@@ -1,40 +1,52 @@
 import { Link } from 'gatsby';
 import * as React from 'react';
 import styled from 'styled-components';
-import GatsbyLogo from '../images/gatsby-icon.png';
-
-interface HeaderProps {
-  siteTitle: string;
-}
+import HeaderLogo from '../images/logo.svg';
+import { HeaderProps } from '../interfaces/Layout.interface';
 
 const HeaderWrapper = styled.div`
-  background: ${props => props.theme.colorPrimary};
+  background: #082133;
+  height: 56px;
   img {
     margin-bottom: 0;
   }
+  // box-shadow: 0px 2px 4px rgba(88, 86, 95, 0.08);
+  padding: 0 6rem;
+  display: flex;
+  align-items: center;
 `;
 
-const HeaderContainer = styled.div`
-  margin: 0 auto;
-  max-width: 96rem;
-  padding: 1rem;
+const Title = styled.span`
+  font-size: 1.13rem;
+  color: #F5F8FA;
+  font-style: normal;
+  font-weight: bold;
+  line-height: 100%;
+  letter-spacing: -0.02em;
 `;
 
-const Header: React.FunctionComponent<HeaderProps> = () => (
+const LogoContainer = styled.div`
+  padding-right: 1rem;
+`;
+
+const Header = ({ siteTitle, logo }: HeaderProps) => (
   <HeaderWrapper>
-    <HeaderContainer>
-      <h1 style={{ margin: 0 }}>
-        <Link
-          to="/"
-          style={{
-            color: 'white',
-            textDecoration: 'none',
-          }}
-        >
-          <img height="100" src={GatsbyLogo} alt="Gatsby Logo" />
-        </Link>
-      </h1>
-    </HeaderContainer>
+    <Link
+      to={logo.link || '/'}
+      style={{
+        color: 'white',
+        textDecoration: 'none',
+      }}
+    >
+      <LogoContainer>
+        <img
+          height="35px"
+          src={logo.image || HeaderLogo}
+          alt="HowtoData Logo"
+        />
+      </LogoContainer>
+    </Link>
+    <Title>{siteTitle}</Title>
   </HeaderWrapper>
 );
 

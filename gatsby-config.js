@@ -1,8 +1,12 @@
+const config = require("./config");
 module.exports = {
+  pathPrefix: config.gatsby.pathPrefix,
   siteMetadata: {
-    title: 'Gatsby-TS-MDX-PrismJs-Starter',
-    description: 'Gatsby-TS-MDX-PrismJs-Starter',
-    keywords: 'One keyword, two keywords',
+    title: config.siteMetadata.title,
+    description: config.siteMetadata.description,
+    keywords: config.siteMetadata.keywords,
+    logo: { link: config.header.logoLink ? config.header.logoLink : '/', image: config.header.logo }, // backwards compatible
+    headerTitle: config.header.title
   },
   plugins: [
     'gatsby-plugin-react-helmet',
@@ -14,11 +18,11 @@ module.exports = {
     'gatsby-plugin-styled-components',
     'gatsby-plugin-offline',
     {
-      resolve: `gatsby-mdx`,
+      resolve: `gatsby-plugin-mdx`,
       options: {
         decks: [],
         defaultLayouts: {
-          default: require.resolve('./src/components/postLayout.tsx'),
+          default: require.resolve('./src/layouts/articleLayout.tsx'),
         },
         extensions: ['.mdx', '.md'],
         gatsbyRemarkPlugins: [
@@ -38,8 +42,8 @@ module.exports = {
     {
       resolve: 'gatsby-source-filesystem',
       options: {
-        name: 'posts',
-        path: `${__dirname}/src/posts`,
+        name: 'docs',
+        path: `${__dirname}/content`,
         ignore: ['**/.tsx*'],
       },
     },
@@ -51,18 +55,11 @@ module.exports = {
       },
     },
     // {
-    //   resolve: `gatsby-plugin-manifest`,
+    //   resolve: 'gatsby-source-remote-file',
     //   options: {
-    //     name: "Gatsby-TS-MDX-PrismJs-Starter",
-    //     short_name: 'Gatsby-Starter',
-    //     start_url: '/',
-    //     background_color: '#663399',
-    //     theme_color: '#663399',
-    //     display: 'minimal-ui',
-    // icon: 'src/images/gatsby-icon.png', // This path is relative to the root of the site.
+    //     url: '../prisma/docs',
+    //     name: 'docs-prisma',
+    //   },
     // },
-    // },
-    // this (optional) plugin enables Progressive Web App + Offline functionality
-    // To learn more, visit: https://gatsby.app/offline
   ],
 };
