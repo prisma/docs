@@ -1,11 +1,11 @@
-# How To Data | Prisma Docs
+# Prisma Docs v2.0
 
 ## 🚀 Quickstart
 
 Download the code and get started by running the following commands:
 
 ```
-$ cd prisma-doc
+$ cd prisma-docs-v2.0
 $ yarn
 $ yarn dev
 ```
