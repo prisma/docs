@@ -59,7 +59,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
 
   return (
     <Layout {...props}>
-      <SEO title={metaTitle} description={metaDescription} />
+      <SEO title={metaTitle!} description={metaDescription!} />
       <BlockContent>
         <TopSection
           location={props.location}
