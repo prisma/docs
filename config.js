@@ -4,15 +4,16 @@ const config = {
   },
   header: {
     logoLink: '/',
-	title: 'Prisma',
-	links: [
-	  { name: 'Install', link: '/' },
+    title: 'Prisma',
+    links: [
+      { name: 'Install', link: '/' },
       { name: 'Guides', link: '/' },
       { name: 'Reference', link: '/' },
       { name: 'Blog', link: '/' },
-	  { name: 'Community', link: '/' },
-	  { name: 'FAQ', link: '/' }
-	]
+      { name: 'Community', link: '/' },
+      { name: 'FAQ', link: '/' },
+      { name: 'Git', link: '/' },
+    ],
   },
   siteMetadata: {
     title: 'Prisma2.0 | Docs',
@@ -20,8 +21,8 @@ const config = {
     keywords: 'Docs, prisma, 2.0',
   },
   footer: {
-	logoLink: '/',
-	title: 'Prisma',
+    logoLink: '/',
+    title: 'Prisma',
     products: [
       { name: 'Prisma Client', link: '/' },
       { name: 'Prisma Migrate', link: '/' },
@@ -51,8 +52,7 @@ const config = {
     newsletter: {
       text: 'Stay up to date with the latest features and changes to Prisma',
     },
-	findus: 
-	{
+    findus: {
       twitterLink: '/',
       youtubeLink: '/',
       fbLink: '/',

@@ -23,15 +23,22 @@ Visit `http://localhost:8000/` to view the app.
 
 Write markdown files in `content` folder.
 
-Open `config.js` for available config options for `gatsby`, `header`, and `siteMetadata`.
+Open `config.js` for available config options for `gatsby`, `header`, `footer` and `siteMetadata`.
 
 - `gatsby` config for global configuration like 
     - `pathPrefix` - Gatsby Path Prefix
 
 - `header` config for site header configuration like
     - `title` - The title that appears on the top left
-    - `logo` - The image /logo on header
+    - `links` - The links for header
     - `logoLink` - The link to redirect on logo click
+
+- `footer` config for site footer configuration like
+    - `title` - The title that appears on the top left
+    - `logoLink` - The link to redirect on logo click
+    - `products`, `community`, `company`, `resources` - The links for various footer
+    - `newsletter` - Newsletter config
+    - `findus` - Social links
 
 - `siteMetadata` config for website related configuration
     - `title` - Title of the website in main page
