@@ -20,11 +20,7 @@ const theme: ThemeProps = {
 
 type LayoutProps = React.ReactNode & RouterProps;
 
-<<<<<<< HEAD
-const Layout: React.FunctionComponent<LayoutProps> = ({ children, location }) => {
-=======
 const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
->>>>>>> master
   const { site } = useLayoutQuery();
   const { header, footer } = site.siteMetadata;
 
@@ -67,11 +63,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
         <Wrapper>
-<<<<<<< HEAD
-          <LeftSideBarWidth className={"hiddenMobile"}>
-=======
           {/* <LeftSideBarWidth> */}
->>>>>>> master
             <Sidebar />
           {/* </LeftSideBarWidth> */}
           <Content>
