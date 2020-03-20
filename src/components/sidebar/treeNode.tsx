@@ -15,9 +15,61 @@ const ListItem = styled.li`
   font-size: 1rem;
   line-height: 16px;
   margin-bottom: 16px;
+  position: relative;
   a {
     color: #4a5568 !important;
     text-decoration: none;
+    vertical-align: middle;
+
+    .tag {
+      float: right;
+      color: #a0aec0;
+      font-size: 14px;
+      font-style: normal;
+      font-weight: 600;
+      background: #edf2f7;
+      border-radius: 5px;
+      padding: 2px 5px;
+    }
+
+    .item-collapser {
+      background: transparent;
+      position: absolute;
+      left: -12px;
+      top: 3px;
+      padding: 0;
+      border: 0;
+
+      &:hover,
+      &:focus,
+      &:active {
+        outline: none;
+      }
+    }
+  }
+  &.active {
+    color: #4a5568;
+    a {
+      font-weight: 700;
+    }
+  }
+  &.top-level {
+    margin-top: 2rem;
+    > a {
+      font-size: 20px;
+      color: #1a202c !important;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    > ul {
+      margin-top: 24px;
+    }
+  }
+  &.static-link > a {
+    color: #a0aec0 !important;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 14px;
   }
 `;
 
@@ -33,7 +85,6 @@ const TreeNode = ({
   staticLink,
   duration,
   experimental,
-  ...rest
 }: any) => {
   const isCollapsed = collapsed[label];
   const collapse = () => {
@@ -50,7 +101,7 @@ const TreeNode = ({
     (location.pathname === url ||
       location.pathname === config.gatsby.pathPrefix + url);
 
-  const calculatedClassName = `${className} item ${active ? 'active' : ''} ${
+  const calculatedClassName = `${className} ${active ? 'active' : ''} ${
     topLevel ? 'top-level' : ''
   } ${staticLink ? 'static-link' : ''}`;
 
