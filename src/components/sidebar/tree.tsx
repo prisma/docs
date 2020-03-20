@@ -35,7 +35,7 @@ const calculateTreeData = (edges: any) => {
           tmp = {
             label: part,
             items: [],
-            topLevel: ((parts.length == 3) && (parts[parts.length -1] === 'index')) ? true : false,
+            topLevel: parts.length == 3 && parts[parts.length - 1] === "index" ? true : false,
           };
           prevItems.push(tmp);
         }
