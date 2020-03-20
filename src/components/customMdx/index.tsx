@@ -1,6 +1,6 @@
 import React from 'react';
 import CodeBlock from './code';
-import Pre from './Pre';
+import Pre from './pre';
 
 export default {
   h1: (props: any) => (
