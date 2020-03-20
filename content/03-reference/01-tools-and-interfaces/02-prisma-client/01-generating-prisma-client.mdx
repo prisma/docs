@@ -1,0 +1,150 @@
+---
+title: "Generating Prisma Client"
+metaTitle: ""
+metaDescription: ""
+---
+
+This page explains how to generate Prisma Client. Generating Prisma Client requires the Prisma CLI installed on your machine (learn more [here]()).
+
+Prisma Client is an auto-generated database client that's tailored to your database schema. By default, it lives inside your `node_modules` directory in `node_modules/@prisma/client`. This location can be adjusted if needed.
+
+Generating Prisma Client requires three steps:
+
+1. Add the following `generator` definition to your Prisma schema:
+    ```prisma
+    generator client {
+      provider = "prisma-client-js"
+    }
+    ```
+1. Install the `@prisma/client` npm module:
+    ```
+    npm install @prisma/client
+    ```
+1. Generate Prisma Client with the following comand:
+    ```
+    prisma generate
+    ```
+
+**Important**: You need to re-execute the `prisma generate` command after every change that's made to your Prisma schema to update the generated Prisma Client code.
+
+Here is a graphical illustration of the typicaly workflow for the Prisma Client generation:
+
+![](https://imgur.com/fZ5rtVg.png)
+
+Note also that `prisma generate` is _automatically_ invoked when you're installing the `@prisma/client` npm module. So, when you're initially setting up Prisma Client, you can typically save the third step from the list above.
+
+Once generated, you can import and instantiate Prisma Client in your code as follows:
+
+```js
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+// use `prisma` in your application to read and write data in your DB
+```
+
+or
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+// use `prisma` in your application to read and write data in your DB
+```
+
+## The `@prisma/client` npm module
+
+### How `@prisma/client` compares to "conventional" node modules
+
+The `@prisma/client` node module is different from "conventional" node modules. With conventional node modules, the entire package is downloaded into your `node_modules` directory and only gets updated when you re-install the package.
+
+As an example for such a module, consider the [`lodash`](https://lodash.com/) npm module. When you install it with `npm install lodash`, it gets downloaded and stored into `node_modules/lodash`. This `node_modules/lodash` directory doesn't change unless another `npm install` is invoked at some point (e.g. when an update of the package is available).
+
+The `@prisma/client` node module is different. It is a "facade package" (basically a stub) that doesn't contain any functional code, such as types or the Prisma Client runtime. 
+
+While you do need to install it _once_ with `npm install @prisma/client`, it is likely that the code inside the `node_modules/@prisma/client` directory changes more often as you're evolving your application. This is because the directory contains code that is _generated_ based on your Prisma schema. When your Prisma schema changes (e.g. because you perform a [schema migration]()), you need to re-execute `prisma generate` which takes care of updating the code in `node_modules/@prisma/client` so that it reflects the schema changes.
+
+Because the `node_modules/@prisma/client` directory contains some code that is _specific_ to _your_ project, it is sometimes called a "smart node module".
+
+![](https://imgur.com/5HuBN2G.png)
+
+### Why is the "facade package" needed if Prisma Client is generated?
+
+The "facade package" is necessary to enable typical build and deployment workflows of Node.js applications. Here are a few examples for this:
+
+- This workflow allows teams to follow conventional practices for version control (because developers can clone repositories, run `npm install` and have the repo be ready without an extra step of running `prisma generate`). 
+- The facade package ensures that Prisma Client survives the [pruning](https://docs.npmjs.com/cli/prune.html) that's often employed by Node.js package managers.
+
+## Specifying the target location for Prisma Client
+
+The Prisma Client generator can be specified as follows in your schema file:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+Note that this is equivalent to specifying the default `output` path `./node_modules/@prisma/client`:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  output   = "./node_modules/@prisma/client"
+}
+```
+
+After running `prisma generate` for either of these schema files, the Prisma Client package will be located in:
+
+```
+node_modules/@prisma/client
+```
+
+You can also specify a custom `output` path on the `generator` configuration, for example:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  output   = "./src/generated/client"
+}
+```
+
+After running `prisma generate` for that schema file, the Prisma Client package will be located in:
+
+```
+./src/generated/client
+```
+
+## Why is Prisma Client generated into `node_modules/@prisma/client` by default?
+
+### Importing Prisma Client
+
+By generating Prisma Client into `node_modules/@prisma/client`, you can import it and instantiate it in your code as follows:
+
+```js
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// use `prisma` in your application to read and write data in your DB
+```
+
+or
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+// use `prisma` in your application to read and write data in your DB
+```
+
+### Keeping the query engine binary out of version control by default
+
+Prisma Client is based on a _query engine_ that's running as a sidecar process alongside your application. This query engine _binary_ is downloaded when `prisma generate` is invoked and stored in the `output` path.
+
+By generating Prisma Client into `node_modules`, the query engine is kept out of version control by default (since `node_modules` is typically ignored for version control). If it was not generated into `node_modules`, then you would need to explicitly ignore it, e.g. for Git you'd need to add the `output` path to your `.gitignore` file.
+
+## Generating Prisma Client in the `postinstall` hook of `@prisma/client`
+
+The `@prisma/client` package defines its own `postinstall` hook that's being executed whenever the package is being installed. This hook invokes the `prisma generate` command which in turn generates the Prisma Client code into the default location `node_modules/@prisma/client`. Notice that this requires the `prisma` CLI to be available, either as local dependency or as a global installation (it is recommended to always install the `prisma` package as a development dependency, using `npm install prisma --save-dev`, to avoid versioning conflicts though).
+
