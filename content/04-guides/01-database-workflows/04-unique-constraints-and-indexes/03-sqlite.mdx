@@ -1,0 +1,314 @@
+---
+title: "Unique constraints and indexes (SQLite)"
+metaTitle: ""
+metaDescription: ""
+---
+
+## Overview
+
+This page explains how to configure a unique [constraint](https://www.sqlite.org/lang_createtable.html#uniqueconst) / [index](https://www.sqlite.org/lang_createindex.html#uniqueidx) in your SQLite database. Constraints and indexes are very similar in SQLite: When adding a unique constraint to one or more columns, SQLite will always create a corresponding unique index.
+
+In this guide, you'll always configure unique constraints (which will automatically configure unique indexes as well).
+
+Since [SQLite does not support `ALTER TABLE` statements with the `ADD CONSTRAINT` operation](https://www.sqlite.org/omitted.html), constraints can only be added when you create the table initially (using `CREATE TABLE`). You can configure unique constraints either on a **single column** or on **multiple columns**.  This guide covers both of the supported combinations.
+
+At the end of the guide, you'll introspect your database to reflect the unique constraint in the Prisma schema, then you'll generate Prisma Client and write a simple Node.js script to validate the constraints.
+
+## Prerequisites
+
+In order to follow this guide, you need:
+
+- the [`sqlite3`](https://www.sqlite.org/cli.html) command line client for SQLite
+- [Node.js](https://nodejs.org/) installed on your machine
+
+## 1. Create a new database and project directory
+
+Start by creating a project directory where you can put the files you'll create throughout this guide:
+
+```
+mkdir unique-demo
+cd unique-demo
+```
+
+Afterwards, execute the following command in your terminal to create a new database called `UniqueDemo`:
+
+```
+sqlite3 UniqueDemo.db
+```
+
+You can validate that the database was created by running the `.tables` command which lists all tables (_relations_) in your database (right now there are none):
+
+```
+sqlite3 UniqueDemo.db '.tables'
+```
+
+
+## 2. Create a table with a single-column unique constraint and index
+
+In this section, you'll **create a new table with a single-column unique constraint** in the `UniqueDemo` database. As mentioned above, this means that SQLite automatically adds a unique index to the same column.
+
+Create a new file called `single-column-unique.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "User" (
+  "id" INTEGER PRIMARY KEY,
+  "email" TEXT UNIQUE
+);
+```
+
+Now run the SQL statement against your database to create a new table called `User`:
+
+```
+sqlite3 UniqueDemo.db < single-column-unique.sql
+```
+
+Congratulations, you just created a table called `User` in the database. The table has an `id` column and a column called `email` on which you defined a unique index. SQLite also automatically added a corresponding unique index (do **not** run this code):
+
+```sql
+CREATE UNIQUE INDEX "sqlite_autoindex_User_1" ON "User"("email");
+```
+
+<details><summary>Alternative: Define the constraint as a <strong>table constraint</strong></summary>
+<br />
+
+In the code above, you created the unique constraint as a **column constraint**. Alternatively, you can define it as a **table constraint**. There's no practical difference between the two, the alternative is just added for completeness.
+
+To add the unique constraint as a table constraint, you need to adjust your SQL statement to look as follows:
+
+
+```sql
+CREATE TABLE "User" (
+  "id" INTEGER PRIMARY KEY,
+  "email" TEXT,
+  UNIQUE ("email")
+);
+```
+
+</details>
+
+## 3. Create a table with a multi-column unique constraint and index
+
+Next, you'll **create a table with a multi-column unique constraint**. This also adds a unique index to the columns with the constraint.
+
+Create a new file called `multi-column-unique.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "AnotherUser" (
+  "id" INTEGER PRIMARY KEY,
+  "firstName" TEXT,
+  "lastName" TEXT,
+  UNIQUE ("firstName", "lastName")
+);
+```
+
+Now run the SQL statement against your database to create a new table called `AnotherUser`:
+
+```
+sqlite3 UniqueDemo.db < multi-column-unique.sql
+```
+
+Congratulations, you just created a table called `AnotherUser` in the database. The table has an `id` column and two column called `firstName` and `lastName` on which you defined a unique index. SQLite also automatically added a corresponding unique index (do **not** run this code):
+
+```sql
+CREATE UNIQUE INDEX "sqlite_autoindex_AnotherUser_1" ON "AnotherUser"("firstName", "lastName");
+```
+
+### 4. Introspect your database with Prisma
+
+In the previous sections, you created two tables with unique constraints:
+
+- The table `User` has a singe-column unique constraint and index on the `email` column
+- The table `AnotherUser` has a multi-column unique constraint and index on the `firstName` and `lastName` columns
+
+In this section you'll introspect your database to generate the Prisma models for these tables.
+
+To start, set up a new Node.js project and add the `prisma2` CLI as a development dependency:
+
+```
+npm init -y
+npm install prisma2 --save-dev
+```
+
+In order to introspect your database, you need to tell Prisma how to connect to it. You do so by configuring a `datasource` in your Prisma schema.
+
+Create a new file called `schema.prisma` and add the following code to it:
+
+```prisma
+datasource sqlite {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+```
+
+The database connection URL is set via an environment variable. The Prisma CLI automatically supports the [`dotenv`]() format which automatically picks up environment variables defined in a file called `.env`.
+
+Create a new file called `.env` and set your database connection URL as the `DATABASE_URL` environment variable:
+
+```
+DATABASE_URL=sqlite:UniqueDemo.db
+```
+
+With both the `schema.prisma` and `.env` files in place, you can run Prisma's introspection with the following command:
+
+```
+npx prisma introspect
+```
+
+This command introspects your database and for each table adds a Prisma model to the Prisma schema:
+
+```prisma
+datasource sqlite {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  email String? @unique
+  id    Int     @default(autoincrement()) @id
+}
+
+model AnotherUser {
+  firstName String?
+  id        Int     @default(autoincrement()) @id
+  lastName  String?
+
+  @@unique([firstName, lastName], name: "sqlite_autoindex_AnotherUser_1")
+}
+```
+
+## 5. Generate Prisma Client
+
+To validate whether the unique constraints work, you'll now generate Prisma Client and send a few sample queries to the database.
+
+First, add a `generator` block to your Prisma schema (typically added right below the `datasource` block): 
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+Run the following command to install and generate Prisma Client in your project:
+
+```
+npx prisma generate
+```
+
+Now you can use Prisma Client to send database queries in Node.js.
+
+## 6. Validate the unique constraints in a Node.js script
+
+Create a new file called `index.js` and add the following code to it:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const newUser1 = await prisma.user.create({
+    data: {
+      email: "alice@prisma.io"
+    }
+  })
+  console.log(newUser1)
+  const newUser2 = await prisma.user.create({
+    data: {
+      email: "alice@prisma.io"
+    }
+  })
+  console.log(newUser2)
+}
+
+main()
+```
+
+In this code, you're creating two users with the same `email`, so you're violating the unique constraint that's configured on the `User` table. 
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+After `newUser1` gets printed to the console succesfully, the script throws an error indicating that the unique constraint on `email` is violated:
+
+```
+{ email: 'alice@prisma.io', id: 1 }
+(node:14072) UnhandledPromiseRejectionWarning: Error:
+Invalid `newUser2 = await prisma.user.create()` invocation in
+/Users/janedoe/unique-demo/index.js:12:38
+
+   8     email: "alice@prisma.io"
+   9   }
+  10 })
+  11 console.log(newUser1)
+→ 12 const newUser2 = await prisma.user.create(Unique constraint failed on the fields: (`email`)
+```
+
+To validate the multi-column unique constraint, replace the code in `index.js` with the following:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const newUser1 = await prisma.anotherUser.create({
+    data: {
+      firstName: "Alice",
+      lastName: "Smith"
+    }
+  })
+  console.log(newUser1)
+  const newUser2 = await prisma.anotherUser.create({
+    data: {
+      firstName: "Alice",
+      lastName: "Smith"
+    }
+  })
+  console.log(newUser2)
+}
+
+main()
+```
+
+Run the script again with this command:
+
+```
+node index.js
+```
+
+This time, you'll see a similar error message indicating the unique constraint on `firstName` and `lastName` was violated:
+
+```
+{ firstName: 'Alice', id: 1, lastName: 'Smith' }
+(node:14273) UnhandledPromiseRejectionWarning: Error:
+Invalid `newUser2 = await prisma.anotherUser.create()` invocation in
+/Users/janedoe/unique-demo/index.js:13:45
+
+   9     lastName: "Smith"
+  10   }
+  11 })
+  12 console.log(newUser1)
+→ 13 const newUser2 = await prisma.anotherUser.create(Unique constraint failed on the fields: (`firstName`,`lastName`)
+```
+
+Note that you can add `NULL` values for these columns without violating the constraints. For example, the following code snippet will **not** fail:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const newUser1 = await prisma.user.create({ data: {} })
+  console.log(newUser1)
+  const newUser2 = await prisma.user.create({ data: {} })
+  console.log(newUser2)
+}
+
+main()
+```
+
+It will create two new records where the `email` is set to `NULL` in the database.
