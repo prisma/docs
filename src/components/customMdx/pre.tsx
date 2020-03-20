@@ -1,5 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
+import CopyButton from './copy';
+import Copy from '../../icons/Copy';
+import { stringify } from '../../utils/stringify';
 
 type PreBlockProps = React.ReactNode;
 
@@ -14,19 +17,16 @@ const getSettings = (className: any) => {
   return copy;
 };
 
-const CopyButton = ({ text }: any) => <span>Copy</span>;
-
 const Pre = ({ languages, children, ...props }: PreBlockProps) => {
   const copy = getSettings(props.className);
-  // const code = stringify(children)
-  const code = 'ss';
+  const code = stringify(children);
 
   return (
     <PreWrapper {...props}>
       {children}
       {copy && (
         <AbsoluteCopyButton>
-          <CopyButton text={code} />
+          <CopyButton text={code}><Copy/></CopyButton>
         </AbsoluteCopyButton>
       )}
     </PreWrapper>

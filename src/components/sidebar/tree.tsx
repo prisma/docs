@@ -8,7 +8,9 @@ interface TreeNode {
     fields: ArticleFields;
   };
 }
+let defaultCollapsed: any = {};
 
+// TODO::Simplify the function
 const calculateTreeData = (edges: any) => {
   const tree = edges.reduce(
     (
@@ -48,6 +50,8 @@ const calculateTreeData = (edges: any) => {
           tmp.duration = duration;
           tmp.experimental = experimental;
         }
+        defaultCollapsed[part.toLowerCase()] =
+          tmp.topLevel || tmp.staticLink ? false : true;
         prevItems = tmp.items;
       }
       const slicedLength = parts.length - 1;
@@ -69,6 +73,7 @@ const calculateTreeData = (edges: any) => {
           experimental,
         });
       }
+
       return accu;
     },
     { items: [] }
@@ -79,15 +84,6 @@ const calculateTreeData = (edges: any) => {
 const Tree = ({ edges }: AllEdges) => {
   let [treeData] = useState(() => {
     return calculateTreeData(edges);
-  });
-
-  const defaultCollapsed: any = {};
-  treeData.items.forEach((item: any) => {
-    if (item.topLevel || item.staticLink) {
-      defaultCollapsed[item.label.toLowerCase()] = false;
-    } else {
-      defaultCollapsed[item.label.toLowerCase()] = true;
-    }
   });
 
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
