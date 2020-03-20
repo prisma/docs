@@ -1,9 +1,9 @@
-import React from 'react';
-import config from '../../../config';
-import styled from 'styled-components';
-import './treeNode.css';
-import ArrowRight from '../../icons/ArrowRight';
-import ArrowDown from '../../icons/ArrowDown';
+import React from "react";
+import config from "../../../config";
+import styled from "styled-components";
+import "./treeNode.css";
+import ArrowRight from "../../icons/ArrowRight";
+import ArrowDown from "../../icons/ArrowDown";
 
 const List = styled.ul`
   list-style: none;
@@ -22,7 +22,7 @@ const ListItem = styled.li`
 `;
 
 const TreeNode = ({
-  className = '',
+  className = "",
   setCollapsed,
   collapsed,
   url,
@@ -42,17 +42,15 @@ const TreeNode = ({
 
   const hasChildren = items.length !== 0;
   let location;
-  if (typeof document != 'undefined') {
+  if (typeof document != "undefined") {
     location = document.location;
   }
   const active =
-    location &&
-    (location.pathname === url ||
-      location.pathname === config.gatsby.pathPrefix + url);
+    location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
-  const calculatedClassName = `${className} item ${active ? 'active' : ''} ${
-    topLevel ? 'top-level' : ''
-  } ${staticLink ? 'static-link' : ''}`;
+  const calculatedClassName = `${className} item ${active ? "active" : ""} ${
+    topLevel ? "top-level" : ""
+  } ${staticLink ? "static-link" : ""}`;
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
@@ -66,14 +64,10 @@ const TreeNode = ({
 
   return (
     <ListItem className={calculatedClassName}>
-      {title && label !== 'index' && (
-        <a href={url.split('/').includes('index') ? null : url}>
+      {title && label !== "index" && (
+        <a href={url.split("/").includes("index") ? null : url}>
           {title && hasChildren && !staticLink && !topLevel ? (
-            <button
-              onClick={collapse}
-              aria-label="collapse"
-              className="item-collapser"
-            >
+            <button onClick={collapse} aria-label="collapse" className="item-collapser">
               {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
             </button>
           ) : null}

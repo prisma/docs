@@ -1,5 +1,5 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from "react";
+import styled from "styled-components";
 
 interface CodeProps {
   languages?: string[];
@@ -20,7 +20,7 @@ const CodeBlock = ({ languages, children, ...props }: CodeBlockProps) => {
             const setCurrentActive = () => setActiveIndex(index);
             return (
               <div
-                className={`tab ${index === activeIndex ? 'active' : ''}`}
+                className={`tab ${index === activeIndex ? "active" : ""}`}
                 key={lang}
                 data-index={`${index}`}
                 onClick={setCurrentActive}

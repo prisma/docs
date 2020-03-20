@@ -1,6 +1,6 @@
-import React from 'react';
-import styled from 'styled-components';
-import * as CopyToClipboard from 'react-copy-to-clipboard'
+import React from "react";
+import styled from "styled-components";
+import * as CopyToClipboard from "react-copy-to-clipboard";
 
 interface CopyProps {
   text: string;
@@ -8,36 +8,33 @@ interface CopyProps {
 
 type CopyButtonProps = CopyProps & React.ReactNode;
 
-const CopyButton = ({text, children, ...props}: CopyButtonProps) => {
+const CopyButton = ({ text, children, ...props }: CopyButtonProps) => {
   const [copied, setCopied] = React.useState(false);
   let copyTimer: any;
 
   const onCopyContent = () => {
-    setCopied(true)
-    copyTimer = window.setTimeout(
-      () => setCopied(false),
-      500,
-    )
-  }
+    setCopied(true);
+    copyTimer = window.setTimeout(() => setCopied(false), 500);
+  };
 
   return (
     <CopyToClipboard text={text} onCopy={onCopyContent}>
-        <CopyComponent>
-          {copied && (
-            <div className="indicator" style={{ color: '#a0aec0' }}>
-              Copied
-            </div>
-          )}
-          {children}
-        </CopyComponent>
-      </CopyToClipboard>
+      <CopyComponent>
+        {copied && (
+          <div className="indicator" style={{ color: "#a0aec0" }}>
+            Copied
+          </div>
+        )}
+        {children}
+      </CopyComponent>
+    </CopyToClipboard>
   );
 };
 
 export default CopyButton;
 
 const CopyComponent = styled.div`
-    font-family: 'Open Sans';
+  font-family: "Open Sans";
   & {
     position: relative;
     cursor: pointer;
@@ -63,4 +60,4 @@ const CopyComponent = styled.div`
     transform: translate(-50%, 0);
     animation: copying 700ms linear;
   }
-`
+`;
