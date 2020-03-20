@@ -44,3 +44,6 @@ Open `config.js` for available config options for `gatsby`, `header`, `footer` a
     - `title` - Title of the website in main page
     - `description` - Description of the website
     - `keywords` - Keywords of the website for SEO
+
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/6d4d28c1-2c75-422f-b529-3a4e6bb70d0b/deploy-status)](https://app.netlify.com/sites/prisma-2-docs/deploys)

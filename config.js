@@ -12,7 +12,6 @@ const config = {
       { name: 'Blog', link: '/' },
       { name: 'Community', link: '/' },
       { name: 'FAQ', link: '/' },
-      { name: 'Git', link: '/' },
     ],
   },
   siteMetadata: {
