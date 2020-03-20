@@ -3,9 +3,10 @@ import * as React from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { useLayoutQuery } from '../hooks/useLayoutQuery';
 import Header from './header';
-import TOC from './toc';
-// import { MDXProvider } from "@mdx-js/react";
-// import customMdx from "../components/customMdx";
+import Footer from './footer';
+
+import { MDXProvider } from '@mdx-js/react';
+import customMdx from '../components/customMdx';
 import './layout.css';
 import Sidebar from './sidebar';
 
@@ -19,13 +20,18 @@ const theme: ThemeProps = {
 
 type LayoutProps = React.ReactNode & RouterProps;
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
+const Layout: React.FunctionComponent<LayoutProps> = ({
+  children,
+  location,
+}) => {
   const { site } = useLayoutQuery();
-  const { headerTitle, logo } = site.siteMetadata;
+  const { header, footer } = site.siteMetadata;
 
   const Wrapper = styled.div`
     display: flex;
     width: 100%;
+    // padding: 0 12rem;
+    padding: 0 10%;
     @media only screen and (max-width: 767px) {
       display: block;
     }
@@ -33,7 +39,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
 
   const Content = styled.main`
     flex: 1;
-    margin: 3rem 0;
+    margin: -80px 0 1rem 24px;
     @media only screen and (max-width: 1023px) {
       padding-left: 0;
     }
@@ -46,46 +52,27 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     }
   `;
   const LeftSideBarWidth = styled.div`
-    width: 360px;
+    width: 215px;
     @media only screen and (max-width: 50rem) {
       width: 100%;
       position: relative;
     }
   `;
 
-  const RightSideBarWidth = styled.div`
-    width: 360px;
-    @media only screen and (max-width: 50rem) {
-      width: 100%;
-      position: relative;
-    }
-  `;
-
-  const Footer = styled.div`
-    height: 300px;
-    background: #082133;
-  `;
-
-  // TODO: Add table of contents to right side
-  // TODO: Custom MDX Components
   return (
     <ThemeProvider theme={theme}>
-      {/* <MDXProvider components={customMdx}> */}
-      <Header siteTitle={headerTitle} logo={logo} />
-      <Wrapper>
-        <LeftSideBarWidth className={'hiddenMobile'}>
-          <Sidebar />
-        </LeftSideBarWidth>
-        <Content>
-          <MaxWidth>{children}</MaxWidth>
-        </Content>
-        <RightSideBarWidth className={'hiddenMobile'}>
-          <TOC />
-        </RightSideBarWidth>
-      </Wrapper>
-      {/* <Footer/> */}
-      <Footer/>
-      {/* </MDXProvider> */}
+      <MDXProvider components={customMdx}>
+        <Header headerProps={header} />
+        <Wrapper>
+          <LeftSideBarWidth className={'hiddenMobile'}>
+            <Sidebar />
+          </LeftSideBarWidth>
+          <Content>
+            <MaxWidth>{children}</MaxWidth>
+          </Content>
+        </Wrapper>
+        <Footer footerProps={footer} />
+      </MDXProvider>
     </ThemeProvider>
   );
 };

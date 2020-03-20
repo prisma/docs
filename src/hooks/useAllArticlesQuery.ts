@@ -10,6 +10,9 @@ export const useAllArticlesQuery = () => {
             fields {
               slug
               title
+              duration
+              staticLink
+              experimental
             }
           }
         }

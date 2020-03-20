@@ -1,6 +1,11 @@
+import { AllEdges } from './AllArticles.interface';
+
 export interface ArticleFields {
   slug: string;
   title: string;
+  staticLink?: boolean;
+  duration?: string;
+  experimental?: boolean;
 }
 
 export interface ArticleData {
@@ -13,6 +18,7 @@ export interface ArticleData {
       metaDescription?: string;
     };
   };
+  allMdx: AllEdges;
 }
 
 export interface ArticleQueryData {

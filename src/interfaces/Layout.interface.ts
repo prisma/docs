@@ -1,13 +1,30 @@
-interface Logo {
-  image: string;
-  link: string;
+// interface Logo {
+//   image: string;
+//   link: string;
+// }
+
+export interface HeaderProps {
+  logoLink: string;
+  title: string;
+  links: { name: string; link: string }[]; // create interface for this
+}
+
+export interface FooterProps {
+  logoLink: string;
+  title: string;
+  products: { name: string; link: string }[];
+  community: { name: string; link: string }[];
+  resources: { name: string; link: string }[];
+  company: { name: string; link: string }[];
+  newsletter: { text: string };
+  findus: any;
 }
 
 interface SiteMeta {
   siteMetadata: {
-    headerTitle: string;
+    header: HeaderProps;
     title: string;
-    logo: Logo;
+    footer: FooterProps;
   };
 }
 
@@ -15,7 +32,3 @@ export interface LayoutQueryData {
   site: SiteMeta;
 }
 
-export interface HeaderProps {
-  siteTitle: string;
-  logo: Logo;
-}

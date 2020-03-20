@@ -5,8 +5,10 @@ module.exports = {
     title: config.siteMetadata.title,
     description: config.siteMetadata.description,
     keywords: config.siteMetadata.keywords,
-    logo: { link: config.header.logoLink ? config.header.logoLink : '/', image: config.header.logo }, // backwards compatible
-    headerTitle: config.header.title
+    header: config.header,
+    // logo: { link: config.header.logoLink ? config.header.logoLink : '/', image: config.header.logo }, // backwards compatible
+    // headerTitle: config.header.title,
+    footer: config.footer
   },
   plugins: [
     'gatsby-plugin-react-helmet',
