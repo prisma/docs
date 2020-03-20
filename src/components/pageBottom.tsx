@@ -1,7 +1,7 @@
-import * as React from 'react';
-import styled from 'styled-components';
-import Up from '../icons/Up';
-import Down from '../icons/Down';
+import * as React from "react";
+import styled from "styled-components";
+import Up from "../icons/Up";
+import Down from "../icons/Down";
 
 const PageBottomWrapper = styled.div`
   display: flex;
@@ -33,10 +33,10 @@ const PageBottom = () => (
     <Feedback>
       <h4>Was this helpful?</h4>
       <div className="moods">
-        <a href={'/'}>
+        <a href={"/"}>
           <Down />
         </a>
-        <a href={'/'}>
+        <a href={"/"}>
           <Up />
         </a>
       </div>

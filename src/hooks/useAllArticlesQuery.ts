@@ -1,5 +1,5 @@
-import { graphql, useStaticQuery } from 'gatsby';
-import { AllArticles } from '../interfaces/AllArticles.interface';
+import { graphql, useStaticQuery } from "gatsby";
+import { AllArticles } from "../interfaces/AllArticles.interface";
 
 export const useAllArticlesQuery = () => {
   const { allMdx }: AllArticles = useStaticQuery(graphql`

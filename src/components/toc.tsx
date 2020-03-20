@@ -1,14 +1,14 @@
-import React from 'react';
-import styled from 'styled-components';
-import { AllArticlesTOC } from '../interfaces/TOC.interface';
-import { useTOCQuery } from '../hooks/useTOCQuery';
+import React from "react";
+import styled from "styled-components";
+import { AllArticlesTOC } from "../interfaces/TOC.interface";
+import { useTOCQuery } from "../hooks/useTOCQuery";
 
 const TOCContent = styled.aside`
   // padding: 2rem 0 0;
 `;
 
 const ChapterTitle = styled.h1`
-  font-family: 'Open Sans';
+  font-family: "Open Sans";
   font-style: normal;
   font-weight: bold;
   font-size: 14px;
@@ -26,22 +26,20 @@ const TOC = ({ location }: any) => {
       if (item !== undefined) {
         if (
           item.node.fields.slug === location.pathname ||
-          '/' + item.node.fields.slug === location.pathname
+          "/" + item.node.fields.slug === location.pathname
         ) {
           if (item.node.tableOfContents.items) {
-            navItems = item.node.tableOfContents.items.map(
-              (innerItem: any, index: number) => {
-                const itemId = innerItem.title
-                  ? innerItem.title.replace(/\s+/g, '-').toLowerCase()
-                  : '#';
+            navItems = item.node.tableOfContents.items.map((innerItem: any, index: number) => {
+              const itemId = innerItem.title
+                ? innerItem.title.replace(/\s+/g, "-").toLowerCase()
+                : "#";
 
-                return (
-                  <li key={index}>
-                    <a href={`#${itemId}`}>{innerItem.title}</a>
-                  </li>
-                );
-              }
-            );
+              return (
+                <li key={index}>
+                  <a href={`#${itemId}`}>{innerItem.title}</a>
+                </li>
+              );
+            });
           }
         }
       }
@@ -50,9 +48,7 @@ const TOC = ({ location }: any) => {
   return navItems && navItems.length ? (
     <TOCContent>
       <ChapterTitle>CONTENT</ChapterTitle>
-      <ul className="list">
-        {navItems}
-      </ul>
+      <ul className="list">{navItems}</ul>
     </TOCContent>
   ) : null;
 };

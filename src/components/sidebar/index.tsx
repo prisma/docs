@@ -1,8 +1,8 @@
-import React from 'react';
-import Tree from './tree';
-import styled from 'styled-components';
-import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery';
-import { AllArticles } from '../../interfaces/AllArticles.interface';
+import React from "react";
+import Tree from "./tree";
+import styled from "styled-components";
+import { useAllArticlesQuery } from "../../hooks/useAllArticlesQuery";
+import { AllArticles } from "../../interfaces/AllArticles.interface";
 
 const Sidebar = styled.aside`
   margin: 0;

@@ -31,4 +31,3 @@ interface SiteMeta {
 export interface LayoutQueryData {
   site: SiteMeta;
 }
-
