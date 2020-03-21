@@ -4,117 +4,447 @@ metaTitle: ""
 metaDescription: ""
 ---
 
-**Note: The content of this page is temporary and will be updated soon.**
+## Overview
 
-## PostgreSQL
+This page explains walks you through the process of setting up Prisma from scratch with your own database. It uses plain SQL to create tables in your database. 
 
-Follow these steps for an initial Prisma setup:
+## Prerequisites
 
-1. Run `mkdir hello-prisma` to create your project directory
-1. Run `cd hello-prisma` to navigate into it
-1. Run `touch schema.prisma` to create an empty [Prisma schema](../../prisma-schema-file.md)
-1. Add a `datasource` to the Prisma schema and set your database connection string as the `url`, e.g.:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = "postgresql://janedoe:janedoe@localhost:5432/hello-prisma"
-   }
-   ```
-1. Run `touch schema.sql` to create your SQL schema and add the following contents to it:
+In order to successfully complete this guide, you need:
 
-   ```sql
-   CREATE TABLE "public"."User" (
-     user_id SERIAL PRIMARY KEY NOT NULL,
-     name VARCHAR(255),
-     email VARCHAR(255) UNIQUE NOT NULL
-   );
+- [Node.js]() installed on your machine
+- a [PostgreSQL]() database server running
+- the [`psql`]() command line client for PostgreSQL
 
-   CREATE TABLE "public"."Post" (
-     post_id SERIAL PRIMARY KEY NOT NULL,
-     title VARCHAR(255) NOT NULL,
-     content TEXT,
-     author_id INTEGER,
-     FOREIGN KEY (author_id) REFERENCES "public"."User"(user_id)
-   );
+Make sure your have your database [connection URL]() (includes your authentication credentials) at hand!
 
-   CREATE TABLE "public"."Profile" (
-     profile_id SERIAL PRIMARY KEY NOT NULL,
-     bio TEXT,
-     user_id INTEGER NOT NULL,
-     FOREIGN KEY (user_id) REFERENCES "public"."User"(user_id)
-   );
-   ```
+If you don't have a database server running and only want to explore Prisma, check out the [Quickstart]().
 
-1. Run the following command to migrate your database schema:
-   ```
-   psql -h __HOST__ -d __DATABASE__ -U __USER__ -f schema.sql
-   ```
-   Note that you need to replace the uppercase placeholders with your database credentials, e.g.:
-   ```
-   psql -h localhost -d hello-prisma -U janedoe -f schema.sql
-   ```
-1. Add a `generator` to the Prisma schema to be able to generate Prisma Client:
-   ```prisma
-   generator client {
-     provider = "prisma-client-js"
-   }
-   ```
-1. Configure project (TypeScript):
-   ```
-   npm init -y
-   npm install typescript ts-node prisma2 --save-dev
-   npm install @prisma/client
-   ```
-1. Run `npx prisma2 introspect` to introspect your database and add your models to the Prisma schema
-1. Run `npx prisma2 generate` to generate Prisma Client
-1. Run `touch tsconfig.json` and the following contents to it:
-   ```json
-   {
-     "compilerOptions": {
-       "sourceMap": true,
-       "outDir": "dist",
-       "strict": true,
-       "lib": ["esnext", "dom"],
-       "esModuleInterop": true
-     }
-   }
-   ```
-1. Run `touch index.ts` to create a source file and add the following code:
+## Create project setup
 
-   ```ts
-   import { PrismaClient } from "@prisma/client";
+As a first step, create a project directory and navigate into it:
 
-   const prisma = new PrismaClient();
+```
+mkdir hello-prisma
+cd hello-prisma
+```
 
-   // A `main` function so that we can use async/await
-   async function main() {
-     const user1 = await prisma.user.create({
-       data: {
-         email: "alice@prisma.io",
-         name: "Alice",
-         post: {
-           create: {
-             title: "Watch the talks from Prisma Day 2019",
-             content: "https://www.prisma.io/blog/z11sg6ipb3i1/",
-           },
-         },
-       },
-       include: {
-         post: true,
-       },
-     });
-     console.log(user1);
-   }
+Next, initialize a Node.js project add the Prisma CLI as a development dependency in your project:
 
-   main()
-     .catch(e => console.error(e))
-     .finally(async () => {
-       await prisma.disconnect();
-     });
-   ```
+```
+npm init -y
+npm install @prisma/cli --save-dev
+```
 
-1. Run `npx ts-node index.ts` to execute the script
+This creates a `package.json` with an initial setup for a Node.js app.
 
+You can now invoke the Prisma CLI by prefixing it with `npx`:
+
+```
+npx prisma
+```
+
+Next, set up your Prisma project by creating your [Prisma schema]() file with the following command:
+
+```
+npx prisma init
+```
+
+This command created a new directory called `prisma` with the following contents:
+
+- `schema.prisma`: The Prisma schema with your database connection and the Prisma Client generator
+- `.env`: A [dotenv]() file for defining environment variables (used for your database connection)
+
+## Connect your database
+
+To connect your database, you need to set the `url` field of the `datasource` block in your Prisma schema to your database [connection URL]():
+
+```prisma
+datasource postgresql {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+In this case, the `url` is [set via an environment variable]() which is defined in `prisma/.env`:
+
+```
+DATABASE_URL="postgresql://johndoe:johndoe@localhost:5432/mydb?schema=public"
+```
+
+You now need to adjust the connection URL to point to your own database. 
+
+The format of the connection URL for your database typically depends on the database you use. For PostgreSQL, it looks as follows (the parts spelled all-uppercased are placeholders for your specific connection details):
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
+```
+
+Here's a short summary of each component:
+
+- `USER`: The name of your database user
+- `PASSWORD`: The password your database user
+- `PORT`: The port where your database server is running (typically `5432` for PostgreSQL)
+- `DATABASE`: The name of the [database]()
+- `SCHEMA`: The name of the [schema]() inside the database 
+
+If you're unsure what to provide for the `schema` parameter for a PostgreSQL connection URL, you can probably omit it. In that case, the default schema name `public` will be used.
+
+As an example, for a PostgreSQL database hosted on Heroku, the [connection string](./core/connectors/postgresql.md#connection-string) might look similar to this:
+
+```
+DATABASE_URL="postgresql://opnmyfngbknppm:XXX@ec2-46-137-91-216.eu-west-1.compute.amazonaws.com:5432/d50rgmkqi2ipus?schema=hello-prisma"
+```
+
+When running PostgreSQL locally, your user and password as well as the database name typically correspond to the current _user_ of your OS, e.g. assuming the user is called `janedoe`:
+
+```
+DATABASE_URL="postgresql://janedoe:janedoe@localhost:5432/janedoe?schema=hello-prisma"
+```
+
+## Create database tables
+
+In this guide, you'll use plain SQL to create the tables in your database. Create a new file called `schema.sql` and add the following contents to it:
+
+```sql copy
+CREATE TABLE "public"."User" (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name VARCHAR(255),
+  email VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE "public"."Post" (
+  id SERIAL PRIMARY KEY NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+  content TEXT,
+  published BOOLEAN NOT NULL DEFAULT false,
+  author INTEGER NOT NULL,
+  FOREIGN KEY (author) REFERENCES "public"."User"(id)
+);
+
+CREATE TABLE "public"."Profile" (
+  id SERIAL PRIMARY KEY NOT NULL,
+  bio TEXT,
+  "user" INTEGER UNIQUE NOT NULL,
+  FOREIGN KEY ("user") REFERENCES "public"."User"(id)
+);
+```
+
+> **Note**: Some fields are written in double-quotes to ensure PostgreSQL uses proper casing. If no double-quotes are used, PostgreSQL would just read everything as _lowercase_ characters.
+
+You can create the tables using any PostgreSQL client of your choice. If you're using `psql`, you can now create the tables using the following command:
+
+```
+psql -h HOST -d DATABASE -U USER -f schema.sql
+```
+
+Similar to before, you need to replace the all-uppercase placeholders with your database credentials, e.g.:
+
+
+<CodeBlock languages={["Unix (Mac OS, Linux)", "Windows"]}>
+
+```bash copy
+psql -h localhost -d hello-prisma -U janedoe -f schema.sql
+```
+
+```bash copy
+
+\connect DATABASE
+\i 'c:/hello-prisma/schema.sql'
+```
+
+</CodeBlock>
+
+Great, you now created three tables in your database
+
+<details><summary>Expand for a graphical overview of the tables</summary>
+
+**User**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `SERIAL`       | **✔️**         | No          | No       | _autoincrementing_ |
+| `name`      | `VARCHAR(255)` | No          | No          | No       | -                  |
+| `email`     | `VARCHAR(255)` | No          | No          | **✔️**      | -                  |
+
+**Post**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `SERIAL`       | **✔️**         | No          | No       | _autoincrementing_ |
+| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**      | `now()`            |
+| `title`     | `VARCHAR(255)` | No          | No          | **✔️**      | -                  |
+| `content`   | `TEXT`         | No          | No          | No       | -                  |
+| `published` | `BOOLEAN`      | No          | No          | **✔️**      | `false`            |
+| `author`    | `INTEGER`      | No          | **✔️**         | **✔️**      | `false`            |
+
+**Profile**
+
+| Column name | Type      | Primary key | Foreign key | Required | Default            |
+| :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `SERIAL`  | **✔️**         | No          | No       | _autoincrementing_ |
+| `bio`       | `TEXT`    | No          | No          | **✔️**      | -                  |
+| `user`      | `INTEGER` | No          | **✔️**         | **✔️**      | `false`            |
+
+</details>
+
+## Introspect your database
+
+As a next step, you will introspect your database. The result of the introspection will be a [data model]() inside your Prisma schema.
+
+Run the following command to introspect your database:
+
+```
+npx prisma introspect
+```
+
+This commands reads the `DATABASE_URL` environment variable that's defined in `.env` and connects to your database. Once the connection is established, it introspects the database (i.e. it _reads the database schema_). It then translates the database schema from SQL into a Prisma data model.
+
+After the introspection has completed, your Prisma schema file was updated and now looks as follows (note that the fields on the models have been reordered for better readability):
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        Int      @default(autoincrement()) @id
+  createdAt DateTime @default(now())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(references: [id])
+}
+
+model Profile {
+  id   Int     @default(autoincrement()) @id
+  bio  String?
+  user User    @relation(references: [id])
+}
+
+model User {
+  id      Int       @default(autoincrement()) @id
+  name    String?
+  email   String    @unique
+  post    Post[]
+  profile Profile?
+}
+```
+
+Prisma's data model is a declarative representation of your database schema and serves as foundation for the generated Prisma Client library. Your Prisma Client instance will expose queries that are _tailored_ to these models.
+
+Right now, there's one 
+
+## Install and generate Prisma Client
+
+To get started with Prisma Client, you need to install it as a node module:
+
+```
+npm install @prisma/client
+```
+
+Notice that the [`@prisma/client` node module]() is a bit different from "conventional" node modules (e.g. a library like [`lodash`]()). When installing the module with `npm install @prisma/client`, npm only downloads an empty package into the `node_modules/@prisma/client` directory. The package is then "filled" with the actual library with the following command of the Prisma CLI:
+
+```
+npx prisma generate
+```
+
+This commands reads your Prisma schema and generates your Prisma Client library into `node_modules/@prisma/client`.
+
+Because the `@prisma/client` node module actually is customized to your project, it is sometimes referred to as a "smart node module":
+
+![](https://i.imgur.com/83djlkl.png)
+
+## Writing your first query with Prisma Client
+
+Now that you generated your Prisma Client library, you can start writing queries to read and write data in your database. For the purpose of this guide, you'll use a plain Node.js script to explore some basic features of Prisma Client.
+
+Create a new file called `index.js` and add the following code to it:
+
+```js
+const { PrismaClient } = require("@prisma/client")
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // ... you will write your Prisma Client queries here
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.disconnect()
+  })
+```
+
+Here's a quick overview of the different parts of the code snippet:
+
+1. Import the `PrismaClient` constructor from the `@prisma/client` node module
+1. Instantiate `PrismaClient`
+1. Define an `async` function called `main` to send queries to the database
+1. Call the `main` function
+1. Close the database connections when the script terminates
+
+Inside the `main` function, add the folowing query to read all `User` records from the database and print the result:
+
+```js
+async function main() {
+  const allUsers = await prisma.user.findMany()
+  console.log(allUsers)
+}
+```
+
+Now run the code with this command:
+
+```
+node index.js
+```
+
+This should print an empty arrays because there are not `User` records in the databse yet:
+
+```js
+[]
+```
+
+## Write data in the database
+
+The `findMany` query you used in the previous section only _reads_ data from the database (although it was still empty). In this section, you'll learn how to write a query to _write_ new records into the `Post` and `User` tables.
+
+Adjust the `main` function to send a `create` query to the database:
+
+```js
+async function main() {
+
+  await prisma.user.create({
+    data: {
+      name: "Alice",
+      email: "alice@prisma.io",
+      author: {
+        create: { title: "Prisma makes databases easy" },
+      },
+    },
+  })
+
+  const allUsers = await prisma.user.findMany({
+    include: { posts: true },
+  })
+  console.dir(allUsers, { depth: null })
+}
+```
+
+This code creates a new `User` record together with a new `Post` record using a [nested write]() query. The two are connected via their `author` and `posts` [relation fields]() respectively.
+
+Notice that you're passing the [`include`]() option to `findMany` which tells Prisma Client to include the `posts` relation on the returned `User` objects.
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+The output should look similar to this:
+
+```js
+[
+  {
+    email: 'alice@prisma.io',
+    id: 1,
+    name: 'Alice',
+    posts: [
+      {
+        content: null,
+        createdAt: 2020-03-21T16:45:01.246Z,
+        id: 1,
+        published: false,
+        title: 'Hello World'
+      }
+    ]
+  }
+]
+```
+
+The query added new records to the `User` and the `Post` tables:
+
+**User**
+
+| **id** | **email**           | **name**  |
+| :----- | :------------------ | :-------- |
+| `1`    | `"alice@prisma.io"` | `"Alice"` |
+
+**Post**
+
+| **id** | **createdAt**              | **title**       | **content** | **published** | **author** |
+| :----- | :------------------------- | :-------------- | :---------- | :------------ | :--------- |
+| `1`    | `2020-03-21T16:45:01.246Z` | `"Hello World"` | `null`      | `false`       | `1`        |
+
+
+> **Note**: The number in the `author` column references the `id` column of the `User` table: the `1` in the `author` column refers to the `User` record with an `id` value of `1`.
+
+Before moving on to the next section, you'll "publish" the `Post` record you just created using an `update` query. Adjust the `main` function as follows:
+
+```js
+async function main() {
+  const post = await prisma.post.update({
+    where: { id: 1 },
+    data: { published: true },
+  })
+  console.log(post)
+}
+```
+
+Now run the code using the same command as before:
+
+```
+node index.js
+```
+
+You will see the following output:
+
+```js
+{
+  id: 1,
+  title: 'Hello World',
+  content: null,
+  published: true
+}
+```
+
+The `Post` record with an `id` of `2` now got updated in the database:
+
+**Post**
+
+| **id** | **title**                       | **content** | **published** | **author** |
+| :----- | :------------------------------ | :---------- | :------------ | :--------- |
+| `1`    | `"Hello World"`                 | `null`      | `true`        | `1`        |
+
+Fantastic, you just wrote new data into your database for the first time using Prisma Client 🚀
+
+## Next steps
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+---
+<!-- 
 ## MySQL
 
 Follow these steps for an initial Prisma setup:
@@ -133,28 +463,28 @@ Follow these steps for an initial Prisma setup:
 
    ```sql
    CREATE TABLE User (
-     user_id BIGINT NOT NULL AUTO_INCREMENT,
+     id BIGINT NOT NULL AUTO_INCREMENT,
      name VARCHAR(255),
      email VARCHAR(255) UNIQUE NOT NULL,
-     PRIMARY KEY (user_id)
-   );
+     PRIMARY KEY (id)
+   )
 
    CREATE TABLE Post (
-     post_id BIGINT NOT NULL AUTO_INCREMENT,
+     post BIGINT NOT NULL AUTO_INCREMENT,
      title VARCHAR(255) NOT NULL,
      content TEXT,
-     author_id BIGINT,
-     PRIMARY KEY (post_id),
-     FOREIGN KEY (author_id) REFERENCES User(user_id)
-   );
+     author BIGINT,
+     PRIMARY KEY (post),
+     FOREIGN KEY (author) REFERENCES User(id)
+   )
 
    CREATE TABLE Profile (
-     profile_id BIGINT NOT NULL AUTO_INCREMENT,
+     profile BIGINT NOT NULL AUTO_INCREMENT,
      bio TEXT,
-     user_id BIGINT NOT NULL,
-     PRIMARY KEY (profile_id),
-     FOREIGN KEY (user_id) REFERENCES User(user_id)
-   );
+     id BIGINT NOT NULL,
+     PRIMARY KEY (profile),
+     FOREIGN KEY (id) REFERENCES User(id)
+   )
    ```
 
 1. Run the following command to migrate your database schema:
@@ -194,9 +524,9 @@ Follow these steps for an initial Prisma setup:
 1. Run `touch index.ts` to create a source file and add the following code:
 
    ```ts
-   import { PrismaClient } from "@prisma/client";
+   import { PrismaClient } from "@prisma/client"
 
-   const prisma = new PrismaClient();
+   const prisma = new PrismaClient()
 
    // A `main` function so that we can use async/await
    async function main() {
@@ -214,15 +544,15 @@ Follow these steps for an initial Prisma setup:
        include: {
          post: true,
        },
-     });
-     console.log(user1);
+     })
+     console.log(user1)
    }
 
    main()
      .catch(e => console.error(e))
      .finally(async () => {
-       await prisma.disconnect();
-     });
+       await prisma.disconnect()
+     })
    ```
 
 1. Run `npx ts-node index.ts` to execute the script
@@ -245,25 +575,25 @@ Follow these steps for an initial Prisma setup:
 
    ```sql
    CREATE TABLE User (
-     user_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
      name VARCHAR(255),
      email VARCHAR(255) UNIQUE NOT NULL
-   );
+   )
 
    CREATE TABLE Post (
-     post_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+     post INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
      title VARCHAR(255) NOT NULL,
      content TEXT,
-     author_id INTEGER,
-     FOREIGN KEY (author_id) REFERENCES User(user_id)
-   );
+     author INTEGER,
+     FOREIGN KEY (author) REFERENCES User(id)
+   )
 
    CREATE TABLE Profile (
-     profile_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+     profile INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
      bio TEXT,
-     user_id INTEGER NOT NULL,
-     FOREIGN KEY (user_id) REFERENCES User(user_id)
-   );
+     id INTEGER NOT NULL,
+     FOREIGN KEY (id) REFERENCES User(id)
+   )
    ```
 
 1. Run the following command to create your SQLite database file from `schema.sql`:
@@ -299,9 +629,9 @@ Follow these steps for an initial Prisma setup:
 1. Run `touch index.ts` to create a source file and add the following code:
 
    ```ts
-   import { PrismaClient } from "@prisma/client";
+   import { PrismaClient } from "@prisma/client"
 
-   const prisma = new PrismaClient();
+   const prisma = new PrismaClient()
 
    // A `main` function so that we can use async/await
    async function main() {
@@ -319,15 +649,15 @@ Follow these steps for an initial Prisma setup:
        include: {
          post: true,
        },
-     });
-     console.log(user1);
+     })
+     console.log(user1)
    }
 
    main()
      .catch(e => console.error(e))
      .finally(async () => {
-       await prisma.disconnect();
-     });
+       await prisma.disconnect()
+     })
    ```
 
-1. Run `npx ts-node index.ts` to execute the script
+1. Run `npx ts-node index.ts` to execute the script -->
