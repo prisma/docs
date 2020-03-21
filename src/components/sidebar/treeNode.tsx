@@ -1,7 +1,7 @@
 import React from "react";
 import config from "../../../config";
 import styled from "styled-components";
-import "./treeNode.css";
+// import "./treeNode.css";
 import ArrowRight from "../../icons/ArrowRight";
 import ArrowDown from "../../icons/ArrowDown";
 
