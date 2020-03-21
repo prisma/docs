@@ -6,7 +6,7 @@ metaDescription: ""
 
 ## Overview
 
-This page explains walks you through the process of setting up Prisma from scratch with your own database. It uses plain SQL to create tables in your database. 
+This page walks you through the process of setting up Prisma from scratch with your own database. It uses plain SQL to create tables in your database. 
 
 ## Prerequisites
 
@@ -80,7 +80,7 @@ The format of the connection URL for your database typically depends on the data
 postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
 ```
 
-Here's a short summary of each component:
+Here's a short explanation of each component:
 
 - `USER`: The name of your database user
 - `PASSWORD`: The password your database user
@@ -239,7 +239,23 @@ model User {
 
 Prisma's data model is a declarative representation of your database schema and serves as foundation for the generated Prisma Client library. Your Prisma Client instance will expose queries that are _tailored_ to these models.
 
-Right now, there's one 
+![](https://imgur.com/EYC3RIK.png)
+
+Right now, there's one minor "issue" with the data model. The `post` relation field on `User` is slightly misnamed after the introspection, since it's actually a [list]() of posts – a better name therefore would be `posts`. This is relevant for the generated Prisma Client API where using `posts` will feel more natural than `post`.
+
+To make this change, manually rename the `post` field to `posts`:
+
+```prisma
+model User {
+  id      Int       @default(autoincrement()) @id
+  name    String?
+  email   String    @unique
+  posts   Post[]
+  profile Profile?
+}
+```
+
+> **Note**: The `posts` field is [virtual]() so you can rename it in your Prisma schema without using [`@map`](). Learn more about [configuring your Prisma Client API](). 
 
 ## Install and generate Prisma Client
 
@@ -256,6 +272,8 @@ npx prisma generate
 ```
 
 This commands reads your Prisma schema and generates your Prisma Client library into `node_modules/@prisma/client`.
+
+![](https://imgur.com/0kmSv6l.png)
 
 Because the `@prisma/client` node module actually is customized to your project, it is sometimes referred to as a "smart node module":
 
@@ -441,237 +459,109 @@ The `Post` record with an `id` of `1` now got updated in the database:
 
 Fantastic, you just wrote new data into your database for the first time using Prisma Client 🚀
 
+
 ## Next steps
 
+### Continue exploring the Prisma Client API
+
+You can send a variety of different queries with the Prisma Client API. Check out the [API reference]() and use your existing PostgreSQL-based setup from this guide to try them out.
+
+**Tip**: You can use your editor's auto-completion feature to learn about the different API calls and the arguments it takes. Auto-completion is commonly invoked by hitting <kbd>CTRL</kbd>+<kbd>SPACE</kbd> on your keyboard.
+
+<details><summary>Expand for more Prisma Client API examples</summary>
+
+Here are a few suggestions for a number of more queries you can send with Prisma Client:
+
+**Filter all `Post` records that contain `"hello"`**
+
+```js
+const filteredPosts = await prisma.post.findMany({
+  where: {
+    OR: [
+      { title: { contains: "hello" },
+      { content: { contains: "hello" },
+    ],
+  },
+})
+```
+
+**Create a new `Post` record and connect it to an existing `User` record**
+
+```js
+const post = await prisma.post.create({
+  data: {
+    title: "Join us for Prisma Day 2020",
+    posts: {
+      connect: { email: "alice@prisma.io" },
+    },
+  },
+})
+```
+
+**Use the fluent relations API to retrieve the `Post` records of a `User` by traversing the relations**
+
+```js
+const posts = await prisma.profile
+  .findOne({
+    where: { id: 1 },
+  })
+  .user()
+  .posts()
+```
+
+**Delete a `User` record**
+
+```js
+const deletedUser = await prisma.user.delete({
+  where: { email: "sarah@prisma.io" },
+})
+```
+
+</details>
+
+### Explore the data in Prisma Studio (experimental)
+
+Prisma Studio is a visual editor for the data in your database. You can use it by running the following command:
+
+```
+npx prisma studio --experimental
+```
+
+### Change the database schema (e.g. add more tables)
+
+To evolve the app, you need to follow the same flow of the tutorial:
+
+1. Manually adjust your database schema using SQL
+1. Re-introspect your database
+1. Re-generate Prisma Client
+
+![](https://imgur.com/8Tp9jRL.png)
+
+### Try a Prisma example
+
+The [`prisma-examples`]() repository contains a number of ready-to-run examples:
+
+#### TypeScript
+
+| Demo                                                                                                               | Stack        | Description                                                                                         |
+| :----------------------------------------------------------------------------------------------------------------- | :----------- | --------------------------------------------------------------------------------------------------- |
+| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/rest-nextjs)                     | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API                                   |
+| [`graphql-nextjs`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/graphql-nextjs)               | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a GraphQL API                                |
+| [`graphql-apollo-server`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/graphql-apollo-server) | Backend only | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/) |
+| [`rest-express`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/rest-express)                   | Backend only | Simple REST API with Express.JS                                                                     |
+| [`grpc`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/grpc)                                   | Backend only | Simple gRPC API                                                                                     |
+
+#### JavaScript (Node.js)
+
+| Demo                                                                                                               | Stack        | Description                                                                                         |
+| :----------------------------------------------------------------------------------------------------------------- | :----------- | :-------------------------------------------------------------------------------------------------- |
+| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/rest-nextjs)                     | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API                                   |
+| [`graphql-apollo-server`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/graphql-apollo-server) | Backend only | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/) |
+| [`rest-express`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/rest-express)                   | Backend only | Simple REST API with Express.JS                                                                     |
+| [`grpc`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/grpc)                                   | Backend only | Simple gRPC API                                                                                     |
 
 
 
 
 
 
-
-
-
-
-
-
-
----
----
-<!-- 
-## MySQL
-
-Follow these steps for an initial Prisma setup:
-
-1. Run `mkdir hello-prisma` to create your project directory
-1. Run `cd hello-prisma` to navigate into it
-1. Run `touch schema.prisma` to create an empty [Prisma schema](../../prisma-schema-file.md)
-1. Add a `datasource` to the Prisma schema and set your database connection string as the `url`, e.g.:
-   ```prisma
-   datasource db {
-     provider = "mysql"
-     url      = "mysql://root:admin@localhost:3306/hello-prisma"
-   }
-   ```
-1. Run `touch schema.sql` to create your SQL schema and add the following contents to it:
-
-   ```sql
-   CREATE TABLE User (
-     id BIGINT NOT NULL AUTO_INCREMENT,
-     name VARCHAR(255),
-     email VARCHAR(255) UNIQUE NOT NULL,
-     PRIMARY KEY (id)
-   )
-
-   CREATE TABLE Post (
-     post BIGINT NOT NULL AUTO_INCREMENT,
-     title VARCHAR(255) NOT NULL,
-     content TEXT,
-     author BIGINT,
-     PRIMARY KEY (post),
-     FOREIGN KEY (author) REFERENCES User(id)
-   )
-
-   CREATE TABLE Profile (
-     profile BIGINT NOT NULL AUTO_INCREMENT,
-     bio TEXT,
-     id BIGINT NOT NULL,
-     PRIMARY KEY (profile),
-     FOREIGN KEY (id) REFERENCES User(id)
-   )
-   ```
-
-1. Run the following command to migrate your database schema:
-   ```
-   mysql -u __USER__ -p __DATABASE__ < schema.sql
-   ```
-   Note that you need to replace the uppercase placeholders with your database credentials, e.g.:
-   ```
-   mysql -u root -p hello-prisma < schema.sql
-   ```
-1. Add a `generator` to the Prisma schema to be able to generate Prisma Client:
-   ```prisma
-   generator client {
-     provider = "prisma-client-js"
-   }
-   ```
-1. Configure project (TypeScript):
-   ```
-   npm init -y
-   npm install typescript ts-node prisma2 --save-dev
-   npm install @prisma/client
-   ```
-1. Run `npx prisma2 introspect` to introspect your database and add your models to the Prisma schema
-1. Run `npx prisma2 generate` to generate Prisma Client
-1. Run `touch tsconfig.json` and the following contents to it:
-   ```json
-   {
-     "compilerOptions": {
-       "sourceMap": true,
-       "outDir": "dist",
-       "strict": true,
-       "lib": ["esnext", "dom"],
-       "esModuleInterop": true
-     }
-   }
-   ```
-1. Run `touch index.ts` to create a source file and add the following code:
-
-   ```ts
-   import { PrismaClient } from "@prisma/client"
-
-   const prisma = new PrismaClient()
-
-   // A `main` function so that we can use async/await
-   async function main() {
-     const user1 = await prisma.user.create({
-       data: {
-         email: "alice@prisma.io",
-         name: "Alice",
-         post: {
-           create: {
-             title: "Watch the talks from Prisma Day 2019",
-             content: "https://www.prisma.io/blog/z11sg6ipb3i1/",
-           },
-         },
-       },
-       include: {
-         post: true,
-       },
-     })
-     console.log(user1)
-   }
-
-   main()
-     .catch(e => console.error(e))
-     .finally(async () => {
-       await prisma.disconnect()
-     })
-   ```
-
-1. Run `npx ts-node index.ts` to execute the script
-
-## SQLite
-
-Follow these steps for an initial Prisma setup:
-
-1. Run `mkdir hello-prisma` to create your project directory
-1. Run `cd hello-prisma` to navigate into it
-1. Run `touch schema.prisma` to create an empty [Prisma schema](../../prisma-schema-file.md)
-1. Add a `datasource` to the Prisma schema and set your database connection string as the `url`, e.g.:
-   ```prisma
-   datasource db {
-     provider = "sqlite"
-     url      = "file:./hello-prisma.db"
-   }
-   ```
-1. Run `touch schema.sql` to create your SQL schema and add the following contents to it:
-
-   ```sql
-   CREATE TABLE User (
-     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-     name VARCHAR(255),
-     email VARCHAR(255) UNIQUE NOT NULL
-   )
-
-   CREATE TABLE Post (
-     post INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-     title VARCHAR(255) NOT NULL,
-     content TEXT,
-     author INTEGER,
-     FOREIGN KEY (author) REFERENCES User(id)
-   )
-
-   CREATE TABLE Profile (
-     profile INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-     bio TEXT,
-     id INTEGER NOT NULL,
-     FOREIGN KEY (id) REFERENCES User(id)
-   )
-   ```
-
-1. Run the following command to create your SQLite database file from `schema.sql`:
-   ```
-   sqlite3 hello-prisma.db < schema.sql
-   ```
-1. Add a `generator` to the Prisma schema to be able to generate Prisma Client:
-   ```prisma
-   generator client {
-     provider = "prisma-client-js"
-   }
-   ```
-1. Configure project (TypeScript):
-   ```
-   npm init -y
-   npm install typescript ts-node prisma2 --save-dev
-   npm install @prisma/client
-   ```
-1. Run `npx prisma2 introspect` to introspect your database and add your models to the Prisma schema
-1. Run `npx prisma2 generate` to generate Prisma Client
-1. Run `touch tsconfig.json` and the following contents to it:
-   ```json
-   {
-     "compilerOptions": {
-       "sourceMap": true,
-       "outDir": "dist",
-       "strict": true,
-       "lib": ["esnext", "dom"],
-       "esModuleInterop": true
-     }
-   }
-   ```
-1. Run `touch index.ts` to create a source file and add the following code:
-
-   ```ts
-   import { PrismaClient } from "@prisma/client"
-
-   const prisma = new PrismaClient()
-
-   // A `main` function so that we can use async/await
-   async function main() {
-     const user1 = await prisma.user.create({
-       data: {
-         email: "alice@prisma.io",
-         name: "Alice",
-         post: {
-           create: {
-             title: "Watch the talks from Prisma Day 2019",
-             content: "https://www.prisma.io/blog/z11sg6ipb3i1/",
-           },
-         },
-       },
-       include: {
-         post: true,
-       },
-     })
-     console.log(user1)
-   }
-
-   main()
-     .catch(e => console.error(e))
-     .finally(async () => {
-       await prisma.disconnect()
-     })
-   ```
-
-1. Run `npx ts-node index.ts` to execute the script -->
