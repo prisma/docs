@@ -1,7 +1,112 @@
 ---
-title: "Relations"
+title: "Relation queries"
 metaTitle: ""
 metaDescription: ""
 ---
 
-Coming soon 🔜
+## Overview
+
+One of the main features of Prisma Client is its API for sending relation queries. Relation queries refer to queries that operate on a [relation]() between two or more models:
+
+- Fluent API for traversing relations 
+- Nested writes with [transactional]() guarantees
+- Nested reads (sometimes referred to as _eager loading_) via [`select`]() and [`include`]()
+- Relation filters (filters on related objects)
+
+This page explains which relation queries exist and how to use them.
+
+The examples on this page based on the following data model:
+
+```prisma
+datasource postgresql {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  posts     Post[]
+  profile   Profile?
+}
+
+model Profile {
+  id   Int    @id @default(autoincrement())
+  user User
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  author     User
+  categories Category[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+> **Note**. This schema is the same as the [example data model](./data-modeling.md/#example) but has all [scalar fields](./data-modeling.md/#scalar-types) removed so you can focus on the relation fields.
+
+## Fluent API
+
+The fluent API lets you _fluently_ traverse the [relations]() of your models via function calls. Note that the _last_ function call determines the return type of the entire query (the respective type annotations are added in the code snippets below to make that explicit).
+
+This query returns all `Post` records by a specific `User`:
+
+```ts
+const postsByUser: Post[] = await prisma.user
+  .findOne({ where: { email: 'alice@prisma.io' } })
+  .posts()
+```
+
+Note that this call is equivalent to this Prisma Client query:
+
+```ts
+const postsByUser = await prisma.post.findMany({
+  where: { author: { email: "alice@prisma.io" } }
+})
+```
+
+The main difference between the two is that the fluent API call is translated into two separaye database queries while the other one only generates a single query.
+
+This request returns all categories by a specific post:
+
+```ts
+const categoriesOfPost: Category[] = await prisma.post
+  .findOne({ where: { id: 1 } })
+  .categories()
+```
+
+Note that you can chain as many queries as you like. In this example, the chanining start at `Profile` and goes over `User` to `Post`:
+
+```ts
+const posts: Post[] = await prisma.profile
+    .findOne({ where: { id: 1 } })
+    .user()
+    .posts()
+}
+```
+
+The only requirement for chaining is that the previous function call must return only a _single object_ (e.g. as returned by a `findOne` query or a "to-one relation" like `profile.user()`).
+
+The following query is **not possible** because `findMany` does not return a single object but a list:
+
+```ts
+// This query is illegal
+const posts = await prisma.user
+    .findMany()
+    .posts()
+}
+```
+
+## Nested writes
+
+## Nested reads
+
+## Relation filters
+
