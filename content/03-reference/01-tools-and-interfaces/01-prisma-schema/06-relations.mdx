@@ -8,7 +8,7 @@ metaDescription: ''
 
 This is an extension of the [Data model]() page which describes how to handle relations between Prisma models in the Prisma schema.
 
-Relations are represented via foreign keys in the underlying database. However, as opposed to how relations are modelled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**. This means that one of these relation fields represents the foreign key in the underlying database, the other relation field is a [virtual relation field]().
+Relations between models are represented via foreign keys in the underlying database. However, as opposed to how relations are modeled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**. This means that one of these relation fields represents the foreign key in the underlying database, the other relation field is a [virtual relation field]() (in the case of [implicit many-to-many relations]()), both relation fields are virtual.
 
 ## Example
 
@@ -189,20 +189,38 @@ Foreign key relation fields are relation fields that are backed by a foreign key
 
 Virtual relation fields are relation fields in the Prisma schema that are not "manifested" in the database schema.
 
-There are two different kinds of virtual relation fields:
+There are two different kinds of virtual relation fields.
 
-- 1-1 and 1-n relations: One side of the relation represents a foreign key, the other side is a virtual relation field.
-- m-n (implicit): Both relation fields are virtual since neither of them directly maps to a foreign key.
+For **1-1 and 1-n relations**, pne side of the relation represents a foreign key, the other side is a virtual relation field:
+
+![](https://imgur.com/kOO4eh2.png)
+
+For **implicit m-n-relations**, both relation fields are virtual since neither of them directly maps to a foreign key:
+
+![](https://imgur.com/01pxhWM.png)
 
 Prisma always requires both sides of a relation to be present, this means that one virtual relation field always needs to be added per relation. When [formatting the Prisma schema](), the formatter automatically inserts any missing virtual relation fields for you to save some typing work.
 
-Virtual relation fields are also present in the generated [Prisma Client API]() which makes working with relations more convenient as you can traverse relationships in your code in both directions.
+Virtual relation fields are also present in the generated [Prisma Client API]() which makes working with relations more convenient as you can traverse relationships in your code in both directions, for example:
+
+```js
+// Traverse relation from `Post` to `User` via fluent API
+const user = await prisma.post
+  .findOne({ where: { id: 1 } })
+  .author()
+
+// Traverse relation from `User` to `Post` via fluent API
+const user = await prisma.user
+  .findOne({ where: { id: 1 } })
+  .posts()
+```
 
 ## The @relation attribute
 
 The `@relation` attribute can only be applied to the [relation fields]() of a Prisma model, not to its [scalar fields](). In most cases the `@relation` attribute is optional, but it can be required, e.g. when:
 
 - you need to disambiguate a relation (that's e.g. the case when you have two relations between the same models)
+- you define a [self-relation](#self-relations)
 - you need to determine on which side of the relation a foreign key should be used
 - you need to control how the relation table is represented in the underlying database (e.g. use a specific name for a relation table)
 
@@ -287,6 +305,8 @@ This 1-1-relation now expresses the following:
 - "a profile must always be connected to one user"
 
 Making the `profile` field on `User` required does not impact the schema in the underlying database since relational databases are not able to model such a constraint. This constraint is implemented and enforced by Prisma's [query engine]().
+
+> **Note**: One-to-one [self-relations](#self-relations) must not be made required on both sides, at least one side always must be declared optional.
 
 It's important to note that in the case of required 1-1-relations, the only way to create a new record for either `User` or `Profile` is by using [nested writes]():
 
@@ -414,14 +434,14 @@ To summarize, these are the rules for determining which side of a 1-1-relation h
 - If **both relation fields are optional**, the one that comes first in the alphabet holds the foreign key. Note that this can be configured differently via the `@relation` attribute.
 - If **both relation fields are required**, the one that comes first in the alphabet holds the foreign key. Note that this can be configured differently via the `@relation` attribute.
 
-Here's the summary in the form of a table assuming two generic models called `ModelA` and `ModelB`:
+Here's the summary in the form of a table assuming the two relation fields of the models from before `Profile.user` and `User.profile`:
 
-| `ModelA`'s relation field | `ModelB`'s relation field | Foreign key on                                               | `@relation` attribute                             |
+| `Prrofile.user` | `User.profile` | Foreign key on                                               | `@relation` attribute                             |
 | :------------------------ | :------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
-| Required                  | Optional                  | `ModelA` (because the relation field on `ModelB` is virtual) | Can't be used to determine the foreign key        |
-| Optional                  | Required                  | `ModelB` (because the relation field on `ModelA` is virtual) | Can't be used to determine the foreign key        |
-| Optional                  | Optional                  | `ModelA` (because it's first in the alphabet)                | Can be used to manually determine the foreign key |
-| Required                  | Required                  | `ModelA` (because it's first in the alphabet)                | Can be used to manually determine the foreign key |
+| Required                  | Optional                  | `Profile` (because the relation field on `User` is virtual) | Can't be used to determine the foreign key        |
+| Optional                  | Required                  | `User` (because the relation field on `Profile` is virtual) | Can't be used to determine the foreign key        |
+| Optional                  | Optional                  | `Profile` (because it's first in the alphabet)                | Can be used to manually determine the foreign key |
+| Required                  | Required                  | `Profile` (because it's first in the alphabet)                | Can be used to manually determine the foreign key |
 
 ## One-to-many
 
@@ -471,12 +491,12 @@ Since there's no `UNIQUE` constraint on the `author` column (foreign key), you c
 
 ### Required vs optional relation fields in one-to-many relations
 
-A 1-n-relation always has one [virtual]() relation field (which must be a [list]()) and a foreign key relation field. In the example above, `posts Post[]` on the `User` model is virtual, `author User` holds a foreign key.
+A 1-n-relation always has one [virtual relation field]() (which must be a [list]()) and a [foreign key relation field](). In the example above, `posts Post[]` on the `User` model is virtual, `author User` holds a foreign key.
 
 The relation fields in a relation can take the following forms:
 
 - the foreign key relation field can be either optional or required
-- the virtual relation field must be a list and is always requireddat
+- the virtual relation field must be a list and is always required
 
 So, the following variant of the example above would be _allowed_:
 
@@ -487,8 +507,8 @@ model User {
 }
 
 model Post {
-  id         Int        @id @default(autoincrement())
-  author     User? // make `author` optional
+  id         Int    @id @default(autoincrement())
+  author     User?  // make `author` optional
 }
 ```
 
@@ -508,7 +528,7 @@ model Post {
 
 ## Many-to-many
 
-Many-to-many (m-n) relations refer to relations where zero or more records on one side of the relation can be connected to zero or more records on the other side. m-n-relations are typically modelled via [relation tables]() in a relational database. m-n-relations can be either [explicit]() or [implicit]().
+Many-to-many (m-n) relations refer to relations where zero or more records on one side of the relation can be connected to zero or more records on the other side. m-n-relations are typically modelled via [relation tables]() in a relational database. m-n-relations can be either [explicit]() or [implicit]() in the Prisma schema.
 
 ### Example
 
@@ -528,7 +548,7 @@ model Category {
 
 Notice that the `posts` field on `Category` and the `categories` field on `Post` both are [virtual](), meaning that they're not manifested in the underlying database schema.
 
-Insttead, the implicit many-to-many relation is maintained by Prisma with a [relation table]() that's not reflected in the Prisma schema.
+Instead, the implicit many-to-many relation is maintained by Prisma with a [relation table]() that's not reflected in the Prisma schema.
 
 This m-n-relation expresses the following:
 
@@ -603,14 +623,31 @@ CREATE UNIQUE INDEX "CategoryToPost_category_post_unique" ON "CategoryToPost"("c
 
 If you're not using Prisma Migrate but obtain your data model from [introspection](), you can still make use of implicit many-to-many relations by following Prisma's conventions for relation tables. For the folowing example, assume you want to create a relation table to get an implicit many-to-many relation for two models called `Post` and `Category`.
 
-### Table name
+#### Table name
 
-The name of the relation table consists of four parts:
+The name of the relation table must be prefixed with an underscore:
 
-1. An underscore as a prefix: `_`
-1. TBD
+- **Valid**: `_CategoryToPost`, `_MyRelation`
+- **Invalid**: ``CategoryToPost`, `MyRelation`
 
-Therefore, the relation name of the relation table is `_CategoryToPost`.
+#### Columns
+
+A relation table for an implicit-many-to-many relation must have exactly two columns:
+
+- A foreign key column that points to `Category` called `A`
+- A foreign key column that points to `Post` called `B`
+
+The columns must be called `A` and `B` where `A` points to the model that comes first in the alphabet and `B` points to the column which comes last in the alphabet.
+
+#### Unique index
+
+There further must be a unique index defined on both foreign key columns:
+
+```sql
+CREATE UNIQUE INDEX "_CategoryToPost_AB_unique" ON "_CategoryToPost"("A" int4_ops,"B" int4_ops);
+```
+
+#### Example
 
 This the a sample SQL statement that would create the three tables including indexes (in PostgreSQL dialect):
 
@@ -630,33 +667,157 @@ CREATE TABLE "Post" (
 CREATE UNIQUE INDEX "Post_pkey" ON "Post"(id int4_ops);
 ```
 
-#### Columns
+### Configuring the name of the relation table in implicit many-to-many relations
 
-A relation table for an implicit-many-to-many relation must have exactly two columns:
+When using Prisma Migrate, you can configure the name of the relation table that's managed by Prisma using the `@relation` attribute. The only requirement is that it starts with an underscore. For example, if you want the relation table to be called `_MyRelationTable` instead of the default name `_CategoryToPost`, you can specify it as follows:
 
-- A foreign key on `Category` that points to `Post`
-- A foreign key on `Post` that points to `Category`
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  categories Category[]  @relation("MyRelationTable")
+}
 
-You can name the columns whatever you like as long as you adhere to the [naming rules]() of Prisma fields.
-
-#### Unique index
-
-There further must be a unique index defined on both foreign key columns:
-
-```sql
-CREATE UNIQUE INDEX "_CategoryToPost_AB_unique" ON "_CategoryToPost"("A" int4_ops,"B" int4_ops);
+model Category {
+  id    Int     @id @default(autoincrement())
+  posts Post[]  @relation("MyRelationTable")
+}
 ```
 
 ## Self-relations
 
 A relation field can also reference its own model, in this case the relation is called a _self-relation_. Self-relations can be of any cardinality, 1-1, 1-n and m-n.
 
+Note that self-relations always require the `@relation` attribute.
+
 ### One-to-one self-relations
 
 A one-to-one self-relation looks as follows:
 
+```prisma
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String?
+  husband     User?    @relation("MarriagePartners")
+  wife        User     @relation("MarriagePartners")
+}
+```
+
+This relation expresses the following:
+
+- "a user has zero or one _husband_ "
+- "a user can have zero or one _wife_"
+
+Note that one-to-one self-relations can not be made required on both sides, one field has to be optional.
+
+In this case, the `wife` relation field is [virtual](). The `husband` field on the other hand is backed by a foreign key in the underlying database. This is implicitly determined by Prisma based on alphabetical order (`husband` comes before `wife` in the alphabet). You can adjust this by [setting the foreign key]() using the `@relation` attribute:
+
+```prisma
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String?
+  husband  User?    @relation("MarriagePartners")
+  wife     User     @relation("MarriagePartners", references: [id]) 
+}
+```
+
+Now the foreign key is stored on `wide` and `husband` is virtual.
+
 ### One-to-many self relations
 
-### Manyto-many self relations
+A one-to-many self-relation looks as follows:
+
+```prisma
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String?
+  teacher  User?    @relation("TeacherStudents")
+  students User[]   @relation("TeacherStudents") 
+}
+```
+
+This relation expresses the following:
+
+- "a user has zero or one _teachers_ "
+- "a user can have zero or more _students_"
+
+Note that you can also require each user to have a teacher by making the `teacher` field [required]().
+
+### Many-to-many self relations
+
+A many-to-many self-relation looks as follows:
+
+```prisma
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String?
+  followedBy  User[]   @relation("UserFollows")
+  following   User[]   @relation("UserFollows")
+}
+```
+
+This relation expresses the following:
+
+- "a user can be followed by zero or more users"
+- "a user can follow zero or more users"
+
+### Defining multiple self-relations on the same model
+
+You can also define multiple self-relations on the same model at once. Taking all relations from the previous sections as example, you could define a `User` model as follows:
+
+```prisma
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String?
+  husband     User?    @relation("MarriagePartners")
+  wife        User     @relation("MarriagePartners")
+  teacher     User?    @relation("TeacherStudents")
+  students    User[]   @relation("TeacherStudents") 
+  followedBy  User[]   @relation("UserFollows")
+  following   User[]   @relation("UserFollows")
+}
+```
 
 ## Disambiguating relations
+
+When you define two relations between two the same models, you need to add the `@relation` attribute to disambiguate them. As an example for why that's needed, consider the following models:
+
+```prisma
+model User {
+  id           Int     @id @default(autoincrement())
+  name         String?
+  writtenPosts Post[]
+  pinnedPost   Post?
+}
+
+model Post {
+  id       Int     @id @default(autoincrement())
+  title    String?
+  author   User
+  pinnedBy User?
+}
+```
+
+In that case, the relations are ambiguous, there are four different ways to interpet them:
+
+- `User.writtenPosts` ↔ `Post.author`
+- `User.writtenPosts` ↔ `Post.pinnedBy`
+- `User.pinnedPost` ↔ `Post.author`
+- `User.pinnedPost` ↔ `Post.pinnedBy`
+
+To disambiguate these relations, you need to annotate the relation fields with the `@relation` attribute and provide the `name` argument. You can set any `name` (except for the empty string `""`), but it must match on both sides of the relation:
+
+```prisma
+model User {
+  id           Int     @id @default(autoincrement())
+  name         String?
+  writtenPosts Post[]  @relation("WrittenPosts")
+  pinnedPost   Post?   @relation("PinnedPost")
+}
+
+model Post {
+  id       Int     @id @default(autoincrement())
+  title    String?
+  author   User    @relation("WrittenPosts")
+  pinnedBy User?   @relation("PinnedPost")
+}
+```
