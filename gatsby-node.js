@@ -28,16 +28,6 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
       value: node.frontmatter.title || parent.name,
     });
     createNodeField({
-      name: 'metaTitle',
-      node,
-      value: node.frontmatter.metaTitle || '',
-    });
-    createNodeField({
-      name: 'metaDescription',
-      node,
-      value: node.frontmatter.metaDescription || '',
-    });
-    createNodeField({
       name: 'staticLink',
       node,
       value: node.frontmatter.staticLink || false,

@@ -18,7 +18,7 @@ module.exports = {
     'gatsby-transformer-remark',
     'gatsby-image',
     'gatsby-plugin-styled-components',
-    'gatsby-plugin-offline',
+    // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
     {
       resolve: `gatsby-plugin-mdx`,
       options: {
