@@ -51,8 +51,7 @@ const SearchInput = styled.input`
   max-width: 215px;
   width: 20%;
   background: #ffffff;
-  box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1),
-    0px 1px 3px rgba(60, 45, 111, 0.15);
+  box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
   border-radius: 5px;
   padding: 0.6rem 2.5rem;
   font-family: Open Sans;

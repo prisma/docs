@@ -1,0 +1,550 @@
+---
+title: 'CLI command reference'
+metaTitle: ''
+metaDescription: ''
+---
+
+## Overview
+
+The Prisma command line interface (CLI) is the primary way to interact with your Prisma project from the command line. It can initialize new project assets, generate Prisma Client, and analyze existing database structures through introspection to automatically create your application models.
+
+Along with these features, there are also a few experimental commands that you you can access if you'd like to use in-progress functionality (e.g. Prisma Migrate or Prisma Studio).
+
+This document will explain the Prisma CLI's commands, arguments, and options.
+
+## Synopsis
+
+The `prisma2` command can be called from command line once installed. When called without arguments, it will display its command usage and help document:
+
+```shell
+prisma2
+```
+
+```
+◭  Prisma is a modern DB toolkit to query, migrate and model your database (https://prisma.io)
+
+Usage
+
+  $ prisma2 [command]
+
+Commands
+
+            init   Setup Prisma for your app
+      introspect   Get the datamodel of your database
+        generate   Generate artifacts (e.g. Prisma Client)
+
+Flags
+
+  --experimental   Show and run experimental Prisma commands
+
+Examples
+
+  Setup a new Prisma project
+  $ prisma2 init
+
+  Introspect an existing database
+  $ prisma2 introspect
+
+  Generate artifacts (e.g. Prisma Client)
+  $ prisma2 generate
+```
+
+You can get additional help on any of the `prisma2` commands by adding the `--help` flag after the command.
+
+## Commands
+
+### init
+
+Bootstraps a fresh Prisma project within the current directory.
+
+The `init` command does not interpret any existing files. Instead, it creates a `prisma` directory containing a bare-bones `schema.prisma` file within your current directory.
+
+#### Examples
+
+**Run `prisma2 init`**
+
+```shell
+prisma2 init
+```
+
+```
+✔ Your Prisma schema was created at prisma/schema.prisma.
+  You can now open it in your favorite editor.
+
+Next steps:
+1. Set the provider of the datasource block in schema.prisma to match your database: postgresql, mysql or sqlite.
+2. Set the DATABASE_URL in the .env file to point to your existing database. If your database has no tables yet, read https://pris.ly/d/getting-started.
+3. Run prisma2 introspect to turn your database schema into a Prisma data model.
+4. Run prisma2 generate to install Prisma Client. You can then start querying your database.
+
+More information in our documentation:
+https://pris.ly/d/getting-started
+```
+
+The command output contains helpful information on how to use the generated files and begin using Prisma with your project.
+
+#### Generated Assets
+
+**`prisma/schema.prisma`**
+
+A minimal `schema.prisma` file to define your schema in:
+
+```prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+**`prisma/.env`**
+
+A file to define environment variables for your project:
+
+```
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#using-environment-variables
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL and SQLite.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="postgresql://johndoe:johndoe@localhost:5432/mydb?schema=public"
+```
+
+### generate
+
+The `generate` command generates assets like Prisma Client based on the [`generator`](https://github.com/prisma/prisma2/blob/master/docs/prisma-schema-file.md#generators-optional) and [`model`](https://github.com/prisma/prisma2/blob/master/docs/data-modeling.md) blocks defined in your `prisma/schema.prisma` file.
+
+The `generate` command is most often used to generate Prisma Client with the `prisma-client-js` generator. This does three things:
+
+1. Searches the current directory and parent directories to find the applicable `npm` project. It will create a `package.json` file in the current directory if it cannot find one.
+2. Installs the `@prisma/client` into the `npm` project if it is not already present.
+3. Inspects the current directory to find a Prisma schema file to process. It will then generate a customized [Prisma Client](https://github.com/prisma/prisma-client-js) for your project.
+
+#### Prerequisites
+
+To use the `generate` command, you must add a generator definition in your `schema.prisma` file. The `prisma-client-js` generator, used to generate Prisma Client, can be added by including the following in your `schema.prisma` file:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+#### Options
+
+The `generate` command recognizes the following options to modify its behavior:
+
+| Option     | Required | Description                                                                                                                                         | Default                                     |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `--schema` | No       | Specifies the path to the desired `schema.prisma` file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`, `./prisma/schema.prisma` |
+| `--watch`  | No       | The `generate` command will continue to watch the `schema.prisma` file and re-generate Prisma Client on file changes.                               |
+
+#### Examples
+
+**Generate Prisma Client using the default `schema.prisma` path**
+
+```shell
+prisma2 generate
+```
+
+    ✔ Generated Prisma Client to ./node_modules/@prisma/client in 61ms
+
+    You can now start using Prisma Client in your code:
+
+    ```
+    import { PrismaClient } from '@prisma/client'
+    // or const { PrismaClient } = require('@prisma/client')
+
+    const prisma = new PrismaClient()
+    ```
+
+    Explore the full API: http://pris.ly/d/client
+
+**Generate Prisma Client using a non-default `schema.prisma` path**
+
+```shell
+prisma2 generate --schema=./alternative/schema.prisma
+```
+
+**Continue watching the `schema.prisma` file for changes to automatically re-generate Prisma Client**
+
+```shell
+prisma2 generate --watch
+```
+
+```
+Watching... /home/prismauser/prisma/prisma-play/prisma/schema.prisma
+
+✔ Generated Prisma Client to ./node_modules/@prisma/client in 45ms
+```
+
+#### Generated Assets
+
+The `prisma-client-js` generator creates a customized client for working with your database within the `./node_modules/@prisma/client` directory.
+
+### introspect
+
+The `introspect` command connects to your database and adds Prisma models to your Prisma schema that reflect the current database schema.
+
+To run the `introspect` command, a `schema.prisma` file with a valid [`datasource`](https://github.com/prisma/prisma2/blob/master/docs/prisma-schema-file.md#data-sources) must be available.
+
+> Warning: The command will overwrite the current `schema.prisma` file with the new schema. Any manual changes or customization will be lost. Be sure to back up your current `schema.prisma` file before running `introspect` if it contains important modifications.
+
+#### Prerequisites
+
+Before using the `introspect` command, you must define a [valid `datasource`](https://github.com/prisma/prisma2/blob/master/docs/prisma-schema-file.md#data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines an SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Options
+
+The `introspect` command recognizes the following options to modify its behavior:
+
+| Option     | Required | Description                                                                                                                                         | Default                                     |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `--schema` | No       | Specifies the path to the desired `schema.prisma` file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`, `./prisma/schema.prisma` |
+| `--print`  | No       | Prints the created `schema.prisma` to the screen instead of writing it to the filesystem.                                                           |
+
+#### Examples
+
+**Analyze the database and write its schema to the `schema.prisma` file**
+
+```shell
+prisma2 introspect
+```
+
+```
+Introspecting based on datasource defined in schema.prisma …
+
+✔ Wrote Prisma data model into schema.prisma in 38ms
+
+Run prisma2 generate to generate Prisma Client.
+```
+
+**Specify an alternative `schema.prisma` file to read and write to**
+
+```shell
+prisma2 introspect --schema=./alternative/schema.prisma
+```
+
+```
+Introspecting based on datasource defined in alternative/schema.prisma …
+
+✔ Wrote Prisma data model into alternative/schema.prisma in 60ms
+
+Run prisma2 generate to generate Prisma Client.
+```
+
+**Display the generated `schema.prisma` file instead of writing it to the filesystem**
+
+```shell
+prisma2 introspect --print
+```
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "sqlite:./hello-prisma.db"
+}
+
+model User {
+  email   String    @unique
+  name    String?
+  user_id Int       @default(autoincrement()) @id
+  post    Post[]
+  profile Profile[]
+}
+
+model Post {
+  content   String?
+  post_id   Int     @default(autoincrement()) @id
+  title     String
+  author_id User?
+}
+
+model Profile {
+  bio        String?
+  profile_id Int     @default(autoincrement()) @id
+  user_id    User
+}
+```
+
+## Migrations (Experimental)
+
+> Warning: The `migrate` command is still considered experimental. As such, there are no guarantees about API stability or production-readiness. Access to this command is provided for evaluation and experimentation. To access experimental commands, you must add the `--experimental` flag.
+
+The `migrate` command creates and manages database migrations. It can be used to create, apply, and rollback database schema updates in a controlled manner.
+
+The `migrate` command includes a number of subcommands to specify the desired action.
+
+### migrate save
+
+Saves a migration that defines the steps necessary to update your current schema.
+
+#### Prerequisites
+
+Before using the `migrate save` command, you must define a [valid `datasource`](https://github.com/prisma/prisma2/blob/master/docs/prisma-schema-file.md#data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines an SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Options
+
+The `migrate save` command recognizes the following options to modify its behavior:
+
+| Option              | Required | Description                                                                                |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `--experimental`    | Yes      | Enables use of experimental commands.                                                      |
+| `-n`, `--name`      | No       | The name of the migration. If not provided, `migrate save` will prompt you for a name.     |
+| `-c`, `--create-db` | No       | Create the database if it does not exist.                                                  |
+| `-p`, `--preview`   | No       | Preview the migration that would be created without writing any changes to the filesystem. |
+
+#### Generated Assets
+
+The `migrate save` command generates the following directories and files as necessary:
+
+- `migrations`: A directory within the current project to store migrations. This directory will be created if it does not exist.
+- `migrations/migrate.lock`: A lock file created specifying the current migration applied to the database. This file will be created if it does not exist.
+- `migrations/<migration>`: A directory for a specific migration. The migration name is derived from the timestamp when it was created followed by a hyphen and the migration name provided by the user.
+- `migrations/<migration>/README.md`: A human-readable description of the migration including metadata like when the migration was created and by who, a list of the actual migration changes and a diff of the changes that are made to the `schema.prisma` file.
+- `migrations/<migration>/schema.prisma`: The schema that will be created if the migration is applied to the project.
+- `migrations/<migration>/steps.json`: An [alternative representation](https://github.com/prisma/specs/tree/master/lift#step) of the migration steps that will be applied.
+
+#### Examples
+
+**Create a new migration**
+
+```shell
+prism2 migrate save --experimental
+```
+
+The command will prompt you for a name for the migration since one was not provided on the command line. After creating the migration, the contents of the generated `schema.prisma` file are displayed.
+
+**Create a migration with a specific name**
+
+```shell
+prism2 migrate save --name "First migration" --experimental
+```
+
+**Create the database if it does not already exist**
+
+```shell
+prism2 migrate save --create-db --experimental
+```
+
+**Preview the migration that would be created by running the `migrate save` command**
+
+```shell
+prism2 migrate save --preview --experimental
+```
+
+### migrate up
+
+Migrate the database up to a specific state.
+
+#### Prerequisites
+
+Before using the `migrate up` command, you must define a [valid `datasource`](https://github.com/prisma/prisma2/blob/master/docs/prisma-schema-file.md#data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines an SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Arguments
+
+The point to migrate the database up to can be defined in any of the following three ways:
+
+| Argument  | Required | Description                                                                        | Default |
+| --------- | -------- | ---------------------------------------------------------------------------------- | ------- |
+| increment | No       | Specifies the number of forward migrations to apply.                               | latest  |
+| name      | No       | Specifies where to migrate to using the name of the final migration to apply.      | latest  |
+| timestamp | No       | Specifies where to migrate to using the timestamp of the final migration to apply. | latest  |
+
+#### Options
+
+Additionally, the following options modify the behavior of the `migrate up` command:
+
+| Option              | Required | Description                                                                                |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `--experimental`    | Yes      | Enables use of experimental commands                                                       |
+| `-c`, `--create-db` | No       | Create the database if it does not exist.                                                  |
+| `-p`, `--preview`   | No       | Preview the migration that would be created without writing any changes to the filesystem. |
+
+#### Examples
+
+**Migrate the database up to the latest available migration**
+
+```shell
+prisma2 migrate up --experimental
+```
+
+**Apply the next two migrations to the database**
+
+```shell
+prisma2 migrate up 2 --experimental
+```
+
+**Apply all migrations necessary up to and including a migration by name**
+
+```shell
+prisma2 migrate up "First migration" --experimental
+```
+
+**Apply all migrations necessary up to and including a migration by timestamp**
+
+```shell
+prisma2 migrate up 20200223181448 --experimental
+```
+
+**Create the database if it does not already exist before applying the migrations**
+
+```shell
+prisma2 migrate up --create-db --experimental
+```
+
+**Preview the migration that would be applied by running the `migrate up` command**
+
+```shell
+prisma2 migrate up --preview --experimental
+```
+
+### migrate down
+
+Migrate the database down to a specific state.
+
+#### Prerequisites
+
+Before using the `migrate down` command, you must define a [valid `datasource`](https://github.com/prisma/prisma2/blob/master/docs/prisma-schema-file.md#data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines an SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Arguments
+
+The point to migrate back to can be defined in any of the following three ways:
+
+| Argument  | Required | Description                                                                             | Default |
+| --------- | -------- | --------------------------------------------------------------------------------------- | ------- |
+| decrement | No       | Specifies the number of backwards migrations to apply.                                  | 1       |
+| name      | No       | Specifies where to migrate back to using the name of the final migration to apply.      |
+| timestamp | No       | Specifies where to migrate back to using the timestamp of the final migration to apply. |
+
+#### Options
+
+Additionally, the following options modify the behavior of the `migrate down` command:
+
+| Option            | Required | Description                                                                                |
+| ----------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `--experimental`  | Yes      | Enables use of experimental commands                                                       |
+| `-p`, `--preview` | No       | Preview the migration that would be created without writing any changes to the filesystem. |
+
+#### Examples
+
+**Migrate the database backwards by a single migration**
+
+```shell
+prisma2 migrate down --experimental
+```
+
+**Migrate the database backwards by two migrations**
+
+```shell
+prisma2 migrate down 2 --experimental
+```
+
+**Migrate backwards through all migrations up to and including a migration by name**
+
+```shell
+prisma2 migrate down "First migration" --experimental
+```
+
+**Migrate backwards through all migrations up to and including a migration by timestamp**
+
+```shell
+prisma2 migrate down 20200223181448 --experimental
+```
+
+**Preview the migration that would be applied by running the `migrate down` command**
+
+```shell
+prisma2 migrate down --preview --experimental
+```
+
+## Studio (Experimental)
+
+### studio
+
+> Warning: The `studio` command is still considered experimental. As such, there are no guarantees about API stability or production-readiness. Access to this command is provided for evaluation and experimentation. To access experimental commands, you must add the `--experimental` flag.
+
+The `studio` command allows you to interact with and manage your data interactively. It does this by starting a local web server with a web app configured with your project's data schema and records.
+
+#### Prerequisites
+
+Before using the `studio` command, you must define a [valid `datasource`](https://github.com/prisma/prisma2/blob/master/docs/prisma-schema-file.md#data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines an SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Options
+
+The `studio` command recognizes the following options:
+
+| Option           | Required | Description                          | Default |
+| ---------------- | -------- | ------------------------------------ | ------- |
+| `--experimental` | Yes      | Enables use of experimental commands |
+| `-p`, `--port`   | No       | The port number to start Studio on.  | 5555    |
+
+#### Examples
+
+**Start Studio on the default port and open a new browser tab to it**
+
+```shell
+prisma2 studio --experimental
+```
+
+**Start Studio on a different port and open a new browser tab to it**
+
+```shell
+prisma2 studio --port 7777 --experimental
+```

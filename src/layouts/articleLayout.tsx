@@ -14,8 +14,7 @@ type ArticleLayoutProps = ArticleQueryData & RouterProps;
 
 const BlockContent = styled.div`
   background: #ffffff;
-  box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05),
-    0px 1px 3px rgba(47, 55, 71, 0.1);
+  box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
   border-radius: 5px;
   margin-top: 1rem;
   padding: 40px;
@@ -35,8 +34,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   } = data;
 
   // Parent title extraction
-  const allContent =
-    allMdx && allMdx.edges && allMdx.edges.map((mdx: any) => mdx.node.fields);
+  const allContent = allMdx && allMdx.edges && allMdx.edges.map((mdx: any) => mdx.node.fields);
 
   allContent?.map((content: any) => {
     content.parentTitle = '';
@@ -54,18 +52,13 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     });
   });
 
-  const getParentTitle = () =>
-    allContent?.find(mdx => mdx.slug === slug).parentTitle.slice(0, -2);
+  const getParentTitle = () => allContent?.find(mdx => mdx.slug === slug).parentTitle.slice(0, -2);
 
   return (
     <Layout {...props}>
-      <SEO title={metaTitle} description={metaDescription} />
+      <SEO title={metaTitle!} description={metaDescription!} />
       <BlockContent>
-        <TopSection
-          location={props.location}
-          title={title}
-          parentTitle={getParentTitle()}
-        />
+        <TopSection location={props.location} title={title} parentTitle={getParentTitle()} />
       </BlockContent>
       <BlockContent>
         <MDXRenderer>{body}</MDXRenderer>

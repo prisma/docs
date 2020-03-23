@@ -22,7 +22,7 @@ const FooterWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   color: #a0aec0;
-  padding: 2rem 12rem;
+  padding: 15rem 12rem 2rem;
 `;
 
 const LinkList = styled.ul`
@@ -71,8 +71,7 @@ const NewsLetter = styled.div`
     margin-top: 24px;
     input {
       background: #ffffff;
-      box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1),
-        0px 1px 3px rgba(60, 45, 111, 0.15);
+      box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
       border-radius: 5px;
       width: 100%;
       border: 0;
@@ -180,9 +179,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
         <div className="email">
           <Email style={{ position: 'absolute', top: '30px', left: '24px' }} />
           <input type="text" placeholder="your@email.com" />
-          <ArrowEmail
-            style={{ position: 'absolute', top: '24px', right: '24px' }}
-          />
+          <ArrowEmail style={{ position: 'absolute', top: '24px', right: '24px' }} />
         </div>
         <div className="social">
           <h4>FIND US</h4>

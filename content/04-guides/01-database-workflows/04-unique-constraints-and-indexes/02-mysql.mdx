@@ -1,0 +1,412 @@
+---
+title: "Unique constraints and indexes (MySQL)"
+metaTitle: ""
+metaDescription: ""
+---
+
+## Overview
+
+This page explains how to configure a unique [constraint](https://dev.mysql.com/doc/refman/5.7/en/glossary.html#glos_unique_constraint) / [index](https://dev.mysql.com/doc/refman/5.7/en/glossary.html#glos_unique_index) in your MySQL database. Constraints and indexes are very similar in MySQL (learn more [here](https://dba.stackexchange.com/a/147)): When adding a unique constraint to one or more columns, MySQL will always create a corresponding unique index.
+
+In this guide, you'll always configure unique constraints (which will automatically configure unique indexes as well).
+
+You can configure unique constraints either on a **single column** or on **multiple columns**. These can be added when you create the table initially (using `CREATE TABLE`) or to an already existing table (using `ALTER TABLE`). This guide covers all four combinations.
+
+At the end of the guide, you'll introspect your database to reflect the unique constraint in the Prisma schema, then you'll generate Prisma Client and write a simple Node.js script to validate the constraints.
+
+## Prerequisites
+
+In order to follow this guide, you need:
+
+- a [MySQL](https://www.mysql.com/) database server running
+- the [`mysql`](https://dev.mysql.com/doc/refman/5.7/en/mysql.html) command line client for MySQL
+- [Node.js](https://nodejs.org/) installed on your machine
+
+## 1. Create a new database and project directory
+
+Start by creating a project directory where you can put the files you'll create throughout this guide:
+
+```
+mkdir unique-demo
+cd unique-demo
+```
+
+Next, make sure that your MySQL database server is running. Then execute the following command in your terminal to create a new database called `UniqueDemo`:
+
+```
+mysql -e 'CREATE DATABASE UniqueDemo;'
+```
+
+> **Note:** When invoking the `mysql` CLI, you might need to authenticate against your MySQL server. To do so, you need to pass two options to the command:
+>
+> - `-u __USERNAME__`: The database user
+> - `-p`: Enable a password prompt for authentication
+>
+> Here's a sample invocation for a user called `root` using the above command:
+>
+> ```
+> mysql -u root -p -e 'CREATE DATABASE UniqueDemo;'
+> ```
+
+You can validate that the database was created by running the `SHOW TABLES` command which lists all tables (_relations_) in your database (right now there are none):
+
+```
+mysql -e 'SHOW TABLES in UniqueDemo;'
+```
+
+## 2. Create a table with a single-column unique constraint and index
+
+In this section, you'll **create a new table with a single-column unique constraint** in the `UniqueDemo` database. As mentioned above, this means that MySQL automatically adds a unique index to the same column.
+
+Create a new file called `single-column-unique.sql` and add the following code to it:
+
+```sql
+CREATE TABLE `UniqueDemo`.`User` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `email` VARCHAR(350) UNIQUE
+);
+```
+
+Now run the SQL statement against your database to create a new table called `User`:
+
+```
+mysql < single-column-unique.sql
+```
+
+Congratulations, you just created a table called `User` in the database. The table has an `id` column and a column called `email` on which you defined a unique constraint. MySQL also automatically added a corresponding unique index (do **not** run this code):
+
+```sql
+CREATE UNIQUE INDEX `email` ON `UniqueDemo`.`User`(`email`);
+```
+
+<!--
+<details><summary>Alternative: Define the constraint as a <strong>table constraint</strong></summary>
+<br />
+
+In the code above, you created the unique constraint as a **column constraint**. Alternatively, you can define it as a **table constraint**. There's no practical difference between the two, the alternative is just added for completeness.
+
+To add the unique constraint as a table constraint, you need to adjust your SQL statement to look as follows:
+
+
+```sql
+CREATE TABLE `UniqueDemo`.`User` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `email` VARCHAR(350),
+  UNIQUE (`email`)
+);
+```
+
+</details> -->
+
+## 3. Create a table with a multi-column unique constraint and index
+
+Next, you'll **create a table with a multi-column unique constraint**. This also adds a unique index to the columns with the constraint.
+
+Create a new file called `multi-column-unique.sql` and add the following code to it:
+
+```sql
+CREATE TABLE `UniqueDemo`.`AnotherUser` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `firstName` VARCHAR(256),
+  `lastName` VARCHAR(256),
+  UNIQUE (`firstName`, `lastName`)
+);
+```
+
+Now run the SQL statement against your database to create a new table called `AnotherUser`:
+
+```
+mysql < multi-column-unique.sql
+```
+
+Congratulations, you just created a table called `AnotherUser` in the database. The table has an `id` column and two column called `firstName` and `lastName` on which you defined a unique index. MySQL also automatically added a corresponding unique index (do **not** run this code):
+
+```sql
+CREATE UNIQUE INDEX `firstName` ON `UniqueDemo`.`AnotherUser`(`firstName`, `lastName`);
+```
+
+## 4. Adding a single-column unique constraint to an existing table
+
+In this section, you'll **add a single-column unique constraint to a table that already exists in your database**. To do so, you first need to create a new table and then alter the table to add the constraint.
+
+Create a new file called `add-single-unique-constraint-later.sql` and add the following code:
+
+```sql
+CREATE TABLE `UniqueDemo`.`OneMoreUser` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(350)
+);
+
+ALTER TABLE `UniqueDemo`.`OneMoreUser` ADD CONSTRAINT `OneMoreUser_email_unique_constraint` UNIQUE (`email`);
+```
+
+This code contains two SQL statements:
+
+1. Create a new table called `OneMoreUser`
+1. Alter the table to add an unique constraint
+
+Now run the SQL statements against your database to create a new table called `OneMoreUser`:
+
+```
+mysql < add-single-unique-constraint-later.sql
+```
+
+Congratulations, you just created a table called `OneMoreUser` in the database. The table has an `id` column and a column called `email` on which you later added a unique constraint in the second SQL statement. MySQL also automatically added a corresponding unique index (do **not** run this code):
+
+```sql
+CREATE UNIQUE INDEX `OneMoreUser_email_unique_constraint` ON `UniqueDemo`.`OneMoreUser`(`email`);
+```
+
+## 5. Adding a multi-column unique constraint to an existing table
+
+In this section, you'll **add a multi-column unique constraint to a table that already exists in your database**. To do so, you first need to create a new table and then alter the table to add the constraint.
+
+Create a new file called `add-multi-unique-constraint-later.sql` and add the following code:
+
+```sql
+CREATE TABLE `UniqueDemo`.`TheLastUser` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `firstName` VARCHAR(256),
+  `lastName` VARCHAR(256)
+);
+
+ALTER TABLE `UniqueDemo`.`TheLastUser` ADD CONSTRAINT `TheLastUser_firstName_lastName_unique_constraint` UNIQUE (`firstName`, `lastName`);
+```
+
+This code contains two SQL statements:
+
+1. Create a new table called `TheLastUser`
+1. Alter the table to add an unique constraint
+
+Now run the SQL statements against your database to create a new table called `OneMoreUser`:
+
+```
+mysql < add-multi-unique-constraint-later.sql
+```
+
+Congratulations, you just created a table called `OneMoreUser` in the database. The table has an `id` column and two columns called `firstName` and `lastName` on which you later added a unique constraint in the second SQL statement. MySQL also automatically added a corresponding unique index (do **not** run this code):
+
+```sql
+CREATE UNIQUE INDEX `TheLastUser_firstName_lastName_unique_constraint` ON `UniqueDemo`.`TheLastUser`(`firstname`, `lastname`);
+```
+
+### 6. Introspect your database with Prisma
+
+In the previous sections, you created four tables with unique constraints:
+
+- The table `User` has a singe-column unique constraint and index on the `email` column
+- The table `AnotherUser` has a multi-column unique constraint and index on the `firstName` and `lastName` columns
+- The table `OneMoreUser` has a singe-column unique constraint and index on the `email` column
+- The table `TheLastUser` has a multi-column unique constraint and index on the `firstName` and `lastName` columns
+
+In this section you'll introspect your database to generate the Prisma models for these tables.
+
+To start, set up a new Node.js project and add the `prisma2` CLI as a development dependency:
+
+```
+npm init -y
+npm install prisma2 --save-dev
+```
+
+In order to introspect your database, you need to tell Prisma how to connect to it. You do so by configuring a `datasource` in your Prisma schema.
+
+Create a new file called `schema.prisma` and add the following code to it:
+
+```prisma
+datasource mysql {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+```
+
+The database connection URL is set via an environment variable. The Prisma CLI automatically supports the [`dotenv`]() format which automatically picks up environment variables defined in a file called `.env`.
+
+Create a new file called `.env` and set your database connection URL as the `DATABASE_URL` environment variable:
+
+```
+DATABASE_URL=mysql://__USER__:__PASSWORD__@__HOST__:__PORT__/UniqueDemo
+```
+
+In the above code snippet, you need to replace the uppercase placeholders with your own connection details. For example, if your database is running locally it could look like this:
+
+```
+DATABASE_URL=mysql://janedoe:mypassword@localhost:3306/UniqueDemo
+```
+
+With both the `schema.prisma` and `.env` files in place, you can run Prisma's introspection with the following command:
+
+```
+npx prisma introspect
+```
+
+This command introspects your database and for each table adds a Prisma model to the Prisma schema:
+
+```prisma
+datasource mysql {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model AnotherUser {
+  firstName String?
+  id        Int     @default(autoincrement()) @id
+  lastName  String?
+
+  @@unique([firstName, lastName], name: "firstName")
+}
+
+model OneMoreUser {
+  email String? @unique
+  id    Int     @default(autoincrement()) @id
+}
+
+model TheLastUser {
+  firstName String?
+  id        Int     @default(autoincrement()) @id
+  lastName  String?
+
+  @@unique([firstName, lastName], name: "TheLastUser_firstName_lastName_unique_constraint")
+}
+
+model User {
+  email String? @unique
+  id    Int     @default(autoincrement()) @id
+}
+```
+
+## 7. Generate Prisma Client
+
+To validate whether the unique constraints work, you'll now generate Prisma Client and send a few sample queries to the database.
+
+First, add a `generator` block to your Prisma schema (typically added right below the `datasource` block):
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+Run the following command to install and generate Prisma Client in your project:
+
+```
+npx prisma generate
+```
+
+Now you can use Prisma Client to send database queries in Node.js.
+
+## 8. Validate the unique constraints in a Node.js script
+
+Create a new file called `index.js` and add the following code to it:
+
+```js
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const newUser1 = await prisma.user.create({
+    data: {
+      email: "alice@prisma.io",
+    },
+  });
+  console.log(newUser1);
+  const newUser2 = await prisma.user.create({
+    data: {
+      email: "alice@prisma.io",
+    },
+  });
+  console.log(newUser2);
+}
+
+main();
+```
+
+In this code, you're creating two users with the same `email`, so you're violating the unique constraint that's configured on the `User` table.
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+After `newUser1` gets printed to the console succesfully, the script throws an error indicating that the unique constraint on `email` is violated:
+
+```
+{ email: 'alice@prisma.io', id: 1 }
+(node:6883) UnhandledPromiseRejectionWarning: Error:
+Invalid `newUser2 = await prisma.user.create()` invocation in
+/Users/janedoe/unique-demo/index.js:12:38
+
+   8     email: "alice@prisma.io"
+   9   }
+  10 })
+  11 console.log(newUser1)
+→ 12 const newUser2 = await prisma.user.create(Unique constraint failed on the constraint: `email`
+```
+
+To validate the multi-column unique constraint, replace the code in `index.js` with the following:
+
+```js
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const newUser1 = await prisma.anotherUser.create({
+    data: {
+      firstName: "Alice",
+      lastName: "Smith",
+    },
+  });
+  console.log(newUser1);
+  const newUser2 = await prisma.anotherUser.create({
+    data: {
+      firstName: "Alice",
+      lastName: "Smith",
+    },
+  });
+  console.log(newUser2);
+}
+
+main();
+```
+
+Run the script again with this command:
+
+```
+node index.js
+```
+
+This time, you'll see a similar error message indicating the unique constraint on `firstName` and `lastName` was violated:
+
+```
+{ firstName: 'Alice', id: 1, lastName: 'Smith' }
+(node:6913) UnhandledPromiseRejectionWarning: Error:
+Invalid `newUser2 = await prisma.anotherUser.create()` invocation in
+/Users/janedoe/unique-demo/index.js:13:45
+
+   9     lastName: "Smith"
+  10   }
+  11 })
+  12 console.log(newUser1)
+→ 13 const newUser2 = await prisma.anotherUser.create(Unique constraint failed on the constraint: `firstName`
+```
+
+Note that you can add `NULL` values for these columns without violating the constraints. For example, the following code snippet will **not** fail:
+
+```js
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const newUser1 = await prisma.user.create({ data: {} });
+  console.log(newUser1);
+  const newUser2 = await prisma.user.create({ data: {} });
+  console.log(newUser2);
+}
+
+main();
+```
+
+It will create two new records where the `email` is set to `NULL` in the database.

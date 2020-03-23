@@ -29,19 +29,17 @@ const TOC = ({ location }: any) => {
           '/' + item.node.fields.slug === location.pathname
         ) {
           if (item.node.tableOfContents.items) {
-            navItems = item.node.tableOfContents.items.map(
-              (innerItem: any, index: number) => {
-                const itemId = innerItem.title
-                  ? innerItem.title.replace(/\s+/g, '-').toLowerCase()
-                  : '#';
+            navItems = item.node.tableOfContents.items.map((innerItem: any, index: number) => {
+              const itemId = innerItem.title
+                ? innerItem.title.replace(/\s+/g, '-').toLowerCase()
+                : '#';
 
-                return (
-                  <li key={index}>
-                    <a href={`#${itemId}`}>{innerItem.title}</a>
-                  </li>
-                );
-              }
-            );
+              return (
+                <li key={index}>
+                  <a href={`#${itemId}`}>{innerItem.title}</a>
+                </li>
+              );
+            });
           }
         }
       }
@@ -50,9 +48,7 @@ const TOC = ({ location }: any) => {
   return navItems && navItems.length ? (
     <TOCContent>
       <ChapterTitle>CONTENT</ChapterTitle>
-      <ul className="list">
-        {navItems}
-      </ul>
+      <ul className="list">{navItems}</ul>
     </TOCContent>
   ) : null;
 };

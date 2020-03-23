@@ -1,0 +1,197 @@
+---
+title: 'Prisma schema file'
+metaTitle: ''
+metaDescription: ''
+---
+
+## Overview
+
+The Prisma schema file (short: _schema file_, _Prisma schema_ or _schema_) is the main configuration file for your Prisma setup. It is typically called `schema.prisma` and consists of the following parts:
+
+- [**Data sources**](): Specify the details of the data sources Prisma should connect to (e.g. a PostgreSQL database)
+- [**Generators**](): Specifies what clients should be generated based on the data model (e.g. Prisma Client)
+- [**Data model definition**](): Specifies your application models (the shape of the data per data source)
+
+Whenever a `prisma2` command is invoked, the CLI typically reads some information from the schema file, e.g.:
+
+- `prisma2 generate`: Reads _all_ above mentioned information from the Prisma schema to generate the correct data source client code (e.g. Prisma Client).
+- `prisma2 migrate save --experimental`: Reads the data sources and data model definition to create a new migration.
+
+You can also [use environment variables]() inside the schema file to provide configuration options when a CLI command is invoked.
+
+## Example
+
+Here is an example for a Prisma schema file that specifies a data source (SQLite), a generator (Prisma Client) and a data model definition with two models and one enum:
+
+```prisma
+datasource sqlite {
+  url      = "file:./data.db"
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  posts     Post[]
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  title      String
+  author     User
+  published  Boolean    @default(false)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+## Naming
+
+The default name for the schema file is `schema.prisma`. When your schema file is named like this, the Prisma 2 CLI will detect it automatically in the directory where you invoke the CLI command (or any of its subdirectories).
+
+If the file is named differently, you can provide the `--schema` argument to the Prisma 2 CLI with the path to the schema file, e.g.:
+
+```
+prisma2 generate --schema ./database/myschema.prisma
+```
+
+## Syntax
+
+The schema file is written in Prisma Schema Language (PSL). You can find a full reference for PSL in the [spec](https://github.com/prisma/specs/tree/master/schema).
+
+### VS Code
+
+Syntax highlighting for PSL is available via a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) (which also lets you auto-format the contents of your Prisma schema and indicates syntax errors with red squiggly lines). Learn more about [setting up Prisma in your editor]().
+
+### GitHub
+
+PSL code snippets on GitHub can be rendered with syntax highlighting as well by using the `.prisma` file extension or annotating fenced code blocks in Markdown with `prisma`:
+
+````
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  name      String?
+}
+```
+````
+
+## Using environment variables
+
+You can use environment variables to provide configuration options when a CLI command is invoked. This can e.g. be helpful in order to:
+
+- Keep secrets out of the schema file
+- Improve portability of the schema file
+
+### Defining environment variables with the env function
+
+Environment variables can be accessed using the `env` function:
+
+```prisma
+datasource postgresql {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+There are a few limitations with `env` at the moment:
+
+- It is not possible to use string concat operations (e.g. to construct your database connection string).
+- It is not possible to use environment variables for the `provider` argument in `datasource` and `generator` definitions.
+
+### Using .env files
+
+For many developer tools, it has become a good practice to define environment variables using [`.env`](https://github.com/motdotla/dotenv) files.
+
+Prisma provides native support for `.env` files **if the `.env` file is located in the same directory as your Prisma schema file**:
+
+```
+.
+└── prisma
+    ├── .env
+    └── schema.prisma
+```
+
+This means any environment variables defined in that `.env` file will automatically be loaded when running a Prisma CLI command.
+
+> **WARNING**: Do not commit your `.env` files into version control.
+
+For example, it is a common scenario to set your database connection URL via an environment variable:
+
+```prisma
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+This requires the `DATABASE_URL` to be set in your `.env` file:
+
+```
+# .env
+DATABASE_URL=postgresql://test:test@localhost:5432/test?schema=public
+```
+
+When running any command that needs to access the database defined via the `datasource` block (e.g. `prisma2 introspect`), the Prisma CLI automatically loads the `DATABASE_URL` environment variables from the `.env` file and makes it available to the CLI.
+
+If you want environment variables to be evaluated at runtime, you need to load them manually in your application code, e.g. using [`dotenv`](https://github.com/motdotla/dotenv):
+
+```ts
+import * as dotenv from 'dotenv';
+
+dotenv.config(); // load the environment variables
+console.log(`The connection URL is ${process.env.DATABASE_URL}`);
+```
+
+## Comments
+
+There are two types of comments that are supported in the schema file:
+
+- `// comment`: This comment is for the reader's clarity and is not present in the abstract syntax tree (AST) of the schema file.
+- `/// comment`: These comments will show up in the abstract syntax tree (AST) of the schema file, either as descriptions to AST nodes or as free-floating comments. Tools can then use these comments to provide additional information.
+
+Here are some different examples:
+
+```prisma
+/// This comment will get attached to the `User` node in the AST
+model User {
+  /// This comment will get attached to the `id` node in the AST
+  id      Int    @default(autoincrement())
+  // This comment is just for you
+  weight  Float /// This comment gets attached to the `weight` node
+}
+
+// This comment is just for you. It will not
+// show up in the AST.
+
+/// This is a free-floating comment that will show up
+/// in the AST as a `Comment` node, but is not attached
+/// to any other node. We can use these for documentation
+/// in the same way that godoc.org works.
+
+model Customer {}
+```
+
+## Auto formatting
+
+Similar to tools like [gofmt](https://golang.org/cmd/gofmt/) and [prettier](https://github.com/prettier/prettier), PSL syntax ships with a formatter for
+`.prisma` files. The formatter can be enabled in the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma).
+
+Like `gofmt` and unlike `prettier`, there are no options for configuration here. **There is exactly one way to format a prisma file**.
+
+Learn more about the formatting rules in the [spec](https://github.com/prisma/specs/tree/master/schema#formatting-rules).

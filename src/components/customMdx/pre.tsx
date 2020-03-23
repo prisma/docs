@@ -26,7 +26,9 @@ const Pre = ({ languages, children, ...props }: PreBlockProps) => {
       {children}
       {copy && (
         <AbsoluteCopyButton>
-          <CopyButton text={code}><Copy/></CopyButton>
+          <CopyButton text={code}>
+            <Copy />
+          </CopyButton>
         </AbsoluteCopyButton>
       )}
     </PreWrapper>

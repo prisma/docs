@@ -96,9 +96,7 @@ const TreeNode = ({
     location = document.location;
   }
   const active =
-    location &&
-    (location.pathname === url ||
-      location.pathname === config.gatsby.pathPrefix + url);
+    location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
   const calculatedClassName = `${className} ${active ? 'active' : ''} ${
     topLevel ? 'top-level' : ''
@@ -119,11 +117,7 @@ const TreeNode = ({
       {title && label !== 'index' && (
         <a href={url.split('/').includes('index') ? null : url}>
           {title && hasChildren && !staticLink && !topLevel ? (
-            <button
-              onClick={collapse}
-              aria-label="collapse"
-              className="item-collapser"
-            >
+            <button onClick={collapse} aria-label="collapse" className="item-collapser">
               {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
             </button>
           ) : null}

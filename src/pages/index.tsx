@@ -20,8 +20,7 @@ import SEO from '../components/seo';
 
 const BlockContent = styled.div`
   background: #ffffff;
-  box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05),
-    0px 1px 3px rgba(47, 55, 71, 0.1);
+  box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
   border-radius: 5px;
   margin-top: 1rem;
   padding: 40px;
@@ -36,11 +35,7 @@ export default function DocHome({ ...props }: any) {
         keywords={config.siteMetadata.keywords || undefined}
       />
       <BlockContent>
-        <TopSection
-          location={props.location}
-          title={'Prisma Docs'}
-          indexPage={true}
-        />
+        <TopSection location={props.location} title={'Prisma Docs'} indexPage={true} />
       </BlockContent>
     </Layout>
   );

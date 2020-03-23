@@ -1,6 +1,455 @@
 ---
-  title: "Quickstart"
-  metaTitle: ""
-  metaDescription: ""
-  duration: "5 min"
+title: 'Quickstart'
+metaTitle: ''
+metaDescription: ''
+duration: '5 min'
 ---
+
+## Overview
+
+This page explains how to get started with Prisma in five minutes. You will learn how to send queries to a SQL database in a plain Node.js script using Prisma Client.
+
+For the demo purposes of this guide, you will use a local [SQLite]() database file. This guide does _not_ cover the Prisma setup process. If you're looking to set up Prisma with your own database, you have these options:
+
+- [Add Prisma to an existing project]()
+- [Setup Prisma from scratch with your own database]()
+
+## Prerequisites
+
+The only prerequisite for this guide that you need to have [**Node.js**]() (version 10 or higher) installed on your machine.
+
+## Download starter project & install dependencies
+
+This guide comes with a small starter project that already has Prisma configured against a SQLite database file.
+
+Open your terminal and download the starter project with the following command:
+
+```
+curl ...
+```
+
+<br />
+<details><summary>Expand for more info on the starter project</summary>
+
+The starter project consists of five files:
+
+- `package.json`: Defines your npm dependencies
+- `prisma/schema.prisma`: Prisma configuration file defining your [models]()
+- `prisma/.env`: Defines your database connection URL as an environment variable
+- `prisma/dev.db`: A SQLite database file
+- `scr/index.js`: A plain, executable Node.js script
+
+Note that the only two dependencies defined in your project are:
+
+- `@prisma/cli`: The Prisma CLI which you can invoke with `npx prisma`
+- `@prisma/client`: Prisma Client library for accessing your database
+
+</details>
+
+The SQLite database file `prisma/dev.db` contains two tables with dummy data:
+
+**User**
+
+| **id** | **email**           | **name**  |
+| :----- | :------------------ | :-------- |
+| `1`    | `"sarah@prisma.io"` | `"Sarah"` |
+| `2`    | `"maria@prisma.io"` | `"Maria"` |
+
+**Post**
+
+| **id** | **title**       | **content** | **published** |  **author** |
+| :----- | :-------------- | :---------- | :------------ | :--------- |
+| `1`    | `"Hello World"` | `null`      | `false`       | `2`        |
+
+> **Note**: The number in the `author` column references the `id` column of the `User` table: the `2` in the `author` column refers to the `User` record with an `id` value of `2`.
+
+Befor you move on, installl the npm dependencies with this command:
+
+```
+npm install
+```
+
+## Write your first query with Prisma Client
+
+The code inside `src/index.js` currently looks as follows:
+
+```js
+const { PrismaClient } = require("@prisma/client")
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // ... you will write your Prisma Client queries here
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.disconnect()
+  })
+```
+
+<br />
+<details><summary>Expand for an explanation of the script</summary>
+
+Here's a quick overview of the main parts:
+
+1. Import the `PrismaClient` constructor from the `@prisma/client` node module
+1. Instantiate `PrismaClient`
+1. Define an `async` function called `main` to send queries to the database
+1. Call the `main` function
+1. Close the database connections when the script terminates
+
+</details>
+
+Inside the `main` function, add the folowing query to read all `User` records from the database and print the result:
+
+```js
+async function main() {
+  const allUsers = await prisma.user.findMany()
+  console.log(allUsers)
+}
+```
+
+Now run the code with this command:
+
+```
+npm run dev
+```
+
+This should print following result to output:
+
+```js
+[
+  { id: 1, email: "sarah@prisma.io", name: "Sarah" },
+  { id: 2, email: "maria@prisma.io", name: "Maria" },
+]
+```
+
+One of the main features of Prisma Client is the ease for working with relations. You can retrieve the `posts` of each user by using the `include` option. Adjust your code to look as follows:
+
+```js
+async function main() {
+  const allUsers = await prisma.user.findMany({
+    include: { posts: true },
+  })
+  // use `console.dir` to print nested objects
+  console.dir(allUsers, { depth: null })
+}
+```
+
+Run the code again with:
+
+```
+npm run dev
+```
+
+Each object inside `allUsers` now includes a `posts` field which represents the data in the relation between the `User` and `Post` tables:
+
+```js
+[
+  { id: 1, email: 'sarah@prisma.io', name: 'Sarah', posts: [] }
+  {
+    id: 2,
+    email: 'maria@prisma.io',
+    name: 'Maria',
+    posts: [
+      { id: 1, title: 'Hello World', content: null, published: false }
+    ]
+  }
+]
+```
+
+Congratulations, you just wrote your first query with Prisma Client 🎉
+
+## Write data into the database
+
+The `findMany` query you used in the previous section only _reads_ data from the database. In this section, you'll learn how to write a query to _write_ new records into the `Post` and `User` tables.
+
+Adjust the `main` function to send a `create` query to the database:
+
+```js
+async function main() {
+  const post = await prisma.post.create({
+    data: {
+      title: "Prisma makes databases easy",
+      author: {
+        connect: { email: "sarah@prisma.io" },
+      },
+    },
+  })
+  console.log(post)
+
+  const allUsers = await prisma.user.findMany({
+    include: { posts: true },
+  })
+  console.dir(allUsers, { depth: null })
+}
+```
+
+This code creates a new `Post` record and _connects_ it in a [nested write]() to an existing `User` record.
+
+Run the code with this command:
+
+```
+npm run dev
+```
+
+The output should look similar to this:
+
+```js
+{
+  id: 2,
+  title: 'Prisma makes databases easy',
+  content: null,
+  published: false
+}
+[
+  {
+    id: 1,
+    email: 'sarah@prisma.io',
+    name: 'Sarah',
+    posts: [
+      { id: 2, title: 'Prisma makes databases easy', content: null, published: false }
+    ]
+  }
+  {
+    id: 2,
+    email: 'maria@prisma.io',
+    name: 'Maria',
+    posts: [
+      { id: 1, title: 'Hello World', content: null, published: false }
+    ]
+  }
+]
+```
+
+The query added a new record to the `Post` table:
+
+**Post**
+
+| **id** | **title**                       | **content** | **published** | **author** |
+| :----- | :------------------------------ | :---------- | :------------ | :--------- |
+| `1`    | `"Hello World"`                 | `null`      | `false`       | `2`        |
+| `2`    | `"Prisma makes databases easy"` | `null`      | `false`       | `1`        |
+
+Before moving on to the next section, you'll "publish" the `Post` record you just created using an `update` query. Adjust the `main` function as follows:
+
+```js
+async function main() {
+  const post = await prisma.post.update({
+    where: { id: 2 },
+    data: { published: true },
+  })
+  console.log(post)
+}
+```
+
+Now run the code using the same command as before:
+
+```
+npm run dev
+```
+
+You will see the following output:
+
+```js
+{
+  id: 2,
+  title: 'Prisma makes databases easy',
+  content: null,
+  published: true
+}
+```
+
+The `Post` record with an `id` of `2` now got updated in the database:
+
+**Post**
+
+| **id** | **title**                       | **content** | **published** | **author** |
+| :----- | :------------------------------ | :---------- | :------------ | :--------- |
+| `1`    | `"Hello World"`                 | `null`      | `false`       | `2`        |
+| `2`    | `"Prisma makes databases easy"` | `null`      | `true`        | `1`        |
+
+Fantastic, you just wrote new data into your database for the first time using Prisma Client 🚀
+
+## Next steps
+
+### Continue exploring the Prisma Client API
+
+You can send a variety of different queries with the Prisma Client API. Check out the [API reference]() and use your existing SQLite-based setup from this guide to try them out.
+
+**Tip**: You can use your editor's auto-completion feature to learn about the different API calls and the arguments it takes. Auto-completion is commonly invoked by hitting <kbd>CTRL</kbd>+<kbd>SPACE</kbd> on your keyboard.
+
+<details><summary>Expand for more Prisma Client API examples</summary>
+
+Here are a few suggestions for a number of more queries you can send with Prisma Client:
+
+**Filter all `Post` records that contain `"prisma"`**
+
+```js
+const filteredPosts = await prisma.post.findMany({
+  where: {
+    OR: [
+      { title: { contains: "prisma" } },
+      { content: { contains: "prisma" } },
+    ],
+  },
+})
+```
+
+**Create a new `User` and a new `Post` record in the same query**
+
+```js
+const user = await prisma.user.create({
+  data: {
+    name: "Nancy",
+    email: "nancy@prisma.io",
+    posts: {
+      create: { title: "Join us for Prisma Day 2020" },
+    },
+  },
+})
+```
+
+**Use the fluent relations API to retrieve the `Post` records of a `User`**
+
+```js
+const posts = await prisma.user
+  .findOne({
+    where: { email: "sarah@prisma.io" },
+  })
+  .posts()
+```
+
+**Delete a `User` record**
+
+```js
+const deletedUser = await prisma.user.delete({
+  where: { email: "sarah@prisma.io" },
+})
+```
+
+</details>
+
+### Explore the data in Prisma Studio (experimental)
+
+Prisma Studio is a visual editor for the data in your database. You can use it by running the following command:
+
+```
+npx prisma studio --experimental
+```
+
+### Change the database schema (e.g. add more tables)
+
+#### SQL (recommended)
+
+Changing your database schema using SQL typically happens with the following steps.
+
+First, run a SQL migration against your database, e.g. with this command in your terminal:
+
+```
+sqlite3 ./prisma/dev.db \
+'CREATE TABLE "Profile" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, 
+  "bio" TEXT,
+  "user" TEXT NOT NULL UNIQUE REFERENCES "User"(id) ON DELETE SET NULL
+)'
+```
+
+Then, introspect your database with this command from the Prisma CLI:
+
+```
+npx prisma introspect
+```
+
+This updates your [Prisma schema]()) in `prisma/schema.prisma`.
+
+Finally, re-generate Prisma Client with this command:
+
+```
+npx prisma generate
+```
+
+This updates the generated Prisma Client library in [`node_modules/@prisma/client`]().
+
+You can now run queries against the new `Profile` table, e.g. using `prisma.profile.findMany()`.
+
+<details><summary>Alternative: Use Prisma Migrate (experimental)</summary>
+
+Changing your database schema using Prisma Migrate typically happens with the following steps.
+
+First, adjust the data model in your Prisma schema, e.g. by adding a new model:
+
+{/*
+Note: Currently commented out because it breaks the syntax highlighting in VS Code
+
+```prisma
+model Profile {
+  id   Int    @id @default(autoincrement())
+  bio  String
+  user User
+}
+
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  posts   Post[]
+  profile Profile?
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  author    User?
+}
+```
+*/}
+
+Next, create a new migration by running the following command:
+
+```
+npx prisma migrate save --name "add-profile" --experimental
+npx prisma migrate up --experimental
+```
+
+Now you can run the  migration against the database `npx prisma migrate up --experimental`.
+
+</details>
+
+You can now run queries against the new `Profile` table, e.g. using `prisma.profile.findMany()`.
+
+### Setup Prisma with your own database
+
+To learn how to connect Prisma to your own database, you can follow the respective setup guide:
+
+- [Add Prisma to an existing project]()
+- [Setup Prisma from scratch with your own database]()
+
+### Try a Prisma example
+
+The [`prisma-examples`]() repository contains a number of ready-to-run examples:
+
+#### TypeScript
+
+| Demo                                                                                                               | Stack        | Description                                                                                         |
+| :----------------------------------------------------------------------------------------------------------------- | :----------- | --------------------------------------------------------------------------------------------------- |
+| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/rest-nextjs)                     | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API                                   |
+| [`graphql-nextjs`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/graphql-nextjs)               | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a GraphQL API                                |
+| [`graphql-apollo-server`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/graphql-apollo-server) | Backend only | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/) |
+| [`rest-express`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/rest-express)                   | Backend only | Simple REST API with Express.JS                                                                     |
+| [`grpc`](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/grpc)                                   | Backend only | Simple gRPC API                                                                                     |
+
+#### JavaScript (Node.js)
+
+| Demo                                                                                                               | Stack        | Description                                                                                         |
+| :----------------------------------------------------------------------------------------------------------------- | :----------- | :-------------------------------------------------------------------------------------------------- |
+| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/rest-nextjs)                     | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API                                   |
+| [`graphql-apollo-server`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/graphql-apollo-server) | Backend only | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/) |
+| [`rest-express`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/rest-express)                   | Backend only | Simple REST API with Express.JS                                                                     |
+| [`grpc`](https://github.com/prisma/prisma-examples/tree/prisma2/javascript/grpc)                                   | Backend only | Simple gRPC API                                                                                     |
