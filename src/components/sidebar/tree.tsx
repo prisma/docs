@@ -84,8 +84,6 @@ const Tree = ({ edges }: AllEdges) => {
     return calculateTreeData(edges).defaultCollapsed;
   });
 
-  console.log(treeData);
-
   const toggle = (label: string) => {
     setCollapsed({
       ...collapsed,

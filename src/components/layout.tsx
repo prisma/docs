@@ -20,7 +20,7 @@ const theme: ThemeProps = {
 
 type LayoutProps = React.ReactNode & RouterProps;
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children, location }) => {
+const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   const { site } = useLayoutQuery();
   const { header, footer } = site.siteMetadata;
 
@@ -34,7 +34,8 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, location }) =>
     }
   `;
 
-  const Content = styled.main`
+  const Content = styled.article`
+    width: 0;
     flex: 1;
     margin: -80px 0 1rem 24px;
     @media only screen and (max-width: 1023px) {
@@ -48,22 +49,23 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, location }) =>
       position: relative;
     }
   `;
-  const LeftSideBarWidth = styled.div`
-    width: 215px;
-    @media only screen and (max-width: 50rem) {
-      width: 100%;
-      position: relative;
-    }
-  `;
+  // const LeftSideBarWidth = styled.div`
+  //   max-width: 215px;
+  //   width: 20%;
+  //   @media only screen and (max-width: 50rem) {
+  //     width: 100%;
+  //     position: relative;
+  //   }
+  // `;
 
   return (
     <ThemeProvider theme={theme}>
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
         <Wrapper>
-          <LeftSideBarWidth className={'hiddenMobile'}>
+          {/* <LeftSideBarWidth> */}
             <Sidebar />
-          </LeftSideBarWidth>
+          {/* </LeftSideBarWidth> */}
           <Content>
             <MaxWidth>{children}</MaxWidth>
           </Content>

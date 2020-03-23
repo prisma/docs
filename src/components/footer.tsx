@@ -22,7 +22,7 @@ const FooterWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   color: #a0aec0;
-  padding: 2rem 12rem;
+  padding: 15rem 12rem 2rem;
 `;
 
 const LinkList = styled.ul`

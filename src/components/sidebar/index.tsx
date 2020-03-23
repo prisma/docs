@@ -6,6 +6,8 @@ import { AllArticles } from '../../interfaces/AllArticles.interface';
 
 const Sidebar = styled.aside`
   margin: 0;
+  max-width: 215px;
+  width: 20%;
 `;
 
 const List = styled.ul`
