@@ -1,16 +1,16 @@
-import { Link } from "gatsby";
-import * as React from "react";
-import styled from "styled-components";
-import PrismaLogoGrey from "../icons/PrismaLogoGrey";
-import Email from "../icons/Email";
-import ArrowEmail from "../icons/ArrowEmail";
-import Twitter from "../icons/Twitter";
-import Youtube from "../icons/Youtube";
-import Slack from "../icons/Slack";
-import Github from "../icons/GitGrey";
-import Facebook from "../icons/Facebook";
+import { Link } from 'gatsby';
+import * as React from 'react';
+import styled from 'styled-components';
+import PrismaLogoGrey from '../icons/PrismaLogoGrey';
+import Email from '../icons/Email';
+import ArrowEmail from '../icons/ArrowEmail';
+import Twitter from '../icons/Twitter';
+import Youtube from '../icons/Youtube';
+import Slack from '../icons/Slack';
+import Github from '../icons/GitGrey';
+import Facebook from '../icons/Facebook';
 
-import { FooterProps } from "../interfaces/Layout.interface";
+import { FooterProps } from '../interfaces/Layout.interface';
 
 type FooterViewProps = {
   footerProps: FooterProps;
@@ -22,7 +22,7 @@ const FooterWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   color: #a0aec0;
-  padding: 2rem 12rem;
+  padding: 15rem 12rem 2rem;
 `;
 
 const LinkList = styled.ul`
@@ -119,12 +119,12 @@ const Footer = ({ footerProps }: FooterViewProps) => {
   } = footerProps;
   return (
     <FooterWrapper>
-      <div style={{ display: "flex", marginTop: "20px" }}>
+      <div style={{ display: 'flex', marginTop: '20px' }}>
         <Link
-          to={logoLink || "/"}
+          to={logoLink || '/'}
           style={{
-            color: "white",
-            textDecoration: "none",
+            color: 'white',
+            textDecoration: 'none',
           }}
         >
           <LogoContainer>
@@ -177,9 +177,9 @@ const Footer = ({ footerProps }: FooterViewProps) => {
         <p>{newsletter.text}</p>
 
         <div className="email">
-          <Email style={{ position: "absolute", top: "30px", left: "24px" }} />
+          <Email style={{ position: 'absolute', top: '30px', left: '24px' }} />
           <input type="text" placeholder="your@email.com" />
-          <ArrowEmail style={{ position: "absolute", top: "24px", right: "24px" }} />
+          <ArrowEmail style={{ position: 'absolute', top: '24px', right: '24px' }} />
         </div>
         <div className="social">
           <h4>FIND US</h4>

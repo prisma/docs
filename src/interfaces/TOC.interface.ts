@@ -1,4 +1,4 @@
-import { EdgeNode } from "./EdgeNode.interface";
+import { EdgeNode } from './EdgeNode.interface';
 
 export interface AllArticlesTOC {
   allMdx: AllEdgesTOC;

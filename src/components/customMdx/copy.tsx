@@ -1,6 +1,6 @@
-import React from "react";
-import styled from "styled-components";
-import * as CopyToClipboard from "react-copy-to-clipboard";
+import React from 'react';
+import styled from 'styled-components';
+import * as CopyToClipboard from 'react-copy-to-clipboard';
 
 interface CopyProps {
   text: string;
@@ -21,7 +21,7 @@ const CopyButton = ({ text, children, ...props }: CopyButtonProps) => {
     <CopyToClipboard text={text} onCopy={onCopyContent}>
       <CopyComponent>
         {copied && (
-          <div className="indicator" style={{ color: "#a0aec0" }}>
+          <div className="indicator" style={{ color: '#a0aec0' }}>
             Copied
           </div>
         )}
@@ -34,7 +34,7 @@ const CopyButton = ({ text, children, ...props }: CopyButtonProps) => {
 export default CopyButton;
 
 const CopyComponent = styled.div`
-  font-family: "Open Sans";
+  font-family: 'Open Sans';
   & {
     position: relative;
     cursor: pointer;

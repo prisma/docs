@@ -1,14 +1,14 @@
 export function stringify(children: any): string {
-  if (typeof children === "string") {
+  if (typeof children === 'string') {
     return children;
   }
 
-  if (typeof children === "undefined") {
-    return "";
+  if (typeof children === 'undefined') {
+    return '';
   }
 
   if (children === null) {
-    return "";
+    return '';
   }
 
   if (children.props && children.props.children) {
@@ -21,21 +21,21 @@ export function stringify(children: any): string {
   /**
    * Necessary because now the pointer changed!!!!
    */
-  if (typeof children === "string") {
+  if (typeof children === 'string') {
     return children;
   }
 
   if (Array.isArray(children)) {
     return children
       .map(el => {
-        if (typeof el === "string") {
+        if (typeof el === 'string') {
           return el;
         } else {
           return stringify(el);
         }
       })
-      .join("");
+      .join('');
   }
 
-  return "";
+  return '';
 }

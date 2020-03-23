@@ -1,11 +1,11 @@
-import { Link } from "gatsby";
-import React from "react";
-import styled from "styled-components";
-import Helmet from "react-helmet";
-import config from "../../config";
-import Layout from "../components/layout";
-import TopSection from "../components/topSection";
-import SEO from "../components/seo";
+import { Link } from 'gatsby';
+import React from 'react';
+import styled from 'styled-components';
+import Helmet from 'react-helmet';
+import config from '../../config';
+import Layout from '../components/layout';
+import TopSection from '../components/topSection';
+import SEO from '../components/seo';
 
 // const Container = styled.span`
 //   font-family: 'Rubik', sans-serif;
@@ -35,7 +35,7 @@ export default function DocHome({ ...props }: any) {
         keywords={config.siteMetadata.keywords || undefined}
       />
       <BlockContent>
-        <TopSection location={props.location} title={"Prisma Docs"} indexPage={true} />
+        <TopSection location={props.location} title={'Prisma Docs'} indexPage={true} />
       </BlockContent>
     </Layout>
   );

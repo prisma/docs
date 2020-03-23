@@ -1,14 +1,14 @@
-import { RouterProps } from "@reach/router";
-import * as React from "react";
-import { ArticleQueryData } from "../interfaces/Article.interface";
-import Layout from "../components/layout";
-import TopSection from "../components/topSection";
-import PageBottom from "../components/pageBottom";
-import SEO from "../components/seo";
-import { graphql } from "gatsby";
-import MDXRenderer from "gatsby-plugin-mdx/mdx-renderer";
+import { RouterProps } from '@reach/router';
+import * as React from 'react';
+import { ArticleQueryData } from '../interfaces/Article.interface';
+import Layout from '../components/layout';
+import TopSection from '../components/topSection';
+import PageBottom from '../components/pageBottom';
+import SEO from '../components/seo';
+import { graphql } from 'gatsby';
+import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer';
 
-import styled from "styled-components";
+import styled from 'styled-components';
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps;
 
@@ -37,18 +37,18 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const allContent = allMdx && allMdx.edges && allMdx.edges.map((mdx: any) => mdx.node.fields);
 
   allContent?.map((content: any) => {
-    content.parentTitle = "";
-    const parts = content.slug.split("/");
+    content.parentTitle = '';
+    const parts = content.slug.split('/');
     const slicedParts = parts.slice(1, parts.length - 1);
     slicedParts.forEach((part: any) => {
       const parent = allContent.find(ac => {
-        const parentParts = ac.slug.split("/");
+        const parentParts = ac.slug.split('/');
         return (
-          parentParts[parentParts.length - 1] === "index" &&
+          parentParts[parentParts.length - 1] === 'index' &&
           parentParts[parentParts.length - 2] === part
         );
       });
-      content.parentTitle = content.parentTitle + parent?.title + " / ";
+      content.parentTitle = content.parentTitle + parent?.title + ' / ';
     });
   });
 

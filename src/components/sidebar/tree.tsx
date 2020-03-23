@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import TreeNode from "./treeNode";
-import { AllEdges } from "../../interfaces/AllArticles.interface";
-import { ArticleFields } from "../../interfaces/Article.interface";
+import React, { useState } from 'react';
+import TreeNode from './treeNode';
+import { AllEdges } from '../../interfaces/AllArticles.interface';
+import { ArticleFields } from '../../interfaces/Article.interface';
 
 interface TreeNode {
   node: {
@@ -21,7 +21,7 @@ const calculateTreeData = (edges: any) => {
         },
       }: TreeNode
     ) => {
-      const parts = slug.split("/");
+      const parts = slug.split('/');
       // if(parts.length === 3) {console.log(parts)}
       let { items: prevItems } = accu;
       const slicedParts = parts.slice(1, -1);
@@ -35,11 +35,11 @@ const calculateTreeData = (edges: any) => {
           tmp = {
             label: part,
             items: [],
-            topLevel: parts.length == 3 && parts[parts.length - 1] === "index" ? true : false,
+            topLevel: parts.length == 3 && parts[parts.length - 1] === 'index' ? true : false,
           };
           prevItems.push(tmp);
         }
-        if (parts[parts.length - 1] === "index" && parts[parts.length - 2] === part) {
+        if (parts[parts.length - 1] === 'index' && parts[parts.length - 2] === part) {
           tmp.url = slug;
           tmp.title = title;
           tmp.staticLink = staticLink;
@@ -83,8 +83,6 @@ const Tree = ({ edges }: AllEdges) => {
   const [collapsed, setCollapsed] = useState(() => {
     return calculateTreeData(edges).defaultCollapsed;
   });
-
-  console.log(treeData);
 
   const toggle = (label: string) => {
     setCollapsed({
