@@ -1,4 +1,4 @@
-import { AllEdges } from "./AllArticles.interface";
+import { AllEdges } from './AllArticles.interface';
 
 export interface ArticleFields {
   slug: string;

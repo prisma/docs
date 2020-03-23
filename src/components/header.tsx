@@ -1,10 +1,10 @@
-import { Link } from "gatsby";
-import * as React from "react";
-import styled from "styled-components";
-import HeaderLogo from "../icons/Logo";
-import Github from "../icons/Git";
-import Search from "../icons/Search";
-import { HeaderProps } from "../interfaces/Layout.interface";
+import { Link } from 'gatsby';
+import * as React from 'react';
+import styled from 'styled-components';
+import HeaderLogo from '../icons/Logo';
+import Github from '../icons/Git';
+import Search from '../icons/Search';
+import { HeaderProps } from '../interfaces/Layout.interface';
 
 type HeaderViewProps = {
   headerProps: HeaderProps;
@@ -90,16 +90,16 @@ const NavLinks = styled.div`
 const Header = ({ headerProps }: HeaderViewProps) => (
   <HeaderWrapper>
     <HeaderNav>
-      <div style={{ display: "flex" }}>
+      <div style={{ display: 'flex' }}>
         <Link
-          to={headerProps.logoLink || "/"}
+          to={headerProps.logoLink || '/'}
           style={{
-            color: "white",
-            textDecoration: "none",
+            color: 'white',
+            textDecoration: 'none',
           }}
         >
           <LogoContainer>
-            <HeaderLogo style={{ height: "24px" }} />
+            <HeaderLogo style={{ height: '24px' }} />
           </LogoContainer>
         </Link>
         <Title>{headerProps.title}</Title>
@@ -110,8 +110,8 @@ const Header = ({ headerProps }: HeaderViewProps) => (
             key={index}
             to={headerlink.link}
             style={{
-              color: "white",
-              textDecoration: "none",
+              color: 'white',
+              textDecoration: 'none',
             }}
           >
             {headerlink.name}
@@ -119,17 +119,17 @@ const Header = ({ headerProps }: HeaderViewProps) => (
         ))}
       </NavLinks>
       <Link
-        to={"/"}
+        to={'/'}
         style={{
-          color: "white",
-          textDecoration: "none",
+          color: 'white',
+          textDecoration: 'none',
         }}
       >
-        <Github style={{ height: "24px" }} />
+        <Github style={{ height: '24px' }} />
       </Link>
     </HeaderNav>
-    <div style={{ position: "relative" }}>
-      <Search style={{ position: "absolute", top: "12px", left: "12px" }} />
+    <div style={{ position: 'relative' }}>
+      <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
       <SearchInput type="text" placeholder="Search" />
     </div>
   </HeaderWrapper>

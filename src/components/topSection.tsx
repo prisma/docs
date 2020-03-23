@@ -1,6 +1,6 @@
-import * as React from "react";
-import styled from "styled-components";
-import TOC from "./toc";
+import * as React from 'react';
+import styled from 'styled-components';
+import TOC from './toc';
 
 const BreadcrumbTitle = styled.h4`
   color: #718096;
@@ -9,7 +9,7 @@ const BreadcrumbTitle = styled.h4`
 `;
 
 const MainTitle = styled.h1`
-  font-family: "Montserrat";
+  font-family: 'Montserrat';
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;

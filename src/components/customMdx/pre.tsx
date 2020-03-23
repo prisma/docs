@@ -1,17 +1,17 @@
-import React from "react";
-import styled from "styled-components";
-import CopyButton from "./copy";
-import Copy from "../../icons/Copy";
-import { stringify } from "../../utils/stringify";
+import React from 'react';
+import styled from 'styled-components';
+import CopyButton from './copy';
+import Copy from '../../icons/Copy';
+import { stringify } from '../../utils/stringify';
 
 type PreBlockProps = React.ReactNode;
 
 const getSettings = (className: any) => {
   let copy = false;
   if (className) {
-    const split = className.split("-");
+    const split = className.split('-');
     if (split.length > 1) {
-      copy = split[1].substr(split.length - 6) === "copy";
+      copy = split[1].substr(split.length - 6) === 'copy';
     }
   }
   return copy;

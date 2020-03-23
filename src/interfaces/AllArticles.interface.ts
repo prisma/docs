@@ -1,5 +1,5 @@
-import { EdgeNode } from "./EdgeNode.interface";
-import { ArticleFields } from "./Article.interface";
+import { EdgeNode } from './EdgeNode.interface';
+import { ArticleFields } from './Article.interface';
 
 export interface AllEdges {
   edges?: [EdgeNode<ArticleFields>];

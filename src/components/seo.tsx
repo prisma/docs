@@ -1,5 +1,5 @@
-import * as React from "react";
-import Helmet from "react-helmet";
+import * as React from 'react';
+import Helmet from 'react-helmet';
 
 type SEOProps = {
   title?: string;
