@@ -22,7 +22,7 @@ const calculateTreeData = (edges: any) => {
       }: TreeNode
     ) => {
       const parts = slug.split('/');
-      // if(parts.length === 3) {console.log(parts)}
+      const topLevel = parts.length == 3 && parts[parts.length - 1] === 'index' ? true : false;
       let { items: prevItems } = accu;
       const slicedParts = parts.slice(1, -1);
       for (const part of slicedParts) {
@@ -35,7 +35,7 @@ const calculateTreeData = (edges: any) => {
           tmp = {
             label: part,
             items: [],
-            topLevel: parts.length == 3 && parts[parts.length - 1] === 'index' ? true : false,
+            topLevel
           };
           prevItems.push(tmp);
         }
@@ -45,6 +45,7 @@ const calculateTreeData = (edges: any) => {
           tmp.staticLink = staticLink;
           tmp.duration = duration;
           tmp.experimental = experimental;
+          tmp.topLevel = topLevel;
         }
         defaultCollapsed[part.toLowerCase()] = tmp.topLevel || tmp.staticLink ? false : true;
         prevItems = tmp.items;
@@ -64,6 +65,7 @@ const calculateTreeData = (edges: any) => {
           staticLink,
           duration,
           experimental,
+          topLevel
         });
       }
 

@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { AllArticlesTOC } from '../interfaces/TOC.interface';
 import { useTOCQuery } from '../hooks/useTOCQuery';
+import { slug } from '../utils/slug';
+import { stringify } from '../utils/stringify';
 
 const TOCContent = styled.aside`
   // padding: 2rem 0 0;
@@ -21,6 +23,7 @@ const ChapterTitle = styled.h1`
 const TOC = ({ location }: any) => {
   const { allMdx }: AllArticlesTOC = useTOCQuery();
   let navItems: any[] = [];
+
   if (allMdx.edges !== undefined && allMdx.edges.length > 0) {
     allMdx.edges.map((item: any) => {
       if (item !== undefined) {
@@ -30,13 +33,11 @@ const TOC = ({ location }: any) => {
         ) {
           if (item.node.tableOfContents.items) {
             navItems = item.node.tableOfContents.items.map((innerItem: any, index: number) => {
-              const itemId = innerItem.title
-                ? innerItem.title.replace(/\s+/g, '-').toLowerCase()
-                : '#';
+              const itemId = innerItem.title ? slug(stringify(innerItem.title)) : '#';
 
               return (
                 <li key={index}>
-                  <a href={`#${itemId}`}>{innerItem.title}</a>
+                  <a href={`#${itemId}`}>{stringify(innerItem.title)}</a>
                 </li>
               );
             });
