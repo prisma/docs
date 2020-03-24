@@ -101,6 +101,7 @@ const TreeNode = ({
   const active =
     location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
+    console.log(location, url,  active);
   const calculatedClassName = `
     ${className} ${active ? 'active' : ''} 
     ${topLevel ? 'top-level' : ''} 
