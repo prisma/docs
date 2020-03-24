@@ -29,13 +29,117 @@ Here are a few examples:
 - [Micro](https://github.com/zeit/micro)
 - [Feathers](https://feathersjs.com/)
 
-## Example
+## Examples
+
+### REST API server example
+
+Assume you have a Prisma schema that looks similar to this:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  author    User?
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+```
+
+You can now implement route controller (e.g. using Express) that use the generated [Prisma Client API]() to perform a database operation when an incoming HTTP request arrives. This page only shows few sample code snippets, if you want to run these code snippets, you can use the [REST API example](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/rest-express).
+
+#### `GET`
+
+```ts
+app.get('/feed', async (req, res) => {
+  const posts = await prisma.post.findMany({
+    where: { published: true },
+    include: { author: true }
+  })
+  res.json(posts)
+})
+```
+
+Note that the `feed` endpoint in this case returns a nested JSON response of `Post` objects that _include_ an `author` object. Here's a sample response:
+
+```json
+[
+  {
+    "id": "21",
+    "title": "Hello World",
+    "content": "null",
+    "published": "true",
+    "author": {
+      "id": "42",
+      "name": "Alice",
+      "email": "alice@prisma.io"
+    }
+  }
+]
+```
+
+#### `POST`
+
+```ts
+app.post(`/post`, async (req, res) => {
+  const { title, content, authorEmail } = req.body
+  const result = await prisma.post.create({
+    data: {
+      title,
+      content,
+      published: false,
+      author: { connect: { email: authorEmail } },
+    },
+  })
+  res.json(result)
+})
+```
+
+#### `PUT`
+
+```ts
+app.put('/publish/:id', async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.post.update({
+    where: { id: Number(id) },
+    data: { published: true },
+  })
+  res.json(post)
+})
+```
+
+#### `DELETE`
+
+```ts
+app.delete(`/post/:id`, async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.post.delete({
+    where: {
+      id: Number(id),
+    },
+  })
+  res.json(post)
+})
+```
+
+### Ready-to-tun example projects
 
 You can find several ready-to-tun examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
-
-## TypeScript
-
-### Fullstack
 
 | Example                                                                                          | Language   | Stack        | Description                                                       |
 | :----------------------------------------------------------------------------------------------- | :--------- | ------------ | ----------------------------------------------------------------- |
