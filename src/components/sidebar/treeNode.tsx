@@ -8,6 +8,10 @@ const List = styled.ul`
   list-style: none;
   padding: 0;
   margin: 16px 0;
+  &.has-border {
+    border-left: 1px solid #cbd5e0;
+    margin-left: -8px;
+  }
 `;
 
 const ListItem = styled.li`
@@ -73,6 +77,9 @@ const ListItem = styled.li`
     font-weight: bold;
     font-size: 14px;
   }
+  &.last-level {
+    padding-left: 30px;
+  }
   .collapse-title {
     cursor: pointer;
   }
@@ -90,6 +97,7 @@ const TreeNode = ({
   staticLink,
   duration,
   experimental,
+  lastLevel,
 }: any) => {
   const isCollapsed = collapsed[label];
   const collapse = () => {
@@ -104,14 +112,10 @@ const TreeNode = ({
   const active =
     location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
-    
-  const calculatedClassName = `
-    ${className} 
-    ${active ? 'active-item' : ''} 
-    ${topLevel ? 'top-level' : ''} 
-    ${staticLink ? 'static-link' : ''}
-    `;
-    console.log(location, url,  active, calculatedClassName);
+  const calculatedClassName = `${className || ''}${active ? 'active-item' : ''}${
+    topLevel ? 'top-level' : ''
+  }${staticLink ? 'static-link' : ''} ${lastLevel ? 'last-level' : ''}`;
+
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
       return -1;
@@ -122,17 +126,24 @@ const TreeNode = ({
     return 0;
   });
 
+  const hasExpandButton = title && hasChildren && !staticLink && !topLevel;
+  let hasBorder: boolean = false;
+  if (hasExpandButton) {
+    items.map((item: any) => (item.lastLevel = true));
+    hasBorder = true;
+  }
+  
   return (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && (
         <a href={url.split('/').includes('index') ? null : url}>
-          {title && hasChildren && !staticLink && !topLevel ? (
-            <a onClick={collapse} className="collapse-title">
+          {hasExpandButton ? (
+            <span onClick={collapse} className="collapse-title">
               <button aria-label="collapse" className="item-collapser">
                 {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
               </button>
               {title}
-            </a>
+            </span>
           ) : (
             title
           )}
@@ -142,7 +153,7 @@ const TreeNode = ({
       )}
 
       {!isCollapsed && hasChildren ? (
-        <List>
+        <List className={`${hasBorder ? 'has-border' : ''}`}>
           {items.map((item: any, index: number) => (
             <TreeNode
               key={item.url + index.toString()}
