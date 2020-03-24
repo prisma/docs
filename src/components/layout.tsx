@@ -28,7 +28,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     display: flex;
     width: 100%;
     // padding: 0 12rem;
-    padding: 0 10%;
+    padding: 0 20%;
     @media only screen and (max-width: 767px) {
       display: block;
     }
@@ -64,7 +64,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
         <Header headerProps={header} />
         <Wrapper>
           {/* <LeftSideBarWidth> */}
-            <Sidebar />
+          <Sidebar />
           {/* </LeftSideBarWidth> */}
           <Content>
             <MaxWidth>{children}</MaxWidth>

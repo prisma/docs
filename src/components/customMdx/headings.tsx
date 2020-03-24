@@ -15,10 +15,10 @@ export default function makeHeading(Component: any) {
       props.id = id;
     }
     return (
-      <Component {...props} id={`#${id}`}>
+      <Component {...props} id={`${id}`}>
         {/* <a href={`#${id}`}> */}
         <A className="title-link" href={`#${id}`}>
-        {/* <StyledAnchor /> */}
+          {/* <StyledAnchor /> */}
           {children}
         </A>
         {/* </a> */}

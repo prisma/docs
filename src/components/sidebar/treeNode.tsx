@@ -64,6 +64,9 @@ const ListItem = styled.li`
       margin-top: 24px;
     }
   }
+  &.bottom-level {
+    margin-left: 20px;
+  }
   &.static-link > a {
     color: #a0aec0 !important;
     text-transform: uppercase;
@@ -98,9 +101,11 @@ const TreeNode = ({
   const active =
     location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
-  const calculatedClassName = `${className} ${active ? 'active' : ''} ${
-    topLevel ? 'top-level' : ''
-  } ${staticLink ? 'static-link' : ''}`;
+  const calculatedClassName = `
+    ${className} ${active ? 'active' : ''} 
+    ${topLevel ? 'top-level' : ''} 
+    ${staticLink ? 'static-link' : ''}
+    `;
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
@@ -117,11 +122,15 @@ const TreeNode = ({
       {title && label !== 'index' && (
         <a href={url.split('/').includes('index') ? null : url}>
           {title && hasChildren && !staticLink && !topLevel ? (
-            <button onClick={collapse} aria-label="collapse" className="item-collapser">
-              {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
-            </button>
-          ) : null}
-          {title}
+            <a onClick={collapse}>
+              <button aria-label="collapse" className="item-collapser">
+                {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
+              </button>
+              {title}
+            </a>
+          ) : (
+            title
+          )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag">Experimental</span>}
         </a>
