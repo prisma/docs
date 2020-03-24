@@ -46,7 +46,7 @@ const ListItem = styled.li`
       }
     }
   }
-  &.active {
+  &.active-item {
     color: #4a5568;
     a {
       font-weight: 700;
@@ -72,6 +72,9 @@ const ListItem = styled.li`
     text-transform: uppercase;
     font-weight: bold;
     font-size: 14px;
+  }
+  .collapse-title {
+    cursor: pointer;
   }
 `;
 
@@ -101,13 +104,14 @@ const TreeNode = ({
   const active =
     location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
-    console.log(location, url,  active);
+    
   const calculatedClassName = `
-    ${className} ${active ? 'active' : ''} 
+    ${className} 
+    ${active ? 'active-item' : ''} 
     ${topLevel ? 'top-level' : ''} 
     ${staticLink ? 'static-link' : ''}
     `;
-
+    console.log(location, url,  active, calculatedClassName);
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
       return -1;
@@ -123,7 +127,7 @@ const TreeNode = ({
       {title && label !== 'index' && (
         <a href={url.split('/').includes('index') ? null : url}>
           {title && hasChildren && !staticLink && !topLevel ? (
-            <a onClick={collapse}>
+            <a onClick={collapse} className="collapse-title">
               <button aria-label="collapse" className="item-collapser">
                 {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
               </button>
