@@ -22,10 +22,15 @@ const HeaderWrapper = styled.div`
   img {
     margin-bottom: 0;
   }
-  padding: 30px 20% 24px;
+  padding: 30px 0 24px;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  // flex-direction: column;
+  justify-content: center;
+
+  .container {
+    width: 990px;
+    max-width: 990px;
+  }
 `;
 
 const HeaderNav = styled.div`
@@ -89,6 +94,7 @@ const NavLinks = styled.div`
 
 const Header = ({ headerProps }: HeaderViewProps) => (
   <HeaderWrapper>
+    <div className={'container'}>
     <HeaderNav>
       <div style={{ display: 'flex' }}>
         <Link
@@ -128,9 +134,10 @@ const Header = ({ headerProps }: HeaderViewProps) => (
         <Github style={{ height: '24px' }} />
       </Link>
     </HeaderNav>
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', marginTop:' 27px' }}>
       <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
       <SearchInput type="text" placeholder="Search" />
+    </div>
     </div>
   </HeaderWrapper>
 );

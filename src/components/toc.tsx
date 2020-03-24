@@ -23,7 +23,9 @@ const ChapterTitle = styled.h1`
 
 const scrollToId = (e: any) => {
   const id = e.target && e.target.href && e.target.href.split('#')[1];
-  scrollTo(`#${id}`);
+  if (id) {
+    scrollTo(`#${id}`);
+  }
 };
 
 const TOC = ({ location }: any) => {
@@ -43,7 +45,6 @@ const TOC = ({ location }: any) => {
 
               return (
                 <li key={index}>
-                  {/* <a href={`#${itemId}`}>{stringify(innerItem.title)}</a> */}
                   <a href={`#${itemId}`} onClick={scrollToId}>
                     {stringify(innerItem.title)}
                   </a>
