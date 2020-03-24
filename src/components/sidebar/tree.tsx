@@ -35,7 +35,9 @@ const calculateTreeData = (edges: any) => {
           tmp = {
             label: part,
             items: [],
-            topLevel
+            topLevel,
+            experimental,
+            staticLink,
           };
           prevItems.push(tmp);
         }
@@ -65,7 +67,7 @@ const calculateTreeData = (edges: any) => {
           staticLink,
           duration,
           experimental,
-          topLevel
+          topLevel,
         });
       }
 

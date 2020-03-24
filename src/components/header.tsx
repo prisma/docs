@@ -22,7 +22,7 @@ const HeaderWrapper = styled.div`
   img {
     margin-bottom: 0;
   }
-  padding: 30px 10% 24px;
+  padding: 30px 20% 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
