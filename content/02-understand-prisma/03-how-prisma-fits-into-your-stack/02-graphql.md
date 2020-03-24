@@ -1,14 +1,12 @@
 ---
-  title: "GraphQL"
-  metaTitle: ""
-  metaDescription: ""
+title: 'GraphQL'
+metaTitle: ''
+metaDescription: ''
 ---
-
-**Note: The content of this page is still in progress.**
 
 ## Overview
 
-GraphQL is a query language for APIs. It is often used as an alternative to RESTful APIs, but can also be used as an additional "gateway" layer on top of existing RESTful services.
+[GraphQL](http://graphql.org/) is a query language for APIs. It is often used as an alternative to RESTful APIs, but can also be used as an additional "gateway" layer on top of existing RESTful services.
 
 With Prisma, you can build GraphQL servers that connect to a database. Prisma is completely agnostic to the GraphQL tools you use. When building as GraphQL server, you can combine Prisma with tools like Apollo Server, `express-graphql`, TypeGraphQL, GraphQL.js or pretty much any tool or library that you're using in your GraphQL server setup.
 
@@ -35,11 +33,11 @@ The GraphQL schema and HTTP server are typically handled by separate libraries. 
 
 In addition to these standalone and single-purpose libraries, there are several projects building integrated _application frameworks_:
 
-| Framework                                  | Stack | Built by                                          | Prisma                 | Description |
-| :----------------------------------------- | :--------------- | :------------------------------------------------ | :--------------------- | :---- |
-| [Nexus](https://www.nexusjs.org/#/)        | Backend only     | [Prisma Labs](https://github.com/prisma-labs/)    | Prisma is optional     | "Delightful GraphQL Application Framework" |
-| [Redwood.js](https://redwoodjs.com)        | Fullstack        | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | "Bringing full-stack to the JAMstack. " |
-| [Blitz](https://github.com/blitz-js/blitz) | Fullstack        | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | "Framework for building monolithic, full-stack, serverless React apps with zero data-fetching and zero client-side state management." |
+| Framework                                  | Stack        | Built by                                          | Prisma                 | Description                                                                                                                           |
+| :----------------------------------------- | :----------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| [Nexus](https://www.nexusjs.org/#/)        | Backend only | [Prisma Labs](https://github.com/prisma-labs/)    | Prisma is optional     | "Delightful GraphQL Application Framework"                                                                                            |
+| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | "Bringing full-stack to the JAMstack. "                                                                                               |
+| [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | "Framework for building monolithic, full-stack, serverless React apps with zero data-fetching and zero client-side state management." |
 
 > **Note**: If you notive any GraphQL libraries/frameworks missing from the list, please let us know.
 
