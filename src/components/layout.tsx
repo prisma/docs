@@ -64,7 +64,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
         <Header headerProps={header} />
         <Wrapper>
           {/* <LeftSideBarWidth> */}
-            <Sidebar />
+          <Sidebar />
           {/* </LeftSideBarWidth> */}
           <Content>
             <MaxWidth>{children}</MaxWidth>

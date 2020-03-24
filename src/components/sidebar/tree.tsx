@@ -37,7 +37,7 @@ const calculateTreeData = (edges: any) => {
             items: [],
             topLevel,
             experimental,
-            staticLink
+            staticLink,
           };
           prevItems.push(tmp);
         }
@@ -67,7 +67,7 @@ const calculateTreeData = (edges: any) => {
           staticLink,
           duration,
           experimental,
-          topLevel
+          topLevel,
         });
       }
 

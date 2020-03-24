@@ -4,16 +4,16 @@ import Pre from './pre';
 import makeHeading from './headings';
 
 export default {
-  h1: () => (<h1 style={{display: 'none'}} />),
-  h2: (props: any) => (makeHeading('h2')({...props})),
-  h3: (props: any) => (makeHeading('h3')({...props})),
-  h4: (props: any) => (makeHeading('h4')({...props})),
-  h5: (props: any) => (makeHeading('h5')({...props})),
-  h6: (props: any) => (makeHeading('h6')({...props})),
+  h1: () => <h1 style={{ display: 'none' }} />,
+  h2: (props: any) => makeHeading('h2')({ ...props }),
+  h3: (props: any) => makeHeading('h3')({ ...props }),
+  h4: (props: any) => makeHeading('h4')({ ...props }),
+  h5: (props: any) => makeHeading('h5')({ ...props }),
+  h6: (props: any) => makeHeading('h6')({ ...props }),
   // h1: (props: any) => (
   //   <h1 className="heading1" id={props.children.replace(/\s+/g, '-').toLowerCase()} {...props} />
   // ),
-  // h2: (props: any) => { 
+  // h2: (props: any) => {
   //   console.log(props)
   //   const text = stringify(props.children);
   //   const id = slug(text);
