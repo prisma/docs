@@ -8,9 +8,9 @@ interface CopyProps {
 
 type CopyButtonProps = CopyProps & React.ReactNode;
 
-const CopyButton = ({ text, children}: CopyButtonProps) => {
+const CopyButton = ({ text, children }: CopyButtonProps) => {
   const [copied, setCopied] = React.useState(false);
-  let copyTimer:any;
+  let copyTimer: any;
 
   const onCopyContent = () => {
     setCopied(true);

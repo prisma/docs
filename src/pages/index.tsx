@@ -1,7 +1,5 @@
-import { Link } from 'gatsby';
 import React from 'react';
 import styled from 'styled-components';
-import Helmet from 'react-helmet';
 import config from '../../config';
 import Layout from '../components/layout';
 import TopSection from '../components/topSection';
