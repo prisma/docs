@@ -21,7 +21,7 @@ const Feedback = styled.div`
     font-weight: bold;
     letter-spacing: 0.01em;
     text-transform: uppercase;
-    color: #a0aec0;
+    color: #a0aec0 !important;
   }
   .moods a {
     margin-right: 0.5rem;

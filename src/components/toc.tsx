@@ -4,6 +4,7 @@ import { AllArticlesTOC } from '../interfaces/TOC.interface';
 import { useTOCQuery } from '../hooks/useTOCQuery';
 import { slug } from '../utils/slug';
 import { stringify } from '../utils/stringify';
+import scrollTo from 'gatsby-plugin-smoothscroll';
 
 const TOCContent = styled.aside`
   // padding: 2rem 0 0;
@@ -19,6 +20,11 @@ const ChapterTitle = styled.h1`
   text-transform: uppercase;
   color: #a0aec0;
 `;
+
+const scrollToId = (e: any) => {
+  const id = e.target && e.target.href && e.target.href.split('#')[1];
+  scrollTo(`#${id}`);
+};
 
 const TOC = ({ location }: any) => {
   const { allMdx }: AllArticlesTOC = useTOCQuery();
@@ -37,7 +43,10 @@ const TOC = ({ location }: any) => {
 
               return (
                 <li key={index}>
-                  <a href={`#${itemId}`}>{stringify(innerItem.title)}</a>
+                  {/* <a href={`#${itemId}`}>{stringify(innerItem.title)}</a> */}
+                  <a href={`#${itemId}`} onClick={scrollToId}>
+                    {stringify(innerItem.title)}
+                  </a>
                 </li>
               );
             });

@@ -12,6 +12,7 @@ type SEOProps = {
 const SEO = ({ title, description, keywords }: SEOProps) => (
   <Helmet>
     <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=0, shrink-to-fit=yes"/>
     {title && <title>{title}</title>}
     {description && <meta name="title" content={description} />}
     {description && <meta name="description" content={description} />}
