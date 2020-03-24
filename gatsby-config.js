@@ -39,6 +39,9 @@ module.exports = {
             },
           },
           'gatsby-remark-sectionize',
+          {
+            resolve: `gatsby-remark-images`,
+          },
         ],
       },
     },
