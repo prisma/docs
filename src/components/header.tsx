@@ -53,8 +53,7 @@ const LogoContainer = styled.div`
 `;
 
 const SearchInput = styled.input`
-  max-width: 215px;
-  width: 20%;
+  width: 215px;
   background: #ffffff;
   box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
   border-radius: 5px;

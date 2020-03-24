@@ -83,6 +83,7 @@ const Tree = ({ edges }: AllEdges) => {
   let [treeData] = useState(() => {
     return calculateTreeData(edges);
   });
+  
 
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   // const [collapsed, setCollapsed] = useState(() => {

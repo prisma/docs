@@ -1,9 +1,8 @@
 import React from 'react';
-import config from '../../../config';
 import styled from 'styled-components';
 import ArrowRight from '../../icons/ArrowRight';
 import ArrowDown from '../../icons/ArrowDown';
-import { Link } from 'gatsby';
+import Link from '../link';
 
 const List = styled.ul`
   list-style: none;
@@ -109,8 +108,6 @@ const TreeNode = ({
   if (typeof document != 'undefined') {
     location = document.location;
   }
-  const active =
-    location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
   const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
     staticLink ? 'static-link' : ''
@@ -136,9 +133,9 @@ const TreeNode = ({
   return (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && (
-        <a
-          href={url.split('/').includes('index') ? null : url}
-          className={active ? 'active-item' : ''}
+        <Link
+          to={url.split('/').includes('index') ? null : url}
+          activeClassName='active-item'
         >
           {hasExpandButton ? (
             <span onClick={collapse} className="collapse-title">
@@ -152,7 +149,7 @@ const TreeNode = ({
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag">Experimental</span>}
-        </a>
+        </Link>
       )}
 
       {!isCollapsed && hasChildren ? (
