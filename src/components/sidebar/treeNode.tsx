@@ -112,9 +112,9 @@ const TreeNode = ({
   const active =
     location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
-  const calculatedClassName = `${className || ''}${active ? 'active-item' : ''}${
+  const calculatedClassName = () => `${className || ''} ${active ? 'active-item' : ''}${
     topLevel ? 'top-level' : ''
-  }${staticLink ? 'static-link' : ''} ${lastLevel ? 'last-level' : ''}`;
+  } ${staticLink ? 'static-link' : ''} ${lastLevel ? 'last-level' : ''}`;
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
@@ -132,9 +132,9 @@ const TreeNode = ({
     items.map((item: any) => (item.lastLevel = true));
     hasBorder = true;
   }
-  
+
   return (
-    <ListItem className={calculatedClassName}>
+    <ListItem className={calculatedClassName()}>
       {title && label !== 'index' && (
         <a href={url.split('/').includes('index') ? null : url}>
           {hasExpandButton ? (
