@@ -107,9 +107,9 @@ model User {
 }
 ```
 
-**Naming of relation fields**
+**Naming of foreign key relation fields**
 
-Foreign keys are represented as _relation fields_ in the Prisma schema. Here's how all the relations from the SQL schema are represented:
+Foreign keys are represented as [relation fields]() in the Prisma schema. Here's how all the relations from the SQL schema are represented:
 
 ```prisma
 model categories {
@@ -240,4 +240,57 @@ const userByProfile = await prisma.profile
   .user();
 ```
 
-> **Warning**: `@map` and `@@map` attributes are removed when you run `prisma introspect` again. You might want to back up your Prisma schema with these attributes in order to not having to annotate everything from scratch again after a re-introspection.
+> **Warning**: `@map` and `@@map` attributes are removed when you run `prisma introspect` again. You therefore might want to back up your Prisma schema with these attributes in order to not having to annotate everything from scratch again after a re-introspection.
+
+## Renaming virtual relation fields
+
+[Virtual relation fields]() only exist in the Prisma schema, but are not actually manifested in the underlying database. You can therefore name these fields whatever you want.
+
+Consider the following example of an ambiguous relation in a SQL database:
+
+```sql
+CREATE TABLE "User" (
+    id SERIAL PRIMARY KEY
+);
+CREATE TABLE "Post" (
+    id SERIAL PRIMARY KEY,
+    "author" integer NOT NULL,
+    "favoritedBy" INTEGER,
+    FOREIGN KEY ("author") REFERENCES "User"(id),
+    FOREIGN KEY ("favoritedBy") REFERENCES "User"(id)
+);
+```
+
+Prism's introspection will result in the following Prisma schema:
+
+```prisma
+model Post {
+  id          Int   @default(autoincrement()) @id
+  author      User  @relation("Post_authorToUser", references: [id])
+  favoritedBy User? @relation("Post_favoritedByToUser", references: [id])
+}
+
+model User {
+  id                          Int    @default(autoincrement()) @id
+  Post_Post_authorToUser      Post[] @relation("Post_authorToUser")
+  Post_Post_favoritedByToUser Post[] @relation("Post_favoritedByToUser")
+}
+```
+
+Since the names of the virtual relation fields `Post_Post_authorToUser` and `Post_Post_favoritedByToUser` are based on the generated relation names, they don't look very friendly in the Prisma Client API. In that case, you can rename the relation fields to anything you like, e.g.:
+
+```prisma
+model Post {
+  id          Int   @default(autoincrement()) @id
+  author      User  @relation("Post_authorToUser", references: [id])
+  favoritedBy User? @relation("Post_favoritedByToUser", references: [id])
+}
+
+model User {
+  id              Int    @default(autoincrement()) @id
+  writtenPost     Post[] @relation("Post_authorToUser")
+  favoritedPosts  Post[] @relation("Post_favoritedByToUser")
+}
+```
+
+> **Warning**: Virtual relation fields that were renamed in the Prisma schema will be reset when you run `prisma introspect` again. You therefore might want to back up your Prisma schema with these attributes in order to not having to annotate everything from scratch again after a re-introspection.
