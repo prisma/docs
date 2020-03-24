@@ -9,9 +9,9 @@ interface TreeNode {
   };
 }
 
+let defaultCollapsed: any = {};
 // TODO::Simplify the function
 const calculateTreeData = (edges: any) => {
-  let defaultCollapsed: any = {};
   const tree = edges.reduce(
     (
       accu: any,
@@ -49,6 +49,7 @@ const calculateTreeData = (edges: any) => {
           tmp.experimental = experimental;
           tmp.topLevel = topLevel;
         }
+
         defaultCollapsed[part.toLowerCase()] = tmp.topLevel || tmp.staticLink ? false : true;
         prevItems = tmp.items;
       }
@@ -75,18 +76,19 @@ const calculateTreeData = (edges: any) => {
     },
     { items: [] }
   );
-  return { tree, defaultCollapsed };
+  return tree;
 };
 
 const Tree = ({ edges }: AllEdges) => {
   let [treeData] = useState(() => {
-    return calculateTreeData(edges).tree;
+    return calculateTreeData(edges);
   });
 
-  // const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  const [collapsed, setCollapsed] = useState(() => {
-    return calculateTreeData(edges).defaultCollapsed;
-  });
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  // const [collapsed, setCollapsed] = useState(() => {
+  //   return calculateTreeData(edges).defaultCollapsed;
+  // });
+  // console.log(collapsed)
 
   const toggle = (label: string) => {
     setCollapsed({

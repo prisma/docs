@@ -3,6 +3,7 @@ import config from '../../../config';
 import styled from 'styled-components';
 import ArrowRight from '../../icons/ArrowRight';
 import ArrowDown from '../../icons/ArrowDown';
+import { Link } from 'gatsby';
 
 const List = styled.ul`
   list-style: none;
@@ -50,11 +51,10 @@ const ListItem = styled.li`
       }
     }
   }
-  &.active-item {
+  .active-item {
     color: #4a5568;
-    a {
-      font-weight: 700;
-    }
+
+    font-weight: 700;
   }
   &.top-level {
     margin-top: 2rem;
@@ -112,9 +112,9 @@ const TreeNode = ({
   const active =
     location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
-  const calculatedClassName = () => `${className || ''} ${active ? 'active-item' : ''}${
-    topLevel ? 'top-level' : ''
-  } ${staticLink ? 'static-link' : ''} ${lastLevel ? 'last-level' : ''}`;
+  const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
+    staticLink ? 'static-link' : ''
+  } ${lastLevel ? 'last-level' : ''}`;
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
@@ -134,9 +134,12 @@ const TreeNode = ({
   }
 
   return (
-    <ListItem className={calculatedClassName()}>
+    <ListItem className={calculatedClassName}>
       {title && label !== 'index' && (
-        <a href={url.split('/').includes('index') ? null : url}>
+        <a
+          href={url.split('/').includes('index') ? null : url}
+          className={active ? 'active-item' : ''}
+        >
           {hasExpandButton ? (
             <span onClick={collapse} className="collapse-title">
               <button aria-label="collapse" className="item-collapser">
@@ -145,7 +148,7 @@ const TreeNode = ({
               {title}
             </span>
           ) : (
-            title
+            <span>{title}</span>
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag">Experimental</span>}
