@@ -1,4 +1,5 @@
 const path = require(`path`);
+// const urlGenerator = require(`./src/utils/urlGenerator`)
 // const { createFilePath } = require(`gatsby-source-filesystem`);
 
 exports.onCreateNode = ({ node, getNode, actions }) => {
@@ -67,7 +68,7 @@ exports.createPages = ({ graphql, actions }) => {
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
         createPage({
-          path: node.fields.slug ? node.fields.slug : '/',
+          path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, "") : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
             id: node.fields.id,
