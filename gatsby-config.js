@@ -1,4 +1,4 @@
-const config = require("./config");
+const config = require('./config');
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
   siteMetadata: {
@@ -8,14 +8,13 @@ module.exports = {
     header: config.header,
     // logo: { link: config.header.logoLink ? config.header.logoLink : '/', image: config.header.logo }, // backwards compatible
     // headerTitle: config.header.title,
-    footer: config.footer
+    footer: config.footer,
   },
   plugins: [
     'gatsby-plugin-react-helmet',
     'gatsby-transformer-sharp',
     'gatsby-plugin-sharp',
     'gatsby-plugin-typescript',
-    'gatsby-transformer-remark',
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
@@ -39,6 +38,7 @@ module.exports = {
               aliases: {},
             },
           },
+          'gatsby-remark-sectionize',
         ],
       },
     },
@@ -57,12 +57,5 @@ module.exports = {
         path: `${__dirname}/src/images`,
       },
     },
-    // {
-    //   resolve: 'gatsby-source-remote-file',
-    //   options: {
-    //     url: '../prisma/docs',
-    //     name: 'docs-prisma',
-    //   },
-    // },
   ],
 };

@@ -1,13 +1,17 @@
 import React from 'react';
-import config from '../../../config';
 import styled from 'styled-components';
 import ArrowRight from '../../icons/ArrowRight';
 import ArrowDown from '../../icons/ArrowDown';
+import Link from '../link';
 
 const List = styled.ul`
   list-style: none;
   padding: 0;
   margin: 16px 0;
+  &.has-border {
+    border-left: 1px solid #cbd5e0;
+    margin-left: -8px;
+  }
 `;
 
 const ListItem = styled.li`
@@ -46,11 +50,10 @@ const ListItem = styled.li`
       }
     }
   }
-  &.active {
+  .active-item {
     color: #4a5568;
-    a {
-      font-weight: 700;
-    }
+
+    font-weight: 700;
   }
   &.top-level {
     margin-top: 2rem;
@@ -73,6 +76,12 @@ const ListItem = styled.li`
     font-weight: bold;
     font-size: 14px;
   }
+  &.last-level {
+    padding-left: 30px;
+  }
+  .collapse-title {
+    cursor: pointer;
+  }
 `;
 
 const TreeNode = ({
@@ -87,6 +96,7 @@ const TreeNode = ({
   staticLink,
   duration,
   experimental,
+  lastLevel,
 }: any) => {
   const isCollapsed = collapsed[label];
   const collapse = () => {
@@ -98,14 +108,10 @@ const TreeNode = ({
   if (typeof document != 'undefined') {
     location = document.location;
   }
-  const active =
-    location && (location.pathname === url || location.pathname === config.gatsby.pathPrefix + url);
 
-  const calculatedClassName = `
-    ${className} ${active ? 'active' : ''} 
-    ${topLevel ? 'top-level' : ''} 
-    ${staticLink ? 'static-link' : ''}
-    `;
+  const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
+    staticLink ? 'static-link' : ''
+  } ${lastLevel ? 'last-level' : ''}`;
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
@@ -117,27 +123,34 @@ const TreeNode = ({
     return 0;
   });
 
+  const hasExpandButton = title && hasChildren && !staticLink && !topLevel;
+  let hasBorder: boolean = false;
+  if (hasExpandButton) {
+    items.map((item: any) => (item.lastLevel = true));
+    hasBorder = true;
+  }
+
   return (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && (
-        <a href={url.split('/').includes('index') ? null : url}>
-          {title && hasChildren && !staticLink && !topLevel ? (
-            <a onClick={collapse}>
+        <Link to={url.split('/').includes('index') ? null : url} activeClassName="active-item">
+          {hasExpandButton ? (
+            <span onClick={collapse} className="collapse-title">
               <button aria-label="collapse" className="item-collapser">
                 {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
               </button>
               {title}
-            </a>
+            </span>
           ) : (
-            title
+            <span>{title}</span>
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag">Experimental</span>}
-        </a>
+        </Link>
       )}
 
       {!isCollapsed && hasChildren ? (
-        <List>
+        <List className={`${hasBorder ? 'has-border' : ''}`}>
           {items.map((item: any, index: number) => (
             <TreeNode
               key={item.url + index.toString()}

@@ -22,10 +22,13 @@ const HeaderWrapper = styled.div`
   img {
     margin-bottom: 0;
   }
-  padding: 30px 20% 24px;
+  padding: 30px 0 24px;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+
+  .container {
+    width: 990px;
+  }
 `;
 
 const HeaderNav = styled.div`
@@ -48,8 +51,7 @@ const LogoContainer = styled.div`
 `;
 
 const SearchInput = styled.input`
-  max-width: 215px;
-  width: 20%;
+  width: 215px;
   background: #ffffff;
   box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
   border-radius: 5px;
@@ -89,48 +91,50 @@ const NavLinks = styled.div`
 
 const Header = ({ headerProps }: HeaderViewProps) => (
   <HeaderWrapper>
-    <HeaderNav>
-      <div style={{ display: 'flex' }}>
-        <Link
-          to={headerProps.logoLink || '/'}
-          style={{
-            color: 'white',
-            textDecoration: 'none',
-          }}
-        >
-          <LogoContainer>
-            <HeaderLogo style={{ height: '24px' }} />
-          </LogoContainer>
-        </Link>
-        <Title>{headerProps.title}</Title>
-      </div>
-      <NavLinks>
-        {headerProps.links.map((headerlink: any, index: number) => (
+    <div className={'container'}>
+      <HeaderNav>
+        <div style={{ display: 'flex' }}>
           <Link
-            key={index}
-            to={headerlink.link}
+            to={headerProps.logoLink || '/'}
             style={{
               color: 'white',
               textDecoration: 'none',
             }}
           >
-            {headerlink.name}
+            <LogoContainer>
+              <HeaderLogo style={{ height: '24px' }} />
+            </LogoContainer>
           </Link>
-        ))}
-      </NavLinks>
-      <Link
-        to={'/'}
-        style={{
-          color: 'white',
-          textDecoration: 'none',
-        }}
-      >
-        <Github style={{ height: '24px' }} />
-      </Link>
-    </HeaderNav>
-    <div style={{ position: 'relative' }}>
-      <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
-      <SearchInput type="text" placeholder="Search" />
+          <Title>{headerProps.title}</Title>
+        </div>
+        <NavLinks>
+          {headerProps.links.map((headerlink: any, index: number) => (
+            <Link
+              key={index}
+              to={headerlink.link}
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+              }}
+            >
+              {headerlink.name}
+            </Link>
+          ))}
+        </NavLinks>
+        <Link
+          to={'/'}
+          style={{
+            color: 'white',
+            textDecoration: 'none',
+          }}
+        >
+          <Github style={{ height: '24px' }} />
+        </Link>
+      </HeaderNav>
+      <div style={{ position: 'relative', marginTop: ' 27px' }}>
+        <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
+        <SearchInput type="text" placeholder="Search" />
+      </div>
     </div>
   </HeaderWrapper>
 );

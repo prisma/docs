@@ -70,7 +70,7 @@ exports.createPages = ({ graphql, actions }) => {
           path: node.fields.slug ? node.fields.slug : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
-            id: node.fields.id
+            id: node.fields.id,
           },
         });
       });
