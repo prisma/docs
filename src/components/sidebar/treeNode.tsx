@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import ArrowRight from '../../icons/ArrowRight';
 import ArrowDown from '../../icons/ArrowDown';
 import Link from '../link';
+import { urlGenerator } from '../../utils/urlGenerator';
 
 const List = styled.ul`
   list-style: none;
@@ -133,7 +134,10 @@ const TreeNode = ({
   return (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && (
-        <Link to={url.split('/').includes('index') ? null : url} activeClassName="active-item">
+        <Link
+          to={url.split('/').includes('index') ? null : urlGenerator(url)}
+          activeClassName="active-item"
+        >
           {hasExpandButton ? (
             <span onClick={collapse} className="collapse-title">
               <button aria-label="collapse" className="item-collapser">
