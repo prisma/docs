@@ -133,10 +133,7 @@ const TreeNode = ({
   return (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && (
-        <Link
-          to={url.split('/').includes('index') ? null : url}
-          activeClassName='active-item'
-        >
+        <Link to={url.split('/').includes('index') ? null : url} activeClassName="active-item">
           {hasExpandButton ? (
             <span onClick={collapse} className="collapse-title">
               <button aria-label="collapse" className="item-collapser">

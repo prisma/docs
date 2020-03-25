@@ -24,12 +24,10 @@ const HeaderWrapper = styled.div`
   }
   padding: 30px 0 24px;
   display: flex;
-  // flex-direction: column;
   justify-content: center;
 
   .container {
     width: 990px;
-    max-width: 990px;
   }
 `;
 
@@ -94,49 +92,49 @@ const NavLinks = styled.div`
 const Header = ({ headerProps }: HeaderViewProps) => (
   <HeaderWrapper>
     <div className={'container'}>
-    <HeaderNav>
-      <div style={{ display: 'flex' }}>
-        <Link
-          to={headerProps.logoLink || '/'}
-          style={{
-            color: 'white',
-            textDecoration: 'none',
-          }}
-        >
-          <LogoContainer>
-            <HeaderLogo style={{ height: '24px' }} />
-          </LogoContainer>
-        </Link>
-        <Title>{headerProps.title}</Title>
-      </div>
-      <NavLinks>
-        {headerProps.links.map((headerlink: any, index: number) => (
+      <HeaderNav>
+        <div style={{ display: 'flex' }}>
           <Link
-            key={index}
-            to={headerlink.link}
+            to={headerProps.logoLink || '/'}
             style={{
               color: 'white',
               textDecoration: 'none',
             }}
           >
-            {headerlink.name}
+            <LogoContainer>
+              <HeaderLogo style={{ height: '24px' }} />
+            </LogoContainer>
           </Link>
-        ))}
-      </NavLinks>
-      <Link
-        to={'/'}
-        style={{
-          color: 'white',
-          textDecoration: 'none',
-        }}
-      >
-        <Github style={{ height: '24px' }} />
-      </Link>
-    </HeaderNav>
-    <div style={{ position: 'relative', marginTop:' 27px' }}>
-      <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
-      <SearchInput type="text" placeholder="Search" />
-    </div>
+          <Title>{headerProps.title}</Title>
+        </div>
+        <NavLinks>
+          {headerProps.links.map((headerlink: any, index: number) => (
+            <Link
+              key={index}
+              to={headerlink.link}
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+              }}
+            >
+              {headerlink.name}
+            </Link>
+          ))}
+        </NavLinks>
+        <Link
+          to={'/'}
+          style={{
+            color: 'white',
+            textDecoration: 'none',
+          }}
+        >
+          <Github style={{ height: '24px' }} />
+        </Link>
+      </HeaderNav>
+      <div style={{ position: 'relative', marginTop: ' 27px' }}>
+        <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
+        <SearchInput type="text" placeholder="Search" />
+      </div>
     </div>
   </HeaderWrapper>
 );

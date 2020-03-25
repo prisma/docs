@@ -4,6 +4,7 @@ export function slug(title: string) {
     .replace('.md', '')
     .replace('@', '')
     .replace('/', '-')
+    .replace('.', '')
     .replace(/\?/g, '')
     .replace(/\&/g, 'and')
     .replace(/"|'|`/g, '')
