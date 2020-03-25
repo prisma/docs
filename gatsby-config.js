@@ -15,7 +15,6 @@ module.exports = {
     'gatsby-transformer-sharp',
     'gatsby-plugin-sharp',
     'gatsby-plugin-typescript',
-    'gatsby-transformer-remark',
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
@@ -39,6 +38,13 @@ module.exports = {
               aliases: {},
             },
           },
+          'gatsby-remark-sectionize'
+          // {
+          //   resolve: `gatsby-transformer-remark`,
+          //   options: {
+          //     plugins: [`gatsby-remark-sectionize`],
+          //   },
+          // },
         ],
       },
     },

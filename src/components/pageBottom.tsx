@@ -23,8 +23,10 @@ const Feedback = styled.div`
     text-transform: uppercase;
     color: #a0aec0 !important;
   }
-  .moods a {
-    margin-right: 0.5rem;
+  .moods {
+    a {
+      margin-right: 0.5rem;
+    }
   }
 `;
 

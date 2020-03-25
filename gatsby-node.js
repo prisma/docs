@@ -25,7 +25,7 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
     createNodeField({
       name: 'title',
       node,
-      value: node.frontmatter.title || parent.name,
+      value: node.frontmatter.title || '',
     });
     createNodeField({
       name: 'staticLink',
