@@ -10,6 +10,7 @@ const BreadcrumbTitle = styled.h4`
 
 const MainTitle = styled.h1`
   font-family: 'Montserrat';
+  font-size: 2rem;
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;

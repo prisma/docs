@@ -27,20 +27,19 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   const Wrapper = styled.div`
     display: flex;
     width: 100%;
-    // padding: 0 12rem;
-    padding: 0 20%;
+    justify-content: center;
     @media only screen and (max-width: 767px) {
       display: block;
     }
   `;
 
   const Content = styled.article`
-    width: 0;
-    flex: 1;
+    max-width: 750px;
+    width: 750px;
     margin: -80px 0 1rem 24px;
-    @media only screen and (max-width: 1023px) {
-      padding-left: 0;
-    }
+    // @media only screen and (max-width: 1023px) {
+    //   padding-left: 0;
+    // }
   `;
 
   const MaxWidth = styled.div`
@@ -49,23 +48,13 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
       position: relative;
     }
   `;
-  // const LeftSideBarWidth = styled.div`
-  //   max-width: 215px;
-  //   width: 20%;
-  //   @media only screen and (max-width: 50rem) {
-  //     width: 100%;
-  //     position: relative;
-  //   }
-  // `;
 
   return (
     <ThemeProvider theme={theme}>
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
         <Wrapper>
-          {/* <LeftSideBarWidth> */}
           <Sidebar />
-          {/* </LeftSideBarWidth> */}
           <Content>
             <MaxWidth>{children}</MaxWidth>
           </Content>
