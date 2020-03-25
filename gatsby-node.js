@@ -25,7 +25,7 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
     createNodeField({
       name: 'title',
       node,
-      value: node.frontmatter.title || '',
+      value: node.frontmatter.title || parent.name,
     });
     createNodeField({
       name: 'staticLink',
@@ -70,7 +70,7 @@ exports.createPages = ({ graphql, actions }) => {
           path: node.fields.slug ? node.fields.slug : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
-            id: node.fields.id
+            id: node.fields.id,
           },
         });
       });
