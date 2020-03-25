@@ -47,6 +47,16 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
       width: 100%;
       position: relative;
     }
+    > section {
+      background: #ffffff;
+      box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
+      border-radius: 5px;
+      margin-top: 1rem;
+      padding: 2rem 40px;
+      &.top-section {
+        padding-top: 40px;
+      }
+    }
   `;
 
   return (

@@ -2,7 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { stringify } from '../../utils/stringify';
 import { slug } from '../../utils/slug';
-// import Anchor from 'icons/Anchor'
+import HashLink from '../../icons/HashLink';
 
 export default function makeHeading(Component: any) {
   return function Heading({ children, ...rest }: any) {
@@ -11,25 +11,21 @@ export default function makeHeading(Component: any) {
     let props = {
       ...rest,
     };
-    if (['h3', 'h4', 'h5'].includes(Component.target)) {
-      props.id = id;
-    }
+
     return (
       <Component {...props} id={`${id}`}>
-        {/* <a href={`#${id}`}> */}
         <A className="title-link" href={`#${id}`}>
-          {/* <StyledAnchor /> */}
+          <StyledAnchor />
           {children}
         </A>
-        {/* </a> */}
       </Component>
     );
   };
 }
 
-const StyledAnchor = styled.span`
-  content: '#';
-  margin-left: 11px;
+const StyledAnchor = styled(HashLink)`
+  margin-left: -24px;
+  margin-right: 5px;
   opacity: 0;
 `;
 

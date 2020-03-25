@@ -8,17 +8,7 @@ import SEO from '../components/seo';
 import { graphql } from 'gatsby';
 import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer';
 
-import styled from 'styled-components';
-
 type ArticleLayoutProps = ArticleQueryData & RouterProps;
-
-const BlockContent = styled.div`
-  background: #ffffff;
-  box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
-  border-radius: 5px;
-  margin-top: 1rem;
-  padding: 40px;
-`;
 
 const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   if (!data) {
@@ -62,12 +52,10 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   return (
     <Layout {...props}>
       <SEO title={metaTitle!} description={metaDescription!} />
-      <BlockContent>
+      <section className="top-section">
         <TopSection location={props.location} title={title} parentTitle={getParentTitle()} />
-      </BlockContent>
-      <BlockContent>
-        <MDXRenderer>{body}</MDXRenderer>
-      </BlockContent>
+      </section>
+      <MDXRenderer>{body}</MDXRenderer>
       <PageBottom />
     </Layout>
   );
