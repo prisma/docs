@@ -1,11 +1,12 @@
-# Prisma Docs v2.0
+# Prisma2 Docs
 [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2/deploys)
+
 ## 🚀 Quickstart
 
 Download the code and get started by running the following commands:
 
 ```
-$ cd prisma-docs-v2.0
+$ cd prisma2-docs
 $ yarn
 $ yarn dev
 ```
