@@ -7,14 +7,14 @@ interface CodeProps {
 
 type CodeBlockProps = CodeProps & React.ReactNode;
 
-const CodeBlock = ({ languages, children, ...props }: CodeBlockProps) => {
+const CodeBlock = ({ languages, children }: CodeBlockProps) => {
   const [activeIndex, setActiveIndex] = React.useState(0);
   const child: any = React.Children.toArray(children)[activeIndex];
   const code = child && child.props && child.props.children;
 
   return (
     <Wrapper>
-      {languages && Array.isArray(languages) && (
+      {/* {languages && Array.isArray(languages) && (
         <Tabs>
           {languages.map((lang, index) => {
             const setCurrentActive = () => setActiveIndex(index);
@@ -30,7 +30,7 @@ const CodeBlock = ({ languages, children, ...props }: CodeBlockProps) => {
             );
           })}
         </Tabs>
-      )}
+      )} */}
       {code}
     </Wrapper>
   );
