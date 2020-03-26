@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Typescript } from '../icons/technologies/Typescript';
-import SelectComponent from './Select';
+import SelectComponent from './select';
 import PostgreSQL from '../icons/technologies/PostgreSQL';
 import MySQL from '../icons/technologies/MySQL';
 import MongoDB from '../icons/technologies/MongoDB';
