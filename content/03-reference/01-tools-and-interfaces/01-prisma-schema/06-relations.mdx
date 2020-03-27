@@ -35,16 +35,16 @@ model Post {
   id         Int         @id @default(autoincrement())
   author     User        @relation(fields: [authorId], references: [id]) // physical relation field
   authorId   Int         // link field
-  categories Category[]  // virtual relation field
+  categories Category[]   @relation(references: [id])  // virtual relation field
 }
 
 model Category {
   id     Int     @id @default(autoincrement())
-  posts  Post[]  // virtual relation field
+  posts  Post[]  @relation(references: [id]) // virtual relation field
 }
 ```
 
-> **Note**. This schema is the same as the [example data model]() but has all [scalar fields]() removed (except for the required [link fields]()) so you can focus on the relation fields.
+> **Note**: This schema is the same as the [example data model]() but has all [scalar fields]() removed (except for the required [link fields]()) so you can focus on the relation fields.
 
 ## Terminology
 
@@ -136,15 +136,17 @@ Implicit many-to-many relations define relation fields as lists on both sides of
 
 ```prisma
 model Post {
-  id         Int        @id @default(autoincrement())
-  categories Category[]
+  id         Int         @id @default(autoincrement())
+  categories Category[]  @relation(references: [id])
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
-  posts Post[]
+  id    Int     @id @default(autoincrement())
+  posts Post[]  @relation(references: [id])
 }
 ```
+
+Note that both relation fields in a many-to-many relation must be annotated with the `@relation` attribute and _reference_ the fields of the other model they're mapping to. 
 
 Note that this m-n-relation is still manifested in a relation table in the underlying database. However, this relation table is managed by Prisma which makes the [Prisma Client API]() for many-to-many relations a bit simpler (since you e.g. have one fewer level of nesting inside of [nested writes]()).
 
@@ -154,33 +156,42 @@ If you're not using Prisma Migrate but obtain your data model from [introspectio
 
 A relation table (also sometimes called _JOIN_, _link_ or _pivot_ table) connects two or more other tables and therefore creates a _relation_ between them. Creating relation tables is a common data modeling practice in SQL to represent relationships between different entities.
 
-When using Prisma, you can create relation tables by defining [models]() similar to how you would model them as tables. The main difference is that the fields of the relation table are both relation fields that are backed by foreign keys (neither of them is virtual).
+When using Prisma, you can create relation tables by defining [models]() similar to how you would model them as tables. The main difference is that the fields of the relation table are both relation fields are both [physical relation fields]() that each _reference_ a link field.
 
-Another use case for relation tables is to add "meta-information" to a relation. For example, _when_ the relation was created.
+Relation tables are also often used to add "meta-information" to a relation. For example, _when_ the relation was created.
 
 Here is an example for a relation table called `CategoriesOnPosts`:
 
 ```prisma
 model Post {
   id         Int        @id @default(autoincrement())
+  title      String
   categories Category[]
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
+  name  String
   posts Post[]
 }
 
 model CategoriesOnPosts {
-  post      Post
-  category  Category
-  createdAt DateTime @default(now())
+  post        Post     @relation(fields: [postId], references: [id])
+  postId      Int
+  category    Category @relation(fields: [catgoryId], references: [id])
+  catgoryId   Int
+  createdAt   DateTime @default(now())
 
-  @@id([post, category])
+  @@id([postId, categoryId])
 }
 ```
 
 In this example, the `createdAt` field stores additional information about the relation between `Post` and `Category` (i.e. it stores the point in time when "the post was added to the catgegory").
+
+Note that the same rules as for [1-n-relations]() apply (because `Post`↔ `CategoriesOnPosts` and `Category` ↔ `CategoriesOnPosts` are both in fact 1-n-relations):
+
+- The relation field on one side must be [virtual]() (here these are `posts` and `categories`)
+- The relation field on the other side must be [physical]() and _reference_ a [link field]()
 
 When you don't need to attach additional information to the relation, you can model m-n-relations as [implicit many-to-many relations](#implicit-many-to-many-relations). If you're not using Prisma Migrate but get your data model from introspection, you can s
 
@@ -534,25 +545,44 @@ In the example above, there's one _implicit_ m-n-relation betwen `Post` and `Cat
 ```prisma
 model Post {
   id         Int        @id @default(autoincrement())
-  categories Category[]
+  categories Category[] @relation(references: [id]) 
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
-  posts Post[]
+  posts Post[] @relation(references: [id]) 
 }
 ```
 
-Notice that the `posts` field on `Category` and the `categories` field on `Post` both are [virtual](), meaning that they're not manifested in the underlying database schema.
+Notice that the `posts` field on `Category` and the `categories` field on `Post` both are [virtual](), meaning that they're not manifested in the underlying database schema. Instead, the implicit many-to-many relation is maintained by Prisma with a [relation table]() that's not reflected in the Prisma schema.
 
-Instead, the implicit many-to-many relation is maintained by Prisma with a [relation table]() that's not reflected in the Prisma schema.
+Both fields require the `@relation` attribute to specify the fields they _reference_ on the other model.
+
+As another example, assume `Category` had a [multi-field ID]():
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  categories Category[]  @relation(references: [name, position])
+}
+
+model Category {
+  name      String
+  position  Int
+  posts     Post[]  @relation(references: [id])
+
+  @@id([name, position])
+}
+```
 
 This m-n-relation expresses the following:
 
 - "a post can have zero or more categories"
 - "a category can have zero or more posts"
 
-In SQL, this implicit m-n-relation maps to the following tables (following Prisma's [conventions for relation tables]()):
+The `@relation` attribute on the `Post` model now references the multi-field ID composed of `name` and `position`.
+
+In SQL, the first of the two implicit m-n-relations maps to the following tables (following Prisma's [conventions for relation tables]()):
 
 ```sql
 CREATE TABLE "Category" (
@@ -575,22 +605,26 @@ CREATE INDEX "_CategoryToPost_B_index" ON "_CategoryToPost"("B" int4_ops);
 An _explicit_ variant of a similar m-n-relation would define an extra model to represent a relation table. In this case, you can also attach additional information to the relation (such as the point in time when it was created):
 
 ```prisma
-model Category {
-  id             Int              @default(autoincrement()) @id
-  categoryToPost CategoryToPost[]
-}
-
 model Post {
-  id             Int              @default(autoincrement()) @id
-  categoryToPost CategoryToPost[]
+  id         Int        @id @default(autoincrement())
+  title      String
+  categories Category[]
 }
 
-model CategoryToPost {
-  category  Category
-  post      Post
-  createdAt DateTime @default(now())
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  posts Post[]
+}
 
-  @@unique([category, post], name: "CategoryToPost_category_post_unique")
+model CategoriesOnPosts {
+  post        Post     @relation(fields: [postId], references: [id])
+  postId      Int
+  category    Category @relation(fields: [catgoryId], references: [id])
+  catgoryId   Int
+  createdAt   DateTime @default(now())
+
+  @@id([postId, categoryId])
 }
 ```
 
@@ -605,11 +639,11 @@ CREATE TABLE "Post" (
 );
 -- Relation table + indexes -------------------------------------------------------
 CREATE TABLE "CategoryToPost" (
-    "category" integer NOT NULL,
-    "post" integer NOT NULL,
+    "categoryId" integer NOT NULL,
+    "postId" integer NOT NULL,
     "createdAt" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY ("category")  REFERENCES "Category"(id),
-    FOREIGN KEY ("post") REFERENCES "Post"(id)
+    FOREIGN KEY ("categoryId")  REFERENCES "Category"(id),
+    FOREIGN KEY ("postId") REFERENCES "Post"(id)
 );
 CREATE UNIQUE INDEX "CategoryToPost_category_post_unique" ON "CategoryToPost"("category" int4_ops,"post" int4_ops);
 ```
@@ -671,12 +705,12 @@ When using Prisma Migrate, you can configure the name of the relation table that
 ```prisma
 model Post {
   id         Int         @id @default(autoincrement())
-  categories Category[]  @relation("MyRelationTable")
+  categories Category[]  @relation("MyRelationTable", references: [id])
 }
 
 model Category {
   id    Int     @id @default(autoincrement())
-  posts Post[]  @relation("MyRelationTable")
+  posts Post[]  @relation("MyRelationTable", references: [id])
 }
 ```
 
