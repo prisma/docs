@@ -35,8 +35,8 @@ const SwitcherWrapper = styled.div`
 `;
 
 const TopSection = ({ location, title, parentTitle, indexPage, langSwitcher, dbSwitcher }: any) => {
-  const [langSelected, setLangSelected] = React.useState('node');
-  const [dbSelected, setDbSelected] = React.useState('mysql');
+  const [langSelected, setLangSelected] = React.useState('typescript');
+  const [dbSelected, setDbSelected] = React.useState('postgres');
 
   const techChanged = (item: any, type: string) => {
     const elements = document.querySelectorAll('[id^="techswitch"]');
