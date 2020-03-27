@@ -726,12 +726,13 @@ A one-to-one self-relation looks as follows:
 
 ```prisma
 model User {
-  id          Int      @id @default(autoincrement())
-  name        String?
-  husband     User?    @relation("MarriagePartners")
-  wife        User     @relation("MarriagePartners")
+  id       Int      @id @default(autoincrement())
+  name     String?
+  husband  User      @relation("MarriagePartners", fields: [id], references: [id])
+  wife     User?     @relation("MarriagePartners")
 }
 ```
+
 
 This relation expresses the following:
 
@@ -740,18 +741,37 @@ This relation expresses the following:
 
 Note that one-to-one self-relations can not be made required on both sides, one field has to be optional.
 
-In this case, the `wife` relation field is [virtual](). The `husband` field on the other hand is backed by a foreign key in the underlying database. This is implicitly determined by Prisma based on alphabetical order (`husband` comes before `wife` in the alphabet). You can adjust this by [setting the foreign key]() using the `@relation` attribute:
+In this case, the `wife` relation field is [virtual](). The `husband` field on the other hand is a [physical relation field](), this means it is backed by a foreign key in the underlying database. Here, `id` is the [link field]() that's referenced by `husband`.
+
+You can also switch the virtual and physical relation fields:
+
+```prisma
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String?
+  husband  User      @relation("MarriagePartners", fields: [id], references: [id])
+  wife     User?     @relation("MarriagePartners")
+}
+```
 
 ```prisma
 model User {
   id       Int      @id @default(autoincrement())
   name     String?
   husband  User?    @relation("MarriagePartners")
-  wife     User     @relation("MarriagePartners", references: [id])
+  wife     User     @relation("MarriagePartners", fields: [id], references: [id])
 }
 ```
 
-Now the foreign key is stored on `wide` and `husband` is virtual.
+Now the foreign key is stored on `wife` and `husband` is virtual.
+
+This relation is represented as follows in SQL:
+
+```sql
+CREATE TABLE "User" (
+    id SERIAL PRIMARY KEY REFERENCES "User"(id),
+);
+```
 
 ### One-to-many self relations
 
@@ -761,7 +781,7 @@ A one-to-many self-relation looks as follows:
 model User {
   id       Int      @id @default(autoincrement())
   name     String?
-  teacher  User?    @relation("TeacherStudents")
+  teacher  User     @relation("TeacherStudents", fields: [id], references: [id])
   students User[]   @relation("TeacherStudents")
 }
 ```
@@ -773,6 +793,14 @@ This relation expresses the following:
 
 Note that you can also require each user to have a teacher by making the `teacher` field [required]().
 
+This relation is represented as follows in SQL:
+
+```sql
+CREATE TABLE "User" (
+    id SERIAL PRIMARY KEY REFERENCES "User"(id),
+);
+```
+
 ### Many-to-many self relations
 
 A many-to-many self-relation looks as follows:
@@ -781,8 +809,8 @@ A many-to-many self-relation looks as follows:
 model User {
   id          Int      @id @default(autoincrement())
   name        String?
-  followedBy  User[]   @relation("UserFollows")
-  following   User[]   @relation("UserFollows")
+  followedBy  User[]   @relation("UserFollows", references: [id])
+  following   User[]   @relation("UserFollows", references: [id])
 }
 ```
 
@@ -790,6 +818,19 @@ This relation expresses the following:
 
 - "a user can be followed by zero or more users"
 - "a user can follow zero or more users"
+
+Note that this n-n-relation is [implicit](). This means Prisma maintains a [relation table]() for it in the underlying database:
+
+```sql
+CREATE TABLE "User" (
+    id integer DEFAULT nextval('"User_id_seq"'::regclass) PRIMARY KEY,
+    name text
+);
+CREATE TABLE "_UserFollows" (
+    "A" integer NOT NULL REFERENCES "User"(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    "B" integer NOT NULL REFERENCES "User"(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+```
 
 ### Defining multiple self-relations on the same model
 
@@ -810,7 +851,7 @@ model User {
 
 ## Disambiguating relations
 
-When you define two relations between two the same models, you need to add the `@relation` attribute to disambiguate them. As an example for why that's needed, consider the following models:
+When you define two relations between two the same models, you need to add the `name` argument in the `@relation` attribute to disambiguate them. As an example for why that's needed, consider the following models:
 
 ```prisma
 model User {
@@ -821,21 +862,23 @@ model User {
 }
 
 model Post {
-  id       Int     @id @default(autoincrement())
-  title    String?
-  author   User
-  pinnedBy User?
+  id          Int     @id @default(autoincrement())
+  title       String?
+  author      User    @relation(fields: [authorId], references: [id])
+  authorId    Int 
+  pinnedBy    User?   @relation(fields: [pinnedById], references: [id])
+  pinnedById  Int?   
 }
 ```
 
 In that case, the relations are ambiguous, there are four different ways to interpet them:
 
-- `User.writtenPosts` ↔ `Post.author`
-- `User.writtenPosts` ↔ `Post.pinnedBy`
-- `User.pinnedPost` ↔ `Post.author`
-- `User.pinnedPost` ↔ `Post.pinnedBy`
+- `User.writtenPosts` ↔ `Post.author` + `Post.authorId`
+- `User.writtenPosts` ↔ `Post.pinnedBy` + `Post.pinnedById`
+- `User.pinnedPost` ↔ `Post.author` + `Post.authorId`
+- `User.pinnedPost` ↔ `Post.pinnedBy` + `Post.pinnedById`
 
-To disambiguate these relations, you need to annotate the relation fields with the `@relation` attribute and provide the `name` argument. You can set any `name` (except for the empty string `""`), but it must match on both sides of the relation:
+To disambiguate these relations, you need to annotate the relation fields with the `@relation` attribute and provide the `name` argument. You can set any `name` (except for the empty string `""`), but it must be the same on both sides of the relation:
 
 ```prisma
 model User {
@@ -846,9 +889,11 @@ model User {
 }
 
 model Post {
-  id       Int     @id @default(autoincrement())
-  title    String?
-  author   User    @relation("WrittenPosts")
-  pinnedBy User?   @relation("PinnedPost")
+  id          Int     @id @default(autoincrement())
+  title       String?
+  author      User    @relation("WrittenPosts", fields: [authorId], references: [id])
+  authorId    Int 
+  pinnedBy    User?   @relation(name: "PinnedPost", fields: [pinnedById], references: [id])
+  pinnedById  Int?    
 }
 ```
