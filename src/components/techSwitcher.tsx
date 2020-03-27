@@ -5,8 +5,6 @@ import SelectComponent from './select';
 import PostgreSQL from '../icons/technologies/PostgreSQL';
 import MySQL from '../icons/technologies/MySQL';
 import MongoDB from '../icons/technologies/MongoDB';
-import Go from '../icons/technologies/Go';
-import Flow from '../icons/technologies/Flow';
 import JS from '../icons/technologies/JS';
 
 interface TechSwitchProps {
@@ -23,29 +21,25 @@ const icons = {
   typescript: <Typescript />,
   mysql: <MySQL />,
   postgres: <PostgreSQL />,
-  mongodb: <MongoDB />,
-  go: <Go />,
-  flow: <Flow />,
+  mongodb: <MongoDB />
 };
 
 const technologyTypes = {
-  languages: ['node', 'typescript', 'flow', 'go'],
+  languages: ['node', 'typescript'],
   databases: ['mysql', 'postgres', 'mongodb'],
 };
 
 export const technologyNames = {
   node: 'JavaScript',
   typescript: 'TypeScript',
-  flow: 'Flow',
   mysql: 'MySQL',
   postgres: 'PostgreSQL',
   mongodb: 'MongoDB',
-  go: 'Go',
 };
 
 const TechnologySwitch = ({ type, onChangeTech }: TechSwitchProps) => {
-  const langDefault = { technology: 'node' };
-  const dbDefault = { technology: 'mysql' };
+  const langDefault = { technology: 'typescript' };
+  const dbDefault = { technology: 'postgres' };
   const defaultItem = type === 'lang' ? langDefault : dbDefault;
 
   const [selectedItem, setSelectedItem] = React.useState(defaultItem);
