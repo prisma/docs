@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import CopyButton from './copy';
 import Copy from '../../icons/Copy';
 import { stringify } from '../../utils/stringify';
+import Prism from 'prismjs';
 
 type PreBlockProps = React.ReactNode;
 
@@ -11,7 +12,7 @@ const getSettings = (className: any) => {
   if (className) {
     const split = className.split('-');
     if (split.length > 1) {
-      copy = split[1].substr(split.length - 6) === 'copy';
+      copy = split[1].includes('copy');
     }
   }
   return copy;
@@ -20,9 +21,22 @@ const getSettings = (className: any) => {
 const Pre = ({ languages, children, ...props }: PreBlockProps) => {
   const copy = getSettings(props.className);
   const code = stringify(children);
+  const preRef = React.useRef(null);
 
+  React.useEffect(() => {
+    const parentNode = preRef.current.parentElement;
+    const dataLangAttribute = parentNode.getAttribute('data-language');
+    if (dataLangAttribute && dataLangAttribute.includes('copy')) {
+      parentNode.setAttribute('data-language', dataLangAttribute.replace('copy', ''));
+      Prism.highlightAll();
+    }
+  });
+
+  const modifiedClassName = getSettings(props.className)
+    ? props.className.replace('copy', '')
+    : props.className;
   return (
-    <PreWrapper {...props}>
+    <PreWrapper {...props} className={modifiedClassName} ref={preRef}>
       {children}
       {copy && (
         <AbsoluteCopyButton>
