@@ -16,6 +16,8 @@ export interface ArticleData {
       title: string;
       metaTitle?: string;
       metaDescription?: string;
+      langSwitcher?: boolean;
+      dbSwitcher?: boolean;
     };
   };
   allMdx: AllEdges;

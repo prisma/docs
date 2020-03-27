@@ -5,17 +5,6 @@ import Layout from '../components/layout';
 import TopSection from '../components/topSection';
 import SEO from '../components/seo';
 
-// const Container = styled.span`
-//   font-family: 'Rubik', sans-serif;
-//   font-size: 3rem;
-//   font-weight: 500;
-//   color: #2f3747;
-//   font-weight: bold;
-//   display: flex;
-//   padding: 40px;
-//   justify-content: center;
-// `;
-
 const BlockContent = styled.div`
   background: #ffffff;
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);

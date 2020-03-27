@@ -9,9 +9,9 @@ const getRemainingChildren = (children: any) =>
   children.filter((child: any) => !(child.props && child.props.originalType === 'summary'));
 
 const CollapseBox = ({ children, ...props }: CollapseProps) => {
-  const titleChild = children && children.find(
-    (child: any) => child.props && child.props.originalType === 'summary'
-  );
+  const titleChild =
+    children &&
+    children.find((child: any) => child.props && child.props.originalType === 'summary');
   const title = titleChild && titleChild.props.children;
   return (
     <Wrapper {...props}>
