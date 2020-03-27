@@ -1,6 +1,8 @@
 import React from 'react';
-import CodeBlock from './code';
+import CodeBlock from './codeBlock';
+import Code from './code';
 import Pre from './pre';
+import CollapseBox from './collapsible';
 import makeHeading from './headings';
 
 export default {
@@ -36,6 +38,8 @@ export default {
   ul: (props: any) => <ul className="list" {...props} />,
   CodeBlock,
   pre: Pre,
+  code: Code,
+  details: CollapseBox
   // a: AnchorTag,
   // TODO add `img`
   // TODO add `blockquote`
