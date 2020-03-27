@@ -4,7 +4,7 @@ import { Typescript } from '../icons/technologies/Typescript';
 import SelectComponent from './select';
 import PostgreSQL from '../icons/technologies/PostgreSQL';
 import MySQL from '../icons/technologies/MySQL';
-import MongoDB from '../icons/technologies/MongoDB';
+import MongoDB from '../icons/technologies/MongoDB'; // change icon as soon as we have it
 import JS from '../icons/technologies/JS';
 
 interface TechSwitchProps {
@@ -21,12 +21,12 @@ const icons = {
   typescript: <Typescript />,
   mysql: <MySQL />,
   postgres: <PostgreSQL />,
-  mongodb: <MongoDB />,
+  sqlite: <MongoDB />, // change icon as soon as we have it
 };
 
 const technologyTypes = {
   languages: ['node', 'typescript'],
-  databases: ['mysql', 'postgres', 'mongodb'],
+  databases: ['mysql', 'postgres', 'sqlite'],
 };
 
 export const technologyNames = {
@@ -34,7 +34,7 @@ export const technologyNames = {
   typescript: 'TypeScript',
   mysql: 'MySQL',
   postgres: 'PostgreSQL',
-  mongodb: 'MongoDB',
+  sqlite: 'SQLite',
 };
 
 const TechnologySwitch = ({ type, onChangeTech }: TechSwitchProps) => {
