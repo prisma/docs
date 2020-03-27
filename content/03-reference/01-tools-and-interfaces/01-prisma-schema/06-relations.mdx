@@ -8,48 +8,43 @@ metaDescription: ''
 
 This is an extension of the [Data model]() page which describes how to handle relations between Prisma models in the Prisma schema.
 
-Relations between models are represented via _foreign keys_ in the underlying database. However, as opposed to how relations are modeled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**. 
+Relations between models are _physically_ represented via _foreign keys_ in the underlying database. However, as opposed to how relations are modeled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**.
 
-This means that one of these relation fields represents the foreign key in the underlying database, the other relation field is a [virtual relation field]() (in the case of [implicit many-to-many relations]()), both relation fields are virtual. 
+This means that one of these relation fields represents the physical foreign key in the underlying database, the other relation field is a [virtual relation field]() (in the case of [implicit many-to-many relations]()), both relation fields are virtual.
+
+The physical relation field must always be accompanied by a [link field]() on the same model.
 
 ## Example
 
 The examples on this page are based on the following schema file:
 
 ```prisma
-datasource postgresql {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id        Int      @id @default(autoincrement())
-  posts     Post[]
-  profile   Profile?
+  id      Int      @id @default(autoincrement())
+  posts   Post[]   // virtual relation field
+  profile Profile? // virtual relation field
 }
 
 model Profile {
-  id   Int    @id @default(autoincrement())
-  user User
+  id      Int     @id @default(autoincrement())
+  user    User    @relation(fields: [userId], references: [id]) // physical relation field
+  userId  Int     // link field
 }
 
 model Post {
-  id         Int        @id @default(autoincrement())
-  author     User
-  categories Category[]
+  id         Int         @id @default(autoincrement())
+  author     User        @relation(fields: [authorId], references: [id]) // physical relation field
+  authorId   Int         // link field
+  categories Category[]  // virtual relation field
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
-  posts Post[]
+  id     Int     @id @default(autoincrement())
+  posts  Post[]  // virtual relation field
 }
 ```
 
-> **Note**. This schema is the same as the [example data model]() but has all [scalar fields]() removed so you can focus on the relation fields.
+> **Note**. This schema is the same as the [example data model]() but has all [scalar fields]() removed (except for the required [link fields]()) so you can focus on the relation fields.
 
 ## Terminology
 
@@ -69,7 +64,11 @@ In the example above, there are the following relations:
 
 ### Relation fields
 
-Relation fields are fields on a Prisma [model]() that do _not_ have a [scalar type](). Instead, their type is another model. Consider these two models:
+Relation fields are fields on a Prisma [model]() that do _not_ have a [scalar type](). Instead, their type is another model.
+
+A relation field is always either [physically]() backed by a foreign key in the underlying database or it is [virtual]() (which means that it's not "visible" in the schema of the underlying database).
+
+Consider these two models:
 
 ```prisma
 model User {
@@ -80,27 +79,29 @@ model User {
 }
 
 model Post {
-  id         Int        @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   title      String
-  author     User
+  author     User    @relation(fields: [authorId], references: [id])
+  authorId   Int
 }
 ```
 
 These models have the following fields:
 
-| Model  | Field    | Type     | Relation field        |
-| :----- | :------- | :------- | :-------------------- |
-| `User` | `id`     | `Int`    | No                    |
-|        | `email`  | `String` | No                    |
-|        | `role`   | `Role`   | No                    |
-|        | `posts`  | `Post[]` | **Yes** (virtual)     |
-| `Post` | `id`     | `Int`    | No                    |
-|        | `title`  | `String` | No                    |
-|        | `author` | `User`   | **Yes** (foreign key) |
+| Model  | Field      | Type     | Relation field                     |
+| :----- | :--------- | :------- | :--------------------------------- |
+| `User` | `id`       | `Int`    | No                                 |
+|        | `email`    | `String` | No                                 |
+|        | `role`     | `Role`   | No                                 |
+|        | `posts`    | `Post[]` | **Yes** (_virtual_)                |
+| `Post` | `id`       | `Int`    | No                                 |
+|        | `title`    | `String` | No                                 |
+|        | `authorId` | `Int`    | No (_link field_)                  |
+|        | `author`   | `User`   | **Yes** (_physical / foreign key_) |
 
 Both `posts` and `author` are relation fields because their types are not scalar types but other models.
 
-Note that a relation field is always either backed by a foreign key in the underlying database or it is [virtual]() (which means that it's not "visible" in the schema of the underlying database).
+Also note that the physical relation field `author` needs to reference the link field `authorId` on the `Post` model inside the `@relation` attribute.
 
 ### Implicit vs explicit many-to-many relations
 
@@ -183,9 +184,36 @@ In this example, the `createdAt` field stores additional information about the r
 
 When you don't need to attach additional information to the relation, you can model m-n-relations as [implicit many-to-many relations](#implicit-many-to-many-relations). If you're not using Prisma Migrate but get your data model from introspection, you can s
 
-### Foreign key relation field
+### Physical relation fields (foreign key)
 
-Foreign key relation fields are relation fields that are backed by a foreign key in the underlying database. **They always require the `@relation attribute**.
+Physical relation relation fields are relation fields that are _physically_ backed by a foreign key in the underlying database. **They always require the `@relation attribute which must point to a link field**.
+
+### Link fields
+
+A link field always has a scalar type and is the direct representation of a foreign key in the underlying database. It must be _referenced_ inside the `@relation` attribute of its physical relation field:
+
+```prisma
+model User {
+  id      Int      @id @default(autoincrement())
+  posts   Post[]   // virtual relation field
+  profile Profile? // virtual relation field
+}
+
+model Profile {
+  id      Int     @id @default(autoincrement())
+  user    User    @relation(fields: [userId], references: [id]) // physical relation field
+  userId  Int     // link field (that gets referenced in the `@relation` attribute above)
+}
+
+model Post {
+  id         Int         @id @default(autoincrement())
+  author     User        @relation(fields: [authorId], references: [id]) // physical relation field
+  authorId   Int         // link field (that gets referenced in the `@relation` attribute above)
+  categories Category[]  // virtual relation field
+}
+```
+
+Note that if the physical relation field is [required](), its link field counterpart also must be required. If the physical relation field is [optional](), the link field also must be optional. 
 
 ### Virtual relation fields
 
@@ -193,9 +221,11 @@ Virtual relation fields are relation fields in the Prisma schema that are not "m
 
 There are two different kinds of virtual relation fields.
 
-For **1-1 and 1-n relations**, pne side of the relation represents a foreign key, the other side is a virtual relation field:
+For **1-1 and 1-n relations**, one side of the relation represents a foreign key, the other side is a virtual relation field:
 
-![](https://imgur.com/kOO4eh2.png)
+<!-- ![](https://imgur.com/kOO4eh2.png) -->
+
+![](https://imgur.com/nycymr8.png)
 
 For **implicit m-n-relations**, both relation fields are virtual since neither of them _directly_ maps to a foreign key:
 
@@ -215,29 +245,34 @@ const user = await prisma.user.findOne({ where: { id: 1 } }).posts();
 
 ## The @relation attribute
 
-The `@relation` attribute can only be applied to the [relation fields]() of a Prisma model, not to its [scalar fields](). In most cases the `@relation` attribute is optional, but it can be required, e.g. when:
+The `@relation` attribute can only be applied to the [relation fields]() of a Prisma model, not to its [scalar fields](). 
+
+It is _always_ required on [physical relation fields]() and _sometimes_ required on [virtual relation fields]().
+
+Here are some cases when the `@relation` attribute is required, e.g. when:
 
 - you need to disambiguate a relation (that's e.g. the case when you have two relations between the same models)
 - you define a [self-relation](#self-relations)
-- you need to determine on which side of the relation a foreign key should be used
+  <!-- - you need to determine on which side of the relation a foreign key should be used -->
 - you need to control how the relation table is represented in the underlying database (e.g. use a specific name for a relation table)
 
 ### Signature
 
 ```
-@relation(_ name: String?, references: FieldReference[]?)
+@relation(_ name: String?, fields: FieldReference[]?, references: FieldReference[]?)
 ```
 
 > **Note**: The leading underscore in the signature means that the argument name can be omitted.
 
-| Argument     | Type               | Required | Description                                                                                                             | Example                             |
-| :----------- | :----------------- | :------- | :---------------------------------------------------------------------------------------------------------------------- | :---------------------------------- |
-| `name`       | `String`           | No       | Defines the name of the relationship. In an m-n-relation, it also determines the name of the underlying relation table. | `"CategoryOnPost"`, `"MyRelation"`  |
-| `references` | `FieldReference[]` | No       | A list of [fields]()                                                                                                    | `["id"]`, `["firstName, lastName"]` |
+| Argument     | Type               | Required                                    | Description                                                                                                             | Example                                               |
+| :----------- | :----------------- | :------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------- |
+| `name`       | `String`           | Sometimes (e.g. to disambiguate a relation) | Defines the name of the relationship. In an m-n-relation, it also determines the name of the underlying relation table. | `"CategoryOnPost"`, `"MyRelation"`                    |
+| `fields`     | `FieldReference[]` | On physical relation fields                 | A list of [fields]() of the _current_ model                                                                             | `["authorId"]`, `["authorFirstName, authorLastName"]` |
+| `references` | `FieldReference[]` | On physical relation fields                 | A list of [fields]() of the model on _the other side of the relation_                                                   | `["id"]`, `["firstName, lastName"]`                   |
 
-### Cases when the @relation attribute is required
+<!-- ### Cases when the @relation attribute is required
 
-TBD
+TBD -->
 
 ## One-to-one relations
 
@@ -254,8 +289,9 @@ model User {
 }
 
 model Profile {
-  id   Int    @id @default(autoincrement())
-  user User
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
 }
 ```
 
@@ -272,12 +308,14 @@ CREATE TABLE "User" (
 );
 CREATE TABLE "Profile" (
     id SERIAL PRIMARY KEY,
-    "user" integer NOT NULL UNIQUE,
+    "userId" INTEGER NOT NULL UNIQUE,
     FOREIGN KEY ("user") REFERENCES "User"(id)
 );
 ```
 
-Notice the `UNIQUE` constraint on the foreign key `user`. If this `UNIQUE` constrain was missing, the relation would be considered a 1-n relation.
+Notice the `UNIQUE` constraint on the foreign key `userId`. If this `UNIQUE` constrain was missing, the relation would be considered a 1-n relation.
+
+The link field `userId` on `Profile` model in the Prisma schema above maps to the `userId` column in the database.
 
 ### Making both sides required in one-to-one relations
 
@@ -291,9 +329,9 @@ model User {
 }
 
 model Profile {
-  id   Int    @id @default(autoincrement())
-  bio  String
-  user User
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
 }
 ```
 
@@ -342,64 +380,34 @@ Consider again the above 1-1-relation between `User` and `Profile` where `profil
 
 ```prisma
 model User {
-  id        Int       @id @default(autoincrement())
-  profile   Profile?
+  id        Int      @id @default(autoincrement())
+  name      String
+  profile   Profile
 }
 
 model Profile {
-  id   Int    @id @default(autoincrement())
-  user User
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
 }
 ```
 
-When using [Prisma Migrate](), this will create the foreign key on the `user` column of the `Profile` table in the underlying database. This is the only possible option because the `profile` relation field on `User` is actually [virtual](), so it can't be used as a foreign key.
+Because the `Profile` model has a [physical relation field]() (called `user`) and a [link field]() (called `userId`), it represents the foreign key in the underlying database. The `profile` relation field on `User` is [virtual]().
 
 This is what the relation looks like in the database:
 
 ![](https://imgur.com/N5wHT6D.png)
 
-If both of the relation fields in the relation would be either required or optional, Prisma Migrate assigns the foreign key to the table that comes first in the alphabet.
 
-**Both relation fields required**
-
-```prisma
-model User {
-  id        Int      @id @default(autoincrement())
-  profile   Profile
-}
-
-model Profile {
-  id   Int    @id @default(autoincrement())
-  user User
-}
-```
-
-**Both relation fields optional**
-
-```prisma
-model User {
-  id        Int       @id @default(autoincrement())
-  profile   Profile?
-}
-
-model Profile {
-  id   Int    @id @default(autoincrement())
-  user User?
-}
-```
-
-In both cases, the foreign key is being added to the `Profile` table because its name comes in the alphabet before `User`:
-
-![](https://imgur.com/N5wHT6D.png)
-
-However, in these cases you can still determine yourself on which side of the relation the foreign key should be stored by using the `@relation` attribute. To store the foreign key on `User` you need to add the `@relation` attribute to its relation field as follows:
+However, you can still determine yourself on which side of the relation the foreign key should be stored. To store the foreign key on `User` you need to add the `@relation` attribute to its relation field and add a corresponding link field:
 
 **Both relation fields required but using `@relation` to determine the foreign key**
 
 ```prisma
 model User {
-  id        Int      @id @default(autoincrement())
-  profile   Profile  @relation(references: [id]) // references `id` of `Profile`
+  id         Int      @id @default(autoincrement())
+  profile    Profile  @relation(fields: [profileId], references: [id]) // references `id` of `Profile`
+  profileId  Int
 }
 
 model Profile {
@@ -413,7 +421,7 @@ model Profile {
 ```prisma
 model User {
   id        Int       @id @default(autoincrement())
-  profile   Profile?  @relation(references: [id]) // references `id` of `Profile`
+  profile   Profile?  @relation(fields: [profileId], references: [id]) // references `id` of `Profile`
 }
 
 model Profile {
@@ -425,21 +433,6 @@ model Profile {
 In both cases, the foreign key is now defined on the `profile` column of the `User` table:
 
 ![](https://imgur.com/NAd72ql.png)
-
-To summarize, these are the rules for determining which side of a 1-1-relation holds the foreign key:
-
-- If **one relation field is optional and the other one is required**, the required one holds the foreign key (as the other is [virtual]()).
-- If **both relation fields are optional**, the one that comes first in the alphabet holds the foreign key. Note that this can be configured differently via the `@relation` attribute.
-- If **both relation fields are required**, the one that comes first in the alphabet holds the foreign key. Note that this can be configured differently via the `@relation` attribute.
-
-Here's the summary in the form of a table assuming the two relation fields of the models from before `Profile.user` and `User.profile`:
-
-| `Profile.user` | `User.profile` | Foreign key on                                              | `@relation` attribute                             |
-| :------------- | :------------- | ----------------------------------------------------------- | ------------------------------------------------- |
-| Required       | Optional       | `Profile` (because the relation field on `User` is virtual) | Can't be used to determine the foreign key        |
-| Optional       | Required       | `User` (because the relation field on `Profile` is virtual) | Can't be used to determine the foreign key        |
-| Optional       | Optional       | `Profile` (because it's first in the alphabet)              | Can be used to manually determine the foreign key |
-| Required       | Required       | `Profile` (because it's first in the alphabet)              | Can be used to manually determine the foreign key |
 
 ## One-to-many
 
@@ -489,11 +482,11 @@ Since there's no `UNIQUE` constraint on the `author` column (foreign key), you c
 
 ### Required vs optional relation fields in one-to-many relations
 
-A 1-n-relation always has one [virtual relation field]() (which must be a [list]()) and a [foreign key relation field](). In the example above, `posts Post[]` on the `User` model is virtual, `author User` holds a foreign key.
+A 1-n-relation always has one [virtual relation field]() (which must be a [list]()) and a [physical relation field](). In the example above, `posts Post[]` on the `User` model is virtual, `author User` holds a foreign key.
 
 The relation fields in a relation can take the following forms:
 
-- the foreign key relation field can be either optional or required
+- the physical relation field can be either optional or required
 - the virtual relation field must be a list and is always required
 
 So, the following variant of the example above would be _allowed_:
