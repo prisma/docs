@@ -1,7 +1,10 @@
 import React from 'react';
-import CodeBlock from './code';
 import SwitchTech from './switchTech';
+import CodeBlock from './codeBlock';
+import Code from './code';
 import Pre from './pre';
+import CollapseBox from './collapsible';
+import Table from './table';
 import makeHeading from './headings';
 
 export default {
@@ -16,7 +19,7 @@ export default {
   CodeBlock,
   SwitchTech,
   pre: Pre,
-  // TODO add `blockquote`
-  // TODO add `table`
-  // TODO add `Collapsible element`
+  code: Code,
+  details: CollapseBox,
+  table: Table,
 };
