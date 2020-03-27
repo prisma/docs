@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Helmet from 'react-helmet';
+import favicon from '../images/favicon-32x32.png'
 
 type SEOProps = {
   title?: string;
@@ -17,6 +18,7 @@ const SEO = ({ title, description, keywords }: SEOProps) => (
     {description && <meta name="title" content={description} />}
     {description && <meta name="description" content={description} />}
     {keywords && <meta name="keywords" content={keywords} />}
+    <link rel="icon" href={favicon} />
   </Helmet>
 );
 
