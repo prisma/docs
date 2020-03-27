@@ -4,6 +4,7 @@ import CodeBlock from './codeBlock';
 import Code from './code';
 import Pre from './pre';
 import CollapseBox from './collapsible';
+import Table from './table';
 import makeHeading from './headings';
 
 export default {
@@ -19,5 +20,6 @@ export default {
   SwitchTech,
   pre: Pre,
   code: Code,
-  details: CollapseBox
+  details: CollapseBox,
+  table: Table,
 };

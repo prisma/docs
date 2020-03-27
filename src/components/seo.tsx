@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Helmet from 'react-helmet';
-import favicon from '../images/favicon-32x32.png'
+import favicon from '../images/favicon-32x32.png';
 
 type SEOProps = {
   title?: string;

@@ -21,7 +21,7 @@ const icons = {
   typescript: <Typescript />,
   mysql: <MySQL />,
   postgres: <PostgreSQL />,
-  mongodb: <MongoDB />
+  mongodb: <MongoDB />,
 };
 
 const technologyTypes = {
