@@ -8,7 +8,7 @@ metaDescription: ''
 
 This is an extension of the [Data model]() page which describes how to handle relations between Prisma models in the Prisma schema.
 
-A relation is a _connection_ between two models in the Prisma schcema. A relation must always be defined with two _relation fields_, one on each the model. In the case of one-to-one and one-to-many relations, an additional _relation scalar field_ must be added: 
+A relation is a _connection_ between two models in the Prisma schema. A relation must always be defined with two _relation fields_, one on each the model. In the case of one-to-one and one-to-many relations, an additional _relation scalar field_ must be added:
 
 ```prisma.
 model User {
@@ -19,21 +19,21 @@ model User {
 model Post {
   id         Int         @id @default(autoincrement())
   author     User        @relation(fields: [authorId], references: [id])
-  authorId   Int         // scalar relation field  (linked in the `@relation` attribute above)
+  authorId   Int         // relation scalar field  (used in the `@relation` attribute above)
 }
 ```
 
-> **Note**: In SQL, relations between models are _physically_ represented via _foreign keys_ in the underlying database. A foreign key is only stored on _one_ side of a relation. As opposed to how relations are modeled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**.
-> This means that one side of the relation represents the _physical foreign key_ in the underlying database, the other relation field is a _virtual relation field_ (in the case of [implicit many-to-many relations]()), both relation fields are virtual.
+> **Note**: In SQL, relations between models are represented via _foreign keys_ in the underlying database. A foreign key is only stored on _one_ side of a relation. As opposed to how relations are modeled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**.
+>
+> This means that one side of the relation represents the _foreign key_ in the underlying database, the other relation field is provided on a Prisma-level (in the case of implicit many-to-many relations, both relation fields are provided on a Prisma-level).
 
-
-<!-- 
+<!--
 
 Relations between models are _physically_ represented via _foreign keys_ in the underlying database. A foreign key is only stored on _one_ side of a relation. As opposed to how relations are modeled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**.
 
 This means that one of these relation fields represents the physical foreign key in the underlying database, the other relation field is a [virtual relation field]() (in the case of [implicit many-to-many relations]()), both relation fields are virtual.
 
-The physical relation field must always be accompanied by a [link field]() on the same model. 
+The physical relation field must always be accompanied by a [relation scalar]() on the same model.
 
 -->
 
@@ -51,23 +51,23 @@ model User {
 model Profile {
   id      Int     @id @default(autoincrement())
   user    User    @relation(fields: [userId], references: [id])
-  userId  Int     // scalar relation field (linked in the `@relation` attribute above)
+  userId  Int     // relation scalar field (used in the `@relation` attribute above)
 }
 
 model Post {
   id         Int         @id @default(autoincrement())
   author     User        @relation(fields: [authorId], references: [id])
-  authorId   Int         // scalar relation field  (linked in the `@relation` attribute above)
+  authorId   Int         // relation scalar field  (used in the `@relation` attribute above)
   categories Category[]  @relation(references: [id])
 }
 
 model Category {
   id     Int     @id @default(autoincrement())
-  posts  Post[]  @relation(references: [id]) 
+  posts  Post[]  @relation(references: [id])
 }
 ```
 
-> **Note**: This schema is the same as the [example data model]() but has all [scalar fields]() removed (except for the required [link fields]()) so you can focus on the relation fields.
+> **Note**: This schema is the same as the [example data model]() but has all [scalar fields]() removed (except for the required [relation scalars]()) so you can focus on the relation fields.
 
 ## Terminology
 
@@ -89,7 +89,7 @@ In the example above, there are the following relations:
 
 Relation [fields]() are fields on a Prisma [model]() that do _not_ have a [scalar type](). Instead, their type is another model.
 
-Every relation must have exactly two relation fieds, one on each model. In case of 1-1 and 1-n relations, an additional _relation scalar field_ is required which gets linked by one of the two relation fields. This relation scalar is the direct representation of the _foreign key_ in the underlying database.
+Every relation must have exactly two relation fieds, one on each model. In case of 1-1 and 1-n relations, an additional _relation scalar field_ is required which gets linked by one of the two relation fields in the `@relation` attribute. This relation scalar is the direct representation of the _foreign key_ in the underlying database.
 
 Consider these two models:
 
@@ -105,7 +105,7 @@ model Post {
   id         Int     @id @default(autoincrement())
   title      String
   author     User    @relation(fields: [authorId], references: [id])
-  authorId   Int     // relation scalar field (linked in the `@relation` attribute above)
+  authorId   Int     // relation scalar field (used in the `@relation` attribute above)
 }
 ```
 
@@ -124,7 +124,7 @@ These models have the following fields:
 
 Both `posts` and `author` are relation fields because their types are not scalar types but other models.
 
-Also note that the annotated relation field `author` needs to link the scalar relation field `authorId` on the `Post` model inside the `@relation` attribute.
+Also note that the annotated relation field `author` needs to link the relation scalar field `authorId` on the `Post` model inside the `@relation` attribute.
 
 ### Implicit vs explicit many-to-many relations
 
@@ -146,10 +146,12 @@ model Category {
 }
 
 model CategoriesOnPosts {
-  post     Post
-  category Category
+  post        Post      @relation(fields: [postId], references: [id])
+  postId      Int       // relation scalar field (used in the `@relation` attribute above)
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  Int       // relation scalar field (used in the `@relation` attribute above)
 
-  @@id([post, category])
+  @@id([postId, categoryId])
 }
 ```
 
@@ -171,17 +173,17 @@ model Category {
 
 Note that both relation fields in a many-to-many relation must be annotated with the `@relation` attribute and _reference_ the fields of the other model they're mapping to.
 
-Note that this m-n-relation is still manifested in a relation table in the underlying database. However, this relation table is managed by Prisma which makes the [Prisma Client API]() for many-to-many relations a bit simpler (since you e.g. have one fewer level of nesting inside of [nested writes]()).
+This m-n-relation is still manifested in a relation table in the underlying database. However, this relation table is managed by Prisma which makes the [Prisma Client API]() for many-to-many relations a bit simpler (since you e.g. have one fewer level of nesting inside of [nested writes]()).
 
 If you're not using Prisma Migrate but obtain your data model from [introspection](), you can still make use of implicit many-to-many relations by following Prisma's [conventions for relation tables]().
 
 ### Relation tables
 
-A relation table (also sometimes called _JOIN_, _link_ or _pivot_ table) connects two or more other tables and therefore creates a _relation_ between them. Creating relation tables is a common data modeling practice in SQL to represent relationships between different entities.
+A relation table (also sometimes called _JOIN_, _link_ or _pivot_ table) connects two or more other tables and therefore creates a _relation_ between them. Creating relation tables is a common data modeling practice in SQL to represent relationships between different entities. In essence it means that "one m-n relation is modeled as two 1-n relations in the database".
 
-When using Prisma, you can create relation tables by defining [models]() similar to how you would model them as tables. The main difference is that the fields of the relation table are both relation fields are both [physical relation fields]() that each _reference_ a link field.
+When using Prisma, you can create relation tables by defining [models]() similar to how you would model them as tables. The main difference is that the fields of the relation table are both annotated relation fields with a corresponding relation scalar field.
 
-Relation tables are also often used to add "meta-information" to a relation. For example, _when_ the relation was created.
+Relation tables are also often used to add "meta-information" to a relation. For example, to store _when_ the relation was created.
 
 Here is an example for a relation table called `CategoriesOnPosts`:
 
@@ -211,56 +213,119 @@ model CategoriesOnPosts {
 
 In this example, the `createdAt` field stores additional information about the relation between `Post` and `Category` (i.e. it stores the point in time when "the post was added to the catgegory").
 
-Note that the same rules as for [1-n-relations]() apply (because `Post`↔ `CategoriesOnPosts` and `Category` ↔ `CategoriesOnPosts` are both in fact 1-n-relations):
+Note that the same rules as for [1-n-relations]() apply (because `Post`↔ `CategoriesOnPosts` and `Category` ↔ `CategoriesOnPosts` are both in fact 1-n-relations), which means one side of the relation needs to be annotated with the `@relation` attribute.
 
-- The relation field on one side must be [virtual]() (here these are `posts` and `categories`)
-- The relation field on the other side must be [physical]() and _reference_ a [link field]()
+When you don't need to attach additional information to the relation, you can model m-n-relations as [implicit many-to-many relations](#implicit-many-to-many-relations). If you're not using Prisma Migrate but obtain your data model from [introspection](), you can still make use of implicit many-to-many relations by following Prisma's [conventions for relation tables]().
 
-When you don't need to attach additional information to the relation, you can model m-n-relations as [implicit many-to-many relations](#implicit-many-to-many-relations). If you're not using Prisma Migrate but get your data model from introspection, you can s
+### Annotated relation fields and relation scalar fields
 
-### Physical relation fields (foreign key)
+1-1 and 1-n relations require one side of the relation to be _annotated_ with the `@relation` attribute, they're therefore commonly referred to as _annotated relation fields_.
 
-Physical relation relation fields are relation fields that are _physically_ backed by a foreign key in the underlying database. **They always require the `@relation attribute which must point to a link field**.
+The side of the relation which is annotated with the `@relation` attribute represents the side that stores the foreign key in the underlying database. The "actual" field that represents the foreign key is required on that side of the relation as well, it's called _relation scalar field_ and must be used in the `@relation` attribute on the annotated relation field. A scalar field _becomes_ a relation scalar field when it's used in the `fields` of an `@relation` attribute.
 
-### Link fields
+Because a relation scalar field always _belongs_ to a relation field, the two are often named the same but the relation scalar is suffixed with `Id`. For example, assume an annotated relation field is called `author`, the corresponding relation scalar would be called `authorId` according to this convention.
 
-A link field always has a scalar type and is the direct representation of a foreign key in the underlying database. It must be _referenced_ inside the `@relation` attribute of its physical relation field:
+Note that relation scalar fields are read-only in the generated [Prisma Client API](). If you want to update a relation in your code, you can do so using [nested writes]().
+
+In **1-1 relations**, you can decide yourself which side of the relation you want to annotate with the `@relation` attribute (and therefore holds the foreign key).
+
+This example annotates the relation field on the `Profile` model:
 
 ```prisma
 model User {
   id      Int      @id @default(autoincrement())
-  posts   Post[]
   profile Profile?
 }
 
 model Profile {
   id      Int     @id @default(autoincrement())
   user    User    @relation(fields: [userId], references: [id])
-  userId  Int     // scalar relation field (referenced in the `@relation` attribute above)
-}
-
-model Post {
-  id         Int         @id @default(autoincrement())
-  author     User        @relation(fields: [authorId], references: [id])
-  authorId   Int         // scalar relation field (referenced in the `@relation` attribute above)
-  categories Category[]
+  userId  Int     // relation scalar field (used in the `@relation` attribute above)
 }
 ```
 
-Note that if the annotated relation field is [required](), its relation scalar field counterpart also must be required. If the annotated relation field is [optional](), the relation scalar field also must be optional.
+In the code above, the `userId` relation scalar is a direct representation of the foreign key in the underlying database.
 
+This example annotates the relation field on the `Profile` model:
+
+```prisma
+model User {
+  id         Int       @id @default(autoincrement())
+  profile    Profile?  @relation(fields: [profileId], references: [id])
+  profileId  Int?      // relation scalar field (used in the `@relation` attribute above)
+}
+
+model Profile {
+  id      Int     @id @default(autoincrement())
+  user    User
+}
+```
+
+In the code above, `profileId` is a direct representation of the foreign key in the underlying database.
+
+In **1-n-relations**, you must annotate the non-list field with the `@relation` attribute:
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  role      Role     @default(USER)
+  posts     Post[]
+}
+
+model Post {
+  id         Int     @id @default(autoincrement())
+  title      String
+  author     User    @relation(fields: [authorId], references: [id])
+  authorId   Int     // relation scalar field (used in the `@relation` attribute above)
+}
+```
+
+Note that for **1-1 and 1-n relations**, the annotated relation field and its relation scalar field must either _both be optional_ or _both be required_. So, the following would be illegal because `user` is optional but `userId` is required:
+
+```prisma
+model User {
+  id      Int      @id @default(autoincrement())
+  profile Profile?
+}
+
+model Profile {
+  id      Int     @id @default(autoincrement())
+  user    User?   @relation(fields: [userId], references: [id]) // ILLEGAL
+  userId  Int     // relation scalar field (used in the `@relation` attribute above)
+}
+```
+
+With [multi-field IDs](), there might also be multiple relation scalars on the same model which are both used in the `@relation`attribute:
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+  profile   Profile?
+
+  @@id([firstName, lastName])
+}
+
+model Profile {
+  id               Int      @id @default(autoincrement())
+  user             User     @relation(fields: [authorFirstName, authorLastName], references: [firstName, lastName])
+  authorFirstName  String   // relation scalar field (used in the `@relation` attribute above)
+  authorLastName   String   // relation scalar field (used in the `@relation` attribute above)
+}
+```
 
 ## The @relation attribute
 
-The `@relation` attribute can only be applied to the [relation fields]() of a Prisma model, not to its [scalar fields]().
+The `@relation` attribute can only be applied to the [relation fields](), not to [scalar fields]().
 
-It is _always_ required on [physical relation fields]() and _sometimes_ required on [virtual relation fields]().
+It must be added to _every_ relation in your Prisma schema. In [implicit m-n relations](), it is required on both sides of the relation. In 1-1 and 1-n relations, it is only required on one side.
 
-Here are some cases when the `@relation` attribute is required, e.g. when:
+Here are some example scenarios when the `@relation` attribute is needed, e.g. when:
 
+- you define a 1-1 or 1-n relation, it is required on _one side_ of the relation (with the corresponding relation scalar field)
 - you need to disambiguate a relation (that's e.g. the case when you have two relations between the same models)
 - you define a [self-relation](#self-relations)
-  <!-- - you need to determine on which side of the relation a foreign key should be used -->
 - you need to control how the relation table is represented in the underlying database (e.g. use a specific name for a relation table)
 
 ### Signature
@@ -274,12 +339,8 @@ Here are some cases when the `@relation` attribute is required, e.g. when:
 | Argument     | Type               | Required                                    | Description                                                                                                             | Example                                               |
 | :----------- | :----------------- | :------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------- |
 | `name`       | `String`           | Sometimes (e.g. to disambiguate a relation) | Defines the name of the relationship. In an m-n-relation, it also determines the name of the underlying relation table. | `"CategoryOnPost"`, `"MyRelation"`                    |
-| `fields`     | `FieldReference[]` | On physical relation fields                 | A list of [fields]() of the _current_ model                                                                             | `["authorId"]`, `["authorFirstName, authorLastName"]` |
-| `references` | `FieldReference[]` | On physical relation fields                 | A list of [fields]() of the model on _the other side of the relation_                                                   | `["id"]`, `["firstName, lastName"]`                   |
-
-<!-- ### Cases when the @relation attribute is required
-
-TBD -->
+| `fields`     | `FieldReference[]` | On [annotated]() relation fields            | A list of [fields]() of the _current_ model                                                                             | `["authorId"]`, `["authorFirstName, authorLastName"]` |
+| `references` | `FieldReference[]` | On [annotated]() relation fields            | A list of [fields]() of the model on _the other side of the relation_                                                   | `["id"]`, `["firstName, lastName"]`                   |
 
 ## One-to-one relations
 
@@ -298,9 +359,11 @@ model User {
 model Profile {
   id      Int    @id @default(autoincrement())
   user    User   @relation(fields: [userId], references: [id])
-  userId  Int    // scalar relation field (referenced in the `@relation` attribute above)
+  userId  Int    // relation scalar field (used in the `@relation` attribute above)
 }
 ```
+
+In the code above, the `userId` relation scalar is a direct representation of the foreign key in the underlying database.
 
 This 1-1-relation expresses the following:
 
@@ -316,13 +379,46 @@ CREATE TABLE "User" (
 CREATE TABLE "Profile" (
     id SERIAL PRIMARY KEY,
     "userId" INTEGER NOT NULL UNIQUE,
-    FOREIGN KEY ("useIdr") REFERENCES "User"(id)
+    FOREIGN KEY ("userId") REFERENCES "User"(id)
 );
 ```
 
-Notice the `UNIQUE` constraint on the foreign key `userId`. If this `UNIQUE` constrain was missing, the relation would be considered a 1-n relation.
+Notice the `UNIQUE` constraint on the foreign key `userId`. If this `UNIQUE` constraint was missing, the relation would be considered a 1-n relation.
 
-The link field `userId` on `Profile` model in the Prisma schema above maps to the `userId` column in the database.
+You can also define this relation using [multi-field IDs]():
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+  profile   Profile?
+
+  @@id([firstName, lastName])
+}
+
+model Profile {
+  id               Int      @id @default(autoincrement())
+  user             User     @relation(fields: [userFirstName, userLastName], references: [firstName, lastName])
+  userFirstName  String     // relation scalar field (used in the `@relation` attribute above)
+  userLastName   String     // relation scalar field (used in the `@relation` attribute above)
+}
+```
+
+In this case, there are _two_ relation scalar fields on `Profile`. This is what the models map to in SQL:
+
+```sql
+CREATE TABLE "User" (
+    firstName TEXT,
+    lastName TEXT,
+    PRIMARY KEY ("firstName","lastName")
+);
+CREATE TABLE "Profile" (
+    id SERIAL PRIMARY KEY,
+    "userFirstName" TEXT NOT NULL UNIQUE,
+    "userLastName" TEXT NOT NULL UNIQUE,
+    FOREIGN KEY ("userFirstName", "userLastName") REFERENCES "User"("firstName", "lastName")
+);
+```
 
 ### Making both sides required in one-to-one relations
 
@@ -383,7 +479,7 @@ If you're using [introspection](), you can make 1-1-relations required by manual
 
 ### Determining the side of the foreign key
 
-Consider again the above 1-1-relation between `User` and `Profile` where `profile` is optional on `User`:
+Consider again the above 1-1-relation between `User` and `Profile`. The relation field on the `Profile` model is annotated with the `@relation` attribute:
 
 ```prisma
 model User {
@@ -395,17 +491,32 @@ model User {
 model Profile {
   id      Int    @id @default(autoincrement())
   user    User   @relation(fields: [userId], references: [id])
-  userId  Int
+  userId  Int    // relation scalar field (used in the `@relation` attribute above)
 }
 ```
 
-Because the `Profile` model has a [physical relation field]() (called `user`) and a [link field]() (called `userId`), it represents the foreign key in the underlying database. The `profile` relation field on `User` is [virtual]().
+You can also annotate the other side of the relation with the `@relation` attribute. The following example annotates the relation field on the `User` model:
+
+```prisma
+model User {
+  id         Int       @id @default(autoincrement())
+  profile    Profile?  @relation(fields: [profileId], references: [id])
+  profileId  Int?      // relation scalar field (used in the `@relation` attribute above)
+}
+
+model Profile {
+  id      Int     @id @default(autoincrement())
+  user    User
+}
+```
+
+In the code above, `profileId` is a direct representation of the foreign key in the underlying database.
 
 This is what the relation looks like in the database:
 
 ![](https://imgur.com/N5wHT6D.png)
 
-However, you can still determine yourself on which side of the relation the foreign key should be stored. To store the foreign key on `User` you need to add the `@relation` attribute to its relation field and add a corresponding link field:
+However, you can still determine yourself on which side of the relation the foreign key should be stored. To store the foreign key on `User` you need to add the `@relation` attribute to its relation field and add a corresponding relation scalar field:
 
 **Both relation fields required but using `@relation` to determine the foreign key**
 
@@ -413,7 +524,7 @@ However, you can still determine yourself on which side of the relation the fore
 model User {
   id         Int      @id @default(autoincrement())
   profile    Profile  @relation(fields: [profileId], references: [id]) // references `id` of `Profile`
-  profileId  Int
+  profileId  Int      // relation scalar field (used in the `@relation` attribute above)
 }
 
 model Profile {
@@ -465,7 +576,7 @@ model Post {
 }
 ```
 
-Notice that the `posts` field on `User` is [virtual](), meaning that it's not manifested in the underlying database schema. On the other side of the relation, the [physical relation field]() `author` and the [link field]() `authorId` represent the foreign key in the underlying database.
+> **Note** The `posts` field does not "manifest" in the underlying database schema. On the other side of the relation, the [annotated relation field]() `author` and the [relation scalar]() `authorId` represent the side of the relation that stores the foreign key in the underlying database.
 
 This 1-n-relation expresses the following:
 
@@ -487,16 +598,57 @@ CREATE TABLE "Post" (
 
 Since there's no `UNIQUE` constraint on the `author` column (foreign key), you can create multiple `Post` records that point to the same `User` record therefore creating a one-to-many relationship between the two tables.
 
+You can also define this relation using [multi-field IDs]():
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+  post      Post[]
+
+  @@id([firstName, lastName])
+}
+
+model Post {
+  id               Int      @id @default(autoincrement())
+  author           User     @relation(fields: [authorFirstName, authorLastName], references: [firstName, lastName])
+  authorFirstName  String   // relation scalar field (used in the `@relation` attribute above)
+  authorLastName   String   // relation scalar field (used in the `@relation` attribute above)
+}
+```
+
+In this case, there are _two_ relation scalar fields on `Post`. This is what the models map to in SQL:
+
+```sql
+CREATE TABLE "User" (
+    firstName TEXT,
+    lastName TEXT,
+    PRIMARY KEY ("firstName","lastName")
+);
+CREATE TABLE "Post" (
+    id SERIAL PRIMARY KEY,
+    "authorFirstName" TEXT NOT NULL UNIQUE,
+    "authorLastName" TEXT NOT NULL UNIQUE,
+    FOREIGN KEY ("authorFirstName", "authorLastName") REFERENCES "User"("firstName", "lastName")
+);
+```
+
 ### Required vs optional relation fields in one-to-many relations
 
-A 1-n-relation always has one [virtual relation field]() (which must be a [list]()) and a [physical relation field]() that references a [link field](). In the example above, `posts` on the `User` model is virtual, `author` represents a foreign key and `authorId` is a link field.
+<!--
+A 1-n-relation always has one [virtual relation field]() (which must be a [list]()) and a [physical relation field]() that references a [relation scalar](). In the example above, `posts` on the `User` model is virtual, `author` represents a foreign key and `authorId` is a relation scalar. -->
 
-The relation fields in a relation can take the following forms:
+A 1-n-relation always has two relation fields:
 
-- the physical relation field can be either optional or required
-- if the physical relation field is required, the link field must be required
-- if the physical relation field is optional, the link field must be optional
-- the virtual relation field must be a list and is always required
+- a [list]() relation field which is _not_ annotated with `@relation`
+- the [annotated relation field]() (including its relation scalar)
+
+The relation fields in a 1-n relation can take the following forms:
+
+- the annotated relation field can be either optional or required
+  - if the annotated relation field is required, the relation scalar must be required
+  - if the annotated relation field is optional, the relation scalar must be optional
+- the other side of the relation must a list and is always required
 
 So, the following variant of the example above would be _allowed_:
 
@@ -549,7 +701,7 @@ model Category {
 }
 ```
 
-Notice that the `posts` field on `Category` and the `categories` field on `Post` both are [virtual](), meaning that they're not manifested in the underlying database schema. Instead, the implicit many-to-many relation is maintained by Prisma with a [relation table]() that's not reflected in the Prisma schema.
+Implicit many-to-many relations are maintained by Prisma with a [relation table]() that's not reflected in the Prisma schema.
 
 Both fields require the `@relation` attribute to specify the fields they _reference_ on the other model.
 
@@ -614,9 +766,9 @@ model Category {
 
 model CategoriesOnPosts {
   post        Post     @relation(fields: [postId], references: [id])
-  postId      Int
+  postId      Int       // relation scalar field (used in the `@relation` attribute above)
   category    Category @relation(fields: [catgoryId], references: [id])
-  catgoryId   Int
+  catgoryId   Int      // relation scalar field (used in the `@relation` attribute above)
   createdAt   DateTime @default(now())
 
   @@id([postId, categoryId])
@@ -735,9 +887,13 @@ This relation expresses the following:
 
 Note that one-to-one self-relations can not be made required on both sides, one field has to be optional.
 
-In this case, the `wife` relation field is [virtual](). The `husband` field on the other hand is a [physical relation field](), this means it is backed by a foreign key in the underlying database. Here, `id` is the [link field]() that's referenced by `husband`.
+Self-relations always require the `@relation` attribute on both sides of the relation. On both ends, you need provide the same relation _name_.
 
-You can also switch the virtual and physical relation fields:
+The `husband` field on the other hand is the [annotated relation field]() (although here the term is ambiguous because both relation fields are annotated with the `@relation` attribute, however here this refers too the field that also has the `fields` and `references` arguments).
+
+The annotated field is backed by a foreign key in the underlying database. Here, `id` is the [relation scalar]() that's referenced by `husband`.
+
+You can again determine which side of the relation should store the foreign key in the underlying database:
 
 ```prisma
 model User {
@@ -757,7 +913,7 @@ model User {
 }
 ```
 
-Now the foreign key is stored on `wife` and `husband` is virtual.
+Now the foreign key is stored on `wife`, `husband` is provided on a Prisma-level (e.g. it will be available in the Prisma Client API).
 
 This relation is represented as follows in SQL:
 
