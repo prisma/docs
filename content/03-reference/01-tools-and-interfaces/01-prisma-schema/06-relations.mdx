@@ -21,26 +21,26 @@ The examples on this page are based on the following schema file:
 ```prisma
 model User {
   id      Int      @id @default(autoincrement())
-  posts   Post[]   // virtual relation field
-  profile Profile? // virtual relation field
+  posts   Post[]
+  profile Profile?
 }
 
 model Profile {
   id      Int     @id @default(autoincrement())
-  user    User    @relation(fields: [userId], references: [id]) // physical relation field
-  userId  Int     // link field
+  user    User    @relation(fields: [userId], references: [id])
+  userId  Int     // scalar relation field
 }
 
 model Post {
   id         Int         @id @default(autoincrement())
-  author     User        @relation(fields: [authorId], references: [id]) // physical relation field
-  authorId   Int         // link field
-  categories Category[]   @relation(references: [id])  // virtual relation field
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int         // scalar relation field
+  categories Category[]  @relation(references: [id])
 }
 
 model Category {
   id     Int     @id @default(autoincrement())
-  posts  Post[]  @relation(references: [id]) // virtual relation field
+  posts  Post[]  @relation(references: [id])
 }
 ```
 
@@ -50,7 +50,7 @@ model Category {
 
 ### Cardinality
 
-There are three different [cardinalities](https://en.wikipedia.org/wiki/Cardinality_(data_modeling)) of relations in Prisma:
+There are three different [cardinalities](<https://en.wikipedia.org/wiki/Cardinality_(data_modeling)>) of relations in Prisma:
 
 - One-to-one (also called 1-1-relation)
 - One-to-many (also called 1-n-relation)
@@ -66,7 +66,7 @@ In the example above, there are the following relations:
 
 Relation fields are fields on a Prisma [model]() that do _not_ have a [scalar type](). Instead, their type is another model.
 
-A relation field is always either [physically]() backed by a foreign key in the underlying database or it is [virtual]() (which means that it's not "visible" in the schema of the underlying database).
+Every very relation must have exactly two relation fieds, one on each model. In case of 1-1 and 1-n relations, an additional _relation scalar field_ is required.
 
 Consider these two models:
 
@@ -88,16 +88,16 @@ model Post {
 
 These models have the following fields:
 
-| Model  | Field      | Type     | Relation field                     |
-| :----- | :--------- | :------- | :--------------------------------- |
-| `User` | `id`       | `Int`    | No                                 |
-|        | `email`    | `String` | No                                 |
-|        | `role`     | `Role`   | No                                 |
-|        | `posts`    | `Post[]` | **Yes** (_virtual_)                |
-| `Post` | `id`       | `Int`    | No                                 |
-|        | `title`    | `String` | No                                 |
-|        | `authorId` | `Int`    | No (_link field_)                  |
-|        | `author`   | `User`   | **Yes** (_physical / foreign key_) |
+| Model  | Field      | Type     | Relation field               |
+| :----- | :--------- | :------- | :--------------------------- |
+| `User` | `id`       | `Int`    | No                           |
+|        | `email`    | `String` | No                           |
+|        | `role`     | `Role`   | No                           |
+|        | `posts`    | `Post[]` | **Yes**                      |
+| `Post` | `id`       | `Int`    | No                           |
+|        | `title`    | `String` | No                           |
+|        | `authorId` | `Int`    | No (_relation scalar field_) |
+|        | `author`   | `User`   | **Yes** (_annotated_)        |
 
 Both `posts` and `author` are relation fields because their types are not scalar types but other models.
 
@@ -146,7 +146,7 @@ model Category {
 }
 ```
 
-Note that both relation fields in a many-to-many relation must be annotated with the `@relation` attribute and _reference_ the fields of the other model they're mapping to. 
+Note that both relation fields in a many-to-many relation must be annotated with the `@relation` attribute and _reference_ the fields of the other model they're mapping to.
 
 Note that this m-n-relation is still manifested in a relation table in the underlying database. However, this relation table is managed by Prisma which makes the [Prisma Client API]() for many-to-many relations a bit simpler (since you e.g. have one fewer level of nesting inside of [nested writes]()).
 
@@ -206,57 +206,30 @@ A link field always has a scalar type and is the direct representation of a fore
 ```prisma
 model User {
   id      Int      @id @default(autoincrement())
-  posts   Post[]   // virtual relation field
-  profile Profile? // virtual relation field
+  posts   Post[]
+  profile Profile?
 }
 
 model Profile {
   id      Int     @id @default(autoincrement())
-  user    User    @relation(fields: [userId], references: [id]) // physical relation field
-  userId  Int     // link field (that gets referenced in the `@relation` attribute above)
+  user    User    @relation(fields: [userId], references: [id])
+  userId  Int     // scalar relation field (referenced in the `@relation` attribute above)
 }
 
 model Post {
   id         Int         @id @default(autoincrement())
-  author     User        @relation(fields: [authorId], references: [id]) // physical relation field
-  authorId   Int         // link field (that gets referenced in the `@relation` attribute above)
-  categories Category[]  // virtual relation field
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int         // scalar relation field (referenced in the `@relation` attribute above)
+  categories Category[]
 }
 ```
 
-Note that if the physical relation field is [required](), its link field counterpart also must be required. If the physical relation field is [optional](), the link field also must be optional. 
+Note that if the annotated relation field is [required](), its relation scalar field counterpart also must be required. If the annotated relation field is [optional](), the relation scalar field also must be optional.
 
-### Virtual relation fields
-
-Virtual relation fields are relation fields in the Prisma schema that are not "manifested" in the database schema.
-
-There are two different kinds of virtual relation fields.
-
-For **1-1 and 1-n relations**, one side of the relation represents a foreign key, the other side is a virtual relation field:
-
-<!-- ![](https://imgur.com/kOO4eh2.png) -->
-
-![](https://imgur.com/nycymr8.png)
-
-For **implicit m-n-relations**, both relation fields are virtual since neither of them _directly_ maps to a foreign key:
-
-![](https://imgur.com/DxuOs88.png)
-
-Prisma always requires both sides of a relation to be present, this means that one virtual relation field always needs to be added per relation. When [formatting the Prisma schema](), the formatter automatically inserts any missing virtual relation fields for you to save some typing work.
-
-Virtual relation fields are also present in the generated [Prisma Client API]() which makes working with relations more convenient as you can traverse relationships in your code in both directions, for example:
-
-```js
-// Traverse relation from `Post` to `User` via fluent API
-const user = await prisma.post.findOne({ where: { id: 1 } }).author();
-
-// Traverse relation from `User` to `Post` via fluent API
-const user = await prisma.user.findOne({ where: { id: 1 } }).posts();
-```
 
 ## The @relation attribute
 
-The `@relation` attribute can only be applied to the [relation fields]() of a Prisma model, not to its [scalar fields](). 
+The `@relation` attribute can only be applied to the [relation fields]() of a Prisma model, not to its [scalar fields]().
 
 It is _always_ required on [physical relation fields]() and _sometimes_ required on [virtual relation fields]().
 
@@ -302,7 +275,7 @@ model User {
 model Profile {
   id      Int    @id @default(autoincrement())
   user    User   @relation(fields: [userId], references: [id])
-  userId  Int
+  userId  Int    // scalar relation field (referenced in the `@relation` attribute above)
 }
 ```
 
@@ -409,7 +382,6 @@ This is what the relation looks like in the database:
 
 ![](https://imgur.com/N5wHT6D.png)
 
-
 However, you can still determine yourself on which side of the relation the foreign key should be stored. To store the foreign key on `User` you need to add the `@relation` attribute to its relation field and add a corresponding link field:
 
 **Both relation fields required but using `@relation` to determine the foreign key**
@@ -466,11 +438,11 @@ model User {
 model Post {
   id        Int   @id @default(autoincrement())
   author    User  @relation(fields: [authorId], references: [author])
-  authorId  Int  
+  authorId  Int
 }
 ```
 
-Notice that the `posts` field on `User` is [virtual](), meaning that it's not manifested in the underlying database schema. On the other side of the relation, the [physical relation field]() `author` and the [link field]() `authorId` represent the foreign key in the underlying database. 
+Notice that the `posts` field on `User` is [virtual](), meaning that it's not manifested in the underlying database schema. On the other side of the relation, the [physical relation field]() `author` and the [link field]() `authorId` represent the foreign key in the underlying database.
 
 This 1-n-relation expresses the following:
 
@@ -514,7 +486,7 @@ model User {
 model Post {
   id        Int    @id @default(autoincrement())
   author    User?  @relation(fields: [authorId], references: [author])
-  authorId  Int?   
+  authorId  Int?
 }
 ```
 
@@ -528,8 +500,8 @@ model User {
 
 model Post {
   id        Int    @id @default(autoincrement())
-  author    User?  @relation(fields: [authorId], references: [author]) 
-  authorId  Int?   
+  author    User?  @relation(fields: [authorId], references: [author])
+  authorId  Int?
 
 }
 ```
@@ -545,12 +517,12 @@ In the example above, there's one _implicit_ m-n-relation betwen `Post` and `Cat
 ```prisma
 model Post {
   id         Int        @id @default(autoincrement())
-  categories Category[] @relation(references: [id]) 
+  categories Category[] @relation(references: [id])
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
-  posts Post[] @relation(references: [id]) 
+  posts Post[] @relation(references: [id])
 }
 ```
 
@@ -733,7 +705,6 @@ model User {
 }
 ```
 
-
 This relation expresses the following:
 
 - "a user has zero or one _husband_ "
@@ -865,9 +836,9 @@ model Post {
   id          Int     @id @default(autoincrement())
   title       String?
   author      User    @relation(fields: [authorId], references: [id])
-  authorId    Int 
+  authorId    Int
   pinnedBy    User?   @relation(fields: [pinnedById], references: [id])
-  pinnedById  Int?   
+  pinnedById  Int?
 }
 ```
 
@@ -892,8 +863,8 @@ model Post {
   id          Int     @id @default(autoincrement())
   title       String?
   author      User    @relation("WrittenPosts", fields: [authorId], references: [id])
-  authorId    Int 
+  authorId    Int
   pinnedBy    User?   @relation(name: "PinnedPost", fields: [pinnedById], references: [id])
-  pinnedById  Int?    
+  pinnedById  Int?
 }
 ```
