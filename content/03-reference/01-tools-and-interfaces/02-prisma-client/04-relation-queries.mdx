@@ -34,19 +34,21 @@ model User {
 }
 
 model Profile {
-  id   Int    @id @default(autoincrement())
-  user User
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields:  [authorId], references: [id])
+  userId  Int
 }
 
 model Post {
   id         Int        @id @default(autoincrement())
-  author     User
-  categories Category[]
+  author    User?       @relation(fields:  [authorId], references: [id])
+  authorId  Int?
+  categories Category[] @relation(references: [id])
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
-  posts Post[]
+  posts Post[] @relation(references: [id])
 }
 ```
 
@@ -72,7 +74,7 @@ const postsByUser = await prisma.post.findMany({
 });
 ```
 
-The main difference between the two is that the fluent API call is translated into two separate database queries while the other one only generates a single query.
+The main difference between the two is that the fluent API call is translated into two separate database queries while the other one only generates a single query (see this [GitHub issue](https://github.com/prisma/prisma2/issues/1984)).
 
 This request returns all categories by a specific post:
 
@@ -80,7 +82,7 @@ This request returns all categories by a specific post:
 const categoriesOfPost: Category[] = await prisma.post.findOne({ where: { id: 1 } }).categories();
 ```
 
-Note that you can chain as many queries as you like. In this example, the chanining start at `Profile` and goes over `User` to `Post`:
+Note that you can chain as many queries as you like. In this example, the chanining starts at `Profile` and goes over `User` to `Post`:
 
 ```ts
 const posts: Post[] = await prisma.profile
@@ -92,7 +94,7 @@ const posts: Post[] = await prisma.profile
 
 The only requirement for chaining is that the previous function call must return only a _single object_ (e.g. as returned by a `findOne` query or a "to-one relation" like `profile.user()`).
 
-The following query is **not possible** because `findMany` does not return a single object but a list:
+The following query is **not possible** because `findMany` does not return a single object but a _list_:
 
 ```ts
 // This query is illegal
@@ -120,7 +122,7 @@ const posts: Post[] = await prisma.user
   });
 ```
 
-Note that this query is equivalent to the following one which is initiated via the `post` instead of the `user` field (i.e. it doesn't use the fluent API):
+Note that this query is _equivalent_ to the following one which is initiated via the `post` instead of the `user` field (i.e. it doesn't use the fluent API):
 
 ```ts
 const posts = await prisma.post.findMany({
@@ -132,7 +134,7 @@ const posts = await prisma.post.findMany({
 console.log(posts);
 ```
 
-The main difference between the two is that the fluent API call is translated into two separate database queries while the other one only generates a single query.
+The main difference between the two is that the fluent API call is translated into two separate database queries while the other one only generates a single query (see this [GitHub issue](https://github.com/prisma/prisma2/issues/1984)).
 
 ## Nested writes
 
@@ -140,11 +142,7 @@ Nested writes provide a way for writing relational data in your database. They f
 
 Nested writes can be nested arbitrarily deep.
 
-Nested writes are available for [relation fields]() when using the model's `create` or `update` query. The following nested write options are available per query:
-
-| Query | Option | Description |
-| :---- | :----- | :---------- |
-|       |        |
+Nested writes are available for [relation fields]() when using the model's `create` or `update` query. The following section shows the nested write options that are available per query.
 
 ### One-to-one relations
 
@@ -158,24 +156,26 @@ model User {
 }
 
 model Profile {
-  id   Int     @id @default(autoincrement())
-  bio  String
-  user User?
+  id      Int     @id @default(autoincrement())
+  bio     String
+  user    User?   @relation(fields:  [userId], references: [id])
+  userId  Int?
 }
 ```
 
-One-to-one relation fields (e.g. `profile` on `User` in the sample data model above)
+The following nested write options for `Profile` are available in `prisma.user.create(...)` queries:
 
-- `create`
-  - `create`: Create a new user and a new profile
-  - `connect`: Create a new user and connect it to an existing profile
-- `update`
-  - `create`: Update an existing user by creating a new profile
-  - `connect`: Update an an existing user by connecting it to an existing profile
-  - `update`: Update an existing user by updating their existing profile
-  - `upsert`: Update an existing user by updating their existing profile or by creating a new profile
-  - `delete` (only if relation is optional): Update an existing user by deleting their existing profile
-  - `disconnect` (only if relation is optional): Update an existing user by removing the connection to their existing profile
+- `create`: Create a new user and a new profile
+- `connect`: Create a new user and connect it to an existing profile
+
+The following nested write options for `Profile` are available in `prisma.user.update(...)` queries:
+
+- `create`: Update an existing user by creating a new profile
+- `connect`: Update an an existing user by connecting it to an existing profile
+- `update`: Update an existing user by updating their existing profile
+- `upsert`: Update an existing user by updating their existing profile or by creating a new profile
+- `delete` (only if relation is optional): Update an existing user by deleting their existing profile
+- `disconnect` (only if relation is optional): Update an existing user by removing the connection to their existing profile
 
 **Create a new `User` record with a new `Profile` record**:
 
@@ -345,21 +345,22 @@ model Post {
 }
 ```
 
-One-to-many relation fields (e.g. `posts` on `User` in the sample data model above):
+The following nested write options for `Post` are available in `prisma.user.create(...)` queries:
 
-- `create`
-  - `create`: Create a new user and one or more new posts
-  - `connect`: Create a new user and connect it to one or more existing posts
-- `update`
-  - `create`: Update an existing user by creating one or more new posts
-  - `connect`: Update an existing user by connecting it to one or more existing posts
-  - `update`: Update an existing user by updating one or more of their existing posts
-  - `upsert`: Update an existing user by updating one or more of their existing posts or by creating one or more new posts
-  - `delete`: Update an existing user by deleting one or more of their existing posts
-  - `disconnect`: Update an existing by removing the connection(s) to one or more of their existing posts
-  - `set`: Update an existing user by replacing their existing posts with one or more existing posts
-  - `updateMany`: Update an existing user by updating one or more of their existing posts
-  - `deleteMany`: Update an existing user by deleting one or more of their existing posts
+- `create`: Create a new user and one or more new posts
+- `connect`: Create a new user and connect it to one or more existing posts
+
+The following nested write options for `Post` are available in `prisma.update.update(...)` queries:
+
+- `create`: Update an existing user by creating one or more new posts
+- `connect`: Update an existing user by connecting it to one or more existing posts
+- `update`: Update an existing user by updating one or more of their existing posts
+- `upsert`: Update an existing user by updating one or more of their existing posts or by creating one or more new posts
+- `delete`: Update an existing user by deleting one or more of their existing posts
+- `disconnect`: Update an existing by removing the connection(s) to one or more of their existing posts
+- `set`: Update an existing user by replacing their existing posts with one or more existing posts
+- `updateMany`: Update an existing user by updating one or more of their existing posts
+- `deleteMany`: Update an existing user by deleting one or more of their existing posts
 
 **Create a new `User` record with a new `Post` record**:
 
@@ -543,9 +544,9 @@ const user = await prisma.user.update({
 
 ## Nested reads
 
-With nested reads, you can modify the structures of the model objects that are returned by your Prisma Client queries by including their relations. In [ORM]() terminoloy, this is sometimes called _eager loading_.
+With nested reads, you can modify the structures of the model objects that are returned by your Prisma Client queries by _including_ their relations. In [ORM]() terminoloy, this is sometimes called _eager loading_.
 
-You can load relations of your models with the [`include`]() and [`select`]() options which you can pass to _any_ Prisma Client query (except for the batch operations `updateMany` and `deleteMany`), . `include` is more commonly used for relations, `select` is used for selecting specific fields.
+You can load relations of your models with the [`include`]() and [`select`]() options which you can pass to _any_ Prisma Client query (except for the batch operations `updateMany` and `deleteMany`). `include` is more commonly used for relations, `select` is used for selecting specific fields.
 
 **Include the `posts` and `profile` relation when loading `User` records**
 

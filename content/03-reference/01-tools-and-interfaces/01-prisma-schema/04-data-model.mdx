@@ -63,19 +63,19 @@ model Profile {
 }
 
 model Post {
-  id         Int        @id @default(autoincrement())
-  createdAt  DateTime   @default(now())
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
   title      String
-  published  Boolean    @default(false)
-  author     User       @relation(fields: [authorId], references: [id])
+  published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
   authorId   Int
-  categories Category[]
+  categories Category[]  @relation(references: [id])
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
+  id    Int     @id @default(autoincrement())
   name  String
-  posts Post[]
+  posts Post[]  @relation(references: [id])
 }
 
 enum Role {
@@ -112,7 +112,6 @@ You can use the following scalar types in the Prisma data model:
 The _data source connector_ determines what _native database type_ each of these types map to. Similarly, the _generator_ determines what _type in the target programming language_ each of these types map to.
 
 Expand below to see the mappings per connector and generator.
-
 
 <details><summary>Scalar mapping to connectors and generators</summary>
 <br />
@@ -237,16 +236,18 @@ Here's an overview of the extact signatures of all attributes:
 @@map(_ name: String)
 
 // Configuring relations
-@relation(_ name: String?, references: FieldReference[]?)
+@relation(_ name: String?, fields: FieldReference[]?, references: FieldReference[]?)
 ```
 
-The leading underscore in a signature means the _argument name_ can be omitted (read more [below](#arguments)).
+> **Note**: The leading underscore in a signature means the _argument name_ can be omitted (read more [below](#arguments)).
+
+Here's an overview of the _types_ that are used in the attribute signatures:
 
 | Type               | Description                              | Example                                |
 | :----------------- | :--------------------------------------- | :------------------------------------- |
 | `FieldReference[]` | An array of [field](#fields) names       | `[id]`, `[firstName, lastName]`        |
-| `String`           | A variable length text in `""`           | `""`, `"Hello World"`, `"Alice"`       |
-| `Expression`       | An expression can be evaluated by Prisma | `42.0`, `""`, `Bob`, `now()`, `cuid()` |
+| `String`           | A variable length text in double quotes  | `""`, `"Hello World"`, `"Alice"`       |
+| `Expression`       | An expression that can be evaluated by Prisma | `42.0`, `""`, `Bob`, `now()`, `cuid()` |
 
 ### Arguments
 
@@ -389,11 +390,12 @@ model User {
 }
 ```
 
-**Specify an ID on sign field `author` without a default value**
+**Specify an ID on field `authorId` without a default value**
 
 ```prisma
 model Post {
-  author     User       @id
+  authorId   Int        @id
+  author     User       @relation(fields:  [authorId], references: [id])
   title      String
   published  Boolean    @default(false)
 }
@@ -524,22 +526,23 @@ const user = await prisma.user.create({
 
 ```prisma
 model Post {
-  author     User
   title      String
-  published  Boolean    @default(false)
+  published  Boolean @default(false)
+  author     User    @relation(fields:  [authorId], references: [id])
+  authorId   Int
 
-  @@id([author, title])
+  @@id([authorId, title])
 }
 
 model User {
-  id        Int      @default(autoincrement())
-  email     String   @unique
-  name      String?
-  posts     Post[]
+  id     Int      @default(autoincrement())
+  email  String   @unique
+  name   String?
+  posts  Post[]
 }
 ```
 
-When creating new `Post` records, you now must provide a unique combination of values for `author` (foreign key) and `title`:
+When creating new `Post` records, you now must provide a unique combination of values for `authorId` (foreign key) and `title`:
 
 ```ts
 const post = await prisma.post.create({
@@ -614,13 +617,14 @@ model User {
 
 Note that in this case, it is _allowed_ to have multiple `User` records in the database where the `email` is `NULL` because `NULL` values are considered to distinct from each other.
 
-**Specify a unique attribute on relation field `author`**
+**Specify a unique attribute on link field `authorId`**
 
 ```prisma
 model Post {
-  author     User       @unique
+  author     User       
+  authorId   Int      @unique
   title      String
-  published  Boolean    @default(false)
+  published  Boolean  @default(false)
 }
 
 model User {
@@ -867,6 +871,8 @@ It is currently not possible to provide more configuration options to the index:
   - Create indexes concurrently with `CONCURRENTLY`
 - MySQL
   - Specify index methods with `USING`; MySQL supports these index methods: B-tree, hash; Prisma uses B-Tree by default
+
+Note that while you can't configure these option in your Prisma schema, you can still configure them on the database-level directly.
 
 ### Mapping column and table names
 

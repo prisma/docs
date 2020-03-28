@@ -48,7 +48,8 @@ model Post {
   title     String
   content   String?
   published Boolean @default(false)
-  author    User?
+  author    User?   @relation(fields:  [authorId], references: [id])
+  authorId  Int?
 }
 
 model User {
@@ -82,6 +83,7 @@ Note that the `feed` endpoint in this case returns a nested JSON response of `Po
     "title": "Hello World",
     "content": "null",
     "published": "true",
+    "authorId": 42,
     "author": {
       "id": "42",
       "name": "Alice",

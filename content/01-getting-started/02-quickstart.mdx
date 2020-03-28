@@ -119,11 +119,11 @@ The SQLite database file `prisma/dev.db` contains two tables with dummy data:
 
 **Post**
 
-| **id** | **title**       | **content** | **published** |  **author** |
+| **id** | **title**       | **content** | **published** |  **authorId** |
 | :----- | :-------------- | :---------- | :------------ | :--------- |
 | `1`    | `"Hello World"` | `null`      | `false`       | `2`        |
 
-> **Note**: The number in the `author` column references the `id` column of the `User` table: the `2` in the `author` column refers to the `User` record with an `id` value of `2`.
+> **Note**: The `authorId` column references the `id` column of the `User` table: the `2` in the `authorId` column refers to the `User` record with an `id` value of `2`.
 
 Befor you move on, navigate into the `starter` directory and install the npm dependencies with these commands:
 
@@ -242,13 +242,19 @@ Each object inside `allUsers` now includes a `posts` field which represents the 
 
 ```js
 [
-  { id: 1, email: 'sarah@prisma.io', name: 'Sarah', posts: [] }
+  { id: 1, email: 'sarah@prisma.io', name: 'Sarah', posts: [] },
   {
     id: 2,
     email: 'maria@prisma.io',
     name: 'Maria',
     posts: [
-      { id: 1, title: 'Hello World', content: null, published: false }
+      {
+        id: 1,
+        title: 'Hello World',
+        content: null,
+        published: false,
+        authorId: 2
+      }
     ]
   }
 ]
@@ -269,11 +275,11 @@ export type Post = {
   title: string
   content: string | null
   published: boolean
+  authorId: number | null
 }
 ```
 
 </SwitchTech>
-
 
 Congratulations, you just wrote your first query with Prisma Client 🎉
 
@@ -317,7 +323,8 @@ The output should look similar to this:
   id: 2,
   title: 'Prisma makes databases easy',
   content: null,
-  published: false
+  published: false,
+  authorId: 1
 }
 [
   {
@@ -325,15 +332,27 @@ The output should look similar to this:
     email: 'sarah@prisma.io',
     name: 'Sarah',
     posts: [
-      { id: 2, title: 'Prisma makes databases easy', content: null, published: false }
+      {
+        id: 2,
+        title: 'Prisma makes databases easy',
+        content: null,
+        published: false,
+        authorId: 1
+      }
     ]
-  }
+  },
   {
     id: 2,
     email: 'maria@prisma.io',
     name: 'Maria',
     posts: [
-      { id: 1, title: 'Hello World', content: null, published: false }
+      {
+        id: 1,
+        title: 'Hello World',
+        content: null,
+        published: false,
+        authorId: 2
+      }
     ]
   }
 ]
@@ -343,7 +362,7 @@ The query added a new record to the `Post` table:
 
 **Post**
 
-| **id** | **title**                       | **content** | **published** | **author** |
+| **id** | **title**                       | **content** | **published** | **authorId** |
 | :----- | :------------------------------ | :---------- | :------------ | :--------- |
 | `1`    | `"Hello World"`                 | `null`      | `false`       | `2`        |
 | `2`    | `"Prisma makes databases easy"` | `null`      | `false`       | `1`        |
@@ -373,7 +392,8 @@ You will see the following output:
   id: 2,
   title: 'Prisma makes databases easy',
   content: null,
-  published: true
+  published: true,
+  authorId: 1
 }
 ```
 
@@ -381,7 +401,7 @@ The `Post` record with an `id` of `2` now got updated in the database:
 
 **Post**
 
-| **id** | **title**                       | **content** | **published** | **author** |
+| **id** | **title**                       | **content** | **published** | **authorId** |
 | :----- | :------------------------------ | :---------- | :------------ | :--------- |
 | `1`    | `"Hello World"`                 | `null`      | `false`       | `2`        |
 | `2`    | `"Prisma makes databases easy"` | `null`      | `true`        | `1`        |
@@ -449,7 +469,6 @@ const deletedUser = await prisma.user.delete({
 
 </details>
 
-
 ---
 
 ### Setup Prisma with your own database
@@ -482,7 +501,7 @@ sqlite3 ./prisma/dev.db \
 'CREATE TABLE "Profile" (
   "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, 
   "bio" TEXT,
-  "user" TEXT NOT NULL UNIQUE REFERENCES "User"(id) ON DELETE SET NULL
+  "userId" TEXT NOT NULL UNIQUE REFERENCES "User"(id) ON DELETE SET NULL
 )'
 ```
 
@@ -494,15 +513,7 @@ npx prisma introspect
 
 This updates your [Prisma schema]()) in `prisma/schema.prisma`.
 
-Finally, re-generate Prisma Client with this command:
-
-``` copy
-npx prisma generate
-```
-
-This updates the generated Prisma Client library in [`node_modules/@prisma/client`]().
-
-You can now run queries against the new `Profile` table, e.g. using `prisma.profile.findMany()`.
+Note that after the introspection, you might want to [configure your  Prisma Client API]().
 
 <details><summary><strong>Alternative</strong>: Use Prisma Migrate (experimental)</summary>
 
@@ -512,9 +523,10 @@ First, adjust the data model in your Prisma schema, e.g. by adding a new model:
 
 ```prisma copy
 model Profile {
-  id   Int    @id @default(autoincrement())
-  bio  String
-  user User
+  id     Int     @id @default(autoincrement())
+  bio    String
+  user   User    @relation(fields: [userId], references: [id])
+  userId Int
 }
 
 model User {
@@ -526,11 +538,12 @@ model User {
 }
 
 model Post {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   title     String
   content   String?
-  published Boolean @default(false)
-  author    User?
+  published Boolean  @default(false)
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  Int?
 }
 ```
 
@@ -541,14 +554,22 @@ npx prisma migrate save --name "add-profile" --experimental
 npx prisma migrate up --experimental
 ```
 
-Now you can run the  migration against the database `npx prisma migrate up --experimental`.
+Now you can run the migration against the database `npx prisma migrate up --experimental`.
 
 </details>
+
+
+Finally, re-generate Prisma Client with this command:
+
+``` copy
+npx prisma generate
+```
+
+This updates the generated Prisma Client library in [`node_modules/@prisma/client`]().
 
 You can now run queries against the new `Profile` table, e.g. using `prisma.profile.findMany()`.
 
 ---
-
 
 ### Try a Prisma example
 
