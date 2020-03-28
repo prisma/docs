@@ -73,6 +73,8 @@ In the resolver of a GraphQL query, Prisma typically reads data from the databas
 
 ### Is there a special connection between Prisma and Nexus?
 
-Yes. At Prisma, we love GraphQL and strongly believe in its bright future. While Prisma is compatible with all tools from the GraphQL ecosystem, we want to leverage the amazing things that become possible when Nexus and Prisma are combined and are therefore helping to build it.
+Yes. At Prisma, we love GraphQL and strongly believe in its bright future. While Prisma is compatible with all tools from the GraphQL ecosystem, we want to leverage the amazing things that become possible when [Nexus]() and Prisma are combined and are therefore helping to build it. 
+
+As an example, when you use Nexus together with Prisma, Nexus can  leverage the information from the Prisma schema and automatically generate queries and mutations for your Prisma models.
 
 The [Prisma Labs]() team has been founded as an independent part of the rest of Prisma's engineering organization to work on open-source tools that are not directly tied to the Prisma database tools. Prisma Labs is currently dedicating most of their time to work on Nexus with the vision of making it a fully-fledged backend framework for building GraphQL servers.
