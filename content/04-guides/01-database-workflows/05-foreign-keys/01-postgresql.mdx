@@ -57,10 +57,12 @@ CREATE TABLE "public"."User" (
 CREATE TABLE "public"."Post" (
   id SERIAL PRIMARY KEY,
   title TEXT,
-  author INTEGER,
-  FOREIGN KEY (author) REFERENCES "public"."User" (id)
+  "authorId" INTEGER,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."User" (id)
 );
 ```
+
+> **Note**: The quotes are added to the `"authorId"` column name to maintain the casing (otherwise PostgreSQL interprets column names as all-lowercase).
 
 Now run the SQL statement against your database to create the two tables:
 
@@ -110,7 +112,7 @@ CREATE TABLE "public"."AnotherPost" (
 );
 ```
 
-> **Note**: The quotes are added to the `"firstName"` and `"lastName"` fields to maintain the casing (otherwise PostgreSQL interprets column names as all-lowercase). The `UNIQUE` constraint on `AnotherUser` is needed to be able to reference the columns as foreign keys.
+> **Note**: The quotes are added to the `"firstName"` and `"lastName"` column names to maintain the casing (otherwise PostgreSQL interprets column names as all-lowercase). The `UNIQUE` constraint on `AnotherUser` is needed to be able to reference the columns as foreign keys.
 
 Now run the SQL statement against your database to create a new table called `AnotherUser`:
 
@@ -118,7 +120,7 @@ Now run the SQL statement against your database to create a new table called `An
 psql ForeignKeyDemo < multi-column-foreign-key.sql
 ```
 
-Congratulations, you just created two tables called `AnotherUser` and `AnotherPost` in the database. The `Post` table references the `User` table via the foreign key defined on the `authorFirstName` and `authorLastName` columns.
+Congratulations, you just created two tables called `AnotherUser` and `AnotherPost` in the database. The `AnotherPost` table references the `AnotherUser` table via the foreign key defined on the `authorFirstName` and `authorLastName` columns.
 
 ## 4. Introspect your database with Prisma
 
@@ -176,30 +178,34 @@ datasource postgresql {
 }
 
 model AnotherPost {
-  id          Int          @default(autoincrement()) @id
-  title       String?
-  anotherUser AnotherUser? @map(["authorFirstName", "authorLastName"]) @relation(references: [firstName, lastName])
+  authorFirstName String?
+  authorLastName  String?
+  id              Int          @default(autoincrement()) @id
+  title           String?
+  AnotherUser     AnotherUser? @relation(fields: [authorFirstName, authorLastName], references: [firstName, lastName])
 }
 
 model AnotherUser {
   firstName   String?
   id          Int           @default(autoincrement()) @id
   lastName    String?
-  anotherPost AnotherPost[]
+  AnotherPost AnotherPost[]
 
   @@unique([firstName, lastName], name: "AnotherUser_firstName_lastName_key")
 }
 
 model Post {
-  id     Int     @default(autoincrement()) @id
-  title  String?
-  author User?
+  authorId Int?
+  id       Int     @default(autoincrement()) @id
+  title    String?
+  User     User?   @relation(fields: [authorId], references: [id])
 }
 
 model User {
   id   Int     @default(autoincrement()) @id
   name String?
-  post Post[]
+  Post Post[]
+}
 ```
 
 ## 5. Generate Prisma Client
@@ -235,14 +241,14 @@ async function main() {
   const userWithPost = await prisma.user.create({
     data: {
       name: 'Alice',
-      post: {
+      Post: {
         create: {
           title: 'Hello World from Alice',
         },
       },
     },
     include: {
-      post: true,
+      Post: true,
     },
   });
   console.log(userWithPost);
@@ -251,14 +257,14 @@ async function main() {
     data: {
       firstName: 'Bob',
       lastName: 'Smith',
-      anotherPost: {
+      AnotherPost: {
         create: {
           title: 'Hello World from Bob',
         },
       },
     },
     include: {
-      anotherPost: true,
+      AnotherPost: true,
     },
   });
   console.log(anotherUserWithPost);
@@ -281,12 +287,19 @@ The following output indicates that the foreign key constraint is working as int
 {
   id: 1,
   name: 'Alice',
-  post: [ { id: 1, title: 'Hello World from Alice' } ]
+  Post: [ { authorId: 1, id: 1, title: 'Hello World from Alice' } ]
 }
 {
   firstName: 'Bob',
   id: 1,
   lastName: 'Smith',
-  anotherPost: [ { id: 1, title: 'Hello World from Bob' } ]
+  AnotherPost: [
+    {
+      authorFirstName: 'Bob',
+      authorLastName: 'Smith',
+      id: 1,
+      title: 'Hello World from Bob'
+    }
+  ]
 }
 ```
