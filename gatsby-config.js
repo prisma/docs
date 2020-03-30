@@ -18,15 +18,6 @@ module.exports = {
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
-    {
-      resolve: `gatsby-plugin-algolia`,
-      options: {
-        appId: config.header.search.algoliaAppId,
-        apiKey: config.header.search.apiKey,
-        queries,
-        chunkSize: 10000, // default: 1000
-      },
-    },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
     {
       resolve: `gatsby-plugin-mdx`,
