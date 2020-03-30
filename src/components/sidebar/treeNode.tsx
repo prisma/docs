@@ -71,6 +71,9 @@ const ListItem = styled.li`
   &.bottom-level {
     margin-left: 20px;
   }
+  &.static-link {
+    margin-top: 24px;
+  }
   &.static-link > a {
     color: #a0aec0 !important;
     text-transform: uppercase;
