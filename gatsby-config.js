@@ -6,6 +6,7 @@ module.exports = {
     description: config.siteMetadata.description,
     keywords: config.siteMetadata.keywords,
     header: config.header,
+    siteUrl: "https://prisma2.netlify.com",
     // logo: { link: config.header.logoLink ? config.header.logoLink : '/', image: config.header.logo }, // backwards compatible
     // headerTitle: config.header.title,
     footer: config.footer,
@@ -18,6 +19,25 @@ module.exports = {
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
+    {
+      resolve: `gatsby-plugin-sitemap`,
+      options: {
+        sitemapSize: 5000
+      }
+    },
+    {
+      resolve: 'gatsby-plugin-robots-txt',
+      options: {
+        env: {
+          development: {
+            policy: [{ userAgent: '*', disallow: ['/'] }]
+          },
+          production: {
+            policy: [{ userAgent: '*', allow: '/' }]
+          }
+        }
+      }
+    },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
     {
       resolve: `gatsby-plugin-mdx`,
@@ -49,7 +69,7 @@ module.exports = {
       resolve: 'gatsby-source-filesystem',
       options: {
         name: 'docs',
-        path: `${__dirname}/content`,
+        path: `${__dirname}/content/`,
         ignore: ['**/.tsx*'],
       },
     },

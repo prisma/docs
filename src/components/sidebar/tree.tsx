@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import TreeNode from './treeNode';
 import { AllEdges } from '../../interfaces/AllArticles.interface';
 import { ArticleFields } from '../../interfaces/Article.interface';
+import { createGlobalState } from 'react-hooks-global-state';
 
 interface TreeNode {
   node: {
@@ -79,12 +80,14 @@ const calculateTreeData = (edges: any) => {
   return tree;
 };
 
+const initialState = { collpased: defaultCollapsed };
+const { useGlobalState } = createGlobalState(initialState);
+
 const Tree = ({ edges }: AllEdges) => {
   let [treeData] = useState(() => {
     return calculateTreeData(edges);
   });
-
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [collapsed, setCollapsed] = useGlobalState('collpased');
 
   const toggle = (label: string) => {
     setCollapsed({

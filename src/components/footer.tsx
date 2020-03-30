@@ -34,6 +34,24 @@ const LinkList = styled.ul`
     a {
       text-decoration: none;
       color: #a0aec0 !important;
+      &:hover {
+        color: #718096 !important;
+        .tag {
+          transform: scale(1.05);
+        }
+      }
+
+      .tag {
+        display: inline-block;
+        border-radius: 6px;
+        margin-left: 8px;
+        padding: 0 8px;
+        background: #48bb78;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+        transition: transform 0.1s ease-in;
+      }
     }
     &:first-of-type {
       line-height: 3rem;
@@ -98,6 +116,10 @@ const NewsLetter = styled.div`
       margin-top: 10px;
       a {
         margin-right: 24px;
+
+        &: hover {
+          color: #718096 !important;
+        }
       }
     }
     &-text {
@@ -166,21 +188,24 @@ const Footer = ({ footerProps }: FooterViewProps) => {
           <li>COMPANY</li>
           {company.map((item: any, index: number) => (
             <li key={index}>
-              <a href={item.link}>{item.name}</a>
+              <a href={item.link}>
+                {item.name}
+                {item.name === 'Jobs' && <span className="tag">We're Hiring</span>}
+              </a>
             </li>
           ))}
         </LinkList>
       </div>
 
       <NewsLetter>
-        <h4>NEWSLETTER</h4>
-        <p>{newsletter.text}</p>
+        {/* <h4>NEWSLETTER</h4>
+        <p>{newsletter.text}</p> */}
 
-        <div className="email">
+        {/* <div className="email">
           <Email style={{ position: 'absolute', top: '30px', left: '24px' }} />
           <input type="text" placeholder="your@email.com" />
           <ArrowEmail style={{ position: 'absolute', top: '24px', right: '24px' }} />
-        </div>
+        </div> */}
         <div className="social">
           <h4>FIND US</h4>
           <div className="social-links">
