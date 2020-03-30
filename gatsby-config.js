@@ -21,6 +21,7 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
+        host: 'https://prisma2.netlify.com',
         env: {
           development: {
             policy: [{ userAgent: '*', disallow: ['/'] }]
