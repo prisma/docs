@@ -1,7 +1,7 @@
 ---
 title: 'GraphQL'
-metaTitle: ''
-metaDescription: ''
+metaTitle: 'Building GraphQL servers with Prisma'
+metaDescription: 'This page gives explains how to build GraphQL servers with Prisma. It shows how Prisma fits into the GraphQL ecosystem and provides practical examples.'
 ---
 
 ## Overview

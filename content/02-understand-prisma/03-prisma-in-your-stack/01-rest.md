@@ -1,7 +1,7 @@
 ---
 title: 'REST'
-metaTitle: ''
-metaDescription: ''
+metaTitle: 'Build REST APIs with Prisma'
+metaDescription: 'This page gives an overview of the most important things when building REST APIs with Prisma. It shows practical examples and the supported libraries.'
 ---
 
 ## Overview
