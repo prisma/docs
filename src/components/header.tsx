@@ -99,7 +99,8 @@ const Header = ({ headerProps }: HeaderViewProps) => (
             style={{
               color: 'white',
               textDecoration: 'none',
-              display: 'flex'
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
             <LogoContainer>
@@ -107,20 +108,19 @@ const Header = ({ headerProps }: HeaderViewProps) => (
             </LogoContainer>
             <Title>{headerProps.title}</Title>
           </Link>
-          
         </div>
         <NavLinks>
           {headerProps.links.map((headerlink: any, index: number) => (
-            <Link
+            <a
               key={index}
-              to={headerlink.link}
+              href={headerlink.link}
               style={{
                 color: 'white',
                 textDecoration: 'none',
               }}
             >
               {headerlink.name}
-            </Link>
+            </a>
           ))}
         </NavLinks>
         <a

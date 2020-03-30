@@ -9,9 +9,9 @@ export default (props: any) => (
     // preserveAspectRatio="xMidYMid"
     {...props}
     style={{
-        height: '100%',
-        width: '55px',
-        marginRight: '-30px'
+      height: '100%',
+      width: '55px',
+      marginRight: '-30px',
     }}
   >
     <defs>
