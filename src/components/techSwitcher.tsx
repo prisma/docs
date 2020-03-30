@@ -4,7 +4,7 @@ import { Typescript } from '../icons/technologies/Typescript';
 import SelectComponent from './select';
 import PostgreSQL from '../icons/technologies/PostgreSQL';
 import MySQL from '../icons/technologies/MySQL';
-import MongoDB from '../icons/technologies/MongoDB'; // change icon as soon as we have it
+import MongoDB from '../icons/technologies/SQLite'; // change icon as soon as we have it
 import JS from '../icons/technologies/JS';
 
 interface TechSwitchProps {
