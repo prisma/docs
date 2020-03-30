@@ -9,8 +9,8 @@ const config = {
       { name: 'Install', link: '/' },
       { name: 'Guides', link: '/' },
       { name: 'Reference', link: '/' },
-      { name: 'Blog', link: '/' },
-      { name: 'Community', link: '/' },
+      { name: 'Blog', link: 'https://www.prisma.io/blog/' },
+      { name: 'Community', link: 'https://www.prisma.io/community/' },
       { name: 'FAQ', link: '/' },
     ],
     search: {
@@ -52,9 +52,9 @@ const config = {
       { name: 'PostgreSQL Tutorial', link: '/tutorials/?tag=postgresql' },
     ],
     company: [
-      { name: 'About', link: '/about' },
-      { name: 'Jobs', link: '/jobs' },
-      { name: 'Blog', link: '/blog' },
+      { name: 'About', link: 'https://www.prisma.io/about' },
+      { name: 'Jobs', link: 'https://www.prisma.io/jobs' },
+      { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Terms & Privacy', link: 'https://gist.github.com/nikolasburk/c0f34b0cc50d3403e2e0d40c0e6510aa' },
     ],
     newsletter: {
