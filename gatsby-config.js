@@ -20,6 +20,12 @@ module.exports = {
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
     {
+      resolve: `gatsby-plugin-sitemap`,
+      options: {
+        sitemapSize: 5000
+      }
+    },
+    {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
         env: {
