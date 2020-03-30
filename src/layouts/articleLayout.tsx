@@ -18,7 +18,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     allMdx,
     mdx: {
       fields: { slug },
-      frontmatter: { title, metaTitle, metaDescription },
+      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
       body,
     },
   } = data;
@@ -53,7 +53,13 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     <Layout {...props}>
       <SEO title={metaTitle || title} description={metaDescription || title} />
       <section className="top-section">
-        <TopSection location={props.location} title={title} parentTitle={getParentTitle()} />
+        <TopSection
+          location={props.location}
+          title={title}
+          parentTitle={getParentTitle()}
+          langSwitcher={langSwitcher}
+          dbSwitcher={dbSwitcher}
+        />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
       <PageBottom />
@@ -77,6 +83,8 @@ export const query = graphql`
         title
         metaTitle
         metaDescription
+        langSwitcher
+        dbSwitcher
       }
     }
     allMdx {

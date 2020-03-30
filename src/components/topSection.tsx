@@ -1,6 +1,15 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import TOC from './toc';
+import TechnologySwitch from './techSwitcher';
+
+const TopSectionWrapper = styled.div`
+  position: relative;
+  hr.bigger-margin {
+    margin-top: 3.5rem;
+    margin-bottom: 4rem;
+  }
+`;
 
 const BreadcrumbTitle = styled.h4`
   color: #718096;
@@ -19,13 +28,85 @@ const MainTitle = styled.h1`
   margin-top: 4px;
 `;
 
-const TopSection = ({ location, title, parentTitle, indexPage }: any) => (
-  <div>
-    {!indexPage && <BreadcrumbTitle>{parentTitle}</BreadcrumbTitle>}
-    <MainTitle>{title}</MainTitle>
-    {!indexPage && <hr />}
-    {!indexPage && <TOC location={location} />}
-  </div>
-);
+const SwitcherWrapper = styled.div`
+  display: flex;
+  position: absolute;
+  top: 78px;
+`;
+
+const TopSection = ({ location, title, parentTitle, indexPage, langSwitcher, dbSwitcher }: any) => {
+  const [langSelected, setLangSelected] = React.useState('typescript');
+  const [dbSelected, setDbSelected] = React.useState('postgres');
+
+  // TODO : Simplify the function!
+  const techChanged = (item: any, type: string) => {
+    const elements = document.querySelectorAll('[id^="techswitch"]');
+    elements.forEach((element: any) => element.classList.remove('show'));
+    const elemToShow = [].slice.call(elements).filter((elm: any) => {
+      if (type === 'lang') {
+        if (dbSwitcher) {
+          if (elm.id.includes('-*-')) { // lang is any
+            return elm.id.includes(`-${dbSelected}`);
+          } else {
+            return (
+              elm.id.includes(`-${item.technology}`) &&
+              (elm.id.includes(`-${dbSelected}`) || elm.id.includes(`-*`))
+            );
+          }
+        } else {
+          return elm.id.includes(`-${item.technology}`);
+        }
+      } else if (type === 'db') {
+        if (langSwitcher) {
+          if (elm.id.slice(-1) === '*') { // db is any
+            return elm.id.includes(`-${langSelected}`);
+          } else {
+            return (
+              elm.id.includes(`-${item.technology}`) &&
+              (elm.id.includes(`-${langSelected}`) || elm.id.includes(`-*`))
+            );
+          }
+        } else {
+          return elm.id.includes(`-${item.technology}`);
+        }
+      }
+    });
+    elemToShow && elemToShow.forEach((eShow: any) => eShow.classList.add('show'));
+  };
+
+  const langChanged = (item: any) => {
+    techChanged(item, 'lang');
+    setLangSelected(item.technology);
+  };
+
+  const dbChanged = (item: any) => {
+    techChanged(item, 'db');
+    setDbSelected(item.technology);
+  };
+
+  React.useEffect(() => {
+    if (langSwitcher && !dbSwitcher) {
+      langChanged({ technology: langSelected });
+    } else if (dbSwitcher && !langSwitcher) {
+      dbChanged({ technology: dbSelected });
+    } else if (dbSwitcher && langSwitcher) {
+      langChanged({ technology: langSelected });
+      dbChanged({ technology: dbSelected });
+    }
+  });
+
+  return (
+    <TopSectionWrapper>
+      {!indexPage && <BreadcrumbTitle>{parentTitle}</BreadcrumbTitle>}
+      <MainTitle>{title}</MainTitle>
+      {!indexPage && <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />}
+      <SwitcherWrapper>
+        {langSwitcher && <TechnologySwitch type="lang" onChangeTech={langChanged} />}
+        {dbSwitcher && <TechnologySwitch type="db" onChangeTech={dbChanged} />}
+      </SwitcherWrapper>
+      {!indexPage && <TOC location={location} />}
+    </TopSectionWrapper>
+  );
+};
 
 export default TopSection;

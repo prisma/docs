@@ -1,57 +1,25 @@
 import React from 'react';
-import styled from 'styled-components';
 
-interface CodeProps {
-  languages?: string[];
-}
+type CodeProps = React.ReactNode;
 
-type CodeBlockProps = CodeProps & React.ReactNode;
+const getSettings = (className: any) => {
+  let copy = false;
+  if (className) {
+    const split = className.split('-');
+    if (split.length > 1) {
+      copy = split[1].includes('copy');
+    }
+  }
+  return copy;
+};
 
-const CodeBlock = ({ languages, children, ...props }: CodeBlockProps) => {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const child: any = React.Children.toArray(children)[activeIndex];
-  const code = child && child.props && child.props.children;
-
+const Code = ({ className, children, ...props }: CodeProps) => {
+  const modifiedClassName = getSettings(className) ? className.replace('copy', '') : className;
   return (
-    <Wrapper>
-      {languages && Array.isArray(languages) && (
-        <Tabs>
-          {languages.map((lang, index) => {
-            const setCurrentActive = () => setActiveIndex(index);
-            return (
-              <div
-                className={`tab ${index === activeIndex ? 'active' : ''}`}
-                key={lang}
-                data-index={`${index}`}
-                onClick={setCurrentActive}
-              >
-                {lang}
-              </div>
-            );
-          })}
-        </Tabs>
-      )}
-      {code}
-    </Wrapper>
+    <code {...props} className={modifiedClassName}>
+      {children}
+    </code>
   );
 };
 
-export default CodeBlock;
-
-const Tabs = styled.div`
-  display: flex;
-  .tab {
-    margin-right: 10px;
-    color: #8fa6b2;
-    cursor: pointer;
-  }
-
-  .tab.active {
-    font-weight: 600;
-    color: #1a202c;
-  }
-`;
-const Wrapper = styled.div`
-  margin-top: 2rem;
-  position: relative;
-`;
+export default Code;

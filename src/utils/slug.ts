@@ -2,7 +2,9 @@ export function slug(title: string) {
   return title
     .replace(/\s/g, '-')
     .replace('.md', '')
+    .replace('/', '-')
     .replace('@', '')
+    .replace('_', '-')
     .replace('/', '-')
     .replace('.', '')
     .replace(/\?/g, '')
