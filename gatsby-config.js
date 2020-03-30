@@ -6,6 +6,7 @@ module.exports = {
     description: config.siteMetadata.description,
     keywords: config.siteMetadata.keywords,
     header: config.header,
+    siteUrl: "https://prisma2.netlify.com",
     // logo: { link: config.header.logoLink ? config.header.logoLink : '/', image: config.header.logo }, // backwards compatible
     // headerTitle: config.header.title,
     footer: config.footer,
@@ -21,7 +22,6 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
-        host: 'https://prisma2.netlify.com',
         env: {
           development: {
             policy: [{ userAgent: '*', disallow: ['/'] }]
