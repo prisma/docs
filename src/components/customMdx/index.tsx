@@ -5,6 +5,7 @@ import Code from './code';
 import Pre from './pre';
 import CollapseBox from './collapsible';
 import Table from './table';
+import ButtonLink from './button';
 import makeHeading from './headings';
 
 export default {
@@ -22,4 +23,5 @@ export default {
   code: Code,
   details: CollapseBox,
   table: Table,
+  ButtonLink
 };
