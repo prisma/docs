@@ -122,7 +122,7 @@ const Header = ({ headerProps }: HeaderViewProps) => (
           ))}
         </NavLinks>
         <Link
-          to={'/'}
+          to={'https://github.com/prisma'}
           style={{
             color: 'white',
             textDecoration: 'none',
@@ -131,10 +131,10 @@ const Header = ({ headerProps }: HeaderViewProps) => (
           <Github style={{ height: '24px' }} />
         </Link>
       </HeaderNav>
-      <div style={{ position: 'relative', marginTop: ' 27px' }}>
+      {/* <div style={{ position: 'relative', marginTop: ' 27px' }}>
         <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
         <SearchInput type="text" placeholder="Search" />
-      </div>
+      </div> */}
     </div>
   </HeaderWrapper>
 );

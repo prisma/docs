@@ -23,5 +23,5 @@ export default {
   code: Code,
   details: CollapseBox,
   table: Table,
-  ButtonLink
+  ButtonLink,
 };
