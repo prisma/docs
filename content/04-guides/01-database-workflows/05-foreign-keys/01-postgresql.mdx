@@ -57,10 +57,12 @@ CREATE TABLE "public"."User" (
 CREATE TABLE "public"."Post" (
   id SERIAL PRIMARY KEY,
   title TEXT,
-  author INTEGER,
-  FOREIGN KEY (author) REFERENCES "public"."User" (id)
+  "authorId" INTEGER,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."User" (id)
 );
 ```
+
+> **Note**: The quotes are added to the `"authorId"` column name to maintain the casing (otherwise PostgreSQL interprets column names as all-lowercase).
 
 Now run the SQL statement against your database to create the two tables:
 
@@ -68,7 +70,7 @@ Now run the SQL statement against your database to create the two tables:
 psql ForeignKeyDemo < single-column-foreign-key.sql
 ```
 
-Congratulations, you just created two tables called `User` and `Post` in the database. The `Post` table references the `User` table via the foreign key defined on the `author` column.
+Congratulations, you just created two tables called `User` and `Post` in the database. The `Post` table references the `User` table via the foreign key defined on the `authorId` column.
 
 <details><summary>Alternative: Define the constraint as a <strong>column constraint</strong></summary>
 <br />
@@ -79,9 +81,9 @@ To add the foreign key constraint as a column constraint, you need to adjust you
 
 ```sql
 CREATE TABLE "public"."Post" (
-  id SERIAL,
+  id SERIAL PRIMARY KEY,
   title TEXT,
-  author INTEGER REFERENCES "public"."User" (id)
+  "authorId" INTEGER REFERENCES "public"."User" (id)
 );
 ```
 
@@ -101,7 +103,6 @@ CREATE TABLE "public"."AnotherUser" (
   UNIQUE ("firstName", "lastName")
 );
 
-
 CREATE TABLE "public"."AnotherPost" (
   id SERIAL PRIMARY KEY,
   title TEXT,
@@ -111,7 +112,7 @@ CREATE TABLE "public"."AnotherPost" (
 );
 ```
 
-> **Note**: The quotes are added to the `"firstName"` and `"lastName"` fields to maintain the casing (otherwise PostgreSQL interprets column names as all-lowercase). The `UNIQUE` constraint on `AnotherUser` is needed to be able to reference the columns as foreign keys.
+> **Note**: The quotes are added to the `"firstName"` and `"lastName"` column names to maintain the casing (otherwise PostgreSQL interprets column names as all-lowercase). The `UNIQUE` constraint on `AnotherUser` is needed to be able to reference the columns as foreign keys.
 
 Now run the SQL statement against your database to create a new table called `AnotherUser`:
 
@@ -119,13 +120,13 @@ Now run the SQL statement against your database to create a new table called `An
 psql ForeignKeyDemo < multi-column-foreign-key.sql
 ```
 
-Congratulations, you just created two tables called `AnotherUser` and `AnotherPost` in the database. The `Post` table references the `User` table via the foreign key defined on the `authorFirstName` and `authorLastName` columns.
+Congratulations, you just created two tables called `AnotherUser` and `AnotherPost` in the database. The `AnotherPost` table references the `AnotherUser` table via the foreign key defined on the `authorFirstName` and `authorLastName` columns.
 
-### 4. Introspect your database with Prisma
+## 4. Introspect your database with Prisma
 
 In the previous sections, you created two different foreign key constraints using four total tables:
 
-- The table `Post` has a singe-column foreign key on it's `author` column which points to the `id` field of the `User` table.
+- The table `Post` has a singe-column foreign key on it's `authorId` column which points to the `id` field of the `User` table.
 - The table `AnotherPost` has a multi-column foreign key on it's `authorFirstName` and `authorLastName` columns which point to the `firstName` and `lastField` columns of the `AnotherUser` table.
 
 In this section you'll introspect your database to generate the Prisma models for these tables.
@@ -177,33 +178,37 @@ datasource postgresql {
 }
 
 model AnotherPost {
-  id          Int          @default(autoincrement()) @id
-  title       String?
-  anotherUser AnotherUser? @map(["authorFirstName", "authorLastName"]) @relation(references: [firstName, lastName])
+  authorFirstName String?
+  authorLastName  String?
+  id              Int          @default(autoincrement()) @id
+  title           String?
+  AnotherUser     AnotherUser? @relation(fields: [authorFirstName, authorLastName], references: [firstName, lastName])
 }
 
 model AnotherUser {
   firstName   String?
   id          Int           @default(autoincrement()) @id
   lastName    String?
-  anotherPost AnotherPost[]
+  AnotherPost AnotherPost[]
 
   @@unique([firstName, lastName], name: "AnotherUser_firstName_lastName_key")
 }
 
 model Post {
-  id     Int     @default(autoincrement()) @id
-  title  String?
-  author User?
+  authorId Int?
+  id       Int     @default(autoincrement()) @id
+  title    String?
+  User     User?   @relation(fields: [authorId], references: [id])
 }
 
 model User {
   id   Int     @default(autoincrement()) @id
   name String?
-  post Post[]
+  Post Post[]
+}
 ```
 
-## 7. Generate Prisma Client
+## 5. Generate Prisma Client
 
 To validate whether the foreign key constraints work, you'll now generate Prisma Client and send a few sample queries to the database to test the relations.
 
@@ -223,7 +228,7 @@ npx prisma generate
 
 Now you can use Prisma Client to send database queries in Node.js.
 
-## 8. Validate the foreign key constraints in a Node.js script
+## 6. Validate the foreign key constraints in a Node.js script
 
 Create a new file called `index.js` and add the following code to it:
 
@@ -236,25 +241,33 @@ async function main() {
   const userWithPost = await prisma.user.create({
     data: {
       name: 'Alice',
-      post: {
+      Post: {
         create: {
           title: 'Hello World from Alice',
         },
       },
     },
+    include: {
+      Post: true,
+    },
   });
+  console.log(userWithPost);
 
   const anotherUserWithPost = await prisma.anotherUser.create({
     data: {
       firstName: 'Bob',
       lastName: 'Smith',
-      anotherPost: {
+      AnotherPost: {
         create: {
           title: 'Hello World from Bob',
         },
       },
     },
+    include: {
+      AnotherPost: true,
+    },
   });
+  console.log(anotherUserWithPost);
 }
 
 main();
@@ -266,4 +279,27 @@ Run the code with this command:
 
 ```
 node index.js
+```
+
+The following output indicates that the foreign key constraint is working as intended:
+
+```js
+{
+  id: 1,
+  name: 'Alice',
+  Post: [ { authorId: 1, id: 1, title: 'Hello World from Alice' } ]
+}
+{
+  firstName: 'Bob',
+  id: 1,
+  lastName: 'Smith',
+  AnotherPost: [
+    {
+      authorFirstName: 'Bob',
+      authorLastName: 'Smith',
+      id: 1,
+      title: 'Hello World from Bob'
+    }
+  ]
+}
 ```
