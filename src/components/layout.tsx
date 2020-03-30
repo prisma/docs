@@ -28,9 +28,9 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     display: flex;
     width: 100%;
     justify-content: center;
-    @media only screen and (max-width: 767px) {
-      display: block;
-    }
+    // @media only screen and (max-width: 767px) {
+    //   display: block;
+    // }
   `;
 
   const Content = styled.article`
@@ -43,10 +43,10 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   `;
 
   const MaxWidth = styled.div`
-    @media only screen and (max-width: 50rem) {
-      width: 100%;
-      position: relative;
-    }
+    // @media only screen and (max-width: 50rem) {
+    //   width: 100%;
+    //   position: relative;
+    // }
     > section {
       background: #ffffff;
       box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
