@@ -130,7 +130,8 @@ const TreeNode = ({
     items.map((item: any) => (item.lastLevel = true));
     hasBorder = true;
   }
-  return (
+
+  return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
         <Link

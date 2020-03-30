@@ -45,7 +45,8 @@ const TopSection = ({ location, title, parentTitle, indexPage, langSwitcher, dbS
     const elemToShow = [].slice.call(elements).filter((elm: any) => {
       if (type === 'lang') {
         if (dbSwitcher) {
-          if (elm.id.includes('-*-')) { // lang is any
+          if (elm.id.includes('-*-')) {
+            // lang is any
             return elm.id.includes(`-${dbSelected}`);
           } else {
             return (
@@ -58,7 +59,8 @@ const TopSection = ({ location, title, parentTitle, indexPage, langSwitcher, dbS
         }
       } else if (type === 'db') {
         if (langSwitcher) {
-          if (elm.id.slice(-1) === '*') { // db is any
+          if (elm.id.slice(-1) === '*') {
+            // db is any
             return elm.id.includes(`-${langSelected}`);
           } else {
             return (
