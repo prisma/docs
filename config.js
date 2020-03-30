@@ -6,12 +6,12 @@ const config = {
     logoLink: '/',
     title: 'Prisma',
     links: [
-      { name: 'Install', link: '/' },
-      { name: 'Guides', link: '/' },
-      { name: 'Reference', link: '/' },
+      { name: 'Install', link: '/#getting-started' },
+      { name: 'Guides', link: '/#guides' },
+      { name: 'Reference', link: '/#reference' },
       { name: 'Blog', link: '/' },
       { name: 'Community', link: '/' },
-      { name: 'FAQ', link: '/' },
+      { name: 'FAQ', link: '/more/faq' },
     ],
     search: {
       indexName: '',
