@@ -51,7 +51,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
 
   return (
     <Layout {...props}>
-      <SEO title={metaTitle || title} description={metaDescription || title} />
+      <SEO title={metaTitle || title} description={metaDescription || title} slug={slug}/>
       <section className="top-section">
         <TopSection
           location={props.location}
