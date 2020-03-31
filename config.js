@@ -4,7 +4,7 @@ const config = {
     siteUrl: 'https://www.prisma.io',
   },
   header: {
-    logoLink: '/',
+    logoLink: 'https://www.prisma.io/docs',
     title: 'Prisma',
     links: [
       { name: 'Install', link: '/getting-started/quickstart' },
@@ -46,7 +46,7 @@ const config = {
     },
   },
   footer: {
-    logoLink: '/',
+    logoLink: 'https://www.prisma.io/docs',
     title: 'Prisma',
     products: [
       { name: 'Prisma Client', link: '/reference/tools-and-interfaces/prisma-client/crud' },
@@ -64,7 +64,7 @@ const config = {
       { name: 'TypeScript Meetup', link: 'https://www.meetup.com/TypeScript-Berlin/' },
     ],
     resources: [
-      { name: 'Docs', link: '/' },
+      { name: 'Docs', link: 'https://www.prisma.io/docs' },
       { name: 'Get started', link: '/getting-started/quickstart' },
       {
         name: 'API Reference',
