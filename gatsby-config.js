@@ -20,21 +20,21 @@ module.exports = {
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {
-        sitemapSize: 5000
-      }
+        sitemapSize: 5000,
+      },
     },
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
         env: {
           development: {
-            policy: [{ userAgent: '*', disallow: ['/'] }]
+            policy: [{ userAgent: '*', disallow: ['/'] }],
           },
           production: {
-            policy: [{ userAgent: '*', allow: '/' }]
-          }
-        }
-      }
+            policy: [{ userAgent: '*', allow: '/' }],
+          },
+        },
+      },
     },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
     {
@@ -54,6 +54,15 @@ module.exports = {
                 tsx: 'tsx',
               },
               aliases: {},
+              languageExtensions: [
+                {
+                  language: 'prisma',
+                  extend: 'groovy',
+                  definition: {
+                    prisma_types: /(PrismaType)/,
+                  },
+                },
+              ],
             },
           },
           'gatsby-remark-sectionize',
