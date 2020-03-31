@@ -94,8 +94,8 @@ const Header = ({ headerProps }: HeaderViewProps) => (
     <div className={'container'}>
       <HeaderNav>
         <div style={{ display: 'flex' }}>
-          <Link
-            to={headerProps.logoLink || '/'}
+          <a
+            href={headerProps.logoLink || '/'}
             style={{
               color: 'white',
               textDecoration: 'none',
@@ -107,7 +107,7 @@ const Header = ({ headerProps }: HeaderViewProps) => (
               <HeaderLogo style={{ height: '24px' }} />
             </LogoContainer>
             <Title>{headerProps.title}</Title>
-          </Link>
+          </a>
         </div>
         <NavLinks>
           {headerProps.links.map((headerlink: any, index: number) => (
