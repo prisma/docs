@@ -1,21 +1,21 @@
 const config = {
   gatsby: {
-    pathPrefix: '/',
-    siteUrl: 'https://www.prisma.io/docs',
+    pathPrefix: '/docs',
+    siteUrl: 'https://www.prisma.io',
   },
   header: {
-    logoLink: 'https://www.prisma.io/docs',
+    logoLink: 'https://www.prisma.io',
     title: 'Prisma',
     links: [
-      { name: 'Install', link: '/getting-started/quickstart' },
-      { name: 'Guides', link: '/guides/database-workflows/setting-up-a-database/postgresql' },
+      { name: 'Install', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
+      { name: 'Guides', link: 'https://www.prisma.io/docs' },
       {
         name: 'Reference',
-        link: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-file',
+        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/api',
       },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
-      { name: 'FAQ', link: '/more/faq' },
+      { name: 'FAQ', link: 'https://www.prisma.io/more/faq' },
     ],
     search: {
       indexName: '',
@@ -49,14 +49,14 @@ const config = {
     logoLink: 'https://www.prisma.io/docs',
     title: 'Prisma',
     products: [
-      { name: 'Prisma Client', link: '/reference/tools-and-interfaces/prisma-client/crud' },
+      { name: 'Prisma Client', link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/crud' },
       { name: 'Prisma 1 Cloud', link: 'https://app.prisma.io/login' },
       // { name: 'Nexus', link: 'https://www.nexusjs.org/' },
       // { name: 'Prisma Admin', link: '/' },
       // { name: 'Prisma Enterprise', link: '/' },
     ],
     community: [
-      { name: 'Meet the community', link: '/community' },
+      { name: 'Meet the community', link: 'https://www.prisma.io/community' },
       { name: 'Slack', link: 'https://slack.prisma.io/' },
       { name: 'Github', link: 'https://github.com/prisma' },
       { name: 'Discussions', link: 'https://github.com/prisma/prisma2/discussions' },
@@ -65,14 +65,14 @@ const config = {
     ],
     resources: [
       { name: 'Docs', link: 'https://www.prisma.io/docs' },
-      { name: 'Get started', link: '/getting-started/quickstart' },
+      { name: 'Get started', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
       {
         name: 'API Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
+        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
-      { name: 'PostgreSQL Tutorial', link: '/tutorials/?tag=postgresql' },
+      { name: 'PostgreSQL Tutorial', link: 'https://www.prisma.io/tutorials/?tag=postgresql' },
     ],
     company: [
       { name: 'About', link: 'https://www.prisma.io/about' },

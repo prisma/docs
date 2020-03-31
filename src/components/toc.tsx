@@ -6,6 +6,7 @@ import { slug } from '../utils/slug';
 import { stringify } from '../utils/stringify';
 import scrollTo from 'gatsby-plugin-smoothscroll';
 import { urlGenerator } from '../utils/urlGenerator';
+import config from '../../config';
 
 const TOCContent = styled.aside`
   // padding: 2rem 0 0;
@@ -38,7 +39,7 @@ const TOC = ({ location }: any) => {
       if (item !== undefined) {
         if (
           urlGenerator(item.node.fields.slug) === location.pathname ||
-          '/' + urlGenerator(item.node.fields.slug) === location.pathname
+          config.gatsby.pathPrefix + urlGenerator(item.node.fields.slug) === location.pathname
         ) {
           if (item.node.tableOfContents.items) {
             navItems = item.node.tableOfContents.items.map((innerItem: any, index: number) => {
