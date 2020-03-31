@@ -6,9 +6,7 @@ module.exports = {
     description: config.siteMetadata.description,
     keywords: config.siteMetadata.keywords,
     header: config.header,
-    siteUrl: "https://prisma2.netlify.com",
-    // logo: { link: config.header.logoLink ? config.header.logoLink : '/', image: config.header.logo }, // backwards compatible
-    // headerTitle: config.header.title,
+    siteUrl: config.gatsby.siteUrl,
     footer: config.footer,
   },
   plugins: [
