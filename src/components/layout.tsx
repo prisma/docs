@@ -28,14 +28,15 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     display: flex;
     width: 100%;
     justify-content: center;
+    padding: 0 10px;
     // @media only screen and (max-width: 767px) {
     //   display: block;
     // }
   `;
 
   const Content = styled.article`
-    max-width: 750px;
-    width: 750px;
+    max-width: 980px;
+    width: 980px;
     margin: -80px 0 1rem 24px;
     // @media only screen and (max-width: 1023px) {
     //   padding-left: 0;

@@ -22,12 +22,12 @@ const HeaderWrapper = styled.div`
   img {
     margin-bottom: 0;
   }
-  padding: 30px 0 24px;
+  padding: 30px 10px 24px;
   display: flex;
   justify-content: center;
 
   .container {
-    width: 990px;
+    width: 1210px;
   }
 `;
 
