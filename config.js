@@ -8,7 +8,7 @@ const config = {
     title: 'Prisma',
     links: [
       { name: 'Docs', link: 'https://www.prisma.io/docs' },
-      { name: 'Quicksart', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
+      { name: 'Quickstart', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
       {
         name: 'Reference',
         link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/api',
