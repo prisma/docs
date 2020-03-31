@@ -1,7 +1,7 @@
 const config = {
   gatsby: {
-    pathPrefix: '/',
-    siteUrl: 'https://www.prisma.io/docs',
+    pathPrefix: '/docs',
+    siteUrl: 'https://www.prisma.io',
   },
   header: {
     logoLink: '/',
