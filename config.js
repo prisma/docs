@@ -4,7 +4,11 @@ const config = {
     siteUrl: 'https://www.prisma.io',
   },
   header: {
+<<<<<<< HEAD
     logoLink: 'https://www.prisma.io',
+=======
+    logoLink: 'https://www.prisma.io/docs',
+>>>>>>> c027d1171fafb1c28e1b4797d9e2374863529b07
     title: 'Prisma',
     links: [
       { name: 'Install', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
@@ -65,7 +69,11 @@ const config = {
     ],
     resources: [
       { name: 'Docs', link: 'https://www.prisma.io/docs' },
+<<<<<<< HEAD
       { name: 'Get started', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
+=======
+      { name: 'Get started', link: '/getting-started/quickstart' },
+>>>>>>> c027d1171fafb1c28e1b4797d9e2374863529b07
       {
         name: 'API Reference',
         link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
