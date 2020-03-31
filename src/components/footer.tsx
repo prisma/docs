@@ -113,6 +113,7 @@ const NewsLetter = styled.div`
 
     &-links {
       display: flex;
+      align-items: center;
       margin-top: 10px;
       a {
         margin-right: 24px;
