@@ -42,10 +42,10 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     });
   });
 
-  if (typeof window !== 'undefined') {
-    // eslint-disable-next-line global-require
-    require('smooth-scroll')('a[href*="#"]');
-  }
+  // if (typeof window !== 'undefined') {
+  //   // eslint-disable-next-line global-require
+  //   require('smooth-scroll')('a[href*="#"]');
+  // }
 
   const getParentTitle = () => allContent?.find(mdx => mdx.slug === slug).parentTitle.slice(0, -2);
 
