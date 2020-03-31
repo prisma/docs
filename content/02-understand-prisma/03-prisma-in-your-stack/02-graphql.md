@@ -1,7 +1,7 @@
 ---
 title: 'GraphQL'
-metaTitle: ''
-metaDescription: ''
+metaTitle: 'Building GraphQL servers with Prisma'
+metaDescription: 'This page gives explains how to build GraphQL servers with Prisma. It shows how Prisma fits into the GraphQL ecosystem and provides practical examples.'
 ---
 
 ## Overview
@@ -35,11 +35,11 @@ In addition to these standalone and single-purpose libraries, there are several 
 
 | Framework                                  | Stack        | Built by                                          | Prisma                 | Description                                                                                                                           |
 | :----------------------------------------- | :----------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| [Nexus](https://www.nexusjs.org/#/)        | Backend only | [Prisma Labs](https://github.com/prisma-labs/)    | Prisma is optional     | "Delightful GraphQL Application Framework"                                                                                            |
-| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | "Bringing full-stack to the JAMstack. "                                                                                               |
-| [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | "Framework for building monolithic, full-stack, serverless React apps with zero data-fetching and zero client-side state management." |
+| [Nexus](https://www.nexusjs.org/#/)        | Backend only | [Prisma Labs](https://github.com/prisma-labs/)    | Prisma is optional     | _Delightful GraphQL Application Framework_                                                                                            |
+| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                                                                               |
+| [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Framework for building monolithic, full-stack, serverless React apps with zero data-fetching and zero client-side state management._ |
 
-> **Note**: If you notive any GraphQL libraries/frameworks missing from the list, please let us know.
+> **Note**: If you notice any GraphQL libraries/frameworks missing from the list, please let us know.
 
 ## Prisma & GraphQL examples
 
@@ -73,6 +73,8 @@ In the resolver of a GraphQL query, Prisma typically reads data from the databas
 
 ### Is there a special connection between Prisma and Nexus?
 
-Yes. At Prisma, we love GraphQL and strongly believe in its bright future. While Prisma is compatible with all tools from the GraphQL ecosystem, we want to leverage the amazing things that become possible when Nexus and Prisma are combined and are therefore helping to build it.
+Yes. At Prisma, we love GraphQL and strongly believe in its bright future. While Prisma is compatible with all tools from the GraphQL ecosystem, we want to leverage the amazing things that become possible when [Nexus](https://www.nexusjs.org/#/) and Prisma are combined and are therefore helping to build it. 
 
-The [Prisma Labs]() team has been founded as an independent part of the rest of Prisma's engineering organization to work on open-source tools that are not directly tied to the Prisma database tools. Prisma Labs is currently dedicating most of their time to work on Nexus with the vision of making it a fully-fledged backend framework for building GraphQL servers.
+As an example, when you use Nexus together with Prisma, Nexus can  leverage the information from the Prisma schema and automatically generate queries and mutations for your Prisma models.
+
+The [Prisma Labs](https://github.com/prisma-labs) team has been founded as an independent part of the rest of Prisma's engineering organization to work on open-source tools that are not directly tied to the Prisma database tools. Prisma Labs is currently dedicating most of their time to work on Nexus with the vision of making it a fully-fledged backend framework for building GraphQL servers.

@@ -71,6 +71,9 @@ const ListItem = styled.li`
   &.bottom-level {
     margin-left: 20px;
   }
+  &.static-link {
+    margin-top: 24px;
+  }
   &.static-link > a {
     color: #a0aec0 !important;
     text-transform: uppercase;
@@ -130,7 +133,8 @@ const TreeNode = ({
     items.map((item: any) => (item.lastLevel = true));
     hasBorder = true;
   }
-  return (
+
+  return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
         <Link

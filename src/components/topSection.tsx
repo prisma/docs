@@ -38,18 +38,39 @@ const TopSection = ({ location, title, parentTitle, indexPage, langSwitcher, dbS
   const [langSelected, setLangSelected] = React.useState('typescript');
   const [dbSelected, setDbSelected] = React.useState('postgres');
 
+  // TODO : Simplify the function!
   const techChanged = (item: any, type: string) => {
     const elements = document.querySelectorAll('[id^="techswitch"]');
     elements.forEach((element: any) => element.classList.remove('show'));
     const elemToShow = [].slice.call(elements).filter((elm: any) => {
       if (type === 'lang') {
-        return dbSwitcher
-          ? elm.id.includes(`-${item.technology}`) && elm.id.includes(`-${dbSelected}`)
-          : elm.id.includes(`-${item.technology}`);
+        if (dbSwitcher) {
+          if (elm.id.includes('-*-')) {
+            // lang is any
+            return elm.id.includes(`-${dbSelected}`);
+          } else {
+            return (
+              elm.id.includes(`-${item.technology}`) &&
+              (elm.id.includes(`-${dbSelected}`) || elm.id.includes(`-*`))
+            );
+          }
+        } else {
+          return elm.id.includes(`-${item.technology}`);
+        }
       } else if (type === 'db') {
-        return langSwitcher
-          ? elm.id.includes(`-${item.technology}`) && elm.id.includes(`-${langSelected}`)
-          : elm.id.includes(`-${item.technology}`);
+        if (langSwitcher) {
+          if (elm.id.slice(-1) === '*') {
+            // db is any
+            return elm.id.includes(`-${langSelected}`);
+          } else {
+            return (
+              elm.id.includes(`-${item.technology}`) &&
+              (elm.id.includes(`-${langSelected}`) || elm.id.includes(`-*`))
+            );
+          }
+        } else {
+          return elm.id.includes(`-${item.technology}`);
+        }
       }
     });
     elemToShow && elemToShow.forEach((eShow: any) => eShow.classList.add('show'));

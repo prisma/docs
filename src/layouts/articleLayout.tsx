@@ -62,7 +62,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
-      <PageBottom />
+      {/* <PageBottom /> */}
     </Layout>
   );
 };

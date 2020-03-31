@@ -1,14 +1,14 @@
 ---
 title: 'REST'
-metaTitle: ''
-metaDescription: ''
+metaTitle: 'Building REST APIs with Prisma'
+metaDescription: 'This page gives an overview of the most important things when building REST APIs with Prisma. It shows practical examples and the supported libraries.'
 ---
 
 ## Overview
 
 When building REST APIs, Prisma Client can be used inside your _route controllers_ to send databases queries.
 
-![](https://imgur.com/dbRvgHc.png)
+![](https://imgur.com/5NwAOMt.png)
 
 ## Supported libraries
 
@@ -48,7 +48,8 @@ model Post {
   title     String
   content   String?
   published Boolean @default(false)
-  author    User?
+  author    User?   @relation(fields:  [authorId], references: [id])
+  authorId  Int?
 }
 
 model User {
@@ -59,7 +60,7 @@ model User {
 }
 ```
 
-You can now implement route controller (e.g. using Express) that use the generated [Prisma Client API]() to perform a database operation when an incoming HTTP request arrives. This page only shows few sample code snippets, if you want to run these code snippets, you can use the [REST API example](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/rest-express).
+You can now implement route controller (e.g. using Express) that use the generated [Prisma Client API](../../../reference/tools-and-interfaces/prisma-client/api) to perform a database operation when an incoming HTTP request arrives. This page only shows few sample code snippets, if you want to run these code snippets, you can use the [REST API example](https://github.com/prisma/prisma-examples/tree/prisma2/typescript/rest-express).
 
 #### `GET`
 
@@ -82,6 +83,7 @@ Note that the `feed` endpoint in this case returns a nested JSON response of `Po
     "title": "Hello World",
     "content": "null",
     "published": "true",
+    "authorId": 42,
     "author": {
       "id": "42",
       "name": "Alice",

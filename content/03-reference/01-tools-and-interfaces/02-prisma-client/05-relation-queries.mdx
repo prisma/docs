@@ -1,0 +1,592 @@
+---
+title: 'Relation queries'
+metaTitle: 'Relation queries (Reference)'
+metaDescription: 'Prisma Client provides convenient queries for working with relations, such as a fluent API, nested writes (transactions), nested reads and relation filters.'
+---
+
+## Overview
+
+One of the main features of Prisma Client is its API for sending relation queries. Relation queries refer to queries that operate on a [relation](../prisma-schema/relations) between two or more models:
+
+- Fluent API for traversing relations
+- Nested writes with [transactional]() guarantees
+- Nested reads (sometimes referred to as _eager loading_) via [`select`](./field-selection#select) and [`include`](./field-selection#include)
+- Relation filters (filters on related objects)
+
+This page explains which relation queries exist and how to use them.
+
+The examples on this page based on the following data model:
+
+```prisma
+datasource postgresql {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  posts     Post[]
+  profile   Profile?
+}
+
+model Profile {
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields:  [authorId], references: [id])
+  userId  Int
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  author    User?       @relation(fields:  [authorId], references: [id])
+  authorId  Int?
+  categories Category[] @relation(references: [id])
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  posts Post[] @relation(references: [id])
+}
+```
+
+> **Note**. This schema is the same as the [example data model](../prisma-schema/data-model#example) but has all [scalar fields](../prisma-schema/data-model#scalar-types) removed so you can focus on the relation fields.
+
+## Fluent API
+
+The fluent API lets you _fluently_ traverse the [relations](../prisma-schema/relations) of your models via function calls. Note that the _last_ function call determines the return type of the entire query (the respective type annotations are added in the code snippets below to make that explicit).
+
+This query returns all `Post` records by a specific `User`:
+
+```ts
+const postsByUser: Post[] = await prisma.user
+  .findOne({ where: { email: 'alice@prisma.io' } })
+  .posts();
+```
+
+Note that this call is equivalent to this Prisma Client query:
+
+```ts
+const postsByUser = await prisma.post.findMany({
+  where: { author: { email: 'alice@prisma.io' } },
+});
+```
+
+The main difference between the two is that the fluent API call is translated into two separate database queries while the other one only generates a single query (see this [GitHub issue](https://github.com/prisma/prisma2/issues/1984)).
+
+This request returns all categories by a specific post:
+
+```ts
+const categoriesOfPost: Category[] = await prisma.post.findOne({ where: { id: 1 } }).categories();
+```
+
+Note that you can chain as many queries as you like. In this example, the chanining starts at `Profile` and goes over `User` to `Post`:
+
+```ts
+const posts: Post[] = await prisma.profile
+    .findOne({ where: { id: 1 } })
+    .user()
+    .posts()
+}
+```
+
+The only requirement for chaining is that the previous function call must return only a _single object_ (e.g. as returned by a `findOne` query or a "to-one relation" like `profile.user()`).
+
+The following query is **not possible** because `findMany` does not return a single object but a _list_:
+
+```ts
+// This query is illegal
+const posts = await prisma.user
+    .findMany()
+    .posts()
+}
+```
+
+## Relation filters
+
+A relation filter is a filter operation that's applied to a related object of a model. Relation filter options can be passed to the last chained query in a fluent API call if it returns a [list](..../prisma-schema/models#type-modifiers).
+
+**Retrieve all `Post` records of a particular `User` record that start with "Hello"**
+
+```ts
+const posts: Post[] = await prisma.user
+  .findOne({
+    where: { email: 'ada@prisma.io' },
+  })
+  .posts({
+    where: {
+      title: { startsWith: 'Hello' },
+    },
+  });
+```
+
+Note that this query is _equivalent_ to the following one which is initiated via the `post` instead of the `user` field (i.e. it doesn't use the fluent API):
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    author: { email: 'bob@prisma.io' },
+    title: { startsWith: 'Hello' },
+  },
+});
+console.log(posts);
+```
+
+The main difference between the two is that the fluent API call is translated into two separate database queries while the other one only generates a single query (see this [GitHub issue](https://github.com/prisma/prisma2/issues/1984)).
+
+## Nested writes
+
+Nested writes provide a way for writing relational data in your database. They further provide [transactional](./transactions) guarantees for creating, updating or deleting data across multiple tables in a single Prisma Client query.
+
+Nested writes can be nested arbitrarily deep.
+
+Nested writes are available for [relation fields](../prisma-schema/relations#relation-fields) when using the model's `create` or `update` query. The following section shows the nested write options that are available per query.
+
+### One-to-one relations
+
+This section shows examples for nested writes on one-to-one relations. It uses the `User` ↔ `Profile` relation from the sample data model above. For illustration purposes, the `email` and `bio` fields have been added:
+
+```prisma
+model User {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  profile  Profile
+}
+
+model Profile {
+  id      Int     @id @default(autoincrement())
+  bio     String
+  user    User?   @relation(fields:  [userId], references: [id])
+  userId  Int?
+}
+```
+
+The following nested write options for `Profile` are available in `prisma.user.create(...)` queries:
+
+- `create`: Create a new user and a new profile
+- `connect`: Create a new user and connect it to an existing profile
+
+The following nested write options for `Profile` are available in `prisma.user.update(...)` queries:
+
+- `create`: Update an existing user by creating a new profile
+- `connect`: Update an an existing user by connecting it to an existing profile
+- `update`: Update an existing user by updating their existing profile
+- `upsert`: Update an existing user by updating their existing profile or by creating a new profile
+- `delete` (only if relation is optional): Update an existing user by deleting their existing profile
+- `disconnect` (only if relation is optional): Update an existing user by removing the connection to their existing profile
+
+**Create a new `User` record with a new `Profile` record**:
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    profile: {
+      create: { bio: 'Hello World' },
+    },
+  },
+});
+```
+
+This example uses the `user` model property, but you could also run the query from the `profile` side:
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'Hello World',
+    user: {
+      create: { email: 'alice@prisma.io' },
+    },
+  },
+});
+```
+
+**Create a new `Profile` record and connect it to an existing `User` record**
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'Hello World',
+    user: {
+      connect: { email: 'alice@prisma.io' },
+    },
+  },
+});
+```
+
+Note that this requires that a `User` record with an `email` of `"alice@prisma.io"` already exists in the database. If that's not the case, the query will fail with an exception.
+
+You can provide any [unique](../prisma-schema/data-model#unique) or [ID](../prisma-schema/data-model#ids) property to the `connect` option, so in this case you could also provide the `id` fied to identify the target `User` record:
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'Hello World',
+    user: {
+      connect: { id: 42 },
+    },
+  },
+});
+```
+
+**Update an existing `User` record by creating a new `Profile` record**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      create: { bio: 'Hello World' },
+    },
+  },
+});
+```
+
+**Update an existing `User` record by connecting it to an existing `Profile` record**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      connect: { id: 24 },
+    },
+  },
+});
+```
+
+**Update an existing `User` record by updating the `Profile` record it's connected to**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      update: { bio: 'Hello World' },
+    },
+  },
+});
+```
+
+**Update an existing `User` record by updating the `Profile` record it's connected to or creating a new one (_upsert_)**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      upsert: {
+        create: { bio: 'Hello World' },
+        update: { bio: 'Hello World' },
+      },
+    },
+  },
+});
+```
+
+**Update an existing `User` record by deleting the `Profile` record it's connected to**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      delete: true,
+    },
+  },
+});
+```
+
+**Update an existing `User` record by disconnecting the `Profile` record it's connected to**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'bob  @prisma.io' },
+  data: {
+    profile: {
+      disconnect: true,
+    },
+  },
+});
+```
+
+Note that this query is actually illegal with the data model from above because the `user` field on `Profile` is required. In order to make this query succeed, you'd need to make both relation fields optional:
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  profile   Profile?
+}
+
+model Profile {
+  id   Int    @id @default(autoincrement())
+  user User?
+}
+```
+
+### One-to-many relations
+
+This section shows examples for nested writes on one-to-many relations. It uses the `User` ↔ `Post` relation from the sample data model above. For illustration purposes, the `email`, `title` and `published fields have been added:
+
+```prisma
+model User {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  posts    Post[]
+}
+
+model Post {
+  id         Int      @id @default(autoincrement())
+  title      String
+  published  Boolean  @default(false)
+  auhtor     User?
+}
+```
+
+The following nested write options for `Post` are available in `prisma.user.create(...)` queries:
+
+- `create`: Create a new user and one or more new posts
+- `connect`: Create a new user and connect it to one or more existing posts
+
+The following nested write options for `Post` are available in `prisma.update.update(...)` queries:
+
+- `create`: Update an existing user by creating one or more new posts
+- `connect`: Update an existing user by connecting it to one or more existing posts
+- `update`: Update an existing user by updating one or more of their existing posts
+- `upsert`: Update an existing user by updating one or more of their existing posts or by creating one or more new posts
+- `delete`: Update an existing user by deleting one or more of their existing posts
+- `disconnect`: Update an existing by removing the connection(s) to one or more of their existing posts
+- `set`: Update an existing user by replacing their existing posts with one or more existing posts
+- `updateMany`: Update an existing user by updating one or more of their existing posts
+- `deleteMany`: Update an existing user by deleting one or more of their existing posts
+
+**Create a new `User` record with a new `Post` record**:
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    posts: {
+      create: { title: 'Hello World' },
+    },
+  },
+});
+```
+
+This example uses the `user` model property, but you could also run the query from the `post` side:
+
+```ts
+const user = await prisma.post.create({
+  data: {
+    title: 'Hello World',
+    author: {
+      create: { email: 'alice@prisma.io' },
+    },
+  },
+});
+```
+
+**Create a new `User` record with two new `Post` records**:
+
+Because it's a one-to-many relation, you can also create several `Post` records at once by passing an array to `create`:
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    posts: {
+      create: [{ title: 'This is my first post' }, { title: 'Here comes a second post' }],
+    },
+  },
+});
+```
+
+**Create a new `Post` record and connect it to an existing `User` record**
+
+```ts
+const user = await prisma.post.create({
+  data: {
+    title: 'Hello World',
+    author: {
+      connect: { email: 'alice@prisma.io' },
+    },
+  },
+});
+```
+
+Note that this requires that a `User` record with an `email` of `"alice@prisma.io"` already exists in the database. If that's not the case, the query will fail with an exception.
+
+You can provide any [unique]() or [ID]() property to the `connect` option, so in this case you could also provide the `id` fied to identify the target `User` record:
+
+```ts
+const user = await prisma.post.create({
+  data: {
+    title: 'Hello World',
+    author: {
+      connect: { id: 42 },
+    },
+  },
+});
+```
+
+**Update an existing `User` record by creating a new `Post` record**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      create: { title: 'Hello World' },
+    },
+  },
+});
+```
+
+**Update an existing `User` record by connecting it to two existing `Post` records**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      connect: [{ id: 24 }, { id: 42 }],
+    },
+  },
+});
+```
+
+**Update an existing `User` record by updating two `Post` records it's connected to**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      update: [
+        {
+          data: { published: true },
+          where: { id: 32 },
+        },
+        {
+          data: { published: true },
+          where: { id: 23 },
+        },
+      ],
+    },
+  },
+});
+```
+
+**Update an existing `User` record by updating two `Post` record it's connected to or creating new ones (_upsert_)**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      upsert: [
+        {
+          create: { title: 'This is my first post' },
+          update: { title: 'This is my first post' },
+          where: { id: 32 },
+        },
+        {
+          create: { title: 'This is mt second post' },
+          update: { title: 'This is mt second post' },
+          where: { id: 23 },
+        },
+      ],
+    },
+  },
+});
+```
+
+**Update an existing `User` record by deleting two `Post` records it's connected to**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      delete: [{ id: 34 }, { id: 36 }],
+    },
+  },
+});
+```
+
+**Update an existing `User` record by disconnecting two `Post` records it's connected to**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      disconnect: [{ id: 44 }, { id: 46 }],
+    },
+  },
+});
+```
+
+**Update an existing `User` record by disconnecting any previous `Post` records and connect two other exiting ones**
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      set: [{ id: 32 }, { id: 42 }],
+    },
+  },
+});
+```
+
+## Nested reads
+
+With nested reads, you can modify the structures of the model objects that are returned by your Prisma Client queries by _including_ their relations. In ORM terminoloy, this is sometimes called _eager loading_.
+
+You can load relations of your models with the [`include`](./field-selection#include) and [`select`](./field-selection#select) options which you can pass to _any_ Prisma Client query (except for the batch operations `updateMany` and `deleteMany`). `include` is more commonly used for relations, `select` is used for selecting specific fields.
+
+**Include the `posts` and `profile` relation when loading `User` records**
+
+```ts
+const users = await prisma.user.findMany({
+  include: {
+    posts: true,
+    profile: true,
+  },
+});
+```
+
+**Include the `posts` relation on the returned objects when creating a new `User` record with two `Post` records**
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    posts: {
+      create: [{ title: 'This is my first post' }, { title: 'Here comes a second post' }],
+    },
+  },
+  include: { posts: true },
+});
+```
+
+**Retrieve deeply nested data by loading several levels of relations**
+
+```ts
+const users = await prisma.user.findMany({
+  include: {
+    posts: {
+      include: {
+        categories: {
+          include: {
+            posts: true,
+          },
+        },
+      },
+    },
+  },
+});
+```
