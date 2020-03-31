@@ -49,7 +49,10 @@ const config = {
     logoLink: 'https://www.prisma.io/docs',
     title: 'Prisma',
     products: [
-      { name: 'Prisma Client', link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/crud' },
+      {
+        name: 'Prisma Client',
+        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/crud',
+      },
       { name: 'Prisma 1 Cloud', link: 'https://app.prisma.io/login' },
       // { name: 'Nexus', link: 'https://www.nexusjs.org/' },
       // { name: 'Prisma Admin', link: '/' },
@@ -65,10 +68,13 @@ const config = {
     ],
     resources: [
       { name: 'Docs', link: 'https://www.prisma.io/docs' },
+
       { name: 'Get started', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
+
       {
         name: 'API Reference',
-        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
+        link:
+          'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
