@@ -99,37 +99,39 @@ const Header = ({ headerProps }: HeaderViewProps) => (
             style={{
               color: 'white',
               textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
             <LogoContainer>
               <HeaderLogo style={{ height: '24px' }} />
             </LogoContainer>
+            <Title>{headerProps.title}</Title>
           </Link>
-          <Title>{headerProps.title}</Title>
         </div>
         <NavLinks>
           {headerProps.links.map((headerlink: any, index: number) => (
-            <Link
+            <a
               key={index}
-              to={headerlink.link}
+              href={headerlink.link}
               style={{
                 color: 'white',
                 textDecoration: 'none',
               }}
             >
               {headerlink.name}
-            </Link>
+            </a>
           ))}
         </NavLinks>
-        <Link
-          to={'https://github.com/prisma'}
+        <a
+          href={'https://github.com/prisma'}
           style={{
             color: 'white',
             textDecoration: 'none',
           }}
         >
           <Github style={{ height: '24px' }} />
-        </Link>
+        </a>
       </HeaderNav>
       {/* <div style={{ position: 'relative', marginTop: ' 27px' }}>
         <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />

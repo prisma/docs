@@ -6,12 +6,12 @@ const config = {
     logoLink: '/',
     title: 'Prisma',
     links: [
-      { name: 'Install', link: '/' },
-      { name: 'Guides', link: '/' },
-      { name: 'Reference', link: '/' },
+      { name: 'Install', link: '/getting-started/quickstart' },
+      { name: 'Guides', link: '/guides/database-workflows/setting-up-a-database/postgresql' },
+      { name: 'Reference', link: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-file' },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
-      { name: 'FAQ', link: '/' },
+      { name: 'FAQ', link: '/more/faq' },
     ],
     search: {
       indexName: '',
@@ -22,7 +22,7 @@ const config = {
   },
   siteMetadata: {
     title: 'Prisma2.0 | Docs',
-    description: 'Documentation built with mdx. Powering prisma 2.0',
+    description: 'Prisma 2.0 Documentation',
     keywords: 'Docs, prisma, 2.0',
   },
   footer: {
