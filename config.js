@@ -16,7 +16,7 @@ const config = {
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
       { name: 'FAQ', link: 'https://www.prisma.io/docs/more/faq' },
-      { name: 'Prisma 1', 'https://www.prisma.io/docs/1.34' },
+      { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
     ],
     search: {
       indexName: '',
