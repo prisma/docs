@@ -62,7 +62,7 @@ const config = {
       { name: 'Meet the community', link: 'https://www.prisma.io/community' },
       { name: 'Slack', link: 'https://slack.prisma.io/' },
       { name: 'Github', link: 'https://github.com/prisma' },
-      { name: 'Discussions', link: 'https://github.com/prisma/prisma2/discussions' },
+      { name: 'Discussions', link: 'https://github.com/prisma/prisma/discussions' },
       { name: 'GraphQL Meetup', link: 'https://www.meetup.com/graphql-berlin/' },
       { name: 'TypeScript Meetup', link: 'https://www.meetup.com/TypeScript-Berlin/' },
     ],
