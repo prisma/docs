@@ -20,9 +20,14 @@ const FooterWrapper = styled.div`
   background: transparent;
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   color: #a0aec0;
-  padding: 15rem 12rem 2rem;
+  .container {
+    padding: 15rem 10px;
+    width: 1210px;
+    display: flex;
+    justify-content: space-between;
+  }
 `;
 
 const LinkList = styled.ul`
@@ -142,95 +147,97 @@ const Footer = ({ footerProps }: FooterViewProps) => {
   } = footerProps;
   return (
     <FooterWrapper>
-      <div style={{ display: 'flex', marginTop: '20px' }}>
-        <Link
-          to={logoLink || '/'}
-          style={{
-            color: 'white',
-            textDecoration: 'none',
-          }}
-        >
-          <LogoContainer>
-            <PrismaLogoGrey />
-          </LogoContainer>
-        </Link>
-        <Title>{title}</Title>
-      </div>
-      <div>
-        <LinkList>
-          <li>PRODUCTS</li>
-          {products.map((item: any, index: number) => (
-            <li key={index}>
-              <a href={item.link}>{item.name}</a>
-            </li>
-          ))}
-        </LinkList>
+      <div className="container">
+        <div style={{ display: 'flex', marginTop: '20px' }}>
+          <Link
+            to={logoLink || '/'}
+            style={{
+              color: 'white',
+              textDecoration: 'none',
+            }}
+          >
+            <LogoContainer>
+              <PrismaLogoGrey />
+            </LogoContainer>
+          </Link>
+          <Title>{title}</Title>
+        </div>
+        <div>
+          <LinkList>
+            <li>PRODUCTS</li>
+            {products.map((item: any, index: number) => (
+              <li key={index}>
+                <a href={item.link}>{item.name}</a>
+              </li>
+            ))}
+          </LinkList>
 
-        <LinkList>
-          <li>RESOURCES</li>
-          {resources.map((item: any, index: number) => (
-            <li key={index}>
-              <a href={item.link}>{item.name}</a>
-            </li>
-          ))}
-        </LinkList>
-      </div>
-      <div>
-        <LinkList>
-          <li>COMMUNITY</li>
-          {community.map((item: any, index: number) => (
-            <li key={index}>
-              <a href={item.link}>{item.name}</a>
-            </li>
-          ))}
-        </LinkList>
+          <LinkList>
+            <li>RESOURCES</li>
+            {resources.map((item: any, index: number) => (
+              <li key={index}>
+                <a href={item.link}>{item.name}</a>
+              </li>
+            ))}
+          </LinkList>
+        </div>
+        <div>
+          <LinkList>
+            <li>COMMUNITY</li>
+            {community.map((item: any, index: number) => (
+              <li key={index}>
+                <a href={item.link}>{item.name}</a>
+              </li>
+            ))}
+          </LinkList>
 
-        <LinkList>
-          <li>COMPANY</li>
-          {company.map((item: any, index: number) => (
-            <li key={index}>
-              <a href={item.link}>
-                {item.name}
-                {item.name === 'Jobs' && <span className="tag">We're Hiring</span>}
-              </a>
-            </li>
-          ))}
-        </LinkList>
-      </div>
+          <LinkList>
+            <li>COMPANY</li>
+            {company.map((item: any, index: number) => (
+              <li key={index}>
+                <a href={item.link}>
+                  {item.name}
+                  {item.name === 'Jobs' && <span className="tag">We're Hiring</span>}
+                </a>
+              </li>
+            ))}
+          </LinkList>
+        </div>
 
-      <NewsLetter>
-        {/* <h4>NEWSLETTER</h4>
+        <NewsLetter>
+          {/* <h4>NEWSLETTER</h4>
         <p>{newsletter.text}</p> */}
 
-        {/* <div className="email">
+          {/* <div className="email">
           <Email style={{ position: 'absolute', top: '30px', left: '24px' }} />
           <input type="text" placeholder="your@email.com" />
           <ArrowEmail style={{ position: 'absolute', top: '24px', right: '24px' }} />
         </div> */}
-        <div className="social">
-          <h4>FIND US</h4>
-          <div className="social-links">
-            <a href={findus.twitterLink}>
-              <Twitter />
-            </a>
-            <a href={findus.fbLink}>
-              <Facebook />
-            </a>
-            <a href={findus.youtubeLink}>
-              <Youtube />
-            </a>
-            <a href={findus.slackLink}>
-              <Slack />
-            </a>
-            <a href={findus.gitLink}>
-              <Github />
-            </a>
-          </div>
+          <div className="social">
+            <h4>FIND US</h4>
+            <div className="social-links">
+              <a href={findus.twitterLink}>
+                <Twitter />
+              </a>
+              <a href={findus.fbLink}>
+                <Facebook />
+              </a>
+              <a href={findus.youtubeLink}>
+                <Youtube />
+              </a>
+              <a href={findus.slackLink}>
+                <Slack />
+              </a>
+              <a href={findus.gitLink}>
+                <Github />
+              </a>
+            </div>
 
-          <p className="social-text">Prisma © 2019 — Frequentis Prisma</p>
-          <p>Made with ❤️ in Berlin</p>
-        </div>
-      </NewsLetter>
+            <p className="social-text">Prisma © 2019 — Frequentis Prisma</p>
+            <p>Made with ❤️ in Berlin</p>
+          </div>
+        </NewsLetter>
+      </div>
     </FooterWrapper>
   );
 };
