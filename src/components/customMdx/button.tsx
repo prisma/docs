@@ -35,6 +35,7 @@ const backgroundColorMap = {
 
 export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     padding: 11px 14px;
+    margin-right: 10px;
     display: inline-flex;
     align-items: center;
     ${p => (p.block ? 'width: 100%;' : '')}
