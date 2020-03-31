@@ -4,11 +4,7 @@ const config = {
     siteUrl: 'https://www.prisma.io',
   },
   header: {
-<<<<<<< HEAD
     logoLink: 'https://www.prisma.io',
-=======
-    logoLink: 'https://www.prisma.io/docs',
->>>>>>> c027d1171fafb1c28e1b4797d9e2374863529b07
     title: 'Prisma',
     links: [
       { name: 'Install', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
@@ -53,7 +49,10 @@ const config = {
     logoLink: 'https://www.prisma.io/docs',
     title: 'Prisma',
     products: [
-      { name: 'Prisma Client', link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/crud' },
+      {
+        name: 'Prisma Client',
+        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/crud',
+      },
       { name: 'Prisma 1 Cloud', link: 'https://app.prisma.io/login' },
       // { name: 'Nexus', link: 'https://www.nexusjs.org/' },
       // { name: 'Prisma Admin', link: '/' },
@@ -69,14 +68,13 @@ const config = {
     ],
     resources: [
       { name: 'Docs', link: 'https://www.prisma.io/docs' },
-<<<<<<< HEAD
+
       { name: 'Get started', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
-=======
-      { name: 'Get started', link: '/getting-started/quickstart' },
->>>>>>> c027d1171fafb1c28e1b4797d9e2374863529b07
+
       {
         name: 'API Reference',
-        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
+        link:
+          'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
