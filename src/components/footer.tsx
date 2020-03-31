@@ -20,9 +20,14 @@ const FooterWrapper = styled.div`
   background: transparent;
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   color: #a0aec0;
-  padding: 15rem 12rem 2rem;
+  .container {
+    padding: 15rem 10px;
+    width: 1210px;
+    display: flex;
+    justify-content: space-between;
+  }
 `;
 
 const LinkList = styled.ul`
@@ -142,6 +147,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
   } = footerProps;
   return (
     <FooterWrapper>
+      <div className="container">
       <div style={{ display: 'flex', marginTop: '20px' }}>
         <Link
           to={logoLink || '/'}
@@ -231,6 +237,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
           <p>Made with ❤️ in Berlin</p>
         </div>
       </NewsLetter>
+      </div>
     </FooterWrapper>
   );
 };
