@@ -14,7 +14,7 @@ type SEOProps = {
 // TODO : Add more meta tags and links if needed.
 const SEO = ({ title, description, keywords, slug }: SEOProps) => {
   let canonicalUrl = config.gatsby.siteUrl;
-  // canonicalUrl = config.gatsby.pathPrefix ? canonicalUrl + config.gatsby.pathPrefix : canonicalUrl;
+  canonicalUrl = config.gatsby.pathPrefix ? canonicalUrl + config.gatsby.pathPrefix : canonicalUrl;
   canonicalUrl = slug ? canonicalUrl + slug : canonicalUrl;
   return (
     <Helmet>
