@@ -3,6 +3,7 @@ import Helmet from 'react-helmet';
 import favicon from '../images/favicon-32x32.png';
 import ogImage from '../images/og-image.png';
 import config from '../../config';
+import { urlGenerator } from '../utils/urlGenerator';
 
 type SEOProps = {
   title?: string;
@@ -15,7 +16,7 @@ type SEOProps = {
 const SEO = ({ title, description, keywords, slug }: SEOProps) => {
   let canonicalUrl = config.gatsby.siteUrl;
   canonicalUrl = config.gatsby.pathPrefix ? canonicalUrl + config.gatsby.pathPrefix : canonicalUrl;
-  canonicalUrl = slug ? canonicalUrl + slug : canonicalUrl;
+  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl;
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
