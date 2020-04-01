@@ -228,6 +228,13 @@ const Footer = ({ footerProps }: FooterViewProps) => {
 
           <p className="social-text">Prisma © 2019 — Frequentis Prisma</p>
           <p>Made with ❤️ in Berlin</p>
+          <br />
+          <p>
+            <small style={{ color: '#a0aec0' }}>https://prisma2.netlify.com</small>
+          </p>
+          <p>
+            <small style={{ color: '#a0aec0' }}>https://github.com/prisma/prisma2-docs</small>
+          </p>
         </div>
       </NewsLetter>
     </FooterWrapper>
