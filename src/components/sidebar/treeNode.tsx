@@ -26,7 +26,8 @@ const ListItem = styled.li`
     vertical-align: middle;
 
     .tag {
-      float: right;
+      position: absolute;
+      right: 0;
       color: #a0aec0;
       font-size: 14px;
       font-style: normal;
@@ -34,6 +35,9 @@ const ListItem = styled.li`
       background: #edf2f7;
       border-radius: 5px;
       padding: 2px 5px;
+      &.small {
+        font-size: 13px;
+      }
     }
 
     .item-collapser {
@@ -103,15 +107,12 @@ const TreeNode = ({
   lastLevel,
 }: any) => {
   const isCollapsed = collapsed[label];
+
   const collapse = () => {
     setCollapsed(label);
   };
 
   const hasChildren = items.length !== 0;
-  let location;
-  if (typeof document != 'undefined') {
-    location = document.location;
-  }
 
   const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
     staticLink ? 'static-link' : ''
@@ -152,7 +153,7 @@ const TreeNode = ({
             <span>{title}</span>
           )}
           {duration && <span className="tag">{duration}</span>}
-          {experimental && <span className="tag">Experimental</span>}
+          {experimental && <span className="tag small">Experimental</span>}
         </Link>
       )}
 

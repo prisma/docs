@@ -22,19 +22,19 @@ const Pre = ({ languages, children, ...props }: PreBlockProps) => {
   const copy = getSettings(props.className);
   const code = stringify(children);
   const preRef = React.useRef(null);
+
   React.useEffect(() => {
     const parentNode = preRef.current.parentElement;
     const dataLangAttribute = parentNode.getAttribute('data-language');
     if (dataLangAttribute && dataLangAttribute.includes('copy')) {
       parentNode.setAttribute('data-language', dataLangAttribute.replace('copy', ''));
-      Prism.highlightElement(preRef.current);
+      Prism.highlightAll();
     }
   });
 
   const modifiedClassName = getSettings(props.className)
     ? props.className.replace('copy', '')
     : props.className;
-
   return (
     <PreWrapper {...props} className={modifiedClassName} ref={preRef}>
       {children}

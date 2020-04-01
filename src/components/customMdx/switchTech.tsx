@@ -7,9 +7,9 @@ interface CodeProps {
 
 type CodeBlockProps = CodeProps & React.ReactNode;
 
-const SwitchTech = ({ technologies, children }: CodeBlockProps) => {
-  return <SwitchWrapper id={`techswitch-${technologies.join('-')}`}>{children}</SwitchWrapper>;
-};
+const SwitchTech = ({ technologies, children }: CodeBlockProps) => (
+  <SwitchWrapper id={`techswitch-${technologies.join('-')}`}>{children}</SwitchWrapper>
+);
 
 export default SwitchTech;
 
