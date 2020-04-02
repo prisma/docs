@@ -21,9 +21,11 @@ const ListItem = styled.li`
   margin-bottom: 16px;
   position: relative;
   a {
-    color: #4a5568 !important;
+    transition: color 150ms ease 0s;
+    color: #718096 !important;
     text-decoration: none;
     vertical-align: middle;
+    &:hover { color: #1A202C !important; }
 
     .tag {
       position: absolute;
@@ -56,8 +58,7 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: #4a5568;
-
+    color: #1A202C !important;
     font-weight: 700;
   }
   &.top-level {
@@ -83,6 +84,7 @@ const ListItem = styled.li`
     text-transform: uppercase;
     font-weight: bold;
     font-size: 14px;
+    &:hover { color: #a0aec0 !important; }
   }
   &.last-level {
     padding-left: 24px;
