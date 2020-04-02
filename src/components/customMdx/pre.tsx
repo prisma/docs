@@ -27,7 +27,7 @@ const Pre = ({ languages, children, ...props }: PreBlockProps) => {
     const dataLangAttribute = parentNode.getAttribute('data-language');
     if (dataLangAttribute && dataLangAttribute.includes('copy')) {
       parentNode.setAttribute('data-language', dataLangAttribute.replace('copy', ''));
-      Prism.highlightElement(preRef.current);
+      Prism.highlightAllUnder(preRef.current);
     }
   });
 
