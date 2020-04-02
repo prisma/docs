@@ -10,8 +10,8 @@ const List = styled.ul`
   padding: 0;
   margin: 16px 0;
   &.has-border {
-    border-left: 1px solid #cbd5e0;
-    margin-left: -8px;
+    border-left: 2px solid #E2E8F0;
+    margin-left: -12px;
   }
 `;
 
@@ -43,7 +43,7 @@ const ListItem = styled.li`
     .item-collapser {
       background: transparent;
       position: absolute;
-      left: -12px;
+      left: -16px;
       top: 3px;
       padding: 0;
       border: 0;
@@ -85,7 +85,7 @@ const ListItem = styled.li`
     font-size: 14px;
   }
   &.last-level {
-    padding-left: 30px;
+    padding-left: 24px;
   }
   .collapse-title {
     cursor: pointer;
