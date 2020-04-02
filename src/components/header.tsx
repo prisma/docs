@@ -27,7 +27,7 @@ const HeaderWrapper = styled.div`
   justify-content: center;
 
   .container {
-    width: 1210px;
+    width: 1110px;
   }
 `;
 

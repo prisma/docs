@@ -3,12 +3,21 @@ import TreeNode from './treeNode';
 import { AllEdges } from '../../interfaces/AllArticles.interface';
 import { ArticleFields } from '../../interfaces/Article.interface';
 import { createGlobalState } from 'react-hooks-global-state';
+import { urlGenerator } from '../../utils/urlGenerator';
 
 interface TreeNode {
   node: {
     fields: ArticleFields;
   };
 }
+
+const getCollpaseState = (part: string) => {
+  let location;
+  if (typeof document != 'undefined') {
+    location = document.location;
+  }
+  return !(location && location.pathname.includes(urlGenerator(part)));
+};
 
 let defaultCollapsed: any = {};
 // TODO::Simplify the function
@@ -51,7 +60,8 @@ const calculateTreeData = (edges: any) => {
           tmp.topLevel = topLevel;
         }
 
-        defaultCollapsed[part.toLowerCase()] = tmp.topLevel || tmp.staticLink ? false : true;
+        defaultCollapsed[part.toLowerCase()] =
+          tmp.topLevel || tmp.staticLink ? false : getCollpaseState(part.toLowerCase());
         prevItems = tmp.items;
       }
       const slicedLength = parts.length - 1;
@@ -80,14 +90,14 @@ const calculateTreeData = (edges: any) => {
   return tree;
 };
 
-const initialState = { collpased: defaultCollapsed };
+const initialState = { collapsedState: defaultCollapsed };
 const { useGlobalState } = createGlobalState(initialState);
 
 const Tree = ({ edges }: AllEdges) => {
   let [treeData] = useState(() => {
     return calculateTreeData(edges);
   });
-  const [collapsed, setCollapsed] = useGlobalState('collpased');
+  const [collapsed, setCollapsed] = useGlobalState('collapsedState');
 
   const toggle = (label: string) => {
     setCollapsed({

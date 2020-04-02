@@ -35,8 +35,8 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   `;
 
   const Content = styled.article`
-    max-width: 980px;
-    width: 980px;
+    max-width: 880px;
+    width: 880px;
     margin: -80px 0 1rem 24px;
     // @media only screen and (max-width: 1023px) {
     //   padding-left: 0;
