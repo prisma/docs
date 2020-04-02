@@ -1,18 +1,18 @@
 import React from 'react';
+import { StickyContainer, Sticky } from 'react-sticky';
 import Tree from './tree';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery';
 import { AllArticles } from '../../interfaces/AllArticles.interface';
 
-const Sidebar = styled.aside`
+const Sidebar = styled.div`
   margin: 0;
-  max-width: 215px;
-  width: 20%;
-  @media (min-width: 1024px) {
-    align-self: flex-start;
-    position: sticky;
-    top: 0;
-  }
+  overflow-y: auto;
+  ${({ isSticky }) =>
+    isSticky &&
+    css`
+      max-height: 100vh;
+    `};
 `;
 
 const List = styled.ul`
@@ -20,14 +20,26 @@ const List = styled.ul`
   padding: 0;
 `;
 
+const NavigationContainer = styled.aside`
+  width: 235px;
+`;
+
 const SidebarLayout = () => {
   const { allMdx }: AllArticles = useAllArticlesQuery();
   return (
-    <Sidebar>
-      <List>
-        <Tree edges={allMdx.edges} />
-      </List>
-    </Sidebar>
+    <StickyContainer>
+      <NavigationContainer>
+        <Sticky topOffset={0}>
+          {({ style, isSticky }) => (
+            <Sidebar style={style} isSticky={isSticky}>
+              <List>
+                <Tree edges={allMdx.edges} />
+              </List>
+            </Sidebar>
+          )}
+        </Sticky>
+      </NavigationContainer>
+    </StickyContainer>
   );
 };
 

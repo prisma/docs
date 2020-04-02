@@ -29,7 +29,7 @@ const ListItem = styled.li`
 
     .tag {
       position: absolute;
-      right: 0;
+      right: 5%;
       color: #a0aec0;
       font-size: 14px;
       font-style: normal;
