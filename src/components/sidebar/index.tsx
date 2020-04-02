@@ -8,6 +8,11 @@ const Sidebar = styled.aside`
   margin: 0;
   max-width: 215px;
   width: 20%;
+  @media (min-width: 1024px) {
+    align-self: flex-start;
+    position: sticky;
+    top: 0;
+  }
 `;
 
 const List = styled.ul`
