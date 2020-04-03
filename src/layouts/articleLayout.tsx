@@ -20,6 +20,10 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       fields: { slug },
       frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
       body,
+      parent,
+    },
+    site: {
+      siteMetadata: { docsLocation },
     },
   } = data;
 
@@ -62,7 +66,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
-      {/* <PageBottom /> */}
+      <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} />
     </Layout>
   );
 };
@@ -71,14 +75,21 @@ export default ArticleLayout;
 
 export const query = graphql`
   query($id: String!) {
+    site {
+      siteMetadata {
+        docsLocation
+      }
+    }
     mdx(fields: { id: { eq: $id } }) {
       fields {
-        title
         slug
-        id
       }
       body
-      tableOfContents
+      parent {
+        ... on File {
+          relativePath
+        }
+      }
       frontmatter {
         title
         metaTitle

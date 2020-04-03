@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import Up from '../icons/Up';
 import Down from '../icons/Down';
+import Link from './link';
 
 const PageBottomWrapper = styled.div`
   display: flex;
@@ -30,7 +31,7 @@ const Feedback = styled.div`
   }
 `;
 
-const PageBottom = () => (
+const PageBottom = ({ editDocsPath }: any) => (
   <PageBottomWrapper>
     <Feedback>
       <h4>Was this helpful?</h4>
@@ -43,8 +44,11 @@ const PageBottom = () => (
         </a>
       </div>
     </Feedback>
-    <a href="/">Edit this page on Github</a>
+    {editDocsPath && <Link to={`${editDocsPath}`}>Edit this page on Github</Link>}
   </PageBottomWrapper>
 );
 
 export default PageBottom;
+{
+  /* <a href="/">Edit this page on Github</a> */
+}

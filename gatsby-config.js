@@ -8,6 +8,7 @@ module.exports = {
     header: config.header,
     siteUrl: config.gatsby.siteUrl,
     footer: config.footer,
+    docsLocation: config.siteMetadata.docsLocation
   },
   plugins: [
     'gatsby-plugin-react-helmet',
