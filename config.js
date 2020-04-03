@@ -7,15 +7,15 @@ const config = {
     logoLink: 'https://www.prisma.io',
     title: 'Prisma',
     links: [
-      { name: 'Docs', link: 'https://www.prisma.io/docs' },
-      { name: 'Quickstart', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
+      { name: 'Docs', link: '/' },
+      { name: 'Quickstart', link: '/getting-started/quickstart' },
       {
         name: 'Reference',
-        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/api',
+        link: '/reference/tools-and-interfaces/prisma-client/api',
       },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
-      { name: 'FAQ', link: 'https://www.prisma.io/docs/more/faq' },
+      { name: 'FAQ', link: '/more/faq' },
       { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
     ],
     search: {
@@ -47,12 +47,12 @@ const config = {
     },
   },
   footer: {
-    logoLink: 'https://www.prisma.io/docs',
+    logoLink: '/',
     title: 'Prisma',
     products: [
       {
         name: 'Prisma Client',
-        link: 'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/crud',
+        link: '/reference/tools-and-interfaces/prisma-client/crud',
       },
       { name: 'Prisma 1 Cloud', link: 'https://app.prisma.io/login' },
       // { name: 'Nexus', link: 'https://www.nexusjs.org/' },
@@ -68,14 +68,14 @@ const config = {
       { name: 'TypeScript Meetup', link: 'https://www.meetup.com/TypeScript-Berlin/' },
     ],
     resources: [
-      { name: 'Docs', link: 'https://www.prisma.io/docs' },
+      { name: 'Docs', link: '/' },
 
-      { name: 'Get started', link: 'https://www.prisma.io/docs/getting-started/quickstart' },
+      { name: 'Get started', link: '/getting-started/quickstart' },
 
       {
         name: 'API Reference',
         link:
-          'https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
+          '/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },

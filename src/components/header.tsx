@@ -1,4 +1,4 @@
-import { Link } from 'gatsby';
+import Link from '../components/link';
 import * as React from 'react';
 import styled from 'styled-components';
 import HeaderLogo from '../icons/Logo';
@@ -99,8 +99,8 @@ const Header = ({ headerProps }: HeaderViewProps) => (
     <div className={'container'}>
       <HeaderNav>
         <div style={{ display: 'flex' }}>
-          <a
-            href={headerProps.logoLink || '/'}
+          <Link
+            to={headerProps.logoLink || '/'}
             style={{
               color: 'white',
               textDecoration: 'none',
@@ -112,31 +112,31 @@ const Header = ({ headerProps }: HeaderViewProps) => (
               <HeaderLogo style={{ height: '24px' }} />
             </LogoContainer>
             <Title>{headerProps.title}</Title>
-          </a>
+          </Link>
         </div>
         <NavLinks>
           {headerProps.links.map((headerlink: any, index: number) => (
-            <a
+            <Link
               key={index}
-              href={headerlink.link}
+              to={headerlink.link}
               style={{
                 color: 'white',
                 textDecoration: 'none',
               }}
             >
               {headerlink.name}
-            </a>
+            </Link>
           ))}
         </NavLinks>
-        <a
-          href={'https://github.com/prisma'}
+        <Link
+          to={'https://github.com/prisma'}
           style={{
             color: 'white',
             textDecoration: 'none',
           }}
         >
           <Github style={{ height: '24px' }} />
-        </a>
+        </Link>
       </HeaderNav>
       {/* <div style={{ position: 'relative', marginTop: ' 27px' }}>
         <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
