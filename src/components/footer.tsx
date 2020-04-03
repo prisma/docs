@@ -1,4 +1,4 @@
-import { Link } from 'gatsby';
+import Link from '../components/link';
 import * as React from 'react';
 import styled from 'styled-components';
 import PrismaLogoGrey from '../icons/PrismaLogoGrey';
@@ -167,7 +167,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
             <li>PRODUCTS</li>
             {products.map((item: any, index: number) => (
               <li key={index}>
-                <a href={item.link}>{item.name}</a>
+                <Link to={item.link}>{item.name}</Link>
               </li>
             ))}
           </LinkList>
@@ -176,7 +176,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
             <li>RESOURCES</li>
             {resources.map((item: any, index: number) => (
               <li key={index}>
-                <a href={item.link}>{item.name}</a>
+                <Link to={item.link}>{item.name}</Link>
               </li>
             ))}
           </LinkList>
@@ -186,7 +186,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
             <li>COMMUNITY</li>
             {community.map((item: any, index: number) => (
               <li key={index}>
-                <a href={item.link}>{item.name}</a>
+                <Link to={item.link}>{item.name}</Link>
               </li>
             ))}
           </LinkList>
@@ -195,10 +195,10 @@ const Footer = ({ footerProps }: FooterViewProps) => {
             <li>COMPANY</li>
             {company.map((item: any, index: number) => (
               <li key={index}>
-                <a href={item.link}>
+                <Link to={item.link}>
                   {item.name}
                   {item.name === 'Jobs' && <span className="tag">We're Hiring</span>}
-                </a>
+                </Link>
               </li>
             ))}
           </LinkList>
@@ -216,21 +216,21 @@ const Footer = ({ footerProps }: FooterViewProps) => {
           <div className="social">
             <h4>FIND US</h4>
             <div className="social-links">
-              <a href={findus.twitterLink}>
+              <Link to={findus.twitterLink}>
                 <Twitter />
-              </a>
-              <a href={findus.fbLink}>
+              </Link>
+              <Link to={findus.fbLink}>
                 <Facebook />
-              </a>
-              <a href={findus.youtubeLink}>
+              </Link>
+              <Link to={findus.youtubeLink}>
                 <Youtube />
-              </a>
-              <a href={findus.slackLink}>
+              </Link>
+              <Link to={findus.slackLink}>
                 <Slack />
-              </a>
-              <a href={findus.gitLink}>
+              </Link>
+              <Link to={findus.gitLink}>
                 <Github />
-              </a>
+              </Link>
             </div>
 
             <p className="social-text">Prisma © 2019 — Frequentis Prisma</p>
