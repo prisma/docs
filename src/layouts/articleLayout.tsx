@@ -15,39 +15,12 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     return null;
   }
   const {
-    allMdx,
     mdx: {
       fields: { slug },
       frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
       body,
     },
   } = data;
-
-  // Parent title extraction
-  const allContent = allMdx && allMdx.edges && allMdx.edges.map((mdx: any) => mdx.node.fields);
-
-  allContent?.map((content: any) => {
-    content.parentTitle = '';
-    const parts = content.slug.split('/');
-    const slicedParts = parts.slice(1, parts.length - 1);
-    slicedParts.forEach((part: any) => {
-      const parent = allContent.find(ac => {
-        const parentParts = ac.slug.split('/');
-        return (
-          parentParts[parentParts.length - 1] === 'index' &&
-          parentParts[parentParts.length - 2] === part
-        );
-      });
-      content.parentTitle = content.parentTitle + parent?.title + ' / ';
-    });
-  });
-
-  // if (typeof window !== 'undefined') {
-  //   // eslint-disable-next-line global-require
-  //   require('smooth-scroll')('a[href*="#"]');
-  // }
-
-  const getParentTitle = () => allContent?.find(mdx => mdx.slug === slug).parentTitle.slice(0, -2);
 
   return (
     <Layout {...props}>
@@ -56,7 +29,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
         <TopSection
           location={props.location}
           title={title}
-          parentTitle={getParentTitle()}
+          slug={slug}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
         />

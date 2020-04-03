@@ -1,41 +1,54 @@
-import React, { Fragment } from "react"
-import { Highlight, Snippet } from "react-instantsearch-dom"
-import { Link } from "gatsby"
-import { Calendar } from "styled-icons/octicons/Calendar"
-import { Tags } from "styled-icons/fa-solid/Tags"
+import React from 'react';
+import { Highlight } from 'react-instantsearch-dom';
+import Link from '../link';
+import { urlGenerator } from '../../utils/urlGenerator';
+import styled from 'styled-components';
+import ParentTitle from '../parentTitleComp';
 
-export const DocHit = ({ hit }: any) => (
-  <div>
-    <Link to={hit.slug}>
-      <h4>
-        <Highlight attribute="title" hit={hit} tagName="mark" />
-      </h4>
+const HitComp = styled.div`
+  padding: 24px 40px !important;
+  font-family: Open Sans;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 16px;
+  line-height: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  max-height: 150px;
+  overflow: auto;
+  &:last-item {
+    border: 0;
+  }
+  a {
+    color: #1a202c !important;
+  }
+  h3 {
+    font-weight: 600;
+    line-height: 100%;
+    letter-spacing: -0.01em;
+    margin: 10px 0;
+  }
+  &:hover,
+  &:focus {
+    background: #f7fafc;
+  }
+  mark {
+    color: #3182ce !important;
+    background: #ebf8ff;
+    padding: 2px 4px;
+  }
+`;
+
+const DocHit = ({ hit }: any) => (
+  <HitComp>
+    <Link
+      style={{ boxShadow: `none`, textDecoration: 'none' }}
+      to={hit.slug.includes('index') ? null : urlGenerator(hit.slug)}
+    >
+      <ParentTitle slug={hit.slug} />
+      <h3>{hit.title}</h3>
+      <Highlight hit={hit} attribute="content" tagName="mark" />
     </Link>
-    <Snippet attribute="excerpt" hit={hit} tagName="mark" />
-  </div>
-)
+  </HitComp>
+);
 
-// export const PostHit = (clickHandler :any) => ({ hit }: any) => (
-//   <div>
-//     <Link to={`/blog` + hit.slug} onClick={clickHandler}>
-//       <h4>
-//         <Highlight attribute="title" hit={hit} tagName="mark" />
-//       </h4>
-//     </Link>
-//     <div>
-//       <Calendar size="1em" />
-//       &nbsp;
-//       <Highlight attribute="date" hit={hit} tagName="mark" />
-//       &emsp;
-//       <Tags size="1em" />
-//       &nbsp;
-//       {hit.tags.map((tag: any, index: number) => (
-//         <Fragment key={tag}>
-//           {index > 0 && `, `}
-//           {tag}
-//         </Fragment>
-//       ))}
-//     </div>
-//     <Snippet attribute="excerpt" hit={hit} tagName="mark" />
-//   </div>
-// )
+export default DocHit;

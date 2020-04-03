@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import TOC from './toc';
 import TechnologySwitch from './techSwitcher';
+import ParentTitle from './parentTitleComp';
 
 const TopSectionWrapper = styled.div`
   position: relative;
@@ -9,12 +10,6 @@ const TopSectionWrapper = styled.div`
     margin-top: 3.5rem;
     margin-bottom: 4rem;
   }
-`;
-
-const BreadcrumbTitle = styled.h4`
-  color: #718096;
-  line-height: 1rem;
-  margin: 0;
 `;
 
 const MainTitle = styled.h1`
@@ -34,7 +29,7 @@ const SwitcherWrapper = styled.div`
   top: 78px;
 `;
 
-const TopSection = ({ location, title, parentTitle, indexPage, langSwitcher, dbSwitcher }: any) => {
+const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher }: any) => {
   const [langSelected, setLangSelected] = React.useState('typescript');
   const [dbSelected, setDbSelected] = React.useState('postgres');
 
@@ -99,7 +94,7 @@ const TopSection = ({ location, title, parentTitle, indexPage, langSwitcher, dbS
 
   return (
     <TopSectionWrapper>
-      {!indexPage && <BreadcrumbTitle>{parentTitle}</BreadcrumbTitle>}
+      {!indexPage && <ParentTitle slug={slug} />}
       <MainTitle>{title}</MainTitle>
       {!indexPage && <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />}
       <SwitcherWrapper>
