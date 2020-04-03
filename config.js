@@ -19,10 +19,10 @@ const config = {
       { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
     ],
     search: {
-      indexName: '',
+      indexName: 'prisma2-docs',
       algoliaAppId: process.env.GATSBY_ALGOLIA_APP_ID,
       algoliaSearchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
-      algoliaAdminKey: process.env.ALGOLIA_ADMIN_KEY,
+      algoliaAdminKey: process.env.GATSBY_ALGOLIA_INDEX_NAME,
     },
   },
   siteMetadata: {

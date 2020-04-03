@@ -3,8 +3,9 @@ import * as React from 'react';
 import styled from 'styled-components';
 import HeaderLogo from '../icons/Logo';
 import Github from '../icons/Git';
-import Search from '../icons/Search';
+import Search from '../components/search';
 import { HeaderProps } from '../interfaces/Layout.interface';
+import config from '../../config';
 
 type HeaderViewProps = {
   headerProps: HeaderProps;
@@ -89,6 +90,10 @@ const NavLinks = styled.div`
   margin: 0 10rem 0;
 `;
 
+const searchIndices = [
+  { name: `${config.header.search.indexName}`, title: `Docs`, hitComp: `DocHit` },
+]
+
 const Header = ({ headerProps }: HeaderViewProps) => (
   <HeaderWrapper>
     <div className={'container'}>
@@ -137,6 +142,7 @@ const Header = ({ headerProps }: HeaderViewProps) => (
         <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
         <SearchInput type="text" placeholder="Search" />
       </div> */}
+      <Search collapse indices={searchIndices} />
     </div>
   </HeaderWrapper>
 );
