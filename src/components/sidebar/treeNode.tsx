@@ -10,8 +10,8 @@ const List = styled.ul`
   padding: 0;
   margin: 16px 0;
   &.has-border {
-    border-left: 1px solid #cbd5e0;
-    margin-left: -8px;
+    border-left: 2px solid #E2E8F0;
+    margin-left: -12px;
   }
 `;
 
@@ -21,9 +21,11 @@ const ListItem = styled.li`
   margin-bottom: 16px;
   position: relative;
   a {
-    color: #4a5568 !important;
+    transition: color 150ms ease 0s;
+    color: #718096 !important;
     text-decoration: none;
     vertical-align: middle;
+    &:hover { color: #1A202C !important; }
 
     .tag {
       position: absolute;
@@ -43,7 +45,7 @@ const ListItem = styled.li`
     .item-collapser {
       background: transparent;
       position: absolute;
-      left: -12px;
+      left: -16px;
       top: 3px;
       padding: 0;
       border: 0;
@@ -56,8 +58,7 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: #4a5568;
-
+    color: #1A202C !important;
     font-weight: 700;
   }
   &.top-level {
@@ -83,9 +84,10 @@ const ListItem = styled.li`
     text-transform: uppercase;
     font-weight: bold;
     font-size: 14px;
+    &:hover { color: #a0aec0 !important; }
   }
   &.last-level {
-    padding-left: 30px;
+    padding-left: 24px;
   }
   .collapse-title {
     cursor: pointer;

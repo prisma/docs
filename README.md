@@ -1,14 +1,18 @@
-# Prisma2 Docs
+# Prisma Documentation
+
 [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2/deploys)
 
-## 🚀 Quickstart
+This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
+
+## Run locally
 
 Download the code and get started by running the following commands:
 
 ```
-$ cd prisma2-docs
-$ yarn
-$ yarn dev
+git clone git@github.com:prisma/prisma2-docs.git
+cd prisma2-docs
+yarn
+yarn dev
 ```
 
 To prettify or format the code, run: 
@@ -20,9 +24,9 @@ yarn prettify
 Visit `http://localhost:8000/` to view the app.
 
 
-## 🔧 Configure
+## Configure
 
-Write markdown files in `content` folder.
+Write MDX files in `content` folder.
 
 Open `config.js` for available config options for `gatsby`, `header`, `footer` and `siteMetadata`.
 
