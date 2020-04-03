@@ -5,9 +5,13 @@ import styled, { css } from 'styled-components';
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery';
 import { AllArticles } from '../../interfaces/AllArticles.interface';
 
+const SidebarContainer = styled.aside`
+  width: 235px;
+`;
+
 const Sidebar = styled.div`
   margin: 0;
-  overflow-y: auto;
+  overflow: auto;
   ${({ isSticky }) =>
     isSticky &&
     css`
@@ -17,18 +21,13 @@ const Sidebar = styled.div`
 
 const List = styled.ul`
   list-style: none;
-  padding: 0;
-`;
-
-const NavigationContainer = styled.aside`
-  width: 235px;
 `;
 
 const SidebarLayout = () => {
   const { allMdx }: AllArticles = useAllArticlesQuery();
   return (
     <StickyContainer>
-      <NavigationContainer>
+      <SidebarContainer>
         <Sticky topOffset={0}>
           {({ style, isSticky }) => (
             <Sidebar style={style} isSticky={isSticky}>
@@ -38,7 +37,7 @@ const SidebarLayout = () => {
             </Sidebar>
           )}
         </Sticky>
-      </NavigationContainer>
+      </SidebarContainer>
     </StickyContainer>
   );
 };
