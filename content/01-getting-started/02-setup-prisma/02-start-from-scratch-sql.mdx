@@ -223,15 +223,15 @@ CREATE TABLE "public"."Post" (
   "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
   content TEXT,
   published BOOLEAN NOT NULL DEFAULT false,
-  author INTEGER NOT NULL,
-  FOREIGN KEY (author) REFERENCES "public"."User"(id)
+  "authorId" INTEGER NOT NULL,
+  FOREIGN KEY ("authorId") REFERENCES "public"."User"(id)
 );
 
 CREATE TABLE "public"."Profile" (
   id SERIAL PRIMARY KEY NOT NULL,
   bio TEXT,
-  "user" INTEGER UNIQUE NOT NULL,
-  FOREIGN KEY ("user") REFERENCES "public"."User"(id)
+  "userId" INTEGER UNIQUE NOT NULL,
+  FOREIGN KEY ("userId") REFERENCES "public"."User"(id)
 );
 ```
 
@@ -276,20 +276,20 @@ Great, you now created three tables in your database
 
 | Column name | Type           | Primary key | Foreign key | Required | Default            |
 | :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
-| `id`        | `SERIAL`       | **✔️**         | No          | No       | _autoincrementing_ |
-| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**      | `now()`            |
-| `title`     | `VARCHAR(255)` | No          | No          | **✔️**      | -                  |
+| `id`        | `SERIAL`       | **✔️**       | No          | No       | _autoincrementing_ |
+| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**    | `now()`            |
+| `title`     | `VARCHAR(255)` | No          | No          | **✔️**    | -                  |
 | `content`   | `TEXT`         | No          | No          | No       | -                  |
-| `published` | `BOOLEAN`      | No          | No          | **✔️**      | `false`            |
-| `author`    | `INTEGER`      | No          | **✔️**         | **✔️**      | `false`            |
+| `published` | `BOOLEAN`      | No          | No          | **✔️**    | `false`            |
+| `authorId`  | `INTEGER`      | No          | **✔️**       | **✔️**    | `false`            |
 
 **Profile**
 
 | Column name | Type      | Primary key | Foreign key | Required | Default            |
 | :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
-| `id`        | `SERIAL`  | **✔️**         | No          | No       | _autoincrementing_ |
-| `bio`       | `TEXT`    | No          | No          | **✔️**      | -                  |
-| `user`      | `INTEGER` | No          | **✔️**         | **✔️**      | `false`            |
+| `id`        | `SERIAL`  | **✔️**       | No          | No       | _autoincrementing_ |
+| `bio`       | `TEXT`    | No          | No          | **✔️**    | -                  |
+| `userId`    | `INTEGER` | No          | **✔️**       | **✔️**    | `false`            |
 
 </details>
 
@@ -390,17 +390,15 @@ model Post {
   title     String
   content   String?
   published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
   authorId  Int
-
-  @@index([authorId], name: "authorId")
+  User      User     @relation(fields: [authorId], references: [id])
 }
 
 model Profile {
-  id   Int      @default(autoincrement()) @id
-  bio  String?
-  user User     @relation(fields: [userId], references: [id])
-  userId Int    @unique
+  id     Int     @default(autoincrement()) @id
+  bio    String?
+  userId Int     @unique
+  User   User    @relation(fields: [userId], references: [id])
 }
 
 model User {
@@ -421,15 +419,36 @@ Right now, there's a few minor "issues" with the data model:
 
 These changes are relevant for the generated Prisma Client API where using `posts` and `profile` will feel more natural and idiomatic to JavaScript/TypeScript developers. You can therefore [configure your Prisma Client API](../../reference/tools-and-interfaces/prisma-client/configuring-the-prisma-client-api).
 
-Because both the generated `Post` and `Profile` fields are _virtual_ (i.e. they're _not backed by a foreign key in the database_), you can manually rename them in your Prisma schema:
+Because both the generated `Post` and `Profile` in the `User` model fields are _virtual_ (i.e. they're _not backed by a foreign key in the database_), you can manually rename them in your Prisma schema:
 
-```prisma copy
+```prisma
 model User {
   id      Int       @default(autoincrement()) @id
   name    String?
   email   String    @unique
   posts   Post[]
   profile Profile?
+}
+```
+
+Equally, apply rename following the cone Profile model, renaming `User` to `user` and the `Post` model, renaming `User` to field:
+
+```prisma
+model Post {
+  id        Int      @default(autoincrement()) @id
+  createdAt DateTime @default(now())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  Int
+  author      User     @relation(fields: [authorId], references: [id])
+}
+
+model Profile {
+  id     Int     @default(autoincrement()) @id
+  bio    String?
+  userId Int     @unique
+  user   User    @relation(fields: [userId], references: [id])
 }
 ```
 
