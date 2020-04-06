@@ -12,6 +12,7 @@ export interface ArticleData {
   mdx: {
     fields: ArticleFields;
     body: string;
+    parent: any;
     frontmatter: {
       title: string;
       metaTitle?: string;
@@ -20,8 +21,12 @@ export interface ArticleData {
       dbSwitcher?: boolean;
     };
   };
-  //allMdx: AllEdges;
-  allMdx: any;
+  allMdx: AllEdges;
+  site: {
+    siteMetadata: {
+      docsLocation: string;
+    }
+  }
 }
 
 export interface ArticleQueryData {
