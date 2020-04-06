@@ -276,20 +276,20 @@ Great, you now created three tables in your database
 
 | Column name | Type           | Primary key | Foreign key | Required | Default            |
 | :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
-| `id`        | `SERIAL`       | **✔️**         | No          | No       | _autoincrementing_ |
-| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**      | `now()`            |
-| `title`     | `VARCHAR(255)` | No          | No          | **✔️**      | -                  |
+| `id`        | `SERIAL`       | **✔️**       | No          | No       | _autoincrementing_ |
+| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**    | `now()`            |
+| `title`     | `VARCHAR(255)` | No          | No          | **✔️**    | -                  |
 | `content`   | `TEXT`         | No          | No          | No       | -                  |
-| `published` | `BOOLEAN`      | No          | No          | **✔️**      | `false`            |
-| `authorId`  | `INTEGER`      | No          | **✔️**         | **✔️**      | `false`            |
+| `published` | `BOOLEAN`      | No          | No          | **✔️**    | `false`            |
+| `authorId`  | `INTEGER`      | No          | **✔️**       | **✔️**    | -                  |
 
 **Profile**
 
 | Column name | Type      | Primary key | Foreign key | Required | Default            |
 | :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
-| `id`        | `SERIAL`  | **✔️**         | No          | No       | _autoincrementing_ |
-| `bio`       | `TEXT`    | No          | No          | **✔️**      | -                  |
-| `userId`    | `INTEGER` | No          | **✔️**         | **✔️**      | `false`            |
+| `id`        | `SERIAL`  | **✔️**       | No          | No       | _autoincrementing_ |
+| `bio`       | `TEXT`    | No          | No          | **✔️**    | -                  |
+| `userId`    | `INTEGER` | No          | **✔️**       | **✔️**    | -                  |
 
 </details>
 
@@ -390,17 +390,15 @@ model Post {
   title     String
   content   String?
   published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
   authorId  Int
-
-  @@index([authorId], name: "authorId")
+  User      User     @relation(fields: [authorId], references: [id])
 }
 
 model Profile {
-  id   Int      @default(autoincrement()) @id
-  bio  String?
-  user User     @relation(fields: [userId], references: [id])
-  userId Int    @unique
+  id     Int     @default(autoincrement()) @id
+  bio    String?
+  userId Int     @unique
+  User   User    @relation(fields: [userId], references: [id])
 }
 
 model User {
@@ -421,15 +419,36 @@ Right now, there's a few minor "issues" with the data model:
 
 These changes are relevant for the generated Prisma Client API where using `posts` and `profile` will feel more natural and idiomatic to JavaScript/TypeScript developers. You can therefore [configure your Prisma Client API](../../reference/tools-and-interfaces/prisma-client/configuring-the-prisma-client-api).
 
-Because both the generated `Post` and `Profile` fields are _virtual_ (i.e. they're _not backed by a foreign key in the database_), you can manually rename them in your Prisma schema:
+Because both the generated `Post` and `Profile` in the `User` model fields are _virtual_ (i.e. they're _not backed by a foreign key in the database_), you can manually rename them in your Prisma schema:
 
-```prisma copy
+```prisma
 model User {
   id      Int       @default(autoincrement()) @id
   name    String?
   email   String    @unique
   posts   Post[]
   profile Profile?
+}
+```
+
+Equally, apply rename following the cone Profile model, renaming `User` to `user` and the `Post` model, renaming `User` to field:
+
+```prisma
+model Post {
+  id        Int      @default(autoincrement()) @id
+  createdAt DateTime @default(now())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  Int
+  author      User     @relation(fields: [authorId], references: [id])
+}
+
+model Profile {
+  id     Int     @default(autoincrement()) @id
+  bio    String?
+  userId Int     @unique
+  user   User    @relation(fields: [userId], references: [id])
 }
 ```
 
@@ -530,9 +549,21 @@ async function main() {
 
 Now run the code with this command:
 
+<SwitchTech technologies={['typescript', '*']}>
+
+```
+npx ts-node index.ts
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
 ```
 node index.js
 ```
+
+</SwitchTech>
 
 This should print an empty arrays because there are no `User` records in the database yet:
 
@@ -575,16 +606,6 @@ async function main() {
 This code creates a new `User` record together with new `Post` and `Profile` records using a [nested write](#nested-writes) query. The `User` record is connected to the two other ones via the `Post.author` ↔ `User.posts` and `Profile.user` ↔ `User.profile` [relation fields](../../reference/tools-and-interfaces/prisma-schema/relations#relation-fields) respectively.
 
 Notice that you're passing the [`include`](../../reference/tools-and-interfaces/prisma-client/field-selection#include) option to `findMany` which tells Prisma Client to include the `posts` and `profile` relations on the returned `User` objects.
-
-<SwitchTech technologies={['typescript', '*']}>
-
-Run the code with this command:
-
-```
-npx ts-node index.ts
-```
-
-</SwitchTech>
 
 <SwitchTech technologies={['typescript', '*']}>
 
