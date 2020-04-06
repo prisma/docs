@@ -1,25 +1,99 @@
 import React from 'react';
+import Highlight, { defaultProps } from 'prism-react-renderer';
+import theme from 'prism-react-renderer/themes/github';
+import CopyButton from './copy';
+import Copy from '../../icons/Copy';
+import { stringify } from '../../utils/stringify';
+import styled from 'styled-components';
 
-type CodeProps = React.ReactNode;
+interface CodeProps {
+  copy?: boolean;
+}
 
-const getSettings = (className: any) => {
-  let copy = false;
-  if (className) {
-    const split = className.split('-');
-    if (split.length > 1) {
-      copy = split[1].includes('copy');
-    }
+type PreCodeProps = CodeProps & React.ReactNode;
+
+function cleanTokens(tokens: any[]) {
+  const tokensLength = tokens.length;
+
+  if (tokensLength === 0) {
+    return tokens;
   }
-  return copy;
-};
+  const lastToken = tokens[tokensLength - 1];
 
-const Code = ({ className, children, ...props }: CodeProps) => {
-  const modifiedClassName = getSettings(className) ? className.replace('copy', '') : className;
+  if (lastToken.length === 1 && lastToken[0].empty) {
+    return tokens.slice(0, tokensLength - 1);
+  }
+  return tokens;
+}
+
+const Code = ({ children, className, ...props }: PreCodeProps) => {
+  let language = className && className.replace(/language-/, '');
+  if (language === 'prisma') {
+    language = 'sql';
+  }
+  const code = stringify(children);
+
   return (
-    <code {...props} className={modifiedClassName}>
-      {children}
-    </code>
+    <>
+      {language ? (
+        <div className="gatsby-highlight">
+          <Highlight {...defaultProps} code={code} language={language} theme={theme}>
+            {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
+              <Pre className={blockClassName} style={style}>
+                {(props['copy'] || language === 'copy') && (
+                  <AbsoluteCopyButton>
+                    <CopyButton text={code}>
+                      <Copy />
+                    </CopyButton>
+                  </AbsoluteCopyButton>
+                )}
+                <code>
+                  {cleanTokens(tokens).map((line: any, i: number) => (
+                    <div {...getLineProps({ line, key: i })}>
+                      {line.map((token: any, key: any) => (
+                        <span {...getTokenProps({ token, key })} />
+                      ))}
+                    </div>
+                  ))}
+                </code>
+              </Pre>
+            )}
+          </Highlight>
+        </div>
+      ) : (
+        <code className="inline-code">{children}</code>
+      )}
+    </>
   );
 };
 
 export default Code;
+
+const AbsoluteCopyButton = styled.div`
+  transition: opacity 100ms ease;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  > div {
+    right: -8px;
+    top: -2px;
+  }
+`;
+
+export const Pre = styled.pre`
+  margin-top: 2rem;
+  position: relative;
+  text-align: left;
+  margin: 0 0 16px 0;
+  padding: 2rem 1rem 1rem 1rem;
+  overflow: auto;
+  word-wrap: normal;
+  webkit-overflow-scrolling: touch;
+
+  & .token-line {
+    line-height: 1.3rem;
+    height: 1.3rem;
+    font-size: 15px;
+  }
+`;
