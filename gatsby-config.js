@@ -21,7 +21,7 @@ module.exports = {
     `gatsby-plugin-smoothscroll`,
     {
       resolve: `gatsby-plugin-algolia`,
-      options: require(`./gatsby-plugin-algolia-config.js`)
+      options: require(`./src/utils/algolia`)
     },
     {
       resolve: `gatsby-plugin-sitemap`,

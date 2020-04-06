@@ -1,5 +1,5 @@
 import React from 'react';
-import { Highlight } from 'react-instantsearch-dom';
+import { Snippet } from 'react-instantsearch-dom';
 import Link from '../link';
 import { urlGenerator } from '../../utils/urlGenerator';
 import styled from 'styled-components';
@@ -14,12 +14,14 @@ const HitComp = styled.div`
   line-height: 24px;
   border-bottom: 1px solid #e2e8f0;
   max-height: 150px;
-  overflow: auto;
   &:last-item {
     border: 0;
   }
   a {
     color: #1a202c !important;
+  }
+  h4 {
+    font-weight: normal;
   }
   h3 {
     font-weight: 600;
@@ -34,7 +36,7 @@ const HitComp = styled.div`
   mark {
     color: #3182ce !important;
     background: #ebf8ff;
-    padding: 2px 4px;
+    padding: 2px;
   }
 `;
 
@@ -46,7 +48,7 @@ const DocHit = ({ hit }: any) => (
     >
       <ParentTitle slug={hit.slug} />
       <h3>{hit.title}</h3>
-      <Highlight hit={hit} attribute="content" tagName="mark" />
+      <Snippet hit={hit} attribute="content" tagName="mark" />
     </Link>
   </HitComp>
 );
