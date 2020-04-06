@@ -20,7 +20,8 @@ export interface ArticleData {
       dbSwitcher?: boolean;
     };
   };
-  allMdx: AllEdges;
+  //allMdx: AllEdges;
+  allMdx: any;
 }
 
 export interface ArticleQueryData {

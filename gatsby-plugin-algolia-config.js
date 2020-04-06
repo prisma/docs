@@ -12,8 +12,8 @@ const handleRawBody = node => {
   // Since the body of my posts is markdown, we will split
   // whereever there are two adjacent new lines, this is a
   // reasonable proxy for paragraphs
-  rawBodyWithoutFrontmatter = rawBody.split('---');
-  const sections = rawBodyWithoutFrontmatter[2].split('\n\n');
+  rawBodyWithoutFrontmatter = rawBody.split('---').splice(0, 2).join('---');
+  const sections = rawBodyWithoutFrontmatter.split('\n\n');
 
   // Now, we're goint to map over each section, returning
   // an object that contains all the frontmatter and excerpt,

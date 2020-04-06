@@ -1,5 +1,11 @@
 export const getParentTitle = (slug: string, allMdx?: any) => {
   const allContent = allMdx && allMdx.edges && allMdx.edges.map((mdx: any) => mdx.node.fields);
+  const cc = allMdx && allMdx.edges && allMdx.edges.map((mdx: any) => mdx.node.rawBody);
+  const aa = (cc[0].split('---').slice(2).join('---').split('\n\n'));
+  // const ss = aa.map((a:any) => a.replace(/[^a-zA-Z0-9]/g, ' '))
+  const ss = aa.map((a:any) => a.split('#').join(''))
+
+  console.log(ss);
 
   allContent?.map((content: any) => {
     content.parentTitle = '';
