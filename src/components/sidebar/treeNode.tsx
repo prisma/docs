@@ -10,7 +10,7 @@ const List = styled.ul`
   padding: 0;
   margin: 16px 0;
   &.has-border {
-    border-left: 2px solid #E2E8F0;
+    border-left: 2px solid #e2e8f0;
     margin-left: -12px;
   }
 `;
@@ -25,7 +25,9 @@ const ListItem = styled.li`
     color: #718096 !important;
     text-decoration: none;
     vertical-align: middle;
-    &:hover { color: #1A202C !important; }
+    &:hover {
+      color: #1a202c !important;
+    }
 
     .tag {
       position: absolute;
@@ -58,7 +60,7 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: #1A202C !important;
+    color: #1a202c !important;
     font-weight: 700;
   }
   &.top-level {
@@ -84,7 +86,9 @@ const ListItem = styled.li`
     text-transform: uppercase;
     font-weight: bold;
     font-size: 14px;
-    &:hover { color: #a0aec0 !important; }
+    &:hover {
+      color: #a0aec0 !important;
+    }
   }
   &.last-level {
     padding-left: 24px;
