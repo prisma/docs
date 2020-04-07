@@ -9,11 +9,12 @@ const Form = styled.form`
   width: 215px;
   position: relative;
   z-index: 100001;
+  display: flex;
+  align-items: center;
 `;
 
 const SearchIcon = styled(SearchPic)`
   position: absolute;
-  top: 12px;
   left: 12px;
   width: 1em;
   pointer-events: none;
@@ -22,7 +23,6 @@ const SearchIcon = styled(SearchPic)`
 
 const ClearIcon = styled(Clear)`
   position: absolute;
-  top: 12px;
   right: 12px;
 `;
 

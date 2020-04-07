@@ -13,7 +13,8 @@ const HitsWrapper = styled.div`
     display: grid;
   }
   max-height: 85vh;
-  overflow: scroll;
+  overflow-y: scroll;
+  overflow-x: hidden;
   z-index: 100002;
   -webkit-overflow-scrolling: touch;
   position: absolute;
