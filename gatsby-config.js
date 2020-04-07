@@ -1,4 +1,6 @@
 const config = require('./config');
+require("dotenv").config()
+
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
   siteMetadata: {
@@ -18,6 +20,10 @@ module.exports = {
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
+    {
+      resolve: `gatsby-plugin-algolia`,
+      options: require(`./src/utils/algolia`)
+    },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {
@@ -47,25 +53,23 @@ module.exports = {
         },
         extensions: ['.mdx', '.md'],
         gatsbyRemarkPlugins: [
-          {
-            resolve: 'gatsby-remark-prismjs',
-            options: {
-              classPrefix: 'language-',
-              inlineCodeMarker: {
-                tsx: 'tsx',
-              },
-              aliases: {},
-              languageExtensions: [
-                {
-                  language: 'prisma',
-                  extend: 'groovy',
-                  definition: {
-                    prisma_types: /(PrismaType)/,
-                  },
-                },
-              ],
-            },
-          },
+          // {
+          //   resolve: 'gatsby-remark-prismjs',
+          //   options: {
+          //     classPrefix: 'language-',
+          //     inlineCodeMarker: null,
+          //     aliases: {},
+          //     languageExtensions: [
+          //       {
+          //         language: 'prisma',
+          //         extend: 'groovy',
+          //         definition: {
+          //           prisma_types: /(PrismaType)/,
+          //         },
+          //       },
+          //     ],
+          //   },
+          // },
           'gatsby-remark-sectionize',
           {
             resolve: `gatsby-remark-images`,

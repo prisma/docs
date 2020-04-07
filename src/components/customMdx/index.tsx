@@ -2,7 +2,6 @@ import React from 'react';
 import SwitchTech from './switchTech';
 import CodeBlock from './codeBlock';
 import Code from './code';
-import Pre from './pre';
 import CollapseBox from './collapsible';
 import Table from './table';
 import ButtonLink from './button';
@@ -19,7 +18,7 @@ export default {
   ul: (props: any) => <ul className="list" {...props} />,
   CodeBlock,
   SwitchTech,
-  pre: Pre,
+  inlineCode: (props: any) => <code className="inline-code" {...props} />,
   code: Code,
   details: CollapseBox,
   table: Table,
