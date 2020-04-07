@@ -49,6 +49,4 @@ const PageBottom = ({ editDocsPath }: any) => (
 );
 
 export default PageBottom;
-{
-  /* <a href="/">Edit this page on Github</a> */
-}
+
