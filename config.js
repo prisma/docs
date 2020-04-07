@@ -1,8 +1,8 @@
 const config = {
   gatsby: {
-    pathPrefix: '/',
-    siteUrl: 'https://prisma2.netlify.com',
-    // siteUrl: 'https://www.prisma.io',
+    pathPrefix: '/docs',
+    // siteUrl: 'https://prisma2.netlify.com',
+    siteUrl: 'https://www.prisma.io',
   },
   header: {
     logoLink: 'https://www.prisma.io',
@@ -20,10 +20,10 @@ const config = {
       { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
     ],
     search: {
-      indexName: 'prisma2-docs',
+      indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
       algoliaAppId: process.env.GATSBY_ALGOLIA_APP_ID,
       algoliaSearchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
-      algoliaAdminKey: process.env.GATSBY_ALGOLIA_INDEX_NAME,
+      algoliaAdminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
     },
   },
   siteMetadata: {
