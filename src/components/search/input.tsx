@@ -24,6 +24,7 @@ const SearchIcon = styled(SearchPic)`
 const ClearIcon = styled(Clear)`
   position: absolute;
   right: 12px;
+  cursor: pointer;
 `;
 
 const Input = styled.input`
