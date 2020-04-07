@@ -2,8 +2,7 @@ import Link from '../components/link';
 import * as React from 'react';
 import styled from 'styled-components';
 import PrismaLogoGrey from '../icons/PrismaLogoGrey';
-import Email from '../icons/Email';
-import ArrowEmail from '../icons/ArrowEmail';
+import NewsLetter from '../components/newsletter';
 import Twitter from '../icons/Twitter';
 import Youtube from '../icons/Youtube';
 import Slack from '../icons/Slack';
@@ -22,6 +21,13 @@ const FooterWrapper = styled.div`
   display: flex;
   justify-content: center;
   color: #a0aec0;
+  h3 {
+    font-size: 1rem;
+    line-height: 3rem;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    margin: 0;
+  }
   .container {
     padding: 15rem 10px;
     width: 1210px;
@@ -33,7 +39,8 @@ const FooterWrapper = styled.div`
 const LinkList = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 0 0 4rem;
+  margin: 0 0 2rem;
+
   li {
     line-height: 2rem;
     a {
@@ -45,7 +52,6 @@ const LinkList = styled.ul`
           transform: scale(1.05);
         }
       }
-
       .tag {
         display: inline-block;
         border-radius: 6px;
@@ -57,11 +63,6 @@ const LinkList = styled.ul`
         color: white;
         transition: transform 0.1s ease-in;
       }
-    }
-    &:first-of-type {
-      line-height: 3rem;
-      font-weight: bold;
-      letter-spacing: 0.1em;
     }
   }
 `;
@@ -78,43 +79,13 @@ const LogoContainer = styled.div`
   padding-right: 0.75rem;
 `;
 
-const NewsLetter = styled.div`
+const SocialWrapper = styled.div`
   max-width: 350px;
   p {
     margin: 0;
   }
-  h4 {
-    margin: 0;
-    line-height: 3rem;
-    font-weight: bold;
-    letter-spacing: 0.1em;
-  }
-  .email {
-    position: relative;
-    margin-top: 24px;
-    input {
-      background: #ffffff;
-      box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-      border-radius: 5px;
-      width: 100%;
-      border: 0;
-      padding: 24px 60px;
-      font-size: 20px;
-      font-family: Open Sans;
-      font-weight: normal;
-
-      &::placeholder {
-        color: #a0aec0;
-      }
-    }
-    ArrowEmail {
-      position: absolute;
-      top: 24px;
-      right: 24px;
-    }
-  }
   .social {
-    margin-top: 75px;
+    margin-top: 2rem;
 
     &-links {
       display: flex;
@@ -122,9 +93,15 @@ const NewsLetter = styled.div`
       margin-top: 10px;
       a {
         margin-right: 24px;
+        svg {
+          transition: transform 0.1s ease-in;
+        }
 
         &: hover {
           color: #718096 !important;
+          svg {
+            transform: scale(1.2);
+          }
         }
       }
     }
@@ -164,7 +141,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
         </div>
         <div>
           <LinkList>
-            <li>PRODUCTS</li>
+            <h3>PRODUCTS</h3>
             {products.map((item: any, index: number) => (
               <li key={index}>
                 <Link to={item.link}>{item.name}</Link>
@@ -173,7 +150,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
           </LinkList>
 
           <LinkList>
-            <li>RESOURCES</li>
+            <h3>RESOURCES</h3>
             {resources.map((item: any, index: number) => (
               <li key={index}>
                 <Link to={item.link}>{item.name}</Link>
@@ -183,7 +160,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
         </div>
         <div>
           <LinkList>
-            <li>COMMUNITY</li>
+            <h3>COMMUNITY</h3>
             {community.map((item: any, index: number) => (
               <li key={index}>
                 <Link to={item.link}>{item.name}</Link>
@@ -192,7 +169,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
           </LinkList>
 
           <LinkList>
-            <li>COMPANY</li>
+            <h3>COMPANY</h3>
             {company.map((item: any, index: number) => (
               <li key={index}>
                 <Link to={item.link}>
@@ -204,17 +181,11 @@ const Footer = ({ footerProps }: FooterViewProps) => {
           </LinkList>
         </div>
 
-        <NewsLetter>
-          {/* <h4>NEWSLETTER</h4>
-        <p>{newsletter.text}</p> */}
+        <SocialWrapper>
+          <NewsLetter newsletter={newsletter} />
 
-          {/* <div className="email">
-          <Email style={{ position: 'absolute', top: '30px', left: '24px' }} />
-          <input type="text" placeholder="your@email.com" />
-          <ArrowEmail style={{ position: 'absolute', top: '24px', right: '24px' }} />
-        </div> */}
           <div className="social">
-            <h4>FIND US</h4>
+            <h3>FIND US</h3>
             <div className="social-links">
               <Link to={findus.twitterLink}>
                 <Twitter />
@@ -236,7 +207,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
             <p className="social-text">Prisma © 2019 — Frequentis Prisma</p>
             <p>Made with ❤️ in Berlin</p>
           </div>
-        </NewsLetter>
+        </SocialWrapper>
       </div>
     </FooterWrapper>
   );
