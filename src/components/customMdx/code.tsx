@@ -30,39 +30,37 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   let language = className && className.replace(/language-/, '');
   if (language === 'prisma') {
     language = 'sql';
+  } else if (language == undefined) {
+    language = 'shell';
   }
   const code = stringify(children);
 
   return (
     <>
-      {language ? (
-        <div className="gatsby-highlight">
-          <Highlight {...defaultProps} code={code} language={language} theme={theme}>
-            {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
-              <Pre className={blockClassName} style={style}>
-                {(props['copy'] || language === 'copy') && (
-                  <AbsoluteCopyButton>
-                    <CopyButton text={code}>
-                      <Copy />
-                    </CopyButton>
-                  </AbsoluteCopyButton>
-                )}
-                <code>
-                  {cleanTokens(tokens).map((line: any, i: number) => (
-                    <div {...getLineProps({ line, key: i })}>
-                      {line.map((token: any, key: any) => (
-                        <span {...getTokenProps({ token, key })} />
-                      ))}
-                    </div>
-                  ))}
-                </code>
-              </Pre>
-            )}
-          </Highlight>
-        </div>
-      ) : (
-        <code className="inline-code">{children}</code>
-      )}
+      <div className="gatsby-highlight">
+        <Highlight {...defaultProps} code={code} language={language} theme={theme}>
+          {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
+            <Pre className={blockClassName} style={style}>
+              {(props['copy'] || language === 'copy') && (
+                <AbsoluteCopyButton>
+                  <CopyButton text={code}>
+                    <Copy />
+                  </CopyButton>
+                </AbsoluteCopyButton>
+              )}
+              <code>
+                {cleanTokens(tokens).map((line: any, i: number) => (
+                  <div {...getLineProps({ line, key: i })}>
+                    {line.map((token: any, key: any) => (
+                      <span {...getTokenProps({ token, key })} />
+                    ))}
+                  </div>
+                ))}
+              </code>
+            </Pre>
+          )}
+        </Highlight>
+      </div>
     </>
   );
 };
