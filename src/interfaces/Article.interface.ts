@@ -25,8 +25,8 @@ export interface ArticleData {
   site: {
     siteMetadata: {
       docsLocation: string;
-    }
-  }
+    };
+  };
 }
 
 export interface ArticleQueryData {
