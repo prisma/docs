@@ -1,4 +1,6 @@
 const config = require('./config');
+require("dotenv").config()
+
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
   siteMetadata: {
@@ -18,6 +20,10 @@ module.exports = {
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
+    {
+      resolve: `gatsby-plugin-algolia`,
+      options: require(`./src/utils/algolia`)
+    },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {

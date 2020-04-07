@@ -3,7 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import HeaderLogo from '../icons/Logo';
 import Github from '../icons/Git';
-import Search from '../icons/Search';
+import Search from '../components/search';
 import { HeaderProps } from '../interfaces/Layout.interface';
 
 type HeaderViewProps = {
@@ -50,27 +50,10 @@ const LogoContainer = styled.div`
   padding-right: 0.75rem;
 `;
 
-const SearchInput = styled.input`
-  width: 215px;
-  background: #ffffff;
-  box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-  border-radius: 5px;
-  padding: 0.6rem 2.5rem;
-  font-family: Open Sans;
-  font-style: normal;
-  font-weight: normal;
-  font-size: 16px;
-  line-height: 100%;
-  border-width: 0;
-  &::placeholder {
-    color: #a0aec0;
-    opacity: 1; /* Firefox */
-  }
-  &:focus,
-  &:active,
-  &:hover {
-    outline: none;
-  }
+const SearchComponent = styled(Search)`
+  position: absolute;
+  top: 12px;
+  left: 12px;
 `;
 
 const NavLinks = styled.div`
@@ -133,10 +116,9 @@ const Header = ({ headerProps }: HeaderViewProps) => (
           <Github style={{ height: '24px' }} />
         </Link>
       </HeaderNav>
-      {/* <div style={{ position: 'relative', marginTop: ' 27px' }}>
-        <Search style={{ position: 'absolute', top: '12px', left: '12px' }} />
-        <SearchInput type="text" placeholder="Search" />
-      </div> */}
+      <div style={{ position: 'relative', marginTop: ' 27px' }}>
+        <SearchComponent />
+      </div>
     </div>
   </HeaderWrapper>
 );
