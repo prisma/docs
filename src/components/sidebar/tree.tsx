@@ -67,10 +67,7 @@ const calculateTreeData = (edges: any) => {
       const slicedLength = parts.length - 1;
       const existingItem = prevItems.find(({ label }: any) => label === parts[slicedLength]);
 
-      if (existingItem) {
-        existingItem.url = slug;
-        existingItem.title = title;
-      } else {
+      if (!existingItem) {
         prevItems.push({
           label: parts[slicedLength],
           url: slug,
