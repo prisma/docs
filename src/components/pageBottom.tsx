@@ -9,7 +9,7 @@ const PageBottomWrapper = styled.div`
   font-size: 14px;
   flex-direction: row;
   justify-content: space-between;
-  padding: 1rem 0;
+  padding: 1rem 40px;
   align-items: center;
   a {
     color: #718096 !important;
