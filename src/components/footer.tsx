@@ -204,7 +204,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
               </Link>
             </div>
 
-            <p className="social-text">Prisma © 2019 — Frequentis Prisma</p>
+            <p className="social-text">Prisma © 2018-2020</p>
             <p>Made with ❤️ in Berlin</p>
           </div>
         </SocialWrapper>
