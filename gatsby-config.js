@@ -54,7 +54,7 @@ module.exports = {
         extensions: ['.mdx', '.md'],
         gatsbyRemarkPlugins: [
           'gatsby-remark-sectionize',
-          'gatsby-remark-check-links',
+          `gatsby-remark-check-links`,
           {
             resolve: `gatsby-remark-images`,
           },
