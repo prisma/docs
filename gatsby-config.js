@@ -53,24 +53,8 @@ module.exports = {
         },
         extensions: ['.mdx', '.md'],
         gatsbyRemarkPlugins: [
-          // {
-          //   resolve: 'gatsby-remark-prismjs',
-          //   options: {
-          //     classPrefix: 'language-',
-          //     inlineCodeMarker: null,
-          //     aliases: {},
-          //     languageExtensions: [
-          //       {
-          //         language: 'prisma',
-          //         extend: 'groovy',
-          //         definition: {
-          //           prisma_types: /(PrismaType)/,
-          //         },
-          //       },
-          //     ],
-          //   },
-          // },
           'gatsby-remark-sectionize',
+          'gatsby-remark-check-links',
           {
             resolve: `gatsby-remark-images`,
           },
