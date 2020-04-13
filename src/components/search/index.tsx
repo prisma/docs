@@ -39,24 +39,22 @@ const HitsWrapper = styled.div`
 `;
 
 const indexName = config.header.search.indexName;
+const searchClient = algoliasearch(
+  config.header.search.algoliaAppId,
+  config.header.search.algoliaSearchKey
+);
+
+const Results = connectStateResults(({ searchState: state, searchResults: res, children }: any) =>
+  res && res.nbHits > 0 ? (
+    children
+  ) : (
+    <div className="no-results">No results for '{state.query}'</div>
+  )
+);
 
 export default function Search() {
   const [query, setQuery] = useState(``);
-  const searchClient = algoliasearch(
-    config.header.search.algoliaAppId,
-    config.header.search.algoliaSearchKey
-  );
-
   const [showHits, setShowHits] = React.useState(true);
-
-  const Results = connectStateResults(({ searchState: state, searchResults: res, children }: any) =>
-    res && res.nbHits > 0 ? (
-      children
-    ) : (
-      <div className="no-results">No results for '{state.query}'</div>
-    )
-  );
-
   const hideSearch = () => setShowHits(false);
   const showSearch = () => setShowHits(true);
 
