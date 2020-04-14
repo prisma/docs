@@ -37,6 +37,14 @@ const HitsWrapper = styled.div`
   .loader {
     padding: 24px 40px;
   }
+  @media (min-width: 768px) and (max-width: 1024px) {
+    left: 0;
+    top: 40px;
+    max-width: 100%;
+    border-top: 1px solid #E2E8F0;
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+  }
 `;
 
 const indexName = config.header.search.indexName;

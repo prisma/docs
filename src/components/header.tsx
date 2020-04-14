@@ -30,9 +30,20 @@ const HeaderWrapper = styled.div`
     width: 1110px;
   }
 
+  .searchContainer {
+    margin-top: 27px;
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+  }
+
   @media (min-width: 768px) and (max-width: 1024px) {
     height: auto;
-    padding: 24px 24px 8px;
+    padding: 24px 8px 8px;
+
+    .container {
+      width: 100%;
+    }
   }
 `;
 
@@ -40,6 +51,10 @@ const HeaderNav = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    padding: 0 16px;
+  }
 `;
 
 const Title = styled.span`
@@ -67,6 +82,7 @@ const NavLinks = styled.div`
   flex-grow: 1;
   a {
     color: #cbd5e0 !important;
+    font-weight: 600;
     &:hover,
     &:active,
     &:focus {
@@ -85,6 +101,15 @@ const DocsMobileButton = styled.div`
   box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
   border-radius: 5px;
   color: #cbd5e0;
+  display: none;
+  padding: 0 14px;
+  height: 42px;
+  margin-left: 8px;
+  font-weight: 600;
+  @media (min-width: 768px) and (max-width: 1024px) {
+    display: flex;
+    align-items: center;
+  }
 `;
 
 const Header = ({ headerProps }: HeaderViewProps) => (
@@ -131,9 +156,10 @@ const Header = ({ headerProps }: HeaderViewProps) => (
           <Github style={{ height: '24px' }} />
         </Link>
       </HeaderNav>
-      <div style={{ position: 'relative', marginTop: ' 27px' }}>
+      <div className="searchContainer">
         <SearchComponent />
         <DocsMobileButton>Docs</DocsMobileButton>
+        {/* <Mobile */}
       </div>
     </div>
   </HeaderWrapper>
