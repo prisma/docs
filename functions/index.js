@@ -1,11 +1,11 @@
-const { PrismaClient, prismaVersion } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');
 const yup = require('yup');
 
 const client = new PrismaClient();
 
 const schema = yup.object().shape({
-  pageUrl: yup.string().require(),
-  sentiment: yup.string().require(),
+  pageUrl: yup.string(),
+  sentiment: yup.string(),
 });
 
 exports.handler = async function(event, context, callback) {
