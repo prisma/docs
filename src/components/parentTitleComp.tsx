@@ -5,8 +5,9 @@ import { getParentTitle } from '../utils/parentTitle';
 import { AllArticles } from '../interfaces/AllArticles.interface';
 
 const BreadcrumbTitle = styled.h4`
-  color: #718096;
+  color: #718096 !important;
   line-height: 1rem;
+  font-weight: normal;
   margin: 0;
 `;
 
