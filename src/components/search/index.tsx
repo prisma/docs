@@ -18,7 +18,7 @@ const HitsWrapper = styled.div`
   z-index: 100002;
   -webkit-overflow-scrolling: touch;
   position: absolute;
-  left: 235px;
+  left: 245px;
   top: 0;
   max-width: 880px;
   width: 100vw;
@@ -33,7 +33,8 @@ const HitsWrapper = styled.div`
     list-style: none;
     margin: 0;
   }
-  .no-results {
+  .no-results,
+  .loader {
     padding: 24px 40px;
   }
 `;
@@ -44,12 +45,14 @@ const searchClient = algoliasearch(
   config.header.search.algoliaSearchKey
 );
 
-const Results = connectStateResults(({ searchState: state, searchResults: res, children }: any) =>
-  res && res.nbHits > 0 ? (
-    children
-  ) : (
-    <div className="no-results">No results for '{state.query}'</div>
-  )
+const Results = connectStateResults(
+  ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
+    (isSearchStalled ? <div className="loader">Searching...</div> : null) ||
+    (res && res.nbHits > 0 ? (
+      children
+    ) : (
+      <div className="no-results">No results for '{state.query}'</div>
+    ))
 );
 
 export default function Search() {
