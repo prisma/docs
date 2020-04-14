@@ -51,27 +51,47 @@ const Input = styled.input`
   }
 `;
 
-const SearchBox = ({ refine, onFocus, ...rest }: any) => {
-  const inputRef = React.useRef(null);
-  const clearInput = () => {
-    inputRef.current.value = '';
-    refine(inputRef.current.value);
+const DEBOUNCE_DELAY = 500;
+
+const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
+  const [value, setValue] = React.useState(currentRefinement);
+  const timeoutId = React.useRef(null);
+
+  const onChange = (e: any) => {
+    const { value: newValue } = e.target;
+
+    // After the user manually cleared the input, call `refine` without waiting so that the search
+    // closes instantly.
+    if (newValue === '') {
+      return clearInput();
+    }
+
+    // Otherwise, debounce the search to avoid triggering many queries at once, which could also
+    // make the UI freeze.
+    window.clearTimeout(timeoutId.current);
+    timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY);
+    setValue(newValue);
   };
+
+  const clearInput = () => {
+    window.clearTimeout(timeoutId.current);
+    setValue('');
+    refine('');
+  };
+
   return (
     <Form>
       <Input
         type="text"
         placeholder="Search"
         aria-label="Search"
-        onChange={(e: any) => refine(e.target.value)}
+        onChange={onChange}
         onFocus={onFocus}
-        ref={inputRef}
+        value={value}
         {...rest}
       />
       <SearchIcon />
-      {inputRef && inputRef.current && inputRef.current.value !== '' && (
-        <ClearIcon onClick={clearInput} />
-      )}
+      {value !== '' && <ClearIcon onClick={clearInput} />}
     </Form>
   );
 };

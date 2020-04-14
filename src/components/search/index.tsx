@@ -18,7 +18,7 @@ const HitsWrapper = styled.div`
   z-index: 100002;
   -webkit-overflow-scrolling: touch;
   position: absolute;
-  left: 235px;
+  left: 245px;
   top: 0;
   max-width: 880px;
   width: 100vw;
@@ -33,30 +33,31 @@ const HitsWrapper = styled.div`
     list-style: none;
     margin: 0;
   }
-  .no-results {
+  .no-results,
+  .loader {
     padding: 24px 40px;
   }
 `;
 
 const indexName = config.header.search.indexName;
+const searchClient = algoliasearch(
+  config.header.search.algoliaAppId,
+  config.header.search.algoliaSearchKey
+);
 
-export default function Search() {
-  const [query, setQuery] = useState(``);
-  const searchClient = algoliasearch(
-    config.header.search.algoliaAppId,
-    config.header.search.algoliaSearchKey
-  );
-
-  const [showHits, setShowHits] = React.useState(true);
-
-  const Results = connectStateResults(({ searchState: state, searchResults: res, children }: any) =>
-    res && res.nbHits > 0 ? (
+const Results = connectStateResults(
+  ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
+    (isSearchStalled ? <div className="loader">Searching...</div> : null) ||
+    (res && res.nbHits > 0 ? (
       children
     ) : (
       <div className="no-results">No results for '{state.query}'</div>
-    )
-  );
+    ))
+);
 
+export default function Search() {
+  const [query, setQuery] = useState(``);
+  const [showHits, setShowHits] = React.useState(true);
   const hideSearch = () => setShowHits(false);
   const showSearch = () => setShowHits(true);
 
