@@ -4,16 +4,9 @@ import Up from '../icons/Up';
 import Down from '../icons/Down';
 import Link from './link';
 
-let reqHeaders = new Headers();
-reqHeaders.append('Content-Type', 'application/json');
-reqHeaders.append(
-  'Authorization',
-  'Basic dGltLnN1Y2hhbmVrQGdtYWlsLmNvbTpERHVkcmYpSkpKZWxFKkhITHpqND0zO30='
-);
-
 const sentiments: any = {
   unhappy: 'Unhappy',
-  happy: 'Happy'
+  happy: 'Happy',
 };
 
 const PageBottomWrapper = styled.div`
@@ -23,6 +16,10 @@ const PageBottomWrapper = styled.div`
   justify-content: space-between;
   padding: 1rem 40px;
   align-items: center;
+  a svg {
+    cursor: pointer;
+    transition: width 2s linear 1s;
+  }
   a,
   .submitted-message {
     color: #718096 !important;
@@ -46,18 +43,23 @@ const Feedback = styled.div`
 
 const PageBottom = ({ editDocsPath, pageUrl }: any) => {
   const [submitted, setSubmitted] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const setSentiment = (e: any) => {
+    setIsSubmitting(true);
     const body = JSON.stringify({ pageUrl, sentiment: sentiments[e.currentTarget.id] });
     const requestOptions: any = {
       method: 'POST',
-      headers: reqHeaders,
       body,
-      redirect: 'follow',
     };
 
     fetch('/.netlify/functions/index', requestOptions)
-      .then((response: any) => response.text())
-      .then(() => setSubmitted(true))
+      .then((response: any) => {
+        setIsSubmitting(false);
+        return response.text();
+      })
+      .then(() => {
+        setSubmitted(true);
+      })
       .catch((error: any) => console.log('error', error));
   };
   return (
@@ -75,7 +77,13 @@ const PageBottom = ({ editDocsPath, pageUrl }: any) => {
           </div>
         </Feedback>
       ) : (
-        <div className="submitted-message">Thanks for the feedback!</div>
+        <>
+          {isSubmitting ? (
+            <div className="submitted-message">Submitting...</div>
+          ) : (
+            <div className="submitted-message">Thanks for the feedback!</div>
+          )}
+        </>
       )}
       {editDocsPath && <Link to={`${editDocsPath}`}>Edit this page on Github</Link>}
     </PageBottomWrapper>
