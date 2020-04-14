@@ -39,7 +39,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
-      <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} />
+      <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug}/>
     </Layout>
   );
 };
