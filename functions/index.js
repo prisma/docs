@@ -1,17 +1,21 @@
 const { PrismaClient } = require('@prisma/client');
-const yup = require('yup');
 
 const client = new PrismaClient();
-
-const schema = yup.object().shape({
-  pageUrl: yup.string(),
-  sentiment: yup.string(),
-});
 
 exports.handler = async function(event, context, callback) {
   const body = JSON.parse(event.body);
 
-  await schema.isValid(body);
+  if (!body.pageUrl) {
+    throw new Error(`Please provide a pageUrl`);
+  }
+
+  if (!body.sentiment) {
+    throw new Error(`Please provide a sentiment`);
+  }
+
+  if (!['Happy', 'Unhappy'].includes(body.sentiment)) {
+    throw new Error(`Please provide "Happy" or "Unhappy" as the sentiment`);
+  }
 
   const data = await client.feedback.create({
     data: {
