@@ -28,7 +28,7 @@ exports.handler = async function(event, context, callback) {
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ data, event }),
+    body: JSON.stringify({ success: true }),
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
