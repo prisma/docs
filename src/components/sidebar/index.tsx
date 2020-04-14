@@ -8,6 +8,10 @@ import { AllArticles } from '../../interfaces/AllArticles.interface';
 
 const SidebarContainer = styled.aside`
   width: 235px;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    display: none;
+  }
 `;
 
 const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`

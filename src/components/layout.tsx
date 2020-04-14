@@ -39,9 +39,11 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     max-width: 880px;
     width: 880px;
     margin: -80px 0 1rem 24px;
-    // @media only screen and (max-width: 1023px) {
-    //   padding-left: 0;
-    // }
+    @media (min-width: 768px) and (max-width: 1024px) {
+      margin: 0;
+      width: 100%;
+      max-width: 100%;
+    }
   `;
 
   const MaxWidth = styled.div`
@@ -57,6 +59,9 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
       padding: 2rem 40px;
       &.top-section {
         padding-top: 40px;
+      }
+      @media (min-width: 768px) and (max-width: 1024px) {
+        margin-top: 0.5rem;
       }
     }
   `;

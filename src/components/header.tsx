@@ -29,6 +29,11 @@ const HeaderWrapper = styled.div`
   .container {
     width: 1110px;
   }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    height: auto;
+    padding: 24px 24px 8px;
+  }
 `;
 
 const HeaderNav = styled.div`
@@ -70,6 +75,16 @@ const NavLinks = styled.div`
   }
 
   margin: 0 10rem 0;
+  @media (min-width: 768px) and (max-width: 1024px) {
+    margin: 0 3rem 0;
+  }
+`;
+
+const DocsMobileButton = styled.div`
+  background: #4a5568;
+  box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
+  border-radius: 5px;
+  color: #cbd5e0;
 `;
 
 const Header = ({ headerProps }: HeaderViewProps) => (
@@ -118,6 +133,7 @@ const Header = ({ headerProps }: HeaderViewProps) => (
       </HeaderNav>
       <div style={{ position: 'relative', marginTop: ' 27px' }}>
         <SearchComponent />
+        <DocsMobileButton>Docs</DocsMobileButton>
       </div>
     </div>
   </HeaderWrapper>
