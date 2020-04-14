@@ -52,7 +52,7 @@ const PageBottom = ({ editDocsPath, pageUrl }: any) => {
       body,
     };
 
-    fetch('/.netlify/functions/index', requestOptions)
+    fetch('/docs/.netlify/functions/index', requestOptions)
       .then((response: any) => {
         setIsSubmitting(false);
         return response.text();
