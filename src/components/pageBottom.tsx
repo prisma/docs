@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import Up from '../icons/Up';
 import Down from '../icons/Down';
 import Link from './link';
+import config from '../../config';
 
 const sentiments: any = {
   unhappy: 'Unhappy',
@@ -52,7 +53,11 @@ const PageBottom = ({ editDocsPath, pageUrl }: any) => {
       body,
     };
 
+<<<<<<< HEAD
+    fetch(`${config.gatsby.pathPrefix}/.netlify/functions/index`, requestOptions)
+=======
     fetch('/docs/.netlify/functions/index', requestOptions)
+>>>>>>> b78791831559f03549cb7cb068ea5042eb00662e
       .then((response: any) => {
         setIsSubmitting(false);
         return response.text();
