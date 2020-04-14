@@ -1,5 +1,28 @@
 const config = require('./config');
-require("dotenv").config()
+require('dotenv').config();
+
+const gatsbyRemarkPlugins = [
+  'gatsby-remark-sectionize',
+  {
+    resolve: `gatsby-remark-autolink-headers`,
+    options: {
+      icon: `<svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1.5 6.33337H15.5" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M1.5 11.6666H15.5" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M6.75 1L5 17" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 1L10.25 17" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`,
+      className: `title-link`,
+    },
+  },
+  {
+    resolve: `gatsby-remark-images`,
+  },
+];
+
+if (process.env.NODE_ENV === 'development') {
+  gatsbyRemarkPlugins.push('gatsby-remark-check-links');
+}
 
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
@@ -10,7 +33,7 @@ module.exports = {
     header: config.header,
     siteUrl: config.gatsby.siteUrl,
     footer: config.footer,
-    docsLocation: config.siteMetadata.docsLocation
+    docsLocation: config.siteMetadata.docsLocation,
   },
   plugins: [
     'gatsby-plugin-react-helmet',
@@ -22,7 +45,7 @@ module.exports = {
     `gatsby-plugin-smoothscroll`,
     {
       resolve: `gatsby-plugin-algolia`,
-      options: require(`./src/utils/algolia`)
+      options: require(`./src/utils/algolia`),
     },
     {
       resolve: `gatsby-plugin-sitemap`,
@@ -52,29 +75,7 @@ module.exports = {
           default: require.resolve('./src/layouts/articleLayout.tsx'),
         },
         extensions: ['.mdx', '.md'],
-        gatsbyRemarkPlugins: [
-          // {
-          //   resolve: 'gatsby-remark-prismjs',
-          //   options: {
-          //     classPrefix: 'language-',
-          //     inlineCodeMarker: null,
-          //     aliases: {},
-          //     languageExtensions: [
-          //       {
-          //         language: 'prisma',
-          //         extend: 'groovy',
-          //         definition: {
-          //           prisma_types: /(PrismaType)/,
-          //         },
-          //       },
-          //     ],
-          //   },
-          // },
-          'gatsby-remark-sectionize',
-          {
-            resolve: `gatsby-remark-images`,
-          },
-        ],
+        gatsbyRemarkPlugins,
       },
     },
     {
@@ -92,5 +93,6 @@ module.exports = {
         path: `${__dirname}/src/images`,
       },
     },
+    'gatsby-plugin-remove-trailing-slashes',
   ],
 };

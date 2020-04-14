@@ -47,10 +47,20 @@ const ListItem = styled.li`
     .item-collapser {
       background: transparent;
       position: absolute;
-      left: -16px;
-      top: 3px;
+      left: -15px;
+      top: 5px;
       padding: 0;
       border: 0;
+
+      .right.open,
+      .down.close {
+        display: none;
+      }
+
+      .right.close,
+      .down.open {
+        display: block;
+      }
 
       &:hover,
       &:focus,
@@ -95,6 +105,9 @@ const ListItem = styled.li`
   }
   .collapse-title {
     cursor: pointer;
+    svg {
+      transition: transform 0.2s ease;
+    }
   }
 `;
 
@@ -113,7 +126,6 @@ const TreeNode = ({
   lastLevel,
 }: any) => {
   const isCollapsed = collapsed[label];
-
   const collapse = () => {
     setCollapsed(label);
   };
@@ -141,6 +153,12 @@ const TreeNode = ({
     hasBorder = true;
   }
 
+  // Fix for issue https://github.com/prisma/prisma2-docs/issues/161
+  const [isOpen, setIsOpen] = React.useState('close');
+  React.useEffect(() => {
+    setIsOpen(isCollapsed ? 'close' : 'open');
+  }, [isCollapsed]);
+
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
@@ -151,7 +169,9 @@ const TreeNode = ({
           {hasExpandButton ? (
             <span onClick={collapse} className="collapse-title">
               <button aria-label="collapse" className="item-collapser">
-                {!isCollapsed ? <ArrowDown /> : <ArrowRight />}
+                {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
+                <ArrowRight className={`right ${isOpen}`} />
+                <ArrowDown className={`down ${isOpen}`} />
               </button>
               {title}
             </span>
