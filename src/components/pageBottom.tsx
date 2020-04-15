@@ -104,7 +104,7 @@ const PageBottom = ({ editDocsPath }: any) => {
       method: 'POST',
       body,
     };
-    await fetch(`${config.gatsby.pathPrefix}/feedback-api/`, requestOptions);
+    await fetch(`https://prisma2.netlify.com/.netlify/functions/index`, requestOptions);
   };
 
   const handleSentiment = (e: any) => {
