@@ -17,7 +17,7 @@ exports.handler = async function(event, context, callback) {
     throw new Error(`Please provide "Happy" or "Unhappy" as the sentiment`);
   }
 
-  const data = await client.feedback.create({
+  await client.feedback.create({
     data: {
       ip: event.headers['x-forwarded-for'],
       pageUrl: body.pageUrl,
