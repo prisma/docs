@@ -32,7 +32,7 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       <meta name="twitter:description" content={config.siteMetadata.description} />
       <meta name="twitter:creator" content={config.siteMetadata.twitter.creator} />
       <meta name="twitter:image" content={`${siteUrl}${config.siteMetadata.twitter.image.url}`} />
-      <meta name="twitter:image:alt" content={config.siteMetadata.image.alt} />
+      <meta name="twitter:image:alt" content={config.siteMetadata.twitter.image.alt} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:type" content={config.siteMetadata.og.type} />
