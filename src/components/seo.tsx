@@ -28,15 +28,17 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content={config.siteMetadata.twitter.site} />
+      <meta name="twitter:title" content={config.siteMetadata.title} />
+      <meta name="twitter:description" content={config.siteMetadata.description} />
       <meta name="twitter:creator" content={config.siteMetadata.twitter.creator} />
-      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image" content={config.siteMetadata.twitter.image_url} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:type" content={config.siteMetadata.og.type} />
       <meta property="og:title" content={config.siteMetadata.title} />
       <meta property="og:description" content={config.siteMetadata.description} />
       <meta property="og:site_name" content={config.siteMetadata.og.site_name} />
-      <meta property="og:image" content={ogImage} />
+      <meta property="og:image" content={config.siteMetadata.og.image.url} />
       <meta property="og:image:alt" content={config.siteMetadata.og.image.alt} />
       <meta property="og:image:type" content={config.siteMetadata.og.image.type} />
       <meta property="og:image:width" content={config.siteMetadata.og.image.width} />
