@@ -17,5 +17,9 @@ export default {
   details: CollapseBox,
   table: Table,
   ButtonLink,
-  img: (props: any) => <a href={props.src} target="_blank"><img {...props}/></a>
+  img: (props: any) => (
+    <a href={props.src} target="_blank">
+      <img {...props} />
+    </a>
+  ),
 };
