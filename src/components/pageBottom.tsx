@@ -104,7 +104,7 @@ const PageBottom = ({ editDocsPath }: any) => {
       method: 'POST',
       body,
     };
-    await fetch(`${config.gatsby.pathPrefix}/.netlify/functions/index`, requestOptions);
+    await fetch(`${config.gatsby.pathPrefix}/feedback-api/`, requestOptions);
   };
 
   const handleSentiment = (e: any) => {
