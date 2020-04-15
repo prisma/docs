@@ -1,8 +1,8 @@
 import * as React from 'react';
 import Helmet from 'react-helmet';
 import favicon from '../images/favicon-32x32.png';
-import config from '../../config';
 import { urlGenerator } from '../utils/urlGenerator';
+import { useStaticQuery, graphql } from 'gatsby';
 
 type SEOProps = {
   title?: string;
@@ -11,12 +11,27 @@ type SEOProps = {
   slug?: string;
 };
 
-// TODO : Add more meta tags and links if needed.
 const SEO = ({ title, description, keywords, slug }: SEOProps) => {
-  let canonicalUrl = config.gatsby.siteUrl;
-  canonicalUrl = config.gatsby.pathPrefix ? canonicalUrl + config.gatsby.pathPrefix : canonicalUrl;
+  const { site } = useStaticQuery(query);
+  const {
+    siteMetadata: {
+      pathPrefix,
+      siteUrl,
+      twitter: {
+        site: tSite,
+        creator: tCreator,
+        image: tUrl
+      },
+      og: {
+        site_name: oSite,
+        type: oType,
+        image: { alt: oImgAlt, url: oUrl, type: oImgType, width: oImgWidth, height: oImgHeight },
+      },
+    },
+  } = site;
+
+  let canonicalUrl = pathPrefix ? (siteUrl + pathPrefix) : siteUrl;
   canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl;
-  const siteUrl = config.gatsby.siteUrl + config.gatsby.pathPrefix;
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
@@ -27,23 +42,22 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       {keywords && <meta name="keywords" content={keywords} />}
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:site" content={config.siteMetadata.twitter.site} />
-      <meta name="twitter:title" content={config.siteMetadata.title} />
-      <meta name="twitter:description" content={config.siteMetadata.description} />
-      <meta name="twitter:creator" content={config.siteMetadata.twitter.creator} />
-      <meta name="twitter:image" content={`${siteUrl}${config.siteMetadata.twitter.image.url}`} />
-      <meta name="twitter:image:alt" content={config.siteMetadata.twitter.image.alt} />
+      <meta name="twitter:site" content={tSite} />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:creator" content={tCreator} />
+      <meta name="twitter:image" content={`${siteUrl+pathPrefix}${tUrl}`} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:type" content={config.siteMetadata.og.type} />
-      <meta property="og:title" content={config.siteMetadata.title} />
-      <meta property="og:description" content={config.siteMetadata.description} />
-      <meta property="og:site_name" content={config.siteMetadata.og.site_name} />
-      <meta property="og:image" content={`${siteUrl}${config.siteMetadata.og.image.url}`} />
-      <meta property="og:image:alt" content={config.siteMetadata.og.image.alt} />
-      <meta property="og:image:type" content={config.siteMetadata.og.image.type} />
-      <meta property="og:image:width" content={config.siteMetadata.og.image.width} />
-      <meta property="og:image:height" content={config.siteMetadata.og.image.height} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:site_name" content={oSite} />
+      <meta property="og:type" content={oType} />
+      <meta property="og:image" content={`${siteUrl+pathPrefix}${oUrl}`} />
+      <meta property="og:image:alt" content={oImgAlt} />
+      <meta property="og:image:type" content={oImgType} />
+      <meta property="og:image:width" content={oImgWidth} />
+      <meta property="og:image:height" content={oImgHeight} />
       <link rel="canonical" href={canonicalUrl} />
       <link rel="icon" href={favicon} />
     </Helmet>
@@ -51,3 +65,30 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
 };
 
 export default SEO;
+
+const query = graphql`
+  query SEO {
+    site {
+      siteMetadata {
+        pathPrefix
+        siteUrl
+        twitter {
+          site
+          creator
+          image
+        }
+        og {
+          site_name
+          type
+          image {
+            url
+            alt
+            type
+            height
+            width
+          }
+        }
+      }
+    }
+  }
+`;

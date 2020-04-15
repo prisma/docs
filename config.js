@@ -34,13 +34,7 @@ const config = {
     twitter: {
       site: '@prisma',
       creator: '@prisma',
-      image: {
-        alt: 'Database tools for modern developers',
-        height: '630',
-        type: 'image/png',
-        url: '/images/og-image.png',
-        width: '1200',
-      },
+      image: '/social/docs-social.png'
     },
     og: {
       site_name: 'Prisma',
@@ -49,7 +43,7 @@ const config = {
         alt: 'Database tools for modern developers',
         height: '630',
         type: 'image/png',
-        url: '/images/og-image.png',
+        url: '/social/docs-social.png',
         width: '1200',
       },
     },
