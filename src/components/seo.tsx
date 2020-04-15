@@ -16,7 +16,7 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
   let canonicalUrl = config.gatsby.siteUrl;
   canonicalUrl = config.gatsby.pathPrefix ? canonicalUrl + config.gatsby.pathPrefix : canonicalUrl;
   canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl;
-  const siteUrl = config.gatsby.siteUrl + config.gatsby.pathPrefix;
+  const siteUrl = config.gatsby.siteUrl;
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
