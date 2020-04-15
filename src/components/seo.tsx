@@ -1,7 +1,6 @@
 import * as React from 'react';
 import Helmet from 'react-helmet';
 import favicon from '../images/favicon-32x32.png';
-import ogImage from '../images/og-image.png';
 import config from '../../config';
 import { urlGenerator } from '../utils/urlGenerator';
 
@@ -17,6 +16,7 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
   let canonicalUrl = config.gatsby.siteUrl;
   canonicalUrl = config.gatsby.pathPrefix ? canonicalUrl + config.gatsby.pathPrefix : canonicalUrl;
   canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl;
+  const siteUrl = config.gatsby.siteUrl + config.gatsby.pathPrefix;
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
@@ -28,15 +28,18 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content={config.siteMetadata.twitter.site} />
+      <meta name="twitter:title" content={config.siteMetadata.title} />
+      <meta name="twitter:description" content={config.siteMetadata.description} />
       <meta name="twitter:creator" content={config.siteMetadata.twitter.creator} />
-      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image" content={`${siteUrl}${config.siteMetadata.twitter.image.url}`} />
+      <meta name="twitter:image:alt" content={config.siteMetadata.twitter.image.alt} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:type" content={config.siteMetadata.og.type} />
       <meta property="og:title" content={config.siteMetadata.title} />
       <meta property="og:description" content={config.siteMetadata.description} />
       <meta property="og:site_name" content={config.siteMetadata.og.site_name} />
-      <meta property="og:image" content={ogImage} />
+      <meta property="og:image" content={`${siteUrl}${config.siteMetadata.og.image.url}`} />
       <meta property="og:image:alt" content={config.siteMetadata.og.image.alt} />
       <meta property="og:image:type" content={config.siteMetadata.og.image.type} />
       <meta property="og:image:width" content={config.siteMetadata.og.image.width} />
