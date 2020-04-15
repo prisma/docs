@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Helmet from 'react-helmet';
 import favicon from '../images/favicon-32x32.png';
+import docsSocial from '../images/docs-social.png';
 import config from '../../config';
 import { urlGenerator } from '../utils/urlGenerator';
 
@@ -32,6 +33,7 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       <meta name="twitter:description" content={config.siteMetadata.description} />
       <meta name="twitter:creator" content={config.siteMetadata.twitter.creator} />
       <meta name="twitter:image" content={`${siteUrl}${config.siteMetadata.twitter.image.url}`} />
+      {/* <meta name="twitter:image" content={'/docs-social.png'} /> */}
       <meta name="twitter:image:alt" content={config.siteMetadata.twitter.image.alt} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
