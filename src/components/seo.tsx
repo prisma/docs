@@ -1,8 +1,8 @@
 import * as React from 'react';
 import Helmet from 'react-helmet';
 import favicon from '../images/favicon-32x32.png';
-import { urlGenerator } from '../utils/urlGenerator';
 import { useStaticQuery, graphql } from 'gatsby';
+import { useLocation } from '@reach/router';
 
 type SEOProps = {
   title?: string;
@@ -11,17 +11,13 @@ type SEOProps = {
   slug?: string;
 };
 
-const SEO = ({ title, description, keywords, slug }: SEOProps) => {
+const SEO = ({ title, description, keywords }: SEOProps) => {
   const { site } = useStaticQuery(query);
   const {
     siteMetadata: {
       pathPrefix,
       siteUrl,
-      twitter: {
-        site: tSite,
-        creator: tCreator,
-        image: tUrl
-      },
+      twitter: { site: tSite, creator: tCreator, image: tUrl },
       og: {
         site_name: oSite,
         type: oType,
@@ -29,9 +25,7 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       },
     },
   } = site;
-
-  let canonicalUrl = pathPrefix ? (siteUrl + pathPrefix) : siteUrl;
-  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl;
+  const canonicalUrl = useLocation().href;
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
@@ -46,14 +40,14 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:creator" content={tCreator} />
-      <meta name="twitter:image" content={`${siteUrl+pathPrefix}${tUrl}`} />
+      <meta name="twitter:image" content={`${siteUrl + pathPrefix}${tUrl}`} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:site_name" content={oSite} />
       <meta property="og:type" content={oType} />
-      <meta property="og:image" content={`${siteUrl+pathPrefix}${oUrl}`} />
+      <meta property="og:image" content={`${siteUrl + pathPrefix}${oUrl}`} />
       <meta property="og:image:alt" content={oImgAlt} />
       <meta property="og:image:type" content={oImgType} />
       <meta property="og:image:width" content={oImgWidth} />

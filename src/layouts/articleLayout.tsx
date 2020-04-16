@@ -17,7 +17,13 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const {
     mdx: {
       fields: { slug },
-      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
+      frontmatter: {
+        title,
+        metaTitle,
+        metaDescription,
+        langSwitcher,
+        dbSwitcher
+      },
       body,
       parent,
     },

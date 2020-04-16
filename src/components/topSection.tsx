@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import TOC from './toc';
 import TechnologySwitch from './techSwitcher';
 import ParentTitle from './parentTitleComp';
+import { useNavigate } from '@reach/router';
+import { urlGenerator } from '../utils/urlGenerator';
 
 const TopSectionWrapper = styled.div`
   position: relative;
@@ -30,8 +32,27 @@ const SwitcherWrapper = styled.div`
 `;
 
 const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher }: any) => {
-  const [langSelected, setLangSelected] = React.useState('typescript');
-  const [dbSelected, setDbSelected] = React.useState('postgres');
+  const navigate = useNavigate();
+  const getTechFromParam = (type: string, defaultVal: string) => {
+    const searchParam = new URLSearchParams(location.search).get(type);
+    return searchParam ? searchParam : defaultVal;
+  };
+
+  const [langSelected, setLangSelected] = React.useState(
+    langSwitcher ? getTechFromParam('lang', langSwitcher[0]) : 'typescript'
+  );
+  const [dbSelected, setDbSelected] = React.useState(
+    dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgres'
+  );
+
+  const goToNewPath = () => {
+    const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
+      dbSwitcher ? `db=${dbSelected}` : ''
+    }`;
+    if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
+      navigate(newParams);
+    }
+  };
 
   // TODO : Simplify the function!
   const techChanged = (item: any, type: string) => {
@@ -69,6 +90,7 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
       }
     });
     elemToShow && elemToShow.forEach((eShow: any) => eShow.classList.add('show'));
+    goToNewPath();
   };
 
   const langChanged = (item: any) => {
@@ -98,8 +120,22 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
       <MainTitle>{title}</MainTitle>
       {!indexPage && <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />}
       <SwitcherWrapper>
-        {langSwitcher && <TechnologySwitch type="lang" onChangeTech={langChanged} />}
-        {dbSwitcher && <TechnologySwitch type="db" onChangeTech={dbChanged} />}
+        {langSwitcher && (
+          <TechnologySwitch
+            type="lang"
+            onChangeTech={langChanged}
+            technologies={langSwitcher}
+            defaultTech={langSelected}
+          />
+        )}
+        {dbSwitcher && (
+          <TechnologySwitch
+            type="db"
+            onChangeTech={dbChanged}
+            technologies={dbSwitcher}
+            defaultTech={dbSelected}
+          />
+        )}
       </SwitcherWrapper>
       {!indexPage && <TOC location={location} />}
     </TopSectionWrapper>

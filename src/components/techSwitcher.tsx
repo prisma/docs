@@ -10,6 +10,8 @@ import JS from '../icons/technologies/JS';
 interface TechSwitchProps {
   type: string;
   onChangeTech: (item: any) => void;
+  technologies: string[];
+  defaultTech: string;
 }
 
 interface TechItem {
@@ -37,9 +39,9 @@ export const technologyNames = {
   sqlite: 'SQLite',
 };
 
-const TechnologySwitch = ({ type, onChangeTech }: TechSwitchProps) => {
-  const langDefault = { technology: 'typescript' };
-  const dbDefault = { technology: 'postgres' };
+const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
+  const langDefault = { technology: defaultTech || 'typescript' };
+  const dbDefault = { technology: defaultTech || 'postgres' };
   const defaultItem = type === 'lang' ? langDefault : dbDefault;
 
   const [selectedItem, setSelectedItem] = React.useState(defaultItem);
@@ -60,10 +62,14 @@ const TechnologySwitch = ({ type, onChangeTech }: TechSwitchProps) => {
     onChangeTech(item);
   };
 
-  const items =
+  let items =
     type === 'lang'
       ? technologyTypes.languages.map((lang: any) => ({ technology: lang }))
       : technologyTypes.databases.map((db: any) => ({ technology: db }));
+
+  if (technologies) {
+    items = items.filter((item: any) => technologies.includes(item.technology));
+  }
 
   return (
     <Container>
