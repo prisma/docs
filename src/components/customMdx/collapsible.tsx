@@ -56,7 +56,7 @@ const Label = styled.label`
   display: block;
   color: #0c344b;
   font-weight: 600;
-  line-height: 2;
+  line-height: 1.5;
   padding-left: 36px;
   cursor: pointer;
 `;
@@ -83,7 +83,7 @@ const Input = styled.input`
 const StyledArrow = styled(ArrowRight)`
   position: absolute;
   left: 18px;
-  top: 10px;
+  top: 8px;
   transition: transform 0.15s;
   input:checked + & {
     transform: rotate(90deg);

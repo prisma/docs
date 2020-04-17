@@ -59,6 +59,9 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     transition: color 150ms ease 0s, background 150ms ease 0s, transform 100ms ease 0s;
     white-space: nowrap;
     word-break: keep-all;
+    max-width: 100%;
+    overflow: scroll;
+    margin-bottom: 0.5rem;
     &:hover {
       background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
     }

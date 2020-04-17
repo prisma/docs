@@ -37,7 +37,7 @@ const HitsWrapper = styled.div`
   .loader {
     padding: 24px 40px;
   }
-  @media (min-width: 768px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 1024px) {
     left: 0;
     top: 40px;
     max-width: 100%;

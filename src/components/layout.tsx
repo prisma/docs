@@ -9,7 +9,7 @@ import { MDXProvider } from '@mdx-js/react';
 import customMdx from '../components/customMdx';
 import './layout.css';
 import Sidebar from './sidebar';
-import Overlay from './search/overlay';
+// import { StickyContainer } from 'react-sticky';
 
 interface ThemeProps {
   colorPrimary: string;
@@ -30,16 +30,15 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     width: 100%;
     justify-content: center;
     padding: 0 10px;
-    // @media only screen and (max-width: 767px) {
-    //   display: block;
-    // }
   `;
 
   const Content = styled.article`
     max-width: 880px;
     width: 880px;
     margin: -80px 0 1rem 24px;
-    @media (min-width: 768px) and (max-width: 1024px) {
+    position: relative;
+    z-index: 100;
+    @media (min-width: 0px) and (max-width: 1024px) {
       margin: 0;
       width: 100%;
       max-width: 100%;
@@ -47,10 +46,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   `;
 
   const MaxWidth = styled.div`
-    // @media only screen and (max-width: 50rem) {
-    //   width: 100%;
-    //   position: relative;
-    // }
     > section {
       background: #ffffff;
       box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
@@ -60,18 +55,34 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
       &.top-section {
         padding-top: 40px;
       }
-      @media (min-width: 768px) and (max-width: 1024px) {
+      @media (min-width: 0px) and (max-width: 1024px) {
         margin-top: 0.5rem;
+      }
+      @media (min-width: 0px) and (max-width: 767px) {
+        padding: 24px;
+        &.top-section {
+          padding-top: 24px;
+        }
       }
     }
   `;
 
+  const NotMobile = styled.section`
+    display: flex;
+    @media (min-width: 0px) and (max-width: 1024px) {
+      display: none;
+    }
+  `;
+
   return (
+    // <StickyContainer>
     <ThemeProvider theme={theme}>
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
         <Wrapper>
-          <Sidebar />
+          <NotMobile>
+            <Sidebar isMobile={false} />
+          </NotMobile>
           <Content>
             <MaxWidth>{children}</MaxWidth>
           </Content>
@@ -79,6 +90,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
         <Footer footerProps={footer} />
       </MDXProvider>
     </ThemeProvider>
+    // </StickyContainer>
   );
 };
 

@@ -37,6 +37,12 @@ const HitComp = styled.div`
     color: #3182ce !important;
     background: #ebf8ff;
     padding: 2px;
+    font-weight: bold;
+  }
+
+  @media (min-width: 0px) and (max-width: 767px) {
+    max-height:fit-content;
+    padding: 24px !important;
   }
 `;
 

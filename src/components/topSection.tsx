@@ -12,6 +12,10 @@ const TopSectionWrapper = styled.div`
     margin-top: 3.5rem;
     margin-bottom: 4rem;
   }
+
+  .tech-switch-block {
+    position: relative;
+  }
 `;
 
 const MainTitle = styled.h1`
@@ -23,12 +27,20 @@ const MainTitle = styled.h1`
   color: #1a202c;
   margin: 0;
   margin-top: 4px;
+  @media only screen and (max-width: 767px) {
+    font-size: 24px;
+  }
 `;
 
 const SwitcherWrapper = styled.div`
   display: flex;
   position: absolute;
-  top: 78px;
+  top: -38px;
+  @media only screen and (max-width: 767px) {
+    flex-direction: column;
+    width: 100%;
+    top: -30px;
+  }
 `;
 
 const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher }: any) => {
@@ -118,25 +130,27 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
     <TopSectionWrapper>
       {!indexPage && <ParentTitle slug={slug} />}
       <MainTitle>{title}</MainTitle>
-      {!indexPage && <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />}
-      <SwitcherWrapper>
-        {langSwitcher && (
-          <TechnologySwitch
-            type="lang"
-            onChangeTech={langChanged}
-            technologies={langSwitcher}
-            defaultTech={langSelected}
-          />
-        )}
-        {dbSwitcher && (
-          <TechnologySwitch
-            type="db"
-            onChangeTech={dbChanged}
-            technologies={dbSwitcher}
-            defaultTech={dbSelected}
-          />
-        )}
-      </SwitcherWrapper>
+      <div className="tech-switch-block">
+        {!indexPage && <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />}
+        <SwitcherWrapper>
+          {langSwitcher && (
+            <TechnologySwitch
+              type="lang"
+              onChangeTech={langChanged}
+              technologies={langSwitcher}
+              defaultTech={langSelected}
+            />
+          )}
+          {dbSwitcher && (
+            <TechnologySwitch
+              type="db"
+              onChangeTech={dbChanged}
+              technologies={dbSwitcher}
+              defaultTech={dbSelected}
+            />
+          )}
+        </SwitcherWrapper>
+      </div>
       {!indexPage && <TOC location={location} />}
     </TopSectionWrapper>
   );

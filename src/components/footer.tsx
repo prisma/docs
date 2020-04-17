@@ -30,9 +30,17 @@ const FooterWrapper = styled.div`
   }
   .container {
     padding: 15rem 10px;
-    width: 1210px;
+    width: 1120px;
     display: flex;
     justify-content: space-between;
+
+    > div {
+      flex: 2;
+    }
+    @media (min-width: 0px) and (max-width: 767px) {
+      flex-direction: column;
+      padding: 3rem 0.5rem;
+    }
   }
 `;
 
@@ -80,7 +88,7 @@ const LogoContainer = styled.div`
 `;
 
 const SocialWrapper = styled.div`
-  max-width: 350px;
+  flex: 3 !important;
   p {
     margin: 0;
   }

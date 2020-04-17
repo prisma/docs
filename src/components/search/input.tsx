@@ -11,7 +11,7 @@ const Form = styled.form`
   z-index: 100001;
   display: flex;
   align-items: center;
-  @media (min-width: 768px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 1024px) {
     flex: 1;
   }
 `;

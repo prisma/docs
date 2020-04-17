@@ -15,4 +15,14 @@ export default Table;
 
 const TableWrapper = styled.div`
   overflow-x: auto;
+  @media (min-width: 0px) and (max-width: 767px) {
+    margin-right: -24px;
+    margin-left: -24px;
+
+    table {
+      border-left: 0;
+      border-right: 0;
+      border-radius:0 !important;
+    }
+  }
 `;
