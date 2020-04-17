@@ -34,6 +34,7 @@ const config = {
     twitter: {
       site: '@prisma',
       creator: '@prisma',
+      image: '/social/docs-social.png'
     },
     og: {
       site_name: 'Prisma',
@@ -42,7 +43,7 @@ const config = {
         alt: 'Database tools for modern developers',
         height: '630',
         type: 'image/png',
-        url: '/images/og-image.png',
+        url: '/social/docs-social.png',
         width: '1200',
       },
     },
@@ -75,8 +76,7 @@ const config = {
 
       {
         name: 'API Reference',
-        link:
-          '/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
+        link: '/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },

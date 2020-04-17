@@ -17,7 +17,13 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const {
     mdx: {
       fields: { slug },
-      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
+      frontmatter: {
+        title,
+        metaTitle,
+        metaDescription,
+        langSwitcher,
+        dbSwitcher
+      },
       body,
       parent,
     },
@@ -39,7 +45,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
-      <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} />
+      <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug} />
     </Layout>
   );
 };

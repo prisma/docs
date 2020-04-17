@@ -27,9 +27,12 @@ if (process.env.NODE_ENV === 'development') {
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
   siteMetadata: {
+    pathPrefix: config.gatsby.pathPrefix,
     title: config.siteMetadata.title,
     description: config.siteMetadata.description,
     keywords: config.siteMetadata.keywords,
+    twitter: config.siteMetadata.twitter,
+    og: config.siteMetadata.og,
     header: config.header,
     siteUrl: config.gatsby.siteUrl,
     footer: config.footer,
