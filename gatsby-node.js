@@ -1,50 +1,25 @@
 const path = require(`path`);
-// const urlGenerator = require(`./src/utils/urlGenerator`)
-// const { createFilePath } = require(`gatsby-source-filesystem`);
 
 exports.onCreateNode = ({ node, getNode, actions }) => {
   const { createNodeField } = actions;
   if (node.internal.type === `Mdx`) {
     const parent = getNode(node.parent);
-
     let value = parent.relativePath.replace(parent.ext, '');
-
     if (value === 'index') {
       value = '';
     }
 
     createNodeField({
+      node,
       name: `slug`,
-      node,
       value: `/${value}`,
-    });
-    createNodeField({
-      name: 'id',
-      node,
-      value: node.id,
-    });
-    createNodeField({
-      name: 'title',
-      node,
-      value: node.frontmatter.title || parent.name,
-    });
-    createNodeField({
-      name: 'staticLink',
-      node,
-      value: node.frontmatter.staticLink || false,
-    });
-    createNodeField({
-      name: 'duration',
-      node,
-      value: node.frontmatter.duration || '',
-    });
-    createNodeField({
-      name: 'experimental',
-      node,
-      value: node.frontmatter.experimental || false,
     });
   }
 };
+
+// const matchesLangDb = (slug, langSwitcher, dbSwitcher) => {
+//   return `${slug.replace(/\d+-/g, '')}/*`;
+// };
 
 exports.createPages = ({ graphql, actions }) => {
   const { createPage } = actions;
@@ -55,11 +30,11 @@ exports.createPages = ({ graphql, actions }) => {
           edges {
             node {
               fields {
-                id
-              }
-              tableOfContents
-              fields {
                 slug
+              }
+              frontmatter {
+                langSwitcher
+                dbSwitcher
               }
             }
           }
@@ -68,12 +43,29 @@ exports.createPages = ({ graphql, actions }) => {
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
         createPage({
-          path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, "") : '/',
+          path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, '') : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
+          matchPath:
+            node.frontmatter.langSwitcher || node.frontmatter.dbSwitcher
+              ? `${node.fields.slug.replace(/\d+-/g, '')}/*`
+              : ``,
           context: {
-            id: node.fields.id,
+            slug: node.fields.slug,
           },
         });
+        // if(node.frontmatter.langSwitcher) {
+        //   node.frontmatter.langSwitcher.forEach(lang => createPage({
+        //     path: node.fields.slug ? `${node.fields.slug.replace(/\d+-/g, '')}-${lang}` : '/',
+        //     component: path.resolve(`./src/layouts/articleLayout.tsx`),
+        //     // matchPath:
+        //     //   node.frontmatter.langSwitcher || node.frontmatter.dbSwitcher
+        //     //     ? `${node.fields.slug.replace(/\d+-/g, '')}/*`
+        //     //     : ``,
+        //     context: {
+        //       slug: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`
+        //     },
+        //   }))
+        // }
       });
       resolve();
     });

@@ -9,7 +9,6 @@ import { MDXProvider } from '@mdx-js/react';
 import customMdx from '../components/customMdx';
 import './layout.css';
 import Sidebar from './sidebar';
-import Overlay from './search/overlay';
 
 interface ThemeProps {
   colorPrimary: string;

@@ -8,6 +8,7 @@ import { urlGenerator } from '../../utils/urlGenerator';
 interface TreeNode {
   node: {
     fields: ArticleFields;
+    frontmatter: any;
   };
 }
 
@@ -27,7 +28,8 @@ const calculateTreeData = (edges: any) => {
       accu: any,
       {
         node: {
-          fields: { slug, title, staticLink, duration, experimental },
+          fields: { slug },
+          frontmatter: {title, staticLink, duration, experimental}
         },
       }: TreeNode
     ) => {

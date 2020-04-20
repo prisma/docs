@@ -1,5 +1,8 @@
 export const getParentTitle = (slug: string, allMdx?: any) => {
-  const allContent = allMdx && allMdx.edges && allMdx.edges.map((mdx: any) => mdx.node.fields);
+  const allContent =
+    allMdx &&
+    allMdx.edges &&
+    allMdx.edges.map((mdx: any) => ({ ...mdx.node.fields, ...mdx.node.frontmatter }));
   allContent?.map((content: any) => {
     content.parentTitle = '';
     const parts = content.slug.split('/');

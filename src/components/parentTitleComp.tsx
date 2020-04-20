@@ -17,7 +17,6 @@ interface ParentTitleProps {
 
 const ParentTitle = ({ slug }: ParentTitleProps) => {
   const { allMdx }: AllArticles = useAllArticlesQuery();
-
   const parentTitle = getParentTitle(slug, allMdx);
   return <BreadcrumbTitle>{parentTitle}</BreadcrumbTitle>;
 };

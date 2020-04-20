@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import TOC from './toc';
 import TechnologySwitch from './techSwitcher';
 import ParentTitle from './parentTitleComp';
-import { useNavigate } from '@reach/router';
+import { useNavigate, redirectTo } from '@reach/router';
 import { urlGenerator } from '../utils/urlGenerator';
 
 const TopSectionWrapper = styled.div`
@@ -46,11 +46,19 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
   );
 
   const goToNewPath = () => {
-    const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
-      dbSwitcher ? `db=${dbSelected}` : ''
+    // const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
+    //   dbSwitcher ? `db=${dbSelected}` : ''
+    // }`;
+    // if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
+    //   navigate(newParams);
+    // }
+
+    console.log(location)
+    const newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
+      dbSwitcher ? `${dbSelected}` : ''
     }`;
-    if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
-      navigate(newParams);
+    if (!(location.pathname.includes(urlGenerator(slug)) && location.pathname.includes(newParams))) {
+      redirectTo(location.pathname + '/'+newParams);
     }
   };
 

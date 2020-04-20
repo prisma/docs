@@ -1,8 +1,13 @@
-import { AllEdges } from './AllArticles.interface';
-
 export interface ArticleFields {
   slug: string;
+}
+
+export interface ArticleFrontmatter {
   title: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  langSwitcher?: string[];
+  dbSwitcher?: string[];
   staticLink?: boolean;
   duration?: string;
   experimental?: boolean;
@@ -13,15 +18,8 @@ export interface ArticleData {
     fields: ArticleFields;
     body: string;
     parent: any;
-    frontmatter: {
-      title: string;
-      metaTitle?: string;
-      metaDescription?: string;
-      langSwitcher?: string[];
-      dbSwitcher?: string[];
-    };
+    frontmatter: ArticleFrontmatter;
   };
-  allMdx: AllEdges;
   site: {
     siteMetadata: {
       docsLocation: string;

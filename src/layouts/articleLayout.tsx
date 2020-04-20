@@ -53,13 +53,13 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
 export default ArticleLayout;
 
 export const query = graphql`
-  query($id: String!) {
+  query($slug: String!) {
     site {
       siteMetadata {
         docsLocation
       }
     }
-    mdx(fields: { id: { eq: $id } }) {
+    mdx(fields: { slug: { eq: $slug } }) {
       fields {
         slug
       }
@@ -75,16 +75,6 @@ export const query = graphql`
         metaDescription
         langSwitcher
         dbSwitcher
-      }
-    }
-    allMdx {
-      edges {
-        node {
-          fields {
-            slug
-            title
-          }
-        }
       }
     }
   }

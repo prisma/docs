@@ -163,7 +163,7 @@ const TreeNode = ({
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
         <Link
-          to={url.split('/').includes('index') ? null : urlGenerator(url)}
+          to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
           activeClassName="active-item"
         >
           {hasExpandButton ? (
