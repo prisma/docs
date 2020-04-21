@@ -47,33 +47,32 @@ exports.createPages = ({ graphql, actions }) => {
       }
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
-        // if (node.frontmatter.langSwitcher) {
-        //   node.frontmatter.langSwitcher.forEach(lang =>
-        //     createPage({
-        //       path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
-        //       component: path.resolve(`./src/layouts/articleLayout.tsx`),
-        //       context: {
-        //         slug: `${node.fields.slug}-${lang}`,
-        //         title: `${node.frontmatter.title}-${lang}`,
-        //         frontmatter: node.frontmatter,
-        //         parentSlug: node.fields.slug.replace(/\d+-/g, ''),
-        //         parentPath: node.parent.relativePath,
-        //         body: node.body,
-        //       },
-        //     })
-        //   );
-        // }
+        if (node.frontmatter.langSwitcher) {
+          node.frontmatter.langSwitcher.forEach(lang =>
+            createPage({
+              path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
+              component: path.resolve(`./src/layouts/articleLayout.tsx`),
+              context: {
+                slug: `${node.fields.slug}-${lang}`,
+                title: `${node.frontmatter.title}-${lang}`,
+                frontmatter: node.frontmatter,
+                parentSlug: node.fields.slug.replace(/\d+-/g, ''),
+                parentPath: node.parent.relativePath,
+                body: node.body,
+              },
+            })
+          );
+        }
         createPage({
           path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, '') : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
             slug: node.fields.slug,
-            seoTitle: node.frontmatter.title,
-            // seoSlug: node.fields.slug
-            // frontmatter: node.frontmatter,
-            // parentSlug: node.fields.slug.replace(/\d+-/g, ''),
-            // parentPath: node.parent.relativePath,
-            // body: node.body,
+            title: node.frontmatter.title,
+            frontmatter: node.frontmatter,
+            parentSlug: node.fields.slug.replace(/\d+-/g, ''),
+            parentPath: node.parent.relativePath,
+            body: node.body,
           },
         });
       });

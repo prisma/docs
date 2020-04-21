@@ -31,7 +31,7 @@ const SwitcherWrapper = styled.div`
   top: 78px;
 `;
 
-const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher, onChangeParam }: any) => {
+const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher, onChangeParam, parentSlug }: any) => {
   const navigate = useNavigate();
   const getTechFromParam = (type: string, defaultVal: string) => {
     const searchParam = new URLSearchParams(location.search).get(type);
@@ -46,22 +46,22 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
   );
 
   const goToNewPath = () => {
-    const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
-      dbSwitcher ? `db=${dbSelected}` : ''
-    }`;
-    if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
-      navigate(newParams);
-      onChangeParam(newParams);
-    }
-    // const newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
-    //   dbSwitcher ? `${dbSelected}` : ''
+    // const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
+    //   dbSwitcher ? `db=${dbSelected}` : ''
     // }`;
-
-    // console.log(newParams);
-    // if (!(location.pathname.includes(urlGenerator(slug)) && location.pathname.includes(newParams))) {
-    //   redirectTo(`${parentSlug}-${newParams}`);
-    //   //redirectTo(`http://localhost:8000/getting-started/quickstart-${newParams}`)
+    // if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
+    //   navigate(newParams);
+    //   onChangeParam(newParams);
     // }
+    const newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
+      dbSwitcher ? `${dbSelected}` : ''
+    }`;
+
+    console.log(newParams);
+    if (!(location.pathname.includes(urlGenerator(slug)) && location.pathname.includes(newParams))) {
+      redirectTo(`${parentSlug}-${newParams}`);
+      //redirectTo(`http://localhost:8000/getting-started/quickstart-${newParams}`)
+    }
   };
 
   // TODO : Simplify the function!
@@ -147,7 +147,7 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
           />
         )}
       </SwitcherWrapper>
-      {!indexPage && <TOC location={location} />}
+      {/* {!indexPage && <TOC location={location} />} */}
     </TopSectionWrapper>
   );
 };

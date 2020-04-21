@@ -15,19 +15,19 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     return null;
   }
   const {
-    mdx: {
-      fields: { slug },
-      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
-      // context: {
-      //   slug,
-      //   title,
-      //   frontmatter: { title: fTitle, metaTitle, metaDescription, langSwitcher, dbSwitcher },
-      //   parentPath,
-      //   parentSlug,
-      //   body,
-      // },
-      body,
-      parent,
+    sitePage: {
+      // fields: { slug },
+      // frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
+      context: {
+        slug,
+        title,
+        frontmatter: { title: fTitle, metaTitle, metaDescription, langSwitcher, dbSwitcher },
+        parentPath,
+        parentSlug,
+        body,
+      },
+      // body,
+      // parent,
     },
     site: {
       siteMetadata: { docsLocation },
@@ -64,68 +64,68 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           slug={slug}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
-          onChangeParam={changeSEODetails}
-          // parentSlug={parentSlug}
+          // onChangeParam={changeSEODetails}
+          parentSlug={parentSlug}
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
-      <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug} />
+      <PageBottom editDocsPath={`${docsLocation}/${parentPath}`} pageUrl={slug} />
     </Layout>
   );
 };
 
 export default ArticleLayout;
 
-// export const query = graphql`
-//   query($path: String!) {
-//     site {
-//       siteMetadata {
-//         docsLocation
-//       }
-//     }
-//     sitePage(path: { eq: $path }) {
-//       context {
-//         slug
-//         title
-//         frontmatter {
-//           title
-//           metaTitle
-//           metaDescription
-//           langSwitcher
-//           dbSwitcher
-//         }
-//         parentPath
-//         parentSlug
-//         body
-//       }
-//     }
-//   }
-// `;
-
 export const query = graphql`
-  query($slug: String!) {
+  query($path: String!) {
     site {
       siteMetadata {
         docsLocation
       }
     }
-    mdx(fields: { slug: { eq: $slug } }) {
-      fields {
+    sitePage(path: { eq: $path }) {
+      context {
         slug
-      }
-      body
-      parent {
-        ... on File {
-          relativePath
-        }
-      }
-      frontmatter {
         title
-        metaTitle
-        metaDescription
-        langSwitcher
-        dbSwitcher
+        frontmatter {
+          title
+          metaTitle
+          metaDescription
+          langSwitcher
+          dbSwitcher
+        }
+        parentPath
+        parentSlug
+        body
       }
     }
   }
 `;
+
+// export const query = graphql`
+//   query($slug: String!) {
+//     site {
+//       siteMetadata {
+//         docsLocation
+//       }
+//     }
+//     mdx(fields: { slug: { eq: $slug } }) {
+//       fields {
+//         slug
+//       }
+//       body
+//       parent {
+//         ... on File {
+//           relativePath
+//         }
+//       }
+//       frontmatter {
+//         title
+//         metaTitle
+//         metaDescription
+//         langSwitcher
+//         dbSwitcher
+//       }
+//     }
+//   }
+// `;
