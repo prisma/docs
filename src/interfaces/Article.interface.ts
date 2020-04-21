@@ -1,38 +1,38 @@
-import { AllEdges } from './AllArticles.interface';
+import { AllEdges } from './AllArticles.interface'
 
 export interface ArticleFields {
-  slug: string;
-  title: string;
-  staticLink?: boolean;
-  duration?: string;
-  experimental?: boolean;
+  slug: string
+  title: string
+  staticLink?: boolean
+  duration?: string
+  experimental?: boolean
 }
 
 export interface ArticleData {
   mdx: {
-    fields: ArticleFields;
-    body: string;
-    parent: any;
+    fields: ArticleFields
+    body: string
+    parent: any
     frontmatter: {
-      title: string;
-      metaTitle?: string;
-      metaDescription?: string;
-      langSwitcher?: string[];
-      dbSwitcher?: string[];
-    };
-  };
-  allMdx: AllEdges;
+      title: string
+      metaTitle?: string
+      metaDescription?: string
+      langSwitcher?: string[]
+      dbSwitcher?: string[]
+    }
+  }
+  allMdx: AllEdges
   site: {
     siteMetadata: {
-      docsLocation: string;
-    };
-  };
+      docsLocation: string
+    }
+  }
 }
 
 export interface ArticleQueryData {
-  data: ArticleData;
+  data: ArticleData
 }
 
 export interface Fields {
-  fields: ArticleFields;
+  fields: ArticleFields
 }
