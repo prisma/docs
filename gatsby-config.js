@@ -39,6 +39,12 @@ module.exports = {
     docsLocation: config.siteMetadata.docsLocation,
   },
   plugins: [
+    {
+      resolve: `gatsby-plugin-google-analytics`,
+      options: {
+        trackingId: 'UA-74131346-14',
+      },
+    },
     'gatsby-plugin-react-helmet',
     'gatsby-transformer-sharp',
     'gatsby-plugin-sharp',
