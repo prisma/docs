@@ -17,13 +17,15 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const {
     mdx: {
       fields: { slug },
-      frontmatter: {
-        title,
-        metaTitle,
-        metaDescription,
-        langSwitcher,
-        dbSwitcher
-      },
+      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
+      // context: {
+      //   slug,
+      //   title,
+      //   frontmatter: { title: fTitle, metaTitle, metaDescription, langSwitcher, dbSwitcher },
+      //   parentPath,
+      //   parentSlug,
+      //   body,
+      // },
       body,
       parent,
     },
@@ -32,9 +34,29 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     },
   } = data;
 
+  const [seoDetails, setSEODetails] = React.useState({
+    seoTitle: metaTitle || title,
+    seoUrl: slug,
+  });
+
+  const changeSEODetails = (newParams: string) => {
+    const lang = new URLSearchParams(newParams).get('lang');
+    const db = new URLSearchParams(newParams).get('db');
+
+    console.log(lang, db)
+    setSEODetails({
+      seoTitle: title + `-${lang}-${db}`,
+      seoUrl: slug + newParams,
+    });
+  };
+
   return (
     <Layout {...props}>
-      <SEO title={metaTitle || title} description={metaDescription || title} slug={slug} />
+      <SEO
+        title={seoDetails.seoTitle}
+        description={metaDescription || title}
+        slug={seoDetails.seoUrl}
+      />
       <section className="top-section">
         <TopSection
           location={props.location}
@@ -42,6 +64,8 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           slug={slug}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
+          onChangeParam={changeSEODetails}
+          // parentSlug={parentSlug}
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
@@ -51,6 +75,32 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
 };
 
 export default ArticleLayout;
+
+// export const query = graphql`
+//   query($path: String!) {
+//     site {
+//       siteMetadata {
+//         docsLocation
+//       }
+//     }
+//     sitePage(path: { eq: $path }) {
+//       context {
+//         slug
+//         title
+//         frontmatter {
+//           title
+//           metaTitle
+//           metaDescription
+//           langSwitcher
+//           dbSwitcher
+//         }
+//         parentPath
+//         parentSlug
+//         body
+//       }
+//     }
+//   }
+// `;
 
 export const query = graphql`
   query($slug: String!) {

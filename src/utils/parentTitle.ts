@@ -19,5 +19,5 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
     });
   });
 
-  return allContent?.find((mdx: any) => mdx.slug === slug).parentTitle.slice(0, -2);
+  return allContent?.find((mdx: any) => slug.includes(mdx.slug)).parentTitle.slice(0, -2);
 };

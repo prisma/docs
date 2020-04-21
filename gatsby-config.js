@@ -18,6 +18,7 @@ const gatsbyRemarkPlugins = [
   {
     resolve: `gatsby-remark-images`,
   },
+  'gatsby-plugin-react-helmet'
 ];
 
 if (process.env.NODE_ENV === 'development') {
@@ -39,17 +40,16 @@ module.exports = {
     docsLocation: config.siteMetadata.docsLocation,
   },
   plugins: [
-    'gatsby-plugin-react-helmet',
     'gatsby-transformer-sharp',
     'gatsby-plugin-sharp',
     'gatsby-plugin-typescript',
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
-    {
-      resolve: `gatsby-plugin-algolia`,
-      options: require(`./src/utils/algolia`),
-    },
+    // {
+    //   resolve: `gatsby-plugin-algolia`,
+    //   options: require(`./src/utils/algolia`),
+    // },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {

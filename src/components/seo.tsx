@@ -1,8 +1,8 @@
 import * as React from 'react';
-import Helmet from 'react-helmet';
+import {Helmet} from 'react-helmet';
 import favicon from '../images/favicon-32x32.png';
 import { useStaticQuery, graphql } from 'gatsby';
-import { useLocation } from '@reach/router';
+import { urlGenerator } from '../utils/urlGenerator';
 
 type SEOProps = {
   title?: string;
@@ -11,7 +11,7 @@ type SEOProps = {
   slug?: string;
 };
 
-const SEO = ({ title, description, keywords }: SEOProps) => {
+const SEO = ({ title, description, keywords, slug }: SEOProps) => {
   const { site } = useStaticQuery(query);
   const {
     siteMetadata: {
@@ -26,15 +26,21 @@ const SEO = ({ title, description, keywords }: SEOProps) => {
     },
   } = site;
 
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const canonicalUrl = location.href;
-  const lang = searchParams ? searchParams.get('lang') : '';
-  const db = searchParams ? searchParams.get('db') : '';
+  // const location = useLocation();
+  // const searchParams = new URLSearchParams(location.search);
+  // const canonicalUrl = location.href;
+  // const lang = searchParams ? searchParams.get('lang') : '';
+  // const db = searchParams ? searchParams.get('db') : '';
 
-  const seoTitle = `${title}${lang ? '-' + lang.toUpperCase() : ''}${
-    db ? '-' + db.toUpperCase() : ''
-  }`;
+  // const seoTitle = `${title}${lang ? '-' + lang.toUpperCase() : ''}${
+  //   db ? '-' + db.toUpperCase() : ''
+  // }`;
+
+  const seoTitle = title;
+
+  let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl;
+  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl;
+
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}

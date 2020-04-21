@@ -27,6 +27,17 @@ export interface ArticleData {
   };
 }
 
+// export interface ArticleData {
+//   sitePage: {
+//     context: any;
+//   };
+//   site: {
+//     siteMetadata: {
+//       docsLocation: string;
+//     };
+//   };
+// }
+
 export interface ArticleQueryData {
   data: ArticleData;
 }
