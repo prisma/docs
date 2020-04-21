@@ -4,7 +4,6 @@ import styled, { ThemeProvider } from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
-
 import { MDXProvider } from '@mdx-js/react'
 import customMdx from '../components/customMdx'
 import './layout.css'

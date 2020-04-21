@@ -56,7 +56,7 @@ const Input = styled.input`
 
 const DEBOUNCE_DELAY = 500
 
-const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
+const SearchBox = ({ refine, onFocus, onBlur, currentRefinement, ...rest }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
   const timeoutId = React.useRef(null)
 

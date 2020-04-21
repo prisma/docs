@@ -7,7 +7,6 @@ import Github from '../icons/Git'
 import Clear from '../icons/Clear'
 import Search from '../components/search'
 import Sidebar from '../components/sidebar'
-// import { Sticky } from 'react-sticky';
 import { HeaderProps } from '../interfaces/Layout.interface'
 
 type HeaderViewProps = {
@@ -33,13 +32,6 @@ const HeaderWrapper = styled.div`
   .container {
     width: 1110px;
   }
-
-  // .searchContainer {
-  //   margin-top: 27px;
-  //   display: flex;
-  //   justify-content: space-between;
-  //   position: relative;
-  // }
 
   @media (min-width: 0px) and (max-width: 1024px) {
     height: auto;
@@ -195,11 +187,14 @@ const NonMobileMenu = styled.div`
 `
 
 const Header = ({ headerProps }: HeaderViewProps) => {
+  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const [showMobileNav, setShowMobileNav] = React.useState(false)
   const [showMobileMenu, setShowMobileMenu] = React.useState(false)
 
   const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
   const toggleMobileMenu = () => setShowMobileMenu(!showMobileMenu)
+
+  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
   const Menu = (
     <>
@@ -254,18 +249,14 @@ const Header = ({ headerProps }: HeaderViewProps) => {
             {showMobileMenu ? <Clear /> : 'Menu'}
           </MenuMobileBtn>
         </HeaderNav>
-        {/* <Sticky topOffset={50}>
-          {({ style, isSticky }: any) => ( 
-            <SearchContainer style={style} isSticky={isSticky}>*/}
         <SearchContainer>
-          {/* <SearchComponent addFocus={hideDocsButton} removeFocus={showDocsButton}/> */}
-          <SearchComponent />
-          <DocsMobileButton onClick={toggleMobileNav}>
-            {showMobileNav ? <Clear /> : 'Docs'}
-          </DocsMobileButton>
+          <SearchComponent hitsStatus={changeHitsStatus} />
+          {showDocsBtn && (
+            <DocsMobileButton onClick={toggleMobileNav}>
+              {showMobileNav ? <Clear /> : 'Docs'}
+            </DocsMobileButton>
+          )}
         </SearchContainer>
-        {/* )}
-        </Sticky> */}
       </div>
 
       {showMobileNav && (

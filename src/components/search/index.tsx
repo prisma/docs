@@ -63,11 +63,16 @@ const Results = connectStateResults(
     ))
 )
 
-export default function Search() {
+export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
-  const [showHits, setShowHits] = React.useState(true)
+  const [showHits, setShowHits] = React.useState(false)
   const hideSearch = () => setShowHits(false)
+
   const showSearch = () => setShowHits(true)
+
+  React.useEffect(() => {
+    hitsStatus(query.length > 0 && showHits)
+  }, [showHits, query])
 
   return (
     <InstantSearch
