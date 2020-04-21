@@ -31,7 +31,15 @@ const SwitcherWrapper = styled.div`
   top: 78px;
 `
 
-const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher }: any) => {
+const TopSection = ({
+  location,
+  title,
+  slug,
+  indexPage,
+  langSwitcher,
+  dbSwitcher,
+  onChangeParam,
+}: any) => {
   const navigate = useNavigate()
   const getTechFromParam = (type: string, defaultVal: string) => {
     const searchParam = new URLSearchParams(location.search).get(type)
@@ -50,6 +58,7 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
       dbSwitcher ? `db=${dbSelected}` : ''
     }`
     if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
+      onChangeParam(newParams)
       navigate(newParams)
     }
   }

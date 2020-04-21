@@ -2,7 +2,7 @@ import * as React from 'react'
 import Helmet from 'react-helmet'
 import favicon from '../images/favicon-32x32.png'
 import { useStaticQuery, graphql } from 'gatsby'
-import { useLocation } from '@reach/router'
+import { urlGenerator } from '../utils/urlGenerator'
 
 type SEOProps = {
   title?: string
@@ -11,7 +11,7 @@ type SEOProps = {
   slug?: string
 }
 
-const SEO = ({ title, description, keywords }: SEOProps) => {
+const SEO = ({ title, description, keywords, slug }: SEOProps) => {
   const { site } = useStaticQuery(query)
   const {
     siteMetadata: {
@@ -26,32 +26,26 @@ const SEO = ({ title, description, keywords }: SEOProps) => {
     },
   } = site
 
-  const location = useLocation()
-  const searchParams = new URLSearchParams(location.search)
-  const canonicalUrl = location.href
-  const lang = searchParams ? searchParams.get('lang') : ''
-  const db = searchParams ? searchParams.get('db') : ''
+  let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl
+  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl
 
-  const seoTitle = `${title}${lang ? '-' + lang.toUpperCase() : ''}${
-    db ? '-' + db.toUpperCase() : ''
-  }`
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
       {/* <meta name="viewport" content="width=device-width, initial-scale=1" /> */}
-      {title && <title>{seoTitle}</title>}
+      {title && <title>{title}</title>}
       {description && <meta name="description" content={description} />}
       {keywords && <meta name="keywords" content={keywords} />}
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content={tSite} />
-      <meta name="twitter:title" content={seoTitle} />
+      <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:creator" content={tCreator} />
       <meta name="twitter:image" content={`${siteUrl + pathPrefix}${tUrl}`} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:title" content={seoTitle} />
+      <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:site_name" content={oSite} />
       <meta property="og:type" content={oType} />
