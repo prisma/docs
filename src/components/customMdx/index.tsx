@@ -1,10 +1,10 @@
-import React from 'react';
-import SwitchTech from './switchTech';
-import CodeBlock from './codeBlock';
-import Code from './code';
-import CollapseBox from './collapsible';
-import Table from './table';
-import ButtonLink from './button';
+import React from 'react'
+import SwitchTech from './switchTech'
+import CodeBlock from './codeBlock'
+import Code from './code'
+import CollapseBox from './collapsible'
+import Table from './table'
+import ButtonLink from './button'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -22,4 +22,4 @@ export default {
       <img {...props} />
     </a>
   ),
-};
+}

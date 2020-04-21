@@ -1,18 +1,18 @@
-import Link from '../components/link';
-import * as React from 'react';
-import styled, { css } from 'styled-components';
-import styledTS from 'styled-components-ts';
-import HeaderLogo from '../icons/Logo';
-import Github from '../icons/Git';
-import Clear from '../icons/Clear';
-import Search from '../components/search';
-import Sidebar from '../components/sidebar';
+import Link from '../components/link'
+import * as React from 'react'
+import styled, { css } from 'styled-components'
+import styledTS from 'styled-components-ts'
+import HeaderLogo from '../icons/Logo'
+import Github from '../icons/Git'
+import Clear from '../icons/Clear'
+import Search from '../components/search'
+import Sidebar from '../components/sidebar'
 // import { Sticky } from 'react-sticky';
-import { HeaderProps } from '../interfaces/Layout.interface';
+import { HeaderProps } from '../interfaces/Layout.interface'
 
 type HeaderViewProps = {
-  headerProps: HeaderProps;
-};
+  headerProps: HeaderProps
+}
 
 const HeaderWrapper = styled.div`
   background: radial-gradient(
@@ -50,7 +50,7 @@ const HeaderWrapper = styled.div`
       width: 100%;
     }
   }
-`;
+`
 
 const HeaderNav = styled.div`
   display: flex;
@@ -60,7 +60,7 @@ const HeaderNav = styled.div`
   @media (min-width: 0px) and (max-width: 1024px) {
     padding: 0 16px;
   }
-`;
+`
 
 const Title = styled.span`
   font-size: 1.2rem;
@@ -69,17 +69,17 @@ const Title = styled.span`
   font-weight: bold;
   line-height: 100%;
   letter-spacing: -0.02em;
-`;
+`
 
 const LogoContainer = styled.div`
   padding-right: 0.75rem;
-`;
+`
 
 const SearchComponent = styled(Search)`
   position: absolute;
   top: 12px;
   left: 12px;
-`;
+`
 
 const NavLinks = styled.div`
   display: flex;
@@ -107,7 +107,7 @@ const NavLinks = styled.div`
       margin-bottom: 20px;
     }
   }
-`;
+`
 
 const DocsMobileButton = styled.div`
   background: #4a5568;
@@ -125,7 +125,7 @@ const DocsMobileButton = styled.div`
     display: flex;
     align-items: center;
   }
-`;
+`
 
 const MobileOnlyNav = styled.div`
   display: none;
@@ -150,7 +150,7 @@ const MobileOnlyNav = styled.div`
   @media (min-width: 0px) and (max-width: 767px) {
     padding: 2rem 1rem;
   }
-`;
+`
 
 const SearchContainer = styledTS<{ isSticky: boolean }>(styled.div)`
   margin-top: 27px;
@@ -162,7 +162,7 @@ const SearchContainer = styledTS<{ isSticky: boolean }>(styled.div)`
     css`
       z-index: 120;
       padding: 8px;
-      margin-top:0;
+      margin-top: 0;
       margin-left: -8px;
       width: 100% !important;
       background: radial-gradient(
@@ -173,7 +173,7 @@ const SearchContainer = styledTS<{ isSticky: boolean }>(styled.div)`
         linear-gradient(180deg, #1a202c 0%, #2d3748 100%),
         linear-gradient(180deg, #0d0f14 0%, rgba(27, 32, 43, 0) 100%), #2f3747;
     `};
-`;
+`
 
 const MenuMobileBtn = styled.a`
   display: none;
@@ -184,7 +184,7 @@ const MenuMobileBtn = styled.a`
   @media (min-width: 0px) and (max-width: 767px) {
     display: block;
   }
-`;
+`
 
 const NonMobileMenu = styled.div`
   display: flex;
@@ -192,14 +192,14 @@ const NonMobileMenu = styled.div`
   @media (min-width: 0px) and (max-width: 767px) {
     display: none;
   }
-`;
+`
 
 const Header = ({ headerProps }: HeaderViewProps) => {
-  const [showMobileNav, setShowMobileNav] = React.useState(false);
-  const [showMobileMenu, setShowMobileMenu] = React.useState(false);
+  const [showMobileNav, setShowMobileNav] = React.useState(false)
+  const [showMobileMenu, setShowMobileMenu] = React.useState(false)
 
-  const toggleMobileNav = () => setShowMobileNav(!showMobileNav);
-  const toggleMobileMenu = () => setShowMobileMenu(!showMobileMenu);
+  const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
+  const toggleMobileMenu = () => setShowMobileMenu(!showMobileMenu)
 
   const Menu = (
     <>
@@ -227,7 +227,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
         <Github style={{ height: '24px' }} />
       </Link>
     </>
-  );
+  )
 
   return (
     <HeaderWrapper>
@@ -256,16 +256,15 @@ const Header = ({ headerProps }: HeaderViewProps) => {
         </HeaderNav>
         {/* <Sticky topOffset={50}>
           {({ style, isSticky }: any) => ( 
-            <SearchContainer style={style} isSticky={isSticky}>*/
-          }
-            <SearchContainer>
-              {/* <SearchComponent addFocus={hideDocsButton} removeFocus={showDocsButton}/> */}
-              <SearchComponent />
-              <DocsMobileButton onClick={toggleMobileNav}>
-                {showMobileNav ? <Clear /> : 'Docs'}
-              </DocsMobileButton>
-            </SearchContainer>
-          {/* )}
+            <SearchContainer style={style} isSticky={isSticky}>*/}
+        <SearchContainer>
+          {/* <SearchComponent addFocus={hideDocsButton} removeFocus={showDocsButton}/> */}
+          <SearchComponent />
+          <DocsMobileButton onClick={toggleMobileNav}>
+            {showMobileNav ? <Clear /> : 'Docs'}
+          </DocsMobileButton>
+        </SearchContainer>
+        {/* )}
         </Sticky> */}
       </div>
 
@@ -277,7 +276,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
 
       {showMobileMenu && <MobileOnlyNav>{Menu}</MobileOnlyNav>}
     </HeaderWrapper>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

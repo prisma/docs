@@ -1,17 +1,17 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from 'react'
+import styled from 'styled-components'
 
-type TableProps = React.ReactNode;
+type TableProps = React.ReactNode
 
 const Table = ({ children, ...props }: TableProps) => {
   return (
     <TableWrapper>
       <table {...props}>{children}</table>
     </TableWrapper>
-  );
-};
+  )
+}
 
-export default Table;
+export default Table
 
 const TableWrapper = styled.div`
   overflow-x: auto;
@@ -22,7 +22,7 @@ const TableWrapper = styled.div`
     table {
       border-left: 0;
       border-right: 0;
-      border-radius:0 !important;
+      border-radius: 0 !important;
     }
   }
-`;
+`

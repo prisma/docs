@@ -1,10 +1,10 @@
-import * as React from 'react';
-import styled from 'styled-components';
-import TOC from './toc';
-import TechnologySwitch from './techSwitcher';
-import ParentTitle from './parentTitleComp';
-import { useNavigate } from '@reach/router';
-import { urlGenerator } from '../utils/urlGenerator';
+import * as React from 'react'
+import styled from 'styled-components'
+import TOC from './toc'
+import TechnologySwitch from './techSwitcher'
+import ParentTitle from './parentTitleComp'
+import { useNavigate } from '@reach/router'
+import { urlGenerator } from '../utils/urlGenerator'
 
 const TopSectionWrapper = styled.div`
   position: relative;
@@ -16,7 +16,7 @@ const TopSectionWrapper = styled.div`
   .tech-switch-block {
     position: relative;
   }
-`;
+`
 
 const MainTitle = styled.h1`
   font-family: 'Montserrat';
@@ -30,7 +30,7 @@ const MainTitle = styled.h1`
   @media only screen and (max-width: 767px) {
     font-size: 24px;
   }
-`;
+`
 
 const SwitcherWrapper = styled.div`
   display: flex;
@@ -41,90 +41,90 @@ const SwitcherWrapper = styled.div`
     width: 100%;
     top: -30px;
   }
-`;
+`
 
 const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher }: any) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   const getTechFromParam = (type: string, defaultVal: string) => {
-    const searchParam = new URLSearchParams(location.search).get(type);
-    return searchParam ? searchParam : defaultVal;
-  };
+    const searchParam = new URLSearchParams(location.search).get(type)
+    return searchParam ? searchParam : defaultVal
+  }
 
   const [langSelected, setLangSelected] = React.useState(
     langSwitcher ? getTechFromParam('lang', langSwitcher[0]) : 'typescript'
-  );
+  )
   const [dbSelected, setDbSelected] = React.useState(
     dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgres'
-  );
+  )
 
   const goToNewPath = () => {
     const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
       dbSwitcher ? `db=${dbSelected}` : ''
-    }`;
+    }`
     if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
-      navigate(newParams);
+      navigate(newParams)
     }
-  };
+  }
 
   // TODO : Simplify the function!
   const techChanged = (item: any, type: string) => {
-    const elements = document.querySelectorAll('[id^="techswitch"]');
-    elements.forEach((element: any) => element.classList.remove('show'));
+    const elements = document.querySelectorAll('[id^="techswitch"]')
+    elements.forEach((element: any) => element.classList.remove('show'))
     const elemToShow = [].slice.call(elements).filter((elm: any) => {
       if (type === 'lang') {
         if (dbSwitcher) {
           if (elm.id.includes('-*-')) {
             // lang is any
-            return elm.id.includes(`-${dbSelected}`);
+            return elm.id.includes(`-${dbSelected}`)
           } else {
             return (
               elm.id.includes(`-${item.technology}`) &&
               (elm.id.includes(`-${dbSelected}`) || elm.id.includes(`-*`))
-            );
+            )
           }
         } else {
-          return elm.id.includes(`-${item.technology}`);
+          return elm.id.includes(`-${item.technology}`)
         }
       } else if (type === 'db') {
         if (langSwitcher) {
           if (elm.id.slice(-1) === '*') {
             // db is any
-            return elm.id.includes(`-${langSelected}`);
+            return elm.id.includes(`-${langSelected}`)
           } else {
             return (
               elm.id.includes(`-${item.technology}`) &&
               (elm.id.includes(`-${langSelected}`) || elm.id.includes(`-*`))
-            );
+            )
           }
         } else {
-          return elm.id.includes(`-${item.technology}`);
+          return elm.id.includes(`-${item.technology}`)
         }
       }
-    });
-    elemToShow && elemToShow.forEach((eShow: any) => eShow.classList.add('show'));
-    goToNewPath();
-  };
+    })
+    elemToShow && elemToShow.forEach((eShow: any) => eShow.classList.add('show'))
+    goToNewPath()
+  }
 
   const langChanged = (item: any) => {
-    techChanged(item, 'lang');
-    setLangSelected(item.technology);
-  };
+    techChanged(item, 'lang')
+    setLangSelected(item.technology)
+  }
 
   const dbChanged = (item: any) => {
-    techChanged(item, 'db');
-    setDbSelected(item.technology);
-  };
+    techChanged(item, 'db')
+    setDbSelected(item.technology)
+  }
 
   React.useEffect(() => {
     if (langSwitcher && !dbSwitcher) {
-      langChanged({ technology: langSelected });
+      langChanged({ technology: langSelected })
     } else if (dbSwitcher && !langSwitcher) {
-      dbChanged({ technology: dbSelected });
+      dbChanged({ technology: dbSelected })
     } else if (dbSwitcher && langSwitcher) {
-      langChanged({ technology: langSelected });
-      dbChanged({ technology: dbSelected });
+      langChanged({ technology: langSelected })
+      dbChanged({ technology: dbSelected })
     }
-  });
+  })
 
   return (
     <TopSectionWrapper>
@@ -153,7 +153,7 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
       </div>
       {!indexPage && <TOC location={location} />}
     </TopSectionWrapper>
-  );
-};
+  )
+}
 
-export default TopSection;
+export default TopSection

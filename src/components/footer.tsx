@@ -1,19 +1,19 @@
-import Link from '../components/link';
-import * as React from 'react';
-import styled from 'styled-components';
-import PrismaLogoGrey from '../icons/PrismaLogoGrey';
-import NewsLetter from '../components/newsletter';
-import Twitter from '../icons/Twitter';
-import Youtube from '../icons/Youtube';
-import Slack from '../icons/Slack';
-import Github from '../icons/GitGrey';
-import Facebook from '../icons/Facebook';
+import Link from '../components/link'
+import * as React from 'react'
+import styled from 'styled-components'
+import PrismaLogoGrey from '../icons/PrismaLogoGrey'
+import NewsLetter from '../components/newsletter'
+import Twitter from '../icons/Twitter'
+import Youtube from '../icons/Youtube'
+import Slack from '../icons/Slack'
+import Github from '../icons/GitGrey'
+import Facebook from '../icons/Facebook'
 
-import { FooterProps } from '../interfaces/Layout.interface';
+import { FooterProps } from '../interfaces/Layout.interface'
 
 type FooterViewProps = {
-  footerProps: FooterProps;
-};
+  footerProps: FooterProps
+}
 
 const FooterWrapper = styled.div`
   background: transparent;
@@ -42,7 +42,7 @@ const FooterWrapper = styled.div`
       padding: 3rem 0.5rem;
     }
   }
-`;
+`
 
 const LinkList = styled.ul`
   list-style: none;
@@ -73,7 +73,7 @@ const LinkList = styled.ul`
       }
     }
   }
-`;
+`
 
 const Title = styled.span`
   font-size: 1.2rem;
@@ -81,11 +81,11 @@ const Title = styled.span`
   font-weight: bold;
   line-height: 100%;
   letter-spacing: -0.02em;
-`;
+`
 
 const LogoContainer = styled.div`
   padding-right: 0.75rem;
-`;
+`
 
 const SocialWrapper = styled.div`
   flex: 3 !important;
@@ -117,7 +117,7 @@ const SocialWrapper = styled.div`
       margin-top: 2rem;
     }
   }
-`;
+`
 
 const Footer = ({ footerProps }: FooterViewProps) => {
   const {
@@ -129,7 +129,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
     company,
     newsletter,
     findus,
-  } = footerProps;
+  } = footerProps
   return (
     <FooterWrapper>
       <div className="container">
@@ -218,7 +218,7 @@ const Footer = ({ footerProps }: FooterViewProps) => {
         </SocialWrapper>
       </div>
     </FooterWrapper>
-  );
-};
+  )
+}
 
-export default Footer;
+export default Footer

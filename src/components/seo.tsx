@@ -1,18 +1,18 @@
-import * as React from 'react';
-import Helmet from 'react-helmet';
-import favicon from '../images/favicon-32x32.png';
-import { useStaticQuery, graphql } from 'gatsby';
-import { useLocation } from '@reach/router';
+import * as React from 'react'
+import Helmet from 'react-helmet'
+import favicon from '../images/favicon-32x32.png'
+import { useStaticQuery, graphql } from 'gatsby'
+import { useLocation } from '@reach/router'
 
 type SEOProps = {
-  title?: string;
-  description?: string;
-  keywords?: string;
-  slug?: string;
-};
+  title?: string
+  description?: string
+  keywords?: string
+  slug?: string
+}
 
 const SEO = ({ title, description, keywords }: SEOProps) => {
-  const { site } = useStaticQuery(query);
+  const { site } = useStaticQuery(query)
   const {
     siteMetadata: {
       pathPrefix,
@@ -24,17 +24,17 @@ const SEO = ({ title, description, keywords }: SEOProps) => {
         image: { alt: oImgAlt, url: oUrl, type: oImgType, width: oImgWidth, height: oImgHeight },
       },
     },
-  } = site;
+  } = site
 
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const canonicalUrl = location.href;
-  const lang = searchParams ? searchParams.get('lang') : '';
-  const db = searchParams ? searchParams.get('db') : '';
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const canonicalUrl = location.href
+  const lang = searchParams ? searchParams.get('lang') : ''
+  const db = searchParams ? searchParams.get('db') : ''
 
   const seoTitle = `${title}${lang ? '-' + lang.toUpperCase() : ''}${
     db ? '-' + db.toUpperCase() : ''
-  }`;
+  }`
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
@@ -63,10 +63,10 @@ const SEO = ({ title, description, keywords }: SEOProps) => {
       <link rel="canonical" href={canonicalUrl} />
       <link rel="icon" href={favicon} />
     </Helmet>
-  );
-};
+  )
+}
 
-export default SEO;
+export default SEO
 
 const query = graphql`
   query SEO {
@@ -93,4 +93,4 @@ const query = graphql`
       }
     }
   }
-`;
+`

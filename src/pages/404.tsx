@@ -1,6 +1,6 @@
-import * as React from 'react';
-import Layout from '../components/layout';
-import styled from 'styled-components';
+import * as React from 'react'
+import Layout from '../components/layout'
+import styled from 'styled-components'
 
 const NotFoundWrapper = styled.div`
   font-family: 'Open Sans';
@@ -12,7 +12,7 @@ const NotFoundWrapper = styled.div`
   h1 {
     font-weight: bold;
   }
-`;
+`
 
 const NotFoundPage = () => (
   <Layout>
@@ -21,6 +21,6 @@ const NotFoundPage = () => (
       You just hit a route that doesn&#39;t exist!
     </NotFoundWrapper>
   </Layout>
-);
+)
 
-export default NotFoundPage;
+export default NotFoundPage
