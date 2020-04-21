@@ -1,9 +1,9 @@
-import React from 'react';
-import styled from 'styled-components';
-import ArrowRight from '../../icons/ArrowRight';
-import ArrowDown from '../../icons/ArrowDown';
-import Link from '../link';
-import { urlGenerator } from '../../utils/urlGenerator';
+import React from 'react'
+import styled from 'styled-components'
+import ArrowRight from '../../icons/ArrowRight'
+import ArrowDown from '../../icons/ArrowDown'
+import Link from '../link'
+import { urlGenerator } from '../../utils/urlGenerator'
 
 const List = styled.ul`
   list-style: none;
@@ -13,7 +13,7 @@ const List = styled.ul`
     border-left: 2px solid #e2e8f0;
     margin-left: -12px;
   }
-`;
+`
 
 const ListItem = styled.li`
   font-size: 1rem;
@@ -109,7 +109,7 @@ const ListItem = styled.li`
       transition: transform 0.2s ease;
     }
   }
-`;
+`
 
 const TreeNode = ({
   className = '',
@@ -125,39 +125,39 @@ const TreeNode = ({
   experimental,
   lastLevel,
 }: any) => {
-  const isCollapsed = collapsed[label];
+  const isCollapsed = collapsed[label]
   const collapse = () => {
-    setCollapsed(label);
-  };
+    setCollapsed(label)
+  }
 
-  const hasChildren = items.length !== 0;
+  const hasChildren = items.length !== 0
 
   const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
     staticLink ? 'static-link' : ''
-  } ${lastLevel ? 'last-level' : ''}`;
+  } ${lastLevel ? 'last-level' : ''}`
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
-      return -1;
+      return -1
     }
     if (a.label > b.label) {
-      return 1;
+      return 1
     }
-    return 0;
-  });
+    return 0
+  })
 
-  const hasExpandButton = title && hasChildren && !staticLink && !topLevel;
-  let hasBorder: boolean = false;
+  const hasExpandButton = title && hasChildren && !staticLink && !topLevel
+  let hasBorder: boolean = false
   if (hasExpandButton) {
-    items.map((item: any) => (item.lastLevel = true));
-    hasBorder = true;
+    items.map((item: any) => (item.lastLevel = true))
+    hasBorder = true
   }
 
   // Fix for issue https://github.com/prisma/prisma2-docs/issues/161
-  const [isOpen, setIsOpen] = React.useState('close');
+  const [isOpen, setIsOpen] = React.useState('close')
   React.useEffect(() => {
-    setIsOpen(isCollapsed ? 'close' : 'open');
-  }, [isCollapsed]);
+    setIsOpen(isCollapsed ? 'close' : 'open')
+  }, [isCollapsed])
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
@@ -196,6 +196,6 @@ const TreeNode = ({
         </List>
       ) : null}
     </ListItem>
-  );
-};
-export default TreeNode;
+  )
+}
+export default TreeNode

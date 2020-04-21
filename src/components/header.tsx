@@ -1,14 +1,14 @@
-import Link from '../components/link';
-import * as React from 'react';
-import styled from 'styled-components';
-import HeaderLogo from '../icons/Logo';
-import Github from '../icons/Git';
-import Search from '../components/search';
-import { HeaderProps } from '../interfaces/Layout.interface';
+import Link from '../components/link'
+import * as React from 'react'
+import styled from 'styled-components'
+import HeaderLogo from '../icons/Logo'
+import Github from '../icons/Git'
+import Search from '../components/search'
+import { HeaderProps } from '../interfaces/Layout.interface'
 
 type HeaderViewProps = {
-  headerProps: HeaderProps;
-};
+  headerProps: HeaderProps
+}
 
 const HeaderWrapper = styled.div`
   background: radial-gradient(
@@ -29,13 +29,13 @@ const HeaderWrapper = styled.div`
   .container {
     width: 1110px;
   }
-`;
+`
 
 const HeaderNav = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-`;
+`
 
 const Title = styled.span`
   font-size: 1.2rem;
@@ -44,17 +44,17 @@ const Title = styled.span`
   font-weight: bold;
   line-height: 100%;
   letter-spacing: -0.02em;
-`;
+`
 
 const LogoContainer = styled.div`
   padding-right: 0.75rem;
-`;
+`
 
 const SearchComponent = styled(Search)`
   position: absolute;
   top: 12px;
   left: 12px;
-`;
+`
 
 const NavLinks = styled.div`
   display: flex;
@@ -70,7 +70,7 @@ const NavLinks = styled.div`
   }
 
   margin: 0 10rem 0;
-`;
+`
 
 const Header = ({ headerProps }: HeaderViewProps) => (
   <HeaderWrapper>
@@ -121,6 +121,6 @@ const Header = ({ headerProps }: HeaderViewProps) => (
       </div>
     </div>
   </HeaderWrapper>
-);
+)
 
-export default Header;
+export default Header

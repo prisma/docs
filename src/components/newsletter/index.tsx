@@ -1,9 +1,9 @@
-import * as React from 'react';
-import styled from 'styled-components';
-import Email from '../../icons/Email';
-import ArrowEmail from '../../icons/ArrowEmail';
-import * as valid from './valid';
-import sendToMailchimp from './mailChimp';
+import * as React from 'react'
+import styled from 'styled-components'
+import Email from '../../icons/Email'
+import ArrowEmail from '../../icons/ArrowEmail'
+import * as valid from './valid'
+import sendToMailchimp from './mailChimp'
 
 const NewsLetterWrapper = styled.div`
   h4 {
@@ -65,35 +65,35 @@ const NewsLetterWrapper = styled.div`
       }
     }
   }
-`;
+`
 
 const Newsletter = ({ newsletter }: any) => {
-  const [submitted, setSubmitted] = React.useState(false);
-  const [email, setEmail] = React.useState('');
-  const [validEmail, setValidEmail] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false)
+  const [email, setEmail] = React.useState('')
+  const [validEmail, setValidEmail] = React.useState(false)
 
   const validate = (e: React.FormEvent<HTMLInputElement>) => {
-    const target = e.target;
+    const target = e.target
     if (!(target instanceof HTMLInputElement)) {
-      return;
+      return
     }
-    const email = valid.email(target.value);
+    const email = valid.email(target.value)
     if (email instanceof Error) {
-      setEmail(target.value.toLowerCase());
-      setValidEmail(false);
-      return;
+      setEmail(target.value.toLowerCase())
+      setValidEmail(false)
+      return
     }
-    setEmail(email);
-    setValidEmail(true);
-  };
+    setEmail(email)
+    setValidEmail(true)
+  }
 
   const submitEmail = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    await sendToMailchimp(email);
-    setEmail('');
-    setValidEmail(false);
-    setSubmitted(true);
-  };
+    e.preventDefault()
+    await sendToMailchimp(email)
+    setEmail('')
+    setValidEmail(false)
+    setSubmitted(true)
+  }
 
   return (
     <NewsLetterWrapper>
@@ -114,7 +114,7 @@ const Newsletter = ({ newsletter }: any) => {
         </button>
       </form>
     </NewsLetterWrapper>
-  );
-};
+  )
+}
 
-export default Newsletter;
+export default Newsletter

@@ -1,10 +1,10 @@
-import React from 'react';
-import { Link as GatsbyLink } from 'gatsby';
-import isAbsoluteUrl from 'is-absolute-url';
+import React from 'react'
+import { Link as GatsbyLink } from 'gatsby'
+import isAbsoluteUrl from 'is-absolute-url'
 
 interface LinkProps {
-  to: string | null;
-  activeClassName?: string;
+  to: string | null
+  activeClassName?: string
 }
 
 const Link = ({ to, activeClassName, ...props }: LinkProps & React.ReactNode) =>
@@ -14,6 +14,6 @@ const Link = ({ to, activeClassName, ...props }: LinkProps & React.ReactNode) =>
     </a>
   ) : (
     <GatsbyLink to={to} activeClassName={activeClassName} {...props} />
-  );
+  )
 
-export default Link;
+export default Link

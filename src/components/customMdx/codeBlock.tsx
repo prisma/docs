@@ -1,23 +1,23 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from 'react'
+import styled from 'styled-components'
 
 interface CodeProps {
-  languages?: string[];
+  languages?: string[]
 }
 
-type CodeBlockProps = CodeProps & React.ReactNode;
+type CodeBlockProps = CodeProps & React.ReactNode
 
 const CodeBlock = ({ languages, children }: CodeBlockProps) => {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const child: any = React.Children.toArray(children)[activeIndex];
-  const code = child && child.props && child.props.children;
+  const [activeIndex, setActiveIndex] = React.useState(0)
+  const child: any = React.Children.toArray(children)[activeIndex]
+  const code = child && child.props && child.props.children
 
   return (
     <Wrapper>
       {languages && Array.isArray(languages) && (
         <Tabs>
           {languages.map((lang, index) => {
-            const setCurrentActive = () => setActiveIndex(index);
+            const setCurrentActive = () => setActiveIndex(index)
             return (
               <div
                 className={`tab ${index === activeIndex ? 'active' : ''}`}
@@ -27,16 +27,16 @@ const CodeBlock = ({ languages, children }: CodeBlockProps) => {
               >
                 {lang}
               </div>
-            );
+            )
           })}
         </Tabs>
       )}
       {code}
     </Wrapper>
-  );
-};
+  )
+}
 
-export default CodeBlock;
+export default CodeBlock
 
 const Tabs = styled.div`
   display: flex;
@@ -50,8 +50,8 @@ const Tabs = styled.div`
     font-weight: 600;
     color: #1a202c;
   }
-`;
+`
 const Wrapper = styled.div`
   margin-top: 2rem;
   position: relative;
-`;
+`
