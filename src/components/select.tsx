@@ -103,6 +103,9 @@ const Dropdown = styled.div`
   border-bottom-right-radius: 6px;
   color: grey;
   box-shadow: 0px 2px 4px rgba(8, 35, 51, 0.05);
+  @media (min-width: 0px) and (max-width: 767px) {
+    width: 100% !important;
+  }
 `
 
 const Item = styled.div`

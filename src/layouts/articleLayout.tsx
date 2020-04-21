@@ -30,7 +30,6 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const [seoUrl, setSEOUrl] = React.useState(slug)
 
   const changeSEODetails = (newParams: string) => {
-    console.log(newParams)
     const lang = new URLSearchParams(newParams).get('lang')
     const db = new URLSearchParams(newParams).get('db')
 

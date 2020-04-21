@@ -34,6 +34,14 @@ const PageBottomWrapper = styled.div`
   button {
     color: #ffffff !important;
   }
+  @media (min-width: 0px) and (max-width: 767px) {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    .edit-git {
+      order: 1;
+    }
+  }
 `
 
 const Feedback = styled.div`
@@ -52,6 +60,9 @@ const Feedback = styled.div`
         background: rgba(204, 217, 223, 0.5);
       }
     }
+  }
+  @media (min-width: 0px) and (max-width: 767px) {
+    order: 2;
   }
 `
 
@@ -83,6 +94,13 @@ const Button = styled(ButtonWrapper)`
     margin-right: 10px;
     path {
       stroke: #ffffff;
+    }
+  }
+  @media (min-width: 0px) and (max-width: 767px) {
+    font-size: 12px;
+    text-transform: none;
+    svg {
+      width: 14px;
     }
   }
 `

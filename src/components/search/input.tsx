@@ -11,6 +11,9 @@ const Form = styled.form`
   z-index: 100001;
   display: flex;
   align-items: center;
+  @media (min-width: 0px) and (max-width: 1024px) {
+    flex: 1;
+  }
 `
 
 const SearchIcon = styled(SearchPic)`
@@ -53,7 +56,7 @@ const Input = styled.input`
 
 const DEBOUNCE_DELAY = 500
 
-const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
+const SearchBox = ({ refine, onFocus, onBlur, currentRefinement, ...rest }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
   const timeoutId = React.useRef(null)
 

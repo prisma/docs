@@ -29,6 +29,13 @@ const ListItem = styled.li`
       color: #1a202c !important;
     }
 
+    @media (min-width: 0px) and (max-width: 1024px) {
+      color: #e2e8f0 !important;
+      &:hover {
+        color: white !important;
+      }
+    }
+
     .tag {
       position: absolute;
       right: 0;
@@ -41,6 +48,10 @@ const ListItem = styled.li`
       padding: 2px 5px;
       &.small {
         font-size: 13px;
+      }
+      @media (min-width: 0px) and (max-width: 1024px) {
+        background: #2d3748;
+        color: #a0aec0;
       }
     }
 
@@ -72,6 +83,9 @@ const ListItem = styled.li`
   .active-item {
     color: #1a202c !important;
     font-weight: 700;
+    @media (min-width: 0px) and (max-width: 1024px) {
+      color: #e2e8f0 !important;
+    }
   }
   &.top-level {
     margin-top: 2rem;
@@ -80,6 +94,9 @@ const ListItem = styled.li`
       color: #1a202c !important;
       font-weight: 600;
       letter-spacing: -0.01em;
+      @media (min-width: 0px) and (max-width: 1024px) {
+        color: #f7fafc !important;
+      }
     }
     > ul {
       margin-top: 24px;
