@@ -59,7 +59,7 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
 
     console.log(newParams);
     if (!(location.pathname.includes(urlGenerator(slug)) && location.pathname.includes(newParams))) {
-      redirectTo(`${parentSlug}-${newParams}`);
+      redirectTo(`${urlGenerator(parentSlug)}-${newParams}`);
       //redirectTo(`http://localhost:8000/getting-started/quickstart-${newParams}`)
     }
   };
@@ -147,7 +147,7 @@ const TopSection = ({ location, title, slug, indexPage, langSwitcher, dbSwitcher
           />
         )}
       </SwitcherWrapper>
-      {/* {!indexPage && <TOC location={location} />} */}
+      {!indexPage && <TOC location={location} />}
     </TopSectionWrapper>
   );
 };

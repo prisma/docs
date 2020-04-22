@@ -13,23 +13,12 @@ export interface ArticleFrontmatter {
   experimental?: boolean;
 }
 
-// export interface ArticleData {
-//   mdx: {
-//     fields: ArticleFields;
-//     body: string;
-//     parent: any;
-//     frontmatter: ArticleFrontmatter;
-//   };
-//   site: {
-//     siteMetadata: {
-//       docsLocation: string;
-//     };
-//   };
-// }
-
 export interface ArticleData {
-  sitePage: {
-    context: any;
+  mdx: {
+    fields: ArticleFields;
+    body: string;
+    parent: any;
+    frontmatter: ArticleFrontmatter;
   };
   site: {
     siteMetadata: {
@@ -37,6 +26,17 @@ export interface ArticleData {
     };
   };
 }
+
+// export interface ArticleData {
+//   sitePage: {
+//     context: any;
+//   };
+//   site: {
+//     siteMetadata: {
+//       docsLocation: string;
+//     };
+//   };
+// }
 
 export interface ArticleQueryData {
   data: ArticleData;

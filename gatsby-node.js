@@ -53,7 +53,7 @@ exports.createPages = ({ graphql, actions }) => {
               path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
               component: path.resolve(`./src/layouts/articleLayout.tsx`),
               context: {
-                slug: `${node.fields.slug}-${lang}`,
+                slug: node.fields.slug + '-' +lang,
                 title: `${node.frontmatter.title}-${lang}`,
                 frontmatter: node.frontmatter,
                 parentSlug: node.fields.slug.replace(/\d+-/g, ''),
