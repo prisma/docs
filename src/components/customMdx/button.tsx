@@ -60,7 +60,7 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     white-space: nowrap;
     word-break: keep-all;
     max-width: 100%;
-    overflow: scroll;
+    overflow-x: auto;
     margin-bottom: 0.5rem;
     &:hover {
       background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
