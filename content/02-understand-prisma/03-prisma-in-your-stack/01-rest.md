@@ -137,13 +137,11 @@ app.delete(`/post/:id`, async (req, res) => {
 });
 ```
 
-## Ready-to-tun example projects
+## Ready-to-run example projects
 
-You can find several ready-to-tun examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
+You can find several ready-to-run examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
 
 | Example                                                                                          | Language   | Stack        | Description                                                       |
 | :----------------------------------------------------------------------------------------------- | :--------- | ------------ | ----------------------------------------------------------------- |
 | [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/master/typescript/rest-nextjs)   | TypeScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
 | [`rest-express`](https://github.com/prisma/prisma-examples/tree/master/typescript/rest-express) | TypeScript | Backend only | Simple REST API with Express                                      |
-| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/master/javascript/rest-nextjs)   | JavaScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
-| [`rest-express`](https://github.com/prisma/prisma-examples/tree/master/javascript/rest-express) | JavaScript | Backend only | Simple REST API with Express                                      |
