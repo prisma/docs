@@ -69,9 +69,10 @@ const TopSection = ({
     const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
       dbSwitcher ? `db=${dbSelected}` : ''
     }`
+
     if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
       onChangeParam(newParams)
-      navigate(newParams)
+      navigate(newParams, { replace: !location.search })
     }
   }
 
