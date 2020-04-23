@@ -5,7 +5,6 @@
 
 export interface HeaderProps {
   logoLink: string
-  title: string
   links: { name: string; link: string }[] // create interface for this
 }
 
