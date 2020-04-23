@@ -38,8 +38,8 @@ const TOC = ({ location }: any) => {
     allMdx.edges.map((item: any) => {
       if (item !== undefined) {
         if (
-          urlGenerator(item.node.fields.slug) === location.pathname ||
-          config.gatsby.pathPrefix + urlGenerator(item.node.fields.slug) === location.pathname
+          location.pathname.includes(urlGenerator(item.node.fields.slug)) ||
+          location.pathname.includes(config.gatsby.pathPrefix + urlGenerator(item.node.fields.slug))
         ) {
           if (item.node.tableOfContents.items) {
             navItems = item.node.tableOfContents.items.map((innerItem: any, index: number) => {

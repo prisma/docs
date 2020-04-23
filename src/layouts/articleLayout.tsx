@@ -7,6 +7,7 @@ import PageBottom from '../components/pageBottom'
 import SEO from '../components/seo'
 import { graphql } from 'gatsby'
 import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
+import { useNavigate } from '@reach/router'
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps
 
@@ -26,34 +27,11 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
     },
   } = data
 
-  const [seoTitle, setSEOTitle] = React.useState(title || metaTitle)
-  const [seoUrl, setSEOUrl] = React.useState(slug)
-
-  const changeSEODetails = (newParams: string) => {
-    const lang = new URLSearchParams(newParams).get('lang')
-    const db = new URLSearchParams(newParams).get('db')
-
-    const newUrl = slug + newParams
-    const newTitleString = `${lang ? `-${lang}${db ? '-' : ''}` : ''}${db ? db : ''}`
-    if (!(seoTitle && seoTitle.includes(newTitleString))) {
-      setSEOTitle(title + newTitleString)
-    }
-    if (!seoUrl.includes(newParams)) {
-      setSEOUrl(newUrl)
-    }
-  }
-
-  // To show the SEO details during initial load
-  React.useEffect(() => {
-    const params = `?${langSwitcher ? `lang=${langSwitcher[0]}${dbSwitcher ? '&' : ''}` : ''}${
-      dbSwitcher ? `db=${dbSwitcher[0]}` : ''
-    }`
-    changeSEODetails(params)
-  }, [])
+  const navigate = useNavigate()
 
   return (
     <Layout {...props}>
-      <SEO title={seoTitle} description={metaDescription || title} slug={seoUrl} />
+      <SEO title={metaTitle || title} description={metaDescription || title} />
       <section className="top-section">
         <TopSection
           location={props.location}
@@ -61,7 +39,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           slug={slug}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
-          onChangeParam={changeSEODetails}
+          navigate={navigate}
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
@@ -95,16 +73,6 @@ export const query = graphql`
         metaDescription
         langSwitcher
         dbSwitcher
-      }
-    }
-    allMdx {
-      edges {
-        node {
-          fields {
-            slug
-            title
-          }
-        }
       }
     }
   }

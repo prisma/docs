@@ -33,10 +33,11 @@ const handleRawBody = node => {
 };
 
 const unnestFrontmatter = node => {
-  const { fields, ...rest } = node;
+  const { fields, frontmatter, ...rest } = node;
 
   return {
     ...fields,
+    ...frontmatter,
     ...rest,
   };
 };
@@ -56,6 +57,8 @@ const queries = [
                 rawBody
                 fields {
                   slug
+                }
+                frontmatter {
                   title
                 }
               }
