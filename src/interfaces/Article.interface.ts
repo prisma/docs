@@ -16,6 +16,7 @@ export interface ArticleFrontmatter {
 export interface ArticleData {
   mdx: {
     fields: ArticleFields
+    tableOfContents: TableOfContents
     body: string
     parent: any
     frontmatter: ArticleFrontmatter
@@ -33,4 +34,11 @@ export interface ArticleQueryData {
 
 export interface Fields {
   fields: ArticleFields
+}
+
+export interface TableOfContents {
+  items: {
+    url: string
+    title: string
+  }[]
 }
