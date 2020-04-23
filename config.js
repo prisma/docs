@@ -1,7 +1,7 @@
 const config = {
   gatsby: {
-    pathPrefix: '/',
-    siteUrl: 'https://prisma2.netlify.app',
+    pathPrefix: '/docs',
+    siteUrl: 'https://www.prisma.io',
   },
   header: {
     logoLink: 'https://www.prisma.io',
@@ -34,7 +34,7 @@ const config = {
     twitter: {
       site: '@prisma',
       creator: '@prisma',
-      image: '/social/docs-social.png'
+      image: '/social/docs-social.png',
     },
     og: {
       site_name: 'Prisma',
@@ -102,6 +102,6 @@ const config = {
       gitLink: 'https://github.com/prisma',
     },
   },
-};
+}
 
-module.exports = config;
+module.exports = config

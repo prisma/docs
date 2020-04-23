@@ -1,5 +1,5 @@
-const config = require('./config');
-require('dotenv').config();
+const config = require('./config')
+require('dotenv').config()
 
 const gatsbyRemarkPlugins = [
   'gatsby-remark-sectionize',
@@ -18,10 +18,10 @@ const gatsbyRemarkPlugins = [
   {
     resolve: `gatsby-remark-images`,
   },
-];
+]
 
 if (process.env.NODE_ENV === 'development') {
-  gatsbyRemarkPlugins.push('gatsby-remark-check-links');
+  gatsbyRemarkPlugins.push('gatsby-remark-check-links')
 }
 
 module.exports = {
@@ -43,7 +43,7 @@ module.exports = {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
         trackingId: 'UA-74131346-14',
-        anonymize: true
+        anonymize: true,
       },
     },
     'gatsby-plugin-react-helmet',
@@ -53,10 +53,10 @@ module.exports = {
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
-    // {
-    //   resolve: `gatsby-plugin-algolia`,
-    //   options: require(`./src/utils/algolia`),
-    // },
+    {
+      resolve: `gatsby-plugin-algolia`,
+      options: require(`./src/utils/algolia`),
+    },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {
@@ -105,4 +105,4 @@ module.exports = {
     },
     'gatsby-plugin-remove-trailing-slashes',
   ],
-};
+}
