@@ -14,11 +14,27 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
       name: `slug`,
       value: `/${value}`,
     });
+    createNodeField({
+      node,
+      name: 'id',
+      value: node.id,
+    });
   }
 };
 
 exports.createPages = ({ graphql, actions }) => {
   const { createPage } = actions;
+
+  const getTitle = (frontmatter, lang, db) => {
+    let pageSeoTitle = frontmatter.metaTitle || frontmatter.title
+    if (lang || db) {
+      const titleEntry = frontmatter.techMetaTitles ? frontmatter.techMetaTitles.find(item => item.name === `${lang}-${db}`) : null
+      pageSeoTitle =  titleEntry ? titleEntry.value : pageSeoTitle
+    } 
+    
+    return pageSeoTitle
+  }
+
   return new Promise((resolve, reject) => {
     graphql(`
       {
@@ -27,6 +43,7 @@ exports.createPages = ({ graphql, actions }) => {
             node {
               fields {
                 slug
+                id
               }
               frontmatter {
                 title
@@ -34,6 +51,14 @@ exports.createPages = ({ graphql, actions }) => {
                 metaDescription
                 langSwitcher
                 dbSwitcher
+                techMetaTitles {
+                  name
+                  value
+                }
+                techMetaDescriptions {
+                  name
+                  value
+                }
               }
               body
               parent {
@@ -48,17 +73,41 @@ exports.createPages = ({ graphql, actions }) => {
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
         if (node.frontmatter.langSwitcher) {
-          node.frontmatter.langSwitcher.forEach(lang =>
+          if (node.frontmatter.dbSwitcher) {
+            node.frontmatter.langSwitcher.forEach(lang =>
+              node.frontmatter.dbSwitcher.forEach(db =>
+                createPage({
+                  path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}-${db}`,
+                  component: path.resolve(`./src/layouts/articleLayout.tsx`),
+                  context: {
+                    id: node.fields.id,
+                    seoTitle: getTitle(node.frontmatter, lang, db)
+                  },
+                })
+              )
+            );
+          } else {
+            node.frontmatter.langSwitcher.forEach(lang =>
+              createPage({
+                path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
+                component: path.resolve(`./src/layouts/articleLayout.tsx`),
+                context: {
+                  id: node.fields.id,
+                  seoTitle: `${node.frontmatter.title}-${lang}`
+                },
+              })
+            );
+          }
+        }
+
+        if (node.frontmatter.dbSwitcher && !node.frontmatter.langSwitcher) {
+          node.frontmatter.dbSwitcher.forEach(db =>
             createPage({
-              path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
+              path: `${node.fields.slug.replace(/\d+-/g, '')}-${db}`,
               component: path.resolve(`./src/layouts/articleLayout.tsx`),
               context: {
-                slug: node.fields.slug + '-' +lang,
-                title: `${node.frontmatter.title}-${lang}`,
-                frontmatter: node.frontmatter,
-                parentSlug: node.fields.slug.replace(/\d+-/g, ''),
-                parentPath: node.parent.relativePath,
-                body: node.body,
+                id: node.fields.id,
+                seoTitle: `${node.frontmatter.title}-${db}`
               },
             })
           );
@@ -67,12 +116,8 @@ exports.createPages = ({ graphql, actions }) => {
           path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, '') : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
-            slug: node.fields.slug,
-            title: node.frontmatter.title,
-            frontmatter: node.frontmatter,
-            parentSlug: node.fields.slug.replace(/\d+-/g, ''),
-            parentPath: node.parent.relativePath,
-            body: node.body,
+            id: node.fields.id,
+            seoTitle: getTitle(node.frontmatter)
           },
         });
       });
@@ -92,3 +137,9 @@ exports.onCreateWebpackConfig = ({ actions }) => {
     },
   });
 };
+
+// title: `${node.frontmatter.title}-${lang}`,
+// frontmatter: node.frontmatter,
+// parentSlug: node.fields.slug.replace(/\d+-/g, ''),
+// parentPath: node.parent.relativePath,
+// body: node.body,

@@ -1,18 +1,21 @@
-import * as React from 'react';
-import {Helmet} from 'react-helmet';
-import favicon from '../images/favicon-32x32.png';
-import { useStaticQuery, graphql } from 'gatsby';
-import { urlGenerator } from '../utils/urlGenerator';
+import * as React from 'react'
+import { Helmet } from 'react-helmet'
+import favicon from '../images/favicon-32x32.png'
+import { useStaticQuery, graphql } from 'gatsby'
+import { urlGenerator } from '../utils/urlGenerator'
+import { useLocation } from '@reach/router'
 
 type SEOProps = {
-  title?: string;
-  description?: string;
-  keywords?: string;
-  slug?: string;
-};
+  title?: string
+  description?: string
+  keywords?: string
+  slug?: string
+}
 
 const SEO = ({ title, description, keywords, slug }: SEOProps) => {
-  const { site } = useStaticQuery(query);
+  const location = useLocation()
+  const [pathTechParams] = location.pathname.split('/').splice(-1)
+  const { site, allSitePage } = useStaticQuery(query)
   const {
     siteMetadata: {
       pathPrefix,
@@ -24,28 +27,23 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
         image: { alt: oImgAlt, url: oUrl, type: oImgType, width: oImgWidth, height: oImgHeight },
       },
     },
-  } = site;
+  } = site
 
-  // const location = useLocation();
-  // const searchParams = new URLSearchParams(location.search);
-  // const canonicalUrl = location.href;
-  // const lang = searchParams ? searchParams.get('lang') : '';
-  // const db = searchParams ? searchParams.get('db') : '';
+  const currentPage = allSitePage.edges.find(
+    (page: any) => page.node.path.split('/').splice(-1)[0] === pathTechParams
+  )
 
-  // const seoTitle = `${title}${lang ? '-' + lang.toUpperCase() : ''}${
-  //   db ? '-' + db.toUpperCase() : ''
-  // }`;
+  const seoTitle =
+    currentPage && currentPage.node.context ? currentPage.node.context.seoTitle : title
 
-  const seoTitle = title;
-
-  let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl;
-  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl;
+  let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl
+  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl
 
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
       {/* <meta name="viewport" content="width=device-width, initial-scale=1" /> */}
-      {title && <title>{seoTitle}</title>}
+      <title>{seoTitle}</title>
       {description && <meta name="description" content={description} />}
       {keywords && <meta name="keywords" content={keywords} />}
       {/* Twitter */}
@@ -69,10 +67,10 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
       <link rel="canonical" href={canonicalUrl} />
       <link rel="icon" href={favicon} />
     </Helmet>
-  );
-};
+  )
+}
 
-export default SEO;
+export default SEO
 
 const query = graphql`
   query SEO {
@@ -98,5 +96,15 @@ const query = graphql`
         }
       }
     }
+    allSitePage {
+      edges {
+        node {
+          context {
+            seoTitle
+          }
+          path
+        }
+      }
+    }
   }
-`;
+`

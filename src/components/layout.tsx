@@ -1,28 +1,28 @@
-import { RouterProps } from '@reach/router';
-import * as React from 'react';
-import styled, { ThemeProvider } from 'styled-components';
-import { useLayoutQuery } from '../hooks/useLayoutQuery';
-import Header from './header';
-import Footer from './footer';
+import { RouterProps } from '@reach/router'
+import * as React from 'react'
+import styled, { ThemeProvider } from 'styled-components'
+import { useLayoutQuery } from '../hooks/useLayoutQuery'
+import Header from './header'
+import Footer from './footer'
 
-import { MDXProvider } from '@mdx-js/react';
-import customMdx from '../components/customMdx';
-import './layout.css';
-import Sidebar from './sidebar';
+import { MDXProvider } from '@mdx-js/react'
+import customMdx from '../components/customMdx'
+import './layout.css'
+import Sidebar from './sidebar'
 
 interface ThemeProps {
-  colorPrimary: string;
+  colorPrimary: string
 }
 
 const theme: ThemeProps = {
   colorPrimary: '#663399',
-};
+}
 
-type LayoutProps = React.ReactNode & RouterProps;
+type LayoutProps = React.ReactNode & RouterProps
 
 const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
-  const { site } = useLayoutQuery();
-  const { header, footer } = site.siteMetadata;
+  const { site } = useLayoutQuery()
+  const { header, footer } = site.siteMetadata
 
   const Wrapper = styled.div`
     display: flex;
@@ -32,7 +32,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     // @media only screen and (max-width: 767px) {
     //   display: block;
     // }
-  `;
+  `
 
   const Content = styled.article`
     max-width: 880px;
@@ -41,7 +41,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     // @media only screen and (max-width: 1023px) {
     //   padding-left: 0;
     // }
-  `;
+  `
 
   const MaxWidth = styled.div`
     // @media only screen and (max-width: 50rem) {
@@ -58,7 +58,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
         padding-top: 40px;
       }
     }
-  `;
+  `
 
   return (
     <ThemeProvider theme={theme}>
@@ -73,7 +73,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
         <Footer footerProps={footer} />
       </MDXProvider>
     </ThemeProvider>
-  );
-};
+  )
+}
 
-export default Layout;
+export default Layout

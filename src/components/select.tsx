@@ -1,22 +1,22 @@
-import React from 'react';
-import styled from 'styled-components';
-import Downshift from 'downshift';
-import ArrowDown from '../icons/ArrowDown';
+import React from 'react'
+import styled from 'styled-components'
+import Downshift from 'downshift'
+import ArrowDown from '../icons/ArrowDown'
 
 interface SelectProps {
-  items: any[];
-  renderItem: (item: any) => any;
-  onChange: (item: any) => void;
-  selectedItem: any;
-  itemToString: (item: any) => string;
-  width?: number;
-  top?: number;
-  selectPlaceholder?: string;
+  items: any[]
+  renderItem: (item: any) => any
+  onChange: (item: any) => void
+  selectedItem: any
+  itemToString: (item: any) => string
+  width?: number
+  top?: number
+  selectPlaceholder?: string
 }
 
 const SelectComponent = (props: SelectProps) => {
-  const { selectedItem, renderItem, onChange, itemToString, items, top, selectPlaceholder } = props;
-  const width = props.width || 160;
+  const { selectedItem, renderItem, onChange, itemToString, items, top, selectPlaceholder } = props
+  const width = props.width || 160
   return (
     <Downshift itemToString={itemToString} onChange={onChange}>
       {({
@@ -26,7 +26,7 @@ const SelectComponent = (props: SelectProps) => {
         highlightedIndex,
         selectedItem: dsSelectedItem,
       }: any) => {
-        const firstItem = isOpen && selectPlaceholder ? null : selectedItem;
+        const firstItem = isOpen && selectPlaceholder ? null : selectedItem
 
         return (
           <div>
@@ -62,13 +62,13 @@ const SelectComponent = (props: SelectProps) => {
               )}
             </div>
           </div>
-        );
+        )
       }}
     </Downshift>
-  );
-};
+  )
+}
 
-export default SelectComponent;
+export default SelectComponent
 
 const Select = styled.button`
   background: #ffffff;
@@ -94,7 +94,7 @@ const Select = styled.button`
   &:hover {
     cursor: pointer;
   }
-` as any;
+` as any
 
 const Dropdown = styled.div`
   background: white;
@@ -103,7 +103,7 @@ const Dropdown = styled.div`
   border-bottom-right-radius: 6px;
   color: grey;
   box-shadow: 0px 2px 4px rgba(8, 35, 51, 0.05);
-`;
+`
 
 const Item = styled.div`
   padding: 8px 14px;
@@ -115,7 +115,7 @@ const Item = styled.div`
   > * + * {
     margin-left: 12px;
   }
-`;
+`
 
 const Left = styled.div`
   display: flex;
@@ -125,8 +125,8 @@ const Left = styled.div`
   > * + * {
     margin-left: 12px;
   }
-`;
+`
 
 const Muted = styled.div`
   opacity: 0.5;
-`;
+`

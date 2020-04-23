@@ -12,5 +12,5 @@ export function slug(title: string) {
     .replace(/"|'|`/g, '')
     .replace(/!/g, '')
     .replace(/[\(\)]/g, '')
-    .toLowerCase();
+    .toLowerCase()
 }

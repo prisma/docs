@@ -1,12 +1,12 @@
-import { EdgeNode } from './EdgeNode.interface';
+import { EdgeNode } from './EdgeNode.interface'
 
 export interface AllEdges {
-  edges?: [EdgeNode];
+  edges?: [EdgeNode]
 }
 
 export interface AllArticles {
-  allMdx: AllEdges;
+  allMdx: AllEdges
 }
 export interface AllArticlesQueryData {
-  data: AllArticles;
+  data: AllArticles
 }

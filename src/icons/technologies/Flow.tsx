@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 export default () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -24,4 +24,4 @@ export default () => (
     <path opacity="0.9" d="M11.9169 7.1781L17.8441 13.1053H11.9169V7.1781Z" fill="#FFCF39" />
     <path opacity="0.7" d="M10.2384 20.9765L3 13.7366H10.2384V20.9765Z" fill="#FFC737" />
   </svg>
-);
+)
