@@ -87,7 +87,7 @@ const NavLinks = styled.div`
     }
   }
 
-  margin: 0 10rem 0;
+  margin: 0 9rem 0;
   @media (min-width: 0px) and (max-width: 1024px) {
     margin: 0 3rem 0;
   }
@@ -241,7 +241,6 @@ const Header = ({ headerProps }: HeaderViewProps) => {
               <LogoContainer>
                 <HeaderLogo style={{ height: '24px' }} />
               </LogoContainer>
-              <Title>{headerProps.title}</Title>
             </Link>
           </div>
           <NonMobileMenu>{Menu}</NonMobileMenu>
