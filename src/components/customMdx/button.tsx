@@ -1,29 +1,29 @@
-import React from 'react';
-import styled from 'styled-components';
-import ArrowRight from '../../icons/ArrowRight';
-import { darken } from 'polished';
-import withProps from 'styled-components-ts';
+import React from 'react'
+import styled from 'styled-components'
+import ArrowRight from '../../icons/ArrowRight'
+import { darken } from 'polished'
+import withProps from 'styled-components-ts'
 
 export interface ButtonProps {
-  href?: string;
-  target?: string;
-  block?: boolean;
-  color?: ButtonColor;
-  disabled?: boolean;
-  arrow?: boolean;
-  children?: any;
-  onClick?: any;
-  arrowLeft?: boolean;
+  href?: string
+  target?: string
+  block?: boolean
+  color?: ButtonColor
+  disabled?: boolean
+  arrow?: boolean
+  children?: any
+  onClick?: any
+  arrowLeft?: boolean
 }
 
-type ButtonColor = 'red' | 'green' | 'grey' | 'grey-bg' | 'dark';
+type ButtonColor = 'red' | 'green' | 'grey' | 'grey-bg' | 'dark'
 const colorMap = {
   red: 'white',
   green: 'white',
   grey: '#3D556B',
   'grey-bg': 'white',
   dark: 'white',
-};
+}
 
 const backgroundColorMap = {
   red: '#ff4f56',
@@ -31,7 +31,7 @@ const backgroundColorMap = {
   grey: 'white',
   'grey-bg': '#8fa6b2',
   dark: 'rgb(12, 52, 75)',
-};
+}
 
 export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     padding: 11px 14px;
@@ -59,13 +59,16 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     transition: color 150ms ease 0s, background 150ms ease 0s, transform 100ms ease 0s;
     white-space: nowrap;
     word-break: keep-all;
+    max-width: 100%;
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
     &:hover {
       background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
     }
     &:focus {
       background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
     }
-  `;
+  `
 
 const ButtonLink = (props: ButtonProps) => (
   <ButtonWrapper {...props}>
@@ -73,15 +76,15 @@ const ButtonLink = (props: ButtonProps) => (
     {props.children}
     {props.arrow && <StyledArrow />}
   </ButtonWrapper>
-);
+)
 
 const StyledArrow = styled(ArrowRight)`
   margin-left: 12px;
-`;
+`
 
 const StyledArrowLeft = styled(ArrowRight)`
   margin-right: 12px;
   transform: rotate(180deg);
-`;
+`
 
-export default ButtonLink;
+export default ButtonLink

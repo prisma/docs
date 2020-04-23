@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { InstantSearch, Index, Hits, connectStateResults } from 'react-instantsearch-dom';
-import algoliasearch from 'algoliasearch/lite';
-import config from '../../../config';
-import CustomSearchBox from './input';
-import DocHit from './hitComps';
-import styled from 'styled-components';
-import Overlay from './overlay';
+import React, { useState } from 'react'
+import { InstantSearch, Index, Hits, connectStateResults } from 'react-instantsearch-dom'
+import algoliasearch from 'algoliasearch/lite'
+import config from '../../../config'
+import CustomSearchBox from './input'
+import DocHit from './hitComps'
+import styled from 'styled-components'
+import Overlay from './overlay'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -37,13 +37,21 @@ const HitsWrapper = styled.div`
   .loader {
     padding: 24px 40px;
   }
-`;
+  @media (min-width: 0px) and (max-width: 1024px) {
+    left: 0;
+    top: 40px;
+    max-width: 100%;
+    border-top: 1px solid #e2e8f0;
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+  }
+`
 
-const indexName = config.header.search.indexName;
+const indexName = config.header.search.indexName
 const searchClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
-);
+)
 
 const Results = connectStateResults(
   ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
@@ -53,13 +61,18 @@ const Results = connectStateResults(
     ) : (
       <div className="no-results">No results for '{state.query}'</div>
     ))
-);
+)
 
-export default function Search() {
-  const [query, setQuery] = useState(``);
-  const [showHits, setShowHits] = React.useState(true);
-  const hideSearch = () => setShowHits(false);
-  const showSearch = () => setShowHits(true);
+export default function Search({ hitsStatus }: any) {
+  const [query, setQuery] = useState(``)
+  const [showHits, setShowHits] = React.useState(false)
+  const hideSearch = () => setShowHits(false)
+
+  const showSearch = () => setShowHits(true)
+
+  React.useEffect(() => {
+    hitsStatus(query.length > 0 && showHits)
+  }, [showHits, query])
 
   return (
     <InstantSearch
@@ -77,5 +90,5 @@ export default function Search() {
         </Index>
       </HitsWrapper>
     </InstantSearch>
-  );
+  )
 }

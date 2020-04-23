@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 export default (props: any) => (
   <svg
@@ -18,4 +18,4 @@ export default (props: any) => (
       strokeLinejoin="round"
     />
   </svg>
-);
+)

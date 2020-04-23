@@ -1,18 +1,18 @@
-import * as React from 'react';
-import Helmet from 'react-helmet';
-import favicon from '../images/favicon-32x32.png';
-import { useStaticQuery, graphql } from 'gatsby';
-import { useLocation } from '@reach/router';
+import * as React from 'react'
+import Helmet from 'react-helmet'
+import favicon from '../images/favicon-32x32.png'
+import { useStaticQuery, graphql } from 'gatsby'
+import { urlGenerator } from '../utils/urlGenerator'
 
 type SEOProps = {
-  title?: string;
-  description?: string;
-  keywords?: string;
-  slug?: string;
-};
+  title?: string
+  description?: string
+  keywords?: string
+  slug?: string
+}
 
-const SEO = ({ title, description, keywords }: SEOProps) => {
-  const { site } = useStaticQuery(query);
+const SEO = ({ title, description, keywords, slug }: SEOProps) => {
+  const { site } = useStaticQuery(query)
   const {
     siteMetadata: {
       pathPrefix,
@@ -20,53 +20,92 @@ const SEO = ({ title, description, keywords }: SEOProps) => {
       twitter: { site: tSite, creator: tCreator, image: tUrl },
       og: {
         site_name: oSite,
-        type: oType,
-        image: { alt: oImgAlt, url: oUrl, type: oImgType, width: oImgWidth, height: oImgHeight },
+        // type: oType,
+        // image: { alt: oImgAlt, url: oUrl, type: oImgType, width: oImgWidth, height: oImgHeight },
       },
     },
-  } = site;
+  } = site
 
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const canonicalUrl = location.href;
-  const lang = searchParams ? searchParams.get('lang') : '';
-  const db = searchParams ? searchParams.get('db') : '';
+  let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl
+  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl
 
-  const seoTitle = `${title}${lang ? '-' + lang.toUpperCase() : ''}${
-    db ? '-' + db.toUpperCase() : ''
-  }`;
   return (
-    <Helmet>
-      {/* <meta charSet="utf-8" /> */}
-      {/* <meta name="viewport" content="width=device-width, initial-scale=1" /> */}
-      {title && <title>{seoTitle}</title>}
-      {description && <meta name="description" content={description} />}
-      {keywords && <meta name="keywords" content={keywords} />}
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:site" content={tSite} />
-      <meta name="twitter:title" content={seoTitle} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:creator" content={tCreator} />
-      <meta name="twitter:image" content={`${siteUrl + pathPrefix}${tUrl}`} />
-      {/* Open Graph */}
-      <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:title" content={seoTitle} />
-      <meta property="og:description" content={description} />
-      <meta property="og:site_name" content={oSite} />
-      <meta property="og:type" content={oType} />
-      <meta property="og:image" content={`${siteUrl + pathPrefix}${oUrl}`} />
-      <meta property="og:image:alt" content={oImgAlt} />
-      <meta property="og:image:type" content={oImgType} />
-      <meta property="og:image:width" content={oImgWidth} />
-      <meta property="og:image:height" content={oImgHeight} />
-      <link rel="canonical" href={canonicalUrl} />
-      <link rel="icon" href={favicon} />
+    <Helmet
+      title={title}
+      meta={[
+        {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1',
+        },
+        {
+          name: 'description',
+          content: description,
+        },
+        {
+          name: 'keywords',
+          content: keywords,
+        },
+        {
+          name: 'twitter:title',
+          content: title,
+        },
+        {
+          name: 'twitter:site',
+          content: tSite,
+        },
+        {
+          name: 'twitter:card',
+          content: "summary_large_image",
+        },
+        {
+          name: 'twitter:description',
+          content: description,
+        },
+        {
+          name: 'twitter:creator',
+          content: tCreator,
+        },
+        {
+          name: 'twitter:image',
+          content: `${siteUrl + pathPrefix}${tUrl}`,
+        },
+        {
+          name: 'og:title',
+          content: title,
+        },
+        {
+          name: 'og:url',
+          content: canonicalUrl,
+        },
+        {
+          name: 'og:image',
+          content: `${siteUrl + pathPrefix}${tUrl}`,
+        },
+        {
+          name: 'og:site_name',
+          content: oSite,
+        },
+        {
+          name: 'og:description',
+          content: description,
+        },
+      ]}
+      link={[
+        {
+          href: canonicalUrl,
+          rel: 'canonical',
+        },
+        {
+          href: favicon,
+          rel: 'icon',
+        },
+      ]}
+    >
     </Helmet>
-  );
-};
+  )
+}
 
-export default SEO;
+export default SEO
 
 const query = graphql`
   query SEO {
@@ -93,4 +132,4 @@ const query = graphql`
       }
     }
   }
-`;
+`

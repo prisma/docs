@@ -1,48 +1,48 @@
-import React from 'react';
-import Highlight, { defaultProps } from 'prism-react-renderer';
-import theme from 'prism-react-renderer/themes/github';
-import CopyButton from './copy';
-import Copy from '../../icons/Copy';
-import { stringify } from '../../utils/stringify';
-import styled from 'styled-components';
+import React from 'react'
+import Highlight, { defaultProps } from 'prism-react-renderer'
+import theme from 'prism-react-renderer/themes/github'
+import CopyButton from './copy'
+import Copy from '../../icons/Copy'
+import { stringify } from '../../utils/stringify'
+import styled from 'styled-components'
 
 interface CodeProps {
-  copy?: boolean;
+  copy?: boolean
 }
 
-type PreCodeProps = CodeProps & React.ReactNode;
+type PreCodeProps = CodeProps & React.ReactNode
 
 function cleanTokens(tokens: any[]) {
-  const tokensLength = tokens.length;
+  const tokensLength = tokens.length
 
   if (tokensLength === 0) {
-    return tokens;
+    return tokens
   }
-  const lastToken = tokens[tokensLength - 1];
+  const lastToken = tokens[tokensLength - 1]
 
   if (lastToken.length === 1 && lastToken[0].empty) {
-    return tokens.slice(0, tokensLength - 1);
+    return tokens.slice(0, tokensLength - 1)
   }
-  return tokens;
+  return tokens
 }
 
 const Code = ({ children, className, ...props }: PreCodeProps) => {
-  let language = className && className.replace(/language-/, '');
+  let language = className && className.replace(/language-/, '')
   if (language === 'prisma') {
-    language = 'sql';
+    language = 'sql'
   } else if (language == undefined) {
-    language = 'shell';
+    language = 'shell'
   }
-  const code = stringify(children);
+  const code = stringify(children)
 
   return (
     <>
-      <div className="gatsby-highlight">
+      <div className="gatsby-highlight mobile-full-width">
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
             <Pre className={blockClassName} style={style}>
               {(props['copy'] || language === 'copy') && (
-                <AbsoluteCopyButton>
+                <AbsoluteCopyButton className="copy-button">
                   <CopyButton text={code}>
                     <Copy />
                   </CopyButton>
@@ -62,10 +62,10 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
         </Highlight>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default Code;
+export default Code
 
 const AbsoluteCopyButton = styled.div`
   transition: opacity 100ms ease;
@@ -77,7 +77,7 @@ const AbsoluteCopyButton = styled.div`
     right: -8px;
     top: -2px;
   }
-`;
+`
 
 export const Pre = styled.pre`
   margin-top: 2rem;
@@ -94,4 +94,4 @@ export const Pre = styled.pre`
     height: 1.3rem;
     font-size: 15px;
   }
-`;
+`
