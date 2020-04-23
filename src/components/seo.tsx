@@ -2,17 +2,14 @@ import * as React from 'react'
 import { Helmet } from 'react-helmet'
 import favicon from '../images/favicon-32x32.png'
 import { useStaticQuery, graphql } from 'gatsby'
-import { urlGenerator } from '../utils/urlGenerator'
 import { useLocation } from '@reach/router'
 
 type SEOProps = {
   title?: string
   description?: string
-  keywords?: string
-  slug?: string
 }
 
-const SEO = ({ title, description, keywords, slug }: SEOProps) => {
+const SEO = ({ title, description }: SEOProps) => {
   const location = useLocation()
   const [pathTechParams] = location.pathname.split('/').splice(-1)
   const { site, allSitePage } = useStaticQuery(query)
@@ -20,6 +17,7 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
     siteMetadata: {
       pathPrefix,
       siteUrl,
+      keywords,
       twitter: { site: tSite, creator: tCreator, image: tUrl },
       og: {
         site_name: oSite,
@@ -35,28 +33,30 @@ const SEO = ({ title, description, keywords, slug }: SEOProps) => {
 
   const seoTitle =
     currentPage && currentPage.node.context ? currentPage.node.context.seoTitle : title
+  const seoDescription =
+    currentPage && currentPage.node.context ? currentPage.node.context.seoDescription : description
 
   let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl
-  canonicalUrl = slug ? canonicalUrl + urlGenerator(slug) : canonicalUrl
+  canonicalUrl = pathTechParams ? `${canonicalUrl}/${pathTechParams}` : canonicalUrl
 
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
       {/* <meta name="viewport" content="width=device-width, initial-scale=1" /> */}
       <title>{seoTitle}</title>
-      {description && <meta name="description" content={description} />}
+      <meta name="description" content={seoDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content={tSite} />
       <meta name="twitter:title" content={seoTitle} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:description" content={seoDescription} />
       <meta name="twitter:creator" content={tCreator} />
       <meta name="twitter:image" content={`${siteUrl + pathPrefix}${tUrl}`} />
       {/* Open Graph */}
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:title" content={seoTitle} />
-      <meta property="og:description" content={description} />
+      <meta property="og:description" content={seoDescription} />
       <meta property="og:site_name" content={oSite} />
       <meta property="og:type" content={oType} />
       <meta property="og:image" content={`${siteUrl + pathPrefix}${oUrl}`} />
@@ -101,6 +101,7 @@ const query = graphql`
         node {
           context {
             seoTitle
+            seoDescription
           }
           path
         }
