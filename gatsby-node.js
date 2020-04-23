@@ -41,7 +41,6 @@ exports.createPages = ({ graphql, actions }) => {
     let pageSeoDesc= frontmatter.metaDescription || frontmatter.title
     if (lang || db) {
       const queryParam = `${lang ? `${lang}${db ? '-' : ''}` : ''}${db ? `${db}` : ''}`
-      console.log(queryParam)
       const descEntry = frontmatter.techMetaDescriptions
         ? frontmatter.techMetaDescriptions.find(item => item.name === queryParam)
         : null

@@ -12,6 +12,9 @@ const TopSectionWrapper = styled.div`
     margin-top: 3.5rem;
     margin-bottom: 4rem;
   }
+  .tech-switch-block {
+    position: relative;
+  }
 `
 
 const MainTitle = styled.h1`
@@ -23,12 +26,20 @@ const MainTitle = styled.h1`
   color: #1a202c;
   margin: 0;
   margin-top: 4px;
+  @media only screen and (max-width: 767px) {
+    font-size: 24px;
+  }
 `
 
 const SwitcherWrapper = styled.div`
   display: flex;
   position: absolute;
-  top: 78px;
+  top: -38px;
+  @media only screen and (max-width: 767px) {
+    flex-direction: column;
+    width: 100%;
+    top: -30px;
+  }
 `
 
 const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate }: any) => {

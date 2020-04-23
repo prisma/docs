@@ -37,12 +37,12 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
   return (
     <>
-      <div className="gatsby-highlight">
+      <div className="gatsby-highlight mobile-full-width">
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
             <Pre className={blockClassName} style={style}>
               {(props['copy'] || language === 'copy') && (
-                <AbsoluteCopyButton>
+                <AbsoluteCopyButton className="copy-button">
                   <CopyButton text={code}>
                     <Copy />
                   </CopyButton>

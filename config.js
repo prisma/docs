@@ -1,7 +1,7 @@
 const config = {
   gatsby: {
     pathPrefix: '/docs',
-    siteUrl: 'https://www.prisma.io',
+    siteUrl: 'https://prisma2.netlify.app',
   },
   header: {
     logoLink: 'https://www.prisma.io',

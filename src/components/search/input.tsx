@@ -11,6 +11,9 @@ const Form = styled.form`
   z-index: 100001;
   display: flex;
   align-items: center;
+  @media (min-width: 0px) and (max-width: 1024px) {
+    flex: 1;
+  }
 `
 
 const SearchIcon = styled(SearchPic)`

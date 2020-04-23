@@ -37,6 +37,14 @@ const HitsWrapper = styled.div`
   .loader {
     padding: 24px 40px;
   }
+  @media (min-width: 0px) and (max-width: 1024px) {
+    left: 0;
+    top: 40px;
+    max-width: 100%;
+    border-top: 1px solid #e2e8f0;
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+  }
 `
 
 const indexName = config.header.search.indexName
@@ -55,11 +63,16 @@ const Results = connectStateResults(
     ))
 )
 
-export default function Search() {
+export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
-  const [showHits, setShowHits] = React.useState(true)
+  const [showHits, setShowHits] = React.useState(false)
   const hideSearch = () => setShowHits(false)
+
   const showSearch = () => setShowHits(true)
+
+  React.useEffect(() => {
+    hitsStatus(query.length > 0 && showHits)
+  }, [showHits, query])
 
   return (
     <InstantSearch

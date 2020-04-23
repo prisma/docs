@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
 import TreeNode from './treeNode'
 import { AllEdges } from '../../interfaces/AllArticles.interface'
-import { ArticleFields } from '../../interfaces/Article.interface'
+import { ArticleFields, ArticleFrontmatter } from '../../interfaces/Article.interface'
 import { createGlobalState } from 'react-hooks-global-state'
 import { urlGenerator } from '../../utils/urlGenerator'
 
 interface TreeNode {
   node: {
     fields: ArticleFields
-    frontmatter: any
+    frontmatter: ArticleFrontmatter
   }
 }
 
