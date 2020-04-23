@@ -21,6 +21,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
       body,
       parent,
+      tableOfContents
     },
     site: {
       siteMetadata: { docsLocation },
@@ -40,6 +41,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
           navigate={navigate}
+          toc={tableOfContents}
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
@@ -67,6 +69,7 @@ export const query = graphql`
           relativePath
         }
       }
+      tableOfContents
       frontmatter {
         title
         metaTitle

@@ -1,16 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import { AllArticlesTOC } from '../interfaces/TOC.interface'
-import { useTOCQuery } from '../hooks/useTOCQuery'
-import { slug } from '../utils/slug'
 import { stringify } from '../utils/stringify'
-import scrollTo from 'gatsby-plugin-smoothscroll'
-import { urlGenerator } from '../utils/urlGenerator'
-import config from '../../config'
-
-const TOCContent = styled.aside`
-  // padding: 2rem 0 0;
-`
 
 const ChapterTitle = styled.h1`
   font-family: 'Open Sans';
@@ -23,46 +13,20 @@ const ChapterTitle = styled.h1`
   color: #a0aec0;
 `
 
-const scrollToId = (e: any) => {
-  const id = e.target && e.target.href && e.target.href.split('#')[1]
-  if (id) {
-    scrollTo(`#${id}`)
-  }
-}
-
-const TOC = ({ location }: any) => {
-  const { allMdx }: AllArticlesTOC = useTOCQuery()
+const TOC = ({ headings }: any) => {
   let navItems: any[] = []
-
-  if (allMdx.edges !== undefined && allMdx.edges.length > 0) {
-    allMdx.edges.map((item: any) => {
-      if (item !== undefined) {
-        if (
-          location.pathname.includes(urlGenerator(item.node.fields.slug)) ||
-          location.pathname.includes(config.gatsby.pathPrefix + urlGenerator(item.node.fields.slug))
-        ) {
-          if (item.node.tableOfContents.items) {
-            navItems = item.node.tableOfContents.items.map((innerItem: any, index: number) => {
-              const itemId = innerItem.title ? slug(stringify(innerItem.title)) : '#'
-
-              return (
-                <li key={index}>
-                  <a href={`#${itemId}`} onClick={scrollToId}>
-                    {stringify(innerItem.title)}
-                  </a>
-                </li>
-              )
-            })
-          }
-        }
-      }
-    })
-  }
+  navItems = headings && headings.map((heading: any, index: number) => {
+    return (
+      <li key={index}>
+        <a href={heading.url}>{stringify(heading.title)}</a>
+      </li>
+    )
+  })
   return navItems && navItems.length ? (
-    <TOCContent>
+    <div>
       <ChapterTitle>CONTENT</ChapterTitle>
       <ul className="list">{navItems}</ul>
-    </TOCContent>
+    </div>
   ) : null
 }
 

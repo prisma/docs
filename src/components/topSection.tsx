@@ -42,7 +42,7 @@ const SwitcherWrapper = styled.div`
   }
 `
 
-const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate }: any) => {
+const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate, toc }: any) => {
   const [pathTechParams] = location.pathname.split('/').splice(-1)
   const getTechFromParam = (type: string, defaultVal: string) => {
     const isTechPath = location.pathname !== withPrefix(urlGenerator(slug))
@@ -161,7 +161,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate 
           )}
         </SwitcherWrapper>
       </div>
-      <TOC location={location} />
+      <TOC headings={toc.items}/>
     </TopSectionWrapper>
   )
 }
