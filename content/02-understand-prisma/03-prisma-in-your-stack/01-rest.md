@@ -137,9 +137,9 @@ app.delete(`/post/:id`, async (req, res) => {
 });
 ```
 
-## Ready-to-tun example projects
+## Ready-to-run example projects
 
-You can find several ready-to-tun examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
+You can find several ready-to-run examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
 
 | Example                                                                                          | Language   | Stack        | Description                                                       |
 | :----------------------------------------------------------------------------------------------- | :--------- | ------------ | ----------------------------------------------------------------- |
