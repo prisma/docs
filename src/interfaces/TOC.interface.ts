@@ -1,21 +1,21 @@
-import { EdgeNode } from './EdgeNode.interface';
+import { EdgeNode } from './EdgeNode.interface'
 
 export interface AllArticlesTOC {
-  allMdx: AllEdgesTOC;
+  allMdx: AllEdgesTOC
 }
 
 export interface AllEdgesTOC {
-  edges?: [EdgeNode<TableOfContents>];
+  edges?: [EdgeNode<TableOfContents>]
 }
 
 export interface TableOfContents {
   fields: {
-    slug: string;
-  };
+    slug: string
+  }
   tableOfContents: {
     items: {
-      url: string;
-      title: string;
-    }[];
-  };
+      url: string
+      title: string
+    }[]
+  }
 }

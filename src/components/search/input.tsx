@@ -1,8 +1,8 @@
-import React from 'react';
-import { connectSearchBox } from 'react-instantsearch-dom';
-import styled from 'styled-components';
-import SearchPic from '../../icons/Search';
-import Clear from '../../icons/Clear';
+import React from 'react'
+import { connectSearchBox } from 'react-instantsearch-dom'
+import styled from 'styled-components'
+import SearchPic from '../../icons/Search'
+import Clear from '../../icons/Clear'
 
 const Form = styled.form`
   position: relative;
@@ -11,7 +11,10 @@ const Form = styled.form`
   z-index: 100001;
   display: flex;
   align-items: center;
-`;
+  @media (min-width: 0px) and (max-width: 1024px) {
+    flex: 1;
+  }
+`
 
 const SearchIcon = styled(SearchPic)`
   position: absolute;
@@ -19,13 +22,13 @@ const SearchIcon = styled(SearchPic)`
   width: 1em;
   pointer-events: none;
   z-index: 100001;
-`;
+`
 
 const ClearIcon = styled(Clear)`
   position: absolute;
   right: 12px;
   cursor: pointer;
-`;
+`
 
 const Input = styled.input`
   width: 100%;
@@ -49,35 +52,35 @@ const Input = styled.input`
   &:hover {
     outline: none;
   }
-`;
+`
 
-const DEBOUNCE_DELAY = 500;
+const DEBOUNCE_DELAY = 500
 
-const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
-  const [value, setValue] = React.useState(currentRefinement);
-  const timeoutId = React.useRef(null);
+const SearchBox = ({ refine, onFocus, onBlur, currentRefinement, ...rest }: any) => {
+  const [value, setValue] = React.useState(currentRefinement)
+  const timeoutId = React.useRef(null)
 
   const onChange = (e: any) => {
-    const { value: newValue } = e.target;
+    const { value: newValue } = e.target
 
     // After the user manually cleared the input, call `refine` without waiting so that the search
     // closes instantly.
     if (newValue === '') {
-      return clearInput();
+      return clearInput()
     }
 
     // Otherwise, debounce the search to avoid triggering many queries at once, which could also
     // make the UI freeze.
-    window.clearTimeout(timeoutId.current);
-    timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY);
-    setValue(newValue);
-  };
+    window.clearTimeout(timeoutId.current)
+    timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY)
+    setValue(newValue)
+  }
 
   const clearInput = () => {
-    window.clearTimeout(timeoutId.current);
-    setValue('');
-    refine('');
-  };
+    window.clearTimeout(timeoutId.current)
+    setValue('')
+    refine('')
+  }
 
   return (
     <Form>
@@ -93,8 +96,8 @@ const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
       <SearchIcon />
       {value !== '' && <ClearIcon onClick={clearInput} />}
     </Form>
-  );
-};
+  )
+}
 
-const CustomSearchBox = connectSearchBox(SearchBox);
-export default CustomSearchBox;
+const CustomSearchBox = connectSearchBox(SearchBox)
+export default CustomSearchBox

@@ -14,7 +14,7 @@ export default async function subscribe(email: string): Promise<void> {
       method: 'GET',
       mode: 'no-cors',
     }
-  );
+  )
   // no-cors doesn't give us any information, so this is just a fire & pray
-  return;
+  return
 }

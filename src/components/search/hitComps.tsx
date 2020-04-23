@@ -1,9 +1,9 @@
-import React from 'react';
-import { Snippet } from 'react-instantsearch-dom';
-import Link from '../link';
-import { urlGenerator } from '../../utils/urlGenerator';
-import styled from 'styled-components';
-import ParentTitle from '../parentTitleComp';
+import React from 'react'
+import { Snippet } from 'react-instantsearch-dom'
+import Link from '../link'
+import { urlGenerator } from '../../utils/urlGenerator'
+import styled from 'styled-components'
+import ParentTitle from '../parentTitleComp'
 
 const HitComp = styled.div`
   padding: 24px 40px !important;
@@ -37,8 +37,14 @@ const HitComp = styled.div`
     color: #3182ce !important;
     background: #ebf8ff;
     padding: 2px;
+    font-weight: bold;
   }
-`;
+
+  @media (min-width: 0px) and (max-width: 767px) {
+    max-height: fit-content;
+    padding: 24px !important;
+  }
+`
 
 const DocHit = ({ hit }: any) => (
   <HitComp>
@@ -51,6 +57,6 @@ const DocHit = ({ hit }: any) => (
       <Snippet hit={hit} attribute="content" tagName="mark" />
     </Link>
   </HitComp>
-);
+)
 
-export default DocHit;
+export default DocHit

@@ -37,7 +37,7 @@ In addition to these standalone and single-purpose libraries, there are several 
 | :----------------------------------------- | :----------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
 | [Nexus](https://www.nexusjs.org/#/)        | Backend only | [Prisma Labs](https://github.com/prisma-labs/)    | Prisma is optional     | _Delightful GraphQL Application Framework_                                                                                            |
 | [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                                                                               |
-| [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Framework for building monolithic, full-stack, serverless React apps with zero data-fetching and zero client-side state management._ |
+| [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Rails-like framework for monolithic, full-stack React apps — built on Next.js._ |
 
 > **Note**: If you notice any GraphQL libraries/frameworks missing from the list, please let us know.
 
