@@ -1,8 +1,3 @@
-// interface Logo {
-//   image: string;
-//   link: string;
-// }
-
 export interface HeaderProps {
   logoLink: string
   links: { name: string; link: string }[] // create interface for this

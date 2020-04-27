@@ -7,14 +7,16 @@ export const useAllArticlesQuery = () => {
       allMdx(sort: { fields: fields___slug }) {
         edges {
           node {
-            rawBody
-            objectID: id
-            fields {
-              slug
+            frontmatter {
               title
               duration
               staticLink
               experimental
+              langSwitcher
+              dbSwitcher
+            }
+            fields {
+              slug
             }
           }
         }

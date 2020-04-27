@@ -35,9 +35,11 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   }
   const code = stringify(children)
 
+  const tokenCopyClass = props['copy'] || language === 'copy' ? 'has-copy-button' : ''
+
   return (
     <>
-      <div className="gatsby-highlight mobile-full-width">
+      <div className="gatsby-highlight pre-highlight">
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
             <Pre className={blockClassName} style={style}>
@@ -51,9 +53,11 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
               <code>
                 {cleanTokens(tokens).map((line: any, i: number) => (
                   <div {...getLineProps({ line, key: i })}>
-                    {line.map((token: any, key: any) => (
-                      <span {...getTokenProps({ token, key })} />
-                    ))}
+                    <div className={tokenCopyClass}>
+                      {line.map((token: any, key: any) => (
+                        <span {...getTokenProps({ token, key })} />
+                      ))}
+                    </div>
                   </div>
                 ))}
               </code>
@@ -70,7 +74,7 @@ export default Code
 const AbsoluteCopyButton = styled.div`
   transition: opacity 100ms ease;
   position: absolute;
-  top: 16px;
+  top: 24px;
   right: 16px;
   z-index: 2;
   > div {
@@ -81,7 +85,6 @@ const AbsoluteCopyButton = styled.div`
 
 export const Pre = styled.pre`
   margin-top: 2rem;
-  position: relative;
   text-align: left;
   margin: 0 0 16px 0;
   padding: 2rem 1rem 1rem 1rem;
@@ -93,5 +96,13 @@ export const Pre = styled.pre`
     line-height: 1.3rem;
     height: 1.3rem;
     font-size: 15px;
+
+    .has-copy-button {
+      width: 95%;
+      overflow-x: auto;
+      &::-webkit-scrollbar {
+        height: 0;
+      }
+    }
   }
 `

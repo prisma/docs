@@ -3,8 +3,8 @@ import styled from 'styled-components'
 import TOC from './toc'
 import TechnologySwitch from './techSwitcher'
 import ParentTitle from './parentTitleComp'
-import { useNavigate } from '@reach/router'
 import { urlGenerator } from '../utils/urlGenerator'
+import { withPrefix } from 'gatsby'
 
 const TopSectionWrapper = styled.div`
   position: relative;
@@ -12,7 +12,6 @@ const TopSectionWrapper = styled.div`
     margin-top: 3.5rem;
     margin-bottom: 4rem;
   }
-
   .tech-switch-block {
     position: relative;
   }
@@ -43,19 +42,21 @@ const SwitcherWrapper = styled.div`
   }
 `
 
-const TopSection = ({
-  location,
-  title,
-  slug,
-  indexPage,
-  langSwitcher,
-  dbSwitcher,
-  onChangeParam,
-}: any) => {
-  const navigate = useNavigate()
+const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate, toc }: any) => {
+  const [pathTechParams] = location.pathname.split('/').splice(-1)
   const getTechFromParam = (type: string, defaultVal: string) => {
-    const searchParam = new URLSearchParams(location.search).get(type)
-    return searchParam ? searchParam : defaultVal
+    const isTechPath = location.pathname !== withPrefix(urlGenerator(slug))
+    let tech = defaultVal
+    if (isTechPath) {
+      if (type === 'lang') {
+        ;[tech] = pathTechParams.split('-').splice(dbSwitcher ? -2 : -1)
+      }
+
+      if (type === 'db') {
+        ;[tech] = pathTechParams.split('-').splice(-1)
+      }
+    }
+    return tech
   }
 
   const [langSelected, setLangSelected] = React.useState(
@@ -64,15 +65,14 @@ const TopSection = ({
   const [dbSelected, setDbSelected] = React.useState(
     dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgres'
   )
-
   const goToNewPath = () => {
-    const newParams = `?${langSwitcher ? `lang=${langSelected}${dbSwitcher ? '&' : ''}` : ''}${
-      dbSwitcher ? `db=${dbSelected}` : ''
+    const newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
+      dbSwitcher ? `${dbSelected}` : ''
     }`
-
-    if (!(location.pathname.includes(urlGenerator(slug)) && location.search === newParams)) {
-      onChangeParam(newParams)
-      navigate(newParams, { replace: !location.search })
+    if (!pathTechParams.includes(newParams)) {
+      navigate(withPrefix(`${urlGenerator(slug)}-${newParams}`), {
+        replace: location.pathname === urlGenerator(slug),
+      })
     }
   }
 
@@ -138,10 +138,10 @@ const TopSection = ({
 
   return (
     <TopSectionWrapper>
-      {!indexPage && <ParentTitle slug={slug} />}
+      <ParentTitle slug={slug} />
       <MainTitle>{title}</MainTitle>
       <div className="tech-switch-block">
-        {!indexPage && <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />}
+        <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
         <SwitcherWrapper>
           {langSwitcher && (
             <TechnologySwitch
@@ -161,7 +161,7 @@ const TopSection = ({
           )}
         </SwitcherWrapper>
       </div>
-      {!indexPage && <TOC location={location} />}
+      <TOC headings={toc.items}/>
     </TopSectionWrapper>
   )
 }

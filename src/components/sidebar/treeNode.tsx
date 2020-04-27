@@ -63,14 +63,25 @@ const ListItem = styled.li`
       padding: 0;
       border: 0;
 
+      .right,
+      .down {
+        transition: opacity 0.5s linear;
+      }
+
       .right.open,
       .down.close {
         display: none;
+        opacity: 0;
       }
 
       .right.close,
       .down.open {
         display: block;
+        opacity: 1;
+      }
+
+      .down.open {
+        margin-top: 2px;
       }
 
       &:hover,
@@ -180,8 +191,9 @@ const TreeNode = ({
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
         <Link
-          to={url.split('/').includes('index') ? null : urlGenerator(url)}
+          to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
           activeClassName="active-item"
+          partiallyActive={true}
         >
           {hasExpandButton ? (
             <span onClick={collapse} className="collapse-title">

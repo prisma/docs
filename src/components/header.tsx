@@ -54,15 +54,6 @@ const HeaderNav = styled.div`
   }
 `
 
-const Title = styled.span`
-  font-size: 1.2rem;
-  color: #f5f8fa;
-  font-style: normal;
-  font-weight: bold;
-  line-height: 100%;
-  letter-spacing: -0.02em;
-`
-
 const LogoContainer = styled.div`
   padding-right: 0.75rem;
 `

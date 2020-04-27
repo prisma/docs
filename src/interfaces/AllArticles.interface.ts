@@ -1,8 +1,7 @@
 import { EdgeNode } from './EdgeNode.interface'
-import { ArticleFields } from './Article.interface'
 
 export interface AllEdges {
-  edges?: [EdgeNode<ArticleFields>]
+  edges?: [EdgeNode]
 }
 
 export interface AllArticles {
