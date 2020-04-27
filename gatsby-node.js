@@ -1,53 +1,55 @@
-const path = require(`path`);
-// const urlGenerator = require(`./src/utils/urlGenerator`)
-// const { createFilePath } = require(`gatsby-source-filesystem`);
+const path = require(`path`)
 
 exports.onCreateNode = ({ node, getNode, actions }) => {
-  const { createNodeField } = actions;
+  const { createNodeField } = actions
   if (node.internal.type === `Mdx`) {
-    const parent = getNode(node.parent);
-
-    let value = parent.relativePath.replace(parent.ext, '');
-
+    const parent = getNode(node.parent)
+    let value = parent.relativePath.replace(parent.ext, '')
     if (value === 'index') {
-      value = '';
+      value = ''
     }
 
     createNodeField({
+      node,
       name: `slug`,
-      node,
       value: `/${value}`,
-    });
+    })
     createNodeField({
+      node,
       name: 'id',
-      node,
       value: node.id,
-    });
-    createNodeField({
-      name: 'title',
-      node,
-      value: node.frontmatter.title || parent.name,
-    });
-    createNodeField({
-      name: 'staticLink',
-      node,
-      value: node.frontmatter.staticLink || false,
-    });
-    createNodeField({
-      name: 'duration',
-      node,
-      value: node.frontmatter.duration || '',
-    });
-    createNodeField({
-      name: 'experimental',
-      node,
-      value: node.frontmatter.experimental || false,
-    });
+    })
   }
-};
+}
 
 exports.createPages = ({ graphql, actions }) => {
-  const { createPage } = actions;
+  const { createPage } = actions
+
+  const getTitle = (frontmatter, lang, db) => {
+    let pageSeoTitle = frontmatter.metaTitle || frontmatter.title
+    if (lang || db) {
+      const queryParam = `${lang ? `${lang}${db ? '-' : ''}` : ''}${db ? `${db}` : ''}`
+      const titleEntry = frontmatter.techMetaTitles
+        ? frontmatter.techMetaTitles.find(item => item.name === queryParam)
+        : null
+      pageSeoTitle = titleEntry ? titleEntry.value : pageSeoTitle
+    }
+    return pageSeoTitle
+  }
+
+  const getDesc = (frontmatter, lang, db) => {
+    let pageSeoDesc= frontmatter.metaDescription || frontmatter.title
+    if (lang || db) {
+      const queryParam = `${lang ? `${lang}${db ? '-' : ''}` : ''}${db ? `${db}` : ''}`
+      const descEntry = frontmatter.techMetaDescriptions
+        ? frontmatter.techMetaDescriptions.find(item => item.name === queryParam)
+        : null
+        pageSeoDesc = descEntry ? descEntry.value : pageSeoDesc
+    }
+
+    return pageSeoDesc
+  }
+
   return new Promise((resolve, reject) => {
     graphql(`
       {
@@ -55,11 +57,29 @@ exports.createPages = ({ graphql, actions }) => {
           edges {
             node {
               fields {
+                slug
                 id
               }
-              tableOfContents
-              fields {
-                slug
+              frontmatter {
+                title
+                metaTitle
+                metaDescription
+                langSwitcher
+                dbSwitcher
+                techMetaTitles {
+                  name
+                  value
+                }
+                techMetaDescriptions {
+                  name
+                  value
+                }
+              }
+              body
+              parent {
+                ... on File {
+                  relativePath
+                }
               }
             }
           }
@@ -67,18 +87,63 @@ exports.createPages = ({ graphql, actions }) => {
       }
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
+        if (node.frontmatter.langSwitcher) {
+          if (node.frontmatter.dbSwitcher) {
+            node.frontmatter.langSwitcher.forEach(lang =>
+              node.frontmatter.dbSwitcher.forEach(db =>
+                createPage({
+                  path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}-${db}`,
+                  component: path.resolve(`./src/layouts/articleLayout.tsx`),
+                  context: {
+                    id: node.fields.id,
+                    seoTitle: getTitle(node.frontmatter, lang, db),
+                    seoDescription: getDesc(node.frontmatter, lang, db)
+                  },
+                })
+              )
+            )
+          } else {
+            node.frontmatter.langSwitcher.forEach(lang =>
+              createPage({
+                path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
+                component: path.resolve(`./src/layouts/articleLayout.tsx`),
+                context: {
+                  id: node.fields.id,
+                  seoTitle: getTitle(node.frontmatter, lang, null),
+                  seoDescription: getDesc(node.frontmatter, lang, null)
+                },
+              })
+            )
+          }
+        }
+
+        if (node.frontmatter.dbSwitcher && !node.frontmatter.langSwitcher) {
+          node.frontmatter.dbSwitcher.forEach(db =>
+            createPage({
+              path: `${node.fields.slug.replace(/\d+-/g, '')}-${db}`,
+              component: path.resolve(`./src/layouts/articleLayout.tsx`),
+              context: {
+                id: node.fields.id,
+                seoTitle: getTitle(node.frontmatter, null, db),
+                seoDescription: getDesc(node.frontmatter, null, db)
+              },
+            })
+          )
+        }
         createPage({
-          path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, "") : '/',
+          path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, '') : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
             id: node.fields.id,
+            seoTitle: getTitle(node.frontmatter),
+            seoDescription: getDesc(node.frontmatter)
           },
-        });
-      });
-      resolve();
-    });
-  });
-};
+        })
+      })
+      resolve()
+    })
+  })
+}
 
 exports.onCreateWebpackConfig = ({ actions }) => {
   actions.setWebpackConfig({
@@ -89,5 +154,6 @@ exports.onCreateWebpackConfig = ({ actions }) => {
         buble: '@philpl/buble', // to reduce bundle size
       },
     },
-  });
-};
+  })
+}
+
