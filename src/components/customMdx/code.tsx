@@ -37,7 +37,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
   return (
     <>
-      <div className="gatsby-highlight mobile-full-width">
+      <div className="gatsby-highlight pre-highlight">
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
             <Pre className={blockClassName} style={style}>
@@ -70,7 +70,7 @@ export default Code
 const AbsoluteCopyButton = styled.div`
   transition: opacity 100ms ease;
   position: absolute;
-  top: 16px;
+  top: 24px;
   right: 16px;
   z-index: 2;
   > div {
@@ -81,7 +81,6 @@ const AbsoluteCopyButton = styled.div`
 
 export const Pre = styled.pre`
   margin-top: 2rem;
-  position: relative;
   text-align: left;
   margin: 0 0 16px 0;
   padding: 2rem 1rem 1rem 1rem;
