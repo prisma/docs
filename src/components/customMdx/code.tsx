@@ -35,6 +35,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   }
   const code = stringify(children)
 
+  const tokenCopyClass = props['copy'] || language === 'copy' ? 'has-copy-button' : ''
+
   return (
     <>
       <div className="gatsby-highlight pre-highlight">
@@ -51,9 +53,11 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
               <code>
                 {cleanTokens(tokens).map((line: any, i: number) => (
                   <div {...getLineProps({ line, key: i })}>
-                    {line.map((token: any, key: any) => (
-                      <span {...getTokenProps({ token, key })} />
-                    ))}
+                    <div className={tokenCopyClass}>
+                      {line.map((token: any, key: any) => (
+                        <span {...getTokenProps({ token, key })} />
+                      ))}
+                    </div>
                   </div>
                 ))}
               </code>
@@ -92,5 +96,13 @@ export const Pre = styled.pre`
     line-height: 1.3rem;
     height: 1.3rem;
     font-size: 15px;
+
+    .has-copy-button {
+      width: 95%;
+      overflow-x: auto;
+      &::-webkit-scrollbar {
+        height: 0;
+      }
+    }
   }
 `
