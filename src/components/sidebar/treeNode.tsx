@@ -63,14 +63,25 @@ const ListItem = styled.li`
       padding: 0;
       border: 0;
 
+      .right,
+      .down {
+        transition: opacity 0.5s linear;
+      }
+
       .right.open,
       .down.close {
         display: none;
+        opacity: 0;
       }
 
       .right.close,
       .down.open {
         display: block;
+        opacity: 1;
+      }
+
+      .down.open {
+        margin-top: 2px;
       }
 
       &:hover,
