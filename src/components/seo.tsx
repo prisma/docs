@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Helmet } from 'react-helmet'
 import favicon from '../images/favicon-32x32.png'
-import { useStaticQuery, graphql } from 'gatsby'
+import { useStaticQuery, graphql, withPrefix } from 'gatsby'
 import { useLocation } from '@reach/router'
 
 type SEOProps = {
@@ -36,8 +36,7 @@ const SEO = ({ title, description }: SEOProps) => {
   const seoDescription =
     currentPage && currentPage.node.context ? currentPage.node.context.seoDescription : description
 
-  let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl
-  canonicalUrl = pathTechParams ? `${canonicalUrl}/${pathTechParams}` : canonicalUrl
+  let canonicalUrl = `${siteUrl}${location.pathname}`
 
   return (
     <Helmet>
