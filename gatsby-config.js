@@ -3,6 +3,9 @@ require('dotenv').config()
 
 const gatsbyRemarkPlugins = [
   'gatsby-remark-sectionize',
+//   {
+//     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+//  },
   {
     resolve: `gatsby-remark-autolink-headers`,
     options: {
@@ -21,7 +24,9 @@ const gatsbyRemarkPlugins = [
 ]
 
 if (process.env.NODE_ENV === 'development') {
-  gatsbyRemarkPlugins.push('gatsby-remark-check-links')
+  gatsbyRemarkPlugins.push({
+    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+ })
 }
 
 module.exports = {
