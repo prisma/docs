@@ -48,7 +48,7 @@ module.exports = {
     'gatsby-plugin-typescript',
     'gatsby-image',
     'gatsby-plugin-styled-components',
-    `gatsby-plugin-smoothscroll`,
+    'gatsby-plugin-smoothscroll',
     'gatsby-plugin-catch-links',
     {
       resolve: `gatsby-plugin-algolia`,
