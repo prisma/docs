@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import ArrowRight from '../../icons/ArrowRight'
 import { darken } from 'polished'
 import withProps from 'styled-components-ts'
+import Link from '../link'
 
 export interface ButtonProps {
   href?: string
@@ -33,7 +34,7 @@ const backgroundColorMap = {
   dark: 'rgb(12, 52, 75)',
 }
 
-export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
+export const ButtonWrapper = withProps<ButtonProps>(styled(Link))`
     padding: 11px 14px;
     margin-right: 10px;
     display: inline-flex;
@@ -71,7 +72,7 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
   `
 
 const ButtonLink = (props: ButtonProps) => (
-  <ButtonWrapper {...props}>
+  <ButtonWrapper to={props.href} {...props}>
     {props.arrowLeft && <StyledArrowLeft />}
     {props.children}
     {props.arrow && <StyledArrow />}
