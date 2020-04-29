@@ -3,9 +3,10 @@ require('dotenv').config()
 
 const gatsbyRemarkPlugins = [
   'gatsby-remark-sectionize',
-//   {
-//     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
-//  },
+  // 'gatsby-plugin-catch-links',
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+ },
   {
     resolve: `gatsby-remark-autolink-headers`,
     options: {
@@ -23,11 +24,11 @@ const gatsbyRemarkPlugins = [
   },
 ]
 
-if (process.env.NODE_ENV === 'development') {
-  gatsbyRemarkPlugins.push({
-    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
- })
-}
+// if (process.env.NODE_ENV === 'development') {
+//   gatsbyRemarkPlugins.push({
+//     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+//  })
+// }
 
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
@@ -58,10 +59,10 @@ module.exports = {
     'gatsby-image',
     'gatsby-plugin-styled-components',
     `gatsby-plugin-smoothscroll`,
-    {
-      resolve: `gatsby-plugin-algolia`,
-      options: require(`./src/utils/algolia`),
-    },
+    // {
+    //   resolve: `gatsby-plugin-algolia`,
+    //   options: require(`./src/utils/algolia`),
+    // },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {
