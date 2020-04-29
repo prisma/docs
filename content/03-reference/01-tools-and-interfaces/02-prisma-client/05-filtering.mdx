@@ -33,6 +33,8 @@ The following queries support filtering:
 
 ## Filter conditions
 
+Prisma Client supports the following filter conditions:
+
 | Operator     | Notes                                                |
 | ------------ | ---------------------------------------------------- |
 | `equals`     |                                                      |
@@ -99,19 +101,157 @@ const user = await prisma.post.findMany({
 
 ## Combine multiple filter conditions
 
-| Operator | Notes |
-| -------- | ----- |
-| `AND`    |       |
-| `NOT`    |       |
-| `OR`     |       |
+You can combine multiple filter conditions with the following operators:
 
-Retrieve all `Post` records where the email ends in prisma.io and
+| Operator | Notes                                    |
+| -------- | ---------------------------------------- |
+| `AND`    | All conditions must return true.         |
+| `NOT`    | All conditions must return false.        |
+| `OR`     | One or more conditions must return true. |
 
-## Examples
+### Examples
 
-NOTE: Do not have to write 'AND'.
+Retrieve all `Post` records where the `content` field contains `Prisma` and `published` is `false`:
+
+```javascript
+const result = await prisma.post.findMany({
+  where: {
+    AND: [
+      {
+        content: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        published: {
+          equals: false,
+        },
+      },
+    ],
+  },
+})
+```
+
+Note that you can write the same query without `AND`:
+
+```javascript
+const result = await prisma.post.findMany({
+  where: {
+    content: {
+      contains: 'Prisma',
+    },
+    published: {
+      equals: false,
+    },
+  },
+})
+```
+
+Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`:
+
+```javascript
+const result2 = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+  },
+})
+```
+
+Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, and `published` is `false`:
+
+```javascript
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    AND: {
+      published: false,
+    },
+  },
+})
+```
+
+Retrieve all `Post` records where the `title` filed contains `Prisma` or `databases`, but not `SQL`:
+
+```javascript
+const result2 = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    NOT: {
+      title: {
+        contains: 'SQL',
+      },
+    },
+  },
+})
+```
+
+You can [enable logging](logging) to debug complex queries:
+
+```javascript
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+  ],
+})
+
+prisma.on('query', e => {
+  e.query, console.log(e)
+})
+```
 
 ## Filter on related records
+
+You can also filter based on related record fields. For example, the following query returns all `Post` records where the user's email address is `sarah@prisma.io`:
+
+```javascript
+const result = await prisma.post.findMany({
+  where: {
+    user: {
+      email: {
+        equals: 'sarah@prisma.io',
+      },
+    },
+  },
+})
+```
+
+Prisma Client offers the following operators for filtering on one-to-many relationships:
 
 | Operator | Description                                                                       |
 | -------- | --------------------------------------------------------------------------------- |
@@ -119,10 +259,65 @@ NOTE: Do not have to write 'AND'.
 | `every`  | Returns all records where all _related_ records match filtering criteria.         |
 | `none`   | Returns all records where no _related_ records match filtering criteria.          |
 
-Example:
+### Examples
 
-Returns all `User` records with one or more published posts:
+Retrieve all `User` records where:
 
-Returns all `User` records with no published posts:
+- _All_ posts are published
+- At least one related `Post` mentions `Prisma`
 
-Returns all `User` records where all posts are published:
+```javascript
+  const record = await prisma.user.findMany({
+    where: {
+      post: {
+          every: {
+            published: true
+          }
+        some: {
+          content: {
+            contains: "Prisma"
+          }
+        }
+      }
+    }
+  }
+```
+
+Retrieve all `Post` records where:
+
+- The `title` field contains `Prisma` or `databases`, but not `SQL`
+- The related `User` record' email address does
+
+```javascript
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    NOT: {
+      title: {
+        contains: 'SQL',
+      },
+    },
+    user: {
+      NOT: {
+        email: {
+          contains: 'sarah',
+        },
+      },
+    },
+  },
+  include: {
+    user: true,
+  },
+})
+```
