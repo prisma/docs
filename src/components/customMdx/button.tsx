@@ -34,7 +34,7 @@ const backgroundColorMap = {
   dark: 'rgb(12, 52, 75)',
 }
 
-export const ButtonWrapper = withProps<ButtonProps>(styled(Link))`
+export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     padding: 11px 14px;
     margin-right: 10px;
     display: inline-flex;
@@ -72,7 +72,7 @@ export const ButtonWrapper = withProps<ButtonProps>(styled(Link))`
   `
 
 const ButtonLink = (props: ButtonProps) => (
-  <ButtonWrapper to={props.href} {...props}>
+  <ButtonWrapper {...props}>
     {props.arrowLeft && <StyledArrowLeft />}
     {props.children}
     {props.arrow && <StyledArrow />}

@@ -5,7 +5,6 @@ import Code from './code'
 import CollapseBox from './collapsible'
 import Table from './table'
 import ButtonLink from './button'
-import Link from '../link'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -18,7 +17,6 @@ export default {
   details: CollapseBox,
   table: Table,
   ButtonLink,
-  a: (props: any) => <Link to={props.href} {...props} />,
   img: (props: any) => (
     <a href={props.src} target="_blank">
       <img {...props} />
