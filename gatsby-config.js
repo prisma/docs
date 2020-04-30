@@ -24,12 +24,6 @@ const gatsbyRemarkPlugins = [
   },
 ]
 
-// if (process.env.NODE_ENV === 'development') {
-//   gatsbyRemarkPlugins.push({
-//     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
-//  })
-// }
-
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
   siteMetadata: {
@@ -58,11 +52,12 @@ module.exports = {
     'gatsby-plugin-typescript',
     'gatsby-image',
     'gatsby-plugin-styled-components',
-    `gatsby-plugin-smoothscroll`,
-    // {
-    //   resolve: `gatsby-plugin-algolia`,
-    //   options: require(`./src/utils/algolia`),
-    // },
+    'gatsby-plugin-smoothscroll',
+    'gatsby-plugin-catch-links',
+    {
+      resolve: `gatsby-plugin-algolia`,
+      options: require(`./src/utils/algolia`),
+    },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {
@@ -72,14 +67,10 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
-        env: {
-          development: {
-            policy: [{ userAgent: '*', disallow: ['/'] }],
-          },
-          production: {
-            policy: [{ userAgent: '*', allow: '/' }],
-          },
-        },
+            policy: [{
+              userAgent: '*',
+              disallow: '/'
+        }]
       },
     },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
