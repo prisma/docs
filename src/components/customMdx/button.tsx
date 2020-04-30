@@ -3,7 +3,8 @@ import styled from 'styled-components'
 import ArrowRight from '../../icons/ArrowRight'
 import { darken } from 'polished'
 import withProps from 'styled-components-ts'
-import Link from '../link'
+import { useLocation } from '@reach/router'
+import { withPrefix } from 'gatsby'
 
 export interface ButtonProps {
   href?: string
@@ -71,13 +72,19 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     }
   `
 
-const ButtonLink = (props: ButtonProps) => (
-  <ButtonWrapper {...props}>
-    {props.arrowLeft && <StyledArrowLeft />}
-    {props.children}
-    {props.arrow && <StyledArrow />}
-  </ButtonWrapper>
-)
+const ButtonLink = (props: ButtonProps) => {
+  const location = useLocation()
+  if (location.pathname === '/docs/') {
+    props.href = withPrefix(props.href!)
+  }
+  return (
+    <ButtonWrapper {...props}>
+      {props.arrowLeft && <StyledArrowLeft />}
+      {props.children}
+      {props.arrow && <StyledArrow />}
+    </ButtonWrapper>
+  )
+}
 
 const StyledArrow = styled(ArrowRight)`
   margin-left: 12px;
