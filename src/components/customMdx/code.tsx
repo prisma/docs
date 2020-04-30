@@ -6,6 +6,8 @@ import Copy from '../../icons/Copy'
 import { stringify } from '../../utils/stringify'
 import styled from 'styled-components'
 
+require("./prismaLang");
+
 interface CodeProps {
   copy?: boolean
 }
@@ -28,9 +30,10 @@ function cleanTokens(tokens: any[]) {
 
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   let language = className && className.replace(/language-/, '')
-  if (language === 'prisma') {
-    language = 'sql'
-  } else if (language == undefined) {
+  // if (language === 'prisma') {
+  //   language = 'groovy'
+  // } else 
+  if (language == undefined) {
     language = 'shell'
   }
   const code = stringify(children)
