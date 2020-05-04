@@ -2,6 +2,13 @@ import Prism from "prism-react-renderer/prism";
 (typeof global !== "undefined" ? global : window).Prism = Prism;
 
 Prism.languages.prisma = Prism.languages.extend('clike', {
+	'class-name': [
+		Prism.languages.clike['class-name'],
+		{
+			pattern: /(^|[^$\w\xA0-\uFFFF])[_$A-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\.(?:prototype|constructor))/,
+			lookbehind: true
+		}
+	],
 	'string': [
 		{
 			pattern: /("""|''')(?:[^\\]|\\[\s\S])*?\1|\$\/(?:\$\/\$|[\s\S])*?\/\$/,
@@ -14,14 +21,17 @@ Prism.languages.prisma = Prism.languages.extend('clike', {
 			greedy: true
 		}
 	],
-	'keyword': /\b(?:as|def|in|abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|trait|transient|try|void|volatile|while)\b/,
+	'keyword': /\b(?:as|def|in|abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|datasource|do|double|else|enum|extends|final|finally|float|for|generator|goto|if|implements|import|instanceof|int|interface|long|model|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|trait|transient|try|type|void|volatile|while)\b/,
 	'number': /\b(?:0b[01_]+|0x[\da-f_]+(?:\.[\da-f_p\-]+)?|[\d_]+(?:\.[\d_]+)?(?:e[+-]?[\d]+)?)[glidf]?\b/i,
 	'operator': {
 		pattern: /(^|[^.])(?:~|==?~?|\?[.:]?|\*(?:[.=]|\*=?)?|\.[@&]|\.\.<|\.\.(?!\.)|-[-=>]?|\+[+=]?|!=?|<(?:<=?|=>?)?|>(?:>>?=?|=)?|&[&=]?|\|[|=]?|\/=?|\^=?|%=?)/,
 		lookbehind: true
 	},
-	'punctuation': /\.+|[{}[\];(),.:$]/
+	'punctuation': /\.+|[{}[\];(),.:$]/,
 });
+
+
+Prism.languages.javascript['class-name'][0].pattern = /(\b(?:model|generator|datasource|enum)\s+)[\w.\\]+/;
 
 Prism.languages.insertBefore('prisma', 'string', {
 	'shebang': {
@@ -34,13 +44,24 @@ Prism.languages.insertBefore('prisma', 'punctuation', {
 	'spock-block': /\b(?:setup|given|when|then|and|cleanup|expect|where):/
 });
 
+Prism.languages.insertBefore('prisma', 'punctuation', {
+	'type-args': /\b(?:references|fields):/
+});
+
 Prism.languages.insertBefore('prisma', 'function', {
 	'annotation': {
-		pattern: /(^|[^.])@\w+/,
+		pattern: /(^|[^.])@+\w+/,
 		lookbehind: true,
 		alias: 'punctuation'
 	}
 });
+
+// Prism.languages.insertBefore('prisma', 'function', {
+// 	'args': {
+// 		pattern: /\[\w+/,
+// 		lookbehind: true
+// 	}
+// });
 
 // Handle string interpolation
 Prism.hooks.add('wrap', function(env) {
