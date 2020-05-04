@@ -120,7 +120,7 @@ const ListItem = styled.li`
     margin-top: 24px;
   }
   &.static-link > a {
-    color: #a0aec0 !important;
+    color: #434951 !important;
     text-transform: uppercase;
     font-weight: bold;
     font-size: 14px;
