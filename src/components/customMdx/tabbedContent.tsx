@@ -44,7 +44,7 @@ const Tabs = styled.div`
   .tabHeading {
     margin-right: 10px;
     font-weight: 600;
-    color: #718096;
+    color: var(--code-inner-color);
     cursor: pointer;
     font-size: 14px;
     display: flex;
@@ -56,8 +56,8 @@ const Tabs = styled.div`
   }
 
   .tabHeading.active {
-    color: #1a202c;
-    background: #edf2f7;
+    color: var(--main-font-color);
+    background: var(--code-bgd-color);
     border-radius: 5px;
   }
 `

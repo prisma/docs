@@ -62,49 +62,45 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
                   let isDiff = false
                   let diffSymbol = ''
-                  if (line[0] && line[0].content.length && line[0].content[0] === '+') {
-                    lineClass = { backgroundColor: '#D9F4E6', symbColor: '#47BB78' }
-                    isDiff = true
-                    diffSymbol = '+'
-                  } else if (line[0] && line[0].content.length && line[0].content[0] === '-') {
-                    lineClass = { backgroundColor: '#F5E4E7', symbColor: '#E53E3E' }
-                    isDiff = true
-                    diffSymbol = '-'
-                  } else if (line[0] && line[0].content.length && line[0].content[0] === '|') {
-                    lineClass = { backgroundColor: '#E2E8F0', symbColor: '#A0AEC0' }
-                    isDiff = true
-                    diffSymbol = '|'
-                  } else if (
-                    line[0] &&
-                    line[0].content === '' &&
-                    line[1] &&
-                    line[1].content === '+'
-                  ) {
-                    lineClass = { backgroundColor: '#D9F4E6', symbColor: '#47BB78' }
-                    isDiff = true
-                    diffSymbol = '+'
-                  } else if (
-                    line[0] &&
-                    line[0].content === '' &&
-                    line[1] &&
-                    line[1].content === '-'
-                  ) {
-                    lineClass = { backgroundColor: '#F5E4E7', symbColor: '#E53E3E' }
-                    isDiff = true
-                    diffSymbol = '-'
-                  } else if (
-                    line[0] &&
-                    line[0].content === '' &&
-                    line[1] &&
-                    line[1].content === '|'
-                  ) {
-                    lineClass = { backgroundColor: '#E2E8F0', symbColor: '#A0AEC0' }
-                    isDiff = true
-                    diffSymbol = '|'
+
+                  const diffBgColorMap: any = {
+                    '+': 'var(--code-added-bg-color)',
+                    '-': 'var(--code-deleted-bg-color)',
+                    '|': 'var(--code-highlight-bg-color)',
                   }
+
+                  const symColorMap: any = {
+                    '+': 'var(--code-added-color)',
+                    '-': 'var(--code-deleted-color)',
+                    '|': 'var(--code-highlight-color)',
+                  }
+
+                  if (
+                    (line[0] &&
+                      line[0].content.length &&
+                      (line[0].content[0] === '+' ||
+                        line[0].content[0] === '-' ||
+                        line[0].content[0] === '|')) ||
+                    (line[0] &&
+                      line[0].content === '' &&
+                      line[1] &&
+                      (line[1].content === '+' ||
+                        line[1].content === '-' ||
+                        line[1].content === '|'))
+                  ) {
+                    diffSymbol =
+                      line[0] && line[0].content.length ? line[0].content[0] : line[1].content
+                    lineClass = {
+                      backgroundColor: diffBgColorMap[diffSymbol],
+                      symbColor: symColorMap[diffSymbol],
+                    }
+                    isDiff = true
+                  }
+
                   const lineProps = getLineProps({ line, key: i })
 
-                  lineProps.style = { ...lineClass } // display: isDiff ? 'flex': 'table-row'
+                  lineProps.style = { ...lineClass }
+
                   return (
                     <Line key={line + i} {...lineProps}>
                       {hasTerminalSymbol && !isDiff && <LineNo>$</LineNo>}
@@ -177,7 +173,7 @@ const Line = styled.div`
 const LineNo = styled.span`
   font-weight: 500;
   line-height: 24px;
-  color: #cbd5e0;
+  color: var(--code-linenum-color);
   display: table-cell;
   text-align: right;
   padding-left: 1em;

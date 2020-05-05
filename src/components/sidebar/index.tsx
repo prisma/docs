@@ -30,7 +30,7 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
       margin-right: 50px;
 
       &:last-of-type {
-        border-left: 1px solid #718096;
+        border-left: 1px solid var(--code-inner-color);
         padding-left: 40px;
       }
     }

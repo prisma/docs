@@ -71,8 +71,8 @@ const SelectComponent = (props: SelectProps) => {
 export default SelectComponent
 
 const Select = styled.button`
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--white-color);
+  border: 1px solid var(--border-color);
   box-sizing: border-box;
   border-radius: 5px;
   padding: 10px;
@@ -81,7 +81,7 @@ const Select = styled.button`
   align-items: center;
   justify-content: space-between;
   min-height: 40px;
-  color: #1a202c;
+  color: var(--main-font-color);
   font-size: 1rem;
   font-family: 'Open Sans';
   &:focus {
@@ -97,7 +97,7 @@ const Select = styled.button`
 ` as any
 
 const Dropdown = styled.div`
-  background: white;
+  background: var(--white-color);
   transform: translateY(14px);
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
@@ -111,7 +111,7 @@ const Dropdown = styled.div`
 const Item = styled.div`
   padding: 8px 14px;
   color: grey;
-  background: 'white';
+  background: var(--white-color);
   cursor: pointer;
   display: flex;
   align-items: center;

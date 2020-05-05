@@ -32,7 +32,7 @@ const ClearIcon = styled(Clear)`
 
 const Input = styled.input`
   width: 100%;
-  background: #ffffff;
+  background: var(--white-color);
   box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
   border-radius: 5px;
   padding: 0.6rem 2.5rem;
@@ -44,7 +44,7 @@ const Input = styled.input`
   border-width: 0;
 
   &::placeholder {
-    color: #a0aec0;
+    color: var(--list-bullet-color);
     opacity: 1; /* Firefox */
   }
   &:focus,

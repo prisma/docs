@@ -16,7 +16,7 @@ const icons = {
   display: <Display />,
   code: <Code />,
 }
-const FileNameWrapper = styled.div`
+const FileNameWrapper = styled.span`
   color: inherit;
   display: inline-flex;
   align-items: center;

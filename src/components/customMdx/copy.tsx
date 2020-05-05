@@ -9,7 +9,6 @@ interface CopyProps {
 type CopyButtonProps = CopyProps & React.ReactNode
 
 const CopyButton = ({ text, children }: CopyButtonProps) => {
-  
   const [copied, setCopied] = React.useState(false)
   let copyTimer: any
 
@@ -22,7 +21,7 @@ const CopyButton = ({ text, children }: CopyButtonProps) => {
     <CopyToClipboard text={text} onCopy={onCopyContent}>
       <CopyComponent>
         {copied && (
-          <div className="indicator" style={{ color: '#a0aec0' }}>
+          <div className="indicator" style={{ color: 'var(--list-bullet-color)' }}>
             Copied
           </div>
         )}

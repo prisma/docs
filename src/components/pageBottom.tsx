@@ -28,11 +28,11 @@ const PageBottomWrapper = styled.div`
   }
   .edit-git,
   .message {
-    color: #718096 !important;
+    color: var(--code-inner-color) !important;
   }
 
   button {
-    color: #ffffff !important;
+    color: var(--white-color) !important;
   }
   @media (min-width: 0px) and (max-width: 767px) {
     padding: 1rem;
@@ -50,7 +50,7 @@ const Feedback = styled.div`
     font-weight: bold;
     letter-spacing: 0.01em;
     text-transform: uppercase;
-    color: #a0aec0 !important;
+    color: var(--list-bullet-color) !important;
   }
   .sentiments {
     a {
@@ -84,7 +84,7 @@ const Title = styled.div`
   font-size: 16px;
 `
 const P = styled.p`
-  color: #a0aec0 !important;
+  color: var(--list-bullet-color) !important;
   margin-top: 0;
 `
 
@@ -93,7 +93,7 @@ const Button = styled(ButtonWrapper)`
   svg {
     margin-right: 10px;
     path {
-      stroke: #ffffff;
+      stroke: var(--white-color);
     }
   }
   @media (min-width: 0px) and (max-width: 767px) {
