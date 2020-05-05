@@ -1,24 +1,8 @@
 import React from 'react'
 import styled from 'styled-components'
-import File from '../../icons/File'
-import Display from '../../icons/Display'
-import Code from '../../icons/Code'
-import Database from '../../icons/Database'
 
 interface CodeProps {
-  tabs?: TabItem[]
-}
-
-const icons = {
-  file: <File />,
-  database: <Database />,
-  display: <Display />,
-  code: <Code />,
-}
-
-interface TabItem {
-  icon: keyof typeof icons
-  text: string
+  tabs?: any[]
 }
 
 type CodeBlockProps = CodeProps & React.ReactNode
@@ -33,7 +17,7 @@ const TabbedContent = ({ tabs, children }: CodeBlockProps) => {
     <Wrapper>
       {tabs && Array.isArray(tabs) && (
         <Tabs>
-          {tabs.map((tab: TabItem, index: number) => {
+          {tabs.map((tab: any, index: number) => {
             const setCurrentActive = () => setActiveIndex(index)
             return (
               <div
@@ -42,8 +26,7 @@ const TabbedContent = ({ tabs, children }: CodeBlockProps) => {
                 data-index={`${index}`}
                 onClick={setCurrentActive}
               >
-                {icons[tab.icon]}
-                {tab.text}
+                {tab}
               </div>
             )
           })}
@@ -63,10 +46,10 @@ const Tabs = styled.div`
     font-weight: 600;
     color: #718096;
     cursor: pointer;
-    padding: 3px 5px;
     font-size: 14px;
     display: flex;
     align-items: center;
+    padding: 3px 5px;
     svg {
       margin-right: 8px;
     }

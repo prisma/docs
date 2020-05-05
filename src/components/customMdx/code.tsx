@@ -6,7 +6,7 @@ import Copy from '../../icons/Copy'
 import { stringify } from '../../utils/stringify'
 import styled from 'styled-components'
 import './prism/index.css'
-require('./prism/prismaLang')
+require('./prism/prism-prisma')
 
 interface CodeProps {
   copy?: boolean
@@ -16,7 +16,6 @@ type PreCodeProps = CodeProps & React.ReactNode
 
 function cleanTokens(tokens: any[]) {
   const tokensLength = tokens.length
-
   if (tokensLength === 0) {
     return tokens
   }
@@ -36,8 +35,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   const code = stringify(children)
 
   const hasCopy = props['copy'] || language === 'copy'
-  const hasLineNo = props['lineNumber'] || language === 'lineNumber'
-  const hasTerminalSymbol = props['terminalSymbol'] || language === 'terminalSymbol'
+  const hasLineNo = props['line-number'] || language === 'line-number'
+  const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol'
 
   const tokenCopyClass = hasCopy ? 'has-copy-button' : ''
 
@@ -58,26 +57,30 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                 {cleanTokens(tokens).map((line: any, i: number) => {
                   let lineClass = {
                     backgroundColor: '',
-                    color: '',
+                    symbColor: '',
                   }
 
                   let isDiff = false
                   let diffSymbol = ''
                   if (line[0] && line[0].content.length && line[0].content[0] === '+') {
-                    lineClass = { backgroundColor: '#D9F4E6', color: '#47BB78'}
+                    lineClass = { backgroundColor: '#D9F4E6', symbColor: '#47BB78' }
                     isDiff = true
                     diffSymbol = '+'
                   } else if (line[0] && line[0].content.length && line[0].content[0] === '-') {
-                    lineClass = { backgroundColor: '#F5E4E7', color: '#E53E3E'}
+                    lineClass = { backgroundColor: '#F5E4E7', symbColor: '#E53E3E' }
                     isDiff = true
                     diffSymbol = '-'
+                  } else if (line[0] && line[0].content.length && line[0].content[0] === '|') {
+                    lineClass = { backgroundColor: '#E2E8F0', symbColor: '#A0AEC0' }
+                    isDiff = true
+                    diffSymbol = '|'
                   } else if (
                     line[0] &&
                     line[0].content === '' &&
                     line[1] &&
                     line[1].content === '+'
                   ) {
-                    lineClass = { backgroundColor: '#D9F4E6', color: '#47BB78'}
+                    lineClass = { backgroundColor: '#D9F4E6', symbColor: '#47BB78' }
                     isDiff = true
                     diffSymbol = '+'
                   } else if (
@@ -86,24 +89,39 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     line[1] &&
                     line[1].content === '-'
                   ) {
-                    lineClass = { backgroundColor: '#F5E4E7', color: '#E53E3E'}
+                    lineClass = { backgroundColor: '#F5E4E7', symbColor: '#E53E3E' }
                     isDiff = true
                     diffSymbol = '-'
+                  } else if (
+                    line[0] &&
+                    line[0].content === '' &&
+                    line[1] &&
+                    line[1].content === '|'
+                  ) {
+                    lineClass = { backgroundColor: '#E2E8F0', symbColor: '#A0AEC0' }
+                    isDiff = true
+                    diffSymbol = '|'
                   }
                   const lineProps = getLineProps({ line, key: i })
 
-                  lineProps.style = {...lineClass, display: isDiff ? 'flex': 'table-row'}
+                  lineProps.style = { ...lineClass } // display: isDiff ? 'flex': 'table-row'
                   return (
                     <Line key={line + i} {...lineProps}>
                       {hasTerminalSymbol && !isDiff && <LineNo>$</LineNo>}
                       {hasLineNo && !isDiff && <LineNo>{i + 1}</LineNo>}
-                      {isDiff && <LineNo style={{ color: lineClass.color }}>{diffSymbol}</LineNo>}
+                      {isDiff && (
+                        <LineNo style={{ color: lineClass.symbColor }}>
+                          {diffSymbol !== '|' ? diffSymbol : i + 1}
+                        </LineNo>
+                      )}
                       <LineContent className={`${tokenCopyClass}`}>
                         {line.map((token: any, key: any) => {
                           if (isDiff) {
                             if (
-                              (key === 0 || key === 1) &&
-                              (token.content.charAt(0) === '+' || token.content.charAt(0) === '-')
+                              ((key === 0 || key === 1) &&
+                                (token.content.charAt(0) === '+' ||
+                                  token.content.charAt(0) === '-')) ||
+                              token.content.charAt(0) === '|'
                             ) {
                               return (
                                 <span
@@ -135,7 +153,7 @@ export default Code
 const AbsoluteCopyButton = styled.div`
   transition: opacity 100ms ease;
   position: absolute;
-  top: 24px;
+  top: 20px;
   right: 16px;
   z-index: 2;
   > div {
@@ -154,9 +172,6 @@ const Pre = styled.pre`
 `
 const Line = styled.div`
   display: table-row;
-  margin-right: -14px;
-  margin-left: -14px;
-  padding: 0 14px;
 `
 
 const LineNo = styled.span`
@@ -165,12 +180,15 @@ const LineNo = styled.span`
   color: #cbd5e0;
   display: table-cell;
   text-align: right;
-  padding-right: 1em;
+  padding-left: 1em;
   user-select: none;
+  width: 24px;
 `
 
 const LineContent = styled.span`
   display: table-cell;
+  padding: 0 1em;
+  white-space: break-spaces;
   &.token-line {
     line-height: 1.3rem;
     height: 1.3rem;

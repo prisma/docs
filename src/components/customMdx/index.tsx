@@ -7,7 +7,7 @@ import CollapseBox from './collapsible'
 import Table from './table'
 import ButtonLink from './button'
 import Link from '../link'
-import HighlightCode from './highlightCode'
+import FileWithIcon from './fileWithIcon'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -16,6 +16,7 @@ export default {
   CodeBlock,
   TabbedContent,
   SwitchTech,
+  FileWithIcon,
   inlineCode: (props: any) => <code className="inline-code" {...props} />,
   code: Code,
   details: CollapseBox,
