@@ -21,7 +21,7 @@ const CopyButton = ({ text, children }: CopyButtonProps) => {
     <CopyToClipboard text={text} onCopy={onCopyContent}>
       <CopyComponent>
         {copied && (
-          <div className="indicator" style={{ color: '#a0aec0' }}>
+          <div className="indicator" style={{ color: 'var(--list-bullet-color)' }}>
             Copied
           </div>
         )}

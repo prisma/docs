@@ -12,13 +12,13 @@ const HitComp = styled.div`
   font-weight: normal;
   font-size: 16px;
   line-height: 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
   max-height: 150px;
   &:last-item {
     border: 0;
   }
   a {
-    color: #1a202c !important;
+    color: var(--main-font-color) !important;
   }
   h4 {
     font-weight: normal;
@@ -31,11 +31,11 @@ const HitComp = styled.div`
   }
   &:hover,
   &:focus {
-    background: #f7fafc;
+    background: var(--main-bgd-color);
   }
   mark {
-    color: #3182ce !important;
-    background: #ebf8ff;
+    color: var(--link-color) !important;
+    background: var(--search-highlight-bg-color);
     padding: 2px;
     font-weight: bold;
   }

@@ -19,8 +19,9 @@ const HeaderWrapper = styled.div`
       rgba(113, 128, 150, 0.25) 0%,
       rgba(113, 128, 150, 0) 100%
     ),
-    linear-gradient(180deg, #1a202c 0%, #2d3748 100%),
-    linear-gradient(180deg, #0d0f14 0%, rgba(27, 32, 43, 0) 100%), #2f3747;
+    linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
+    linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
+    var(--gradient1-color);
   height: 150px;
   img {
     margin-bottom: 0;
@@ -37,7 +38,7 @@ const HeaderWrapper = styled.div`
     height: auto;
     padding: 24px 8px 8px;
     flex-direction: column;
-    background: #1a202c;
+    background: var(--main-font-color);
     .container {
       width: 100%;
     }
@@ -69,12 +70,12 @@ const NavLinks = styled.div`
   justify-content: space-around;
   flex-grow: 1;
   a {
-    color: #cbd5e0 !important;
+    color: var(--code-linenum-color) !important;
     font-weight: 600;
     &:hover,
     &:active,
     &:focus {
-      color: #ffffff !important;
+      color: var(--white-color) !important;
     }
   }
 
@@ -93,10 +94,10 @@ const NavLinks = styled.div`
 `
 
 const DocsMobileButton = styled.div`
-  background: #4a5568;
+  background: var(--header-btn-color);
   box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
   border-radius: 5px;
-  color: #cbd5e0;
+  color: var(--code-linenum-color);
   display: none;
   padding: 0 14px;
   height: 42px;
@@ -121,8 +122,9 @@ const MobileOnlyNav = styled.div`
       rgba(113, 128, 150, 0.25) 0%,
       rgba(113, 128, 150, 0) 100%
     ),
-    linear-gradient(180deg, #1a202c 0%, #2d3748 100%),
-    linear-gradient(180deg, #0d0f14 0%, rgba(27, 32, 43, 0) 100%), #2f3747;
+    linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
+    linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
+    var(--gradient1-color);
   width: 100%;
   left: 0;
   padding: 0 2rem;
@@ -153,8 +155,9 @@ const SearchContainer = styledTS<{ isSticky: boolean }>(styled.div)`
           rgba(113, 128, 150, 0.25) 0%,
           rgba(113, 128, 150, 0) 100%
         ),
-        linear-gradient(180deg, #1a202c 0%, #2d3748 100%),
-        linear-gradient(180deg, #0d0f14 0%, rgba(27, 32, 43, 0) 100%), #2f3747;
+        linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
+        linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
+        var(--gradient1-color);
     `};
 `
 
@@ -162,7 +165,7 @@ const MenuMobileBtn = styled.a`
   display: none;
   font-weight: bold;
   letter-spacing: 0.1em;
-  color: #a0aec0 !important;
+  color: var(--list-bullet-color) !important;
   text-transform: uppercase;
   @media (min-width: 0px) and (max-width: 767px) {
     display: block;
