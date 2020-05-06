@@ -68,7 +68,7 @@ const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
     if (newValue === '') {
       return clearInput()
     }
-
+    console.log(newValue)
     // Otherwise, debounce the search to avoid triggering many queries at once, which could also
     // make the UI freeze.
     window.clearTimeout(timeoutId.current)
@@ -91,6 +91,7 @@ const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
         onChange={onChange}
         onFocus={onFocus}
         value={value}
+        focusShortcuts={['/']}
         {...rest}
       />
       <SearchIcon />

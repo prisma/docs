@@ -74,6 +74,8 @@ export default function Search({ hitsStatus }: any) {
     hitsStatus(query.length > 0 && showHits)
   }, [showHits, query])
 
+  const emptySearchBox = () => setQuery('')
+
   return (
     <InstantSearch
       searchClient={searchClient}
@@ -82,7 +84,10 @@ export default function Search({ hitsStatus }: any) {
     >
       <Overlay visible={query.length > 0 && showHits} hideSearch={hideSearch} />
       <CustomSearchBox onFocus={showSearch} />
-      <HitsWrapper className={`${query.length > 0 && showHits ? 'show' : ''}`}>
+      <HitsWrapper
+        className={`${query.length > 0 && showHits ? 'show' : ''}`}
+        onClick={emptySearchBox}
+      >
         <Index key={indexName} indexName={indexName}>
           <Results>
             <Hits hitComponent={DocHit} />
