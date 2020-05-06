@@ -81,6 +81,7 @@ const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
     refine('')
   }
 
+  // Explore SearchBox from react-instant-search
   return (
     <Form>
       <Input
@@ -90,7 +91,6 @@ const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
         onChange={onChange}
         onFocus={onFocus}
         value={value}
-        focusShortcuts={['/']}
         {...rest}
       />
       <SearchIcon />
