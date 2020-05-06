@@ -10,18 +10,20 @@ const ChapterTitle = styled.h1`
   line-height: 100%;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: #a0aec0;
+  color: var(--list-bullet-color);
 `
 
 const TOC = ({ headings }: any) => {
   let navItems: any[] = []
-  navItems = headings && headings.map((heading: any, index: number) => {
-    return (
-      <li key={index}>
-        <a href={heading.url}>{stringify(heading.title)}</a>
-      </li>
-    )
-  })
+  navItems =
+    headings &&
+    headings.map((heading: any, index: number) => {
+      return (
+        <li key={index}>
+          <a href={heading.url}>{stringify(heading.title)}</a>
+        </li>
+      )
+    })
   return navItems && navItems.length ? (
     <div>
       <ChapterTitle>CONTENT</ChapterTitle>

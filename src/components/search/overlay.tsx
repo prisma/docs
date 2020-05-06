@@ -9,23 +9,8 @@ interface Props {
 
 const Overlay = ({ visible, hideSearch }: Props) => {
   const [transition, setTransition] = React.useState(false)
-  //   constructor(props) {
-  //     super(props)
-  //     this.state = { transition: false }
-  //   }
-
-  //   componentDidMount() {
-  //     setTimeout(() => {
-  //       this.setState({ transition: true })
-  //     }, 1000)
-  //   }
-
-  //   shouldComponentUpdate(nextProps) {
-  //     return this.props.visible !== nextProps.visible
-  //   }
 
   React.useEffect(() => {
-    // Update the document title using the browser API
     setTimeout(() => {
       setTransition(true)
     }, 1000)

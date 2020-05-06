@@ -42,13 +42,13 @@ const Tabs = styled.div`
   display: flex;
   .tab {
     margin-right: 10px;
-    color: #8fa6b2;
+    color: var(--grey-bg-color);
     cursor: pointer;
   }
 
   .tab.active {
     font-weight: 600;
-    color: #1a202c;
+    color: var(--main-font-color);
   }
 `
 const Wrapper = styled.div`

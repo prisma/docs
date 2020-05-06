@@ -5,6 +5,6 @@ var links = require('remark-validate-links')
 
 remark()
   .use(links)
-  .process(vfile.readSync('content/01-getting-started/02-setup-prisma/03-start-from-scratch-prisma-migrate.mdx'), function(err, file) {
+  .process(vfile.readSync('content/01-getting-started/01-quickstart.mdx'), function(err, file) {
     console.error(report(err || file))
   })

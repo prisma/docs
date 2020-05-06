@@ -1,0 +1,505 @@
+---
+title: 'Filtering'
+metaTitle: 'Filtering (Reference)'
+metaDescription: 'Use the Prisma Client API to filter records by any combination of fields or related record fields.'
+---
+
+## Overview
+
+Prisma Client allows you to filter records on any combination of model fields, including related models, and supports a variety of filter conditions.
+
+For example, the following query returns all `User` records with at least one published post and an email address that ends with `prisma.io`:
+
+```js
+const result = await prisma.user.findMany({
+  where: {
+    email: {
+      endsWith: 'prisma.io',
+    },
+    posts: {
+      some: {
+        published: true,
+      },
+    },
+  },
+})
+```
+
+The following queries support filtering:
+
+- `findMany`
+- `updateMany`
+- `deleteMany`
+- `count`
+
+The following filter types are generated from the default model:
+
+```ts
+export type StringFilter = {
+  equals?: string | null
+  not?: string | StringFilter | null
+  in?: Enumerable<string> | null
+  notIn?: Enumerable<string> | null
+  lt?: string | null
+  lte?: string | null
+  gt?: string | null
+  gte?: string | null
+  contains?: string | null
+  startsWith?: string | null
+  endsWith?: string | null
+}
+
+export type IntFilter = {
+  equals?: number | null
+  not?: number | IntFilter | null
+  in?: Enumerable<number> | null
+  notIn?: Enumerable<number> | null
+  lt?: number | null
+  lte?: number | null
+  gt?: number | null
+  gte?: number | null
+}
+
+export type NullableStringFilter = {
+  equals?: string | null
+  not?: string | null | NullableStringFilter
+  in?: Enumerable<string> | null
+  notIn?: Enumerable<string> | null
+  lt?: string | null
+  lte?: string | null
+  gt?: string | null
+  gte?: string | null
+  contains?: string | null
+  startsWith?: string | null
+  endsWith?: string | null
+}
+
+export type PostFilter = {
+  every?: PostWhereInput | null
+  some?: PostWhereInput | null
+  none?: PostWhereInput | null
+}
+
+export type NullableIntFilter = {
+  equals?: number | null
+  not?: number | null | NullableIntFilter
+  in?: Enumerable<number> | null
+  notIn?: Enumerable<number> | null
+  lt?: number | null
+  lte?: number | null
+  gt?: number | null
+  gte?: number | null
+}
+
+export type BooleanFilter = {
+  equals?: boolean | null
+  not?: boolean | BooleanFilter | null
+}
+```
+
+## Filter conditions
+
+Prisma Client supports the following filter conditions:
+
+| Operator     | Supported types                                                                                              | Notes                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `equals`     | `string`<br />`number`<br />`boolean`<br />`Date`<br />`[enum]`<br />`null`                                  | Value equals.                                                        |
+| `not`        | `string`<br />`number`<br />`boolean`<br />`Date`<br />`[enum]`<br />`null`                                  | Value does not equal.                                                |
+| `in`         | `Enumerable<string>`<br />`Enumerable<number>`<br />`Enumerable<Date>`<br />`Enumerable<[enum]>`<br />`null` | Value exists in list.                                                |
+| `notIn`      | `Enumerable<string>`<br />`Enumerable<number>`<br />`Enumerable<Date>`<br />`Enumerable<[enum]>`<br />`null` | Value does not exist in list.                                        |
+| `lt`         | `string`<br />`number`<br />`Date`<br />`null`                                                               | Value is less than X.                                                |
+| `lte`        | `string`<br />`number`<br />`Date`<br />`null`                                                               | Value is less than or equal to X.                                    |
+| `gt`         | `string`<br />`number`<br />`Date`<br />`null`                                                               | Value is greater than X.                                             |
+| `gte`        | `string`<br />`number` <br />`Date`<br />`null`                                                              | Value is greater than or equal to                                    |
+| `contains`   | `string`<br />`null`                                                                                         | Value contains. Does not support wildcards - for example, `b[a-c]d`. |
+| `startsWith` | `string`<br />`null`                                                                                         | Value starts with.                                                   |
+| `endsWith`   | `string`<br />`null`                                                                                         | Value ends with.                                                     |
+
+### Examples
+
+#### Retrieve all `Post` records where `title` starts with `Pr` (such as `Prisma`)
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    title: {
+      startsWith: 'Pr',
+    },
+  },
+})
+```
+
+#### Retrieve all `User` records where `email` ends with `prisma.io`
+
+```js
+const result = await prisma.user.findMany({
+  where: {
+    email: {
+      endsWith: 'prisma.io',
+    },
+  },
+})
+```
+
+#### Retrieve all `Post` records where `content` contains `databases`
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    content: {
+      contains: 'databases',
+    },
+  },
+})
+```
+
+#### Retrieve all `Post` records where `date_created` is greater than March 19th, 2020
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    date_created: {
+      gte: new Date('2020-03-19T14:21:00+0200') /* Includes time offset for UTC */,
+    },
+  },
+})
+```
+
+#### Count all `Post` records where `content` contains `databases`
+
+```js
+const result = await prisma.post.count({
+  where: {
+    content: {
+      contains: 'databases',
+    },
+  },
+})
+```
+
+## Combine multiple filter conditions
+
+You can combine multiple filter conditions with the following operators:
+
+| Operator | Notes                                                                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AND`    | All conditions must return`true`. Alternatively, pass a list of objects into the `where` clause - the `AND` operator is [not required](#no-and). |
+| `NOT`    | All conditions must return `false`.                                                                                                              |
+| `OR`     | One or more conditions must return `true`.                                                                                                       |
+
+### Examples
+
+#### Retrieve all `Post` records where the `content` field contains `Prisma` and `published` is `false`
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    AND: [
+      {
+        content: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        published: {
+          equals: false,
+        },
+      },
+    ],
+  },
+})
+```
+
+The following format returns the same results <a name="no-and"></a>:
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    content: {
+      contains: 'Prisma',
+    },
+    published: {
+      equals: false,
+    },
+  },
+})
+```
+
+> **Note**: `OR` and `NOT` require an array.
+
+#### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+  },
+})
+```
+
+#### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, and `published` is `false`
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    AND: {
+      published: false,
+    },
+  },
+})
+```
+
+#### Retrieve all `Post` records where the `title` filed contains `Prisma` or `databases`, but not `SQL`
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    NOT: {
+      title: {
+        contains: 'SQL',
+      },
+    },
+  },
+})
+```
+
+You can [enable logging](logging) to debug complex queries:
+
+```js
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+  ],
+})
+
+prisma.on('query', e => {
+  e.query, console.log(e)
+})
+```
+
+## Filter on related records
+
+You can filter records based on related record fields. For example, the following query returns all `Post` records where the user's email address is `sarah@prisma.io`:
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    user: {
+      email: {
+        equals: 'sarah@prisma.io',
+      },
+    },
+  },
+})
+```
+
+Prisma Client offers the following operators for filtering on one-to-many relationships:
+
+| Operator | Description                                                                       |
+| -------- | --------------------------------------------------------------------------------- |
+| `some`   | Returns all records where one or more _related_ records match filtering criteria. |
+| `every`  | Returns all records where all _related_ records match filtering criteria.         |
+| `none`   | Returns all records where no _related_ records match filtering criteria.          |
+
+### Examples
+
+#### Retrieve all `User` records where _all_ posts are published and a least one related `Post` mentions `Prisma`
+
+```js
+  const result = await prisma.user.findMany({
+    where: {
+      post: {
+          every: {
+            published: true
+          }
+        some: {
+          content: {
+            contains: "Prisma"
+          }
+        }
+      }
+    }
+  }
+```
+
+#### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, but not `SQL`, and the related `User` record' email address does not contain `sarah`
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    NOT: {
+      title: {
+        contains: 'SQL',
+      },
+    },
+    user: {
+      NOT: {
+        email: {
+          contains: 'sarah',
+        },
+      },
+    },
+  },
+  include: {
+    user: true,
+  },
+})
+```
+
+## Filter within `include`
+
+When you use `include` to load related records (for example, a user's posts), you can filter which related records should be returned. For example, you might want to return all users, but only include posts that have been published. Some user records will be returned without any posts.
+
+### Examples
+
+#### Retrieve _all_ `User` records, and include all `Post` records that have not been published yet
+
+```js
+const result = await prisma.user.findMany(
+  include: {
+    Post: {
+      where: {
+        published: false,
+      },
+    },
+  },
+})
+```
+
+> **Note**: Some users records will be returned without any posts.
+
+#### Retrieve `User` records with at least one `Post` that isn't published, and include all `Post` records that have not been published yet
+
+```js
+const result = await prisma.user.findMany({
+  where: {
+    Post: {
+      some: {
+        published: false,
+      },
+    },
+  },
+  include: {
+    Post: {
+      where: {
+        published: false,
+      },
+    },
+  },
+})
+```
+
+#### Retrieve all `User` records where the `email` contains `Prisma`, and include all `Post` records that have not been published yet
+
+```js
+const result = await prisma.user.findMany({
+  where: {
+    email: {
+      contains: 'prisma.io',
+    },
+  },
+  include: {
+    Post: {
+      where: {
+        published: false,
+      },
+    },
+  },
+})
+```
+
+## Filter within `select`
+
+When you use `select` to return a subset of data from related records (for example, a user's posts), you can filter which related records should be returned. For example, you might want to query all users with a `prisma.io` email address and select the titles of their published posts.
+
+### Examples
+
+#### Retrieve _all_ `User` records where `email` contains `prisma.io`, and select the `title` of all `Post` records that have not been published yet
+
+```js
+const result = await prisma.user.findMany({
+  where: {
+    email: {
+      contains: 'prisma.io',
+    },
+  },
+  select: {
+    Post: {
+      where: {
+        published: false,
+      },
+      select: {
+        title: true,
+      },
+    },
+  },
+})
+```
+
+You can use the `post` model property to write the same query:
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    published: false,
+    User: {
+      email: {
+        contains: 'prisma.io',
+      },
+    },
+  },
+  select: {
+    title: true,
+  },
+})
+```

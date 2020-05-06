@@ -23,7 +23,7 @@ const MainTitle = styled.h1`
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;
-  color: #1a202c;
+  color: var(--main-font-color);
   margin: 0;
   margin-top: 4px;
   @media only screen and (max-width: 767px) {
@@ -161,7 +161,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
           )}
         </SwitcherWrapper>
       </div>
-      <TOC headings={toc.items}/>
+      <TOC headings={toc.items} />
     </TopSectionWrapper>
   )
 }

@@ -1,9 +1,10 @@
 import React from 'react'
 import styled from 'styled-components'
 import ArrowRight from '../../icons/ArrowRight'
-import { darken } from 'polished'
+// import { darken } from 'polished'
 import withProps from 'styled-components-ts'
-import Link from '../link'
+import { useLocation } from '@reach/router'
+import { withPrefix } from 'gatsby'
 
 export interface ButtonProps {
   href?: string
@@ -19,22 +20,22 @@ export interface ButtonProps {
 
 type ButtonColor = 'red' | 'green' | 'grey' | 'grey-bg' | 'dark'
 const colorMap = {
-  red: 'white',
-  green: 'white',
-  grey: '#3D556B',
-  'grey-bg': 'white',
-  dark: 'white',
+  red: '--white-color',
+  green: '--white-color',
+  grey: '--grey-color',
+  'grey-bg': '--white-color',
+  dark: '--white-color',
 }
 
-const backgroundColorMap = {
-  red: '#ff4f56',
-  green: '#15BD76',
-  grey: 'white',
-  'grey-bg': '#8fa6b2',
-  dark: 'rgb(12, 52, 75)',
+const backgroundColorMap: any = {
+  red: '--red-color',
+  green: '--red-color',
+  grey: '--white-color',
+  'grey-bg': '--grey-bg-color',
+  dark: '--dark-color',
 }
 
-export const ButtonWrapper = withProps<ButtonProps>(styled(Link))`
+export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     padding: 11px 14px;
     margin-right: 10px;
     display: inline-flex;
@@ -49,8 +50,8 @@ export const ButtonWrapper = withProps<ButtonProps>(styled(Link))`
     opacity: ${p => (p.disabled ? '0.2' : 1)};
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    background: ${p => backgroundColorMap[p.color || 'green']};
-    color: ${p => colorMap[p.color || 'green']} !important;
+    background: var(${p => backgroundColorMap[p.color || 'green']});
+    color: var(${p => colorMap[p.color || 'green']}) !important;
     line-height: 1;
     font-size: 14px;
     font-weight: 700;
@@ -63,21 +64,27 @@ export const ButtonWrapper = withProps<ButtonProps>(styled(Link))`
     max-width: 100%;
     overflow-x: auto;
     margin-bottom: 0.5rem;
-    &:hover {
-      background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
-    }
-    &:focus {
-      background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
-    }
   `
+//     &:hover {
+//       background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
+//     }
+//     &:focus {
+//       background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
+//     }
 
-const ButtonLink = (props: ButtonProps) => (
-  <ButtonWrapper to={props.href} {...props}>
-    {props.arrowLeft && <StyledArrowLeft />}
-    {props.children}
-    {props.arrow && <StyledArrow />}
-  </ButtonWrapper>
-)
+const ButtonLink = (props: ButtonProps) => {
+  const location = useLocation()
+  if (location.pathname === '/docs/') {
+    props.href = withPrefix(props.href!)
+  }
+  return (
+    <ButtonWrapper {...props}>
+      {props.arrowLeft && <StyledArrowLeft />}
+      {props.children}
+      {props.arrow && <StyledArrow />}
+    </ButtonWrapper>
+  )
+}
 
 const StyledArrow = styled(ArrowRight)`
   margin-left: 12px;

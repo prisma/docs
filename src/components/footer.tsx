@@ -20,7 +20,7 @@ const FooterWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  color: #a0aec0;
+  color: var(--list-bullet-color);
   h3 {
     font-size: 1rem;
     line-height: 3rem;
@@ -53,9 +53,9 @@ const LinkList = styled.ul`
     line-height: 2rem;
     a {
       text-decoration: none;
-      color: #a0aec0 !important;
+      color: var(--list-bullet-color) !important;
       &:hover {
-        color: #718096 !important;
+        color: var(--code-inner-color) !important;
         .tag {
           transform: scale(1.05);
         }
@@ -65,7 +65,7 @@ const LinkList = styled.ul`
         border-radius: 6px;
         margin-left: 8px;
         padding: 0 8px;
-        background: #48bb78;
+        background: var(--code-added-color);
         font-size: 12px;
         font-weight: bold;
         color: white;
@@ -106,7 +106,7 @@ const SocialWrapper = styled.div`
         }
 
         &: hover {
-          color: #718096 !important;
+          color: var(--code-inner-color) !important;
           svg {
             transform: scale(1.2);
           }
