@@ -1,4 +1,5 @@
 var visit = require('unist-util-visit')
+const path = require('path')
 
 function getCacheKey(node) {
   return `remark-check-links-${node.id}-${node.internal.contentDigest}`
@@ -21,12 +22,10 @@ function getHeadingsMapKey(link, path) {
 
 function createPathPrefixer(pathPrefix) {
   return function withPathPrefix(url) {
-    var prefixed = pathPrefix +  url
+    var prefixed = pathPrefix + url
     return prefixed.replace(/\/\//, '/')
   }
 }
-
-
 
 module.exports = async function plugin(
   { markdownAST, markdownNode, files, getNode, cache, getCache, pathPrefix },
@@ -47,15 +46,28 @@ module.exports = async function plugin(
       return
     }
 
-    if (node.url.startsWith('#') || /^\.{0,2}\//.test(node.url)) {
-      const originalUrl = node.url
-      if (!node.url.startsWith('#')) {
-        node.url = '/'.concat(node.url.replace(/\..\//g, ''))
-      }
+    if (!node.url.startsWith('mailto:') && !/^https?:\/\//.test(node.url)) {
+      let tranformedUrl = node.url
 
+      if (!node.url.startsWith('#') && !node.url.startsWith('/')) {
+        const parent = getNode(markdownNode.parent)
+        tranformedUrl = withPathPrefix(
+          path
+            .resolve(
+              markdownNode.fields.slug
+                .replace(/\d+-/g, '')
+                .replace(/\/$/, '')
+                .split(path.sep)
+                .slice(0, parent.name === 'index' ? undefined : -1)
+                .join(path.sep) || '/',
+              node.url
+            )
+            .replace(/\/?(\?|#|$)/, '/$1')
+        )
+      }
       links.push({
         ...node,
-        originalUrl,
+        tranformedUrl,
         frontmatter: markdownNode.frontmatter,
       })
     }
@@ -66,8 +78,7 @@ module.exports = async function plugin(
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
   cache.set(getCacheKey(parent), {
-    path: markdownNode.fields.slug.replace(/\d+-/g, ''),
-    // path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '')),
+    path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat('/')),
     links,
     headings,
     setAt,
@@ -102,6 +113,8 @@ module.exports = async function plugin(
   let totalBrokenLinks = 0
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
+  const pathKeys = Object.keys(linksMap)
+
   for (const path in linksMap) {
     if (prefixedIgnore.includes(path)) {
       // don't count broken links for ignored pages
@@ -110,27 +123,27 @@ module.exports = async function plugin(
 
     const linksForPath = linksMap[path]
     if (linksForPath.length) {
-      // console.log(path)
-      // console.log(linksForPath)
-      // console.log(linksForPath.length)
       const brokenLinks = linksForPath.filter(link => {
         // return true for broken links, false = pass
-        const { key, hasHash, hashIndex } = getHeadingsMapKey(link.url, path)
+        const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, path)
         if (prefixedExceptions.includes(key)) {
           return false
         }
 
+        const url = link.tranformedUrl.slice(0, hashIndex)
+        const urlToCheck = url.slice(-1) === '/' ? url : url.concat('/')
         const headings = headingsMap[key]
+
         if (headings) {
           if (hasHash) {
-            const id = link.url.slice(hashIndex + 1)
+            const id = link.tranformedUrl.slice(hashIndex + 1)
             return !prefixedExceptions.includes(id) && !headings.includes(id)
           }
 
           return false
         }
 
-        return true
+        return !pathKeys.includes(urlToCheck)
       })
 
       const brokenLinkCount = brokenLinks.length
@@ -149,7 +162,7 @@ module.exports = async function plugin(
               ':'
             )
           }
-          console.warn(`${prefix} ${link.url}`)
+          console.warn(`${prefix} ${link.tranformedUrl}`)
         }
         console.log('')
       }

@@ -3,10 +3,8 @@ require('dotenv').config()
 
 const gatsbyRemarkPlugins = [
   'gatsby-remark-sectionize',
-  // 'gatsby-plugin-catch-links',
-  {
-    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
- },
+  // 'gatsby-remark-rewrite-relative-links',
+
   {
     resolve: `gatsby-remark-autolink-headers`,
     options: {
@@ -19,8 +17,12 @@ const gatsbyRemarkPlugins = [
       className: `title-link`,
     },
   },
+
   {
     resolve: `gatsby-remark-images`,
+  },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
   },
 ]
 
@@ -54,10 +56,10 @@ module.exports = {
     'gatsby-plugin-styled-components',
     'gatsby-plugin-smoothscroll',
     'gatsby-plugin-catch-links',
-    {
-      resolve: `gatsby-plugin-algolia`,
-      options: require(`./src/utils/algolia`),
-    },
+    // {
+    //   resolve: `gatsby-plugin-algolia`,
+    //   options: require(`./src/utils/algolia`),
+    // },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {
@@ -67,10 +69,12 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
-            policy: [{
-              userAgent: '*',
-              disallow: '/'
-        }]
+        policy: [
+          {
+            userAgent: '*',
+            disallow: '/',
+          },
+        ],
       },
     },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
