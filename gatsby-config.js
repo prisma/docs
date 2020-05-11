@@ -3,8 +3,6 @@ require('dotenv').config()
 
 const gatsbyRemarkPlugins = [
   'gatsby-remark-sectionize',
-  // 'gatsby-remark-rewrite-relative-links',
-
   {
     resolve: `gatsby-remark-autolink-headers`,
     options: {
