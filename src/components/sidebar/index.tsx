@@ -64,6 +64,7 @@ const getGuides = (allEdges: any) =>
 
 const SidebarLayout = ({ isMobile }: any) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
+
   return !isMobile ? (
     <StickyContainer>
       <SidebarContainer>

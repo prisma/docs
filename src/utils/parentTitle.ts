@@ -21,3 +21,4 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
 
   return allContent?.find((mdx: any) => mdx.slug === slug).parentTitle.slice(0, -2)
 }
+
