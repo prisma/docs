@@ -70,7 +70,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
       dbSwitcher ? `${dbSelected}` : ''
     }`
     if (!pathTechParams.includes(newParams)) {
-      navigate(withPrefix(`${urlGenerator(slug)}-${newParams}`), {
+      navigate(withPrefix(`${urlGenerator(slug)}-${newParams}${location.hash}`), {
         replace: location.pathname === urlGenerator(slug),
       })
     }

@@ -15,22 +15,16 @@ const gatsbyRemarkPlugins = [
       className: `title-link`,
     },
   },
+
   {
     resolve: `gatsby-remark-images`,
   },
-  // {
-  //   resolve: `gatsby-remark-highlights`,
-  //   options: {
-  //       // Additional languages, no need to add it 
-  //       // if you don't wish to use additional languages
-  //       // additionalLangs: [`language-groovy`],
-  //       // scope prefix to use, defaults to ''
-  //       scopePrefix: 'syntax--',
-  //       codeWrap: {
-  //         className: 'midnight'
-  //       }
-  //     }
-  // },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-to-absoluteurl'),
+  },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+  },
 ]
 
 module.exports = {
@@ -76,10 +70,12 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
-            policy: [{
-              userAgent: '*',
-              disallow: '/'
-        }]
+        policy: [
+          {
+            userAgent: '*',
+            disallow: '/',
+          },
+        ],
       },
     },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
