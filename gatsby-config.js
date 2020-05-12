@@ -15,8 +15,12 @@ const gatsbyRemarkPlugins = [
       className: `title-link`,
     },
   },
+
   {
     resolve: `gatsby-remark-images`,
+  },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
   },
 ]
 
@@ -63,10 +67,12 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
-            policy: [{
-              userAgent: '*',
-              disallow: '/'
-        }]
+        policy: [
+          {
+            userAgent: '*',
+            disallow: '/',
+          },
+        ],
       },
     },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
