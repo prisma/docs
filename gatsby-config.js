@@ -20,6 +20,9 @@ const gatsbyRemarkPlugins = [
     resolve: `gatsby-remark-images`,
   },
   {
+    resolve: require.resolve('./plugins/gatsby-remark-to-absoluteurl'),
+  },
+  {
     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
   },
 ]
