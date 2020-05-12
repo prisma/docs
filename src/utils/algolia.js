@@ -1,51 +1,74 @@
 require('dotenv').config({
   path: `.env`,
-});
+})
 
 const handleRawBody = node => {
-  const { rawBody, ...rest } = node;
-  rawBodyWithoutFrontmatter = rawBody
+  const { rawBody, ...rest } = node
+  const rawBodyWithoutFrontmatter = rawBody
     .split('---')
     .slice(2)
-    .join('---');
-  const sections = rawBodyWithoutFrontmatter.split('\n\n');
-  const filteredSections = sections.filter(
-    section =>
-      section !== ' ' &&
-      section !== '' &&
-      !section.includes('##') &&
-      !section.includes('<summary>') &&
-      !section.includes('</details') &&
-      !section.includes('```') &&
-      !section.includes('ButtonLink') &&
-      !section.includes('SwitchTech') &&
-      !section.includes('|')
-  );
-  const records = filteredSections.map(fSection => ({
-    ...rest,
-    content: fSection
-      .replace(/[^a-zA-Z0-9]/g, ' ')
-      .replace(/\s\s+/g, ' ')
-      .trim(),
-  }));
+    .join('---')
+  const blocks = rawBodyWithoutFrontmatter
+    .split(/#{3,}/i)
+    .join(' ')
+    .split('##')
+  const headingWithcontent = blocks
+    .filter(block => block !== '\n\n')
+    .map(block => {
+      const parts = block.split('\n\n')
+      return { heading: parts[0].trim(), content: parts.splice(1).join('\n\n') }
+    })
+  let finalSections = []
+  headingWithcontent.map(fSec => {
+    const sections = fSec.content.split('\n\n')
+    const filteredSections = sections.filter(
+      section =>
+        section !== ' ' &&
+        section !== '' &&
+        !section.includes('</details') &&
+        !section.includes('ButtonLink') &&
+        !section.includes('SwitchTech') &&
+        !section.includes('TabbedContent') &&
+        !section.includes('CodeBlock') &&
+        !section.includes('tab>')
+    )
+    filteredSections.map(
+      para => (para !== '\n' || para !== '') && finalSections.push({ para, heading: fSec.heading })
+    )
+  })
 
-  return records;
-};
+  const records = finalSections.map(fSection => ({
+    ...rest,
+    heading: fSection.heading,
+    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
+    path: `${rest.slug.replace(/\d+-/g, '')}${
+      rest.tableOfContents &&
+      rest.tableOfContents.items &&
+      rest.tableOfContents.items.find(t => t.title === fSection.heading)
+        ? rest.tableOfContents.items.find(t => t.title === fSection.heading).url
+        : ''
+    }`,
+  }))
+
+  return records
+}
 
 const unnestFrontmatter = node => {
-  const { fields, frontmatter, ...rest } = node;
+  const { fields, frontmatter, ...rest } = node
 
   return {
     ...fields,
     ...frontmatter,
     ...rest,
-  };
-};
+  }
+}
 
 const settings = {
-  searchableAttributes: ['content'],
-  attributesToSnippet: ['content:25'],
-};
+  searchableAttributes: ['title', 'heading', 'content'],
+  attributesToHighlight: ['*'],
+  attributesToSnippet: ['*:25'],
+  hitsPerPage: 20,
+}
 
 const queries = [
   {
@@ -61,6 +84,7 @@ const queries = [
                 frontmatter {
                   title
                 }
+                tableOfContents
               }
             }
           }
@@ -75,11 +99,11 @@ const queries = [
     indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
     settings,
   },
-];
+]
 
 module.exports = {
   appId: process.env.GATSBY_ALGOLIA_APP_ID,
   apiKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
   indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
   queries,
-};
+}

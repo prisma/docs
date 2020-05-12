@@ -21,7 +21,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
       body,
       parent,
-      tableOfContents
+      tableOfContents,
     },
     site: {
       siteMetadata: { docsLocation },

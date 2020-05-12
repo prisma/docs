@@ -10,7 +10,7 @@ const List = styled.ul`
   padding: 0;
   margin: 16px 0;
   &.has-border {
-    border-left: 2px solid #e2e8f0;
+    border-left: 2px solid var(--border-color);
     margin-left: -12px;
   }
 `
@@ -22,15 +22,15 @@ const ListItem = styled.li`
   position: relative;
   a {
     transition: color 150ms ease 0s;
-    color: #718096 !important;
+    color: var(--code-inner-color) !important;
     text-decoration: none;
     vertical-align: middle;
     &:hover {
-      color: #1a202c !important;
+      color: var(--main-font-color) !important;
     }
 
     @media (min-width: 0px) and (max-width: 1024px) {
-      color: #e2e8f0 !important;
+      color: var(--border-color) !important;
       &:hover {
         color: white !important;
       }
@@ -39,19 +39,19 @@ const ListItem = styled.li`
     .tag {
       position: absolute;
       right: 0;
-      color: #a0aec0;
+      color: var(--list-bullet-color);
       font-size: 14px;
       font-style: normal;
       font-weight: 600;
-      background: #edf2f7;
+      background: var(--code-bgd-color);
       border-radius: 5px;
       padding: 2px 5px;
       &.small {
         font-size: 13px;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
-        background: #2d3748;
-        color: #a0aec0;
+        background: var(--tag-media-color);
+        color: var(--list-bullet-color);
       }
     }
 
@@ -92,21 +92,21 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: #1a202c !important;
+    color: var(--main-font-color) !important;
     font-weight: 700;
     @media (min-width: 0px) and (max-width: 1024px) {
-      color: #e2e8f0 !important;
+      color: var(--border-color) !important;
     }
   }
   &.top-level {
     margin-top: 2rem;
     > a {
       font-size: 20px;
-      color: #1a202c !important;
+      color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
       @media (min-width: 0px) and (max-width: 1024px) {
-        color: #f7fafc !important;
+        color: var(--main-bgd-color) !important;
       }
     }
     > ul {
@@ -120,12 +120,12 @@ const ListItem = styled.li`
     margin-top: 24px;
   }
   &.static-link > a {
-    color: #a0aec0 !important;
+    color: var(--list-bullet-color) !important;
     text-transform: uppercase;
     font-weight: bold;
     font-size: 14px;
     &:hover {
-      color: #a0aec0 !important;
+      color: var(--list-bullet-color) !important;
     }
   }
   &.last-level {

@@ -10,13 +10,13 @@ import './layout.css'
 import Sidebar from './sidebar'
 // import { StickyContainer } from 'react-sticky';
 
-interface ThemeProps {
-  colorPrimary: string
-}
+// interface ThemeProps {
+//   colorPrimary: string
+// }
 
-const theme: ThemeProps = {
-  colorPrimary: '#663399',
-}
+// const theme: ThemeProps = {
+//   colorPrimary: '#663399',
+// }
 
 type LayoutProps = React.ReactNode & RouterProps
 
@@ -46,7 +46,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
 
   const MaxWidth = styled.div`
     > section {
-      background: #ffffff;
+      background: var(--white-color);
       box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
       border-radius: 5px;
       margin-top: 1rem;
@@ -74,22 +74,20 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   `
 
   return (
-    // <StickyContainer>
-    <ThemeProvider theme={theme}>
-      <MDXProvider components={customMdx}>
-        <Header headerProps={header} />
-        <Wrapper>
-          <NotMobile>
-            <Sidebar isMobile={false} />
-          </NotMobile>
-          <Content>
-            <MaxWidth>{children}</MaxWidth>
-          </Content>
-        </Wrapper>
-        <Footer footerProps={footer} />
-      </MDXProvider>
-    </ThemeProvider>
-    // </StickyContainer>
+    // <ThemeProvider theme={theme}>
+    <MDXProvider components={customMdx}>
+      <Header headerProps={header} />
+      <Wrapper>
+        <NotMobile>
+          <Sidebar isMobile={false} />
+        </NotMobile>
+        <Content>
+          <MaxWidth>{children}</MaxWidth>
+        </Content>
+      </Wrapper>
+      <Footer footerProps={footer} />
+    </MDXProvider>
+    // </ThemeProvider>
   )
 }
 

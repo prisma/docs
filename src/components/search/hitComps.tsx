@@ -1,7 +1,6 @@
 import React from 'react'
 import { Snippet } from 'react-instantsearch-dom'
 import Link from '../link'
-import { urlGenerator } from '../../utils/urlGenerator'
 import styled from 'styled-components'
 import ParentTitle from '../parentTitleComp'
 
@@ -12,13 +11,13 @@ const HitComp = styled.div`
   font-weight: normal;
   font-size: 16px;
   line-height: 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
   max-height: 150px;
   &:last-item {
     border: 0;
   }
   a {
-    color: #1a202c !important;
+    color: var(--main-font-color) !important;
   }
   h4 {
     font-weight: normal;
@@ -31,11 +30,11 @@ const HitComp = styled.div`
   }
   &:hover,
   &:focus {
-    background: #f7fafc;
+    background: var(--main-bgd-color);
   }
   mark {
-    color: #3182ce !important;
-    background: #ebf8ff;
+    color: var(--link-color) !important;
+    background: var(--search-highlight-bg-color);
     padding: 2px;
     font-weight: bold;
   }
@@ -50,10 +49,15 @@ const DocHit = ({ hit }: any) => (
   <HitComp>
     <Link
       style={{ boxShadow: `none`, textDecoration: 'none' }}
-      to={hit.slug.includes('index') ? null : urlGenerator(hit.slug)}
+      to={hit.slug.includes('index') ? null : hit.path}
     >
       <ParentTitle slug={hit.slug} />
-      <h3>{hit.title}</h3>
+      <h3>
+        <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}
+        <span style={{ color: 'var(--code-inner-color)' }}>
+          <Snippet hit={hit} attribute="heading" tagName="mark" />
+        </span>
+      </h3>
       <Snippet hit={hit} attribute="content" tagName="mark" />
     </Link>
   </HitComp>

@@ -18,7 +18,7 @@ const NewsLetterWrapper = styled.div`
     display: flex;
     align-items: center;
     input {
-      background: #ffffff;
+      background: var(--white-color);
       box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
       border-radius: 5px;
       width: 100%;
@@ -29,7 +29,7 @@ const NewsLetterWrapper = styled.div`
       font-weight: normal;
 
       &::placeholder {
-        color: #a0aec0;
+        color: var(--code-highlight-color);
       }
     }
     .email-icon {
@@ -47,20 +47,20 @@ const NewsLetterWrapper = styled.div`
       height: 32px;
       circle {
         transition: 0.2s fill ease;
-        fill: #48bb78;
+        fill: var(--code-added-color);
       }
       path {
         transition: 0.2s stroke ease;
-        stroke: #ffffff;
+        stroke: var(--white-color);
       }
       &[disabled] {
         cursor: default;
 
         circle {
-          fill: #e2e8f0;
+          fill: var(--border-color);
         }
         path {
-          stroke: #718096;
+          stroke: var(--code-inner-color);
         }
       }
     }
