@@ -162,7 +162,7 @@ module.exports = async function plugin(
               ':'
             )
           }
-          console.warn(`${prefix} ${link.tranformedUrl}`)
+          console.warn(`${prefix} ${link.url}`)
         }
         console.log('')
       }
