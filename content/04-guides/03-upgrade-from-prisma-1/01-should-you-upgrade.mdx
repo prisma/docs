@@ -581,19 +581,159 @@ enum Role {
 }
 ```
 
-### Scalar lists
+### Scalar lists (arrays)
 
 #### Problem
 
-TBD
+In Prisma 1, you can define lists of _scalar_ types on your models. Under the hood, this is implemented with an extra table that keeps track of the values in the list.
+
+To remove the approach with the extra table which incurred hidden performance costs, Prisma 2.0 only supports scalar lists only when they're natively supported by the database you use. At the mooment, only [PostgreSQL supports scalar lists (arrays) natively](https://www.postgresql.org/docs/9.1/arrays.html). 
+
+With PostgreSQL, you therefore can keep using scalar lists in Prisma 2.0, but you'll need to perform a data migration to transfer the data from the extra table from Prisma 1 into an actual PostgreSQL array.
 
 #### Example
 
-TBD
+##### Prisma 1 datamodel
+
+```graphql
+type User {
+  id: ID! @id
+  coinflips: Boolean[]
+}
+```
+
+##### Prisma 1 generated SQL migration
+
+```sql
+CREATE TABLE "User" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL
+);
+
+CREATE TABLE "User_coinflips" (
+    "nodeId" VARCHAR(25) REFERENCES "User"(id),
+    position INTEGER,
+    value BOOLEAN NOT NULL,
+    CONSTRAINT "User_coinflips_pkey" PRIMARY KEY ("nodeId", position)
+);
+CREATE UNIQUE INDEX "User_coinflips_pkey" ON "User_coinflips"("nodeId" text_ops,position int4_ops);
+```
+
+##### Result of Prisma 2.0 introspection
+
+```prisma
+model User {
+  id             String           @id
+  User_coinflips User_coinflips[]
+}
+
+model User_coinflips {
+  nodeId   String
+  position Int
+  value    Boolean
+  User     User    @relation(fields: [nodeId], references: [id])
+
+  @@id([nodeId, position])
+}
+```
+
+Note that you can now generate Prisma Client and you'll be access the data from the scalar lists through the extra table. PostgreSQL users can alternatively migrate the data into a native PostgreSQL array and continue to benefit from the slicker Prisma Client API for scalar lists.
+
+<details><summary>Expand for sample Prisma Client API calls</summary>
+
+To access the coinflips data, you will now have to always [`include`]() it in your queries:
+
+```ts
+const user = await prisma.user.findOne({ 
+  where: { id: 1 },
+  include: {
+    coinflips: {
+      orderBy: { position: "asc" }
+    }
+  }
+})
+```
+
+> The `orderBy` is important to retain the order of the list.
+
+This is the `result of the query:
+
+```js
+{
+  id: 1,
+  name: 'Alice',
+  coinflips: [
+    { id: 1, position: 1000, value: false },
+    { id: 2, position: 2000, value: true },
+    { id: 3, position: 3000, value: false },
+    { id: 4, position: 4000, value: true },
+    { id: 5, position: 5000, value: true },
+    { id: 6, position: 6000, value: false }
+  ]
+}
+```
+
+To access just the boolean values from the list, you can `map` over the `coinflips` on `user` as follows:
+
+```ts
+const currentCoinflips = user!.coinflips.map(cf => cf.value)
+```
+
+> The exclamation mark above means that we're _force unwrapping_ the `user` value. This is necessary because the `user` returned from the previous query might be `null`.
+
+Here's the value of `currentCoinflips` after the call to `map`:
+
+```
+[ false, true, false, true, true, false ]
+```
+
+</details>
 
 #### Workaround
 
-TBD
+The following workaround is only available for PostgreSQL users!
+
+As scalar lists (i.e. [arrays](https://www.postgresql.org/docs/9.1/arrays.html)) are available as a native PostgreSQL feature, you can keep using the same notation of `coinflips: Boolean[]` in your Prisma schema.
+
+However, in order to do so you need to manually migrate the underlying data from the `User_coinflips` table into a PostgreSQL array. Here's how you can do that:
+
+1. Add the new `coinflips` column to the `User` tables:
+    ```sql
+    ALTER TABLE "User" ADD COLUMN coinflips BOOLEAN[];
+    ```
+1. Migrate the data from `"User_coinflips".value` to `"User.coinflips"`:
+    ```sql
+    UPDATE "User"
+      SET coinflips = t.flips
+    FROM (
+      SELECT "nodeId", array_agg(VALUE ORDER BY position) AS flips
+      FROM "User_coinflips"
+      GROUP BY "nodeId"
+    ) t
+    where t."nodeId" = "User"."id";
+    ```
+1. To cleanup, you can delete the `User_coinflips` table:
+    ```sql
+    DROP TABLE "User_coinflips";
+    ```
+
+You can keep using Prisma Client as before:
+
+```ts
+const user = await prisma.user.findOne({ 
+  where: { id: 1 },
+})
+```
+
+This is the result from the API call:
+
+```js
+{
+  id: 1,
+  name: 'Alice',
+  coinflips: [ false, true, false, true, true, false ]
+}
+```
+
 
 ### Cascading deletes
 
