@@ -33,18 +33,18 @@ Prisma 2.0 doesn't have full feature parity with Prisma 1 yet. These are the big
 
 The database schema that is created when running `prisma deploy` in Prisma 1 is only partially compatible with the one that Prisma 2.0 creates. This section gives an overview of the general incompatibilities and the potential workarounds.
 
-| Feature                      | SQL Workaround | Prisma 2.0 Schema Workaround | Compatible | 
-| ---------------------------- | -------------- | ---------------------------- | ---------- | 
-| Default values               | Yes            | Yes                          | Yes        | 
-| Generated CUIDs as ID values | No             | Yes                          | Yes        | 
-| `@createdAt`                 | Yes            | Yes                          | Yes        | 
-| `@updatedAt`                 | No             | Yes                          | Yes        | 
-| 1-1 relations                | Yes            | No                           | No         | 
-| Relation tables              | Yes            | No                           | No         | 
-| Cascading deletes            | Depends        | No                           | No         | 
-| Scalar lists (arrays)        | Depends        | No                           | No         | 
-| Json type                    | Yes            | No                           | No         | 
-| Enums                        | Yes            | No                           | No         | 
+| Feature                      | SQL Workaround | Prisma 2.0 Schema Workaround |
+| ---------------------------- | -------------- | ---------------------------- |
+| Default values               | Yes            | Yes                          |
+| Generated CUIDs as ID values | No             | Yes                          |
+| `@createdAt`                 | Yes            | Yes                          |
+| `@updatedAt`                 | No             | Yes                          |
+| 1-1 relations                | Yes            | No                           |
+| Relation tables              | Yes            | No                           |
+| Json type                    | Yes            | No                           |
+| Enums                        | Yes            | No                           |
+| Cascading deletes            | Depends        | No                           |
+| Scalar lists (arrays)        | Depends        | No                           |
 
 ### Default values
 
@@ -66,8 +66,8 @@ type Post {
 ##### Prisma 1 generated SQL migration
 
 ```sql
-CREATE TABLE Post (
-  id TEXT PRIMARY KEY NOT NULL,
+CREATE TABLE "Post" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL,
   published BOOLEAN NOT NULL
 );
 ```
@@ -76,30 +76,29 @@ CREATE TABLE Post (
 
 ```prisma
 model Post {
-  id        String
+  id        String  @id
   published Boolean
 }
 ```
 
-Because the `DEFAULT` constraint has not been added to the database when mapping the Prisma 1 datamodel to the database with `prisma deploy`, Prisma 2.0 doesn't recognize it after introspection.
+Because the `DEFAULT` constraint has not been added to the database when mapping the Prisma 1 datamodel to the database with `prisma deploy`, Prisma 2.0 doesn't recognize it during introspection.
 
 #### Workarounds
 
-##### Manually add a `DEFAULT` constrain to the database column
+##### Manually add a `DEFAULT` constraint to the database column
 
 You can alter the column to add the `DEFAULT` constraint as follows:
 
 ```sql
-ALTER TABLE Post
-  ADD CONSTRAINT published_false
-  DEFAULT false FOR published;
+ALTER TABLE "Post"
+	ALTER COLUMN published SET DEFAULT false;
 ```
 
 After this adjustment, you can re-introspect your database and the `@default` attribute will be added to the `published` field:
 
 ```prisma
 model Post {
-  id        String
+  id        String  @id
   published Boolean @default(false)
 }
 ```
@@ -108,12 +107,14 @@ model Post {
 
 You can add the `@default` attribute to the Prisma model:
 
-```diff
+```prisma line-number
 model Post {
   id        String
-+ published Boolean @default(false)
+|  published Boolean @default(false)
 }
 ```
+
+If the `@default` attribute is set in the Prisma schema and you run `prisma generate`, the resulting Prisma Client code will generate the specified default values at runtime (similar to what the Prisma server did in Prisma 1).
 
 The main drawback of this approach is that after each re-introspection the `@default` attribute will be removed (because introspection overwrites the current Prisma schema) and you'll need to re-add it again.
 
@@ -136,8 +137,8 @@ type Post {
 ##### Prisma 1 generated SQL migration
 
 ```sql
-CREATE TABLE Post (
-  id TEXT PRIMARY KEY NOT NULL
+CREATE TABLE "Post" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL
 );
 ```
 
@@ -151,15 +152,17 @@ model Post {
 
 Because there's no indication of the CUID behaviour in the database, Prisma's introspection doesn't recognize it.
 
-#### Workarounds
+#### Workaround
 
 As a workaround, you can manually add the `@default(cuid())` attribute to the Prisma model:
 
-```diff
+```prisma line-number
 model Post {
-+ id String @id @default(cuid())
+|  id String @id @default(cuid())
 }
 ```
+
+If the `@default` attribute is set in the Prisma schema and you run `prisma generate`, the resulting Prisma Client code will generate the specified default values at runtime (similar to what the Prisma server did in Prisma 1).
 
 Note that you'll have to re-add the attribute after each introspection because introspection removes it (as the previous version of the Prisma schema is overwritten)!
 
@@ -183,10 +186,10 @@ type Post {
 ##### Prisma 1 generated SQL migration
 
 ```sql
-CREATE TABLE Post {
-  id TEXT PRIMARY KEY NOT NULL,
-  createdAt TIMESTAMPZ
-}
+CREATE TABLE "Post" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL
+);
 ```
 
 ##### Result of Prisma 2.0 introspection
@@ -205,9 +208,8 @@ model Post {
 You can alter the column to add the `DEFAULT` constraint as follows:
 
 ```sql
-ALTER TABLE Post
-  ADD CONSTRAINT created_at_now
-  DEFAULT false FOR createdAt;
+ALTER TABLE "Post"
+	ALTER COLUMN "createdAt" SET DEFAULT CURRENT_TIMESTAMP;
 ```
 
 After this adjustment, you can re-introspect your database and the `@default` attribute will be added to the `published` field:
@@ -223,12 +225,14 @@ model Post {
 
 As a workaround, you can manually add the `@default(now())` attribute to the Prisma model:
 
-```diff
+```prisma line-number
 model Post {
   id        String    @id
-+ createdAt DateTime @default(now())
+|  createdAt DateTime @default(now())
 }
 ```
+
+If the `@default` attribute is set in the Prisma schema and you run `prisma generate`, the resulting Prisma Client code will generate the specified default values at runtime (similar to what the Prisma server did in Prisma 1).
 
 Note that you'll have to re-add the attribute after each introspection because introspection removes it (as the previous version of the Prisma schema is overwritten)!
 
@@ -252,9 +256,9 @@ type Post {
 ##### Prisma 1 generated SQL migration
 
 ```sql
-CREATE TABLE Post (
-  id TEXT PRIMARY KEY NOT NULL,
-  updatedAt TIMESTAMPZ
+CREATE TABLE "Post" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL,
+  updatedAt TIMESTAMP
 );
 ```
 
@@ -273,12 +277,14 @@ model Post {
 
 As a workaround, you can manually add the `@updatedAt` attribute to the Prisma model:
 
-```diff
+```prisma line-number
 model Post {
   id        String   @id
-+ updatedAt DateTime @updatedAt
+|  updatedAt DateTime @updatedAt
 }
 ```
+
+If the `@updatedAt` attribute is set in the Prisma schema and you run `prisma generate`, the resulting Prisma Client code will automatically generate values for this column when an existing record is updated (similar to what the Prisma server did in Prisma 1).
 
 Note that you'll have to re-add the attribute after each introspection because introspection removes it (as the previous version of the Prisma schema is overwritten)!
 
@@ -286,7 +292,7 @@ Note that you'll have to re-add the attribute after each introspection because i
 
 #### Problem
 
-In the [datamodel v1.1](https://www.prisma.io/blog/datamodel-v11-lrzqy1f56c90/) that was introduced in Prisma v1.31, 1-1 relations can be declared as _inline_. In that case, the relation will not be maintained via a relation table but via a single foreign key on one of the two tables involved.
+In the [datamodel v1.1](https://www.prisma.io/blog/datamodel-v11-lrzqy1f56c90/) that was introduced in Prisma v1.31, 1-1 relations can be declared as _inline_. In that case, the relation will not be maintained via a [relation table](../../reference/tools-and-interfaces/prisma-schema/relations#relation-tables) but via a single foreign key on one of the two tables involved.
 
 When this approach is used, Prisma doesn't add a `UNIQUE` constraint to the foreign key column which means that after Prisma 2.0 introspection, this former 1-1 relation will be added as a 1-n relation to the Prisma schema.
 
@@ -311,14 +317,14 @@ Note that omitting the `@relation` directive in this case would result in the sa
 ##### Prisma 1 generated SQL migration
 
 ```sql
-CREATE TABLE User (
-  id TEXT PRIMARY KEY NOT NULL,
+CREATE TABLE "User" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL
 );
 
-CREATE TABLE Profile (
-  id TEXT PRIMARY KEY NOT NULL,
-  userId TEXT,
-  FOREIGN KEY id REFERENCES User(id)
+CREATE TABLE "Profile" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL,
+  "user" VARCHAR(25),
+  FOREIGN KEY ("user") REFERENCES "User"(id)
 );
 ```
 ##### Result of Prisma 2.0 introspection
@@ -326,13 +332,13 @@ CREATE TABLE Profile (
 ```prisma
 model User {
   id      String    @id
-  Profile Profile[] 
+  Profile Profile[]
 }
 
 model Profile {
-  id     String @id  
-  userId String
-  User   User   @relation(fields: [userId], references: [id])
+  id   String  @id
+  user String?
+  User User?   @relation(fields: [user], references: [id])
 }
 ```
 
@@ -345,23 +351,22 @@ Because there's no `UNIQUE` constraint defined on the `userId` column (which rep
 You can alter the foreign key column to add the `UNIQUE` constraint as follows:
 
 ```sql
-ALTER TABLE Profile
-  ADD CONSTRAINT userId_unique
-  UNIQUE FOR userId;
+ALTER TABLE "Profile"
+  ADD CONSTRAINT userId_unique UNIQUE ("user");
 ```
 
 After this adjustment, you can re-introspect your database and the 1-1 relation will be properly recognized:
 
 ```prisma
 model User {
-  id      String  @id
-  Profile Profile
+  id      String   @id
+  Profile Profile?
 }
 
 model Profile {
-  id     String @id  
-  userId String
-  User   User   @relation(fields: [userId], references: [id])
+  id   String  @id  
+  user String?
+  User User?   @relation(fields: [userId], references: [id])
 }
 ```
 
@@ -369,10 +374,10 @@ model Profile {
 
 You can remove the `[]` type modifier attribute from the relation field in the Prisma schema:
 
-```diff
+```prisma line-number
 model User {
   id      String  @id
-+ Profile Profile
+|  Profile Profile
 }
 
 model Profile {
@@ -382,15 +387,17 @@ model Profile {
 }
 ```
 
-The main drawback of this approach is that after each re-introspection the `[]` type modifier will have to be removed again (because introspection overwrites the current Prisma schema).
+The main drawback of this approach is that after each re-introspection the `[]` type modifier will have to be removed again (because introspection overwrites the current Prisma schema) and you'll need to re-add it again.
 
 ### Relations that are represented via relation tables
 
 #### Problem
 
-All relations in the Prisma 1 datamodel v1.0 are represented as relation tables. In the datamodel v1.1 version, all m-n relations as well as the 1-1 and 1-n relations declared as `link: TABLE` are represented as relation tables.
+All relations in the Prisma 1 datamodel v1.0 are represented as relation tables. In datamodel v1.1, all m-n relations as well as the 1-1 and 1-n relations declared as `link: TABLE` are represented as relation tables.
 
 Because of this representation, Prisma 2.0 introspection will recognize all these relations as m-n relations.
+
+
 
 #### Example
 
@@ -399,54 +406,69 @@ Because of this representation, Prisma 2.0 introspection will recognize all thes
 ```graphql
 type User {
   id: ID! @id
-  profile: Profile @relation(link: TABLE)
+  posts: [Post!]!
 }
 
-type Profile {
+type Post {
   id: ID! @id
-  user: User
+  author: User! @relation(link: TABLE)
 }
 ```
 
 ##### Prisma 1 generated SQL migration
 
 ```sql
-CREATE TABLE User (
-  id TEXT PRIMARY KEY NOT NULL
+CREATE TABLE "User" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL
 );
 
-CREATE TABLE Profile (
-  id TEXT PRIMARY KEY NOT NULL
+CREATE TABLE "Post" (
+  id VARCHAR(25) PRIMARY KEY NOT NULL
 );
 
--- TBD: add relation table
+CREATE TABLE "_PostToUser" (
+  "A" VARCHAR(25) NOT NULL REFERENCES "Post"(id) ON DELETE CASCADE,
+  "B" VARCHAR(25) NOT NULL REFERENCES "User"(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX "_PostToUser_AB_unique" ON "_PostToUser"("A" text_ops,"B" text_ops);
+CREATE INDEX "_PostToUser_B" ON "_PostToUser"("B" text_ops);
 ```
 
+##### Result of Prisma 2.0 introspection
+
+```prisma
+model User {
+  id   String @id
+  Post Post[] @relation(references: [id])
+}
+
+model Post {
+  id   String @id
+  User User[] @relation(references: [id])
+}
+```
+
+Because the relation table that was created by Prisma 1 uses the same [conventions for relation tables](../../reference/tools-and-interfaces/prisma-schema/relations#conventions-for-relation-tables-in-implicit-m-n-relations) as Prisma 2.0, the relation now gets recognized as a m-n relation.
+
 #### Workaround
+
+As a workaround, you can migrate the data into a structure that's compatible with Prisma's 1-n relation:
+
+1. Create new column `authorId` on the `Post` table. This column should be a _foreign key_ that references the `id` field of the `User` table.
+1. Write a SQL query that reads all the rows from the `_PostToUser` relation table and for each row:
+    1. Finds the respective `Post` record by looking up the value from column `A`
+    1. Inserts the value from column `B` as the value for `authorId` into the `Post` record
+1. Delete the `_PostToUser` relation table
+
+After that you can introspect your database and the relation will now be recognized as 1-n.
 
 ### Cascading deletes
 
 #### Problem
 
+#### Example
 
-<!-- ## Upgrade paths
-
-Based on these differences, the high-level steps to upgrade a project from using Prisma 1 are as follows:
-
-1. Install the new Prisma 2.0 CLI as a development dependency
-1. Use the Prisma 2.0 CLI to introspect your Prisma 1 database and generate your Prisma schema
-1. Install and generate Prisma Client 2.0
-1. Adjust your application code, specifically replace the API calls from the Prisma client 1.0 with those of Prisma Client 2.0
-
-**Note that steps 3. and 4. will look somewhat different if you are:**
-
-- **not using the Prisma client** (e.g. because you're using Prisma bindings).
-- **building a GraphQL API using `nexus-prisma`**.
-
-Both scenarios will be covered in other upgrade guides that are [coming soon](https://github.com/prisma/prisma/issues/1937).
-
-In this guide, we'll take a look at migrating a REST API from Prisma 1 to Prisma 2.0 based on this [Prisma 1 example](https://github.com/prisma/prisma1-examples/tree/master/typescript/rest-express). -->
-
+#### Workaround
 
 ## Prisma schema upgrade CLI
 
@@ -465,4 +487,12 @@ If your project is not yet running in production or has little traffic and user 
 
 In case your project already sees a lot of traffic and has a lot of user data stored in the databse, you might want to consider the **gradual** upgrade strategy where you're running Prisma 1 and Prisma 2.0 side-by-side for a certain amount of time until you've replace all former Prisma 1 functionality with Prisma 2.0
 
+### Upgrade path
 
+No matter which of the strategies you choose, on a high-level the envisioned upgrade path looks as follows:
+
+1. Install the new Prisma 2.0 CLI as a development dependency
+1. Use the Prisma 2.0 CLI to introspect your Prisma 1 database and generate your Prisma schema
+1. Run the [Prisma schema upgrade CLI]() to "fix" the Prisma schema
+1. Install and generate Prisma Client 2.0
+1. Adjust your application code, specifically replace the API calls from the Prisma client 1.0 with those of Prisma Client 2.0
