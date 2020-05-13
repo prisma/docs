@@ -29,7 +29,7 @@ const calculateTreeData = (edges: any) => {
       {
         node: {
           fields: { slug },
-          frontmatter: { title, staticLink, duration, experimental },
+          frontmatter: { title, staticLink, duration, experimental, dbSwitcher, langSwitcher },
         },
       }: TreeNode
     ) => {
@@ -37,6 +37,9 @@ const calculateTreeData = (edges: any) => {
       const topLevel = parts.length == 3 && parts[parts.length - 1] === 'index' ? true : false
       let { items: prevItems } = accu
       const slicedParts = parts.slice(1, -1)
+      const newParams = `${langSwitcher ? `${langSwitcher[0]}${dbSwitcher ? '-' : ''}` : ''}${
+        dbSwitcher ? `${dbSwitcher[0]}` : ''
+      }`
       for (const part of slicedParts) {
         let tmp = prevItems && prevItems.find(({ label }: any) => label == part)
         if (tmp) {
@@ -54,7 +57,7 @@ const calculateTreeData = (edges: any) => {
           prevItems.push(tmp)
         }
         if (parts[parts.length - 1] === 'index' && parts[parts.length - 2] === part) {
-          tmp.url = slug
+          tmp.url = `${slug}${newParams ? '-' + newParams : ''}`
           tmp.title = title
           tmp.staticLink = staticLink
           tmp.duration = duration
@@ -72,7 +75,7 @@ const calculateTreeData = (edges: any) => {
       if (!existingItem) {
         prevItems.push({
           label: parts[slicedLength],
-          url: slug,
+          url: `${slug}${newParams ? '-' + newParams : ''}`,
           items: [],
           title,
           staticLink,
