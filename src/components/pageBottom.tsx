@@ -122,7 +122,7 @@ const PageBottom = ({ editDocsPath }: any) => {
       method: 'POST',
       body,
     }
-    await fetch(`.netlify/functions/index`, requestOptions)
+    await fetch(`https://prisma2.netlify.com/.netlify/functions/index`, requestOptions)
   }
 
   const handleSentiment = (e: any) => {
