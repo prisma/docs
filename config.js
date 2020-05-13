@@ -30,7 +30,7 @@ const config = {
     description:
       'Prisma replaces traditional ORMs and can be used to build GraphQL servers, REST APIs, microservices & more.',
     keywords: 'Docs, prisma, 2.0',
-    docsLocation: 'https://github.com/prisma/prisma2-docs/tree/master/content',
+    docsLocation: 'https://github.com/prisma/docs/tree/master/content',
     twitter: {
       site: '@prisma',
       creator: '@prisma',
