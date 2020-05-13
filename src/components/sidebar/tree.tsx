@@ -105,6 +105,20 @@ const Tree = ({ edges }: AllEdges) => {
     })
   }
 
+
+  // //Start
+  // const location = useLocation()
+  // // React.useEffect(() => {
+  //   const dd = treeData.url ? urlGenerator(treeData.url) : ''
+  //   const elemActive = document.getElementById(dd)
+
+  //   if (dd === location.pathname) {
+  //     console.log(location, dd, elemActive)
+  //     elemActive?.scrollIntoView()
+  //   }
+  // // }, [url])
+  // // End
+
   return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} />
 }
 

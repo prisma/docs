@@ -4,6 +4,7 @@ import ArrowRight from '../../icons/ArrowRight'
 import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
+import { useLocation } from '@reach/router'
 
 const List = styled.ul`
   list-style: none;
@@ -187,13 +188,17 @@ const TreeNode = ({
     setIsOpen(isCollapsed ? 'close' : 'open')
   }, [isCollapsed])
 
+  
+
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
         <Link
-          to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
+          // to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
+          to={urlGenerator(url)}
           activeClassName="active-item"
           partiallyActive={true}
+          id={urlGenerator(url)}
         >
           {hasExpandButton ? (
             <span onClick={collapse} className="collapse-title">
