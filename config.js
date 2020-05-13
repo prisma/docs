@@ -48,6 +48,9 @@ const config = {
       },
     },
   },
+  feedback: {
+    function_name: 'https://prisma2.netlify.app/.netlify/functions/index',
+  },
   footer: {
     logoLink: '/',
     title: 'Prisma',
