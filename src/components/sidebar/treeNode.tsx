@@ -195,7 +195,7 @@ const TreeNode = ({
       {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
         <Link
           // to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
-          to={urlGenerator(url)}
+          to={(staticLink || topLevel ) ? null : urlGenerator(url)}
           activeClassName="active-item"
           partiallyActive={true}
           id={urlGenerator(url)}
