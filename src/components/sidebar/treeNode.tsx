@@ -145,6 +145,7 @@ const TreeNode = ({
   setCollapsed,
   collapsed,
   url,
+  slug,
   title,
   items,
   label,
@@ -153,10 +154,12 @@ const TreeNode = ({
   duration,
   experimental,
   lastLevel,
+  hidePage,
 }: any) => {
   const isCollapsed = collapsed[label]
-  const collapse = () => {
+  const collapse = (e: any) => {
     setCollapsed(label)
+    e.preventDefault()
   }
 
   const hasChildren = items.length !== 0
@@ -188,21 +191,22 @@ const TreeNode = ({
     setIsOpen(isCollapsed ? 'close' : 'open')
   }, [isCollapsed])
 
-  
+  const location = useLocation()
+  const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
-      {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
+      {title && label !== 'index' && !hidePage && (
         <Link
-          // to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
-          to={(staticLink || topLevel ) ? null : urlGenerator(url)}
+          to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
+          className={isCurrent ? 'active-item' : 'hh'}
           partiallyActive={true}
-          id={urlGenerator(url)}
+          id={slug}
         >
           {hasExpandButton ? (
-            <span onClick={collapse} className="collapse-title">
-              <button aria-label="collapse" className="item-collapser">
+            <span className="collapse-title">
+              <button aria-label="collapse" className="item-collapser" onClick={collapse}>
                 {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />

@@ -141,7 +141,9 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
       <ParentTitle slug={slug} />
       <MainTitle>{title}</MainTitle>
       <div className="tech-switch-block">
-        <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
+        {(dbSwitcher || langSwitcher || toc.length > 0) && (
+          <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
+        )}
         <SwitcherWrapper>
           {langSwitcher && (
             <TechnologySwitch
@@ -161,7 +163,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
           )}
         </SwitcherWrapper>
       </div>
-      <TOC headings={toc.items} />
+      {toc.length > 0 && <TOC headings={toc.items} />}
     </TopSectionWrapper>
   )
 }

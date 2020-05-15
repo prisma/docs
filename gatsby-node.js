@@ -19,6 +19,11 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
       name: 'id',
       value: node.id,
     })
+    createNodeField({
+      node,
+      name: 'modSlug',
+      value: `/${value.replace('/index', '')}`,
+    })
   }
 }
 
@@ -59,6 +64,7 @@ exports.createPages = ({ graphql, actions }) => {
               fields {
                 slug
                 id
+                modSlug
               }
               frontmatter {
                 title
@@ -92,7 +98,7 @@ exports.createPages = ({ graphql, actions }) => {
             node.frontmatter.langSwitcher.forEach(lang =>
               node.frontmatter.dbSwitcher.forEach(db =>
                 createPage({
-                  path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}-${db}`,
+                  path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${lang}-${db}`,
                   component: path.resolve(`./src/layouts/articleLayout.tsx`),
                   context: {
                     id: node.fields.id,
@@ -105,7 +111,7 @@ exports.createPages = ({ graphql, actions }) => {
           } else {
             node.frontmatter.langSwitcher.forEach(lang =>
               createPage({
-                path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
+                path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${lang}`,
                 component: path.resolve(`./src/layouts/articleLayout.tsx`),
                 context: {
                   id: node.fields.id,
@@ -120,7 +126,7 @@ exports.createPages = ({ graphql, actions }) => {
         if (node.frontmatter.dbSwitcher && !node.frontmatter.langSwitcher) {
           node.frontmatter.dbSwitcher.forEach(db =>
             createPage({
-              path: `${node.fields.slug.replace(/\d+-/g, '')}-${db}`,
+              path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${db}`,
               component: path.resolve(`./src/layouts/articleLayout.tsx`),
               context: {
                 id: node.fields.id,
@@ -131,7 +137,7 @@ exports.createPages = ({ graphql, actions }) => {
           )
         }
         createPage({
-          path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, '') : '/',
+          path: node.fields.modSlug ? node.fields.modSlug.replace(/\d+-/g, '') : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
             id: node.fields.id,

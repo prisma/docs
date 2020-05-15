@@ -5,7 +5,6 @@ import styledTS from 'styled-components-ts'
 import { StickyContainer, Sticky } from 'react-sticky'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
-import { getSections } from 'src/utils/parentTitle'
 
 const SidebarContainer = styled.aside`
   width: 235px;
@@ -73,9 +72,6 @@ const SidebarLayout = ({ isMobile }: any) => {
   //     </List>
   //   </Sidebar>
   // )
-
-
-  console.log(getSections())
 
   return !isMobile ? (
     <StickyContainer>

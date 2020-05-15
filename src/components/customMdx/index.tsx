@@ -7,6 +7,7 @@ import CollapseBox from './collapsible'
 import Table from './table'
 import ButtonLink from './button'
 import FileWithIcon from './fileWithIcon'
+import Subsections from './subSections'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -21,6 +22,7 @@ export default {
   details: CollapseBox,
   table: Table,
   ButtonLink,
+  Subsections,
   img: (props: any) => (
     <a href={props.src} target="_blank">
       <img {...props} />
