@@ -225,13 +225,13 @@ type Query {
 }
 
 type Mutation {
+  createUser(data: UserCreateInput!): User!
   createDraft(authorId: ID!, title: String!, content: String!): Post
+  updateBio(userId: String!, bio: String!): User
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
   publish(id: ID!): Post
   deletePost(id: ID!): Post
   signup(name: String!, email: String!): User!
-  updateBio(userId: String!, bio: String!): User
-  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
-  createUser(data: UserCreateInput!): User!
 }
 ```
 
@@ -383,7 +383,7 @@ schema.queryType({
 })
 ```
 
-If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to yourt GraphQL schema already:
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
 
 ```graphql line-number
 type Query {
@@ -517,7 +517,7 @@ schema.queryType({
 })
 ```
 
-If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to yourt GraphQL schema already:
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
 
 ```graphql line-number
 type Query {
@@ -605,6 +605,541 @@ schema.queryType({
 +      }
     })
   },
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+### 3.1. Migrate GraphQL mutations
+
+In this section, you'll migrate the GraphQL mutations from the sample schema to the Nexus.
+
+#### 3.1.1. Define the `Mutation` type
+
+The first step to migrate any queries is to define the `Mutation` type of your GraphQL API. Once that's done, you can gradually add operations to it. Add the following definition to `graphql.ts`:
+
+```ts
+schema.mutationType({
+  definition(t) {
+    // your GraphQL mutations + resolvers will be defined here
+  }
+})
+```
+
+#### 3.1.2. Migrate the `createUser` mutation (which uses `forwardTo`)
+
+The `createUser` mutation from the sample GraphQL schema is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    createUser: forwardTo('prisma'),
+    // ... other resolvers
+  }
+}
+```
+
+Similar to forwarding GraphQL queries, you can use the `crud` property on the `t` variable inside the `definition` function in order to mirror the same behaviour with Nexus. Similar to `model`, this property is available because you're using the `nexus-prisma-plugin` which leverages type information from your Prisma models and auto-generates resolvers under the hood. The `crud` property also support autocompletion, so you can explore all available queries in your editor again:
+
+![](https://imgur.com/U0mDPsA.png)
+
+##### Forwarding the mutation with the `nexus-prisma-plugin`
+
+To add the `createUser` mutation to your GraphQL API, add the following lines to the query type definition:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
++    t.crud.createOneUser({
++      alias: 'createUser',
++    })
+  }
+})
+```
+
+Note that the default name for the mutation in your GraphQL schema is `createdOneUser` (named after the function which is exposed by `t.crud`). In order to rename it to `createUser`, you need to provide the `alias` property.
+
+If you have the Nexus development server running, you can save the file and your GraphQL API will be updated to expose the new `createUser` mutation. You can also observe this by looking at the `Mutation` type inside the generated `nexus.graphql` file:
+
+```graphql
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+}
+```
+
+You can now write your first mutation against the new API, e.g.:
+
+```graphql
+mutation {
+ 	createUser(data: {
+     name: "Alice",
+     email: "alice@prisma.io"
+   }) {
+     id
+   }
+}
+```
+
+If your application exposes all CRUD operations from Prisma using `forwardTo`, you can now continue adding all remaining ones using the same approach via `t.crud`. To learn how "custom" mutations can be defined and resolved using Nexus, move on to the next sections.
+
+#### 3.1.3. Migrate the `createDraft(title: String!, content: String, authorId: String!): Post!` query
+
+The `createDraft` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  createDraft(title: String!, content: String, authorId: String!): Post!
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    createDraft: (_, args, context, info) => {
+      return context.prisma.mutation.createPost(
+        {
+          data: {
+            title: args.title,
+            content: args.content,
+            author: {
+              connect: {
+                id: args.authorId,
+              },
+            },
+          },
+        },
+        info,
+      )
+    },
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    t.crud.createOneUser({
+      alias: 'createUser',
+    })
+
++    t.field('createDraft', {
++      type: 'Post',
++      args: { 
++        title: schema.stringArg({ nullable: false }),
++        content: schema.stringArg(),
++        authorId: schema.stringArg({ nullable: false }),
++      }
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
+
+```graphql line-number
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+|  createDraft(title: String!, content: String, authorId: String!): Post!
+}
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+mutation {
+  createDraft(
+    title: "Hello World",
+    authorId: "__AUTHOR_ID__"
+  ) {
+    id
+    published
+    auhor {
+      id
+      name
+    }
+  }
+}
+```
+
+However, the response of such a mutation will always be:
+
+```json
+{
+  "data": {
+    "createDraft": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    t.crud.createOneUser({
+      alias: 'createUser',
+    })
+    t.field('createDraft', {
+      type: 'Post',
+      args: { 
+        title: schema.stringArg({ nullable: false }),
+        content: schema.stringArg(),
+        authorId: schema.stringArg({ nullable: false }),
+      },
++      resolve: (_, args) => {
++        return context.db.post.create({
++          data: {
++            title: args.title,
++            content: args.content,
++            author: {
++              connect: { id: args.authorId }
++            }
++          }
++        })
++      }
+    })
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+#### 3.1.4. Migrate the `updateBio(bio: String, userUniqueInput: UserUniqueInput!): User` mutation
+
+The `updateBio` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  updateBio(bio: String, userUniqueInput: UserUniqueInput!): User
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    updateBio: (_, args, context, info) => {
+      return context.prisma.mutation.updateUser(
+        {
+          data: {
+            profile: {
+              update: { bio: args.bio }
+            }
+          },
+          where: { id: args.userId }
+        },
+        info,
+      )
+    },
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    t.crud.createOneUser({
+      alias: 'createUser',
+    })
+    t.field('createDraft', {
+      type: 'Post',
+      args: { 
+        title: schema.stringArg({ nullable: false }),
+        content: schema.stringArg(),
+        authorId: schema.stringArg({ nullable: false }),
+      },
+      resolve: (_, args, context) => {
+        return context.db.post.create({
+          data: {
+            title: args.title,
+            content: args.content,
+            author: {
+              connect: { id: args.authorId }
+            }
+          }
+        })
+      }
+    })
++    t.field('updateBio', {
++      type: 'User',
++      args: {
++        userUniqueInput: schema.arg({ 
++          type: 'UserUniqueInput', 
++          nullable: false 
++        }),
++        bio: schema.stringArg()
++      },
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
+
+```graphql line-number
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  createDraft(title: String!, content: String, authorId: String!): Post!
+|  updateBio(bio: String, userUniqueInput: UserUniqueInput!): User
+}
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+mutation {
+  updateBio(
+    userUniqueInput: {
+      email: "alice@prisma.io"
+    }
+    bio: "I like turtles"
+  ){
+    id
+    name
+    profile {
+      id
+      bio
+    }
+  }
+}
+```
+
+However, the response of such a mutation will always be:
+
+```json
+{
+  "data": {
+    "updateBio": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    t.crud.createOneUser({
+      alias: 'createUser',
+    })
+    t.field('createDraft', {
+      type: 'Post',
+      args: { 
+        title: schema.stringArg({ nullable: false }),
+        content: schema.stringArg(),
+        authorId: schema.stringArg({ nullable: false }),
+      },
+      resolve: (_, args, context) => {
+        return context.db.post.create({
+          data: {
+            title: args.title,
+            content: args.content,
+            author: {
+              connect: { id: args.authorId }
+            }
+          }
+        })
+      }
+    })
++    t.field('updateBio', {
++      type: 'User',
++      args: {
++        userUniqueInput: schema.arg({ 
++          type: 'UserUniqueInput', 
++          nullable: false 
++        }),
++        bio: schema.stringArg()
++      },
++      resolve: (_, args, context) => {
++        return context.db.user.update({
++          where: {
++            id: args.userUniqueInput?.id,
++            email: args.userUniqueInput?.email
++          },
++          data: {
++            profile: {
++              create: { 
++                  bio: args.bio
++              }
++            }
++          }
++        })
++      }
++    })
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+
+#### 3.1.5. Migrate the `addPostToCategories(postId: String!, categoryIds: [String!]!): Post` mutation
+
+The `addPostToCategories` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    addPostToCategories: (_, args, context, info) => {
+      const ids = args.categoryIds.map(id => ({ id }))
+      return context.prisma.mutation.updatePost(
+        {
+          data: {
+
+
+            categories: {
+              connect: ids
+            }
+          },
+          where: {
+            id: args.postId
+          }
+        },
+        info,
+      )
+    },
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... mutations from before
+
++  t.field('addPostToCategories', {
++      type: 'Post',
++      args: {
++        postId: schema.stringArg({ nullable: false }),
++        categoryIds: schema.stringArg({ 
++          list: true, 
++          nullable: false 
++        }),
++      },
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
+
+```graphql line-number
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  createDraft(title: String!, content: String, authorId: String!): Post!
+  updateBio(bio: String, userUniqueInput: UserUniqueInput!): User
+|  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+}
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+mutation {
+	addPostToCategories(
+    postId: "__AUTHOR_ID__"
+    categoryIds: [
+      "__CATEGORY_ID_1__",
+      "__CATEGORY_ID_2__",
+    ]
+  ) {
+    id
+    title
+    categories {
+      id
+      name
+    }
+  }
+}
+```
+
+However, the response of such a mutation will always be:
+
+```json
+{
+  "data": {
+    "addPostToCategories": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... mutations from before
+  t.field('addPostToCategories', {
+      type: 'Post',
+      args: {
+        postId: schema.stringArg({ nullable: false }),
+        categoryIds: schema.stringArg({ 
+          list: true, 
+          nullable: false 
+        }),
+      },
++      resolve: (_, args, context) => {
++        const ids = args.categoryIds.map(id => ({ id }))
++        return context.db.post.update({
++          where: {
++            id: args.postId
++          },
++          data: {
++            categories: { connect: ids }
++          }
++        })
++      }
+    })
   }
 })
 ```
