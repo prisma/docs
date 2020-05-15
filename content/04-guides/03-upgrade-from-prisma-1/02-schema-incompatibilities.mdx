@@ -2,6 +2,7 @@
 title: 'Schema incompatibilities'
 metaTitle: 'Problems and workarounds for Prisma 1 and 2.0 schemas'
 metaDescription: 'Learn about the schema incompatibilities between Prisma 1 and Prisma 2.0 and how to resolve them with several workarounds.'
+dbSwitcher: ['postgres', 'mysql']
 ---
 
 ## Overview
@@ -51,10 +52,24 @@ Because the `DEFAULT` constraint has not been added to the database when mapping
 
 You can alter the column to add the `DEFAULT` constraint as follows:
 
+<SwitchTech technologies={['*', 'postgresql']}>
+
 ```sql
 ALTER TABLE "Post"
 	ALTER COLUMN published SET DEFAULT false;
 ```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+```sql
+ALTER TABLE `Post`
+	ALTER COLUMN published SET DEFAULT false;
+```
+
+</SwitchTech>
+
 
 After this adjustment, you can re-introspect your database and the `@default` attribute will be added to the `published` field:
 
@@ -313,10 +328,24 @@ Because there's no `UNIQUE` constraint defined on the `user` column (which repre
 
 You can alter the foreign key column to add the `UNIQUE` constraint as follows:
 
+<SwitchTech technologies={['*', 'postgresql']}>
+
 ```sql
 ALTER TABLE "Profile"
   ADD CONSTRAINT userId_unique UNIQUE ("user");
 ```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+```sql
+ALTER TABLE `Profile`
+  ADD CONSTRAINT userId_unique UNIQUE (`user`);
+```
+
+</SwitchTech>
+
 
 After this adjustment, you can re-introspect your database and the 1-1 relation will be properly recognized:
 
@@ -418,6 +447,8 @@ Because the relation table that was created by Prisma 1 uses the same [conventio
 
 As a workaround, you can migrate the data into a structure that's compatible with Prisma's 1-n relation:
 
+<SwitchTech technologies={['*', 'postgresql']}>
+
 1. Create new column `authorId` on the `Post` table. This column should be a _foreign key_ that references the `id` field of the `User` table:
     ```sql
     ALTER TABLE "Post"  ADD COLUMN "authorId" VARCHAR(25);
@@ -439,6 +470,30 @@ As a workaround, you can migrate the data into a structure that's compatible wit
     ```sql
     DROP TABLE "_PostToUser";
     ```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+1. Create new column `authorId` on the `Post` table. This column should be a _foreign key_ that references the `id` field of the `User` table:
+    ```sql
+    ALTER TABLE `Post` ADD COLUMN `authorId` VARCHAR(25);
+    ALTER TABLE `Post` ADD FOREIGN KEY (`authorId`) REFERENCES `User` (`id`);
+    ```
+1. Write a SQL query that reads all the rows from the `_PostToUser` relation table and for each row:
+    1. Finds the respective `Post` record by looking up the value from column `A`
+    1. Inserts the value from column `B` as the value for `authorId` into that `Post` record
+    ```sql
+    UPDATE Post, _PostToUser
+    SET Post.authorId = _PostToUser.B
+    WHERE Post.id = _PostToUser.A
+    ```
+1. Delete the `_PostToUser` relation table
+    ```sql
+    DROP TABLE `_PostToUser`;
+    ```
+
+</SwitchTech>
 
 After that you can introspect your database and the relation will now be recognized as 1-n:
 
@@ -494,9 +549,21 @@ model User {
 
 You can manually change the type of the column to `JSON`
 
+<SwitchTech technologies={['*', 'postgresql']}>
+
 ```sql
 ALTER TABLE "User" ALTER COLUMN "jsonData" TYPE JSON;
 ```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+```sql
+ALTER TABLE User MODIFY COLUMN role ENUM('ADMIN', 'CUSTOMER') DEFAULT 'CUSTOMER';
+```
+
+</SwitchTech>
 
 After this adjustment, you can re-introspect your database and the field will now be recognized as `Json`:
 

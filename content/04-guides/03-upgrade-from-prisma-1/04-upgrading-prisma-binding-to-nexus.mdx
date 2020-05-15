@@ -1,0 +1,321 @@
+---
+title: 'Upgrading from Prisma 1 with prisma-binding'
+metaTitle: 'Upgrading from Prisma 1 with prisma-binding'
+metaDescription: 'Learn how to upgrade existing Prisma 1 projects with prisma-binding to Prisma 2.0 and Nexus.'
+---
+
+## Overview
+
+This upgrade guide describes how to migrate a Node.js project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses `prisma-binding` to implement a GraphQL server. The code will be migrated to [Nexus](https://www.nexusjs.org) and the [`nexus-schema-plugin-prisma`](https://github.com/graphql-nexus/nexus-schema-plugin-prisma).
+
+Nexus currently [only works with TypeScript](https://github.com/graphql-nexus/nexus/issues/85), therefore this guide also explains how to migrate from JavaScript to TypeScript. The guide therefore basically assumes a full rewrite of your existing app.
+
+If you're currently using JavaScript and want to continue doing so, you can follow the guide to upgrade from `prisma-binding` to an SDL-first setup. 
+
+The guide assumes that you already went through the [guide for upgrading the Prisma layer](./upgrading-the-prisma-layer). This means you already:
+
+- installed the Prisma 2.0 CLI
+- created your Prisma 2.0 schema
+- introspected your database and resolved potential schema incompatibilities
+- installed and generated Prisma Client
+
+If that's the case, you can continue with the next steps. 
+
+## 1. Installing and configuring Nexus 
+
+### 1.1. Install Nexus dependencies
+
+The first step is to install the Nexus CLI in your project:
+
+```
+npm install nexus@next
+```
+
+> **Note** Nexus is currently in a [transition phase]() from a standalone [schema construction library](http://nexus.js.org/) to a fully-fledged GraphQL application framework. This guide targets the framework version of Nexus which is currently available under the `@next` npm tag.
+
+Next, install the the Prisma plugin for Nexus which will allow you to expose Prisma models in your GraphQL API:
+
+```
+npm install nexus-plugin-prisma
+```
+
+### 1.2. Configure TypeScript
+
+Since you'll be using TypeScript in this guide, you need to add the required dependencies:
+
+```
+npm install typescript ts-node --save-dev
+```
+
+Create a new file called `tsconfig.json` in the root directory of your project:
+
+```
+touch tsconfig.json
+```
+
+Now add the following contents to the new file:
+
+```json
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "strict": true,
+    "rootDir": "api"
+  },
+  "include": ["api"]
+}
+```
+
+### 1.3. Create your basic Nexus setup
+
+Create the root source file of your API called `app.ts`:
+
+```
+touch app.ts
+```
+
+Now add the following code to it:
+
+```ts
+import { log, settings, use } from 'nexus'
+import { prisma } from 'nexus-plugin-prisma'
+
+use(prisma({ migrations: false }))
+
+settings.change({
+  logger: {
+    level: 'trace',
+  },
+  server: {
+    startMessage: (info) => {
+      settings.original.server.startMessage(info)
+    },
+  },
+  schema: {
+    generateGraphQLSDLFile: './src/generated/nexus.graphql'
+  }
+})
+```
+
+Also, adjust the scripts section inside your `package.json` to include the following commands:
+
+```json line-number
+{
+  "scripts": {
++    "dev": "nexus dev",
++    "build": "nexus build",
++    "start": "node node_modules/.build"
+  }
+}
+```
+
+At this point, you can run the app using the following command:
+
+```
+npm run dev
+```
+
+You should see the following CLI output:
+
+```
+544 ▲ nexus:schema Your GraphQL schema is empty. This is normal if you have not defined any GraphQL types yet. But if you did, check that the file name follows the convention: all graphql.ts modules or direct child modules within a graphql directory are automatically imported.
+  3 ● server listening  --  url: 'http://localhost:4000/'
+```
+
+Your GraphQL server is running, but there's no actual _GraphQL schema_ connected to it yet. In the following steps, we'll explain how you can migrate your existing SDL-first GraphQL schema that's implemented with `prisma-binding` to an equivalent setup using Nexus.
+
+## 2. Create your GraphQL types
+
+The first step is to create your _GraphQL types_. In this case, your GraphQL types will mirror the Prisma models (as it likely was the case in your `prisma-binding` setup as well). In case the exposed GraphQL type deviates from a Prisma model, you'll be able to easily adjust the exposed GraphQL type accordingly using the Nexus API. 
+
+For the purpose of this guide, you'll keep all the code in a single file. However, you can structure the files to your personal preference and `import` accordingly.
+
+Create a new file called `graphql.ts` right next to `app.ts`:
+
+```
+touch graphql.ts
+```
+
+In Nexus, GraphQL types are defined via the `objectType` function that's exposed by the main `schema` object. Import `schema` and then start with the skeletton for your first GraphQL type. In this case, we're starting by mapping Prisma's `User` model to GraphQL:
+
+```ts
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    // the fields of the type will be defined here
+  },
+})
+```
+
+With this code in place, you can start exposing the _fields_ of the `User` model one by one. You can use your editor's autocompletion to save some typing. Inside the body of the `definition` function, type `t.model.` and then hit <kbd>CTRL</kbd>+<kbd>SPACE</kbd>. This will bring up your the autocompletion and suggest all fields that are defined on the `User` model:
+
+![](https://imgur.com/IlIM2dv.png)
+
+In that manner, you can start completing your object type definition until you exposed all the fields of the model:
+
+```ts
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    t.model.id()
+    t.model.email()
+    t.model.name()
+    t.model.jsonData()
+    t.model.role()
+    t.model.profile()
+    t.model.posts()
+  },
+})
+```
+
+At this point, any _relation fields_ might give you TypeScript errors. That's expected, they will resolve automatically once you've added the remaining types.
+
+> **Note**: Be sure to have you Nexus development server that you started with `yarn dev` running all the time. It constantly updates the generated Nexus types that enable the autocompletion in the background.
+
+Note that the `t.model.posts` relation exposes a _list_ of `Post` objects. By default, Nexus exposes only pagination properties for that list – if you want to add ordering and filtering for that relation as well, you'll need to explicitly enable those:
+
+```ts line-number
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    t.model.id()
+    t.model.email()
+    t.model.name()
+    t.model.jsonData()
+    t.model.role()
+    t.model.profile()
++    t.model.posts({
++      filtering: true,
++      ordering: true,
++    })
+  },
+})
+```
+
+Once you're done with the first type, you can start defining the remaining ones.
+
+<details><summary>Expand to view the full version of the sample data model</summary>
+
+```ts
+// TBD
+```
+
+</details>
+
+You can view the current version of your GraphQL schema in SDL in the generated GraphQL schema file in `./src/generated/nexus.graphql`.
+
+## 3. Migrate GraphQL operations
+
+As a next step, you can start migrating all the GraphQL queries and mutations from the previous GraphQL API to the new one.
+
+For this guide, the following sample GraphQL schema will be used:
+
+```graphql
+# import Post from './generated/prisma.graphql'
+# import User from './generated/prisma.graphql'
+# import Category from './generated/prisma.graphql'
+
+type Query {
+  posts(searchString: String): [Post!]!
+  user(id: ID!): User
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+  allCategories: [Category!]!
+}
+
+type Mutation {
+  createDraft(authorId: ID!, title: String!, content: String!): Post
+  publish(id: ID!): Post
+  deletePost(id: ID!): Post
+  signup(name: String!, email: String!): User!
+  updateBio(userId: String!, bio: String!): User
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+  createUser(data: UserCreateInput!): User!
+}
+```
+
+### 3.1. Migrate GraphQL queries
+
+In this section, you'll migrate all GraphQL _queries_ from `prisma-binding` to Nexus.
+
+#### 3.1.1. Define the `Query` type
+
+The first step to migrate any queries is to define the `Query` type of your GraphQL API. Once that's done, you can gradually add operations to it. Add the following definition to `graphql.ts`:
+
+```ts
+schema.queryType({
+  definition(t) {
+    // your GraphQL queries + resolvers will be defined here
+  }
+})
+```
+
+#### 3.1.2. Migrate the `users` query (which uses `forwardTo`)
+
+The `users` query from the sample GraphQL schema is defined and implemented as follows:
+
+```graphql
+type Query {
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+  # ... other queries
+}
+```
+
+```js
+const resolvers = {
+  Query: {
+    users: forwardTo('prisma'),
+    // ... other resolvers
+  }
+}
+```
+
+To mirror the same behaviour with Nexus, you can use the `crud` property on the `t` variable inside the `definition` function. Similar to `model`, this property is available because you're using the `nexus-prisma-plugin` which leverages type information from your Prisma models and auto-generates resolvers under the hood. The `crud` property also support autocompletion, so you can explore all available queries in your editor again:
+
+![](https://imgur.com/XoboQUP.png)
+
+To add the `users` query to your GraphQL API, add the following lines to the query type definition:
+
+```ts line-number
+schema.queryType({
+  definition(t) {
++    t.crud.users({
++      filtering: true,
++      ordering: true,
++    })
+  }
+})
+```
+
+#### 3.1.3. Migrate the `posts` query
+
+The `posts` query is defined and implemented as follows:
+
+```graphql
+type Query {
+  posts(searchString: String): [Post!]!
+  # ... other queries
+}
+```
+
+```js
+const resolvers = {
+  Query: {
+    posts: (_, args, context, info) => {
+      return context.prisma.query.posts(
+        {
+          where: {
+            OR: [
+              { title_contains: args.searchString },
+              { content_contains: args.searchString },
+            ],
+          },
+        },
+        info,
+      )
+    },
+    // ... other resolvers
+  }
+}
+```
+
+To define
