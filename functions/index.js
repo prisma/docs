@@ -4,7 +4,6 @@ const client = new PrismaClient();
 
 exports.handler = async function(event, context, callback) {
   const body = JSON.parse(event.body);
-
   if (!body.pageUrl) {
     throw new Error(`Please provide a pageUrl`);
   }

@@ -25,6 +25,12 @@ const gatsbyRemarkPlugins = [
   {
     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
   },
+  {
+    resolve: 'gatsby-remark-copy-linked-files',
+    options: {
+      destinationDir: "static",
+    },
+  }
 ]
 
 module.exports = {
