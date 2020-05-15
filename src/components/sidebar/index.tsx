@@ -65,14 +65,6 @@ const getGuides = (allEdges: any) =>
 const SidebarLayout = ({ isMobile }: any) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
 
-  // return (
-  //   <Sidebar>
-  //     <List>
-  //       <Tree edges={allMdx.edges} />
-  //     </List>
-  //   </Sidebar>
-  // )
-
   return !isMobile ? (
     <StickyContainer>
       <SidebarContainer>

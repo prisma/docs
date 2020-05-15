@@ -43,13 +43,13 @@ exports.createPages = ({ graphql, actions }) => {
   }
 
   const getDesc = (frontmatter, lang, db) => {
-    let pageSeoDesc= frontmatter.metaDescription || frontmatter.title
+    let pageSeoDesc = frontmatter.metaDescription || frontmatter.title
     if (lang || db) {
       const queryParam = `${lang ? `${lang}${db ? '-' : ''}` : ''}${db ? `${db}` : ''}`
       const descEntry = frontmatter.techMetaDescriptions
         ? frontmatter.techMetaDescriptions.find(item => item.name === queryParam)
         : null
-        pageSeoDesc = descEntry ? descEntry.value : pageSeoDesc
+      pageSeoDesc = descEntry ? descEntry.value : pageSeoDesc
     }
 
     return pageSeoDesc
@@ -103,7 +103,7 @@ exports.createPages = ({ graphql, actions }) => {
                   context: {
                     id: node.fields.id,
                     seoTitle: getTitle(node.frontmatter, lang, db),
-                    seoDescription: getDesc(node.frontmatter, lang, db)
+                    seoDescription: getDesc(node.frontmatter, lang, db),
                   },
                 })
               )
@@ -116,7 +116,7 @@ exports.createPages = ({ graphql, actions }) => {
                 context: {
                   id: node.fields.id,
                   seoTitle: getTitle(node.frontmatter, lang, null),
-                  seoDescription: getDesc(node.frontmatter, lang, null)
+                  seoDescription: getDesc(node.frontmatter, lang, null),
                 },
               })
             )
@@ -131,7 +131,7 @@ exports.createPages = ({ graphql, actions }) => {
               context: {
                 id: node.fields.id,
                 seoTitle: getTitle(node.frontmatter, null, db),
-                seoDescription: getDesc(node.frontmatter, null, db)
+                seoDescription: getDesc(node.frontmatter, null, db),
               },
             })
           )
@@ -142,7 +142,7 @@ exports.createPages = ({ graphql, actions }) => {
           context: {
             id: node.fields.id,
             seoTitle: getTitle(node.frontmatter),
-            seoDescription: getDesc(node.frontmatter)
+            seoDescription: getDesc(node.frontmatter),
           },
         })
       })
@@ -162,4 +162,3 @@ exports.onCreateWebpackConfig = ({ actions }) => {
     },
   })
 }
-

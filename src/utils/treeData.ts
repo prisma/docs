@@ -20,7 +20,15 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
       {
         node: {
           fields: { slug, modSlug },
-          frontmatter: { title, staticLink, duration, experimental, dbSwitcher, langSwitcher, hidePage },
+          frontmatter: {
+            title,
+            staticLink,
+            duration,
+            experimental,
+            dbSwitcher,
+            langSwitcher,
+            hidePage,
+          },
         },
       }: TreeNode
     ) => {
@@ -78,7 +86,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           duration,
           experimental,
           topLevel,
-          hidePage
+          hidePage,
         })
       }
 

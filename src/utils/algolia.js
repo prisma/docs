@@ -72,7 +72,7 @@ const settings = {
   attributesToHighlight: ['title', 'heading', 'content'],
   attributesToSnippet: ['title:20', 'heading:20', 'content:25'],
   hitsPerPage: 20,
-  separatorsToIndex: '!#()[]{}*+-_一,:;<>?@/\^|%&~£¥$§€†‡'
+  separatorsToIndex: '!#()[]{}*+-_一,:;<>?@/^|%&~£¥$§€†‡',
 }
 
 const queries = [
