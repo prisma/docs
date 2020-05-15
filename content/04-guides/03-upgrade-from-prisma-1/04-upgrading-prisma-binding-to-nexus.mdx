@@ -170,7 +170,7 @@ schema.objectType({
 
 At this point, any _relation fields_ might give you TypeScript errors. That's expected, they will resolve automatically once you've added the remaining types.
 
-> **Note**: Be sure to have you Nexus development server that you started with `yarn dev` running all the time. It constantly updates the generated Nexus types that enable the autocompletion in the background.
+> **Note**: Be sure to have you Nexus development server that you started with `npm run dev` running all the time. It constantly updates the generated Nexus types that enable the autocompletion in the background as you save a file.
 
 Note that the `t.model.posts` relation exposes a _list_ of `Post` objects. By default, Nexus exposes only pagination properties for that list – if you want to add ordering and filtering for that relation as well, you'll need to explicitly enable those:
 
@@ -191,6 +191,8 @@ schema.objectType({
   },
 })
 ```
+
+> **Note**: If you have one or more fields of type `Json` on any of your Prisma models, enabling `filtering` currently produces an [error](https://github.com/graphql-nexus/nexus-schema-plugin-prisma/issues/666). As a workaround, you can temporarily comment out these field(s).
 
 Once you're done with the first type, you can start defining the remaining ones.
 
@@ -251,7 +253,9 @@ schema.queryType({
 
 #### 3.1.2. Migrate the `users` query (which uses `forwardTo`)
 
-The `users` query from the sample GraphQL schema is defined and implemented as follows:
+The `users` query from the sample GraphQL schema is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
 
 ```graphql
 type Query {
@@ -259,6 +263,8 @@ type Query {
   # ... other queries
 }
 ```
+
+##### Resolver implementation with `prisma-binding`
 
 ```js
 const resolvers = {
@@ -273,6 +279,8 @@ To mirror the same behaviour with Nexus, you can use the `crud` property on the 
 
 ![](https://imgur.com/XoboQUP.png)
 
+##### Forwarding the query with the `nexus-prisma-plugin`
+
 To add the `users` query to your GraphQL API, add the following lines to the query type definition:
 
 ```ts line-number
@@ -286,9 +294,44 @@ schema.queryType({
 })
 ```
 
-#### 3.1.3. Migrate the `posts` query
+If you have the Nexus development server running, you can save the file and your GraphQL API will be updated to expose the new `users` query. You can also observe this by looking at the `Query` type inside the generated `nexus.graphql` file:
 
-The `posts` query is defined and implemented as follows:
+```graphql
+type Query {
+  users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: UserOrderByInput, skip: Int, where: UserWhereInput): [User!]!
+}
+```
+
+You can now write your first query against the new API, e.g.:
+
+```graphql
+{
+ 	users {
+    id
+    name
+    profile {
+      id
+      bio
+    }
+    posts {
+      id
+      title
+      categories {
+        id
+        name
+      }
+    }
+  } 
+}
+```
+
+If your application exposes all CRUD operations from Prisma using `forwardTo`, you can now continue adding all remaining ones using the same approach via `t.crud`. To learn how "custom" queries can be defined and resolved using Nexus, move on to the next sections.
+
+#### 3.1.3. Migrate the `posts(searchString: String): [Post!]!` query
+
+The `posts` query is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
 
 ```graphql
 type Query {
@@ -296,6 +339,8 @@ type Query {
   # ... other queries
 }
 ```
+
+##### Resolver implementation with `prisma-binding`
 
 ```js
 const resolvers = {
@@ -318,4 +363,250 @@ const resolvers = {
 }
 ```
 
-To define
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `queryType`:
+
+```ts line-number
+schema.queryType({
+  definition(t) {
+    t.crud.users({
+      filtering: true,
+      ordering: true
+    })
+
++    t.list.field('posts', {
++      type: 'Post',
++      args: { searchString: schema.stringArg() }
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to yourt GraphQL schema already:
+
+```graphql line-number
+type Query {
+|  posts(searchString: String): [Post!]
+  users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: UserOrderByInput, skip: Int, where: UserWhereInput): [User!]!
+}
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+{
+  posts {
+    id
+    title
+  }
+}
+```
+
+However, the response of such a query will always be:
+
+```json
+{
+  "data": {
+    "posts": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.queryType({
+  definition(t) {
+    t.crud.users({
+      filtering: true,
+      ordering: true
+    })
+
+    t.list.field('posts', {
+      type: 'Post',
+      args: { searchString: schema.stringArg() },
++      resolve: (_, args, context) => {
++        return context.db.post.findMany({
++          where: {
++            OR: [{
++              title: { contains: args.searchString }
++            }, {
++              content: { contains: args.searchString }
++            }]
++          }
++        })
++      }
+    })
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+#### 3.1.3. Migrate the `user(uniqueInput: UserUniqueInput): User` query
+
+The `user` query is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Query {
+  user(userUniqueInput: UserUniqueInput): User
+  # ... other queries
+}
+
+input UserUniqueInput {
+  id: String
+  email: String
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Query: {
+    user: (_, args, context, info) => {
+      return context.prisma.query.user(
+        {
+          where: args.userUniqueInput,
+        },
+        info,
+      )
+    },
+    // ... other resolvers
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `queryType` and define and `inputObjectType` to that includes the two `@unique` fields of your `User` model:
+
+```ts line-number
++schema.inputObjectType({
++  name: 'UserUniqueInput',
++  definition(t) {
++    t.string('id')
++    t.string('email')
++  },
++})
+
+schema.queryType({
+  definition(t) {
+    t.crud.users({
+      filtering: true,
+      ordering: true
+    })
+
+    t.list.field('posts', {
+      type: 'Post',
+      args: { searchString: schema.stringArg() }
+    })
+
++    t.field('user', {
++      type: 'User',
++      args: {
++        userUniqueInput: schema.arg({ type: 'UserUniqueInput' })
++      }
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to yourt GraphQL schema already:
+
+```graphql line-number
+type Query {
+  posts(searchString: String): [Post!]
+|  user(userUniqueInput: UserUniqueInput): User
+  users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: UserOrderByInput, skip: Int, where: UserWhereInput): [User!]!
+}
+
+| input UserUniqueInput {
+|   email: String
+|   id: String
+| }
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+{
+  user(userUniqueInput: { email: "alice@prisma.io" }) {
+    id
+    name
+  }
+}
+```
+
+However, the response of such a query will always be:
+
+```json
+{
+  "data": {
+    "user": null
+  }
+}
+```
+
+##### Code-first resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.inputObjectType({
+  name: 'UserUniqueInput',
+  definition(t) {
+    t.string('id')
+    t.string('email')
+  },
+})
+
+schema.queryType({
+  definition(t) {
+    t.crud.users({
+      filtering: true,
+      ordering: true
+    })
+
+    t.list.field('posts', {
+      type: 'Post',
+      args: { searchString: schema.stringArg() },
+      resolve: (_, args, context) => {
+        return context.db.post.findMany({
+          where: {
+            OR: [{
+              title: { contains: args.searchString }
+            }, {
+              content: { contains: args.searchString }
+            }]
+          }
+        })
+      }
+    })
+
+    t.field('user', {
+      type: 'User',
+      nullable: true,
+      args: {
+        userUniqueInput: schema.arg({ type: 'UserUniqueInput' })
+      },
++      resolve: (_, args, context) => {
++        return context.db.user.findOne({
++          where: {
++            id: args.userUniqueInput?.id,
++            email: args.userUniqueInput?.email
++          }
++        })
++      }
+    })
+  },
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
