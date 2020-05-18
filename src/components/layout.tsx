@@ -34,7 +34,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   const Content = styled.article`
     max-width: 880px;
     width: 880px;
-    margin: -80px 0 1rem 24px;
+    margin: -80px 0 1rem;
     position: relative;
     z-index: 100;
     @media (min-width: 0px) and (max-width: 1024px) {

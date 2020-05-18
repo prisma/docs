@@ -33,12 +33,14 @@ const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
   const parentTitle = getParentTitle(slug, allMdx)
   return (
     <BreadcrumbTitle>
-      {parentTitle.map((part: any, index: number) => (
-        <span key={index}>
-          {part.link && !nonLink ? <Link to={part.link}>{part.title} </Link> : part.title}
-          {parentTitle.length !== index + 1 ? ' / ' : ''}
-        </span>
-      ))}
+      {parentTitle.length > 0
+        ? parentTitle.map((part: any, index: number) => (
+            <span key={index}>
+              {part.link && !nonLink ? <Link to={part.link}>{part.title} </Link> : part.title}
+              {parentTitle.length !== index + 1 ? ' / ' : ''}
+            </span>
+          ))
+        : ''}
     </BreadcrumbTitle>
   )
 }
