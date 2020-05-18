@@ -157,9 +157,19 @@ const TreeNode = ({
   hidePage,
 }: any) => {
   const isCollapsed = collapsed[label]
-  const collapse = (e: any) => {
+  const collapse = () => {
+    Object.keys(collapsed).map(lbl => {
+      if (lbl !== label) {
+        collapsed[lbl] = collapsed[lbl] == false ? (collapsed[lbl] = true) : collapsed[lbl]
+      }
+    })
+    setCollapsed(label)
+  }
+
+  const justExpand = (e: any) => {
     setCollapsed(label)
     e.preventDefault()
+    e.stopPropagation()
   }
 
   const hasChildren = items.length !== 0
@@ -205,8 +215,8 @@ const TreeNode = ({
           id={slug}
         >
           {hasExpandButton ? (
-            <span className="collapse-title">
-              <button aria-label="collapse" className="item-collapser" onClick={collapse}>
+            <span className="collapse-title" onClick={collapse}>
+              <button aria-label="collapse" className="item-collapser" onClick={justExpand}>
                 {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />

@@ -51,7 +51,7 @@ const DocHit = ({ hit }: any) => (
       style={{ boxShadow: `none`, textDecoration: 'none' }}
       to={hit.slug.includes('index') ? null : hit.path}
     >
-      <ParentTitle slug={hit.slug} />
+      <ParentTitle slug={hit.slug} nonLink={true} />
       <h3>
         <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}
         <span style={{ color: 'var(--code-inner-color)' }}>
