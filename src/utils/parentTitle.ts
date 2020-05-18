@@ -18,7 +18,6 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
       content.parentTitle = content.parentTitle + parent?.title + ' / '
     })
   })
-
-  return allContent?.find((mdx: any) => mdx.slug === slug).parentTitle.slice(0, -2)
+  const currentSlug = allContent.find((mdx: any) => mdx.slug === slug)
+  return currentSlug ? currentSlug.parentTitle.slice(0, -2) : ''
 }
-
