@@ -41,7 +41,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
           navigate={navigate}
-          toc={toc ? tableOfContents : []}
+          toc={toc || toc == null ? tableOfContents : []}
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>

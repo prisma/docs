@@ -27,7 +27,7 @@ const Subsections = () => {
       ) {
         getSubSecs(currentSlug, tree.items)
       } else {
-        subSecs = tree.items
+        subSecs = tree.items.filter((t: any) => t.label !== 'index')
         return
       }
     }

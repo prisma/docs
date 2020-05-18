@@ -67,7 +67,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
         }
         if (defaultCollapsed && location) {
           defaultCollapsed[part.toLowerCase()] =
-            tmp.topLevel || tmp.staticLink ? false : getCollpaseState(part.toLowerCase(), location)
+            tmp.topLevel || tmp.staticLink ? null : getCollpaseState(part.toLowerCase(), location)
         }
 
         prevItems = tmp.items
