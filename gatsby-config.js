@@ -18,6 +18,9 @@ const gatsbyRemarkPlugins = [
 
   {
     resolve: `gatsby-remark-images`,
+    options: {
+      disableBgImageOnAlpha: true,
+    },
   },
   {
     resolve: require.resolve('./plugins/gatsby-remark-to-absoluteurl'),
