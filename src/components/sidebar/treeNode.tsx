@@ -163,11 +163,11 @@ const TreeNode = ({
         collapsed[lbl] = collapsed[lbl] == false ? (collapsed[lbl] = true) : collapsed[lbl]
       }
     })
-    setCollapsed(label)
+    setCollapsed(label, false)
   }
 
   const justExpand = (e: any) => {
-    setCollapsed(label)
+    setCollapsed(label, true)
     e.preventDefault()
     e.stopPropagation()
   }
@@ -211,7 +211,6 @@ const TreeNode = ({
           to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'hh'}
-          partiallyActive={true}
           id={slug}
         >
           {hasExpandButton ? (
