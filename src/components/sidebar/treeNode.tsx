@@ -172,13 +172,6 @@ const TreeNode = ({
     e.stopPropagation()
   }
 
-  // // React.useEffect(() => {
-  //   const id = document.getElementById('/04-guides/02-deployment/01-deploying-to-zeit-now')
-  //   if (id) {
-  //     id.scrollIntoView()
-  //   }
-  // // }, [])
-
   const hasChildren = items.length !== 0
 
   const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${

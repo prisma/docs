@@ -4,10 +4,15 @@ import { calculateTreeData } from '../../utils/treeData'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { useLocation } from '@reach/router'
+import styled from 'styled-components'
 
 interface SubsecProps {
   depth?: number
 }
+
+const SubsectionWrapper = styled.div`
+  margin: 1.5rem 0;
+`
 
 const Subsections = ({ depth }: SubsecProps) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
@@ -37,20 +42,18 @@ const Subsections = ({ depth }: SubsecProps) => {
   const list = (subsecs: any, dep: number) => {
     const subs = subsecs.filter((t: any) => t.label !== 'index' && !t.hidePage)
     return (
-      <div>
-        <ul className="list">
-          {subs.map((sec: any, index: number) => (
-            <li key={index}>
-              <Link to={sec.url}>{sec.title}</Link>
-              {dep > 1 && sec.items.length > 0 && list(sec.items, dep - 1)}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <ul className="list">
+        {subs.map((sec: any, index: number) => (
+          <li key={index}>
+            <Link to={sec.url}>{sec.title}</Link>
+            {dep > 1 && sec.items.length > 0 && list(sec.items, dep - 1)}
+          </li>
+        ))}
+      </ul>
     )
   }
 
-  return list(subSecs, depth || 1)
+  return <SubsectionWrapper>{list(subSecs, depth || 1)}</SubsectionWrapper>
 }
 
 export default Subsections

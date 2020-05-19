@@ -1,6 +1,6 @@
 import { RouterProps } from '@reach/router'
 import * as React from 'react'
-import styled, { ThemeProvider } from 'styled-components'
+import styled from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
@@ -8,15 +8,6 @@ import { MDXProvider } from '@mdx-js/react'
 import customMdx from '../components/customMdx'
 import './layout.css'
 import Sidebar from './sidebar'
-// import { StickyContainer } from 'react-sticky';
-
-// interface ThemeProps {
-//   colorPrimary: string
-// }
-
-// const theme: ThemeProps = {
-//   colorPrimary: '#663399',
-// }
 
 type LayoutProps = React.ReactNode & RouterProps
 
@@ -74,7 +65,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
   `
 
   return (
-    // <ThemeProvider theme={theme}>
     <MDXProvider components={customMdx}>
       <Header headerProps={header} />
       <Wrapper>
@@ -87,7 +77,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
       </Wrapper>
       <Footer footerProps={footer} />
     </MDXProvider>
-    // </ThemeProvider>
   )
 }
 
