@@ -19,6 +19,11 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
       name: 'id',
       value: node.id,
     })
+    createNodeField({
+      node,
+      name: 'modSlug',
+      value: `/${value.replace('/index', '')}`,
+    })
   }
 }
 
@@ -38,13 +43,13 @@ exports.createPages = ({ graphql, actions }) => {
   }
 
   const getDesc = (frontmatter, lang, db) => {
-    let pageSeoDesc= frontmatter.metaDescription || frontmatter.title
+    let pageSeoDesc = frontmatter.metaDescription || frontmatter.title
     if (lang || db) {
       const queryParam = `${lang ? `${lang}${db ? '-' : ''}` : ''}${db ? `${db}` : ''}`
       const descEntry = frontmatter.techMetaDescriptions
         ? frontmatter.techMetaDescriptions.find(item => item.name === queryParam)
         : null
-        pageSeoDesc = descEntry ? descEntry.value : pageSeoDesc
+      pageSeoDesc = descEntry ? descEntry.value : pageSeoDesc
     }
 
     return pageSeoDesc
@@ -59,6 +64,7 @@ exports.createPages = ({ graphql, actions }) => {
               fields {
                 slug
                 id
+                modSlug
               }
               frontmatter {
                 title
@@ -92,12 +98,12 @@ exports.createPages = ({ graphql, actions }) => {
             node.frontmatter.langSwitcher.forEach(lang =>
               node.frontmatter.dbSwitcher.forEach(db =>
                 createPage({
-                  path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}-${db}`,
+                  path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${lang}-${db}`,
                   component: path.resolve(`./src/layouts/articleLayout.tsx`),
                   context: {
                     id: node.fields.id,
                     seoTitle: getTitle(node.frontmatter, lang, db),
-                    seoDescription: getDesc(node.frontmatter, lang, db)
+                    seoDescription: getDesc(node.frontmatter, lang, db),
                   },
                 })
               )
@@ -105,12 +111,12 @@ exports.createPages = ({ graphql, actions }) => {
           } else {
             node.frontmatter.langSwitcher.forEach(lang =>
               createPage({
-                path: `${node.fields.slug.replace(/\d+-/g, '')}-${lang}`,
+                path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${lang}`,
                 component: path.resolve(`./src/layouts/articleLayout.tsx`),
                 context: {
                   id: node.fields.id,
                   seoTitle: getTitle(node.frontmatter, lang, null),
-                  seoDescription: getDesc(node.frontmatter, lang, null)
+                  seoDescription: getDesc(node.frontmatter, lang, null),
                 },
               })
             )
@@ -120,23 +126,23 @@ exports.createPages = ({ graphql, actions }) => {
         if (node.frontmatter.dbSwitcher && !node.frontmatter.langSwitcher) {
           node.frontmatter.dbSwitcher.forEach(db =>
             createPage({
-              path: `${node.fields.slug.replace(/\d+-/g, '')}-${db}`,
+              path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${db}`,
               component: path.resolve(`./src/layouts/articleLayout.tsx`),
               context: {
                 id: node.fields.id,
                 seoTitle: getTitle(node.frontmatter, null, db),
-                seoDescription: getDesc(node.frontmatter, null, db)
+                seoDescription: getDesc(node.frontmatter, null, db),
               },
             })
           )
         }
         createPage({
-          path: node.fields.slug ? node.fields.slug.replace(/\d+-/g, '') : '/',
+          path: node.fields.modSlug ? node.fields.modSlug.replace(/\d+-/g, '') : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
             id: node.fields.id,
             seoTitle: getTitle(node.frontmatter),
-            seoDescription: getDesc(node.frontmatter)
+            seoDescription: getDesc(node.frontmatter),
           },
         })
       })
@@ -156,4 +162,3 @@ exports.onCreateWebpackConfig = ({ actions }) => {
     },
   })
 }
-

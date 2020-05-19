@@ -6,7 +6,7 @@ import Clear from '../../icons/Clear'
 
 const Form = styled.form`
   position: relative;
-  width: 215px;
+  width: 208px;
   position: relative;
   z-index: 100001;
   display: flex;
