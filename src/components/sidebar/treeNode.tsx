@@ -5,6 +5,7 @@ import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
 import { useLocation } from '@reach/router'
+import { withPrefix } from 'gatsby'
 
 const List = styled.ul`
   list-style: none;
@@ -165,6 +166,7 @@ const TreeNode = ({
     })
     setCollapsed(label, false)
   }
+  const location = useLocation()
 
   const justExpand = (e: any) => {
     setCollapsed(label, true)
@@ -201,7 +203,6 @@ const TreeNode = ({
     setIsOpen(isCollapsed ? 'close' : 'open')
   }, [isCollapsed])
 
-  const location = useLocation()
   const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))
 
   return url === '/' ? null : (
@@ -211,7 +212,7 @@ const TreeNode = ({
           to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'hh'}
-          id={slug}
+          id={withPrefix(url)}
         >
           {hasExpandButton ? (
             <span className="collapse-title" onClick={collapse}>

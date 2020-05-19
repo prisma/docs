@@ -5,6 +5,7 @@ import styledTS from 'styled-components-ts'
 import { StickyContainer, Sticky } from 'react-sticky'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
+import config from '../../../config'
 
 const SidebarContainer = styled.aside`
   width: 215px;
@@ -14,6 +15,7 @@ const SidebarContainer = styled.aside`
 const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
   margin: 0;
   overflow: auto;
+  height: 100vh;
   ${({ isSticky }: any) =>
     isSticky &&
     css`
@@ -57,21 +59,20 @@ const List = styled.ul`
   padding: 0 0 0 15px;
   margin: 0;
 `
-
-const getNonGuides = (allEdges: any) =>
-  allEdges.filter((edge: any) => !edge.node.fields.slug.includes(`04-guides`))
-const getGuides = (allEdges: any) =>
-  allEdges.filter((edge: any) => edge.node.fields.slug.includes(`04-guides`))
+const paneRegex = new RegExp('\\b(' + config.sidebar.tablet_menu_split.join('|') + ')\\b', 'ig')
+const getLeftPane = (allEdges: any) =>
+  allEdges.filter((edge: any) => !edge.node.fields.slug.match(paneRegex))
+const getRightPane = (allEdges: any) =>
+  allEdges.filter((edge: any) => edge.node.fields.slug.match(paneRegex))
 
 const SidebarLayout = ({ isMobile }: any) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
-
   return !isMobile ? (
     <StickyContainer>
       <SidebarContainer>
         <Sticky topOffset={0}>
           {({ style, isSticky }: any) => (
-            <Sidebar style={style} isSticky={isSticky}>
+            <Sidebar style={style} isSticky={isSticky} id="sidebar-container">
               <List>
                 <Tree edges={allMdx.edges} />
               </List>
@@ -84,10 +85,10 @@ const SidebarLayout = ({ isMobile }: any) => {
     <Sidebar>
       <div className="tablet-only">
         <List>
-          <Tree edges={getNonGuides(allMdx.edges)} />
+          <Tree edges={getLeftPane(allMdx.edges)} />
         </List>
         <List>
-          <Tree edges={getGuides(allMdx.edges)} />
+          <Tree edges={getRightPane(allMdx.edges)} />
         </List>
       </div>
       <div className="mobile-only">
