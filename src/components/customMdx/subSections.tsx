@@ -5,6 +5,7 @@ import { AllArticles } from '../../interfaces/AllArticles.interface'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { useLocation } from '@reach/router'
 import styled from 'styled-components'
+import { withPrefix } from 'gatsby'
 
 interface SubsecProps {
   depth?: number
@@ -20,23 +21,24 @@ const Subsections = ({ depth }: SubsecProps) => {
   const treeData = calculateTreeData(allMdx.edges, null, null)
   let subSecs: any[] = []
 
-  const getSubSecs = (currentSlug: string, treeItems: any[]): any => {
+  const getSubSecs = (currentPath: string, treeItems: any[]): any => {
     for (let i = 0; i < treeItems.length - 1; i++) {
       const tree = treeItems[i]
       if (
         !(
-          tree.url ===
-            `${currentSlug.substr(-1) === '/' ? currentSlug.slice(0, -1) : currentSlug}` &&
+          withPrefix(tree.url) ===
+            `${currentPath.substr(-1) === '/' ? currentPath.slice(0, -1) : currentPath}` &&
           tree.label !== 'index'
         )
       ) {
-        getSubSecs(currentSlug, tree.items)
+        getSubSecs(currentPath, tree.items)
       } else {
         subSecs = tree.items
         return
       }
     }
   }
+
   getSubSecs(location.pathname, treeData.items)
 
   const list = (subsecs: any, dep: number) => {
