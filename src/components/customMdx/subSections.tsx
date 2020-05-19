@@ -1,17 +1,17 @@
 import Link from '../link'
 import * as React from 'react'
-import styled from 'styled-components'
 import { calculateTreeData } from '../../utils/treeData'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { useLocation } from '@reach/router'
 
-const SubsectionWrapper = styled.div``
+interface SubsecProps {
+  depth?: number
+}
 
-const Subsections = () => {
+const Subsections = ({ depth }: SubsecProps) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
   const location = useLocation()
-  // const slugg = '/01-getting-started/index'
   const treeData = calculateTreeData(allMdx.edges, null, null)
   let subSecs: any[] = []
 
@@ -27,23 +27,30 @@ const Subsections = () => {
       ) {
         getSubSecs(currentSlug, tree.items)
       } else {
-        subSecs = tree.items.filter((t: any) => t.label !== 'index')
+        subSecs = tree.items
         return
       }
     }
   }
   getSubSecs(location.pathname, treeData.items)
-  return (
-    <SubsectionWrapper>
-      <ul className="list">
-        {subSecs.map((sec: any, index: number) => (
-          <li key={index}>
-            <Link to={sec.url}>{sec.title}</Link>
-          </li>
-        ))}
-      </ul>
-    </SubsectionWrapper>
-  )
+
+  const list = (subsecs: any, dep: number) => {
+    const subs = subsecs.filter((t: any) => t.label !== 'index' && !t.hidePage)
+    return (
+      <div>
+        <ul className="list">
+          {subs.map((sec: any, index: number) => (
+            <li key={index}>
+              <Link to={sec.url}>{sec.title}</Link>
+              {dep > 1 && sec.items.length > 0 && list(sec.items, dep - 1)}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  return list(subSecs, depth || 1)
 }
 
 export default Subsections

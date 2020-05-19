@@ -37,5 +37,4 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
   })
   const currentSlug = allContent.find((mdx: any) => mdx.modSlug === slug)
   return currentSlug ? currentSlug.parentTitle : []
-  // return allContent?.find((mdx: any) => mdx.modSlug === slug).parentTitle
 }

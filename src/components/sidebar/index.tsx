@@ -58,8 +58,8 @@ const List = styled.ul`
   // padding: 0 0 0 20px;
   // margin: 0;
   list-style: none;
-  padding: 0 0 0 20px;
-  margin: 4rem 0 0;
+  padding: 0 0 0 15px;
+  margin: 0;
 `
 
 const getNonGuides = (allEdges: any) =>
@@ -69,6 +69,8 @@ const getGuides = (allEdges: any) =>
 
 const SidebarLayout = ({ isMobile }: any) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
+
+  
 
   return !isMobile ? (
     <StickyContainer>
