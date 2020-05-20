@@ -7,8 +7,8 @@ import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
 
 const SidebarContainer = styled.aside`
-  width: 215px;
-  margin: 0px 30px 0 -16px;
+  width: 231px;
+  margin: 0px 16px 0 -16px;
 `
 
 const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
@@ -54,7 +54,7 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
 
 const List = styled.ul`
   list-style: none;
-  padding: 0 0 0 15px;
+  padding: 0 5px 0 15px;
   margin: 0;
 `
 
