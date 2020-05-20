@@ -18,6 +18,9 @@ const gatsbyRemarkPlugins = [
 
   {
     resolve: `gatsby-remark-images`,
+    options: {
+      disableBgImageOnAlpha: true,
+    },
   },
   {
     resolve: require.resolve('./plugins/gatsby-remark-to-absoluteurl'),
@@ -28,9 +31,9 @@ const gatsbyRemarkPlugins = [
   {
     resolve: 'gatsby-remark-copy-linked-files',
     options: {
-      destinationDir: "static",
+      destinationDir: 'static',
     },
-  }
+  },
 ]
 
 module.exports = {
@@ -48,13 +51,6 @@ module.exports = {
     docsLocation: config.siteMetadata.docsLocation,
   },
   plugins: [
-    {
-      resolve: `gatsby-plugin-google-analytics`,
-      options: {
-        trackingId: 'UA-74131346-14',
-        anonymize: true,
-      },
-    },
     'gatsby-plugin-react-helmet',
     'gatsby-transformer-sharp',
     'gatsby-plugin-sharp',
