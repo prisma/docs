@@ -17,10 +17,10 @@ const Tree = ({ edges }: AllEdges) => {
   })
   const [collapsed, setCollapsed] = useGlobalState('collapsedState')
 
-  const toggle = (label: string, toggle: boolean) => {
+  const toggle = (label: string, toggleContent: boolean) => {
     setCollapsed({
       ...collapsed,
-      [label]: !toggle ? false : !collapsed[label],
+      [label]: !toggleContent ? false : !collapsed[label],
     })
   }
 

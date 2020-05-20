@@ -51,6 +51,9 @@ const config = {
   feedback: {
     function_name: 'https://prisma2.netlify.app/.netlify/functions/index',
   },
+  sidebar: {
+    tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
+  },
   footer: {
     logoLink: '/',
     title: 'Prisma',
