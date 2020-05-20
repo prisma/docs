@@ -56,7 +56,7 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
 
 const List = styled.ul`
   list-style: none;
-  padding: 0 5px 0 15px;
+  padding: 0 7px 0 15px;
   margin: 0;
 `
 const paneRegex = new RegExp('\\b(' + config.sidebar.tablet_menu_split.join('|') + ')\\b', 'ig')
