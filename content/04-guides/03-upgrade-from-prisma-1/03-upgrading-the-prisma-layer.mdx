@@ -19,7 +19,6 @@ Once done with these steps, you can move on to the next guide that explains how 
 
 > **Note**: During the upgrade process it can be helpful to get a graphical view on your database. It is therefore recommended to use a graphical database client to connect to your database, such as [TablePlus](https://tableplus.com/) or [Postico](https://eggerapps.at/postico/).
 
-
 ## 1. Install Prisma 2.0 CLI 
 
 The Prisma 2.0 CLI is available as the [`@prisma/cli`](https://www.npmjs.com/package/@prisma/cli) package on npm and is invoked via the `prisma` command.
@@ -81,7 +80,7 @@ You can now invoke it as follows:
 npx prisma
 ```
 
-Because the CLI command of this version is identical to the Prisma 2 CLI command (in both cases, it's just `prisma`), there might be name clashes between the two. You might have to uninstall the `@prisma/cli` package if you want to run Prisma 1 commands.
+Because the CLI command of this version is identical to the Prisma 2 CLI command (in both cases, it's just `prisma`), there might be [name clashes](https://github.com/prisma/prisma/issues/2433) between the two. You might have to uninstall the `@prisma/cli` package if you want to run Prisma 1 commands.
 
 </details>
 
@@ -89,7 +88,7 @@ Because the CLI command of this version is identical to the Prisma 2 CLI command
 
 For this guide, you'll first create a new Prisma schema using the `prisma init` command and then "fill" it with a data model using [introspection](../../reference/tools-and-interfaces/introspection).
 
-Run the following command to create your Prisma schema:
+Run the following command to create your Prisma schema (note that this throws an error if you already have a folder called `prisma`):
 
 ```copy
 npx prisma init
@@ -213,9 +212,89 @@ Based on these connection details, you need to configure the `DATABASE_URL` envi
 DATABASE_URL="postgresql://janedoe:randompassword@localhost:5432/mydb?schema=public"
 ```
 
-> **Note for PostgreSQL users**: The `schema` argument is typically composed of your _service name_ and _service stage_ which are configured as the last two _path_ componens on the `endpoint` in your `prisma.yml`. 
->
-> For example, if your `endpoint` is `http://localhost:4466/myproject/dev`, the schema will be called `myproject$dev`. If the `endpoint` is `http://localhost:4466/`, the schema will be called `default$default`.
+When using **PostgreSQL**, the `schema` argument is typically composed of your _service name_ and _service stage_ and separated by the `$` character. 
+
+**MySQL** doesn't have the concept of _schemas_, but the same combination of _service name_ and _service stage_ determine the _database name_, separated by the `@` character. Service name and service stage are configured as the last two _path_ componens on the `endpoint` in your `prisma.yml`. 
+
+<!-- <details><summary>Expand for example connection URLs</summary>
+
+## MySQL
+
+**prisma.yml**
+
+```yml
+endpoint: http://localhost:4466/myproject/dev
+```
+
+**Database name**
+
+```
+myproject@dev
+```
+
+**Prisma 2.0 connection URL**
+
+```
+mysql://USER:PASSWORD@HOST:PORT/myproject@dev
+```
+
+---
+
+```yml
+endpoint: http://localhost:4466/
+```
+
+**Database name**
+
+```
+default@default
+```
+
+**Prisma 2.0 connection URL**
+
+```
+mysql://USER:PASSWORD@HOST:PORT/default@default
+```
+
+## PostgreSQL
+
+**prisma.yml**
+
+```yml
+endpoint: http://localhost:4466/myproject/dev
+```
+
+**Schema name**
+
+```
+myproject$dev
+```
+
+**Prisma 2.0 connection URL**
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=myproject$dev
+```
+
+---
+
+```yml
+endpoint: http://localhost:4466/
+```
+
+**Database name**
+
+```
+default$default
+```
+
+**Prisma 2.0 connection URL**
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=default$default
+```
+
+</details> -->
 
 Learn more on the [Connection URLs](../../reference/database-connectors/connection-urls) page.
 
@@ -319,8 +398,8 @@ CREATE INDEX "_CategoryToPost_B" ON"_CategoryToPost"("B" text_ops);
 Note that this data model has three [relations](../../reference/tools-and-interfaces/prisma-schema/relations):
 
 - 1-1: `User` ↔ `Profile`
-- 1-n: `User` ↔ `Post`
-- m-n: `Post` ↔ `Category` (maintained via the `_PostToUser` relation table)
+- 1-n: `User` ↔ `Post`  (maintained via the `_PostToUser` relation table)
+- m-n: `Post` ↔ `Category` (maintained via the `_CategoryToPost` relation table)
 
 Now you can run Prisma's introspection against your database with the following command:
 
@@ -372,8 +451,8 @@ model Category {
 
 While this is already a valid Prisma 2.0 schema, it lacks a number of _features_ that were part of its Prisma 1 equivalent:
 
-- no default CUID values for `@id` fields
-- no generated date values for the `createdAt` and `updatedAt` fields on `Post`
+- no auto-generated default CUID values for `@id` fields
+- no auto-generated date values for the `createdAt` and `updatedAt` fields on `Post`
 - no default value for the `role` field on `User`
 - no default value for the `published` field on `Post`
 
@@ -385,7 +464,11 @@ There further are a number of inconsistencies which result in a less idiomatic/e
 - the `jsonData` field on `User` is of type `String` instead of `Json`
 - the `role` field on `User` is of type `String` instead of `Role`, the `enum` definition for role is missing altogether
 
-While these inconsistencies don't actually impact the "feature set" you'll have available in your Prisma Client API, they make you lose certain constraints/guarantees that were present before. For example, Prisma now won't guarantee that a `User` is connected to at most one `Profile` because the relation between the tables was recognized as 1-n during introspection. Another issues is that you can store whatever text for the `jsonData` and role fields, regardless of whether it's valid JSON or represents a value of the `Role` enum.
+While these inconsistencies don't actually impact the "feature set" you'll have available in your Prisma Client API, they make you lose certain constraints/guarantees that were present before. 
+
+For example, Prisma now won't guarantee that a `User` is connected to _at most_ one `Profile` because the relation between the tables was recognized as 1-n during introspection, so one `User` record _could_ now get connected to multiple `Profile` records. 
+
+Another issues is that you can store whatever text for the `jsonData` and `role` fields, regardless of whether it's valid JSON or represents a value of the `Role` enum.
 
 To learn more about these inconsistencies check out the [Schema incompatibilities](./schema-incompatibilities) page.
 
@@ -394,6 +477,12 @@ In the following, we'll go through these incompatibilities and fix them one by o
 ## 5. Use the Prisma schema upgrade CLI to resolve schema incompatibilities
 
 The [Prisma schema upgrade CLI](./should-you-upgrade#prisma-schema-upgrade-cli) is an interactive tool that helps you upgrading your Prisma schema and ironing out most the inconsistencies listed above.
+
+You can either install it locally in your project, or invoke it once without installation using `npx`:
+
+```
+npx prisma-upgrade prisma1/datamodel.graphql prisma/schema.prisma
+```
 
 ...
 
