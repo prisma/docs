@@ -17,8 +17,8 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   }
   const {
     mdx: {
-      fields: { slug },
-      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher },
+      fields: { slug, modSlug },
+      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher, toc },
       body,
       parent,
       tableOfContents,
@@ -37,11 +37,11 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
         <TopSection
           location={props.location}
           title={title}
-          slug={slug}
+          slug={modSlug}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
           navigate={navigate}
-          toc={tableOfContents}
+          toc={toc || toc == null ? tableOfContents : []}
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
@@ -62,6 +62,7 @@ export const query = graphql`
     mdx(fields: { id: { eq: $id } }) {
       fields {
         slug
+        modSlug
       }
       body
       parent {
@@ -76,6 +77,7 @@ export const query = graphql`
         metaDescription
         langSwitcher
         dbSwitcher
+        toc
       }
     }
   }

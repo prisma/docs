@@ -31,9 +31,9 @@ const gatsbyRemarkPlugins = [
   {
     resolve: 'gatsby-remark-copy-linked-files',
     options: {
-      destinationDir: "static",
+      destinationDir: 'static',
     },
-  }
+  },
 ]
 
 module.exports = {

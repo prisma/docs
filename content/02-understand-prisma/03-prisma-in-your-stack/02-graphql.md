@@ -33,10 +33,10 @@ The GraphQL schema and HTTP server are typically handled by separate libraries. 
 
 In addition to these standalone and single-purpose libraries, there are several projects building integrated _application frameworks_:
 
-| Framework                                  | Stack        | Built by                                          | Prisma                 | Description                                                                                                                           |
-| :----------------------------------------- | :----------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| [Nexus](https://www.nexusjs.org/#/)        | Backend only | [Prisma Labs](https://github.com/prisma-labs/)    | Prisma is optional     | _Delightful GraphQL Application Framework_                                                                                            |
-| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                                                                               |
+| Framework                                  | Stack        | Built by                                          | Prisma                 | Description                                                                      |
+| :----------------------------------------- | :----------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------- |
+| [Nexus](https://www.nexusjs.org/#/)        | Backend only | [Prisma Labs](https://github.com/prisma-labs/)    | Prisma is optional     | _Delightful GraphQL Application Framework_                                       |
+| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                          |
 | [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Rails-like framework for monolithic, full-stack React apps — built on Next.js._ |
 
 > **Note**: If you notice any GraphQL libraries/frameworks missing from the list, please let us know.
@@ -47,8 +47,8 @@ Below you find a number of ready-to-run examples that showcase how to use Prisma
 
 ### TypeScript
 
-| Demo                                                                                                               | HTTP Server     | GraphQL schema  | Description                                                                                                                            |
-| :----------------------------------------------------------------------------------------------------------------- | :-------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| Demo                                                                                                              | HTTP Server     | GraphQL schema  | Description                                                                                                                            |
+| :---------------------------------------------------------------------------------------------------------------- | :-------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | [GraphQL](https://github.com/prisma/prisma-examples/tree/master/typescript/graphql)                               | `graphql-yoga`  | `nexus`         | Simple GraphQL server based on [`graphql-yoga`](https://github.com/prisma-labs/graphql-yoga)                                           |
 | [GraphQL (Apollo Server)](https://github.com/prisma/prisma-examples/tree/master/typescript/graphql-apollo-server) | `apollo-server` | `nexus`         | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/)                                    |
 | [GraphQL (SDL-first)](https://github.com/prisma/prisma-examples/tree/master/typescript/graphql-sdl-first)         | `graphql-yoga`  | `graphql-tools` | Simple GraphQL server based on the SDL-first approach of [`graphql-tools`](https://www.apollographql.com/docs/graphql-tools/) (Apollo) |
@@ -56,8 +56,8 @@ Below you find a number of ready-to-run examples that showcase how to use Prisma
 
 ### JavaScript (Node.js)
 
-| Demo                                                                                                               | HTTP Server     | GraphQL schema  | Description                                                                                                                            |
-| :----------------------------------------------------------------------------------------------------------------- | :-------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| Demo                                                                                                              | HTTP Server     | GraphQL schema  | Description                                                                                                                            |
+| :---------------------------------------------------------------------------------------------------------------- | :-------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | [GraphQL](https://github.com/prisma/prisma-examples/tree/master/javascript/graphql)                               | `graphql-yoga`  | `nexus`         | Simple GraphQL server based on [`graphql-yoga`](https://github.com/prisma-labs/graphql-yoga)                                           |
 | [GraphQL (Apollo Server)](https://github.com/prisma/prisma-examples/tree/master/javascript/graphql-apollo-server) | `apollo-server` | `nexus`         | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/)                                    |
 | [GraphQL (SDL-first)](https://github.com/prisma/prisma-examples/tree/master/javascript/graphql-sdl-first)         | `graphql-yoga`  | `graphql-tools` | Simple GraphQL server based on the SDL-first approach of [`graphql-tools`](https://www.apollographql.com/docs/graphql-tools/) (Apollo) |
@@ -73,8 +73,8 @@ In the resolver of a GraphQL query, Prisma typically reads data from the databas
 
 ### Is there a special connection between Prisma and Nexus?
 
-Yes. At Prisma, we love GraphQL and strongly believe in its bright future. While Prisma is compatible with all tools from the GraphQL ecosystem, we want to leverage the amazing things that become possible when [Nexus](https://www.nexusjs.org/#/) and Prisma are combined and are therefore helping to build it. 
+Yes. At Prisma, we love GraphQL and strongly believe in its bright future. While Prisma is compatible with all tools from the GraphQL ecosystem, we want to leverage the amazing things that become possible when [Nexus](https://www.nexusjs.org/#/) and Prisma are combined and are therefore helping to build it.
 
-As an example, when you use Nexus together with Prisma, Nexus can  leverage the information from the Prisma schema and automatically generate queries and mutations for your Prisma models.
+As an example, when you use Nexus together with Prisma, Nexus can leverage the information from the Prisma schema and automatically generate queries and mutations for your Prisma models.
 
 The [Prisma Labs](https://github.com/prisma-labs) team has been founded as an independent part of the rest of Prisma's engineering organization to work on open-source tools that are not directly tied to the Prisma database tools. Prisma Labs is currently dedicating most of their time to work on Nexus with the vision of making it a fully-fledged backend framework for building GraphQL servers.
