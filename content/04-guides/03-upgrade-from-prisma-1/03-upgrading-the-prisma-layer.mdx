@@ -484,67 +484,304 @@ You can either install it locally in your project, or invoke it once without ins
 npx prisma-upgrade prisma1/datamodel.graphql prisma/schema.prisma
 ```
 
-### 5.1 
+The CLI will greet you with the following message:
 
-...
+```
+Welcome to the Prisma 1 to Prisma 2 upgrade tool.
+
+This tool is designed to help you gracefully transition your mysql database from Prisma 1 to Prisma 2.
+
+Here's how it works:
+
+  1. We inspect the contents of your Prisma 1 datamodel file.
+  2. We generate SQL commands for you to run on your database.
+  3. We re-introspect your database to get a new Prisma 2 Schema.
+  4. We apply any Prisma-specific changes to the new Prisma 2 Schema
+
+We will not try to migrate your database for you. You are in full control
+over the changes to your mysql database.
+
+We suggest you first run the subsequent SQL commands on your testing or staging mysql database.
+Then when you're confident with the transition you can migrate your production database.
+
+If you have any questions along the way, please reach out to hi@prisma.io.
+    
+✔ Are you ready to get started? y/N
+```
+
+Press the <kbd>y</kbd> button on your keyboard to continue.
+
+### 5.1. Set `DEFAULT` constraints in the database
+
+The first thing the tool does is help you resolve the issue that [default values aren't represented in the database](./schema-incompatibilities#default-values-arent-represented-in-database) by generating SQL statements that add the respective `DEFAULT` constraints directly to the database.
+
+In this case, two `DEFAULT` constraints are missing which are suggested by the tool:
+
+```
+Let's transition Prisma 1's @default's to default values backed by the database. Run the following SQL command against your database:
+      
+  ALTER TABLE User CHANGE role role varchar(191) NOT NULL DEFAULT 'CUSTOMER';
+  ALTER TABLE Post CHANGE published published tinyint(1) NOT NULL DEFAULT 0;
+```
+
+You can now run these SQL statements against your database either using a command line client or a GUI like TablePlus:
+
+![](https://imgur.com/Qr7L1Nc.png)
+
+After having added the `DEFAULT` constraints successfully, you can move on in the CLI by hitting the <kbd>y</kbd> button again.
+
+### 5.2. Set default values for `@createdAt` fields
+
+The next thing the tools does is help you resolve the issue that the behaviour of [`@createdAt` isn't represented in database](./schema-incompatibilities#default-values-arent-represented-in-database)
+
+The CLI currently shows the following output:
+
+```
+Let's transition Prisma 1's @createdAt to a datetime type with a default value of now. Run the following SQL command against your database:
+      
+  ALTER TABLE Post CHANGE createdAt createdAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
+```
+
+The CLI suggests to replicate the behaviour of `@createdAt` by adding another `DEFAULT` constraint with the value `CURRENT_TIMESTAMP`. After introspection, this will not be added as the `@createdAt` attribute, but as `@default(now())` in the new Prisma schema.
+
+Go ahead and run this statement against your database now.
+
+![](https://imgur.com/L9sj36r.png)
+
+You can move on in the CLI by hitting the <kbd>y</kbd> button again.
+
+```
+✔ Done migrating @createdAt? Press 'y' to continue … yes
+```
+
+### 5.3. Set default values for `@updatedAt` fields
+
+The next thing the tools does is help you resolve the issue that the behaviour of [`@updated` isn't represented in database](./schema-incompatibilities#updatedat-isnt-represented-in-database).
+
+The CLI currently shows the following output:
+
+```
+Let's transition Prisma 1's @updatedAt to a datetime type with a default value of now. Run the following SQL command against your database:
+      
+  ALTER TABLE Post CHANGE updatedAt updatedAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
+```
+
+The CLI suggests to replicate the behaviour of `@updated` by adding another `DEFAULT` constraint with the value `CURRENT_TIMESTAMP` (see this open [GitHub issue](https://github.com/prisma/upgrade/issues/2)).
+
+Go ahead and run this statement against your database now.
+
+![](https://imgur.com/8W9IbYB.png)
+
+You can move on in the CLI by hitting the <kbd>y</kbd> button again.
+
+```
+? Done migrating @updatedAt? Press 'y' to continue › (y/N)
+```
+
+### 5.4. Add `UNIQUE` constraint on foreign key to enforce 1-1 relationships
+
+Next, the tool will help you [turn the current 1-n relation between `User` ↔ `Profile`  back into a 1-1 relation](./schema-incompatibilities##inline-1-1-relations-are-recognized-as-1-n-missing-unique-constraint) by adding a `UNIQUE` constraint to the foreign key column called `user` (named after the relation field in the Prisma 1 datamodel) in the database.
+
+The CLI currently shows the following output:
+
+```
+Let's transition Prisma 1's 1-to-1 relations with @relation or @relation(link:INLINE) to unique constraints on the database. Run the following SQL command against your database:
+      
+  ALTER TABLE Profile ADD UNIQUE (user);
+```
+
+Go ahead and run this statement against your database now.
+
+![](https://imgur.com/ALlkwat.png)
+
+You can move on in the CLI by hitting the <kbd>y</kbd> button again.
+
+```
+? Done migrating your inline relations? Press 'y' to continue › (y/N)
+```
+
+### 5.5. Fix `Json` columns by changing column types from plain text to `Json`
+
+Next, the tool helps you ensure that `Json` fields in your Prisma 1 datamodel will be represented as `JSON` columns in the underlying database, right now they are represented as plain strings (e.g. as `MEDIUMTEXT` in MySQL).
+
+The CLI currently shows the following output:
+
+```
+Let's transition Prisma 1's Json type to a json type in the database. Run the following SQL command against your database:
+      
+  ALTER TABLE User CHANGE jsonData jsonData JSON;
+```
+
+Changing the column type to `JSON` will ensure that the field is properly recognized as `Json` during Prisma 2 introspection.
+
+Go ahead and run this statement against your database now.
+
+![](https://imgur.com/feI3ZUF.png)
+
+You can move on in the CLI by hitting the <kbd>y</kbd> button again.
+
+```
+? Done migrating Json? Press 'y' to continue › (y/N)
+```
+
+### 5.6. Final result
 
 The final version of the Prisma schema should look as follows:
 
 ```prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "mysql"
-  url      = "mysql://root:prisma@localhost:3306/default@default"
-}
-
-model User {
-  id       String   @id
-  email    String?  @unique
-  name     String
-  role     Role?    @default(CUSTOMER)
-  jsonData Json?
-  posts    Post[]
-  profile  Profile?
+model Category {
+  id   String @id
+  name String
+  Post Post[] @relation(references: [id])
 }
 
 model Post {
-  id         String     @id
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  title      String
-  content    String?
-  published  Boolean    @default(false)
-  author     User?      @relation(fields: [authorId], references: [id])
-  authorId   String?
-  categories Category[] @relation(references: [id])
-
-  @@index([authorId], name: "authorId")
+  content   String?
+  createdAt DateTime   @default(now())
+  id        String     @id
+  published Boolean    @default(false)
+  title     String
+  updatedAt DateTime   @default(now())
+  Category  Category[] @relation(references: [id])
+  User      User[]     @relation(references: [id])
 }
 
 model Profile {
-  id     String  @id
-  bio    String?
-  user   User?   @relation(fields: [userId], references: [id])
-  userId String? @map("user") @unique
+  bio  String?
+  id   String  @id
+  user String? @unique
+  User User?   @relation(fields: [user], references: [id])
 }
 
-model Category {
-  id    String @id
-  name  String
-  posts Post[] @relation(references: [id])
-}
-
-enum Role {
-  ADMIN
-  CUSTOMER
-
-  @@map("User_role")
+model User {
+  email    String?  @unique
+  id       String   @id
+  jsonData Json?
+  name     String
+  role     String   @default("CUSTOMER")
+  Profile  Profile?
+  Post     Post[]   @relation(references: [id])
 }
 ```
 
-## 6. Install and generate Prisma Client
+## 6. Manually resolve remaining schema incompatibilities
+
+There are a few schema incompatibilities that were not yet resolved by the Prisma schema upgrade CLI.
+
+Note that this guide will be continuously updated to incorporate the new [features](https://github.com/prisma/upgrade#current-features) of the upgrade CLI. For now, you can just follow the guide here and transfer the given SQL statements to your own setup.
+
+### 6.1. Fix enum column
+
+Right now, the `Role` enum is missing from the datamodel. That's because the enum fields from the Prisma 1 datamodel have been represented as plain strings in the database (e.g. as `MEDIUMTEXT` in MySQL). Consequently, the `role` field on `User` is currently defined as `String` in the new Prisma schema.
+
+To fix this, you can set the type for the `role` column as a new `ENUM` with SQL:
+
+```sql
+ALTER TABLE User MODIFY COLUMN role ENUM('ADMIN', 'CUSTOMER') DEFAULT 'CUSTOMER';
+```
+
+You can run this statement against your database now:
+
+![](https://imgur.com/Fo0LbzU.png)
+
+### 6.2. Fix incorrect m-n relations
+
+As a next step, you'll fix all 1-1 and 1-n relations that Prisma 1 represents with relation tables and that [currently only exist as m-n relations](./schema-incompatibilities#all-non-inline-relations-are-recognized-as-m-n) in your new Prisma 2.0 schema. Concretely, this is the case for the `User` ↔ `Post` relation which currently is defined as m-n but _should_ really be a 1-n relation. 
+
+To fix this, you'll need to create a new foreign key column on `Post` to link directly to the `User` table. Then you'll need to migrate the foreign key values from the current relation table into the new foreign key column on `Post`. Finally, you can delete the relation table.
+
+Here's the SQL statements for the sample data model from this guide:
+
+For this fix, you'll need to run 3 SQL statements:
+
+1. Create new column `authorId` on the `Post` table. This column should be a _foreign key_ that references the `id` field of the `User` table:
+    ```sql
+    ALTER TABLE `Post` ADD COLUMN `authorId` VARCHAR(25);
+    ALTER TABLE `Post` ADD FOREIGN KEY (`authorId`) REFERENCES `User` (`id`);
+    ```
+1. Write a SQL query that reads all the rows from the `_PostToUser` relation table and for each row:
+    1. Finds the respective `Post` record by looking up the value from column `A`
+    1. Inserts the value from column `B` as the value for `authorId` into that `Post` record
+    ```sql
+    UPDATE Post, _PostToUser
+    SET Post.authorId = _PostToUser.B
+    WHERE Post.id = _PostToUser.A
+    ```
+1. Delete the `_PostToUser` relation table
+    ```sql
+    DROP TABLE `_PostToUser`;
+    ```
+
+![](https://imgur.com/nvrKuVJ.png)
+
+After these commands, the user ID values of the records from column `B` of the relation table are migrated to the new `authorId` column.
+
+### 6.3. Fix remaining issues
+
+Note, at this point you still haven't fixed [scalar lists](./schema-incompatibilities##scalar-lists-arrays-are-maintained-with-extra-table#) and [cascading deletes](./schema-incompatibilities#cascading-deletes-are-not-supported-in-prisma-20). You can find the recommended workarounds for these on the [Schema incompatibilities](./schema-incompatibilities) page. 
+
+### 6.4. Introspect database
+
+Assume these have been fixed, you can now run introspection again to generate your updated Prisma schema with proper enum support and the 1-n relation bewtween `User` ↔ `Post`:
+
+```
+npx prisma introspect
+```
+
+This should be the result when you now introspect your database:
+
+```prisma
+model Category {
+  id   String @id
+  name String
+  Post Post[] @relation(references: [id])
+}
+
+model Post {
+  authorId  String?
+  content   String?
+  createdAt DateTime   @default(now())
+  id        String     @id
+  published Boolean    @default(false)
+  title     String
+  updatedAt DateTime   @default(now())
+  Category  Category[] @relation(references: [id])
+}
+
+model Profile {
+  bio  String?
+  id   String  @id
+  user String? @unique
+  User User?   @relation(fields: [user], references: [id])
+}
+
+model User {
+  email    String?    @unique
+  id       String     @id
+  jsonData Json?
+  name     String
+  role     User_role? @default(CUSTOMER)
+  Profile  Profile?
+}
+
+enum User_role {
+  ADMIN
+  CUSTOMER
+}
+```
+
+### 6.5. Rename relation fields
+
+To make sure your Prisma Client queries feel natural and idiomatic, it's recommended to make a few adjustments to the Prisma in order to [configure your generated Prisma Client API](../../reference/tools-and-interfaces/prisma-client/configuring-the-prisma-client-api).
+
+Mostly, this means renaming [relation fields](../../reference/tools-and-interfaces/prisma-schema/relations#relation-fields).
+
+Because all relation fields are _virtual_, meaning they don't _manifest_ in the database, you can name them whathever you like.s In this case, all relation fields are lowercased and sometimes pluralized.
+
+<!-- Also note that `@map` and `@@map` are being used: -->
+
+## 7. Install and generate Prisma Client
+
+TBD
 
 
