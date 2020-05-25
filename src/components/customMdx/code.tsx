@@ -27,18 +27,22 @@ function cleanTokens(tokens: any[]) {
   return tokens
 }
 
+const propList = ['copy', 'line-number', 'bash-symbol']
+
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   let language = className && className.replace(/language-/, '')
-  if (language == undefined) {
-    language = 'bash'
+  let breakWords = false
+
+  if (propList.includes(language)) {
+    breakWords = true
   }
+
   const code = stringify(children)
 
   const hasCopy = props['copy'] || language === 'copy'
   const hasLineNo = props['line-number'] || language === 'line-number'
   const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol'
-
-  const tokenCopyClass = hasCopy ? 'has-copy-button' : ''
+  const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
   return (
     <>
@@ -61,6 +65,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   }
 
                   let isDiff = false
+                  // let isHidden = false
                   let diffSymbol = ''
 
                   const diffBgColorMap: any = {
@@ -96,6 +101,13 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     }
                     isDiff = true
                   }
+
+                  // if (
+                  //   (line[0] && line[0].content.length && line[0].content[0] === '!') ||
+                  //   (line[0] && line[0].content === '' && line[1] && line[1].content === '!')
+                  // ) {
+                  //   isHidden = true
+                  // }
 
                   const lineProps = getLineProps({ line, key: i })
 
@@ -167,34 +179,29 @@ const Pre = styled.pre`
   webkit-overflow-scrolling: touch;
 `
 const Line = styled.div`
-  display: table-row;
+  display: block;
 `
 
 const LineNo = styled.span`
   font-weight: 500;
   line-height: 24px;
   color: var(--code-linenum-color);
-  display: table-cell;
+  display: inline-block;
   text-align: right;
-  padding-left: 1em;
+  // padding-left: 1em;
   user-select: none;
   width: 24px;
 `
 
 const LineContent = styled.span`
-  display: table-cell;
   padding: 0 1em;
-  white-space: break-spaces;
+  &.break-words {
+    display: table-cell;
+    white-space: break-spaces;
+  }
+
   &.token-line {
     line-height: 1.3rem;
     height: 1.3rem;
-
-    .has-copy-button {
-      width: 95%;
-      overflow-x: auto;
-      &::-webkit-scrollbar {
-        height: 0;
-      }
-    }
   }
 `
