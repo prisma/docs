@@ -8,8 +8,8 @@ const ParallelBlocks = ({ children }: CodeBlockProps) => {
     children && children.filter((child: any) => child.props && child.props.originalType === 'block')
   return (
     <Wrapper>
-      {blockContent.map((block: any) => (
-        <Block>
+      {blockContent.map((block: any, i: number) => (
+        <Block key={i}>
           <div className="blockHeading">{block.props.content}</div>
           <div className="blockContent">{block.props.children}</div>
         </Block>

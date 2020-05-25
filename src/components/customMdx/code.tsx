@@ -44,8 +44,6 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol'
   const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
-  const [hiddenGroup, setHiddenGroup] = React.useState({})
-
   return (
     <>
       <div className="gatsby-highlight pre-highlight">
@@ -67,7 +65,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   }
 
                   let isDiff = false
-                  let isHidden = false
+                  // let isHidden = false
                   let diffSymbol = ''
 
                   const diffBgColorMap: any = {
@@ -104,19 +102,18 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     isDiff = true
                   }
 
-                  if (
-                    (line[0] && line[0].content.length && line[0].content[0] === '!') ||
-                    (line[0] && line[0].content === '' && line[1] && line[1].content === '!')
-                  ) {
-                    isHidden = true
-                    setHiddenGroup({ ...hiddenGroup, [`${i}_hide`]: true })
-                  }
+                  // if (
+                  //   (line[0] && line[0].content.length && line[0].content[0] === '!') ||
+                  //   (line[0] && line[0].content === '' && line[1] && line[1].content === '!')
+                  // ) {
+                  //   isHidden = true
+                  // }
 
                   const lineProps = getLineProps({ line, key: i })
 
                   lineProps.style = { ...lineClass }
 
-                  return !hiddenGroup[`${i}_hide`] ? (
+                  return (
                     <Line key={line + i} {...lineProps}>
                       {hasTerminalSymbol && !isDiff && <LineNo>$</LineNo>}
                       {hasLineNo && !isDiff && <LineNo>{i + 1}</LineNo>}
@@ -147,10 +144,6 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                           return <span {...getTokenProps({ token, key })} />
                         })}
                       </LineContent>
-                    </Line>
-                  ) : (
-                    <Line key={line + i} {...lineProps}>
-                      <a>Show hidden lines</a>
                     </Line>
                   )
                 })}
@@ -195,9 +188,9 @@ const LineNo = styled.span`
   color: var(--code-linenum-color);
   display: inline-block;
   text-align: right;
-  padding-left: 1em;
+  // padding-left: 1em;
   user-select: none;
-  width: 30px;
+  width: 24px;
 `
 
 const LineContent = styled.span`
