@@ -2,6 +2,8 @@ import React from 'react'
 import SwitchTech from './switchTech'
 import CodeBlock from './codeBlock'
 import TabbedContent from './tabbedContent'
+import ParallelBlocks from './parallelBlocks'
+import CodeWithResult from './codeWithResult'
 import Code from './code'
 import CollapseBox from './collapsible'
 import Table from './table'
@@ -15,6 +17,8 @@ export default {
   ul: (props: any) => <ul className="list" {...props} />,
   CodeBlock,
   TabbedContent,
+  ParallelBlocks,
+  CodeWithResult,
   SwitchTech,
   FileWithIcon,
   inlineCode: (props: any) => <code className="inline-code" {...props} />,
