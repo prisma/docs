@@ -14,9 +14,11 @@ export const useAllArticlesQuery = () => {
               experimental
               langSwitcher
               dbSwitcher
+              hidePage
             }
             fields {
               slug
+              modSlug
             }
           }
         }

@@ -6,6 +6,7 @@ import Link from './link'
 import config from '../../config'
 import { ButtonWrapper } from './customMdx/button'
 import Twitter from '../icons/Twitter'
+import { useLocation } from '@reach/router'
 
 const sentiments: any = {
   unhappy: 'Unhappy',
@@ -22,7 +23,7 @@ const PageBottomWrapper = styled.div`
   justify-content: space-between;
   padding: 1rem 40px;
   align-items: center;
-  a svg {
+  button svg {
     cursor: pointer;
     transition: width 2s linear 1s;
   }
@@ -53,8 +54,9 @@ const Feedback = styled.div`
     color: var(--list-bullet-color) !important;
   }
   .sentiments {
-    a {
-      margin-right: 0.5rem;
+    button {
+      background: transparent;
+      border: 0;
       &:hover svg {
         border-radius: 50%;
         background: rgba(204, 217, 223, 0.5);
@@ -109,10 +111,7 @@ const PageBottom = ({ editDocsPath }: any) => {
   const [submitted, setSubmitted] = React.useState(false)
   const [sentiment, setSentiment] = React.useState(sentiments['happy'])
 
-  let location
-  if (typeof document != 'undefined') {
-    location = document.location
-  }
+  let location = useLocation()
   const pageUrl = location ? location.pathname : '/'
   const currentDocsPageURL = encodeURIComponent(location ? location.href : '/')
 
@@ -122,14 +121,14 @@ const PageBottom = ({ editDocsPath }: any) => {
       method: 'POST',
       body,
     }
-    await fetch(`https://prisma2.netlify.com/.netlify/functions/index`, requestOptions)
+    await fetch(config.feedback.function_name, requestOptions)
   }
 
   const handleSentiment = (e: any) => {
     const selectedSentiment = e.currentTarget.id
-    sendFeedback(selectedSentiment)
     setSentiment(sentiments[selectedSentiment])
     setSubmitted(true)
+    sendFeedback(selectedSentiment)
   }
 
   return (
@@ -138,12 +137,12 @@ const PageBottom = ({ editDocsPath }: any) => {
         <Feedback>
           <h4>Was this helpful?</h4>
           <div className="sentiments">
-            <a id="happy" onClick={handleSentiment}>
+            <button id="happy" onClick={handleSentiment}>
               <Up />
-            </a>
-            <a id="unhappy" onClick={handleSentiment}>
+            </button>
+            <button id="unhappy" onClick={handleSentiment}>
               <Down />
-            </a>
+            </button>
           </div>
         </Feedback>
       ) : (
@@ -157,7 +156,7 @@ const PageBottom = ({ editDocsPath }: any) => {
                   <br />
                   Tell us why on GitHub!
                 </P>
-                <Button target="_blank" href={gitIssueUrl} type="primary">
+                <Button target="_blank" href={gitIssueUrl} type="primary" color="dark">
                   Tell us On Github
                 </Button>
               </>

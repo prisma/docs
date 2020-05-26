@@ -37,17 +37,21 @@ const handleRawBody = node => {
     )
   })
 
-  const records = finalSections.map(fSection => ({
-    ...rest,
-    heading: fSection.heading,
-    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
-    path: `${rest.slug.replace(/\d+-/g, '')}${
+  const getTitlePath = fSection => {
+    const tocItem =
       rest.tableOfContents &&
       rest.tableOfContents.items &&
-      rest.tableOfContents.items.find(t => t.title === fSection.heading)
-        ? rest.tableOfContents.items.find(t => t.title === fSection.heading).url
-        : ''
-    }`,
+      rest.tableOfContents.items.find(t => t.title === fSection.heading.replace(/`/g, ''))
+    return tocItem ? tocItem.url : ''
+  }
+
+  const records = finalSections.map(fSection => ({
+    objectID: rest.objectID,
+    title: rest.title,
+    slug: rest.slug,
+    heading: fSection.heading,
+    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
+    path: `${rest.slug.replace(/\d+-/g, '')}${getTitlePath(fSection)}`,
   }))
 
   return records
@@ -65,9 +69,10 @@ const unnestFrontmatter = node => {
 
 const settings = {
   searchableAttributes: ['title', 'heading', 'content'],
-  attributesToHighlight: ['*'],
-  attributesToSnippet: ['*:25'],
+  attributesToHighlight: ['title', 'heading', 'content'],
+  attributesToSnippet: ['title:20', 'heading:20', 'content:25'],
   hitsPerPage: 20,
+  separatorsToIndex: '!#()[]{}*+-_一,:;<>?@/^|%&~£¥$§€†‡',
 }
 
 const queries = [

@@ -5,12 +5,12 @@ function getCacheKey(node) {
   return `remark-check-links-${node.id}-${node.internal.contentDigest}`
 }
 
-function getHeadingsMapKey(link, path) {
+function getHeadingsMapKey(link, pathUrl) {
   let key = link
   const hashIndex = link.indexOf('#')
   const hasHash = hashIndex !== -1
   if (hasHash) {
-    key = link.startsWith('#') ? path : link.slice(0, hashIndex)
+    key = link.startsWith('#') ? pathUrl : link.slice(0, hashIndex)
   }
 
   return {
@@ -32,6 +32,7 @@ module.exports = async function plugin(
   { exceptions = [], ignore = [], verbose = true } = {}
 ) {
   const withPathPrefix = createPathPrefixer(pathPrefix)
+  const pathSep = path.sep || '/'
   if (!markdownNode.fields) {
     // let the file pass if it has no fields
     return markdownAST
@@ -48,23 +49,6 @@ module.exports = async function plugin(
 
     if (!node.url.startsWith('mailto:') && !/^https?:\/\//.test(node.url)) {
       let tranformedUrl = node.url
-
-      if (!node.url.startsWith('#') && !node.url.startsWith('/')) {
-        const parent = getNode(markdownNode.parent)
-        tranformedUrl = withPathPrefix(
-          path
-            .resolve(
-              markdownNode.fields.slug
-                .replace(/\d+-/g, '')
-                .replace(/\/$/, '')
-                .split(path.sep)
-                .slice(0, parent.name === 'index' ? undefined : -1)
-                .join(path.sep) || '/',
-              node.url
-            )
-            .replace(/\/?(\?|#|$)/, '/$1')
-        )
-      }
       links.push({
         ...node,
         tranformedUrl,
@@ -78,7 +62,7 @@ module.exports = async function plugin(
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
   cache.set(getCacheKey(parent), {
-    path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat('/')),
+    path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat(pathSep)),
     links,
     headings,
     setAt,
@@ -114,24 +98,26 @@ module.exports = async function plugin(
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
+  const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`index${pathSep}`, ''))
+  console.log(pathKeysWithoutIndex)
 
-  for (const path in linksMap) {
-    if (prefixedIgnore.includes(path)) {
+  for (const pathL in linksMap) {
+    if (prefixedIgnore.includes(pathL)) {
       // don't count broken links for ignored pages
       continue
     }
 
-    const linksForPath = linksMap[path]
+    const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
       const brokenLinks = linksForPath.filter(link => {
         // return true for broken links, false = pass
-        const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, path)
+        const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
         if (prefixedExceptions.includes(key)) {
           return false
         }
 
         const url = link.tranformedUrl.slice(0, hashIndex)
-        const urlToCheck = url.slice(-1) === '/' ? url : url.concat('/')
+        const urlToCheck = url.slice(-1) === pathSep ? url : url.concat(pathSep)
         const headings = headingsMap[key]
 
         if (headings) {
@@ -143,13 +129,13 @@ module.exports = async function plugin(
           return false
         }
 
-        return !pathKeys.includes(urlToCheck)
+        return !pathKeysWithoutIndex.includes(urlToCheck)
       })
 
       const brokenLinkCount = brokenLinks.length
       totalBrokenLinks += brokenLinkCount
       if (brokenLinkCount && verbose) {
-        console.warn(`${brokenLinkCount} broken links found on ${path}`)
+        console.warn(`${brokenLinkCount} broken links found on ${pathL}`)
         for (const link of brokenLinks) {
           let prefix = '-'
           if (link.position) {
@@ -162,7 +148,7 @@ module.exports = async function plugin(
               ':'
             )
           }
-          console.warn(`${prefix} ${link.url}`)
+          console.warn(`${prefix} ${link.originalUrl}`)
         }
         console.log('')
       }

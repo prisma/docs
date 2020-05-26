@@ -5,6 +5,9 @@ import ArrowRight from '../../icons/ArrowRight'
 import withProps from 'styled-components-ts'
 import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
+import isAbsoluteUrl from 'is-absolute-url'
+
+import * as path from 'path'
 
 export interface ButtonProps {
   href?: string
@@ -72,13 +75,27 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
 //       background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
 //     }
 
-const ButtonLink = (props: ButtonProps) => {
+const getAbsPath = (href: any, location: any) => {
+  return withPrefix(
+    path
+      .resolve(
+        location.pathname
+          .replace('/docs', '')
+          .replace('docs', '')
+          .replace(/\/$/, '')
+          .split(path.sep)
+          .slice(0, -1)
+          .join(path.sep) || '/',
+        href
+      )
+      .replace(/\/?(\?|#|$)/, '/$1')
+  )
+}
+const ButtonLink = ({ href, ...props }: ButtonProps) => {
   const location = useLocation()
-  if (location.pathname === '/docs/') {
-    props.href = withPrefix(props.href!)
-  }
+  const newHref = isAbsoluteUrl(href) ? href : getAbsPath(href, location)
   return (
-    <ButtonWrapper {...props}>
+    <ButtonWrapper href={newHref} {...props}>
       {props.arrowLeft && <StyledArrowLeft />}
       {props.children}
       {props.arrow && <StyledArrow />}

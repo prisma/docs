@@ -4,6 +4,8 @@ import ArrowRight from '../../icons/ArrowRight'
 import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
+import { useLocation } from '@reach/router'
+import { withPrefix } from 'gatsby'
 
 const List = styled.ul`
   list-style: none;
@@ -16,9 +18,9 @@ const List = styled.ul`
 `
 
 const ListItem = styled.li`
-  font-size: 1rem;
-  line-height: 16px;
-  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 14px;
+  margin-bottom: 14px;
   position: relative;
   a {
     transition: color 150ms ease 0s;
@@ -101,7 +103,7 @@ const ListItem = styled.li`
   &.top-level {
     margin-top: 2rem;
     > a {
-      font-size: 20px;
+      font-size: 1rem;
       color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
@@ -123,7 +125,7 @@ const ListItem = styled.li`
     color: var(--list-bullet-color) !important;
     text-transform: uppercase;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 12px;
     &:hover {
       color: var(--list-bullet-color) !important;
     }
@@ -144,6 +146,7 @@ const TreeNode = ({
   setCollapsed,
   collapsed,
   url,
+  slug,
   title,
   items,
   label,
@@ -152,10 +155,23 @@ const TreeNode = ({
   duration,
   experimental,
   lastLevel,
+  hidePage,
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
-    setCollapsed(label)
+    Object.keys(collapsed).map(lbl => {
+      if (lbl !== label) {
+        collapsed[lbl] = collapsed[lbl] == false ? (collapsed[lbl] = true) : collapsed[lbl]
+      }
+    })
+    setCollapsed(label, false)
+  }
+  const location = useLocation()
+
+  const justExpand = (e: any) => {
+    setCollapsed(label, true)
+    e.preventDefault()
+    e.stopPropagation()
   }
 
   const hasChildren = items.length !== 0
@@ -187,17 +203,20 @@ const TreeNode = ({
     setIsOpen(isCollapsed ? 'close' : 'open')
   }, [isCollapsed])
 
+  const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))
+
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
-      {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
+      {title && label !== 'index' && !hidePage && (
         <Link
-          to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
+          to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
-          partiallyActive={true}
+          className={isCurrent ? 'active-item' : 'hh'}
+          id={withPrefix(url)}
         >
           {hasExpandButton ? (
-            <span onClick={collapse} className="collapse-title">
-              <button aria-label="collapse" className="item-collapser">
+            <span className="collapse-title" onClick={collapse}>
+              <button aria-label="collapse" className="item-collapser" onClick={justExpand}>
                 {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />

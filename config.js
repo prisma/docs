@@ -30,7 +30,7 @@ const config = {
     description:
       'Prisma replaces traditional ORMs and can be used to build GraphQL servers, REST APIs, microservices & more.',
     keywords: 'Docs, prisma, 2.0',
-    docsLocation: 'https://github.com/prisma/prisma2-docs/tree/master/content',
+    docsLocation: 'https://github.com/prisma/docs/tree/master/content',
     twitter: {
       site: '@prisma',
       creator: '@prisma',
@@ -47,6 +47,12 @@ const config = {
         width: '1200',
       },
     },
+  },
+  feedback: {
+    function_name: 'https://prisma2.netlify.app/.netlify/functions/index',
+  },
+  sidebar: {
+    tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
   },
   footer: {
     logoLink: '/',
