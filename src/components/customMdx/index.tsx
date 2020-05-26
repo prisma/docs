@@ -15,6 +15,7 @@ export default {
   h1: () => <h1 style={{ display: 'none' }} />,
   p: (props: any) => <p className="paragraph" {...props} />,
   ul: (props: any) => <ul className="list" {...props} />,
+  ol: (props: any) => <ol className="o-list" {...props} />,
   CodeBlock,
   TabbedContent,
   ParallelBlocks,

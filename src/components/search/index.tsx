@@ -49,16 +49,12 @@ const HitsWrapper = styled.div`
 `
 
 const SearchBoxDiv = styled(SearchBox)`
+  width: 208px;
   form {
-    position: relative;
-    width: 208px;
     position: relative;
     z-index: 100001;
     display: flex;
     align-items: center;
-    @media (min-width: 0px) and (max-width: 1024px) {
-      flex: 1;
-    }
 
     button.ais-SearchBox-submit {
       display: none;
@@ -95,6 +91,10 @@ const SearchBoxDiv = styled(SearchBox)`
     input[type='search']::-webkit-search-results-decoration {
       -webkit-appearance: none;
     }
+  }
+
+  @media (min-width: 0px) and (max-width: 1024px) {
+    flex: 1;
   }
 `
 

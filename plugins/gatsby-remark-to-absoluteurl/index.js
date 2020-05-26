@@ -22,6 +22,7 @@ module.exports = function plugin({ markdownAST, markdownNode, pathPrefix, getNod
         path
           .resolve(
             markdownNode.fields.slug
+              .replace(`${path.sep}index`, '')
               .replace(/\d+-/g, '')
               .replace(/\/$/, '')
               .split(path.sep)
