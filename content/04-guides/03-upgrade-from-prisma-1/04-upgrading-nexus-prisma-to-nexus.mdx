@@ -1,16 +1,14 @@
 ---
-title: 'prisma-binding to Nexus'
+title: 'Old to new Nexus'
 metaTitle: 'Upgrading from Prisma 1 with prisma-binding to Nexus'
 metaDescription: 'Learn how to upgrade existing Prisma 1 projects with prisma-binding to Prisma 2.0 and Nexus.'
 ---
 
 ## Overview
 
-This upgrade guide describes how to migrate a Node.js project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses [`nexus`]() (< v0.X) or [`@nexus/schema`]() and [`nexus-prisma`]() (< v0.X) to implement a GraphQL server. 
+This upgrade guide describes how to migrate a project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses [`nexus`](https://www.npmjs.com/package/nexus) (< v0.12.0) or [`@nexus/schema`](https://github.com/graphql-nexus/schema) together with [`nexus-prisma`](https://www.npmjs.com/package/nexus-prisma) (< v4.0.0) to implement a GraphQL server. 
 
-The code will be migrated to [Nexus](https://www.nexusjs.org) and the [`nexus-schema-plugin-prisma`](https://github.com/graphql-nexus/nexus-schema-plugin-prisma). As opposed to the _SDL-first_ approach that's used with `prisma-binding`, Nexus follows a code-first approach to construct GraphQL schemas. You can learn about the main differences of these two approaches in this [article](https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3/).
-
-[Nexus currently only works with TypeScript](https://github.com/graphql-nexus/nexus/issues/85), therefore this guide also explains how to migrate from JavaScript to TypeScript. The guide therefore basically assumes a **full rewrite** of your existing app. If you're currently using JavaScript and want to continue doing so, you can follow the [guide](./upgrading-prisma-binding-to-sdl-first) to upgrade from `prisma-binding` to an SDL-first setup. 
+The code will be migrated to the new [Nexus Framework](https://www.nexusjs.org) and the [`nexus-schema-plugin-prisma`](https://github.com/graphql-nexus/nexus-schema-plugin-prisma). 
 
 The guide assumes that you already went through the [guide for upgrading the Prisma layer](./upgrading-the-prisma-layer). This means you already:
 
@@ -32,31 +30,35 @@ The guide further assumes that you have a file setup that looks similar to this:
 │   └── prisma.yml
 └── src
     ├── generated
-    │   └── prisma.graphql
-    ├── index.js
-    └── schema.graphql
+    │   ├── nexus-prisma
+    │   ├── nexus.ts
+    │   ├── prisma-client
+    │   └── schema.graphql
+    └── index.ts
 ```
 
 The important parts are:
 
 - A folder called with `prisma` with your Prisma 2.0 schema
-- A folder called `src` with your application code and a schema called `schema.graphql`
+- A folder called `src` with your application code
 
 If this is not what your project structure looks like, you'll need to adjust the instructions in the guide to match your own setup.
 
-## 1. Installing and configuring Nexus 
+## 1. Upgrade Nexus dependencies to the Nexus Framework
 
-### 1.1. Install Nexus dependencies
+To get started, you can remove the old Nexus and Prisma 1 dependencies:
 
-The first step is to install the Nexus CLI in your project:
+```
+npm uninstall nexus nexus-prisma graphql prisma-client-lib
+```
+
+Then, you can install the new Nexus dependency in your project:
 
 ```
 npm install nexus@next
 ```
 
-> **Note**: Nexus is currently in a [transition phase](https://github.com/graphql-nexus/schema/issues/373) from a standalone [schema construction library](http://nexus.js.org/) to a fully-fledged GraphQL application framework. This guide targets the framework version of Nexus which is currently available under the `@next` npm tag.
-
-Next, install the the Prisma plugin for Nexus which will allow you to expose Prisma models in your GraphQL API:
+Next, install the the Prisma plugin for Nexus which will allow you to expose Prisma models in your GraphQL API (this is the new equivalent of the former `nexus-prisma` package):
 
 ```
 npm install nexus-plugin-prisma
@@ -74,48 +76,47 @@ Note however that you can still invoke the Prisma 2.0 CLI with the familiar comm
 npx prisma
 ```
 
-### 1.2. Configure TypeScript
+## 2. Update the Nexus configuration in your code
 
-Since you'll be using TypeScript in this guide, you need to add the required dependencies:
+<!-- The new Nexus Framework uses a similar, code-first API as you're used to from your Prisma 1 app. However, it gives you a lot more convenience and saves a lot of the configuration boilerplate that was needed before.  -->
 
+### 2.1. Remove `makePrismaSchema`
+
+With the new Nexus Framework, you don't need to create your `GraphQLSchema` instance manually any more as was done with `makeSchema` or `makePrismaSchema` before. Instead, Nexus now hands you a `schema` object that can directly be configured by calling functions on it. You'll see how that's done once we start migrating the actual GraphQL types.
+
+However your code calling `makeSchema` or `makePrismaSchema` before looks like, you can now just delete it, e.g::
+
+```ts line-number
+- const schema = makePrismaSchema({
+-   types: [Query, Mutation, User, Post],
+-   prisma: {
+-     datamodelInfo,
+-     client: prisma,
+-   },
+-   outputs: {
+-     schema: path.join(__dirname, './generated/schema.graphql'),
+-     typegen: path.join(__dirname, './generated/nexus.ts'),
+-   },
+-   nonNullDefaults: {
+-     input: false,
+-     output: false,
+-   },
+-   typegenAutoConfig: {
+-     sources: [
+-       {
+-         source: path.join(__dirname, './types.ts'),
+-         alias: 'types',
+-       },
+-     ],
+-     contextType: 'types.Context',
+-   },
+- })
 ```
-npm install typescript ts-node --save-dev
-```
 
-Create a new file called `tsconfig.json` in the root directory of your project:
-
-```
-touch tsconfig.json
-```
-
-Now add the following contents to the new file:
-
-```json
-{
-  "compilerOptions": {
-    "skipLibCheck": true,
-    "strict": true,
-    "rootDir": "api"
-  },
-  "include": ["api"]
-}
-```
-
-### 1.3. Create your basic Nexus setup
-
-Create the root source file of your API called `app.ts`:
-
-```
-touch app.ts
-```
-
-Now add the following setup code to it:
+If you want to configure the schema further, you can import the [`settings`](https://www.nexusjs.org/#/api/modules/main/exports/settings) object from `nexus`, e.g.:
 
 ```ts
-import { log, settings, use } from 'nexus'
-import { prisma } from 'nexus-plugin-prisma'
-
-use(prisma({ migrations: false }))
+import { log, settings } from 'nexus'
 
 settings.change({
   logger: {
@@ -127,17 +128,68 @@ settings.change({
     },
   },
   schema: {
-    generateGraphQLSDLFile: './src/generated/nexus.graphql'
+    generateGraphQLSDLFile: './src/generated/schema.graphql'
   }
 })
 ```
 
-There are two main things to note about this setup:
+### 2.2. Remove your GraphQL server
 
-- When adding the `nexus-plugin-prisma` via Nexus' `use()` function, you're disabling [Prisma Migrate](../../reference/tools-and-interfaces/prisma-migrate) which is currently still in an experimental state and therefore is not recommended for production use.
-- You'll be generating the SDL-version of your GraphQL schema `nexus.graphql` inside `./src/generated`.
+The new Nexus Framework comes with an integrated HTTP server based on [`express-graphql`](https://github.com/graphql/express-graphql). This means you don't need your previous server (e.g. `graphql-yoga` or `apollo-server`) any more.
 
-Also, adjust the scripts section inside your `package.json` to include the following commands:
+```
+npm uninstall graphql-yoga
+```
+
+Once removed, you can also delete the `GraphQLServer` setup code, e.g.:
+
+```ts line-number
+- const server = new GraphQLServer({
+-   schema,
+-   context: { prisma },
+- })
+- server.start()
+```
+
+If you need to configure the Express server in specific ways, you can do so by importing the `server` object from `nexus`, e.g.:
+
+```ts
+import cors from 'cors'
+import { server } from 'nexus'
+
+server.express.use(cors())
+```
+
+### 2.3. Adjust the `context` configuration
+
+The `context` object in GraphQL servers allows your resolvers to communicate with each other. Instead of creating this object manually and passing it to your GraphQL server, you can now call the `addToContext` function on your main `schema` object:
+
+```ts
+import { schema } from 'nexus'
+
+schema.addToContext(req => {
+  return { ... }
+})
+```
+
+> **Note**: Since you're using the new `nexus-plugin-prisma`, you don't need to to attach a `PrismaClient` instance to the `context` manually any more. The plugin will automatically add it for you as an object called `db`, so you can access it inside your resolvers e.g. via `context.db.user.findMany()`. 
+
+### 2.4. Use the `nexus-plugin-prisma` 
+
+The new `nexus-plugin-prisma` package is the equivalent of the `nexus-prisma` package that was used with Prisma 1.
+
+In your new setup, you now need to integrate the plugin using Nexus' `use` function. You'll likely want to put that code somewhere at the "root" of your application structure, e.g. in `index.ts` or something similar.
+
+```ts
+import { use } from 'nexus'
+import { prisma } from 'nexus-plugin-prisma'
+
+use(prisma({ migrations: false }))
+```
+
+Note that when adding the `nexus-plugin-prisma`, you're disabling [Prisma Migrate](../../reference/tools-and-interfaces/prisma-migrate) which is currently still in an experimental state and therefore is not recommended for production use. This makes Nexus compatible with the [introspection-based workflows](../../understand-prisma/introduction#sql-migrations-and-introspection).
+
+Next, you can adjust the `scripts` section inside your `package.json` to include the following commands:
 
 ```json line-number
 {
@@ -149,24 +201,18 @@ Also, adjust the scripts section inside your `package.json` to include the follo
 }
 ```
 
-The `dev` script starts a development server that you **always** should have running in the background when developing your app.
+The `dev` script starts a development server that you **always** should have running in the background when developing your app. Note however that running it right now likely produces TypeScript errors because oyu e.g. uninstalled the `nexus-prisma` package which is probably still used throughout your application.
 
-You can start the development server using the following command:
+As a next step, you'll need to start migrating Nexus' GraphQL type definitions to the new API.
 
-```
-npm run dev
-```
+## 2. Migrate your GraphQL types
 
-You should see the following CLI output:
+Here's a quick overview of the main differences between the two approaches of creating GraphQL types with the "old" and "new" Nexus.
 
-```
-544 ▲ nexus:schema Your GraphQL schema is empty. This is normal if you have not defined any GraphQL types yet. But if you did, check that the file name follows the convention: all graphql.ts modules or direct child modules within a graphql directory are automatically imported.
-  3 ● server listening  --  url: 'http://localhost:4000/'
-```
-
-Your GraphQL server is now running, but there's no actual _GraphQL schema_ connected to it yet. In the following steps, we'll explain how you can migrate your existing SDL-first GraphQL schema that's implemented with `prisma-binding` to an equivalent setup using Nexus.
-
-## 2. Create your GraphQL types
+- `prismaObjectType` doesn't exist any more, all types are created with Nexus `objectType` function.
+- Instead of importing `objectType`, you can now invoke it on your main `schema` instance as `schema.objectType(...)`.
+- To expose Prisma models via Nexus, you can use the `t.model` propery which is added to the `t` argument that's passed into Nexus' `definition` functions. `.t.model` gives you access to the properties of a Prisma model.
+- Exposing CRUD operations for Prisma models via Nexus follows a similar approach. These are exposed via `t.crud` on the `definition` functions of your 
 
 The next step of the upgrade process is to create your _GraphQL types_. In this case, your GraphQL types will mirror the Prisma models (as it likely was the case in your `prisma-binding` setup as well). If a GraphQL type deviates from a Prisma model, you'll be able to easily adjust the exposed GraphQL type accordingly using the Nexus API. 
 
