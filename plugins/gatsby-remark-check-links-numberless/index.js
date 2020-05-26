@@ -99,7 +99,6 @@ module.exports = async function plugin(
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
   const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`index${pathSep}`, ''))
-  console.log(pathKeysWithoutIndex)
 
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {

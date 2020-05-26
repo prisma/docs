@@ -29,6 +29,8 @@ const handleRawBody = node => {
         !section.includes('ButtonLink') &&
         !section.includes('SwitchTech') &&
         !section.includes('TabbedContent') &&
+        !section.includes('ParallelBlocks') &&
+        !section.includes('CodeWithResult') &&
         !section.includes('CodeBlock') &&
         !section.includes('tab>')
     )
@@ -48,10 +50,10 @@ const handleRawBody = node => {
   const records = finalSections.map(fSection => ({
     objectID: rest.objectID,
     title: rest.title,
-    slug: rest.slug,
+    slug: rest.modSlug,
     heading: fSection.heading,
     content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
-    path: `${rest.slug.replace(/\d+-/g, '')}${getTitlePath(fSection)}`,
+    path: `${rest.modSlug.replace(/\d+-/g, '')}${getTitlePath(fSection)}`,
   }))
 
   return records
@@ -85,6 +87,7 @@ const queries = [
                 rawBody
                 fields {
                   slug
+                  modSlug
                 }
                 frontmatter {
                   title
