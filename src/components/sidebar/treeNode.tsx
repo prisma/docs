@@ -18,9 +18,9 @@ const List = styled.ul`
 `
 
 const ListItem = styled.li`
-  font-size: 1rem;
-  line-height: 16px;
-  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 14px;
+  margin-bottom: 14px;
   position: relative;
   a {
     transition: color 150ms ease 0s;
@@ -103,7 +103,7 @@ const ListItem = styled.li`
   &.top-level {
     margin-top: 2rem;
     > a {
-      font-size: 20px;
+      font-size: 1rem;
       color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
@@ -125,7 +125,7 @@ const ListItem = styled.li`
     color: var(--list-bullet-color) !important;
     text-transform: uppercase;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 12px;
     &:hover {
       color: var(--list-bullet-color) !important;
     }
