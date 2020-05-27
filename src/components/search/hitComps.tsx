@@ -47,10 +47,7 @@ const HitComp = styled.div`
 
 const DocHit = ({ hit }: any) => (
   <HitComp>
-    <Link
-      style={{ boxShadow: `none`, textDecoration: 'none' }}
-      to={hit.slug.includes('index') ? null : hit.path}
-    >
+    <Link style={{ boxShadow: `none`, textDecoration: 'none' }} to={hit.path}>
       <ParentTitle slug={hit.slug} nonLink={true} />
       <h3>
         <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}

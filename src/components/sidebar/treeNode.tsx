@@ -5,6 +5,7 @@ import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
 import { useLocation } from '@reach/router'
+import { withPrefix } from 'gatsby'
 
 const List = styled.ul`
   list-style: none;
@@ -17,9 +18,9 @@ const List = styled.ul`
 `
 
 const ListItem = styled.li`
-  font-size: 1rem;
-  line-height: 16px;
-  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.25;
+  margin-bottom: 12px;
   position: relative;
   a {
     transition: color 150ms ease 0s;
@@ -60,7 +61,7 @@ const ListItem = styled.li`
       background: transparent;
       position: absolute;
       left: -15px;
-      top: 5px;
+      top: 7px;
       padding: 0;
       border: 0;
 
@@ -102,7 +103,7 @@ const ListItem = styled.li`
   &.top-level {
     margin-top: 2rem;
     > a {
-      font-size: 20px;
+      font-size: 1rem;
       color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
@@ -124,7 +125,7 @@ const ListItem = styled.li`
     color: var(--list-bullet-color) !important;
     text-transform: uppercase;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 12px;
     &:hover {
       color: var(--list-bullet-color) !important;
     }
@@ -165,6 +166,7 @@ const TreeNode = ({
     })
     setCollapsed(label, false)
   }
+  const location = useLocation()
 
   const justExpand = (e: any) => {
     setCollapsed(label, true)
@@ -201,7 +203,6 @@ const TreeNode = ({
     setIsOpen(isCollapsed ? 'close' : 'open')
   }, [isCollapsed])
 
-  const location = useLocation()
   const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))
 
   return url === '/' ? null : (
@@ -211,7 +212,7 @@ const TreeNode = ({
           to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'hh'}
-          id={slug}
+          id={withPrefix(url)}
         >
           {hasExpandButton ? (
             <span className="collapse-title" onClick={collapse}>
