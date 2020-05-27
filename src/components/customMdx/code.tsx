@@ -5,6 +5,8 @@ import CopyButton from './copy'
 import Copy from '../../icons/Copy'
 import { stringify } from '../../utils/stringify'
 import styled from 'styled-components'
+import './prism/index.css'
+require('./prism/prism-prisma')
 
 interface CodeProps {
   copy?: boolean
@@ -14,7 +16,6 @@ type PreCodeProps = CodeProps & React.ReactNode
 
 function cleanTokens(tokens: any[]) {
   const tokensLength = tokens.length
-
   if (tokensLength === 0) {
     return tokens
   }
@@ -26,16 +27,22 @@ function cleanTokens(tokens: any[]) {
   return tokens
 }
 
+const propList = ['copy', 'line-number', 'bash-symbol']
+
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   let language = className && className.replace(/language-/, '')
-  if (language === 'prisma') {
-    language = 'sql'
-  } else if (language == undefined) {
-    language = 'shell'
+  let breakWords = false
+
+  if (propList.includes(language)) {
+    breakWords = true
   }
+
   const code = stringify(children)
 
-  const tokenCopyClass = props['copy'] || language === 'copy' ? 'has-copy-button' : ''
+  const hasCopy = props['copy'] || language === 'copy'
+  const hasLineNo = props['line-number'] || language === 'line-number'
+  const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol'
+  const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
   return (
     <>
@@ -51,15 +58,95 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                 </AbsoluteCopyButton>
               )}
               <code>
-                {cleanTokens(tokens).map((line: any, i: number) => (
-                  <div {...getLineProps({ line, key: i })}>
-                    <div className={tokenCopyClass}>
-                      {line.map((token: any, key: any) => (
-                        <span {...getTokenProps({ token, key })} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                {cleanTokens(tokens).map((line: any, i: number) => {
+                  let lineClass = {
+                    backgroundColor: '',
+                    symbColor: '',
+                  }
+
+                  let isDiff = false
+                  // let isHidden = false
+                  let diffSymbol = ''
+
+                  const diffBgColorMap: any = {
+                    '+': 'var(--code-added-bg-color)',
+                    '-': 'var(--code-deleted-bg-color)',
+                    '|': 'var(--code-highlight-bg-color)',
+                  }
+
+                  const symColorMap: any = {
+                    '+': 'var(--code-added-color)',
+                    '-': 'var(--code-deleted-color)',
+                    '|': 'var(--code-highlight-color)',
+                  }
+
+                  if (
+                    (line[0] &&
+                      line[0].content.length &&
+                      (line[0].content[0] === '+' ||
+                        line[0].content[0] === '-' ||
+                        line[0].content[0] === '|')) ||
+                    (line[0] &&
+                      line[0].content === '' &&
+                      line[1] &&
+                      (line[1].content === '+' ||
+                        line[1].content === '-' ||
+                        line[1].content === '|'))
+                  ) {
+                    diffSymbol =
+                      line[0] && line[0].content.length ? line[0].content[0] : line[1].content
+                    lineClass = {
+                      backgroundColor: diffBgColorMap[diffSymbol],
+                      symbColor: symColorMap[diffSymbol],
+                    }
+                    isDiff = true
+                  }
+
+                  // if (
+                  //   (line[0] && line[0].content.length && line[0].content[0] === '!') ||
+                  //   (line[0] && line[0].content === '' && line[1] && line[1].content === '!')
+                  // ) {
+                  //   isHidden = true
+                  // }
+
+                  const lineProps = getLineProps({ line, key: i })
+
+                  lineProps.style = { ...lineClass }
+
+                  return (
+                    <Line key={line + i} {...lineProps}>
+                      {hasTerminalSymbol && !isDiff && <LineNo>$</LineNo>}
+                      {hasLineNo && !isDiff && <LineNo>{i + 1}</LineNo>}
+                      {isDiff && (
+                        <LineNo style={{ color: lineClass.symbColor }}>
+                          {diffSymbol !== '|' ? diffSymbol : i + 1}
+                        </LineNo>
+                      )}
+                      <LineContent className={`${tokenCopyClass}`}>
+                        {line.map((token: any, key: any) => {
+                          if (isDiff) {
+                            if (
+                              ((key === 0 || key === 1) &&
+                                (token.content.charAt(0) === '+' ||
+                                  token.content.charAt(0) === '-')) ||
+                              token.content.charAt(0) === '|'
+                            ) {
+                              return (
+                                <span
+                                  {...getTokenProps({
+                                    token: { ...token, content: token.content.slice(1) },
+                                    key,
+                                  })}
+                                />
+                              )
+                            }
+                          }
+                          return <span {...getTokenProps({ token, key })} />
+                        })}
+                      </LineContent>
+                    </Line>
+                  )
+                })}
               </code>
             </Pre>
           )}
@@ -74,35 +161,47 @@ export default Code
 const AbsoluteCopyButton = styled.div`
   transition: opacity 100ms ease;
   position: absolute;
-  top: 24px;
+  top: 20px;
   right: 16px;
   z-index: 2;
   > div {
     right: -8px;
-    top: -2px;
+    top: -6px;
   }
 `
 
-export const Pre = styled.pre`
+const Pre = styled.pre`
   margin-top: 2rem;
   text-align: left;
   margin: 0 0 16px 0;
   padding: 2rem 1rem 1rem 1rem;
   overflow: auto;
-  word-wrap: normal;
   webkit-overflow-scrolling: touch;
+`
+const Line = styled.div`
+  display: block;
+`
 
-  & .token-line {
+const LineNo = styled.span`
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--code-linenum-color);
+  display: inline-block;
+  text-align: right;
+  // padding-left: 1em;
+  user-select: none;
+  width: 24px;
+`
+
+const LineContent = styled.span`
+  padding: 0 1em;
+  &.break-words {
+    display: table-cell;
+    white-space: break-spaces;
+  }
+
+  &.token-line {
     line-height: 1.3rem;
     height: 1.3rem;
-    font-size: 15px;
-
-    .has-copy-button {
-      width: 95%;
-      overflow-x: auto;
-      &::-webkit-scrollbar {
-        height: 0;
-      }
-    }
   }
 `

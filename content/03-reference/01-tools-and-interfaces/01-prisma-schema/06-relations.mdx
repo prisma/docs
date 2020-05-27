@@ -6,28 +6,35 @@ metaDescription: 'A relation is a connection between two models in the Prisma sc
 
 ## Overview
 
-This is an extension of the [Data model](data-model) page which describes how to handle relations between Prisma models in the Prisma schema.
-
 > **Note**: If you are upgrading from a Prisma 2.0 Preview version (e.g. `preview025`) and want to adopt the new relation syntax, be sure to check out the [release notes](https://github.com/prisma/prisma/releases) which contain concrete instructions for the upgrade process.
 
-A relation is a _connection_ between two models in the Prisma schema. A relation must always be defined with two _relation fields_, one on each the model. In the case of one-to-one and one-to-many relations, an additional _relation scalar field_ must be added:
+A relation is a _connection_ between two models in the Prisma schema. For example, there is a one-to-many relation between `User` and `Post` because one user can have many blog posts. The following Prisma schema defines a one-to-many relation between `User` and `Post`. The fields involved in defining the relation are highlighted:
 
-```prisma
+```prisma line-number
 model User {
   id      Int      @id @default(autoincrement())
-  posts   Post[]
+|  posts   Post[]
 }
 
 model Post {
   id         Int         @id @default(autoincrement())
-  author     User        @relation(fields: [authorId], references: [id])
-  authorId   Int         // relation scalar field  (used in the `@relation` attribute above)
+|  author     User        @relation(fields: [authorId], references: [id])
+|  authorId   Int         // relation scalar field  (used in the `@relation` attribute above)
 }
 ```
 
-> **Note**: In SQL, relations between models are represented via _foreign keys_ in the underlying database. A foreign key is only stored on _one_ side of a relation. As opposed to how relations are modeled in SQL, **Prisma always requires explicit relation fields on _both_ sides of the relation to be set on your Prisma models**.
->
-> This means that one side of the relation represents the _foreign key_ in the underlying database, the other relation field is provided on a Prisma-level (in the case of implicit many-to-many relations, both relation fields are provided on a Prisma-level).
+At a Prisma level, a relation is made up of:
+
+- Two [_relation fields_](#relation-fields): `author` and `posts`. Relation fields are used to define connections between models at the Prisma level and **do not exist in the database**.
+- The scalar `authorId` field. This field **does** exist in the database and represents the foreign key that connect a `Post` record to a `User` record.
+
+The following diagram compares the Prisma schema and the original SQL database:
+
+![A side-by-side comparison of the Prisma schema and the database it was generated from.](prisma-schema/relations-intro.png)
+
+In SQL, you use a _foreign key_ to create a relation between two tables. Foreign keys are stored on **one side** of the relation: each `Post` has an `authorId` (the foreign key), which references the `id` (a primary key) of a `User`.
+
+At a Prisma level, a connection between two models is **always** represented by a [relation field](#relation-fields) on each side of the relation.
 
 ## Example
 
@@ -888,58 +895,89 @@ Note that self-relations always require the `@relation` attribute.
 
 ### One-to-one self-relations
 
-A one-to-one self-relation looks as follows:
+The following example models a one-to-one self-relation:
 
 ```prisma
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String?
-  husband  User      @relation("MarriagePartners", fields: [id], references: [id])
-  wife     User?     @relation("MarriagePartners")
+  id             Int     @default(autoincrement()) @id
+  name           String?
+  successorId Int?
+  successor   User?   @relation("BlogOwnerHistory", fields: [successorId], references: [id])
+  predecessor User?   @relation("BlogOwnerHistory")
 }
 ```
 
 This relation expresses the following:
 
-- "a user has zero or one _husband_ "
-- "a user can have zero or one _wife_"
+- "a user can have one or zero predecessors" (for example, Sarah is Mary's predecessor as blog owner)
+- "a user can have one or zero successors" (for example, Mary is Sarah's successor as blog owner)
 
-Note that one-to-one self-relations can not be made required on both sides, one field has to be optional.
+> **Note**: One-to-one self-relations cannot be made required on both sides. One or both sides must be optional, otherwise it becomes impossible to create the first `User` record.
 
-Self-relations always require the `@relation` attribute on both sides of the relation. On both ends, you need provide the same relation _name_.
+To create a one-to-one self-relation:
 
-The `husband` field on the other hand is the [annotated relation field](#annotated-relation-fields-and-relation-scalar-fields) (although here the term is ambiguous because both relation fields are annotated with the `@relation` attribute, however here this refers too the field that also has the `fields` and `references` arguments).
+- Both sides of the relation must define a `@relation` attribute that share the same name - in this case, **BlogOwnerHistory**.
+- One relation field must be a [fully annotated](#annotated-relation-fields-and-relation-scalar-fields). In this example, the `successor` field defines both the `field` and `references` arguments.
+- One relation field must be backed by a foreign key. The `successor` field is backed by the `successorId` foreign key, which references a value in the `id` field.
 
-The annotated field is backed by a foreign key in the underlying database. Here, `id` is the [relation scalar](#annotated-relation-fields-and-relation-scalar-fields) that's referenced by `husband`.
+> **Note**: One-to-one self relations require two sides even if both sides are equal in the relationship. For example, to model a 'best friends' relation, you would need to create two relation fields: `bestfriend1` and a `bestfriend2`.
 
-You can again determine which side of the relation should store the foreign key in the underlying database:
+Either side of the relation can be backed by a foreign key. In the following example, `successor` is backed by `successorId`:
 
-```prisma
+```prisma line-number
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String?
-  husband  User      @relation("MarriagePartners", fields: [id], references: [id])
-  wife     User?     @relation("MarriagePartners")
+  id             Int     @default(autoincrement()) @id
+  name           String?
+| successorId Int?
+| successor   User?   @relation("BlogOwnerHistory", fields: [successorId], references: [id])
+  predecessor User?   @relation("BlogOwnerHistory")
 }
 ```
 
-```prisma
+In the following example, `predecessor` is backed by `predecessorId`:
+
+```prisma line-number
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String?
-  husband  User?    @relation("MarriagePartners")
-  wife     User     @relation("MarriagePartners", fields: [id], references: [id])
+  id             Int     @default(autoincrement()) @id
+  name           String?
+  successor   User?   @relation("BlogOwnerHistory")
+| predecessorId Int?
+| predecessor User?   @relation("BlogOwnerHistory", fields: [predecessorId], references: [id])
 }
 ```
 
-Now the foreign key is stored on `wife`, `husband` is provided on a Prisma-level (e.g. it will be available in the Prisma Client API).
+No matter which side is backed by a foreign key, the Prisma Client surfaces both the `predecessor` and `successor` fields:
+
+```ts line-number
+  const x = await prisma.user.create({
+    data: {
+      name: "Bob McBob",
+|      successor: {
+        connect: {
+          id: 2,
+        },
+      },
+|      predecessor: {
+        connect: {
+          id: 4,
+        },
+      },
+    },
+  });
+```
 
 This relation is represented as follows in SQL:
 
 ```sql
 CREATE TABLE "User" (
-    id SERIAL PRIMARY KEY REFERENCES "User"(id),
+    id SERIAL PRIMARY KEY,
+    "name" TEXT,
+    "successorId" INTEGER
 );
+
+ALTER TABLE "User" ADD CONSTRAINT fk_successor_user FOREIGN KEY ("successorId") REFERENCES "User" (id);
+
+ALTER TABLE "User" ADD CONSTRAINT successor_unique UNIQUE ("successorId");
 ```
 
 ### One-to-many self relations
@@ -950,7 +988,8 @@ A one-to-many self-relation looks as follows:
 model User {
   id       Int      @id @default(autoincrement())
   name     String?
-  teacher  User     @relation("TeacherStudents", fields: [id], references: [id])
+  teacherId Int?
+  teacher  User?     @relation("TeacherStudents", fields: [teacherId], references: [id])
   students User[]   @relation("TeacherStudents")
 }
 ```
@@ -966,8 +1005,12 @@ This relation is represented as follows in SQL:
 
 ```sql
 CREATE TABLE "User" (
-    id SERIAL PRIMARY KEY REFERENCES "User"(id),
+    id SERIAL PRIMARY KEY,
+"name" TEXT,
+    "teacherId" INTEGER
 );
+
+ALTER TABLE "User" ADD CONSTRAINT fk_teacherid_user FOREIGN KEY ("teacherId") REFERENCES "User" (id);
 ```
 
 ### Many-to-many self relations

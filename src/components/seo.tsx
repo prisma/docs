@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Helmet } from 'react-helmet'
 import favicon from '../images/favicon-32x32.png'
-import { useStaticQuery, graphql, withPrefix } from 'gatsby'
+import { useStaticQuery, graphql } from 'gatsby'
 import { useLocation } from '@reach/router'
 
 type SEOProps = {
@@ -41,7 +41,7 @@ const SEO = ({ title, description }: SEOProps) => {
   return (
     <Helmet>
       {/* <meta charSet="utf-8" /> */}
-      {/* <meta name="viewport" content="width=device-width, initial-scale=1" /> */}
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>{seoTitle}</title>
       <meta name="description" content={seoDescription} />
       {keywords && <meta name="keywords" content={keywords} />}

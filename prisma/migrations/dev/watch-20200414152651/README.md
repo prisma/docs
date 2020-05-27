@@ -16,7 +16,7 @@ CREATE TABLE "docs-feedback"."Feedback" (
     "sentiment" "Sentiment" NOT NULL ,
     "userAgent" text  NOT NULL ,
     PRIMARY KEY ("id")
-) 
+)
 ```
 
 ## Changes
@@ -46,5 +46,3 @@ migration ..watch-20200414152651
 +  Unhappy
 +}
 ```
-
-

@@ -1,10 +1,13 @@
 import React from 'react'
 import styled from 'styled-components'
 import ArrowRight from '../../icons/ArrowRight'
-import { darken } from 'polished'
+// import { darken } from 'polished'
 import withProps from 'styled-components-ts'
 import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
+import isAbsoluteUrl from 'is-absolute-url'
+
+import * as path from 'path'
 
 export interface ButtonProps {
   href?: string
@@ -20,19 +23,19 @@ export interface ButtonProps {
 
 type ButtonColor = 'red' | 'green' | 'grey' | 'grey-bg' | 'dark'
 const colorMap = {
-  red: 'white',
-  green: 'white',
-  grey: '#3D556B',
-  'grey-bg': 'white',
-  dark: 'white',
+  red: '--white-color',
+  green: '--white-color',
+  grey: '--grey-color',
+  'grey-bg': '--white-color',
+  dark: '--white-color',
 }
 
-const backgroundColorMap = {
-  red: '#ff4f56',
-  green: '#15BD76',
-  grey: 'white',
-  'grey-bg': '#8fa6b2',
-  dark: 'rgb(12, 52, 75)',
+const backgroundColorMap: any = {
+  red: '--red-color',
+  green: '--red-color',
+  grey: '--white-color',
+  'grey-bg': '--grey-bg-color',
+  dark: '--dark-color',
 }
 
 export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
@@ -50,8 +53,8 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     opacity: ${p => (p.disabled ? '0.2' : 1)};
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    background: ${p => backgroundColorMap[p.color || 'green']};
-    color: ${p => colorMap[p.color || 'green']} !important;
+    background: var(${p => backgroundColorMap[p.color || 'green']});
+    color: var(${p => colorMap[p.color || 'green']}) !important;
     line-height: 1;
     font-size: 14px;
     font-weight: 700;
@@ -64,21 +67,35 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     max-width: 100%;
     overflow-x: auto;
     margin-bottom: 0.5rem;
-    &:hover {
-      background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
-    }
-    &:focus {
-      background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
-    }
   `
+//     &:hover {
+//       background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
+//     }
+//     &:focus {
+//       background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
+//     }
 
-const ButtonLink = (props: ButtonProps) => {
+const getAbsPath = (href: any, location: any) => {
+  return withPrefix(
+    path
+      .resolve(
+        location.pathname
+          .replace('/docs', '')
+          .replace('docs', '')
+          .replace(/\/$/, '')
+          .split(path.sep)
+          .slice(0, -1)
+          .join(path.sep) || '/',
+        href
+      )
+      .replace(/\/?(\?|#|$)/, '/$1')
+  )
+}
+const ButtonLink = ({ href, ...props }: ButtonProps) => {
   const location = useLocation()
-  if (location.pathname === '/docs/') {
-    props.href = withPrefix(props.href!)
-  }
+  const newHref = isAbsoluteUrl(href) ? href : getAbsPath(href, location)
   return (
-    <ButtonWrapper {...props}>
+    <ButtonWrapper href={newHref} {...props}>
       {props.arrowLeft && <StyledArrowLeft />}
       {props.children}
       {props.arrow && <StyledArrow />}

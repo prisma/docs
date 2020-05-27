@@ -15,8 +15,24 @@ const gatsbyRemarkPlugins = [
       className: `title-link`,
     },
   },
+
   {
     resolve: `gatsby-remark-images`,
+    options: {
+      disableBgImageOnAlpha: true,
+    },
+  },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-to-absoluteurl'),
+  },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+  },
+  {
+    resolve: 'gatsby-remark-copy-linked-files',
+    options: {
+      destinationDir: 'static',
+    },
   },
 ]
 
@@ -35,13 +51,6 @@ module.exports = {
     docsLocation: config.siteMetadata.docsLocation,
   },
   plugins: [
-    {
-      resolve: `gatsby-plugin-google-analytics`,
-      options: {
-        trackingId: 'UA-74131346-14',
-        anonymize: true,
-      },
-    },
     'gatsby-plugin-react-helmet',
     'gatsby-transformer-sharp',
     'gatsby-plugin-sharp',
@@ -63,10 +72,12 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
-            policy: [{
-              userAgent: '*',
-              disallow: '/'
-        }]
+        policy: [
+          {
+            userAgent: '*',
+            disallow: '/',
+          },
+        ],
       },
     },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox

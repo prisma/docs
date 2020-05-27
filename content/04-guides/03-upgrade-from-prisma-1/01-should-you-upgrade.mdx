@@ -1,0 +1,88 @@
+---
+title: 'Should you upgrade?'
+metaTitle: 'Should you upgrade from Prisma 1 to Prisma 2.0?'
+metaDescription: 'Learn whether you should already upgrade your Prisma 1 project to Prisma 2.0'
+---
+
+## Overview
+
+This page helps you make an informed decision on when you should upgrade to Prisma 2.0.
+
+## Main differences between Prisma 1 and Prisma 2.0
+
+On a high-level, the biggest differences between Prisma 1 and Prisma 2.0 are the following:
+
+- Prisma 2.0 doesn't require hosting a database proxy server (i.e., the [Prisma server](https://www.prisma.io/docs/1.34/prisma-server/)).
+- Prisma 2.0 makes the features of Prisma 1 more modular and splits them into dedicated tools:
+  - Prisma Client: An improved version of Prisma client 1.0
+  - Prisma Migrate: Data modeling and migrations (formerly `prisma deploy`).
+- Prisma 1 datamodel and `prisma.yml` have been merged into the [Prisma schema](../../reference/tools-and-interfaces/prisma-schema/prisma-schema-file).
+- Prisma 2.0 uses its own [modeling language](https://github.com/prisma/specs/tree/master/schema) instead of being based on GraphQL SDL.
+- Prisma 2.0 doesn't expose ["a GraphQL API for your database"](https://www.prisma.io/blog/prisma-and-graphql-mfl5y2r7t49c/) anymore, but only allows for _programmatic access_ via the Prisma Client API. This means Prisma 2.0 [doesn't support Prisma binding](https://www.prisma.io/docs/more/faq#does-prisma-client-support-graphql-schema-delegation-and-graphql-binding) any more.
+- More powerful introspection allows connecting Prisma 2.0 to any existing database
+
+## Feature parity
+
+Prisma 2.0 doesn't have full feature parity with Prisma 1 yet. These are the biggest features that are still missing from Prisma 2.0:
+
+- **Database migrations**: In Prisma 1, you could migrate your database schema using `prisma deploy`. Prisma 2.0 aims to bring back this functionality with [Prisma Migrate](../../reference/tools-and-interfaces/prisma-migrate). Until Prisma Migrate is available, you'll have to run your database migrations with plain SQL or another migration tool.
+- **Realtime API (Subscriptions)**: Prisma 2.0 currently [doesn't have a way to subscribe to events happening in the database](https://github.com/prisma/prisma/issues/298) and get notified in realtime. It is currently unclear if, when and in what form a realtime API will be added to Prisma 2.0. For the time being, you can implement realtime functionality using native database triggers, or if you're using GraphQL subscriptions you can consider triggering subscriptions manually inside your _mutation resolvers_.
+- **MongoDB support**: Prisma 2.0 [doesn't yet support MongoDB](https://github.com/prisma/prisma/issues/1277). If you're using Prisma 1 with MongoDB and want to upgrade to Prisma 2.0, you either need to migrate your data into a relational database first or wait until MongoDB is supported.
+
+## Schema incompatibilities
+
+The database schema that is created when running `prisma deploy` in Prisma 1 is only partially compatible with the one that Prisma 2.0 creates. This section gives a quick overview of the general incompatibilities and the potential workarounds.
+
+> **Note**: For a detailled explanation of the problems and respective workarounds, please refer to the [Schema incompatibilities](./schema-incompatibilities) page.
+
+Here's an overview of the different columns:
+
+- **Problem**: A short description of the problem when upgrading from Prisma 1 to Prisma 2.0
+- **SQL**: Can this be solved by making a non-breaking to the SQL schema?
+- **Prisma schema**: Can this be solved by making a non-breaking change to the Prisma 2.0 schema?
+- **Data migration**: Does this require migrating data across tables and/or columns?
+
+| Problem                                                                  | SQL     | Prisma schema | Data migration |
+| ------------------------------------------------------------------------ | ------- | ------------- | -------------- |
+| Default values aren't represented in database                            | Yes     | Yes           | No             |
+| Generated CUIDs as ID values aren't represented in database              | No      | Yes           | No             |
+| `@createdAt` isn't represented in database                               | Yes     | Yes           | No             |
+| `@updatedAt` isn't represented in database                               | No      | Yes           | No             |
+| Inline 1-1 relations are recognized as 1-n (missing `UNIQUE` constraint) | Yes     | No            | No             |
+| _All_ non-inline relations are recognized as m-n                         | Yes     | No            | Yes            |
+| Json type is represented as `TEXT` in database                           | Yes     | No            | No             |
+| Enums are represented as `TEXT` in database                              | Yes     | No            | No             |
+| Scalar lists (arrays) are maintained with extra table                    | Depends | No            | Depends        |
+| Cascading deletes are not supported in Prisma 2.0                        | Depends | No            | TBD            |
+
+> **Note**: A general drawback with the workarounds in the Prisma schema is that [changes to the Prisma schema get lost after re-introspecting the database](https://github.com/prisma/prisma/issues/2425) and need to be re-added manually after each introspection run.
+
+## Prisma schema upgrade CLI
+
+The [Prisma schema upgrade CLI](https://github.com/prisma/upgrade) helps you apply the workarounds that are explained on the [Schema incompatibilities](./schema-incompatibilities) page.
+
+## Update strategies
+
+There are two main upgrade strategies:
+
+- **Upgrade all at once**: Entirely remove Prisma 1 from your project and move everything over to Prisma 2.0 at once.
+- **Gradual upgrade side-by-side**: Add Prisma 2.0 to the existing Prisma 1 project and gradually replace existing Prisma 1 features with Prisma 2.0 while running them side-by-side.
+
+### When to choose which strategy
+
+If your project is not yet running in production or has little traffic and user data, the **all at once** strategy is recommended.
+
+In case your project already sees a lot of traffic and has a lot of user data stored in the databse, you might want to consider the **gradual** upgrade strategy where you're running Prisma 1 and Prisma 2.0 side-by-side for a certain amount of time until you've replace all former Prisma 1 functionality with Prisma 2.0
+
+Note that _you won't be able to fix the [schema incompatibilities](#schema-incompatibilities) that require a data migration_ if you choose the gradual upgrade strategy and intend to run Prisma 1 and Prisma 2 side-by-side. That's because these data migrations are breaking the schema that Prisma 1 expects. This means that your Prisma Client API might not feel as idiomatic as it could, but you still get the full feature set of Prisma Client.
+
+### Upgrade path
+
+No matter which of the strategies you choose, on a high-level the envisioned upgrade path looks as follows:
+
+1. Install the new Prisma 2.0 CLI as a development dependency
+1. Create your Prisma schema and configure the database connection URL
+1. Use the Prisma 2.0 CLI to introspect your Prisma 1 database and generate your Prisma schema
+1. Run the [Prisma schema upgrade CLI](https://github.com/prisma/upgrade) to "fix" the Prisma schema
+1. Install and generate Prisma Client 2.0
+1. Adjust your application code, specifically replace the API calls from the Prisma client 1.0 with those of Prisma Client 2.0
