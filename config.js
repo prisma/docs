@@ -3,6 +3,16 @@ const config = {
     pathPrefix: '/docs',
     siteUrl: 'https://www.prisma.io',
   },
+  redirects: [
+    {
+      from: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-file',
+      to: '/reference/tools-and-interfaces/prisma-schema',
+    },
+    {
+      from: '/reference/tools-and-interfaces/prisma-client/api',
+      to: '/reference/tools-and-interfaces/prisma-client',
+    },
+  ],
   header: {
     logoLink: 'https://www.prisma.io',
     title: 'Prisma',
