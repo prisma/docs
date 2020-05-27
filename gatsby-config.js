@@ -24,6 +24,9 @@ const gatsbyRemarkPlugins = [
   },
   {
     resolve: require.resolve('./plugins/gatsby-remark-to-absoluteurl'),
+    options: {
+      redirects: config.redirects,
+    },
   },
   {
     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
