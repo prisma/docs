@@ -19,8 +19,8 @@ const List = styled.ul`
 
 const ListItem = styled.li`
   font-size: 14px;
-  line-height: 14px;
-  margin-bottom: 14px;
+  line-height: 1.25;
+  margin-bottom: 12px;
   position: relative;
   a {
     transition: color 150ms ease 0s;
@@ -61,7 +61,7 @@ const ListItem = styled.li`
       background: transparent;
       position: absolute;
       left: -15px;
-      top: 5px;
+      top: 7px;
       padding: 0;
       border: 0;
 
