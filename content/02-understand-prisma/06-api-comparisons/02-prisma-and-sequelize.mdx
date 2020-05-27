@@ -1,0 +1,396 @@
+---
+title: 'Comparing Prisma and Sequelize'
+metaTitle: 'Comparing Prisma and Sequelize'
+metaDescription: 'Compare the Prisma and Sequelize APIs.'
+---
+
+## Overview
+
+This page compares the Prisma and [Sequelize](http://docs.sequelizejs.com/) APIs.
+
+## Fetching single objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.findOne({
+  where: {
+    id: 1,
+  },
+});
+```
+
+**Sequelize**
+
+```ts
+const user = await User.findByPk(id)
+```
+
+## Fetching selected scalars of single objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.findOne({
+  where: {
+    id: 1,
+  },
+  select: {
+    name: true,
+  },
+});
+```
+
+**Sequelize**
+
+```ts
+const user = await User.findByPk(1, { attributes: ["name"], raw: true });
+```
+
+> **Tip** Use the `raw: true` query option to return plain Javascript objects.
+
+## Fetching relations
+
+**Prisma**
+
+<CodeBlock languages={["Using include", "Fluent API"]}>
+
+```ts
+const posts = await prisma.user.findOne({
+  where: {
+    id: 2,
+  },
+  include: {
+    post: true,
+  },
+});
+```
+
+```ts
+const posts = await prisma.user.findOne({
+  where: {
+    id: 2,
+  },
+})
+.post();
+```
+
+</CodeBlock>
+
+> **Note**: `select` return a `user` object that includes a `post` array, whereas the fluent API only returns a `post` array. 
+
+**Sequelize**
+
+```ts
+const user = await User.findByPk(id, {
+  include: [{
+    model: Post
+  }]
+})
+```
+
+> **Tip**: Use `model: Post as "Post"` if you used an alias to define the relationship between `User` and `Post` - for example: `User.hasMany(Post, { as: "Post", foreignKey: "authorId" });`
+
+## Filtering for concrete values
+
+**Prisma**
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    title: {
+      contains: "Hello",
+    },
+  },
+});
+```
+
+**Sequelize**
+
+```ts
+const post = await Post.findAll({
+  raw: true,
+  where: {
+    title: {
+      [Op.like]: "%Hello%",
+    },
+  },
+});
+```
+
+## Other filter criteria
+
+**Prisma**
+
+Prisma generates many [additional filters](../../reference/tools-and-interfaces/prisma-client/filtering) that are commonly used in modern application development.
+
+**Sequelize**
+
+Sequelize has an [extensive set of operators](http://docs.sequelizejs.com/manual/tutorial/querying.html#operators).
+
+## Relation filters
+
+**Prisma**
+
+Prisma lets you filter a list based on a criteria that applies not only to the models of the list being retrieved, but to a _relation_ of that model. 
+
+For example, the following query returns users with one or more posts with "Hello" in the title:
+
+```ts
+const posts = await prisma.user.findMany({
+  where: {
+    Post: {
+      some: {
+        title: {
+          contains: "Hello",
+        },
+      },
+    },
+  }
+});
+```
+
+**Sequelize**
+
+Sequelize [doesn't offer a dedicated API for relation filters](https://github.com/sequelize/sequelize/issues/10943). You can get similar functionality by sending a raw SQL query to the database.
+
+## Pagination
+
+**Prisma**
+
+Cursor-style pagination:
+
+```ts
+const page = prisma.post.findMany({
+  before: {
+    id: 242,
+  },
+  last: 20,
+});
+```
+
+Offset pagination:
+
+```ts
+const cc = prisma.post.findMany({
+  skip: 200,
+  first: 20,
+});
+```
+
+**Sequelize**
+
+```ts
+const posts = await Post.findAll({ 
+  offset: 5, 
+  limit: 10 
+})
+```
+
+## Creating objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: "alice@prisma.io",
+  },
+});
+```
+
+**Sequelize**
+
+<CodeBlock languages={["Using `save`", "Using `create`"]}>
+
+```ts
+const user = User.build({
+  name: "Alice",
+  email: "alice@prisma,io"
+})
+await user.save()
+```
+
+```ts
+const user = await User.create({
+  name: "Alice",
+  email: "alice@prisma,io"
+})
+```
+
+</CodeBlock>
+
+## Updating objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.update({
+  data: {
+    name: "Alicia",
+  },
+  where: {
+    id: 2
+  }
+});
+```
+
+**Sequelize**
+
+<CodeBlock languages={["Using `save`", "Using `update`"]}>
+
+```ts
+user.name = "James"
+user.email =" alice@prisma.com"
+await user.save()
+```
+
+```ts
+await User.update({
+  name: "James",
+  email: "james@prisma.io"
+})
+```
+
+</CodeBlock>
+
+## Deleting objects
+
+**Prisma**
+
+```ts
+const user = prisma.user.delete({
+  where: {
+    id: 10,
+  },
+});
+```
+
+**Sequelize**
+
+```ts
+await user.destroy()
+```
+
+## Batch updates
+
+**Prisma**
+
+```ts
+const user = await prisma.user.updateMany({
+  data: {
+    name: "Published author!",
+  },
+  where: {
+    email: {
+      contains: "prisma.io"
+    }
+  },
+});
+```
+
+**Sequelize**
+
+```ts
+const updatedUsers = await User.update({ 
+  { role: "Admin" },
+  where: {
+    email: {
+      [Op.like]: "%@prisma.io"
+    }
+  },
+})
+```
+
+## Batch deletes
+
+**Prisma**
+
+```ts
+const users = await prisma.user.deleteMany({
+  where: {
+    id: {
+      in: [1, 2, 6, 6, 22, 21, 25],
+    },
+  },
+});
+```
+
+**Sequelize**
+
+```ts
+await User.destroy({
+  where: {
+    id: {
+      [Op.in]: [id1, id2, id3]
+    }
+  }
+})
+```
+
+## Transactions
+
+**Prisma**
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: "bob.rufus@prisma.io",
+    name: "Bob Rufus",
+    Post: {
+      create: [
+        { title: "Working at Prisma" },
+        { title: "All about databases" },
+      ],
+    },
+  },
+});
+```
+
+**Sequelize**
+
+<CodeBlock languages={["Manual", "Automatic"]}>
+
+```ts
+return sequelize.transaction(async t => {
+  const user = await User.create({
+    name: "Alice",
+    email: "alice@prisma,io"
+  }, { 
+    transaction: t 
+  })
+  const post1 = await Post.create({
+    title: "Join us for GraphQL Conf in 2019"
+  }, { 
+    transaction: t 
+  })
+  const post2 = await Post.create({
+    title: "Subscribe to GraphQL Weekly for GraphQL news"
+  }, { 
+    transaction: t 
+  })
+  await user.setPosts([post1, post2])
+})
+```
+
+```ts
+return sequelize.transaction(async transaction => {
+  try {
+      const user = await User.create({
+      name: "Alice",
+      email: "alice@prisma,io"
+    })
+    const post1 = await Post.create({
+      title: "Join us for GraphQL Conf in 2019"
+    })
+    const post2 = await Post.create({
+      title: "Subscribe to GraphQL Weekly for GraphQL news"
+    })
+    await user.setPosts([post1, post2])
+  } catch(e) {
+    return t.rollback()
+  }
+})
+```
+
+</CodeBlock>
