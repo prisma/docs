@@ -1,0 +1,1900 @@
+---
+title: 'Old to new Nexus'
+metaTitle: 'Upgrading from Prisma 1 with prisma-binding to Nexus'
+metaDescription: 'Learn how to upgrade existing Prisma 1 projects with prisma-binding to Prisma 2.0 and Nexus.'
+---
+
+## Overview
+
+This upgrade guide describes how to migrate a project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses [`nexus`](https://www.npmjs.com/package/nexus) (< v0.12.0) or [`@nexus/schema`](https://github.com/graphql-nexus/schema) together with [`nexus-prisma`](https://www.npmjs.com/package/nexus-prisma) (< v4.0.0) to implement a GraphQL server. 
+
+The code will be migrated to the new [Nexus Framework](https://www.nexusjs.org) and the [`nexus-schema-plugin-prisma`](https://github.com/graphql-nexus/nexus-schema-plugin-prisma). 
+
+The guide assumes that you already went through the [guide for upgrading the Prisma layer](./upgrading-the-prisma-layer). This means you already:
+
+- installed the Prisma 2.0 CLI
+- created your Prisma 2.0 schema
+- introspected your database and resolved potential schema incompatibilities
+- installed and generated Prisma Client
+
+The guide further assumes that you have a file setup that looks similar to this:
+
+```
+.
+├── README.md
+├── package.json
+├── prisma
+│   └── schema.prisma
+├── prisma1
+│   ├── datamodel.prisma
+│   └── prisma.yml
+└── src
+    ├── generated
+    │   ├── nexus-prisma
+    │   ├── nexus.ts
+    │   ├── prisma-client
+    │   └── schema.graphql
+    └── index.ts
+```
+
+The important parts are:
+
+- A folder called with `prisma` with your Prisma 2.0 schema
+- A folder called `src` with your application code
+
+If this is not what your project structure looks like, you'll need to adjust the instructions in the guide to match your own setup.
+
+## 1. Upgrade Nexus dependencies to the Nexus Framework
+
+To get started, you can remove the old Nexus and Prisma 1 dependencies:
+
+```
+npm uninstall nexus nexus-prisma graphql prisma-client-lib
+```
+
+Then, you can install the new Nexus dependency in your project:
+
+```
+npm install nexus@next
+```
+
+Next, install the the Prisma plugin for Nexus which will allow you to expose Prisma models in your GraphQL API (this is the new equivalent of the former `nexus-prisma` package):
+
+```
+npm install nexus-plugin-prisma
+```
+
+The `nexus-plugin-prisma` dependency bundles all required Prisma dependencies. You should therefore remove the dependencies that you added installed when you upgraded the Prisma layer of your app:
+
+```
+npm uninstall @prisma/cli @prisma/client
+```
+
+Note however that you can still invoke the Prisma 2.0 CLI with the familiar command:
+
+```
+npx prisma
+```
+
+## 2. Update the Nexus configuration in your code
+
+<!-- The new Nexus Framework uses a similar, code-first API as you're used to from your Prisma 1 app. However, it gives you a lot more convenience and saves a lot of the configuration boilerplate that was needed before.  -->
+
+### 2.1. Remove `makePrismaSchema`
+
+With the new Nexus Framework, you don't need to create your `GraphQLSchema` instance manually any more as was done with `makeSchema` or `makePrismaSchema` before. Instead, Nexus now hands you a `schema` object that can directly be configured by calling functions on it. You'll see how that's done once we start migrating the actual GraphQL types.
+
+However your code calling `makeSchema` or `makePrismaSchema` before looks like, you can now just delete it, e.g::
+
+```ts line-number
+- const schema = makePrismaSchema({
+-   types: [Query, Mutation, User, Post],
+-   prisma: {
+-     datamodelInfo,
+-     client: prisma,
+-   },
+-   outputs: {
+-     schema: path.join(__dirname, './generated/schema.graphql'),
+-     typegen: path.join(__dirname, './generated/nexus.ts'),
+-   },
+-   nonNullDefaults: {
+-     input: false,
+-     output: false,
+-   },
+-   typegenAutoConfig: {
+-     sources: [
+-       {
+-         source: path.join(__dirname, './types.ts'),
+-         alias: 'types',
+-       },
+-     ],
+-     contextType: 'types.Context',
+-   },
+- })
+```
+
+If you want to configure the schema further, you can import the [`settings`](https://www.nexusjs.org/#/api/modules/main/exports/settings) object from `nexus`, e.g.:
+
+```ts
+import { log, settings } from 'nexus'
+
+settings.change({
+  logger: {
+    level: 'trace',
+  },
+  server: {
+    startMessage: (info) => {
+      settings.original.server.startMessage(info)
+    },
+  },
+  schema: {
+    generateGraphQLSDLFile: './src/generated/schema.graphql'
+  }
+})
+```
+
+### 2.2. Remove your GraphQL server
+
+The new Nexus Framework comes with an integrated HTTP server based on [`express-graphql`](https://github.com/graphql/express-graphql). This means you don't need your previous server (e.g. `graphql-yoga` or `apollo-server`) any more.
+
+```
+npm uninstall graphql-yoga
+```
+
+Once removed, you can also delete the `GraphQLServer` setup code, e.g.:
+
+```ts line-number
+- const server = new GraphQLServer({
+-   schema,
+-   context: { prisma },
+- })
+- server.start()
+```
+
+If you need to configure the Express server in specific ways, you can do so by importing the `server` object from `nexus`, e.g.:
+
+```ts
+import cors from 'cors'
+import { server } from 'nexus'
+
+server.express.use(cors())
+```
+
+### 2.3. Adjust the `context` configuration
+
+The `context` object in GraphQL servers allows your resolvers to communicate with each other. Instead of creating this object manually and passing it to your GraphQL server, you can now call the `addToContext` function on your main `schema` object:
+
+```ts
+import { schema } from 'nexus'
+
+schema.addToContext(req => {
+  return { ... }
+})
+```
+
+> **Note**: Since you're using the new `nexus-plugin-prisma`, you don't need to to attach a `PrismaClient` instance to the `context` manually any more. The plugin will automatically add it for you as an object called `db`, so you can access it inside your resolvers e.g. via `context.db.user.findMany()`. 
+
+### 2.4. Use the `nexus-plugin-prisma` 
+
+The new `nexus-plugin-prisma` package is the equivalent of the `nexus-prisma` package that was used with Prisma 1.
+
+In your new setup, you now need to integrate the plugin using Nexus' `use` function. You'll likely want to put that code somewhere at the "root" of your application structure, e.g. in `index.ts` or something similar.
+
+```ts
+import { use } from 'nexus'
+import { prisma } from 'nexus-plugin-prisma'
+
+use(prisma({ migrations: false }))
+```
+
+Note that when adding the `nexus-plugin-prisma`, you're disabling [Prisma Migrate](../../reference/tools-and-interfaces/prisma-migrate) which is currently still in an experimental state and therefore is not recommended for production use. This makes Nexus compatible with the [introspection-based workflows](../../understand-prisma/introduction#sql-migrations-and-introspection).
+
+Next, you can adjust the `scripts` section inside your `package.json` to include the following commands:
+
+```json line-number
+{
+  "scripts": {
++    "dev": "nexus dev",
++    "build": "nexus build",
++    "start": "node node_modules/.build"
+  }
+}
+```
+
+The `dev` script starts a development server that you **always** should have running in the background when developing your app. Note however that running it right now likely produces TypeScript errors because oyu e.g. uninstalled the `nexus-prisma` package which is probably still used throughout your application.
+
+As a next step, you'll need to start migrating Nexus' GraphQL type definitions to the new API.
+
+## 2. Migrate your GraphQL types
+
+Here's a quick overview of the main differences between the two approaches of creating GraphQL types with the "old" and "new" Nexus.
+
+- `prismaObjectType` doesn't exist any more, all types are created with Nexus `objectType` function.
+- Instead of importing `objectType`, you can now invoke it on your main `schema` instance as `schema.objectType(...)`.
+- To expose Prisma models via Nexus, you can use the `t.model` propery which is added to the `t` argument that's passed into Nexus' `definition` functions. `t.model` gives you access to the properties of a Prisma model and lets you expose them.
+- Exposing CRUD operations for Prisma models via Nexus follows a similar approach. These are exposed via `t.crud` in the `definition` functions of your `queryType` and `mutationType` types.
+
+### 2.1. Migrating the `Post` type
+
+#### Type definition with the "old" Nexus and `nexus-prisma`
+
+In the sample app, the `User` type is defined as follows:
+
+```ts
+const User = prismaObjectType({
+  name: 'User',
+  definition(t) {
+    t.prismaFields([
+      'id',
+      'name',
+      'email',
+      {
+        name: 'posts',
+        args: [], // remove the arguments from the `posts` field of the `User` type in the Prisma schema
+      },
+    ])
+  },
+})
+```
+
+#### Type definition the Nexus Framework and the `nexus-plugin-prisma`
+
+With the new Nexus Framework, you can now access the `objectType` function on your main `schema` instance and expose all fields from the Prisma model like so:
+
+```ts
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    t.model.id()
+    t.model.name()
+    t.model.email()
+    t.model.posts({
+      pagination: false,
+      ordering: false,
+      filtering: false
+    })
+    t.model.profile()
+  }
+})
+```
+
+Note that `t.model` looks at the `name` attribute and matches it against the models in your Prisma schema. In this case, it's matched against the `User` model. Therefore, `t.model` exposes functions that are named after the fields of the `User` model.
+
+At this point, you'll probably get errors on the relation fields `posts` and `profile`, e.g.:
+
+```
+Warning: Your GraphQL `User` object definition is projecting a field `posts` with `Post` as output type, but `Post` is not defined in your GraphQL Schema
+```
+
+This is because you didn't add the `Post` and `Profile` types to the GraphQL schema yet, the errors will go away once you do that!
+
+
+### 2.2. Migrating the `Post` type
+
+#### Type definition with the "old" Nexus and `nexus-prisma`
+
+In the sample app, the `Post` type is defined as follows:
+
+```ts
+const Post = prismaObjectType({
+  name: 'Post',
+  definition(t) {
+    t.prismaFields(['*'])
+  },
+})
+```
+
+The asterisk in `prismaFields` means that _all_ Prisma fields are exposed.
+
+#### Type definition the Nexus Framework and the `nexus-plugin-prisma`
+
+With the new Nexus Framework, you need to expose all fields explicitly, so there's no option to just expose everything from a Prisma model.
+
+Therefore, the new definition of `Post` must explicitly list all its fields:
+
+```ts
+schema.objectType({
+  name: 'Post',
+  definition(t) {
+    t.model.id()
+    t.model.title()
+    t.model.content()
+    t.model.published()
+    t.model.author()
+  }
+})
+```
+
+Note that `t.model` looks at the `name` attribute and matches it against the models in your Prisma schema. In this case, it's matched against the `Post` model. Therefore, `t.model` exposes functions that are named after the fields of the `Post` model.
+
+
+### 2.3. Migrating the `Profile` type
+
+#### Type definition with the "old" Nexus and `nexus-prisma`
+
+In the sample app, the `Profile` type is defined as follows:
+
+```ts
+const Profile = prismaObjectType({
+  name: 'Profile',
+  definition(t) {
+    t.prismaFields(['*'])
+  },
+})
+```
+
+The asterisk in `prismaFields` means that _all_ Prisma fields are exposed.
+
+#### Type definition the Nexus Framework and the `nexus-plugin-prisma`
+
+With the new Nexus Framework, you need to expose all fields explicitly, so there's no option to just expose everything from a Prisma model.
+
+Therefore, the new definition of `Profile` must explicitly list all its fields:
+
+```ts
+schema.objectType({
+  name: 'Profile',
+  definition(t) {
+    t.model.id()
+    t.model.bio()
+    t.model.user()
+  }
+})
+```
+
+Note that `t.model` looks at the `name` attribute and matches it against the models in your Prisma schema. In this case, it's matched against the `Profile` model. Therefore, `t.model` exposes functions that are named after the fields of the `Profile` model.
+
+### 2.4. Migrating the `Category` type
+
+#### Type definition with the "old" Nexus and `nexus-prisma`
+
+In the sample app, the `Category` type is defined as follows:
+
+```ts
+const Category = prismaObjectType({
+  name: 'Category',
+  definition(t) {
+    t.prismaFields(['*'])
+  },
+})
+```
+
+The asterisk in `prismaFields` means that _all_ Prisma fields are exposed.
+
+#### Type definition the Nexus Framework and the `nexus-plugin-prisma`
+
+With the new Nexus Framework, you need to expose all fields explicitly, so there's no option to just expose everything from a Prisma model.
+
+Therefore, the new definition of `Category` must explicitly list all its fields:
+
+```ts
+schema.objectType({
+  name: 'Category',
+  definition(t) {
+    t.model.id()
+    t.model.name()
+    t.model.posts()
+  }
+})
+```
+
+Note that `t.model` looks at the `name` attribute and matches it against the models in your Prisma schema. In this case, it's matched against the `Category` model. Therefore, `t.model` exposes functions that are named after the fields of the `Category` model.
+
+## 3. Migrate GraphQL operations
+
+As a next step, you can start migrating all the GraphQL _queries_ and _mutations_ from the "previous" GraphQL API to the new one.
+
+```
+For this guide, the following sample GraphQL operations will be used:
+
+```graphql
+input UserUniqueInput {
+  id: String
+  email: String
+}
+
+type Query {
+  posts(searchString: String): [Post!]!
+  user(userUniqueInput: UserUniqueInput!): User
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+}
+
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  createDraft(title: String!, content: String, authorId: ID!): Post
+  updateBio(userUniqueInput: UserUniqueInput!, bio: String!): User
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+}
+```
+
+### 3.1. Migrate GraphQL queries
+
+In this section, you'll migrate all GraphQL _queries_ from the "old" to the "new" Nexus.
+
+#### 3.1.1. Define the `Query` type
+
+The first step to migrate any queries is to define the `Query` type of your GraphQL API. Once that's done, you can gradually add operations to it. 
+
+Similar to the `objectType` functions you've used in the previous sections, you don't need to import the `queryType` function any more. Instead, you access it on your main `schema` object. Otherwise the API of `queryType` is remaining the same in the "new" Nexus.
+
+```ts
+schema.queryType({
+  definition(t) {
+    // your GraphQL queries + resolvers will be defined here
+  }
+})
+```
+
+#### 3.1.2. Migrate the `users` query 
+
+In our sample API, the `users` query from the sample GraphQL schema is implemented as follows.
+
+```ts
+const Query = prismaObjectType({
+  name: 'Query',
+  definition(t) {
+    t.prismaFields(['users'])
+  },
+})
+```
+
+To get the same behaviour with the new Nexus, you need to call the `users` function on `t.crud`:
+
+```ts
+schema.queryType({
+  definition(t) {
+    t.crud.posts({
+      filtering: true,
+      ordering: true
+    })
+  }
+})
+```
+
+Recall that the `crud` property is added to `t` by the `nexus-plugin-prisma` (using the same mechanism as for `t.model`).
+
+#### 3.1.3. Migrate the `posts(searchString: String): [Post!]!` query
+
+In the sample API, the `posts` query is implemented as follows:
+
+```ts
+queryType({
+  definition(t) {
+    t.list.field('posts', {
+      type: 'Post',
+      args: {
+        searchString: stringArg({ nullable: true }),
+      },
+      resolve: (parent, { searchString }, context) => {
+        return context.prisma.posts({
+          where: {
+            OR: [
+              { title_contains: searchString },
+              { content_contains: searchString },
+            ],
+          },
+        })
+      },
+    })
+  }
+})
+```
+
+The only thing that needs to be updated for this query is the call to Prisma since the new Prisma Client API looks a bit different from the one used in Prisma 1.
+
+```ts line-number
+queryType({
+  definition(t) {
+    t.list.field('posts', {
+      type: 'Post',
+      args: {
+        searchString: stringArg({ nullable: true }),
+      },
+      resolve: (parent, { searchString }, context) => {
+|        return context.db.post({
+          where: {
+            OR: [
+|              { title: { contains: searchString } },
+|              { content: { contains: searchString } },
+            ],
+          },
+        })
+      },
+    })  
+  }
+})
+```
+
+Notice that the `db` object is automatically attached to the `context` by the `nexus-plugin-prisma`. It represents an instance of your `PrismaClient` which enables you to send queries to your database inside your resolvers.
+
+#### 3.1.3. Migrate the `user(uniqueInput: UserUniqueInput): User` query
+
+In the sample API, the `user` query is implemented as follows:
+
+```ts
+inputObjectType({
+  name: 'UserUniqueInput',
+  definition(t) {
+    t.string('id')
+    t.string('email')
+  },
+})
+
+queryType({
+  definition(t) {
+    t.field('user', {
+      type: 'User',
+      args: {
+        userUniqueInput: schema.arg({ 
+          type: 'UserUniqueInput',
+          nullable: false,
+       })
+      },
+      resolve: (_, args, context) => {
+        return context.prisma.user({
+          id: args.userUniqueInput?.id,
+          email: args.userUniqueInput?.email
+        })
+      }
+    })
+  }
+})
+```
+
+The things that need to be updated for this query is the to access `inputObjectType` and `arg` on your main `schema` object as well as the call to Prisma since the new Prisma Client API looks a bit different from the one used in Prisma 1.
+
+```ts line-number
+|schema.inputObjectType({
+  name: 'UserUniqueInput',
+  definition(t) {
+    t.string('id')
+    t.string('email')
+  },
+})
+
+|schema.queryType({
+  definition(t) {
+    t.field('user', {
+      type: 'User',
+      args: {
+|        userUniqueInput: schema.arg({ 
+          type: 'UserUniqueInput',
+          nullable: false,
+       })
+      },
+      resolve: (_, args, context) => {
+|        return context.prisma.user.findOne({
+|          where: {
+|            id: args.userUniqueInput?.id,
+|            email: args.userUniqueInput?.email
+|          }
+|        })
+      }
+    })
+  }
+})
+```
+
+### 3.2. Migrate GraphQL mutations
+
+In this section, you'll migrate the GraphQL mutations from the sample schema to the "new" Nexus.
+
+#### 3.2.1. Define the `Mutation` type
+
+The first step to migrate any mutations is to define the `Mutation` type of your GraphQL API. Once that's done, you can gradually add operations to it. 
+
+Similar to the `objectType` functions you've used in the previous sections, you don't need to import the `mutationType` function any more. Instead, you access it on your main `schema` object. Otherwise the API of `mutationType` is remaining the same in the "new" Nexus.
+
+```ts
+schema.mutationType({
+  definition(t) {
+    // your GraphQL mutations + resolvers will be defined here
+  }
+})
+```
+
+#### 3.2.2. Migrate the `createUser` mutation
+
+In our sample API, the `createUser` mutation from the sample GraphQL schema is implemented as follows.
+
+```ts
+const Mutation = prismaObjectType({
+  name: 'Mutation',
+  definition(t) {
+    t.prismaFields(['createUser'])
+  },
+})
+```
+
+To get the same behaviour with the "new" Nexus, you need to call the `createOneUser` function on `t.crud` and pass an `alias` in order to rename the field in your GraphQL schema to `createUser` (otherwise it would be called `createOneUser`, after the function that's used):
+
+```ts
+schema.queryType({
+  definition(t) {
+    t.crud.createOneUser({
+      alias: 'createUser'
+    })
+  }
+})
+```
+
+Recall that the `crud` property is added to `t` by the `nexus-plugin-prisma` (using the same mechanism as for `t.model`).
+
+#### 3.2.3. Migrate the `createDraft(title: String!, content: String, authorId: String!): Post!` query
+
+In the sample app, the `createDraft` mutation implemented as follows.
+
+```ts line-number
+mutationType({
+  definition(t) {
+    t.field('createDraft', {
+      type: 'Post',
+      args: { 
+        title: stringArg({ nullable: false }),
+        content: stringArg(),
+        authorId: stringArg({ nullable: false }),
+      },
+      resolve: (_, args) => {
+        return context.prisma.createPost({
+          title: args.title,
+          content: args.content,
+          author: {
+            connect: { id: args.authorId }
+          }
+        })
+      }
+    })
+  }
+})
+```
+
+The things that need to be updated for this mutation is the to access `stringArg` on your main `schema` object as well as the call to Prisma since the new Prisma Client API looks a bit different from the one used in Prisma 1.
+
+```ts line-number
+|schema.mutationType({
+  definition(t) {
+    t.field('createDraft', {
+      type: 'Post',
+      args: { 
+|        title: schema.stringArg({ nullable: false }),
+|        content: schema.stringArg(),
+|        authorId: schema.stringArg({ nullable: false }),
+      },
+      resolve: (_, args) => {
+|        return context.db.post.create({
+|          data: {
+|            title: args.title,
+|            content: args.content,
+|            author: {
+|              connect: { id: args.authorId }
+|            }
+|          }
+|        })
+      }
+    })
+  }
+})
+```
+
+#### 3.2.4. Migrate the `updateBio(bio: String, userUniqueInput: UserUniqueInput!): User` mutation
+
+In the sample API, the `updateBio` mutation is defined and implemented as follows.
+
+```ts
+mutationType({
+  definition(t) {
+
+    t.field('updateBio', {
+      type: 'User',
+      args: {
+        userUniqueInput: arg({ 
+          type: 'UserUniqueInput', 
+          nullable: false 
+        }),
+        bio: stringArg()
+      },
+      resolve: (_, args, context) => {
+        return context.prisma.updateUser({
+          where: {
+            id: args.userUniqueInput?.id,
+            email: args.userUniqueInput?.email
+          },
+          data: {
+            profile: {
+              create: { bio: args.bio }
+            }
+          }
+        })
+      }
+    })
+  }
+})
+```
+
+The things that need to be updated for this mutation is the to access `stringArg` on your main `schema` object as well as the call to Prisma since the new Prisma Client API looks a bit different from the one used in Prisma 1.
+
+```ts
+|schema.mutationType({
+  definition(t) {
+    t.field('updateBio', {
+      type: 'User',
+      args: {
+|        userUniqueInput: schema.arg({ 
+          type: 'UserUniqueInput', 
+          nullable: false 
+        }),
+|        bio: schema.stringArg()
+      },
+      resolve: (_, args, context) => {
+|        return context.db.user.update({
+|          where: {
+|            id: args.userUniqueInput?.id,
+|            email: args.userUniqueInput?.email
+|          },
+|          data: {
+|            profile: {
+|              create: { bio: args.bio }
+|            }
+|          }
+|        })
+      }
+    })
+  }
+})
+```
+
+#### 3.2.5. Migrate the `addPostToCategories(postId: String!, categoryIds: [String!]!): Post` mutation
+
+In the sample API, the `addPostToCategories` mutation is defined and implemented as follows.
+
+```ts line-number
+mutationType({
+  definition(t) {
+    t.field('addPostToCategories', {
+      type: 'Post',
+      args: {
+        postId: stringArg({ nullable: false }),
+        categoryIds: stringArg({ 
+          list: true, 
+          nullable: false 
+        }),
+      },
+      resolve: (_, args, context) => {
+        const ids = args.categoryIds.map(id => ({ id }))
+        return context.prisma.updatePost({
+          where: {
+            id: args.postId
+          },
+          data: {
+            categories: { connect: ids }
+          }
+        })
+      }
+    })
+  }
+})
+```
+
+The things that need to be updated for this mutation is the to access `stringArg` on your main `schema` object as well as the call to Prisma since the new Prisma Client API looks a bit different from the one used in Prisma 1.
+
+```ts line-number
+|schema.mutationType({
+  definition(t) {
+    t.field('addPostToCategories', {
+      type: 'Post',
+      args: {
+|        postId: schema.stringArg({ nullable: false }),
+|        categoryIds: schema.stringArg({ 
+          list: true, 
+          nullable: false 
+        }),
+      },
+      resolve: (_, args, context) => {
+        const ids = args.categoryIds.map(id => ({ id }))
+|        return context.db.post.update({
+|          where: {
+|            id: args.postId
+|          },
+|          data: {
+|            categories: { connect: ids }
+|          }
+|        })
+      }
+    })
+  }
+})
+```
+
+## 4. Cleaning up 
+
+
+### 4.1. Clean up npm dependencies
+
+You can start by removing npm dependencies that were related to the Prisma 1 setup:
+
+```
+npm uninstall graphql-yoga prisma1
+```
+
+### 4.2. Delete unused files
+
+Next, delete the files of your Prisma 1 setup:
+
+```
+rm prisma1/datamodel.prisma prisma1/prisma.yml
+```
+
+### 4.3. Stop the Prisma server
+
+Finally, you can stop running your Prisma server.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The next step of the upgrade process is to create your _GraphQL types_. In this case, your GraphQL types will mirror the Prisma models (as it likely was the case in your `prisma-binding` setup as well). If a GraphQL type deviates from a Prisma model, you'll be able to easily adjust the exposed GraphQL type accordingly using the Nexus API. 
+
+For the purpose of this guide, you'll keep all the code in a single file. However, you can structure the files to your personal preference and `import` accordingly.
+
+Create a new file called `graphql.ts` right next to `app.ts`:
+
+```
+touch graphql.ts
+```
+
+In Nexus, GraphQL types are defined via the `objectType` function that's exposed by the main `schema` object. Import `schema` and then start with the skeleton for your first GraphQL type. In this case, we're starting by mapping Prisma's `User` model to GraphQL:
+
+```ts
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    // the fields of the type will be defined here
+  },
+})
+```
+
+With this code in place, you can start exposing the _fields_ of the `User` model one by one. You can use your editor's autocompletion to save some typing. Inside the body of the `definition` function, type `t.model.` and then hit <kbd>CTRL</kbd>+<kbd>SPACE</kbd>. This will bring up the autocompletion and suggest all fields that are defined on the `User` model:
+
+![](https://imgur.com/IlIM2dv.png)
+
+Note that the `model` property on `t` is provided by the `nexus-plugin-prisma`. It leverages the type information from your Prisma schema and allows you to easily expose them via GraphQL.
+
+In that manner, you can start completing your object type definition until you exposed all the fields of the model:
+
+```ts
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    t.model.id()
+    t.model.email()
+    t.model.name()
+    t.model.jsonData()
+    t.model.role()
+    t.model.profile()
+    t.model.posts()
+  },
+})
+```
+
+At this point, any _relation fields_ might give you TypeScript errors (in this case, that would be `profile` and `posts` which both point to other object types). That's expected, these errors will resolve automatically after you've added the remaining types.
+
+> **Note**: Be sure to have your Nexus development server that you started with `npm run dev` running all the time. It constantly updates the generated Nexus types that enable the autocompletion in the background as you save a file.
+
+Note that the `t.model.posts` relation exposes a _list_ of `Post` objects. By default, Nexus exposes only _pagination_ properties for that list – if you want to add _ordering_ and _filtering_ for that relation as well, you'll need to explicitly enable those:
+
+```ts line-number
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    t.model.id()
+    t.model.email()
+    t.model.name()
+    t.model.jsonData()
+    t.model.role()
+    t.model.profile()
++    t.model.posts({
++      filtering: true,
++      ordering: true,
++    })
+  },
+})
+```
+
+> **Note**: If you have one or more fields of type `Json` on any of your Prisma models, enabling `filtering` currently produces an [error](https://github.com/graphql-nexus/nexus-schema-plugin-prisma/issues/666). As a workaround, you can temporarily comment out these field(s) in your Prisma schema.
+
+Once you're done with the first type, you can start defining the remaining ones.
+
+<details><summary>Expand to view the full version of the sample data model</summary>
+
+To expose all sample Prisma models with Nexus, the following code is needed:
+
+```ts
+schema.objectType({
+  name: 'User',
+  definition(t) {
+    t.model.id()
+    t.model.email()
+    t.model.name()
+    t.model.jsonData()
+    t.model.role()
+    t.model.profile()
+    t.model.posts({
+      filtering: true,
+      ordering: true,
+    })
+  },
+})
+
+schema.objectType({
+  name: 'Post',
+  definition(t) {
+    t.model.id()
+    t.model.createdAt()
+    t.model.updatedAt()
+    t.model.title()
+    t.model.content()
+    t.model.published()
+    t.model.author()
+    t.model.authorId()
+    t.model.categories({
+      filtering: true,
+      ordering: true,
+    })
+  },
+})
+
+schema.objectType({
+  name: 'Profile',
+  definition(t) {
+    t.model.id()
+    t.model.bio()
+    t.model.user()
+    t.model.userId()
+  },
+})
+
+schema.objectType({
+  name: 'Category',
+  definition(t) {
+    t.model.id()
+    t.model.name()
+    t.model.posts({
+      filtering: true,
+      ordering: true,
+    })
+  },
+})
+```
+
+</details>
+
+You can view the current version of your GraphQL schema in SDL in the generated GraphQL schema file in `./src/generated/nexus.graphql`.
+
+## 3. Migrate GraphQL operations
+
+As a next step, you can start migrating all the GraphQL _queries_ and _mutations_ from the "previous" GraphQL API to the new one that's built with Nexus.
+
+For this guide, the following sample GraphQL schema will be used:
+
+```graphql
+# import Post from './generated/prisma.graphql'
+# import User from './generated/prisma.graphql'
+# import Category from './generated/prisma.graphql'
+
+input UserUniqueInput {
+  id: String
+  email: String
+}
+
+type Query {
+  posts(searchString: String): [Post!]!
+  user(userUniqueInput: UserUniqueInput!): User
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+}
+
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  createDraft(title: String!, content: String, authorId: ID!): Post
+  updateBio(userUniqueInput: UserUniqueInput!, bio: String!): User
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+}
+```
+
+### 3.1. Migrate GraphQL queries
+
+In this section, you'll migrate all GraphQL _queries_ from `prisma-binding` to Nexus.
+
+#### 3.1.1. Define the `Query` type
+
+The first step to migrate any queries is to define the `Query` type of your GraphQL API. Once that's done, you can gradually add operations to it. Add the following definition to `graphql.ts`:
+
+```ts
+schema.queryType({
+  definition(t) {
+    // your GraphQL queries + resolvers will be defined here
+  }
+})
+```
+
+Note that the Nexus API can seem a bit confusing at first. The code above is actually equivalent to writing the following:
+
+```ts
+schema.queryType({
+  definition: t => {
+    // your GraphQL queries + resolvers will be defined here
+  }
+})
+```
+
+However, the first version of the two is the common conventions for Nexus, so it'll be used throughout this guide.
+
+#### 3.1.2. Migrate the `users` query (which uses `forwardTo`)
+
+In our sample API, the `users` query from the sample GraphQL schema is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Query {
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+  # ... other queries
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Query: {
+    users: forwardTo('prisma'),
+    // ... other resolvers
+  }
+}
+```
+
+To mirror the same behaviour with Nexus, you can use the `crud` property on the `t` variable inside the `definition` function. 
+
+Similar to `model`, this property is available because you're using the `nexus-prisma-plugin` which leverages type information from your Prisma models and auto-generates resolvers under the hood. The `crud` property also supports autocompletion, so you can explore all available queries in your editor again:
+
+![](https://imgur.com/XoboQUP.png)
+
+##### Forwarding the query with the `nexus-prisma-plugin`
+
+To add the `users` query to your GraphQL API, add the following lines to the query type definition:
+
+```ts line-number
+schema.queryType({
+  definition(t) {
++    t.crud.users({
++      filtering: true,
++      ordering: true,
++    })
+  }
+})
+```
+
+If you have the Nexus development server running, you can save the file and your GraphQL API will be updated to expose the new `users` query. You can also observe this by looking at the `Query` type inside the generated `nexus.graphql` file:
+
+```graphql
+type Query {
+  users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: UserOrderByInput, skip: Int, where: UserWhereInput): [User!]!
+}
+```
+
+You can now write your first query against the new API, e.g.:
+
+```graphql
+{
+ 	users {
+    id
+    name
+    profile {
+      id
+      bio
+    }
+    posts {
+      id
+      title
+      categories {
+        id
+        name
+      }
+    }
+  } 
+}
+```
+
+If your application exposes all CRUD operations from Prisma using `forwardTo`, you can now continue adding all remaining ones using the same approach via `t.crud`. To learn how "custom" queries can be defined and resolved using Nexus, move on to the next sections.
+
+#### 3.1.3. Migrate the `posts(searchString: String): [Post!]!` query
+
+The `posts` query is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Query {
+  posts(searchString: String): [Post!]!
+  # ... other queries
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Query: {
+    posts: (_, args, context, info) => {
+      return context.prisma.query.posts(
+        {
+          where: {
+            OR: [
+              { title_contains: args.searchString },
+              { content_contains: args.searchString },
+            ],
+          },
+        },
+        info,
+      )
+    },
+    // ... other resolvers
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `queryType`:
+
+```ts line-number
+schema.queryType({
+  definition(t) {
+    // ... previous queries
+
++    t.list.field('posts', {
++      type: 'Post',
++      nullable: false,
++      args: { searchString: schema.stringArg() }
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
+
+```graphql line-number
+type Query {
+|  posts(searchString: String): [Post!]!
+  users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: UserOrderByInput, skip: Int, where: UserWhereInput): [User!]!
+}
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+{
+  posts {
+    id
+    title
+  }
+}
+```
+
+However, the response of such a query will always be:
+
+```json
+{
+  "data": {
+    "posts": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.queryType({
+  definition(t) {
+    // ... previous queries
+
+    t.list.field('posts', {
+      type: 'Post',
+      nullable: false,
+      args: { searchString: schema.stringArg() },
++      resolve: (_, args, context) => {
++        return context.db.post.findMany({
++          where: {
++            OR: [{
++              title: { contains: args.searchString }
++            }, {
++              content: { contains: args.searchString }
++            }]
++          }
++        })
++      }
+    })
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+Note that the `db` object that's attached to the `context` argument represents your [`PrismaClient`](../../reference/tools-and-interfaces/prisma-client/api) instance that you can use to send queries to your database.
+
+#### 3.1.3. Migrate the `user(uniqueInput: UserUniqueInput): User` query
+
+In our sample app, the `user` query is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Query {
+  user(userUniqueInput: UserUniqueInput): User
+  # ... other queries
+}
+
+input UserUniqueInput {
+  id: String
+  email: String
+}
+```
+
+Note that this is a bit of a contrived example to demonstrate usage of `input` types with Nexus.
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Query: {
+    user: (_, args, context, info) => {
+      return context.prisma.query.user(
+        {
+          where: args.userUniqueInput,
+        },
+        info,
+      )
+    },
+    // ... other resolvers
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `queryType` and define an `inputObjectType` that includes the two `@unique` fields of your `User` model:
+
+```ts line-number
++schema.inputObjectType({
++  name: 'UserUniqueInput',
++  definition(t) {
++    t.string('id')
++    t.string('email')
++  },
++})
+
+schema.queryType({
+  definition(t) {
+    // ... previous queries
+
++    t.field('user', {
++      type: 'User',
++      args: {
++        userUniqueInput: schema.arg({ 
++          type: 'UserUniqueInput',
++          nullable: false,
++       })
++      }
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this change already added the correct _definition_ to your GraphQL schema:
+
+```graphql line-number
+type Query {
+  posts(searchString: String): [Post!]
+|  user(userUniqueInput: UserUniqueInput!): User
+  users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: UserOrderByInput, skip: Int, where: UserWhereInput): [User!]!
+}
+
+| input UserUniqueInput {
+|   email: String
+|   id: String
+| }
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+{
+  user(userUniqueInput: { email: "alice@prisma.io" }) {
+    id
+    name
+  }
+}
+```
+
+However, the response of such a query will always be:
+
+```json
+{
+  "data": {
+    "user": null
+  }
+}
+```
+
+##### Code-first resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.inputObjectType({
+  name: 'UserUniqueInput',
+  definition(t) {
+    t.string('id')
+    t.string('email')
+  },
+})
+
+schema.queryType({
+  definition(t) {
+    // ... previous queries
+
+    t.field('user', {
+      type: 'User',
+      nullable: true,
+      args: {
+        userUniqueInput: schema.arg({ 
+          type: 'UserUniqueInput',
+          nullable: false, 
+        })
+      },
++      resolve: (_, args, context) => {
++        return context.db.user.findOne({
++          where: {
++            id: args.userUniqueInput?.id,
++            email: args.userUniqueInput?.email
++          }
++        })
++      }
+    })
+  },
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+### 3.1. Migrate GraphQL mutations
+
+In this section, you'll migrate the GraphQL mutations from the sample schema to the Nexus.
+
+#### 3.1.1. Define the `Mutation` type
+
+The first step to migrate any mutations is to define the `Mutation` type of your GraphQL API. Once that's done, you can gradually add operations to it. Add the following definition to `graphql.ts`:
+
+```ts
+schema.mutationType({
+  definition(t) {
+    // your GraphQL mutations + resolvers will be defined here
+  }
+})
+```
+
+#### 3.1.2. Migrate the `createUser` mutation (which uses `forwardTo`)
+
+In the sample app, the `createUser` mutation from the sample GraphQL schema is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    createUser: forwardTo('prisma'),
+    // ... other resolvers
+  }
+}
+```
+
+Similar to forwarding GraphQL queries, you can use the `crud` property on the `t` variable inside the `definition` function in order to expose full CRUD capabilities for Prisma models. 
+
+Similar to `model`, this property is available because you're using the `nexus-prisma-plugin` which leverages type information from your Prisma models and auto-generates resolvers under the hood. The `crud` property supports autocompletion when defining mutations as well, so you can explore all available operations in your editor again:
+
+![](https://imgur.com/U0mDPsA.png)
+
+##### Forwarding the mutation with the `nexus-prisma-plugin`
+
+To add the `createUser` mutation to your GraphQL API, add the following lines to the query type definition:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
++    t.crud.createOneUser({
++      alias: 'createUser',
++    })
+  }
+})
+```
+
+Note that the default name for the mutation in your GraphQL schema is `createdOneUser` (named after the function which is exposed by `t.crud`). In order to rename it to `createUser`, you need to provide the `alias` property.
+
+If you have the Nexus development server running, you can save the file and your GraphQL API will be updated to expose the new `createUser` mutation. You can also observe this by looking at the `Mutation` type inside the generated `nexus.graphql` file:
+
+```graphql
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+}
+```
+
+You can now write your first mutation against the new API, e.g.:
+
+```graphql
+mutation {
+ 	createUser(data: {
+     name: "Alice",
+     email: "alice@prisma.io"
+   }) {
+     id
+   }
+}
+```
+
+If your application exposes all CRUD operations from Prisma using `forwardTo`, you can now continue adding all remaining ones using the same approach via `t.crud`. To learn how "custom" mutations can be defined and resolved using Nexus, move on to the next sections.
+
+#### 3.1.3. Migrate the `createDraft(title: String!, content: String, authorId: String!): Post!` query
+
+In the sample app, the `createDraft` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  createDraft(title: String!, content: String, authorId: String!): Post!
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    createDraft: (_, args, context, info) => {
+      return context.prisma.mutation.createPost(
+        {
+          data: {
+            title: args.title,
+            content: args.content,
+            author: {
+              connect: {
+                id: args.authorId,
+              },
+            },
+          },
+        },
+        info,
+      )
+    },
+    // ... other resolvers
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... previous mutations
+
++    t.field('createDraft', {
++      type: 'Post',
++      args: { 
++        title: schema.stringArg({ nullable: false }),
++        content: schema.stringArg(),
++        authorId: schema.stringArg({ nullable: false }),
++      }
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
+
+```graphql line-number
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+|  createDraft(title: String!, content: String, authorId: String!): Post!
+}
+```
+
+You can even send the respective mutation via the GraphQL Playground already:
+
+```graphql
+mutation {
+  createDraft(
+    title: "Hello World",
+    authorId: "__AUTHOR_ID__"
+  ) {
+    id
+    published
+    auhor {
+      id
+      name
+    }
+  }
+}
+```
+
+However, the response of such a mutation will always be:
+
+```json
+{
+  "data": {
+    "createDraft": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that mutation. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... previous mutations
+
+    t.field('createDraft', {
+      type: 'Post',
+      args: { 
+        title: schema.stringArg({ nullable: false }),
+        content: schema.stringArg(),
+        authorId: schema.stringArg({ nullable: false }),
+      },
++      resolve: (_, args) => {
++        return context.db.post.create({
++          data: {
++            title: args.title,
++            content: args.content,
++            author: {
++              connect: { id: args.authorId }
++            }
++          }
++        })
++      }
+    })
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+#### 3.1.4. Migrate the `updateBio(bio: String, userUniqueInput: UserUniqueInput!): User` mutation
+
+In the sample app, the `updateBio` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  updateBio(bio: String!, userUniqueInput: UserUniqueInput!): User
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    updateBio: (_, args, context, info) => {
+      return context.prisma.mutation.updateUser(
+        {
+          data: {
+            profile: {
+              update: { bio: args.bio }
+            }
+          },
+          where: { id: args.userId }
+        },
+        info,
+      )
+    },
+    // ... other resolvers
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... previous mutations
+
++    t.field('updateBio', {
++      type: 'User',
++      args: {
++        userUniqueInput: schema.arg({ 
++          type: 'UserUniqueInput', 
++          nullable: false 
++        }),
++        bio: schema.stringArg({ nullable: false })
++      },
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
+
+```graphql line-number
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  createDraft(title: String!, content: String, authorId: String!): Post!
+|  updateBio(bio: String!, userUniqueInput: UserUniqueInput!): User
+}
+```
+
+You can even send the respective mutation via the GraphQL Playground already:
+
+```graphql
+mutation {
+  updateBio(
+    userUniqueInput: {
+      email: "alice@prisma.io"
+    }
+    bio: "I like turtles"
+  ){
+    id
+    name
+    profile {
+      id
+      bio
+    }
+  }
+}
+```
+
+However, the response of such a mutation will always be:
+
+```json
+{
+  "data": {
+    "updateBio": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... previous mutations
+
+    t.field('updateBio', {
+      type: 'User',
+      args: {
+        userUniqueInput: schema.arg({ 
+          type: 'UserUniqueInput', 
+          nullable: false 
+        }),
+        bio: schema.stringArg()
+      },
++      resolve: (_, args, context) => {
++        return context.db.user.update({
++          where: {
++            id: args.userUniqueInput?.id,
++            email: args.userUniqueInput?.email
++          },
++          data: {
++            profile: {
++              create: { bio: args.bio }
++            }
++          }
++        })
++      }
++    })
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+
+#### 3.1.5. Migrate the `addPostToCategories(postId: String!, categoryIds: [String!]!): Post` mutation
+
+In our sample app, the `addPostToCategories` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    addPostToCategories: (_, args, context, info) => {
+      const ids = args.categoryIds.map(id => ({ id }))
+      return context.prisma.mutation.updatePost(
+        {
+          data: {
+            categories: {
+              connect: ids
+            }
+          },
+          where: {
+            id: args.postId
+          }
+        },
+        info,
+      )
+    },
+    // ... other resolvers
+  }
+}
+```
+
+##### Code-first schema definition with `nexus`
+
+To get the same behaviour with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... mutations from before
+
++  t.field('addPostToCategories', {
++      type: 'Post',
++      args: {
++        postId: schema.stringArg({ nullable: false }),
++        categoryIds: schema.stringArg({ 
++          list: true, 
++          nullable: false 
++        }),
++      },
++    })
+  }
+})
+```
+
+If you look at the generated SDL version of your GraphQL schema inside `nexus.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
+
+```graphql line-number
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  createDraft(title: String!, content: String, authorId: String!): Post!
+  updateBio(bio: String, userUniqueInput: UserUniqueInput!): User
+|  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+}
+```
+
+You can even send the respective query via the GraphQL Playground already:
+
+```graphql
+mutation {
+	addPostToCategories(
+    postId: "__AUTHOR_ID__"
+    categoryIds: [
+      "__CATEGORY_ID_1__",
+      "__CATEGORY_ID_2__",
+    ]
+  ) {
+    id
+    title
+    categories {
+      id
+      name
+    }
+  }
+}
+```
+
+However, the response of such a mutation will always be:
+
+```json
+{
+  "data": {
+    "addPostToCategories": null
+  }
+}
+```
+
+##### Resolver implementation with `nexus`
+
+That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
+
+```ts line-number
+schema.mutationType({
+  definition(t) {
+    // ... mutations from before
+  t.field('addPostToCategories', {
+      type: 'Post',
+      args: {
+        postId: schema.stringArg({ nullable: false }),
+        categoryIds: schema.stringArg({ 
+          list: true, 
+          nullable: false 
+        }),
+      },
++      resolve: (_, args, context) => {
++        const ids = args.categoryIds.map(id => ({ id }))
++        return context.db.post.update({
++          where: {
++            id: args.postId
++          },
++          data: {
++            categories: { connect: ids }
++          }
++        })
++      }
+    })
+  }
+})
+```
+
+If you're re-sending the same query from before, you'll find that it now returns actual data instead of `null`.
+
+## 4. Cleaning up 
+
+Since the entire app has now been upgrade to Prisma 2.0 and Nexus, you can delete all unnecessary files and remove the no longer needed dependencies.
+
+### 4.1. Clean up npm dependencies
+
+You can start by removing npm dependencies that were related to the Prisma 1 setup:
+
+```
+npm uninstall graphql-cli graphql-yoga prisma-binding prisma1
+```
+
+### 4.2. Delete unused files
+
+Next, delete the files of your Prisma 1 setup:
+
+```
+rm prisma1/datamodel.prisma prisma1/prisma.yml
+```
+
+You can also delete any remaining `.js` files, the `schema.graphql` and `prisma.graphql` files.
+
+### 4.3. Stop the Prisma server
+
+Finally, you can stop running your Prisma server.
