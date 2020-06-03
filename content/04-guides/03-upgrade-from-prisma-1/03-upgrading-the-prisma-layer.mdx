@@ -2,6 +2,7 @@
 title: 'Upgrading the Prisma layer'
 metaTitle: 'Upgrading the Prisma layer to Prisma 2.0'
 metaDescription: 'Learn how to the Prisma layer to Prisma 2.0 and create your Prisma schema.'
+dbSwitcher: ['postgres', 'mysql']
 ---
 
 ## Overview
@@ -10,7 +11,7 @@ This page explains the first step of your upgrade process: Taking your Prisma 1 
 
 1. Add the Prisma 2.0 CLI as a development dependency
 1. Create your Prisma 2.0 schema
-1. Determine your connection URL and connect your database
+1. Determine your connection URL and connect to your database
 1. Introspect your database (that was so far managed with Prisma 1)
 1. Use the [Prisma schema upgrade CLI](./should-you-upgrade#prisma-schema-upgrade-cli) to resolve the [schema incompatibilities](./schema-incompatibilities) in the new Prisma 2.0 data model
 1. Install and generate Prisma Client
@@ -134,7 +135,7 @@ https://pris.ly/d/getting-started
 
 The command created a new folder called `prisma` with two files:
 
-- `schema.prisma`: Your Prisma schema file that specifies the [data source](../../reference/tools-and-interfaces/prisma-schema/data-sources), [generator](../../reference/tools-and-interfaces/prisma-schema/generators) and [data model](../../reference/tools-and-interfaces/prisma-schema/data-model) (note that the data model doesn't exist yet).
+- `schema.prisma`: Your Prisma schema file that specifies the [data source](../../reference/tools-and-interfaces/prisma-schema/data-sources), [generator](../../reference/tools-and-interfaces/prisma-schema/generators) and [data model](../../reference/tools-and-interfaces/prisma-schema/data-model) (note that the data model doesn't exist yet, it will be generated via introspection).
 - `.env`: A [dotenv](https://github.com/motdotla/dotenv#readme) file to configure your database [connection URL](../../reference/database-connectors/connection-urls).
 
 Your initial Prisma schema looks as follows:
@@ -157,7 +158,7 @@ With Prisma 1, you specify which language variant of the Prisma client you wante
 
 > **Note**: Unlike Prisma 1, the TypeScript and JavaScript variants of Prisma Client 2.0 use the _same_ generator called `prisma-client-js`. The generated types in `index.d.ts` are _always_ included, even in plain JavaScript projects. This enables feature like autocompletion in VS Code even when not using TypeScript.
 
-## 3. Determine your connection URL and connect your database
+## 3. Determine your connection URL and connect to your database
 
 With Prisma 1, the database connection is configured in the Docker Compose file that's used to launch the Prisma server. The Prisma server then exposes a GraphQL endpoint (via HTTP) that proxies all database requests from the Prisma client application code. That HTTP endpoint is specified in your `prisma.yml`.
 
@@ -165,9 +166,12 @@ With Prisma 2.0, the HTTP layer isn't exposed any more and Prisma Client 2.0 is 
 
 So, as a next step you'll need to tell Prisma 2.0 _what_ kind of database you use (MySQL or PostgreSQL) and _where_ it is located.
 
-First, you need to ensure that that `provider` field on the `datasource` block inside `schema.prisma` is configured to use the right database. 
+First, you need to ensure that that `provider` field on the `datasource` block inside `schema.prisma` is configured to use the right database:
 
-If you're using PostgreSQL, it needs to define the value `postgresql` in the `provider` field. If you're using MySQL, it needs to define the value `mysql` in the `provider` field. Switch around with the tabs in the code block to see examples of both:
+- If you're using PostgreSQL, it needs to define the value `"postgresql"` in the `provider` field. 
+- If you're using MySQL, it needs to define the value `"mysql"` in the `provider` field.
+
+Switch around with the tabs in the code block to see examples of both:
 
 <CodeBlock languages={["PostgreSQL", "MySQL"]}>
 
@@ -187,34 +191,95 @@ datasource db {
 
 </CodeBlock>
 
-With the `provider` field properly set, you can go ahead and configure the connection URL inside the `.env` file. 
+With the `provider` field set, you can go ahead and configure the connection URL inside the `.env` file. 
 
 Assume the database configuration in your Docker Compose file that you used to deploy your Prisma server looks as follows:
 
+<SwitchTech technologies={['*', 'postgresql']}>
+
 ```yml
-databases:
-  default:
-    connector: postgres
-    host: host.docker.internal
-    database: mydb
-    schema: public
-    user: janedoe
-    password: janedoe
-    ssl: false
-    rawAccess: true
-    port: '5432'
-    migrations: true
+PRISMA_CONFIG: |
+  port: 4466
+  databases:
+    default:
+      connector: postgres
+      host: postgres
+      port: 5432
+      user: prisma
+      password: prisma
 ```
 
-Based on these connection details, you need to configure the `DATABASE_URL` environment variable inside your `.env` file as follows: 
+Also assume your `endpoint` in `prisma.yml` is configured as follows:
+
+```yml
+endpoint: http://localhost:4466/myproject/dev
+```
+
+Based on these connection details, you need to configure the `DATABASE_URL` environment variable inside your `.env` file as follows:
 
 ```bash
-DATABASE_URL="postgresql://janedoe:randompassword@localhost:5432/mydb?schema=public"
+DATABASE_URL="postgresql://janedoe:randompassword@localhost:5432/prisma?schema=myproject$dev"
 ```
 
-When using **PostgreSQL**, the `schema` argument is typically composed of your _service name_ and _service stage_ and separated by the `$` character. 
+Note that the `schema` argument is typically composed of your _service name_ and _service stage_ (which are part of the `endpoint` in `prisma.yml`), separated by the `$` character. 
 
-**MySQL** doesn't have the concept of _schemas_, but the same combination of _service name_ and _service stage_ determine the _database name_, separated by the `@` character. Service name and service stage are configured as the last two _path_ componens on the `endpoint` in your `prisma.yml`. 
+Sometimes no service name and stage are specified in `prisma.yml`:
+
+```
+endpoint: http://localhost:4466/
+```
+
+In that case, the `schema` must be specified as follows:
+
+```bash
+DATABASE_URL="postgresql://janedoe:randompassword@localhost:5432/prisma?schema=default$default"
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+```yml
+PRISMA_CONFIG: |
+  port: 4466
+  databases:
+    default:
+      connector: mysql
+      host: mysql
+      port: 3306
+      user: root
+      password: randompassword
+```
+
+Also assume your `endpoint` in `prisma.yml` is configured as follows:
+
+```yml
+endpoint: http://localhost:4466/myproject/dev
+```
+
+Based on these connection details, you need to configure the `DATABASE_URL` environment variable inside your `.env` file as follows:
+
+```bash
+DATABASE_URL="mysql://root:randompassword@localhost:3306/myproject@dev"
+```
+
+Note that the _database name_ in the connection string is typically composed of your _service name_ and _service stage_ (which are part of the `endpoint` in `prisma.yml`), separated by the `@` character. 
+
+Sometimes no service name and stage are specified in `prisma.yml`:
+
+```
+endpoint: http://localhost:4466/
+```
+
+In that case, the database name must be specified as follows:
+
+```bash
+DATABASE_URL="mysql://root:randompassword@localhost:5432/default@default"
+```
+
+
+</SwitchTech>
+
 
 <!-- <details><summary>Expand for example connection URLs</summary>
 
