@@ -39,7 +39,7 @@ const SEO = ({ title, description }: SEOProps) => {
   let canonicalUrl = `${siteUrl}${location.pathname}`
 
   return (
-    <Helmet>
+    <Helmet htmlAttributes={{ lang: 'en' }}>
       {/* <meta charSet="utf-8" /> */}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>{seoTitle}</title>
