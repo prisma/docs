@@ -533,7 +533,7 @@ While these inconsistencies don't actually impact the "feature set" you'll have 
 
 For example, Prisma now won't guarantee that a `User` is connected to _at most_ one `Profile` because the relation between the tables was recognized as 1-n during introspection, so one `User` record _could_ now get connected to multiple `Profile` records. 
 
-Another issues is that you can store whatever text for the `jsonData` and `role` fields, regardless of whether it's valid JSON or represents a value of the `Role` enum.
+Another issue is that you can store whatever text for the `jsonData` and `role` fields, regardless of whether it's valid JSON or represents a value of the `Role` enum.
 
 To learn more about these inconsistencies check out the [Schema incompatibilities](./schema-incompatibilities) page.
 
@@ -550,6 +550,35 @@ npx prisma-upgrade prisma1/datamodel.graphql prisma/schema.prisma
 ```
 
 The CLI will greet you with the following message:
+
+<SwitchTech technologies={['*', 'postgres']}>
+
+```
+Welcome to the Prisma 1 to Prisma 2 upgrade tool.
+
+This tool is designed to help you gracefully transition your postgresql database from Prisma 1 to Prisma 2.
+
+Here's how it works:
+
+  1. We inspect the contents of your Prisma 1 datamodel file.
+  2. We generate SQL commands for you to run on your database.
+  3. We re-introspect your database to get a new Prisma 2 Schema.
+  4. We apply any Prisma-specific changes to the new Prisma 2 Schema
+
+We will not try to migrate your database for you. You are in full control
+over the changes to your postgresql database.
+
+We suggest you first run the subsequent SQL commands on your testing or staging postgresql database.
+Then when you're confident with the transition you can migrate your production database.
+
+If you have any questions along the way, please reach out to hi@prisma.io.
+    
+✔ Are you ready to get started? y/N
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
 
 ```
 Welcome to the Prisma 1 to Prisma 2 upgrade tool.
@@ -574,6 +603,8 @@ If you have any questions along the way, please reach out to hi@prisma.io.
 ✔ Are you ready to get started? y/N
 ```
 
+</SwitchTech>
+
 Press the <kbd>y</kbd> button on your keyboard to continue.
 
 ### 5.1. Set `DEFAULT` constraints in the database
@@ -581,6 +612,30 @@ Press the <kbd>y</kbd> button on your keyboard to continue.
 The first thing the tool does is help you resolve the issue that [default values aren't represented in the database](./schema-incompatibilities#default-values-arent-represented-in-database) by generating SQL statements that add the respective `DEFAULT` constraints directly to the database.
 
 In this case, two `DEFAULT` constraints are missing which are suggested by the tool:
+
+<SwitchTech technologies={['*', 'postgres']}>
+
+```
+Let's transition Prisma 1's @default's to default values backed by the database. Run the following SQL command against your database:
+      
+  ALTER TABLE User ALTER COLUMN role SET DEFAULT 'CUSTOMER';
+  ALTER TABLE Post ALTER COLUMN published SET DEFAULT FALSE;
+```
+
+Note that you need to [adjust](https://github.com/prisma/upgrade/issues/14) these statements before running them against your database: The table names need to be specified in double quotes and prefixed with the schema name (which should be specified in double quotes as well):
+
+```sql
+ALTER TABLE "default$default"."User" ALTER COLUMN role SET DEFAULT 'CUSTOMER';
+ALTER TABLE "default$default"."Post" ALTER COLUMN published SET DEFAULT FALSE;
+```
+
+You can now run these SQL statements against your database either using a command line client or a GUI like Postico:
+
+![](https://imgur.com/o4dJJic.png)
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
 
 ```
 Let's transition Prisma 1's @default's to default values backed by the database. Run the following SQL command against your database:
@@ -593,13 +648,43 @@ You can now run these SQL statements against your database either using a comman
 
 ![](https://imgur.com/Qr7L1Nc.png)
 
+</SwitchTech>
+
 After having added the `DEFAULT` constraints successfully, you can move on in the CLI by hitting the <kbd>y</kbd> button again.
+
+```
+✔ Done migrating @default? Press 'y' to continue … yes
+```
 
 ### 5.2. Set default values for `@createdAt` fields
 
 The next thing the tools does is help you resolve the issue that the behaviour of [`@createdAt` isn't represented in database](./schema-incompatibilities#default-values-arent-represented-in-database)
 
 The CLI currently shows the following output:
+
+<SwitchTech technologies={['*', 'postgres']}>
+
+```
+Let's transition Prisma 1's @createdAt to a datetime type with a default value of now. Run the following SQL command against your database:
+      
+  ALTER TABLE Post ALTER COLUMN createdAt SET DEFAULT CURRENT_TIMESTAMP;
+```
+
+The CLI suggests to replicate the behaviour of `@createdAt` by adding another `DEFAULT` constraint with the value `CURRENT_TIMESTAMP`. After introspection, this will not be added as the `@createdAt` attribute, but as `@default(now())` in the new Prisma schema.
+
+Note that you need to [adjust](https://github.com/prisma/upgrade/issues/14) these statements before running them against your database: The table and column names need to be specified in double quotes. Table names must also be prefixed with the schema name (which should be specified in double quotes as well):
+
+```sql
+ALTER TABLE "default$default"."Post" ALTER COLUMN "createdAt" SET DEFAULT CURRENT_TIMESTAMP;
+```
+
+You can now run these SQL statements against your database either using a command line client or a GUI like Postico:
+
+![](https://imgur.com/PvuQVkj.png)
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
 
 ```
 Let's transition Prisma 1's @createdAt to a datetime type with a default value of now. Run the following SQL command against your database:
@@ -612,6 +697,8 @@ The CLI suggests to replicate the behaviour of `@createdAt` by adding another `D
 Go ahead and run this statement against your database now.
 
 ![](https://imgur.com/L9sj36r.png)
+
+</SwitchTech>
 
 You can move on in the CLI by hitting the <kbd>y</kbd> button again.
 
