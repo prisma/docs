@@ -15,14 +15,29 @@ const gatsbyRemarkPlugins = [
       className: `title-link`,
     },
   },
+
   {
     resolve: `gatsby-remark-images`,
+    options: {
+      disableBgImageOnAlpha: true,
+    },
+  },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-to-absoluteurl'),
+    options: {
+      redirects: config.redirects,
+    },
+  },
+  {
+    resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+  },
+  {
+    resolve: 'gatsby-remark-copy-linked-files',
+    options: {
+      destinationDir: 'static',
+    },
   },
 ]
-
-if (process.env.NODE_ENV === 'development') {
-  gatsbyRemarkPlugins.push('gatsby-remark-check-links')
-}
 
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
@@ -39,20 +54,14 @@ module.exports = {
     docsLocation: config.siteMetadata.docsLocation,
   },
   plugins: [
-    {
-      resolve: `gatsby-plugin-google-analytics`,
-      options: {
-        trackingId: 'UA-74131346-14',
-        anonymize: true,
-      },
-    },
     'gatsby-plugin-react-helmet',
     'gatsby-transformer-sharp',
     'gatsby-plugin-sharp',
     'gatsby-plugin-typescript',
     'gatsby-image',
     'gatsby-plugin-styled-components',
-    `gatsby-plugin-smoothscroll`,
+    'gatsby-plugin-smoothscroll',
+    'gatsby-plugin-catch-links',
     {
       resolve: `gatsby-plugin-algolia`,
       options: require(`./src/utils/algolia`),
@@ -66,14 +75,12 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-robots-txt',
       options: {
-        env: {
-          development: {
-            policy: [{ userAgent: '*', disallow: ['/'] }],
+        policy: [
+          {
+            userAgent: '*',
+            disallow: '/',
           },
-          production: {
-            policy: [{ userAgent: '*', allow: '/' }],
-          },
-        },
+        ],
       },
     },
     // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox

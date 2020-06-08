@@ -4,33 +4,35 @@ import ArrowRight from '../../icons/ArrowRight'
 import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
+import { useLocation } from '@reach/router'
+import { withPrefix } from 'gatsby'
 
 const List = styled.ul`
   list-style: none;
   padding: 0;
   margin: 16px 0;
   &.has-border {
-    border-left: 2px solid #e2e8f0;
+    border-left: 2px solid var(--border-color);
     margin-left: -12px;
   }
 `
 
 const ListItem = styled.li`
-  font-size: 1rem;
-  line-height: 16px;
-  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.25;
+  margin-bottom: 12px;
   position: relative;
   a {
     transition: color 150ms ease 0s;
-    color: #718096 !important;
+    color: var(--code-inner-color) !important;
     text-decoration: none;
     vertical-align: middle;
     &:hover {
-      color: #1a202c !important;
+      color: var(--main-font-color) !important;
     }
 
     @media (min-width: 0px) and (max-width: 1024px) {
-      color: #e2e8f0 !important;
+      color: var(--border-color) !important;
       &:hover {
         color: white !important;
       }
@@ -39,19 +41,19 @@ const ListItem = styled.li`
     .tag {
       position: absolute;
       right: 0;
-      color: #a0aec0;
+      color: var(--list-bullet-color);
       font-size: 14px;
       font-style: normal;
       font-weight: 600;
-      background: #edf2f7;
+      background: var(--code-bgd-color);
       border-radius: 5px;
       padding: 2px 5px;
       &.small {
         font-size: 13px;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
-        background: #2d3748;
-        color: #a0aec0;
+        background: var(--tag-media-color);
+        color: var(--list-bullet-color);
       }
     }
 
@@ -59,7 +61,7 @@ const ListItem = styled.li`
       background: transparent;
       position: absolute;
       left: -15px;
-      top: 5px;
+      top: 7px;
       padding: 0;
       border: 0;
 
@@ -92,21 +94,21 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: #1a202c !important;
+    color: var(--main-font-color) !important;
     font-weight: 700;
     @media (min-width: 0px) and (max-width: 1024px) {
-      color: #e2e8f0 !important;
+      color: var(--border-color) !important;
     }
   }
   &.top-level {
     margin-top: 2rem;
     > a {
-      font-size: 20px;
-      color: #1a202c !important;
+      font-size: 1rem;
+      color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
       @media (min-width: 0px) and (max-width: 1024px) {
-        color: #f7fafc !important;
+        color: var(--main-bgd-color) !important;
       }
     }
     > ul {
@@ -120,12 +122,12 @@ const ListItem = styled.li`
     margin-top: 24px;
   }
   &.static-link > a {
-    color: #a0aec0 !important;
+    color: var(--list-bullet-color) !important;
     text-transform: uppercase;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 12px;
     &:hover {
-      color: #a0aec0 !important;
+      color: var(--list-bullet-color) !important;
     }
   }
   &.last-level {
@@ -144,6 +146,7 @@ const TreeNode = ({
   setCollapsed,
   collapsed,
   url,
+  slug,
   title,
   items,
   label,
@@ -152,10 +155,23 @@ const TreeNode = ({
   duration,
   experimental,
   lastLevel,
+  hidePage,
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
-    setCollapsed(label)
+    Object.keys(collapsed).map(lbl => {
+      if (lbl !== label) {
+        collapsed[lbl] = collapsed[lbl] == false ? (collapsed[lbl] = true) : collapsed[lbl]
+      }
+    })
+    setCollapsed(label, false)
+  }
+  const location = useLocation()
+
+  const justExpand = (e: any) => {
+    setCollapsed(label, true)
+    e.preventDefault()
+    e.stopPropagation()
   }
 
   const hasChildren = items.length !== 0
@@ -187,17 +203,20 @@ const TreeNode = ({
     setIsOpen(isCollapsed ? 'close' : 'open')
   }, [isCollapsed])
 
+  const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))
+
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
-      {title && label !== 'index' && url !== '/01-getting-started/04-example' && (
+      {title && label !== 'index' && !hidePage && (
         <Link
-          to={url.split('/').includes('index') ? null : `${urlGenerator(url)}`}
+          to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
-          partiallyActive={true}
+          className={isCurrent ? 'active-item' : 'hh'}
+          id={withPrefix(url)}
         >
           {hasExpandButton ? (
-            <span onClick={collapse} className="collapse-title">
-              <button aria-label="collapse" className="item-collapser">
+            <span className="collapse-title" onClick={collapse}>
+              <button aria-label="collapse" className="item-collapser" onClick={justExpand}>
                 {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />

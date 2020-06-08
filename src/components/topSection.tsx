@@ -23,7 +23,7 @@ const MainTitle = styled.h1`
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;
-  color: #1a202c;
+  color: var(--main-font-color);
   margin: 0;
   margin-top: 4px;
   @media only screen and (max-width: 767px) {
@@ -70,7 +70,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
       dbSwitcher ? `${dbSelected}` : ''
     }`
     if (!pathTechParams.includes(newParams)) {
-      navigate(withPrefix(`${urlGenerator(slug)}-${newParams}`), {
+      navigate(withPrefix(`${urlGenerator(slug)}-${newParams}${location.hash}`), {
         replace: location.pathname === urlGenerator(slug),
       })
     }
@@ -141,7 +141,9 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
       <ParentTitle slug={slug} />
       <MainTitle>{title}</MainTitle>
       <div className="tech-switch-block">
-        <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
+        {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
+          <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
+        )}
         <SwitcherWrapper>
           {langSwitcher && (
             <TechnologySwitch
@@ -161,7 +163,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
           )}
         </SwitcherWrapper>
       </div>
-      <TOC headings={toc.items}/>
+      {toc && toc.items && toc.items.length > 0 && <TOC headings={toc.items} />}
     </TopSectionWrapper>
   )
 }

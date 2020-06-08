@@ -69,9 +69,9 @@ app.get('/feed', async (req, res) => {
   const posts = await prisma.post.findMany({
     where: { published: true },
     include: { author: true },
-  });
-  res.json(posts);
-});
+  })
+  res.json(posts)
+})
 ```
 
 Note that the `feed` endpoint in this case returns a nested JSON response of `Post` objects that _include_ an `author` object. Here's a sample response:
@@ -97,7 +97,7 @@ Note that the `feed` endpoint in this case returns a nested JSON response of `Po
 
 ```ts
 app.post(`/post`, async (req, res) => {
-  const { title, content, authorEmail } = req.body;
+  const { title, content, authorEmail } = req.body
   const result = await prisma.post.create({
     data: {
       title,
@@ -105,44 +105,44 @@ app.post(`/post`, async (req, res) => {
       published: false,
       author: { connect: { email: authorEmail } },
     },
-  });
-  res.json(result);
-});
+  })
+  res.json(result)
+})
 ```
 
 #### `PUT`
 
 ```ts
 app.put('/publish/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params
   const post = await prisma.post.update({
     where: { id: Number(id) },
     data: { published: true },
-  });
-  res.json(post);
-});
+  })
+  res.json(post)
+})
 ```
 
 #### `DELETE`
 
 ```ts
 app.delete(`/post/:id`, async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params
   const post = await prisma.post.delete({
     where: {
       id: Number(id),
     },
-  });
-  res.json(post);
-});
+  })
+  res.json(post)
+})
 ```
 
 ## Ready-to-run example projects
 
 You can find several ready-to-run examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
 
-| Example                                                                                          | Language   | Stack        | Description                                                       |
-| :----------------------------------------------------------------------------------------------- | :--------- | ------------ | ----------------------------------------------------------------- |
+| Example                                                                                         | Language   | Stack        | Description                                                       |
+| :---------------------------------------------------------------------------------------------- | :--------- | ------------ | ----------------------------------------------------------------- |
 | [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/master/typescript/rest-nextjs)   | TypeScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
 | [`rest-express`](https://github.com/prisma/prisma-examples/tree/master/typescript/rest-express) | TypeScript | Backend only | Simple REST API with Express                                      |
 | [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/master/javascript/rest-nextjs)   | JavaScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |

@@ -36,13 +36,12 @@ const SEO = ({ title, description }: SEOProps) => {
   const seoDescription =
     currentPage && currentPage.node.context ? currentPage.node.context.seoDescription : description
 
-  let canonicalUrl = pathPrefix ? siteUrl + pathPrefix : siteUrl
-  canonicalUrl = pathTechParams ? `${canonicalUrl}/${pathTechParams}` : canonicalUrl
+  let canonicalUrl = `${siteUrl}${location.pathname}`
 
   return (
-    <Helmet>
+    <Helmet htmlAttributes={{ lang: 'en' }}>
       {/* <meta charSet="utf-8" /> */}
-      {/* <meta name="viewport" content="width=device-width, initial-scale=1" /> */}
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>{seoTitle}</title>
       <meta name="description" content={seoDescription} />
       {keywords && <meta name="keywords" content={keywords} />}

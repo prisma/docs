@@ -1,5 +1,6 @@
 export interface ArticleFields {
   slug: string
+  modSlug: string
 }
 
 export interface ArticleFrontmatter {
@@ -11,6 +12,8 @@ export interface ArticleFrontmatter {
   staticLink?: boolean
   duration?: string
   experimental?: boolean
+  toc?: boolean
+  hidePage?: boolean
 }
 
 export interface ArticleData {

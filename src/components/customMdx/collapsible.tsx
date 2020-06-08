@@ -42,7 +42,7 @@ const Tab = styled.div`
     width: 8px;
     height: 100%;
     left: 0px;
-    background: #edf2f7;
+    background: var(--code-bgd-color);
     border-radius: 5px;
   }
   p {
@@ -53,7 +53,7 @@ const Tab = styled.div`
 const Label = styled.label`
   position: relative;
   display: block;
-  color: #0c344b;
+  color: var(--selection-bgd-color);
   font-weight: 600;
   line-height: 1.5;
   padding-left: 36px;
@@ -63,7 +63,7 @@ const Label = styled.label`
 const TabContent = styled.div`
   max-height: 0;
   overflow: hidden;
-  color: #3d5866;
+  color: var(--grey-color);
   transition: max-height 0.35s, padding 0.35s;
   padding-left: 36px;
   padding-bottom: 0;
