@@ -10,7 +10,7 @@ Prisma Client supports both offset and cursor-based pagination.
 
 ## Offset pagination
 
-Offset pagination combines `skip` and `first` to skip a certain number of results and select a limited range. The following query skips the first 40 `Post` records and returns records 41 - 51:
+Offset pagination combines `skip` and `take` to skip a certain number of results and select a limited range. The following query skips the first 40 `Post` records and returns records 41 - 51:
 
 ```ts line-number
 const results = await prisma.post.findMany({
@@ -39,7 +39,7 @@ The following query returns all records where the `email` field contains `"prism
 ```ts line-number
 const results = await prisma.post.findMany({
   skip: 40,
-  first: 10,
+  take: 10,
   where: {
     email: {
       contains: 'prisma.io',
@@ -55,7 +55,7 @@ The following query returns all records where the `email` field contains `"prism
 ```ts line-number
 const results = prisma.post.findMany({
   skip: 200,
-  first: 20,
+  take: 20,
   where: {
     title: {
       contains: 'Prisma',
@@ -69,7 +69,7 @@ const results = prisma.post.findMany({
 
 ## Cursor-based pagination
 
-Cursor-based pagination combines `after` and `first` or `before` and `last` to return a limited subset of results **before or after a cursor** that you supply. A cursor **bookmarks** your location in the result set as you paginate, and must be a unique, sequential column - such as an ID or a timestamp.
+Cursor-based pagination combines `cursor` and `take` to return a limited subset of results **before or after the supplied cursor**. A cursor **bookmarks** your location in the result set as you paginate, and must be a unique, sequential column - such as an ID or a timestamp.
 
 > **Note**: Cursor-based pagination requires that you sort by your 'bookmark' - the unique, sequential value that represents your cursor.
 
@@ -77,7 +77,7 @@ The first query returns the first 4 `Post` records that contain the word `"Prism
 
 ```ts line-number
 const firstQueryResults = prisma.post.findMany({
-  first: 4,
+  take: 4,
   where: {
     title: {
       contains: 'Prisma' /* Optional filter */,
@@ -92,7 +92,7 @@ const firstQueryResults = prisma.post.findMany({
 // case, the ID of the last post in the list of 20.
 
 const lastPostInResults = firstQueryResults[3] // Remember: zero-based index! :)
-const cursor = lastPostInResults.id
+const cursorMark = lastPostInResults.id
 ```
 
 The following diagram shows the first 4 `Post` records. In this example, record **29** becomes the cursor for the second query:
@@ -103,9 +103,10 @@ The second query returns the first 4 `Post` records that contain the word `"Pris
 
 ```ts line-number
 const secondQuery = prisma.post.findMany({
-  first: 4,
-  after: {
-    id: cursor,
+  take: 4,
+  skip: 1, // Skip the cursor
+  cursor: {
+    id: cursorMark,
   },
   where: {
     title: {
@@ -118,7 +119,7 @@ const secondQuery = prisma.post.findMany({
 })
 ```
 
-> **Note**: The value of `cursor` must come from your first query - if you guess, you will page to an unknown location in your result set. Although IDs are sequential, you cannot predict the rate of increment (`2`, `20`, `32` is more likely than `1`, `2` `3`, particularly in a filtered result set).
+> **Note**: The value of `cursorMark` must come from your first query - if you guess, you will page to an unknown location in your result set. Although IDs are sequential, you cannot predict the rate of increment (`2`, `20`, `32` is more likely than `1`, `2` `3`, particularly in a filtered result set).
 
 The following diagram shows the first 4 `Post` records **after** the record with ID **29**. In this example, the new cursor is **52**:
 
@@ -144,14 +145,14 @@ Use cases for cursor-based pagination includes:
 
 ```ts line-number
 const secondQuery = prisma.post.findMany({
-  first: 4,
-  after: {
-    id: cursor,
+  take: 4,
+  cursor: {
+    id: cursorMark,
   },
-  where: {
-    title: {
-      contains: 'Prisma' /* Optional filter */,
-    },
+|  where: {
+|    title: {
+|      contains: 'Prisma' /* Optional filter */,
+|    },
   },
   orderBy: {
     id: 'asc',
@@ -171,8 +172,8 @@ To support paging backwards and forwards, you must save an additional cursor fro
 const myOldCursor = 200
 
 const firstQueryResults = prisma.post.findMany({
-  first: 4,
-  after: myOldCursor,
+  take: -4,
+  cursor: myOldCursor,
   where: {
     title: {
       contains: 'Prisma' /* Optional filter */,
@@ -194,8 +195,8 @@ const cursorForward = lastPostInResults.id
 
 // Page backwards!
 const secondQueryResults = prisma.post.findMany({
-| last: 4,
-| before: myOldCursor,
+| take: -4,
+| cursor: cursorBackward,
   where: {
     title: {
       contains: 'Prisma' /* Optional filter */,
