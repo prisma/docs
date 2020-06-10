@@ -53,8 +53,8 @@ const SearchBoxDiv = styled(SearchBox)`
   form {
     position: relative;
     z-index: 100001;
-    display: flex;
-    align-items: center;
+    // display: flex;
+    // align-items: center;
 
     button.ais-SearchBox-submit {
       display: none;
