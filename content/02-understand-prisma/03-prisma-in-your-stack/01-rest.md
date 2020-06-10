@@ -31,7 +31,7 @@ Here's a non-exhaustive list of libraries and frameworks you can use with Prisma
 
 ## REST API server example
 
-Assume you have a Prisma schema that looks similar to this:
+Assume you have a Prisma Schema that looks similar to this:
 
 ```prisma
 datasource db {
