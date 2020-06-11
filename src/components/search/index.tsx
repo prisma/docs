@@ -1,12 +1,11 @@
 import React, { useState } from 'react'
-import { InstantSearch, Index, Hits, connectStateResults, SearchBox } from 'react-instantsearch-dom'
+import { InstantSearch, Index, Hits, connectStateResults } from 'react-instantsearch-dom'
 import algoliasearch from 'algoliasearch/lite'
 import config from '../../../config'
 import DocHit from './hitComps'
 import styled from 'styled-components'
 import Overlay from './overlay'
-import SearchPic from '../../icons/Search'
-import Clear from '../../icons/Clear'
+import CustomSearchBox from './input'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -48,72 +47,6 @@ const HitsWrapper = styled.div`
   }
 `
 
-const SearchBoxDiv = styled(SearchBox)`
-  width: 208px;
-  form {
-    position: relative;
-    z-index: 100001;
-    // display: flex;
-    // align-items: center;
-
-    button.ais-SearchBox-submit {
-      display: none;
-    }
-    button.ais-SearchBox-reset {
-      background: transparent;
-      border: transparent;
-      outline: none;
-    }
-
-    input {
-      width: 100%;
-      background: var(--white-color);
-      box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-      border-radius: 5px;
-      padding: 0.6rem 2.5rem;
-      font-family: Open Sans;
-      font-style: normal;
-      font-weight: normal;
-      font-size: 16px;
-      line-height: 100%;
-      border-width: 0;
-
-      &::placeholder {
-        content: 'Search';
-        color: var(--list-bullet-color);
-        opacity: 1; /* Firefox */
-      }
-    }
-
-    input[type='search']::-webkit-search-decoration,
-    input[type='search']::-webkit-search-cancel-button,
-    input[type='search']::-webkit-search-results-button,
-    input[type='search']::-webkit-search-results-decoration {
-      -webkit-appearance: none;
-    }
-  }
-
-  @media (min-width: 0px) and (max-width: 1024px) {
-    flex: 1;
-  }
-`
-
-const SearchIcon = styled(SearchPic)`
-  position: absolute;
-  left: 12px;
-  top: 12px;
-  width: 1em;
-  pointer-events: none;
-  z-index: 100001;
-`
-
-const ClearIcon = styled(Clear)`
-  position: absolute;
-  right: 24px;
-  top: 15px;
-  cursor: pointer;
-`
-
 const indexName = config.header.search.indexName
 const searchClient = algoliasearch(
   config.header.search.algoliaAppId,
@@ -133,6 +66,7 @@ const Results = connectStateResults(
 export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
+
   const hideSearch = () => setShowHits(false)
 
   const showSearch = () => setShowHits(true)
@@ -141,8 +75,6 @@ export default function Search({ hitsStatus }: any) {
     hitsStatus(query.length > 0 && showHits)
   }, [showHits, query])
 
-  const emptySearchBox = () => setQuery('')
-
   return (
     <InstantSearch
       searchClient={searchClient}
@@ -150,20 +82,8 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={query.length > 0 && showHits} hideSearch={hideSearch} />
-      <SearchBoxDiv
-        focusShortcuts={['s', 191]}
-        onFocus={showSearch}
-        searchAsYouType={true}
-        reset={<ClearIcon />}
-        translations={{
-          placeholder: 'Search',
-        }}
-      />
-      <SearchIcon />
-      <HitsWrapper
-        className={`${query.length > 0 && showHits ? 'show' : ''}`}
-        onClick={emptySearchBox}
-      >
+      <CustomSearchBox onFocus={showSearch} />
+      <HitsWrapper className={`${query.length > 0 && showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
             <Hits hitComponent={DocHit} />
