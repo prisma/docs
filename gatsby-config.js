@@ -63,6 +63,12 @@ module.exports = {
     'gatsby-plugin-smoothscroll',
     'gatsby-plugin-catch-links',
     {
+      resolve: `gatsby-plugin-layout`,
+      options: {
+          component: require.resolve(`./src/layouts/articleLayout.tsx`)
+      }
+    },
+    {
       resolve: `gatsby-plugin-algolia`,
       options: require(`./src/utils/algolia`),
     },
@@ -87,10 +93,10 @@ module.exports = {
     {
       resolve: `gatsby-plugin-mdx`,
       options: {
-        decks: [],
-        defaultLayouts: {
-          default: require.resolve('./src/layouts/articleLayout.tsx'),
-        },
+        // decks: [],
+        // defaultLayouts: {
+        //   default: require.resolve('./src/layouts/articleLayout.tsx'),
+        // },
         extensions: ['.mdx', '.md'],
         gatsbyRemarkPlugins,
       },
