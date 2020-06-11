@@ -21,20 +21,20 @@ const results = await prisma.post.findMany({
 
 ![](pagination/offset-skip-take.png)
 
-✔ Pros of offset pagination include:
+### ✔ Pros of offset pagination
 
 - You can jump to any page immediately. For example, you can `skip` 200 records and `take` 10, which simulates jumping straight to page 21 of the result set. This is not possible with cursor-based pagination.
 - You can paginate the same result set in any sort order. For example, you can jump to page 21 of a list of `User` records sort by first name. This is not possible with cusor-based pagination, which requires sorting by a unique, sequential column.
 
-✘ Cons of offset pagination include::
+### ✘ Cons of offset pagination
 
 - Offset pagination **does not scale** at a database level. For example, if you skip 200,000 records and take the first 10, the database still has to traverse the first 200,000 records before returning the 10 that you asked for - this affects performance.
 
-Use cases for offset pagination include:
+### Use cases for offset pagination
 
 - Shallow pagination of results. For example, a blog interface that allows you to filter `Post` records by author and page through the first few pages.
 
-### Filtering and offset pagination
+### Example: Filtering and offset pagination
 
 The following query returns all records where the `email` field contains `"prisma.io"`. The query skips the first 40 records and recods 41 - 51.
 
@@ -50,7 +50,7 @@ const results = await prisma.post.findMany({
 })
 ```
 
-### Sorting and offset pagination
+### Example: Sorting and offset pagination
 
 The following query returns all records where the `email` field contains `"prisma.io"`, and sorts the result by the `title` field. The query skips the first 40 records and recods 41 - 51.
 
@@ -71,11 +71,9 @@ const results = prisma.post.findMany({
 
 ## Cursor-based pagination
 
-Cursor-based pagination combines `cursor` and `take` to return a limited set of results before or after a given **cursor**. A cursor is any unique, sequential column - such as an ID or a timestamp - that can be used to **bookmark** your location a result set. For example, you can `take` 10 results that come after the `Post` record with an `id` of 29.
+Cursor-based pagination combines `cursor` and `take` to return a limited set of results before or after a given **cursor**. A cursor bookmarks your location in a result set and must be a unique, sequential column - such as an ID or a timestamp.
 
-> **Note**: Cursor-based pagination [requires that you sort by your 'bookmark'](#sorting-and-cursor-based-pagination) - the unique, sequential value that represents your cursor.
-
-The following query returns the first 4 `Post` records that contain the word `"Prisma"`. The ID of the last `Post` in the result
+The following example returns the first 4 `Post` records that contain the word `"Prisma"` and saves the ID of the last record as `myCursor`:
 
 ```ts line-number
 const firstQueryResults = prisma.post.findMany({
@@ -91,20 +89,20 @@ const firstQueryResults = prisma.post.findMany({
 })
 
 // Bookmark your location in the result set - in this
-// case, the ID of the last post in the list of 20.
+// case, the ID of the last post in the list of 4.
 
-const lastPostInResults = firstQueryResults[3] // Remember: zero-based index! :)
-const myCursor = lastPostInResults.id
+|const lastPostInResults = firstQueryResults[3] // Remember: zero-based index! :)
+|const myCursor = lastPostInResults.id // Example: 29
 ```
 
-The following diagram shows the first 4 `Post` records. In this example, record **29** becomes the cursor for the second query:
+The following diagram shows the IDs of the first 4 results - or page 1. The cursor for the next cursor is **29**:
 
-![](pagination/cursor-first-4.png)
+![](pagination/cursor-1.png)
 
 The second query returns the first 4 `Post` records that contain the word `"Prisma"` **after the supplied cursor** (in other words - IDs that are larger than **29**):
 
 ```ts line-number
-const secondQuery = prisma.post.findMany({
+const secondQueryResults = prisma.post.findMany({
   take: 4,
   skip: 1, // Skip the cursor
   cursor: {
@@ -119,31 +117,56 @@ const secondQuery = prisma.post.findMany({
     id: 'asc',
   },
 })
-```
 
-> **Note**: The value of `myCursor` must come from your first query - if you guess, you will page to an unknown location in your result set. Although IDs are sequential, you cannot predict the rate of increment (`2`, `20`, `32` is more likely than `1`, `2` `3`, particularly in a filtered result set).
+|const lastPostInResults = secondQueryResults[3] // Remember: zero-based index! :)
+|const myCursor = lastPostInResults.id // Example: 52
+```
 
 The following diagram shows the first 4 `Post` records **after** the record with ID **29**. In this example, the new cursor is **52**:
 
-![](pagination/cursor-next-4.png)
+![](pagination/cursor-2.png)
 
-✔ Pros of cursor-based pagination include:
+### FAQ
+
+#### Do I always have to skip: 1?
+
+If you do not `skip: 1`, your result set will include your previous cursor. The first query returns four results and the cursor is **29**:
+
+![](pagination/cursor-1.png)
+
+Without `skip: 1`, the second query returns 4 results after (and _including_) the cursor:
+
+![](pagination/cursor-3.png)
+
+If you `skip: 1`, the cursor is not included:
+
+![](pagination/cursor-2.png)
+
+You can choose to `skip: 1` or not depending on the pagination behavior that you want.
+
+#### Can I guess the value of the cursor?
+
+If you guess the value of the next cursor, you will page to an unknown location in your result set. Although IDs are sequential, you cannot predict the rate of increment (`2`, `20`, `32` is more likely than `1`, `2` `3`, particularly in a filtered result set).
+
+#### Does cursor-based pagination use the concept of a cursor in the underlying database?
+
+No, cursor pagination does not [use cursors in the underlying database](https://www.postgresql.org/docs/9.2/plpgsql-cursors.html).
+
+### ✔ Pros of cursor-based pagination
 
 - Cursor-based pagination **scales**. The underlying SQL does not use `OFFSET`, but instead queries all `Post` records with an ID greater than X.
 
-✘ Cons of cursor-based pagination include:
+### ✘ Cons of cursor-based pagination
 
 - You must sort by your cursor, which has to be a unique, sequential column.
 - You cannot jump to a specific page number - you must traverse pages 1 - 20 in order to know what the cursor should be for the query that returns page 21.
 
-Use cases for cursor-based pagination includes:
+### Use cases for cursor-based pagination
 
 - Infinite scroll - for example, sort blog posts by date/time descending and request 10 blog posts at a time.
 - Paging through an entire result set in batches - for example, as part of a long-running data export.
 
-> **Note** Cursor pagination does not [use cursors in the underlying database](https://www.postgresql.org/docs/9.2/plpgsql-cursors.html).
-
-### Filtering and cursor-based pagination
+### Example: Filtering and cursor-based pagination
 
 ```ts line-number
 const secondQuery = prisma.post.findMany({
