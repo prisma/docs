@@ -13,7 +13,7 @@ This page explains the first step of your upgrade process: Taking your Prisma 1 
 1. Create your Prisma 2.0 schema
 1. Determine your connection URL and connect to your database
 1. Introspect your database (that was so far managed with Prisma 1)
-1. Use the [Prisma schema upgrade CLI](./how-to-upgrade#prisma-schema-upgrade-cli) to resolve the [schema incompatibilities](./schema-incompatibilities) in the new Prisma 2.0 data model
+1. Use the [Prisma Upgrade CLI](./how-to-upgrade#prisma-upgrade-cli) to resolve the [schema incompatibilities](./schema-incompatibilities) in the new Prisma 2.0 data model
 1. Install and generate Prisma Client
 
 Once done with these steps, you can move on to the next guide that explains how you can upgrade the application layer to use Prisma Client for your database queries.
@@ -276,7 +276,6 @@ In that case, the database name must be specified as follows:
 ```bash
 DATABASE_URL="mysql://root:randompassword@localhost:5432/default@default"
 ```
-
 
 </SwitchTech>
 
@@ -541,73 +540,128 @@ In the following, we'll go through these incompatibilities and fix them one by o
 
 ## 5. Use the Prisma schema upgrade CLI to resolve schema incompatibilities
 
-The [Prisma schema upgrade CLI](./how-to-upgrade#prisma-schema-upgrade-cli) is an interactive tool that helps you upgrading your Prisma schema and ironing out most of the inconsistencies listed above.
+The [Prisma Upgrade CLI](./how-to-upgrade#prisma-upgrade-cli) is an interactive tool that helps you upgrading your Prisma schema and ironing out most of the inconsistencies listed above.
 
-You can either install it locally in your project, or invoke it once without installation using `npx`:
+The Prisma Upgrade CLI works in two major phases:
+
+1. Fix the database schema via plain SQL
+1. Add missing attributes to the Prisma 2.0 schema and other schema fixes
+
+During the first phase, it will generate and print a number of SQL statements that you should run against your database to adjust the database schema. You can either run all of the statements or a subset of them before continuing to the second phase.
+
+During the second phase, you don't need to do anything manually. The Upgrade CLI will make changes to your Prisma schema by adding certain Prisma-level attributes (like `@default(cuid))` or `@updatedAt`), adjusting the names of relation fields to match the ones from your Prisma 1 datamodel and ensure 1-1-relations that were required on both sides in your Prisma 1 datamodel are also required in the Prisma 2.0 schema.
+
+Note that you can start over at any time during the process and go back from the second to the first phase.
+
+To use the Upgrade CLI, you can either install it locally in your project, or invoke it once without installation using `npx` as done here:
 
 ```
-npx prisma-upgrade prisma1/datamodel.graphql prisma/schema.prisma
+npx prisma-upgrade prisma1/prisma.yml prisma/schema.prisma
 ```
 
 The CLI will greet you with the following message:
 
-<SwitchTech technologies={['*', 'postgres']}>
-
 ```
-Welcome to the Prisma 1 to Prisma 2 upgrade tool.
+npx prisma-upgrade prisma1/prisma.yml prisma/schema.prisma
 
-This tool is designed to help you gracefully transition your postgresql database from Prisma 1 to Prisma 2.
+◮ Welcome to the interactive Prisma Upgrade CLI that helps with the
+upgrade process from Prisma 1 to Prisma 2.0.
 
-Here's how it works:
+Please read the docs to learn more about the upgrade process:
+https://pris.ly/d/how-to-upgrade
 
-  1. We inspect the contents of your Prisma 1 datamodel file.
-  2. We generate SQL commands for you to run on your database.
-  3. We re-introspect your database to get a new Prisma 2 Schema.
-  4. We apply any Prisma-specific changes to the new Prisma 2 Schema
+➤ Goal
+The Upgrade CLI helps you resolve the schema incompatibilities
+betweeen Prisma 1 and Prisma 2.0. Learn more in the docs:
+https://pris.ly/d/schema-incompatibilities
 
-We will not try to migrate your database for you. You are in full control
-over the changes to your postgresql database.
+➤ How it works
+Troughout the process, you'll need to adjust your database schema by sending
+SQL statements to it. The SQL statements are provided by the Upgrade CLI.
 
-We suggest you first run the subsequent SQL commands on your testing or staging postgresql database.
-Then when you're confident with the transition you can migrate your production database.
+Note that the Upgrade CLI never makes changes to your database,
+you are in full control over any operations that are executed against it.
 
-If you have any questions along the way, please reach out to hi@prisma.io.
+You can stop and re-run the Upgrade CLI at any time.
+
+These are the different steps of the upgrade processs:
+
+  1. The Upgrade CLI generates SQL commands for you to run on your database.
+  2. You run the SQL commands against your database.
+  3. You run the `npx prisma introspect` command again.
+  4. You run the `npx prisma-upgrade` command again.
+  5. The Upgrade CLI adjusts the Prisma 2 schema by adding missing attributes.
+
+➤ Note
+It is recommended that you make a full backup of your existing data before starting
+the upgrade process. If possible, the migration should be performed in a staging
+environment before executed against a production environment.
+
+➤ Help
+If you have any questions or run into any problems along the way,
+please create an issue at:
+https://github.com/prisma/upgrade/issues/new
     
-✔ Are you ready to get started? y/N
+Are you ready? [Y/n] 
 ```
 
-</SwitchTech>
+Press the <kbd>Y</kbd> button, then confirm by hitting <kbd>RETURN</kbd> on your keyboard to continue.
 
-<SwitchTech technologies={['*', 'mysql']}>
+Once you confirmed, the CLI outputs the SQL statements you should be running against your database:
 
 ```
-Welcome to the Prisma 1 to Prisma 2 upgrade tool.
+Run the following SQL statements against your database:
 
-This tool is designed to help you gracefully transition your mysql database from Prisma 1 to Prisma 2.
+  Turn the columns string type into a enum type for Enum fields
+  https://pris.ly/d/schema-incompatibilities#enums-are-represented-as-text-in-database
 
-Here's how it works:
+    CREATE TYPE "demo1$dev"."Role" AS ENUM ('ADMIN', 'CUSTOMER');
+ALTER TABLE "demo1$dev"."User" ALTER COLUMN "role" SET DATA TYPE "demo1$dev"."Role" using "role"::"demo1$dev"."Role";
 
-  1. We inspect the contents of your Prisma 1 datamodel file.
-  2. We generate SQL commands for you to run on your database.
-  3. We re-introspect your database to get a new Prisma 2 Schema.
-  4. We apply any Prisma-specific changes to the new Prisma 2 Schema
 
-We will not try to migrate your database for you. You are in full control
-over the changes to your mysql database.
+  Fixing columns with JSON data types
+  https://pris.ly/d/schema-incompatibilities#json-type-is-represented-as-text-in-database
 
-We suggest you first run the subsequent SQL commands on your testing or staging mysql database.
-Then when you're confident with the transition you can migrate your production database.
+    ALTER TABLE "demo1$dev"."User" ALTER COLUMN "jsonData" SET DATA TYPE JSONB USING "jsonData"::TEXT::JSONB;
 
-If you have any questions along the way, please reach out to hi@prisma.io.
+
+  Add missing `DEFAULT` constraints to the database
+  https://pris.ly/d/schema-incompatibilities#default-values-arent-represented-in-database
+
+    ALTER TABLE "demo1$dev"."Post" ALTER COLUMN "published" SET DEFAULT false;
+
+
+      If you executed one or more of the above SQL statements against your database,
+      please run the following two commands:
+
+        1. Run `npx prisma introspect` again to refresh your Prisma 2 schema.
+        2. Run `npx prisma-upgrade` again.
+
+      If you can't or don't want to execute the remaining SQL statements right now, you can
+      skip to the last step where the Upgrade CLI adds missing attributes to your Prisma 2
+      schema that are not picked up by introspection.
+
+        1. Run `prisma introspect` again to refresh your Prisma 2.0 schema.
+        2. Run `prisma-upgrade` again.
     
-✔ Are you ready to get started? y/N
+Skip to the last step? [Y/n]? 
 ```
 
-</SwitchTech>
+The shown SQL statemnts fall are categorized into five buckets, all aiming to resolve a certain [schema incompatibility](./schema-incompatibilities):
 
-Press the <kbd>y</kbd> button on your keyboard to continue.
+- Add missing `DEFAULT` constraints to the database
+- Replicate `@createdAt` behavior in Prisma 2.0
+- Fix 1-1 relations by adding `UNIQUE` constraints
+- Fix columns with JSON data types
+- Fix columns with ENUM data types
 
-### 5.1. Set `DEFAULT` constraints in the database
+As a next step, you can start sending the SQL statements to your database. Note that all of these changes are non-breaking and you'll be able to continue using Prisma 1 side-by-side with Prisma 2.0.
+
+The next secions cover the different kinds of SQL statements to be sent to your database individually.
+
+### 5.1. Fix the database schema via plain SQL
+
+### 5.1.1. Add missing `DEFAULT` constraints to the database
 
 The first thing the tool does is help you resolve the issue that [default values aren't represented in the database](./schema-incompatibilities#default-values-arent-represented-in-database) by generating SQL statements that add the respective `DEFAULT` constraints directly to the database.
 
@@ -616,10 +670,10 @@ In this case, two `DEFAULT` constraints are missing which are suggested by the t
 <SwitchTech technologies={['*', 'postgres']}>
 
 ```
-Let's transition Prisma 1's @default's to default values backed by the database. Run the following SQL command against your database:
-      
-  ALTER TABLE User ALTER COLUMN role SET DEFAULT 'CUSTOMER';
-  ALTER TABLE Post ALTER COLUMN published SET DEFAULT FALSE;
+Add missing `DEFAULT` constraints to the database
+https://pris.ly/d/schema-incompatibilities#default-values-arent-represented-in-database
+
+  ALTER TABLE "demo1$dev"."Post" ALTER COLUMN "published" SET DEFAULT false;
 ```
 
 Note that you need to [adjust](https://github.com/prisma/upgrade/issues/14) these statements before running them against your database: The table names need to be specified in double quotes and prefixed with the schema name (which should be specified in double quotes as well):
@@ -650,13 +704,7 @@ You can now run these SQL statements against your database either using a comman
 
 </SwitchTech>
 
-After having added the `DEFAULT` constraints successfully, you can move on in the CLI by hitting the <kbd>y</kbd> button again.
-
-```
-✔ Done migrating @default? Press 'y' to continue … yes
-```
-
-### 5.2. Set default values for `@createdAt` fields
+### 5.1.2. Replicate `@createdAt` behavior in Prisma 2.0
 
 The next thing the tools does is help you resolve the issue that the behaviour of [`@createdAt` isn't represented in database](./schema-incompatibilities#default-values-arent-represented-in-database)
 
@@ -700,37 +748,7 @@ Go ahead and run this statement against your database now.
 
 </SwitchTech>
 
-You can move on in the CLI by hitting the <kbd>y</kbd> button again.
-
-```
-✔ Done migrating @createdAt? Press 'y' to continue … yes
-```
-
-### 5.3. Set default values for `@updatedAt` fields
-
-The next thing the tools does is help you resolve the issue that the behaviour of [`@updated` isn't represented in database](./schema-incompatibilities#updatedat-isnt-represented-in-database).
-
-The CLI currently shows the following output:
-
-```
-Let's transition Prisma 1's @updatedAt to a datetime type with a default value of now. Run the following SQL command against your database:
-      
-  ALTER TABLE Post CHANGE updatedAt updatedAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
-```
-
-The CLI suggests to replicate the behaviour of `@updated` by adding another `DEFAULT` constraint with the value `CURRENT_TIMESTAMP` (see this open [GitHub issue](https://github.com/prisma/upgrade/issues/2)).
-
-Go ahead and run this statement against your database now.
-
-![](https://imgur.com/8W9IbYB.png)
-
-You can move on in the CLI by hitting the <kbd>y</kbd> button again.
-
-```
-? Done migrating @updatedAt? Press 'y' to continue › (y/N)
-```
-
-### 5.4. Add `UNIQUE` constraint on foreign key to enforce 1-1 relationships
+### 5.1.3. Fix 1-1 relations by adding `UNIQUE` constraints
 
 Next, the tool will help you [turn the current 1-n relation between `User` ↔ `Profile`  back into a 1-1 relation](./schema-incompatibilities##inline-1-1-relations-are-recognized-as-1-n-missing-unique-constraint) by adding a `UNIQUE` constraint to the foreign key column called `user` (named after the relation field in the Prisma 1 datamodel) in the database.
 
@@ -746,13 +764,7 @@ Go ahead and run this statement against your database now.
 
 ![](https://imgur.com/ALlkwat.png)
 
-You can move on in the CLI by hitting the <kbd>y</kbd> button again.
-
-```
-? Done migrating your inline relations? Press 'y' to continue › (y/N)
-```
-
-### 5.5. Fix `Json` columns by changing column types from plain text to `Json`
+### 5.1.4. Fix columns with JSON data types
 
 Next, the tool helps you ensure that `Json` fields in your Prisma 1 datamodel will be represented as `JSON` columns in the underlying database, right now they are represented as plain strings (e.g. as `MEDIUMTEXT` in MySQL).
 
@@ -770,13 +782,41 @@ Go ahead and run this statement against your database now.
 
 ![](https://imgur.com/feI3ZUF.png)
 
-You can move on in the CLI by hitting the <kbd>y</kbd> button again.
+
+### 5.1.5. Fix columns with ENUM data types
+
+Next, the tool helps you ensure that `enum` definitions in your Prisma 1 datamodel will be represented as actual `ENUM` types in the underlying database, right now they are represented as plain strings (e.g. as `MEDIUMTEXT` in MySQL).
+
+The CLI currently shows the following output:
 
 ```
-? Done migrating Json? Press 'y' to continue › (y/N)
+Fix columns with ENUM data types
+https://pris.ly/d/schema-incompatibilities#enums-are-represented-as-text-in-database
+
+  CREATE TYPE "default$default"."Role" AS ENUM ('ADMIN', 'CUSTOMER');
+  ALTER TABLE "default$default"."User" ALTER COLUMN "role" SET DATA TYPE "default$default"."Role" using "role"::"default$default"."Role";
 ```
 
-### 5.6. Final result
+Go ahead and run this statement against your database now.
+
+![](https://imgur.com/Fo0LbzU.png)
+
+### 5.2. Add missing attributes to the Prisma 2.0 schema and other schema fixes
+
+At this point, you either ran all the SQL statement that were printed by the CLI or you skipped some of them. Either way, you can now move on the last step and let the Upgrade CLI add the missing Prisma 2.0 attributes. Typically these are the following:
+
+- `@default(cuid())` for your `@id` fields
+- `@updatedAt` for any fields that were using this attribute in Prisma 1
+- `@map` and `@@map` as replacements for `@db` and `@@db` from Prisma 1
+
+In that step, the Upgrade CLI also fixes other issues that occured in the transition to Prisma 2.0:
+
+- it makes sure that 1-1-relations that were required on both sides in Prisma 1 are also required in your Prisma 2.0 schema
+- it renames relation fields to the same names they had in your Prisma 1 datamodel ([coming soon](https://github.com/prisma/upgrade/issues/25))
+
+To apply these changes, hit the <kbd>Y</kbd> button and confirm by hitting <kbd>RETURN</kbd>.
+
+### 5.3. Final result
 
 The final version of the Prisma schema should look as follows:
 
@@ -821,20 +861,6 @@ model User {
 There are a few schema incompatibilities that were not yet resolved by the Prisma schema upgrade CLI.
 
 Note that this guide will be continuously updated to incorporate the new [features](https://github.com/prisma/upgrade#current-features) of the upgrade CLI. For now, you can just follow the guide here and transfer the given SQL statements to your own setup.
-
-### 6.1. Fix enum column
-
-Right now, the `Role` enum is missing from the datamodel. That's because the enum fields from the Prisma 1 datamodel have been represented as plain strings in the database (e.g. as `MEDIUMTEXT` in MySQL). Consequently, the `role` field on `User` is currently defined as `String` in the new Prisma schema.
-
-To fix this, you can set the type for the `role` column as a new `ENUM` with SQL:
-
-```sql
-ALTER TABLE User MODIFY COLUMN role ENUM('ADMIN', 'CUSTOMER') DEFAULT 'CUSTOMER';
-```
-
-You can run this statement against your database now:
-
-![](https://imgur.com/Fo0LbzU.png)
 
 ### 6.2. Fix incorrect m-n relations
 
