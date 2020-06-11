@@ -542,69 +542,116 @@ In the following, we'll go through these incompatibilities and fix them one by o
 
 The [Prisma Upgrade CLI](./how-to-upgrade#prisma-upgrade-cli) is an interactive tool that helps you upgrading your Prisma schema and ironing out most of the inconsistencies listed above.
 
-You can either install it locally in your project, or invoke it once without installation using `npx`:
+The Prisma Upgrade CLI works in two major phases:
+
+1. Fix the database schema via plain SQL
+1. Add missing attributes to the Prisma 2.0 schema
+
+During the first phase, it will generate and print a number of SQL statements that you should run against your database to adjust the database schema. You can either run all of the statements or a subset of them before continuing to the second phase. Also note that you can start over at any time during the process and go back from the second to the first phase.
+
+To use the Upgrade CLI, you can either install it locally in your project, or invoke it once without installation using `npx` as done here:
 
 ```
-npx prisma-upgrade prisma1/datamodel.graphql prisma/schema.prisma
+npx prisma-upgrade prisma1/prisma.yml prisma/schema.prisma
 ```
 
 The CLI will greet you with the following message:
 
-<SwitchTech technologies={['*', 'postgres']}>
-
 ```
-Welcome to the Prisma 1 to Prisma 2 upgrade tool.
+npx prisma-upgrade prisma1/prisma.yml prisma/schema.prisma
 
-This tool is designed to help you gracefully transition your postgresql database from Prisma 1 to Prisma 2.
+◮ Welcome to the interactive Prisma Upgrade CLI that helps with the
+upgrade process from Prisma 1 to Prisma 2.0.
 
-Here's how it works:
+Please read the docs to learn more about the upgrade process:
+https://pris.ly/d/how-to-upgrade
 
-  1. We inspect the contents of your Prisma 1 datamodel file.
-  2. We generate SQL commands for you to run on your database.
-  3. We re-introspect your database to get a new Prisma 2 Schema.
-  4. We apply any Prisma-specific changes to the new Prisma 2 Schema
+➤ Goal
+The Upgrade CLI helps you resolve the schema incompatibilities
+betweeen Prisma 1 and Prisma 2.0. Learn more in the docs:
+https://pris.ly/d/schema-incompatibilities
 
-We will not try to migrate your database for you. You are in full control
-over the changes to your postgresql database.
+➤ How it works
+Troughout the process, you'll need to adjust your database schema by sending
+SQL statements to it. The SQL statements are provided by the Upgrade CLI.
 
-We suggest you first run the subsequent SQL commands on your testing or staging postgresql database.
-Then when you're confident with the transition you can migrate your production database.
+Note that the Upgrade CLI never makes changes to your database,
+you are in full control over any operations that are executed against it.
 
-If you have any questions along the way, please reach out to hi@prisma.io.
+You can stop and re-run the Upgrade CLI at any time.
+
+These are the different steps of the upgrade processs:
+
+  1. The Upgrade CLI generates SQL commands for you to run on your database.
+  2. You run the SQL commands against your database.
+  3. You run the `npx prisma introspect` command again.
+  4. You run the `npx prisma-upgrade` command again.
+  5. The Upgrade CLI adjusts the Prisma 2 schema by adding missing attributes.
+
+➤ Note
+It is recommended that you make a full backup of your existing data before starting
+the upgrade process. If possible, the migration should be performed in a staging
+environment before executed against a production environment.
+
+➤ Help
+If you have any questions or run into any problems along the way,
+please create an issue at:
+https://github.com/prisma/upgrade/issues/new
     
-✔ Are you ready to get started? y/N
+Are you ready? [Y/n] 
 ```
 
-</SwitchTech>
+Press the <kbd>Y</kbd> button, then confirm by hitting <kbd>RETURN</kbd> on your keyboard to continue.
 
-<SwitchTech technologies={['*', 'mysql']}>
+Once you confirmed, the CLI outputs the SQL statements you should be running against your database:
 
 ```
-Welcome to the Prisma 1 to Prisma 2 upgrade tool.
+Run the following SQL statements against your database:
 
-This tool is designed to help you gracefully transition your mysql database from Prisma 1 to Prisma 2.
+  Turn the columns string type into a enum type for Enum fields
+  https://pris.ly/d/schema-incompatibilities#enums-are-represented-as-text-in-database
 
-Here's how it works:
+    CREATE TYPE "demo1$dev"."Role" AS ENUM ('ADMIN', 'CUSTOMER');
+ALTER TABLE "demo1$dev"."User" ALTER COLUMN "role" SET DATA TYPE "demo1$dev"."Role" using "role"::"demo1$dev"."Role";
 
-  1. We inspect the contents of your Prisma 1 datamodel file.
-  2. We generate SQL commands for you to run on your database.
-  3. We re-introspect your database to get a new Prisma 2 Schema.
-  4. We apply any Prisma-specific changes to the new Prisma 2 Schema
 
-We will not try to migrate your database for you. You are in full control
-over the changes to your mysql database.
+  Fixing columns with JSON data types
+  https://pris.ly/d/schema-incompatibilities#json-type-is-represented-as-text-in-database
 
-We suggest you first run the subsequent SQL commands on your testing or staging mysql database.
-Then when you're confident with the transition you can migrate your production database.
+    ALTER TABLE "demo1$dev"."User" ALTER COLUMN "jsonData" SET DATA TYPE JSONB USING "jsonData"::TEXT::JSONB;
 
-If you have any questions along the way, please reach out to hi@prisma.io.
+
+  Add missing `DEFAULT` constraints to the database
+  https://pris.ly/d/schema-incompatibilities#default-values-arent-represented-in-database
+
+    ALTER TABLE "demo1$dev"."Post" ALTER COLUMN "published" SET DEFAULT false;
+
+
+      If you executed one or more of the above SQL statements against your database,
+      please run the following two commands:
+
+        1. Run `npx prisma introspect` again to refresh your Prisma 2 schema.
+        2. Run `npx prisma-upgrade` again.
+
+      If you can't or don't want to execute the remaining SQL statements right now, you can
+      skip to the last step where the Upgrade CLI adds missing attributes to your Prisma 2
+      schema that are not picked up by introspection.
+
+        1. Run `prisma introspect` again to refresh your Prisma 2.0 schema.
+        2. Run `prisma-upgrade` again.
     
-✔ Are you ready to get started? y/N
+Skip to the last step? [Y/n]? 
 ```
 
-</SwitchTech>
+The shown SQL statemnts fall are categorized into five buckets, all aiming to resolve a certain [schema incompatibility]():
 
-Press the <kbd>y</kbd> button on your keyboard to continue.
+- Add missing `DEFAULT` constraints to the database
+- Replicate `@createdAt` behavior in Prisma 2.0
+- Fix 1-1 relations by adding `UNIQUE` constraints
+- Fix columns with JSON data types
+- Fix columns with ENUM data types
+
+As a next step, you can start sending the SQL statements to your database. Note that all of these changes are non-breaking and you'll be able to continue using Prisma 1 side-by-side.
 
 ### 5.1. Set `DEFAULT` constraints in the database
 
