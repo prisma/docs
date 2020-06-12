@@ -117,8 +117,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     <Line key={line + i} {...lineProps}>
                       {/* {hasTerminalSymbol && !isDiff && <LineNo>$</LineNo>}
                       {hasLineNo && !isDiff && <LineNo>{i + 1}</LineNo>} */}
-                      {hasTerminalSymbol && <LineNo>$</LineNo>}
-                      {!hasTerminalSymbol && <LineNo>{i + 1}</LineNo>}
+                      {hasTerminalSymbol && !isDiff && <LineNo>$</LineNo>}
+                      {!hasTerminalSymbol && !isDiff && <LineNo>{i + 1}</LineNo>}
                       {isDiff && (
                         <LineNo style={{ color: lineClass.symbColor }}>
                           {diffSymbol !== '|' ? diffSymbol : i + 1}
