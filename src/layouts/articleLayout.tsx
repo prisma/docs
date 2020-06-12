@@ -8,6 +8,7 @@ import SEO from '../components/seo'
 import { graphql } from 'gatsby'
 import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
 import { useNavigate } from '@reach/router'
+import { MDXProvider } from "@mdx-js/react"
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps
 
@@ -44,7 +45,10 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           toc={toc || toc == null ? tableOfContents : []}
         />
       </section>
+      <MDXProvider components={{ a: (props) => <a {...props} href={(/%5C/i.test(props.href))?props.href.replace(/%5C/g,'/').slice(3):props.href} /> 
+    }}>
       <MDXRenderer>{body}</MDXRenderer>
+      </MDXProvider>
       <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug} />
     </Layout>
   )
