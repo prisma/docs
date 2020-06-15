@@ -67,7 +67,7 @@ const DocHit = ({ hit }: any) => hit._distinctSeqID == 0 ? (
       </h3>
       <Snippet hit={hit} attribute="content" tagName="mark" />
     </Link>
-    {hit.moreCount > 0 && <p className="more">{hit.moreCount} more results on this page</p>}
+    {hit.moreCount > 1 && <p className="more">More results on this page</p>}
   </HitComp>
 ): null
 
