@@ -53,11 +53,28 @@ const searchClient = algoliasearch(
   config.header.search.algoliaSearchKey
 )
 
+const getHits = (children: any, res: any) => {
+  const allHits = res.hits
+  const newHits = allHits
+    .filter((h: any) => h._distinctSeqID == 0)
+    .map((x: any) => ({
+      ...x,
+      moreCount: 0,
+    }))
+  allHits.map((h: any) => {
+    const first = newHits.find((firstG: any) => firstG.slug == h.slug)
+    if (first) {
+      first.moreCount++
+    }
+  })
+  res.hits = newHits
+  return children
+}
 const Results = connectStateResults(
   ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
     (isSearchStalled ? <div className="loader">Searching...</div> : null) ||
     (res && res.nbHits > 0 ? (
-      children
+      getHits(children, res)
     ) : (
       <div className="no-results">No results for '{state.query}'</div>
     ))

@@ -74,6 +74,8 @@ const settings = {
   attributesToHighlight: ['title', 'heading', 'content'],
   attributesToSnippet: ['title:20', 'heading:20', 'content:25'],
   hitsPerPage: 20,
+  // attributeForDistinct: 'slug',
+  // distinct: 50,
   separatorsToIndex: '!#()[]{}*+-_一,:;<>?@/^|%&~£¥$§€†‡',
 }
 

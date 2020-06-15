@@ -12,7 +12,7 @@ const HitComp = styled.div`
   font-size: 16px;
   line-height: 24px;
   border-bottom: 1px solid var(--border-color);
-  max-height: 150px;
+  // max-height: 150px;
   &:last-item {
     border: 0;
   }
@@ -24,7 +24,7 @@ const HitComp = styled.div`
   }
   h3 {
     font-weight: 600;
-    line-height: 100%;
+    line-height: 28px;
     letter-spacing: -0.01em;
     margin: 10px 0;
   }
@@ -39,13 +39,23 @@ const HitComp = styled.div`
     font-weight: bold;
   }
 
+  .more {
+    color: var(--code-inner-color);
+    font-size: 14px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(113, 128, 150, 0.2);
+    width: fit-content;
+    margin: 10px 0 0;
+  }
+
   @media (min-width: 0px) and (max-width: 767px) {
     max-height: fit-content;
     padding: 24px !important;
   }
 `
 
-const DocHit = ({ hit }: any) => (
+const DocHit = ({ hit }: any) => hit._distinctSeqID == 0 ? (
   <HitComp>
     <Link style={{ boxShadow: `none`, textDecoration: 'none' }} to={hit.path}>
       <ParentTitle slug={hit.slug} nonLink={true} />
@@ -57,7 +67,8 @@ const DocHit = ({ hit }: any) => (
       </h3>
       <Snippet hit={hit} attribute="content" tagName="mark" />
     </Link>
+    {hit.moreCount > 0 && <p className="more">{hit.moreCount} more results on this page</p>}
   </HitComp>
-)
+): null
 
 export default DocHit
