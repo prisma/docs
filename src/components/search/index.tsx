@@ -55,7 +55,6 @@ const searchClient = algoliasearch(
 
 const getHits = (children: any, res: any) => {
   const allHits = res.hits
-  console.log(allHits)
   const newHits = allHits
     .filter((h: any) => h._distinctSeqID == 0)
     .map((x: any) => ({
