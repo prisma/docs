@@ -6,6 +6,8 @@ function withPathPrefix(url, pathPrefix) {
   return prefixed.replace(/\/\//, '/')
 }
 
+const pathSep = path.sep || '/'
+
 module.exports = function plugin(
   { markdownAST, markdownNode, pathPrefix, getNode },
   { redirects = [] } = {}
@@ -24,15 +26,17 @@ module.exports = function plugin(
       const newUrl = path
         .resolve(
           markdownNode.fields.slug
-            .replace(`${path.sep}index`, '')
+            .replace(`${pathSep}index`, '')
             .replace(/\d+-/g, '')
             .replace(/\/$/, '')
-            .split(path.sep)
+            .replace(/\\$/, '')
+            .split(pathSep)
             .slice(0, parent.name === 'index' ? undefined : -1)
-            .join(path.sep) || '/',
+            .join(pathSep) || '/',
           node.url
         )
         .replace(/\/?(\?|#|$)/, '/$1')
+        .replace(/\\?(\?|#|$)/, '/$1')
 
       const isRedirectPath = redirects.find(url => url.from === newUrl || `${url.from}/` === newUrl)
       node.url = withPathPrefix(isRedirectPath ? isRedirectPath.to : newUrl, pathPrefix)
