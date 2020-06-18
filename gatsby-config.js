@@ -105,7 +105,7 @@ const plugins = [
   'gatsby-plugin-remove-trailing-slashes',
 ]
 
-if (process.env.INDEX_ALGOLIA) {
+if (process.env.INDEX_ALGOLIA === "true") {
   plugins = [...plugins, algoliaPlugin]
 }
 
