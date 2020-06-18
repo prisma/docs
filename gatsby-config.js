@@ -43,7 +43,7 @@ const algoliaPlugin = {
   options: require(`./src/utils/algolia`),
 }
 
-const plugins = [
+let plugins = [
   'gatsby-plugin-react-helmet',
   'gatsby-transformer-sharp',
   'gatsby-plugin-sharp',
