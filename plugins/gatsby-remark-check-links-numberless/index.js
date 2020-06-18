@@ -98,7 +98,7 @@ module.exports = async function plugin(
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
-  const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`index${pathSep}`, ''))
+  const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`index${pathSep}`, '').replace(/.$/,''))
 
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
@@ -109,14 +109,15 @@ module.exports = async function plugin(
     const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
       const brokenLinks = linksForPath.filter(link => {
+
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
         if (prefixedExceptions.includes(key)) {
           return false
         }
 
-        const url = link.tranformedUrl.slice(0, hashIndex)
-        const urlToCheck = url.slice(-1) === pathSep ? url : url.concat(pathSep)
+        const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
+        const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
         const headings = headingsMap[key]
 
         if (headings) {
@@ -127,8 +128,8 @@ module.exports = async function plugin(
 
           return false
         }
-
-        return !pathKeysWithoutIndex.includes(urlToCheck)
+    
+        return !pathKeysWithoutIndex.includes(urlToCheck) 
       })
 
       const brokenLinkCount = brokenLinks.length

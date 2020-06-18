@@ -29,17 +29,15 @@ module.exports = function plugin(
             .replace(`${pathSep}index`, '')
             .replace(/\d+-/g, '')
             .replace(/\/$/, '')
-            .replace(/\\$/, '')
             .split(pathSep)
             .slice(0, parent.name === 'index' ? undefined : -1)
             .join(pathSep) || '/',
           node.url
         )
         .replace(/\/?(\?|#|$)/, '/$1')
-        .replace(/\\?(\?|#|$)/, '/$1')
 
-      const isRedirectPath = redirects.find(url => url.from === newUrl || `${url.from}/` === newUrl)
-      node.url = withPathPrefix(isRedirectPath ? isRedirectPath.to : newUrl, pathPrefix)
+      const isRedirectPath = redirects.find(url => newUrl.includes(url.from))
+      node.url = withPathPrefix(isRedirectPath ? newUrl.replace(isRedirectPath.from, isRedirectPath.to) : newUrl, pathPrefix)
     }
   }
 
