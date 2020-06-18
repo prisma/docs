@@ -122,12 +122,14 @@ const ListItem = styled.li`
     margin-top: 24px;
   }
   &.static-link > a {
-    color: var(--list-bullet-color) !important;
+    color: var(--main-font-color) !important;
     text-transform: uppercase;
     font-weight: bold;
     font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0.02em;
     &:hover {
-      color: var(--list-bullet-color) !important;
+      color: var(--main-font-color) !important;
     }
   }
   &.last-level {
