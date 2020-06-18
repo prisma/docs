@@ -70,7 +70,7 @@ module.exports = {
     },
     {
       resolve: `gatsby-plugin-algolia`,
-      options: require(`./src/utils/algolia`),
+      options: process.env.INDEX_ALGOLIA ? require(`./src/utils/algolia`): null,
     },
     {
       resolve: `gatsby-plugin-sitemap`,
