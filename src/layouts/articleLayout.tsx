@@ -1,7 +1,6 @@
 import { RouterProps } from '@reach/router'
 import * as React from 'react'
 import { ArticleQueryData } from '../interfaces/Article.interface'
-import Layout from '../components/layout'
 import TopSection from '../components/topSection'
 import PageBottom from '../components/pageBottom'
 import SEO from '../components/seo'
@@ -31,7 +30,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const navigate = useNavigate()
 
   return (
-    <Layout {...props}>
+    <>
       <SEO title={metaTitle || title} description={metaDescription || title} />
       <section className="top-section">
         <TopSection
@@ -46,7 +45,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       </section>
       <MDXRenderer>{body}</MDXRenderer>
       <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug} />
-    </Layout>
+    </>
   )
 }
 

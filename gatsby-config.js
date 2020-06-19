@@ -52,12 +52,12 @@ let plugins = [
   'gatsby-plugin-styled-components',
   'gatsby-plugin-smoothscroll',
   'gatsby-plugin-catch-links',
-  {
-    resolve: `gatsby-plugin-layout`,
-    options: {
-      component: require.resolve(`./src/layouts/articleLayout.tsx`),
-    },
-  },
+  // {
+  //   resolve: `gatsby-plugin-layout`,
+  //   options: {
+  //     component: require.resolve(`./src/layouts/articleLayout.tsx`),
+  //   },
+  // },
   {
     resolve: `gatsby-plugin-sitemap`,
     options: {
@@ -79,10 +79,10 @@ let plugins = [
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
-      // decks: [],
-      // defaultLayouts: {
-      //   default: require.resolve('./src/layouts/articleLayout.tsx'),
-      // },
+      decks: [],
+      defaultLayouts: {
+        default: require.resolve('./src/layouts/articleLayout.tsx'),
+      },
       extensions: ['.mdx', '.md'],
       gatsbyRemarkPlugins,
     },
@@ -105,7 +105,7 @@ let plugins = [
   'gatsby-plugin-remove-trailing-slashes',
 ]
 
-if (process.env.INDEX_ALGOLIA === "true") {
+if (process.env.INDEX_ALGOLIA === 'true') {
   plugins = [...plugins, algoliaPlugin]
 }
 
