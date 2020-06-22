@@ -6,7 +6,7 @@ function withPathPrefix(url, pathPrefix) {
   return prefixed.replace(/\/\//, '/')
 }
 
-const pathSep = path.sep || '/'
+const pathSep = '/'
 
 module.exports = function plugin(
   { markdownAST, markdownNode, pathPrefix, getNode },
@@ -35,28 +35,33 @@ module.exports = function plugin(
           node.url
         )
         .replace(/\/?(\?|#|$)/, '/$1')
-      
-      if(/^..\\/.test(newUrl)){
-        //Code specifically for local run, to fix broken links on
-        let newUrl2=path.resolve(
-          markdownNode.fields.slug
-            .replace(/(\/.+)\/.*/,'$1')
-            .replace(/\/\d+-/g,'/')
-            ,node.url
-        )
-        
-        newUrl2=newUrl2.replace(/\\/g,'/').slice(2).replace(/(^.*)#.*/, '$1')
-        const isRedirectPath = redirects.find(url => newUrl2.includes(url.from))
-        if(isRedirectPath){newUrl2=isRedirectPath.to}
 
-        let hashVal=node.url.match(/#.*/)
-        if(hashVal)newUrl2+=hashVal[0]
-        
-        node.url=newUrl2.replace(/^([^#]*)$/, '$1/')
-      }
-      else{
+      if (/^..\\/.test(newUrl)) {
+        //Code specifically for local run, to fix broken links on
+        let newUrl2 = path.resolve(
+          markdownNode.fields.slug.replace(/(\/.+)\/.*/, '$1').replace(/\/\d+-/g, '/'),
+          node.url
+        )
+
+        newUrl2 = newUrl2
+          .replace(/\\/g, '/')
+          .slice(2)
+          .replace(/(^.*)#.*/, '$1')
+        const isRedirectPath = redirects.find(url => newUrl2.includes(url.from))
+        if (isRedirectPath) {
+          newUrl2 = isRedirectPath.to
+        }
+
+        let hashVal = node.url.match(/#.*/)
+        if (hashVal) newUrl2 += hashVal[0]
+
+        node.url = newUrl2.replace(/^([^#]*)$/, '$1/')
+      } else {
         const isRedirectPath = redirects.find(url => newUrl.includes(url.from))
-        node.url = withPathPrefix(isRedirectPath ? newUrl.replace(isRedirectPath.from, isRedirectPath.to) : newUrl, pathPrefix)
+        node.url = withPathPrefix(
+          isRedirectPath ? newUrl.replace(isRedirectPath.from, isRedirectPath.to) : newUrl,
+          pathPrefix
+        )
       }
     }
   }
