@@ -112,7 +112,6 @@ module.exports = async function plugin(
 
     const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
-      a
       const brokenLinks = linksForPath.filter(link => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
