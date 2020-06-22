@@ -38,6 +38,76 @@ const gatsbyRemarkPlugins = [
     },
   },
 ]
+const algoliaPlugin = {
+  resolve: `gatsby-plugin-algolia`,
+  options: require(`./src/utils/algolia`),
+}
+
+let plugins = [
+  'gatsby-plugin-react-helmet',
+  'gatsby-transformer-sharp',
+  'gatsby-plugin-sharp',
+  'gatsby-plugin-typescript',
+  'gatsby-image',
+  'gatsby-plugin-styled-components',
+  'gatsby-plugin-smoothscroll',
+  'gatsby-plugin-catch-links',
+  {
+    resolve: `gatsby-plugin-layout`,
+    options: {
+      component: require.resolve(`./src/layouts/articleLayout.tsx`),
+    },
+  },
+  {
+    resolve: `gatsby-plugin-sitemap`,
+    options: {
+      sitemapSize: 5000,
+    },
+  },
+  {
+    resolve: 'gatsby-plugin-robots-txt',
+    options: {
+      policy: [
+        {
+          userAgent: '*',
+          disallow: '/',
+        },
+      ],
+    },
+  },
+  // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
+  {
+    resolve: `gatsby-plugin-mdx`,
+    options: {
+      // decks: [],
+      // defaultLayouts: {
+      //   default: require.resolve('./src/layouts/articleLayout.tsx'),
+      // },
+      extensions: ['.mdx', '.md'],
+      gatsbyRemarkPlugins,
+    },
+  },
+  {
+    resolve: 'gatsby-source-filesystem',
+    options: {
+      name: 'docs',
+      path: `${__dirname}/content`,
+      ignore: ['**/.tsx*'],
+    },
+  },
+  {
+    resolve: 'gatsby-source-filesystem',
+    options: {
+      name: 'images',
+      path: `${__dirname}/src/images`,
+    },
+  },
+  'gatsby-plugin-remove-trailing-slashes',
+]
+
+if (process.env.INDEX_ALGOLIA === "true") {
+  plugins = [...plugins, algoliaPlugin]
+}
 
 module.exports = {
   pathPrefix: config.gatsby.pathPrefix,
@@ -53,69 +123,5 @@ module.exports = {
     footer: config.footer,
     docsLocation: config.siteMetadata.docsLocation,
   },
-  plugins: [
-    'gatsby-plugin-react-helmet',
-    'gatsby-transformer-sharp',
-    'gatsby-plugin-sharp',
-    'gatsby-plugin-typescript',
-    'gatsby-image',
-    'gatsby-plugin-styled-components',
-    'gatsby-plugin-smoothscroll',
-    'gatsby-plugin-catch-links',
-    {
-      resolve: `gatsby-plugin-layout`,
-      options: {
-          component: require.resolve(`./src/layouts/articleLayout.tsx`)
-      }
-    },
-    {
-      resolve: `gatsby-plugin-algolia`,
-      options: require(`./src/utils/algolia`),
-    },
-    {
-      resolve: `gatsby-plugin-sitemap`,
-      options: {
-        sitemapSize: 5000,
-      },
-    },
-    {
-      resolve: 'gatsby-plugin-robots-txt',
-      options: {
-        policy: [
-          {
-            userAgent: '*',
-            disallow: '/',
-          },
-        ],
-      },
-    },
-    // 'gatsby-plugin-offline', // it causes infinite loop issue with workbox
-    {
-      resolve: `gatsby-plugin-mdx`,
-      options: {
-        // decks: [],
-        // defaultLayouts: {
-        //   default: require.resolve('./src/layouts/articleLayout.tsx'),
-        // },
-        extensions: ['.mdx', '.md'],
-        gatsbyRemarkPlugins,
-      },
-    },
-    {
-      resolve: 'gatsby-source-filesystem',
-      options: {
-        name: 'docs',
-        path: `${__dirname}/content`,
-        ignore: ['**/.tsx*'],
-      },
-    },
-    {
-      resolve: 'gatsby-source-filesystem',
-      options: {
-        name: 'images',
-        path: `${__dirname}/src/images`,
-      },
-    },
-    'gatsby-plugin-remove-trailing-slashes',
-  ],
+  plugins,
 }
