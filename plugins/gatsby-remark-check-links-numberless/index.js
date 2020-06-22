@@ -23,7 +23,7 @@ function getHeadingsMapKey(link, pathUrl) {
 function createPathPrefixer(pathPrefix) {
   return function withPathPrefix(url) {
     var prefixed = pathPrefix + url
-    return prefixed.replace(/\/\//, '/')
+    return prefixed
   }
 }
 
@@ -32,7 +32,7 @@ module.exports = async function plugin(
   { exceptions = [], ignore = [], verbose = true } = {}
 ) {
   const withPathPrefix = createPathPrefixer(pathPrefix)
-  const pathSep = path.sep || '/'
+  const pathSep = '/'
   if (!markdownNode.fields) {
     // let the file pass if it has no fields
     return markdownAST
@@ -62,7 +62,7 @@ module.exports = async function plugin(
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
   cache.set(getCacheKey(parent), {
-    path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat(pathSep)),
+    path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '')),
     links,
     headings,
     setAt,
@@ -98,8 +98,7 @@ module.exports = async function plugin(
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
-  const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`index${pathSep}`, '').replace(/.$/,''))
-
+  const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`${pathSep}index`, ''))
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
       // don't count broken links for ignored pages
@@ -109,7 +108,6 @@ module.exports = async function plugin(
     const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
       const brokenLinks = linksForPath.filter(link => {
-
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
         if (prefixedExceptions.includes(key)) {
@@ -128,8 +126,8 @@ module.exports = async function plugin(
 
           return false
         }
-    
-        return !pathKeysWithoutIndex.includes(urlToCheck) 
+
+        return !pathKeysWithoutIndex.includes(urlToCheck)
       })
 
       const brokenLinkCount = brokenLinks.length
@@ -148,7 +146,7 @@ module.exports = async function plugin(
               ':'
             )
           }
-          console.warn(`${prefix} ${link.originalUrl}`)
+          console.warn(`${prefix} ${link.tranformedUrl}`)
         }
         console.log('')
       }
