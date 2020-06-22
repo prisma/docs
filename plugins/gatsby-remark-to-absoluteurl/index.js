@@ -3,7 +3,7 @@ const path = require('path')
 
 function withPathPrefix(url, pathPrefix) {
   const prefixed = pathPrefix + url
-  return prefixed
+  return prefixed.replace(/\/\//, '/')
 }
 
 const pathSep = '/'

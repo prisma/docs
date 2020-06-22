@@ -23,7 +23,7 @@ function getHeadingsMapKey(link, pathUrl) {
 function createPathPrefixer(pathPrefix) {
   return function withPathPrefix(url) {
     var prefixed = pathPrefix + url
-    return prefixed
+    return prefixed.replace(/\/\//, '/')
   }
 }
 
@@ -62,7 +62,10 @@ module.exports = async function plugin(
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
   cache.set(getCacheKey(parent), {
-    path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '')),
+    path:
+      pathPrefix === ''
+        ? markdownNode.fields.slug.replace(/\d+-/g, '')
+        : withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat(pathSep)),
     links,
     headings,
     setAt,
@@ -98,7 +101,9 @@ module.exports = async function plugin(
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
-  const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`${pathSep}index`, ''))
+  const pathKeysWithoutIndex = pathKeys.map(p =>
+    p.replace(`${pathSep}index`, '').replace(/\/$/, '')
+  )
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
       // don't count broken links for ignored pages
@@ -107,6 +112,7 @@ module.exports = async function plugin(
 
     const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
+      a
       const brokenLinks = linksForPath.filter(link => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
@@ -126,7 +132,6 @@ module.exports = async function plugin(
 
           return false
         }
-
         return !pathKeysWithoutIndex.includes(urlToCheck)
       })
 
