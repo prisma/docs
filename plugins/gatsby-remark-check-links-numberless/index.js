@@ -42,6 +42,9 @@ module.exports = async function plugin(
   const headings = []
 
   function visitor(node, index, parent) {
+    //To convert all uppercase links to lowercase (if used by mistake)
+    node.url = node.url.toLowerCase()
+
     if (parent.type === 'heading') {
       headings.push(parent.data.id)
       return
@@ -62,10 +65,7 @@ module.exports = async function plugin(
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
   cache.set(getCacheKey(parent), {
-    path:
-      pathPrefix === ''
-        ? markdownNode.fields.slug.replace(/\d+-/g, '')
-        : withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat(pathSep)),
+    path:withPathPrefix(markdownNode.fields.slug.replace(/\/index$/,'').replace(/\d+-/g, '').concat(pathSep)),
     links,
     headings,
     setAt,
