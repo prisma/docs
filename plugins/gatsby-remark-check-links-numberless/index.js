@@ -32,7 +32,7 @@ module.exports = async function plugin(
   { exceptions = [], ignore = [], verbose = true } = {}
 ) {
   const withPathPrefix = createPathPrefixer(pathPrefix)
-  const pathSep = path.sep || '/'
+  const pathSep = '/'
   if (!markdownNode.fields) {
     // let the file pass if it has no fields
     return markdownAST
@@ -62,7 +62,10 @@ module.exports = async function plugin(
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
   cache.set(getCacheKey(parent), {
-    path: withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat(pathSep)),
+    path:
+      pathPrefix === ''
+        ? markdownNode.fields.slug.replace(/\d+-/g, '')
+        : withPathPrefix(markdownNode.fields.slug.replace(/\d+-/g, '').concat(pathSep)),
     links,
     headings,
     setAt,
@@ -98,8 +101,9 @@ module.exports = async function plugin(
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
-  const pathKeysWithoutIndex = pathKeys.map(p => p.replace(`index${pathSep}`, ''))
-
+  const pathKeysWithoutIndex = pathKeys.map(p =>
+    p.replace(`${pathSep}index`, '').replace(/\/$/, '')
+  )
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
       // don't count broken links for ignored pages
@@ -115,8 +119,8 @@ module.exports = async function plugin(
           return false
         }
 
-        const url = link.tranformedUrl.slice(0, hashIndex)
-        const urlToCheck = url.slice(-1) === pathSep ? url : url.concat(pathSep)
+        const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
+        const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
         const headings = headingsMap[key]
 
         if (headings) {
@@ -127,7 +131,6 @@ module.exports = async function plugin(
 
           return false
         }
-
         return !pathKeysWithoutIndex.includes(urlToCheck)
       })
 

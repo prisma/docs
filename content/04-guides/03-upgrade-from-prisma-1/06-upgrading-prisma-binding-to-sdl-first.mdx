@@ -44,7 +44,7 @@ If this is not what your project structure looks like, you'll need to adjust the
 
 ## 1. Adjusting your GraphQL schema
 
-With `prisma-binding`, your approach for defining your GraphQL schema (sometimes called [application schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#a-note-on-the-application-schema)) is based on _importing_ GraphQL types from the generated `prisma.graphql` file (in Prisma 1, this is typically called [Prisma schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#the-prisma-graphql-schema)). These types mirror the types from your Prisma 1 datamodel and serve as foundation for your GraphQL API.
+With `prisma-binding`, your approach for defining your GraphQL schema (sometimes called [application schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#a-note-on-the-application-schema)) is based on _importing_ GraphQL types from the generated `prisma.graphql` file (in Prisma 1, this is typically called [Prisma GraphQL schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#the-prisma-graphql-schema)). These types mirror the types from your Prisma 1 datamodel and serve as foundation for your GraphQL API.
 
 With Prisma 2.0, there's no `prisma.graphql` file any more that you could import from. Therefore, you have to spell out all the types of your GraphQL schema directly inside your `schema.graphql` file. 
 
@@ -110,6 +110,10 @@ The `PrismaClient` query API is inspired by the initial `prisma-binding` API, so
 Similar to the `prisma-binding` instance from Prisma 1, you also want to attach your `PrismaClient` from Prisma 2.0 to GraphQL's `context` so that in can be accessed inside your resolvers:
 
 ```js line-number
+const { PrismaClient } = require('@prisma/client')
+
+// ...
+
 const server = new GraphQLServer({
   typeDefs: 'src/schema.graphql',
   resolvers,
@@ -402,13 +406,13 @@ const resolvers = {
   Profile: {
     // ... your type resolvers for `User` from before
   },
-  Category: {
-    posts: (parent, args, context) => {
-      return context.prisma.findOne({
-        where: { id: parent.id }
-      }).posts()
-    }
-  },
++  Category: {
++    posts: (parent, args, context) => {
++      return context.prisma.findOne({
++        where: { id: parent.id }
++      }).posts()
++    }
++  },
 }
 ```
 
@@ -463,7 +467,97 @@ const resolvers = {
 
 ##### Implementing the `users` resolver with Prisma Client
 
-TBD
+To re-implement queries that were previously using `forwardTo`, the idea is to pass the incoming filtering, ordering and pagination arguments to `PrismaClient`:
+
+```js
+const resolvers = {
+  Query: {
+    users: (_, args, context, info) => {
+      // this doesn't work
+      const { where, orderBy, skip, first, last, after, before } = args
+      return context.prismaClient.user.findMany({
+        where,
+        orderBy,
+        skip,
+        first,
+        last,
+        after,before
+      })
+    },
+    // ... other resolvers
+  }
+}
+```
+
+Note that this approach does **not** work yet because the _structures_ of the incoming arguments is different from the ones expected by `PrismaClient`. To ensure the structures are compatible, you can use the `prisma-binding-argument-transform` npm package which ensures compatibility:
+
+```
+npm install prisma-binding-argument-transform
+```
+
+You can now use this package as follows:
+
+```js
+const { makeOrderByPrisma2Compatible, makeWherePrisma2Compatible } = require('prisma-binding-argument-transform')
+
+const resolvers = {
+  Query: {
+    users: (_, args, context, info) => {
+      // this still doesn't entirely work
+      const { where, orderBy, skip, first, last, after, before } = args
+      const prisma2Where = makeWherePrisma2Compatible(where)
+      const prisma2OrderBy = makeOrderByPrisma2Compatible(orderBy)
+      return context.prismaClient.user.findMany({
+        where: prisma2Where,
+        orderBy: prisma2OrderBy,
+        skip,
+        first,
+        last,
+        after,before
+      })
+    },
+    // ... other resolvers
+  }
+}
+```
+
+The last remaining issue with this are the pagination arguments. Prisma 2.0 introduces a [new pagination API](https://github.com/prisma/prisma/releases/tag/2.0.0-beta.7):
+
+- The `first`, `last`, `before` and `after` arguments are removed
+- The new `cursor` argument replaces `before` and `after`
+- The new `take` argument replaces `first` and `last`
+
+Here is how you can adjust the call to make it compliant with the new Prisma Client pagination API:
+
+```js
+const { makeOrderByPrisma2Compatible, makeWherePrisma2Compatible } = require('prisma-binding-argument-transform')
+
+const resolvers = {
+  Query: {
+    users: (_, args, context) => {
+      const { where, orderBy, skip, first, last, after, before } = args
+      const prisma2Where = makeWherePrisma2Compatible(where)
+      const prisma2OrderBy = makeOrderByPrisma2Compatible(orderBy)
+      const skipValue = skip || 0
+      const prisma2Skip = Boolean(before) ? skipValue+1 : skipValue
+      const prisma2Take = Boolean(last) ? -last : first
+      const prisma2Before = { id: before }
+      const prisma2After = { id: after }
+      const prisma2Cursor = !Boolean(before) && !Boolean(after) ? undefined : (Boolean(before) ? prisma2Before : prisma2After)
+      return context.prismaClient.user.findMany({
+        where: prisma2Where,
+        orderBy: prisma2OrderBy,
+        skip: prisma2Skip,
+        cursor: prisma2Cursor,
+        take: prisma2Take,
+      })
+    },
+    // ... other resolvers
+  }
+}
+```
+
+The calculations are needed to ensure the incoming pagination arguments map properly to the ones from the Prisma Client API.
 
 #### 3.1.3. Migrate the `posts(searchString: String): [Post!]!` query
 
