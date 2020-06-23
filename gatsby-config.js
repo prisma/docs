@@ -13,6 +13,7 @@ const gatsbyRemarkPlugins = [
       <path d="M12 1L10.25 17" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>`,
       className: `title-link`,
+      enableCustomId: true,
     },
   },
 
