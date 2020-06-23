@@ -133,9 +133,88 @@ npx prisma introspect
 
 Prisma will introspect the database defined in the `datasource` block of the Prisma schema and populate the Prisma schema with models corresponding to the database tables.
 
-**Checkpoint:** Open `schema.prisma` and ensure there are three models: `Post`, `Profile`, and `User`.
+**Checkpoint:** `prisma/schema.prisma` should look as follows (note that the fields on the models have been reordered for better readability):
 
-## 6. Define Vercel secret and expose to functions
+```prisma
+model Post {
+  author_id Int?
+  content   String?
+  post_id   Int     @default(autoincrement()) @id
+  title     String
+  User      User?   @relation(fields: [author_id], references: [user_id])
+}
+
+model Profile {
+  bio        String?
+  profile_id Int     @default(autoincrement()) @id
+  user_id    Int
+  User       User    @relation(fields: [user_id], references: [user_id])
+}
+
+model User {
+  email   String    @unique
+  name    String?
+  user_id Int       @default(autoincrement()) @id
+  Post    Post[]
+  Profile Profile[]
+}
+```
+
+### Rename the relation fields for easy access
+
+Because both the generated `Post` and `Profile` fields in the `User` model are _virtual_ (i.e. they're _not backed by a foreign key in the database_), you can manually rename them in your Prisma schema. This will only affect the generated client and is typically done so that they have a more meaningful name in the context of the relation.
+
+In the resulting Prisma schema there are two types of relation fields:
+
+- Relation fields: identified by having a Model name as the type, e.g. the `User` field in the `Post` model. Can be renamed to better fit its usage, e.g. `User` -> `author`.
+- [Relation scalar fields](../..//reference/tools-and-interfaces/prisma-schema/relations): these are used to store the foreign key, e.g. the `authorId` field in the `Post` model. Cannot be rename as it must match the field in the database.
+
+The names of the relation fields are used in the client to access those relations for example, fetching a specific `Post` and its associated `User` object would as follows with the Prisma schema above:
+
+```js
+const postAuthor = await prisma.post.findOne({
+  where: { id: 1 },
+  include: { User: true },
+})
+```
+
+If you rename the `User` field in the `Post` model to `author`, you'll be able to access it as follows:
+
+```js
+const postAuthor = await prisma.post.findOne({
+  where: { id: 1 },
+  include: { author: true },
+})
+```
+
+Based on that logic, rename the relation fields to better adhere to the [naming conventions](../../reference/tools-and-interfaces/prisma-schema/models#naming-fields):
+
+```prisma
+model Post {
+  post_id   Int     @default(autoincrement()) @id
+  author_id Int?
+  content   String?
+  title     String
+  author      User?   @relation(fields: [author_id], references: [user_id]) // renamed from `User` -> `author`
+}
+
+model Profile {
+  bio        String?
+  profile_id Int     @default(autoincrement()) @id
+  user_id    Int
+  user       User    @relation(fields: [user_id], references: [user_id]) // renamed from `User` -> `user`
+}
+
+model User {
+  email   String    @unique
+  name    String?
+  user_id Int       @default(autoincrement()) @id
+  posts    Post[] // renamed from `Post` -> `posts`
+  profiles Profile[] // renamed from `User` -> `profiles`
+}
+```
+
+## 7. Define Vercel secret and expose to functions
 
 In step 4 you set the `DATABASE_URL` environment variable on your machine. For the application to work, `DATABASE_URL` also needs to be available to Vercel's serverless functions.
 
@@ -169,7 +248,7 @@ Using the `vercel.json` configuration file, you can set Vercel related configura
 
 The configuration exposes the Vercel secret `database_url` as an environment variable named `DATABASE_URL` to both the build and run time. Prisma will use `DATABASE_URL` to connect to your database whenever the functions run.
 
-## 7. Deploy to Vercel
+## 8. Deploy to Vercel
 
 Deploy the app from the project's root:
 
@@ -187,7 +266,7 @@ curl https://PROJECT_NAME.NOW_USERNAME.now.sh/api
 
 The call should return: `{"up":true}`
 
-## 8. Test your deployed application
+## 9. Test your deployed application
 
 You can use the static frontend to interact with the API you deployed via the preview URL.
 
