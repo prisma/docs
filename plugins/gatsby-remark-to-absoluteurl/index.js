@@ -13,6 +13,9 @@ module.exports = function plugin(
   { redirects = [] } = {}
 ) {
   function visitor(node) {
+    //To convert all uppercase links to lowercase (if used by mistake)
+    node.url = node.url.toLowerCase()
+    
     node.originalUrl = node.url
     if (
       markdownNode.fields &&
@@ -48,9 +51,7 @@ module.exports = function plugin(
           .slice(2)
           .replace(/(^.*)#.*/, '$1')
         const isRedirectPath = redirects.find(url => newUrl2.includes(url.from))
-        if (isRedirectPath) {
-          newUrl2 = isRedirectPath.to
-        }
+        if (isRedirectPath) newUrl2 = isRedirectPath.to
 
         let hashVal = node.url.match(/#.*/)
         if (hashVal) newUrl2 += hashVal[0]
