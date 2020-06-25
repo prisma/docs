@@ -145,5 +145,4 @@ You can find several ready-to-run examples that show how to implement a REST API
 | :---------------------------------------------------------------------------------------------- | :--------- | ------------ | ----------------------------------------------------------------- |
 | [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/master/typescript/rest-nextjs)   | TypeScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
 | [`rest-express`](https://github.com/prisma/prisma-examples/tree/master/typescript/rest-express) | TypeScript | Backend only | Simple REST API with Express                                      |
-| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/master/javascript/rest-nextjs)   | JavaScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
 | [`rest-express`](https://github.com/prisma/prisma-examples/tree/master/javascript/rest-express) | JavaScript | Backend only | Simple REST API with Express                                      |
