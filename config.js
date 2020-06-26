@@ -96,7 +96,7 @@ const config = {
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
-      { name: 'PostgreSQL Tutorial', link: 'https://www.prisma.io/tutorials/?tag=postgresql' },
+      { name: 'Data Guide', link: 'https://dataguide.prisma.io/' },
     ],
     company: [
       { name: 'About', link: 'https://www.prisma.io/about' },
