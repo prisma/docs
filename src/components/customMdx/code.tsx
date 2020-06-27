@@ -81,20 +81,10 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   }
 
                   if (
-                    (line[0] &&
-                      line[0].content.length &&
-                      (line[0].content[0] === '+' ||
-                        line[0].content[0] === '-' ||
-                        line[0].content[0] === '|')) ||
-                    (line[0] &&
-                      line[0].content === '' &&
-                      line[1] &&
-                      (line[1].content === '+' ||
-                        line[1].content === '-' ||
-                        line[1].content === '|'))
+                    (line[0] && /[+|-]/.test(line[0].content[0])) ||
+                    (line[1] && /[+|-]/.test(line[1].content[0]))
                   ) {
-                    diffSymbol =
-                      line[0] && line[0].content.length ? line[0].content[0] : line[1].content
+                    diffSymbol = line[0] && line[0].content.length ? line[0].content[0] : line[1].content[0]
                     lineClass = {
                       backgroundColor: diffBgColorMap[diffSymbol],
                       symbColor: symColorMap[diffSymbol],
@@ -124,22 +114,15 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       )}
                       <LineContent className={`${tokenCopyClass}`}>
                         {line.map((token: any, key: any) => {
-                          if (isDiff) {
-                            if (
-                              ((key === 0 || key === 1) &&
-                                (token.content.charAt(0) === '+' ||
-                                  token.content.charAt(0) === '-')) ||
-                              token.content.charAt(0) === '|'
-                            ) {
-                              return (
-                                <span
-                                  {...getTokenProps({
-                                    token: { ...token, content: token.content.slice(1) },
-                                    key,
-                                  })}
-                                />
-                              )
-                            }
+                          if (isDiff && (key === 0 || key === 1) && /[+|-]/.test(token.content[0])) {
+                            return (
+                              <span
+                                {...getTokenProps({
+                                  token: { ...token, content: token.content.slice(1) },
+                                  key,
+                                })}
+                              />
+                            )
                           }
                           return <span {...getTokenProps({ token, key })} />
                         })}
