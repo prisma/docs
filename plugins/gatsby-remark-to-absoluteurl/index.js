@@ -30,7 +30,7 @@ module.exports = function plugin(
         .resolve(
           markdownNode.fields.slug
             .replace(`${pathSep}index`, '')
-            .replace(/\d+-/g, '')
+            .replace(/\d{2,}-/g, '')
             .replace(/\/$/, '')
             .split(pathSep)
             .slice(0, parent.name === 'index' ? undefined : -1)
@@ -42,7 +42,7 @@ module.exports = function plugin(
       if (/^..\\/.test(newUrl)) {
         //Code specifically for local run, to fix broken links on
         let newUrl2 = path.resolve(
-          markdownNode.fields.slug.replace(/(\/.+)\/.*/, '$1').replace(/\/\d+-/g, '/'),
+          markdownNode.fields.slug.replace(/(\/.+)\/.*/, '$1').replace(/\/\d{2,}-/g, '/'),
           node.url
         )
 

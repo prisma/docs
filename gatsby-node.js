@@ -98,7 +98,7 @@ exports.createPages = ({ graphql, actions }) => {
             node.frontmatter.langSwitcher.forEach(lang =>
               node.frontmatter.dbSwitcher.forEach(db =>
                 createPage({
-                  path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${lang}-${db}`,
+                  path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}-${db}`,
                   component: path.resolve(`./src/layouts/articleLayout.tsx`),
                   context: {
                     id: node.fields.id,
@@ -111,7 +111,7 @@ exports.createPages = ({ graphql, actions }) => {
           } else {
             node.frontmatter.langSwitcher.forEach(lang =>
               createPage({
-                path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${lang}`,
+                path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}`,
                 component: path.resolve(`./src/layouts/articleLayout.tsx`),
                 context: {
                   id: node.fields.id,
@@ -126,7 +126,7 @@ exports.createPages = ({ graphql, actions }) => {
         if (node.frontmatter.dbSwitcher && !node.frontmatter.langSwitcher) {
           node.frontmatter.dbSwitcher.forEach(db =>
             createPage({
-              path: `${node.fields.modSlug.replace(/\d+-/g, '')}-${db}`,
+              path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${db}`,
               component: path.resolve(`./src/layouts/articleLayout.tsx`),
               context: {
                 id: node.fields.id,
@@ -137,7 +137,7 @@ exports.createPages = ({ graphql, actions }) => {
           )
         }
         createPage({
-          path: node.fields.modSlug ? node.fields.modSlug.replace(/\d+-/g, '') : '/',
+          path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
           component: path.resolve(`./src/layouts/articleLayout.tsx`),
           context: {
             id: node.fields.id,

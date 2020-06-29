@@ -53,7 +53,7 @@ const handleRawBody = node => {
     slug: rest.modSlug,
     heading: fSection.heading,
     content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
-    path: `${rest.modSlug.replace(/\d+-/g, '')}${getTitlePath(fSection)}`,
+    path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
   }))
 
   return records
