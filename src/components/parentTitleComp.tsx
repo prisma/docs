@@ -36,7 +36,13 @@ const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
       {parentTitle.length > 0
         ? parentTitle.map((part: any, index: number) => (
             <span key={index}>
-              {part.link && !nonLink ? <Link to={part.link}>{part.title} </Link> : part.title}
+              {part.link && !nonLink ? (
+                <Link to={part.link}>
+                  <span dangerouslySetInnerHTML={{ __html: part.title }} />{' '}
+                </Link>
+              ) : (
+                <span dangerouslySetInnerHTML={{ __html: part.title }} />
+              )}
               {parentTitle.length !== index + 1 ? ' / ' : ''}
             </span>
           ))
