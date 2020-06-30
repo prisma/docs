@@ -217,16 +217,16 @@ const TreeNode = ({
           id={withPrefix(url)}
         >
           {hasExpandButton ? (
-            <span className="collapse-title" onClick={collapse}>
+            <span className="collapse-title" onClick={collapse} >
               <button aria-label="collapse" className="item-collapser" onClick={justExpand}>
                 {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />
               </button>
-              {title}
+              <span dangerouslySetInnerHTML={{ __html: title }}/>{/* {title} */}
             </span>
           ) : (
-            <span>{title}</span>
+            <span dangerouslySetInnerHTML={{ __html: title }}/>
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag small">Experimental</span>}
