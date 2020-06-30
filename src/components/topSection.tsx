@@ -19,7 +19,7 @@ const TopSectionWrapper = styled.div`
 
 const MainTitle = styled.h1`
   font-family: 'Montserrat';
-  font-size: 2rem;
+  font-size: 2rem !important;
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;
@@ -139,7 +139,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
   return (
     <TopSectionWrapper>
       <ParentTitle slug={slug} />
-      <MainTitle>{title}</MainTitle>
+      <MainTitle dangerouslySetInnerHTML={{ __html: title }} />
       <div className="tech-switch-block">
         {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
           <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
