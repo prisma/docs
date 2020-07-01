@@ -119,13 +119,14 @@ It should print the following output:
 
 ```
 $ npx prisma init
+                
 
 ✔ Your Prisma schema was created at prisma/schema.prisma.
   You can now open it in your favorite editor.
 
 Next steps:
-1. Set the provider of the datasource block in schema.prisma to match your database: postgresql, mysql or sqlite.
-2. Set the DATABASE_URL in the .env file to point to your existing database. If your database has no tables yet, read https://pris.ly/d/getting-started.
+1. Set the DATABASE_URL in the .env file to point to your existing database. If your database has no tables yet, read https://pris.ly/d/getting-started.
+2. Set the provider of the datasource block in schema.prisma to match your database: postgresql, mysql or sqlite.
 3. Run prisma introspect to turn your database schema into a Prisma data model.
 4. Run prisma generate to install Prisma Client. You can then start querying your database.
 
@@ -154,7 +155,7 @@ generator client {
 }
 ```
 
-With Prisma 1, you specify which language variant of the Prisma client you wanted to use in your `prisma.yml`. With Prisma 2.0, this information is now also contained inside the Prisma schema via a `generator` block. 
+With Prisma 1, you specify which language variant of the Prisma client you wanted to use in your `prisma.yml`. With Prisma 2.0, this information is now specified inside the Prisma schema via a `generator` block. 
 
 > **Note**: Unlike Prisma 1, the TypeScript and JavaScript variants of Prisma Client 2.0 use the _same_ generator called `prisma-client-js`. The generated types in `index.d.ts` are _always_ included, even in plain JavaScript projects. This enables feature like autocompletion in VS Code even when not using TypeScript.
 
@@ -479,7 +480,7 @@ For the above Prisma 1 datamodel, this results in the following Prisma 2.0 schem
 
 ```prisma
 model User {
-  id       String    @id
+  id       String    @default(cuid()) @id
   email    String?   @unique
   name     String
   role     String
@@ -489,7 +490,7 @@ model User {
 }
 
 model Post {
-  id        String     @id
+  id        String     @default(cuid()) @id
   createdAt DateTime
   updatedAt DateTime
   title     String
@@ -500,14 +501,14 @@ model Post {
 }
 
 model Profile {
-  id   String  @id
+  id   String  @default(cuid()) @id
   bio  String?
   user String?
   User User?   @relation(fields: [user], references: [id])
 }
 
 model Category {
-  id   String @id
+  id   String @default(cuid()) @id
   name String
   Post Post[] @relation(references: [id])
 }
@@ -515,7 +516,6 @@ model Category {
 
 While this is already a valid Prisma 2.0 schema, it lacks a number of _features_ that were part of its Prisma 1 equivalent:
 
-- no auto-generated default CUID values for `@id` fields
 - no auto-generated date values for the `createdAt` and `updatedAt` fields on `Post`
 - no default value for the `role` field on `User`
 - no default value for the `published` field on `Post`
@@ -551,7 +551,11 @@ During the first phase, it will generate and print a number of SQL statements th
 
 During the second phase, you don't need to do anything manually. The Upgrade CLI will make changes to your Prisma schema by adding certain Prisma-level attributes (like `@default(cuid))` or `@updatedAt`), adjusting the names of relation fields to match the ones from your Prisma 1 datamodel and ensure 1-1-relations that were required on both sides in your Prisma 1 datamodel are also required in the Prisma 2.0 schema.
 
-Note that you can start over at any time during the process and go back from the second to the first phase.
+Note that **you can start over at any time during the process** and go back from the second to the first phase.
+
+In this illustration, the green area shows the first phase, the blue area shows the second phase. Note that you can optionally run `prisma introspect` in between the phases to update your Prisma data model:
+
+![](https://imgur.com/bsFu8HD.png)
 
 To use the Upgrade CLI, you can either install it locally in your project, or invoke it once without installation using `npx` as done here:
 
@@ -610,39 +614,54 @@ Press the <kbd>Y</kbd> button, then confirm by hitting <kbd>RETURN</kbd> on your
 Once you confirmed, the CLI outputs the SQL statements you should be running against your database:
 
 ```
+➤ Adjust your database schema
 Run the following SQL statements against your database:
 
-  Turn the columns string type into a enum type for Enum fields
+  Fix columns with ENUM data types
   https://pris.ly/d/schema-incompatibilities#enums-are-represented-as-text-in-database
 
-    CREATE TYPE "demo1$dev"."Role" AS ENUM ('ADMIN', 'CUSTOMER');
-ALTER TABLE "demo1$dev"."User" ALTER COLUMN "role" SET DATA TYPE "demo1$dev"."Role" using "role"::"demo1$dev"."Role";
-
-
-  Fixing columns with JSON data types
-  https://pris.ly/d/schema-incompatibilities#json-type-is-represented-as-text-in-database
-
-    ALTER TABLE "demo1$dev"."User" ALTER COLUMN "jsonData" SET DATA TYPE JSONB USING "jsonData"::TEXT::JSONB;
+    CREATE TYPE "dr4$dev"."Role" AS ENUM ('ADMIN', 'CUSTOMER');
+    ALTER TABLE "dr4$dev"."User" ALTER COLUMN "role" SET DATA TYPE "dr4$dev"."Role" using "role"::"dr4$dev"."Role";
 
 
   Add missing `DEFAULT` constraints to the database
   https://pris.ly/d/schema-incompatibilities#default-values-arent-represented-in-database
 
-    ALTER TABLE "demo1$dev"."Post" ALTER COLUMN "published" SET DEFAULT false;
+    ALTER TABLE "dr4$dev"."User" ALTER COLUMN "role" SET DEFAULT 'CUSTOMER';
+    ALTER TABLE "dr4$dev"."Post" ALTER COLUMN "published" SET DEFAULT false;
 
 
-      If you executed one or more of the above SQL statements against your database,
-      please run the following two commands:
+  Fix columns with JSON data types
+  https://pris.ly/d/schema-incompatibilities#json-type-is-represented-as-text-in-database
 
-        1. Run `npx prisma introspect` again to refresh your Prisma 2 schema.
-        2. Run `npx prisma-upgrade` again.
+    ALTER TABLE "dr4$dev"."User" ALTER COLUMN "jsonData" SET DATA TYPE JSONB USING "jsonData"::TEXT::JSONB;
 
-      If you can't or don't want to execute the remaining SQL statements right now, you can
-      skip to the last step where the Upgrade CLI adds missing attributes to your Prisma 2
-      schema that are not picked up by introspection.
 
-        1. Run `prisma introspect` again to refresh your Prisma 2.0 schema.
-        2. Run `prisma-upgrade` again.
+  Replicate `@createdAt` behavior in Prisma 2.0
+  https://pris.ly/d/schema-incompatibilities#createdat-isnt-represented-in-database
+
+    ALTER TABLE "dr4$dev"."Post" ALTER COLUMN "createdAt" SET DEFAULT CURRENT_TIMESTAMP;
+
+
+  Fix 1-1 relations by adding `UNIQUE` constraints
+  https://pris.ly/d/schema-incompatibilities#inline-1-1-relations-are-recognized-as-1-n-missing-unique-constraint
+
+    ALTER TABLE "dr4$dev"."Profile" ADD UNIQUE ("user");
+
+
+
+➤ Next Steps
+
+After you executed one or more of the above SQL statements against your database,
+please run the following two commands to refresh your Prisma 2 Schema and check
+the changes.
+
+  1. Run `npx prisma introspect` again to refresh your Prisma 2 schema.
+  2. Run `npx prisma-upgrade` again.
+
+If you can't or don't want to execute the remaining SQL statements right now, you can
+skip to the last step where the Upgrade CLI adds missing attributes to your Prisma 2
+schema that are not picked up by introspection.
     
 Skip to the last step? [Y/n]? 
 ```
@@ -657,7 +676,7 @@ The shown SQL statements fall are categorized into five buckets, all aiming to r
 
 As a next step, you can start sending the SQL statements to your database. Note that all of these changes are non-breaking and you'll be able to continue using Prisma 1 side-by-side with Prisma 2.0.
 
-The next secions cover the different kinds of SQL statements to be sent to your database individually.
+The next sections cover the different kinds of SQL statements to be sent to your database individually.
 
 ### 5.1. Fix the database schema via plain SQL
 
@@ -673,7 +692,7 @@ In this case, two `DEFAULT` constraints are missing which are suggested by the t
 Add missing `DEFAULT` constraints to the database
 https://pris.ly/d/schema-incompatibilities#default-values-arent-represented-in-database
 
-  ALTER TABLE "demo1$dev"."Post" ALTER COLUMN "published" SET DEFAULT false;
+  ALTER TABLE "default$default"."Post" ALTER COLUMN "published" SET DEFAULT false;
 ```
 
 Note that you need to [adjust](https://github.com/prisma/upgrade/issues/14) these statements before running them against your database: The table names need to be specified in double quotes and prefixed with the schema name (which should be specified in double quotes as well):
@@ -781,7 +800,6 @@ Changing the column type to `JSON` will ensure that the field is properly recogn
 Go ahead and run this statement against your database now.
 
 ![](https://imgur.com/feI3ZUF.png)
-
 
 ### 5.1.5. Fix columns with ENUM data types
 
