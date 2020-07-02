@@ -6,9 +6,7 @@ metaDescription: 'A relation is a connection between two models in the Prisma sc
 
 ## Overview
 
-> **Note**: If you are upgrading from a Prisma 2.0 Preview version (e.g. `preview025`) and want to adopt the new relation syntax, be sure to check out the [release notes](https://github.com/prisma/prisma/releases) which contain concrete instructions for the upgrade process.
-
-A relation is a _connection_ between two models in the Prisma schema. For example, there is a one-to-many relation between `User` and `Post` because one user can have many blog posts. The following Prisma schema defines a one-to-many relation between `User` and `Post`. The fields involved in defining the relation are highlighted:
+A relation is a _connection_ between two models in the Prisma schema. For example, there is a one-to-many relation between `User` and `Post` because one user can have many blog posts. The following Prisma schema defines a one-to-many relation between the `User` and `Post` models. The fields involved in defining the relation are highlighted:
 
 ```prisma line-number
 model User {
@@ -23,22 +21,106 @@ model Post {
 }
 ```
 
-At a Prisma level, a relation is made up of:
+At a Prisma level, the `User` / `Post` relation is made up of:
 
-- Two [_relation fields_](#relation-fields): `author` and `posts`. Relation fields are used to define connections between models at the Prisma level and **do not exist in the database**.
-- The scalar `authorId` field. This field **does** exist in the database and represents the foreign key that connect a `Post` record to a `User` record.
+- Two [relation fields](#relation-fields): `author` and `posts`. Relation fields define connections between models at the Prisma level and **do not exist in the database**. These fields are used to generate the Prisma Client.
+- The scalar `authorId` field, which is referenced by the `@relation` attribute. This field **does exist in the database** - it is the foreign key that connects `Post` and `User`.
 
-The following diagram compares the Prisma schema and the original SQL database:
+At a Prisma level, a connection between two models is **always** represented by a [relation field](#relation-fields) on **each side** of the relation.
 
-![A side-by-side comparison of the Prisma schema and the database it was generated from.](prisma-schema/relations-intro.png)
+The following entity relationship diagram defines the same one-to-many relation between the `User` and `Post` tables in a database:
 
-In SQL, you use a _foreign key_ to create a relation between two tables. Foreign keys are stored on **one side** of the relation: each `Post` has an `authorId` (the foreign key), which references the `id` (a primary key) of a `User`.
+![A 1-n relationship between a user and posts table.](relations/one-to-many.png)
 
-At a Prisma level, a connection between two models is **always** represented by a [relation field](#relation-fields) on each side of the relation.
+In SQL, you use a _foreign key_ to create a relation between two tables. Foreign keys are stored on **one side** of the relation. Our example is made up of:
 
-## Example
+- A foreign key column in the `Post` table named `authorId`.
+- A primary key column in the `User` table named `id`. The `authorId` column in the `Post` table references the `id` column in the `User` table.
 
-The examples on this page are based on the following schema file:
+In the Prisma schema, the foreign key / primary key relationship is represented by the `@relation` attribute on the `author` field:
+
+```prisma
+author     User        @relation(fields: [authorId], references: [id])
+```
+
+> **Note**: Relations in the Prisma schema represents relationships that exist between tables in the database. If the relationship does not exist in the database, it does not exist in the Prisma schema.
+
+### Relations in the Prisma Client
+
+The Prisma Client is generated from the Prisma schema. The following examples demonstrate how relations manifest when you use the Prisma Client to get, create, and update records.
+
+The following query creates a `User` record and two connected `Post` records:
+
+```ts
+const userAndPosts = await prisma.user.create({
+  data: {
+    posts: {
+      create: [
+        { title: 'Prisma Day 2020' }, // Populates authorId with user's id
+        { title: 'How to write a Prisma schema' }, // Populates authorId with user's id
+      ],
+    },
+  },
+})
+```
+
+In the underlying database, this query:
+
+1. Creates a `User` with an auto-generated `id` (for example, `20`)
+2. Creates two new `Post` records and sets the `authorId` of both records to `20`
+
+The following example retrieves a `User` by `id` and includes any related `Post` records:
+
+```ts
+const getAuthor = await prisma.post.findOne({
+  where: {
+    id: "20",
+  },
+  include: {
+|    posts: true, // All posts where authorId == 20
+  },
+});
+```
+
+In the underlying database, this query:
+
+1. Retrieves the `User` record with an `id` of `20`
+2. Retrieves all `Post` records with an `authorId` of `20`
+
+The following query associates an existing `Post` record with an existing `User` record:
+
+```ts
+const updateAuthor = await prisma.user.update({
+  where: {
+    id: 20,
+  },
+  data: {
+    posts: {
+      connect: {
+        id: 4,
+      },
+    },
+  },
+})
+```
+
+In the underlying database, this query:
+
+1. Sets the `authorId` to `20` on the `Post` record where the `id` is `4`
+
+## Types of relations
+
+There are three different types (or [cardinalities](<https://en.wikipedia.org/wiki/Cardinality_(data_modeling)>)) of relations in Prisma:
+
+- [One-to-one](one-to-one) (also called 1-1-relation)
+- [One-to-many](one-to-many) (also called 1-n-relation)
+- [Many-to-many](many-to-may) (also called m-n-relation)
+
+The following Prisma schema includes every type of relation:
+
+- 1-1: `User` ↔ `Profile`
+- 1-n: `User` ↔ `Post`
+- m-n: `Post` ↔ `Category`
 
 ```prisma
 model User {
@@ -68,21 +150,11 @@ model Category {
 
 > **Note**: This schema is the same as the [example data model](data-model#example) but has all [scalar fields](data-model#scalar-types) removed (except for the required [relation scalars](#annotated-relation-fields-and-relation-scalar-fields)) so you can focus on the [relation fields](#relation-fields).
 
+The following entity relationship diagram represents the database that correponds to the sample Prisma schema:
+
+![The sample schema as an entity relationship diagram](relations/sample-schema.png)
+
 ## Terminology
-
-### Cardinality
-
-There are three different [cardinalities](<https://en.wikipedia.org/wiki/Cardinality_(data_modeling)>) of relations in Prisma:
-
-- One-to-one (also called 1-1-relation)
-- One-to-many (also called 1-n-relation)
-- Many-to-many (also called m-n-relation)
-
-In the example above, there are the following relations:
-
-- 1-1: `User` ↔ `Profile`
-- 1-n: `User` ↔ `Post`
-- m-n: `Post` ↔ `Category`
 
 ### Relation fields
 
