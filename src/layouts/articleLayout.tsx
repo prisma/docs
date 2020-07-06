@@ -18,7 +18,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const {
     mdx: {
       fields: { slug, modSlug },
-      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher, toc },
+      frontmatter: { title, metaTitle, metaDescription, langSwitcher, dbSwitcher, toc, tocDepth },
       body,
       parent,
       tableOfContents,
@@ -29,7 +29,6 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   } = data
 
   const navigate = useNavigate()
-
   return (
     <Layout {...props}>
       <SEO title={metaTitle || title} description={metaDescription || title} />
@@ -42,6 +41,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           dbSwitcher={dbSwitcher}
           navigate={navigate}
           toc={toc || toc == null ? tableOfContents : []}
+          tocDepth={tocDepth}
         />
       </section>
       <MDXRenderer>{body}</MDXRenderer>
@@ -70,7 +70,7 @@ export const query = graphql`
           relativePath
         }
       }
-      tableOfContents
+      tableOfContents(maxDepth: 3)
       frontmatter {
         title
         metaTitle
@@ -78,6 +78,7 @@ export const query = graphql`
         langSwitcher
         dbSwitcher
         toc
+        tocDepth
       }
     }
   }
