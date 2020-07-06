@@ -59,16 +59,24 @@ const updatedPost: Post = await prisma.post.update({
 })
 ```
 
-## Future transaction support in Prisma Client
+## Bulk operations (experimental)
 
-Transactions are a commonly used feature in relational as well as non-relational databases and Prisma Client might support more transaction mechanisms in the future. Specifically, the following two use cases might be supported:
+### Pre-requisites
 
-- Sending multiple operations in bulk
-- Enabling longer-running transactions where operations can depend on each other
+You must activate the `transactionApi` feature flag in your `schema.prisma` file as follows:
 
-### Bulk operations
+```
+generator client {
+  provider = "prisma-client-js"
+  experimentalFeatures = ["transactionApi"]
+}
+```
 
-The first use case of sending multiple operations in bulk could be implemented with an API similar to this:
+Once done, generate the client using `npx prisma generate`.
+
+### The `transaction` API
+
+The following example will execute multiple operations within a transaction:
 
 ```ts
 const write1 = prisma.user.create()
@@ -80,27 +88,6 @@ await prisma.transaction([write1, write2, write3])
 
 Instead of immediately awaiting the result of each operation when it's performed, the operation itself is stored in a variable first which later is submitted to the database via a method called `transaction`. Prisma Client will ensure that either all three `create`-operations or none of them succeed.
 
-### Long-running transactions
-
-The second use case of longer-running transactions where operations can depend on each other is a bit more involved. Prisma Client would need to expose a _transaction API_ which enables developers to initiate and commit a transaction themselves while Prisma Client takes care of ensuring the safety guarantees associated with transactions. It could look similar to this:
-
-```ts
-prisma.transaction(async tx => {
-  const user = await tx.users.create({
-    data: { email: 'alice@prisma.io' },
-  })
-  const order = await tx.orders.create({
-    data: {
-      customer: {
-        connect: { id: user.id },
-      },
-    },
-  })
-  await tx.commit()
-})
-```
-
-In this case, the API provides a way to wrap a sequence of operations in a callback which gets executed as a transaction, therefore is guaranteed to either succeed or fail as a whole.
 
 ### Join the conversation on GitHub
 
