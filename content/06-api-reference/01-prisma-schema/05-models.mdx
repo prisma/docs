@@ -1,0 +1,222 @@
+---
+title: 'Models'
+metaTitle: 'Models (Reference)'
+metaDescription: 'Learn about defining your application models with Prisma. Models represent tables in the database and serve as the foundation for generated Prisma Client queries.'
+---
+
+## Overview
+
+This is an extension of the [Data model](data-model) page that discusses _models_ in the data model definition in detail.
+
+Models represent the entities of your application domain. They are defined using `model` blocks in the data model. In the [example data model](data-model#example), `User`, `Profile`, `Post` and `Category` are models. Here's the `User` model from the example for reference:
+
+```prisma
+model User {
+id Int @id @default(autoincrement())
+createdAt DateTime @default(now())
+email String @unique
+name String?
+role Role @default(USER)
+posts Post[]
+profile Profile?
+}
+```
+
+On a technical level, a model maps to the underlying structures of the data source, e.g.:
+
+- In PostgreSQL, a model maps to a _table_
+- In MySQL, a model maps to a _table_
+- In SQLite, a model maps to a _table_
+
+> **Note**: In the future there might be connectors for non-relational databases and other data sources. For example, for MongoDB a model would map to a _collection_, for a REST API it would map to a _resource_.
+
+## Naming models
+
+Model names must start with a letter. They are are typically spelled in [PascalCase](http://wiki.c2.com/?PascalCase) and use the singular form (e.g. `User` instead of `user`, `users` or `Users`).
+
+Technically, a model can be named anything that adheres to this regular expression:
+
+```
+[A-Za-z][A-Za-z0-9_]*
+```
+
+Note that naming conventions in databases wildly differ. A common approach for naming tables in databases is to use plural form and [snake_case](https://en.wikipedia.org/wiki/Snake_case) notation, e.g. `users`. When introspecting a database where a table is called `users`, you'll end up with a model looking similar to this:
+
+```prisma
+model users {
+  id          Int     @id @default(autoincrement())
+  first_name  String
+  // more fields ...
+}
+```
+
+In this case, the naming convention of the Prisma schema is violated. However, you can still adhere to the naming convention without renaming the underlying `users` table in the database by using the `@@map` attribute:
+
+```prisma
+model User {
+  id          Int     @id @default(autoincrement())
+  first_name  String
+  // more fields ...
+
+  @@map(name: "users")
+}
+```
+
+With this model definition, Prisma automatically maps the `User` model to the `users` table in the underlying database. Note that you can also map column names to field names using `@map`:
+
+```prisma
+model User {
+  id          Int     @id @default(autoincrement())
+  firstName  String   @map(name: "first_name")
+  // more fields ...
+
+  @@map(name: "users")
+}
+```
+
+`@@map` and `@map` are often used to [configure your Prisma Client API](../prisma-client/configuring-the-prisma-client-api) by decoupling it from the naming of tables and columns in the underlying database.
+
+## Fields
+
+The properties of a model are called _fields_. Fields map to _columns_ and consist of several parts:
+
+- [Name](#naming-fields)
+- [Type](#field-types)
+- [Type modifier](#type-modifiers) (optional)
+- [Attributes](data-model#attributes) (optional)
+
+Here's an overview of these for the fields from the `User` model [above](models#overview:
+
+| Name        | Type       | Scalar vs Relation | Type modifier | Attributes                            |
+| :---------- | :--------- | :----------------- | :------------ | :------------------------------------ |
+| `id`        | `Int`      | Scalar             | -             | `@id` and `@default(autoincrement())` |
+| `createdAt` | `DateTime` | Scalar             | -             | `@default(now())`                     |
+| `email`     | `String`   | Scalar             | -             | `@unique`                             |
+| `name`      | `String`   | Scalar             | `?`           | -                                     |
+| `role`      | `Role`     | Scalar (enum)      | -             | `@default(USER)`                      |
+| `posts`     | `Post`     | Relation (virtual) | `?`           | -                                     |
+| `profile`   | `Profile`  | Relation (virtual) | `[]`          | -                                     |
+
+### Naming fields
+
+Field names _must_ start with a letter and are typically spelled in [camelCase](http://wiki.c2.com/?CamelCase).
+
+Technically, a field can be named anything that adheres to this regular expression:
+
+```
+[A-Za-z][A-Za-z0-9_]*
+```
+
+### Field types
+
+#### Scalar fields vs relation fields
+
+The type of a field determines its _structure_. A type falls in either of two categories:
+
+- [Scalar type](data-model#scalar-types) (includes [enums](data-model#enums))
+- Model (the field is then called [relation field](relations#relation-fields))
+
+Prisma supports the following scalar types:
+
+- `Int`
+- `Float`
+- `String`
+- `Boolean`
+- `DateTime`
+- `Json`
+- `enum` definitions
+
+### Type modifiers
+
+The type of a field can be modified by appending either of two modifiers:
+
+- `[]`: Make a field a **list**
+- `?`: Make a field **optional**
+
+In the main example above, the field `name` on the `User` model is _optional_ and the `posts` relation field is a _list_.
+
+Note that you can not combine the list and optional modifiers on the same field. So, the following would be illegal in Prisma:
+
+```prisma
+model User {
+  id    Int      @id @default(autincremenent())
+  posts Post[]?  // 🚨🚓
+}
+```
+
+#### Lists
+
+When annotated with the `[]` type modifier, a field becomes a list. This means it can hold multiple elements of the specified type.
+
+> **Note**: Scalar lists (arrays) are only supported in the data model if your database natively supports them. Currently, scalar lists are therefore only supported when using PostgreSQL (since MySQL and SQLite don't natively support scalar lists).
+
+#### Optional vs required
+
+When **not** annotating a field with the `?` type modifier, the field will be _required_ on every record of the model. This has effects on two levels:
+
+- **Database**: Required fields are represented via `NOT NULL` constraints in the underlying database.
+- **Prisma Client**: Prisma Client's generated [TypeScript types](#type-definitions) that represent the models in your application code will also define these fields as required to ensure they always carry values at runtime.
+
+### Model attributes
+
+A field of a model can have one or more _attributes_ which modify the behaviour of the field. Field attributes are always prefixed with a single `@`, model attributes which are prefixed with `@@`). You can find an overview of all available attributes on the [Data model](data-model) page.
+
+## Models in Prisma Client
+
+### Queries (CRUD)
+
+Every model in the data model definition will result in a number of CRUD queries in the generated [Prisma Client API](../prisma-client/api):
+
+- `findMany`
+- `findOne`
+- `create`
+- `update`
+- `upsert`
+- `delete`
+- `updateMany`
+- `deleteMany`
+
+The operations are accessible via a generated property on the Prisma Client instance. By default the name of the property is the lowercase form of the model name, e.g. `user` for a `User` model or `post` for a `Post` model.
+
+Here is an example illustrating the use of a `user` property from the Prisma Client API:
+
+```js
+const newUser = await prisma.user.create({
+  data: {
+    name: 'Alice',
+  },
+})
+const allUsers = await prisma.user.findMany()
+```
+
+### Type definitions
+
+Prisma Client not only provides a query API for models, it also generates type definitions that reflect your model structures. These are part of the generated [`@prisma/client`](../prisma-client/generating-prisma-client#the-prismaclient-npm-package) node module in a file called `index.d.ts`.
+
+When using TypeScript, these type definitions ensure that all your database queries are entirely type safe and validated at compile-time (even partial queries using [`select`](../prisma-client/field-selection#select) or [`include`](../prisma-client/field-selection#include)).
+
+Even when using plain JavaScript, the type definitions are still included in the `@prisma/client` node module, enabling features like [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense)/autocompletion in your editor.
+
+> **Note**: The actual types are stored in the `.prisma/client` folder. `@prisma/client/index.d.ts` exports the contents of this folder.
+
+For example, the type definition for the `User` model from above would look as follows:
+
+```ts
+export type User = {
+  id: number
+  email: string
+  name: string | null
+  role: string
+}
+```
+
+Note that the relation fields `posts` and `profile` are not included in the type definition by default. However, if you need variations of the `User` type you can still define them using some of [Prisma Client's generated helper types](../prisma-client/generating-prisma-client) (in this case, these helper types would be called `UserGetIncludePayload` and `UserGetSelectPayload`).
+
+### Requirements
+
+- Prisma currently requires every record of a model to be _uniquely_ identifiable. This means that you need to define _at least_ one `@unique`, `@@unique`, `@id` or `@@id` attribute per model.
+- Prisma only supports models that are named according to this regular expression:
+  ```
+  [A-Za-z_][A-Za-z0-9_]*
+  ```
+  If your model name was generated from introspection and doesn't adhere to this naming convention, you can use the `@@map` attribute to define a valid Prisma model name and map it to the non-allowed model name in your database.

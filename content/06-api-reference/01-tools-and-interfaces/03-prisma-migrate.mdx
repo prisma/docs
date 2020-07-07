@@ -1,0 +1,233 @@
+---
+title: 'Prisma Migrate'
+metaTitle: 'Prisma Migrate (Reference)'
+metaDescription: 'Prisma Migrate is a declarative data modeling and schema migration tool that is available via the Prisma CLI.'
+experimental: true
+---
+
+## Overview
+
+Prisma Migrate is a tool that lets you _change your database schema_, e.g. by creating new tables or adding columns to existing tables. These changes are called _schema migrations_. Prisma Migrate is available as part of the [Prisma CLI](prisma-cli/installation) via the `prisma migrate` command.
+
+**Prisma Migrate is currently in an experimental state.** This means that it is not recommended to use Prisma Migrate in production. Instead, you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](introspection).
+
+## Prisma Migrate vs SQL migrations
+
+Prisma Migrate is a _declarative_ migration system, as opposed to SQL which can be considered _imperative_:
+
+- **SQL (imperative)**: Provide the individual _steps_ to get from the current schema to the desired schema.
+- **Prisma Migrate (declarative)**: Define the desired schema as a [Prisma data model](prisma-schema/data-model) (Prisma Migrate takes care of generating the necessary _steps_).
+
+Here's a quick comparison. Assume you have the following scenario:
+
+1. You need to create the `User` table to store user information (name, email, ...)
+1. Create two new tables `Post` and `Profile` with foreign keys to `User`
+1. Add a new column with a default value to the `Post` table
+
+### SQL
+
+In SQL, you'd have to send three subsequent SQL statements to account for this scenario:
+
+**1. Create the `User` table to store user information (name, email, ...)**
+
+```sql
+CREATE TABLE "User" (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255) NOT NULL
+);
+```
+
+**2. Create two new tables `Post` and `Profile` with foreign keys to `User`**
+
+```sql
+CREATE TABLE "Profile" (
+    id SERIAL PRIMARY KEY,
+    bio TEXT NOT NULL,
+    "user" integer NOT NULL UNIQUE,
+    FOREIGN KEY ("user") REFERENCES "User"(id)
+);
+CREATE TABLE "Post" (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author integer NOT NULL,
+    FOREIGN KEY (author) REFERENCES "User"(id)
+);
+```
+
+**3. Add a new column with a default value to the `Post` table**
+
+```sql
+ALTER TABLE "Post"
+ADD COLUMN published BOOLEAN DEFAULT false;
+```
+
+### Prisma Migrate
+
+With Prisma Migrate, you write the desired database schema in the form of a [Prisma data model](prisma-schema/data-model) inside your [Prisma schema file](prisma-schema/prisma-schema-file). To map the data model to your database schema, you then have to run these two commands:
+
+```
+prisma migrate save --experimental
+prisma migrate up --experimental
+```
+
+The first command _saves_ a new migration to the `prisma/migrations` directory in the file system of your project and updates the `_Migration` table in your database. Each time you run this command to save a new migration, it creates a dedicated directory inside of `prisma/migrations` for that specific migration, which will have its own `README.md` file containing detailed information about the migration (e.g. the generated SQL statements which will be executed when you run `prisma migrate up`).
+
+The second command _executes_ the migration against your database.
+
+**1. Create the `User` table to store user information (name, email, ...)**
+
+Add the model to your Prisma schema:
+
+```prisma
+model User {
+  id     Int      @id @default(autoincrement())
+  name   String?
+  email  String   @unique
+}
+```
+
+Now run the two commands mentioned above:
+
+```
+prisma migrate save --experimental
+prisma migrate up --experimental
+```
+
+**2. Create two new tables `Post` and `Profile` with foreign keys to `User`**
+
+Add two models with [relation fields](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-schema/relations#relation-fields) to your Prisma schema:
+
+```prisma
+model User {
+  id       Int       @id @default(autoincrement())
+  name     String?
+  email    String    @unique
+  posts    Post[]
+  profile  Profile?
+}
+
+model Profile {
+  id   Int    @id @default(autoincrement())
+  bio  String
+  user User
+}
+
+model Post {
+  id      Int     @id @default(autoincrement())
+  title   String
+  author  User
+}
+```
+
+Notice that in addition to the [annotated relation fields](prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) and its relation scalar field (which represent the foreign keys), you must also specify the Prisma-level [relation fields](prisma-schema/relations#relation-fields) on the other side of the relation.
+
+Now run the two commands mentioned above:
+
+```
+prisma migrate save --experimental
+prisma migrate up --experimental
+```
+
+**3. Add a new column with default value to the `Post` table**
+
+Add a [field](prisma-schema/models#fields) to the `Post` model:
+
+```prisma
+model User {
+  id       Int       @id @default(autoincrement())
+  name     String?
+  email    String    @unique
+  posts    Post[]
+  profile  Profile?
+}
+
+model Profile {
+  id   Int    @id @default(autoincrement())
+  bio  String
+  user User
+}
+
+model Post {
+  id         Int      @id @default(autoincrement())
+  title      String
+  published  Boolean  @default(false)
+  author     User
+}
+```
+
+Now run the two commands mentioned above:
+
+```
+prisma migrate save --experimental
+prisma migrate up --experimental
+```
+
+## Supported operations
+
+The following table shows which SQL operations are currently supported by Prisma Migrate. If an operation is not yet supported, it links to a workaround that uses plain SQL and [introspection](introspection) to enable this feature in Prisma Client.
+
+| Operation                           | SQL                             |                                      Supported                                       |
+| :---------------------------------- | :------------------------------ | :----------------------------------------------------------------------------------: |
+| Create a new table                  | `CREATE TABLE`                  |                                          ✔️                                          |
+| Rename an existing table            | `ALTER TABLE` + `RENAME`        |                           Not yet (workaround coming soon)                           |
+| Delete an existing table            | `DROP TABLE`                    |                                          ✔️                                          |
+| Add a column to an existing table   | `ALTER TABLE` + `ADD COLUMN`    |                                          ✔️                                          |
+| Rename an existing column           | `ALTER TABLE` + `RENAME COLUMN` |                           Not yet (workaround coming soon)                           |
+| Delete an existing column           | `ALTER TABLE` + `DROP COLUMN`   |                                          ✔️                                          |
+| Set primary keys ([IDs]())          | `PRIMARY KEY`                   |                                          ✔️                                          |
+| Define [relations]() (foreign keys) | `FOREIGN KEY` + `REFERENCES`    |                                          ✔️                                          |
+| Make columns [optional/required]()  | `NOT NULL`                      |                                          ✔️                                          |
+| Set [unique constraints]()          | `UNIQUE`                        |                                          ✔️                                          |
+| Set [default]() values              | `DEFAULT`                       |                                          ✔️                                          |
+| Define [enums]()                    | `ENUM`                          |                                          ✔️                                          |
+| Create [indexes]()                  | `CREATE INDEX`                  |                                          ✔️                                          |
+| Cascading deletes                   | `ON DELETE`                     | Not yet ([workaround](../../guides/database-workflows/cascading-deletes/postgresql)) |
+| Cascading updates                   | `ON UPDATE`                     |                           Not yet (workaround coming soon)                           |
+| Data validation                     | `CHECK`                         |  Not yet ([workaround](../../guides/database-workflows/data-validation/postgresql))  |
+
+Note that this table assumes that the operation is also supported by the underlying database. For example, `ENUM` is not supported in SQLite. This means that you also can't use `enum` when using Prisma Migrate.
+
+## Migration history
+
+Prisma Migrate stores the migration history of your project in two places:
+
+- A directory called `migrations` on your file system
+- A table called `_Migration` in your database
+
+### The `migrations` directory
+
+The `migrations` directory stores information about the migrations that have been or will be executed against your database. You should never make any manual changes to the files in `migrations`. The only way to change the content of this directory should be using the `prisma migrate save` command.
+
+The `migrations` directory should be checked into version control (e.g. Git).
+
+### The `_Migration` table
+
+The `_Migration` table additionally stores information about each migration that was ever executed against the database by Prisma Migrate.
+
+## Typical workflow
+
+With **Prisma Migrate**, the workflow looks slightly different:
+
+1. Manually adjust your [Prisma data model](prisma-schema/data-model)
+1. Migrate your database using the `prisma migrate` CLI commands
+1. (Re-)generate Prisma Client
+1. Use Prisma Client in your application code to access your database
+
+![](https://imgur.com/OImder6.png)
+
+## Troubleshooting
+
+Since Prisma Migrate is currently experimental, you might end up in a state where the `migrations` directory and/or the `_Migrations` table are out of sync with the actual state of the database. In these cases, it often helps to "reset" Prisma Migrate by deleting the `migrations` folder and deleting all entries from the `_Migration` table.
+
+### Delete the `migrations` directory
+
+```
+rm -rf migrations
+```
+
+### Delete all entries from the `_Migration` table
+
+```sql
+TRUNCATE _Migration;
+```
