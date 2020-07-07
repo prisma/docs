@@ -13,21 +13,21 @@ const ChapterTitle = styled.h1`
   color: var(--list-bullet-color);
 `
 
-const TOC = ({ headings }: any) => {
-  let navItems: any[] = []
-  navItems =
+const TOC = ({ headings, tocDepth }: any) => {
+  const navItems = (headings: any[], depth: number) =>
     headings &&
     headings.map((heading: any, index: number) => {
       return (
         <li key={index}>
           <a href={heading.url}>{stringify(heading.title)}</a>
+          {(heading.items && heading.items.length > 0 && depth > 1) && navItems(heading.items, depth - 1)}
         </li>
       )
     })
   return navItems && navItems.length ? (
     <div>
       <ChapterTitle>CONTENT</ChapterTitle>
-      <ul className="list">{navItems}</ul>
+      <ul className="list">{navItems(headings, tocDepth || 1)}</ul>
     </div>
   ) : null
 }
