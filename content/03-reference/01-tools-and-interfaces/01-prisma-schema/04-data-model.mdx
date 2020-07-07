@@ -95,103 +95,204 @@ Depending on the use case, the data model is typically created in either of two 
 
 ## Models
 
-You can find information about models [here](models).
+Models represent the entities of your application domain. They are defined using `model` blocks in the data model. In the [example data model](data-model#example), `User`, `Profile`, `Post` and `Category` are models. Here's the `User` model from the example for reference:
 
-## Scalar types
+```prisma
+model User {
+id Int @id @default(autoincrement())
+createdAt DateTime @default(now())
+email String @unique
+name String?
+role Role @default(USER)
+posts Post[]
+profile Profile?
+}
+```
 
-You can use the following scalar types in the Prisma data model:
+On a technical level, a model maps to the underlying structures of the data source, e.g.:
 
-| Prisma Type | Description           |
-| ----------- | --------------------- |
-| `String`    | Variable length text  |
-| `Boolean`   | True or false value   |
-| `Int`       | Integer value         |
-| `Float`     | Floating point number |
-| `DateTime`  | Timestamp             |
-| `Json`      | A JSON object         |
+- In PostgreSQL, a model maps to a _table_
+- In MySQL, a model maps to a _table_
+- In SQLite, a model maps to a _table_
 
-The _data source connector_ determines what _native database type_ each of these types map to. Similarly, the _generator_ determines what _type in the target programming language_ each of these types map to.
+> **Note**: In the future there might be connectors for non-relational databases and other data sources. For example, for MongoDB a model would map to a _collection_, for a REST API it would map to a _resource_.
 
-Expand below to see the mappings per connector and generator.
+### Naming models
 
-<details><summary>Scalar mapping to connectors and generators</summary>
-<br />
+Model names must start with a letter. They are are typically spelled in [PascalCase](http://wiki.c2.com/?PascalCase) and use the singular form (e.g. `User` instead of `user`, `users` or `Users`).
 
-**Connectors**
-
-| Type       | PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
-| ---------- | ----------- | ----------- | --------- | --------- |
-| `String`   | `text`      | `TEXT`      | `TEXT`    | `string`  |
-| `Boolean`  | `boolean`   | `BOOLEAN`   | n/a       | `boolean` |
-| `Int`      | `integer`   | `INT`       | `INTEGER` | `number`  |
-| `Float`    | `real`      | `FLOAT`     | `REAL`    | `number`  |
-| `DateTime` | `timestamp` | `TIMESTAMP` | n/a       | n/a       |
-| `Json`     | `json` / `jsonb`      | `JSON`      | n/a       | `object`  |
-
-**Generators**
-
-| Type       | Prisma Client |
-| ---------- | ------------- |
-| `String`   | `string`      |
-| `Boolean`  | `boolean`     |
-| `Int`      | `number`      |
-| `Float`    | `number`      |
-| `DateTime` | `Date`        |
-| `JSON`     | `object`      |
-
-</details>
-
-## Enums
-
-You can define enums in your data model if they're supported by the [data source](data-sources) you use:
-
-- PostgreSQL: [Supported](https://www.postgresql.org/docs/9.1/datatype-enum.html)
-- MySQL: [Supported](https://dev.mysql.com/doc/refman/8.0/en/enum.html)
-- SQLite: Not supported
-
-Enums are considered [scalar](#scalar-types) types in the Prisma data model. They're therefore [by default](../prisma-client/field-selection#the-default-selection-set) included as return values in [Prisma Client queries](../prisma-client/crud).
-
-Enums are defined via the `enum` block.
-
-## Naming enums
-
-Enum names must start with a letter. They are typically spelled in [PascalCase](http://wiki.c2.com/?PascalCase) and use the singular form (e.g. `Role` instead of `role`, `roles` or `Roles`).
-
-Technically, an enum can be named anything that adheres to this regular expression:
+Technically, a model can be named anything that adheres to this regular expression:
 
 ```
 [A-Za-z][A-Za-z0-9_]*
 ```
 
-### Examples
-
-**Specify an `enum` with two possible values**
+Note that naming conventions in databases wildly differ. A common approach for naming tables in databases is to use plural form and [snake_case](https://en.wikipedia.org/wiki/Snake_case) notation, e.g. `users`. When introspecting a database where a table is called `users`, you'll end up with a model looking similar to this:
 
 ```prisma
-enum Role {
-  USER
-  ADMIN
-}
-
-model User {
-  id    Int   @id @default(autoincrement())
-  role  Role
+model users {
+  id          Int     @id @default(autoincrement())
+  first_name  String
+  // more fields ...
 }
 ```
 
-**Specify an `enum` with two possible values and set a default value**
+In this case, the naming convention of the Prisma schema is violated. However, you can still adhere to the naming convention without renaming the underlying `users` table in the database by using the `@@map` attribute:
 
 ```prisma
-enum Role {
-  USER
-  ADMIN
-}
-
 model User {
-  id    Int   @id @default(autoincrement())
-  role  Role  @default(USER)
+  id          Int     @id @default(autoincrement())
+  first_name  String
+  // more fields ...
+
+  @@map(name: "users")
 }
 ```
+
+With this model definition, Prisma automatically maps the `User` model to the `users` table in the underlying database. Note that you can also map column names to field names using `@map`:
+
+```prisma
+model User {
+  id          Int     @id @default(autoincrement())
+  firstName  String   @map(name: "first_name")
+  // more fields ...
+
+  @@map(name: "users")
+}
+```
+
+`@@map` and `@map` are often used to [configure your Prisma Client API](../prisma-client/configuring-the-prisma-client-api) by decoupling it from the naming of tables and columns in the underlying database.
+
+### Models in Prisma Client
+
+#### Queries (CRUD)
+
+Every model in the data model definition will result in a number of CRUD queries in the generated [Prisma Client API](../prisma-client/api):
+
+- `findMany`
+- `findOne`
+- `create`
+- `update`
+- `upsert`
+- `delete`
+- `updateMany`
+- `deleteMany`
+
+The operations are accessible via a generated property on the Prisma Client instance. By default the name of the property is the lowercase form of the model name, e.g. `user` for a `User` model or `post` for a `Post` model.
+
+Here is an example illustrating the use of a `user` property from the Prisma Client API:
+
+```js
+const newUser = await prisma.user.create({
+  data: {
+    name: 'Alice',
+  },
+})
+const allUsers = await prisma.user.findMany()
+```
+
+#### Type definitions
+
+Prisma Client not only provides a query API for models, it also generates type definitions that reflect your model structures. These are part of the generated [`@prisma/client`](../prisma-client/generating-prisma-client#the-prismaclient-npm-package) node module in a file called `index.d.ts`.
+
+When using TypeScript, these type definitions ensure that all your database queries are entirely type safe and validated at compile-time (even partial queries using [`select`](../prisma-client/field-selection#select) or [`include`](../prisma-client/field-selection#include)).
+
+Even when using plain JavaScript, the type definitions are still included in the `@prisma/client` node module, enabling features like [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense)/autocompletion in your editor.
+
+> **Note**: The actual types are stored in the `.prisma/client` folder. `@prisma/client/index.d.ts` exports the contents of this folder.
+
+For example, the type definition for the `User` model from above would look as follows:
+
+```ts
+export type User = {
+  id: number
+  email: string
+  name: string | null
+  role: string
+}
+```
+
+Note that the relation fields `posts` and `profile` are not included in the type definition by default. However, if you need variations of the `User` type you can still define them using some of [Prisma Client's generated helper types](../prisma-client/generating-prisma-client) (in this case, these helper types would be called `UserGetIncludePayload` and `UserGetSelectPayload`).
+
+### Model requirements
+
+- Prisma currently requires every record of a model to be _uniquely_ identifiable. This means that you need to define _at least_ one `@unique`, `@@unique`, `@id` or `@@id` attribute per model.
+- Prisma only supports models that are named according to this regular expression:
+  ```
+  [A-Za-z_][A-Za-z0-9_]*
+  ```
+  If your model name was generated from introspection and doesn't adhere to this naming convention, you can use the `@@map` attribute to define a valid Prisma model name and map it to the non-allowed model name in your database.
+
+## Fields
+
+The properties of a model are called _fields_. Fields map to _columns_ and consist of several parts:
+
+- [Name](#naming-fields)
+- [Type](#field-types)
+- [Type modifier](#type-modifiers) (optional)
+- [Attributes](data-model#attributes) (optional)
+
+Here's an overview of these for the fields from the `User` model [above](models#overview:
+
+| Name        | Type       | Scalar vs Relation | Type modifier | Attributes                            |
+| :---------- | :--------- | :----------------- | :------------ | :------------------------------------ |
+| `id`        | `Int`      | Scalar             | -             | `@id` and `@default(autoincrement())` |
+| `createdAt` | `DateTime` | Scalar             | -             | `@default(now())`                     |
+| `email`     | `String`   | Scalar             | -             | `@unique`                             |
+| `name`      | `String`   | Scalar             | `?`           | -                                     |
+| `role`      | `Role`     | Scalar (enum)      | -             | `@default(USER)`                      |
+| `posts`     | `Post`     | Relation (virtual) | `?`           | -                                     |
+| `profile`   | `Profile`  | Relation (virtual) | `[]`          | -                                     |
+
+### Naming fields
+
+Field names _must_ start with a letter and are typically spelled in [camelCase](http://wiki.c2.com/?CamelCase).
+
+Technically, a field can be named anything that adheres to this regular expression:
+
+```
+[A-Za-z][A-Za-z0-9_]*
+```
+
+### Field types
+
+#### Scalar fields vs relation fields
+
+The type of a field determines its _structure_. A type falls in either of two categories:
+
+- [Scalar type](data-model#scalar-types) (includes [enums](data-model#enums))
+- Model (the field is then called [relation field](relations#relation-fields))
+
+### Type modifiers
+
+The type of a field can be modified by appending either of two modifiers:
+
+- `[]`: Make a field a **list**
+- `?`: Make a field **optional**
+
+In the main example above, the field `name` on the `User` model is _optional_ and the `posts` relation field is a _list_.
+
+Note that you can not combine the list and optional modifiers on the same field. So, the following would be illegal in Prisma:
+
+```prisma
+model User {
+  id    Int      @id @default(autincremenent())
+  posts Post[]?  // 🚨🚓
+}
+```
+
+#### Lists
+
+When annotated with the `[]` type modifier, a field becomes a list. This means it can hold multiple elements of the specified type.
+
+> **Note**: Scalar lists (arrays) are only supported in the data model if your database natively supports them. Currently, scalar lists are therefore only supported when using PostgreSQL (since MySQL and SQLite don't natively support scalar lists).
+
+#### Optional vs required
+
+When **not** annotating a field with the `?` type modifier, the field will be _required_ on every record of the model. This has effects on two levels:
+
+- **Database**: Required fields are represented via `NOT NULL` constraints in the underlying database.
+- **Prisma Client**: Prisma Client's generated [TypeScript types](#type-definitions) that represent the models in your application code will also define these fields as required to ensure they always carry values at runtime.
 
 ## Attributes
 
@@ -200,115 +301,7 @@ Attributes modify the behavior of a [field](models#fields) or block (e.g. [model
 - _Field_ attributes are prefixed with `@`
 - _Block_ attributes are prefixed with `@@`
 
-### Overview
-
 Here's a quick overview of the available field attributes:
-
-| Name         | Database representation      | Arguments                                 | Description                                                                                  |
-| :----------- | :--------------------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------- |
-| `@id`        | `PRIMARY KEY`                | -                                         | Defines a single-field ID on the model.                                                      |
-| `@@id`       | `PRIMARY KEY`                | A list of field references                | Defines a multi-field ID on the model.                                                       |
-| `@default`   | `DEFAULT`                    | An expression (e.g. `5`, `true`, `now()`) | Defines a default value for this field. `@default` takes an expression as an argument.       |
-| `@unique`    | `UNIQUE`                     | -                                         | Defines a unique constraint for this field.                                                  |
-| `@@unique`   | `UNIQUE`                     | A list of field references                | Defines a compound unique constraint for the specified fields.                               |
-| `@@index`    | `INDEX`                      | A list of field references                | Defines an index.                                                                            |
-| `@relation`  | `FOREIGN KEY` / `REFERENCES` | A name and/or a list of field references  | Defines meta information about the relation. [Learn more](relations#the-relation-attribute). |
-| `@map`       | n/a                          | The name of the target database column    | Maps a field name from the Prisma schema to a different column name.                         |
-| `@@map`      | n/a                          | The name of the target database table     | Maps a model name from the Prisma schema to a different table name.                           |
-| `@updatedAt` | n/a                          | -                                         | Automatically stores the time when a record was last updated.                                |
-
-Here's an overview of the exact signatures of all attributes:
-
-```
-// IDs
-@id
-@@id(_ fields: FieldReference[])
-
-// Unique
-@unique
-@@unique(_ fields: FieldReference[])
-
-// Default
-@default(_ expression: Expression)
-
-// Index
-@@index(_ fields: FieldReference[])
-
-// Mapping model/field names from Prisma schema to database
-@map(_ name: String)
-@@map(_ name: String)
-
-// Configuring relations
-@relation(_ name: String?, fields: FieldReference[]?, references: FieldReference[]?)
-```
-
-> **Note**: The leading underscore in a signature means the _argument name_ can be omitted (read more [below](#arguments)).
-
-Here's an overview of the _types_ that are used in the attribute signatures:
-
-| Type               | Description                                   | Example                                |
-| :----------------- | :-------------------------------------------- | :------------------------------------- |
-| `FieldReference[]` | An array of [field](models#fields) names            | `[id]`, `[firstName, lastName]`        |
-| `String`           | A variable length text in double quotes       | `""`, `"Hello World"`, `"Alice"`       |
-| `Expression`       | An expression that can be evaluated by Prisma | `42.0`, `""`, `Bob`, `now()`, `cuid()` |
-
-### Arguments
-
-Note that some attributes take arguments. Arguments in attributes are always named, but in most cases the argument _name_ can be omitted.
-
-The following pairs of default values are all equivalent.
-
-**The name of the `fields` argument on the `@@id` attribute can be omitted**
-
-```prisma
-@@id(fields: [title, author])
-@@id([title, author])
-```
-
-**The name of the `value` argument on the `@default` attribute can be omitted**
-
-```prisma
-id Int @id @default(value: autoincrement())
-id Int @id @default(autoincrement())
-```
-
-**The name of the `fields` argument on the `@@unique` attribute can be omitted**
-
-```prisma
-@@unique(fields: [title, author])
-@@unique([title, author])
-```
-
-**The name of the `fields` argument on the `@@index` attribute can be omitted**
-
-```prisma
-@@index(fields: [title, author])
-@@index([title, author])
-```
-
-**The name of the `name` argument on the `@relation` attribute can be omitted (`references` is required though)**
-
-```prisma
-@relation(name: "UserOnPost", references: [id])
-@relation("UserOnPost", references: [id])
-
-// or
-
-@relation(name: "UserOnPost")
-@relation("UserOnPost")
-```
-
-**The name of the `name` argument on the `@map` and `@@map` attributes can be omitted**
-
-```prisma
-@map(name: "is_admin")
-@map("is_admin")
-
-// and
-
-@@map(name: "users")
-@@map("users")
-```
 
 ### IDs
 
@@ -316,157 +309,11 @@ You can add IDs to your models to be able to uniquely identify individual record
 
 IDs can be defined on a **single field** using `@id` or on **multiple fields** (also called composite or compound IDs) using `@@id`. Any model can at most have one ID, no matter if it's defined on a single field or on multiple fields.
 
-#### Signature
-
-The signatures of the `@id` attribute looks as follows:
-
-```
-@id
-```
-
-The signatures of the `@@id` attribute looks as follows:
-
-```
-@@id(_ fields: FieldReference[])
-```
-
 #### Single-field IDs
 
 To determine which field of a model represents the ID, you can annotate it with the `@id` attribute. Note that a field that's annotated with `@id` can not be [optional](models#optional-vs-required).
 
 `@id` attributes can be defined on fields of any [type](models#field-types) in your Prisma schema (e.g. `Int`, `String`, enums, relation fields, ...). The only exception are "virtual" [relation fields](relations#relation-fields) that are defined only on a Prisma-level but do not manifest in the database.
-
-##### Single-field IDs without default values
-
-```prisma
-model User {
-  id    String  @id
-  name  String
-}
-```
-
-Note that in the above case, you _must_ provide your own ID values when creating new records for the `User` model using Prisma Client, e.g.:
-
-```ts
-const newUser = await prisma.user.create({
-  data: {
-    id: 1,
-    name: 'Alice',
-  },
-})
-```
-
-##### Single-field IDs with default values
-
-In most cases, you want to have the ID initialized by your database. To do so, you can annotate it with the `@default` attribute and initialize the field with a [function](#functions).
-
-These are the available functions and the types they're compatible with:
-
-| Function          | Type     | Description                                                                                                                                               |
-| :---------------- | :------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `autoincrement()` | `Int`    | Create a sequence of integers in the underlying database and assign the incremented values to the ID values of the created records based on the sequence. |
-| `cuid()`          | `String` | Generate a globally unique identifier based on the [`cuid`](https://github.com/ericelliott/cuid) spec.                                                    |
-| `uuid()`          | `String` | Generate a globally unique identifier based on the [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) spec.                              |
-
-Note that using these functions will have different effects with respect to your database and Prisma internals:
-
-| Function          | PostgreSQL                                                                                          | MySQL                                                                                                      | SQLite                                                                  | Prisma                                                       |
-| :---------------- | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- | :----------------------------------------------------------- |
-| `cuid()`          | n/a                                                                                                 | n/a                                                                                                        | n/a                                                                     | Implemented by [query engine](../prisma-client/query-engine) |
-| `uuid()`          | n/a                                                                                                 | n/a                                                                                                        | n/a                                                                     | Implemented by [query engine](../prisma-client/query-engine) |
-| `autoincrement()` | Uses the [`SERIAL`](https://www.postgresql.org/docs/9.1/datatype-numeric.html#DATATYPE-SERIAL) type | Uses the [`AUTO_INCREMENT`](https://dev.mysql.com/doc/refman/8.0/en/example-auto-increment.html) attribute | Uses the [`AUTOINCREMENT`](https://www.sqlite.org/autoinc.html) keyword | n/a                                                          |
-
-This table shows how each of these functions is implemented.
-
-`cuid()` and `uuid()` are implemented by Prisma and therefore are not "visible" in the underlying database schema. You can still use them when using [introspection](../introspection) by [manually changing your Prisma schema](../prisma-client/configuring-the-prisma-client-api) and [generating Prisma Client](../prisma-client/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](../prisma-client/query-engine).
-
-`autoincrement()` on the other hand is always "implememented" on the database-level, meaning it does manifest in the database schema and can be recognized through introspection.
-
-##### Examples
-
-**Specify an ID on `String` without a default value**
-
-```prisma
-model User {
-  id    String  @id
-  name  String
-}
-```
-
-**Specify an ID on field `authorId` without a default value**
-
-```prisma
-model Post {
-  authorId   Int        @id
-  author     User       @relation(fields:  [authorId], references: [id])
-  title      String
-  published  Boolean    @default(false)
-}
-
-model User {
-  email     String   @unique
-  name      String?
-  posts     Post[]
-}
-```
-
-Note that in this case you can only create new `Post` records by using Prisma Client's [nested writes](../prisma-client/relation-queries#nested-writes) to immediately connect the new `Post` record with a new or existing `User` record, e.g.:
-
-```ts
-const post = await prisma.post.create({
-  data: {
-    title: 'Hello World',
-    author: {
-      create: {
-        name: 'Alice',
-        email: 'alice@prisma.io',
-      },
-    },
-  },
-})
-```
-
-Or when a `User` record with `bob@prisma.io` as its `email` already exists, you can connect it to the new `Post` record in a nested write:
-
-```ts
-const post = await prisma.post.create({
-  data: {
-    title: 'Hello World',
-    author: {
-      connect: {
-        email: 'bob@prisma.io',
-      },
-    },
-  },
-})
-```
-
-**Generate `cuid()` values as IDs**
-
-```prisma
-model User {
-  id    String  @id @default(cuid())
-  name  String
-}
-```
-
-**Generate `uuid()` values as IDs**
-
-```prisma
-model User {
-  id    String  @id @default(uuid())
-  name  String
-}
-```
-
-**Generate auto-incrementing integers as IDs**
-
-```prisma
-model User {
-  id    Int     @id @default(autoincrement())
-  name  String
-}
-```
 
 #### Multi-field IDs
 
@@ -474,113 +321,13 @@ To determine which fields of a model represent the multi-field ID, you can inclu
 
 `@@id` attributes can include fields of any [type](models#field-types) in your Prisma schema (e.g. `Int`, `String`, enums, relation fields, ...).
 
-##### Examples
-
-**Specify a multi-field ID on two `String` fields**
-
-```prisma
-model User {
-  firstName String
-  lastName  String
-  email     String @unique
-  isAdmin   Boolean @default(false)
-
-  @@id([firstName, lastName])
-}
-```
-
-When creating new `User` records, you now must provide a unique combination of values for `firstName` and `lastName`:
-
-```ts
-const user = await prisma.user.create({
-  data: {
-    firstName: 'Alice',
-    lastName: 'Smith',
-  },
-})
-```
-
-**Specify a multi-field ID on two `String` fields and one `Boolean` field**
-
-```prisma
-model User {
-  firstName String
-  lastName  String
-  email     String @unique
-  isAdmin   Boolean @default(false)
-
-  @@id([firstName, lastName, isAdmin])
-}
-```
-
-When creating new `User` records, you now must provide a unique combination of values for `firstName`, `lastName` and `isAdmin`:
-
-```ts
-const user = await prisma.user.create({
-  data: {
-    firstName: 'Alice',
-    lastName: 'Smith',
-    isAdmin: true,
-  },
-})
-```
-
-**Specify a multi-field ID that includes a relation field**
-
-```prisma
-model Post {
-  title      String
-  published  Boolean @default(false)
-  author     User    @relation(fields:  [authorId], references: [id])
-  authorId   Int
-
-  @@id([authorId, title])
-}
-
-model User {
-  id     Int      @default(autoincrement())
-  email  String   @unique
-  name   String?
-  posts  Post[]
-}
-```
-
-When creating new `Post` records, you now must provide a unique combination of values for `authorId` (foreign key) and `title`:
-
-```ts
-const post = await prisma.post.create({
-  data: {
-    title: 'Hello World',
-    author: {
-      connect: {
-        email: 'alice@prisma.io',
-      },
-    },
-  },
-})
-```
-
-### Unique
+### Unique values
 
 You can add unique attributes to your models to be able to uniquely identify individual records of that model. In relational databases, this corresponds to adding a `UNIQUE` constraint.
 
 Unique attributes can be defined on a **single field** using `@unique` or on **multiple fields** (also called composite or compound unique constraints) using `@@unique`. A model can have any number of unique attributes.
 
 > **Note**: Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
-
-#### Signature
-
-The signatures of the `@unique` attribute looks as follows:
-
-```
-@unique
-```
-
-The signatures of the `@@unique` attribute looks as follows:
-
-```
-@@unique(_ fields: FieldReference[])
-```
 
 #### Single-field unique attributes
 
@@ -597,109 +344,15 @@ model User {
 
 `@unique` attributes can be defined on fields of any [type](models#field-types) in your Prisma schema (e.g. `Int`, `String`, enums, relation fields, ...). The only exception are "virtual" [relation fields](relations#relation-fields) that are defined only on a Prisma-level but do not manifest in the database.
 
-##### Examples
-
-**Specify a unique attribute on a required `String` field**
-
-```prisma
-model User {
-  email String  @unique
-  name  String
-}
-```
-
-**Specify a unique attribute on an optional `String` field**
-
-```prisma
-model User {
-  id    Int     @id @default(autoincrement())
-  email String? @unique
-  name  String
-}
-```
+#### Examples
 
 Note that in this case, it is _allowed_ to have multiple `User` records in the database where the `email` is `NULL` because `NULL` values are considered to distinct from each other.
 
-**Specify a unique attribute on relation scalar field `authorId`**
-
-```prisma
-model Post {
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int     @unique
-  title     String
-  published Boolean @default(false)
-}
-
-model User {
-  id    Int     @id @default(autoincrement())
-  email String? @unique
-  name  String
-  Post  Post[]
-}
-```
-
-**Specify a unique attribute with `cuid()` values as default values**
-
-```prisma
-model User {
-  id    String  @unique @default(cuid())
-  name  String
-}
-```
-
-#### Multi-field unique attributes
+### Multi-field unique attributes
 
 To add multi-field unique attribue to a model, you have to annotate it with the `@@unique` attribute and provide the list of referenced fields as an argument.
 
 `@@unique` attributes can include fields of any [type](models#field-types) in your Prisma schema (e.g. `Int`, `String`, enums, relation fields, ...).
-
-##### Examples
-
-**Specify a multi-field unique attribute on two `String` fields**
-
-```prisma
-model User {
-  id        Int     @default(autoincrement())
-  firstName String
-  lastName  String
-  isAdmin   Boolean @default(false)
-
-  @@unique([firstName, lastName])
-}
-```
-
-**Specify a multi-field unique attribute on two `String` fields and one `Boolean` field**
-
-```prisma
-model User {
-  id        Int     @default(autoincrement())
-  firstName String
-  lastName  String
-  isAdmin   Boolean @default(false)
-
-  @@unique([firstName, lastName, isAdmin])
-}
-```
-
-**Specify a multi-field unique attribute that includes a relation field**
-
-```prisma
-model Post {
-  id        Int     @default(autoincrement())
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int
-  title     String
-  published Boolean @default(false)
-  
-  @@unique([authorId, title])
-}
-
-model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  posts Post[]
-}
-```
 
 ### Default values
 
@@ -708,14 +361,6 @@ You can define default values for the fields of your models using the `@default`
 The `@default` attribute takes as argument an _expression_, this can be a static, hardcoded value e.g. `5`, `true`, `"Hello"` or a function, e.g. `now()`, `uuid()`, `cuid()`. Note that there is a special function in the Prisma schema called `dbgenerated()` which is used in [introspection](../introspection) results for default values that can not yet be represented in the Prisma schema.
 
 Default values can be defined on any scalar type but not on relation fields.
-
-#### Signature
-
-The signatures of the `@default` attribute looks as follows:
-
-```
-@default(_ expression: Expression)
-```
 
 #### Static default values
 
@@ -768,60 +413,7 @@ Note that using these functions will have different effects with respect to your
 | `now()`           | [`CURRENT_TIMESTAMP`](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT) and aliases like `now()` | [`CURRENT_TIMESTAMP`](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-functions.html#function_current-timestamp) and aliases like `now()` | `CURRENT_TIMESTAMP` and aliases like `date('now')`                      |
 | `dbgenerated()`   | Any expression                                                                                                                             | Any expression                                                                                                                                  | Any expression                                                          | n/a                                                          |
 
-This table shows how each of these functions is implemented.
-
-`cuid()` and `uuid()` are implemented by Prisma and therefore are not "visible" in the underlying database schema. You can still use them when using [introspection](../introspection) by [manually changing your Prisma schema](../prisma-client/configuring-the-prisma-client-api) and [generating Prisma Client](../prisma-client/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](../prisma-client/query-engine)
-
 `autoincrement()`, `now` and `dbgenerated()` on the other hand are always "implemented" on the database-level, meaning they manifest in the database schema and can be recognized through introspection.
-
-#### Examples
-
-**Default value for an `Int`**
-
-```prisma
-model User {
-  email        String  @unique
-  profileViews Int     @default(0)
-}
-```
-
-**Default value for a `Float`**
-
-```prisma
-model User {
-  email    String  @unique
-  number   Float   @default(1.1)
-}
-```
-
-**Default value for a `String`**
-
-```prisma
-model User {
-  email    String  @unique
-  name     String  @default("")
-}
-```
-
-**Default value for a `Boolean`**
-
-```prisma
-model User {
-  email    String  @unique
-  isAdmin  Boolean     @default(false)
-}
-```
-
-**Default value for a `DateTime`**
-
-Note that static default values for `DateTime` are based on the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. However, they must always include the time including the [time offsets from UTC](https://en.wikipedia.org/wiki/ISO_8601#Time_offsets_from_UTC).
-
-```prisma
-model User {
-  email  String    @unique
-  data   DateTime  @default("2020-03-19T14:21:00+0200")
-}
-```
 
 #### Limitations
 
@@ -831,53 +423,9 @@ Default values are currently not allowed on relation fields in the Prisma schema
 
 You can define indexes on one or multiple fields of your models via the `@@index` on a model.
 
-#### Signature
-
-The signature of the `@@index` attribute looks as follows:
-
-```
-@@index(_ fields: FieldReference[])
-```
-
-#### Examples
-
-Assume you want to add an index for the `title` field of the `Post` model from the example [above](#example). You can define the index like so:
-
-```prisma
-model Post {
-  id       Int     @id @default(autoincrement())
-  title    String
-  content  String?
-
-  @@index([title])
-}
-```
-
-To define an index on multiple fields (i.e. a multi-column index), you can add more fields to the array passed to the `@@index` attribute, e.g.:
-
-```prisma
-model Post {
-  id       Int     @id @default(autoincrement())
-  title    String
-  content  String?
-
-  @@index([title, content])
-}
-```
-
-#### Limitations
-
-It is currently not possible to provide more configuration options to the index:
-
-- PostgreSQL
-  - Define index fields as expressions (e.g. `CREATE INDEX title ON public."Post"((lower(title)) text_ops);`)
-  - Specify index methods with `USING`; PostgreSQL supports these index methods: B-tree, hash, GiST, and GIN; Prisma uses B-Tree by default
-  - Define partial indexes with `WHERE`
-  - Create indexes concurrently with `CONCURRENTLY`
-- MySQL
-  - Specify index methods with `USING`; MySQL supports these index methods: B-tree, hash; Prisma uses B-Tree by default
-
-Note that while you can't configure these option in your Prisma schema, you can still configure them on the database-level directly.
+<div style="background-color: rgb(246, 248, 250); background-image: url(https://cdn.onlinewebfonts.com/svg/img_285835.png);background-size:50px;background-position: 10px 10px;background-repeat:no-repeat; padding:20px 10px 10px 70px;min-height: 70px">
+  See <a>API Reference: Indexes</a>
+</div>
 
 ### Mapping column, table and enum names
 
@@ -885,65 +433,21 @@ You can use the `@map` and `@@map` attributes to map field, model and enum names
 
 Read more about this on the [Configuring the Prisma Client API](../prisma-client/configuring-the-prisma-client-api) page.
 
-#### Signature
-
-The signature of the `@map` attribute looks as follows:
-
-```
-@map(_ name: String)
-```
-
-The signature of the `@@map` attribute looks as follows:
-
-```
-@@map(_ name: String)
-```
-
-#### Examples
-
-**Map the `User` model to a table called `users`**:
-
-```prisma
-model User {
-  id   Int    @id @default(autoincrement())
-  name String
-  @@map("users")
-}
-```
-
-**Map the `firstName` field to a column called `first_name`**:
-
-```prisma
-model User {
-  id        Int    @id @default(autoincrement())
-  firstName String @map("first_name")
-}
-```
-
-**Map the `User` model to a table called `users` and `firstName` field to a column called `first_name`**:
-
-```prisma
-model User {
-  id        Int    @id @default(autoincrement())
-  firstName String @map("first_name")
-  @@map("users")
-}
-```
-
-**Map the `Role` enum to a native enum in the database called `_Role` its values to lowercase values in the database**:
-
-```prisma
-enum Role {
-  ADMIN     @map("admin")
-  CUSTOMER  @map("customer")
-
-  @@map("_Role")
-}
-```
-
-### Configuring relations
+### Relations
 
 You can learn everything about configuration relations on the [Relations](relations) page in the docs.
+
+## Enums
+
+You can define enums in your data model if they're supported by the [data source](data-sources) you use:
+
+- PostgreSQL: [Supported](https://www.postgresql.org/docs/9.1/datatype-enum.html)
+- MySQL: [Supported](https://dev.mysql.com/doc/refman/8.0/en/enum.html)
+- SQLite: Not supported
+
+Enums are considered [scalar](#scalar-types) types in the Prisma data model. They're therefore [by default](../prisma-client/field-selection#the-default-selection-set) included as return values in [Prisma Client queries](../prisma-client/crud).
+
+Enums are defined via the `enum` block.
 
 ## Functions
 
