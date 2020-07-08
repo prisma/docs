@@ -8,9 +8,9 @@ metaDescription: 'Learn how to deploy a Node.js server that uses Prisma to Herok
 
 In this guide, you will set up and deploy a Node.js server that uses Prisma with PostgreSQL to [Heroku](https://www.heroku.com). The application will expose a REST API and use Prisma Client to handle fetching, creating, and deleting records from a database.
 
-Heroku is a cloud platform as a service (PaaS). In contrast to the popular serverless deployment model, with Heroku, your application will be constantly running even if no requests are made to it. This has several benefits due to the connection limits of a PostgreSQL database. For more information, check out the [general deployment documentation]
+Heroku is a cloud platform as a service (PaaS). In contrast to the popular serverless deployment model, with Heroku, your application will be constantly running even if no requests are made to it. This has several benefits due to the connection limits of a PostgreSQL database. For more information, check out the [general deployment documentation](/reference/tools-and-interfaces/prisma-client/deployment)
 
-Typically Heroku integrates with a Git repository for automatic deployments upon commits. You can deploy to Heroku from a Github repository, or by pushing your source to a [Git repository that Heroku creates per app](https://devcenter.heroku.com/articles/git). This guide will use the latter approach where you will push your code to the repository created by Heroku which will trigger a build and deploy the application.
+Typically Heroku integrates with a Git repository for automatic deployments upon commits. You can deploy to Heroku from a GitHub repository, or by pushing your source to a [Git repository that Heroku creates per app](https://devcenter.heroku.com/articles/git). This guide will use the latter approach where you will push your code to the repository created by Heroku which will trigger a build and deploy the application.
 
 The application has the following components:
 
@@ -21,7 +21,11 @@ The application has the following components:
 
 The focus of this guide is showing how project using Prisma can be deployed to Heroku. The starting point will the [Prisma Heroku example](https://github.com/prisma/prisma-examples/tree/master/deployment-platforms/heroku) which contains an Express.js server with a couple of pre-configured REST endpoints and a simple frontend.
 
-> Throughout the guide you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
+> **Note:** Throughout the guide you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
+
+## A note on deploying GraphQL servers to Heroku
+
+While the example uses REST, the same principles apply to a GraphQL server, with the main difference being that you typically have a single GraphQL API endpoint rather than a route for every resource as with REST.
 
 ## Prerequisites
 
@@ -30,7 +34,7 @@ The focus of this guide is showing how project using Prisma can be deployed to H
 - Node.js installed.
 - PostgreSQL CLI `psql` installed.
 
-> Heroku provides a free plan which includes Node.js hosting and a PostgreSQL database, so no billing information is required.
+> **Note:** Heroku provides a free plan which includes Node.js hosting and a PostgreSQL database, so no billing information is required.
 
 ## Prisma workflow
 
@@ -40,7 +44,7 @@ This guide starts with an empty database created with Prisma Migrate and looks a
 
 ![workflow diagram](https://imgur.com/OImder6.png)
 
-1. Define the database schema using Prisma Schema.
+1. Define the database schema using Prisma schema.
 1. Save the migration.
 1. Run the migration using Prisma Migrate which will create the database schema.
 1. Run `prisma generate` which will generate Prisma Client based on the Prisma schema.
@@ -77,7 +81,7 @@ Install the dependencies:
 npm install
 ```
 
-> The `Procfile` tells Heroku the command needed to start the application, i.e. `npm start`
+> **Note:** The `Procfile` tells Heroku the command needed to start the application, i.e. `npm start`
 
 ## 2. Create a Git repository for the application
 
@@ -128,7 +132,7 @@ To deploy an application to Heroku, you need to create an app. You can do so wit
 heroku apps:create your-app-name
 ```
 
-> Use a unique name of your choice instead of `your-app-name`.
+> **Note:** Use a unique name of your choice instead of `your-app-name`.
 
 **Checkpoint:** You should see the URL and the repository for your Heroku app:
 
@@ -175,7 +179,7 @@ Database has been created and is available
 Created postgresql-parallel-73780 as DATABASE_URL
 ```
 
-> Note: Heroku will automatically set the `DATABASE_URL` environment variable when the app is running on Heroku. Prisma will use this environment variable because it's declared in the _datasource_ block of the Prisma schema (`prisma/schema.prisma`) with `env("DATABASE_URL")`.
+> **Note:** Heroku will automatically set the `DATABASE_URL` environment variable when the app is running on Heroku. Prisma will use this environment variable because it's declared in the _datasource_ block of the Prisma schema (`prisma/schema.prisma`) with `env("DATABASE_URL")`.
 
 ## 7. Set the DATABASE_URL environment variable locally
 
@@ -197,7 +201,7 @@ Copy the connection URL and set it as an environment variable:
 export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__"
 ```
 
-> It's considered best practice to keep secrets out of your codebase. If you open up the `prisma/schema.prisma` file, you should see `env("DATABASE_URL")` in the _datasource_ block. By setting an environment variable you keep secrets out of the codebase.
+> **Note:** It's considered best practice to keep secrets out of your codebase. If you open up the `prisma/schema.prisma` file, you should see `env("DATABASE_URL")` in the _datasource_ block. By setting an environment variable you keep secrets out of the codebase.
 
 ## 8. Save and run the database migration
 
@@ -210,7 +214,7 @@ This is a two-step process:
 
 For more information on how Prisma Migrate works, check out the [documentation](/reference/tools-and-interfaces/prisma-migrate)
 
-> **Prisma Migrate is currently in an experimental state.** This means that it is not recommended to use Prisma Migrate in production. Instead, you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/reference/tools-and-interfaces/introspection).
+> **Note:** **Prisma Migrate is currently in an experimental state.** This means that it is not recommended to use Prisma Migrate in production. Instead, you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/reference/tools-and-interfaces/introspection).
 
 **Checkpoint:** `heroku pg:psql --command="\dt"` should show the newly created database tables:
 ```no-lines
@@ -243,6 +247,8 @@ remote:        Released v1
 remote:        https://your-app-name.herokuapp.com/ deployed to Heroku
 ```
 
+> **Note:** Heroku will also set the `PORT` environment variable to which your application will be bound.
+
 ## 10. Test your deployed application
 
 You can use the static frontend to interact with the API you deployed via the preview URL.
@@ -274,10 +280,24 @@ You can view the application's logs with the `heroku logs --tail` command:
 2020-07-07T14:39:30.645923+00:00 heroku[router]: at=info method=GET path="/api/feed" host=your-app-name.herokuapp.com request_id=4 fwd="1.1.1.1" dyno=web.1 connect=1ms service=24ms status=200 bytes=680 protocol=https
 ```
 
+
+## Heroku specific notes
+
+There are some implementation details relating to Heroku that this guide addresses and are worth reiterating:
+
+- **Port binding**: web servers bind to a port so that they can accept connections. When deploying to Heroku The `PORT` environment variable is set by Heroku. Ensure you bind to `process.env.PORT` so that your application can accept requests once deployed. A common pattern is to try binding to try `process.env.PORT` and fallback to a preset port as follows:
+
+```js
+const PORT = process.env.PORT || 3000
+const server = app.listen(PORT, () => { console.log(`app running on port ${PORT}`) })
+```
+
+- **Database URL**: As part of Heroku's provisioning process, a `DATABASE_URL` config var is added to your app’s configuration. This contains the URL your app uses to access the database. Ensure that your `schema.prisma` file uses `env("DATABASE_URL")` so that Prisma Client can successfully connect to the database.
+
 ## Summary
 
 Congratulations! You have successfully deployed a Node.js app with Prisma to Heroku.
 
-You can find the source code for the example in [this Github repository](https://github.com/prisma/prisma-examples/tree/master/deployment-platforms/heroku).
+You can find the source code for the example in [this GitHub repository](https://github.com/prisma/prisma-examples/tree/master/deployment-platforms/heroku).
 
 For more insight into Prisma Client's API, look at the route handlers in the `src/index.js` file.
