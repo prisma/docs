@@ -8,6 +8,7 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
       ...mdx.node.fields,
       title: mdx.node.frontmatter.title,
       staticLink: mdx.node.frontmatter.staticLink,
+      codeStyle: mdx.node.frontmatter.codeStyle,
     }))
   allContent?.map((content: any) => {
     content.parentTitle = []
@@ -29,6 +30,7 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
         // const topLevel = parts.length == 3 && parts[parts.length - 1] === 'index' ? true : false
         content.parentTitle.push({
           title: parent?.title,
+          codeStyle: parent?.codeStyle,
           link: urlGenerator(parent.modSlug),
           // link: topLevel || parent.staticLink ? null : urlGenerator(parent.modSlug),
         })

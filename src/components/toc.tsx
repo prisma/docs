@@ -20,7 +20,10 @@ const TOC = ({ headings, tocDepth }: any) => {
       return (
         <li key={index}>
           <a href={heading.url}>{stringify(heading.title)}</a>
-          {(heading.items && heading.items.length > 0 && depth > 1) && navItems(heading.items, depth - 1)}
+          {heading.items &&
+            heading.items.length > 0 &&
+            depth > 1 &&
+            navItems(heading.items, depth - 1)}
         </li>
       )
     })

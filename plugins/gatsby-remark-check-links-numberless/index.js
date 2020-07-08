@@ -65,7 +65,12 @@ module.exports = async function plugin(
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
   cache.set(getCacheKey(parent), {
-    path:withPathPrefix(markdownNode.fields.slug.replace(/\/index$/,'').replace(/\d{2,}-/g, '').concat(pathSep)),
+    path: withPathPrefix(
+      markdownNode.fields.slug
+        .replace(/\/index$/, '')
+        .replace(/\d{2,}-/g, '')
+        .concat(pathSep)
+    ),
     links,
     headings,
     setAt,
