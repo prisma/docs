@@ -95,17 +95,18 @@ git init
 ```
 
 With the repository initialized, add and commit the files:
+
 ```no-lines
 git add .
 git commit -m 'Initial commit'
 ```
 
 **Checkpoint:** `git log -1` should show the commit:
+
 ```no-lines
 git log -1
 commit 895534590fdd260acee6396e2e1c0438d1be7fed (HEAD -> master)
 ```
-
 
 ## 3. Heroku CLI login
 
@@ -217,6 +218,7 @@ For more information on how Prisma Migrate works, check out the [documentation](
 > **Note:** **Prisma Migrate is currently in an experimental state.** This means that it is not recommended to use Prisma Migrate in production. Instead, you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/reference/tools-and-interfaces/introspection).
 
 **Checkpoint:** `heroku pg:psql --command="\dt"` should show the newly created database tables:
+
 ```no-lines
   --> Connecting to postgresql-parallel-111222
                 List of relations
@@ -237,7 +239,6 @@ git push heroku master
 ```
 
 This will trigger a build and deploy your application to Heroku.
-
 
 **Checkpoint:** `git push` will emit the build progress and if succeeds will display the URL of the deployed app:
 
@@ -266,6 +267,7 @@ The buttons allow you to make requests to the REST API and view the response:
 For more insight into Prisma Client's API, look at the route handlers in the `src/index.js` file.
 
 You can view the application's logs with the `heroku logs --tail` command:
+
 ```no-lines
 2020-07-07T14:39:07.396544+00:00 app[web.1]:
 2020-07-07T14:39:07.396569+00:00 app[web.1]: > prisma-heroku@1.0.0 start /app
@@ -280,7 +282,6 @@ You can view the application's logs with the `heroku logs --tail` command:
 2020-07-07T14:39:30.645923+00:00 heroku[router]: at=info method=GET path="/api/feed" host=your-app-name.herokuapp.com request_id=4 fwd="1.1.1.1" dyno=web.1 connect=1ms service=24ms status=200 bytes=680 protocol=https
 ```
 
-
 ## Heroku specific notes
 
 There are some implementation details relating to Heroku that this guide addresses and are worth reiterating:
@@ -289,7 +290,9 @@ There are some implementation details relating to Heroku that this guide address
 
 ```js
 const PORT = process.env.PORT || 3000
-const server = app.listen(PORT, () => { console.log(`app running on port ${PORT}`) })
+const server = app.listen(PORT, () => {
+  console.log(`app running on port ${PORT}`)
+})
 ```
 
 - **Database URL**: As part of Heroku's provisioning process, a `DATABASE_URL` config var is added to your app’s configuration. This contains the URL your app uses to access the database. Ensure that your `schema.prisma` file uses `env("DATABASE_URL")` so that Prisma Client can successfully connect to the database.
