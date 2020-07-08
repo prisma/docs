@@ -9,13 +9,14 @@ import { withPrefix } from 'gatsby'
 
 interface SubsecProps {
   depth?: number
+  rootPath?: string
 }
 
 const SubsectionWrapper = styled.div`
   margin: 1.5rem 0;
 `
 
-const Subsections = ({ depth }: SubsecProps) => {
+const Subsections = ({ depth, rootPath }: SubsecProps) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
   const location = useLocation()
   const treeData = calculateTreeData(allMdx.edges, null, null)
@@ -39,7 +40,7 @@ const Subsections = ({ depth }: SubsecProps) => {
     }
   }
 
-  getSubSecs(location.pathname, treeData.items)
+  getSubSecs(rootPath ? rootPath : location.pathname, treeData.items)
 
   const list = (subsecs: any, dep: number) => {
     const subs = subsecs.filter((t: any) => t.label !== 'index' && !t.hidePage)
