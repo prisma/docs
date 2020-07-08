@@ -102,23 +102,18 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     isDiff = true
                   }
 
-                  // if (
-                  //   (line[0] && line[0].content.length && line[0].content[0] === '!') ||
-                  //   (line[0] && line[0].content === '' && line[1] && line[1].content === '!')
-                  // ) {
-                  //   isHidden = true
-                  // }
-
                   const lineProps = getLineProps({ line, key: i })
 
                   lineProps.style = { ...lineClass }
 
                   return (
                     <Line key={line + i} {...lineProps}>
-                      {hasTerminalSymbol && !isDiff && <LineNo>$</LineNo>}
-                      {!hasTerminalSymbol && !isDiff && !hasNoLine && <LineNo>{i + 1}</LineNo>}
+                      {hasTerminalSymbol && !isDiff && <LineNo className="line-no">$</LineNo>}
+                      {!hasTerminalSymbol && !isDiff && !hasNoLine && (
+                        <LineNo className="line-no">{i + 1}</LineNo>
+                      )}
                       {isDiff && (
-                        <LineNo style={{ color: lineClass.symbColor }}>
+                        <LineNo className="line-no" style={{ color: lineClass.symbColor }}>
                           {diffSymbol !== '|' ? diffSymbol : i + 1}
                         </LineNo>
                       )}
