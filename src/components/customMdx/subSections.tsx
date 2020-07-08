@@ -22,7 +22,7 @@ const Subsections = ({ depth }: SubsecProps) => {
   let subSecs: any[] = []
 
   const getSubSecs = (currentPath: string, treeItems: any[]): any => {
-    for (let i = 0; i < treeItems.length - 1; i++) {
+    for (let i = 0; i < treeItems.length; i++) {
       const tree = treeItems[i]
       if (
         !(
@@ -47,7 +47,9 @@ const Subsections = ({ depth }: SubsecProps) => {
       <ul className="list">
         {subs.map((sec: any, index: number) => (
           <li key={index}>
-            <Link to={sec.url}>{sec.title}</Link>
+            <Link to={sec.url}>
+              <span className={`${sec.codeStyle ? 'inline-code' : ''}`}>{sec.title}</span>
+            </Link>
             {dep > 1 && sec.items.length > 0 && list(sec.items, dep - 1)}
           </li>
         ))}

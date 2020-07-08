@@ -55,20 +55,21 @@ const HitComp = styled.div`
   }
 `
 
-const DocHit = ({ hit }: any) => hit._distinctSeqID == 0 ? (
-  <HitComp>
-    <Link style={{ boxShadow: `none`, textDecoration: 'none' }} to={hit.path}>
-      <ParentTitle slug={hit.slug} nonLink={true} />
-      <h3>
-        <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}
-        <span style={{ color: 'var(--code-inner-color)' }}>
-          <Snippet hit={hit} attribute="heading" tagName="mark" />
-        </span>
-      </h3>
-      <Snippet hit={hit} attribute="content" tagName="mark" />
-    </Link>
-    {hit.moreCount > 1 && <p className="more">More results on this page</p>}
-  </HitComp>
-): null
+const DocHit = ({ hit }: any) =>
+  hit._distinctSeqID == 0 ? (
+    <HitComp>
+      <Link style={{ boxShadow: `none`, textDecoration: 'none' }} to={hit.path}>
+        <ParentTitle slug={hit.slug} nonLink={true} />
+        <h3>
+          <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}
+          <span style={{ color: 'var(--code-inner-color)' }}>
+            <Snippet hit={hit} attribute="heading" tagName="mark" />
+          </span>
+        </h3>
+        <Snippet hit={hit} attribute="content" tagName="mark" />
+      </Link>
+      {hit.moreCount > 1 && <p className="more">More results on this page</p>}
+    </HitComp>
+  ) : null
 
 export default DocHit
