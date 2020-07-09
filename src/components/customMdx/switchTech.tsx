@@ -15,7 +15,6 @@ export default SwitchTech
 
 const SwitchWrapper = styled.section`
   display: none;
-  margin-top: 2rem;
   position: relative;
   &.show {
     display: block;
