@@ -19,11 +19,11 @@ const config = {
     logoLink: 'https://www.prisma.io',
     title: 'Prisma',
     links: [
-      { name: 'Docs', link: '/' },
       { name: 'Quickstart', link: '/getting-started/quickstart' },
+      { name: 'Docs', link: '/' },
       {
-        name: 'Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/api',
+        name: 'API Reference',
+        link: '/api-reference',
       },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
