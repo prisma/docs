@@ -10,7 +10,7 @@ import { withPrefix } from 'gatsby'
 const List = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 16px 0;
+  margin: 12px 0 24px;
   &.has-border {
     border-left: 2px solid var(--border-color);
     margin-left: -12px;
@@ -45,7 +45,7 @@ const ListItem = styled.li`
       font-size: 14px;
       font-style: normal;
       font-weight: 600;
-      background: var(--code-bgd-color);
+      background: var(--code-inline-bgd-color);
       border-radius: 5px;
       padding: 2px 5px;
       &.small {
@@ -107,7 +107,7 @@ const ListItem = styled.li`
   &.top-level {
     margin-top: 2rem;
     > a {
-      font-size: 1rem;
+      font-size: 1.125rem;
       color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
@@ -116,14 +116,14 @@ const ListItem = styled.li`
       }
     }
     > ul {
-      margin-top: 24px;
+      margin-top: 12px;
     }
   }
   &.bottom-level {
     margin-left: 20px;
   }
   &.static-link {
-    margin-top: 24px;
+    margin-top: 12px;
   }
   &.static-link > a {
     color: var(--main-font-color) !important;

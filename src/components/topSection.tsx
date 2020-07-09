@@ -9,8 +9,8 @@ import { withPrefix } from 'gatsby'
 const TopSectionWrapper = styled.div`
   position: relative;
   hr.bigger-margin {
-    margin-top: 3.5rem;
-    margin-bottom: 4rem;
+    margin-top: 3rem;
+    margin-bottom: 3.5rem;
   }
   .tech-switch-block {
     position: relative;
