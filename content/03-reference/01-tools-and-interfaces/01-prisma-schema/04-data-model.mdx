@@ -286,22 +286,13 @@ Attributes modify the behavior of a [field](models#fields) or block (e.g. [model
 
 ### IDs
 
-An ID uniquely identifies individual records of a model.
+An ID uniquely identifies individual records of a model. IDs can be defined by a single field using the `@id` attribute, or multiple fields using the `@@id` attribute.
 
-IDs can be defined as:
-
-- A **single field** using `@id`
-- **Multiple fields** (also called composite or compound IDs) using `@@id`.
-
-A model can only have _one_ ID, and that ID can either be a single field or based on multiple fields.
-
-#### Single-field IDs
-
-To determine which field of a model represents the ID, you can annotate it with the `@id` attribute. The `id` field represents the ID of the `User` model:
+In the following example, the `User` ID is represented by the `id` field:
 
 ```prisma
 model User {
-  id      Int      @id @default(autoincrement())
+| id      Int      @id @default(autoincrement())
   email   String   @unique
   name    String?
   role    Role     @default(USER)
@@ -310,72 +301,84 @@ model User {
 }
 ```
 
+In the following example, the `User` ID is represented by a combination of the `firstName` and `lastName` fields:
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+  email     String @unique
+  isAdmin   Boolean @default(false)
+
+| @@id([firstName, lastName])
+}
+```
+
+> **Note**: A model can only have _one_ ID, and that ID can either be a single field or based on multiple fields.
+
 <div style="border-radius:8px;background-color: rgb(246, 248, 250); background-image: url(https://cdn.onlinewebfonts.com/svg/img_285835.png);background-size:30px;background-position: 20px 20px;background-repeat:no-repeat; padding:20px 10px 10px 70px;min-height: 70px">
-  See <a>API Reference: @id</a>
-</div>
-
-#### Multi-field IDs
-
-To determine which fields of a model represent the multi-field ID, you can include them in the `@@id` attribute that's defined on your model.
-
-<div style="border-radius:8px;background-color: rgb(246, 248, 250); background-image: url(https://cdn.onlinewebfonts.com/svg/img_285835.png);background-size:30px;background-position: 20px 20px;background-repeat:no-repeat; padding:20px 10px 10px 70px;min-height: 70px">
-  See <a>API Reference: @@id</a>
+  See <a>API Reference: @id and @@id</a>
 </div>
 
 ### Unique values
 
-You can add unique attributes to your models to be able to uniquely identify individual records of that model.
+You can add unique attributes to your models to be able to uniquely identify individual records of that model. Unique attributes can be defined on a single field using `@unique` attribute, or on multiple fields (also called composite or compound unique constraints) using the `@@unique` attribute.
 
-Unique attributes can be defined on a **single field** using `@unique` or on **multiple fields** (also called composite or compound unique constraints) using `@@unique`. A model can have any number of unique attributes.
-
-> **Note**: Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
-
-#### Single-field unique attributes
-
-To add a unique attribute to a field of a model, you can annotate it with the `@unique` attribute.
+In the following example, the value of the `email` field must be unique:
 
 ```prisma
 model User {
-  email String  @unique // `email` can not be optional because it's the only unique field on the model
+| email String  @unique // `email` can not be optional because it's the only unique field on the model
   name  String?
 }
 ```
 
+In the following example, a combination of `authorId` and `title` must be unique:
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+  title      String
+  published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]  @relation(references: [id])
+
+| @@unique([authorId, title])
+}
+```
+
 <div style="border-radius:8px;background-color: rgb(246, 248, 250); background-image: url(https://cdn.onlinewebfonts.com/svg/img_285835.png);background-size:30px;background-position: 20px 20px;background-repeat:no-repeat; padding:20px 10px 10px 70px;min-height: 70px">
-  See <a>API Reference: @unique</a>
-</div>
-
-### Multi-field unique attributes
-
-To add multi-field unique attribue to a model, you have to annotate it with the `@@unique` attribute and provide the list of referenced fields as an argument.
-
-<div style="border-radius:8px;background-color: rgb(246, 248, 250); background-image: url(https://cdn.onlinewebfonts.com/svg/img_285835.png);background-size:30px;background-position: 20px 20px;background-repeat:no-repeat; padding:20px 10px 10px 70px;min-height: 70px">
-  See <a>API Reference: @@unique</a>
+  See <a>API Reference: @unique and @@unique</a>
 </div>
 
 ### Default values
 
-You can define default values for the fields of your models using the `@default` attribute.
+You can define default values for scalar fields of your models using the `@default` attribute:
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+| createdAt  DateTime    @default(now())
+  title      String
+| published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]  @relation(references: [id])
+}
+```
+
+Default values can be:
+
+- Static values that correspond to the field type, such as `5` (`Int`), `Hello` (`String`), or `false` (`Boolean`)
+- Functions, such as `now()` or `uuid()`
 
 The `@default` attribute takes as argument an _expression_, this can be a static, hardcoded value e.g. `5`, `true`, `"Hello"` or a function, e.g. `now()`, `uuid()`, `cuid()`. Note that there is a special function in the Prisma schema called `dbgenerated()` which is used in [introspection](../introspection) results for default values that can not yet be represented in the Prisma schema.
 
-Default values can be defined on any scalar type but not on relation fields.
-
-#### Static default values
-
-For [scalar types](#scalar-types), you can use any static value that corresponds to the type of a field as a default value:
-
-| Type       | Examples                         |
-| :--------- | :------------------------------- |
-| `Int`      | `-100`, `0`, `42`                |
-| `Float`    | `-100.5`, `0`, `4.2`             |
-| `String`   | `"Alice"`, `"Hello World"`, `""` |
-| `Boolean`  | `true`, `false`                  |
-| `DateTime` | `"2020-03-19T14:21:00+0200"`     |
-
-#### Functions as default values
-
-These are the available functions and the types they're compatible with:
+<div style="border-radius:8px;background-color: rgb(246, 248, 250); background-image: url(https://cdn.onlinewebfonts.com/svg/img_285835.png);background-size:30px;background-position: 20px 20px;background-repeat:no-repeat; padding:20px 10px 10px 70px;min-height: 70px">
+  See <a>API Reference: @default and attribute functions</a>
+</div>
 
 ### Indexes
 
@@ -385,7 +388,7 @@ You can define indexes on one or multiple fields of your models via the `@@index
   See <a>API Reference: Indexes</a>
 </div>
 
-### Mapping column, table and enum names
+### Mapping column, table and `enum` names
 
 You can use the `@map` and `@@map` attributes to map field, model and enum names as well in your Prisma schema to different column and table names in the underlying database schema.
 
