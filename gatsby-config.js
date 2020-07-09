@@ -115,6 +115,8 @@ module.exports = {
   siteMetadata: {
     pathPrefix: config.gatsby.pathPrefix,
     title: config.siteMetadata.title,
+    titlePrefix: config.gatsby.titlePrefix,
+    titleSuffix: config.gatsby.titleSuffix,
     description: config.siteMetadata.description,
     keywords: config.siteMetadata.keywords,
     twitter: config.siteMetadata.twitter,

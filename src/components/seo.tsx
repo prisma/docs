@@ -16,6 +16,8 @@ const SEO = ({ title, description }: SEOProps) => {
   const {
     siteMetadata: {
       pathPrefix,
+      titlePrefix,
+      titleSuffix,
       siteUrl,
       keywords,
       twitter: { site: tSite, creator: tCreator, image: tUrl },
@@ -42,7 +44,9 @@ const SEO = ({ title, description }: SEOProps) => {
     <Helmet htmlAttributes={{ lang: 'en' }}>
       {/* <meta charSet="utf-8" /> */}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>{seoTitle}</title>
+      <title>
+        {titlePrefix} {seoTitle} {titleSuffix}{' '}
+      </title>
       <meta name="description" content={seoDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
       {/* Twitter */}
@@ -76,6 +80,8 @@ const query = graphql`
     site {
       siteMetadata {
         pathPrefix
+        titlePrefix
+        titleSuffix
         siteUrl
         twitter {
           site
