@@ -31,7 +31,6 @@ export interface ArticleData {
       docsLocation: string
     }
   }
-  allMdx?: any
 }
 
 export interface ArticleQueryData {
