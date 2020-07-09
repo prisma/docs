@@ -38,10 +38,10 @@ const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
             <span key={index}>
               {part.link && !nonLink ? (
                 <Link to={part.link}>
-                  <span dangerouslySetInnerHTML={{ __html: part.title }} />{' '}
+                  <span className={`${part.codeStyle ? 'inline-code' : ''}`}>{part.title}</span>
                 </Link>
               ) : (
-                <span dangerouslySetInnerHTML={{ __html: part.title }} />
+                <span className={`${part.codeStyle ? 'inline-code' : ''}`}>{part.title}</span>
               )}
               {parentTitle.length !== index + 1 ? ' / ' : ''}
             </span>
