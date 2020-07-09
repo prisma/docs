@@ -5,7 +5,7 @@ import { getParentTitle } from '../utils/parentTitle'
 import { AllArticles } from '../interfaces/AllArticles.interface'
 import Link from './link'
 
-const BreadcrumbTitle = styled.h4`
+const BreadcrumbTitle = styled.div`
   color: var(--code-inner-color) !important;
   line-height: 1rem;
   font-weight: normal;
