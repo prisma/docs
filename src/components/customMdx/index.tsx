@@ -11,6 +11,7 @@ import ButtonLink from './button'
 import FileWithIcon from './fileWithIcon'
 import Subsections from './subSections'
 import TopBlock from './topBlock'
+import ApiRef from './tempApiRef'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -22,6 +23,7 @@ export default {
   ParallelBlocks,
   CodeWithResult,
   SwitchTech,
+  ApiRef,
   FileWithIcon,
   inlineCode: (props: any) => <code className="inline-code" {...props} />,
   code: Code,

@@ -19,7 +19,6 @@ const config = {
     logoLink: 'https://www.prisma.io',
     title: 'Prisma',
     links: [
-      { name: 'Quickstart', link: '/getting-started/quickstart' },
       { name: 'Docs', link: '/' },
       {
         name: 'API Reference',
