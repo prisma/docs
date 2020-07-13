@@ -11,7 +11,7 @@ const config = {
       to: '/reference/tools-and-interfaces/prisma-schema',
     },
     {
-      from: '/reference/tools-and-interfaces/prisma-client',
+      from: '/reference/tools-and-interfaces/prisma-client/api',
       to: '/reference/tools-and-interfaces/prisma-client',
     },
   ],
@@ -23,7 +23,7 @@ const config = {
       { name: 'Quickstart', link: '/getting-started/quickstart' },
       {
         name: 'Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/api',
+        link: '/reference/tools-and-interfaces/prisma-client/',
       },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
