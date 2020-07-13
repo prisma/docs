@@ -14,23 +14,26 @@ const ChapterTitle = styled.h1`
 `
 
 const TOC = ({ headings, tocDepth }: any) => {
-  const navItems = (headings: any[], depth: number) =>
-    headings &&
-    headings.map((heading: any, index: number) => {
-      return (
-        <li key={index}>
-          <a href={heading.url}>{stringify(heading.title)}</a>
-          {heading.items &&
-            heading.items.length > 0 &&
-            depth > 1 &&
-            navItems(heading.items, depth - 1)}
-        </li>
-      )
-    })
+  const navItems = (headings: any[], depth: number) => {
+    return (
+      <ul className="list">
+        {headings &&
+          headings.map((heading: any, index: number) => (
+            <li key={index}>
+              <a href={heading.url}>{stringify(heading.title)}</a>
+              {heading.items &&
+                heading.items.length > 0 &&
+                depth > 1 &&
+                navItems(heading.items, depth - 1)}
+            </li>
+          ))}
+      </ul>
+    )
+  }
   return navItems && navItems.length ? (
     <div>
       <ChapterTitle>CONTENT</ChapterTitle>
-      <ul className="list">{navItems(headings, tocDepth || 1)}</ul>
+      {navItems(headings, tocDepth || 1)}
     </div>
   ) : null
 }
