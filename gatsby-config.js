@@ -104,6 +104,7 @@ let plugins = [
     },
   },
   'gatsby-plugin-remove-trailing-slashes',
+  'gatsby-plugin-meta-redirect'
 ]
 
 if (process.env.INDEX_ALGOLIA === 'true') {
@@ -125,6 +126,7 @@ module.exports = {
     siteUrl: config.gatsby.siteUrl,
     footer: config.footer,
     docsLocation: config.siteMetadata.docsLocation,
+    redirects: config.redirects
   },
   plugins,
 }
