@@ -2,6 +2,8 @@ const config = {
   gatsby: {
     pathPrefix: '/docs',
     siteUrl: 'https://www.prisma.io',
+    titlePrefix: '',
+    titleSuffix: '',
   },
   redirects: [
     {
@@ -21,7 +23,7 @@ const config = {
       { name: 'Quickstart', link: '/getting-started/quickstart' },
       {
         name: 'Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/api',
+        link: '/reference/tools-and-interfaces/prisma-client/',
       },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },

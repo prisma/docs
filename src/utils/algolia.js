@@ -20,19 +20,28 @@ const handleRawBody = node => {
     })
   let finalSections = []
   headingWithcontent.map(fSec => {
-    const sections = fSec.content.split('\n\n')
+    const sections = fSec.content.replace(/(\s\```)([^```]+)(\```\s)/g, '').split('\n\n')
     const filteredSections = sections.filter(
       section =>
         section !== ' ' &&
         section !== '' &&
-        !section.includes('</details') &&
-        !section.includes('ButtonLink') &&
-        !section.includes('SwitchTech') &&
+        !section.includes('details>') &&
+        !section.includes('TopBlock>') &&
+        !section.includes('<ButtonLink') &&
+        !section.includes('SwitchTech>') &&
         !section.includes('TabbedContent') &&
-        !section.includes('ParallelBlocks') &&
-        !section.includes('CodeWithResult') &&
+        !section.includes('FileWithIcon') &&
+        !section.includes('ParallelBlocks>') &&
+        !section.includes('CodeWithResult>') &&
         !section.includes('CodeBlock') &&
-        !section.includes('tab>')
+        !section.includes('tab>') &&
+        !section.includes('| **') &&
+        !section.includes('```') &&
+        !section.includes('block>') &&
+        !section.includes('ParallelBlocks>') &&
+        !section.includes('CmdResult>') &&
+        !section.includes('<Subsections') &&
+        !section.includes('Cmd>')
     )
     filteredSections.map(
       para => (para !== '\n' || para !== '') && finalSections.push({ para, heading: fSec.heading })
@@ -47,7 +56,8 @@ const handleRawBody = node => {
     return tocItem ? tocItem.url : ''
   }
 
-  const records = finalSections.map(fSection => ({
+  const records = finalSections.map((fSection, index) => ({
+    id: index,
     objectID: rest.objectID,
     title: rest.title,
     slug: rest.modSlug,

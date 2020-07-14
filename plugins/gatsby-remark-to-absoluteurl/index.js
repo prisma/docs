@@ -15,7 +15,7 @@ module.exports = function plugin(
   function visitor(node) {
     //To convert all uppercase links to lowercase (if used by mistake)
     node.url = node.url.toLowerCase()
-    
+
     node.originalUrl = node.url
     if (
       markdownNode.fields &&

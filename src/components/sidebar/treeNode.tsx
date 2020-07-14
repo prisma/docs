@@ -10,7 +10,7 @@ import { withPrefix } from 'gatsby'
 const List = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 16px 0;
+  margin: 12px 0 24px;
   &.has-border {
     border-left: 2px solid var(--border-color);
     margin-left: -12px;
@@ -45,7 +45,7 @@ const ListItem = styled.li`
       font-size: 14px;
       font-style: normal;
       font-weight: 600;
-      background: var(--code-bgd-color);
+      background: var(--code-inline-bgd-color);
       border-radius: 5px;
       padding: 2px 5px;
       &.small {
@@ -64,6 +64,10 @@ const ListItem = styled.li`
       top: 7px;
       padding: 0;
       border: 0;
+
+      &.more-left {
+        left: 10px;
+      }
 
       .right,
       .down {
@@ -103,7 +107,7 @@ const ListItem = styled.li`
   &.top-level {
     margin-top: 2rem;
     > a {
-      font-size: 1rem;
+      font-size: 1.125rem;
       color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
@@ -112,14 +116,14 @@ const ListItem = styled.li`
       }
     }
     > ul {
-      margin-top: 24px;
+      margin-top: 12px;
     }
   }
   &.bottom-level {
     margin-left: 20px;
   }
   &.static-link {
-    margin-top: 24px;
+    margin-top: 12px;
   }
   &.static-link > a {
     color: var(--main-font-color) !important;
@@ -158,6 +162,7 @@ const TreeNode = ({
   experimental,
   lastLevel,
   hidePage,
+  codeStyle,
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
@@ -177,10 +182,11 @@ const TreeNode = ({
   }
 
   const hasChildren = items.length !== 0
+  const level = slug ? slug.split('/').indexOf(label) : ''
 
   const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
     staticLink ? 'static-link' : ''
-  } ${lastLevel ? 'last-level' : ''}`
+  } ${lastLevel ? 'last-level' : ''} ${level > 2 ? 'more-padding' : ''}`
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
@@ -213,20 +219,24 @@ const TreeNode = ({
         <Link
           to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
-          className={isCurrent ? 'active-item' : 'hh'}
+          className={isCurrent ? 'active-item' : 'non-active'}
           id={withPrefix(url)}
         >
           {hasExpandButton ? (
-            <span className="collapse-title" onClick={collapse} >
-              <button aria-label="collapse" className="item-collapser" onClick={justExpand}>
+            <span className="collapse-title" onClick={collapse}>
+              <button
+                aria-label="collapse"
+                className={`item-collapser ${level > 3 ? 'more-left' : ''}`}
+                onClick={justExpand}
+              >
                 {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />
               </button>
-              <span dangerouslySetInnerHTML={{ __html: title }}/>{/* {title} */}
+              <span className={`${codeStyle ? 'inline-code' : ''}`}>{title}</span>
             </span>
           ) : (
-            <span dangerouslySetInnerHTML={{ __html: title }}/>
+            <span className={`${codeStyle ? 'inline-code' : ''}`}>{title}</span>
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag small">Experimental</span>}
