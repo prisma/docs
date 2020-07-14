@@ -28,7 +28,7 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
 }
 
 exports.createPages = ({ graphql, actions }) => {
-  const { createPage } = actions
+  const { createPage, createRedirect } = actions
 
   const getTitle = (frontmatter, lang, db) => {
     let pageSeoTitle = frontmatter.metaTitle || frontmatter.title
@@ -90,6 +90,14 @@ exports.createPages = ({ graphql, actions }) => {
             }
           }
         }
+        site {
+          siteMetadata {
+            redirects {
+              from
+              to
+            }
+          }
+        }
       }
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
@@ -147,6 +155,14 @@ exports.createPages = ({ graphql, actions }) => {
         })
       })
       resolve()
+      const redirects = result.data.site.siteMetadata.redirects
+      redirects.map(redirect =>
+        createRedirect({
+          fromPath: redirect.from,
+          toPath: redirect.to,
+          statusCode: 301,
+        })
+      )
     })
   })
 }
