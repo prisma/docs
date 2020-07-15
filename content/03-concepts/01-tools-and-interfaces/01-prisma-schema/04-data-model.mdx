@@ -91,9 +91,105 @@ The corresponding database looks like this:
 
 </details>
 
-The generated API looks like this:
+The follow example creates a `User` record and three nested `Post` records, each with one or two nested `Category` records:
 
-// TODO: Complex example
+<TabbedContent tabs={[<FileWithIcon text="Query Example" icon="code"/>  , <FileWithIcon text="Copy-Paste Example" icon="code"/>]}>	
+
+<tab>
+
+```ts
+  const user = await prisma.user.create({
+    data: {
+      email: "ariadne@prisma.io",
+      name: "Ariadne",
+      posts: {
+        create: [
+          {
+            title: "My first day at Prisma",
+            categories: {
+              create: {
+                name: "Office",
+              },
+            },
+          },
+          {
+            title: "How to connect to a SQLite database",
+            categories: {
+              create: [{ name: "Databases" }, { name: "Tutorials" }],
+            },
+          },
+        ],
+      },
+    },
+  });
+```
+
+</tab>
+
+<tab>
+
+```ts
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient({});
+
+// A `main` function so that you can use async/await
+async function main() {
+  // Create user, posts, and categories
+  const user = await prisma.user.create({
+    data: {
+      email: "ariadne@prisma.io",
+      name: "Ariadne",
+      posts: {
+        create: [
+          {
+            title: "My first day at Prisma",
+            categories: {
+              create: {
+                name: "Office",
+              },
+            },
+          },
+          {
+            title: "How to connect to a SQLite database",
+            categories: {
+              create: [{ name: "Databases" }, { name: "Tutorials" }],
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // Return user, and posts, and categories
+  const returnUser = await prisma.user.findOne({
+    where: {
+      id: user.id,
+    },
+    include: {
+      posts: {
+        include: {
+          categories: true,
+        },
+      },
+    },
+  });
+
+  console.log(returnUser);
+}
+
+main()
+  .catch((e) => {
+    throw e;
+  })
+  .finally(async () => {
+    await prisma.disconnect();
+  });
+```
+
+</tab>
+
+</TabbedContent>
 
 Your data model will reflect your application domain. For example:
 
@@ -139,7 +235,7 @@ model comments {
 }
 ```
 
-However, you can still adhere to the naming convention without renaming the underlying `users` table in the database by using the `@@map` attribute:
+However, you can still adhere to the naming convention without renaming the underlying `comments` table in the database by using the `@@map` attribute:
 
 ```prisma
 model Comment {
@@ -149,7 +245,7 @@ model Comment {
 }
 ```
 
-With this model definition, Prisma automatically maps the `User` model to the `users` table in the underlying database. 
+With this model definition, Prisma automatically maps the `Comment` model to the `comments` table in the underlying database. 
 
 > **Note**: You can also [`@map`](../../../api-reference/prisma-schema#map) a column name.
 
@@ -163,67 +259,104 @@ With this model definition, Prisma automatically maps the `User` model to the `u
 
 ## Creating  fields
 
-The properties of a model are called _fields_. Fields map to _columns_ and consist of several parts:
+The properties of a model are called _fields_. Fields map to _columns_ and consist of:
 
-- [Type](#field-types)
-- [Type modifier](#type-modifiers) (optional)
-- [Attributes](data-model#attributes) (optional)
+- A **field type**
+- Optional **type modifiers**
+- Optional **attributes**
+
+A field's type determines its _structure_, and fits into one of two categories:
+
+- [Scalar types](data-model#scalar-fields) (includes [enums](data-model#enums)) - for example, `String` or `Int`.
+- Model types (the field is then called [relation field](relations#relation-fields)) - for example `Post` or `Comment[]`.
+
+<ApiRef>
+
+**API Reference:** [Field types](../../../api-reference/prisma-schema#field-types), [type modifiers](../../../api-reference/prisma-schema#model-field-type-modifiers), and [attributes](../../../api-reference/prisma-schema#attributes)
+
+</ApiRef>
+
+### Scalar fields
 
 ```prisma
+model Comment {
+|  id      Int    @id @default(autoincrement())
+|  title   String
+|  content String
+}
+
+model Tag {
+|  name String @id
+}
+```
+
+> **Note**: `@id`
+
+### Relation fields
+
+A relation field's type is another model. A [relation](relations) is **always** defined by two relation fields - one on each model. The following example defines:
+
+* A [many-to-many](relations#many-to-many-relations) relation:
+  * Each `Post` can have one or more tags (`Tag[]`)
+  * Each `Tag` can have one or more posts (`Post[]`)
+* A [one-to-many](relations#one-to-many-relations) relation:
+  * Each `Comment` is associated with one `Post`
+  * Each `Post` can have one or more comments (`Comment[]`)
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+  title      String
+  published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]  @relation(references: [id])
+|  comments   Comment[]
+|  tags       Tag[]
+}
+
 model Comment {
    id Int 
    title String
    content String
+|   Post    Post?  @relation(fields: [postId], references: [id])
+   postId  Int?
 }
 
 model Tag {
-  name String
+  name   String  
+|  posts  Post[]
 }
 ```
 
-### Field types
+> **Note**: _Scalar_ lists (arrays) are only supported in the data model if your database natively supports them. Currently, scalar lists are therefore only supported when using PostgreSQL (since MySQL and SQLite don't natively support scalar lists).
 
-The type of a field determines its _structure_. A type falls in either of two categories:
-
-- [Scalar type](#field-types) (includes [enums](data-model#enums)) - for example, `String` or `Int`.
-- Model (the field is then called [relation field](relations#relation-fields)) - for example `Post[]` or `Profile`.
-
-### Type modifiers
-
-The type of a field can be modified by appending either of two modifiers:
-
-- `[]`: Make a field a **list**
-- `?`: Make a field **optional**
-
-The `User` model has a `Post[]` list field and an optional `Profile?` field:
+### Optional and mandatory fields
 
 ```prisma
-model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  role    Role     @default(USER)
-| posts   Post[]
-| profile Profile?
+model Comment {
+  id      Int    @id @default(autoincrement())
+  title   String
+| content? String
+}
+
+model Tag {
+  name String @id
 }
 ```
 
-> **Note**: Scalar lists (arrays) are only supported in the data model if your database natively supports them. Currently, scalar lists are therefore only supported when using PostgreSQL (since MySQL and SQLite don't natively support scalar lists).
+When **not** annotating a field with the `?` type modifier, the field will be _required_ on every record of the model. This has effects on two levels:
+
+- **Database**: Required fields are represented via `NOT NULL` constraints in the underlying database.
+- **Prisma Client**: Prisma Client's generated [TypeScript types](#type-definitions) that represent the models in your application code will also define these fields as required to ensure they always carry values at runtime.
+
 
 <ApiRef>
 
 **API Reference:** [Type modifiers](../../../api-reference/prisma-schema#model-field-type-modifiers)
 
 </ApiRef>
-
-### Creating a list field
-
-### Creating a required field
-
-When **not** annotating a field with the `?` type modifier, the field will be _required_ on every record of the model. This has effects on two levels:
-
-- **Database**: Required fields are represented via `NOT NULL` constraints in the underlying database.
-- **Prisma Client**: Prisma Client's generated [TypeScript types](#type-definitions) that represent the models in your application code will also define these fields as required to ensure they always carry values at runtime.
 
 ## Defining attributes
 
