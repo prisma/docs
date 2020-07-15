@@ -20,10 +20,6 @@ const config = {
     title: 'Prisma',
     links: [
       { name: 'Docs', link: '/' },
-      {
-        name: 'API Reference',
-        link: '/api-reference',
-      },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
       { name: 'FAQ', link: '/more/faq' },
