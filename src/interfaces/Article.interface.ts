@@ -14,6 +14,8 @@ export interface ArticleFrontmatter {
   experimental?: boolean
   toc?: boolean
   hidePage?: boolean
+  tocDepth?: number
+  codeStyle?: boolean
 }
 
 export interface ArticleData {
@@ -43,5 +45,6 @@ export interface TableOfContents {
   items: {
     url: string
     title: string
+    items?: any[]
   }[]
 }

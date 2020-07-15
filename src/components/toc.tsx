@@ -13,21 +13,27 @@ const ChapterTitle = styled.h1`
   color: var(--list-bullet-color);
 `
 
-const TOC = ({ headings }: any) => {
-  let navItems: any[] = []
-  navItems =
-    headings &&
-    headings.map((heading: any, index: number) => {
-      return (
-        <li key={index}>
-          <a href={heading.url}>{stringify(heading.title)}</a>
-        </li>
-      )
-    })
+const TOC = ({ headings, tocDepth }: any) => {
+  const navItems = (headings: any[], depth: number) => {
+    return (
+      <ul className="list">
+        {headings &&
+          headings.map((heading: any, index: number) => (
+            <li key={index}>
+              <a href={heading.url}>{stringify(heading.title)}</a>
+              {heading.items &&
+                heading.items.length > 0 &&
+                depth > 1 &&
+                navItems(heading.items, depth - 1)}
+            </li>
+          ))}
+      </ul>
+    )
+  }
   return navItems && navItems.length ? (
     <div>
       <ChapterTitle>CONTENT</ChapterTitle>
-      <ul className="list">{navItems}</ul>
+      {navItems(headings, tocDepth || 1)}
     </div>
   ) : null
 }

@@ -12,11 +12,13 @@ The code will be migrated to [Nexus](https://www.nexusjs.org) and the [`nexus-sc
 
 [Nexus currently only works with TypeScript](https://github.com/graphql-nexus/nexus/issues/85), therefore this guide also explains how to migrate from JavaScript to TypeScript. The guide therefore basically assumes a **full rewrite** of your existing app. If you're currently using JavaScript and want to continue doing so, you can follow the [guide](./upgrading-prisma-binding-to-sdl-first) to upgrade from `prisma-binding` to an SDL-first setup. 
 
+> **Note**: Because this guide requires a full rewrite, you can only choose this upgrade path if you are following the [all-at-once upgrade strategy](./how-to-upgrade#upgrade-strategies).  
+
 The guide assumes that you already went through the [guide for upgrading the Prisma layer](./upgrading-the-prisma-layer). This means you already:
 
 - installed the Prisma 2.0 CLI
 - created your Prisma 2.0 schema
-- introspected your database and resolved potential schema incompatibilities
+- introspected your database and resolved potential [schema incompatibilities](./schema-incompatibilities)
 - installed and generated Prisma Client
 
 The guide further assumes that you have a file setup that looks similar to this:
@@ -50,7 +52,7 @@ If this is not what your project structure looks like, you'll need to adjust the
 
 The first step is to install the Nexus dependency in your project:
 
-```
+``` copy
 npm install nexus@next
 ```
 
@@ -58,13 +60,13 @@ npm install nexus@next
 
 Next, install the the Prisma plugin for Nexus which will allow you to expose Prisma models in your GraphQL API:
 
-```
+``` copy
 npm install nexus-plugin-prisma
 ```
 
-The `nexus-plugin-prisma` dependency bundles all required Prisma dependencies. You should therefore remove the dependencies that you added installed when you upgraded the Prisma layer of your app:
+The `nexus-plugin-prisma` dependency bundles all required Prisma dependencies. You should therefore remove the dependencies that you installed when you upgraded the Prisma layer of your app:
 
-```
+``` copy
 npm uninstall @prisma/cli @prisma/client
 ```
 
@@ -78,27 +80,29 @@ npx prisma
 
 Since you'll be using TypeScript in this guide, you need to add the required dependencies:
 
-```
+``` copy
 npm install typescript ts-node --save-dev
 ```
 
 Create a new file called `tsconfig.json` in the root directory of your project:
 
-```
+``` copy
 touch tsconfig.json
 ```
 
 Now add the following contents to the new file:
 
-```json
+```json copy
 {
   "compilerOptions": {
     "skipLibCheck": true,
     "strict": true,
     "rootDir": "src",
+    "noEmit": true,
+    "typeRoots": ["node_modules/@types","types"],
     "plugins": [{ "name": "nexus/typescript-language-service" }]
   },
-  "include": ["src"]
+  "include": ["src", "types.d.ts"]
 }
 ```
 
@@ -106,17 +110,22 @@ Now add the following contents to the new file:
 
 Create the root source file of your API called `app.ts` inside the `src` directory:
 
-```
+``` copy
 touch src/app.ts
 ```
 
 Now add the following setup code to it:
 
-```ts
-import { log, settings, use } from 'nexus'
+```ts copy
+import { settings, use } from 'nexus'
 import { prisma } from 'nexus-plugin-prisma'
 
-use(prisma({ migrations: false }))
+use(
+  prisma({
+    migrations: false,
+    features: { crud: true },
+  }),
+)
 
 settings.change({
   server: {
@@ -132,12 +141,12 @@ settings.change({
 
 There are two main things to note about this setup:
 
-- When adding the `nexus-plugin-prisma` via Nexus' `use()` function, you're disabling [Prisma Migrate](../../../reference/tools-and-interfaces/prisma-migrate) which is currently still in an experimental state and therefore is not recommended for production use.
+- When adding the `nexus-plugin-prisma` via Nexus' `use()` function, you're disabling [Prisma Migrate](../../../reference/tools-and-interfaces/prisma-migrate) and enabling the auto-generation of CRUD resolvers via `t.crud`.
 - You'll be generating the SDL-version of your GraphQL schema `nexus.graphql` inside `./src/generated`.
 
 Also, adjust the scripts section inside your `package.json` to include the following commands:
 
-```json line-number
+```json 
 {
   "scripts": {
 +    "dev": "nexus dev",
@@ -151,15 +160,15 @@ The `dev` script starts a development server that you **always** should have run
 
 You can start the development server using the following command:
 
-```
+``` copy
 npm run dev
 ```
 
 You should see the following CLI output:
 
 ```
-544 ▲ nexus:schema Your GraphQL schema is empty. This is normal if you have not defined any GraphQL types yet. But if you did, check that the file name follows the convention: all graphql.ts modules or direct child modules within a graphql directory are automatically imported.
-  3 ● server listening  --  url: 'http://localhost:4000/'
+589 ▲ nexus:schema Your GraphQL schema is empty. This is normal if you have not defined any GraphQL types yet. If you did however, check that your files are contained in the same directory specified in the `rootDir` property of your tsconfig.json file.
+  3 ● nexus:server listening  --  url: 'http://localhost:4000/'
 ```
 
 Your GraphQL server is now running, but there's no actual _GraphQL schema_ connected to it yet. In the following steps, we'll explain how you can migrate your existing SDL-first GraphQL schema that's implemented with `prisma-binding` to an equivalent setup using Nexus.
@@ -172,13 +181,13 @@ For the purpose of this guide, you'll keep all the code in a single file. Howeve
 
 Create a new file called `graphql.ts` right next to `app.ts`:
 
-```
-touch graphql.ts
+``` copy
+touch src/graphql.ts
 ```
 
 In Nexus, GraphQL types are defined via the `objectType` function that's exposed by the main `schema` object. Import `schema` and then start with the skeleton for your first GraphQL type. In this case, we're starting by mapping Prisma's `User` model to GraphQL:
 
-```ts
+```ts copy
 import { schema } from 'nexus'
 
 schema.objectType({
@@ -285,7 +294,7 @@ schema.objectType({
     t.model.id()
     t.model.bio()
     t.model.user()
-    t.model.userId()
+    t.model.owner()
   },
 })
 
@@ -344,7 +353,7 @@ In this section, you'll migrate all GraphQL _queries_ from `prisma-binding` to N
 
 The first step to migrate any queries is to define the `Query` type of your GraphQL API. Once that's done, you can gradually add operations to it. Add the following definition to `graphql.ts`:
 
-```ts
+```ts copy
 schema.queryType({
   definition(t) {
     // your GraphQL queries + resolvers will be defined here
@@ -765,7 +774,7 @@ schema.mutationType({
 })
 ```
 
-Note that the default name for the mutation in your GraphQL schema is `createdOneUser` (named after the function which is exposed by `t.crud`). In order to rename it to `createUser`, you need to provide the `alias` property.
+Note that the default name for the mutation in your GraphQL schema is `createOneUser` (named after the function which is exposed by `t.crud`). In order to rename it to `createUser`, you need to provide the `alias` property.
 
 If you have the Nexus development server running, you can save the file and your GraphQL API will be updated to expose the new `createUser` mutation. You can also observe this by looking at the `Mutation` type inside the generated `nexus.graphql` file:
 
@@ -869,7 +878,7 @@ mutation {
   ) {
     id
     published
-    auhor {
+    author {
       id
       name
     }
@@ -903,7 +912,7 @@ schema.mutationType({
         content: schema.stringArg(),
         authorId: schema.stringArg({ nullable: false }),
       },
-+      resolve: (_, args) => {
++      resolve: (_, args, context) => {
 +        return context.db.post.create({
 +          data: {
 +            title: args.title,
@@ -1050,8 +1059,7 @@ schema.mutationType({
 +            }
 +          }
 +        })
-+      }
-+    })
+      }
   }
 })
 ```
@@ -1206,7 +1214,7 @@ Since the entire app has now been upgrade to Prisma 2.0 and Nexus, you can delet
 
 You can start by removing npm dependencies that were related to the Prisma 1 setup:
 
-```
+``` copy
 npm uninstall graphql-cli graphql-yoga prisma-binding prisma1
 ```
 
@@ -1214,7 +1222,7 @@ npm uninstall graphql-cli graphql-yoga prisma-binding prisma1
 
 Next, delete the files of your Prisma 1 setup:
 
-```
+``` copy
 rm prisma1/datamodel.prisma prisma1/prisma.yml
 ```
 

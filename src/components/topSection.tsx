@@ -9,8 +9,8 @@ import { withPrefix } from 'gatsby'
 const TopSectionWrapper = styled.div`
   position: relative;
   hr.bigger-margin {
-    margin-top: 3.5rem;
-    margin-bottom: 4rem;
+    margin-top: 3rem;
+    margin-bottom: 3.5rem;
   }
   .tech-switch-block {
     position: relative;
@@ -26,6 +26,11 @@ const MainTitle = styled.h1`
   color: var(--main-font-color);
   margin: 0;
   margin-top: 4px;
+  &.inline-code {
+    font-size: 2rem;
+    padding: 0px 0.2em;
+    line-height: 3rem;
+  }
   @media only screen and (max-width: 767px) {
     font-size: 24px;
   }
@@ -42,7 +47,17 @@ const SwitcherWrapper = styled.div`
   }
 `
 
-const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate, toc }: any) => {
+const TopSection = ({
+  location,
+  title,
+  slug,
+  langSwitcher,
+  dbSwitcher,
+  navigate,
+  toc,
+  tocDepth,
+  codeStyle,
+}: any) => {
   const [pathTechParams] = location.pathname.split('/').splice(-1)
   const getTechFromParam = (type: string, defaultVal: string) => {
     const isTechPath = location.pathname !== withPrefix(urlGenerator(slug))
@@ -139,7 +154,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
   return (
     <TopSectionWrapper>
       <ParentTitle slug={slug} />
-      <MainTitle dangerouslySetInnerHTML={{ __html: title }} />
+      <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
       <div className="tech-switch-block">
         {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
           <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
@@ -163,7 +178,7 @@ const TopSection = ({ location, title, slug, langSwitcher, dbSwitcher, navigate,
           )}
         </SwitcherWrapper>
       </div>
-      {toc && toc.items && toc.items.length > 0 && <TOC headings={toc.items} />}
+      {toc && toc.items && toc.items.length > 0 && <TOC headings={toc.items} tocDepth={tocDepth} />}
     </TopSectionWrapper>
   )
 }

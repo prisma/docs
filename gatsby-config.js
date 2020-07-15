@@ -53,12 +53,12 @@ let plugins = [
   'gatsby-plugin-styled-components',
   'gatsby-plugin-smoothscroll',
   'gatsby-plugin-catch-links',
-  {
-    resolve: `gatsby-plugin-layout`,
-    options: {
-      component: require.resolve(`./src/layouts/articleLayout.tsx`),
-    },
-  },
+  // {
+  //   resolve: `gatsby-plugin-layout`,
+  //   options: {
+  //     component: require.resolve(`./src/layouts/articleLayout.tsx`),
+  //   },
+  // },
   {
     resolve: `gatsby-plugin-sitemap`,
     options: {
@@ -80,10 +80,10 @@ let plugins = [
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
-      // decks: [],
-      // defaultLayouts: {
-      //   default: require.resolve('./src/layouts/articleLayout.tsx'),
-      // },
+      decks: [],
+      defaultLayouts: {
+        default: require.resolve('./src/layouts/articleLayout.tsx'),
+      },
       extensions: ['.mdx', '.md'],
       gatsbyRemarkPlugins,
     },
@@ -104,17 +104,20 @@ let plugins = [
     },
   },
   'gatsby-plugin-remove-trailing-slashes',
+  'gatsby-plugin-meta-redirect'
 ]
 
-if (process.env.INDEX_ALGOLIA === "true") {
+if (process.env.INDEX_ALGOLIA === 'true') {
   plugins = [...plugins, algoliaPlugin]
 }
 
 module.exports = {
-  pathPrefix: config.gatsby.pathPrefix,
+  pathPrefix: process.env.ADD_PREFIX === 'true' ? config.gatsby.pathPrefix : '/',
   siteMetadata: {
     pathPrefix: config.gatsby.pathPrefix,
     title: config.siteMetadata.title,
+    titlePrefix: config.gatsby.titlePrefix,
+    titleSuffix: config.gatsby.titleSuffix,
     description: config.siteMetadata.description,
     keywords: config.siteMetadata.keywords,
     twitter: config.siteMetadata.twitter,
@@ -123,6 +126,7 @@ module.exports = {
     siteUrl: config.gatsby.siteUrl,
     footer: config.footer,
     docsLocation: config.siteMetadata.docsLocation,
+    redirects: config.redirects
   },
   plugins,
 }
