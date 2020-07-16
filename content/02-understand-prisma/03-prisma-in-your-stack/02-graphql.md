@@ -8,7 +8,7 @@ metaDescription: 'This page gives explains how to build GraphQL servers with Pri
 
 [GraphQL](http://graphql.org/) is a query language for APIs. It is often used as an alternative to RESTful APIs, but can also be used as an additional "gateway" layer on top of existing RESTful services.
 
-With Prisma, you can build GraphQL servers that connect to a database. Prisma is completely agnostic to the GraphQL tools you use. When building as GraphQL server, you can combine Prisma with tools like Apollo Server, `express-graphql`, TypeGraphQL, GraphQL.js or pretty much any tool or library that you're using in your GraphQL server setup.
+With Prisma, you can build GraphQL servers that connect to a database. Prisma is completely agnostic to the GraphQL tools you use. When building as GraphQL server, you can combine Prisma with tools like Apollo Server, `express-graphql`, TypeGraphQL, GraphQL.js, or pretty much any tool or library that you're using in your GraphQL server setup.
 
 ## GraphQL servers under the hood
 
@@ -17,7 +17,7 @@ A GraphQL server consists of two major components:
 - GraphQL schema (type definitions + resolvers)
 - HTTP server
 
-Note that a GraphQL schema can be written code-first or SDL-first. Check out this [article](https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3/) to learn more about these two approaches. If you like the SDL-first approach but still want to make your code type safe, check out [GraphQL Code Generator](https://graphql-code-generator.com/) to generate various type definitions based on SDL.
+Note that a GraphQL schema can be written code-first or SDL-first. Check out this [article](https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3/) to learn more about these two approaches. If you like the SDL-first approach but still want to make your code type-safe, check out [GraphQL Code Generator](https://graphql-code-generator.com/) to generate various type definitions based on SDL.
 
 The GraphQL schema and HTTP server are typically handled by separate libraries. Here is an overview of current GraphQL server tools and their purpose:
 
@@ -43,7 +43,7 @@ In addition to these standalone and single-purpose libraries, there are several 
 
 ## Prisma & GraphQL examples
 
-Below you find a number of ready-to-run examples that showcase how to use Prisma with different combination of the tools mentioned in the table above.
+Below you find several ready-to-run examples that showcase how to use Prisma with different combinations of the tools mentioned in the table above.
 
 ### TypeScript
 
