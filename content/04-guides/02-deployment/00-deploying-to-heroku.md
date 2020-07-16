@@ -196,7 +196,7 @@ Connection URL:
    postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__
 ```
 
-Copy the connection URL and set it as an environment variable:
+Copy the connection URL and set it as an environment variable (make sure your .env is located in the prisma directory): 
 
 ```no-lines
 export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__"
