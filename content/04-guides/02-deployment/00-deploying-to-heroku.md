@@ -56,7 +56,7 @@ Open your terminal and navigate to a location of your choice. Create the directo
 ```no-lines
 mkdir prisma-heroku
 cd prisma-heroku
-curl https://codeload.github.com/prisma/prisma-examples/tar.gz/heroku | tar -xz --strip=3 prisma-examples-heroku/deployment-platforms/heroku/
+curl https://codeload.github.com/prisma/prisma-examples/tar.gz/master | tar -xz --strip=3 prisma-examples-master/deployment-platforms/heroku
 ```
 
 <!-- tar strip folder is a concatenation of the REPOSITORY-BRANCH/REF, e.g. prisma-examples-master -->
