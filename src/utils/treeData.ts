@@ -25,6 +25,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             staticLink,
             duration,
             experimental,
+            preview,
             dbSwitcher,
             langSwitcher,
             hidePage,
@@ -52,6 +53,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             items: [],
             topLevel,
             experimental,
+            preview,
             staticLink,
           }
           prevItems.push(tmp)
@@ -63,6 +65,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.staticLink = staticLink
           tmp.duration = duration
           tmp.experimental = experimental
+          tmp.preview = preview
           tmp.topLevel = topLevel
           tmp.hidePage = hidePage
           tmp.codeStyle = codeStyle
@@ -87,6 +90,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           staticLink,
           duration,
           experimental,
+          preview,
           topLevel,
           hidePage,
           codeStyle,

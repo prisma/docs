@@ -12,6 +12,7 @@ export interface ArticleFrontmatter {
   staticLink?: boolean
   duration?: string
   experimental?: boolean
+  preview?: boolean
   toc?: boolean
   hidePage?: boolean
   tocDepth?: number
