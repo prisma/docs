@@ -134,12 +134,13 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                         {line.map((token: any, key: any) => {
                           if (isDiff) {
                             if (
-                              ((key === 0 || key === 1) &&
-                                (token.content.charAt(0) === '+' ||
-                                  token.content.charAt(0) === '-')) ||
-                              token.content.charAt(0) === '|' ||
-                              token.content.charAt(0) === '✎'
+                              (key === 0 || key === 1) &&
+                              (token.content.charAt(0) === '+' ||
+                                token.content.charAt(0) === '-' ||
+                                token.content.charAt(0) === '|' || 
+                                token.content.charAt(0) === '✎')
                             ) {
+                              console.log(line)
                               return (
                                 <span
                                   {...getTokenProps({
