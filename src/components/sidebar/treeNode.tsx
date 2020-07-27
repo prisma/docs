@@ -160,6 +160,7 @@ const TreeNode = ({
   staticLink,
   duration,
   experimental,
+  preview,
   lastLevel,
   hidePage,
   codeStyle,
@@ -240,6 +241,7 @@ const TreeNode = ({
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag small">Experimental</span>}
+          {preview && <span className="tag small">Preview</span>}
         </Link>
       )}
 

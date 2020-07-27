@@ -12,6 +12,7 @@ export const useAllArticlesQuery = () => {
               duration
               staticLink
               experimental
+              preview
               langSwitcher
               dbSwitcher
               hidePage
