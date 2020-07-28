@@ -59,6 +59,9 @@ const Tabs = styled.div`
     color: var(--main-font-color);
     background: var(--code-bgd-color);
     border-radius: 5px;
+    svg path {
+      stroke: var(--code-inner-color);
+    }
   }
 `
 const Wrapper = styled.div`
