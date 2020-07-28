@@ -17,7 +17,7 @@ const CodeWithResult = ({ children }: CodeWithResultProps) => {
       <div className="cmd">{cmd}</div>
       <div className="result">
         <div onClick={toggleResult} className="show-btn">
-          {showResult ? `Hide result` : `Show result`}
+          {showResult ? `Hide CLI output` : `Show CLI output`}
         </div>
         {showResult && <div className="result-code">{result}</div>}
       </div>
