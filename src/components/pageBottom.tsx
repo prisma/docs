@@ -92,6 +92,7 @@ const P = styled.p`
 
 const Button = styled(ButtonWrapper)`
   display: inline-flex !important;
+  overflow: hidden;
   svg {
     margin-right: 10px;
     path {
