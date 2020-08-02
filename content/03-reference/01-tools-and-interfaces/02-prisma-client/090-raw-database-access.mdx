@@ -54,30 +54,56 @@ queryRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promi
 
 ### Typing `queryRaw` results
 
-You can adjust the return type of `queryRaw` with a [TypeScript Generic](https://www.typescriptlang.org/docs/handbook/generics.html).
+You can adjust the return type of `queryRaw` with a [TypeScript Generic](https://www.typescriptlang.org/docs/handbook/generics.html). `queryRaw` has the following signature:
 
-`queryRaw` has the following signature:
-
-```ts
+```ts no-lines
 queryRaw<T = any>(query: string | TemplateStringsArray): Promise<T>;
 ```
 
-The return type of `queryRaw` is `Promise<T>`, where `T` is a [generic type parameter](https://www.typescriptlang.org/docs/handbook/generics.html). This means you can type the result manually by providing `T` when you invoke `queryRaw`. If you don't provide any type, the return type of `queryRaw` defaults to `any`.
+`Promise<T>` uses [generic type parameter `T`](https://www.typescriptlang.org/docs/handbook/generics.html). You can determine the type of `T` when you invoke the `queryRaw` command. In the following example, `queryRaw` returns `User[]`:
 
 ```ts
 // import the generated `User` type from the `@prisma/client` module
 import { User } from '@prisma/client'
 
-const result = await prisma.raw<User[]>('SELECT * FROM User;')
+const result = await prisma.queryRaw<User[]>('SELECT * FROM User;')
 // result is of type: `User[]`
 ```
 
-Now, `result` is statically typed to the generated `User` type (or rather an array thereof) from Prisma Client.
+> **Note**: If you do not provide a type, `queryRaw` defaults to `any`.
+
+`result` is now `User[]` and intellisense is available:
 
 ![](https://imgur.com/H2TCRc5.png)
 
-If you're selecting only specific fields of the model or want to include relations, read the documentation about [leveraging Prisma Client's generated types](advanced-usage-of-generated-types) if you want to ensure that the query results are properly typed.
+If you are selecting **specific fields** of the model or want to include relations, refer to the documentation about [leveraging Prisma Client's generated types](advanced-usage-of-generated-types) if you want to make sure that the results are properly typed.
 
+#### Type caveats when using raw SQL
+
+When you type the results of `queryRaw`, the raw data does not always match the suggested TypeScript type. For example, the following Prisma model includes a `Boolean` field named `published`:
+
+```prisma
+model Post {
+  id         Int     @default(autoincrement()) @id
+| published  Boolean @default(false)
+  title      String
+  content    String?
+}
+```
+
+The following query returns all posts and prints out the value of each post's `published` property:
+
+```ts
+const result = await prisma.queryRaw<Post[]>`SELECT * FROM Post`;
+
+result.forEach((x) => {
+  console.log(x.published);
+});
+```
+
+If the database provider is MySQL, the values are `1` or `0`. However, if the database provider is PostgreSQL, the values are `true`, `false`, or `NULL`.
+
+> **Note**: The Prisma Client query engine standardises the return type for all databases.
 
 ## <inlinecode>executeRaw</inlinecode>
 
@@ -117,36 +143,78 @@ There are two ways to pass variables into `executeRaw` and `queryRaw`:
 
 Prisma Client escapes all variables, but there are still steps you can take to further [mitigate the risk of SQL injection](#mitigating-sql-injection). 
 
+> **Note**: You cannot pass in table or column names as variables.
+
 ### Variables with tagged templates
+
+The following examples uses [tagged templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) to pass variables into the SQL query. The Prisma Client implementation specifically uses [SQL Template Tag](https://github.com/blakeembrey/sql-template-tag
+):
 
 ```ts
 const userId = 42
-const result = await prisma.queryRaw`SELECT * FROM User WHERE id = ${userId};`
+const result = await prisma.queryRaw`SELECT * FROM User WHERE id = (${userId});`
+```
+
+SQL Template Tag exposes includes a number of helpers. The following example uses `join()` to pass in a list of IDs:
+
+```ts
+import { join } from "@prisma/client";
+
+const ids = [1, 3, 5, 10, 20];
+const result = await prisma.queryRaw`SELECT * FROM User WHERE id IN (${join(
+  ids
+)})`;
+```
+
+The following example uses the `empty` and `sql` helpers to change the query depending on whether `userName` is empty:
+
+```ts
+const userName = "";
+const result = await prisma.queryRaw`SELECT * FROM User ${
+  userName ? sql`WHERE name = ${userName}` : empty // Cannot use "" or NULL here!
+}`;
 ```
 
 Benefits of using tagged templates include:
 
-* They are database-agnostic - you do not need to remember if variables should be written as is `$1` (PostgreSQL) or `?` (MySQL)
+* Tagged templates are database-agnostic - you do not need to remember if variables should be written as is `$1` (PostgreSQL) or `?` (MySQL)
 * Tagged templates give you access to useful helpers like `join` and `empty`
 * Embedded, named variables are easier to read
 
-`queryRaw` and `executeRaw` are implemented as [tagged templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates). This means that you can call the `queryRaw` as follows:
-
-`executeRaw` can also be called like so:
-
-Cannot pass in table names or column names
-
-Based on https://github.com/blakeembrey/sql-template-tag
-
 ### Parameterized queries
+
+`queryRaw` supports standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL):
+
+```ts
+const userName = "Sarah";
+const email = "alice@prisma.io";
+const result = await prisma.queryRaw(
+  "SELECT * FROM User WHERE (name = ? OR email = ?)", // MySQL variable, represented by ?
+  userName,
+  email
+);
+```
+
+The same query written using tagged templates is easier to read and works with all database providers:
+
+```ts
+const userName = "Sarah";
+const email = "alice@prisma.io";
+const result = await prisma.queryRaw`SELECT * FROM User WHERE (name = ${userName} OR email = ${email})`;
+```
 
 ## SQL injection
 
-Mitigating the risk of SQL injection
+Prisma Client mitigates the risk of SQL injection in the following ways:
 
-✔ DO 
-* Use tagged templates to pass variables into your query
+* Escapes all variables and sends all queries as prepared statements.
+* Executes `queryRaw()` and `executeRaw()` as a single query. You cannot append a second query - for example, adding `DROP tablename` to the end of a `SELECT`.
 
-✖ AVOID:
+Do not use
 
-* Be careful about constructing a SQL query with string concatenation - 
+
+```ts
+const mysterString = ""
+const query = "SELECT" + mysterString;
+const result = await prisma.queryRaw`"SELECT * FROM User WHERE (name = ${userName} OR email = ${email})`;
+```
