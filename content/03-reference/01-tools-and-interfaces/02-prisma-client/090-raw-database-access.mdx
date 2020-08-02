@@ -4,27 +4,38 @@ metaTitle: 'Raw database access (Reference)'
 metaDescription: 'Learn how you can send raw SQL queries to your database using the raw() method from the Prisma Client API.'
 ---
 
-## Overview
+<TopBlock>
 
-Prisma Client exposes two functions that allow you to send raw SQL queries to your database:
+Prisma Client exposes two methods that allow you to send raw SQL queries to your database:
 
 - Use `queryRaw` to return actual records (for example, using `SELECT`)
-- Use `executeRaw` to return a count of affected rows (for example, using `UPDATE`)
+- Use `executeRaw` to return a count of affected rows (for example, after an `UPDATE` or `DELETE`)
 
 Use cases for raw SQL include:
 
-- Heavily optimized query
-- Feature that you cannot currently do with Prisma Client
+- You are a strong SQL user and want to run a heavily optimized query
+- Prisma Client does not yet support the feature that you require (please [consider raising an issue](https://github.com/prisma/prisma/issues/new/choose))
 
-## `queryRaw`
+</TopBlock>
 
-Use `queryRaw` if you want to retrieve actual database records - for example, using `SELECT`:
+## <inlinecode>queryRaw</inlinecode>
 
-```ts
+`queryRaw` returns actual database records. For example, the following `SELECT` query returns all fields for each record in the `User` table:
+
+```ts no-lines
 const result = await prisma.queryRaw('SELECT * FROM User;')
 ```
 
-`result` is an array where each object corresponds to a retrieved database record:
+The same method is implemented as a tagged template, which makes it easier to use [variables](#using-variables-and-helpers). The following example includes an `${email}` variable:
+
+```ts no-lines
+const email = "edna@prisma.io"
+const result = await prisma.queryRaw`SELECT * FROM User WHERE email = ${email};`
+```
+
+### Return type
+
+`queryRaw` returns an array. Each object corresponds to a database record:
 
 ```js
 ;[
@@ -33,60 +44,25 @@ const result = await prisma.queryRaw('SELECT * FROM User;')
 ]
 ```
 
-## `executeRaw`
+You also [type the results of `queryRaw`](#typing-queryraw-results).
 
-Sometimes you are interested in the _number of affected rows of a database operation_ instead of retrieving records.
-This can be the case for example if you want to perform an `UPDATE` query, that potentially updates multiple records in the database:
+### Signature
 
-```ts
-const result: number = await prisma.executeRaw(
-  'UPDATE User SET active = $1 WHERE emailValidated = $2;',
-  true,
-  true
-)
+```ts no-lines
+queryRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promise<T>;
 ```
 
-`result` describes the number of affected rows by the `UPDATE` operation.
+### Typing `queryRaw` results
 
-## Tagged templates
+You can adjust the return type of `queryRaw` with a [TypeScript Generic](https://www.typescriptlang.org/docs/handbook/generics.html).
 
-Both the `queryRaw` and `executeRaw` methods are implemented as a [tagged template](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates). Therefore, you can also call `queryRaw` as follows:
-
-```ts
-const result = await prisma.queryRaw`SELECT * FROM User;`
-```
-
-`executeRaw` can also be called like so:
-
-```ts
-const result: number = await prisma.executeRaw`UPDATE User SET active = ${true} WHERE emailValidated = ${true}`
-```
-
-## Setting variables
-
-To include variables in your SQL query, you can use JavaScript string interpolation with [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals):
-
-```ts
-const userId = 42
-const result = await prisma.queryRaw`SELECT * FROM User WHERE id = ${userId};`
-```
-
-It's now possible to use parameters and they will be escaped.
-
-The following helpers for template literals:
-
-Based on https://github.com/blakeembrey/sql-template-tag
-
-## Typing `queryRaw` results
-
-While `executeRaw` always returns `Promise<number>`, the return type of `queryRaw` can be adjusted with a TypeScript Generic.
-It has the following function signature:
+`queryRaw` has the following signature:
 
 ```ts
 queryRaw<T = any>(query: string | TemplateStringsArray): Promise<T>;
 ```
 
-The return type of `queryRaw` is a `Promise` for the [generic](https://www.typescriptlang.org/docs/handbook/generics.html) type parameter `T`. This means you can type the result manually by providing `T` when you invoke `queryRaw`. If you don't provide any type, the return type of `queryRaw` defaults to `any`.
+The return type of `queryRaw` is `Promise<T>`, where `T` is a [generic type parameter](https://www.typescriptlang.org/docs/handbook/generics.html). This means you can type the result manually by providing `T` when you invoke `queryRaw`. If you don't provide any type, the return type of `queryRaw` defaults to `any`.
 
 ```ts
 // import the generated `User` type from the `@prisma/client` module
@@ -102,12 +78,75 @@ Now, `result` is statically typed to the generated `User` type (or rather an arr
 
 If you're selecting only specific fields of the model or want to include relations, read the documentation about [leveraging Prisma Client's generated types](advanced-usage-of-generated-types) if you want to ensure that the query results are properly typed.
 
-## When to use what?
 
-You might ask yourself - when do I use `queryRaw` and when `executeRaw`?
-The simple rule of thumb is: If you mutate data, you probably want to know the number of affected rows, therefore you use `executeRaw`.
-If you on the other hand want to retrieve rows and actually query data, you can use `queryRaw`.
+## <inlinecode>executeRaw</inlinecode>
+
+`executeRaw` returns the _number of rows affected by a database operation_, such as `UPDATE` or `DELETE`. This function does **not** return database records. The following query updates records in the database and returns a count of the number of records that were updated:
+
+```ts
+const result: number = await prisma.executeRaw(
+  'UPDATE User SET active = true WHERE emailValidated = true;'
+)
+```
+
+The same method is implemented as a tagged template, which makes it easier to use [variables](#using-variables-and-helpers):
+
+```ts
+const emailValidated = true;
+const active = true;
+
+const result: number = await prisma.executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`)
+```
+
+### Return type
+
+`executeRaw` returns a `number`.
+
+### Signature
+
+```ts
+executeRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promise<number>;
+```
+
+## Using variables
+
+There are two ways to pass variables into `executeRaw` and `queryRaw`:
+
+* Use the [tagged template](#variables-with-tagged-templates) implementation of either method (preferred)
+* Use a [parameterized query](#parameterized-queries)
+
+Prisma Client escapes all variables, but there are still steps you can take to further [mitigate the risk of SQL injection](#mitigating-sql-injection). 
+
+### Variables with tagged templates
+
+```ts
+const userId = 42
+const result = await prisma.queryRaw`SELECT * FROM User WHERE id = ${userId};`
+```
+
+Benefits of using tagged templates include:
+
+* They are database-agnostic - you do not need to remember if variables should be written as is `$1` (PostgreSQL) or `?` (MySQL)
+* Tagged templates give you access to useful helpers like `join` and `empty`
+* Embedded, named variables are easier to read
+
+`queryRaw` and `executeRaw` are implemented as [tagged templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates). This means that you can call the `queryRaw` as follows:
+
+`executeRaw` can also be called like so:
+
+Cannot pass in table names or column names
+
+Based on https://github.com/blakeembrey/sql-template-tag
+
+### Parameterized queries
 
 ## SQL injection
 
 Mitigating the risk of SQL injection
+
+✔ DO 
+* Use tagged templates to pass variables into your query
+
+✖ AVOID:
+
+* Be careful about constructing a SQL query with string concatenation - 
