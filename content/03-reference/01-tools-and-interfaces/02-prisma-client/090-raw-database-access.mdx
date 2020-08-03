@@ -26,7 +26,7 @@ Use cases for raw SQL include:
 const result = await prisma.queryRaw('SELECT * FROM User;')
 ```
 
-The same method is implemented as a tagged template, which makes it easier to use [variables](#using-variables-and-helpers). The following example includes an `${email}` variable:
+The same method is implemented as a tagged template, which makes it easier to use [variables](#using-variables) by providing **placeholders**. The following example includes an `${email}` placeholder:
 
 ```ts no-lines
 const email = "edna@prisma.io"
@@ -115,14 +115,16 @@ const result: number = await prisma.executeRaw(
 )
 ```
 
-The same method is implemented as a tagged template, which makes it easier to use [variables](#using-variables-and-helpers):
+The same method is implemented as a tagged template, which makes it easier to use [variables](#using-variables) by providing placeholders. The following example includes `${emailValidated}` and `${active}` placeholders:
 
 ```ts
 const emailValidated = true;
 const active = true;
 
-const result: number = await prisma.executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`)
+const result: number = await prisma.executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`
 ```
+
+> **Note**: `executeRaw` does not support [multiple queries in a single string]() (for example, `ALTER TABLE` and `CREATE TABLE` together).
 
 ### Return type
 
@@ -136,24 +138,30 @@ executeRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Pro
 
 ## Using variables
 
-There are two ways to pass variables into `executeRaw` and `queryRaw`:
+`executeRaw` and `queryRaw` are implemented as [**tagged templates**](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates). Tagged templates are the recommended way to use variables with raw SQL in Prisma Client.
 
-* Use the [tagged template](#variables-with-tagged-templates) implementation of either method (preferred)
-* Use a [parameterized query](#parameterized-queries)
-
-Prisma Client escapes all variables, but there are still steps you can take to further [mitigate the risk of SQL injection](#mitigating-sql-injection). 
-
-### Variables with tagged templates
-
-The following examples uses [tagged templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) to pass variables into the SQL query. The Prisma Client implementation specifically uses [SQL Template Tag](https://github.com/blakeembrey/sql-template-tag
-):
+The following example includes a placeholder named `${userId}`. Note the double backticks (``` `` ```) instead of `()`:
 
 ```ts
 const userId = 42
-const result = await prisma.queryRaw`SELECT * FROM User WHERE id = (${userId});`
+const result = await prisma.queryRaw`SELECT * FROM User WHERE id = ${userId};` 
 ```
 
-SQL Template Tag exposes includes a number of helpers. The following example uses `join()` to pass in a list of IDs:
+> **Important**: You *must* use double backticks - the same query using `queryRaw()` is not necessarily secure.
+
+✔ Benefits of using tagged templates include:
+
+* Prisma Client escapes all variables.
+* Tagged templates are database-agnostic - you do not need to remember if variables should be written as is `$1` (PostgreSQL) or `?` (MySQL).
+* Tagged templates give you access to [useful helpers](#tagged-template-helpers).
+* Embedded, named variables are easier to read.
+
+> **Note**: You cannot pass a table or column name into a tagged template placeholder.
+
+### Tagged template helpers
+
+Prisma Client specifically uses [SQL Template Tag](https://github.com/blakeembrey/sql-template-tag
+), which exposes a number of helpers. For example, the following query uses `join()` to pass in a list of IDs:
 
 ```ts
 import { join } from "@prisma/client";
@@ -167,23 +175,17 @@ const result = await prisma.queryRaw`SELECT * FROM User WHERE id IN (${join(
 The following example uses the `empty` and `sql` helpers to change the query depending on whether `userName` is empty:
 
 ```ts
+import { sql, empty } from "@prisma/client";
+
 const userName = "";
 const result = await prisma.queryRaw`SELECT * FROM User ${
   userName ? sql`WHERE name = ${userName}` : empty // Cannot use "" or NULL here!
 }`;
 ```
 
-Benefits of using tagged templates include:
-
-* Tagged templates are database-agnostic - you do not need to remember if variables should be written as is `$1` (PostgreSQL) or `?` (MySQL)
-* Tagged templates give you access to useful helpers like `join` and `empty`
-* Embedded, named variables are easier to read
-
-> **Note**: You cannot pass in table or column names as tagged template variables. 
-
 ### Parameterized queries
 
-`queryRaw` supports standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL):
+As an alternative to tagged templates, `queryRaw()` and `executeRaw()` support standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL):
 
 ```ts
 const userName = "Sarah";
@@ -195,33 +197,23 @@ const result = await prisma.queryRaw(
 );
 ```
 
-The same query written using tagged templates is easier to read and works with all database providers:
+As with tagged templates, Prisma Client escapes all variables. 
 
-```ts
-const userName = "Sarah";
-const email = "alice@prisma.io";
-const result = await prisma.queryRaw`SELECT * FROM User WHERE (name = ${userName} OR email = ${email})`;
-```
+> **Note**: You cannot pass a table or column name as a variable into a parameterized query.
 
 ## SQL injection
 
 Prisma Client mitigates the risk of SQL injection in the following ways:
 
-* Escapes all variables when you use tagged templates or a parameterized query.
-* Sends all queries as prepared statements.
-* Executes `queryRaw()` and `executeRaw()` as a single query. You cannot append a second query - for example, adding `DROP tablename` to the end of a `SELECT`.
+* Prisma Client escapes all variables when you use tagged templates (``` queryRaw`` ``` or ``` executeRaw`` ``` ) or parameterized queries (`queryRaw(query, variables)` or `executeRaw(query, variables)`).
+* Prima Client sends all queries as prepared statements.
+* Both versions of `executeRaw` (standard and tagged template) can only run **one** query at a time. You cannot append a second query - for example, adding `DROP bobby_tables` to the end of an `ALTER`.
 
-We recommend that you use tagged templates and avoid using string concatenation to construct a query. The following example returns all users where `name` is `Sarah`:
+If you cannot use tagged templates or parameterized queries (for example, you need to pass in table or column names as variables), be aware that your code may be vulnerable to SQL injection.
 
-```ts
-const inputString = '"Sarah"';
-const query = "SELECT id, name, email FROM User WHERE name = " + inputString;
-const result = await prisma.queryRaw(query);
+### Warning: String concatenation 
 
-console.log(result);
-```
-
-However, because `inputString` is not escaped, you can extend the query with a `UNION` statement to include data from the `Post` table:
+The following example concatanates `query`and `inputString`. Prisma Client ❌ **cannot** escape `inputString` in this example, which makes it vulnerable to SQL injection:
 
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post'; // SQL Injection
@@ -231,7 +223,20 @@ const result = await prisma.queryRaw(query);
 console.log(result);
 ```
 
-By contrast, the same query using tagged templates escapes `inputString` and the query does not return results:
+### Warning: Template literals 
+
+The following example uses a template literal inside `queryRaw()`and returns all users where `name` equals `${inputString}`. Prisma Client ❌ **cannot** escape `inputString` in this example, which makes it vulnerable to SQL injection:
+
+```ts
+const inputString = '"Sarah" UNION SELECT id, title, content FROM Post'; // SQL Injection
+const result = await prisma.queryRaw(
+  `SELECT id, name, email FROM User WHERE name = ${inputString}`
+);
+
+console.log(result);
+```
+
+By contrast, the same query using **tagged templates** escapes `inputString` and the query does not return results. The only difference between the two examples is that `()` have been replaced by ``` `` ```:
 
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post';
