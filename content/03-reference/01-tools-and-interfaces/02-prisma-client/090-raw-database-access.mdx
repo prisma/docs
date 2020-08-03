@@ -207,14 +207,35 @@ const result = await prisma.queryRaw`SELECT * FROM User WHERE (name = ${userName
 
 Prisma Client mitigates the risk of SQL injection in the following ways:
 
-* Escapes all variables and sends all queries as prepared statements.
+* Escapes all variables when you use tagged templates or a parameterized query.
+* Sends all queries as prepared statements.
 * Executes `queryRaw()` and `executeRaw()` as a single query. You cannot append a second query - for example, adding `DROP tablename` to the end of a `SELECT`.
 
-Do not use
-
+We recommend that you use tagged templates and avoid using string concatenation to construct a query. The following example returns all users where `name` is `Sarah`:
 
 ```ts
-const mysterString = ""
-const query = "SELECT" + mysterString;
-const result = await prisma.queryRaw`"SELECT * FROM User WHERE (name = ${userName} OR email = ${email})`;
+const inputString = '"Sarah"';
+const query = "SELECT id, name, email FROM User WHERE name = " + inputString;
+const result = await prisma.queryRaw(query);
+
+console.log(result);
+```
+
+However, because `inputString` is not escaped, you can extend the query with a `UNION` statement to include data from the `Post` table:
+
+```ts
+const inputString = '"Sarah" UNION SELECT id, title, content FROM Post'; // SQL Injection
+const query = "SELECT id, name, email FROM User WHERE name = " + inputString;
+const result = await prisma.queryRaw(query);
+
+console.log(result);
+```
+
+By contrast, the same query using tagged templates escapes `inputString` and the query does not return results:
+
+```ts
+const inputString = '"Sarah" UNION SELECT id, title, content FROM Post';
+const result = await prisma.queryRaw`SELECT id, name, email FROM User WHERE name = ${inputString}`;
+
+console.log(result);
 ```
