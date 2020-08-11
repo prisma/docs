@@ -4,6 +4,7 @@ import File from '../../icons/File'
 import Display from '../../icons/Display'
 import Code from '../../icons/Code'
 import Database from '../../icons/Database'
+import Prisma from '../../icons/Prisma'
 
 interface FileWithIconProps {
   text: string[]
@@ -15,6 +16,7 @@ const icons = {
   database: <Database />,
   display: <Display />,
   code: <Code />,
+  prisma: <Prisma />,
 }
 const FileNameWrapper = styled.span`
   color: inherit;
