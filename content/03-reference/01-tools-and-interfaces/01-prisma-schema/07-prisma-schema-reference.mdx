@@ -274,6 +274,7 @@ Defines a Prisma [model](../../../reference/tools-and-interfaces/prisma-schema/d
 * Model names must start with a letter and are typically spelled in [PascalCase](http://wiki.c2.com/?PascalCase)
 * Must use the singular form (e.g. `User` instead of `user`, `users` or `Users`).
 * Must adhere to the following regular expression: `[A-Za-z][A-Za-z0-9_]*`
+* Prisma has a number of **reserved words** that are being used by Prisma internally and therefore cannot be used as a model name. You can find the reserved words [here](https://github.com/prisma/prisma/blob/master/src/packages/client/src/generation/generateClient.ts#L463) and [here](https://github.com/prisma/prisma-engines/blob/master/libs/datamodel/core/src/transform/ast_to_dml/reserved_model_names.rs).
 
 #### Order of fields
 
@@ -306,51 +307,88 @@ Fields are properties of models.
 
 The _data source connector_ determines what _native database type_ each of these types map to. Similarly, the _generator_ determines what _type in the target programming language_ each of these types map to.
 
-Connectors:
-
-| Type       | PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
-| ---------- | ----------- | ----------- | --------- | --------- |
-| `String`   | `text`      | `TEXT`      | `TEXT`    | `string`  |
-| `Boolean`  | `boolean`   | `BOOLEAN`   | n/a       | `boolean` |
-| `Int`      | `integer`   | `INT`       | `INTEGER` | `number`  |
-| `Float`    | `real`      | `FLOAT`     | `REAL`    | `number`  |
-| `DateTime` | `timestamp` | `TIMESTAMP` | n/a       | n/a       |
-| `Json`     | `json` / `jsonb`      | `JSON`      | n/a       | `object`  |
-
-Generators:
-
-| Type       | Prisma Client |
-| ---------- | ------------- |
-| `String`   | `string`      |
-| `Boolean`  | `boolean`     |
-| `Int`      | `number`      |
-| `Float`    | `number`      |
-| `DateTime` | `Date`        |
-| `JSON`     | `object`      |
-
 ### <inlinecode>String</inlinecode>
 
 Variable length text.
+
+#### Connectors
+
+| PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
+| ----------- | ----------- | --------- | --------- |
+| `text`      | `TEXT`      | `TEXT`    | `string`  |
+
+#### Generators 
+
+Prisma Client JS: `string`
 
 ### <inlinecode>Boolean</inlinecode>
 
 True or false value
 
+#### Connectors
+
+| PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
+| ----------- | ----------- | --------- | --------- |
+| `boolean`   |  `BOOLEAN` | `INTEGER`       | `boolean` |
+
+#### Generators 
+
+Prisma Client JS: `boolean`
+
 ### <inlinecode>Int</inlinecode>
 
-Integer value
+#### Connectors
+
+| PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
+| ----------- | ----------- | --------- | --------- |
+| `integer`   | `INT`       | `INTEGER` | `number`  |
+
+#### Generators 
+
+Prisma Client JS: `number`
 
 ### <inlinecode>Float</inlinecode>
 
 Floating point number
 
+#### Connectors
+
+| PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
+| ----------- | ----------- | --------- | --------- |
+| `decimal(65,30)`      | `DECIMAL(65,30)`     | `REAL`    | `number`  |
+
+#### Generators 
+
+Prisma Client JS: `number`
+
+
 ### <inlinecode>DateTime</inlinecode>
 
-Timestamp
+Date and time - format depends on database, Prisma returns ISO 8601 string
+
+#### Connectors
+
+| PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
+| ----------- | ----------- | --------- | --------- |
+| `timestamp(3)` | `DATETIME(3)` | [`NUMERIC`]()       | n/a       |
+
+#### Generators 
+
+Prisma Client JS: `Date`
 
 ### <inlinecode>Json</inlinecode>
 
 A JSON object
+
+#### Connectors
+
+| PostgreSQL  | MySQL       | SQLite    | Raw JSON  |
+| ----------- | ----------- | --------- | --------- |
+| `json` / `jsonb`      | `JSON`      | n/a       | `object`  |
+
+#### Generators 
+
+Prisma Client JS: `object`
 
 ## <inlinecode>model</inlinecode> field type modifiers
 
@@ -397,6 +435,11 @@ Attributes modify the behavior of a [field](#model-fields) or block (e.g. [model
 
 - _Field_ attributes are prefixed with `@`
 - _Block_ attributes are prefixed with `@@`
+
+Some attributes take arguments. Arguments in attributes are always named, but in most cases the argument _name_ can be omitted.
+
+> **Note**: The leading underscore in a signature means the _argument name_ can be omitted (read more [below](#arguments)).
+
 
 ### <inlinecode>@id</inlinecode>
 
@@ -519,6 +562,14 @@ Defines a multi-field ID on the model.
 | ---------- | -------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `fields` | **Yes**  | `FieldReference[]` | A list of field names - for example, `["firstname", "lastname"]`|
 
+The name of the `fields` argument on the `@@id` attribute can be omitted:
+
+```prisma no-lines
+@@id(fields: [title, author])
+@@id([title, author])
+```
+
+
 #### Signature
 
 ```ts no-lines
@@ -613,11 +664,16 @@ const post = await prisma.post.create({
 
 ### <inlinecode>@default</inlinecode>
 
-Defines a default value for this field. `@default` takes an expression as an argument.
+Defines a default value for a field.
 
 #### Remarks
 
 * Corresponding database type: `DEFAULT`
+
+##### Limitations
+
+Default values are currently not allowed on relation fields in the Prisma schema. Note however that you can still define default values _manually_ in the underlying database using plain SQL. These will not be represented in the Prisma schema though, this is a temporary limitation which you can [track on GitHub](https://github.com/prisma/prisma/issues/1111).
+
 
 #### Arguments 
 
@@ -625,11 +681,12 @@ Defines a default value for this field. `@default` takes an expression as an arg
 | ---------- | -------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `expression` | **Yes**  | An expression (e.g. `5`, `true`, `now()`)  | |
 
+The name of the `value` argument on the `@default` attribute can be omitted:
 
-
-#### Limitations
-
-Default values are currently not allowed on relation fields in the Prisma schema. Note however that you can still define default values _manually_ in the underlying database using plain SQL. These will not be represented in the Prisma schema though, this is a temporary limitation which you can [track on GitHub](https://github.com/prisma/prisma/issues/1111).
+```prisma no-lines
+id Int @id @default(value: autoincrement())
+id Int @id @default(autoincrement())
+```
 
 #### Signature
 
@@ -755,7 +812,12 @@ Defines a compound unique constraint for the specified fields.
 | ---------- | -------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `fields` | **Yes**  | `FieldReference[]`  | A list of field names - for example, `["firstname", "lastname"]` |
 
+The name of the `fields` argument on the `@@unique` attribute can be omitted:
 
+```prisma no-lines
+@@unique(fields: [title, author])
+@@unique([title, author])
+```
 
 #### Signature
 
@@ -943,6 +1005,19 @@ Defines meta information about the relation. [Learn more](../../../reference/too
 | `references` | **Yes**  | `FieldReference[]`  | A list of field names - for example, `["firstname", "lastname"]` |
 
 
+The name of the `name` argument on the `@relation` attribute can be omitted (`references` is required though)
+
+```prisma
+@relation(name: "UserOnPost", references: [id])
+@relation("UserOnPost", references: [id])
+
+// or
+
+@relation(name: "UserOnPost")
+@relation("UserOnPost")
+```
+
+
 #### Signature
 
 ```ts
@@ -956,6 +1031,14 @@ Maps a field name from the Prisma schema to a different column name.
 #### Arguments 
 
 The name of the target database column.
+
+The name of the `name` argument on the `@map` attribute can be omitted:
+
+```prisma
+@map(name: "is_admin")
+@map("users")
+```
+
 
 #### Signature
 
@@ -991,6 +1074,13 @@ Maps a model name from the Prisma schema to a different table name.
 #### Arguments 
 
 The name of the target database table.
+
+The name of the `name` argument on the `@@map` attribute can be omitted
+
+```prisma
+@@map(name: "users")
+@@map("users")
+```
 
 #### Signature
 
@@ -1033,94 +1123,6 @@ N/A
 
 ```ts no-lines
 @updatedAt
-```
-
-## Attribute arguments
-
-Some attributes take arguments. Arguments in attributes are always named, but in most cases the argument _name_ can be omitted.
-
-> **Note**: The leading underscore in a signature means the _argument name_ can be omitted (read more [below](#arguments)).
-
-### <inlinecode>fields</inlinecode> (<inlinecode>FieldReference[]</inlinecode>)
-
-A list of [fields](../../../reference/tools-and-interfaces/prisma-schema/data-model#fields) of the _current_ model.
-
-#### Remarks
-
-Required on [annotated](../../../reference/tools-and-interfaces/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) relation fields.
-
-#### Examples
-
-##### The name of the `fields` argument on the `@@index` attribute can be omitted
-
-
-##### The name of the `fields` argument on the `@@unique` attribute can be omitted
-
-```prisma no-lines
-@@unique(fields: [title, author])
-@@unique([title, author])
-```
-
-##### The name of the `fields` argument on the `@@id` attribute can be omitted
-
-```prisma no-lines
-@@id(fields: [title, author])
-@@id([title, author])
-```
-
-### <inlinecode>value</inlinecode> (<inlinecode>String</inlinecode>)
-
-#### Examples
-
-##### The name of the `value` argument on the `@default` attribute can be omitted
-
-```prisma no-lines
-id Int @id @default(value: autoincrement())
-id Int @id @default(autoincrement())
-```
-
-### <inlinecode>references</inlinecode> (<inlinecode>FieldReference[]</inlinecode>)
-
-A list of [fields](data-model#fields of the model on _the other side of the relation_.
-
-#### Remarks
-
-Required on [annotated](../../../reference/tools-and-interfaces/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) relation fields.
-
-#### Examples
-
-##### The name of the `name` argument on the `@relation` attribute can be omitted (`references` is required though)
-
-```prisma
-@relation(name: "UserOnPost", references: [id])
-@relation("UserOnPost", references: [id])
-
-// or
-
-@relation(name: "UserOnPost")
-@relation("UserOnPost")
-```
-
-### <inlinecode>name</inlinecode> (<inlinecode>String</inlinecode>)
-
-Defines the name of the relationship. In an m-n-relation, it also determines the name of the underlying relation table.
-
-#### Remarks
-
-* Sometimes required (for example, to disambiguate a relation)    
-
-#### Examples
-
-##### The name of the `name` argument on the `@map` and `@@map` attributes can be omitted
-
-```prisma
-@map(name: "is_admin")
-@map("is_admin")
-
-// and
-
-@@map(name: "users")
-@@map("users")
 ```
 
 ## Attribute functions
