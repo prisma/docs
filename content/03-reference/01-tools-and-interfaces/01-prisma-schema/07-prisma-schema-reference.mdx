@@ -454,9 +454,10 @@ Defines a single-field ID on the model.
 #### Remarks
 
 * Corresponding database type: `PRIMARY KEY`
+* Can be annotated with a [`@default()`](#default) value, including [functions]()
 * Cannot be optional
 * Can be defined on any scalar field
-* **Cannot** be defined on a relation field
+* Cannot be defined on a relation field
 
 #### Arguments
 
@@ -470,7 +471,38 @@ N/A
 
 #### Examples
 
-##### Single-field IDs without default values
+In most cases, you want to have the ID initialized by your database. To do so, you can annotate it with the `@default` attribute and initialize the field with a [function](#attribute-functions).
+
+##### Generate `cuid()` values as IDs
+
+```prisma
+model User {
+  id    String  @id @default(cuid())
+  name  String
+}
+```
+
+##### Generate `uuid()` values as IDs
+
+```prisma
+model User {
+  id    String  @id @default(uuid())
+  name  String
+}
+```
+
+##### Generate auto-incrementing integers as IDs
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String
+}
+```
+
+##### Single-field IDs *without* default values
+
+In the following example, `id` does not have a default value:
 
 ```prisma
 model User {
@@ -490,11 +522,7 @@ const newUser = await prisma.user.create({
 })
 ```
 
-##### Single-field IDs with default values
-
-In most cases, you want to have the ID initialized by your database. To do so, you can annotate it with the `@default` attribute and initialize the field with a [function](#attribute-functions).
-
-##### Specify an ID on `String` without a default value
+###### Specify an ID on `String` *without* a default value
 
 ```prisma
 model User {
@@ -503,52 +531,58 @@ model User {
 }
 ```
 
-##### Specify an ID on field `authorId` without a default value
+###### Specify an ID on relation scalar field without a default value
+
+In the following example, `authorId` is a both a relation scalar and the ID of `Profile`:
 
 ```prisma
-model Post {
-  authorId   Int        @id
-  author     User       @relation(fields:  [authorId], references: [id])
-  title      String
-  published  Boolean    @default(false)
+model Profile {
+  authorId Int    @id
+  author   User   @relation(fields: [authorId], references: [id])
+  bio      String
 }
 
 model User {
-  email     String   @unique
-  name      String?
-  posts     Post[]
+  id      Int     @id
+  email   String  @unique
+  name    String?
+  profile Profile?
 }
 ```
 
-Note that in this case you can only create new `Post` records by using Prisma Client's [nested writes](../../../reference/tools-and-interfaces/prisma-client/relation-queries#nested-writes) to immediately connect the new `Post` record with a new or existing `User` record, e.g.:
+In this scenario, you cannot create a `Profile` only - you must use Prisma Client's [nested writes](../../../reference/tools-and-interfaces/prisma-client/relation-queries#nested-writes) create a `User` **or** connect the profile to an existing user.
+
+The following example creates a user and a profile:
 
 ```ts
-const post = await prisma.post.create({
+const userWithProfile = await prisma.user.create({
   data: {
-    title: 'Hello World',
-    author: {
+    id: 3,
+    email: "bob@prisma.io",
+    name: "Bob Prismo",
+    profile: {
       create: {
-        name: 'Alice',
-        email: 'alice@prisma.io',
+        bio:
+          "Hello, I'm Bob Prismo and I love apples, blue nail varnish, and the sound of buzzing mosquitoes.",
       },
     },
   },
-})
+});
 ```
 
-Or when a `User` record with `bob@prisma.io` as its `email` already exists, you can connect it to the new `Post` record in a nested write:
+The following example connects a new profile to a user:
 
 ```ts
-const post = await prisma.post.create({
+const profileWithUser = await prisma.profile.create({
   data: {
-    title: 'Hello World',
+    bio: "Hello, I'm Bob and I like nothing at all. Just nothing.",
     author: {
       connect: {
-        email: 'bob@prisma.io',
+        id: 22,
       },
     },
   },
-})
+});
 ```
 
 ### <inlinecode>@@id</inlinecode>
