@@ -14,6 +14,10 @@ const config = {
       from: '/reference/tools-and-interfaces/prisma-client/api',
       to: '/reference/tools-and-interfaces/prisma-client',
     },
+    {
+      from: '/reference/tools-and-interfaces/prisma-schema/models',
+      to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
+    },
   ],
   header: {
     logoLink: 'https://www.prisma.io',
