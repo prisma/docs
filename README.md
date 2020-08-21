@@ -1,16 +1,14 @@
 # Prisma Documentation
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
 
 This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
 
 ## Run locally
 
-Download the code and get started by running the following commands:
+Clone this repository and get started by running the following commands:
 
 ```
-git clone git@github.com:prisma/prisma2-docs.git
-cd prisma2-docs
 yarn
 yarn dev
 ```
