@@ -141,11 +141,8 @@ const Footer = ({ footerProps }: FooterViewProps) => {
               textDecoration: 'none',
             }}
           >
-            <LogoContainer>
-              <PrismaLogoGrey />
-            </LogoContainer>
+            <img src="https://images2.prisma.io/footer-logo.png" alt="Prisma Logo" style={{ width: 90 + "px", height: 24 + "px" }} />
           </Link>
-          <Title>{title}</Title>
         </div>
         <div>
           <LinkList>
