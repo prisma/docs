@@ -1,0 +1,135 @@
+---
+title: 'Soft delete middleware'
+metaTitle: 'Soft delete middleware (Reference)'
+metaDescription: 'How to use middleware to intercept deletes and set a field value instead of deleting the record.'
+---
+
+<TopBlock>
+
+The following example uses middleware to perform a **soft delete**, which means that a record is marked as deleted rather than removed from the database.
+
+This example uses the following schema - note the `deleted` field on the `Post` property:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  posts     Post[]
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  published Boolean  @default(false)
+  title     String
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  Int?
+|  deleted   Boolean? @default(false)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+The following example changes 
+
+* Intercept `delete` and `Post`
+* Change the `params.action` to an `update`
+* Introduce a `data` argument
+
+```ts file=script.ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient({})
+
+async function mainAsync() {
+  prisma.$use(async (params, next) => {
+    // Check incoming query type
+    if (params.model == 'Post' && params.action == 'delete') {
+      // Change action to an update
+      params.action = 'update'
+
+      // Set field value
+      params.args['data'] = { deleted: true }
+    }
+    return next(params)
+  })
+
+  const createPost = await prisma.post.create({
+    data: { title: 'How to use Prisma Client' },
+  })
+
+  const deletePost = await prisma.post.delete({
+    where: {
+      id: createPost.id,
+    },
+  })
+
+  const getPost = await prisma.post.findOne({
+    where: {
+      id: deletePost.id,
+    },
+  })
+
+  console.log(getPost) // Will return post with deleted:true
+}
+
+mainAsync()
+```
+
+```ts file=script.ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient({})
+
+async function mainAsync() {
+  prisma.$use(async (params, next) => {
+    // Check incoming query type
+    if (params.model == 'Post' && params.action == 'delete') {
+      // Change action to an update
+      params.action = 'update'
+
+      // Set field value
+      params.args['data'] = { deleted: true }
+    }
+    return next(params)
+  })
+
+  const createPost = await prisma.post.create({
+    data: { title: 'How to use Prisma Client' },
+  })
+
+  const deletePost = await prisma.post.delete({
+    where: {
+      id: createPost.id,
+    },
+  })
+
+  const getPost = await prisma.post.findOne({
+    where: {
+      id: deletePost.id,
+    },
+  })
+
+  console.log(getPost) // Will return post with deleted:true
+}
+
+mainAsync()
+```
+
+</TopBlock>
+
+

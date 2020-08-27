@@ -1,0 +1,91 @@
+---
+title: 'Logging middleware'
+metaTitle: 'Logging middleware (Reference)'
+metaDescription: 'How to use middleware to intercept deletes and set a field value instead of deleting the record.'
+---
+
+<TopBlock>
+
+The following example logs the time taken for `await next(params)` (executing)
+
+```ts
+const prisma = new PrismaClient();
+
+prisma.$use(async (params, next) => {
+  const before = Date.now();
+
+  const result = await next(params);
+
+  const after = Date.now();
+
+  console.log(
+    `Query ${params.model}.${params.action} took ${after - before}ms`
+  );
+
+  return result;
+});
+
+const create = await prisma.post.create({
+  data: {
+    title: "Welcome to Prisma Day 2020",
+  },
+});
+
+const createAgain = await prisma.post.create({
+  data: {
+    title: "All about database collation",
+  },
+});
+```
+
+```no-lines
+Query Post.create took 92ms
+Query Post.create took 15ms
+```
+
+The following examples are based on a sample schema:
+
+<details><summary>Expand to view sample schema</summary>
+
+```prisma
+generator client {
+  provider             = "prisma-client-js"
+  experimentalFeatures = ["middlewares"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  authorId  Int?
+  content   String?
+  id        Int     @default(autoincrement()) @id
+  published Boolean @default(false)
+  title     String
+  user      User?   @relation(fields: [authorId], references: [id])
+  language  String?
+
+  @@index([authorId], name: "authorId")
+}
+
+model User {
+  email           String  @unique
+  id              Int     @default(autoincrement()) @id
+  name            String?
+  posts           Post[]
+  extendedProfile Json?
+  role            Role    @default(USER)
+}
+
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}
+```
+
+</details>
+
+</TopBlock>
