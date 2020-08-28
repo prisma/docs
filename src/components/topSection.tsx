@@ -16,6 +16,11 @@ const TopSectionWrapper = styled.div`
     position: relative;
   }
 `
+const Header = styled.div`
+display: flex;
+justify-content: space-between;
+align-items: center;
+`
 
 const MainTitle = styled.h1`
   font-family: 'Montserrat';
@@ -38,8 +43,8 @@ const MainTitle = styled.h1`
 
 const SwitcherWrapper = styled.div`
   display: flex;
-  position: absolute;
-  top: -38px;
+  // position: absolute;
+  // top: -38px;
   @media only screen and (max-width: 767px) {
     flex-direction: column;
     width: 100%;
@@ -153,12 +158,15 @@ const TopSection = ({
 
   return (
     <TopSectionWrapper>
-      <ParentTitle slug={slug} />
+      <Header>
+      <div className="title">
+        <ParentTitle slug={slug} />
       <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
+      </div>
       <div className="tech-switch-block">
-        {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
+        {/* {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
           <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
-        )}
+        )} */}
         <SwitcherWrapper>
           {langSwitcher && (
             <TechnologySwitch
@@ -177,8 +185,10 @@ const TopSection = ({
             />
           )}
         </SwitcherWrapper>
+       
       </div>
-      {toc && toc.items && toc.items.length > 0 && <TOC headings={toc.items} tocDepth={tocDepth} />}
+      </Header>
+      {/* {toc && toc.items && toc.items.length > 0 && <TOC headings={toc.items} tocDepth={tocDepth} />} */}
     </TopSectionWrapper>
   )
 }

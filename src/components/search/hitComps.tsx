@@ -40,11 +40,8 @@ const HitComp = styled.div`
   }
 
   .more {
-    color: var(--code-inner-color);
+    color: #3182CE;
     font-size: 14px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: rgba(113, 128, 150, 0.2);
     width: fit-content;
     margin: 10px 0 0;
   }
@@ -68,7 +65,7 @@ const DocHit = ({ hit }: any) =>
         </h3>
         <Snippet hit={hit} attribute="content" tagName="mark" />
       </Link>
-      {hit.moreCount > 1 && <p className="more">More results on this page</p>}
+      {hit.moreCount > 1 && <p className="more">... More results on this page</p>}
     </HitComp>
   ) : null
 

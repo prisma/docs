@@ -30,7 +30,8 @@ const FooterWrapper = styled.div`
   }
   .container {
     padding: 15rem 10px;
-    width: 1120px;
+    max-width: 1200px;
+    width: 100%;
     display: flex;
     justify-content: space-between;
 
@@ -53,6 +54,8 @@ const LinkList = styled.ul`
     line-height: 2rem;
     a {
       text-decoration: none;
+      display: flex;
+      align-items: center;
       color: var(--list-bullet-color) !important;
       &:hover {
         color: var(--code-inner-color) !important;
@@ -61,30 +64,27 @@ const LinkList = styled.ul`
         }
       }
       .tag {
-        display: inline-block;
+        padding: 0 0.5rem;
+        height: 20px;
+        align-items: center;
+        display: flex;
         border-radius: 6px;
         margin-left: 8px;
-        padding: 0 8px;
         background: var(--code-added-color);
         font-size: 12px;
         font-weight: bold;
         color: white;
         transition: transform 0.1s ease-in;
+        &.black {
+          background: #000000;
+        }
+
+        &:hover {
+          // transform: scale(1.25);
+        }
       }
     }
   }
-`
-
-const Title = styled.span`
-  font-size: 1.2rem;
-  font-style: normal;
-  font-weight: bold;
-  line-height: 100%;
-  letter-spacing: -0.02em;
-`
-
-const LogoContainer = styled.div`
-  padding-right: 0.75rem;
 `
 
 const SocialWrapper = styled.div`
@@ -122,7 +122,6 @@ const SocialWrapper = styled.div`
 const Footer = ({ footerProps }: FooterViewProps) => {
   const {
     logoLink,
-    title,
     products,
     resources,
     community,
@@ -179,7 +178,8 @@ const Footer = ({ footerProps }: FooterViewProps) => {
               <li key={index}>
                 <Link to={item.link}>
                   {item.name}
-                  {item.name === 'Jobs' && <span className="tag">We're Hiring</span>}
+                  {/* {item.name === 'Jobs' && <span className="tag">We're Hiring</span>} */}
+                  {item.name === 'Causes' && <span className="tag black">Black Lives Matter</span>}
                 </Link>
               </li>
             ))}

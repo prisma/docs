@@ -1,7 +1,6 @@
 require('dotenv').config({
   path: `.env`,
 })
-
 const handleRawBody = node => {
   const { rawBody, ...rest } = node
   const rawBodyWithoutFrontmatter = rawBody

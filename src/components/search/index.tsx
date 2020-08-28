@@ -18,13 +18,17 @@ const HitsWrapper = styled.div`
   z-index: 100002;
   -webkit-overflow-scrolling: touch;
   position: absolute;
-  left: 230px;
-  top: 0;
-  max-width: 880px;
-  width: 100vw;
+  left: 50%;
+  top: 97px;
+  
+  transform: translate(-50%, -0%);
+  max-width: 1200px;
+  width: 100%;
   background: var(--white-color);
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
   border-radius: 5px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   * {
     margin-top: 0;
     padding: 0;
@@ -38,9 +42,9 @@ const HitsWrapper = styled.div`
     padding: 24px 40px;
   }
   @media (min-width: 0px) and (max-width: 1024px) {
-    left: 0;
-    top: 40px;
-    max-width: 100%;
+    // left: 0;
+    top: 88px;
+   // max-width: 100%;
     border-top: 1px solid var(--border-color);
     border-top-right-radius: 0;
     border-top-left-radius: 0;
@@ -99,7 +103,7 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={query.length > 0 && showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} />
+      <CustomSearchBox onFocus={showSearch} isOpened={query.length > 0 && showHits}/>
       <HitsWrapper className={`${query.length > 0 && showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>

@@ -8,10 +8,16 @@ import { MDXProvider } from '@mdx-js/react'
 import customMdx from '../components/customMdx'
 import './layout.css'
 import Sidebar from './sidebar'
+import TOC from './toc'
 
-type LayoutProps = React.ReactNode & RouterProps
+interface LayoutContentProps {
+  toc: any
+  tocDepth?: number
+}
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
+type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
+
+const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth }) => {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
@@ -19,15 +25,14 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     display: flex;
     width: 100%;
     justify-content: center;
-    padding: 0 10px;
+    padding: 0 24px;
   `
 
   const Content = styled.article`
-    max-width: 880px;
-    width: 880px;
-    margin: -80px 0 1rem;
+    margin: 0 0 1rem;
     position: relative;
     z-index: 100;
+    flex: 1;
     @media (min-width: 0px) and (max-width: 1024px) {
       margin: 0;
       width: 100%;
@@ -37,13 +42,9 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
 
   const MaxWidth = styled.div`
     > section {
-      background: var(--white-color);
-      box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
-      border-radius: 5px;
-      margin-top: 1rem;
-      padding: 2rem 40px;
+      padding: 1rem 40px;
       &.top-section {
-        padding-top: 40px;
+        padding-top: 0;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
         margin-top: 0.5rem;
@@ -59,6 +60,21 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
 
   const NotMobile = styled.section`
     display: flex;
+    @media (min-width: 0px) and (max-width: 768px) {
+      display: none;
+    }
+  `
+
+  const Container = styled.div`
+    max-width: 1200px;
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    margin-top: 40px;
+  `
+
+  const TOCWrapper = styled.div`
+    width: 180px;
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
@@ -68,12 +84,19 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     <MDXProvider components={customMdx}>
       <Header headerProps={header} />
       <Wrapper>
-        <NotMobile>
-          <Sidebar isMobile={false} />
-        </NotMobile>
-        <Content>
-          <MaxWidth>{children}</MaxWidth>
-        </Content>
+        <Container>
+          <NotMobile>
+            <Sidebar isMobile={false} />
+          </NotMobile>
+          <Content>
+            <MaxWidth>{children}</MaxWidth>
+          </Content>
+          <TOCWrapper>
+            {toc && toc.items && toc.items.length > 0 && (
+              <TOC headings={toc.items} tocDepth={tocDepth} />
+            )}
+          </TOCWrapper>
+        </Container>
       </Wrapper>
       <Footer footerProps={footer} />
     </MDXProvider>

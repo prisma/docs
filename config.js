@@ -23,16 +23,16 @@ const config = {
     logoLink: 'https://www.prisma.io',
     title: 'Prisma',
     links: [
-      { name: 'Docs', link: '/' },
-      { name: 'Quickstart', link: '/getting-started/quickstart' },
-      {
-        name: 'Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/',
-      },
+      { name: 'Documentation', link: '/' },
+      // {
+      //   name: 'Reference',
+      //   link: '/reference/tools-and-interfaces/prisma-client/',
+      // },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
-      { name: 'FAQ', link: '/more/faq' },
-      { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
+      // { name: 'FAQ', link: '/more/faq' },
+      // { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
+      { name: 'Quickstart', link: '/getting-started/quickstart', type: 'button' }
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
@@ -107,6 +107,7 @@ const config = {
     company: [
       { name: 'About', link: 'https://www.prisma.io/about' },
       { name: 'Jobs', link: 'https://www.prisma.io/jobs' },
+      { name: 'Causes', link: 'https://www.notion.so/prismaio/What-Prisma-Cares-About-32946d99f9ea4925a796663dc8945c42' },
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       {
         name: 'Terms & Privacy',

@@ -44,6 +44,7 @@ export const useLayoutQuery = () => {
             links {
               name
               link
+              type
             }
           }
         }

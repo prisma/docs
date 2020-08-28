@@ -31,12 +31,12 @@ const ListItem = styled.li`
       color: var(--main-font-color) !important;
     }
 
-    @media (min-width: 0px) and (max-width: 1024px) {
-      color: var(--border-color) !important;
-      &:hover {
-        color: white !important;
-      }
-    }
+    // @media (min-width: 0px) and (max-width: 1024px) {
+    //   color: var(--border-color) !important;
+    //   &:hover {
+    //     color: white !important;
+    //   }
+    // }
 
     .tag {
       position: absolute;
@@ -51,10 +51,10 @@ const ListItem = styled.li`
       &.small {
         font-size: 13px;
       }
-      @media (min-width: 0px) and (max-width: 1024px) {
-        background: var(--tag-media-color);
-        color: var(--list-bullet-color);
-      }
+      // @media (min-width: 0px) and (max-width: 1024px) {
+      //   background: var(--tag-media-color);
+      //   color: var(--list-bullet-color);
+      // }
     }
 
     .item-collapser {
@@ -100,20 +100,24 @@ const ListItem = styled.li`
   .active-item {
     color: var(--main-font-color) !important;
     font-weight: 700;
-    @media (min-width: 0px) and (max-width: 1024px) {
-      color: var(--border-color) !important;
-    }
+    // @media (min-width: 0px) and (max-width: 1024px) {
+    //   color: var(--border-color) !important;
+    // }
   }
   &.top-level {
     margin-top: 2rem;
+
+    // &:nth-child(1) {
+    //   margin-top: 0;
+    // }
     > a {
       font-size: 1.125rem;
       color: var(--main-font-color) !important;
       font-weight: 600;
       letter-spacing: -0.01em;
-      @media (min-width: 0px) and (max-width: 1024px) {
-        color: var(--main-bgd-color) !important;
-      }
+      // @media (min-width: 0px) and (max-width: 1024px) {
+      //   color: var(--main-bgd-color) !important;
+      // }
     }
     > ul {
       margin-top: 12px;

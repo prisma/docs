@@ -8,7 +8,7 @@ import { AllArticles } from '../../interfaces/AllArticles.interface'
 import config from '../../../config'
 
 const SidebarContainer = styled.aside`
-  width: 231px;
+  width: 272px;
   margin: 0px 16px 0 -16px;
 `
 
@@ -24,28 +24,30 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
 
   .tablet-only {
     display: none;
-    
+    background: #F7FAFC;
     justify-content: space-between;
-    padding: 2rem 0;
+    padding: 3rem 4rem;
 
     > ul {
       width: 50%;
       margin-right: 50px;
 
       &:last-of-type {
-        border-left: 1px solid var(--code-inner-color);
+        // border-left: 1px solid var(--code-inner-color);
         padding-left: 40px;
       }
     }
 
-    @media (min-width: 768px) and (max-width: 1024px) {
+    @media (min-width: 641px) and (max-width: 1024px) {
       display:flex;    
     }
   }
 
   .mobile-only {
     display: none;
-    @media only screen and (max-width: 767px) {
+    background: #F7FAFC;
+    padding: 2rem;
+    @media only screen and (max-width: 640px) {
       display: flex;
       > ul {
         width: 100%;
@@ -57,7 +59,7 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
 const List = styled.ul`
   list-style: none;
   padding: 0 7px 0 15px;
-  margin: 0;
+  margin: -20px 0 0;
 `
 const paneRegex = new RegExp('\\b(' + config.sidebar.tablet_menu_split.join('|') + ')\\b', 'ig')
 const getLeftPane = (allEdges: any) =>
