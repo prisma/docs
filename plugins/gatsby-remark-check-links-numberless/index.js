@@ -105,7 +105,6 @@ module.exports = async function plugin(
     p.replace(`${pathSep}index`, '').replace(/\/$/, '')
   )
 
-  console.log(pathKeysWithoutIndex)
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
       // don't count broken links for ignored pages
