@@ -12,6 +12,7 @@ import DownChevron from '../icons/DownChevron'
 import UpChevron from '../icons/UpChevron'
 import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
+import { useLocation } from '@reach/router'
 
 const secondLevelHeaderMenuItems = [
   { text: 'Learn Prisma', expandContent: 'mainDocs', to: '/', matchPath: '/', type: 'section' },
@@ -311,6 +312,8 @@ const Header = ({ headerProps }: HeaderViewProps) => {
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
   const { width } = useWindowDimensions()
+
+  const location = useLocation()
 
   const Menu = (
     <>
