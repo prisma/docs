@@ -46,7 +46,7 @@ module.exports = async function plugin(
     node.url = node.url.toLowerCase()
 
     if (parent.type === 'heading') {
-      headings.push(parent.data.id)
+      headings.push(parent.data.id.replace(/inlinecode/g, ''))
       return
     }
 
