@@ -2,11 +2,15 @@
 title: 'Soft delete middleware'
 metaTitle: 'Soft delete middleware (Reference)'
 metaDescription: 'How to use middleware to intercept deletes and set a field value instead of deleting the record.'
+tocDepth: 3
 ---
 
 <TopBlock>
 
-The following example uses middleware to perform a **soft delete**, which means that a record is marked as deleted rather than removed from the database.
+The following example uses middleware to perform a **soft delete**, which means that a record is marked as deleted by changing a field like `isDeleted` to `true` rather than removed from the database. Reasons to use a soft delete include:
+
+* Regulatory requirements that mean you have to keep data for a certain amount of time
+* 'Bin' functionality that allows users to kee precords in trash for a while - e.g. undo deleting a blog post
 
 This example uses the following schema - note the `deleted` field on the `Post` property:
 
@@ -45,91 +49,176 @@ enum Role {
   ADMIN
 }
 ```
-
-The following example changes 
-
-* Intercept `delete` and `Post`
-* Change the `params.action` to an `update`
-* Introduce a `data` argument
-
-```ts file=script.ts
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient({})
-
-async function mainAsync() {
-  prisma.$use(async (params, next) => {
-    // Check incoming query type
-    if (params.model == 'Post' && params.action == 'delete') {
-      // Change action to an update
-      params.action = 'update'
-
-      // Set field value
-      params.args['data'] = { deleted: true }
-    }
-    return next(params)
-  })
-
-  const createPost = await prisma.post.create({
-    data: { title: 'How to use Prisma Client' },
-  })
-
-  const deletePost = await prisma.post.delete({
-    where: {
-      id: createPost.id,
-    },
-  })
-
-  const getPost = await prisma.post.findOne({
-    where: {
-      id: deletePost.id,
-    },
-  })
-
-  console.log(getPost) // Will return post with deleted:true
-}
-
-mainAsync()
-```
-
-```ts file=script.ts
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient({})
-
-async function mainAsync() {
-  prisma.$use(async (params, next) => {
-    // Check incoming query type
-    if (params.model == 'Post' && params.action == 'delete') {
-      // Change action to an update
-      params.action = 'update'
-
-      // Set field value
-      params.args['data'] = { deleted: true }
-    }
-    return next(params)
-  })
-
-  const createPost = await prisma.post.create({
-    data: { title: 'How to use Prisma Client' },
-  })
-
-  const deletePost = await prisma.post.delete({
-    where: {
-      id: createPost.id,
-    },
-  })
-
-  const getPost = await prisma.post.findOne({
-    where: {
-      id: deletePost.id,
-    },
-  })
-
-  console.log(getPost) // Will return post with deleted:true
-}
-
-mainAsync()
-```
-
 </TopBlock>
 
+## Step 1: Store status of record
 
+Add a field named `deleted` to the `Post` model. You can choose between two field types depending on your requirements:
+
+* `Boolean` with a default value of `false`:
+
+  ```prisma
+  model Post {
+    id        Int      @id @default(autoincrement())
+    ...
+  |  deleted   Boolean @default(false)
+  }
+  ```
+
+* Create a nullable `DateTime` field so that you know exactly *when* a record was marked as deleted - `NULL` indicates that a record has not been deleted. In some cases, storing when a record was removed may be a regulatory requirement:
+
+  ```prisma
+  model Post {
+    id        Int      @id @default(autoincrement())
+    ...
+  |  deleted   DateTime?
+  }
+  ```
+
+> **Note**: Using two separate fields (`isDeleted` and `deletedDate`) may result in these two fields becoming out of sync - for example, a record may be marked as deleted but have no associated date.)
+
+This example uses a `Boolean` field type for simplicity.
+
+## Step 2: Soft delete middleware
+
+Add a middleware that performs the following tasks:
+
+* Intercepts `delete` and `deleteMany` queries for the `Post` model
+* Changes the `params.action` to `update` and `updateMany` respectively
+* Introduces a `data` argument and sets `{ deleted: true }`, preserving other filter arguments if they exist
+
+```ts file=script.ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient({})
+
+async function mainAsync() {
+  prisma.$use(async (params, next) => {
+    // Check incoming query type
+    if (params.model == 'Post' && params.action == 'delete') {
+      // Change action to an update
+      params.action = 'update'
+
+      // Set field value
+      params.args['data'] = { deleted: true }
+    }
+    return next(params)
+  })
+
+  // ****************//
+  // TEST MIDDLEWARE //
+  // ****************//
+
+  // 1. Create a new post
+  const createPost = await prisma.post.create({
+    data: { title: 'How to create soft delete middleware' },
+  })
+
+  // 2. Soft delete the post
+  const deletePost = await prisma.post.delete({
+    where: {
+      id: createPost.id,
+    },
+  })
+
+  // 3. Confirm that the post was not permanently deleted
+  const getPost = await prisma.post.findOne({
+    where: {
+      id: deletePost.id, // Post still available
+    },
+  })
+
+  // 4. Return posts that were NOT deleted
+  const allPosts = await prisma.post.finOne
+
+  console.log(getPost) // Will return post with deleted:true
+}
+
+mainAsync()
+```
+
+✔ Pros of this approach:
+
+* Soft delete set at data access level - nobody can delete unless they use raw SQL
+
+✖ Cons of this approach:
+
+* Content still accessible unless you explicitly you filter by `deleted:false`
+
+## Step 3: Disable the ability to read/update deleted records
+
+> How do I prevent deleted records from being read and updated?
+
+### Option 1: Do nothing
+
+* Prisma ONLY responsible for CRUD - makes no decisions about
+* Business logic should be done in GraphQL API layer or REST API layer. For example, here's graphQL resolver (it works, you can copy paste)
+
+### Option 1: Use middleware to disable all read and update queries for deleted records
+
+* Prisma decides - only way to get to those records is to use SQL
+
+You can further extend the middleware by only returning `Post` records where `deleted` equals `false` when you perform a `findMany` query:
+
+```ts file=script.ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient({})
+
+async function mainAsync() {
+  prisma.$use(async (params, next) => {
+    // Check incoming query type
+    if (params.model == 'Post' && params.action == 'delete') {
+      // Change action to an update
+      params.action = 'update'
+
+      // Set field value
+      params.args['data'] = { deleted: true }
+    }
+    return next(params)
+  })
+
+  const createPost = await prisma.post.create({
+    data: { title: 'How to use Prisma Client' },
+  })
+
+  const deletePost = await prisma.post.delete({
+    where: {
+      id: createPost.id,
+    },
+  })
+
+  const getPost = await prisma.post.findOne({
+    where: {
+      id: deletePost.id,
+    },
+  })
+
+  console.log(getPost) // Will return post with deleted:true
+}
+
+mainAsync()
+```
+
+### Option 3: Use middleware to set default behaviour for read and update queries for deleted records
+
+✔ Pros of this approach:
+
+* Developer must make conscious choice to include deleted records
+* Won't accidentally return deleted records
+
+✖ Cons of this approach:
+
+* Not obvious from API that yo uaren't getting all records and that deleted: false is part of the default query
+* *Can* still return deleted records
+* Cannot influence `findOne` because it's done by ID, only `findMany`
+
+## FAQ
+
+### Can I add a global <inlinecode>includeDeleted</inlinecode> to the <inlinecode>Post</inlinecode> model?
+
+You may be tempted ot 'hack' a global `includedDeleted` property into the `Post` record. Your generated API will then make this possible:
+
+```ts
+prisma.post.findMany({ where: { includeDeleted: true }});
+```
+
+We recommend against this. - pollutes the API; models are supposed to represent data only and should not be abused to include global variables.
