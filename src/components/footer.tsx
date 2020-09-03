@@ -1,7 +1,6 @@
 import Link from '../components/link'
 import * as React from 'react'
 import styled from 'styled-components'
-import PrismaLogoGrey from '../icons/PrismaLogoGrey'
 import NewsLetter from '../components/newsletter'
 import Twitter from '../icons/Twitter'
 import Youtube from '../icons/Youtube'
@@ -20,10 +19,10 @@ const FooterWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  color: var(--list-bullet-color);
+  color: ${p => p.theme.colors.gray500};
   h3 {
-    font-size: 1rem;
-    line-height: 3rem;
+    font-size: ${p => p.theme.fontSizes[16]};
+    line-height: ${p => p.theme.space[48]};
     font-weight: bold;
     letter-spacing: 0.1em;
     margin: 0;
@@ -38,9 +37,9 @@ const FooterWrapper = styled.div`
     > div {
       flex: 2;
     }
-    @media (min-width: 0px) and (max-width: 767px) {
+    @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
       flex-direction: column;
-      padding: 3rem 0.5rem;
+      padding: ${p => p.theme.fontSizes[48]} 0.5rem;
     }
   }
 `
@@ -48,17 +47,17 @@ const FooterWrapper = styled.div`
 const LinkList = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 0 0 2rem;
+  margin: 0 0 ${p => p.theme.space[32]};
 
   li {
-    line-height: 2rem;
+    line-height: ${p => p.theme.space[32]};
     a {
       text-decoration: none;
       display: flex;
       align-items: center;
-      color: var(--list-bullet-color) !important;
+      color: ${p => p.theme.colors.gray500} !important;
       &:hover {
-        color: var(--code-inner-color) !important;
+        color: ${p => p.theme.colors.gray600} !important;
         .tag {
           transform: scale(1.05);
         }
@@ -68,19 +67,15 @@ const LinkList = styled.ul`
         height: 20px;
         align-items: center;
         display: flex;
-        border-radius: 6px;
-        margin-left: 8px;
-        background: var(--code-added-color);
-        font-size: 12px;
+        border-radius: ${p => p.theme.radii.small};
+        margin-left: ${p => p.theme.space[8]};
+        background: ${p => p.theme.colors.green500};
+        font-size: ${p => p.theme.fontSizes[12]};
         font-weight: bold;
-        color: white;
+        color: ${p => p.theme.colors.white};
         transition: transform 0.1s ease-in;
         &.black {
-          background: #000000;
-        }
-
-        &:hover {
-          // transform: scale(1.25);
+          background: ${p => p.theme.colors.black};
         }
       }
     }
@@ -93,20 +88,20 @@ const SocialWrapper = styled.div`
     margin: 0;
   }
   .social {
-    margin-top: 2rem;
+    margin-top: ${p => p.theme.space[32]};
 
     &-links {
       display: flex;
       align-items: center;
       margin-top: 10px;
       a {
-        margin-right: 24px;
+        margin-right: ${p => p.theme.space[24]};
         svg {
           transition: transform 0.1s ease-in;
         }
 
         &: hover {
-          color: var(--code-inner-color) !important;
+          color: ${p => p.theme.colors.gray600} !important;
           svg {
             transform: scale(1.2);
           }
@@ -114,7 +109,7 @@ const SocialWrapper = styled.div`
       }
     }
     &-text {
-      margin-top: 2rem;
+      margin-top: ${p => p.theme.space[32]};
     }
   }
 `

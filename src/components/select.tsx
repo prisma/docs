@@ -71,19 +71,19 @@ const SelectComponent = (props: SelectProps) => {
 export default SelectComponent
 
 const Select = styled.button`
-  background: var(--white-color);
-  border: 1px solid var(--border-color);
+  background: ${p => p.theme.colors.white};
+  border: 1px solid ${p => p.theme.colors.gray300};
   box-sizing: border-box;
-  border-radius: 5px;
+  border-radius: ${p => p.theme.radii.small};
   padding: 10px;
   width: ${(p: any) => p.width}px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 40px;
-  color: var(--main-font-color);
+  color: ${p => p.theme.colors.gray900};
   font-size: 1rem;
-  font-family: 'Open Sans';
+  font-family: ${p => p.theme.fonts.text};
   &:focus {
     outline: 0;
   }
@@ -97,7 +97,7 @@ const Select = styled.button`
 ` as any
 
 const Dropdown = styled.div`
-  background: var(--white-color);
+  background: ${p => p.theme.colors.white};
   transform: translateY(14px);
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
@@ -111,7 +111,7 @@ const Dropdown = styled.div`
 const Item = styled.div`
   padding: 8px 14px;
   color: grey;
-  background: var(--white-color);
+  background: ${p => p.theme.colors.white};
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -1,6 +1,6 @@
 import { RouterProps } from '@reach/router'
 import * as React from 'react'
-import styled from 'styled-components'
+import styled, { ThemeProvider } from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
@@ -9,6 +9,7 @@ import customMdx from '../components/customMdx'
 import './layout.css'
 import Sidebar from './sidebar'
 import TOC from './toc'
+import theme from 'prisma-lens'
 
 interface LayoutContentProps {
   toc: any
@@ -25,11 +26,11 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
     display: flex;
     width: 100%;
     justify-content: center;
-    padding: 0 24px;
+    padding: 0 ${p => p.theme.space[24]};
   `
 
   const Content = styled.article`
-    margin: 0 0 1rem;
+    margin: 0 0 ${p => p.theme.space[16]};
     position: relative;
     z-index: 100;
     flex: 1;
@@ -42,17 +43,17 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
 
   const MaxWidth = styled.div`
     > section {
-      padding: 1rem 40px;
+      padding: 1rem ${p => p.theme.space[40]};
       &.top-section {
         padding-top: 0;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
         margin-top: 0.5rem;
       }
-      @media (min-width: 0px) and (max-width: 767px) {
-        padding: 24px;
+      @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+        padding: ${p => p.theme.space[24]};
         &.top-section {
-          padding-top: 24px;
+          padding-top: ${p => p.theme.space[24]};
         }
       }
     }
@@ -60,7 +61,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
 
   const NotMobile = styled.section`
     display: flex;
-    @media (min-width: 0px) and (max-width: 768px) {
+    @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
       display: none;
     }
   `
@@ -70,7 +71,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
     width: 100%;
     justify-content: center;
     display: flex;
-    margin-top: 40px;
+    margin-top: ${p => p.theme.space[40]};
   `
 
   const TOCWrapper = styled.div`
@@ -81,6 +82,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
   `
 
   return (
+    <ThemeProvider theme={theme}>
     <MDXProvider components={customMdx}>
       <Header headerProps={header} />
       <Wrapper>
@@ -100,6 +102,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
       </Wrapper>
       <Footer footerProps={footer} />
     </MDXProvider>
+    </ThemeProvider>
   )
 }
 

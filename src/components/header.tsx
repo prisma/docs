@@ -1,7 +1,6 @@
 import Link from '../components/link'
 import * as React from 'react'
-import styled, { css } from 'styled-components'
-import styledTS from 'styled-components-ts'
+import styled from 'styled-components'
 import HeaderLogo from '../icons/Logo'
 import Github from '../icons/Git'
 import Clear from '../icons/Clear'
@@ -38,13 +37,13 @@ const HeaderWrapper = styled.div`
       rgba(113, 128, 150, 0.25) 0%,
       rgba(113, 128, 150, 0) 100%
     ),
-    linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
-    linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
-    var(--gradient1-color);
+    linear-gradient(180deg, ${p => p.theme.colors.gray900} 0%, ${p => p.theme.colors.gray800} 100%),
+    linear-gradient(180deg, ${p => p.theme.colors.gray900} 0%, rgba(27, 32, 43, 0) 100%),
+    ${p => p.theme.colors.gray800};
   img {
     margin-bottom: 0;
   }
-  padding: 24px 16px;
+  padding: ${p => p.theme.space[24]} ${p => p.theme.space[16]};
   display: flex;
   justify-content: center;
 `
@@ -63,7 +62,7 @@ const HeaderNav = styled.div`
   justify-content: space-between;
 
   @media (min-width: 0px) and (max-width: 1024px) {
-    padding: 0 16px;
+    padding: 0 ${p => p.theme.space[16]};
   }
 `
 
@@ -87,7 +86,7 @@ const NavLinks = styled.div`
     &:hover,
     &:active,
     &:focus {
-      color: var(--white-color) !important;
+      color: ${p => p.theme.colors.white} !important;
     }
   }
 
@@ -96,32 +95,32 @@ const NavLinks = styled.div`
     margin: 0 3rem 0;
   }
 
-  @media (min-width: 0px) and (max-width: 768px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     flex-direction: column;
     align-items: flex-end;
     margin: 0;
     a {
-      margin-bottom: 20px;
+      margin-bottom: ${p => p.theme.space[20]};
     }
   }
 `
 
 const DocsMobileButton = styled.div`
-  background: #ffffff;
-  border-radius: 6px;
-  color: #4a5568;
+  background: ${p => p.theme.colors.white};
+  border-radius: ${p => p.theme.radii.small};
+  color: ${p => p.theme.colors.gray700};
   display: none;
-  padding: 0 14px;
+  padding: 0 ${p => p.theme.space[14]};
   height: 40px;
-  margin-left: 8px;
+  margin-left: ${p => p.theme.space[8]};
   font-weight: 600;
   position: relative;
   z-index: 300;
   justify-content: space-between;
   svg {
-    margin-left: 8px;
+    margin-left: ${p => p.theme.space[8]};
   }
-  @media (min-width: 0px) and (max-width: 768px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     display: flex;
     align-items: center;
 
@@ -135,20 +134,20 @@ const MobileOnlyNav = styled.div`
   z-index: 210;
   top: 70px;
   transition: top 0.35s;
-  padding: 1rem;
-  border-radius: 6px;
+  padding: ${p => p.theme.space[16]};
+  border-radius: ${p => p.theme.radii.small};
   text-align: left;
-  background: #2f3747;
+  background: ${p => p.theme.colors.gray800};
   right: 0;
-  padding: 2rem 1rem;
-  @media (min-width: 0px) and (max-width: 768px) {
+  padding: ${p => p.theme.space[32]} ${p => p.theme.space[16]};
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     display: block;
   }
 `
 
 const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
-  background: #edf2f7;
-  box-shadow: 0px 1px 0px #e2e8f0;
+  background: ${p => p.theme.colors.gray200};
+  box-shadow: 0px 1px 0px ${p => p.theme.colors.gray300};
   top: 0;
   padding: 0;
   z-index: 200;
@@ -159,31 +158,14 @@ const MobileOnlyMenu = styled(MobileOnlyNav)`
   position: absolute;
 `
 
-const SecondLevelHeader = styledTS<{ isSticky: boolean }>(styled.div)`
-  background: #EDF2F7;
+const SecondLevelHeader = styled.div`
+  background: ${p => p.theme.colors.gray200};
   padding: 20px 16px;
   display: flex;
   justify-content: center;
   position: relative;
   z-index: 105;
-  ${({ isSticky }: any) =>
-    isSticky &&
-    css`
-      z-index: 120;
-      padding: 8px;
-      margin-top: 0;
-      margin-left: -8px;
-      width: 100% !important;
-      background: radial-gradient(
-          37.86% 77.79% at 50% 100%,
-          rgba(113, 128, 150, 0.25) 0%,
-          rgba(113, 128, 150, 0) 100%
-        ),
-        linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
-        linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
-        var(--gradient1-color);
-    `};
-  @media (min-width: 0px) and (max-width: 768px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     padding: 12px 16px;
   }
 `
@@ -192,9 +174,9 @@ const MenuMobileBtn = styled.a`
   display: none;
   font-weight: bold;
   letter-spacing: 0.1em;
-  color: var(--list-bullet-color) !important;
+  color: ${p => p.theme.colors.gray500} !important;
   text-transform: uppercase;
-  @media (min-width: 0px) and (max-width: 768px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     display: block;
   }
 `
@@ -202,8 +184,8 @@ const MenuMobileBtn = styled.a`
 const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
-  font-size: 1rem;
-  @media (min-width: 0px) and (max-width: 768px) {
+  font-size: ${p => p.theme.fontSizes[16]};
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     display: none;
   }
 `
@@ -212,14 +194,14 @@ const NavLink = styled(Link)`
   transition: color 0.1s ease-in;
   padding: 0 0.75rem;
   margin: 0 0.5rem;
-  color: var(--code-linenum-color) !important;
-  @media (min-width: 0px) and (max-width: 768px) {
+  color: ${p => p.theme.colors.gray400} !important;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     margin: 0;
     padding: 0;
   }
 `
 const DarkNavLink = styled(NavLink)`
-  color: #4a5568 !important;
+  color: ${p => p.theme.colors.gray700} !important;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -229,21 +211,21 @@ const DarkNavLink = styled(NavLink)`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid #e2e8f0;
-    color: #718096;
+    border-top: 1px solid ${p => p.theme.colors.gray300};
+    color: ${p => p.theme.colors.gray600};
     font-weight: 600;
     &:hover {
-      color: var(--main-font-color);
+      color: ${p => p.theme.colors.gray900};
     }
   }
 
   &:hover {
-    color: var(--main-font-color) !important;
+    color: ${p => p.theme.colors.gray900} !important;
   }
   &.active-item {
-    background: #ffffff;
-    border-radius: 6px;
-    color: #a0aec0 !important;
+    background: ${p => p.theme.colors.white};
+    border-radius: ${p => p.theme.radii.small};
+    color: ${p => p.theme.colors.gray500} !important;
     padding: 4px 6px;
   }
 
@@ -251,11 +233,11 @@ const DarkNavLink = styled(NavLink)`
     display: none;
   }
 
-  @media (min-width: 0px) and (max-width: 768px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     &.active-item {
       background: transparent;
-      color: #4a5568 !important;
-      padding: 24px;
+      color: ${p => p.theme.colors.gray700} !important;
+      padding: ${p => p.theme.space[24]};
     }
     svg {
       display: block;
@@ -264,30 +246,30 @@ const DarkNavLink = styled(NavLink)`
 `
 
 const SecondLevelMobileNavLink = styled.div`
-  padding: 24px;
+  padding: ${p => p.theme.space[24]};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #e2e8f0;
-  color: #718096;
+  border-top: 1px solid ${p => p.theme.colors.gray300};
+  color: ${p => p.theme.colors.gray600};
   font-weight: 600;
   &:hover {
-    color: var(--main-font-color);
+    color: ${p => p.theme.colors.gray900};
   }
 `
 
 const NavButton = styled(NavLink)`
-  background: #48bb78;
-  border-radius: 6px;
+  background: ${p => p.theme.colors.green500};
+  border-radius: ${p => p.theme.radii.small};
   padding: 5px;
-  color: white !important;
+  color: ${p => p.theme.colors.white} !important;
 
   &:hover {
-    background: #38a169;
+    background: ${p => p.theme.colors.green600};
   }
 
-  @media (min-width: 0px) and (max-width: 768px) {
-    color: var(--code-linenum-color) !important;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    color: ${p => p.theme.colors.gray400} !important;
     background: transparent;
     padding: 0;
     margin: 0;
@@ -296,7 +278,7 @@ const NavButton = styled(NavLink)`
 
 const SecondLevelNav = styled.div`
   margin-left: 45px;
-  @media (min-width: 0px) and (max-width: 768px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     margin: 0;
   }
 `

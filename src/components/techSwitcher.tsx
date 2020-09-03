@@ -89,7 +89,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
 const Container = styled.div`
   margin: 16px 1rem 24px 0;
-  @media only screen and (max-width: 767px) {
+  @media only screen and (max-width: ${p => p.theme.breakpoints.tablet}) {
     margin: 8px 0 0;
     button {
       width: 100%;

@@ -14,23 +14,23 @@ const SearchBoxDiv = styled.div`
     z-index: 100001;
     max-width: 1200px;
     width: 100%;
-    background: white;
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
+    background: ${p => p.theme.colors.white};
+    padding: ${p => p.theme.space[20]};
+    border-bottom: 1px solid ${p => p.theme.colors.gray300};
 
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+    border-top-left-radius: ${p => p.theme.radii.small};
+    border-top-right-radius: ${p => p.theme.radii.small};
 
     form {
       width: 100%;
 
       input {
-        color: #4A5568;
+        color: ${p => p.theme.colors.gray700};
       }
     }
 
     .clear {
-      background: #E2E8F0;
+      background: ${p => p.theme.colors.gray300};
       border-radius: 6px;
       height: 36px;
       width: 36px;
@@ -39,7 +39,7 @@ const SearchBoxDiv = styled.div`
       justify-content: center;
       
       svg path {
-        stroke: #4A5568;
+        stroke: ${p => p.theme.colors.gray700};
       }
     }
   }
@@ -65,17 +65,17 @@ const SearchBoxDiv = styled.div`
       width: 100%;
       background: transparent;
       outline: none;
-      padding: 0rem 1rem;
-      font-family: Open Sans;
+      padding: 0rem ${p => p.theme.space[16]};
+      font-family: ${p => p.theme.fonts.text};
       font-style: normal;
       font-weight: normal;
-      font-size: 16px;
+      font-size: ${p => p.theme.fontSizes[16]};
       line-height: 100%;
       border-width: 0;
 
       &::placeholder {
         content: 'Search';
-        color: var(--list-bullet-color);
+        color: ${p => p.theme.colors.gray500};
         opacity: 1; /* Firefox */
       }
     }
@@ -89,15 +89,15 @@ const SearchBoxDiv = styled.div`
   }
 
   .slash {
-    border: 1px solid #cbd5e0;
+    border: 1px solid ${p => p.theme.colors.gray400};
     border-radius: 4px;
-    color: #cbd5e0;
+    color: ${p => p.theme.colors.gray400};
     width: 18px;
     display: flex;
     justify-content: center;
   }
 
-  @media (min-width: 0px) and (max-width: 768px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     .slash {
       display: none;
     }
@@ -119,7 +119,6 @@ const DEBOUNCE_DELAY = 500
 const focusShortcuts = ['s', 191]
 
 const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: any) => {
-  const [focusState, setFocusState] = React.useState(false)
   const [value, setValue] = React.useState(currentRefinement)
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
@@ -189,13 +188,9 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
     document.addEventListener('keydown', onKeyDown)
   }, [])
 
-  const focused = () => {inputEl.current.value !== '' ? setFocusState(true): setFocusState(false); onFocus() }
-
-  const removeFocus = () => setFocusState(false)
   return (
     <SearchBoxDiv className={isOpened ? 'opened': ''}>
       <form onSubmit={onSubmit}> 
-      {/* focusState === true ? 'focused': '' */}
         <SearchIcon />
         <input
           ref={inputEl}
@@ -203,8 +198,6 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
           placeholder={placeholderText}
           aria-label="Search Documentation..."
           onChange={onChange}
-          onFocus={focused}
-          onBlur={removeFocus}
           value={value}
           {...rest}
         />

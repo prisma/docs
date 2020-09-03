@@ -28,33 +28,33 @@ const CodeWithResult = ({ children }: CodeWithResultProps) => {
 export default CodeWithResult
 
 const Wrapper = styled.div`
-  margin-top: 2rem;
+  margin-top: ${p => p.theme.space[32]};
   .cmd .pre-highlight pre {
     border-radius: 8px 8px 0px 0px;
   }
 
   .result {
-    background: var(--code-result-bg-color);
+    background: ${p => p.theme.colors.gray300};
     border-radius: 0px 0px 8px 8px;
     margin-top: -13px;
 
     pre {
-      background: var(--code-result-bg-color) !important;
+      background: ${p => p.theme.colors.gray300} !important;
       border-radius: 0px 0px 8px 8px;
       margin-top: 0;
     }
 
     .show-btn {
-      font-family: Open Sans;
+      font-family: ${p => p.theme.fonts.text};
       font-style: normal;
       font-weight: 600;
-      font-size: 12px;
+      font-size: ${p => p.theme.fontSizes[12]};
       line-height: 100%;
       letter-spacing: 0.01em;
-      color: var(--code-inner-color);
+      color: ${p => p.theme.colors.gray600};
       height: 24px;
       display: flex;
-      padding-left: 1rem;
+      padding-left: ${p => p.theme.space[16]};
       align-items: center;
       cursor: pointer;
     }

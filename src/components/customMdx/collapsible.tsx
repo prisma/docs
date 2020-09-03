@@ -27,7 +27,7 @@ const CollapseBox = ({ children, ...props }: CollapseProps) => {
 export default CollapseBox
 
 const Wrapper = styled.div`
-  padding-bottom: 24px;
+  padding-bottom: ${p => p.theme.space[24]};
 `
 
 const Tab = styled.div`
@@ -42,28 +42,28 @@ const Tab = styled.div`
     width: 8px;
     height: 100%;
     left: 0px;
-    background: var(--code-bgd-color);
-    border-radius: 5px;
+    background: ${p => p.theme.colors.gray100};
+    border-radius: ${p => p.theme.radii.small};
   }
   p {
-    margin-top: 8px;
+    margin-top: ${p => p.theme.space[8]};
   }
 `
 
 const Label = styled.label`
   position: relative;
   display: block;
-  color: var(--selection-bgd-color);
+  color: #0c344b;
   font-weight: 600;
   line-height: 1.5;
-  padding-left: 36px;
+  padding-left: ${p => p.theme.space[36]};
   cursor: pointer;
 `
 
 const TabContent = styled.div`
   max-height: 0;
   overflow: hidden;
-  color: var(--grey-color);
+  color: ${p => p.theme.colors.gray800};
   transition: max-height 0.35s, padding 0.35s;
   padding-left: 36px;
   padding-bottom: 0;
@@ -75,7 +75,7 @@ const Input = styled.input`
   z-index: -1;
   &:checked ~ .tab-content {
     max-height: 2000px;
-    padding-bottom: 8px;
+    padding-bottom: ${p => p.theme.space[8]};
   }
 `
 

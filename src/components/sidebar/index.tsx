@@ -9,10 +9,10 @@ import config from '../../../config'
 
 const SidebarContainer = styled.aside`
   width: 272px;
-  margin: 0px 16px 0 -16px;
+  margin: 0px ${p => p.theme.space[16]} 0 -${p => p.theme.space[16]};
 `
 
-const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
+const Sidebar = styledTS<{ isSticky: boolean, theme: any }>(styled.div)`
   margin: 0;
   overflow: auto;
   height: 100vh;
@@ -24,17 +24,16 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
 
   .tablet-only {
     display: none;
-    background: #F7FAFC;
+    background: ${p => p.theme.colors.gray100};
     justify-content: space-between;
-    padding: 3rem 4rem;
+    padding: ${p => p.theme.space[48]} ${p => p.theme.space[64]};
 
     > ul {
       width: 50%;
       margin-right: 50px;
 
       &:last-of-type {
-        // border-left: 1px solid var(--code-inner-color);
-        padding-left: 40px;
+        padding-left: ${p => p.theme.space[40]};
       }
     }
 
@@ -45,9 +44,9 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
 
   .mobile-only {
     display: none;
-    background: #F7FAFC;
-    padding: 2rem;
-    @media only screen and (max-width: 640px) {
+    background: ${p => p.theme.colors.gray100};
+    padding: ${p => p.theme.space[32]};
+    @media only screen and (max-width: ${p => p.theme.breakpoints.mobile}) {
       display: flex;
       > ul {
         width: 100%;
@@ -58,8 +57,8 @@ const Sidebar = styledTS<{ isSticky: boolean }>(styled.div)`
 
 const List = styled.ul`
   list-style: none;
-  padding: 0 7px 0 15px;
-  margin: -20px 0 0;
+  padding: 0 7px 0 ${p => p.theme.space[16]};
+  margin: -${p => p.theme.space[20]} 0 0;
 `
 const paneRegex = new RegExp('\\b(' + config.sidebar.tablet_menu_split.join('|') + ')\\b', 'ig')
 const getLeftPane = (allEdges: any) =>

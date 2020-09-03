@@ -49,8 +49,6 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
           navigate={navigate}
-          toc={toc || toc == null ? tableOfContents : []}
-          tocDepth={tocDepth}
           codeStyle={codeStyle}
         />
       </section>
