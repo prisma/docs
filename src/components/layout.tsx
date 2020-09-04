@@ -33,11 +33,18 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
     margin: 0 0 ${p => p.theme.space[16]};
     position: relative;
     z-index: 100;
-    flex: 1;
+    // flex: 1;
+    max-width: 748px;
     @media (min-width: 0px) and (max-width: 1024px) {
       margin: 0;
       width: 100%;
       max-width: 100%;
+    }
+
+    @media (min-width: 1024px) and (max-width: 1200px) {
+      margin: 0;
+      width: 100%;
+      max-width: 570px;
     }
   `
 
@@ -50,7 +57,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
       @media (min-width: 0px) and (max-width: 1024px) {
         margin-top: 0.5rem;
       }
-      @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+      @media (min-width: 0px) and (max-width: 1024px) {
         padding: ${p => p.theme.space[24]};
         &.top-section {
           padding-top: ${p => p.theme.space[24]};
@@ -61,7 +68,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
 
   const NotMobile = styled.section`
     display: flex;
-    @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
   `

@@ -243,6 +243,10 @@ const DarkNavLink = styled(NavLink)`
       display: block;
     }
   }
+  @media (min-width: ${p => p.theme.breakpoints.tablet}) and (max-width: 784px) {
+    font-size: 14px;
+  }
+
 `
 
 const SecondLevelMobileNavLink = styled.div`
