@@ -133,7 +133,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       )}
                       {isDiff && (
                         <LineNo className="line-no" style={{ color: lineClass.symbColor }}>
-                          {['+', '-'].includes(diffSymbol) ? diffSymbol : i + 1}
+                          {['+', '-','✎'].includes(diffSymbol) ? diffSymbol : i + 1}
                         </LineNo>
                       )}
                       <LineContent className={`${tokenCopyClass}`}>
