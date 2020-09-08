@@ -1,12 +1,14 @@
 import React from 'react'
 import styled from 'styled-components'
 import { Typescript } from '../icons/technologies/Typescript'
-import NewSelectComponent from './new-select'
+import SelectComponent from './select'
 import PostgreSQL from '../icons/technologies/PostgreSQL'
 import MySQL from '../icons/technologies/MySQL'
 import SQLite from '../icons/technologies/SQLite' 
 import JS from '../icons/technologies/JS'
-import SelectComponent from './select'
+import { components } from 'react-select'
+import ArrowDown from '../icons/ArrowDown'
+
 
 interface TechSwitchProps {
   type: string
@@ -49,14 +51,35 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
   const renderItem = (item: TechItem) => {
     return (
-      <>
+      <SelectItem>
         {icons[item.technology]}
         <span>{technologyNames[item.technology]}</span>
-      </>
+      </SelectItem>
     )
   }
 
-  const itemToString = (item: TechItem) => item && item.technology
+  const DropdownIndicator = (props: any) => {
+    return (
+      <components.DropdownIndicator {...props}>
+        <ArrowDown />
+      </components.DropdownIndicator>
+    )
+  }
+
+  
+  const IndicatorSeparator = () => {
+    return <span style={{display: 'none'}} />;
+  }
+
+  const Option = (props: any) => {
+    return (
+      <components.Option {...props}>{renderItem({ technology: props.value })}</components.Option>
+    )
+  }
+
+  const SingleValue = (props: any) => (
+    <components.SingleValue {...props}>{renderItem({ technology: props.children })}</components.SingleValue>
+  );
 
   const handleChange = (item: TechItem) => {
     setSelectedItem(item)
@@ -74,14 +97,14 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
   return (
     <Container>
-      <NewSelectComponent
+      <SelectComponent
         items={items}
+        DropdownIndicator={DropdownIndicator}
+        IndicatorSeperator={IndicatorSeparator}
+        Option={Option}
+        SingleValue={SingleValue}
         selectedItem={selectedItem}
-        renderItem={renderItem}
-        itemToString={itemToString}
         onChange={handleChange}
-        top={-14}
-        selectPlaceholder="Select an item"
         width={168}
       />
     </Container>
@@ -90,12 +113,20 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
 const Container = styled.div`
   margin: 16px 1rem 24px 0;
-  width: 160px;
+  width: 170px;
+
   @media only screen and (max-width: 767px) {
     margin: 8px 0 0;
-    button {
-      width: 100%;
-    }
+    width: 100%;
+  }
+`
+
+const SelectItem = styled.div`
+  display: flex;
+  align-items: center;
+
+  svg {
+    margin-right: 10px;
   }
 `
 

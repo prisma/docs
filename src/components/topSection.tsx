@@ -3,13 +3,18 @@ import styled from 'styled-components'
 import TOC from './toc'
 import ParentTitle from './parentTitleComp'
 import SwitcherBlock from './switcherBlock'
-import { useNavigate } from '@reach/router'
 
 const TopSectionWrapper = styled.div`
   position: relative;
   hr.bigger-margin {
     margin-top: 3rem;
     margin-bottom: 3.5rem;
+  }
+
+  @media only screen and (max-width: 767px) {
+    hr.bigger-margin {
+      margin-bottom: 6rem;
+    }
   }
   .tech-switch-block {
     position: relative;

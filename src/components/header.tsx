@@ -243,7 +243,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
           </MenuMobileBtn>
         </HeaderNav>
         <SearchContainer>
-          {/* <SearchComponent hitsStatus={changeHitsStatus} /> */}
+          <SearchComponent hitsStatus={changeHitsStatus} />
           {showDocsBtn && (
             <DocsMobileButton onClick={toggleMobileNav}>
               {showMobileNav ? <Clear /> : 'Docs'}

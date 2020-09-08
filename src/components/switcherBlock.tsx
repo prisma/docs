@@ -3,7 +3,6 @@ import styled from 'styled-components'
 import TechnologySwitch from './techSwitcher'
 import { urlGenerator } from '../utils/urlGenerator'
 import { withPrefix } from 'gatsby'
-import { useNavigate, useLocation } from '@reach/router'
 
 const SwitcherWrapper = styled.div`
   display: flex;
@@ -17,17 +16,13 @@ const SwitcherWrapper = styled.div`
 `
 
 const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: any) => {
- 
-    // const navigate = useNavigate()
-    // const location = useLocation()
-
-    console.log(langSwitcher, dbSwitcher)
-
-    console.log(location)
-
-  const [pathTechParams] = location.pathname.split('/').splice(-1)
+  const [pathTechParams] = location.pathname
+    .replace(/\/$/, '')
+    .split('/')
+    .splice(-1)
   const getTechFromParam = (type: string, defaultVal: string) => {
     const isTechPath = location.pathname !== withPrefix(urlGenerator(slug))
+
     let tech = defaultVal
     if (isTechPath) {
       if (type === 'lang') {
@@ -48,7 +43,6 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: a
     dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgres'
   )
   const goToNewPath = () => {
-      console.log(langSelected, dbSelected)
     const newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
       dbSwitcher ? `${dbSelected}` : ''
     }`
@@ -99,7 +93,6 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: a
   }
 
   const langChanged = (item: any) => {
-      console.log(item)
     techChanged(item, 'lang')
     setLangSelected(item.technology)
   }
@@ -109,22 +102,21 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: a
     setDbSelected(item.technology)
   }
 
-  // cleanup!! - memory leak!!
   React.useEffect(() => {
-    // let mounted = true
+    let mounted = true
 
-    if (langSwitcher && !dbSwitcher ) {
+    if (langSwitcher && !dbSwitcher && mounted) {
       langChanged({ technology: langSelected })
-    } else if (dbSwitcher && !langSwitcher ) {
+    } else if (dbSwitcher && !langSwitcher && mounted) {
       dbChanged({ technology: dbSelected })
-    } else if (dbSwitcher && langSwitcher ) {
+    } else if (dbSwitcher && langSwitcher && mounted) {
       langChanged({ technology: langSelected })
       dbChanged({ technology: dbSelected })
     }
 
-    // return function cleanup() {
-    //   mounted = false
-    // }
+    return function cleanup() {
+      mounted = false
+    }
   }, [langSelected, dbSelected])
   return (
     <SwitcherWrapper>
