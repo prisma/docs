@@ -1,11 +1,12 @@
 import React from 'react'
 import styled from 'styled-components'
 import { Typescript } from '../icons/technologies/Typescript'
-import SelectComponent from './select'
+import NewSelectComponent from './new-select'
 import PostgreSQL from '../icons/technologies/PostgreSQL'
 import MySQL from '../icons/technologies/MySQL'
-import SQLite from '../icons/technologies/SQLite' // change icon as soon as we have it
+import SQLite from '../icons/technologies/SQLite' 
 import JS from '../icons/technologies/JS'
+import SelectComponent from './select'
 
 interface TechSwitchProps {
   type: string
@@ -23,7 +24,7 @@ const icons = {
   typescript: <Typescript />,
   mysql: <MySQL />,
   postgres: <PostgreSQL />,
-  sqlite: <SQLite />, // change icon as soon as we have it
+  sqlite: <SQLite />,
 }
 
 const technologyTypes = {
@@ -73,7 +74,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
   return (
     <Container>
-      <SelectComponent
+      <NewSelectComponent
         items={items}
         selectedItem={selectedItem}
         renderItem={renderItem}
@@ -89,6 +90,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
 const Container = styled.div`
   margin: 16px 1rem 24px 0;
+  width: 160px;
   @media only screen and (max-width: 767px) {
     margin: 8px 0 0;
     button {
