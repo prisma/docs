@@ -39,12 +39,14 @@ model User {
 }
 
 model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  published Boolean @default(true)
-  author    User    @relation(fields:  [authorId], references: [id])
-  authorId  Int
-  comments Json
+  id         Int     @id @default(autoincrement())
+  title      String
+  published  Boolean @default(true)
+  author     User    @relation(fields:  [authorId], references: [id])
+  authorId   Int
+  comments   Json
+  views      Int     @default(0)
+  likes      Int     @default(0)
 }
 
 enum Role {
@@ -398,6 +400,8 @@ You can also perform nested writes, such as:
 
 The `update` query updates an existing database record. You can use the `select` and `include` options to determine which properties should be included on the returned object.
 
+To perform arithmeic operations (add, subtract, multiply, divide), use [atomic updates](#atomic-operations-on-update) to prevent race conditions.
+
 ### Options
 
 #### Type
@@ -498,6 +502,8 @@ You can also perform nested writes during an update, such as:
 
 The `upsert` query updates an existing or creates a new database record. You can use the `select` and `include` options to determine which properties should be included on the returned object.
 
+To perform arithmeic operations (add, subtract, multiply, divide), use [atomic updates](#atomic-operations-on-update) to prevent race conditions.
+
 ### Options
 
 #### Type
@@ -547,7 +553,7 @@ export type User = {
 
 ### Examples
 
-**Update (if exists) or create a new `User` record with an `email` of `alice@prisma.io`**:
+#### Update (if exists) or create a new `User` record with an `email` of `alice@prisma.io`
 
 ```ts
 const user = await prisma.user.upsert({
@@ -653,6 +659,8 @@ const user = await prisma.user.delete({
 ## updateMany
 
 The `updateMany` query updates a batch of existing database records in bulk and returns the number of deleted records. You can [filter](filtering) the list of records to be updated.
+
+To perform arithmeic operations (add, subtract, multiply), use [atomic updates](#atomic-operations-on-update) to prevent race conditions.
 
 ### Options
 
@@ -932,4 +940,102 @@ if (user) {
 
   console.log(updatedUser.coinflips);
 }
+```
+
+## Atomic operations on update
+
+Atomic operations on update is available as a preview feature in 2.6.0 and later for `Float` and `Int` field types. This feature allows you to update a field based on its **current** value (such as *subtracting* or *dividing*) without risking a race condition.
+
+<details><summary>Overview: Race conditions</summary>
+
+A race conditions occurs when two or more operations must be done in sequence in order to complete a task. In the following example, two clients try to increase the same field (`postCount`) by one:
+
+| Client | Operation | Value  |
+|:--| :----- | :------------------ | :-------- |
+|Client 1| **Get** field value     | `21` |
+|Client 2| **Get** field value     | `21` |
+|Client 2| **Set** field value     | `22` |
+|Client 1| **Set** field value     | `22` ✘ |
+
+The value *should* be `23`, but the two clients did not read and write to the `postCount` field in sequence. Atomic operations on update combine read and write into a single operation, which prevents a race condition:
+
+| Client | Operation | Value  |
+|:--| :----- | :------------------ | :-------- |
+|Client 1| **Get and set** field value     | `21` &rarr; `22` |
+|Client 2| **Get and set** field value     | `22` &rarr; `23` ✔ |
+
+</details>
+
+Add the highlighted feature flag to enable atomic number operations on update:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+|  previewFeatures = ["atomicNumberOperations"]
+}
+```
+
+> Please [share your feedback](https://github.com/prisma/prisma/issues/3491) on how this feature works for you. We are interested in both positive and negative feedback, so we know if this feature is already ready for production! (If encounter any problems, please open a [new issue in the `prisma/prisma` repository](https://github.com/prisma/prisma/issues/new/choose)).
+
+### Reference
+
+| Option | Description           
+| :----- | :------------------ | 
+| `increment`    | Adds `n` to the current value. | 
+| `decrement`    | Subtacts `n` from the current value. | 
+| `multiply`    | Multiplies the current value by `n`. | 
+| `divide`    | Divides the current value by `n`. | 
+| `set`    | Sets the current field value. Identical to `{ myField : n }`. | 
+
+> **Note**: You can only perform **one** atomic update per field, per query.
+
+`Int` and `Float` fields accept objects with the following type as input:
+
+```ts
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+```
+
+#### Examples
+
+##### Increment all `view` and `likes` fields of all `Post` records by `1`
+
+```ts
+const updatePosts = await prisma.post.updateMany({
+  data: {
+    views: {
+      increment: 1
+    },
+    likes: {
+      increment: 1
+    }
+  }
+})
+```
+
+##### Set all `count` fields of all `Post` records to `0`
+
+```ts
+const updatePosts = await prisma.post.updateMany({
+  data: {
+    views: {
+      set: 0
+    },
+  }
+})
+```
+
+Can also be written as:
+
+```ts
+const updatePosts = await prisma.post.updateMany({
+  data: {
+    views: 0,
+  }
+})
 ```
