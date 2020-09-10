@@ -7,17 +7,65 @@ preview: false
 
 <TopBlock>
 
-Prisma maps `undefined` to `null` - example:
+Prisma Client differentiates between `null` and `undefined`.
 
-- `null`
-- `undefined`
+`null` is a **value**:
 
-..will return
+* Optional fields (`name`) accept `null` when you create or update a record
+* Mandatory fields (`email`) **do not** accept `null` when you create or update a record
+* Filtering by `null` only possible for optional fields - mandatory fields will never be `null`
 
-```prisma
+`undefined` means **do nothing**:
 
-```
+* Optional fields accept `undefined` when you create a record - the field value becomes `null` or the [`@default`]() value
+* Mandatory fields do not accepted `undefined` when you create a record - you must provide a value
+* When you update any field, setting the field value to `undefined` is the same as **doing nothing**
+* Filtering by `undefined` is the same **not including the filter at all**
 
 </TopBlock>
 
-## `NaN`
+## Examples
+
+The following example are based on this model:
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+```
+
+### Update `User` record with valid `email` or do nothing
+
+The following query updates a user's `email` if the supplied email is valid - otherwise, no change is made to `email`:
+
+```ts
+const email = "ariadne@prisma.io";
+
+const update = await prisma.user.update({
+  where: {
+    id: 1,
+  },
+  data: {
+    email: isValid(email) ? email : undefined, // undefined == do nothing
+  },
+});
+
+function isValid(email: string) {
+  return email.includes("@"); // Simplistic validation!
+}
+```
+
+✖ The following is **not** valid because `email` is a mandatory field and cannot be set to `null`:
+
+```ts
+data: {
+  email: isValid(email) ? email : null,
+},
+```
+
+> **Note**: TypeScript will give you an error: `Type 'null' is not assignable to type 'string'. ts(2322)`
+
+
+## Use case: `null` and `undefined` in GraphQL
