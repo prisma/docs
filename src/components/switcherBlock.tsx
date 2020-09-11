@@ -16,14 +16,13 @@ const SwitcherWrapper = styled.div`
 `
 
 const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: any) => {
-  const [pathTechParams] = location.pathname
-    .replace(/\/$/, '')
-    .split('/')
-    .splice(-1)
-  const getTechFromParam = (type: string, defaultVal: string) => {
-    const isTechPath = location.pathname !== withPrefix(urlGenerator(slug))
+  const currentPath = location.pathname.replace(/\/$/, '')
+  let [pathTechParams] = currentPath.split('/').splice(-1)
 
+  const isTechPath = currentPath !== withPrefix(urlGenerator(slug))
+  const getTechFromParam = (type: string, defaultVal: string) => {
     let tech = defaultVal
+
     if (isTechPath) {
       if (type === 'lang') {
         ;[tech] = pathTechParams.split('-').splice(dbSwitcher ? -2 : -1)
@@ -42,10 +41,29 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: a
   const [dbSelected, setDbSelected] = React.useState(
     dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgres'
   )
+
   const goToNewPath = () => {
-    const newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
+    let newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
       dbSwitcher ? `${dbSelected}` : ''
     }`
+
+    if (langSwitcher && !dbSwitcher) {
+      // for paths without tech or lang in the url - to redirect to one with default tech and lang
+      if (!langSwitcher.includes(pathTechParams.split('-').slice(-1))) {
+        pathTechParams = `${pathTechParams}-${langSwitcher[0]}`
+      }
+    } else if (!langSwitcher && dbSwitcher) {
+      // for paths without tech or lang in the url - to redirect to one with default tech and lang
+      if (!dbSwitcher.includes(pathTechParams.split('-').slice(-1))) {
+        pathTechParams = `${pathTechParams}-${dbSwitcher[0]}`
+      }
+    } else if (langSwitcher && dbSwitcher) {
+      // for paths without tech or lang in the url - to redirect to one with default tech and lang
+      if (!dbSwitcher.includes(pathTechParams.split('-').slice(-1))) {
+        pathTechParams = `${pathTechParams}-${langSwitcher[0]}-${dbSwitcher[0]}`
+      }
+    }
+
     if (!pathTechParams.includes(newParams)) {
       navigate(withPrefix(`${urlGenerator(slug)}-${newParams}${location.hash}`), {
         replace: location.pathname === urlGenerator(slug),
