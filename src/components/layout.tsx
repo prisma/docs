@@ -18,7 +18,7 @@ interface LayoutContentProps {
 
 type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth }) => {
+const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth, location }) => {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
@@ -102,7 +102,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth 
           </Content>
           <TOCWrapper>
             {toc && toc.items && toc.items.length > 0 && (
-              <TOC headings={toc.items} tocDepth={tocDepth} />
+              <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
             )}
           </TOCWrapper>
         </Container>

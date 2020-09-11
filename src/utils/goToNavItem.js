@@ -1,6 +1,6 @@
 module.exports = {
   goToNav(pathname) {
-    var currentElem = document.getElementById(pathname)
+    var currentElem = document.getElementById(pathname.replace(/\/$/, ''))
     const sidebarElem = document.getElementById('sidebar-container')
     if (currentElem && sidebarElem) {
       var topPos = currentElem.getBoundingClientRect().top - 250

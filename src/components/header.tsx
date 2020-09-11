@@ -436,7 +436,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
       </HeaderWrapper>
 
       {/* Second level header */}
-      <SecondLevelHeader>
+      {/* <SecondLevelHeader>
         <Container style={{ display: 'flex' }}>
           <SearchComponent hitsStatus={changeHitsStatus} />
           {showDocsBtn && <NonMobileMenu>
@@ -449,7 +449,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
             </DocsMobileButton>
           )}
         </Container>
-      </SecondLevelHeader>
+      </SecondLevelHeader> */}
 
       {showMobileNav && (
         <SecondLevelMobileOnlyNav>
