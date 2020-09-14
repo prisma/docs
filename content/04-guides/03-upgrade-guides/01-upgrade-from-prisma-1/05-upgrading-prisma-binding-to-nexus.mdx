@@ -116,6 +116,7 @@ For some basic setup, add this code to `index.ts`:
 import { queryType, makeSchema } from "@nexus/schema"
 import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema"
 import { GraphQLServer } from "graphql-yoga"
+import { createContext } from "./context"
 
 const Query = queryType({
   definition(t) {
@@ -133,16 +134,21 @@ export const schema = makeSchema({
     typegen: __dirname + '/generated/nexus.ts',
   },
   typegenAutoConfig: {
+    contextType: "Context.Context",
     sources: [
       {
-        source: '@prisma/client',
-        alias: 'prisma',
+        source: "@prisma/client",
+        alias: "prisma",
+      },
+      {
+        source: require.resolve("./context"),
+        alias: "Context",
       },
     ],
   },
 })
 
-new GraphQLServer({ schema }).start(() =>
+new GraphQLServer({ schema, context: createContext() }).start(() =>
   console.log(
     `Server ready at: http://localhost:4000`,
   ),
@@ -151,19 +157,29 @@ new GraphQLServer({ schema }).start(() =>
 
 Note that this setup already contains the configuration of the Prisma plugin for Nexus. This will enable the `t.model` and `t.crud` functionality that you'll get to know later in this guide.
 
-Also note that the Nexus API for defining Graphql types can seem a bit confusing at first. The above definition of the `Query` type is actually equivalent to writing the following:
+In the `typegenAutoConfig` setting, you're providing additional types that help your editor to provide your autocompletion as you develop your app. Right now it references a file called `types.ts` that you don't have in your project yet. This file will contain the type of your `context` object that's passed through your GraphQL resolver chain.
 
-```ts
-const Query = queryType({
-  definition: (t) => {
-    t.string("hello", () => {
-      return "Hello Nexus!"
-    })
-  },
-})
+Create the new `types.ts` file inside the `src` directory:
+
+```terminal copy
+touch src/types.ts
 ```
 
-However, the above version is the common convention for Nexus, so it'll be used throughout this guide.
+Now add the following code to it:
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+export interface Context {
+  prisma: PrismaClient
+}
+
+export function createContext(): Context {
+  return { prisma }
+}
+```
 
 Next, adjust the `scripts` section inside your `package.json` to include the following commands:
 
@@ -1273,7 +1289,7 @@ Next, delete the files of your Prisma 1 setup:
 rm prisma1/datamodel.prisma prisma1/prisma.yml
 ```
 
-You can also delete any remaining `.js` files, the `schema.graphql` and `prisma.graphql` files.
+You can also delete any remaining `.js` files, the old `schema.graphql` and `prisma.graphql` files.
 
 ### 4.3. Stop the Prisma server
 
