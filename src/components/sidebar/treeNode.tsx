@@ -98,7 +98,7 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: var(--main-font-color) !important;
+    color: var(--link-color) !important;
     font-weight: 700;
     @media (min-width: 0px) and (max-width: 1024px) {
       color: var(--border-color) !important;
