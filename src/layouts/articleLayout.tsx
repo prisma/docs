@@ -36,7 +36,6 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       siteMetadata: { docsLocation },
     },
   } = data
-
   const navigate = useNavigate()
   return (
     <Layout {...props}>
