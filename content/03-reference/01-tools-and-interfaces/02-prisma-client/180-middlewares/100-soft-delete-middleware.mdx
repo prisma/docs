@@ -7,48 +7,58 @@ tocDepth: 3
 
 <TopBlock>
 
-The following example uses middleware to perform a **soft delete**, which means that a record is marked as deleted by changing a field like `isDeleted` to `true` rather than removed from the database. Reasons to use a soft delete include:
+The following example uses middleware to perform a **soft delete**, which means that a record is **marked as deleted** by changing a field like `deleted` to `true` rather than actually being removed from the database. Reasons to use a soft delete include:
 
 * Regulatory requirements that mean you have to keep data for a certain amount of time
-* 'Bin' functionality that allows users to kee precords in trash for a while - e.g. undo deleting a blog post
+* 'Trash' / 'bin' functionality that allows users to restore content that was deleted 
 
 This example uses the following schema - note the `deleted` field on the `Post` property:
 
 ```prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
-  provider = "postgres"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider        = "prisma-client-js"
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  email     String   @unique
+  id        Int     @default(autoincrement()) @id
   name      String?
-  role      Role     @default(USER)
+  email     String  @unique
   posts     Post[]
+  followers User[]  @relation("UserToUser")
+  User      User?   @relation("UserToUser", fields: [userId], references: [id])
+  userId    Int?
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  published Boolean  @default(false)
-  title     String
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
-|  deleted   Boolean? @default(false)
+  id      Int     @default(autoincrement()) @id
+  title   String
+  content String?
+  User    User?   @relation(fields: [userId], references: [id])
+  userId  Int?
+  tags    Tag[]
+  views   Int     @default(0)
+|  deleted Boolean @default(false)
 }
 
-enum Role {
-  USER
-  ADMIN
+model Category {
+  id             Int        @default(autoincrement()) @id
+  parentCategory Category?  @relation("CategoryToCategory", fields: [categoryId], references: [id])
+  Category       Category[] @relation("CategoryToCategory")
+  categoryId     Int?
 }
+
+model Tag {
+  tagName String @id // Must be unique
+  posts   Post[]
+}
+
 ```
+
 </TopBlock>
 
 ## Step 1: Store status of record
@@ -87,138 +97,495 @@ Add a middleware that performs the following tasks:
 * Changes the `params.action` to `update` and `updateMany` respectively
 * Introduces a `data` argument and sets `{ deleted: true }`, preserving other filter arguments if they exist
 
+Run the following example to test the soft delete middleware:
+
 ```ts file=script.ts
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient({})
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient({});
 
 async function mainAsync() {
+  /***********************************/
+  /* SOFT DELETE MIDDLEWARE */
+  /***********************************/
+
   prisma.$use(async (params, next) => {
     // Check incoming query type
-    if (params.model == 'Post' && params.action == 'delete') {
-      // Change action to an update
-      params.action = 'update'
-
-      // Set field value
-      params.args['data'] = { deleted: true }
+    if (params.model == "Post") {
+      if (params.action == "delete") {
+        // Delete queries
+        // Change action to an update
+        params.action = "update";
+        params.args["data"] = { deleted: true };
+      }
+      if (params.action == "deleteMany") {
+        // Delete many queries
+        params.action = "updateMany";
+        if (params.args.data != undefined) {
+          params.args.data["deleted"] = true;
+        } else {
+          params.args["data"] = { deleted: true };
+        }
+      }
     }
-    return next(params)
-  })
+    return next(params);
+  });
 
-  // ****************//
-  // TEST MIDDLEWARE //
-  // ****************//
+  /***********************************/
+  /* TEST */
+  /***********************************/
 
-  // 1. Create a new post
-  const createPost = await prisma.post.create({
-    data: { title: 'How to create soft delete middleware' },
-  })
+  const titles = [
+    { title: "How to create soft delete middleware" },
+    { title: "How to install Prisma" },
+    { title: "How to update a record" },
+  ];
 
-  // 2. Soft delete the post
+  console.log("\u001b[1;34mSTARTING SOFT DELETE TEST \u001b[0m");
+  console.log("\u001b[1;34m#################################### \u001b[0m");
+
+  let i = 0;
+  let posts = new Array();
+
+  // Create 3 new posts with a randomly assigned title each time
+  for (i == 0; i < 3; i++) {
+    const createPostOperation = prisma.post.create({
+      data: titles[Math.floor(Math.random() * titles.length)],
+    });
+    posts.push(createPostOperation);
+  }
+
+  var postsCreated = await prisma.$transaction(posts);
+
+  console.log(
+    "Posts created with IDs: " +
+      "\u001b[1;32m" +
+      postsCreated.map((x) => x.id) +
+      "\u001b[0m"
+  );
+
+  // Delete the first post from the array
   const deletePost = await prisma.post.delete({
     where: {
-      id: createPost.id,
+      id: postsCreated[0].id, // Random ID
     },
-  })
+  });
 
-  // 3. Confirm that the post was not permanently deleted
-  const getPost = await prisma.post.findOne({
+  // Delete the 2nd two posts
+  const deleteManyPosts = await prisma.post.deleteMany({
     where: {
-      id: deletePost.id, // Post still available
+      id: {
+        in: [postsCreated[1].id, postsCreated[2].id],
+      },
     },
-  })
+  });
 
-  // 4. Return posts that were NOT deleted
-  const allPosts = await prisma.post.finOne
+  const getPosts = await prisma.post.findMany({
+    where: {
+      id: {
+        in: postsCreated.map((x) => x.id),
+      },
+    },
+  });
 
-  console.log(getPost) // Will return post with deleted:true
+  console.log();
+
+  console.log(
+    "Deleted post with ID: " + "\u001b[1;32m" + deletePost.id + "\u001b[0m"
+  );
+  console.log(
+    "Deleted posts with IDs: " +
+      "\u001b[1;32m" +
+      [postsCreated[1].id + "," + postsCreated[2].id] +
+      "\u001b[0m"
+  );
+  console.log();
+  console.log(
+    "Are the posts still available?: " +
+      (getPosts.length == 3
+        ? "\u001b[1;32m" + "Yes!" + "\u001b[0m"
+        : "\u001b[1;31m" + "No!" + "\u001b[0m")
+  );
+  console.log();
+  console.log("\u001b[1;34m#################################### \u001b[0m");
+  // 4. Count ALL posts
+  const f = await prisma.post.findMany({});
+  console.log("Number of posts: " + "\u001b[1;32m" + f.length + "\u001b[0m");
+
+  // 5. Count DELETED posts
+  const r = await prisma.post.findMany({
+    where: {
+      deleted: true,
+    },
+  });
+  console.log(
+    "Number of SOFT deleted posts: " + "\u001b[1;32m" + r.length + "\u001b[0m"
+  );
 }
 
-mainAsync()
+mainAsync();
+```
+
+The example outputs the following:
+
+```no-lines
+STARTING SOFT DELETE TEST 
+#################################### 
+Posts created with IDs: 587,588,589
+
+Deleted post with ID: 587
+Deleted posts with IDs: 588,589
+
+Are the posts still available?: Yes!
+
+#################################### 
+```
+
+> **Tip**: Comment out the middleware to see the message change.
+
+✔ Pros of this approach to soft delete include:
+
+* Soft delete happens at data access level, which means that you cannot delete records unless you use raw SQL
+
+✘ Cons of this approach to soft delete include:
+
+* Content can still be read and updated unless you explicitly you filter by `where: { deleted: false }` - in a large project with a lot of queries, there is a risk that soft deleted content will still be displayed
+* You can still use raw SQL to delete records
+  
+  > **Tip**: You can create rules or triggers ([MySQL](https://dev.mysql.com/doc/refman/8.0/en/trigger-syntax.html) and [PostgreSQL](https://www.postgresql.org/docs/8.1/rules-update.html)) at a database level to prevent records from being deleted.
+
+## Step 3: Optionally prevent read/update of soft deleted records
+
+In step 2, we implemented middleware that prevents `Post` records from being deleted. However, you can still read and update deleted records. This steps explores two ways that you can prevent the reading and updating of deleted records.
+
+> **Note**: These options are just ideas with pros and cons, you may choose to do something entirely different.
+
+### Option 1: Implement filters in your own application code
+
+In this option:
+
+* Prisma middleware is responsible for preventing records from being deleted
+* Your own application code (which could be a GraphQL API, a REST API, a module) is responsible for filtering out deleted posts where necessary (`{ where: { deleted: false }}`) when reading and updating data - for example, the `getPost` GraphQL resolver never returns a deleted post
+
+✔ Pros of this approach to soft delete include:
+
+* No change to Prisma's create/update queries - you can easily request deleted records if you need them
+* Modifying queries in middleware can have some unintended consequences, such as changing query return types (see option 2)
+
+✘ Cons of this approach to soft delete include:
+
+* Logic relating to soft delete maintained in two different places
+* If your API surface is very large and maintained by multiple contributors, it may be difficult to enforce certain business rules (for example, never allow deleted records to be updated)
+
+### Option 2: Use middleware to determine the behavior of read/update queries for deleted records
+
+Option two uses Prisma middleware to prevent soft deleted records from being returned. The following table describes how the middleware affects each query:
+
+| **Query** | **Middleware logic**       | **Changes to return type** |
+| :----- | :-------------- | :---------- |
+| `findOne`    | 🔧 Change query to to `findMany` (because you cannot apply `deleted: false` filters to `findOne`) <br /> 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts | `[]` instead of `Post` (`findMany` returns an array)   | test |
+| `findMany`    | 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts by default <br />🔧 Allow developers to **explicitly request** soft deleted posts by specifying `deleted: true` | No change      |
+| `update`    | 🔧 Change query to to `updateMany` (because you cannot apply `deleted: false` filters to `update`) <br /> 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts | `{ count: n }` instead of `Post`    |
+| `updateMany`    | 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts | No change      |
+
+* **Why are you making it possible to use `findMany` with a `{ where: { deleted: true } }` filter, but not `updateMany`?**<br />
+    This particular example was written to support the scenario where a user can *restore* their deleted blog post (which requires a list of soft deleted posts) - but the should not be able to edit a deleted post.
+* **Can I still `connect` or `connectOrCreate` a deleted post?**<br />
+   In this example - yes. The middleware does not prevent you from connecting an existing, soft deleted post to a user.
+
+Run the following sample to see how middleware affects each query:
+
+```ts file=script.ts
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient({});
+
+async function mainAsync() {
+  /***********************************/
+  /* SOFT DELETE MIDDLEWARE */
+  /***********************************/
+
+  prisma.$use(async (params, next) => {
+    if (params.model == "Post") {
+      if (params.action == "findOne") {
+        // Change to findMany - you cannot filter
+        // by anything except ID / unique with findOne
+        params.action = "findMany";
+        // Add 'deleted' filter
+        // ID filter maintained
+        params.args.where["deleted"] = false;
+      }
+      if (params.action == "findMany") {
+        // Find many queries
+        if (params.args.where != undefined) {
+          if (params.args.where.deleted == undefined) {
+            // Exclude deleted records if they have not been expicitly requested
+            params.args.where["deleted"] = false;
+          }
+        } else {
+          params.args["where"] = { deleted: false };
+        }
+      }
+    }
+    return next(params);
+  });
+
+  prisma.$use(async (params, next) => {
+    if (params.model == "Post") {
+      if (params.action == "update") {
+        // Change to updateMany - you cannot filter
+        // by anything except ID / unique with findOne
+        params.action = "updateMany";
+        // Add 'deleted' filter
+        // ID filter maintained
+        params.args.where["deleted"] = false;
+      }
+      if (params.action == "updateMany") {
+        if (params.args.where != undefined) {
+          params.args.where["deleted"] = false;
+        } else {
+          params.args["where"] = { deleted: false };
+        }
+      }
+    }
+    return next(params);
+  });
+
+  prisma.$use(async (params, next) => {
+    // Check incoming query type
+    if (params.model == "Post") {
+      if (params.action == "delete") {
+        // Delete queries
+        // Change action to an update
+        params.action = "update";
+        params.args["data"] = { deleted: true };
+      }
+      if (params.action == "deleteMany") {
+        // Delete many queries
+        params.action = "updateMany";
+        if (params.args.data != undefined) {
+          params.args.data["deleted"] = true;
+        } else {
+          params.args["data"] = { deleted: true };
+        }
+      }
+    }
+    return next(params);
+  });
+
+  /***********************************/
+  /* TEST */
+  /***********************************/
+
+  const titles = [
+    { title: "How to create soft delete middleware" },
+    { title: "How to install Prisma" },
+    { title: "How to update a record" },
+  ];
+
+  console.log("\u001b[1;34mSTARTING SOFT DELETE TEST \u001b[0m");
+  console.log("\u001b[1;34m#################################### \u001b[0m");
+
+  let i = 0;
+  let posts = new Array();
+
+  // Create 3 new posts with a randomly assigned title each time
+  for (i == 0; i < 3; i++) {
+    const createPostOperation = prisma.post.create({
+      data: titles[Math.floor(Math.random() * titles.length)],
+    });
+    posts.push(createPostOperation);
+  }
+
+  var postsCreated = await prisma.$transaction(posts);
+
+  console.log(
+    "Posts created with IDs: " +
+      "\u001b[1;32m" +
+      postsCreated.map((x) => x.id) +
+      "\u001b[0m"
+  );
+
+  // Delete the first post from the array
+  const deletePost = await prisma.post.delete({
+    where: {
+      id: postsCreated[0].id, // Random ID
+    },
+  });
+
+  // Delete the 2nd two posts
+  const deleteManyPosts = await prisma.post.deleteMany({
+    where: {
+      id: {
+        in: [postsCreated[1].id, postsCreated[2].id],
+      },
+    },
+  });
+
+  const getOnePost = await prisma.post.findOne({
+    where: {
+      id: postsCreated[0].id,
+    },
+  });
+
+  const getPosts = await prisma.post.findMany({
+    where: {
+      id: {
+        in: postsCreated.map((x) => x.id),
+      },
+    },
+  });
+
+  const getPostsAnDeletedPosts = await prisma.post.findMany({
+    where: {
+      id: {
+        in: postsCreated.map((x) => x.id),
+      },
+      deleted: true,
+    },
+  });
+
+  const updatePost = await prisma.post.update({
+    where: {
+      id: postsCreated[1].id,
+    },
+    data: {
+      title: "This is an updated title (update)",
+    },
+  });
+
+  const updateManyDeletedPosts = await prisma.post.updateMany({
+    where: {
+      deleted: true,
+      id: {
+        in: postsCreated.map((x) => x.id),
+      },
+    },
+    data: {
+      title: "This is an updated title (updateMany)",
+    },
+  });
+
+  console.log();
+
+  console.log(
+    "Deleted post (delete) with ID: " +
+      "\u001b[1;32m" +
+      deletePost.id +
+      "\u001b[0m"
+  );
+  console.log(
+    "Deleted posts (deleteMany) with IDs: " +
+      "\u001b[1;32m" +
+      [postsCreated[1].id + "," + postsCreated[2].id] +
+      "\u001b[0m"
+  );
+  console.log();
+  console.log(
+    "findOne: " +
+      (getOnePost?.id != undefined
+        ? "\u001b[1;32m" + "Posts returned!" + "\u001b[0m"
+        : "\u001b[1;31m" +
+          "Post not returned!" +
+          "(Value is: " +
+          JSON.stringify(getOnePost) +
+          ")" +
+          "\u001b[0m")
+  );
+  console.log(
+    "findMany: " +
+      (getPosts.length == 3
+        ? "\u001b[1;32m" + "Posts returned!" + "\u001b[0m"
+        : "\u001b[1;31m" + "Posts not returned!" + "\u001b[0m")
+  );
+  console.log(
+    "findMany ( delete: true ): " +
+      (getPostsAnDeletedPosts.length == 3
+        ? "\u001b[1;32m" + "Posts returned!" + "\u001b[0m"
+        : "\u001b[1;31m" + "Posts not returned!" + "\u001b[0m")
+  );
+  console.log();
+  console.log(
+    "update: " +
+      (updatePost.id != undefined
+        ? "\u001b[1;32m" + "Post updated!" + "\u001b[0m"
+        : "\u001b[1;31m" +
+          "Post not updated!" +
+          "(Value is: " +
+          JSON.stringify(updatePost) +
+          ")" +
+          "\u001b[0m")
+  );
+  console.log(
+    "updateMany ( delete: true ): " +
+      (updateManyDeletedPosts.count == 3
+        ? "\u001b[1;32m" + "Posts updated!" + "\u001b[0m"
+        : "\u001b[1;31m" + "Posts not updated!" + "\u001b[0m")
+  );
+  console.log();
+  console.log("\u001b[1;34m#################################### \u001b[0m");
+  // 4. Count ALL posts
+  const f = await prisma.post.findMany({});
+  console.log(
+    "Number of active posts: " + "\u001b[1;32m" + f.length + "\u001b[0m"
+  );
+
+  // 5. Count DELETED posts
+  const r = await prisma.post.findMany({
+    where: {
+      deleted: true,
+    },
+  });
+  console.log(
+    "Number of SOFT deleted posts: " + "\u001b[1;32m" + r.length + "\u001b[0m"
+  );
+}
+
+mainAsync();
+```
+
+The example outputs the following:
+
+```
+STARTING SOFT DELETE TEST 
+#################################### 
+Posts created with IDs: 680,681,682
+
+Deleted post (delete) with ID: 680
+Deleted posts (deleteMany) with IDs: 681,682
+
+findOne: Post not returned!(Value is: [])
+findMany: Posts not returned!
+findMany ( delete: true ): Posts returned!
+
+update: Post not updated!(Value is: {"count":0})
+updateMany ( delete: true ): Posts not updated!
+
+#################################### 
+Number of active posts: 0
+Number of SOFT deleted posts: 95
 ```
 
 ✔ Pros of this approach:
 
-* Soft delete set at data access level - nobody can delete unless they use raw SQL
+* A developer can make a conscious choice to include deleted records in `findMany`
+* You cannot accidentally read or update a deleted record
 
 ✖ Cons of this approach:
 
-* Content still accessible unless you explicitly you filter by `deleted:false`
-
-## Step 3: Disable the ability to read/update deleted records
-
-> How do I prevent deleted records from being read and updated?
-
-### Option 1: Do nothing
-
-* Prisma ONLY responsible for CRUD - makes no decisions about
-* Business logic should be done in GraphQL API layer or REST API layer. For example, here's graphQL resolver (it works, you can copy paste)
-
-### Option 1: Use middleware to disable all read and update queries for deleted records
-
-* Prisma decides - only way to get to those records is to use SQL
-
-You can further extend the middleware by only returning `Post` records where `deleted` equals `false` when you perform a `findMany` query:
-
-```ts file=script.ts
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient({})
-
-async function mainAsync() {
-  prisma.$use(async (params, next) => {
-    // Check incoming query type
-    if (params.model == 'Post' && params.action == 'delete') {
-      // Change action to an update
-      params.action = 'update'
-
-      // Set field value
-      params.args['data'] = { deleted: true }
-    }
-    return next(params)
-  })
-
-  const createPost = await prisma.post.create({
-    data: { title: 'How to use Prisma Client' },
-  })
-
-  const deletePost = await prisma.post.delete({
-    where: {
-      id: createPost.id,
-    },
-  })
-
-  const getPost = await prisma.post.findOne({
-    where: {
-      id: deletePost.id,
-    },
-  })
-
-  console.log(getPost) // Will return post with deleted:true
-}
-
-mainAsync()
-```
-
-### Option 3: Use middleware to set default behaviour for read and update queries for deleted records
-
-✔ Pros of this approach:
-
-* Developer must make conscious choice to include deleted records
-* Won't accidentally return deleted records
-
-✖ Cons of this approach:
-
-* Not obvious from API that yo uaren't getting all records and that deleted: false is part of the default query
-* *Can* still return deleted records
-* Cannot influence `findOne` because it's done by ID, only `findMany`
+* Not obvious from API that you aren't getting all records and that `{ where: { deleted: false } }` is part of the default query
+* Return types of `findOne` and `update` affected because middleware changes the queries to `findMany` and `updateMany` respectively
 
 ## FAQ
 
 ### Can I add a global <inlinecode>includeDeleted</inlinecode> to the <inlinecode>Post</inlinecode> model?
 
-You may be tempted ot 'hack' a global `includedDeleted` property into the `Post` record. Your generated API will then make this possible:
+You may be tempted to 'hack' your API by adding a `includedDeleted` property to the `Post` model and make the following query possible:
 
 ```ts
 prisma.post.findMany({ where: { includeDeleted: true }});
 ```
 
-We recommend against this. - pollutes the API; models are supposed to represent data only and should not be abused to include global variables.
+> **Note**: You would still need to write middleware.
+
+We **✘ do not** recommend this approach as it pollutes the schema with fields that do not represent real data.
