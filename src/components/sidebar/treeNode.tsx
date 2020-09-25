@@ -213,7 +213,15 @@ const TreeNode = ({
   // Fix for issue https://github.com/prisma/prisma2-docs/issues/161
   const [isOpen, setIsOpen] = React.useState('close')
   React.useEffect(() => {
-    setIsOpen(isCollapsed ? 'close' : 'open')
+    let mounted = true
+
+    if(mounted) {
+      setIsOpen(isCollapsed ? 'close' : 'open')
+    }
+    
+    return function cleanup() {
+      mounted = false
+    }
   }, [isCollapsed])
 
   const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))

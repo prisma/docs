@@ -1,0 +1,582 @@
+---
+title: 'Data model'
+metaTitle: 'Data model (Reference)'
+metaDescription: 'Learn about the concepts for building your data model with Prisma: Models, scalar types, enums, attributes, functions, IDs, default values and more.'
+tocDepth: 2
+---
+
+<TopBlock>
+
+The data model definition part of the [Prisma schema](../) defines your application models (also called **Prisma models**). Models:
+
+* Represent the **entities** of your application domain
+* Map to the **tables** in your database
+* Form the foundation of the **queries** available in the generated [Prisma Client API](../prisma-client/)
+* When used with TypeScript, Prisma Client provides generated **type definitions** for your models and any [variations](../prisma-client/advanced-usage-of-generated-types) of them to make database access entirely type safe.
+
+The following schema describes a blogging platform - the data model definition is highlighted:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+|model User {
+|  id      Int      @id @default(autoincrement())
+|  email   String   @unique
+|  name    String?
+|  role    Role     @default(USER)
+|  posts   Post[]
+|  profile Profile?
+|}
+
+|model Profile {
+|  id      Int     @id @default(autoincrement())
+|  bio     String
+|  user    User    @relation(fields: [userId], references: [id])
+|  userId  Int
+|}
+
+|model Post {
+|  id         Int         @id @default(autoincrement())
+|  createdAt  DateTime    @default(now())
+|  title      String
+|  published  Boolean     @default(false)
+|  author     User        @relation(fields: [authorId], references: [id])
+|  authorId   Int
+|  categories Category[]  @relation(references: [id])
+|}
+
+|model Category {
+|  id    Int     @id @default(autoincrement())
+|  name  String
+|  posts Post[]  @relation(references: [id])
+|}
+
+|enum Role {
+|  USER
+|  ADMIN
+|}
+```
+  
+The data model definition is made up of:
+
+- [Models](#defining-models) ([`model`](prisma-schema-reference#model) <span class="api"></span> primitives) that define a number of fields, including [relations between models](#relation-fields)
+- [Enums](#defining-enums) ([`enum`](prisma-schema-reference#enum) <span class="api"></span> primitives) - only available if [enums are supported natively by your database](../../database-connectors/database-features#misc)
+- [Attributes](#defining-attributes) and [functions](#using-functions) that change the behavior of fields and models
+
+The corresponding database looks like this:
+
+![](prisma-schema/sample-database.png)
+
+<details><summary>A model maps to the underlying structures of the data source.</summary>
+
+- In PostgreSQL, a model maps to a _table_
+- In MySQL, a model maps to a _table_
+- In SQLite, a model maps to a _table_
+
+> **Note**: In the future there might be connectors for non-relational databases and other data sources. For example, for MongoDB a model would map to a _collection_, for a REST API it would map to a _resource_.
+
+</details>
+
+The following example uses the Prisma Client generated from this model to create a `User` record and three nested `Post` records, each with one or two nested `Category` records:
+
+<TabbedContent tabs={[<FileWithIcon text="Query Example" icon="code"/>  , <FileWithIcon text="Copy-Paste Example" icon="code"/>]}>	
+
+<tab>
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: "ariadne@prisma.io",
+    name: "Ariadne",
+    posts: {
+      create: [
+        {
+          title: "My first day at Prisma",
+          categories: {
+            create: {
+              name: "Office",
+            },
+          },
+        },
+        {
+          title: "How to connect to a SQLite database",
+          categories: {
+            create: [{ name: "Databases" }, { name: "Tutorials" }],
+          },
+        },
+      ],
+    },
+  },
+});
+```
+
+</tab>
+
+<tab>
+
+```ts
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient({});
+
+// A `main` function so that you can use async/await
+async function main() {
+  // Create user, posts, and categories
+  const user = await prisma.user.create({
+    data: {
+      email: "ariadne@prisma.io",
+      name: "Ariadne",
+      posts: {
+        create: [
+          {
+            title: "My first day at Prisma",
+            categories: {
+              create: {
+                name: "Office",
+              },
+            },
+          },
+          {
+            title: "How to connect to a SQLite database",
+            categories: {
+              create: [{ name: "Databases" }, { name: "Tutorials" }],
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // Return user, and posts, and categories
+  const returnUser = await prisma.user.findOne({
+    where: {
+      id: user.id,
+    },
+    include: {
+      posts: {
+        include: {
+          categories: true,
+        },
+      },
+    },
+  });
+
+  console.log(returnUser);
+}
+
+main()
+  .catch((e) => {
+    throw e;
+  })
+  .finally(async () => {
+    await prisma.disconnect();
+  });
+```
+
+</tab>
+
+</TabbedContent>
+
+Your data model reflects *your* application domain. For example:
+
+- In an **e-commerce** application you probably have models like `Customer`, `Order`, `Item` and `Invoice`.
+- In a **social media** application you probably have models like `User`, `Post`, `Photo` and `Message`.
+
+</TopBlock>
+
+## Introspection and migration
+
+There are two ways to define a data model:
+
+- **Write the model manually and use Prisma Migrate**: You can write your data model manually and map it to your database using [Prisma Migrate](../prisma-migrate) (experimental). In this case, the data model is the single source of truth for the models of your application.
+- **Generate the model via introspection**: When you have an existing database or prefer migrating your database schema with SQL, you generate the data model by [introspecting](../introspection) your database. In this case, the database schema is the single source of truth for the models of your application.
+
+> **Note**: Since [Prisma Migrate](../prisma-migrate) is currently in an experimental state, the officially recommended way for using Prisma is the introspection-based approach.
+
+## Defining models
+
+Models represent the entities of your application domain. Models are represented by [`model`](prisma-schema-reference#model) <span class="api"></span> blocks and define a number of [fields](prisma-schema-reference#model-fields). In the [example data model](data-model), `User`, `Profile`, `Post` and `Category` are models.
+
+A blogging platform can be extended with the following models:
+
+```prisma
+model Comment {
+   // Fields
+}
+
+model Tag {
+   // Fields
+}
+```
+
+### Mapping model names to tables
+
+Prisma model [naming conventions (singular form, PascalCase)](prisma-schema-reference#naming-conventions) <span class="api"></span> do not always match table names in the database. A common approach for naming tables in databases is to use plural form and [snake_case](https://en.wikipedia.org/wiki/Snake_case) notation - for example: `comments`. When you introspect a database with a table named `comments`, the result Prisma model will look like this:
+
+```prisma
+model comments {
+   // Fields
+}
+```
+
+However, you can still adhere to the naming convention without renaming the underlying `comments` table in the database by using the [`@@map`](prisma-schema-reference#map-1) <span class="api"></span> attribute:
+
+```prisma
+model Comment {
+   // Fields
+  @@map(name: "comments")
+}
+```
+
+With this model definition, Prisma automatically maps the `Comment` model to the `comments` table in the underlying database. 
+
+> **Note**: You can also [`@map`](prisma-schema-reference#map) <span class="api"></span> a column name or enum value, and `@@map` an enum.
+
+`@map` and `@@map` allow you to [tune the shape of your Prisma Client API](../prisma-client/configuring-the-prisma-client-api#using-map-and-map-to-rename-fields-and-models-in-the-prisma-client-api) by decoupling model and field names from table and column names in the underlying database.
+
+## Defining fields
+
+The properties of a model are called _fields_. Fields map to _columns_ and consist of:
+
+- A **[field name](prisma-schema-reference#model-fields)** <span class="api"></span>
+- A **[field type](#field-types)**
+- Optional **[type modifiers](#type-modifiers)**
+- Optional **[attributes](#defining-attributes)**
+
+The following table describes `User` model's fields from the sample schema:
+
+<details><summary>Expand to see table</summary>
+
+
+| Name        | Type       | Scalar vs Relation | Type modifier | Attributes                            |
+| :---------- | :--------- | :----------------- | :------------ | :------------------------------------ |
+| `id`        | `Int`      | Scalar             | -             | `@id` and `@default(autoincrement())` |
+| `email`     | `String`   | Scalar             | -             | `@unique`                             |
+| `name`      | `String`   | Scalar             | `?`           | -                                     |
+| `role`      | `Role`     | Scalar (`enum`)    | -             | `@default(USER)`                      |
+| `posts`     | `Post`     | Relation (Prisma-level field) | `?`           | -                                     |
+| `profile`   | `Profile`  | Relation (Prisma-level field) | `[]`          | -                                     |
+
+</details>
+
+### Field types
+
+A field's type determines its _structure_, and fits into one of two categories:
+
+- [Scalar types](data-model#scalar-fields) (includes [enums](data-model#defining-enums)) - for example, [`String`](prisma-schema-reference#string) <span class="api"></span> or [`Int`](prisma-schema-reference#int) <span class="api"></span>
+- Model types (the field is then called [relation field](relations#relation-fields)) - for example `Post` or `Comment[]`.
+
+#### Scalar fields
+
+The following example extends the `Comment` and `Tag` models with several scalar types. Some fields include [attributes](#defining-attributes):
+
+```prisma
+model Comment {
+|  id      Int    @id @default(autoincrement())
+|  title   String
+|  content String
+}
+
+model Tag {
+|  name    String @id
+}
+```
+
+See [complete list of scalar field types](prisma-schema-reference#model-field-scalar-types) <span class="api"></span>.
+
+##### Unsupported types
+
+When you introspect a database, unsupported types are commented out:
+
+```prisma
+  // This type is currently not supported 
+  // mydata                   geometric?
+```
+
+Follow [`topic:native database types`](https://github.com/prisma/prisma/issues?q=is%3Aissue+is%3Aopen+label%3A%22topic%3A+native+database+types%22+) and [`topic:types`](https://github.com/prisma/prisma/issues?q=is%3Aissue+is%3Aopen+label%3A%22topic%3A+types%22+) for information about type support. 
+
+#### Relation fields
+
+A relation field's type is another model - for example, a post (`Post`) can have multiple comments (`Comment[]`):
+
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  // Other fields
+|  comments   Comment[] // A post can have many comments
+}
+
+model Comment {
+  id      Int 
+   // Other fields
+|  Post    Post?  @relation(fields: [postId], references: [id]) // A comment can have one post
+  postId  Int?
+}
+```
+
+Refer to the [relations documentation](relations) for more examples and information about relationships between models.
+
+### Type modifiers
+
+The type of a field can be modified by appending either of two modifiers:
+
+* [`[]`](prisma-schema-reference#--modifier) <span class="api"></span> Make a field a list
+* [`?`](prisma-schema-reference#-modifier) <span class="api"></span> Make a field optional
+
+> **Note**: You **cannot** combine type modifiers - optional lists are not supported.
+
+#### Lists 
+
+The following example includes a scalar list and a list of related models:
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  // Other fields
+|  comments   Comment[]  // A list of comments
+|  keywords   String[]  // A scalar list
+}
+```
+
+> **Note**: Scalar lists are **only** supported if the underlying database supports scalar lists.
+
+#### Optional and mandatory fields
+
+```prisma
+model Comment {
+  id      Int    @id @default(autoincrement())
+  title   String
+|  content? String
+}
+
+model Tag {
+  name    String @id
+}
+```
+
+When **not** annotating a field with the `?` type modifier, the field will be _required_ on every record of the model. This has effects on two levels:
+
+- **Database**: Required fields are represented via `NOT NULL` constraints in the underlying database.
+- **Prisma Client**: Prisma Client's generated [TypeScript types](#type-definitions) that represent the models in your application code will also define these fields as required to ensure they always carry values at runtime.
+
+## Defining attributes
+
+Attributes modify the behavior of fields or model blocks. The following example includes two field attributes ([`@unique`](prisma-schema-reference#unique) <span class="api"></span> and [`@default`](prisma-schema-reference#default)) <span class="api"></span> and one block attribute (`@@id`):
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+|  email     String @unique
+|  isAdmin   Boolean @default(false) // @default(value: false)
+
+|  @@id([firstName, lastName])
+}
+```
+
+Some attributes accept [arguments](prisma-schema-reference#attribute-argument-types) <span class="api"></span> - for example, `@default` accepts `true` or `false`:
+
+```prisma
+isAdmin   Boolean @default(false) // short form of @default(value: false)
+```
+
+See [complete list of field and block attributes](prisma-schema-reference#attributes) <span class="api"></span>
+
+### Defining an ID field
+
+An ID uniquely identifies individual records of a model. IDs can be defined by a single field using the [`@id`](prisma-schema-reference#id) <span class="api"></span> attribute, or multiple fields using the [`@@id`](prisma-schema-reference#id-1) <span class="api"></span> attribute.
+
+In the following example, the `User` ID is represented by the `id` field:
+
+```prisma
+model User {
+|  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+```
+
+In the following example, the `User` ID is represented by a combination of the `firstName` and `lastName` fields:
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+  email     String @unique
+  isAdmin   Boolean @default(false)
+
+|  @@id([firstName, lastName])
+}
+``` 
+
+> **Note**: A model can only have _one_ ID, and that ID can either be a single field or based on multiple fields.
+
+### Defining a unique field
+
+You can add unique attributes to your models to be able to uniquely identify individual records of that model. Unique attributes can be defined on a single field using [`@unique`](prisma-schema-reference#unique) <span class="api"></span> attribute, or on multiple fields (also called composite or compound unique constraints) using the [`@@unique`](prisma-schema-reference#unique-1) <span class="api"></span> attribute.
+
+In the following example, the value of the `email` field must be unique:
+
+```prisma
+model User {
+|  email String  @unique // `email` can not be optional because it's the only unique field on the model
+  name  String?
+}
+```
+
+In the following example, a combination of `authorId` and `title` must be unique:
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+  title      String
+  published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]  @relation(references: [id])
+
+|  @@unique([authorId, title])
+}
+```
+
+### Defining a default value
+
+You can define default values for scalar fields of your models using the [`@default`](prisma-schema-reference#default) <span class="api"></span> attribute:
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+|  createdAt  DateTime    @default(now())
+  title      String
+|  published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]  @relation(references: [id])
+}
+```
+
+`@default` attributes typically represent `DEFAULT` values in the underlying database. However, functions like `cuid()` and `uuid()` are provided by Prisma's [query engine](../prisma-client/query-engine/) and are therefore not "visible" in the underlying database schema.
+
+Default values can be:
+
+- Static values that correspond to the field type, such as `5` (`Int`), `Hello` (`String`), or `false` (`Boolean`)
+- [Functions](#using-functions), such as [`now()`](prisma-schema-reference#now) or [`uuid()`](prisma-schema-reference#uuid)
+
+### Defining an index
+
+You can define indexes on one or multiple fields of your models via the `@@index` on a model. The following example defines a multi-column index based on the `title` and `content` field:
+
+```prisma
+model Post {
+  id       Int     @id @default(autoincrement())
+  title    String
+  content  String?
+  @@index([title, content])
+}
+```
+
+## Defining enums
+
+You can define enums in your data model if they're supported by the [data source](data-sources) you use.
+
+Enums are considered [scalar](#field-types) types in the Prisma data model. They're therefore [by default](../prisma-client/field-selection#the-default-selection-set) included as return values in [Prisma Client queries](../prisma-client/crud).
+
+Enums are defined via the [`enum`](prisma-schema-reference#enum) <span class="api"></span> block. For example, a `User` has a `Role`:
+
+```prisma
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+|  role    Role     @default(USER)
+}
+
+|enum Role {
+|  USER
+|  ADMIN
+|}
+```
+
+## Using functions
+
+The Prisma schema supports a number of [functions](prisma-schema-reference#attribute-functions) <span class="api"></span>. These can be used to specify [default values](prisma-schema-reference#default) on fields of a model. 
+
+For example, the default value of `createdAt` is [`now()`](prisma-schema-reference#now) <span class="api"></span>:
+
+```prisma
+model Post {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+}
+```
+
+[`cuid()`](prisma-schema-reference#cuid) <span class="api"></span> and [`uuid()`](prisma-schema-reference#uuid) <span class="api"></span> are implemented by Prisma and therefore are not "visible" in the underlying database schema. You can still use them when using [introspection](../introspection) by [manually changing your Prisma schema](../prisma-client/configuring-the-prisma-client-api) and [generating Prisma Client](../prisma-client/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](../prisma-client/query-engine)
+
+`autoincrement()`, `now` and `dbgenerated()` are always "implemented" on the database-level, meaning they manifest in the database schema and can be recognized through introspection.
+
+## Relations
+
+Refer to the [relations documentation](relations) for more examples and information about relationships between models.
+
+## Models in Prisma Client
+
+### Queries (CRUD)
+
+Every model in the data model definition will result in a number of CRUD queries in the generated [Prisma Client API](../prisma-client/):
+
+- `findMany`
+- `findOne`
+- `create`
+- `update`
+- `upsert`
+- `delete`
+- `updateMany`
+- `deleteMany`
+
+The operations are accessible via a generated property on the Prisma Client instance. By default the name of the property is the lowercase form of the model name, e.g. `user` for a `User` model or `post` for a `Post` model.
+
+Here is an example illustrating the use of a `user` property from the Prisma Client API:
+
+```js
+const newUser = await prisma.user.create({
+  data: {
+    name: 'Alice',
+  },
+})
+const allUsers = await prisma.user.findMany()
+```
+
+### Type definitions
+
+Prisma Client not only provides a query API for models, it also generates type definitions that reflect your model structures. These are part of the generated [`@prisma/client`](../prisma-client/generating-prisma-client#the-prismaclient-npm-package) node module in a file called `index.d.ts`.
+
+When using TypeScript, these type definitions ensure that all your database queries are entirely type safe and validated at compile-time (even partial queries using [`select`](../prisma-client/field-selection#select) or [`include`](../prisma-client/field-selection#include)).
+
+Even when using plain JavaScript, the type definitions are still included in the `@prisma/client` node module, enabling features like [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense)/autocompletion in your editor.
+
+> **Note**: The actual types are stored in the `.prisma/client` folder. `@prisma/client/index.d.ts` exports the contents of this folder.
+
+For example, the type definition for the `User` model from above would look as follows:
+
+```ts
+export type User = {
+  id: number
+  email: string
+  name: string | null
+  role: string
+}
+```
+
+Note that the relation fields `posts` and `profile` are not included in the type definition by default. However, if you need variations of the `User` type you can still define them using some of [Prisma Client's generated helper types](../prisma-client/generating-prisma-client) (in this case, these helper types would be called `UserGetIncludePayload` and `UserGetSelectPayload`).

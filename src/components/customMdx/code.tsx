@@ -131,7 +131,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       {!hasTerminalSymbol && !isDiff && !hasNoLine && (
                         <LineNo className="line-no">{i + 1}</LineNo>
                       )}
-                      {isDiff && (
+                      {isDiff && !hasNoLine && (
                         <LineNo className="line-no" style={{ color: lineClass.symbColor }}>
                           {['+', '-','✎'].includes(diffSymbol) ? diffSymbol : i + 1}
                         </LineNo>

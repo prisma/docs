@@ -12,10 +12,13 @@ const SidebarContainer = styled.aside`
   margin: 0px ${p => p.theme.space[16]} 0 -${p => p.theme.space[16]};
 `
 
-const Sidebar = styledTS<{ isSticky: boolean, theme: any }>(styled.div)`
+const Sidebar = styledTS<{ isSticky: boolean; theme: any }>(styled.div)`
   margin: 0;
   overflow: auto;
   height: 100vh;
+  @media (min-width: 0) and (max-width: 1024px) {
+    height: auto;   
+  }
   ${({ isSticky }: any) =>
     isSticky &&
     css`
@@ -46,7 +49,7 @@ const Sidebar = styledTS<{ isSticky: boolean, theme: any }>(styled.div)`
     display: none;
     background: ${p => p.theme.colors.gray100};
     padding: ${p => p.theme.space[32]};
-    @media only screen and (max-width: ${p => p.theme.breakpoints.mobile}) {
+    @media only screen and (max-width: 640px) {
       display: flex;
       > ul {
         width: 100%;
@@ -60,14 +63,32 @@ const List = styled.ul`
   padding: 0 7px 0 ${p => p.theme.space[16]};
   margin: -${p => p.theme.space[20]} 0 0;
 `
-const paneRegex = new RegExp('\\b(' + config.sidebar.tablet_menu_split.join('|') + ')\\b', 'ig')
-const getLeftPane = (allEdges: any) =>
-  allEdges.filter((edge: any) => !edge.node.fields.slug.match(paneRegex))
-const getRightPane = (allEdges: any) =>
-  allEdges.filter((edge: any) => edge.node.fields.slug.match(paneRegex))
+// const paneRegex = new RegExp('\\b(' + config.sidebar.tablet_menu_split.join('|') + ')\\b', 'ig')
+// const getLeftPane = (allEdges: any) =>
+//   allEdges.filter((edge: any) => !edge.node.fields.slug.match(paneRegex))
+// const getRightPane = (allEdges: any) =>
+//   allEdges.filter((edge: any) => edge.node.fields.slug.match(paneRegex))
 
-const SidebarLayout = ({ isMobile }: any) => {
+const SidebarLayout = ({ isMobile, location, slug }: any) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
+  const bucketName =
+    location && location.state && location.state.bucketName ? location.state.bucketName : '/'
+  let bucketEdges = allMdx.edges?.filter(edge => edge.node.fields.slug.includes(bucketName))
+
+  const bucketNames = config.header.secondLevelHeaderMenuItems.map((item: any) => item.bucketName)
+
+  if (slug) {
+    const slugBucketPart = `/${slug.split('/')[1]}`
+    const selectedBucket = bucketNames.filter((bn:any) => bn === slugBucketPart)[0]
+    if (selectedBucket) {
+      bucketEdges = allMdx.edges?.filter(edge => edge.node.fields.slug.includes(selectedBucket))
+    }
+  }
+
+  if(bucketName === '/') {
+    bucketEdges = []
+  }
+
   return !isMobile ? (
     <StickyContainer>
       <SidebarContainer>
@@ -75,7 +96,7 @@ const SidebarLayout = ({ isMobile }: any) => {
           {({ style, isSticky }: any) => (
             <Sidebar style={style} isSticky={isSticky} id="sidebar-container">
               <List>
-                <Tree edges={allMdx.edges} />
+                <Tree edges={bucketEdges} />
               </List>
             </Sidebar>
           )}
@@ -85,16 +106,19 @@ const SidebarLayout = ({ isMobile }: any) => {
   ) : (
     <Sidebar>
       <div className="tablet-only">
-        <List>
+        {/* <List>
           <Tree edges={getLeftPane(allMdx.edges)} />
         </List>
         <List>
           <Tree edges={getRightPane(allMdx.edges)} />
+        </List> */}
+         <List>
+          <Tree edges={bucketEdges} />
         </List>
       </div>
       <div className="mobile-only">
         <List>
-          <Tree edges={allMdx.edges} />
+          <Tree edges={bucketEdges} />
         </List>
       </div>
     </Sidebar>

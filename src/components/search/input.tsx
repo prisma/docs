@@ -37,7 +37,7 @@ const SearchBoxDiv = styled.div`
       display: flex;
       align-items: center;
       justify-content: center;
-      
+
       svg path {
         stroke: ${p => p.theme.colors.gray700};
       }
@@ -47,8 +47,8 @@ const SearchBoxDiv = styled.div`
   .clear {
     display: none;
   }
-  
-  form {    
+
+  form {
     display: flex;
     align-items: center;
 
@@ -112,7 +112,6 @@ const SearchIcon = styled(SearchPic)`
 
 const ClearIcon = styled(Clear)`
   cursor: pointer;
-  
 `
 
 const DEBOUNCE_DELAY = 500
@@ -122,8 +121,8 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
   const [value, setValue] = React.useState(currentRefinement)
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
-  const {width} = useWindowDimensions()
-  const placeholderText = width > 640 ? "Search Documentation..." : "Search"
+  const { width } = useWindowDimensions()
+  const placeholderText = width > 640 ? 'Search Documentation...' : 'Search'
 
   const onChange = (e: any) => {
     const { value: newValue } = e.target
@@ -188,9 +187,10 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
     document.addEventListener('keydown', onKeyDown)
   }, [])
 
+
   return (
-    <SearchBoxDiv className={isOpened ? 'opened': ''}>
-      <form onSubmit={onSubmit}> 
+    <SearchBoxDiv className={isOpened ? 'opened' : ''}>
+      <form onSubmit={onSubmit}>
         <SearchIcon />
         <input
           ref={inputEl}
@@ -198,11 +198,16 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
           placeholder={placeholderText}
           aria-label="Search Documentation..."
           onChange={onChange}
+          onFocus={onFocus}
           value={value}
           {...rest}
         />
 
-        {value !== '' && <span className="clear"><ClearIcon onClick={clearInput}/></span>}
+        {value !== '' && (
+          <span className="clear">
+            <ClearIcon onClick={clearInput} />
+          </span>
+        )}
         {!isOpened && <span className="slash">/</span>}
       </form>
     </SearchBoxDiv>

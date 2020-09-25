@@ -46,6 +46,12 @@ export const useLayoutQuery = () => {
               link
               type
             }
+            secondLevelHeaderMenuItems {
+              type
+              to
+              bucketName
+              text
+            }
           }
         }
       }

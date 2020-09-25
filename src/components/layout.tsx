@@ -7,18 +7,19 @@ import Footer from './footer'
 import { MDXProvider } from '@mdx-js/react'
 import customMdx from '../components/customMdx'
 import './layout.css'
-import Sidebar from './sidebar'
+import SidebarLayout from './sidebar'
 import TOC from './toc'
 import theme from 'prisma-lens'
 
 interface LayoutContentProps {
   toc: any
   tocDepth?: number
+  slug?: string
 }
 
 type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth, location }) => {
+const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth, location, slug }) => {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
@@ -35,15 +36,14 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth,
     z-index: 100;
     // flex: 1;
     max-width: 748px;
+    width: 100%;
     @media (min-width: 0px) and (max-width: 1024px) {
       margin: 0;
-      width: 100%;
       max-width: 100%;
     }
 
     @media (min-width: 1024px) and (max-width: 1200px) {
       margin: 0;
-      width: 100%;
       max-width: 570px;
     }
   `
@@ -91,11 +91,11 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth,
   return (
     <ThemeProvider theme={theme}>
     <MDXProvider components={customMdx}>
-      <Header headerProps={header} />
+      <Header headerProps={header}/>
       <Wrapper>
         <Container>
           <NotMobile>
-            <Sidebar isMobile={false} />
+            <SidebarLayout isMobile={false} location={location} slug={slug}/>
           </NotMobile>
           <Content>
             <MaxWidth>{children}</MaxWidth>

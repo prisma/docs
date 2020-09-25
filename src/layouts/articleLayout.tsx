@@ -36,10 +36,9 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       siteMetadata: { docsLocation },
     },
   } = data
-
   const navigate = useNavigate()
   return (
-    <Layout {...props} toc={toc || toc == null ? tableOfContents : []} tocDepth={tocDepth}>
+    <Layout {...props} toc={toc || toc == null ? tableOfContents : []} tocDepth={tocDepth} slug={slug}>
       <SEO title={metaTitle || title} description={metaDescription || title} />
       <section className="top-section">
         <TopSection

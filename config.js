@@ -34,6 +34,23 @@ const config = {
       // { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
       { name: 'Quickstart', link: '/getting-started/quickstart', type: 'button' }
     ],
+    secondLevelHeaderMenuItems: [
+      {
+        text: 'Learn Prisma',
+        to: '/learn-prisma',
+        type: 'bucket',
+        bucketName: '/01-learn-prisma',
+      },
+      {
+        text: 'API Reference',
+        to: '/api-ref',
+        type: 'bucket',
+        bucketName: '/02-api-ref',
+      },
+      { text: 'FAQ', to: '/faq', type: 'bucket', bucketName: '/03-faq' },
+    
+      { text: 'Prisma 1 Docs', to: 'https://www.prisma.io/docs/1.34', type: 'external-link' },
+    ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
       algoliaAppId: process.env.GATSBY_ALGOLIA_APP_ID,
@@ -102,7 +119,7 @@ const config = {
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
-      { name: 'Data Guide', link: 'https://dataguide.prisma.io/' },
+      { name: 'Data Guide', link: 'https://www.prisma.io/dataguide/' },
     ],
     company: [
       { name: 'About', link: 'https://www.prisma.io/about' },

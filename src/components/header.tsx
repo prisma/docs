@@ -12,20 +12,8 @@ import UpChevron from '../icons/UpChevron'
 import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
+import ExternalLink from '../icons/ExternalLink'
 
-const secondLevelHeaderMenuItems = [
-  { text: 'Learn Prisma', expandContent: 'mainDocs', to: '/', matchPath: '/', type: 'section' },
-  {
-    text: 'API Reference',
-    // expandContent: 'apiDocs',
-    to: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-reference',
-    // matchPath: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-reference',
-    type: 'link',
-  },
-  { text: 'FAQ', to: '/more/faq', type: 'link' },
-
-  { text: 'Prisma 1', to: 'https://www.prisma.io/docs/1.34', type: 'link' },
-]
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -123,8 +111,6 @@ const DocsMobileButton = styled.div`
   @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     display: flex;
     align-items: center;
-
-    
   }
 `
 
@@ -205,6 +191,13 @@ const DarkNavLink = styled(NavLink)`
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  &.link {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    color: ${p => p.theme.colors.gray600} !important;
+  }
 
   .menu-item {
     padding: 24px;
@@ -229,10 +222,6 @@ const DarkNavLink = styled(NavLink)`
     padding: 4px 6px;
   }
 
-  svg {
-    display: none;
-  }
-
   @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     &.active-item {
       background: transparent;
@@ -246,7 +235,6 @@ const DarkNavLink = styled(NavLink)`
   @media (min-width: ${p => p.theme.breakpoints.tablet}) and (max-width: 784px) {
     font-size: 14px;
   }
-
 `
 
 const SecondLevelMobileNavLink = styled.div`
@@ -281,9 +269,13 @@ const NavButton = styled(NavLink)`
 `
 
 const SecondLevelNav = styled.div`
-  margin-left: 45px;
+  margin-left: 85px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
   @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     margin: 0;
+    flex-direction: column;
   }
 `
 
@@ -343,20 +335,35 @@ const Header = ({ headerProps }: HeaderViewProps) => {
   )
 
   const SecondLevelMenu = () => {
+    const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(item => item.type === 'bucket')
+    const externalLinkItems = headerProps.secondLevelHeaderMenuItems.filter(
+      item => item.type === 'external-link'
+    )
     return (
       <SecondLevelNav>
-        {secondLevelHeaderMenuItems.map(item => {
-          const isCurrent = location && item.matchPath && location.pathname.includes(item.matchPath)
-          return (
-            <DarkNavLink
-              to={item.to}
-              // activeClassName="active-item"
-              className={isCurrent ? 'active-item' : 'non-active'}
-            >
-              {item.text}
+        <div>
+          {bucketItems.map(item => {
+            const isCurrent = location && item.to && location.pathname.includes(item.to)
+            return (
+              <DarkNavLink
+                to={item.to}
+                state={{ bucketName: item.bucketName }}
+                activeClassName="active-item"
+                className={isCurrent ? 'active-item' : 'non-active'}
+              >
+                {item.text}
+              </DarkNavLink>
+            )
+          })}
+        </div>
+        <div>
+          {externalLinkItems.map(item => (
+            <DarkNavLink className="link" to={item.to}>
+              {item.text} &nbsp;&nbsp;
+              <ExternalLink />
             </DarkNavLink>
-          )
-        })}
+          ))}
+        </div>
       </SecondLevelNav>
     )
   }
@@ -371,7 +378,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
   const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
     const [showExpanded, setShowExpanded] = React.useState(false)
     const toggle = () => setShowExpanded(!showExpanded)
-    return type === 'section' ? (
+    return type === 'bucket' ? (
       <>
         <SecondLevelMobileNavLink onClick={toggle}>
           {text}
@@ -391,10 +398,11 @@ const Header = ({ headerProps }: HeaderViewProps) => {
 
   const SecondLevelMobileMenu = () => (
     <SecondLevelNav>
-      {secondLevelHeaderMenuItems.map(item => {
+      {headerProps.secondLevelHeaderMenuItems.map(item => {
         return (
           <MenuItem
-            componentToShow={item.expandContent === 'mainDocs' ? <Sidebar isMobile={true} /> : null}
+            componentToShow={<Sidebar isMobile={true} slug={item.bucketName}/>}
+            // componentToShow={item.expandContent === 'mainDocs' ? <Sidebar isMobile={true} /> : null}
             type={item.type}
             text={item.text}
             link={item.to}
@@ -436,12 +444,14 @@ const Header = ({ headerProps }: HeaderViewProps) => {
       </HeaderWrapper>
 
       {/* Second level header */}
-      {/* <SecondLevelHeader>
+      <SecondLevelHeader>
         <Container style={{ display: 'flex' }}>
           <SearchComponent hitsStatus={changeHitsStatus} />
-          {showDocsBtn && <NonMobileMenu>
-            <SecondLevelMenu />
-          </NonMobileMenu>}
+          {showDocsBtn && (
+            <NonMobileMenu style={{ width: '100%' }}>
+              <SecondLevelMenu />
+            </NonMobileMenu>
+          )}
           {showDocsBtn && (
             <DocsMobileButton onClick={toggleMobileNav}>
               {width > 640 ? 'Documentation' : 'Docs'}
@@ -449,7 +459,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
             </DocsMobileButton>
           )}
         </Container>
-      </SecondLevelHeader> */}
+      </SecondLevelHeader>
 
       {showMobileNav && (
         <SecondLevelMobileOnlyNav>

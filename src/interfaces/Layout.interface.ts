@@ -1,6 +1,7 @@
 export interface HeaderProps {
   logoLink: string
   links: { name: string; link: string }[] // create interface for this
+  secondLevelHeaderMenuItems: {text:  string; type: string; to: string; bucketName: string}[]
 }
 
 export interface FooterProps {

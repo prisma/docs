@@ -1,15 +1,20 @@
-import * as React from 'react'
+ import * as React from 'react'
 import styled from 'styled-components'
 import TechnologySwitch from './techSwitcher'
 import ParentTitle from './parentTitleComp'
-import { urlGenerator } from '../utils/urlGenerator'
-import { withPrefix } from 'gatsby'
+import SwitcherBlock from './switcherBlock'
 
 const TopSectionWrapper = styled.div`
   position: relative;
   hr.bigger-margin {
     margin-top: ${p => p.theme.space[48]};
     margin-bottom: 3.5rem;
+  }
+
+  @media only screen and (max-width: 767px) {
+    hr.bigger-margin {
+      margin-bottom: 6rem;
+    }
   }
   .tech-switch-block {
     position: relative;
@@ -58,99 +63,6 @@ const TopSection = ({
   navigate,
   codeStyle,
 }: any) => {
-  const [pathTechParams] = location.pathname.split('/').splice(-1)
-  const getTechFromParam = (type: string, defaultVal: string) => {
-    const isTechPath = location.pathname !== withPrefix(urlGenerator(slug))
-    let tech = defaultVal
-    if (isTechPath) {
-      if (type === 'lang') {
-        ;[tech] = pathTechParams.split('-').splice(dbSwitcher ? -2 : -1)
-      }
-
-      if (type === 'db') {
-        ;[tech] = pathTechParams.split('-').splice(-1)
-      }
-    }
-    return tech
-  }
-
-  const [langSelected, setLangSelected] = React.useState(
-    langSwitcher ? getTechFromParam('lang', langSwitcher[0]) : 'typescript'
-  )
-  const [dbSelected, setDbSelected] = React.useState(
-    dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgres'
-  )
-  const goToNewPath = () => {
-    const newParams = `${langSwitcher ? `${langSelected}${dbSwitcher ? '-' : ''}` : ''}${
-      dbSwitcher ? `${dbSelected}` : ''
-    }`
-    if (!pathTechParams.includes(newParams)) {
-      navigate(withPrefix(`${urlGenerator(slug)}-${newParams}${location.hash}`), {
-        replace: location.pathname === urlGenerator(slug),
-      })
-    }
-  }
-
-  // TODO : Simplify the function!
-  const techChanged = (item: any, type: string) => {
-    const elements = document.querySelectorAll('[id^="techswitch"]')
-    elements.forEach((element: any) => element.classList.remove('show'))
-    const elemToShow = [].slice.call(elements).filter((elm: any) => {
-      if (type === 'lang') {
-        if (dbSwitcher) {
-          if (elm.id.includes('-*-')) {
-            // lang is any
-            return elm.id.includes(`-${dbSelected}`)
-          } else {
-            return (
-              elm.id.includes(`-${item.technology}`) &&
-              (elm.id.includes(`-${dbSelected}`) || elm.id.includes(`-*`))
-            )
-          }
-        } else {
-          return elm.id.includes(`-${item.technology}`)
-        }
-      } else if (type === 'db') {
-        if (langSwitcher) {
-          if (elm.id.slice(-1) === '*') {
-            // db is any
-            return elm.id.includes(`-${langSelected}`)
-          } else {
-            return (
-              elm.id.includes(`-${item.technology}`) &&
-              (elm.id.includes(`-${langSelected}`) || elm.id.includes(`-*`))
-            )
-          }
-        } else {
-          return elm.id.includes(`-${item.technology}`)
-        }
-      }
-    })
-    elemToShow && elemToShow.forEach((eShow: any) => eShow.classList.add('show'))
-    goToNewPath()
-  }
-
-  const langChanged = (item: any) => {
-    techChanged(item, 'lang')
-    setLangSelected(item.technology)
-  }
-
-  const dbChanged = (item: any) => {
-    techChanged(item, 'db')
-    setDbSelected(item.technology)
-  }
-
-  React.useEffect(() => {
-    if (langSwitcher && !dbSwitcher) {
-      langChanged({ technology: langSelected })
-    } else if (dbSwitcher && !langSwitcher) {
-      dbChanged({ technology: dbSelected })
-    } else if (dbSwitcher && langSwitcher) {
-      langChanged({ technology: langSelected })
-      dbChanged({ technology: dbSelected })
-    }
-  })
-
   return (
     <TopSectionWrapper>
       <Header>
@@ -159,7 +71,7 @@ const TopSection = ({
       <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
       </div>
       <div className="tech-switch-block">
-        <SwitcherWrapper>
+        {/* <SwitcherWrapper>
           {langSwitcher && (
             <TechnologySwitch
               type="lang"
@@ -176,7 +88,19 @@ const TopSection = ({
               defaultTech={dbSelected}
             />
           )}
-        </SwitcherWrapper>
+        </SwitcherWrapper> */}
+        {/* {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
+          <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
+        )} */}
+        {(langSwitcher || dbSwitcher) && (
+          <SwitcherBlock
+            langSwitcher={langSwitcher}
+            dbSwitcher={dbSwitcher}
+            navigate={navigate}
+            location={location}
+            slug={slug}
+          />
+        )}
       </div>
       </Header>
     </TopSectionWrapper>

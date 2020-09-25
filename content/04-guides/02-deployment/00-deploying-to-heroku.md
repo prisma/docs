@@ -19,7 +19,7 @@ The application has the following components:
 
 ![architecture diagram](./heroku-architecture.png)
 
-The focus of this guide is showing how project using Prisma can be deployed to Heroku. The starting point will the [Prisma Heroku example](https://github.com/prisma/prisma-examples/tree/master/deployment-platforms/heroku) which contains an Express.js server with a couple of pre-configured REST endpoints and a simple frontend.
+The focus of this guide is showing how project using Prisma can be deployed to Heroku. The starting point will the [Prisma Heroku example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/heroku) which contains an Express.js server with a couple of pre-configured REST endpoints and a simple frontend.
 
 > **Note:** Throughout the guide you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
 
@@ -56,10 +56,10 @@ Open your terminal and navigate to a location of your choice. Create the directo
 ```no-lines
 mkdir prisma-heroku
 cd prisma-heroku
-curl https://codeload.github.com/prisma/prisma-examples/tar.gz/master | tar -xz --strip=3 prisma-examples-master/deployment-platforms/heroku
+curl https://codeload.github.com/prisma/prisma-examples/tar.gz/latest | tar -xz --strip=3 prisma-examples-latest/deployment-platforms/heroku
 ```
 
-<!-- tar strip folder is a concatenation of the REPOSITORY-BRANCH/REF, e.g. prisma-examples-master -->
+<!-- tar strip folder is a concatenation of the REPOSITORY-BRANCH/REF, e.g. prisma-examples-latest -->
 
 **Checkpoint:** `ls -1` should show:
 
@@ -301,6 +301,6 @@ const server = app.listen(PORT, () => {
 
 Congratulations! You have successfully deployed a Node.js app with Prisma to Heroku.
 
-You can find the source code for the example in [this GitHub repository](https://github.com/prisma/prisma-examples/tree/master/deployment-platforms/heroku).
+You can find the source code for the example in [this GitHub repository](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/heroku).
 
 For more insight into Prisma Client's API, look at the route handlers in the `src/index.js` file.
