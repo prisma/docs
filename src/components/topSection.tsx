@@ -56,11 +56,11 @@ const SwitcherWrapper = styled.div`
 
 const TopSection = ({
   location,
+  navigate,
   title,
   slug,
   langSwitcher,
   dbSwitcher,
-  navigate,
   codeStyle,
 }: any) => {
   return (
