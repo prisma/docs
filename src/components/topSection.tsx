@@ -1,6 +1,6 @@
  import * as React from 'react'
 import styled from 'styled-components'
-import TechnologySwitch from './techSwitcher'
+import TOC from './toc'
 import ParentTitle from './parentTitleComp'
 import SwitcherBlock from './switcherBlock'
 
@@ -45,15 +45,6 @@ const MainTitle = styled.h1`
   }
 `
 
-const SwitcherWrapper = styled.div`
-  display: flex;
-  @media only screen and (max-width: ${p => p.theme.breakpoints.tablet}) {
-    flex-direction: column;
-    width: 100%;
-    top: -30px;
-  }
-`
-
 const TopSection = ({
   location,
   navigate,
@@ -61,6 +52,7 @@ const TopSection = ({
   slug,
   langSwitcher,
   dbSwitcher,
+  toc,
   codeStyle,
 }: any) => {
   return (
@@ -71,27 +63,9 @@ const TopSection = ({
       <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
       </div>
       <div className="tech-switch-block">
-        {/* <SwitcherWrapper>
-          {langSwitcher && (
-            <TechnologySwitch
-              type="lang"
-              onChangeTech={langChanged}
-              technologies={langSwitcher}
-              defaultTech={langSelected}
-            />
-          )}
-          {dbSwitcher && (
-            <TechnologySwitch
-              type="db"
-              onChangeTech={dbChanged}
-              technologies={dbSwitcher}
-              defaultTech={dbSelected}
-            />
-          )}
-        </SwitcherWrapper> */}
-        {/* {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
+        {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
           <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
-        )} */}
+        )}
         {(langSwitcher || dbSwitcher) && (
           <SwitcherBlock
             langSwitcher={langSwitcher}
