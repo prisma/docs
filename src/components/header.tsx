@@ -1,9 +1,6 @@
 import Link from '../components/link'
 import * as React from 'react'
 import styled from 'styled-components'
-import HeaderLogo from '../icons/Logo'
-import Github from '../icons/Git'
-import Clear from '../icons/Clear'
 import Search from '../components/search'
 import Sidebar from '../components/sidebar'
 import { HeaderProps } from '../interfaces/Layout.interface'
@@ -13,7 +10,7 @@ import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
-
+import { Header } from 'prisma-lens'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -39,58 +36,40 @@ const HeaderWrapper = styled.div`
 const Container = styled.div`
   max-width: 1200px;
   width: 100%;
+
+  > * {
+    padding: 0;
+
+    .menu {
+      background: transparent;
+      border: 0;
+    }
+
+    .list {
+      z-index: 120;
+    }
+
+    .menu,
+    .list {
+      a {
+        color: currentcolor !important;
+        text-decoration: none;
+
+        &:hover {
+          color: ${p => p.theme.colors.white} !important;
+        }
+      }
+    }
+  }
   @media (min-width: 0px) and (max-width: 1024px) {
     justify-content: space-between;
   }
-`
-
-const HeaderNav = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  @media (min-width: 0px) and (max-width: 1024px) {
-    padding: 0 ${p => p.theme.space[16]};
-  }
-`
-
-const LogoContainer = styled.div`
-  padding-right: 0.75rem;
 `
 
 const SearchComponent = styled(Search)`
   position: absolute;
   top: 12px;
   left: 12px;
-`
-
-const NavLinks = styled.div`
-  display: flex;
-  justify-content: space-around;
-  flex-grow: 1;
-  align-items: center;
-  a {
-    font-weight: 600;
-    &:hover,
-    &:active,
-    &:focus {
-      color: ${p => p.theme.colors.white} !important;
-    }
-  }
-
-  margin: 0 1rem 0;
-  @media (min-width: 0px) and (max-width: 1024px) {
-    margin: 0 3rem 0;
-  }
-
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
-    flex-direction: column;
-    align-items: flex-end;
-    margin: 0;
-    a {
-      margin-bottom: ${p => p.theme.space[20]};
-    }
-  }
 `
 
 const DocsMobileButton = styled.div`
@@ -139,11 +118,6 @@ const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
   z-index: 200;
 `
 
-const MobileOnlyMenu = styled(MobileOnlyNav)`
-  text-align: right;
-  position: absolute;
-`
-
 const SecondLevelHeader = styled.div`
   background: ${p => p.theme.colors.gray200};
   padding: 20px 16px;
@@ -153,17 +127,6 @@ const SecondLevelHeader = styled.div`
   z-index: 105;
   @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     padding: 12px 16px;
-  }
-`
-
-const MenuMobileBtn = styled.a`
-  display: none;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-  color: ${p => p.theme.colors.gray500} !important;
-  text-transform: uppercase;
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
-    display: block;
   }
 `
 
@@ -250,24 +213,6 @@ const SecondLevelMobileNavLink = styled.div`
   }
 `
 
-const NavButton = styled(NavLink)`
-  background: ${p => p.theme.colors.green500};
-  border-radius: ${p => p.theme.radii.small};
-  padding: 5px;
-  color: ${p => p.theme.colors.white} !important;
-
-  &:hover {
-    background: ${p => p.theme.colors.green600};
-  }
-
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
-    color: ${p => p.theme.colors.gray400} !important;
-    background: transparent;
-    padding: 0;
-    margin: 0;
-  }
-`
-
 const SecondLevelNav = styled.div`
   margin-left: 85px;
   width: 100%;
@@ -279,63 +224,21 @@ const SecondLevelNav = styled.div`
   }
 `
 
-const Header = ({ headerProps }: HeaderViewProps) => {
+const HeaderSec = ({ headerProps }: HeaderViewProps) => {
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const [showMobileNav, setShowMobileNav] = React.useState(false)
-  const [showMobileMenu, setShowMobileMenu] = React.useState(false)
 
   const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
-  const toggleMobileMenu = () => setShowMobileMenu(!showMobileMenu)
-
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
   const { width } = useWindowDimensions()
 
   const location = useLocation()
 
-  const Menu = (
-    <>
-      <NavLinks>
-        {headerProps.links.map((headerlink: any, index: number) =>
-          headerlink.type !== 'button' ? (
-            <NavLink
-              key={index}
-              to={headerlink.link}
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-              }}
-            >
-              {headerlink.name}
-            </NavLink>
-          ) : (
-            <NavButton
-              key={index}
-              to={headerlink.link}
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-              }}
-            >
-              {headerlink.name}
-            </NavButton>
-          )
-        )}
-      </NavLinks>
-      <Link
-        to={'https://github.com/prisma'}
-        style={{
-          color: 'white',
-          textDecoration: 'none',
-        }}
-      >
-        <Github style={{ height: '24px' }} />
-      </Link>
-    </>
-  )
-
   const SecondLevelMenu = () => {
-    const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(item => item.type === 'bucket')
+    const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
+      item => item.type === 'bucket'
+    )
     const externalLinkItems = headerProps.secondLevelHeaderMenuItems.filter(
       item => item.type === 'external-link'
     )
@@ -390,7 +293,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
       <DarkNavLink to={link}>
         <div className="menu-item">
           {text}
-          {showExpanded ? <UpChevron /> : <RightChevron />}
+          <ExternalLink />
         </div>
       </DarkNavLink>
     )
@@ -401,7 +304,7 @@ const Header = ({ headerProps }: HeaderViewProps) => {
       {headerProps.secondLevelHeaderMenuItems.map(item => {
         return (
           <MenuItem
-            componentToShow={<Sidebar isMobile={true} slug={item.bucketName}/>}
+            componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
             // componentToShow={item.expandContent === 'mainDocs' ? <Sidebar isMobile={true} /> : null}
             type={item.type}
             text={item.text}
@@ -417,30 +320,8 @@ const Header = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <HeaderNav>
-            <div style={{ display: 'flex' }}>
-              <Link
-                to={headerProps.logoLink || '/'}
-                style={{
-                  color: 'white',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <LogoContainer>
-                  <HeaderLogo style={{ height: '24px' }} />
-                </LogoContainer>
-              </Link>
-            </div>
-            <NonMobileMenu>{Menu}</NonMobileMenu>
-            <MenuMobileBtn onClick={toggleMobileMenu}>
-              {showMobileMenu ? <Clear /> : 'Menu'}
-            </MenuMobileBtn>
-          </HeaderNav>
+          <Header />
         </Container>
-
-        {showMobileMenu && <MobileOnlyMenu>{Menu}</MobileOnlyMenu>}
       </HeaderWrapper>
 
       {/* Second level header */}
@@ -470,4 +351,4 @@ const Header = ({ headerProps }: HeaderViewProps) => {
   )
 }
 
-export default Header
+export default HeaderSec

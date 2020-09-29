@@ -215,10 +215,10 @@ const TreeNode = ({
   React.useEffect(() => {
     let mounted = true
 
-    if(mounted) {
+    if (mounted) {
       setIsOpen(isCollapsed ? 'close' : 'open')
     }
-    
+
     return function cleanup() {
       mounted = false
     }

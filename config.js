@@ -20,20 +20,6 @@ const config = {
     },
   ],
   header: {
-    logoLink: 'https://www.prisma.io',
-    title: 'Prisma',
-    links: [
-      { name: 'Documentation', link: '/' },
-      // {
-      //   name: 'Reference',
-      //   link: '/reference/tools-and-interfaces/prisma-client/',
-      // },
-      { name: 'Blog', link: 'https://www.prisma.io/blog/' },
-      { name: 'Community', link: 'https://www.prisma.io/community/' },
-      // { name: 'FAQ', link: '/more/faq' },
-      // { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
-      { name: 'Quickstart', link: '/getting-started/quickstart', type: 'button' }
-    ],
     secondLevelHeaderMenuItems: [
       {
         text: 'Learn Prisma',
@@ -48,7 +34,7 @@ const config = {
         bucketName: '/02-api-ref',
       },
       { text: 'FAQ', to: '/faq', type: 'bucket', bucketName: '/03-faq' },
-    
+
       { text: 'Prisma 1 Docs', to: 'https://www.prisma.io/docs/1.34', type: 'external-link' },
     ],
     search: {
@@ -88,58 +74,8 @@ const config = {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
   },
   footer: {
-    logoLink: '/',
-    title: 'Prisma',
-    products: [
-      {
-        name: 'Prisma Client',
-        link: '/reference/tools-and-interfaces/prisma-client/crud',
-      },
-      { name: 'Prisma 1 Cloud', link: 'https://app.prisma.io/login' },
-      // { name: 'Nexus', link: 'https://www.nexusjs.org/' },
-      // { name: 'Prisma Admin', link: '/' },
-      // { name: 'Prisma Enterprise', link: '/' },
-    ],
-    community: [
-      { name: 'Meet the community', link: 'https://www.prisma.io/community' },
-      { name: 'Slack', link: 'https://slack.prisma.io/' },
-      { name: 'Github', link: 'https://github.com/prisma' },
-      { name: 'Discussions', link: 'https://github.com/prisma/prisma/discussions' },
-      { name: 'GraphQL Meetup', link: 'https://www.meetup.com/graphql-berlin/' },
-      { name: 'TypeScript Meetup', link: 'https://www.meetup.com/TypeScript-Berlin/' },
-    ],
-    resources: [
-      { name: 'Docs', link: '/' },
-
-      { name: 'Get started', link: '/getting-started/quickstart' },
-
-      {
-        name: 'API Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
-      },
-      { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
-      { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
-      { name: 'Data Guide', link: 'https://www.prisma.io/dataguide/' },
-    ],
-    company: [
-      { name: 'About', link: 'https://www.prisma.io/about' },
-      { name: 'Jobs', link: 'https://www.prisma.io/jobs' },
-      { name: 'Causes', link: 'https://www.notion.so/prismaio/What-Prisma-Cares-About-32946d99f9ea4925a796663dc8945c42' },
-      { name: 'Blog', link: 'https://www.prisma.io/blog/' },
-      {
-        name: 'Terms & Privacy',
-        link: 'https://gist.github.com/nikolasburk/c0f34b0cc50d3403e2e0d40c0e6510aa',
-      },
-    ],
     newsletter: {
       text: 'Stay up to date with the latest features and changes to Prisma',
-    },
-    findus: {
-      twitterLink: 'https://twitter.com/prisma',
-      youtubeLink: 'https://www.youtube.com/channel/UCptAHlN1gdwD89tFM3ENb6w',
-      fbLink: 'https://www.facebook.com/prisma.io',
-      slackLink: 'https://slack.prisma.io/',
-      gitLink: 'https://github.com/prisma',
     },
   },
 }
