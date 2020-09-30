@@ -1,4 +1,4 @@
-# Prisma Documentation
+# Prisma Documentation - A Splendid Work
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
 
