@@ -61,7 +61,8 @@ const handleRawBody = node => {
     objectID: rest.objectID,
     title: rest.title,
     slug: rest.modSlug,
-    heading: fSection.heading,
+    apiReference: fSection.heading.includes('inlinecode') ? fSection.heading.replace('<inlinecode>', '').replace('</inlinecode>', ''): null,
+    heading: fSection.heading.replace('<inlinecode>', '').replace('</inlinecode>', ''),
     content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
     path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
   }))
