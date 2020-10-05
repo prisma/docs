@@ -98,7 +98,7 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: var(--main-font-color) !important;
+    color: var(--link-color) !important;
     font-weight: 700;
     @media (min-width: 0px) and (max-width: 1024px) {
       color: var(--border-color) !important;
@@ -209,7 +209,15 @@ const TreeNode = ({
   // Fix for issue https://github.com/prisma/prisma2-docs/issues/161
   const [isOpen, setIsOpen] = React.useState('close')
   React.useEffect(() => {
-    setIsOpen(isCollapsed ? 'close' : 'open')
+    let mounted = true
+
+    if(mounted) {
+      setIsOpen(isCollapsed ? 'close' : 'open')
+    }
+    
+    return function cleanup() {
+      mounted = false
+    }
   }, [isCollapsed])
 
   const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))

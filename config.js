@@ -102,7 +102,7 @@ const config = {
       },
       { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
       { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
-      { name: 'Data Guide', link: 'https://dataguide.prisma.io/' },
+      { name: 'Data Guide', link: 'https://www.prisma.io/dataguide/' },
     ],
     company: [
       { name: 'About', link: 'https://www.prisma.io/about' },

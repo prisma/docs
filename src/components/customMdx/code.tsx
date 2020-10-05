@@ -41,10 +41,16 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   const code = stringify(children)
 
   const hasCopy = props['copy'] || language === 'copy'
-  const hasNoLine = props['no-lines'] || language === 'no-lines'
+  let hasNoLine = true
   const isTerminal = props['terminal'] || language === 'terminal'
   const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol' || isTerminal
   const fileName = props['file'] || language === 'file'
+
+  if (!fileName) {
+    hasNoLine = true
+  } else {
+    hasNoLine = props['no-lines'] || language === 'no-lines'
+  }
 
   const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
@@ -125,9 +131,9 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       {!hasTerminalSymbol && !isDiff && !hasNoLine && (
                         <LineNo className="line-no">{i + 1}</LineNo>
                       )}
-                      {isDiff && (
+                      {isDiff && !hasNoLine && (
                         <LineNo className="line-no" style={{ color: lineClass.symbColor }}>
-                          {['+', '-'].includes(diffSymbol) ? diffSymbol : i + 1}
+                          {['+', '-','✎'].includes(diffSymbol) ? diffSymbol : i + 1}
                         </LineNo>
                       )}
                       <LineContent className={`${tokenCopyClass}`}>
