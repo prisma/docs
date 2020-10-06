@@ -24,7 +24,7 @@ const config = {
     title: 'Prisma',
     links: [
       { name: 'Docs', link: '/' },
-      { name: 'Quickstart', link: '/getting-started/quickstart' },
+      { name: 'Quickstart', link: '/getting-started/quickstart-typescript' },
       {
         name: 'Reference',
         link: '/reference/tools-and-interfaces/prisma-client/',
@@ -94,7 +94,7 @@ const config = {
     resources: [
       { name: 'Docs', link: '/' },
 
-      { name: 'Get started', link: '/getting-started/quickstart' },
+      { name: 'Get started', link: '/getting-started/quickstart-typescript' },
 
       {
         name: 'API Reference',
