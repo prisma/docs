@@ -1,6 +1,7 @@
 import React from 'react'
 import Highlight, { defaultProps } from 'prism-react-renderer'
 import theme from 'prism-react-renderer/themes/github'
+import rangeParser from 'parse-numeric-range'
 import CopyButton from './copy'
 import Copy from '../../icons/Copy'
 import { stringify } from '../../utils/stringify'
@@ -14,6 +15,27 @@ interface CodeProps {
 }
 
 type PreCodeProps = CodeProps & React.ReactNode
+
+const diffBgColorMap: any = {
+  '+': 'var(--code-added-bg-color)',
+  '-': 'var(--code-deleted-bg-color)',
+  '|': 'var(--code-highlight-bg-color)',
+  '✎': 'var(--code-edit-bg-color)',
+}
+
+const symColorMap: any = {
+  '+': 'var(--code-added-color)',
+  '-': 'var(--code-deleted-color)',
+  '|': 'var(--code-highlight-color)',
+  '✎': 'var(--code-highlight-color)',
+}
+
+const symbols: any = {
+  normal: '|',
+  add: '+',
+  delete: '-',
+  edit: '✎',
+}
 
 function cleanTokens(tokens: any[]) {
   const tokensLength = tokens.length
@@ -33,6 +55,14 @@ const propList = ['copy', 'bash-symbol', 'terminal', 'no-lines']
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   let language = className && className.replace(/language-/, '')
   let breakWords = false
+  let diffArray: any = []
+  
+  if (props && props.metastring && props.metastring.includes('highlight')) {
+    const parts = props.highlight.split('|')
+    parts.forEach((part: any) => {
+      diffArray = [part.split(';'), ...diffArray]
+    })
+  }
 
   if (propList.includes(language)) {
     breakWords = true
@@ -80,45 +110,19 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   }
 
                   let isDiff = false
-                  // let isHidden = false
                   let diffSymbol = ''
 
-                  const diffBgColorMap: any = {
-                    '+': 'var(--code-added-bg-color)',
-                    '-': 'var(--code-deleted-bg-color)',
-                    '|': 'var(--code-highlight-bg-color)',
-                    '✎': 'var(--code-edit-bg-color)',
-                  }
-
-                  const symColorMap: any = {
-                    '+': 'var(--code-added-color)',
-                    '-': 'var(--code-deleted-color)',
-                    '|': 'var(--code-highlight-color)',
-                    '✎': 'var(--code-highlight-color)',
-                  }
-
-                  if (
-                    (line[0] &&
-                      line[0].content.length &&
-                      (line[0].content[0] === '+' ||
-                        line[0].content[0] === '-' ||
-                        line[0].content[0] === '|' ||
-                        line[0].content[0] === '✎')) ||
-                    (line[0] &&
-                      line[0].content === '' &&
-                      line[1] &&
-                      (line[1].content === '+' ||
-                        line[1].content === '-' ||
-                        line[1].content === '|' ||
-                        line[1].content === '✎'))
-                  ) {
-                    diffSymbol =
-                      line[0] && line[0].content.length ? line[0].content[0] : line[1].content
-                    lineClass = {
-                      backgroundColor: diffBgColorMap[diffSymbol],
-                      symbColor: symColorMap[diffSymbol],
-                    }
-                    isDiff = true
+                  if (diffArray.length !== 0) {
+                    diffArray.forEach((arr: any) => {
+                      if (rangeParser(arr[0]).includes(i + 1)) {
+                        diffSymbol = symbols[arr[1]]
+                        lineClass = {
+                          backgroundColor: diffBgColorMap[diffSymbol],
+                          symbColor: symColorMap[diffSymbol],
+                        }
+                        isDiff = true
+                      }
+                    })
                   }
 
                   const lineProps = getLineProps({ line, key: i })
@@ -133,7 +137,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       )}
                       {isDiff && !hasNoLine && (
                         <LineNo className="line-no" style={{ color: lineClass.symbColor }}>
-                          {['+', '-','✎'].includes(diffSymbol) ? diffSymbol : i + 1}
+                          {['+', '-', '✎'].includes(diffSymbol) ? diffSymbol : i + 1}
                         </LineNo>
                       )}
                       <LineContent className={`${tokenCopyClass}`}>
