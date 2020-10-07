@@ -1,0 +1,165 @@
+---
+title: 'Working with JSON fields'
+metaTitle: 'Working with JSON fields (Reference)'
+metaDescription: 'How to read, write, and filter by JSON fields.'
+---
+
+## Overview
+
+Use the `Json` field to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `extendedProfile`:
+
+```prisma
+model User {
+  email           String  @unique
+  id              Int     @default(autoincrement()) @id
+  name            String?
+  posts           Post[]
+|  extendedProfile Json?
+  role            Role    @default(USER)
+}
+```
+
+The following represents a sample `extendedProfile` field value:
+
+```json
+{
+   "bio": [
+      {
+         "languages": "Danish, English"
+      },
+      {
+         "age": "87"
+      }
+   ],
+   "pets": "none"
+}
+```
+
+> **Note**: The `Json` field is only supported if the [underlying database](../../database-connectors) has a corresponding JSON data type.
+
+You can use a `Json` field if:
+
+* You need to store data that does not adhere to a consistent structure 
+* You are importing data from another system and do not want to map that data to Prisma models
+
+The `Json` field supports a few additional types, such as `string` and `boolean`. These additional types exist to match the types supported by [`JSON.parse()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse):
+
+```ts
+export declare type JsonValue = string | number | boolean | null | JsonObject | JsonArray
+```
+
+### Filtering
+
+Prisma Client supports [**basic** filtering](#filter-on-a-json-field) for `Json` fields. Relevant types: 
+
+```ts
+export type NullableJsonFilter = {
+  equals?: InputJsonValue | null
+  not?: InputJsonValue | null | NullableJsonFilter
+}
+```
+
+## Examples
+
+The examples in this section are based on the following schema:
+
+<a  id="sample-model"></a>
+
+<details>
+  <summary>Expand sample schema</summary>
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  authorId  Int?
+  content   String?
+  id        Int     @default(autoincrement()) @id
+  published Boolean @default(false)
+  title     String
+  user      User?   @relation(fields: [authorId], references: [id])
+
+  @@index([authorId], name: "authorId")
+}
+
+model User {
+  email           String  @unique
+  id              Int     @default(autoincrement()) @id
+  name            String?
+  posts           Post[]
+  extendedProfile Json?
+  role            Role    @default(USER)
+}
+
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}
+```
+
+</details>
+
+### Write to a `Json` field
+
+The following example writes a `JSON` object to the `extendedProfile` field:
+
+```ts
+var json = { "pets": [{ "name": "Bob the dog" }, { "name": "Claudine the cat" }] };
+
+const createUser = await prisma.user.create({
+  data: {
+    email: "birgitte@prisma.io",
+    extendedProfile: json,
+  },
+});
+```
+
+> **Note**: Javascript objects (for example, `{ pets: "none"}`) are automatically converted to JSON.
+
+### Filter on a `Json` field
+
+```ts
+var json = { pets: [{ name: "Sob the dog" }, { name: "Claudine the cat" }] };
+
+const get = await prisma.user.findMany({
+  where: {
+    extendedProfile: {
+      equals: json,
+    },
+  },
+});
+```
+
+The following example omits the `equals` but produces the same result:
+
+```ts
+var json = { pets: [{ name: "Bob the dog" }, { name: "Claudine the cat" }] };
+
+const get = await prisma.user.findMany({
+  where: {
+    extendedProfile: json
+  },
+});
+```
+
+The following example returns all users where the `extendedProfile` field does **not** match `json`: 
+
+```ts
+var json = { pets: [{ name: "Bob the dog" }, { name: "Claudine the cat" }] };
+
+const get = await prisma.user.findMany({
+  where: {
+    extendedProfile: {
+      not: json,
+    },
+  },
+});
+```

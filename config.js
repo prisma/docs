@@ -22,10 +22,16 @@ const config = {
   header: {
     secondLevelHeaderMenuItems: [
       {
-        text: 'Learn Prisma',
+        text: 'Getting Started',
         to: '/learn-prisma',
         type: 'bucket',
         bucketName: '/01-learn-prisma',
+      },
+      {
+        text: 'Concepts',
+        to: '/reference',
+        type: 'bucket',
+        bucketName: '/03-reference',
       },
       {
         text: 'API Reference',
