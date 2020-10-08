@@ -40,7 +40,7 @@ const config = {
         bucketName: '/02-guides-and-tutorials',
       },
       {
-        text: 'API Reference',
+        text: 'Reference',
         to: '/api-ref',
         type: 'bucket',
         bucketName: '/02-api-ref',
