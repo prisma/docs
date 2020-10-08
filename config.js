@@ -45,7 +45,7 @@ const config = {
         type: 'bucket',
         bucketName: '/02-api-ref',
       },
-      { text: 'FAQ', to: '/faq', type: 'bucket', bucketName: '/03-faq' },
+      { text: 'About', to: '/faq', type: 'bucket', bucketName: '/03-faq' },
       { text: 'Prisma 1 Docs', to: 'https://www.prisma.io/docs/1.34', type: 'external-link' },
     ],
     search: {
