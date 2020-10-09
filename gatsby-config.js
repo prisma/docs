@@ -104,7 +104,8 @@ let plugins = [
     },
   },
   'gatsby-plugin-remove-trailing-slashes',
-  'gatsby-plugin-meta-redirect'
+  'gatsby-plugin-meta-redirect',
+  'gatsby-plugin-page-list',
 ]
 
 if (process.env.INDEX_ALGOLIA === 'true') {
