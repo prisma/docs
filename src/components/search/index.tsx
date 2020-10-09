@@ -38,8 +38,49 @@ const HitsWrapper = styled.div`
     margin: 0;
   }
   .no-results,
+  // .loader {
+  //   padding: ${p => p.theme.space[24]} ${p => p.theme.space[40]};
+  // }
+  .loader,
+  .loader:after {
+    border-radius: 50%;
+    width: 5em;
+    height: 5em;
+  }
   .loader {
-    padding: ${p => p.theme.space[24]} ${p => p.theme.space[40]};
+    margin: 60px auto;
+    font-size: 10px;
+    position: relative;
+    text-indent: -9999em;
+    border-top: 0.5em solid rgba(215,215,215, 0.2);
+    border-right: 0.5em solid rgba(215,215,215, 0.2);
+    border-bottom: 0.5em solid rgba(215,215,215, 0.2);
+    border-left: 0.5em solid #d7d7d7;
+    -webkit-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-animation: load8 1.1s infinite linear;
+    animation: load8 1.1s infinite linear;
+  }
+  @-webkit-keyframes load8 {
+    0% {
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg);
+    }
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes load8 {
+    0% {
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg);
+    }
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
   }
   @media (min-width: 0px) and (max-width: 1024px) {
     // left: 0;
@@ -76,7 +117,7 @@ const getHits = (children: any, res: any) => {
 }
 const Results = connectStateResults(
   ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
-    (isSearchStalled ? <div className="loader">Searching...</div> : null) ||
+    ((isSearchStalled || (state.query === '' ))? <div className="loader">Searching...</div> : null) ||
     (res && res.nbHits > 0 ? (
       getHits(children, res)
     ) : (
@@ -93,7 +134,7 @@ export default function Search({ hitsStatus }: any) {
   const showSearch = () => setShowHits(true)
 
   React.useEffect(() => {
-    hitsStatus(query.length > 0 && showHits)
+    hitsStatus(showHits)
   }, [showHits, query])
 
   return (
@@ -102,9 +143,9 @@ export default function Search({ hitsStatus }: any) {
       indexName={indexName}
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
-      <Overlay visible={query.length > 0 && showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} isOpened={query.length > 0 && showHits}/>
-      <HitsWrapper className={`${query.length > 0 && showHits ? 'show' : ''}`} onClick={hideSearch}>
+      <Overlay visible={showHits} hideSearch={hideSearch} />
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits}/>
+      <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
             <Hits hitComponent={DocHit} />
