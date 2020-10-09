@@ -24,7 +24,7 @@ const config = {
     title: 'Prisma',
     links: [
       { name: 'Docs', link: '/' },
-      { name: 'Quickstart', link: '/getting-started/quickstart' },
+      { name: 'Quickstart', link: '/getting-started/quickstart-typescript' },
       {
         name: 'Reference',
         link: '/reference/tools-and-interfaces/prisma-client/',
@@ -32,7 +32,7 @@ const config = {
       { name: 'Blog', link: 'https://www.prisma.io/blog/' },
       { name: 'Community', link: 'https://www.prisma.io/community/' },
       { name: 'FAQ', link: '/more/faq' },
-      { name: 'Prisma 1', link: 'https://www.prisma.io/docs/1.34' },
+      { name: 'Prisma 1', link: 'https://v1.prisma.io/docs/1.34' },
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
@@ -94,7 +94,7 @@ const config = {
     resources: [
       { name: 'Docs', link: '/' },
 
-      { name: 'Get started', link: '/getting-started/quickstart' },
+      { name: 'Get started', link: '/getting-started/quickstart-typescript' },
 
       {
         name: 'API Reference',
