@@ -22,19 +22,30 @@ const config = {
   header: {
     secondLevelHeaderMenuItems: [
       {
-        text: 'Learn Prisma',
+        text: 'Getting Started',
         to: '/learn-prisma',
         type: 'bucket',
         bucketName: '/01-learn-prisma',
       },
       {
-        text: 'API Reference',
+        text: 'Concepts',
+        to: '/reference',
+        type: 'bucket',
+        bucketName: '/03-reference',
+      },
+      {
+        text: 'Guides',
+        to: '/guides-and-tutorials',
+        type: 'bucket',
+        bucketName: '/02-guides-and-tutorials',
+      },
+      {
+        text: 'Reference',
         to: '/api-ref',
         type: 'bucket',
         bucketName: '/02-api-ref',
       },
-      { text: 'FAQ', to: '/faq', type: 'bucket', bucketName: '/03-faq' },
-
+      { text: 'About', to: '/faq', type: 'bucket', bucketName: '/03-faq' },
       { text: 'Prisma 1 Docs', to: 'https://www.prisma.io/docs/1.34', type: 'external-link' },
     ],
     search: {
