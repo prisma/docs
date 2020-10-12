@@ -2,7 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 import { stringify } from '../utils/stringify'
 
-const ChapterTitle = styled.h2`
+const ChapterTitle = styled.div`
   font-family: 'Open Sans';
   font-style: normal;
   font-weight: bold;
