@@ -842,7 +842,7 @@ Defines a unique constraint for this field.
 #### Remarks
 
 * Corresponding database type: `UNIQUE`
-* `NULL` values are considered to distinct (multiple `NULL` values in a column are allowed)
+* `NULL` values are considered to be distinct (multiple rows with `NULL` values in the same column are allowed)
 * Can be defined on any scalar field
 * **Cannot** be defined on a relation field
 * A field annotated with `@unique` can be optional or required 
@@ -915,21 +915,38 @@ Defines a compound [unique constraint](data-model#defining-a-unique-field) <span
 #### Remarks
 
 * Corresponding database type: `UNIQUE`
-* `NULL` values are considered to distinct (multiple `NULL` values in a column are allowed)
-* Can be defined on any scalar field
-* **Cannot** be defined on a relation field
-* A field annotated with `@@unique` can be optional or required 
-* A field annotated with `@@unique` _must_ be required if it represents the only unique constraint on a model without an `@id` / `@@id`
-* A model can have any number of unique constraints
+* A `@@unique` block is required if it represents the only unique constraint on a model without an `@id` / `@@id`
+* All fields that make up the unique constraint **must** be mandatory fields. The following model is **not** valid because `id` could be `null`:
+
+  ```prisma
+  model User {
+    firstname Int
+    lastname Int
+    id Int?
+    @@unique([firstname, lastname, id])
+  }
+  ```
+
+  The reason for this behavior is that SQL considers `null` values to be distinct, which means that two rows that *look* identical are considered unique:
+
+  ```
+   firstname  | lastname | id 
+   -----------+----------+------
+   John       | Smith    | null
+   John       | Smith    | null
+  ```
+
+* A model can have any number of `@@unique` blocks
 * Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
+
 
 #### Arguments 
 
 
 | Name       | Required | Type                                   | Description                                                                                                            |
 | ---------- | -------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `fields` | **Yes**  | `FieldReference[]`  | A list of field names - for example, `["firstname", "lastname"]` |
-| `name`   | **No**   | `String`            | The name of the unique combination of fields - defaults to `fieldName1_fieldName2_fieldname3`  |
+| `fields` | **Yes**  | `FieldReference[]`  | A list of field names - for example, `["firstname", "lastname"]`. Fields must be mandatory - see remarks. |
+| `name`   | **No**   | `String`            | The name of the unique combination of fields - defaults to `fieldName1_fieldName2_fieldName3`  |
 
 The name of the `fields` argument on the `@@unique` attribute can be omitted:
 
@@ -1010,7 +1027,7 @@ model User {
 
 ### <inlinecode>@@index</inlinecode>
 
-Defines an index.
+Defines an index in the database.
 
 #### Remarks
 
@@ -1035,7 +1052,7 @@ Note that while you can't configure these option in your Prisma schema, you can 
 | Name       | Required | Type                                   | Description                                                                                                            |
 | ---------- | -------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `fields` | **Yes**  | `FieldReference[]`  | A list of field names - for example, `["firstname", "lastname"]` |
-| `name` | **No**  | `name`  | The name of the index in the underlying database (Prisma generates an index name that respects identifier length limits if you do not specify a name - for example: `tablename.field1_field2_field3_unique`) |
+| `name` | **No**  | `name`  | The name of the index in the underlying database (Prisma generates an index name that respects identifier length limits if you do not specify a name. Prisma uses the following naming convention: `tablename.field1_field2_field3_unique`) |
 
 The *name* of the `fields` argument on the `@@index` attribute can be omitted:
 
