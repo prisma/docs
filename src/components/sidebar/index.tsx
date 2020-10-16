@@ -1,29 +1,20 @@
 import React from 'react'
 import Tree from './tree'
-import styled, { css } from 'styled-components'
-import styledTS from 'styled-components-ts'
-import { StickyContainer, Sticky } from 'react-sticky'
+import styled from 'styled-components'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
 import config from '../../../config'
 
 const SidebarContainer = styled.aside`
   width: 272px;
+  height: 100%;
   margin: 0px ${p => p.theme.space[16]} 0 -${p => p.theme.space[16]};
 `
 
-const Sidebar = styledTS<{ isSticky: boolean; theme: any }>(styled.div)`
+const Sidebar = styled.div`
   margin: 0;
   overflow: auto;
-  height: 100vh;
-  @media (min-width: 0) and (max-width: 1024px) {
-    height: auto;   
-  }
-  ${({ isSticky }: any) =>
-    isSticky &&
-    css`
-      max-height: 100vh;
-    `};
+  height: auto;
 
   .tablet-only {
     display: none;
@@ -41,7 +32,7 @@ const Sidebar = styledTS<{ isSticky: boolean; theme: any }>(styled.div)`
     }
 
     @media (min-width: 641px) and (max-width: 1024px) {
-      display:flex;    
+      display: flex;
     }
   }
 
@@ -83,21 +74,14 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
   if (!isMobile && slug === '/') {
     bucketEdges = []
   }
-
   return !isMobile ? (
-    <StickyContainer>
-      <SidebarContainer>
-        <Sticky topOffset={0}>
-          {({ style, isSticky }: any) => (
-            <Sidebar style={style} isSticky={isSticky} id="sidebar-container">
-              <List>
-                <Tree edges={bucketEdges} />
-              </List>
-            </Sidebar>
-          )}
-        </Sticky>
-      </SidebarContainer>
-    </StickyContainer>
+    <SidebarContainer>
+      <Sidebar id="sidebar-container">
+        <List>
+          <Tree edges={bucketEdges} />
+        </List>
+      </Sidebar>
+    </SidebarContainer>
   ) : (
     <Sidebar>
       <div className="mobile-only">

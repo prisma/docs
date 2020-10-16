@@ -10,6 +10,7 @@ import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
 import theme from 'prisma-lens'
+import { stickWhenNeeded } from '../utils/scrollSidebar'
 
 interface LayoutContentProps {
   toc: any
@@ -19,7 +20,13 @@ interface LayoutContentProps {
 
 type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth, location, slug }) => {
+const Layout: React.FunctionComponent<LayoutProps> = ({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+}) => {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
@@ -68,8 +75,13 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth,
 
   const NotMobile = styled.section`
     display: flex;
+    height: fit-content;
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
+    }
+
+    &.fixed {
+      position: sticky;
     }
   `
 
@@ -88,27 +100,31 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, toc, tocDepth,
     }
   `
 
+  React.useEffect(() => {
+    stickWhenNeeded()
+  })
+
   return (
     <ThemeProvider theme={theme}>
-    <MDXProvider components={customMdx}>
-      <Header headerProps={header}/>
-      <Wrapper>
-        <Container>
-          <NotMobile>
-            <SidebarLayout isMobile={false} location={location} slug={slug}/>
-          </NotMobile>
-          <Content>
-            <MaxWidth>{children}</MaxWidth>
-          </Content>
-          <TOCWrapper>
-            {toc && toc.items && toc.items.length > 0 && (
-              <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
-            )}
-          </TOCWrapper>
-        </Container>
-      </Wrapper>
-      <Footer footerProps={footer} />
-    </MDXProvider>
+      <MDXProvider components={customMdx}>
+        <Header headerProps={header} />
+        <Wrapper>
+          <Container>
+            <NotMobile id="sidebar-holder">
+              <SidebarLayout isMobile={false} location={location} slug={slug} />
+            </NotMobile>
+            <Content>
+              <MaxWidth>{children}</MaxWidth>
+            </Content>
+            <TOCWrapper>
+              {toc && toc.items && toc.items.length > 0 && (
+                <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+              )}
+            </TOCWrapper>
+          </Container>
+        </Wrapper>
+        <Footer footerProps={footer} />
+      </MDXProvider>
     </ThemeProvider>
   )
 }

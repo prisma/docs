@@ -1,7 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
 import { stringify } from '../utils/stringify'
-const { goToNav } = require('../utils/goToNavItem')
 
 const ChapterTitle = styled.h1`
   font-family: ${p => p.theme.fonts.text};
@@ -40,14 +39,12 @@ const TOCList = styled.ul`
 const TOCContainer = styled.div`
   position: sticky;
   top: 10px;
+  overflow: scroll;
+  height: 100vh;
 `
 
-const TOC = ({ headings, tocDepth, location }: any) => {
+const TOC = ({ headings, tocDepth }: any) => {
   const navItems = (headings: any[], depth: number) => {
-    const maintainSidenavPos = () => {
-      goToNav(location.pathname)
-      return true
-    }
     return (
       <TOCList>
         {headings &&
@@ -55,7 +52,6 @@ const TOC = ({ headings, tocDepth, location }: any) => {
             <li key={index}>
               <a
                 href={heading.url.replace(/inlinecode/g, '')}
-                onClick={maintainSidenavPos}
                 dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
               />
               {heading.items &&
