@@ -7,5 +7,5 @@ exports.onClientEntry = () => {
 
 exports.onRouteUpdate = ({ location }) => {
   trackPage(location.pathname)
-  goToNav(location.pathname)
+  goToNav(location.pathname) // This may not work anymore due to the new scroll behavior of the sidebar
 }

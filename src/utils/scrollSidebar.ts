@@ -5,7 +5,6 @@ export const stickWhenNeeded = () => {
     var $window = $(window)
     var lastScrollTop = $window.scrollTop()
     var wasScrollingDown = true
-
     var $sidebar = $('#sidebar-holder')
     if ($sidebar.length > 0) {
       var initialSidebarTop = $sidebar.position().top
@@ -47,14 +46,13 @@ export const stickWhenNeeded = () => {
         } else if (dragTopUp) {
           $sidebar.css('top', 0)
         } else if ($sidebar.hasClass('fixed')) {
-          var currentTop = parseInt($sidebar.css('top'), 10)
+          var currentTop = parseInt(($sidebar.css('top') === 'auto' ?  1 : $sidebar.css('top')), 10)
 
           var minTop = -heightDelta
           var scrolledTop = currentTop + scrollDelta
 
           var isPageAtBottom = scrollTop + windowHeight >= $(document).height()
           var newTop = isPageAtBottom ? minTop : scrolledTop
-
           $sidebar.css('top', newTop)
         }
 
