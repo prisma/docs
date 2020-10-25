@@ -9,7 +9,6 @@ langSwitcher: ['typescript', 'node']
 
 This page walks you through the process of setting up Prisma from scratch with your own database. It uses plain SQL to create tables in your database. 
 
-
 </TopBlock>
 
 ## Prerequisites
@@ -19,10 +18,10 @@ In order to successfully complete this guide, you need:
 - [Node.js](https://nodejs.org/en/) installed on your machine
 - a [MSSQL](https://www.postgresql.org/) database server running
 
-  - MSSQL on Docker
-  - MSSQL on Windows (local)
+  - [Microsoft SQL Server on Linux for Docker](mssql-docker)
+  - [MSSQL on Windows (local)](mssql-local)
 
-Make sure you have your database [connection URL](../../reference/database-connectors/connection-urls) (that includes your authentication credentials) at hand!
+Make sure you have your database [connection URL](mssql-connection-string) (including authentication credentials) available.
 
 ## Create project setup
 
@@ -35,7 +34,7 @@ Make sure you have your database [connection URL](../../reference/database-conne
     cd hello-prisma
     ```
 
-1. Initialize a TypeScript project and add the Prisma CLI as a development dependency to it:
+1. Initialize a TypeScript project and add the Prisma CLI as a development dependency:
 
   ```terminal copy
   npm init -y
@@ -86,7 +85,7 @@ Make sure you have your database [connection URL](../../reference/database-conne
     cd hello-prisma
     ```
 
-1. Initialize a Node.js project and add the Prisma CLI as a development dependency to it:
+1. Initialize a Node.js project and add the Prisma CLI as a development dependency:
 
     ```terminal copy
     npm init -y
@@ -114,9 +113,9 @@ Make sure you have your database [connection URL](../../reference/database-conne
 
 </SwitchTech>
 
-
-
 ## Connect your database
+
+To connect to your MSSQL database:
 
 1. Add the following line to the `client` block in your schema file to enable the MSSQL preview:
 
@@ -146,73 +145,184 @@ Make sure you have your database [connection URL](../../reference/database-conne
 
 1. Adjust the connection string to match your setup - see [MSSQL connection string](mssql-connection-string) for more information.
 
-1. Introspect your database to 
+1. Introspect your database to validate your connection string - the CLI will throw a `P4001` error because your database is empty: 
 
+  <CodeWithResult>
+
+  <Cmd>
+  
   ```terminal
   npx prisma introspect
   ```
 
+  </Cmd>
+
+  <CmdResult>
+
+  ```
+  Environment variables loaded from prisma\.env
+  Prisma Schema loaded from prisma\schema.prisma
+
+  Introspecting based on datasource defined in prisma\schema.prisma …
+  Error: 
+  P4001 The introspected database was empty:
+  ```
+
+  </CmdResult>
+
+  </CodeWithResult>
+
 ## Create database tables with SQL
 
-In this guide, you'll use plain SQL to create the tables in your database. Create a new file called `schema.sql` and add the following contents to it:
+To create database tables, you can either:
+
+* Use the `sqlcmd` command line tool (Docker) OR
+* Use MSSQL Management Studio (Windows only)
+
+### Using `sqlcmd` with Docker
+
+1. Paste the following SQL query into a file named `create.sql`, replacing `USE sample` with the name of your database - for example, `USE myDatabase`:
 
 ```sql file=schema.sql copy
-CREATE TABLE "public"."User" (
-  id SERIAL PRIMARY KEY NOT NULL,
+USE sample
+
+GO
+
+CREATE TABLE [User] (
+  id INT PRIMARY KEY NOT NULL,
   name VARCHAR(255),
   email VARCHAR(255) UNIQUE NOT NULL
 );
 
-CREATE TABLE "public"."Post" (
-  id SERIAL PRIMARY KEY NOT NULL,
+CREATE TABLE [Post] (
+  id INT PRIMARY KEY NOT NULL,
   title VARCHAR(255) NOT NULL,
-  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+  "createdAt" DATETIME NOT NULL DEFAULT GETDATE(),
   content TEXT,
-  published BOOLEAN NOT NULL DEFAULT false,
+  published BIT NOT NULL DEFAULT 0,
   "authorId" INTEGER NOT NULL,
-  FOREIGN KEY ("authorId") REFERENCES "public"."User"(id)
+  FOREIGN KEY ("authorId") REFERENCES [User] (id)
 );
 
-CREATE TABLE "public"."Profile" (
-  id SERIAL PRIMARY KEY NOT NULL,
+CREATE TABLE [Profile] (
+  id INT PRIMARY KEY NOT NULL,
   bio TEXT,
   "userId" INTEGER UNIQUE NOT NULL,
-  FOREIGN KEY ("userId") REFERENCES "public"."User"(id)
+  FOREIGN KEY ("userId") REFERENCES [User](id)
 );
 ```
 
-See [type mapping between PostgreSQL to Prisma schema during introspection](../../reference/database-connectors/postgresql#introspection) for information about what each database type maps to in the Prisma Schema.
+1. In your terminal, navigate to the folder with the `create.sql` file.
 
-> **Note**: Some fields are written in double-quotes to ensure PostgreSQL uses proper casing. If no double-quotes were used, PostgreSQL would just read everything as _lowercase_ characters.
+2. Run the following command to copy the `create.sql` from your local machine to your container's root folder:
 
-You can create the tables using any PostgreSQL client of your choice. If you're using `psql`, you can now create the tables using the following command:
+   ```
+   docker cp create.sql sql1:/
+   ```
 
-```terminal
-psql -h HOST -d DATABASE -U USER -f schema.sql
-```
+1. Run the following command to start an interactive bash shell, replacing `sql1` with the name of your Docker container:
 
-Similar to before, you need to replace the all-uppercase placeholders with your database credentials, e.g.:
+  ```terminal
+  docker exec -it sql1 "bash"
+  ```
 
-<TabbedContent tabs={[<FileWithIcon text="Unix (Mac OS, Linux)" icon="display"/>, <FileWithIcon text="Windows" icon="display"/>]}>	
+1. Use the `sqlcmd` tool to run the `create.sql` script, replacing `mypassword` with your password:
 
-<tab>	
+  ```terminal
+  /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "mypassword" -i create.sql
+  ```
 
-```terminal copy
-psql -h localhost -d hello-prisma -U janedoe -f schema.sql
-```
+1. To confirm that your tables were created, log in to `sqlcmd`:
 
-</tab>	
+   ```
+   /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "mypassword" 
+   ```
 
-<tab>	
+1. Run the following command (you may need to copy-paste each line):
 
-```terminal copy
-\connect DATABASE
-\i 'c:/hello-prisma/schema.sql'
-```
+  <CodeWithResult>
 
-</tab>	
+  <Cmd>
 
-</TabbedContent>
+   ```terminal
+   USE my_database_name
+   :setvar SQLCMDMAXVARTYPEWIDTH 15
+   :setvar SQLCMDMAXFIXEDTYPEWIDTH 15
+   sp_tables
+   @table_type="'TABLE'"
+   GO
+   ```
+
+   </Cmd>
+
+   <CmdResult>
+
+    ```
+     TABLE_QUALIFIER TABLE_OWNER     TABLE_NAME      TABLE_TYPE      REMARKS
+     --------------- --------------- --------------- --------------- ---------------
+     mstest          dbo             _Migration      TABLE           NULL
+     mstest          dbo             _PostToTag      TABLE           NULL
+     mstest          dbo             Category        TABLE           NULL
+     mstest          dbo             Post            TABLE           NULL
+     mstest          dbo             Tag             TABLE           NULL
+     mstest          dbo             User            TABLE           NULL
+    ```
+
+    </CmdResult>
+
+    </CodeWithResult>
+
+### Using MSSQL Management Studio
+
+1. Log in to MSSQL Server Management Studio.
+
+1. Click the **New Query** button:
+
+  ![The New Query button in MSSQL Management Studio](../../../../doc-images/new-query.png)
+
+1. Change `USE sample` to use name of your database (for example, `USE myDatabase`) and paste it into the query window:
+
+  ```sql file=schema.sql copy
+  | USE sample
+
+  GO
+
+  CREATE TABLE [User] (
+    id INT PRIMARY KEY NOT NULL,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE NOT NULL
+  );
+
+  CREATE TABLE [Post] (
+    id INT PRIMARY KEY NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT GETDATE(),
+    content TEXT,
+    published BIT NOT NULL DEFAULT 0,
+    "authorId" INTEGER NOT NULL,
+    FOREIGN KEY ("authorId") REFERENCES [User] (id)
+  );
+
+  CREATE TABLE [Profile] (
+    id INT PRIMARY KEY NOT NULL,
+    bio TEXT,
+    "userId" INTEGER UNIQUE NOT NULL,
+    FOREIGN KEY ("userId") REFERENCES [User](id)
+  );
+  ```
+
+1. Click the **Execute** button or press **F5** on your keyboard to execute the query - you should see the following message:
+
+  ```
+  Commands completed successfully.
+
+  Completion time: 2020-10-25T10:55:16.0721284+01:00
+  ```
+
+1. Expand the database node in the Object Explorer to confirm that your tables were created:
+
+  ![A list of database tables in the Object Explorer in MSSQL Managmeent Studio](../../../../doc-images/database-tables.png)
+
 
 ## Introspect your database with Prisma
 
@@ -253,515 +363,74 @@ model User {
 }
 ```
 
-## Adjust the data model
+### Adjust the data model
 
-1. Adjust the data model as shown:
+The introspected model contains auto-genreated relation fields that do not ahere to Prisma's naming convention:
 
-```prisma file=prisma/schema.prisma
-model Post {
-  id        Int      @default(autoincrement()) @id
-  createdAt DateTime @default(now())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-✎  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-}
-
-model Profile {
-  id     Int     @default(autoincrement()) @id
-  bio    String?
-✎  user   User    @relation(fields: [userId], references: [id])
-  userId Int     @unique
-}
-
+```prisma
 model User {
   id      Int      @default(autoincrement()) @id
   email   String   @unique
   name    String?
-✎  posts   Post[]
-✎  profile Profile?
+|  Post    Post[] // Should be `posts`
+|  Profile Profile? // Should be `profile`
 }
 ```
 
-2. Try re-introspecting - Prisma will not overwrite your changes.
+Field names affect the shape of the Prisma Client - for example, a property named `Post` that it is a *list* of posts. To adjust the data model:
+
+1. Change the field names as shown:
+
+    ```prisma file=prisma/schema.prisma
+    model Post {
+      id        Int      @default(autoincrement()) @id
+      createdAt DateTime @default(now())
+      title     String
+      content   String?
+      published Boolean  @default(false)
+    ✎  author    User     @relation(fields: [authorId], references: [id])
+      authorId  Int
+    }
+
+    model Profile {
+      id     Int     @default(autoincrement()) @id
+      bio    String?
+    ✎  user   User    @relation(fields: [userId], references: [id])
+      userId Int     @unique
+    }
+
+    model User {
+      id      Int      @default(autoincrement()) @id
+      email   String   @unique
+      name    String?
+    ✎  posts   Post[]
+    ✎  profile Profile?
+    }
+    ```
+
+1. Introspect again to confirm that Prisma does not overwrite your manual changes.
 
 ## Install and generate Prisma Client
 
-To get started with Prisma Client, you need to 
+To get started with Prisma Client:
 
 1. Install the `@prisma/client` package:
 
-```terminal copy
-npm install @prisma/client
-```
+  ```terminal copy
+  npm install @prisma/client
+  ```
 
-Notice that the [`@prisma/client` node module](../../reference/tools-and-interfaces/prisma-client/generating-prisma-client#the-prismaclient-npm-package) references a folder named `.prisma\client`. The `.prisma\client` folder contains your generated Prisma Client, and is modified each time you change the schema and run the following command:
+1. Run the following command to generate your Prisma Client:
 
-```terminal
-npx prisma generate
-```
+  ```terminal copy
+  npx prisma generate
+  ```
 
-This commands reads your Prisma schema and generates your Prisma Client library into `node_modules/@prisma/client`.
+  `prisma generate` reads your Prisma schema and generates your Prisma Client library into a folder named `.prisma/client`, which is referenced by `node_modules/@prisma/client`.
 
-![](https://imgur.com/FensWfo.png)
-
-The `@prisma/client` node module references a folder named `.prisma/client`, which contains your unique, generated Prisma Client:
-
-![The .prisma and @prisma folders](setup-prisma/prisma-client-node-module.png)
-
-## Write your first query with Prisma Client
-
-Now that you have generated your Prisma Client library, you can start writing queries to read and write data in your database. For the purpose of this guide, you'll use a plain Node.js script to explore some basic features of Prisma Client.
-
-<SwitchTech technologies={['typescript', '*']}>
-
-Create a new file called `index.ts` and add the following code to it:
-
-```js copy file=index.ts
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
-
-async function main() {
-  // ... you will write your Prisma Client queries here
-}
-
-main()
-  .catch(e => {
-    throw e
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['node', '*']}>
-
-Create a new file called `index.js` and add the following code to it:
-
-```js copy file=index.js
-const { PrismaClient } = require("@prisma/client")
-
-const prisma = new PrismaClient()
-
-async function main() {
-  // ... you will write your Prisma Client queries here
-}
-
-main()
-  .catch(e => {
-    throw e
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
-```
-
-</SwitchTech>
-
-Here's a quick overview of the different parts of the code snippet:
-
-1. Import the `PrismaClient` constructor from the `@prisma/client` node module
-1. Instantiate `PrismaClient`
-1. Define an `async` function called `main` to send queries to the database
-1. Call the `main` function
-1. Close the database connections when the script terminates
-
-Inside the `main` function, add the following query to read all `User` records from the database and print the result:
-
-<SwitchTech technologies={['typescript', '*']}>
-
-```ts file=index.ts
-async function main() {
--  // ... you will write your Prisma Client queries here
-+  const allUsers = await prisma.user.findMany()
-+  console.log(allUsers)
-}
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['node', '*']}>
-
-```js file=index.js
-async function main() {
--  // ... you will write your Prisma Client queries here
-+  const allUsers = await prisma.user.findMany()
-+  console.log(allUsers)
-}
-```
-
-</SwitchTech>
-
-Now run the code with this command:
-
-<SwitchTech technologies={['typescript', '*']}>
-
-```terminal copy
-npx ts-node index.ts
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['node', '*']}>
-
-```terminal copy
-node index.js
-```
-
-</SwitchTech>
-
-This should print an empty array because there are no `User` records in the database yet:
-
-```js no-lines
-[]
-```
-
-## Write data into the database
-
-The `findMany` query you used in the previous section only _reads_ data from the database (although it was still empty). In this section, you'll learn how to write a query to _write_ new records into the `Post` and `User` tables.
-
-Adjust the `main` function to send a `create` query to the database:
-
-<SwitchTech technologies={['typescript', '*']}>
-
-```ts copy file=index.ts
-async function main() {
-
-  await prisma.user.create({
-    data: {
-      name: "Alice",
-      email: "alice@prisma.io",
-      posts: {
-        create: { title: "Hello World" },
-      },
-      profile: {
-        create: { bio:  "I like turtles" }
-      }
-    }
-  })
-
-  const allUsers = await prisma.user.findMany({
-    include: { 
-      posts: true,
-      profile: true 
-    },
-  })
-  console.dir(allUsers, { depth: null })
-}
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['node', '*']}>
-
-```js copy file=index.js
-async function main() {
-
-  await prisma.user.create({
-    data: {
-      name: "Alice",
-      email: "alice@prisma.io",
-      posts: {
-        create: { title: "Hello World" },
-      },
-      profile: {
-        create: { bio: "I like turtles" }
-      }
-    }
-  })
-
-  const allUsers = await prisma.user.findMany({
-    include: { 
-      posts: true,
-      profile: true 
-    },
-  })
-  console.dir(allUsers, { depth: null })
-}
-```
-
-</SwitchTech>
-
-
-This code creates a new `User` record together with new `Post` and `Profile` records using a [nested write](../../reference/tools-and-interfaces/prisma-client/relation-queries#nested-writes) query. The `User` record is connected to the two other ones via the `Post.author` ↔ `User.posts` and `Profile.user` ↔ `User.profile` [relation fields](../../reference/tools-and-interfaces/prisma-schema/relations#relation-fields) respectively.
-
-Notice that you're passing the [`include`](../../reference/tools-and-interfaces/prisma-client/field-selection#include) option to `findMany` which tells Prisma Client to include the `posts` and `profile` relations on the returned `User` objects.
-
-<SwitchTech technologies={['typescript', '*']}>
-
-Run the code with this command:
-
-```terminal copy
-npx ts-node index.ts
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['node', '*']}>
-
-Run the code with this command:
-
-```terminal copy
-node index.js
-```
-
-</SwitchTech>
-
-The output should look similar to this:
-
-```js no-lines
-[
-  {
-    email: 'alice@prisma.io',
-    id: 1,
-    name: 'Alice',
-    posts: [
-      {
-        content: null,
-        createdAt: 2020-03-21T16:45:01.246Z,
-        id: 1,
-        published: false,
-        title: 'Hello World',
-        authorId: 1,
-      }
-    ],
-    profile: {
-      bio: 'I like turtles',
-      id: 1,
-      userId: 1,
-    }
-  }
-]
-```
-
-<SwitchTech technologies={['typescript']}>
-
-Also note that `allUsers` is _statically typed_ thanks to [Prisma Client's generated types](../../reference/tools-and-interfaces/prisma-client/advanced-usage-of-generated-types). You can observe the type by hovering over the `allUsers` variable in your editor. It should be typed as follows:
-
-```ts no-lines
-const allUsers: (User & {
-    posts: Post[];
-})[]
-
-export type Post = {
-  id: number
-  title: string
-  content: string | null
-  published: boolean
-  authorId: number | null
-}
-```
-
-</SwitchTech>
-
-The query added new records to the `User` and the `Post` tables:
-
-**User**
-
-| **id** | **email**           | **name**  |
-| :----- | :------------------ | :-------- |
-| `1`    | `"alice@prisma.io"` | `"Alice"` |
-
-**Post**
-
-| **id** | **createdAt**              | **title**       | **content** | **published** | **authorId** |
-| :----- | :------------------------- | :-------------- | :---------- | :------------ | :--------- |
-| `1`    | `2020-03-21T16:45:01.246Z` | `"Hello World"` | `null`      | `false`       | `1`        |
-
-**Profile**
-
-| **id** | **bio**           | **userId**  |
-| :----- | :------------------ | :-------- |
-| `1`    | `"I like turtles"` | `1` |
-
-> **Note**: The numbers in the `authorId` column on `Post` and `userId` column on `Profile` both reference the `id` column of the `User` table, meaning the `id` value `1` column therefore refers to the first (and only) `User` record in the database.
-
-Before moving on to the next section, you will "publish" the `Post` record you just created using an `update` query. Adjust the `main` function as follows:
-
-<SwitchTech technologies={['typescript', '*']}>
-
-```js file=index.ts copy
-async function main() {
-  const post = await prisma.post.update({
-    where: { id: 1 },
-    data: { published: true },
-  })
-  console.log(post)
-}
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['node', '*']}>
-
-```js file=index.js copy
-async function main() {
-  const post = await prisma.post.update({
-    where: { id: 1 },
-    data: { published: true },
-  })
-  console.log(post)
-}
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['typescript', '*']}>
-
-Now run the code using the same command as before:
-
-```terminal copy
-npx ts-node index.ts
-```
-
-</SwitchTech>
-
-<SwitchTech technologies={['node', '*']}>
-
-Now run the code using the same command as before:
-
-```terminal copy
-node index.js
-```
-
-</SwitchTech>
-
-You will see the following output:
-
-```js no-lines
-{
-  authorId: 1,
-  content: null,
-  createdAt: 2020-04-09T09:25:07.663Z,
-  id: 1,
-  published: true,
-  title: 'Hello World'
-}
-```
-
-The `Post` record with an `id` of `1` now got updated in the database:
-
-**Post**
-
-| **id** | **title**                       | **content** | **published** | **authorId** |
-| :----- | :------------------------------ | :---------- | :------------ | :--------- |
-| `1`    | `"Hello World"`                 | `null`      | `true`        | `1`        |
-
-Fantastic, you just wrote new data into your database for the first time using Prisma Client 🚀
+## Use the Prisma Client to read and write data
 
 ## Next steps
 
 This section lists a number of potential next steps you can now take from here. Feel free to explore these or read the [Introduction](../../understand-prisma/introduction) page to get a high-level overview of Prisma.
 
-### Continue exploring the Prisma Client API
-
-You can send a variety of queries with the Prisma Client API. Check out the [API reference](../../reference/tools-and-interfaces/prisma-client/api) and use your existing database setup from this guide to try them out.
-
-**Tip**: You can use your editor's auto-completion feature to learn about the different API calls and the arguments it takes. Auto-completion is commonly invoked by hitting <kbd>CTRL</kbd>+<kbd>SPACE</kbd> on your keyboard.
-
-<details><summary>Expand for more Prisma Client API examples</summary>
-
-Here are a few suggestions for a number of more queries you can send with Prisma Client:
-
-**Filter all `Post` records that contain `"hello"`**
-
-```js
-const filteredPosts = await prisma.post.findMany({
-  where: {
-    OR: [
-      { title: { contains: "hello" },
-      { content: { contains: "hello" },
-    ],
-  },
-})
-```
-
-**Create a new `Post` record and connect it to an existing `User` record**
-
-```js
-const post = await prisma.post.create({
-  data: {
-    title: "Join us for Prisma Day 2020",
-    author: {
-      connect: { email: "alice@prisma.io" },
-    },
-  },
-})
-```
-
-**Use the fluent relations API to retrieve the `Post` records of a `User` by traversing the relations**
-
-```js
-const posts = await prisma.profile
-  .findOne({
-    where: { id: 1 },
-  })
-  .user()
-  .posts()
-```
-
-**Delete a `User` record**
-
-```js
-const deletedUser = await prisma.user.delete({
-  where: { email: "sarah@prisma.io" },
-})
-```
-
-</details>
-
-
-### Explore the data in Prisma Studio
-
-Prisma Studio is a visual editor for the data in your database. You can use it by running the following command:
-
-```terminal copy
-npx prisma studio
-```
-
-### Change the database schema (e.g. add more tables)
-
-To evolve the app, you need to follow the same flow of the tutorial:
-
-1. Manually adjust your database schema using SQL
-1. Re-introspect your database
-1. Optionally re-configure your Prisma Client API
-1. Re-generate Prisma Client
-
-![](https://imgur.com/ToNkpb2.png)
-
-
-### Try a Prisma example
-
-The [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository contains a number of ready-to-run examples:
-
-<TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript (Node.js)" icon="code"/>]}>	
-
-<tab>
-
-| Demo                                                                                                               | Stack        | Description                                                                                         |
-| :----------------------------------------------------------------------------------------------------------------- | :----------- | --------------------------------------------------------------------------------------------------- |
-| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-nextjs)                     | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API                                   |
-| [`graphql-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql-nextjs)               | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a GraphQL API                                |
-| [`graphql-apollo-server`](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql-apollo-server) | Backend only | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/) |
-| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express)                   | Backend only | Simple REST API with Express.JS                                                                     |
-| [`grpc`](https://github.com/prisma/prisma-examples/tree/latest/typescript/grpc)                                   | Backend only | Simple gRPC API                                                                                     |
-
-</tab>
-
-<tab>
-
-| Demo                                                                                                               | Stack        | Description                                                                                         |
-| :----------------------------------------------------------------------------------------------------------------- | :----------- | :-------------------------------------------------------------------------------------------------- |
-| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nextjs)                     | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API                                   |
-| [`graphql-apollo-server`](https://github.com/prisma/prisma-examples/tree/latest/javascript/graphql-apollo-server) | Backend only | Simple GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/) |
-| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-express)                   | Backend only | Simple REST API with Express.JS                                                                     |
-| [`grpc`](https://github.com/prisma/prisma-examples/tree/latest/javascript/grpc)                                   | Backend only | Simple gRPC API                                                                                     |
-
-</tab>
-
-</TabbedContent>
