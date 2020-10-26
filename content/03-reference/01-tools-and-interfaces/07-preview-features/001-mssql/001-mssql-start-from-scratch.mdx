@@ -7,7 +7,7 @@ langSwitcher: ['typescript', 'node']
 
 <TopBlock>
 
-This page walks you through the process of setting up Prisma from scratch with your own database. It uses plain SQL to create tables in your database. 
+Follow this tutorial to use Prisma with a Microsoft SQL Server database.
 
 </TopBlock>
 
@@ -16,7 +16,7 @@ This page walks you through the process of setting up Prisma from scratch with y
 In order to successfully complete this guide, you need:
 
 - [Node.js](https://nodejs.org/en/) installed on your machine
-- a [MSSQL](https://www.postgresql.org/) database server running
+- A [MSSQL](https://docs.microsoft.com/en-us/sql/?view=sql-server-ver15) database
 
   - [Microsoft SQL Server on Linux for Docker](mssql-docker)
   - [MSSQL on Windows (local)](mssql-local)
@@ -135,13 +135,15 @@ To connect to your MSSQL database:
   }
   ```
 
-1. Define the `DATABASE_URL` [environment variable](../../reference/tools-and-interfaces/prisma-schema/prisma-schema-file#using-environment-variables) in the `prisma/.env` file - this is the connection string to your database:
+1. Define the `DATABASE_URL` [environment variable](../../reference/tools-and-interfaces/prisma-schema/prisma-schema-file#using-environment-variables) in the `prisma/.env` file - this is the connection string to your database.
+
+    The following example connection string uses SQL authentication, but there are [other ways to format your connection string]((mssql-connection-string)):
 
     ```js file=prisma/.env
-    DATABASE_URL="sqlserver://localhost:1433;database=mydb;user=sa;password=r@ndomP@$$w0rd;trustServerCertificate=true;encrypt=DANGER_PLAINTEXT"
+    DATABASE_URL="sqlserver://localhost:1433;database=mydb;user=sa;password=r@ndomP@$$w0rd;trustServerCertificate=true"
     ```
 
-    > It is **very important** to include `trustServerCertificate=true;encrypt=DANGER_PLAINTEXT` if you are using MSSQL on MacOS.
+    > It is **very important** to include `encrypt=DANGER_PLAINTEXT` if you are using MSSQL on MacOS specifically.
 
 1. Adjust the connection string to match your setup - see [MSSQL connection string](mssql-connection-string) for more information.
 
@@ -181,40 +183,42 @@ To create database tables, you can either:
 
 ### Using `sqlcmd` with Docker
 
+To create tables using the `sqlcmd`:
+
 1. Paste the following SQL query into a file named `create.sql`, replacing `USE sample` with the name of your database - for example, `USE myDatabase`:
 
-```sql file=schema.sql copy
-USE sample
+  ```sql file=schema.sql copy
+  USE sample
 
-GO
+  GO
 
-CREATE TABLE [User] (
-  id INT PRIMARY KEY NOT NULL,
-  name VARCHAR(255),
-  email VARCHAR(255) UNIQUE NOT NULL
-);
+  CREATE TABLE [User] (
+    id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE NOT NULL
+  );
 
-CREATE TABLE [Post] (
-  id INT PRIMARY KEY NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  "createdAt" DATETIME NOT NULL DEFAULT GETDATE(),
-  content TEXT,
-  published BIT NOT NULL DEFAULT 0,
-  "authorId" INTEGER NOT NULL,
-  FOREIGN KEY ("authorId") REFERENCES [User] (id)
-);
+  CREATE TABLE [Post] (
+    id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT GETDATE(),
+    content TEXT,
+    published BIT NOT NULL DEFAULT 0,
+    "authorId" INTEGER NOT NULL,
+    FOREIGN KEY ("authorId") REFERENCES [User] (id)
+  );
 
-CREATE TABLE [Profile] (
-  id INT PRIMARY KEY NOT NULL,
-  bio TEXT,
-  "userId" INTEGER UNIQUE NOT NULL,
-  FOREIGN KEY ("userId") REFERENCES [User](id)
-);
-```
+  CREATE TABLE [Profile] (
+    id INT PRIMARY KEY IDENTITY(1,1)  NOT NULL,
+    bio TEXT,
+    "userId" INTEGER UNIQUE NOT NULL,
+    FOREIGN KEY ("userId") REFERENCES [User](id)
+  );
+  ```
 
 1. In your terminal, navigate to the folder with the `create.sql` file.
 
-2. Run the following command to copy the `create.sql` from your local machine to your container's root folder:
+2. Run the following command (change `sql1` to the name of your container) to copy the `create.sql` from your local machine to your container's root folder:
 
    ```
    docker cp create.sql sql1:/
@@ -272,7 +276,9 @@ CREATE TABLE [Profile] (
 
     </CodeWithResult>
 
-### Using MSSQL Management Studio
+### Using MSSQL Management Studio (Windows only)
+
+To create tables MSSQL Management Studio:
 
 1. Log in to MSSQL Server Management Studio.
 
@@ -288,13 +294,13 @@ CREATE TABLE [Profile] (
   GO
 
   CREATE TABLE [User] (
-    id INT PRIMARY KEY NOT NULL,
+    id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
     name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL
   );
 
   CREATE TABLE [Post] (
-    id INT PRIMARY KEY NOT NULL,
+    id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
     title VARCHAR(255) NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT GETDATE(),
     content TEXT,
@@ -304,7 +310,7 @@ CREATE TABLE [Profile] (
   );
 
   CREATE TABLE [Profile] (
-    id INT PRIMARY KEY NOT NULL,
+    id INT PRIMARY KEY IDENTITY(1,1)  NOT NULL,
     bio TEXT,
     "userId" INTEGER UNIQUE NOT NULL,
     FOREIGN KEY ("userId") REFERENCES [User](id)
@@ -412,7 +418,7 @@ Field names affect the shape of the Prisma Client - for example, a property name
 
 ## Install and generate Prisma Client
 
-To get started with Prisma Client:
+Prisma Client is an auto-generated, type-safe query builder based on your data model. To get started with Prisma Client:
 
 1. Install the `@prisma/client` package:
 
@@ -430,7 +436,150 @@ To get started with Prisma Client:
 
 ## Use the Prisma Client to read and write data
 
-## Next steps
+<SwitchTech technologies={['typescript', '*']}>
 
-This section lists a number of potential next steps you can now take from here. Feel free to explore these or read the [Introduction](../../understand-prisma/introduction) page to get a high-level overview of Prisma.
+1. Create a file named `index.ts` and add the following sample code:
 
+    ```ts
+    import { PrismaClient } from "@prisma/client";
+
+    const prisma = new PrismaClient();
+
+    async function main() {
+      // Create a user and two posts
+      const createUser = await prisma.user.create({
+        data: {
+          name: "Alice",
+          email: "alice@prisma.io",
+          posts: {
+            create: [
+              { title: "My first day at Prisma" },
+              {
+                title: "How to create an MSSQL database",
+                content: "A tutorial in progress!",
+              },
+            ],
+          },
+        },
+      });
+
+      // Return all posts
+      const getPosts = await prisma.post.findMany({});
+
+      console.log(getPosts);
+    }
+
+    main()
+      .catch((e) => {
+        throw e;
+      })
+      .finally(async () => {
+        await prisma.$disconnect();
+      });
+    ```
+
+1. Run the code with the following command:
+
+  ```terminal
+  npx ts-node index.ts
+  ```
+
+  You should see the following output:
+
+  ```json
+  [
+    {
+      id: 1,
+      title: 'My first day at Prisma',
+      createdAt: 2020-10-26T08:24:10.966Z,
+      content: null,
+      published: false,
+      authorId: 1
+    {
+      id: 2,
+      title: 'How to create an MSSQL database',
+      createdAt: 2020-10-26T08:24:10.966Z,
+      content: 'A tutorial in progress!',
+      published: false,
+      authorId: 1
+    }
+  ]
+  ```
+
+1. Change `email: "alice@prisma.io"` to another email address and run the code again to create another user and list of posts.
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+1. Create a file named `index.js` and add the following sample code:
+
+    ```js
+    const { PrismaClient } = require("@prisma/client")
+
+    const prisma = new PrismaClient();
+
+    async function main() {
+      // Create a user and two posts
+      const createUser = await prisma.user.create({
+        data: {
+          name: "Alice",
+          email: "alice@prisma.io",
+          posts: {
+            create: [
+              { title: "My first day at Prisma" },
+              {
+                title: "How to create an MSSQL database",
+                content: "A tutorial in progress!",
+              },
+            ],
+          },
+        },
+      });
+
+      // Return all posts
+      const getPosts = await prisma.post.findMany({});
+
+      console.log(getPosts);
+    }
+
+    main()
+      .catch((e) => {
+        throw e;
+      })
+      .finally(async () => {
+        await prisma.$disconnect();
+      });
+    ```
+
+1. Run the code with the following command:
+
+  ```terminal
+  node index.js
+  ```
+
+  You should see the following output:
+
+  ```json
+  [
+    {
+      id: 1,
+      title: 'My first day at Prisma',
+      createdAt: 2020-10-26T08:24:10.966Z,
+      content: null,
+      published: false,
+      authorId: 1
+    {
+      id: 2,
+      title: 'How to create an MSSQL database',
+      createdAt: 2020-10-26T08:24:10.966Z,
+      content: 'A tutorial in progress!',
+      published: false,
+      authorId: 1
+    }
+  ]
+  ```
+
+1. Change `email: "alice@prisma.io"` to another email address and run the code again to create another user and list of posts.
+
+</SwitchTech>
