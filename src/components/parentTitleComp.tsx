@@ -5,7 +5,7 @@ import { getParentTitle } from '../utils/parentTitle'
 import { AllArticles } from '../interfaces/AllArticles.interface'
 import Link from './link'
 
-const BreadcrumbTitle = styled.h4`
+const BreadcrumbTitle = styled.div`
   color: var(--code-inner-color) !important;
   line-height: 1rem;
   font-weight: normal;
@@ -31,22 +31,23 @@ interface ParentTitleProps {
 const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
   const parentTitle = getParentTitle(slug, allMdx)
+  if (parentTitle.length === 0) {
+    return null
+  }
   return (
     <BreadcrumbTitle>
-      {parentTitle.length > 0
-        ? parentTitle.map((part: any, index: number) => (
-            <span key={index}>
-              {part.link && !nonLink ? (
-                <Link to={part.link}>
-                  <span className={`${part.codeStyle ? 'inline-code' : ''}`}>{part.title}</span>
-                </Link>
-              ) : (
-                <span className={`${part.codeStyle ? 'inline-code' : ''}`}>{part.title}</span>
-              )}
-              {parentTitle.length !== index + 1 ? ' / ' : ''}
-            </span>
-          ))
-        : ''}
+      {parentTitle.map((part: any, index: number) => (
+        <span key={index}>
+          {part.link && !nonLink ? (
+            <Link to={part.link}>
+              <span className={`${part.codeStyle ? 'inline-code' : ''}`}>{part.title}</span>
+            </Link>
+          ) : (
+            <span className={`${part.codeStyle ? 'inline-code' : ''}`}>{part.title}</span>
+          )}
+          {parentTitle.length !== index + 1 ? ' / ' : ''}
+        </span>
+      ))}
     </BreadcrumbTitle>
   )
 }

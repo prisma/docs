@@ -27,20 +27,20 @@ In order to follow this guide, you need:
 
 Start by creating a project directory where you can put the files you'll create throughout this guide:
 
-```
+```terminal copy
 mkdir unique-demo
 cd unique-demo
 ```
 
 Next, make sure that your PostgreSQL database server is running. Then execute the following command in your terminal to create a new database called `UniqueDemo`:
 
-```
+```terminal copy
 createdb UniqueDemo
 ```
 
 You can validate that the database was created by running the `\dt` command which lists all tables (_relations_) in your database (right now there are none):
 
-```
+```terminal copy
 psql -d UniqueDemo -c "\dt"
 ```
 
@@ -50,7 +50,7 @@ In this section, you'll **create a new table with a single-column unique constra
 
 Create a new file called `single-column-unique.sql` and add the following code to it:
 
-```sql
+```sql file=single-column-unique.sql copy
 CREATE TABLE "public"."User" (
   email TEXT UNIQUE
 );
@@ -58,7 +58,7 @@ CREATE TABLE "public"."User" (
 
 Now run the SQL statement against your database to create a new table called `User`:
 
-```
+```terminal copy
 psql UniqueDemo < single-column-unique.sql
 ```
 
@@ -91,7 +91,7 @@ Next, you'll **create a table with a multi-column unique constraint**. This also
 
 Create a new file called `multi-column-unique.sql` and add the following code to it:
 
-```sql
+```sql file=multi-column-unique.sql copy
 CREATE TABLE "public"."AnotherUser" (
   "firstName" TEXT,
   "lastName" TEXT,
@@ -101,7 +101,7 @@ CREATE TABLE "public"."AnotherUser" (
 
 Now run the SQL statement against your database to create a new table called `AnotherUser`:
 
-```
+```terminal copy
 psql UniqueDemo < multi-column-unique.sql
 ```
 
@@ -117,7 +117,7 @@ In this section, you'll **add a single-column unique constraint to a table that 
 
 Create a new file called `add-single-unique-constraint-later.sql` and add the following code:
 
-```sql
+```sql file=add-single-unique-constraint-later.sql copy
 CREATE TABLE "public"."OneMoreUser" (
   email TEXT
 );
@@ -132,7 +132,7 @@ This code contains two SQL statements:
 
 Now run the SQL statements against your database to create a new table called `OneMoreUser`:
 
-```
+```terminal copy
 psql UniqueDemo < add-single-unique-constraint-later.sql
 ```
 
@@ -148,7 +148,7 @@ In this section, you'll **add a multi-column unique constraint to a table that a
 
 Create a new file called `add-multi-unique-constraint-later.sql` and add the following code:
 
-```sql
+```sql file=add-multi-unique-constraint-later.sql copy
 CREATE TABLE "public"."TheLastUser" (
   "firstName" TEXT,
   "lastName" TEXT
@@ -185,48 +185,63 @@ In the previous sections, you created four tables with unique constraints:
 
 In this section you'll introspect your database to generate the Prisma models for these tables.
 
-To start, set up a new Node.js project and add the `prisma` CLI as a development dependency:
+To start, set up a new Node.js project and add the Prisma CLI as a development dependency:
 
-```
+```terminal copy
 npm init -y
-npm install prisma --save-dev
+npm install @prisma/cli --save-dev
 ```
 
-In order to introspect your database, you need to tell Prisma how to connect to it. You do so by configuring a `datasource` in your Prisma schema.
+Next, set up your Prisma project by creating your [Prisma schema](../../../reference/tools-and-interfaces/prisma-schema/prisma-schema-file) file with the following command:
 
-Create a new file called `schema.prisma` and add the following code to it:
+```terminal copy
+npx prisma init
+```
 
-```prisma
-datasource postgresql {
+This command created a new directory called `prisma` with the following contents:
+
+- `schema.prisma`: The Prisma schema with your database connection and the Prisma Client generator
+- `.env`: A [dotenv](https://github.com/motdotla/dotenv) file for defining environment variables (used for your database connection)
+
+To connect your database, you need to set the `url` field of the `datasource` block in your Prisma schema to your database [connection URL](../../../reference/database-connectors/connection-urls):
+
+```prisma file=prisma/schema.prisma
+datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 ```
 
-The database connection URL is set via an environment variable. The Prisma CLI automatically supports the [`dotenv`](https://github.com/motdotla/dotenv) format which automatically picks up environment variables defined in a file called `.env`.
+In this case, the `url` is [set via an environment variable](../../../reference/tools-and-interfaces/prisma-schema/prisma-schema-file#using-environment-variables) which is defined in `prisma/.env`:
 
-Create a new file called `.env` and set your database connection URL as the `DATABASE_URL` environment variable:
-
-```
-DATABASE_URL=postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/UniqueDemo
+```js file=prisma/.env
+DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
 ```
 
-In the above code snippet, you need to replace the uppercase placeholders with your own connection details. For example, if your database is running locally it could look like this:
+The format of the connection URL for your database depends on the database you use. For PostgreSQL, it looks as follows (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
 
 ```
-DATABASE_URL=postgresql://janedoe:mypassword@localhost:5432/UniqueDemo
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
 ```
+
+Here's a short explanation of each component:
+
+- `USER`: The name of your database user
+- `PASSWORD`: The password for your database user
+- `PORT`: The port where your database server is running (typically `5432` for PostgreSQL)
+- `DATABASE`: The name of the [database](https://www.postgresql.org/docs/12/manage-ag-overview.html)
+- `SCHEMA`: The name of the [schema](https://www.postgresql.org/docs/12/ddl-schemas.html) inside the database 
 
 With both the `schema.prisma` and `.env` files in place, you can run Prisma's introspection with the following command:
 
-```
+```terminal copy
 npx prisma introspect
 ```
 
 This command introspects your database and for each table adds a Prisma model to the Prisma schema:
 
-```prisma
-datasource postgresql {
+```prisma file=prisma/schema.prisma
+datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
@@ -260,7 +275,7 @@ To validate whether the unique constraints work, you'll now generate Prisma Clie
 
 First, add a `generator` block to your Prisma schema (typically added right below the `datasource` block):
 
-```prisma
+```prisma file=schema/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -268,7 +283,7 @@ generator client {
 
 Run the following command to install and generate Prisma Client in your project:
 
-```
+```terminal copy
 npx prisma generate
 ```
 
@@ -278,7 +293,7 @@ Now you can use Prisma Client to send database queries in Node.js.
 
 Create a new file called `index.js` and add the following code to it:
 
-```js
+```js file=index.js copy
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -305,7 +320,7 @@ In this code, you're creating two users with the same `email`, so you're violati
 
 Run the code with this command:
 
-```
+```terminal copy
 node index.js
 ```
 
@@ -324,7 +339,7 @@ Invalid `const newUser1 = await prisma.user.create()` invocation in
 
 To validate the multi-column unique constraint, replace the code in `index.js` with the following:
 
-```js
+```js file=index.js copy
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -351,7 +366,7 @@ main();
 
 Run the script again with this command:
 
-```
+```terminal copy
 node index.js
 ```
 
@@ -370,7 +385,7 @@ Invalid `newUser2 = await prisma.anotherUser.create()` invocation in
 
 Note that you can add `NULL` values for these columns without violating the constraints. For example, the following code snippet will **not** fail:
 
-```js
+```js file=index.js copy
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();

@@ -1,10 +1,13 @@
 import React from 'react'
 import styled from 'styled-components'
 
-type CodeWithResultProps = React.ReactNode
+interface ExpandedProps {
+  expanded?: boolean
+}
+type CodeWithResultProps = React.ReactNode & ExpandedProps
 
-const CodeWithResult = ({ children }: CodeWithResultProps) => {
-  const [showResult, setShowResult] = React.useState(false)
+const CodeWithResult = ({ children, expanded }: CodeWithResultProps) => {
+  const [showResult, setShowResult] = React.useState(expanded)
   const cmd =
     children && children.filter((child: any) => child.props && child.props.mdxType === 'Cmd')
   const result =
@@ -17,7 +20,7 @@ const CodeWithResult = ({ children }: CodeWithResultProps) => {
       <div className="cmd">{cmd}</div>
       <div className="result">
         <div onClick={toggleResult} className="show-btn">
-          {showResult ? `Hide result` : `Show result`}
+          {showResult ? `Hide CLI output` : `Show CLI output`}
         </div>
         {showResult && <div className="result-code">{result}</div>}
       </div>
@@ -34,12 +37,19 @@ const Wrapper = styled.div`
   }
 
   .result {
-    background: var(--code-result-bg-color);
+    background-color: var(--main-font-color) !important;
+    color: var(--code-inline-bgd-color) !important;
     border-radius: 0px 0px 8px 8px;
     margin-top: -13px;
 
     pre {
-      background: var(--code-result-bg-color) !important;
+      background-color: var(--main-font-color) !important;
+      color: var(--code-inline-bgd-color) !important;
+
+      .token.plain {
+        color: var(--code-inline-bgd-color) !important;
+      }
+
       border-radius: 0px 0px 8px 8px;
       margin-top: 0;
     }

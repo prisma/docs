@@ -2,7 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 import { stringify } from '../utils/stringify'
 
-const ChapterTitle = styled.h1`
+const ChapterTitle = styled.div`
   font-family: 'Open Sans';
   font-style: normal;
   font-weight: bold;
@@ -10,7 +10,7 @@ const ChapterTitle = styled.h1`
   line-height: 100%;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: var(--list-bullet-color);
+  color: var(--list-bullet-color) !important;
 `
 
 const TOC = ({ headings, tocDepth }: any) => {
@@ -20,7 +20,7 @@ const TOC = ({ headings, tocDepth }: any) => {
         {headings &&
           headings.map((heading: any, index: number) => (
             <li key={index}>
-              <a href={heading.url}>{stringify(heading.title)}</a>
+              <a href={heading.url.replace(/inlinecode/g, '')} dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}/>
               {heading.items &&
                 heading.items.length > 0 &&
                 depth > 1 &&

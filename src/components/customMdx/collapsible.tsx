@@ -27,7 +27,7 @@ const CollapseBox = ({ children, ...props }: CollapseProps) => {
 export default CollapseBox
 
 const Wrapper = styled.div`
-  padding-bottom: 24px;
+  padding: 24px 0;
 `
 
 const Tab = styled.div`

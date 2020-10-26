@@ -10,7 +10,7 @@ The Prisma schema file (short: _schema file_, _Prisma schema_ or _schema_) is th
 
 - [**Data sources**](data-sources): Specify the details of the data sources Prisma should connect to (e.g. a PostgreSQL database)
 - [**Generators**](generators): Specifies what clients should be generated based on the data model (e.g. Prisma Client)
-- [**Data model definition**](data-model): Specifies your application [models](models) (the shape of the data per data source) and their [relations](relations)
+- [**Data model definition**](data-model): Specifies your application [models](data-model#defining-models) (the shape of the data per data source) and their [relations](relations)
 
 Whenever a `prisma` command is invoked, the CLI typically reads some information from the schema file, e.g.:
 
@@ -24,7 +24,7 @@ You can also [use environment variables](#using-environment-variables) inside th
 Here is an example for a Prisma schema file that specifies a data source (PostgreSQL), a generator (Prisma Client) and a data model definition with two models (with one relation) and one enum:
 
 ```prisma
-datasource postgresql {
+datasource db {
   url      = env("DATABASE_URL")
   provider = "postgresql"
 }
@@ -91,6 +91,42 @@ model User {
 ```
 ````
 
+## Prisma schema file location
+
+The Prisma CLI looks for the Prisma schema file in the following locations, in the following order:
+
+1.  The location specified by the [`--schema` flag](../prisma-cli/command-reference), which is available when you `introspect`, `generate`, and `migrate`:
+
+    ```terminal
+    prisma generate --schema=./alternative/schema.prisma
+    ```
+
+2.  The location specified in the `package.json` file (version 2.7.0 and later):
+
+    ```json
+    "prisma": {
+      "schema": "db/schema.prisma"
+    }
+    ```
+
+3.  Default locations:
+
+    - `./prisma/schema.prisma`
+    - `./schema.prisma`
+
+The Prisma CLI outputs the path of the schema file that will be used. The following example shows the terminal output for `prisma introspect`:
+
+```no-lines
+Environment variables loaded from prisma\.env
+|Prisma Schema loaded from prisma\schema.prisma
+
+Introspecting based on datasource defined in prisma\schema.prisma …
+
+✔ Introspected 4 models and wrote them into prisma\schema.prisma in 239ms
+
+Run prisma generate to generate Prisma Client.
+```
+
 ## Using environment variables
 
 You can use environment variables to provide configuration options when a CLI command is invoked. Environment variables allow you to:
@@ -105,15 +141,22 @@ You can use machine-specific variables, `.env` files, or a combination of both.
 Environment variables can be accessed using the `env` function:
 
 ```prisma
-datasource postgresql {
+datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 ```
 
+In version 2.7.0 and later, you can expand variables using the format specified by [dotenv-expand](https://github.com/motdotla/dotenv-expand). This is useful when dealing with PaaS or similar products. such as Heroku):
+
+```
+# .env
+DATABASE_URL=postgresql://test:test@localhost:5432/test
+DATABASE_URL_WITH_SCHEMA=${DATABASE_URL}?schema=public
+```
+
 There are a few limitations with `env` at the moment:
 
-- It is not possible to use string concat operations (e.g. to construct your database connection string).
 - It is not possible to use environment variables for the `provider` argument in `datasource` and `generator` definitions.
 
 ### Using .env files
@@ -125,11 +168,11 @@ For many developer tools, it has become a good practice to define environment va
 
 The following table describes where the Prisma CLI looks for the `.env` file:
 
-| **Command**                                                  | **Schema file location**                                                        | **`.env` file locations checked, in order**    |
-| :----------------------------------------------------------- | :------------------------------------------------------------------------------ | :--------------------------------------------- |
-| `prisma [command]`                                           | `./prisma/schema.prisma`                                                        | `./prisma/.env`                                |
-| `prisma [command] --schema=./folder/subfolder/schema.prisma` | `./folder/subfolder/schema.prisma`                                              | `./folder/subfolder/.env`<br />`./prisma/.env` |
-| `prisma [command]`                                           | No schema (for example, when running `prisma introspect` in an empty directory) | `./prisma/.env`                                |
+| **Command**                                     | **Schema file location**                                                        | **`.env` file locations checked, in order**    |
+| :---------------------------------------------- | :------------------------------------------------------------------------------ | :--------------------------------------------- |
+| `prisma [command]`                              | `./prisma/schema.prisma`                                                        | `./prisma/.env`                                |
+| `prisma [command] --schema=./a/b/schema.prisma` | `./a/b/schema.prisma`                                                           | `./a/b/.env`<br />`./prisma/.env` |
+| `prisma [command]`                              | No schema (for example, when running `prisma introspect` in an empty directory) | `./prisma/.env`                                |
 
 Any environment variables defined in that `.env` file will automatically be loaded when running a Prisma CLI command.
 
@@ -189,8 +232,10 @@ You can use `dotenv-cli` if you want to:
 3.  To use the `.env3` file, you can use `dotenv` when you run any Prisma command and specify which `.env` file to use. The following example uses a file named `.env3`:
 
     ```
-    dotenv -e .env3 npx prisma introspect
+    dotenv -e .env3 -- npx prisma introspect
     ```
+
+> **Note:** dotenv doesn't pass the flags to the Prisma command by default, this is why the command includes two dashes `--` before `prisma`, making it possible to use flags like `--force`, `--schema` or `--experimental`.
 
 #### Via application code
 
@@ -220,12 +265,12 @@ Here are some different examples:
 
 ```prisma
   /// This comment will get attached to the `User` node in the AST
-  model User {
+model User {
   /// This comment will get attached to the `id` node in the AST
   id      Int    @default(autoincrement())
   // This comment is just for you
   weight  Float /// This comment gets attached to the `weight` node
-  }
+}
 
   // This comment is just for you. It will not
   // show up in the AST.
@@ -235,7 +280,7 @@ Here are some different examples:
   /// to any other node. We can use these for documentation
   /// in the same way that godoc.org works.
 
-  model Customer {}
+model Customer {}
 ```
 
 ## Auto formatting

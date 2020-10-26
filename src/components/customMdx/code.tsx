@@ -6,6 +6,7 @@ import Copy from '../../icons/Copy'
 import { stringify } from '../../utils/stringify'
 import styled from 'styled-components'
 import './prism/index.css'
+import FileWithIcon from './fileWithIcon'
 require('./prism/prism-prisma')
 
 interface CodeProps {
@@ -27,7 +28,7 @@ function cleanTokens(tokens: any[]) {
   return tokens
 }
 
-const propList = ['copy', 'bash-symbol']
+const propList = ['copy', 'bash-symbol', 'terminal', 'no-lines']
 
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   let language = className && className.replace(/language-/, '')
@@ -40,16 +41,30 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   const code = stringify(children)
 
   const hasCopy = props['copy'] || language === 'copy'
-  const hasNoLine = props['no-lines'] || language === 'no-lines'
-  const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol'
+  let hasNoLine = true
+  const isTerminal = props['terminal'] || language === 'terminal'
+  const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol' || isTerminal
+  const fileName = props['file'] || language === 'file'
+
+  if (!fileName) {
+    hasNoLine = true
+  } else {
+    hasNoLine = props['no-lines'] || language === 'no-lines'
+  }
+
   const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
   return (
-    <>
+    <CodeWrapper>
+      {fileName && (
+        <div className="file">
+          <FileWithIcon text={fileName} icon="file" />
+        </div>
+      )}
       <div className="gatsby-highlight pre-highlight">
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
-            <Pre className={blockClassName} style={style}>
+            <Pre className={`${blockClassName} ${isTerminal ? 'is-terminal' : ''}`} style={style}>
               {(props['copy'] || language === 'copy') && (
                 <AbsoluteCopyButton className="copy-button">
                   <CopyButton text={code}>
@@ -72,12 +87,14 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     '+': 'var(--code-added-bg-color)',
                     '-': 'var(--code-deleted-bg-color)',
                     '|': 'var(--code-highlight-bg-color)',
+                    '✎': 'var(--code-edit-bg-color)',
                   }
 
                   const symColorMap: any = {
                     '+': 'var(--code-added-color)',
                     '-': 'var(--code-deleted-color)',
                     '|': 'var(--code-highlight-color)',
+                    '✎': 'var(--code-highlight-color)',
                   }
 
                   if (
@@ -85,13 +102,15 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       line[0].content.length &&
                       (line[0].content[0] === '+' ||
                         line[0].content[0] === '-' ||
-                        line[0].content[0] === '|')) ||
+                        line[0].content[0] === '|' ||
+                        line[0].content[0] === '✎')) ||
                     (line[0] &&
                       line[0].content === '' &&
                       line[1] &&
                       (line[1].content === '+' ||
                         line[1].content === '-' ||
-                        line[1].content === '|'))
+                        line[1].content === '|' ||
+                        line[1].content === '✎'))
                   ) {
                     diffSymbol =
                       line[0] && line[0].content.length ? line[0].content[0] : line[1].content
@@ -112,19 +131,20 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       {!hasTerminalSymbol && !isDiff && !hasNoLine && (
                         <LineNo className="line-no">{i + 1}</LineNo>
                       )}
-                      {isDiff && (
+                      {isDiff && !hasNoLine && (
                         <LineNo className="line-no" style={{ color: lineClass.symbColor }}>
-                          {diffSymbol !== '|' ? diffSymbol : i + 1}
+                          {['+', '-','✎'].includes(diffSymbol) ? diffSymbol : i + 1}
                         </LineNo>
                       )}
                       <LineContent className={`${tokenCopyClass}`}>
                         {line.map((token: any, key: any) => {
                           if (isDiff) {
                             if (
-                              ((key === 0 || key === 1) &&
-                                (token.content.charAt(0) === '+' ||
-                                  token.content.charAt(0) === '-')) ||
-                              token.content.charAt(0) === '|'
+                              (key === 0 || key === 1) &&
+                              (token.content.charAt(0) === '+' ||
+                                token.content.charAt(0) === '-' ||
+                                token.content.charAt(0) === '|' ||
+                                token.content.charAt(0) === '✎')
                             ) {
                               return (
                                 <span
@@ -147,11 +167,21 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
           )}
         </Highlight>
       </div>
-    </>
+    </CodeWrapper>
   )
 }
 
 export default Code
+
+const CodeWrapper = styled.div`
+  .file {
+    font-weight: 600;
+    color: var(--code-inner-color);
+    font-size: 14px;
+    font-family: 'Open Sans';
+    margin-bottom: 0.5rem;
+  }
+`
 
 const AbsoluteCopyButton = styled.div`
   transition: opacity 100ms ease;

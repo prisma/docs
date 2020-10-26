@@ -2,6 +2,8 @@ require('dotenv').config({
   path: `.env`,
 })
 
+const removeInlineCode = (heading, path) => path ? heading.replace(/inlinecode/g, ''): heading.replace('<inlinecode>', '').replace('</inlinecode>', '')
+
 const handleRawBody = node => {
   const { rawBody, ...rest } = node
   const rawBodyWithoutFrontmatter = rawBody
@@ -35,7 +37,6 @@ const handleRawBody = node => {
         !section.includes('CodeWithResult>') &&
         !section.includes('CodeBlock') &&
         !section.includes('tab>') &&
-        !section.includes('| **') &&
         !section.includes('```') &&
         !section.includes('block>') &&
         !section.includes('ParallelBlocks>') &&
@@ -53,7 +54,7 @@ const handleRawBody = node => {
       rest.tableOfContents &&
       rest.tableOfContents.items &&
       rest.tableOfContents.items.find(t => t.title === fSection.heading.replace(/`/g, ''))
-    return tocItem ? tocItem.url : ''
+    return tocItem ? removeInlineCode(tocItem.url, true) : ''
   }
 
   const records = finalSections.map((fSection, index) => ({
@@ -61,11 +62,12 @@ const handleRawBody = node => {
     objectID: rest.objectID,
     title: rest.title,
     slug: rest.modSlug,
-    heading: fSection.heading,
-    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
+    apiReference: fSection.heading.includes('inlinecode') ? removeInlineCode(fSection.heading): null,
+    heading: removeInlineCode(fSection.heading),
+    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
     path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
   }))
-
+  
   return records
 }
 
