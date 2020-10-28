@@ -37,7 +37,6 @@ const handleRawBody = node => {
         !section.includes('CodeWithResult>') &&
         !section.includes('CodeBlock') &&
         !section.includes('tab>') &&
-        !section.includes('| **') &&
         !section.includes('```') &&
         !section.includes('block>') &&
         !section.includes('ParallelBlocks>') &&
@@ -65,10 +64,10 @@ const handleRawBody = node => {
     slug: rest.modSlug,
     apiReference: fSection.heading.includes('inlinecode') ? removeInlineCode(fSection.heading): null,
     heading: removeInlineCode(fSection.heading),
-    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\<\>\[\]]+/g, ' ').trim(),
+    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
     path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
   }))
-
+  
   return records
 }
 

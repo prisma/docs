@@ -2,6 +2,7 @@
 title: 'CLI command reference'
 metaTitle: 'Prisma CLI Command Reference'
 metaDescription: 'This page gives an overview of all available Prisma CLI commands, explains their options and shows numerous usage examples.'
+tocDepth: 2
 ---
 
 ## Overview
@@ -35,11 +36,15 @@ Commands
 
             init   Setup Prisma for your app
       introspect   Get the datamodel of your database
-        generate   Generate artifacts (e.g. Prisma Client)     
+        generate   Generate artifacts (e.g. Prisma Client)
+          studio   Open Prisma Studio
+          format   Format your schema
+              db   Manage your database schema and lifecycle (preview)
 
 Flags
 
-  --experimental   Show and run experimental Prisma commands   
+  --experimental   Show and run experimental Prisma commands
+       --preview   Run preview Prisma commands
 
 Examples
 
@@ -51,6 +56,12 @@ Examples
 
   Generate artifacts (e.g. Prisma Client)
   $ prisma generate
+
+  Browse your data
+  $ prisma studio
+
+  Push the Prisma schema state to the database
+  $ prisma db push --preview
 ```
 
 
@@ -467,6 +478,98 @@ model Profile {
 
 </CodeWithResult>
 
+## <inlinecode>db</inlinecode>
+
+### <inlinecode>db push</inlinecode>
+
+> **Note**: This feature is currently in [Preview](../../../more/releases#preview). Features in Preview may still have some issues, and are not recommended for use in production environments. To access commands in Preview, you must opt-in via the `--preview-feature` flag.
+
+The `db push` command pushes the state of your Prisma schema file to the database without using migrations. This command is a good choice when you do not need to version schema changes, such as during prototyping and local development. `db push` works as follows:
+
+- `db push` introspects the database, and infers and executes the changes required to make your database schema reflect the state of your Prisma schema.
+- By default, after changes have been applied to the database schema, generators are triggered (for example, Prisma Client). You do not need to manually invoke `prisma generate`.
+- If `db push` anticipates that the changes could result in data loss, it will:
+  
+  - Throw an error 
+  - Require the `--force` option if you still want to make the changes
+
+- `db push` does not interact with or rely on migrations. The migrations table will no be updated, and no migration files will be generated. If migrations are detected, `db  push` will prompt for confirmation or [require an explicit option (`--ignore-migrations`)](#db-push-and-migrate-experimental).
+
+`db push` works well if:
+
+* You want to quickly prototype and iterate on schema design locally without the need to deploy these changes to other environments such as other developers, or staging and production environments.
+* You are prioritizing reaching a **desired end-state** and not the changes or steps executed to reach that end-state. There is no way to preview the changes that will be made to the database.
+* You do not need control over how schema changes impact data. There is no way to orchestrate schema and data migrations - if `db push` anticipates that changes will result in data loss, it will require specific confirmation via a `--force` option. You can either accept data loss by specifying the option or stop the process, but there is no way to customize the changes.
+
+`db push` is not recommended if:
+
+- You want to replicate your schema changes in other environments where there could be important data you cannot afford to lose. You can use `db push` for prototyping, but you should use migrations to commit the schema changes and apply these in your other environments.
+- You want fine-grained control over how the schema changes are executed - for example, renaming a column instead of dropping it and creating a new one.
+- You want to keep track of changes made to the database schema over time. `db push` does not create any artifacts that allow you to keep track of these changes.
+- You want the schema changes to be reversible. You can use `db push` again to revert to the original state, but this might result in data loss and there will be no mechanism for you to orchestrate these changes.
+
+#### <inlinecode>db push</inlinecode> and Migrate (experimental)
+
+If you are already using migrations with Prisma Migrate, `db push` will still work. However, be aware of the following side effects of using both Prisma Migrate and `db push`:
+
+Prisma Migrate introspects the database to anticipate the changes needed to reach the end-state of the migration and preview these changes as DDL statements in `README.md` files.
+
+If you use `db push` to change the database schema using the Prisma Schema file, and subsequently use `prisma migrate save --experimental`  to generate the corresponding migration:
+
+1. Migrate will still work regardless if it is executed on top of the changes from `db push` or not, **but**
+2. the DDL statements in `README.md` will **not** reflect the steps carried out in other environments where `db push` was not used - the statements can be different or entirely missing.
+
+Because this behavior could be confusing to some, if `db push` detect migration files, it will require confirmation to proceed or supplying an `—-ignore-migrations` option.
+
+#### Prerequisites 
+
+Before using the `db push` command, you must define a valid [datasource](../prisma-schema/data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines a SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Arguments
+
+| Argument | Required | Description | Default |
+|:----------| :-------- | :---------- | :-------- |
+| `--schema`| No | Specifies the path to the desired schema.prisma file to be processed instead of the default path. Both absolute and relative paths are supported.| `./schema.prisma`<br /> `./prisma/schema.prisma` |
+
+
+#### Options
+
+| Options | Required | Description | 
+|:----------| :-------- | :---------- |
+| `--preview-feature`| Yes | Enables use of Preview feature commands |
+| `--skip-generate`| No | Skip generation of artifacts such as Prisma Client |
+| `--ignore-migrations`| No | If there migration files, `db push` will have some side effects. Use this option to ignore these side effects and proceed. |
+| `--force`| No | Ignore data loss warnings. This option is required if as a result of making the schema changes, data may be lost.  |
+| `--help` / `--h`| No | Displays the help message |
+
+#### Examples
+
+Push the schema:
+
+```terminal
+npx prisma db push --preview-feature
+```
+Push the schema, accepting data loss:
+
+```terminal
+npx prisma db push --preview-feature --force
+```
+
+Push the schema with a custom schema location:
+
+```terminal
+npx prisma db push --preview-feature --schema=/tmp/schema.prisma
+```
+
 ## Migrations (Experimental)
 
 > Warning: The `migrate` command is still considered experimental. As such, there are no guarantees about API stability or production-readiness. Access to this command is provided for evaluation and experimentation. To access experimental commands, you must add the `--experimental` flag.
@@ -619,7 +722,7 @@ prisma migrate up --create-db --experimental
 prisma migrate up --preview --experimental
 ```
 
-### migrate down
+### <inlinecode>migrate down</inlinecode>
 
 Migrate the database down to a specific state.
 
@@ -688,11 +791,9 @@ prisma migrate down 20200223181448 --experimental
 prisma migrate down --preview --experimental
 ```
 
-## Studio (Experimental)
+## Studio 
 
 ### <inlinecode>studio</inlinecode>
-
-> Warning: The `studio` command is still considered experimental. As such, there are no guarantees about API stability or production-readiness. Access to this command is provided for evaluation and experimentation. To access experimental commands, you must add the `--experimental` flag.
 
 The `studio` command allows you to interact with and manage your data interactively. It does this by starting a local web server with a web app configured with your project's data schema and records.
 
