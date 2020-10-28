@@ -14,6 +14,7 @@ const SearchBoxDiv = styled.div`
     z-index: 100001;
     max-width: 1200px;
     width: 100%;
+    height: 77px;
     background: ${p => p.theme.colors.white};
     padding: ${p => p.theme.space[20]};
     border-bottom: 1px solid ${p => p.theme.colors.gray300};
@@ -203,7 +204,7 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
           {...rest}
         />
 
-        {value !== '' && (
+        {(value !== '' && isOpened) && (
           <span className="clear">
             <ClearIcon onClick={clearInput} />
           </span>
