@@ -2,7 +2,13 @@ require('dotenv').config({
   path: `.env`,
 })
 
-const removeInlineCode = (heading, path) => path ? heading.replace(/inlinecode/g, ''): heading.replace('<inlinecode>', '').replace('</inlinecode>', '')
+const removeInlineCode = (heading, path) =>
+  path
+    ? heading.replace(/inlinecode/g, '')
+    : heading.replace('<inlinecode>', '').replace('</inlinecode>', '')
+
+const isApiTerm = term => term.includes('AlgoliaTerm') && term.split('"')[1] === 'apiReference'
+const getApiVal = term => term.split('"')[3]
 
 const handleRawBody = node => {
   const { rawBody, ...rest } = node
@@ -62,12 +68,14 @@ const handleRawBody = node => {
     objectID: rest.objectID,
     title: rest.title,
     slug: rest.modSlug,
-    apiReference: fSection.heading.includes('inlinecode') ? removeInlineCode(fSection.heading): null,
+    apiReference: isApiTerm(fSection.para) ? getApiVal(fSection.para) : null,
     heading: removeInlineCode(fSection.heading),
-    content: fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
+    content: isApiTerm(fSection.para)
+      ? getApiVal(fSection.para)
+      : fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
     path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
   }))
-  
+
   return records
 }
 
