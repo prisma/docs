@@ -42,7 +42,7 @@ Prisma supports different workflows depending on whether you integrate with an e
 
 This guide starts with an empty database created with Prisma Migrate and looks as follows:
 
-![workflow diagram](https://imgur.com/OImder6.png)
+![Typical workflow with Prisma Migrate](https://imgur.com/OImder6.png)
 
 1. Define the database schema using Prisma schema.
 1. Save the migration.
