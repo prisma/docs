@@ -62,7 +62,7 @@ let plugins = [
   {
     resolve: `gatsby-plugin-sitemap`,
     options: {
-      sitemapSize: 5000,
+      // sitemapSize: 5000,
     },
   },
   {
@@ -80,7 +80,7 @@ let plugins = [
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
-      decks: [],
+      //  decks: [],
       defaultLayouts: {
         default: require.resolve('./src/layouts/articleLayout.tsx'),
       },
