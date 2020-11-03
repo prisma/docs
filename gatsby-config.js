@@ -62,7 +62,7 @@ let plugins = [
   {
     resolve: `gatsby-plugin-sitemap`,
     options: {
-      sitemapSize: 5000,
+      // sitemapSize: 5000,
     },
   },
   {
@@ -80,7 +80,7 @@ let plugins = [
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
-      decks: [],
+      // decks: [],
       defaultLayouts: {
         default: require.resolve('./src/layouts/articleLayout.tsx'),
       },
@@ -92,7 +92,7 @@ let plugins = [
     resolve: 'gatsby-source-filesystem',
     options: {
       name: 'docs',
-      path: `${__dirname}/content-bucket-wise`,
+      path: `${__dirname}/content`,
       ignore: ['**/.tsx*'],
     },
   },
