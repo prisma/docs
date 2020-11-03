@@ -11,8 +11,12 @@ const config = {
       to: '/reference/tools-and-interfaces/prisma-schema',
     },
     {
+      from: '/reference/tools-and-interfaces/prisma-schema',
+      to: '/concepts/components/prisma-schema',
+    },
+    {
       from: '/reference/tools-and-interfaces/prisma-client/api',
-      to: '/reference/tools-and-interfaces/prisma-client',
+      to: '/concepts/components/prisma-client',
     },
     {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
