@@ -8,7 +8,7 @@ metaDescription: 'This page gives an overview of the most important things when 
 
 When building REST APIs, Prisma Client can be used inside your _route controllers_ to send databases queries.
 
-![](https://imgur.com/5NwAOMt.png)
+![REST APIs with Prisma Client](https://imgur.com/5NwAOMt.png)
 
 ## Supported libraries
 
@@ -141,9 +141,9 @@ app.delete(`/post/:id`, async (req, res) => {
 
 You can find several ready-to-run examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
 
-| Example                                                                                         | Language   | Stack        | Description                                                       |
-| :---------------------------------------------------------------------------------------------- | :--------- | ------------ | ----------------------------------------------------------------- |
-| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-nextjs)   | TypeScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
-| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express) | TypeScript | Backend only | Simple REST API with Express                                      |
-| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nextjs)   | JavaScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
-| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-express) | JavaScript | Backend only | Simple REST API with Express                                      |
+| Example                                                                                                             | Language   | Stack        | Description                                                       |
+| :------------------------------------------------------------------------------------------------------------------ | :--------- | ------------ | ----------------------------------------------------------------- |
+| [`rest-nextjs-api-routes`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-nextjs-api-routes) | TypeScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
+| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express)                     | TypeScript | Backend only | Simple REST API with Express                                      |
+| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nextjs)                       | JavaScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API |
+| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-express)                     | JavaScript | Backend only | Simple REST API with Express                                      |

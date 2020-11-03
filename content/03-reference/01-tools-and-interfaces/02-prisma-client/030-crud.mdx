@@ -151,7 +151,7 @@ export type User = {
 
 #### Single-field ID or unique attribute
 
-**Retrieve the `User` record with an `id` of `42`**:
+##### Retrieve the `User` record with an `id` of `42`
 
 ```ts
 const result = await prisma.user.findOne({
@@ -161,7 +161,7 @@ const result = await prisma.user.findOne({
 })
 ```
 
-**Retrieve the `User` record with an `email` of `alice@prisma.io`**:
+##### Retrieve the `User` record with an `email` of `alice@prisma.io`
 
 ```ts
 const result = await prisma.user.findOne({
@@ -171,7 +171,7 @@ const result = await prisma.user.findOne({
 })
 ```
 
-#### Multi-field ID or unique attribute
+#### Multi-field ID attribute
 
 Assume your model has a multi-field ID or unique attribute, e.g.:
 
@@ -184,7 +184,7 @@ model User {
 }
 ```
 
-**Retrieve the `User` record with `firstName` of `Alice` and `lastName` of `Smith`**:
+##### Retrieve the `User` record with `firstName` of `Alice` and `lastName` of `Smith`
 
 ```ts
 const result = await prisma.user.findOne({
@@ -195,6 +195,181 @@ const result = await prisma.user.findOne({
     },
   },
 })
+```
+
+#### Multi-field unique attribute
+
+Assume your model has a multi-field unique attribute:
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+
+|  @@unique(fields: [firstName, lastName], name: "fullname")
+}
+```
+
+> **Note**: This example of `@@unique` includes an optional `name`. If you do not specify a name, the field name in the generated client is `firstName_lastName`
+
+##### Retrieve the `User` record with `firstName` of `Alice` and `lastName` of `Smith`
+
+```ts
+const result = await prisma.user.findOne({
+  where: {
+    fullname: { // name property of @@unique attribute
+      firstName: 'Alice',
+      lastName: 'Smith',
+    },
+  },
+})
+```
+
+## findFirst
+
+The `findFirst` query returns the first record in a list that matches your criteria. `findFirst` accepts the same arguments as `findMany`.
+
+### Options
+
+#### Type
+
+`findFirst` takes as input an object of the following type:
+
+```ts
+export type FindFirstUserArgs = {
+  select?: UserSelect | null
+  include?: UserInclude | null
+  where?: UserWhereInput
+  orderBy?: Enumerable<UserOrderByInput> | UserOrderByInput
+  cursor?: UserWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Enumerable<UserDistinctFieldEnum>
+}
+```
+
+These are further relevant generated types:
+
+```ts
+export type UserWhereInput = {
+  id?: number | IntFilter | null
+  name?: string | NullableStringFilter | null
+  email?: string | StringFilter | null
+  role?: Role | RoleFilter | null
+  profileViews?: number | IntFilter | null
+  posts?: PostFilter | null
+  AND?: Enumerable<UserWhereInput> | null
+  OR?: Enumerable<UserWhereInput> | null
+  NOT?: Enumerable<UserWhereInput> | null
+}
+
+export type PostFilter = {
+  every?: PostWhereInput | null
+  some?: PostWhereInput | null
+  none?: PostWhereInput | null
+}
+
+export type UserWhereUniqueInput = {
+  id?: number | null
+  email?: string | null
+}
+
+export type UserOrderByInput = {
+  id?: SortOrder | null
+  name?: SortOrder | null
+  email?: SortOrder | null
+  role?: SortOrder | null
+  profileViews?: SortOrder | null
+}
+
+export declare const SortOrder: {
+  asc: 'asc'
+  desc: 'desc'
+}
+```
+ 
+#### Reference
+
+| Name      | Type                   | Required | Description                                                                                                 |
+| --------- | ---------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `where`   | `UserWhereInput`       | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                        |
+| `orderBy` | `Enumerable<UserOrderByInput>`     | No       | Lets you order the returned list by any property.                                                          |
+| `skip`    | `string`               | No       | Specifies how many of the returned objects in the list should be skipped.                                   |
+| `cursor`   | `UserWhereUniqueInput` | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value). |
+| `take`   | `number`               | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list.  |
+| `select`  | `UserSelect`           | No       | Specifies which properties to include on the returned object.                                               |
+| `include` | `UserInclude`          | No       | Specifies which relations should be eagerly loaded on the returned object.                                  |
+| `distinct` | `Enumerable<UserDistinctFieldEnum>`          | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                  |
+
+### Return type
+
+`findFirst` returns a plain old JavaScript object or `null`.
+
+The type of the object returned by the `findFirst` API call depends on whether you use the `select` and `include` options.
+
+If you use neither of these options, the return type will correspond to the TypeScript type that's generated for the model. For the `User` model from above, this type looks as follows:
+
+```ts
+export type User = {
+  id: number
+  name: string | null
+  email: string
+  role: Role
+  coinflips: boolean[]
+  profileViews: number
+}
+```
+
+### Examples
+
+#### Retrieve the first `User` record where the `name` is `Alice`
+
+```ts
+const user = await prisma.user.findFirst({
+  where: { name: 'Alice' },
+})
+```
+
+See [filtering documentation](filtering#filter-on-related-records) for advanced examples.
+
+#### Retrieve the first `Post` record where the `title` starsts with `A test`, reverse the list with `take`
+
+Providing a negative value for `take` when you use a `findFirst` query reverses the order of the list. Use the following example to experiment - the value of `c` changes depending on whether or not `take` is negative or positive:
+
+```ts file="script.ts"
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient({});
+
+async function mainAsync() {
+  const a = await prisma.post.create({
+    data: {
+      title: "A test 1",
+    },
+  });
+
+  const b = await prisma.post.create({
+    data: {
+      title: "A test 2",
+    },
+  });
+
+  const c = await prisma.post.findFirst({
+    where: {
+      title: {
+        startsWith: "A test",
+      },
+    },
+    orderBy: {
+      title: "asc",
+    },
+    take: -1,
+  });
+
+  console.log(c);
+}
+
+mainAsync();
 ```
 
 ## findMany
@@ -216,6 +391,7 @@ export type FindManyUserArgs = {
   cursor?: UserWhereUniqueInput | null
   take?: number | null
   skip?: number | null
+  distinct?: Enumerable<UserDistinctFieldEnum>  
 }
 ```
 
@@ -270,6 +446,8 @@ export declare const SortOrder: {
 | `take`   | `number`               | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (+ve value) or _end_ (-ve value) **either** of the list **or** from the `cursor` position if mentioned)  |
 | `select`  | `UserSelect`           | No       | Specifies which properties to include on the returned object.                                               |
 | `include` | `UserInclude`          | No       | Specifies which relations should be eagerly loaded on the returned object.                                  |
+| `distinct` | `Enumerable<UserDistinctFieldEnum>`          | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                  |
+
 
 ### Return type
 
@@ -629,7 +807,13 @@ export type FirstNameLastNameCompoundUniqueInput = {
 
 ### Return type
 
-`delete` returns a plain old JavaScript object. 
+`delete` returns a plain old JavaScript object or throws a `RecordNotFound` exception if the unique identifier does not exist:
+
+```terminal
+Error for binding '0': RecordNotFound("Record to delete does not exist.")
+```
+
+> **Tip**: If you need to delete multiple records based on some criteria (for example, all `User` records with a `prisma.io` email address, use `deleteMany`)
 
 The type of the object that's returned by a `delete` API call depends on whether you use the `select` and `include` options.
 
@@ -906,14 +1090,12 @@ The following example demonstrates how to set the value of a scalar list (`coinf
 const createdUser = await prisma.user.create({
   data: {
     email: "eloise@prisma.io",
-    coinflips: {
-      set: [true, true, true, false, true],
-    },
+    coinflips: [true, true, true, false, true],
   },
 });
 ```
 
-Scalar lists only support `set` - you cannot add or remove elements, only overwrite the entire value. The following example retrieves user, uses `push()` to add three new coin flips, and overwrites the `coinflips` property in an `update`:
+Scalar lists only support setting a value - you cannot add or remove elements, only overwrite the entire value. The following example retrieves user, uses `push()` to add three new coin flips, and overwrites the `coinflips` property in an `update`:
 
 ```ts
 const user = await prisma.user.findOne({
@@ -932,9 +1114,7 @@ if (user) {
       email: "eloise@prisma.io",
     },
     data: {
-      coinflips: {
-        set: user.coinflips, 
-      },
+      coinflips: user.coinflips
     },
   });
 
@@ -944,7 +1124,7 @@ if (user) {
 
 ## Atomic operations on update
 
-Atomic operations on update is available as a preview feature in 2.6.0 and later for `Float` and `Int` field types. This feature allows you to update a field based on its **current** value (such as *subtracting* or *dividing*) without risking a race condition.
+Atomic operations on update is available for `Float` and `Int` field types. This feature allows you to update a field based on its **current** value (such as *subtracting* or *dividing*) without risking a race condition.
 
 <details><summary>Overview: Race conditions</summary>
 
@@ -965,17 +1145,6 @@ The value *should* be `23`, but the two clients did not read and write to the `p
 |Client 2| **Get and set** field value     | `22` &rarr; `23` ✔ |
 
 </details>
-
-Add the highlighted feature flag to enable atomic number operations on update:
-
-```prisma
-generator client {
-  provider = "prisma-client-js"
-|  previewFeatures = ["atomicNumberOperations"]
-}
-```
-
-> Please [share your feedback](https://github.com/prisma/prisma/issues/3491) on how this feature works for you. We are interested in both positive and negative feedback, so we know if this feature is already ready for production! (If encounter any problems, please open a [new issue in the `prisma/prisma` repository](https://github.com/prisma/prisma/issues/new/choose)).
 
 ### Reference
 

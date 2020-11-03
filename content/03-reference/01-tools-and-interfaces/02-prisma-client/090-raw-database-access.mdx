@@ -23,14 +23,14 @@ Use cases for raw SQL include:
 `$queryRaw` returns actual database records. For example, the following `SELECT` query returns all fields for each record in the `User` table:
 
 ```ts no-lines
-const result = await prisma.queryRaw('SELECT * FROM User;')
+const result = await prisma.$queryRaw('SELECT * FROM User;')
 ```
 
 The same method is implemented as a [tagged template](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates), which makes it easier to use [variables](#using-variables) by providing **placeholders**. The following example includes an `${email}` placeholder:
 
 ```ts no-lines
 const email = 'edna@prisma.io'
-const result = await prisma.queryRaw`SELECT * FROM User WHERE email = ${email};`
+const result = await prisma.$queryRaw`SELECT * FROM User WHERE email = ${email};`
 ```
 
 ### Return type
@@ -49,7 +49,7 @@ You can also [type the results of `$queryRaw`](#typing-queryraw-results).
 ### Signature
 
 ```ts no-lines
-queryRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promise<T>;
+$queryRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promise<T>;
 ```
 
 ### Typing `$queryRaw` results
@@ -57,7 +57,7 @@ queryRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promi
 You can adjust the return type of `$queryRaw` with a [TypeScript Generic](https://www.typescriptlang.org/docs/handbook/generics.html). `$queryRaw` has the following signature:
 
 ```ts no-lines
-queryRaw<T = any>(query: string | TemplateStringsArray): Promise<T>;
+$queryRaw<T = any>(query: string | TemplateStringsArray): Promise<T>;
 ```
 
 `Promise<T>` uses [generic type parameter `T`](https://www.typescriptlang.org/docs/handbook/generics.html). You can determine the type of `T` when you invoke the `$queryRaw` command. In the following example, `$queryRaw` returns `User[]`:
@@ -66,7 +66,7 @@ queryRaw<T = any>(query: string | TemplateStringsArray): Promise<T>;
 // import the generated `User` type from the `@prisma/client` module
 import { User } from '@prisma/client'
 
-const result = await prisma.queryRaw<User[]>('SELECT * FROM User;')
+const result = await prisma.$queryRaw<User[]>('SELECT * FROM User;')
 // result is of type: `User[]`
 ```
 
@@ -74,7 +74,7 @@ const result = await prisma.queryRaw<User[]>('SELECT * FROM User;')
 
 `result` is now `User[]` and intellisense is available:
 
-![](https://imgur.com/H2TCRc5.png)
+![Typing $queryRaw results](https://imgur.com/H2TCRc5.png)
 
 If you are selecting **specific fields** of the model or want to include relations, refer to the documentation about [leveraging Prisma Client's generated types](advanced-usage-of-generated-types) if you want to make sure that the results are properly typed.
 
@@ -94,7 +94,7 @@ model Post {
 The following query returns all posts and prints out the value of each post's `published` property:
 
 ```ts
-const result = await prisma.queryRaw<Post[]>`SELECT * FROM Post`
+const result = await prisma.$queryRaw<Post[]>`SELECT * FROM Post`
 
 result.forEach(x => {
   console.log(x.published)
@@ -121,7 +121,7 @@ The same method is implemented as a [tagged template](https://developer.mozilla.
 const emailValidated = true
 const active = true
 
-const result: number = await prisma.executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`
+const result: number = await prisma.$executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`
 ```
 
 Be aware that:
@@ -136,8 +136,12 @@ Be aware that:
 ### Signature
 
 ```ts
-executeRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promise<number>;
+$executeRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Promise<number>;
 ```
+
+## Transactions
+
+In 2.10.0 and later, you can use `.$executeRaw()` and `.$queryRaw()` inside a transaction.
 
 ## Using variables
 
@@ -187,13 +191,25 @@ const result = await prisma.$queryRaw`SELECT * FROM User ${
 
 ### Parameterized queries
 
-As an alternative to tagged templates, `$queryRaw()` and `$executeRaw()` support standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL):
+As an alternative to tagged templates, `$queryRaw()` and `$executeRaw()` support standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL). The following example uses a MySQL query:
 
 ```ts
 const userName = 'Sarah'
 const email = 'alice@prisma.io'
-const result = await prisma.queryRaw(
+const result = await prisma.$queryRaw(
   'SELECT * FROM User WHERE (name = ? OR email = ?)', // MySQL variable, represented by ?
+  userName,
+  email
+)
+```
+
+The following example uses a PostgreSQL query:
+
+```ts
+const userName = 'Sarah'
+const email = 'alice@prisma.io'
+const result = await prisma.$queryRaw(
+  'SELECT * FROM User WHERE (name = $1 OR email = $2)', // PostgreSQL variables, represented by $1 and $2
   userName,
   email
 )
@@ -202,6 +218,20 @@ const result = await prisma.queryRaw(
 As with tagged templates, Prisma Client escapes all variables.
 
 > **Note**: You cannot pass a table or column name as a variable into a parameterized query. For example, you cannot `SELECT ?` and pass in `*` or `id, name` based on some condition.
+
+#### Parameterized PostgreSQL `ILIKE` query
+
+When you use `ILIKE`, the `%` wildcard character(s) should be included in the variable itself, not the query (`string`):
+
+```ts
+const userName = "Sarah";
+const emailFragment = "prisma.io";
+const result = await prisma.$queryRaw(
+  'SELECT * FROM "User" WHERE (name = $1 OR email = $2)', // Using %$2 here would not work
+  userName,
+  `%${emailFragment}`
+);
+```
 
 ## SQL injection
 
@@ -219,7 +249,7 @@ The following example concatanates `query`and `inputString`. Prisma Client ❌ *
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post' // SQL Injection
 const query = 'SELECT id, name, email FROM User WHERE name = ' + inputString
-const result = await prisma.queryRaw(query)
+const result = await prisma.$queryRaw(query)
 
 console.log(result)
 ```
@@ -230,7 +260,7 @@ The following example uses a template literal inside `$queryRaw()`and returns al
 
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post' // SQL Injection
-const result = await prisma.queryRaw(`SELECT id, name, email FROM User WHERE name = ${inputString}`)
+const result = await prisma.$queryRaw(`SELECT id, name, email FROM User WHERE name = ${inputString}`)
 
 console.log(result)
 ```
@@ -239,7 +269,7 @@ By contrast, the same query using **tagged templates** escapes `inputString` and
 
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post'
-const result = await prisma.queryRaw`SELECT id, name, email FROM User WHERE name = ${inputString}`
+const result = await prisma.$queryRaw`SELECT id, name, email FROM User WHERE name = ${inputString}`
 
 console.log(result)
 ```
