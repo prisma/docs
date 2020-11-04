@@ -98,7 +98,7 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: ${p => p.theme.colors.gray900} !important;
+    color: ${p => p.theme.colors.blue600} !important;
     font-weight: 700;
     // @media (min-width: 0px) and (max-width: 1024px) {
     //   color: ${p => p.theme.colors.gray300} !important;
