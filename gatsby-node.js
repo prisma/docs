@@ -103,6 +103,7 @@ exports.createPages = ({ graphql, actions }) => {
       result.data.allMdx.edges.forEach(({ node }) => {
         if (node.frontmatter.langSwitcher) {
           if (node.frontmatter.dbSwitcher) {
+
             node.frontmatter.langSwitcher.forEach(lang =>
               node.frontmatter.dbSwitcher.forEach(db =>
                 createPage({

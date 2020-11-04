@@ -158,7 +158,7 @@ const PageBottom = ({ editDocsPath }: any) => {
                   Tell us why on GitHub!
                 </P>
                 <Button target="_blank" href={gitIssueUrl} type="primary" color="dark">
-                  Tell us On Github
+                  Tell us On GitHub
                 </Button>
               </>
             ) : (
@@ -177,7 +177,7 @@ const PageBottom = ({ editDocsPath }: any) => {
       )}
       {editDocsPath && (
         <Link className="edit-git" to={`${editDocsPath}`}>
-          Edit this page on Github
+          Edit this page on GitHub
         </Link>
       )}
     </PageBottomWrapper>

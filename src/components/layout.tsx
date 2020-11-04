@@ -95,13 +95,19 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
   const TOCWrapper = styled.div`
     width: 180px;
+    height: fit-content;
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
+    }
+
+    &.fixed {
+      position: sticky;
     }
   `
 
   React.useEffect(() => {
-    stickWhenNeeded()
+    stickWhenNeeded('#sidebar-holder')
+    stickWhenNeeded('#toc-holder')
   })
 
   return (
@@ -116,7 +122,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
             <Content>
               <MaxWidth>{children}</MaxWidth>
             </Content>
-            <TOCWrapper>
+            <TOCWrapper id="toc-holder">
               {toc && toc.items && toc.items.length > 0 && (
                 <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
               )}

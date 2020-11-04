@@ -1,11 +1,11 @@
 import $ from 'jquery'
 
-export const stickWhenNeeded = () => {
+export const stickWhenNeeded = (id: string) => {
     // Find more elegant solution
     var $window = $(window)
     var lastScrollTop = $window.scrollTop()
     var wasScrollingDown = true
-    var $sidebar = $('#sidebar-holder')
+    var $sidebar = $(id)
     if ($sidebar.length > 0) {
       var initialSidebarTop = $sidebar.position().top
 
