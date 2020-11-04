@@ -66,6 +66,12 @@ let plugins = [
     },
   },
   {
+    resolve: `gatsby-plugin-netlify`,
+    options: {
+      // Options here
+    },
+  },
+  {
     resolve: 'gatsby-plugin-robots-txt',
     options: {
       policy: [
