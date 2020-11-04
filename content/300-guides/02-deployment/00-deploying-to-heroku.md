@@ -8,7 +8,7 @@ metaDescription: 'Learn how to deploy a Node.js server that uses Prisma to Herok
 
 In this guide, you will set up and deploy a Node.js server that uses Prisma with PostgreSQL to [Heroku](https://www.heroku.com). The application will expose a REST API and use Prisma Client to handle fetching, creating, and deleting records from a database.
 
-Heroku is a cloud platform as a service (PaaS). In contrast to the popular serverless deployment model, with Heroku, your application will be constantly running even if no requests are made to it. This has several benefits due to the connection limits of a PostgreSQL database. For more information, check out the [general deployment documentation](/reference/tools-and-interfaces/prisma-client/deployment)
+Heroku is a cloud platform as a service (PaaS). In contrast to the popular serverless deployment model, with Heroku, your application will be constantly running even if no requests are made to it. This has several benefits due to the connection limits of a PostgreSQL database. For more information, check out the [general deployment documentation](/concepts/components/prisma-client/deployment)
 
 Typically Heroku integrates with a Git repository for automatic deployments upon commits. You can deploy to Heroku from a GitHub repository, or by pushing your source to a [Git repository that Heroku creates per app](https://devcenter.heroku.com/articles/git). This guide will use the latter approach where you will push your code to the repository created by Heroku which will trigger a build and deploy the application.
 
@@ -213,9 +213,9 @@ This is a two-step process:
 1. Save the migration: `npx prisma migrate save --experimental --name "init"`
 2. Run the migration `npx prisma migrate up --experimental`
 
-For more information on how Prisma Migrate works, check out the [documentation](/reference/tools-and-interfaces/prisma-migrate)
+For more information on how Prisma Migrate works, check out the [documentation](/concepts/components/prisma-migrate)
 
-> **Note:** **Prisma Migrate is currently in an experimental state.** This means that it is not recommended to use Prisma Migrate in production. Instead, you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/reference/tools-and-interfaces/introspection).
+> **Note:** **Prisma Migrate is currently in an experimental state.** This means that it is not recommended to use Prisma Migrate in production. Instead, you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/concepts/components/introspection).
 
 **Checkpoint:** `heroku pg:psql --command="\dt"` should show the newly created database tables:
 
