@@ -4,11 +4,13 @@ metaTitle: 'Building REST APIs with Prisma'
 metaDescription: 'This page gives an overview of the most important things when building REST APIs with Prisma. It shows practical examples and the supported libraries.'
 ---
 
-## Overview
+<TopBlock>
 
 When building REST APIs, Prisma Client can be used inside your _route controllers_ to send databases queries.
 
 ![REST APIs with Prisma Client](https://imgur.com/5NwAOMt.png)
+
+</TopBlock>
 
 ## Supported libraries
 
