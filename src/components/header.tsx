@@ -214,7 +214,7 @@ const SecondLevelMobileNavLink = styled.div`
 `
 
 const SecondLevelNav = styled.div`
-  margin-left: 85px;
+  margin-left: 42px;
   width: 100%;
   display: flex;
   justify-content: space-between;
