@@ -62,7 +62,14 @@ let plugins = [
   {
     resolve: `gatsby-plugin-sitemap`,
     options: {
-      // sitemapSize: 5000,
+      sitemapSize: 5000,
+      exclude: [
+        // Remove these from sitemap for SEO purposes as they're redirected
+        `/getting-started/quickstart`,
+        `/getting-started/setup-prisma/add-to-existing-project`,
+        `/getting-started/setup-prisma/start-from-scratch-prisma-migrate`,
+        `/getting-started/setup-prisma/start-from-scratch-sql`,
+      ]
     },
   },
   {
@@ -86,7 +93,7 @@ let plugins = [
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
-      //  decks: [],
+      decks: [],
       defaultLayouts: {
         default: require.resolve('./src/layouts/articleLayout.tsx'),
       },
