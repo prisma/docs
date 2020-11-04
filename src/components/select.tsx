@@ -31,7 +31,7 @@ const SelectComponent = (props: SelectProps) => {
 
   const options = items.map(it => ({ value: it.technology, label: it.technology }))
 
-  const selectedOption = { value: selectedItem.technology, label: selectedItem.technology }
+  const selectedOption = options.filter(ff => ff.value === selectedItem.technology)
 
   const SelectContainer = (props: any) => {
     return (
@@ -58,7 +58,7 @@ export default SelectComponent
 const SelectComponentWrapper = styled.div`
   .select-container {
     > div:first-child {
-      height: 40px;
+      height: 38px;
       border-color: #e2e8f0;
       border-radius: 5px;
     }

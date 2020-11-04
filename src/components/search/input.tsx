@@ -9,6 +9,10 @@ const SearchBoxDiv = styled.div`
   width: 250px;
   display: flex;
 
+  form {
+    width: 250px;
+  }
+
   &.opened {
     position: relative;
     z-index: 100001;
@@ -24,7 +28,6 @@ const SearchBoxDiv = styled.div`
 
     form {
       width: 100%;
-
       input {
         color: ${p => p.theme.colors.gray700};
       }

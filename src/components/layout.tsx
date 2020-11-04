@@ -10,7 +10,7 @@ import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
 import theme from 'prisma-lens'
-import { stickWhenNeeded } from '../utils/scrollSidebar'
+import { stickWhenNeeded } from '../utils/stickWhenNeeded'
 
 interface LayoutContentProps {
   toc: any
