@@ -5,7 +5,7 @@ import styled from 'styled-components'
 const NotFoundWrapper = styled.div`
   font-family: 'Open Sans';
   margin-top: 200px;
-  padding: 40px;
+  padding: ${p => p.theme.space[40]};
   display: flex;
   flex-direction: column;
   align-items: center;

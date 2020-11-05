@@ -6,17 +6,17 @@ import { AllArticles } from '../interfaces/AllArticles.interface'
 import Link from './link'
 
 const BreadcrumbTitle = styled.div`
-  color: var(--code-inner-color) !important;
+  color: ${p => p.theme.colors.gray600} !important;
   line-height: 1rem;
   font-weight: normal;
   margin: 0;
   a {
-    color: var(--code-inner-color) !important;
+    color: ${p => p.theme.colors.gray600} !important;
     text-decoration: none;
 
     &:hover,
     &:focus {
-      color: var(--grey-color) !important;
+      color: ${p => p.theme.colors.gray700} !important;
       text-decoration: underline;
       cursor: pointer;
     }

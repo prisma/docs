@@ -1,13 +1,16 @@
 import Link from '../components/link'
 import * as React from 'react'
-import styled, { css } from 'styled-components'
-import styledTS from 'styled-components-ts'
-import HeaderLogo from '../icons/Logo'
-import Github from '../icons/Git'
-import Clear from '../icons/Clear'
+import styled from 'styled-components'
 import Search from '../components/search'
 import Sidebar from '../components/sidebar'
 import { HeaderProps } from '../interfaces/Layout.interface'
+import DownChevron from '../icons/DownChevron'
+import UpChevron from '../icons/UpChevron'
+import RightChevron from '../icons/RightChevron'
+import useWindowDimensions from '../hooks/useWindowDimensions'
+import { useLocation } from '@reach/router'
+import ExternalLink from '../icons/ExternalLink'
+import { Header } from 'prisma-lens'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -19,44 +22,48 @@ const HeaderWrapper = styled.div`
       rgba(113, 128, 150, 0.25) 0%,
       rgba(113, 128, 150, 0) 100%
     ),
-    linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
-    linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
-    var(--gradient1-color);
-  height: 150px;
+    linear-gradient(180deg, ${p => p.theme.colors.gray900} 0%, ${p => p.theme.colors.gray800} 100%),
+    linear-gradient(180deg, ${p => p.theme.colors.gray900} 0%, rgba(27, 32, 43, 0) 100%),
+    ${p => p.theme.colors.gray800};
   img {
     margin-bottom: 0;
   }
-  padding: 30px 10px 24px;
+  padding: ${p => p.theme.space[24]} ${p => p.theme.space[16]};
   display: flex;
   justify-content: center;
+`
 
-  .container {
-    width: 1110px;
-  }
+const Container = styled.div`
+  max-width: 1200px;
+  width: 100%;
 
-  @media (min-width: 0px) and (max-width: 1024px) {
-    height: auto;
-    padding: 24px 8px 8px;
-    flex-direction: column;
-    background: var(--main-font-color);
-    .container {
-      width: 100%;
+  > * {
+    padding: 0;
+
+    .menu {
+      background: transparent;
+      border: 0;
+    }
+
+    .list {
+      z-index: 120;
+    }
+
+    .menu,
+    .list {
+      a {
+        color: currentcolor !important;
+        text-decoration: none;
+
+        &:hover {
+          color: ${p => p.theme.colors.white} !important;
+        }
+      }
     }
   }
-`
-
-const HeaderNav = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
   @media (min-width: 0px) and (max-width: 1024px) {
-    padding: 0 16px;
+    justify-content: space-between;
   }
-`
-
-const LogoContainer = styled.div`
-  padding-right: 0.75rem;
 `
 
 const SearchComponent = styled(Search)`
@@ -65,47 +72,22 @@ const SearchComponent = styled(Search)`
   left: 12px;
 `
 
-const NavLinks = styled.div`
-  display: flex;
-  justify-content: space-around;
-  flex-grow: 1;
-  a {
-    color: var(--code-linenum-color) !important;
-    font-weight: 600;
-    &:hover,
-    &:active,
-    &:focus {
-      color: var(--white-color) !important;
-    }
-  }
-
-  margin: 0 9rem 0;
-  @media (min-width: 0px) and (max-width: 1024px) {
-    margin: 0 3rem 0;
-  }
-
-  @media (min-width: 0px) and (max-width: 767px) {
-    flex-direction: column;
-    margin: 0;
-    a {
-      margin-bottom: 20px;
-    }
-  }
-`
-
 const DocsMobileButton = styled.div`
-  background: var(--header-btn-color);
-  box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-  border-radius: 5px;
-  color: var(--code-linenum-color);
+  background: ${p => p.theme.colors.white};
+  border-radius: ${p => p.theme.radii.small};
+  color: ${p => p.theme.colors.gray700};
   display: none;
-  padding: 0 14px;
-  height: 42px;
-  margin-left: 8px;
+  padding: 0 ${p => p.theme.space[14]};
+  height: 40px;
+  margin-left: ${p => p.theme.space[8]};
   font-weight: 600;
   position: relative;
   z-index: 300;
-  @media (min-width: 0px) and (max-width: 1024px) {
+  justify-content: space-between;
+  svg {
+    margin-left: ${p => p.theme.space[8]};
+  }
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     display: flex;
     align-items: center;
   }
@@ -113,154 +95,260 @@ const DocsMobileButton = styled.div`
 
 const MobileOnlyNav = styled.div`
   display: none;
-  position: absolute;
-  z-index: 210;
-  top: 0px;
-  transition: top 0.35s;
-  background: radial-gradient(
-      37.86% 77.79% at 50% 100%,
-      rgba(113, 128, 150, 0.25) 0%,
-      rgba(113, 128, 150, 0) 100%
-    ),
-    linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
-    linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
-    var(--gradient1-color);
-  width: 100%;
-  left: 0;
-  padding: 0 2rem;
-  @media (min-width: 0px) and (max-width: 1024px) {
-    top: 120px;
-    display: block;
-  }
-  @media (min-width: 0px) and (max-width: 767px) {
-    padding: 2rem 1rem;
-  }
-`
-
-const SearchContainer = styledTS<{ isSticky: boolean }>(styled.div)`
-  margin-top: 27px;
-  display: flex;
-  justify-content: space-between;
   position: relative;
-  ${({ isSticky }: any) =>
-    isSticky &&
-    css`
-      z-index: 120;
-      padding: 8px;
-      margin-top: 0;
-      margin-left: -8px;
-      width: 100% !important;
-      background: radial-gradient(
-          37.86% 77.79% at 50% 100%,
-          rgba(113, 128, 150, 0.25) 0%,
-          rgba(113, 128, 150, 0) 100%
-        ),
-        linear-gradient(180deg, var(--main-font-color) 0%, var(--tag-media-color) 100%),
-        linear-gradient(180deg, var(--gradient2-color) 0%, rgba(27, 32, 43, 0) 100%),
-        var(--gradient1-color);
-    `};
+  z-index: 210;
+  top: 70px;
+  transition: top 0.35s;
+  padding: ${p => p.theme.space[16]};
+  border-radius: ${p => p.theme.radii.small};
+  text-align: left;
+  background: ${p => p.theme.colors.gray800};
+  right: 0;
+  padding: ${p => p.theme.space[32]} ${p => p.theme.space[16]};
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    display: block;
+  }
 `
 
-const MenuMobileBtn = styled.a`
-  display: none;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-  color: var(--list-bullet-color) !important;
-  text-transform: uppercase;
-  @media (min-width: 0px) and (max-width: 767px) {
-    display: block;
+const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
+  background: ${p => p.theme.colors.gray200};
+  box-shadow: 0px 1px 0px ${p => p.theme.colors.gray300};
+  top: 0;
+  padding: 0;
+  z-index: 200;
+`
+
+const SecondLevelHeader = styled.div`
+  background: ${p => p.theme.colors.gray200};
+  padding: 20px 16px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 105;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    padding: 12px 16px;
   }
 `
 
 const NonMobileMenu = styled.div`
   display: flex;
-  width: 100%;
-  @media (min-width: 0px) and (max-width: 767px) {
+  align-items: center;
+  font-size: ${p => p.theme.fontSizes[16]};
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     display: none;
   }
 `
 
-const Header = ({ headerProps }: HeaderViewProps) => {
+const NavLink = styled(Link)`
+  transition: color 0.1s ease-in;
+  padding: 0 0.75rem;
+  margin: 0 0.5rem;
+  color: ${p => p.theme.colors.gray400} !important;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    margin: 0;
+    padding: 0;
+  }
+`
+const DarkNavLink = styled(NavLink)`
+  color: ${p => p.theme.colors.gray700} !important;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  &.link {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    color: ${p => p.theme.colors.gray600} !important;
+  }
+
+  .menu-item {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid ${p => p.theme.colors.gray300};
+    color: ${p => p.theme.colors.gray600};
+    font-weight: 600;
+    &:hover {
+      color: ${p => p.theme.colors.gray900};
+    }
+  }
+
+  &:hover {
+    color: ${p => p.theme.colors.gray900} !important;
+  }
+  &.active-item {
+    background: ${p => p.theme.colors.white};
+    border-radius: ${p => p.theme.radii.small};
+    color: ${p => p.theme.colors.gray500} !important;
+    padding: 4px 6px;
+  }
+
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    &.active-item {
+      background: transparent;
+      color: ${p => p.theme.colors.gray700} !important;
+      padding: ${p => p.theme.space[24]};
+    }
+    svg {
+      display: block;
+    }
+  }
+  @media (min-width: ${p => p.theme.breakpoints.tablet}) and (max-width: 784px) {
+    font-size: 14px;
+  }
+`
+
+const SecondLevelMobileNavLink = styled.div`
+  padding: ${p => p.theme.space[24]};
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid ${p => p.theme.colors.gray300};
+  color: ${p => p.theme.colors.gray600};
+  font-weight: 600;
+  &:hover {
+    color: ${p => p.theme.colors.gray900};
+  }
+`
+
+const SecondLevelNav = styled.div`
+  margin-left: 42px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    margin: 0;
+    flex-direction: column;
+  }
+`
+
+const HeaderSec = ({ headerProps }: HeaderViewProps) => {
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const [showMobileNav, setShowMobileNav] = React.useState(false)
-  const [showMobileMenu, setShowMobileMenu] = React.useState(false)
 
   const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
-  const toggleMobileMenu = () => setShowMobileMenu(!showMobileMenu)
-
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
-  const Menu = (
-    <>
-      <NavLinks>
-        {headerProps.links.map((headerlink: any, index: number) => (
-          <Link
-            key={index}
-            to={headerlink.link}
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-            }}
-          >
-            {headerlink.name}
-          </Link>
-        ))}
-      </NavLinks>
-      <Link
-        to={'https://github.com/prisma'}
-        style={{
-          color: 'white',
-          textDecoration: 'none',
-        }}
-      >
-        <Github style={{ height: '24px' }} />
-      </Link>
-    </>
+  const { width } = useWindowDimensions()
+
+  const location = useLocation()
+
+  const SecondLevelMenu = () => {
+    const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
+      item => item.type === 'bucket'
+    )
+    const externalLinkItems = headerProps.secondLevelHeaderMenuItems.filter(
+      item => item.type === 'external-link'
+    )
+    return (
+      <SecondLevelNav>
+        <div>
+          {bucketItems.map(item => {
+            const isCurrent = location && item.to && location.pathname.includes(item.to)
+            return (
+              <DarkNavLink
+                to={item.to}
+                state={{ bucketName: item.bucketName }}
+                activeClassName="active-item"
+                className={isCurrent ? 'active-item' : 'non-active'}
+              >
+                {item.text}
+              </DarkNavLink>
+            )
+          })}
+        </div>
+        <div>
+          {externalLinkItems.map(item => (
+            <DarkNavLink className="link" to={item.to}>
+              {item.text} &nbsp;&nbsp;
+              <ExternalLink />
+            </DarkNavLink>
+          ))}
+        </div>
+      </SecondLevelNav>
+    )
+  }
+
+  interface MenuItemProps {
+    componentToShow?: any
+    type: string
+    text: string
+    link?: string
+  }
+
+  const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
+    const [showExpanded, setShowExpanded] = React.useState(false)
+    const toggle = () => setShowExpanded(!showExpanded)
+    return type === 'bucket' ? (
+      <>
+        <SecondLevelMobileNavLink onClick={toggle}>
+          {text}
+          {showExpanded ? <UpChevron /> : <RightChevron />}
+        </SecondLevelMobileNavLink>
+        {showExpanded && componentToShow}
+      </>
+    ) : (
+      <DarkNavLink to={link}>
+        <div className="menu-item">
+          {text}
+          <ExternalLink />
+        </div>
+      </DarkNavLink>
+    )
+  }
+
+  const SecondLevelMobileMenu = () => (
+    <SecondLevelNav>
+      {headerProps.secondLevelHeaderMenuItems.map(item => {
+        return (
+          <MenuItem
+            componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
+            // componentToShow={item.expandContent === 'mainDocs' ? <Sidebar isMobile={true} /> : null}
+            type={item.type}
+            text={item.text}
+            link={item.to}
+          />
+        )
+      })}
+    </SecondLevelNav>
   )
 
   return (
-    <HeaderWrapper>
-      <div className={'container'}>
-        <HeaderNav>
-          <div style={{ display: 'flex' }}>
-            <Link
-              to={headerProps.logoLink || '/'}
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <LogoContainer>
-                <HeaderLogo style={{ height: '24px' }} />
-              </LogoContainer>
-            </Link>
-          </div>
-          <NonMobileMenu>{Menu}</NonMobileMenu>
-          <MenuMobileBtn onClick={toggleMobileMenu}>
-            {showMobileMenu ? <Clear /> : 'Menu'}
-          </MenuMobileBtn>
-        </HeaderNav>
-        <SearchContainer>
+    <>
+      {/* Top level header */}
+      <HeaderWrapper>
+        <Container>
+          <Header />
+        </Container>
+      </HeaderWrapper>
+
+      {/* Second level header */}
+      <SecondLevelHeader>
+        <Container style={{ display: 'flex' }}>
           <SearchComponent hitsStatus={changeHitsStatus} />
           {showDocsBtn && (
+            <NonMobileMenu style={{ width: '100%' }}>
+              <SecondLevelMenu />
+            </NonMobileMenu>
+          )}
+          {showDocsBtn && (
             <DocsMobileButton onClick={toggleMobileNav}>
-              {showMobileNav ? <Clear /> : 'Docs'}
+              {width > 640 ? 'Documentation' : 'Docs'}
+              {showMobileNav ? <UpChevron /> : <DownChevron />}
             </DocsMobileButton>
           )}
-        </SearchContainer>
-      </div>
+        </Container>
+      </SecondLevelHeader>
 
       {showMobileNav && (
-        <MobileOnlyNav>
-          <Sidebar isMobile={true} />
-        </MobileOnlyNav>
+        <SecondLevelMobileOnlyNav>
+          <SecondLevelMobileMenu />
+        </SecondLevelMobileOnlyNav>
       )}
-
-      {showMobileMenu && <MobileOnlyNav>{Menu}</MobileOnlyNav>}
-    </HeaderWrapper>
+    </>
   )
 }
 
-export default Header
+export default HeaderSec

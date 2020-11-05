@@ -1,7 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
 import ArrowRight from '../../icons/ArrowRight'
-// import { darken } from 'polished'
 import withProps from 'styled-components-ts'
 import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
@@ -19,23 +18,24 @@ export interface ButtonProps {
   children?: any
   onClick?: any
   arrowLeft?: boolean
+  theme?: any
 }
 
 type ButtonColor = 'red' | 'green' | 'grey' | 'grey-bg' | 'dark'
 const colorMap = {
-  red: '--white-color',
-  green: '--white-color',
-  grey: '--grey-color',
-  'grey-bg': '--white-color',
-  dark: '--white-color',
+  red: '#ffffff',
+  green: '#ffffff',
+  grey: '#3d556b',
+  'grey-bg': '#ffffff',
+  dark: '#ffffff',
 }
 
 const backgroundColorMap: any = {
-  red: '--red-color',
-  green: '--red-color',
-  grey: '--white-color',
-  'grey-bg': '--grey-bg-color',
-  dark: '--dark-color',
+  red: '#ff4f56',
+  green: '#ff4f56',
+  grey: '#ffffff',
+  'grey-bg': '#8fa6b2',
+  dark: 'rgb(12, 52, 75)',
 }
 
 export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
@@ -47,14 +47,14 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     border: none;
     text-decoration: none;
     height: 40px;
-    font-size: 1rem;
+    font-size: ${p => p.theme.fontSizes[16]};
     box-sizing: border-box;
     outline: none;
     opacity: ${p => (p.disabled ? '0.2' : 1)};
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    background: var(${p => backgroundColorMap[p.color || 'green']});
-    color: var(${p => colorMap[p.color || 'green']}) !important;
+    background: ${p => backgroundColorMap[p.color || 'green']};
+    color: ${p => colorMap[p.color || 'green']} !important;
     line-height: 1;
     font-size: 14px;
     font-weight: 700;

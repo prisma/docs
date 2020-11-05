@@ -5,19 +5,19 @@ import styled from 'styled-components'
 import ParentTitle from '../parentTitleComp'
 
 const HitComp = styled.div`
-  padding: 24px 40px !important;
-  font-family: Open Sans;
+  padding: ${p => p.theme.space[24]} ${p => p.theme.space[40]} !important;
+  font-family: ${p => p.theme.fonts.text};
   font-style: normal;
   font-weight: normal;
-  font-size: 16px;
-  line-height: 24px;
-  border-bottom: 1px solid var(--border-color);
+  font-size: ${p => p.theme.fontSizes[16]};
+  line-height: ${p => p.theme.space[24]};
+  border-bottom: 1px solid ${p => p.theme.colors.gray300};
   // max-height: 150px;
   &:last-item {
     border: 0;
   }
   a {
-    color: var(--main-font-color) !important;
+    color: ${p => p.theme.colors.gray900} !important;
   }
   h4 {
     font-weight: normal;
@@ -30,28 +30,25 @@ const HitComp = styled.div`
   }
   &:hover,
   &:focus {
-    background: var(--main-bgd-color);
+    background: ${p => p.theme.colors.gray100};
   }
   mark {
-    color: var(--link-color) !important;
-    background: var(--search-highlight-bg-color);
+    color: ${p => p.theme.colors.blue600} !important;
+    background: #ebf8ff;
     padding: 2px;
     font-weight: bold;
   }
 
   .more {
-    color: var(--code-inner-color);
-    font-size: 14px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: rgba(113, 128, 150, 0.2);
+    color: ${p => p.theme.colors.blue600};
+    font-size: ${p => p.theme.fontSizes[14]};
     width: fit-content;
     margin: 10px 0 0;
   }
 
-  @media (min-width: 0px) and (max-width: 767px) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     max-height: fit-content;
-    padding: 24px !important;
+    padding: ${p => p.theme.space[24]} !important;
   }
 `
 
@@ -68,7 +65,7 @@ const DocHit = ({ hit }: any) =>
         </h3>
         <Snippet hit={hit} attribute="content" tagName="mark" />
       </Link>
-      {hit.moreCount > 1 && <p className="more">More results on this page</p>}
+      {hit.moreCount > 1 && <p className="more">... More results on this page</p>}
     </HitComp>
   ) : null
 

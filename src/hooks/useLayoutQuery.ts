@@ -9,41 +9,16 @@ export const useLayoutQuery = () => {
           # change siteMetaData in 'gatsby-config.js'
           title
           footer {
-            logoLink
-            title
-            products {
-              name
-              link
-            }
-            community {
-              name
-              link
-            }
-            resources {
-              name
-              link
-            }
-            company {
-              name
-              link
-            }
             newsletter {
               text
             }
-            findus {
-              twitterLink
-              youtubeLink
-              fbLink
-              slackLink
-              gitLink
-            }
           }
           header {
-            logoLink
-            title
-            links {
-              name
-              link
+            secondLevelHeaderMenuItems {
+              type
+              to
+              bucketName
+              text
             }
           }
         }

@@ -6,12 +6,9 @@ import { withPrefix } from 'gatsby'
 
 const SwitcherWrapper = styled.div`
   display: flex;
-  position: absolute;
-  top: -38px;
+  flex-direction: column;
   @media only screen and (max-width: 767px) {
-    flex-direction: column;
     width: 100%;
-    top: -30px;
   }
 `
 

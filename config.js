@@ -11,8 +11,12 @@ const config = {
       to: '/reference/tools-and-interfaces/prisma-schema',
     },
     {
+      from: '/reference/tools-and-interfaces/prisma-schema',
+      to: '/concepts/components/prisma-schema',
+    },
+    {
       from: '/reference/tools-and-interfaces/prisma-client/api',
-      to: '/reference/tools-and-interfaces/prisma-client',
+      to: '/concepts/components/prisma-client',
     },
     {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
@@ -20,19 +24,33 @@ const config = {
     },
   ],
   header: {
-    logoLink: 'https://www.prisma.io',
-    title: 'Prisma',
-    links: [
-      { name: 'Docs', link: '/' },
-      { name: 'Quickstart', link: '/getting-started/quickstart-typescript' },
+    secondLevelHeaderMenuItems: [
       {
-        name: 'Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/',
+        text: 'Getting Started',
+        to: '/getting-started',
+        type: 'bucket',
+        bucketName: '/100-getting-started',
       },
-      { name: 'Blog', link: 'https://www.prisma.io/blog/' },
-      { name: 'Community', link: 'https://www.prisma.io/community/' },
-      { name: 'FAQ', link: '/more/faq' },
-      { name: 'Prisma 1', link: 'https://v1.prisma.io/docs/1.34' },
+      {
+        text: 'Concepts',
+        to: '/concepts',
+        type: 'bucket',
+        bucketName: '/200-concepts',
+      },
+      {
+        text: 'Guides',
+        to: '/guides',
+        type: 'bucket',
+        bucketName: '/300-guides',
+      },
+      {
+        text: 'Reference',
+        to: '/reference',
+        type: 'bucket',
+        bucketName: '/400-reference',
+      },
+      { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
+      { text: 'Prisma 1 Docs', to: 'https://www.prisma.io/docs/1.34', type: 'external-link' },
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
@@ -71,57 +89,8 @@ const config = {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
   },
   footer: {
-    logoLink: '/',
-    title: 'Prisma',
-    products: [
-      {
-        name: 'Prisma Client',
-        link: '/reference/tools-and-interfaces/prisma-client/crud',
-      },
-      { name: 'Prisma 1 Cloud', link: 'https://app.prisma.io/login' },
-      // { name: 'Nexus', link: 'https://www.nexusjs.org/' },
-      // { name: 'Prisma Admin', link: '/' },
-      // { name: 'Prisma Enterprise', link: '/' },
-    ],
-    community: [
-      { name: 'Meet the community', link: 'https://www.prisma.io/community' },
-      { name: 'Slack', link: 'https://slack.prisma.io/' },
-      { name: 'GitHub', link: 'https://github.com/prisma' },
-      { name: 'Discussions', link: 'https://github.com/prisma/prisma/discussions' },
-      { name: 'GraphQL Meetup', link: 'https://www.meetup.com/graphql-berlin/' },
-      { name: 'TypeScript Meetup', link: 'https://www.meetup.com/TypeScript-Berlin/' },
-    ],
-    resources: [
-      { name: 'Docs', link: '/' },
-
-      { name: 'Get started', link: '/getting-started/quickstart-typescript' },
-
-      {
-        name: 'API Reference',
-        link: '/reference/tools-and-interfaces/prisma-client/generating-prisma-client',
-      },
-      { name: 'Examples', link: 'https://github.com/prisma/prisma-examples' },
-      { name: 'How to GraphQL', link: 'https://www.howtographql.com/' },
-      { name: 'Data Guide', link: 'https://www.prisma.io/dataguide/' },
-    ],
-    company: [
-      { name: 'About', link: 'https://www.prisma.io/about' },
-      { name: 'Jobs', link: 'https://www.prisma.io/jobs' },
-      { name: 'Blog', link: 'https://www.prisma.io/blog/' },
-      {
-        name: 'Terms & Privacy',
-        link: 'https://gist.github.com/nikolasburk/c0f34b0cc50d3403e2e0d40c0e6510aa',
-      },
-    ],
     newsletter: {
       text: 'Stay up to date with the latest features and changes to Prisma',
-    },
-    findus: {
-      twitterLink: 'https://twitter.com/prisma',
-      youtubeLink: 'https://www.youtube.com/channel/UCptAHlN1gdwD89tFM3ENb6w',
-      fbLink: 'https://www.facebook.com/prisma.io',
-      slackLink: 'https://slack.prisma.io/',
-      gitLink: 'https://github.com/prisma',
     },
   },
 }

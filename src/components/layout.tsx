@@ -1,17 +1,32 @@
 import { RouterProps } from '@reach/router'
 import * as React from 'react'
-import styled from 'styled-components'
+import styled, { ThemeProvider } from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
 import { MDXProvider } from '@mdx-js/react'
 import customMdx from '../components/customMdx'
 import './layout.css'
-import Sidebar from './sidebar'
+import SidebarLayout from './sidebar'
+import TOC from './toc'
+import theme from 'prisma-lens'
+import { stickWhenNeeded } from '../utils/stickWhenNeeded'
 
-type LayoutProps = React.ReactNode & RouterProps
+interface LayoutContentProps {
+  toc: any
+  tocDepth?: number
+  slug?: string
+}
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
+type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
+
+const Layout: React.FunctionComponent<LayoutProps> = ({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+}) => {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
@@ -19,39 +34,40 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
     display: flex;
     width: 100%;
     justify-content: center;
-    padding: 0 10px;
+    padding: 0 ${p => p.theme.space[24]};
   `
 
   const Content = styled.article`
-    max-width: 880px;
-    width: 880px;
-    margin: -80px 0 1rem;
+    margin: 0 0 ${p => p.theme.space[16]};
     position: relative;
     z-index: 100;
+    // flex: 1;
+    max-width: 748px;
+    width: 100%;
     @media (min-width: 0px) and (max-width: 1024px) {
       margin: 0;
-      width: 100%;
       max-width: 100%;
+    }
+
+    @media (min-width: 1024px) and (max-width: 1200px) {
+      margin: 0;
+      max-width: 570px;
     }
   `
 
   const MaxWidth = styled.div`
     > section {
-      background: var(--white-color);
-      box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
-      border-radius: 5px;
-      margin-top: 1rem;
-      padding: 2rem 40px;
+      padding: 1rem ${p => p.theme.space[40]};
       &.top-section {
-        padding-top: 40px;
+        padding-top: 0;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
         margin-top: 0.5rem;
       }
-      @media (min-width: 0px) and (max-width: 767px) {
-        padding: 24px;
+      @media (min-width: 0px) and (max-width: 1024px) {
+        padding: ${p => p.theme.space[24]};
         &.top-section {
-          padding-top: 24px;
+          padding-top: ${p => p.theme.space[24]};
         }
       }
     }
@@ -59,24 +75,63 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children }) => {
 
   const NotMobile = styled.section`
     display: flex;
+    height: fit-content;
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
+
+    &.fixed {
+      position: sticky;
+    }
   `
 
+  const Container = styled.div`
+    max-width: 1200px;
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    margin-top: ${p => p.theme.space[40]};
+  `
+
+  const TOCWrapper = styled.div`
+    width: 180px;
+    height: fit-content;
+    @media (min-width: 0px) and (max-width: 1024px) {
+      display: none;
+    }
+
+    &.fixed {
+      position: sticky;
+    }
+  `
+
+  React.useEffect(() => {
+    stickWhenNeeded('#sidebar-holder')
+    stickWhenNeeded('#toc-holder')
+  })
+
   return (
-    <MDXProvider components={customMdx}>
-      <Header headerProps={header} />
-      <Wrapper>
-        <NotMobile>
-          <Sidebar isMobile={false} />
-        </NotMobile>
-        <Content>
-          <MaxWidth>{children}</MaxWidth>
-        </Content>
-      </Wrapper>
-      <Footer footerProps={footer} />
-    </MDXProvider>
+    <ThemeProvider theme={theme}>
+      <MDXProvider components={customMdx}>
+        <Header headerProps={header} />
+        <Wrapper>
+          <Container>
+            <NotMobile id="sidebar-holder">
+              <SidebarLayout isMobile={false} location={location} slug={slug} />
+            </NotMobile>
+            <Content>
+              <MaxWidth>{children}</MaxWidth>
+            </Content>
+            <TOCWrapper id="toc-holder">
+              {toc && toc.items && toc.items.length > 0 && (
+                <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+              )}
+            </TOCWrapper>
+          </Container>
+        </Wrapper>
+        <Footer footerProps={footer} />
+      </MDXProvider>
+    </ThemeProvider>
   )
 }
 

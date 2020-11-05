@@ -1,7 +1,7 @@
 import { EdgeNode } from './EdgeNode.interface'
 
 export interface AllEdges {
-  edges?: [EdgeNode]
+  edges?: [EdgeNode] | EdgeNode[]
 }
 
 export interface AllArticles {

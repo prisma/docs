@@ -8,28 +8,28 @@ import sendToMailchimp from './mailChimp'
 const NewsLetterWrapper = styled.div`
   h4 {
     margin: 0;
-    line-height: 3rem;
+    line-height: ${p => p.theme.space[48]};
     font-weight: bold;
     letter-spacing: 0.1em;
   }
   .email {
     position: relative;
-    margin-top: 24px;
+    margin-top: ${p => p.theme.space[24]};
     display: flex;
     align-items: center;
     input {
-      background: var(--white-color);
+      background: ${p => p.theme.colors.white};
       box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-      border-radius: 5px;
+      border-radius: ${p => p.theme.radii.small};
       width: 100%;
       border: 0;
-      padding: 24px 60px;
+      padding: ${p => p.theme.space[24]} 60px;
       font-size: 100%;
       font-family: Open Sans;
       font-weight: normal;
 
       &::placeholder {
-        color: var(--code-highlight-color);
+        color: ${p => p.theme.colors.gray500};
       }
     }
     .email-icon {
@@ -47,20 +47,20 @@ const NewsLetterWrapper = styled.div`
       height: 32px;
       circle {
         transition: 0.2s fill ease;
-        fill: var(--code-added-color);
+        fill: ${p => p.theme.colors.green500};
       }
       path {
         transition: 0.2s stroke ease;
-        stroke: var(--white-color);
+        stroke: ${p => p.theme.colors.white};
       }
       &[disabled] {
         cursor: default;
 
         circle {
-          fill: var(--border-color);
+          fill: ${p => p.theme.colors.gray300};
         }
         path {
-          stroke: var(--code-inner-color);
+          stroke: ${p => p.theme.colors.gray600};
         }
       }
     }
@@ -97,8 +97,6 @@ const Newsletter = ({ newsletter }: any) => {
 
   return (
     <NewsLetterWrapper>
-      <h4>NEWSLETTER</h4>
-      <p>{newsletter.text}</p>
 
       <form className="email" onSubmit={submitEmail}>
         <Email className="email-icon" />

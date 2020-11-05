@@ -112,7 +112,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 }
 
 const Container = styled.div`
-  margin: 16px 1rem 24px 0;
+  margin: 16px 1rem 0 0;
   width: 170px;
 
   @media only screen and (max-width: 767px) {

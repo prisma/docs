@@ -38,7 +38,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   } = data
   const navigate = useNavigate()
   return (
-    <Layout {...props}>
+    <Layout {...props} toc={toc || toc == null ? tableOfContents : []} tocDepth={tocDepth} slug={slug}>
       <SEO title={metaTitle || title} description={metaDescription || title} />
       <section className="top-section">
         <TopSection
@@ -48,8 +48,6 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
           navigate={navigate}
-          toc={toc || toc == null ? tableOfContents : []}
-          tocDepth={tocDepth}
           codeStyle={codeStyle}
         />
       </section>

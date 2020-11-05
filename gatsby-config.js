@@ -134,7 +134,7 @@ module.exports = {
     siteUrl: config.gatsby.siteUrl,
     footer: config.footer,
     docsLocation: config.siteMetadata.docsLocation,
-    redirects: config.redirects
+    redirects: config.redirects,
   },
   plugins,
 }

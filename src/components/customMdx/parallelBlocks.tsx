@@ -28,9 +28,9 @@ const Block = styled.div`
   }
   .blockHeading {
     font-weight: 600;
-    font-size: 14px;
+    font-size: ${p => p.theme.fontSizes[14]};
     svg {
-      margin-right: 8px;
+      margin-right: ${p => p.theme.space[8]};
     }
   }
 
@@ -43,21 +43,21 @@ const Block = styled.div`
     }
   }
 
-  @media (max-width: 767px) and (min-width: 0px) {
+  @media (max-width: ${p => p.theme.breakpoints.tablet}) and (min-width: 0px) {
     .pre-highlight {
       margin: 0;
     }
     &:first-of-type .pre-highlight {
       margin-right: 0;
-      margin-left: -24px;
+      margin-left: -${p => p.theme.space[24]};
     }
     &:last-of-type .pre-highlight {
       margin-left: 0;
-      margin-right: -24px;
+      margin-right: -${p => p.theme.space[24]};
     }
   }
 `
 const Wrapper = styled.div`
   display: flex;
-  margin-top: 2rem;
+  margin-top: ${p => p.theme.space[32]};
 `

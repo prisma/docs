@@ -10,51 +10,51 @@ import { withPrefix } from 'gatsby'
 const List = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 12px 0 24px;
+  margin: ${p => p.theme.space[12]} 0 ${p => p.theme.space[24]};
   &.has-border {
-    border-left: 2px solid var(--border-color);
-    margin-left: -12px;
+    border-left: 2px solid ${p => p.theme.colors.gray300};
+    margin-left: -${p => p.theme.space[12]};
   }
 `
 
 const ListItem = styled.li`
-  font-size: 14px;
+  font-size: ${p => p.theme.fontSizes[14]};
   line-height: 1.25;
-  margin-bottom: 12px;
+  margin-bottom: ${p => p.theme.space[12]};
   position: relative;
   a {
     transition: color 150ms ease 0s;
-    color: var(--code-inner-color) !important;
+    color: ${p => p.theme.colors.gray600} !important;
     text-decoration: none;
     vertical-align: middle;
     &:hover {
-      color: var(--main-font-color) !important;
+      color: ${p => p.theme.colors.gray900} !important;
     }
 
-    @media (min-width: 0px) and (max-width: 1024px) {
-      color: var(--border-color) !important;
-      &:hover {
-        color: white !important;
-      }
-    }
+    // @media (min-width: 0px) and (max-width: 1024px) {
+    //   color: ${p => p.theme.colors.gray300} !important;
+    //   &:hover {
+    //     color: ${p => p.theme.colors.white} !important;
+    //   }
+    // }
 
     .tag {
       position: absolute;
       right: 0;
-      color: var(--list-bullet-color);
-      font-size: 14px;
+      color: ${p => p.theme.colors.gray500};
+      font-size: ${p => p.theme.fontSizes[14]};
       font-style: normal;
       font-weight: 600;
-      background: var(--code-inline-bgd-color);
-      border-radius: 5px;
+      background: ${p => p.theme.colors.gray200};
+      border-radius: ${p => p.theme.radii.small};
       padding: 2px 5px;
       &.small {
         font-size: 13px;
       }
-      @media (min-width: 0px) and (max-width: 1024px) {
-        background: var(--tag-media-color);
-        color: var(--list-bullet-color);
-      }
+      // @media (min-width: 0px) and (max-width: 1024px) {
+      //   background: ${p => p.theme.colors.gray800};
+      //   color: ${p => p.theme.colors.gray500};
+      // }
     }
 
     .item-collapser {
@@ -98,46 +98,50 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: var(--link-color) !important;
+    color: ${p => p.theme.colors.blue600} !important;
     font-weight: 700;
-    @media (min-width: 0px) and (max-width: 1024px) {
-      color: var(--border-color) !important;
-    }
+    // @media (min-width: 0px) and (max-width: 1024px) {
+    //   color: ${p => p.theme.colors.gray300} !important;
+    // }
   }
   &.top-level {
-    margin-top: 2rem;
+    margin-top: ${p => p.theme.space[32]};
+
+    // &:nth-child(1) {
+    //   margin-top: 0;
+    // }
     > a {
       font-size: 1.125rem;
-      color: var(--main-font-color) !important;
+      color: ${p => p.theme.colors.gray900} !important;
       font-weight: 600;
       letter-spacing: -0.01em;
-      @media (min-width: 0px) and (max-width: 1024px) {
-        color: var(--main-bgd-color) !important;
-      }
+      // @media (min-width: 0px) and (max-width: 1024px) {
+      //   color: ${p => p.theme.colors.gray100} !important;
+      // }
     }
     > ul {
-      margin-top: 12px;
+      margin-top: ${p => p.theme.space[12]};
     }
   }
   &.bottom-level {
-    margin-left: 20px;
+    margin-left: ${p => p.theme.space[20]};
   }
   &.static-link {
-    margin-top: 12px;
+    margin-top: ${p => p.theme.space[12]};
   }
   &.static-link > a {
-    color: var(--main-font-color) !important;
+    color: ${p => p.theme.colors.gray900} !important;
     text-transform: uppercase;
     font-weight: bold;
-    font-size: 12px;
-    line-height: 14px;
+    font-size: ${p => p.theme.fontSizes[12]};
+    line-height: ${p => p.theme.space[14]};
     letter-spacing: 0.02em;
     &:hover {
-      color: var(--main-font-color) !important;
+      color: ${p => p.theme.colors.gray900} !important;
     }
   }
   &.last-level {
-    padding-left: 24px;
+    padding-left: ${p => p.theme.space[24]};
   }
   .collapse-title {
     cursor: pointer;
@@ -211,10 +215,10 @@ const TreeNode = ({
   React.useEffect(() => {
     let mounted = true
 
-    if(mounted) {
+    if (mounted) {
       setIsOpen(isCollapsed ? 'close' : 'open')
     }
-    
+
     return function cleanup() {
       mounted = false
     }

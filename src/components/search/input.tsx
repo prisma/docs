@@ -3,14 +3,58 @@ import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
 import SearchPic from '../../icons/Search'
 import Clear from '../../icons/Clear'
+import useWindowDimensions from '../../hooks/useWindowDimensions'
 
 const SearchBoxDiv = styled.div`
-  width: 208px;
+  width: 250px;
+  display: flex;
+
   form {
+    width: 250px;
+  }
+
+  &.opened {
     position: relative;
     z-index: 100001;
-    // display: flex;
-    // align-items: center;
+    max-width: 1200px;
+    width: 100%;
+    height: 77px;
+    background: ${p => p.theme.colors.white};
+    padding: ${p => p.theme.space[20]};
+    border-bottom: 1px solid ${p => p.theme.colors.gray300};
+
+    border-top-left-radius: ${p => p.theme.radii.small};
+    border-top-right-radius: ${p => p.theme.radii.small};
+
+    form {
+      width: 100%;
+      input {
+        color: ${p => p.theme.colors.gray700};
+      }
+    }
+
+    .clear {
+      background: ${p => p.theme.colors.gray300};
+      border-radius: 6px;
+      height: 36px;
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg path {
+        stroke: ${p => p.theme.colors.gray700};
+      }
+    }
+  }
+
+  .clear {
+    display: none;
+  }
+
+  form {
+    display: flex;
+    align-items: center;
 
     button.ais-SearchBox-submit {
       display: none;
@@ -23,20 +67,19 @@ const SearchBoxDiv = styled.div`
 
     input {
       width: 100%;
-      background: var(--white-color);
-      box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-      border-radius: 5px;
-      padding: 0.6rem 2.5rem;
-      font-family: Open Sans;
+      background: transparent;
+      outline: none;
+      padding: 0rem ${p => p.theme.space[16]};
+      font-family: ${p => p.theme.fonts.text};
       font-style: normal;
       font-weight: normal;
-      font-size: 16px;
+      font-size: ${p => p.theme.fontSizes[16]};
       line-height: 100%;
       border-width: 0;
 
       &::placeholder {
         content: 'Search';
-        color: var(--list-bullet-color);
+        color: ${p => p.theme.colors.gray500};
         opacity: 1; /* Firefox */
       }
     }
@@ -49,34 +92,41 @@ const SearchBoxDiv = styled.div`
     }
   }
 
-  @media (min-width: 0px) and (max-width: 1024px) {
-    flex: 1;
+  .slash {
+    border: 1px solid ${p => p.theme.colors.gray400};
+    border-radius: 4px;
+    color: ${p => p.theme.colors.gray400};
+    width: 18px;
+    display: flex;
+    justify-content: center;
+  }
+
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    .slash {
+      display: none;
+    }
   }
 `
 
 const SearchIcon = styled(SearchPic)`
-  position: absolute;
-  left: 12px;
-  top: 12px;
   width: 1em;
   pointer-events: none;
   z-index: 100001;
 `
 
 const ClearIcon = styled(Clear)`
-  position: absolute;
-  right: 24px;
-  top: 15px;
   cursor: pointer;
 `
 
 const DEBOUNCE_DELAY = 500
 const focusShortcuts = ['s', 191]
 
-const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
+const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
+  const { width } = useWindowDimensions()
+  const placeholderText = width > 640 ? 'Search Documentation...' : 'Search'
 
   const onChange = (e: any) => {
     const { value: newValue } = e.target
@@ -141,21 +191,28 @@ const SearchBox = ({ refine, onFocus, currentRefinement, ...rest }: any) => {
     document.addEventListener('keydown', onKeyDown)
   }, [])
 
+
   return (
-    <SearchBoxDiv>
+    <SearchBoxDiv className={isOpened ? 'opened' : ''}>
       <form onSubmit={onSubmit}>
+        <SearchIcon />
         <input
           ref={inputEl}
           type="text"
-          placeholder="Search"
-          aria-label="Search"
+          placeholder={placeholderText}
+          aria-label="Search Documentation..."
           onChange={onChange}
           onFocus={onFocus}
           value={value}
           {...rest}
         />
-        <SearchIcon />
-        {value !== '' && <ClearIcon onClick={clearInput} />}
+
+        {(value !== '' && isOpened) && (
+          <span className="clear">
+            <ClearIcon onClick={clearInput} />
+          </span>
+        )}
+        {!isOpened && <span className="slash">/</span>}
       </form>
     </SearchBoxDiv>
   )

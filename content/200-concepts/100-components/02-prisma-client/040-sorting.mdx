@@ -1,0 +1,515 @@
+---
+title: 'Sorting'
+metaTitle: 'Sorting (Reference)'
+metaDescription: 'How to determine the sort order of results.'
+---
+
+<TopBlock>
+
+Prisma Client allows you to sort a list of records or a nested list of records by a particular field or set of fields. For example, the following query returns all `User` records sorted by `role` and `name`, **and** each user's posts sorted by `title`:
+
+```ts
+const usersWithPosts = await prisma.user.findMany({
+  orderBy: [
+    {
+      role: 'desc',
+    },
+    {
+      email: 'desc',
+    },
+  ],
+  include: {       
+    posts: {
+      orderBy: {
+        title: "desc",
+      },
+      select: {
+        title: true,
+      },
+    },
+  },
+});
+```
+
+> **Note**: The ability to sort by multiple fields is available in [version 2.4.1](https://github.com/prisma/prisma/releases/tag/2.4.1) and later.
+
+<details><summary>Expand for query output</summary>
+
+```json
+[
+  {
+      "email": "kwame@prisma.io",
+      "id": 2,
+      "name": "Kwame",
+      "role": "USER",
+      "posts": [
+          {
+              "title": "Prisma in five minutes"
+          },
+          {
+              "title": "Happy Table Friends: Relations in Prisma"
+          }
+      ]
+  },
+  {
+      "email": "emily@prisma.io",
+      "id": 5,
+      "name": "Emily",
+      "role": "USER",
+      "posts": [
+          {
+              "title": "Prisma Day 2020"
+          },
+          {
+              "title": "My first day at Prisma"
+          },
+          {
+              "title": "All about databases"
+          }
+      ]
+  }
+]
+```
+
+</details>
+
+You can sort by any of the following scalar field types:
+
+- `String`
+- `Int`
+- `Float`
+- `Boolean`
+- `DateTime`
+
+The following queries support sorting:
+
+* `findMany`
+* `aggregate`
+
+> **Note**: You can also [sort lists of nested records when you use `findOne`](#sort-one-users-nested-list-of-post-records)
+ to retrieve a single record by ID.
+
+The following order types are generated from the <a href="sorting#sample-model">sample schema</a>:
+
+```ts
+export type PostOrderByInput = {
+  authorId?: SortOrder
+  content?: SortOrder
+  id?: SortOrder
+  published?: SortOrder
+  title?: SortOrder
+}
+
+export type UserOrderByInput = {
+  email?: SortOrder
+  id?: SortOrder
+  name?: SortOrder
+  extendedProfile?: SortOrder
+  role?: SortOrder
+}
+
+export declare const SortOrder: {
+  asc: 'asc',
+  desc: 'desc'
+};
+
+export declare type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+```
+
+<a  id="sample-model"></a>
+
+<details>
+  <summary>Expand sample schema</summary>
+
+```prisma
+  generator client {
+  provider             = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  authorId  Int?
+  content   String?
+  id        Int     @default(autoincrement()) @id
+  published Boolean @default(false)
+  title     String
+  user      User?   @relation(fields: [authorId], references: [id])
+
+  @@index([authorId], name: "authorId")
+}
+
+model User {
+  email           String  @unique
+  id              Int     @default(autoincrement()) @id
+  name            String?
+  posts           Post[]
+  extendedProfile Json?
+  role            Role    @default(USER)
+}
+
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}
+```
+
+</details>
+
+</TopBlock>
+
+## FAQ
+
+### Can I sort by the property of a nested `model`?
+
+Follow [issue #249 on GitHub](https://github.com/prisma/prisma-client-js/issues/249).
+
+### Can I sort by an aggregate value (for example, by user's post count)?
+
+Follow [issue #1 on GitHub](https://github.com/prisma/prisma-client-js/issues/1).
+
+### Can I perform case-insensitive sorting?
+
+Follow [issue #841 on GitHub](https://github.com/prisma/prisma-client-js/issues/841).
+
+## Examples
+
+### Sort `User` by `email` field
+
+The following example returns all `User` records sorted by `email` ascending:
+
+```ts
+const users = await prisma.user.findMany({
+  orderBy: {
+    email: 'asc',
+  },
+})
+```
+
+The following example returns all `User` records sorted by `email` descending:
+
+```ts
+const users = await prisma.user.findMany({
+  orderBy: {
+    email: 'desc',
+  },
+})
+```
+
+### Sort `User` by multiple fields - `email` *and* `role`
+
+The following example sorts users by two fields - first `email`, then `role`:
+
+```ts
+const users = await prisma.user.findMany({
+  select: {
+    email: true,
+    role: true,
+  },
+  orderBy: [
+    {
+      email: 'desc',
+    },
+    {
+      role: 'desc',
+    },
+  ],
+});
+```
+
+<details><summary>Expand for example output</summary>
+
+```js
+[
+    {
+        "email": "yuki@prisma.io",
+        "role": "USER"
+    },
+    {
+        "email": "nora@prisma.io",
+        "role": "USER"
+    },
+    {
+        "email": "mary@prisma.io",
+        "role": "MODERATOR"
+    },
+    {
+        "email": "elsa@prisma.io",
+        "role": "MODERATOR"
+    },
+    {
+        "email": "eloise@prisma.io",
+        "role": "USER"
+    },
+    {
+        "email": "coco@prisma.io",
+        "role": "ADMIN"
+    },
+    {
+        "email": "anna@prisma.io",
+        "role": "USER"
+    },
+    {
+        "email": "alice@prisma.io",
+        "role": "USER"
+    }
+]
+```
+
+</details>
+
+The order of sorting parameters matters - the following query sorts by `role`, then `email`. Not the difference in the results:
+
+```ts
+const users = await prisma.user.findMany({
+  select: {
+    email: true,
+    role: true,
+  },
+  orderBy: [
+    {
+      role: 'desc',
+    },
+    {
+      email: 'desc',
+    },
+  ],
+});
+```
+
+<details><summary>Expand for example output</summary>
+
+```js
+[
+  {
+      "email": "mary@prisma.io",
+      "role": "MODERATOR"
+  },
+  {
+      "email": "elsa@prisma.io",
+      "role": "MODERATOR"
+  },
+  {
+      "email": "yuki@prisma.io",
+      "role": "USER"
+  },
+  {
+      "email": "nora@prisma.io",
+      "role": "USER"
+  },
+  {
+      "email": "eloise@prisma.io",
+      "role": "USER"
+  },
+  {
+      "email": "anna@prisma.io",
+      "role": "USER"
+  },
+  {
+      "email": "alice@prisma.io",
+      "role": "USER"
+  },
+  {
+      "email": "coco@prisma.io",
+      "role": "ADMIN"
+  }
+]
+```
+sql
+</details>
+
+### Sort `User` by `email`, select `name` and `email`
+
+The following example returns all the `name` and `email` fields of all `User` records, sorted by `email`:
+
+```ts
+const users3 = await prisma.user.findMany({
+  orderBy: {
+    email: 'asc',
+  },
+  select: {
+    name: true,
+    email: true,
+  },
+})
+```
+
+Example output:
+
+```json
+[
+  {
+    "name": "Alice",
+    "email": "alice@prisma.io"
+  },
+  {
+    "name": "Ariadne",
+    "email": "ariadne@prisma.io"
+  },
+  {
+    "name": "Bob",
+    "email": "bob@prisma.io"
+  }
+]
+```
+
+### Sort `User` records by `email` and sort nested `Post` records by `title`
+
+The following example:
+
+- Returns all `User` records sorted by `email`
+- For each `User` record, returns the `title` field of all nested `Post` records sorted by `title`
+
+```ts
+const usersWithPosts = await prisma.user.findMany({
+  orderBy: {
+    email: 'asc',
+  },
+  include: {
+    posts: {
+      select: {
+        title: true,
+      },
+      orderBy: {
+        title: 'asc',
+      },
+    },
+  },
+})
+```
+
+Example output:
+
+```json
+[
+  {
+    "id": 2,
+    "email": "alice@prisma.io",
+    "name": "Alice",
+    "posts": [
+      {
+        "title": "Watch the talks from Prisma Day 2019"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "email": "ariadne@prisma.io",
+    "name": "Ariadne",
+    "posts": [
+      {
+        "title": "How to connect to a SQLite database"
+      },
+      {
+        "title": "My first day at Prisma"
+      }
+    ]
+  },
+  {
+    "id": 1,
+    "email": "bob@prisma.io",
+    "name": "Bob",
+    "posts": [
+      {
+        "title": "Follow Prisma on Twitter"
+      },
+      {
+        "title": "Subscribe to GraphQL Weekly for community news "
+      }
+    ]
+  }
+]
+```
+
+### Sort one user's nested list of `Post` records
+
+The following example retrieves a single `User` record by ID, as well as a list of nested `Post` records sorted by `title`:
+
+```ts
+const userWithPosts = await prisma.user.findOne({
+  where: {
+    id: 1,
+  },
+  include: {
+    posts: {
+      orderBy: {
+        title: "desc",
+      },
+      select: {
+        title: true,
+        published: true,
+      },
+    },
+  },
+});
+```
+
+Example output:
+
+```json
+{
+    "email": "sarah@prisma.io",
+    "id": 1,
+    "name": "Sarah",
+    "extendedProfile": null,
+    "role": "USER",
+    "posts": [
+        {
+            "title": "Prisma Day 2020",
+            "published": false
+        },
+        {
+            "title": "My first post",
+            "published": false
+        },
+        {
+            "title": "All about databases",
+            "published": true
+        }
+    ]
+}
+```
+
+### Sort by `enum`
+
+The following sorts all `User` records by `role` (an `enum`):
+
+```ts
+const sort = await prisma.user.findMany({
+  orderBy: {
+    role: 'desc',
+  },
+  select: {
+    email: true,
+    role: true,
+  },
+})
+```
+
+Example output:
+
+```json
+[
+  {
+    "email": "emma@prisma.io",
+
+    "role": "USER"
+  },
+  {
+    "email": "suma@prisma.io",
+    "role": "ADMIN"
+  },
+  {
+    "email": "kwame@prisma.io",
+    "role": "ADMIN"
+  },
+  {
+    "email": "pearl@prisma.io",
+    "role": "ADMIN"
+  }
+]
+```

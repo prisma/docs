@@ -18,10 +18,10 @@ const twitterShareUrl = `https://twitter.com/intent/tweet?text=I%27ve%20found%20
 
 const PageBottomWrapper = styled.div`
   display: flex;
-  font-size: 14px;
+  font-size: ${p => p.theme.fontSizes[14]};
   flex-direction: row;
   justify-content: space-between;
-  padding: 1rem 40px;
+  padding: ${p => p.theme.space[16]} ${p => p.theme.space[40]};
   align-items: center;
   button svg {
     cursor: pointer;
@@ -29,14 +29,14 @@ const PageBottomWrapper = styled.div`
   }
   .edit-git,
   .message {
-    color: var(--code-inner-color) !important;
+    color: ${p => p.theme.colors.gray600} !important;
   }
 
   button {
-    color: var(--white-color) !important;
+    color: ${p => p.theme.colors.white} !important;
   }
-  @media (min-width: 0px) and (max-width: 767px) {
-    padding: 1rem;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    padding: ${p => p.theme.space[16]};
     flex-direction: column;
     align-items: flex-start;
     .edit-git {
@@ -51,7 +51,7 @@ const Feedback = styled.div`
     font-weight: bold;
     letter-spacing: 0.01em;
     text-transform: uppercase;
-    color: var(--list-bullet-color) !important;
+    color: ${p => p.theme.colors.gray500} !important;
   }
   .sentiments {
     button {
@@ -83,10 +83,10 @@ const Content = styled.div`
 const Title = styled.div`
   margin: 0 0 16px 0 !important;
   font-weight: 600;
-  font-size: 16px;
+  font-size: ${p => p.theme.fontSizes[16]};
 `
 const P = styled.p`
-  color: var(--list-bullet-color) !important;
+  color: ${p => p.theme.colors.gray500} !important;
   margin-top: 0;
 `
 
@@ -96,11 +96,11 @@ const Button = styled(ButtonWrapper)`
   svg {
     margin-right: 10px;
     path {
-      stroke: var(--white-color);
+      stroke: ${p => p.theme.colors.white};
     }
   }
   @media (min-width: 0px) and (max-width: 767px) {
-    font-size: 12px;
+    font-size: ${p => p.theme.fontSizes[12]};
     text-transform: none;
     svg {
       width: 14px;

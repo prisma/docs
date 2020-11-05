@@ -1,42 +1,47 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import TOC from './toc'
 import ParentTitle from './parentTitleComp'
 import SwitcherBlock from './switcherBlock'
 
 const TopSectionWrapper = styled.div`
   position: relative;
-  hr.bigger-margin {
-    margin-top: 3rem;
-    margin-bottom: 3.5rem;
-  }
 
-  @media only screen and (max-width: 767px) {
-    hr.bigger-margin {
-      margin-bottom: 6rem;
-    }
-  }
   .tech-switch-block {
     position: relative;
+  }
+
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.phone}) {
+    .tech-switch-block {
+      width: 100%;
+    }
+  }
+`
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.phone}) {
+    flex-direction: column;
+    align-items: baseline;
   }
 `
 
 const MainTitle = styled.h1`
-  font-family: 'Montserrat';
-  font-size: 2rem !important;
+  font-family: ${p => p.theme.fonts.display};
+  font-size: ${p => p.theme.fontSizes[32]} !important;
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;
-  color: var(--main-font-color);
+  color: ${p => p.theme.colors.gray900};
   margin: 0;
   margin-top: 4px;
   &.inline-code {
-    font-size: 2rem;
+    font-size: ${p => p.theme.fontSizes[32]};
     padding: 0px 0.2em;
     line-height: 3rem;
   }
-  @media only screen and (max-width: 767px) {
-    font-size: 24px;
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    font-size: ${p => p.theme.fontSizes[24]};
   }
 `
 
@@ -48,28 +53,27 @@ const TopSection = ({
   langSwitcher,
   dbSwitcher,
   toc,
-  tocDepth,
   codeStyle,
 }: any) => {
   return (
     <TopSectionWrapper>
-      <ParentTitle slug={slug} />
-      <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
-      <div className="tech-switch-block">
-        {(dbSwitcher || langSwitcher || (toc && toc.items && toc.items.length) > 0) && (
-          <hr className={`${langSwitcher || dbSwitcher ? 'bigger-margin' : ''}`} />
-        )}
-        {(langSwitcher || dbSwitcher) && (
-          <SwitcherBlock
-            langSwitcher={langSwitcher}
-            dbSwitcher={dbSwitcher}
-            navigate={navigate}
-            location={location}
-            slug={slug}
-          />
-        )}
-      </div>
-      {toc && toc.items && toc.items.length > 0 && <TOC headings={toc.items} tocDepth={tocDepth} />}
+      <Header>
+        <div className="title">
+          <ParentTitle slug={slug} />
+          <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
+        </div>
+        <div className="tech-switch-block">
+          {(langSwitcher || dbSwitcher) && (
+            <SwitcherBlock
+              langSwitcher={langSwitcher}
+              dbSwitcher={dbSwitcher}
+              navigate={navigate}
+              location={location}
+              slug={slug}
+            />
+          )}
+        </div>
+      </Header>
     </TopSectionWrapper>
   )
 }

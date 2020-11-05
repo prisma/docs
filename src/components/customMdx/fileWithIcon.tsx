@@ -23,7 +23,7 @@ const FileNameWrapper = styled.span`
   display: inline-flex;
   align-items: center;
   svg {
-    margin-right: 8px;
+    margin-right: ${p => p.theme.space[8]};
   }
 `
 

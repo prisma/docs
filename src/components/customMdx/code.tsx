@@ -176,9 +176,9 @@ export default Code
 const CodeWrapper = styled.div`
   .file {
     font-weight: 600;
-    color: var(--code-inner-color);
-    font-size: 14px;
-    font-family: 'Open Sans';
+    color: ${p => p.theme.colors.gray600};
+    font-size: ${p => p.theme.fontSizes[14]};
+    font-family: ${p => p.theme.fonts.text};
     margin-bottom: 0.5rem;
   }
 `
@@ -190,13 +190,13 @@ const AbsoluteCopyButton = styled.div`
   right: 16px;
   z-index: 2;
   > div {
-    right: -8px;
+    right: -${p => p.theme.space[8]};
     top: -6px;
   }
 `
 
 const Pre = styled.pre`
-  margin-top: 2rem;
+  margin-top: ${p => p.theme.space[32]};
   text-align: left;
   margin: 0 0 16px 0;
   padding: 2rem 1rem 1rem 1rem;
@@ -209,8 +209,8 @@ const Line = styled.div`
 
 const LineNo = styled.span`
   font-weight: 500;
-  line-height: 24px;
-  color: var(--code-linenum-color);
+  line-height: ${p => p.theme.space[24]};
+  color: ${p => p.theme.colors.gray400};
   display: inline-block;
   text-align: right;
   // padding-left: 1em;
@@ -219,7 +219,7 @@ const LineNo = styled.span`
 `
 
 const LineContent = styled.span`
-  padding: 0 1em;
+  padding: 0 ${p => p.theme.space[16]};
   &.break-words {
     display: inline-table;
     white-space: break-spaces;

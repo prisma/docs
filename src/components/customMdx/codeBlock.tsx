@@ -42,13 +42,13 @@ const Tabs = styled.div`
   display: flex;
   .tab {
     margin-right: 10px;
-    color: var(--grey-bg-color);
+    color: ${p => p.theme.colors.gray600};
     cursor: pointer;
   }
 
   .tab.active {
     font-weight: 600;
-    color: var(--main-font-color);
+    color: ${p => p.theme.colors.gray900};
   }
 `
 const Wrapper = styled.div`

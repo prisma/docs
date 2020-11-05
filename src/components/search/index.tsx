@@ -18,13 +18,17 @@ const HitsWrapper = styled.div`
   z-index: 100002;
   -webkit-overflow-scrolling: touch;
   position: absolute;
-  left: 230px;
-  top: 0;
-  max-width: 880px;
-  width: 100vw;
-  background: var(--white-color);
+  left: 50%;
+  top: 97px;
+  
+  transform: translate(-50%, -0%);
+  max-width: 1200px;
+  width: 100%;
+  background: ${p => p.theme.colors.white};
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
-  border-radius: 5px;
+  border-radius: ${p => p.theme.radii.small};
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   * {
     margin-top: 0;
     padding: 0;
@@ -34,14 +38,55 @@ const HitsWrapper = styled.div`
     margin: 0;
   }
   .no-results,
+  // .loader {
+  //   padding: ${p => p.theme.space[24]} ${p => p.theme.space[40]};
+  // }
+  .loader,
+  .loader:after {
+    border-radius: 50%;
+    width: 5em;
+    height: 5em;
+  }
   .loader {
-    padding: 24px 40px;
+    margin: 60px auto;
+    font-size: 10px;
+    position: relative;
+    text-indent: -9999em;
+    border-top: 0.5em solid rgba(215,215,215, 0.2);
+    border-right: 0.5em solid rgba(215,215,215, 0.2);
+    border-bottom: 0.5em solid rgba(215,215,215, 0.2);
+    border-left: 0.5em solid #d7d7d7;
+    -webkit-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-animation: load8 1.1s infinite linear;
+    animation: load8 1.1s infinite linear;
+  }
+  @-webkit-keyframes load8 {
+    0% {
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg);
+    }
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes load8 {
+    0% {
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg);
+    }
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
   }
   @media (min-width: 0px) and (max-width: 1024px) {
-    left: 0;
-    top: 40px;
-    max-width: 100%;
-    border-top: 1px solid var(--border-color);
+    // left: 0;
+    top: 88px;
+   // max-width: 100%;
+    border-top: 1px solid ${p => p.theme.colors.gray300};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
@@ -72,7 +117,7 @@ const getHits = (children: any, res: any) => {
 }
 const Results = connectStateResults(
   ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
-    (isSearchStalled ? <div className="loader">Searching...</div> : null) ||
+    ((isSearchStalled || (state.query === '' ))? <div className="loader">Searching...</div> : null) ||
     (res && res.nbHits > 0 ? (
       getHits(children, res)
     ) : (
@@ -89,7 +134,7 @@ export default function Search({ hitsStatus }: any) {
   const showSearch = () => setShowHits(true)
 
   React.useEffect(() => {
-    hitsStatus(query.length > 0 && showHits)
+    hitsStatus(showHits)
   }, [showHits, query])
 
   return (
@@ -98,9 +143,9 @@ export default function Search({ hitsStatus }: any) {
       indexName={indexName}
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
-      <Overlay visible={query.length > 0 && showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} />
-      <HitsWrapper className={`${query.length > 0 && showHits ? 'show' : ''}`} onClick={hideSearch}>
+      <Overlay visible={showHits} hideSearch={hideSearch} />
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits}/>
+      <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
             <Hits hitComponent={DocHit} />

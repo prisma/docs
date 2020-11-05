@@ -44,28 +44,28 @@ const Tabs = styled.div`
   .tabHeading {
     margin-right: 10px;
     font-weight: 600;
-    color: var(--code-inner-color);
+    color: ${p => p.theme.colors.gray600};
     cursor: pointer;
-    font-size: 14px;
+    font-size: ${p => p.theme.fontSizes[14]};
     display: flex;
     align-items: center;
     padding: 3px 5px;
     svg {
-      margin-right: 8px;
+      margin-right: ${p => p.theme.space[8]};
     }
   }
 
   .tabHeading.active {
-    color: var(--main-font-color);
-    background: var(--code-bgd-color);
-    border-radius: 5px;
+    color: ${p => p.theme.colors.gray900};
+    background: ${p => p.theme.colors.gray100};
+    border-radius: ${p => p.theme.radii.small};
     svg path {
-      stroke: var(--code-inner-color);
+      stroke: ${p => p.theme.colors.gray600};
     }
   }
 `
 const Wrapper = styled.div`
-  margin-top: 2rem;
+  margin-top: ${p => p.theme.space[32]};
   position: relative;
 
   tab > * {

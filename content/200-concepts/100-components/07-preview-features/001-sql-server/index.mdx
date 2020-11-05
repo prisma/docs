@@ -1,0 +1,88 @@
+---
+title: 'Microsoft SQL Server Connector'
+metaTitle: 'Microsoft SQL Server Connector (Preview)'
+metaDescription: 'Preview content for the Microsoft SQL Server Connector.'
+
+---
+
+<TopBlock>
+
+The Microsoft SQL Connector is available as a Preview feature in [2.10.0](https://github.com/prisma/prisma/releases/tag/2.10.0).
+
+</TopBlock>
+
+## Enable SQL Server Preview feature
+
+To enable the Microsoft SQL Server Preview feature:
+
+1. Update the `client` and `datasource` blocks in your schema as shown:
+
+    ```prisma file=prisma/schema.prisma
+    generator client {
+        provider        = "prisma-client-js"
+    |    previewFeatures = ["microsoftSqlServer"]
+    }
+
+    datasource db {
+    |    provider = "sqlserver"
+        url      = env("DATABASE_URL")
+    }
+    ```
+
+1. Generate Prisma Client:
+
+    ```terminal
+    npx prisma generate
+    ```
+
+Alternatively, follow the [Microsoft SQL Server tutorial](sql-server-start-from-scratch).
+
+## Type mapping
+
+| **Prisma type** | **SQL Server types** |
+|-----------------|-----------------|
+| `String`        | `char`<br />`varchar`<br />`nvarchar`<br />`text`<br />`ntext` |
+| `Float`         | `float(n)`<br />`number(p,s)`<br />`decimal(p,s)`<br />`money`<br />`smallmoney`<br />`real` |
+| `DateTime`      | `time`<br />`date`<br />`datetime`<br />`datetime2`<br />`smalldatetime`<br />`datetimeoffset` |
+| `Boolean`       | `bit`
+| `Integer`       | `tinyint`<br />`smallint`<br />`int`<br />`bigint`
+
+## Supported versions
+
+See [Supported databases](../../../../reference/database-reference/supported-databases#preview).
+
+## Limitations and known issues
+
+### TLS required
+
+Prisma Client requires TLS to connect to an Microsoft SQL Server database. Be aware that Apple are very specific about [what kind of TLS server certificates are accepted](https://support.apple.com/en-ca/HT210176), which means that MacOS users may not be able to connect to a SQL Server database using a weak TLS certificate.
+
+To make local development easier on MacOS, you can add `encrypt=DANGER_PLAINTEXT` to the end of your connection string.
+
+> **Note**: `encrypt=DANGER_PLAINTEXT` must not be used in production.
+
+###  Migrations are not supported yet
+
+Follow issue [#4074 on GitHub](https://github.com/prisma/prisma/issues/4074) for more information.
+
+### Extended native types support not available
+
+Follow issue [#4077 on GitHub](https://github.com/prisma/prisma/issues/4077) for more information.
+
+### Data model limitations
+
+#### Cannot use column with `UNIQUE` constraint and filtered index as foreign key
+
+Microsoft SQL Server [only allows one `NULL` value in a column that has a `UNIQUE` constraint](https://docs.microsoft.com/en-us/sql/relational-databases/tables/unique-constraints-and-check-constraints?view=sql-server-ver15#Unique). For example:
+
+* A table of users has a column named `license_number`
+* The `license_number` field has a `UNIQUE` constraint
+* The `license_number` field only allows **one** `NULL` value
+
+The standard way to get around this issue is to create a filtered unique index that excludes `NULL` values. This allows you to insert multiple `NULL` values. If you do not create an index in the database, you will get an error if you try to insert more than one `null` value into a column with Prisma Client.
+
+*However*, creating an index makes it impossible to use `license_number` as a foreign key in the database (or a relation scalar field in corresponding Prisma Schema)
+
+### Azure SQL firewall connection policy must be proxy
+
+Follow issue [#88 on GitHub](https://github.com/prisma/tiberius/issues/88) for more information.
