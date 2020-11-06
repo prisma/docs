@@ -9,6 +9,6 @@ const TopBlock = ({ children, ...props }: TopBlockProps) => {
 
 export default TopBlock
 
-const TopBlockWrapper = styled.div`
-  padding: ${p => p.theme.space[4]} ${p => p.theme.space[40]};
+const TopBlockWrapper = styled.section`
+  /* padding: ${p => p.theme.space[4]} ${p => p.theme.space[40]}; */
 `

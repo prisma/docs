@@ -35,6 +35,9 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     width: 100%;
     justify-content: center;
     padding: 0 ${p => p.theme.space[24]};
+    @media (max-width: ${p => p.theme.breakpoints.tablet}) {
+      padding: 0;
+    }
   `
 
   const Content = styled.article`
@@ -57,7 +60,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
   const MaxWidth = styled.div`
     > section {
-      padding: 1rem ${p => p.theme.space[40]};
+      padding: 0 ${p => p.theme.space[40]};
       &.top-section {
         padding-top: 0;
       }
@@ -65,7 +68,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
         margin-top: 0.5rem;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
-        padding: ${p => p.theme.space[24]};
+        padding: 0 ${p => p.theme.space[24]};
         &.top-section {
           padding-top: ${p => p.theme.space[24]};
         }
