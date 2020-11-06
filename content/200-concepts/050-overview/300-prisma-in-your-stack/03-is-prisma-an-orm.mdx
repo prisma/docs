@@ -1,215 +1,157 @@
 ---
 title: 'Is Prisma an ORM?'
 metaTitle: 'Is Prisma an ORM?'
-metaDescription: 'Learn why Prisma is not an ORM. It shares similar goals with ORMs and wants to make working with databases easy, but it does not map classes to tables as ORMs do.'
+metaDescription: 'Learn about how Prisma implements the Data Mapper ORM pattern and how it achieves the same goal as traditional ORMs without requiring you to map classes to tables as traditional ORMs do.'
 ---
 
-<TopBlock>
+## Overview
 
-To answer the question briefly: _No, Prisma is not an ORM_.
+To answer the question briefly: _Yes, Prisma is a new kind of ORM that fundamentally differs from traditional ORMs and doesn't suffer from many of the problems commonly associated with these_.
 
-The main goal of Prisma is to make working with databases easier for application developers. In that sense, it shares the same goals with ORMs, but takes a fundamentally different approach.
+Traditional ORMs provide an object-oriented way for working with relational databases by mapping tables to _model classes_ in your programming language. This approach leads to many problems that are caused by the [object-relational impedance mismatch](https://en.wikipedia.org/wiki/Object%E2%80%93relational_impedance_mismatch).
 
-ORMs are libraries that map tables in your database to classes in your programming language. Prisma, on the other hand, is a database toolkit. The toolkit includes Prisma Client, which is an auto-generated query builder that exposes queries which are _tailored_ to your models. All Prisma Client queries return plain old JavaScript objects.
+Prisma works fundamentally different compared to that. With Prisma, you define your models in the declarative [Prisma schema](../../reference/tools-and-interfaces/prisma-schema/prisma-schema-file) which serves as the single source of truth for your database schema and the models in your programming language. In your application code, you can then use Prisma Client to read and write data in your database without the overhead of managing complex model instances. This makes the process of querying data a lot more natural as well as more predictable since Prisma Client always returns plain JavaScript objects.
 
-To understand how Prisma and ORMs differ conceptually, here's a brief overview of how their building blocks relate to databases:
-
-| Database     | ORMs                                 | Prisma                                                                                                             |
-| ------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| SQL Schema   | Migrations and model classes         | [Prisma schema](../../components/prisma-schema)                             |
-| Tables       | Model classes                        | [Models](../../components/prisma-schema/data-model#defining-models) in the Prisma schema       |
-| Columns      | Properties in model classes          | Model [fields](../../components/prisma-schema/data-model#defining-fields) in the Prisma schema |
-| Records      | Instances of a model class (objects) | Plain JavaScript objects                                                                                           |
-| Foreign keys | Foreign keys on model classes        | [Relations](../../components/prisma-schema/relations) between Prisma models                    |
-
-In this article, you will learn in more detail about the differences of Prisma compared to traditional ORMs and other database access libraries.
-
-</TopBlock>
+In this article, you will learn in more detail about ORM patterns and workflows, how Prisma implements the Data Mapper pattern, and the benefits of Prisma's approach.
 
 ## What are ORMs?
 
 If you're already familiar with ORMs, feel free to jump to the [next section](#prisma) on Prisma.
 
-### Concepts
+### ORM Patterns - Active Record and Data Mapper
 
-ORMs provide a high-level database abstraction. They expose a programmatic interface to create, read, delete, and manipulate data while hiding some of the complexity of the database. Database abstractions vary in terms of the complexity they hide and the approach they take (for example, query builders like [knex.js](https://knexjs.org/) and [MassiveJS](https://massivejs.org/)).
+ORMs provide a high-level database abstraction. They expose a programmatic interface through objects to create, read, delete, and manipulate data while hiding some of the complexity of the database.
 
-The idea with ORMs is that you define your models as **classes** that map to tables in a database. The classes and their instances provide you with a flexible API to read and write data in the database.
+The idea with ORMs is that you define your models as **classes** that map to tables in a database. The classes and their instances provide you with a programmatic API to read and write data in the database.
 
-Database records are represented as instances of the model classes which carry the logic for storage, retrieval, serialization, and deserialization. They often also contain business logic.
+There are two common ORM patterns: [_Active Record_](https://en.wikipedia.org/wiki/Active_record_pattern) and [_Data Mapper_](https://en.wikipedia.org/wiki/Data_mapper_pattern) which differ in how they transfer data between objects and the database. While both patterns require you to define classes as the main building block. The most notable difference between the two is that the Data Mapper pattern decouples in-memory objects in the application code from the database and uses the data mapper layer to transfer data between the two. In practice, this means that with Data Mapper the in-memory objects (representing data in the database) don't even know that there’s a database present.
 
-Model classes typically have several responsibilities:
+#### Active Record
 
-- Mapping the table's columns to the model's properties, e.g. mapping a `createdAt` column to a `createdAt` property on your model.
-- Mapping the foreign keys in a table to relations of the corresponding models, e.g. a 1:n relationship between a `blog` and `posts` as represented by a `blog_id` field in the posts table.
-- Implementing business/domain logic e.g. `isUserEmailConfirmed` method to check whether the account's email has been confirmed.
+_Active Record_ ORMs map model classes to database tables where the structure of the two representations is closely related, e.g. each field in the model class will have a matching column in the database table. Instances of the model classes wrap database rows and carry both the data and the access logic to handle persisting changes in the database. Additionally, model classes can carry business logic specific to on the data in the model.
 
-### Workflows
+The model class typically has methods that do the following:
 
-As an example for what "typical" ORM workflows look like, [Sequelize](https://sequelize.org/), a popular ORM in the Node.js ecosystem, will be used. Like most ORMs, Sequelize supports workflows for data modeling, querying, and schema migrations.
+- Construct an instance of the model from an SQL query.
+- Construct a new instance for later insertion into the table.
+- Methods to wrap commonly used SQL queries and return Active Record objects.
+- Update the database and insert into it the data in the Active Record.
+- Get and set the fields.
+- Implement business logic.
 
-#### Data modeling
+#### Data Mapper
 
-For example, assume a hypothetical `User` table:
+_Data Mapper_ ORMs, in contrast to Active Record, decouple the application's in-memory representation of data from the database's representation. The decoupling is achieved by requiring you to separate the mapping responsibility into two types of classes:
 
-![user-table](https://i.imgur.com/EPslYJy.png)
+- **Entity classes**: The application's in-memory representation of entities which have no knowledge of the database
+- **Mapper classes**: These have two responsibilities:
+  - Transforming the data between the two representations.
+  - Generating the SQL necessary to fetch data from the database and persist changes in the database.
 
-The equivalent SQL in PostgreSQL dialect:
+Data Mapper ORMs allow for greater flexibility between the problem domain as implemented in code and the database. This is because the data mapper pattern allows you to hide the ways in which you database isn’t an ideal way to think about your domain behind the whole data-mapping layer.
 
-```sql
-CREATE TABLE "public"."User" (
-  id SERIAL PRIMARY KEY NOT NULL,
-  first_name VARCHAR(255),
-  last_name VARCHAR(255),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  email_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
-  birth_date DATE NOT NULL,
-);
-```
+In reality, not all Data Mapper ORMs adhere to this pattern strictly. For example, [TypeORM](https://github.com/typeorm/typeorm/blob/master/docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern), a popular ORM in the TypeScript ecosystem which supports both Active Record and Data Mapper, takes the following approach to Data Mapper:
 
-Here's what its corresponding model class will look like with Sequelize.
-You define the model's fields, map them to the table's fields, and define a class and instance method:
+- Entity classes use decorators (`@Column`) to map class properties to table columns and are aware of the database.
+- Instead of mapper classes, _repository_ classes are used for querying the database and may contain custom queries. Repositories use the decorators to determine the mapping between entity properties and database columns.
 
-```js
-import { Model } from 'sequelize'
+Given the following `User` table in the database:
 
-class User extends Model {
-  // Class method that can be called directly on the model class
-  static async isEmailConfirmed(email) {
-    const count = await this.count({ where: { email, emailConfirmed: true } })
-    return count === 0
-  }
-  // Model instance method
-  getFullName() {
-    return [this.firstname, this.lastname].join(' ')
-  }
-}
+![user-table](https://imgur.com/f5SFwjC.png)
 
-User.init(
-  {
-    id: {
-      allowNull: false
-      autoIncrement: true,
-      primaryKey: true,
-      type: Sequelize.INTEGER,
-    }
-    firstName: {
-      type: Sequelize.STRING,
-      field: 'first_name',
-      allowNull: true
-    },
-    lastName: {
-      type: Sequelize.STRING,
-      field: 'last_name',
-      allowNull: true
-    },
-    email: {
-      type: Sequelize.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
-    },
-    emailConfirmed: {
-      type: Sequelize.BOOLEAN,
-      field: 'email_confirmed',
-      allowNull: false,
-      defaultValue: false
-    },
-    birthDate: {
-      type: Sequelize.DATE,
-      field: 'birth_date'
-    }
-  },
-  { sequelize }
-)
-```
+This is what the corresponding entity class would look lie:
 
-Model instances represent database records and contain three important things:
+```ts
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
 
-- The in-memory representation of the record data as persisted in the database
-- The logic for storage, retrieval, serialization, and deserialization of its data and related data.
-- The inherited business/domain logic defined in the model class
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number
 
-#### Querying
+  @Column({ name: 'first_name' })
+  firstName: string
 
-You can fetch and update a model instance with Sequelize as follows:
+  @Column({ name: 'last_name' })
+  lastName: string
 
-```js
-const ada = await User.findOne({ where: { firstName: 'Ada' } })
-ada.lastName = 'Lovelace'
-await ada.save()
-ada.getFullName() // Ada Lovelace
-```
-
-#### Schema migrations
-
-A key part of using a database is changing the schema to accommodate new features and to better fit the problem you're solving. Because the ORM sits between the developer and the database, most ORMs provide a **migration tool** to assist with the creation and modification of the database schema.
-
-A migration is a set of steps to take the database schema from one state to another. The first migration usually creates tables and indices. Subsequent migrations may alter tables, introduce new indices, or create new tables. Depending on the migration tool, the migration may be in the form of SQL statements or programmatic code which will get converted to SQL statements.
-
-Sequelize for example, has a programmatic API for migrations.
-
-Assuming you were starting from scratch, this is what a full workflow would look like: you create a migration that will create the `Users` table in the database schema and define the model class as in the [example above](#data-modeling) with the `User` model.
-
-1. Create the first migration:
-
-```js
-// migrations/20191217102908-create-user.js
-module.exports = {
-  up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('Users', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER,
-      },
-      firstName: {
-        type: Sequelize.STRING,
-        field: 'first_name',
-      },
-      lastName: {
-        type: Sequelize.STRING,
-        field: 'last_name',
-      },
-      email: {
-        type: Sequelize.STRING,
-      },
-      emailConfirmed: {
-        type: Sequelize.BOOLEAN,
-        field: 'email_confirmed',
-        allowNull: false,
-        defaultValue: false,
-      },
-      birthDate: {
-        type: Sequelize.DATE,
-      },
-    })
-  },
-  down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('Users')
-  },
+  @Column({ unique: true })
+  email: string
 }
 ```
 
-2. Create the corresponding model as in the previous section.
-3. To add a new table, create a new migration and corresponding model.
-   To change the `Users` table, create a new migration which will add the field and update the model to reflect the changes.
+### Migration workflows
 
-The first two steps will be part of any schema change that uses Sequelize both as an ORM and for migrations. The second step is where the _synchronization culprit_ is. In other words, it is where the responsibility is on the developer to ensure she has correctly defined the model in line with the database schema.
+A central part of developing applications that make use of a database is changing the database schema to accommodate new features and to better fit the problem you're solving. In this section, we'll discuss what migrations are and how they affect the workflow.
 
-Other ORMs have a workflow similar to this. Some, like [Django's ORM](https://docs.djangoproject.com/en/3.0/topics/migrations/#workflow), support a simpler workflow where you're required to only change the models and using a CLI tool, your models are scanned and compared to the versions currently contained in your migration files, and then a new set of migrations is written out.
+Because the ORM sits between the developer and the database, most ORMs provide a **migration tool** to assist with the creation and modification of the database schema.
+
+A migration is a set of steps to take the database schema from one state to another. The first migration usually creates tables and indices. Subsequent migrations may alter tables, introduce new indices, or create new tables. Depending on the migration tool, the migration may be in the form of SQL statements or programmatic code which will get converted to SQL statements (as with [ActiveRecord](https://guides.rubyonrails.org/active_record_migrations.html) and [SQLAlchemy](https://alembic.sqlalchemy.org/en/latest/tutorial.html#create-a-migration-script)).
+
+Because databases usually contain data, migrations assist you with breaking down schema changes into smaller units which helps avoid inadvertent data loss.
+
+Assuming you were starting a project from scratch, this is what a full workflow would look like: you create a migration that will create the `User` table in the database schema and define the `User` entity class as in the example above.
+
+Then, as the project progresses and you decide you want to add a new `salutation` column to the `User` table, you would create another migration which would alter the table and add the `salutation` column.
+
+Let's take a look at a TypeORM migration, will be used.
+In this example, the migration adds a new `salutation` column to the existing `User` table:
+
+```ts
+import { MigrationInterface, QueryRunner } from 'typeorm'
+
+export class UserRefactoring1604448000 implements MigrationInterface {
+  async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "User" ADD COLUMN "salutation" TEXT`)
+  }
+
+  async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "User" DROP COLUMN "salutation"`)
+  }
+}
+```
+
+> **Note:** TypeORM also offers the [`synchronize`](https://github.com/typeorm/typeorm/blob/master/docs/faq.md#how-do-i-update-a-database-schema) option which updates the database schema based on your entity classes. However, it is not recommended for use in production as it gives little flexibility how changes are carried out and can cause inadvertent data loss. Therefor it isn't addressed in this section.
+
+Once a migration is carried out and the database schema has been altered, the entity and mapper classes must also be updated to account for the new `lastName` column.
+
+With TypeORM that means adding a `salutation` property to the `User` entity class:
+
+```ts
+import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column({ name: 'first_name' })
+  firstName: string
+
+  @Column({ name: 'last_name' })
+  lastName: string
+
+  @Column({ unique: true })
+  email: string
+
+|  @Column()
+|  salutation: string;
+}
+```
+
+Synchronizing such changes can be a challenge with ORMs because the changes are applied manually and are not easily verifiable programmatically. Renaming an existing column can be even more cumbersome and involve searching and replacing references to the column.
+
+> **Note:** Django's [makemigrations](https://docs.djangoproject.com/en/3.1/ref/django-admin/#django-admin-makemigrations) CLI generates migrations by inspecting changes in models which, similar to Prisma, does away with the synchronization problem.
+
+In summary, evolving the schema is a key part of building applications. With ORMs, the workflow for updating the schema involves using a migration tool to create a migration followed by updating the corresponding entity and mapper classes (depending on the implementation). As you'll see, Prisma takes a different approach to this.
 
 Now that you've seen migrations and workflows, you will look at the benefits and drawbacks of ORMs.
 
 ### Benefits of ORMs
 
-There are different reasons for why developers choose to use ORMs:
+There are different reasons why developers choose to use ORMs:
 
 - ORMs facilitate implementing the domain model. The domain model is an object model that incorporates the behavior and data of your business logic. In other words, it allows you to focus on real business concepts rather than the database structure or SQL semantics.
-- As you evolve your schema, the changes happen in a single place: the models. This saves you from having to search and replace SQL statements scattered throughout your code.
 - ORMs help reduce the amount of code. It saves you from writing repetitive SQL statements for common CRUD (Create Read Update Delete) operations and escaping user input to prevent vulnerabilities such as SQL injections.
 - ORMs require you to write little to no SQL (depending on your complexity you may still need to write the odd raw query). This is beneficial for developers who are not familiar with SQL and but still want to work with a database.
 - Many ORMs abstract database-specific details. In theory, this means that an ORM can make changing from one database to another easier. It should be noted that in practice applications rarely change the database they use.
@@ -222,50 +164,123 @@ The drawbacks of ORMs are not always apparent when you start using them. This se
 
 - With ORMs, you form an object graph representation of database tables; this is known as the [object-relational impedance mismatch](https://en.wikipedia.org/wiki/Object-relational_impedance_mismatch). Depending on your use-case, the problem you are solving may form a complex object graph which doesn't trivially map to a relational database. Synchronizing between two different representations of data, one in the relational database, and the other in-memory (with objects) is quite difficult. This is because objects are more flexible and varied in the way they can relate to each other compared to relational database records.
 - While ORMs handle the complexity associated with the problem, the synchronization problem doesn't go away. Any changes to the database schema or the data model require the changes to be mapped back to the other side. This burden is often on the developer. In the context of a team working on a project, database schema changes require coordination.
-- ORMs tend to have a large API surface due to the complexity they encapsulate. The flip side of not having to write SQL is that you spend a lot of time learning how to use the ORM. This applies to most abstractions, however without understanding the way the database works, understanding and improving slow queries can be difficult.
+- ORMs tend to have a large API surface due to the complexity they encapsulate. The flip side of not having to write SQL is that you spend a lot of time learning how to use the ORM. This applies to most abstractions, however without understanding how the database works, improving slow queries can be difficult.
 - Some _complex queries_ aren't supported by ORMs due to the flexibility that SQL offers. This problem is alleviated by raw SQL querying functionality in which you pass the ORM a SQL statement string and the query is run for you.
 
 Now that the costs and benefits of ORMs have been covered, you can better understand what Prisma is and how it fits in.
 
 ## Prisma
 
-Prisma is a **database toolkit** that makes working with databases easy for application developers. It currently consists of two main tools:
+Prisma is a database toolkit that makes working with databases easy for application developers. It consists of three tools:
 
-- [**Prisma Client**](../../components/prisma-client): Auto-generated and type-safe database client
-- [**Prisma Migrate**](../../components/prisma-migrate) (experimental): A CLI for declarative data modeling and migrations
+- [**Prisma Client**](../../reference/tools-and-interfaces/prisma-client/api): Auto-generated and type-safe _Data Mapper ORM_.
+- [**Prisma Migrate**](https://www.notion.so/prismaio/Public-Documentation-for-Prisma-Migrate-Early-Access-7708df0c1d3d4852ab39fb69ed182786) [(early access)](https://www.prisma.io/docs/about/releases#early-access): A declarative data modeling and migration tool.
+- [**Prisma Studio**](../../reference/tools-and-interfaces/prisma-migrate): A modern GUI for browsing and managing data in your database.
 
-Both Prisma Client and Prisma Migrate rely on the [Prisma schema](../../components/prisma-schema). The Prisma schema is a declarative representation of your database schema. It serves as the single source truth for both the database schema and your application models.
+The three tools use the [Prisma schema](../../reference/tools-and-interfaces/prisma-schema/prisma-schema-file) as a single source truth for the database schema, your application's object schema, and the mapping between the two. It's defined by you and is your main configuration file for Prisma.
 
-### How Prisma compares
+Prisma makes you productive and confident in the software you're building with features such as _type safety_ and a streamlined developer experience.
 
-Unlike ORMs, with Prisma you don't create model classes nor do you map fields in your codebase to database fields. Instead, you use the generated Prisma Client API like an advanced query builder that returns plain JavaScript objects. Schema changes are synced automatically from the models in the Prisma schema to the database.
+In the next section, you will learn about Prisma implement the Data Mapper ORM pattern.
 
-Models in Prisma mean something slightly different to ORMs. When using ORMs, models are represented as _classes_. With Prisma, models are defined in the Prisma schema as abstract entities which describe the relationships between tables:
+### How Prisma implements the Data Mapper pattern
+
+The Data Mapper pattern allows the object schema to evolve independently of the database schema by separating concerns into entity and mapper classes. One of the reasons that traditional data mapper ORMs do this is due to the structure of organizations where the two responsibilities would be handled by separate teams, e.g., [DBAs](https://en.wikipedia.org/wiki/Database_administrator) and backend developers.
+
+With the rise of modern cloud environments with managed database services and DevOps practices, more teams embrace a cross-functional approach, whereby teams own both the full development cycle including the database and operational concerns.
+
+Prisma enables the evolution of the DB schema and object schema in tandem, thereby reducing the need for deviation in the first place, while still allowing you to keep your application and database decoupled using map attributes. While this may seem like a limitation, it prevents the domain model's evolution (through the object schema) from getting imposed on the database as an afterthought.
+
+To understand how Prisma's implementation of the Data Mapper pattern differs conceptually to traditional Data Mapper ORMs, here's a brief comparison of their concepts and building blocks:
+
+| Concept         | Description                                                          | Building block in traditional ORMs             | Building block in Prisma             | Source of truth in Prisma            |
+| --------------- | -------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------ | ------------------------------------ |
+| Object schema   | The in-memory data structures in your applications                   | Model classes                                  | Generated TypeScript types           | Models in the Prisma schema          |
+| Data Mapper     | The code which transforms between the object schema and the database | Mapper classes                                 | Generated functions in Prisma Client | @map attributes in the Prisma schema |
+| Database schema | The structure of data in the database, e.g., tables and columns      | SQL written by hand or with a programmatic API | SQL generated by Prisma Migrate      | Prisma schema                        |
+
+Prisma aligns with the Data Mapper pattern with the following added benefits:
+
+- Reducing the boilerplate of defining classes and mapping logic by generating Prisma Client based on the Prisma schema.
+- Eliminating the synchronization challenges between application objects and the database schema.
+- Database migrations are a first-class citizen as they're derived from the Prisma schema.
+
+Now that we've talked about the concepts behind Prisma's approach to Data Mapper, we can go through how the Prisma schema works in practice.
+
+### Prisma schema
+
+At the heart of Prisma's implementation of the Data Mapper pattern is the _Prisma schema_ – a single source of truth for the following responsibilities:
+
+- Configuring how Prisma connects your database.
+- Generating Prisma Client – the type-safe ORM for use in your application code.
+- Creating and evolving the database schema with Prisma Migrate.
+- Defining the mapping between application objects and database columns.
+
+Models in Prisma mean something slightly different to Active Record ORMs. With Prisma, models are defined in the Prisma schema as abstract entities which describe tables, relations, and the mappings between columns to properties in the Prisma Client.
+
+As an example, here's a Prisma schema for a blog:
 
 ```prisma
-model User {
-  id        Int      @default(autoincrement()) @id
-  birthDate DateTime
-  email     String   @unique
-  firstName String?
-  lastName  String?
-  posts     Post[]
+datasource db {
+  provider = "postgres"
+  url      = "postgresql://janedoe:janedoe@localhost:5432/hello-prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
 }
 
 model Post {
-  content   String?
-  post_id   Int     @default(autoincrement()) @id
+  id        Int     @id @default(autoincrement())
   title     String
-  author_id User
+  content   String? @map("post_content")
+  published Boolean @default(false)
+  author    User?   @relation(fields: [authorId], references: [id])
+  authorId  Int?
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
 }
 ```
 
-Prima schema's declarative nature is concise compared to imperative model definitions in ORMs.
+Here's a break down of the example above:
 
-The workflow is slightly different to ORMs. You can use Prisma when building new applications from scratch or adopt it incrementally:
+- The `datasource` block defines the connection to the database.
+- The `generator` block tells Prisma to generate the client for TypeScript and Node.js.
+- The `Post` and `User` models map to database tables.
+- The two models have a _1-n_ relation where each `User` can have many related `Post`s.
+- Each field in the models has a type, e.g. the `id` has the type `Int`.
+- Fields may contain field attributes to define:
+  - Primary keys with the `@id` attribute.
+  - Unique keys with the `@unique` attribute.
+  - Default values with the `@default` attribute.
+  - Mapping between table columns and Prisma Client fields with the `@map` attribute, e.g., the `content` field maps (which will be accessible in Prisma Client) maps to the `post_content` database column.
 
-- _Existing application_ (brownfield): Projects that already have a database schema can be [introspected](../../components/introspection) by Prisma to generate the Prisma schema and Prisma Client. This use-case works with any existing migration tool and is useful for incremental adoption. It's possible to switch to Prisma Migrate as the migration tool. However, this is optional.
+The `User` / `Post` relation can be visualized with the following diagram:
+
+![1-n relation between User and Post](https://imgur.com/lidq1Xy.png)
+
+At a Prisma level, the `User` / `Post` relation is made up of:
+
+- The scalar `authorId` field, which is referenced by the `@relation` attribute. This field exists in the database table – it is the foreign key that connects Post and User.
+- The two relation fields: `author` and `posts` **do not exist** in the database table. Relation fields define connections between models at the Prisma level and do not exist in the database. These fields are used to access relations with Prisma Client.
+
+Prima schema's declarative nature is concise and allows defining tables, relations, table constraints, and mappings between the table columns and their representation in Prisma Client (like the `content` field).
+
+In the next section, you will learn about Prisma's supported workflows.
+
+### Prisma workflow
+
+The workflow with Prisma is slightly different to traditional ORMs. You can use Prisma when building new applications from scratch or adopt it incrementally:
+
 - _New application_ (greenfield): Projects that have no database schema yet can use Prisma Migrate to create the database schema.
+- _Existing application_ (brownfield): Projects that already have a database schema can be [introspected](../../reference/tools-and-interfaces/introspection) by Prisma to generate the Prisma schema and Prisma Client. This use-case works with any existing migration tool and is useful for incremental adoption. It's possible to switch to Prisma Migrate as the migration tool. However, this is optional.
+
+With both workflows, the Prisma schema is the main configuration file.
 
 #### Workflow for incremental adoption in projects with an existing database
 
@@ -274,7 +289,7 @@ Brownfield projects typically already have some database abstraction and schema.
 A non-exhaustive list of setups compatible with this workflow:
 
 - Projects using plain SQL files with `CREATE TABLE` and `ALTER TABLE` to create and alter the database schema.
-- Projects using a third party migration library like [db-migrate](https://github.com/db-migrate/node-db-migrate).
+- Projects using a third party migration library like [db-migrate](https://github.com/db-migrate/node-db-migrate) or [Umzug](https://github.com/sequelize/umzug).
 - Projects already using an ORM. In this case, database access through the ORM remains unchanged while the generated Prisma Client can be incrementally adopted.
 
 In practice, these are the steps necessary to introspect an existing DB and generate Prisma Client:
@@ -283,7 +298,7 @@ In practice, these are the steps necessary to introspect an existing DB and gene
 
 ```prisma
 datasource db {
-  provider = "postgresql"
+  provider = "postgres"
   url      = "postgresql://janedoe:janedoe@localhost:5432/hello-prisma"
 }
 
@@ -292,10 +307,11 @@ generator client {
 }
 ```
 
-2. Run `prisma introspect`
-3. Run `prisma generate`
+2. Run `prisma introspect` which will populate the Prisma schema with models derived from your database schema.
+3. (Optional) Customize [field and model mappings](<(https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#mapping-model-names-to-tables)>) between Prisma Client and the database.
+4. Run `prisma generate`.
 
-Prisma will generate Prisma Client inside the `node_modules` folder, from which it can be imported in your application. For more extensive usage documentation, see the [Prisma Client API](../../components/prisma-client) docs.
+Prisma will generate Prisma Client inside the `node_modules` folder, from which it can be imported in your application. For more extensive usage documentation, see the [Prisma Client API](../../reference/tools-and-interfaces/prisma-client/api) docs.
 
 To summarise, Prisma Client can be integrated into projects with an existing database and tooling as part of a parallel adoption strategy. New projects will use a different workflow detailed next.
 
@@ -303,57 +319,126 @@ To summarise, Prisma Client can be integrated into projects with an existing dat
 
 Prisma is different from ORMs in terms of the workflows it supports. A closer look at the steps necessary to create and change a new database schema is useful for understanding Prisma Migrate.
 
-Prisma Migrate is a CLI for declarative data modeling & migrations. Unlike most migration tools that come as part of an ORM, you only need to describe the current schema, instead of the operations to move from one state to another. Prisma Migrate infers the operations and carries out the migration for you.
+Prisma Migrate is a CLI for declarative data modeling & migrations. Unlike most migration tools that come as part of an ORM, you only need to describe the current schema, instead of the operations to move from one state to another. Prisma Migrate infers the operations, generates the SQL and carries out the migration for you.
 
-This example demonstrates using Prisma in a new project with a new database schema similar to the Sequelize example above:
+This example demonstrates using Prisma in a new project with a new database schema similar to the blog example above:
 
 1. Create the Prisma schema:
 
 ```prisma
 // schema.prisma
 datasource db {
-  provider = "sqlite"
-  url      = "file:data.db"
+  provider = "postgres"
+  url      = "postgresql://janedoe:janedoe@localhost:5432/hello-prisma"
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String? @map("post_content")
+  published Boolean @default(false)
+  author    User?   @relation(fields: [authorId], references: [id])
+  authorId  Int?
+}
+
 model User {
-  id        Int      @id
-  birthDate DateTime
-  email     String   @unique
-  firstName String?
-  lastName  String?
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
 }
 ```
 
-2. `prisma migrate save --experimental`: Save the migration. Typically migrations are saved in the code repository
-3. `prisma migrate up --experimental`: Run the migration which will create the database schema
-4. `prisma generate`: Re-generate Prisma Client
+2. Run `prisma migrate` to generates the SQL for the migration, apply it to the database, and generate Prisma Client.
 
 For any further changes to the database schema:
 
-1. Apply changes to the Prisma schema, e.g. add a `registrationDate` field to the `User` model
-1. Follow steps 2-4.
+1. Apply changes to the Prisma schema, e.g., add a `registrationDate` field to the `User` model
+1. Run `prisma migrate` again.
 
-The last two steps demonstrate how declarative migrations work by adding a field to the Prisma schema and using Prisma Migrate to transform the database schema to the desired state. Lastly, the Prisma Client was regenerated so that it reflects the updated schema.
+The last step demonstrates how declarative migrations work by adding a field to the Prisma schema and using Prisma Migrate to transform the database schema to the desired state. After the migration is run, Prisma Client is automatically regenerated so that it reflects the updated schema.
 
 If you don't want to use Prisma Migrate but still want to use the type-safe generated Prisma Client in a new project, see the next section.
 
 ##### Alternative for new projects without Prisma Migrate
 
-The workflow above relies on Prisma Migrate, which is still experimental. It is possible to use Prisma Client in a new project with a third-party migration tool instead of Prisma Migrate. For example, a new project could choose to use the Node.js migration framework [db-migrate](https://github.com/db-migrate/node-db-migrate) to create the database schema and migrations and Prisma Client for querying. In essence, this is covered by the [workflow for existing databases](#workflow-for-incremental-adoption-in-projects-with-an-existing-database).
+The workflow above relies on Prisma Migrate, which is still in early access. It is possible to use Prisma Client in a new project with a third-party migration tool instead of Prisma Migrate. For example, a new project could choose to use the Node.js migration framework [db-migrate](https://github.com/db-migrate/node-db-migrate) to create the database schema and migrations and Prisma Client for querying. In essence, this is covered by the [workflow for existing databases](#workflow-for-incremental-adoption-in-projects-with-an-existing-database).
+
+In the last section, you will see how data is accessed and manipulated using the generated Prisma Client.
+
+## Accessing data with Prisma Client
+
+So far, the article covered the concepts behind Prisma, its implementation of the Data Mapper pattern, and the workflows it supports. In this last section, you will see how to access data in your application using Prisma Client.
+
+Accessing the database with Prisma Client happens through the query methods it exposes. All queries return plain old JavaScript objects. Given the blog schema from above, fetching a user looks as follows:
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+const user = await prisma.user.findOne({
+  where: {
+    email: 'alice@prisma.io',
+  },
+})
+```
+
+In this query, the `findOne` method is used to fetch a single row from the `User` table. By default, Prisma will return all the scalar fields in the `User` table.
+
+> **Note:** The example uses TypeScript to make full use of the type safety features offered by Prisma Client. However, Prisma also works with [JavaScript in Node.js](https://dev.to/prisma/productive-development-with-prisma-s-zero-cost-type-safety-4od2).
+
+Prisma Client maps queries and results to [structural types](https://en.wikipedia.org/wiki/Structural_type_system) by generating code from the Prisma schema. This means that `user` has an associated type in the generated Prisma Client:
+
+```
+export type User = {
+  id: number
+  email: string
+  name: string | null
+}
+```
+
+This ensures that accessing a non-existent field will raise a type error. More broadly, it means that the result's type for every query is known ahead of running the query, which helps catch errors. For example, the following code snippet will raise a type error:
+
+```ts
+console.log(user.lastName) // Property 'lastName' does not exist on type 'User'.
+```
+
+### Fetching relations
+
+Fetch relations with Prisma Client is done with the `include` option. For example, to fetch a user and their posts would be done as follows:
+
+```ts
+const user = await prisma.user.findOne({
+  where: {
+    email: 'alice@prisma.io',
+  },
+  include: {
+    posts: true,
+  },
+})
+```
+
+With this query, `user`'s type will also include `Post`s which can be accessed with the `posts` array property:
+
+```ts
+console.log(user.posts[0].title)
+```
+
+The example only scratches the surface of the Prisma Client's API for [CRUD operations](../../reference/tools-and-interfaces/prisma-client/crud) which you can more about in the docs. The main idea is that all queries and results are backed by types and you have full control over how relations are fetched.
 
 ## Conclusion
 
-Both Prisma and ORMs are powerful tools that aim to make working with databases easier and more productive.
+In summary, Prisma is a new kind of Data Mapper ORM that differs from traditional ORM and doesn't suffer from the problems commonly associated with them.
 
-Like all abstractions, both hide away some of the underlying details of the database with different assumptions.
+Unlike traditional ORMs, with Prisma, you define the Prisma schema – a declarative single source of truth for the database schema and application models. All queries in Prisma Client return plain JavaScript objects which makes the process of interacting with the database a lot more natural as well as more predictable.
 
-The workflow with ORMs is centered around model classes and instances to encapsulate data and related business logic–a pattern fits the OOP (Object Oriented Programming) paradigm.
+Prisma supports two main workflows for starting new projects and adopting in an existing project. For both workflows, the Prisma schema is the main configuration file.
 
-Prisma's fundamental differences are the declarative schema as a single source of truth and the use of plain JavaScript objects in Prisma Client.
+Like all abstractions, both Prisma and other ORMs hide away some of the underlying details of the database with different assumptions.
 
 These differences and your use case all affect the workflow and cost of adoption. Hopefully understanding how they differ can help you make an informed decision.
