@@ -27,7 +27,7 @@ const CollapseBox = ({ children, ...props }: CollapseProps) => {
 export default CollapseBox
 
 const Wrapper = styled.div`
-  padding-bottom: ${p => p.theme.space[24]};
+  margin-bottom: ${p => p.theme.space[16]};
 `
 
 const Tab = styled.div`
@@ -56,7 +56,7 @@ const Label = styled.label`
   color: #0c344b;
   font-weight: 600;
   line-height: 1.5;
-  padding-left: ${p => p.theme.space[36]};
+  padding-left: ${p => p.theme.space[32]};
   cursor: pointer;
 `
 

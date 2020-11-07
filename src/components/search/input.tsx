@@ -47,6 +47,13 @@ const SearchBoxDiv = styled.div`
       }
     }
   }
+  @media (max-width: ${p => p.theme.breakpoints.phone}) {
+    width: auto;
+    flex: 1;
+    form {
+      width: 100%;
+    }
+  }
 
   .clear {
     display: none;
@@ -191,7 +198,6 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
     document.addEventListener('keydown', onKeyDown)
   }, [])
 
-
   return (
     <SearchBoxDiv className={isOpened ? 'opened' : ''}>
       <form onSubmit={onSubmit}>
@@ -207,7 +213,7 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
           {...rest}
         />
 
-        {(value !== '' && isOpened) && (
+        {value !== '' && isOpened && (
           <span className="clear">
             <ClearIcon onClick={clearInput} />
           </span>

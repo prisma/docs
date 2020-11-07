@@ -25,6 +25,9 @@ const FileNameWrapper = styled.span`
   svg {
     margin-right: ${p => p.theme.space[8]};
   }
+  @media (max-width: ${p => p.theme.breakpoints.tablet}) {
+    font-size: ${p => p.theme.fontSizes[14]};
+  }
 `
 
 const FileWithIcon = ({ icon, text }: FileWithIconProps) => (
