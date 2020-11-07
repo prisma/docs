@@ -94,6 +94,9 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     justify-content: center;
     display: flex;
     margin-top: ${p => p.theme.space[40]};
+    @media (max-width: 1024px) {
+      margin-top: ${p => p.theme.space[8]};
+    }
   `
 
   const TOCWrapper = styled.div`
