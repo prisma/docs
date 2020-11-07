@@ -96,7 +96,7 @@ const SearchBoxDiv = styled.div`
     border: 1px solid ${p => p.theme.colors.gray400};
     border-radius: 4px;
     color: ${p => p.theme.colors.gray400};
-    width: 18px;
+    min-width: 18px;
     display: flex;
     justify-content: center;
   }
@@ -109,7 +109,7 @@ const SearchBoxDiv = styled.div`
 `
 
 const SearchIcon = styled(SearchPic)`
-  width: 1em;
+  min-width: 1em;
   pointer-events: none;
   z-index: 100001;
 `
