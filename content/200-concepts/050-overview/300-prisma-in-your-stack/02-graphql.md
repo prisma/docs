@@ -78,3 +78,7 @@ No matter which of the above GraphQL tools/libraries you use, Prisma is used ins
 
 In the resolver of a GraphQL query, Prisma typically reads data from the database to return it in the GraphQL response. In the resolver of a GraphQL mutation, Prisma typically also writes data to the database (e.g. creating new or updating existing records).
 
+## Other GraphQL Resources
+
+Prisma curates [GraphQL Weekly](https://www.graphqlweekly.com/), a newsletter highlighting resources and updates from the GraphQL community. Subscribe to keep up-to-date with GraphQL articles, videos, tutorials, libraries, and more.
+
