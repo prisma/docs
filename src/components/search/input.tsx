@@ -47,6 +47,13 @@ const SearchBoxDiv = styled.div`
       }
     }
   }
+  @media (max-width: ${p => p.theme.breakpoints.phone}) {
+    width: auto;
+    flex: 1;
+    form {
+      width: 100%;
+    }
+  }
 
   .clear {
     display: none;
@@ -96,7 +103,7 @@ const SearchBoxDiv = styled.div`
     border: 1px solid ${p => p.theme.colors.gray400};
     border-radius: 4px;
     color: ${p => p.theme.colors.gray400};
-    width: 18px;
+    min-width: 18px;
     display: flex;
     justify-content: center;
   }
@@ -109,7 +116,7 @@ const SearchBoxDiv = styled.div`
 `
 
 const SearchIcon = styled(SearchPic)`
-  width: 1em;
+  min-width: 1em;
   pointer-events: none;
   z-index: 100001;
 `
@@ -191,7 +198,6 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
     document.addEventListener('keydown', onKeyDown)
   }, [])
 
-
   return (
     <SearchBoxDiv className={isOpened ? 'opened' : ''}>
       <form onSubmit={onSubmit}>
@@ -207,7 +213,7 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
           {...rest}
         />
 
-        {(value !== '' && isOpened) && (
+        {value !== '' && isOpened && (
           <span className="clear">
             <ClearIcon onClick={clearInput} />
           </span>

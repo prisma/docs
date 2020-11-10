@@ -16,7 +16,7 @@ const Sidebar = styled.div`
   overflow: auto;
   height: auto;
 
-  .tablet-only {
+  /* .tablet-only {
     display: none;
     background: ${p => p.theme.colors.gray100};
     justify-content: space-between;
@@ -34,13 +34,13 @@ const Sidebar = styled.div`
     @media (min-width: 641px) and (max-width: 1024px) {
       display: flex;
     }
-  }
+  } */
 
   .mobile-only {
     display: none;
     background: ${p => p.theme.colors.gray100};
     padding: ${p => p.theme.space[32]};
-    @media only screen and (max-width: 640px) {
+    @media only screen and (max-width: 1024px) {
       display: flex;
       > ul {
         width: 100%;

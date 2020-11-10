@@ -84,10 +84,11 @@ const DocsMobileButton = styled.div`
   position: relative;
   z-index: 300;
   justify-content: space-between;
+  cursor: pointer;
   svg {
     margin-left: ${p => p.theme.space[8]};
   }
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: 1024px) {
     display: flex;
     align-items: center;
   }
@@ -105,7 +106,7 @@ const MobileOnlyNav = styled.div`
   background: ${p => p.theme.colors.gray800};
   right: 0;
   padding: ${p => p.theme.space[32]} ${p => p.theme.space[16]};
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: 1024px) {
     display: block;
   }
 `
@@ -134,14 +135,14 @@ const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
   font-size: ${p => p.theme.fontSizes[16]};
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
   }
 `
 
 const NavLink = styled(Link)`
   transition: color 0.1s ease-in;
-  padding: 0 0.75rem;
+  padding: 0 0.5rem;
   margin: 0 0.5rem;
   color: ${p => p.theme.colors.gray400} !important;
   @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
@@ -182,20 +183,20 @@ const DarkNavLink = styled(NavLink)`
     background: ${p => p.theme.colors.white};
     border-radius: ${p => p.theme.radii.small};
     color: ${p => p.theme.colors.gray500} !important;
-    padding: 4px 6px;
+    padding: 0.25rem 0.5rem;
   }
 
   @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     &.active-item {
       background: transparent;
       color: ${p => p.theme.colors.gray700} !important;
-      padding: ${p => p.theme.space[24]};
+      padding: 0.25rem 0.5rem;
     }
     svg {
       display: block;
     }
   }
-  @media (min-width: ${p => p.theme.breakpoints.tablet}) and (max-width: 784px) {
+  @media (min-width: ${p => p.theme.breakpoints.tablet}) and (max-width: 1024px) {
     font-size: 14px;
   }
 `
@@ -208,17 +209,18 @@ const SecondLevelMobileNavLink = styled.div`
   border-top: 1px solid ${p => p.theme.colors.gray300};
   color: ${p => p.theme.colors.gray600};
   font-weight: 600;
+  cursor: pointer;
   &:hover {
     color: ${p => p.theme.colors.gray900};
   }
 `
 
 const SecondLevelNav = styled.div`
-  margin-left: 42px;
+  margin-left: 48px;
   width: 100%;
   display: flex;
   justify-content: space-between;
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: 1024px) {
     margin: 0;
     flex-direction: column;
   }
