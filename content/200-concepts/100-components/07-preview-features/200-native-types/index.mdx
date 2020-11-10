@@ -1,0 +1,150 @@
+---
+title: 'Extended native types support'
+metaTitle: 'Extended native types support (Reference)'
+metaDescription: 'Overview of the native types Preview feature.'
+---
+
+<TopBlock>
+
+Extended native database type support is a Preview feature in [2.11.0](https://github.com/prisma/prisma/releases/2.11.0). This Preview includes the following features:
+
+* Introspection adds **type attributes** to each field that **enrich your schema** with information about the underlying native database type
+* New [Prisma types](#additional-prisma-types)
+
+In the following example, the `String` fields map to a `varchar` with different character limits in the underlying database:
+
+```prisma
+model Post {
+  authorId                   Int?     @db.Int
+|  content                    String?  @db.VarChar(1000)
+  id                         Int      @id @default(autoincrement()) @db.Int
+  published                  Boolean  @default(false) @db.TinyInt
+|  title                      String   @db.VarChar(191)
+}
+```
+
+In a future release, [Prisma Migrate support for type attributes](#prisma-migrate-not-yet-supported) will give you greater control over exactly which types are created in the underlying database.
+
+See also:
+
+* [Native database type attributes overview](#native-database-type-attributes)
+* [Type mappings](native-types-mappings)
+
+</TopBlock>
+
+## Native database type attributes
+
+When you enable the `nativeTypes` Preview feature, introspection adds a native database type attribute that describes the underlying database type:
+
+  ```prisma
+  model Post {
+    id      Int    @id
+    title   String @db.VarChar(200)
+    tagline String @db.Char(50)
+  }
+  ```
+
+> **Note**: `db push` and Prisma Migrate are not yet supported, which means that you cannot add the type attributes to the schema yourself.
+
+Each Prisma type can map to multiple native database types. Native database type attributes are:
+
+* Specific to the underlying provider - for example, PostgreSQL uses `@db.Boolean` for `Boolean` whereas MySQL uses `@db.TinyInt`
+* Written in PascalCase (for example, `VarChar` or `Text`)
+* Prefixed by `@db`, where `db` is the name of the `datasource` block in your schema
+
+Currently, the main benefit of native database type attributes is an **enriched schema** when you introspect - you can see if  `String` is `varchar(200)` or just `text`.
+
+In future, native database type attributes will allow you finer control over exactly what type is created in the database when you migrate.
+
+## Enable native database type attributes
+
+To enable native database type attributes:
+
+1. Update the `generator` block in your schema as shown:
+
+    ```prisma file=prisma/schema.prisma
+    generator client {
+        provider        = "prisma-client-js"
+    |    previewFeatures = ["nativeTypes"]
+    }
+    ```
+
+1. Introspect your database to populate the schema with type attributes:
+
+   ```terminal
+   npx prisma introspect
+   ```
+
+1. Generate Prisma Client:
+
+    ```terminal
+    npx prisma generate
+    ```
+
+## Additional Prisma types
+
+The type attribute Preview feature includes the following new Prisma types:
+
+* [`Decimal`](native-types-mappings#decimal)
+* [`Bytes`](native-types-mappings#bytes) 
+* [`BigInt`](native-types-mappings#bigint)
+
+### Working with new types in Prisma Client
+
+* `BigInt` uses [`BigInt` type](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) (Node.js 10.4.0+ required)
+* `Decimal` uses the [`Decimal.js` library](https://mikemcl.github.io/decimal.js/)
+* `Bytes` uses [`Buffer`](https://nodejs.org/api/buffer.html)
+
+The following model uses the three new Primsa types:
+
+```prisma
+model sample {
+  bigInt  BigInt?  @db.BigInt
+  byteA   Bytes?   @db.ByteA
+  decimal Decimal? @db.Numeric
+  id      Int      @id @default(autoincrement()) @db.Integer
+}
+```
+
+The following example demonstrates how to create and filter on `sample` records with Prisma Client:
+
+```ts
+// Create record
+const newTypes = await prisma.sample.create({
+  data:{
+    bigInt: BigInt(534543543534),
+    decimal: new Decimal(24.454545),
+    byteA: Buffer.from(["Hello", "this is a string", 1, 9, 4])
+  }
+});
+
+// Filter records
+const newTypesFilter = await prisma.dates.findMany({
+  where: {
+    bigInt: {
+      gt: BigInt(4594375943753)
+    },
+    byteA: {
+      not: Buffer.from(["Hey!"])
+    }
+  }
+})
+```
+
+## Limitations
+
+### Prisma Migrate not yet supported
+
+Prisma Migrate does not yet support native database type attributes. If you try to `prisma migrate` or `prisma db push`, you will see the following error:
+
+```terminal
+Response "Some of the requested Preview features are not yet allowed in migration engine. Please remove them from your data model before using migrations. (blocked: `nativeTypes`)"
+```
+
+### <inlinecode>db push</inlinecode> not yet supported
+
+`db push` uses the Migration Engine, which does not support native database type attributes yet.
+
+### SQL Server not yet supported
+
+You cannot use native database type attributes with the [SQL Server Preview](../sql-server) yet.
