@@ -40,14 +40,13 @@ While the example uses REST, the same principles apply to a GraphQL server, with
 
 Prisma supports different workflows depending on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, i.e. `schema.prisma` file.
 
-This guide starts with an empty database created with Prisma Migrate and looks as follows:
-
-![Typical workflow with Prisma Migrate](https://imgur.com/OImder6.png)
+This guide starts with an empty database created with the [`prisma db push`](/reference/api-reference/command-reference#db-push) and looks as follows:
 
 1. Define the database schema using Prisma schema.
-1. Save the migration.
-1. Run the migration using Prisma Migrate which will create the database schema.
-1. Run `prisma generate` which will generate Prisma Client based on the Prisma schema.
+2. Run `prisma db push --preview-feature` which will create the database schema in a single step and generate Prisma Client.
+
+> **Note:** The `prisma db push` command is intended for prototyping and should be avoided in production as it can lead to data loss.
+
 
 ## 1. Download the example and install dependencies
 
@@ -67,8 +66,6 @@ curl https://codeload.github.com/prisma/prisma-examples/tar.gz/latest | tar -xz 
 ls -1
 Procfile
 README.md
-node_modules
-package-lock.json
 package.json
 prisma
 public
@@ -143,15 +140,7 @@ heroku apps:create your-app-name
 > https://your-app-name.herokuapp.com/ | https://git.heroku.com/your-app-name.git
 ```
 
-## 5. Connect your local code repository to Heroku for deployment
-
-To deploy your application, you need to add the git remote that Heroku created to your local repository.
-
-You can do so with the following Heroku CLI command:
-
-```no-lines
-heroku git:remote --app your-app-name
-```
+Creating the Heroku app will add the git remote Heroku created to your local repository. Pushing commits to this remote will trigger a deploy.
 
 **Checkpoint:** `git remote -v` should show the Heroku git remote for your application:
 
@@ -160,7 +149,13 @@ heroku	https://git.heroku.com/your-app-name.git (fetch)
 heroku	https://git.heroku.com/your-app-name.git (push)
 ```
 
-## 6. Add a PostgreSQL database to your application
+If you don't see the heroku remote, use the following command to add it:
+
+```no-lines
+heroku git:remote --app your-app-name
+```
+
+## 5. Add a PostgreSQL database to your application
 
 Heroku allows your to provision a PostgreSQL database as part of an application.
 
@@ -182,7 +177,7 @@ Created postgresql-parallel-73780 as DATABASE_URL
 
 > **Note:** Heroku will automatically set the `DATABASE_URL` environment variable when the app is running on Heroku. Prisma will use this environment variable because it's declared in the _datasource_ block of the Prisma schema (`prisma/schema.prisma`) with `env("DATABASE_URL")`.
 
-## 7. Set the DATABASE_URL environment variable locally
+## 6. Set the DATABASE_URL environment variable locally
 
 In the previous step you created the database and saw how Heroku defines `DATABASE_URL` for the application when running on Heroku. In this step, you will to set the `DATABASE_URL` environment variable locally so that you can run the database migration from locally using Prisma.
 
@@ -204,18 +199,17 @@ export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATA
 
 > **Note:** It's considered best practice to keep secrets out of your codebase. If you open up the `prisma/schema.prisma` file, you should see `env("DATABASE_URL")` in the _datasource_ block. By setting an environment variable you keep secrets out of the codebase.
 
-## 8. Save and run the database migration
+## 7. Save and run the database migration
 
-With the Heroku app and database created, you can run the migration to create the database schema with Prisma Migrate.
+With the Heroku app and database created, you will create the database schema using the `prisma db push` command. The command lets you push the state of your Prisma schema file to the database without using migrations.
 
-This is a two-step process:
+To do so run the following command:
 
-1. Save the migration: `npx prisma migrate save --experimental --name "init"`
-2. Run the migration `npx prisma migrate up --experimental`
+```no-lines
+npx prisma db push --preview-feature
+```
 
-For more information on how Prisma Migrate works, check out the [documentation](/concepts/components/prisma-migrate)
-
-> **Note:** **Prisma Migrate is currently in an experimental state.** This means that it is not recommended to use Prisma Migrate in production. Instead, you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/concepts/components/introspection).
+> **Note:** The `db push` is currently in preview mode. This means that it is not recommended to use in production. Moreover, the command is intended for prototying and local development. In production it's recommended to use manage the database schema with a [database migration tool](https://en.wikipedia.org/wiki/Schema_migration) like [Prisma Migrate](/concepts/components/prisma-migrate) which is also in preview mode. If you're intending to deploy a production app while Prisma Migrate is still in preview,you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/concepts/components/introspection).
 
 **Checkpoint:** `heroku pg:psql --command="\dt"` should show the newly created database tables:
 
@@ -230,7 +224,7 @@ For more information on how Prisma Migrate works, check out the [documentation](
   (3 rows)
 ```
 
-## 9. Push to deploy
+## 8. Push to deploy
 
 Deploy the app by pushing the changes to the Heroku app repository:
 
@@ -250,7 +244,7 @@ remote:        https://your-app-name.herokuapp.com/ deployed to Heroku
 
 > **Note:** Heroku will also set the `PORT` environment variable to which your application will be bound.
 
-## 10. Test your deployed application
+## 9. Test your deployed application
 
 You can use the static frontend to interact with the API you deployed via the preview URL.
 
