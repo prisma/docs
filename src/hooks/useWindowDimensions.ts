@@ -21,7 +21,7 @@ export default function useWindowDimensions() {
     function handleResize() {
       setWindowDimensions(getWindowDimensions())
     }
-
+    handleResize() // trying to trigger this on component mount since it's bugging out at prisma.io/docs/
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
