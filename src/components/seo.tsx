@@ -11,7 +11,6 @@ type SEOProps = {
 
 const SEO = ({ title, description }: SEOProps) => {
   const location = useLocation()
-  const [pathTechParams] = location.pathname.split('/').splice(-1)
   const { site, allSitePage } = useStaticQuery(query)
   const {
     siteMetadata: {
@@ -30,9 +29,10 @@ const SEO = ({ title, description }: SEOProps) => {
   } = site
 
   const currentPage = allSitePage.edges.find(
-    (page: any) => page.node.path.split('/').splice(-1)[0] === pathTechParams
+    (page: any) => page.node.path === location.pathname
   )
 
+  // Give the context precedence as it has the title based on the language and db selection
   const seoTitle =
     currentPage && currentPage.node.context ? currentPage.node.context.seoTitle : title
   const seoDescription =
