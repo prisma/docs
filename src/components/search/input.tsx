@@ -133,8 +133,8 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
   const { width } = useWindowDimensions()
-  const placeholderText = width > 640 ? 'Search Documentation...' : 'Search'
-
+  // const placeholderText = width > 640 ? 'Search Documentation...' : 'Search'
+  const [placeholderText, setPlaceholderText] = React.useState('Search')
   const onChange = (e: any) => {
     const { value: newValue } = e.target
 
@@ -196,6 +196,9 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
 
   React.useEffect(() => {
     document.addEventListener('keydown', onKeyDown)
+    if (width > 640) {
+      setPlaceholderText('Search Documentation...')
+    }
   }, [])
 
   return (
