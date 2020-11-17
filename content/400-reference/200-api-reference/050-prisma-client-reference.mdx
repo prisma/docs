@@ -19,6 +19,8 @@ model User {
   role         Role      @default(USER)
   coinflips    Boolean[]
   posts        Post[]
+  city         String
+  country      String
 }
 
 model Post {
@@ -42,6 +44,269 @@ All example generated types (such as `UserSelect` and `UserWhereUniqueInput`) ar
 
 </TopBlock>
 
+## <inlinecode>PrismaClient</inlinecode>
+
+### <inlinecode>datasources</inlinecode>
+
+### <inlinecode>log</inlinecode>
+
+Determines the type and level of logging.
+
+#### Options
+
+| Option                   | Example                                                                  | Description |
+| ------------------------ | ------------------------------------------------------------------------ | ----------- |
+| Array of log levels      | `[ "info", "query" ]`                                                    |             |
+| Array of log definitions | `[ { level: "info", emit: "event" }, { level: "warn", emit: "stdout" }]` |             |
+
+Available log levels:
+
+| Name    | Description                                    |
+| ------- | ---------------------------------------------- |
+| `query` | If it's not defined, the default is colorless. |
+| `info`  | Enables pretty error formatting.               |
+| `warn`  | Enables colorless error formatting.            |
+| `error` | Enables colorless error formatting.            |
+
+Available emit formats:
+
+| Name     | Description                                    |
+| -------- | ---------------------------------------------- |
+| `stdout` | If it's not defined, the default is colorless. |
+| `event`  | Enables pretty error formatting.               |
+
+#### Reference
+
+```ts
+log?: Array<LogLevel | LogDefinition>
+```
+
+```ts
+export type LogLevel = 'info' | 'query' | 'warn' | 'error'
+export type LogDefinition = {
+  level: LogLevel
+  emit: 'stdout' | 'event'
+}
+```
+
+```ts
+export type QueryEvent = {
+  timestamp: Date
+  query: string
+  params: string
+  duration: number
+  target: string
+}
+
+export type LogEvent = {
+  timestamp: Date
+  message: string
+  target: string
+}
+```
+
+#### Examples
+
+##### Log `query` and `info` to `stdout`
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+| const prisma = new PrismaClient({ log: ['query', 'info'] })
+
+async function main() {
+  const countUsers = await prisma.user.count({})
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</Cmd>
+
+<CmdResult>
+
+```
+prisma:info  Starting a postgresql pool with 13 connections.
+prisma:info  Started http server
+prisma:query SELECT COUNT(*) FROM (SELECT "public"."User"."id" FROM "public"."User" WHERE 1=1 ORDER BY "public"."User"."coinflips" ASC OFFSET $1) AS "sub"
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+##### Log a `query` event to console
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({ log: [{ level: 'query', emit: 'event' }] })
+
+prisma.$on('query', e => {
+  console.log(e)
+})
+
+async function main() {
+  const countUsers = await prisma.user.count({})
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</Cmd>
+
+<CmdResult>
+
+```js
+{
+  timestamp: 2020-11-17T10:32:10.898Z,
+  query: 'SELECT COUNT(*) FROM (SELECT "public"."User"."id" FROM "public"."User" WHERE 1=1 OFFSET $1) AS "sub"',
+  params: '[0]',
+  duration: 5,
+  target: 'quaint::connector::metrics'
+}
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+##### Log `info`, `warn`, and `error` events to console
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({
+  log: [
+    { level: 'warn', emit: 'event' },
+    { level: 'info', emit: 'event' },
+    { level: 'error', emit: 'event' },
+  ],
+})
+
+prisma.$on('warn', e => {
+  console.log(e)
+})
+
+prisma.$on('info', e => {
+  console.log(e)
+})
+
+prisma.$on('error', e => {
+  console.log(e)
+})
+
+async function main() {
+  const countUsers = await prisma.user.count({})
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  timestamp: 2020-11-17T10:33:24.592Z,
+  message: 'Starting a postgresql pool with 13 connections.',
+  target: 'quaint::pooled'
+}
+{
+  timestamp: 2020-11-17T10:33:24.637Z,
+  message: 'Started http server',
+  target: 'query_engine::server'
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+### <inlinecode>errorFormat</inlinecode>
+
+Determines the level and formatting of errors returned by Prisma.
+
+#### Options
+
+| Name                  | Description                                    |
+| --------------------- | ---------------------------------------------- |
+| `undefined`           | If it's not defined, the default is colorless. |
+| `pretty`              | Enables pretty error formatting.               |
+| `colorless` (default) | Enables colorless error formatting.            |
+| `minimal`             | Enables minimal error formatting.              |
+
+#### Reference
+
+```ts
+errorFormat?: ErrorFormat
+```
+
+```ts
+export type ErrorFormat = 'pretty' | 'colorless' | 'minimal'
+```
+
+#### Examples
+
+##### No error formatting
+
+```ts
+const prisma = new PrismaClient({
+  // Defaults to colorless
+})
+```
+
+##### `pretty` error formatting
+
+```ts
+const prisma = new PrismaClient({
+  errorFormat: 'pretty',
+})
+```
+
+##### `colorless` error formatting
+
+```ts
+const prisma = new PrismaClient({
+  errorFormat: 'colorless',
+})
+```
+
+##### `minimal` error formatting
+
+```ts
+const prisma = new PrismaClient({
+  errorFormat: 'minimal',
+})
+```
+
 ## Model queries
 
 ### <inlinecode>findOne</inlinecode>
@@ -61,11 +326,11 @@ All example generated types (such as `UserSelect` and `UserWhereUniqueInput`) ar
 
 #### Return type
 
-| Return type               | Example                    | Description                                                                      |
-| ------------------------- | -------------------------- | -------------------------------------------------------------------------------- |
-| Javascript object (typed) | `User`                     | Specifies which properties to include on the returned object.                    |
-| Javascript object (plain) | `{ title: "Hello world" }` | Wraps all _unique_ fields of a model so that individual records can be selected. |
-| `null`                    | `null`                     | Record not found                                                                 |
+| Return type               | Example                    | Description                                                     |
+| ------------------------- | -------------------------- | --------------------------------------------------------------- |
+| Javascript object (typed) | `User`                     |                                                                 |
+| Javascript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return. |
+| `null`                    | `null`                     | Record not found                                                |
 
 #### Reference
 
@@ -173,11 +438,11 @@ const result = await prisma.user.findOne({
 
 #### Return type
 
-| Return type               | Example                    | Description                                                                      |
-| ------------------------- | -------------------------- | -------------------------------------------------------------------------------- |
-| Javascript object (typed) | `User`                     | Specifies which properties to include on the returned object.                    |
-| Javascript object (plain) | `{ title: "Hello world" }` | Wraps all _unique_ fields of a model so that individual records can be selected. |
-| `null`                    | `null`                     | Record not found                                                                 |
+| Return type               | Example                    | Description                                                     |
+| ------------------------- | -------------------------- | --------------------------------------------------------------- |
+| Javascript object (typed) | `User`                     | Specifies which properties to include on the returned object.   |
+| Javascript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return. |
+| `null`                    | `null`                     | Record not found                                                |
 
 #### Reference
 
@@ -268,11 +533,11 @@ See [filtering documentation](filtering#filter-on-related-records) for advanced 
 
 #### Return type
 
-| Return type                     | Example                      | Description                                                                             |
-| ------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
-| Javascript array object (typed) | `User[]`                     |                                                                                         |
-| Javascript array object (plain) | `[{ title: "Hello world" }]` | Returned if you use `select` or `include` to customize which fields should be returned. |
-| Empty array                     | `[]`                         | No matching records found.                                                              |
+| Return type                     | Example                      | Description                                                     |
+| ------------------------------- | ---------------------------- | --------------------------------------------------------------- |
+| Javascript array object (typed) | `User[]`                     |                                                                 |
+| Javascript array object (plain) | `[{ title: "Hello world" }]` | Use `select` and `include` to determine which fields to return. |
+| Empty array                     | `[]`                         | No matching records found.                                      |
 
 #### Reference
 
@@ -317,10 +582,10 @@ See [filtering documentation](filtering#filter-on-related-records) for advanced 
 
 #### Return type
 
-| Return type                     | Example                        | Description                                                                             |
-| ------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------- |
-| Javascript array object (typed) | `User`                         |                                                                                         |
-| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Returned if you use `select` or `include` to customize which fields should be returned. |
+| Return type                     | Example                        | Description                                                     |
+| ------------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| Javascript array object (typed) | `User`                         |                                                                 |
+| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Use `select` and `include` to determine which fields to return. |
 
 #### Remarks
 
@@ -447,10 +712,10 @@ You can also perform nested writes, such as:
 
 #### Return type
 
-| Return type                     | Example                        | Description                                                                             |
-| ------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------- |
-| Javascript array object (typed) | `User`                         |                                                                                         |
-| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Returned if you use `select` or `include` to customize which fields should be returned. |
+| Return type                     | Example                        | Description                                                     |
+| ------------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| Javascript array object (typed) | `User`                         |                                                                 |
+| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Use `select` and `include` to determine which fields to return. |
 | `RecordNotFound` exception      |                                |
 
 #### Remarks
@@ -502,10 +767,10 @@ You can also perform nested writes during an update, such as:
 
 #### Return type
 
-| Return type                     | Example                        | Description                                                                             |
-| ------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------- |
-| Javascript array object (typed) | `User`                         |                                                                                         |
-| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Returned if you use `select` or `include` to customize which fields should be returned. |
+| Return type                     | Example                        | Description                                                     |
+| ------------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| Javascript array object (typed) | `User`                         |                                                                 |
+| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Use `select` and `include` to determine which fields to return. |
 
 #### Reference
 
@@ -559,11 +824,11 @@ export type UserDeleteArgs = {
 
 #### Return type
 
-| Return type                     | Example                        | Description                                                                                                                           |
-| ------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Javascript array object (typed) | `User`                         | The `User` record that was deleted.                                                                                                   |
-| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Data from the `User` record that was deleted. Returned if you use `select` or `include` to customize which fields should be returned. |
-| `RecordNotFound` exception      |                                | Returned if record does not exist.                                                                                                    |
+| Return type                     | Example                        | Description                                                                                                   |
+| ------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Javascript array object (typed) | `User`                         | The `User` record that was deleted.                                                                           |
+| Javascript array object (plain) | `{ name: "Alice Wonderland" }` | Data from the `User` record that was deleted. Use `select` and `include` to determine which fields to return. |
+| `RecordNotFound` exception      |                                | Returned if record does not exist.                                                                            |
 
 #### Remarks
 
@@ -719,18 +984,17 @@ const deletedUserCount = await prisma.user.deleteMany({
 | Name       | Type                                                          | Required | Description                                                                                                                                                                                     |
 | ---------- | ------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `where`    | `UserWhereInput`                                              | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                            |
-| `orderBy`  | `XOR<Enumerable<PostOrder`<br />`ByInput>, PostOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                               |
-| `skip`     | `number`                                                      | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                       |
 | `cursor`   | `UserWhereUniqueInput`                                        | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                            |
+| `skip`     | `number`                                                      | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                       |
 | `take`     | `number`                                                      | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (+ve value) or _end_ (-ve value) **either** of the list **or** from the `cursor` position if mentioned) |
+| `orderBy`  | `XOR<Enumerable<PostOrder`<br />`ByInput>, PostOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                               |
 | `distinct` | `Enumerable<UserDistinctFieldEnum>`                           | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                       |
 
 #### Return type
 
-| Return type    | Example        | Description                   |
-| -------------- | -------------- | ----------------------------- |
-| `number` | `29` | The count of records. |
-
+| Return type | Example | Description           |
+| ----------- | ------- | --------------------- |
+| `number`    | `29`    | The count of records. |
 
 #### Reference
 
@@ -770,13 +1034,988 @@ const result = await prisma.user.count({
 
 ### <inlinecode>aggregate</inlinecode>
 
+## Model query options
+
+### <inlinecode>select</inlinecode>
+
+### <inlinecode>include</inlinecode>
+
+### <inlinecode>where</inlinecode>
+
+### <inlinecode>orderBy</inlinecode>
+
+#### Inputs
+
+| Name   | Description                  |
+| ------ | ---------------------------- |
+| `asc`  | Sort ascending (A &rarr; Z)  |
+| `desc` | Sort descending (Z &rarr; A) |
+
+#### Reference
+
+```ts
+orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
+```
+
+```ts
+export type UserOrderByInput = {
+  id?: SortOrder
+  name?: SortOrder
+  email?: SortOrder
+  profileViews?: SortOrder
+  role?: SortOrder
+  coinflips?: SortOrder
+}
+
+export declare const SortOrder: {
+  asc: 'asc'
+  desc: 'desc'
+}
+```
+
+#### Examples
+
+##### Sort `User` by `email` field
+
+The following example returns all `User` records sorted by `email` ascending:
+
+```ts
+const users = await prisma.user.findMany({
+  orderBy: {
+    email: 'asc',
+  },
+})
+```
+
+The following example returns all `User` records sorted by `email` descending:
+
+```ts
+const users = await prisma.user.findMany({
+  orderBy: {
+    email: 'desc',
+  },
+})
+```
+
+##### Sort `User` by multiple fields - `email` _and_ `role`
+
+The following example sorts users by two fields - first `email`, then `role`:
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+const users = await prisma.user.findMany({
+  select: {
+    email: true,
+    role: true,
+  },
+  orderBy: [
+    {
+      email: 'desc',
+    },
+    {
+      role: 'desc',
+    },
+  ],
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```json
+[
+  {
+    "email": "yuki@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "nora@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "mary@prisma.io",
+    "role": "MODERATOR"
+  },
+  {
+    "email": "elsa@prisma.io",
+    "role": "MODERATOR"
+  },
+  {
+    "email": "eloise@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "coco@prisma.io",
+    "role": "ADMIN"
+  },
+  {
+    "email": "anna@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "alice@prisma.io",
+    "role": "USER"
+  }
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+The order of sorting parameters matters - the following query sorts by `role`, then `email`. Not the difference in the results:
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+const users = await prisma.user.findMany({
+  select: {
+    email: true,
+    role: true,
+  },
+  orderBy: [
+    {
+      role: 'desc',
+    },
+    {
+      email: 'desc',
+    },
+  ],
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```json
+[
+  {
+    "email": "mary@prisma.io",
+    "role": "MODERATOR"
+  },
+  {
+    "email": "elsa@prisma.io",
+    "role": "MODERATOR"
+  },
+  {
+    "email": "yuki@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "nora@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "eloise@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "anna@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "alice@prisma.io",
+    "role": "USER"
+  },
+  {
+    "email": "coco@prisma.io",
+    "role": "ADMIN"
+  }
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+##### Sort `User` by `email`, select `name` and `email`
+
+The following example returns all the `name` and `email` fields of all `User` records, sorted by `email`:
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+const users3 = await prisma.user.findMany({
+  orderBy: {
+    email: 'asc',
+  },
+  select: {
+    name: true,
+    email: true,
+  },
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```js
+;[
+  {
+    name: 'Alice',
+    email: 'alice@prisma.io',
+  },
+  {
+    name: 'Ariadne',
+    email: 'ariadne@prisma.io',
+  },
+  {
+    name: 'Bob',
+    email: 'bob@prisma.io',
+  },
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+##### Sort `User` records by `email` and sort nested `Post` records by `title`
+
+The following example:
+
+- Returns all `User` records sorted by `email`
+- For each `User` record, returns the `title` field of all nested `Post` records sorted by `title`
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+const usersWithPosts = await prisma.user.findMany({
+  orderBy: {
+    email: 'asc',
+  },
+  include: {
+    posts: {
+      select: {
+        title: true,
+      },
+      orderBy: {
+        title: 'asc',
+      },
+    },
+  },
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```json
+[
+  {
+    "id": 2,
+    "email": "alice@prisma.io",
+    "name": "Alice",
+    "posts": [
+      {
+        "title": "Watch the talks from Prisma Day 2019"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "email": "ariadne@prisma.io",
+    "name": "Ariadne",
+    "posts": [
+      {
+        "title": "How to connect to a SQLite database"
+      },
+      {
+        "title": "My first day at Prisma"
+      }
+    ]
+  },
+  {
+    "id": 1,
+    "email": "bob@prisma.io",
+    "name": "Bob",
+    "posts": [
+      {
+        "title": "Follow Prisma on Twitter"
+      },
+      {
+        "title": "Subscribe to GraphQL Weekly for community news "
+      }
+    ]
+  }
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+##### Sort one user's nested list of `Post` records
+
+The following example retrieves a single `User` record by ID, as well as a list of nested `Post` records sorted by `title`:
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+const userWithPosts = await prisma.user.findOne({
+  where: {
+    id: 1,
+  },
+  include: {
+    posts: {
+      orderBy: {
+        title: 'desc',
+      },
+      select: {
+        title: true,
+        published: true,
+      },
+    },
+  },
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```json
+{
+  "email": "sarah@prisma.io",
+  "id": 1,
+  "name": "Sarah",
+  "extendedProfile": null,
+  "role": "USER",
+  "posts": [
+    {
+      "title": "Prisma Day 2020",
+      "published": false
+    },
+    {
+      "title": "My first post",
+      "published": false
+    },
+    {
+      "title": "All about databases",
+      "published": true
+    }
+  ]
+}
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+##### Sort by `enum`
+
+The following sorts all `User` records by `role` (an `enum`):
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+const sort = await prisma.user.findMany({
+  orderBy: {
+    role: 'desc',
+  },
+  select: {
+    email: true,
+    role: true,
+  },
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```json
+[
+  {
+    "email": "emma@prisma.io",
+
+    "role": "USER"
+  },
+  {
+    "email": "suma@prisma.io",
+    "role": "ADMIN"
+  },
+  {
+    "email": "kwame@prisma.io",
+    "role": "ADMIN"
+  },
+  {
+    "email": "pearl@prisma.io",
+    "role": "ADMIN"
+  }
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+### <inlinecode>distinct</inlinecode>
+
+#### Reference
+
+```ts
+  distinct?: Enumerable<UserDistinctFieldEnum>
+```
+
+```ts
+export declare const UserDistinctFieldEnum: {
+  id: 'id'
+  name: 'name'
+  email: 'email'
+  profileViews: 'profileViews'
+  role: 'role'
+  coinflips: 'coinflips'
+}
+```
+
+#### Examples
+
+##### Select distinct on a single field
+
+The following example returns all distinct `city` fields, and selects only the `city` and `country` fields:
+
+<CodeWithResult  expanded={true}>
+
+<Cmd>
+
+```ts
+const distinctCities = await prisma.user.findMany({
+  select: {
+    city: true,
+    country: true,
+  },
+  distinct: ['city'],
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```js no-lines
+;[
+  { city: 'Paris', country: 'France' },
+  { city: 'Lyon', country: 'France' },
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+##### Select distinct on multiple fields
+
+The following example returns all distinct `city` _and_ `country` field combinations, and selects only the `city` and `country` fields:
+
+<CodeWithResult expanded={true}>
+
+<Cmd>
+
+```ts
+const distinctCitiesAndCountries = await prisma.user.findMany({
+  select: {
+    city: true,
+    country: true,
+  },
+  distinct: ['city', 'country'],
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```js no-lines
+;[
+  { city: 'Paris', country: 'France' },
+  { city: 'Paris', country: 'Denmark' },
+  { city: 'Lyon', country: 'France' },
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
+Note that there is now a "Paris, Denmark" in addition to "Paris, France":
+
+##### Select distinct in combination with a filter
+
+The following example returns all distinct `city` _and_ `country` field combinations where the user's email contains `"prisma.io"`, and selects only the `city` and `country` fields:
+
+<CodeWithResult>
+
+<Cmd>
+
+```ts
+const distinctCitiesAndCountries = await prisma.user.findMany({
+  where: {
+    email: {
+      contains: 'prisma.io',
+    },
+  },
+  select: {
+    city: true,
+    country: true,
+  },
+  distinct: ['city', 'country'],
+})
+```
+
+</Cmd>
+
+<CmdResult>
+
+```js
+;[
+  { city: 'Paris', country: 'Denmark' },
+  { city: 'Lyon', country: 'France' },
+]
+```
+
+</CmdResult>
+
+</CodeWithResult>
+
 ## Nested queries
+
+### <inlinecode>create</inlinecode>
+
+`create` creates a new related record or set of records.
+
+#### Examples
+
+##### Create a new `User` record with a new `Profile` record
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    profile: {
+|     create: { bio: 'Hello World' },
+    },
+  },
+})
+```
+
+##### Create a new `Profile` record with a new `User` record
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'Hello World',
+    user: {
+|     create: { email: 'alice@prisma.io' },
+    },
+  },
+})
+```
+
+##### Create a new `User` record with a new `Post` record
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    posts: {
+|     create: { title: 'Hello World' },
+    },
+  },
+})
+```
+
+##### Create a new `User` record with two new `Post` records
+
+Because it's a one-to-many relation, you can also create several `Post` records at once by passing an array to `create`:
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    posts: {
+|     create: [{ title: 'This is my first post' }, { title: 'Here comes a second post' }],
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by creating a new `Profile` record
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+|     create: { bio: 'Hello World' },
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by creating a new `Post` record
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+|      create: { title: 'Hello World' },
+    },
+  },
+})
+```
 
 ### <inlinecode>connect</inlinecode>
 
+A nested `connect` query connects a record to an existing related record by ID or unique identifier.
+
+#### Remarks
+
+- If the related record does not exist, Prisma Client throws an exception:
+
+  ```
+  The required connected records were not found. Expected 1 records to be connected, found 0.
+  ```
+
+#### Examples
+
+##### Create a new `Profile` record and connect it to an existing `User` record via unique field
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'Hello World',
+    user: {
+      connect: { email: 'alice@prisma.io' },
+    },
+  },
+})
+```
+
+##### Create a new `Profile` record and connect it to an existing `User` record via an ID field
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'Hello World',
+    user: {
+      connect: { id: 42 }, // sets userId of Profile record
+    },
+  },
+})
+```
+
+In [2.11.0](https://github.com/prisma/prisma/releases/2.11.0) and later, you can set the foreign key directly:
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'Hello World',
+    userId: 42,
+  },
+})
+```
+
+To use this feature, enable the `uncheckedScalarInputs` in your schema file as shown:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["uncheckedScalarInputs"]
+}
+```
+
+##### Create a new `Post` record and connect it to an existing `User` record
+
+```ts
+const user = await prisma.post.create({
+  data: {
+    title: 'Hello World',
+    author: {
+      connect: { email: 'alice@prisma.io' },
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by connecting it to an existing `Profile` record
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      connect: { id: 24 },
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by connecting it to two existing `Post` records
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      connect: [{ id: 24 }, { id: 42 }],
+    },
+  },
+})
+```
+
 ### <inlinecode>connectOrCreate</inlinecode>
 
+`connectOrCreate` _either_ connects a record to an existing related record by ID or unique identifier _or_ creates a new related record if the record does not exist.
+
+#### Examples
+
+##### Create a new `Profile` record, then connect it to an existing `User` record _or_ create a new `User`
+
+The following example:
+
+1. Creates a `Profile`
+2. Attempts to connect the profile to a `User` where the email address is `alice@prisma.io`
+3. Creates a new user if a user if a matching user does not exist
+
+```ts
+const user = await prisma.profile.create({
+  data: {
+    bio: 'The coolest Alice on the planet',
+    user: {
+      connectOrCreate: {
+        where:  { email: 'alice@prisma.io' },
+        create: { email: 'alice@prisma.io'}
+    },
+  },
+})
+```
+
+##### Create a new `Post` record and connect it to an existing `User` record, _or_ create a new `User`
+
+```ts
+const user = await prisma.post.create({
+  data: {
+    title: 'Hello World',
+    author: {
+      connectOrCreate: {
+        where: { email: 'alice@prisma.io' },
+        create: { email: 'alice@prisma.io' },
+      },
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by connecting it to an existing `Profile` record, _or_ creating a new `Profile` record
+
+The following example:
+
+2. Attempts to connect the user to a `Profile` with an `id` of `20`
+3. Creates a new profile if a matching profile does not exist
+
+```ts
+const updateUser = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      connectOrCreate: {
+        where: { id: 20 },
+        create: {
+          bio: 'The coolest Alice in town',
+        },
+      },
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by connect it to two existing `Post` records, or creating two new `Post` records
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      connectOrCreate: [
+        {
+          where: { id: 32 },
+          create: { title: 'This is my first post' },
+        },
+        {
+          where: { id: 19 },
+          create: { title: 'This is my second post' },
+        },
+      ],
+    },
+  },
+})
+```
+
 ### <inlinecode>disconnect</inlinecode>
+
+#### Examples
+
+##### Update an existing `User` record by disconnecting the `Profile` record it's connected to
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'bob  @prisma.io' },
+  data: {
+    profile: {
+      disconnect: true,
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by disconnecting two `Post` records it's connected to
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      disconnect: [{ id: 44 }, { id: 46 }],
+    },
+  },
+})
+```
+
+### <inlinecode>update</inlinecode>
+
+A nested `update` query updates a single related record with ID `n`, where the parent record's ID is `m`.
+
+#### Remarks
+
+- Nested `update` queries are only available in the context of a top-level `update` query (for example, `prisma.user.update(...)`).
+- If the parent record does not exist, Prisma Client throws an exception:
+
+  ```
+  AssertionError("Expected a valid parent ID to be present for nested update to-one case.")
+  ```
+
+- If the related record that you want to update does not exist, Prisma Client throws an exception:
+
+  ```
+  AssertionError("Expected a valid parent ID to be present for nested update to-one case.")
+  ```
+
+#### Examples
+
+##### Update an existing `User` record by updating two `Post` records it's connected to
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      update: [
+        {
+          data: { published: true },
+          where: { id: 32 },
+        },
+        {
+          data: { published: true },
+          where: { id: 23 },
+        },
+      ],
+    },
+  },
+})
+```
+
+### <inlinecode>upsert</inlinecode>
+
+#### Examples
+
+##### Update an existing `User` record by updating the `Profile` record it's connected to or creating a new one (_upsert_)
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      upsert: {
+        create: { bio: 'Hello World' },
+        update: { bio: 'Hello World' },
+      },
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by updating the `Profile` record it's connected to
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      update: { bio: 'Hello World' },
+    },
+  },
+})
+```
+
+##### Update an existing `User` record by updating two `Post` record it's connected to or creating new ones (_upsert_)
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      upsert: [
+        {
+          create: { title: 'This is my first post' },
+          update: { title: 'This is my first post' },
+          where: { id: 32 },
+        },
+        {
+          create: { title: 'This is mt second post' },
+          update: { title: 'This is mt second post' },
+          where: { id: 23 },
+        },
+      ],
+    },
+  },
+})
+```
+
+### <inlinecode>delete</inlinecode>
+
+#### Examples
+
+##### Update an existing `User` record by deleting two `Post` records it's connected to
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      delete: [{ id: 34 }, { id: 36 }],
+    },
+  },
+})
+```
 
 ## Filter conditions and operators
 
@@ -794,15 +2033,27 @@ Vaulue does not equal `n`.
 
 ### <inlinecode>in</inlinecode>
 
+Value `n` exists in list.
+
 ### <inlinecode>notIn</inlinecode>
+
+Value `n` does not exist in list.
 
 ### <inlinecode>lt</inlinecode>
 
+Value `n` is less than `x`.
+
 ### <inlinecode>lte</inlinecode>
+
+Value `n` is less than _or_ equal to `x`.
 
 ### <inlinecode>gt</inlinecode>
 
-### <inlinecode>mode</inlinecode>
+Value `n` is greater than `x`.
+
+### <inlinecode>gte</inlinecode>
+
+Value `n` is greater than _or_ equal to `x`.
 
 #### Examples
 
@@ -818,9 +2069,25 @@ const result = await prisma.post.findMany({
 })
 ```
 
-### <inlinecode>gte</inlinecode>
-
 ### <inlinecode>contains</inlinecode>
+
+Value `n` contains `x`.
+
+#### Examples
+
+##### Count all `Post` records where `content` contains `databases`
+
+```js
+const result = await prisma.post.count({
+  where: {
+    content: {
+      contains: 'databases',
+    },
+  },
+})
+```
+
+### <inlinecode>mode</inlinecode>
 
 #### Examples
 
@@ -835,7 +2102,6 @@ const result = await prisma.post.findMany({
   },
 })
 ```
-
 
 ### <inlinecode>startsWith</inlinecode>
 
@@ -867,105 +2133,13 @@ const result = await prisma.user.findMany({
 })
 ```
 
-
-Prisma Client supports the following filter conditions:
-
-| Operator     | Supported types                                                                                              | Notes                                                                |
-| ------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `equals`     | `string`<br />`number`<br />`boolean`<br />`Date`<br />`[enum]`<br />`null`                                  | Value equals.                                                        |
-| `not`        | `string`<br />`number`<br />`boolean`<br />`Date`<br />`[enum]`<br />`null`                                  | Value does not equal.                                                |
-| `in`         | `Enumerable<string>`<br />`Enumerable<number>`<br />`Enumerable<Date>`<br />`Enumerable<[enum]>`<br />`null` | Value exists in list.                                                |
-| `notIn`      | `Enumerable<string>`<br />`Enumerable<number>`<br />`Enumerable<Date>`<br />`Enumerable<[enum]>`<br />`null` | Value does not exist in list.                                        |
-| `lt`         | `string`<br />`number`<br />`Date`<br />`null`                                                               | Value is less than X.                                                |
-| `lte`        | `string`<br />`number`<br />`Date`<br />`null`                                                               | Value is less than or equal to X.                                    |
-| `gt`         | `string`<br />`number`<br />`Date`<br />`null`                                                               | Value is greater than X.                                             |
-| `gte`        | `string`<br />`number` <br />`Date`<br />`null`                                                              | Value is greater than or equal to                                    |
-| `contains`   | `string`<br />`null`                                                                                         | Value contains. Does not support wildcards - for example, `b[a-c]d`. |
-| `startsWith` | `string`<br />`null`                                                                                         | Value starts with.                                                   |
-| `endsWith`   | `string`<br />`null`                                                                                         | Value ends with.                                                     |
-
 ### <inlinecode>AND</inlinecode>
 
-### <inlinecode>OR</inlinecode>
+All conditions must return`true`. Alternatively, pass a list of objects into the `where` clause - the `AND` operator is [not required](filtering#no-and).
 
+#### Examples
 
-### <inlinecode>NOT</inlinecode>
-
-You can combine multiple filter conditions with the following operators:
-
-| Operator | Notes                                                                                                                                                     |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AND`    | All conditions must return`true`. Alternatively, pass a list of objects into the `where` clause - the `AND` operator is [not required](filtering#no-and). |
-| `NOT`    | All conditions must return `false`.                                                                                                                       |
-| `OR`     | One or more conditions must return `true`.                                                                                                                |
-
-Prisma Client offers the following operators for filtering on one-to-many relationships:
-
-
-
-### <inlinecode>some</inlinecode>
-
-Returns all records where **one or more** ("some") _related_ records match filtering criteria.
-
-#### Reference
-
-```ts
-export type PostFilter = {
-  every?: PostWhereInput | null
-|  some?: PostWhereInput | null
-  none?: PostWhereInput | null
-}
-```
-
-
-### <inlinecode>every</inlinecode>
-
-Returns all records where **all** ("every") _related_ records match filtering criteria. 
-
-#### Reference
-
-```ts
-export type PostFilter = {
-|  every?: PostWhereInput | null
-  some?: PostWhereInput | null
-  none?: PostWhereInput | null
-}
-```
-
-
-### <inlinecode>none</inlinecode>
-
-Returns all records where **zero** _related_ records match filtering criteria.
-
-#### Reference
-
-```ts
-export type PostFilter = {
-  every?: PostWhereInput | null
-  some?: PostWhereInput | null
-|  none?: PostWhereInput | null
-}
-```
-
-
-### Examples
-
-
-
-
-#### Count all `Post` records where `content` contains `databases`
-
-```js
-const result = await prisma.post.count({
-  where: {
-    content: {
-      contains: 'databases',
-    },
-  },
-})
-```
-
-#### Retrieve all `Post` records where the `content` field contains `Prisma` and `published` is `false`
+##### Retrieve all `Post` records where the `content` field contains `Prisma` and `published` is `false`
 
 ```js
 const result = await prisma.post.findMany({
@@ -1003,30 +2177,9 @@ const result = await prisma.post.findMany({
 })
 ```
 
-> **Note**: `OR` and `NOT` require an array.
+##### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, and `published` is `false`
 
-#### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`
-
-```js
-const result = await prisma.post.findMany({
-  where: {
-    OR: [
-      {
-        title: {
-          contains: 'Prisma',
-        },
-      },
-      {
-        title: {
-          contains: 'databases',
-        },
-      },
-    ],
-  },
-})
-```
-
-#### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, and `published` is `false`
+The following example combines `OR` and `AND`:
 
 ```js
 const result = await prisma.post.findMany({
@@ -1050,7 +2203,36 @@ const result = await prisma.post.findMany({
 })
 ```
 
-#### Retrieve all `Post` records where the `title` filed contains `Prisma` or `databases`, but not `SQL`
+### <inlinecode>OR</inlinecode>
+
+One or more conditions must return `true`.
+
+#### Examples
+
+##### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+  },
+})
+```
+
+##### Retrieve all `Post` records where the `title` filed contains `Prisma` or `databases`, but not `SQL`
+
+The following example combines `OR` and `NOT`:
 
 ```js
 const result = await prisma.post.findMany({
@@ -1076,43 +2258,65 @@ const result = await prisma.post.findMany({
 })
 ```
 
-You can [enable logging](logging) to debug complex queries:
+##### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, and `published` is `false`
+
+The following example combines `OR` and `AND`:
 
 ```js
-const prisma = new PrismaClient({
-  log: [
-    {
-      emit: 'event',
-      level: 'query',
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    AND: {
+      published: false,
     },
-  ],
-})
-
-prisma.$on('query', e => {
-  e.query, console.log(e)
+  },
 })
 ```
 
-#### Retrieve all `User` records where _all_ posts are published and a least one related `Post` mentions `Prisma`
+### <inlinecode>NOT</inlinecode>
+
+All conditions must return `false`.
+
+#### Examples
+
+##### Retrieve all `Post` records where the `title` filed contains `Prisma` or `databases`, but not `SQL`
 
 ```js
-  const result = await prisma.user.findMany({
-    where: {
-      post: {
-          every: {
-            published: true
-          }
-        some: {
-          content: {
-            contains: "Prisma"
-          }
-        }
-      }
-    }
-  }
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+      {
+        title: {
+          contains: 'databases',
+        },
+      },
+    ],
+    NOT: {
+      title: {
+        contains: 'SQL',
+      },
+    },
+  },
+})
 ```
 
-#### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, but not `SQL`, and the related `User` record' email address does not contain `sarah`
+##### Retrieve all `Post` records where the `title` field contains `Prisma` or `databases`, but not `SQL`, and the related `User` record' email address does not contain `sarah`
 
 ```js
 const result = await prisma.post.findMany({
@@ -1148,6 +2352,92 @@ const result = await prisma.post.findMany({
 })
 ```
 
+### <inlinecode>some</inlinecode>
+
+Returns all records where **one or more** ("some") _related_ records match filtering criteria.
+
+#### Reference
+
+```ts
+export type PostFilter = {
+  every?: PostWhereInput | null
+|  some?: PostWhereInput | null
+  none?: PostWhereInput | null
+}
+```
+
+#### Examples
+
+##### Retrieve all `User` records where _all_ posts are published and a least one related `Post` mentions `Prisma`
+
+```ts
+  const result = await prisma.user.findMany({
+    where: {
+      post: {
+          every: {
+            published: true
+          }
+        some: {
+          content: {
+            contains: "Prisma"
+          }
+        }
+      }
+    }
+  }
+```
+
+### <inlinecode>every</inlinecode>
+
+Returns all records where **all** ("every") _related_ records match filtering criteria.
+
+#### Reference
+
+```ts
+export type PostFilter = {
+|  every?: PostWhereInput | null
+  some?: PostWhereInput | null
+  none?: PostWhereInput | null
+}
+```
+
+#### Examples
+
+##### Retrieve all `User` records where _all_ posts are published and a least one related `Post` mentions `Prisma`
+
+```ts
+  const result = await prisma.user.findMany({
+    where: {
+      post: {
+          every: {
+            published: true
+          }
+        some: {
+          content: {
+            contains: "Prisma"
+          }
+        }
+      }
+    }
+  }
+```
+
+### <inlinecode>none</inlinecode>
+
+Returns all records where **zero** _related_ records match filtering criteria.
+
+#### Reference
+
+```ts
+export type PostFilter = {
+  every?: PostWhereInput | null
+  some?: PostWhereInput | null
+|  none?: PostWhereInput | null
+}
+```
+
+#### Examples
+
 ## Atomic number operations
 
 Atomic operations on update is available for number field types (`Float` and `Int`). This feature allows you to update a field based on its **current** value (such as _subtracting_ or _dividing_) without risking a race condition.
@@ -1182,13 +2472,11 @@ The value _should_ be `23`, but the two clients did not read and write to the `p
 | `divide`    | Divides the current value by `n`.                             |
 | `set`       | Sets the current field value. Identical to `{ myField : n }`. |
 
+### Reference
 
-
-### Reference 
-
-```ts
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
+```ts file=index.d.ts
+export type IntFieldUpdateOperationsInput = {
+  set?: number
   increment?: number
   decrement?: number
   multiply?: number
@@ -1198,7 +2486,7 @@ export type NullableIntFieldUpdateOperationsInput = {
 
 ### Remarks
 
-* You can only perform **one** atomic update per field, per query.
+- You can only perform **one** atomic update per field, per query.
 
 ### Examples
 
@@ -1239,37 +2527,20 @@ const updatePosts = await prisma.post.updateMany({
 })
 ```
 
-## Model query options
-
-### <inlinecode>select</inlinecode>
-
-Used by:
-
-- `findFirst`
-- `findOne`
-- `findMany`
-- `create`
-- `update`
-- `upsert`
-
-#### Reference
-
-```ts
-export type UserSelect = {
-  id?: boolean
-  name?: boolean
-  email?: boolean
-  profileViews?: boolean
-  role?: boolean
-  coinflips?: boolean
-  posts?: boolean | FindManyPostArgs
-}
-```
-
-### <inlinecode>include</inlinecode>
-
 ## Client methods
 
 - All client-level methods are prefixed by `$`
 
-### <inlinecode>\$disconnect()</inlinecode>
+### <inlinecode>&#36;disconnect()</inlinecode>
+
+### <inlinecode>&#36;connect()</inlinecode>
+
+### <inlinecode>&#36;on()</inlinecode>
+
+### <inlinecode>&#36;use()</inlinecode>
+
+### <inlinecode>&#36;executeRaw()</inlinecode>
+
+### <inlinecode>&#36;queryRaw()</inlinecode>
+
+### <inlinecode>&#36;transaction()</inlinecode>

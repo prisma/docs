@@ -165,86 +165,19 @@ model Profile {
 }
 ```
 
-The following nested write options for `Profile` are available in `prisma.user.create(...)` queries:
-
-- `create`: Create a new user and a new profile
-- `connect`: Create a new user and connect it to an existing profile
-- `connectOrCreate`: Create a new user and connect it to an existing profile, _or_ create a new profile if the supplied profile ID does not exist
 
 The following nested write options for `Profile` are available in `prisma.user.update(...)` queries:
 
-- `create`: Update an existing user by creating a new profile
-- `connect`: Update an an existing user by connecting it to an existing profile
-- `connectOrCreate`: Update an existing user by connecting it to an existing profile, _or_ create a new profile if the supplied profile ID does not exist
-- `update`: Update an existing user by updating their existing profile
 - `upsert`: Update an existing user by updating their existing profile or by creating a new profile
 - `delete` (only if relation is optional): Update an existing user by deleting their existing profile
 - `disconnect` (only if relation is optional): Update an existing user by removing the connection to their existing profile
 
-#### Create a new `User` record with a new `Profile` record
-
-```ts
-const user = await prisma.user.create({
-  data: {
-    email: 'alice@prisma.io',
-    profile: {
-      create: { bio: 'Hello World' },
-    },
-  },
-})
-```
-
-This example uses the `user` model property, but you could also run the query from the `profile` side:
-
-```ts
-const user = await prisma.profile.create({
-  data: {
-    bio: 'Hello World',
-    user: {
-      create: { email: 'alice@prisma.io' },
-    },
-  },
-})
-```
-
-#### Create a new `Profile` record and connect it to an existing `User` record
-
-```ts
-const user = await prisma.profile.create({
-  data: {
-    bio: 'Hello World',
-    user: {
-      connect: { email: 'alice@prisma.io' },
-    },
-  },
-})
-```
 
 Note that this requires that a `User` record with an `email` of `"alice@prisma.io"` already exists in the database. If that's not the case, the query will fail with an exception.
 
 You can provide any [unique](../prisma-schema/data-model#defining-a-unique-field) or [ID](../prisma-schema/data-model#defining-an-id-field) property to the `connect` option, so in this case you could also provide the `id` field to identify the target `User` record:
 
-```ts
-const user = await prisma.profile.create({
-  data: {
-    bio: 'Hello World',
-    user: {
-      connect: { id: 42 }, // sets userId of Profile record
-    },
-  },
-})
-```
 
-In [2.11.0](https://github.com/prisma/prisma/releases/2.11.0) and later, you can set the foreign key directly:
-
-```ts
-const user = await prisma.profile.create({
-  data: {
-    bio: 'Hello World',
-    userId: 42
-  },
-})
-```
 
 To use this feature, enable the `uncheckedScalarInputs` in your schema file as shown:
 
@@ -255,105 +188,6 @@ generator client {
 }
 ```
 
-#### Create a new `Profile` record, then connect it to an existing `User` record *or* create a new `User`
-
-The following example:
-
-1. Creates a `Profile`
-2. Attempts to connect the profile to a `User` where the email address is `alice@prisma.io`
-3. Creates a new user if a user if a matching user does not exist
-
-```ts
-const user = await prisma.profile.create({
-  data: {
-    bio: 'The coolest Alice on the planet',
-    user: {
-      connectOrCreate: { 
-        where:  { email: 'alice@prisma.io' },
-        create: { email: 'alice@prisma.io'}
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by creating a new `Profile` record
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    profile: {
-      create: { bio: 'Hello World' },
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by connecting it to an existing `Profile` record
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    profile: {
-      connect: { id: 24 },
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by connecting it to an existing `Profile` record, *or* creating a new `Profile` record
-
-The following example:
-
-2. Attempts to connect the user to a `Profile` with an `id` of `20`
-3. Creates a new profile if a matching profile does not exist
-
-```ts
-  const updateUser = await prisma.user.update({
-    where: { email: "alice@prisma.io" },
-    data: {
-      profile: {
-        connectOrCreate: { 
-          where: { id: 20 },
-          create: {
-            bio: "The coolest Alice in town",
-          },
-        },
-      },
-    },
-  });
-```
-
-#### Update an existing `User` record by updating the `Profile` record it's connected to
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    profile: {
-      update: { bio: 'Hello World' },
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by updating the `Profile` record it's connected to or creating a new one (_upsert_)
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    profile: {
-      upsert: {
-        create: { bio: 'Hello World' },
-        update: { bio: 'Hello World' },
-      },
-    },
-  },
-})
-```
-
 #### Update an existing `User` record by deleting the `Profile` record it's connected to
 
 ```ts
@@ -362,19 +196,6 @@ const user = await prisma.user.update({
   data: {
     profile: {
       delete: true,
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by disconnecting the `Profile` record it's connected to
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'bob  @prisma.io' },
-  data: {
-    profile: {
-      disconnect: true,
     },
   },
 })
@@ -401,21 +222,6 @@ model Profile {
 
 This section shows examples for nested writes on one-to-many relations. It uses the `User` ↔ `Post` relation from the sample data model above. For illustration purposes, the `email`, `title` and `published` fields have been added:
 
-```prisma
-model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  posts    Post[]
-}
-
-model Post {
-  id         Int      @id @default(autoincrement())
-  title      String
-  published  Boolean  @default(false)
-  author     User?    @relation(fields:  [authorId], references: [id])
-  authorId   Int?
-}
-```
 
 The following nested write options for `Post` are available in `prisma.user.create(...)` queries:
 
@@ -436,19 +242,6 @@ The following nested write options for `Post` are available in `prisma.post.upda
 - `updateMany`: Update an existing user by updating one or more of their existing posts
 - `deleteMany`: Update an existing user by deleting one or more of their existing posts
 
-**Create a new `User` record with a new `Post` record**:
-
-```ts
-const user = await prisma.user.create({
-  data: {
-    email: 'alice@prisma.io',
-    posts: {
-      create: { title: 'Hello World' },
-    },
-  },
-})
-```
-
 This example uses the `user` model property, but you could also run the query from the `post` side:
 
 ```ts
@@ -457,34 +250,6 @@ const user = await prisma.post.create({
     title: 'Hello World',
     author: {
       create: { email: 'alice@prisma.io' },
-    },
-  },
-})
-```
-
-#### Create a new `User` record with two new `Post` records
-
-Because it's a one-to-many relation, you can also create several `Post` records at once by passing an array to `create`:
-
-```ts
-const user = await prisma.user.create({
-  data: {
-    email: 'alice@prisma.io',
-    posts: {
-      create: [{ title: 'This is my first post' }, { title: 'Here comes a second post' }],
-    },
-  },
-})
-```
-
-#### Create a new `Post` record and connect it to an existing `User` record
-
-```ts
-const user = await prisma.post.create({
-  data: {
-    title: 'Hello World',
-    author: {
-      connect: { email: 'alice@prisma.io' },
     },
   },
 })
@@ -500,163 +265,6 @@ const user = await prisma.post.create({
     title: 'Hello World',
     author: {
       connect: { id: 42 },
-    },
-  },
-})
-```
-
-
-In [2.11.0](https://github.com/prisma/prisma/releases/2.11.0) and later, you can set the foreign key directly:
-
-```ts
-const user = await prisma.post.create({
-  data: {
-    title: 'Hello World',
-    authorId: 42
-  },
-})
-```
-
-To use this feature, enable the `uncheckedScalarInputs` in your schema file as shown:
-
-```prisma file=schema.prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["uncheckedScalarInputs"]
-}
-```
-
-#### Create a new `Post` record and connect it to an existing `User` record, *or* create a new `User`
-
-```ts
-  const user = await prisma.post.create({
-    data: {
-      title: "Hello World",
-      author: {
-        connectOrCreate: {
-          where: { email: "alice@prisma.io" },
-          create: { email: "alice@prisma.io" },
-        },
-      },
-    },
-  });
-```
-
-#### Update an existing `User` record by creating a new `Post` record
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    posts: {
-      create: { title: 'Hello World' },
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by connecting it to two existing `Post` records
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    posts: {
-      connect: [{ id: 24 }, { id: 42 }],
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by connect it to two existing `Post` records, or creating two new `Post` records
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    posts: {
-      connectOrCreate: [
-        {
-          where: { id: 32 },          
-          create: { title: 'This is my first post' },
-        },
-        {
-          where: { id: 19 },          
-          create: { title: 'This is my second post' },
-        },
-      ],
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by updating two `Post` records it's connected to
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    posts: {
-      update: [
-        {
-          data: { published: true },
-          where: { id: 32 },
-        },
-        {
-          data: { published: true },
-          where: { id: 23 },
-        },
-      ],
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by updating two `Post` record it's connected to or creating new ones (_upsert_)
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    posts: {
-      upsert: [
-        {
-          create: { title: 'This is my first post' },
-          update: { title: 'This is my first post' },
-          where: { id: 32 },
-        },
-        {
-          create: { title: 'This is mt second post' },
-          update: { title: 'This is mt second post' },
-          where: { id: 23 },
-        },
-      ],
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by deleting two `Post` records it's connected to
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    posts: {
-      delete: [{ id: 34 }, { id: 36 }],
-    },
-  },
-})
-```
-
-#### Update an existing `User` record by disconnecting two `Post` records it's connected to
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    posts: {
-      disconnect: [{ id: 44 }, { id: 46 }],
     },
   },
 })
