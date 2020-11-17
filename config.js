@@ -3,7 +3,7 @@ const config = {
     pathPrefix: '/docs',
     siteUrl: 'https://www.prisma.io',
     titlePrefix: '',
-    titleSuffix: ' | Prisma Documentation',
+    titleSuffix: ' | Prisma Docs',
   },
   redirects: [
     {
