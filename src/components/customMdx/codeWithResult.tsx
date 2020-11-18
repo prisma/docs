@@ -50,6 +50,10 @@ const Wrapper = styled.div`
         color: var(--code-inline-bgd-color) !important;
       }
 
+      .token.punctuation {
+        color: ${p => p.theme.colors.gray500} !important;
+      }
+
       border-radius: 0px 0px 8px 8px;
       margin-top: 0;
     }
