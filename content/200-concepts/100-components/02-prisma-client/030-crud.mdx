@@ -2,35 +2,363 @@
 title: 'CRUD'
 metaTitle: 'CRUD (Reference)'
 metaDescription: 'This page provides a detailed reference of the auto-generated CRUD queries that are exposed in the Prisma Client API, such as findOne, findMany, create, ...'
+tocDepth: 3
 ---
 
 <TopBlock>
 
+All examples are based on the following schema:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ExtendedProfile {
+  id        Int    @id @default(autoincrement())
+  biography String
+  user      User   @relation(fields: userId, references: id)
+  userId    Int
+}
+
+model User {
+  id           Int             @id @default(autoincrement())
+  name         String?
+  email        String          @unique
+  profileViews Int             @default(0)
+  role         Role            @default(USER)
+  coinflips    Boolean[]
+  posts        Post[]
+  profile      ExtendedProfile
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
+  comments   Json?
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  categories Category[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
 </TopBlock>
 
-## Create 
+## Create
 
 ### Create a single record
 
+The following example uses a `create` <span class="api"></span> query to create a single record:
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'elsa@prisma.io',
+    name: 'Elsa Prisma',
+  },
+})
+```
+
 ### Create multiple records
 
-### Nested creates
+Can't do this yet.
+
+### Create a record and several related records
+
+The following example uses a `create` query <span class="api"></span> and a nested `create` query <span class="api"></span> to create user with several posts in a single transaction:
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'elsa@prisma.io',
+    name: 'Elsa Prisma',
+    posts: {
+      create: [{ title: 'How to make an omelette' }, { title: 'How to eat an omelette' }],
+    },
+  },
+})
+```
+
+### Create a record and connect it to an existing related record
 
 ## Read
 
-### Get record by ID
+### Get record by ID or unique identifier
+
+`findFirst` <span class="api"></span>
+
+```ts
+const user = await prisma.user.findOne({
+  where: {
+    email: 'elsa@prisma.io',
+  },
+})
+```
+
+```ts
+const user = await prisma.user.findOne({
+  where: {
+    id: 99,
+  },
+})
+```
+
+### Get all records
+
+```ts
+const user = await prisma.user.findMany()
+```
+
+### Get a filtered list of records
+
+#### Filter by a single field value
+
+```ts
+  const users = await prisma.user.findMany({
+    where: {
+      email: {
+        endsWith: "prisma.io"
+      }
+    },
+  }
+```
+
+#### Filter by multiple field values
+
+- Name starts with `E`
+
+_OR_
+
+- More than 0 profile views
+- Is an admin
+
+```ts
+const users = await prisma.user.findMany({
+  where: {
+    OR: [
+      {
+        name: {
+          startsWith: 'E',
+        },
+      },
+      {
+        AND: {
+          profileViews: {
+            gt: 0,
+          },
+          role: {
+            equals: 'ADMIN',
+          },
+        },
+      },
+    ],
+  },
+})
+```
+
+#### Filter by related record field values
+
+- User's email ends with `prisma.io`
+- User has at least _one_ post (`some`) that is not published
+
+```ts
+  const users = await prisma.user.findMany({
+    where: {
+      email: {
+        endsWith: "prisma.io"
+      },
+      posts: {
+        some: {
+          published: false
+        }
+      }
+    },
+  }
+```
+
+- User has at least _no_ posts (`none`) with more than 100 views
+
+```ts
+  const users = await prisma.user.findMany({
+    where: {
+      posts: {
+        none: {
+          views: {
+            gt: 100
+          }
+        }
+      }
+    },
+  }
+```
+
+### Include related records
+
+```ts
+const user = await prisma.user.findMany({
+  where: {
+    role: 'ADMIN',
+  },
+  include: {
+    posts: true,
+  },
+})
+```
+
+### Include a filtered list of related records
+
+```ts
+const user = await prisma.user.findMany({
+  where: {
+    role: 'ADMIN',
+  },
+  include: {
+    posts: {
+      where: {
+        title: {
+          contains: 'Prisma',
+        },
+      },
+    },
+  },
+})
+```
+
+- Get a list of users and their published posts
+- Get a list of users and any posts with zero views
+
+### Select a subset of fields
+
+```ts
+const user = await prisma.user.findOne({
+  where: {
+    email: 'emma@prisma.io',
+  },
+  select: {
+    email: true,
+    name: true
+  },
+})
+```
+
+#### Select a subset of related record fields
+
+```ts
+const user = await prisma.user.findOne({
+  where: {
+    email: 'emma@prisma.io',
+  },
+  select: {
+    email: true,
+    posts: {
+      select: {
+        likes: true,
+      },
+    },
+  },
+})
+```
+
+### Select distinct field values
 
 ## Update
 
+### Update a single record
+
+### Update multiple records
+
+### Update or insert records
+
+### Disconnect a related record
+
+### Connect a related record
+
+#### Connect an existing record
+
+#### Connect a new record
+
 ## Delete
 
-### Examples
+## Advanced query examples
 
+### Create a deeply nested tree of records
 
+- A single `User`
+- Two new, related `Post` records
+- Connect or create `Category` per post
 
-## Working with advanced scalar types
-
-### Working with `Json` fields
-
-See [Working with Json](working-with-json).
-
+```ts
+const u = await prisma.user.create({
+  include: {
+    posts: {
+      include: {
+        categories: true,
+      },
+    },
+  },
+  data: {
+    email: 'emma@prisma.io',
+    posts: {
+      create: [
+        {
+          title: 'My first post',
+          categories: {
+            connectOrCreate: [
+              {
+                create: { name: 'Introductions' },
+                where: {
+                  name: 'Introductions',
+                },
+              },
+              {
+                create: { name: 'Social' },
+                where: {
+                  name: 'Social',
+                },
+              },
+            ],
+          },
+        },
+        {
+          title: 'How to make cookies',
+          categories: {
+            connectOrCreate: [
+              {
+                create: { name: 'Social' },
+                where: {
+                  name: 'Social',
+                },
+              },
+              {
+                create: { name: 'Cooking' },
+                where: {
+                  name: 'Cooking',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+})
+```

@@ -1038,7 +1038,209 @@ const result = await prisma.user.count({
 
 ### <inlinecode>select</inlinecode>
 
+`select` defines which fields are included in the selection set that Prisma Client returns. For example, when you `create` new record, you can choose to return the entire record (the default selection set) or a subset of fields.
+
+#### Remarks
+
+- You cannot combine `select` and `include` on the same level.
+
+#### Reference
+
+```ts
+export type UserSelect = {
+  id?: boolean
+  name?: boolean
+  email?: boolean
+  profileViews?: boolean
+  role?: boolean
+  coinflips?: boolean
+  posts?: boolean | FindManyPostArgs
+}
+```
+
+#### Examples
+
+##### Select the `name` and `profileViews` fields of a single `User` record
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const result = await prisma.user.findOne({
+  where: { id: 1 },
+  select: {
+    name: true,
+    profileViews: true,
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  name: "Alice",
+  profileViews: 0
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+##### Select the `name` and `profileViews` fields of a multiple `User` records
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const result = await prisma.user.findMany({
+  select: {
+    email: true,
+    role: true,
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+;[
+  {
+    email: 'alice@prisma.io',
+    role: 'ADMIN',
+  },
+  {
+    email: 'bob@prisma.io',
+    role: 'USER',
+  },
+]
+```
+
+</CmdResult>
+</CodeWithResult>
+
+Here's how you can include additional fields of a relation:
+
+```ts
+const result = await prisma.user.findMany({
+  select: {
+    id: true,
+    name: true,
+    posts: {
+      select: {
+        id: true,
+        title: true,
+      },
+    },
+  },
+})
+```
+
+In this case, the result might look as follow:
+
+```ts
+;[
+  {
+    id: 1,
+    name: 'Alice',
+    posts: [
+      { id: 1, title: 'Hello World' },
+      { id: 2, title: 'Bye bye' },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Bob',
+    posts: [],
+  },
+]
+```
+
+You can also nest the `include` option inside of the `select` option:
+
+```ts
+const result = await prisma.user.findMany({
+  select: {
+    id: true,
+    name: true,
+    posts: {
+      include: {
+        author: true,
+      },
+    },
+  },
+})
+```
+
+This would result in the following structure for the `result` object:
+
+```js
+;[
+  {
+    id: 1,
+    name: 'Alice',
+    posts: [
+      {
+        id: 1,
+        title: 'Hello World',
+        published: true,
+        author: {
+          id: 1,
+          name: 'Alice',
+          email: 'alice@prisma.io',
+          role: 'ADMIN',
+          coinflips: [true, false],
+          profileViews: 0,
+        },
+      },
+      {
+        id: 2,
+        title: 'Bye bye',
+        published: false,
+        author: {
+          id: 1,
+          name: 'Alice',
+          email: 'alice@prisma.io',
+          role: 'USER',
+          coinflips: [],
+          profileViews: 0,
+        },
+      },
+    ],
+  },
+]
+```
+
 ### <inlinecode>include</inlinecode>
+
+#### Examples
+
+##### Include the `posts` and `profile` relation when loading `User` records
+
+```ts
+const users = await prisma.user.findMany({
+  include: {
+    posts: true, // Returns all fields for all posts
+    profile: true, // Returns all Profile fields
+  },
+})
+```
+
+##### Include the `posts` relation on the returned objects when creating a new `User` record with two `Post` records
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    posts: {
+      create: [{ title: 'This is my first post' }, { title: 'Here comes a second post' }],
+    },
+  },
+  include: { posts: true }, // Returns all fields for all posts
+})
+```
 
 ### <inlinecode>where</inlinecode>
 
@@ -1689,6 +1891,21 @@ const user = await prisma.user.update({
 
 ### <inlinecode>set</inlinecode>
 
+#### Examples
+
+##### Update an existing `User` record by disconnecting any previous `Post` records and connecting two other exiting ones
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    posts: {
+      set: [{ id: 32 }, { id: 42 }],
+    },
+  },
+})
+```
+
 ### <inlinecode>connect</inlinecode>
 
 A nested `connect` query connects a record to an existing related record by specifying an ID or unique identifier.
@@ -1883,7 +2100,7 @@ A nested `disconnect` query breaks the connection between a parent record and a 
 
 #### Remarks
 
-* `disconnect` is only available if the relation is optional.
+- `disconnect` is only available if the relation is optional.
 
 #### Examples
 
@@ -1915,7 +2132,7 @@ const user = await prisma.user.update({
 
 ### <inlinecode>update</inlinecode>
 
-A nested `update` query updates a single related record with ID `n`, where the parent record's ID is `m`.
+A nested `update` query updates one or more related records where the parent record's ID is `n`.
 
 #### Remarks
 
@@ -1933,6 +2150,19 @@ A nested `update` query updates a single related record with ID `n`, where the p
   ```
 
 #### Examples
+
+##### Update an existing `User` record by updating the `Profile` record it's connected to
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      update: { bio: 'Hello World' },
+    },
+  },
+})
+```
 
 ##### Update an existing `User` record by updating two `Post` records it's connected to
 
@@ -1978,19 +2208,6 @@ const user = await prisma.user.update({
 })
 ```
 
-##### Update an existing `User` record by updating the `Profile` record it's connected to
-
-```ts
-const user = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
-  data: {
-    profile: {
-      update: { bio: 'Hello World' },
-    },
-  },
-})
-```
-
 ##### Update an existing `User` record by updating two `Post` record it's connected to or creating new ones (_upsert_)
 
 ```ts
@@ -2021,9 +2238,22 @@ A nested `delete` query deletes a related record. The parent record is not delet
 
 #### Remarks
 
-* `delete` is only available if the relation is optional.
+- `delete` is only available if the relation is optional.
 
 #### Examples
+
+##### Update an existing `User` record by deleting the `Profile` record it's connected to
+
+```ts
+const user = await prisma.user.update({
+  where: { email: 'alice@prisma.io' },
+  data: {
+    profile: {
+      delete: true,
+    },
+  },
+})
+```
 
 ##### Update an existing `User` record by deleting two `Post` records it's connected to
 
@@ -2556,16 +2786,16 @@ const updatePosts = await prisma.post.updateMany({
 
 - All client-level methods are prefixed by `$`
 
-### <inlinecode>&#36;disconnect()</inlinecode>
+### <inlinecode>\$disconnect()</inlinecode>
 
-### <inlinecode>&#36;connect()</inlinecode>
+### <inlinecode>\$connect()</inlinecode>
 
-### <inlinecode>&#36;on()</inlinecode>
+### <inlinecode>\$on()</inlinecode>
 
-### <inlinecode>&#36;use()</inlinecode>
+### <inlinecode>\$use()</inlinecode>
 
-### <inlinecode>&#36;executeRaw()</inlinecode>
+### <inlinecode>\$executeRaw()</inlinecode>
 
-### <inlinecode>&#36;queryRaw()</inlinecode>
+### <inlinecode>\$queryRaw()</inlinecode>
 
-### <inlinecode>&#36;transaction()</inlinecode>
+### <inlinecode>\$transaction()</inlinecode>
