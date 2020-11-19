@@ -1,18 +1,95 @@
 ---
 title: 'Select fields and include relations'
-metaTitle: 'Select and include (Concepts)'
+metaTitle: 'Select fields and include relations (Concepts)'
 metaDescription: 'This page explains how to select only a subset of a model''s fields and/or include relations ("eager loading") in a Prisma Client query.'
 tocDepth: 2
 ---
 
 <TopBlock>
 
-By default, the result of a query that returns one or more records (such as a `User`) includes the following:
+By default, when a query returns records (as opposed to a count), the result includes the **default selection set**:
 
-* **All** scalar fields defined in the Prisma schema
-* **Zero** relations, such as a user's posts or profile
+- **All** scalar fields defined in the Prisma schema
+- **None** of the relations
 
-This is the **default selection set**. The following example returns the default selection set:
+To customize the result:
+
+- Use `select` <span class="api"></span> to return specific fields
+- Use `include` <span class="api"></span> to explicitly include relations
+
+Selecting only the fields and relations that you require rather than relying on the default selection set can ✔ reduce the size of the response and ✔ improve query speed.
+
+</TopBlock>
+
+## Example schema
+
+All examples are based on the following schema:
+
+<details><summary>Expand for sample schema</summary>
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ExtendedProfile {
+  id        Int    @id @default(autoincrement())
+  biography String
+  user      User   @relation(fields: userId, references: id)
+  userId    Int
+}
+
+model User {
+  id           Int             @id @default(autoincrement())
+  name         String?
+  email        String          @unique
+  profileViews Int             @default(0)
+  role         Role            @default(USER)
+  coinflips    Boolean[]
+  posts        Post[]
+  profile      ExtendedProfile
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
+  comments   Json?
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  categories Category[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+</details>
+
+Use the `db push` command to push the example schema to your own database:
+
+```terminal
+npx prisma db push --preview-feature
+```
+
+## Return the default selection set
+
+The following query returns the default selection set (all scalar fields, no relations):
 
 <CodeWithResult expanded="{true}">
 <Cmd>
@@ -43,14 +120,11 @@ const getUser: User | null = await prisma.user.findOne({
 </CmdResult>
 </CodeWithResult>
 
-To return specific fields or include relations, use `select` <span class="api"></span> and `include` <span class="api"></span> respectively.
-
-</TopBlock>
-
 ## Select specific fields
 
+Use `select` <span class="api"></span> to return a limited subset of fields instead of all fields.
 
-Use `select` <span class="api"></span> to return a specific subset of fields. The following example returns the `email` and `name` fields only:
+The following example returns the `email` and `name` fields only:
 
 <CodeWithResult expanded="{true}">
 <Cmd>
@@ -83,7 +157,9 @@ const getUser: object | null = await prisma.user.findOne({
 
 ## Include relations
 
-To included related records, such as a user's posts, use the `include` <span class="api"></span> option. The following example returns a single user _and_ that user's posts:
+Use `include` <span class="api"></span> to include related records, such as a user's posts or profile, in the response.
+
+The following example returns a single user _and_ that user's posts:
 
 <CodeWithResult>
 <Cmd>
@@ -199,9 +275,7 @@ const getPosts = await prisma.post.findMany({
 </CmdResult>
 </CodeWithResult>
 
-Note that you **cannot** use `select` <span class="api"></span> and `include` <span class="api"></span> on the same level:
-
-
+Note that you **cannot** use `select` <span class="api"></span> and `include` <span class="api"></span> _on the same level_:
 
 <CodeWithResult>
 <Cmd>
@@ -256,7 +330,11 @@ Please either use `include` or `select`, but not both at the same time.
 </CmdResult>
 </CodeWithResult>
 
-### Select relation fields
+To `select` specific record and related record fields, use a [nested `select`](#select-relation-fields).
+
+### Select specific relation fields
+
+The following example selects the user's `name` and the `title` of each related post:
 
 <CodeWithResult>
 <Cmd>
@@ -266,12 +344,13 @@ const getUser = await prisma.user.findOne({
   where: {
     id: 19,
   },
-  include: {
+  select: {
+    name: true,
     posts: {
       select: {
-        title: true
-      }
-    }
+        title: true,
+      },
+    },
   },
 })
 ```
@@ -281,12 +360,7 @@ const getUser = await prisma.user.findOne({
 
 ```js
 {
-  id: 19,
-  name: null,
-  email: 'emma@prisma.io',
-  profileViews: 0,
-  role: 'USER',
-  coinflips: [],
+  name: "Elsa",
   posts: [ { title: 'My first post' }, { title: 'How to make cookies' } ]
 }
 ```
