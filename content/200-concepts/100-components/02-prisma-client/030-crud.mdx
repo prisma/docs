@@ -7,12 +7,12 @@ tocDepth: 3
 
 <TopBlock>
 
-This page describes how to perform basic CRUD operations with your generated Prisma Client API
+This page describes how to perform CRUD operations with your generated Prisma Client API. CRUD is an acronym that stands for:
 
-* Create
-* Read (and filtering)
-* Update
-* Delete
+- [Create](#create)
+- [Read](#read)
+- [Update](#update)
+- [Delete](#delete)
 
 Paginate, aggregate, sort, and work with transactions.
 
@@ -88,7 +88,7 @@ npx prisma db push --preview-feature
 
 ### Create a single record
 
-- [`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span> a single `User` record
+The following query creates ([`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span>) a single user with two fields:
 
 <CodeWithResult>
 <Cmd>
@@ -119,20 +119,118 @@ const user = await prisma.user.create({
 </CmdResult>
 </CodeWithResult>
 
+Your schema determines [which fields are mandatory](../prisma-schema/data-model#optional-and-mandatory-fields).
+
+#### Create a single record using generated types
+
+The following example produces an identical result, but creates a `UserCreateInput` variable named `user` _outside_ the context of the `create` query. After completing a simple check (should posts be included in this `create` query?), the `user` variable is passed into the query:
+
+```ts
+let includePosts: boolean = false
+let user: UserCreateInput
+
+// Check if posts should be included in the query
+if (includePosts) {
+  user = {
+    email: 'elsa@prisma.io',
+    name: 'Elsa Prisma',
+    posts: {
+      create: {
+        title: 'Include this post!',
+      },
+    },
+  }
+}
+{
+  user = {
+    email: 'elsa@prisma.io',
+    name: 'Elsa Prisma',
+  }
+}
+
+// Pass 'user' object into query
+const createUser = await prisma.user.create({ data: user })
+```
+
+For more information about working with generated types, see: [Generated types](working-with-generated-types).
+
+
 ### Create multiple records
 
-Can't do this yet.
+Prisma Client does not yet support batching at a database level. The following example does create two `User` records - however, this will result in two separate `INSERT` queries:
+
+<CodeWithResult expanded="{true}">
+<Cmd>
+
+```ts file=script.ts
+import { PrismaClient, UserCreateInput } from '@prisma/client'
+
+const prisma = new PrismaClient({ log: ['query'] })
+
+async function main() {
+  // Create input for two new users
+  let users: UserCreateInput[] = [
+    {
+      email: 'ariana@prisma.io',
+      name: 'Ari',
+      profileViews: 20,
+      coinflips: [true, false, false],
+      role: 'ADMIN',
+    },
+    {
+      email: 'elsa@prisma.io',
+      name: 'Elsa',
+      profileViews: 20,
+      coinflips: [true, false, false],
+      role: 'ADMIN',
+    },
+  ]
+
+  // Prepare and execute all queries
+  await Promise.all(
+    users.map(async user => {
+      await prisma.user.create({
+        data: user,
+      })
+    })
+  )
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</Cmd>
+<CmdResult>
+
+```
+prisma:query BEGIN
+prisma:query BEGIN
+prisma:query INSERT INTO "public"."User" ("name","email","profileViews","role","coinflips") VALUES ($1,$2,$3,$4,$5) RETURNING "public"."User"."id"
+prisma:query SELECT "public"."User"."id", "public"."User"."name", "public"."User"."email", "public"."User"."profileViews", "public"."User"."role", "public"."User"."coinflips" FROM "public"."User" WHERE "public"."User"."id" = $1 LIMIT $2 OFFSET $3
+prisma:query INSERT INTO "public"."User" ("name","email","profileViews","role","coinflips") VALUES ($1,$2,$3,$4,$5) RETURNING "public"."User"."id"
+prisma:query SELECT "public"."User"."id", "public"."User"."name", "public"."User"."email", "public"."User"."profileViews", "public"."User"."role", "public"."User"."coinflips" FROM "public"."User" WHERE "public"."User"."id" = $1 LIMIT $2 OFFSET $3
+prisma:query COMMIT
+prisma:query COMMIT
+```
+
+</CmdResult>
+
+</CodeWithResult>
 
 ### Create a record and several related records
 
-- [`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span> new `User` record
-- [`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span> multiple related `Post` records
-- `include` <span class="api"></span> the user's post in the returned object (optional)
+The following query creates ([`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span>) a single user and two related posts (nested [`create`](../../../reference/api-reference/prisma-client-reference#create-1) <span class="api"></span>). The example uses the [`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span> option to include the related posts in the response:
 
 <CodeWithResult>
 <Cmd>
 
-```ts
+```ts file=script.ts
 const user = await prisma.user.create({
   data: {
     email: 'elsa@prisma.io',
@@ -184,16 +282,16 @@ const user = await prisma.user.create({
 </CmdResult>
 </CodeWithResult>
 
+For more information about creating related records, see [Working with relations](working-with-relations).
+
 ### Create a record and connect it to an existing related record
 
-- [`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span> a new `User` record
-- `connect` <span class="api"></span> the new user to multiple existing `Post` records by `id`
-- `include` <span class="api"></span> the user's post in the returned object (optional)
+The following query creates ([`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span>) a new `User` record and connects that record (`connect` <span class="api"></span>) to three existing posts:
 
 <CodeWithResult>
 <Cmd>
 
-```ts
+```ts file=script.ts
 const user = await prisma.user.create({
   data: {
     email: 'vlad@prisma.io',
@@ -237,38 +335,23 @@ const user = await prisma.user.create({
 
 > **Note**: Prisma Client throws an exception if any of the post records cannot be found: `connect: [{ id: 8 }, { id: 9 }, { id: 10 }]`
 
-### Create a single record using generated types
-
-```ts
-// Create input object
-let user: UserCreateInput = {
-  email: 'vlad@prisma.io',
-  posts: {
-    connect: [{ id: 8 }, { id: 9 }, { id: 10 }],
-  },
-}
-
-// Create user
-const createUser = await prisma.user.create({ data: user })
-```
-
-More about using generated types.
+For more information about connecting and disconnecting related records, see [Working with relations](working-with-relations).
 
 ## Read
 
 ### Get record by ID or unique identifier
 
-`findFirst` <span class="api"></span>
+The following queries return a single record (`findOne` <span class="api"></span>) by unique identifier or ID:
 
-```ts
+```ts file=script.ts
+// By unique identifier
 const user = await prisma.user.findOne({
   where: {
     email: 'elsa@prisma.io',
   },
 })
-```
 
-```ts
+// By ID
 const user = await prisma.user.findOne({
   where: {
     id: 99,
@@ -278,13 +361,44 @@ const user = await prisma.user.findOne({
 
 ### Get all records
 
+The following `findMany` <span class="api"></span> query returns _all_ `User` records:
+
 ```ts
 const user = await prisma.user.findMany()
 ```
 
+You can also [paginate your results](pagination).
+
 ### Get a filtered list of records
 
+### Get the first record that matches a specific criteria
+
+The following `findFirst` <span class="api"></span> query returns the _most recently created user_ with at least one post that has more than 100 likes:
+
+1. Order users by ascending ID (largest first) - the largest ID is the most recent
+2. Return the first user in ascending order with at least one post that has more than 100 likes
+
+```ts file=script.ts
+  const findUser = await prisma.user.findFirst({
+    where: {
+      posts: {
+        some: {
+          likes: {
+            gt: 100
+          }
+        }
+      }
+    },
+    orderBy: {
+      id: "asc"
+    }
+  })
+}
+```
+
 #### Filter by a single field value
+
+The following query returns all users with an email that ends in `prisma.io`:
 
 ```ts
   const users = await prisma.user.findMany({
@@ -298,12 +412,7 @@ const user = await prisma.user.findMany()
 
 #### Filter by multiple field values
 
-- Name starts with `E`
-
-_OR_
-
-- More than 0 profile views
-- Is an admin
+The following query uses a combinations of operators to return users whose name start with `E` _or_ administrators with at least 1 profile view:
 
 ```ts
 const users = await prisma.user.findMany({
@@ -331,8 +440,7 @@ const users = await prisma.user.findMany({
 
 #### Filter by related record field values
 
-- User's email ends with `prisma.io`
-- User has at least _one_ post (`some`) that is not published
+The following query returns users with an email that ends with `prisma.io` _and_ have at least _one_ post (`some`) that is not published:
 
 ```ts
   const users = await prisma.user.findMany({
@@ -349,7 +457,7 @@ const users = await prisma.user.findMany({
   }
 ```
 
-- User has at least _no_ posts (`none`) with more than 100 views
+The following example returns users that have no posts (`none`) with more than 100 views:
 
 ```ts
   const users = await prisma.user.findMany({
@@ -396,7 +504,7 @@ const user = await prisma.user.findMany({
           contains: 'Prisma',
         },
         content: {
-            contains: 'Prisma',
+          contains: 'Prisma',
         },
       },
     },
