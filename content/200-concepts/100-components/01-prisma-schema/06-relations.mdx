@@ -420,6 +420,19 @@ Here are some example scenarios when the `@relation` attribute is needed, e.g. w
 
 One-to-one (1-1) relations refer to relations where at most one record can be connected on both sides of the relation.
 
+### The side _without_ a relation scalar _must_ be optional
+
+In a one-to-one relation, the side of the relation _without_ a relation scalar (the field representing the foreign key in the database) _must_ be optional:
+
+```prisma
+model User {
+  id        Int       @id @default(autoincrement())
+  profile   Profile? // No relation scalar - must be optional
+}
+```
+
+This restriction was introduced in 2.12.0.
+
 ### Example
 
 In the example below, there's one 1-1-relation between `User` and `Profile`:
@@ -494,63 +507,6 @@ CREATE TABLE "Profile" (
 );
 ```
 
-### Making both sides required in one-to-one relations
-
-When using Prisma, you can "augment" a 1-1-relation and make it required on _both_ sides:
-
-```prisma
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  profile   Profile
-}
-
-model Profile {
-  id      Int    @id @default(autoincrement())
-  user    User   @relation(fields: [userId], references: [id])
-  userId  Int
-}
-```
-
-This 1-1-relation now expresses the following:
-
-- "a user must always have one profile" (because the `profile` field is [required](data-model#optional-and-mandatory-fields) on `User`)
-- "a profile must always be connected to one user"
-
-Making the `profile` field on `User` required does not impact the schema in the underlying database since relational databases are not able to model such a constraint. This constraint is implemented and enforced by Prisma's [query engine](../prisma-client/query-engine).
-
-> **Note**: One-to-one [self-relations](#self-relations) must not be made required on both sides, at least one side always must be declared optional.
-
-It's important to note that in the case of required 1-1-relations, the only way to create a new record for either `User` or `Profile` is by using [nested writes](../prisma-client/relation-queries#nested-writes):
-
-```ts
-const user = await prisma.user.create({
-  data: {
-    name: "Alice"
-    profile: {
-      create: {
-        bio: "Hello World"
-      }
-    }
-  }
-})
-
-// or
-
-const user = await prisma.profile.create({
-  data: {
-    bio: "I like turtles"
-    user: {
-      create: {
-        name: "Bob"
-      }
-    }
-  }
-})
-```
-
-If you're using [introspection](../introspection), you can make 1-1-relations required by manually adjusting your [Prisma schema](../) and making both relation fields required, then you can [re-generate Prisma Client](../prisma-client/generating-prisma-client) which will now make sure that the required 1-1-relation is enforced by the query engine.
-
 ### Determining the side of the foreign key
 
 Consider again the above 1-1-relation between `User` and `Profile`. The relation field on the `Profile` model is annotated with the `@relation` attribute:
@@ -559,7 +515,7 @@ Consider again the above 1-1-relation between `User` and `Profile`. The relation
 model User {
   id        Int      @id @default(autoincrement())
   name      String
-  profile   Profile
+  profile   Profile?
 }
 
 model Profile {
@@ -580,19 +536,15 @@ model User {
 
 model Profile {
   id      Int     @id @default(autoincrement())
-  user    User
+  user    User?
 }
 ```
 
 In the code above, `profileId` is a direct representation of the foreign key in the underlying database.
 
-This is what the relation looks like in the database:
-
-![Relation in the database](https://imgur.com/N5wHT6D.png)
-
 However, you can still determine yourself on which side of the relation the foreign key should be stored. To store the foreign key on `User` you need to add the `@relation` attribute to its relation field and add a corresponding relation scalar field:
 
-**Both relation fields required but using `@relation` to determine the foreign key**
+**One relation field required but using `@relation` to determine the foreign key**
 
 ```prisma
 model User {
@@ -603,7 +555,7 @@ model User {
 
 model Profile {
   id   Int    @id @default(autoincrement())
-  user User
+  user User?
 }
 ```
 
@@ -622,9 +574,7 @@ model Profile {
 }
 ```
 
-In both cases, the foreign key is now defined on the `profile` column of the `User` table:
-
-![foreign key in the profile table](https://imgur.com/NAd72ql.png)
+In both cases, the foreign key is now defined on the `profileId` column of the `User` table.
 
 ## One-to-many relations
 
