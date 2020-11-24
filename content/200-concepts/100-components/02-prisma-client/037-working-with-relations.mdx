@@ -2,6 +2,7 @@
 title: 'Working with relations'
 metaTitle: 'Working with relations (Reference)'
 metaDescription: 'Prisma Client provides convenient queries for working with relations, such as a fluent API, nested writes (transactions), nested reads and relation filters.'
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -83,7 +84,7 @@ const user = await prisma.user.create({
 
 ### Connect an existing record
 
-You can also connect an existing record to a new or existing user. The following query:
+You can `connect` <span class="api"></span> an existing record to a new or existing user. The following query:
 
 1. Connects an existing post (`id: 11`) to an existing user (`id: 9`)
 2. Adds a new related post (`title: "My fist post title"`)
@@ -108,23 +109,204 @@ You can also connect an existing record to a new or existing user. The following
 
 ### Connect or create a record
 
+If a related record may or may not already exist, use `connectOrCreate` <span class="api"></span> to connect the related record:
+
+- Connect a `User` with the email address `viola@prisma.io` _or_
+- Create a new `User` with the email address `viola@prisma.io` if the user does not already exist
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+  const createPost = await prisma.post.create({
+      data: {
+        title: "How to make croissants",
+        author: {
+          connectOrCreate: {
+            where: {
+              email: "viola@prisma.io"
+            },
+            create: {
+              email: "viola@prisma.io",
+              name: "Viola"
+            }
+          }
+        }
+      },
+      include: {
+        author: true
+      }
+  })
+}
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  id: 26,
+  title: 'How to make croissants',
+  published: true,
+  authorId: 43,
+  views: 0,
+  likes: 0,
+  author: {
+    id: 43,
+    name: 'Viola',
+    email: 'viola@prisma.io',
+    profileViews: 0,
+    role: 'USER',
+    coinflips: []
+  }
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
 ### Disconnect a related record
+
+To `disconnect` one out of a list of records (for example, a specific blog post) provide the ID or unique identifier of the record(s) to disconnect:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+  const updatePost = await prisma.user.update({
+      where: {
+        id: 16
+      },
+      data: {
+        posts: {
+          disconnect: {
+            id: [ {12}, {19} ]
+          }
+        }
+      },
+      select: {
+        posts: true
+      }
+  })
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  id: 16,
+  name: null,
+  email: 'orla@prisma.io',
+  profileViews: 0,
+  role: 'USER',
+  coinflips: [],
+  posts: []
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+To `disconnect` _one_ record (for example, a post's author), use `disconnect: true`:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const updatePost = await prisma.post.update({
+  where: {
+    id: 23,
+  },
+  data: {
+    author: {
+      disconnect: true,
+    },
+  },
+  include: {
+    author: true,
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  id: 23,
+  title: 'How to eat an omelette',
+  published: true,
+  authorId: null,
+  comments: null,
+  views: 0,
+  likes: 0,
+  author: null
+}
+```
+
+</CmdResult>
+</CodeWithResult>
 
 ### Disconnect all related records
 
-## Filtering 
+To `disconnect` <span class="api"></span> _all_ related records in a one-to-many relation (a user has many posts), `set` the relation to an empty list as shown:
 
-## Filter parent records by relation fields
+<CodeWithResult>
+<Cmd>
 
-> "I want a list of every user that has at least one unpublished post"
+```ts
 
-## Filter the relations list
+  const updateUser = await prisma.user.update({
+      where: {
+        id: 16
+      },
+      data: {
+        posts: {
+|         set: []
+        }
+      },
+      include: {
+        posts: true
+      }
+  })
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  id: 16,
+  name: null,
+  email: 'orla@prisma.io',
+  profileViews: 0,
+  role: 'USER',
+  coinflips: [],
+  posts: []
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+## Filtering
+
+### Filter records by relation fields
+
+Prisma Client provides the `some`, `every`, and `none` options to filter records by the properties of _related_ records. For example:
+
+| Requirement                                                            | Query option                        |
+| ---------------------------------------------------------------------- | ----------------------------------- |
+| "I want a list of every user that has _at least one_ unpublished post" | `some` posts are unpublished        |
+| "I want a list of every user that has _no_ unpublished post"           | `none` of the posts are unpublished |
+| "I want a list of every user that has _only_ unpublished post"         | `every` post is unpublished         |
+
+### Filter the relations list
 
 > "Show me every Prisma employee's first post"
 
 When you use `select` to return a subset of data from related records (for example, a user's posts), you can filter which related records should be returned. For example, you might want to query all users with a `prisma.io` email address and select the titles of their published posts.
-
-### Examples
 
 #### Retrieve _all_ `User` records where `email` contains `prisma.io`, and select the `title` of all `Post` records that have not been published yet
 
@@ -165,84 +347,6 @@ const result = await prisma.post.findMany({
   },
 })
 ```
-
-## Filter within `include`
-
-When you use `include` to load related records (for example, a user's posts), you can filter which related records should be returned. For example, you might want to return all users, but only include posts that have been published. Some user records will be returned without any posts.
-
-### Examples
-
-#### Retrieve _all_ `User` records, and include all `Post` records that have not been published yet
-
-```js
-const result = await prisma.user.findMany(
-  include: {
-    Post: {
-      where: {
-        published: false,
-      },
-    },
-  },
-})
-```
-
-> **Note**: Some users records will be returned without any posts.
-
-#### Retrieve `User` records with at least one `Post` that isn't published, and include all `Post` records that have not been published yet
-
-```js
-const result = await prisma.user.findMany({
-  where: {
-    Post: {
-      some: {
-        published: false,
-      },
-    },
-  },
-  include: {
-    Post: {
-      where: {
-        published: false,
-      },
-    },
-  },
-})
-```
-
-#### Retrieve all `User` records where the `email` contains `Prisma`, and include all `Post` records that have not been published yet
-
-```js
-const result = await prisma.user.findMany({
-  where: {
-    email: {
-      contains: 'prisma.io',
-    },
-  },
-  include: {
-    Post: {
-      where: {
-        published: false,
-      },
-    },
-  },
-})
-```
-
-You can filter records based on related record fields. For example, the following query returns all `Post` records where the user's email address is `sarah@prisma.io`:
-
-```js
-const result = await prisma.post.findMany({
-  where: {
-    user: {
-      email: {
-        equals: 'sarah@prisma.io',
-      },
-    },
-  },
-})
-```
-
-### <inlinecode>some</inlinecode>, <inlinecode>every</inlinecode>, and <inlinecode>none</inlinecode>
 
 ## Fluent API
 
@@ -292,88 +396,4 @@ const posts = await prisma.user
     .findMany()
     .posts()
 }
-```
-
-## Relation filters
-
-A [relation filter](filtering#filter-on-related-records) is a filter operation that's applied to a related object of a model. Relation filter options can be passed to the last chained query in a fluent API call if it returns a [list](../prisma-schema/data-model#type-modifiers).
-
-**Retrieve all `Post` records of a particular `User` record that start with "Hello"**
-
-```ts
-const posts: Post[] = await prisma.user
-  .findOne({
-    where: { email: 'ada@prisma.io' },
-  })
-  .posts({
-    where: {
-      title: { startsWith: 'Hello' },
-    },
-  })
-```
-
-Note that this query is _equivalent_ to the following one which is initiated via the `post` instead of the `user` field (in other words, it doesn't use the fluent API):
-
-```ts
-const posts = await prisma.post.findMany({
-  where: {
-    author: { email: 'bob@prisma.io' },
-    title: { startsWith: 'Hello' },
-  },
-})
-console.log(posts)
-```
-
-The main difference between the two is that the fluent API call is translated into two separate database queries while the other one only generates a single query (see this [GitHub issue](https://github.com/prisma/prisma/issues/1984)).
-
-## Nested writes
-
-Nested writes provide a way for writing relational data in your database. They further provide [transactional](transactions) guarantees for creating, updating or deleting data across multiple tables in a single Prisma Client query.
-
-Nested writes can be nested arbitrarily deep.
-
-Nested writes are available for [relation fields](../prisma-schema/relations#relation-fields) when using the model's `create` or `update` query. The following section shows the nested write options that are available per query.
-
-### One-to-one relations
-
-This section shows examples for nested writes on one-to-one relations. It uses the `User` ↔ `Profile` relation from the sample data model above. For illustration purposes, the `email` and `bio` fields have been added:
-
-You can provide any [unique](../prisma-schema/data-model#defining-a-unique-field) or [ID](../prisma-schema/data-model#defining-an-id-field) property to the `connect` option, so in this case you could also provide the `id` field to identify the target `User` record:
-
-### One-to-many relations
-
-This section shows examples for nested writes on one-to-many relations. It uses the `User` ↔ `Post` relation from the sample data model above. For illustration purposes, the `email`, `title` and `published` fields have been added:
-
-The following nested write options for `Post` are available in `prisma.post.update(...)` queries:
-
-- `update`: Update an existing user by updating one or more of their existing posts
-- `upsert`: Update an existing user by updating one or more of their existing posts or by creating one or more new posts
-- `delete`: Update an existing user by deleting one or more of their existing posts
-- `disconnect`: Update an existing by removing the connection(s) to one or more of their existing posts
-- `set`: Update an existing user by replacing their existing posts with one or more existing posts
-- `updateMany`: Update an existing user by updating one or more of their existing posts
-- `deleteMany`: Update an existing user by deleting one or more of their existing posts
-
-## Read related records (nested read)
-
-With nested reads, you can modify the structures of the model objects that are returned by your Prisma Client queries by _including_ their relations. In ORM terminology, this is sometimes called _eager loading_.
-
-You can load relations of your models with the [`include`](field-selection#include) and [`select`](field-selection#select) options which you can pass to _any_ Prisma Client query (except for the batch operations `updateMany` and `deleteMany`). `include` is more commonly used for relations, `select` is used for selecting specific fields.
-
-**Retrieve deeply nested data by loading several levels of relations**
-
-```ts
-const users = await prisma.user.findMany({
-  include: {
-    posts: {
-      include: {
-        categories: {
-          include: {
-            posts: true,
-          },
-        },
-      },
-    },
-  },
-})
 ```
