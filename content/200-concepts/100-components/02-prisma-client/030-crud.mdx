@@ -1,7 +1,7 @@
 ---
 title: 'CRUD'
 metaTitle: 'CRUD (Reference)'
-metaDescription: 'This page provides a detailed reference of the auto-generated CRUD queries that are exposed in the Prisma Client API, such as findOne, findMany, create, ...'
+metaDescription: 'This page provides a detailed reference of the auto-generated CRUD queries that are exposed in the Prisma Client API, such as findUnique, findMany, create, ...'
 tocDepth: 3
 ---
 
@@ -126,34 +126,47 @@ Your schema determines [which fields are mandatory](../prisma-schema/data-model#
 The following example produces an identical result, but creates a `UserCreateInput` variable named `user` _outside_ the context of the `create` query. After completing a simple check (should posts be included in this `create` query?), the `user` variable is passed into the query:
 
 ```ts
-let includePosts: boolean = false
-let user: UserCreateInput
+import { PrismaClient, Prisma } from '@prisma/client'
 
-// Check if posts should be included in the query
-if (includePosts) {
-  user = {
-    email: 'elsa@prisma.io',
-    name: 'Elsa Prisma',
-    posts: {
-      create: {
-        title: 'Include this post!',
+const prisma = new PrismaClient()
+
+async function main() {
+  let includePosts: boolean = false
+  let user: Prisma.UserCreateInput
+
+  // Check if posts should be included in the query
+  if (includePosts) {
+    user = {
+      email: 'elsa@prisma.io',
+      name: 'Elsa Prisma',
+      posts: {
+        create: {
+          title: 'Include this post!',
+        },
       },
-    },
+    }
   }
-}
-{
-  user = {
-    email: 'elsa@prisma.io',
-    name: 'Elsa Prisma',
+  {
+    user = {
+      email: 'elsa@prisma.io',
+      name: 'Elsa Prisma',
+    }
   }
+
+  // Pass 'user' object into query
+  const createUser = await prisma.user.create({ data: user })
 }
 
-// Pass 'user' object into query
-const createUser = await prisma.user.create({ data: user })
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
 ```
 
 For more information about working with generated types, see: [Generated types](working-with-generated-types).
-
 
 ### Create multiple records
 
@@ -341,18 +354,18 @@ For more information about connecting and disconnecting related records, see [Wo
 
 ### Get record by ID or unique identifier
 
-The following queries return a single record (`findOne` <span class="api"></span>) by unique identifier or ID:
+The following queries return a single record (`findUnique` <span class="api"></span>) by unique identifier or ID:
 
 ```ts file=script.ts
 // By unique identifier
-const user = await prisma.user.findOne({
+const user = await prisma.user.findUnique({
   where: {
     email: 'elsa@prisma.io',
   },
 })
 
 // By ID
-const user = await prisma.user.findOne({
+const user = await prisma.user.findUnique({
   where: {
     id: 99,
   },
@@ -368,8 +381,6 @@ const user = await prisma.user.findMany()
 ```
 
 You can also [paginate your results](pagination).
-
-### Get a filtered list of records
 
 ### Get the first record that matches a specific criteria
 
@@ -395,6 +406,8 @@ The following `findFirst` <span class="api"></span> query returns the _most rece
   })
 }
 ```
+
+### Get a filtered list of records
 
 #### Filter by a single field value
 
@@ -473,7 +486,28 @@ The following example returns users that have no posts (`none`) with more than 1
   }
 ```
 
+The following example returns users that _only_ has posts (`every`) with more than 100 views:
+
+```ts
+  const users = await prisma.user.findMany({
+    where: {
+      posts: {
+        every: {
+          views: {
+            gt: 100
+          }
+        }
+      }
+    },
+  }
+```
+
 ### Include related records
+
+The following query returns all `ADMIN` users and includes each user's posts in the result:
+
+<CodeWithResult>
+<Cmd>
 
 ```ts
 const user = await prisma.user.findMany({
@@ -485,6 +519,53 @@ const user = await prisma.user.findMany({
   },
 })
 ```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+    "id": 38,
+    "name": "Maria",
+    "email": "maria@prisma.io",
+    "profileViews": 20,
+    "role": "ADMIN",
+    "coinflips": [
+        true,
+        false,
+        false
+    ],
+    "list": [],
+    "posts": []
+},
+{
+    "id": 39,
+    "name": "Oni",
+    "email": "oni2@prisma.io",
+    "profileViews": 20,
+    "role": "ADMIN",
+    "coinflips": [
+        true,
+        false,
+        false
+    ],
+    "list": [],
+    "posts": [
+        {
+        "id": 25,
+        "authorId": 39,
+        "title": "My awesome post",
+        "published": true,
+        "comments": null,
+        "views": 0,
+        "likes": 0
+        }
+    ]
+}
+```
+
+</CmdResult>
+</CodeWithResult>
 
 For more information about including relations, see [Select fields and include relations](select-and-include).
 
@@ -520,7 +601,7 @@ For more information about including relations, see [Select fields and include r
 <Cmd>
 
 ```ts
-const user = await prisma.user.findOne({
+const user = await prisma.user.findUnique({
   where: {
     email: 'emma@prisma.io',
   },
@@ -549,7 +630,7 @@ For more information about including relations, see [Select fields and include r
 <Cmd>
 
 ```ts
-const user = await prisma.user.findOne({
+const user = await prisma.user.findUnique({
   where: {
     email: 'emma@prisma.io',
   },
@@ -578,21 +659,77 @@ For more information about including relations, see [Select fields and include r
 
 ### Select distinct field values
 
+<CodeWithResult>
+<Cmd>
+
+```ts
+const distinctRoles = await prisma.user.findMany({
+  distinct: ['role'],
+  select: {
+    role: true,
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+[
+   {
+      "role": "USER"
+   },
+   {
+      "role": "ADMIN"
+   }
+]
+```
+
+</CmdResult>
+</CodeWithResult>
+
 ## Update
 
 ### Update a single record
 
+<CodeWithResult>
+<Cmd>
+
+```ts
+  const updateUser = await prisma.user.update({
+    where: {
+      email: "viola@prisma.io"
+    },
+    data: {
+      name: "Viola the Magnificent"
+    }
+  })
+```
+
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+   "id": 43,
+   "name": "Viola the Magnificent",
+   "email": "viola@prisma.io",
+   "profileViews": 0,
+   "role": "USER",
+   "coinflips": [],
+   "list": []
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
 ### Update multiple records
 
-### Update or insert records
+### Update _or_ insert records
 
-### Disconnect a related record
-
-### Connect a related record
-
-#### Connect an existing record
-
-#### Connect a new record
+### Connect and disconnect related records
 
 ## Delete
 
