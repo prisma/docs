@@ -3,3 +3,601 @@ title: 'Migrate from TypeROM'
 metaTitle: 'How to migrate from TypeORM to Prisma'
 metaDescription: 'Learn how to migrate from TypeORM to Prisma'
 ---
+
+This guide describes how to migrate from TypeORM to Prisma. It uses an extended version of the [TypeORM Express example](https://github.com/typeorm/typescript-express-example/) as a sample project to demonstrate the migration steps. You can find the example used for this guide on [GitHub](https://github.com/prisma/migrate-from-typeorm-to-prisma). This migration guide uses PostgreSQL as as an example database, but it equally applies to any other relational database that's [supported by Prisma]().
+
+Note that the steps for migrating from TypeORM to Prisma are always the same, no matter what kind of application or API layer you're building:
+
+1. Install the Prisma CLI
+1. Introspect your database
+1. Install Prisma Client
+1. Gradually replace your TypeORM queries with Prisma Client
+
+These steps apply, no matter if you're building a REST API (e.g. with Express, koa or NestJS), a GraphQL API (e.g. with Apollo Server, TypeORM or Nexus) or any other kind of application that uses TypeORM for database access.
+
+Prisma lends itself really well for **incremental adoption**. This means, you don't have migrate your entire project from TypeORM to Prisma at once, but rather you can _step-by-step_ move your database queries from TypeORM to Prisma.
+
+## Overview of the sample project
+
+For this guide, we'll use a REST API built with Express as a sample project to migrate to Prisma. It has four models/entitites:
+
+<TabbedContent tabs={[<FileWithIcon text="User.ts" icon="file"/>, <FileWithIcon text="Post.ts" icon="file"/>, <FileWithIcon text="Profile.ts" icon="file"/>, <FileWithIcon text="Category.ts" icon="file"/>]}>     
+ 
+<tab>
+
+```ts
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ nullable: true })
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @OneToMany((type) => Post, (post) => post.author)
+  posts: Post[];
+
+  @OneToOne((type) => Profile, (profile) => profile.user,  { cascade: true })
+  profile: Profile;
+}
+```
+
+</tab>
+
+<tab>
+
+```ts
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true })
+  content: string;
+
+  @Column({ default: false })
+  published: boolean;
+
+  @ManyToOne((type) => User, (user) => user.posts)
+  author: User;
+
+  @ManyToMany((type) => Category, (category) => category.posts)
+  @JoinTable()
+  categories: Category[];
+}
+```
+
+</tab>
+
+<tab>
+
+```ts
+@Entity()
+export class Profile {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ nullable: true })
+  bio: string;
+
+  @OneToOne((type) => User, (user) => user.profile)
+  @JoinColumn()
+  user: User;
+}
+```
+
+</tab>
+
+<tab>
+
+```ts
+@Entity()
+export class Category {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @ManyToMany((type) => Post, (post) => post.categories)
+  posts: Post[];
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+The models have the following relations:
+
+- 1-1: `User` ↔ `Profile`
+- 1-n: `User` ↔ `Post`
+- m-n: `Post` ↔ `Category`
+
+The corresponding tables have been created using a generated TypeORM migration.
+
+<details><summary>Expand to view details of the migration</summary>  
+
+The migration has been created using 
+
+```terminal
+typeorm migration:generate -n Init
+```
+
+This created the following migration file: 
+
+```ts file=migrations/1605698662257-Init.ts
+import {MigrationInterface, QueryRunner} from "typeorm";
+
+export class Init1605698662257 implements MigrationInterface {
+    name = 'Init1605698662257'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TABLE "profile" ("id" SERIAL NOT NULL, "bio" character varying, "userId" integer, CONSTRAINT "REL_a24972ebd73b106250713dcddd" UNIQUE ("userId"), CONSTRAINT "PK_3dd8bfc97e4a77c70971591bdcb" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "user" ("id" SERIAL NOT NULL, "name" character varying, "email" character varying NOT NULL, CONSTRAINT "UQ_e12875dfb3b1d92d7d7c5377e22" UNIQUE ("email"), CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "post" ("id" SERIAL NOT NULL, "title" character varying NOT NULL, "content" character varying, "published" boolean NOT NULL DEFAULT false, "authorId" integer, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "category" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_9c4e4a89e3674fc9f382d733f03" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "post_categories_category" ("postId" integer NOT NULL, "categoryId" integer NOT NULL, CONSTRAINT "PK_91306c0021c4901c1825ef097ce" PRIMARY KEY ("postId", "categoryId"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_93b566d522b73cb8bc46f7405b" ON "post_categories_category" ("postId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_a5e63f80ca58e7296d5864bd2d" ON "post_categories_category" ("categoryId") `);
+        await queryRunner.query(`ALTER TABLE "profile" ADD CONSTRAINT "FK_a24972ebd73b106250713dcddd9" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_c6fb082a3114f35d0cc27c518e0" FOREIGN KEY ("authorId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "post_categories_category" ADD CONSTRAINT "FK_93b566d522b73cb8bc46f7405bd" FOREIGN KEY ("postId") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "post_categories_category" ADD CONSTRAINT "FK_a5e63f80ca58e7296d5864bd2d3" FOREIGN KEY ("categoryId") REFERENCES "category"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "post_categories_category" DROP CONSTRAINT "FK_a5e63f80ca58e7296d5864bd2d3"`);
+        await queryRunner.query(`ALTER TABLE "post_categories_category" DROP CONSTRAINT "FK_93b566d522b73cb8bc46f7405bd"`);
+        await queryRunner.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_c6fb082a3114f35d0cc27c518e0"`);
+        await queryRunner.query(`ALTER TABLE "profile" DROP CONSTRAINT "FK_a24972ebd73b106250713dcddd9"`);
+        await queryRunner.query(`DROP INDEX "IDX_a5e63f80ca58e7296d5864bd2d"`);
+        await queryRunner.query(`DROP INDEX "IDX_93b566d522b73cb8bc46f7405b"`);
+        await queryRunner.query(`DROP TABLE "post_categories_category"`);
+        await queryRunner.query(`DROP TABLE "category"`);
+        await queryRunner.query(`DROP TABLE "post"`);
+        await queryRunner.query(`DROP TABLE "user"`);
+        await queryRunner.query(`DROP TABLE "profile"`);
+    }
+
+}
+```
+
+</details>  
+
+As mentioned before, this guide is an extended variation of the TypeORM Express example and uses the same file structure. The route handlers are located in the `src/controller` directory. From there, they are pulled into a central `src/routes.ts` file which is used to set up the required routes in `src/index.ts`:
+
+```
+└── blog-typeorm
+    ├── ormconfig.json
+    ├── package.json
+    ├── src
+    │   ├── controllers
+    │   │   ├── AddPostToCategoryAction.ts
+    │   │   ├── CreateDraftAction.ts
+    │   │   ├── CreateUserAction.ts
+    │   │   ├── FeedAction.ts
+    │   │   ├── FilterPostsAction.ts
+    │   │   ├── GetPostByIdAction.ts
+    │   │   └── SetBioForUserAction.ts
+    │   ├── entity
+    │   │   ├── Category.ts
+    │   │   ├── Post.ts
+    │   │   ├── Profile.ts
+    │   │   └── User.ts
+    │   ├── index.ts
+    │   ├── migration
+    │   │   └── 1605698662257-Init.ts
+    │   └── routes.ts
+    └── tsconfig.json
+```
+
+
+## Step 1. Install the Prisma CLI
+
+The first step to adopt is Prisma is to install the Prisma CLI:
+
+```terminal copy
+npm install @prisma/cli --save-dev
+```
+
+## Step 2. Introspect your database
+
+### 2.1. Set up Prisma
+
+Before you can introspect your database, you need to set up your [Prisma schema]() and connect Prisma to your database. Run the following command in your terminal to create a basic Prisma schema file:
+
+```terminal copy
+npx prisma init
+```
+
+This command created a new directory called `prisma` with the following files for you:
+
+- `schema.prisma`: Your Prisma schema file that specifies your database connection and models
+- `.env`: A [`dotenv`](https://github.com/motdotla/dotenv) to configure your database connection URL as an environment variable 
+
+The Prisma schema file currently looks as follows:
+
+```prisma file=prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+> **Tip**: If you're using VS Code, be sure to install the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) for syntax highlighting, formatting, auto-completion and a lot more cool features. 
+
+### 2.2. Connect your database
+
+If you're not using PostgreSQL, you need to adjust the `provider` field on the `datasource` block to the database you currently use:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>     
+
+<tab>
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+</tab>
+
+<tab>
+
+```prisma
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+```
+
+</tab>
+
+<tab>
+
+```prisma
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+```
+
+</tab>
+
+<tab>
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+Once that's done, you can configure your [database connection URL]() in the `.env` file. Here's how the database connection from TypeORM maps to the connection URL format used by Prisma:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>     
+
+<tab>
+
+Assume you have the following database connection details in `ormconfig.json`:
+
+```json file=ormconfig.json
+{
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "alice",
+  "password": "myPassword42",
+  "database": "blog-typeorm"
+}
+```
+
+The respective connection URL would look as follows in Prisma:
+
+```sh file=.env
+DATABASE_URL="postgresql://alice:myPassword42@localhost:5432/blog-typeorm"
+```
+
+Note that you can optionally configure the PostgreSQL [schema](https://www.postgresql.org/docs/9.1/ddl-schemas.html) by appending the `schema` argument to the connection URL:
+
+```sh file=.env
+DATABASE_URL="postgresql://alice:myPassword42@localhost:5432/blog-typeorm?schema=myschema"
+```
+
+If not provided, the default schema called `public` is being used.
+
+</tab>
+
+<tab>
+
+Assume you have the following database connection details in `ormconfig.json`:
+
+```json file=ormconfig.json
+{
+  "type": "mysql",
+  "host": "localhost",
+  "port": 3306,
+  "username": "alice",
+  "password": "myPassword42",
+  "database": "blog-typeorm"
+}
+```
+
+The respective connection URL would look as follows in Prisma:
+
+```sh file=.env
+DATABASE_URL="mysql://alice:myPassword42@localhost:3306/blog-typeorm"
+```
+
+</tab>
+
+<tab>
+
+Assume you have the following database connection details in `ormconfig.json`:
+
+```json file=ormconfig.json
+{
+  "type": "mssql",
+  "host": "localhost",
+  "port": 1433,
+  "username": "alice",
+  "password": "myPassword42",
+  "database": "blog-typeorm"
+}
+```
+
+The respective connection URL would look as follows in Prisma:
+
+```sh file=.env
+DATABASE_URL="sqlserver://localhost:1433;database=blog-typeorm;user=alice;password=myPassword42;trustServerCertificate=true"
+```
+
+Note that if you are running on macOS, you must use `encrypt=DANGER_PLAINTEXT` to work around the current [TLS limitation](https://github.com/prisma/prisma/issues/4075):
+
+```
+DATABASE_URL="sqlserver://localhost:1433;database=blog-typeorm;user=alice;password=myPassword42;trustServerCertificate=true;encrypt=DANGER_PLAINTEXT"
+```
+
+</tab>
+
+<tab>
+
+Assume you have the following database connection details in `ormconfig.json`:
+
+```json file=ormconfig.json
+{
+  "type": "sqlite",
+  "database": "blog-typeorm"
+}
+```
+
+The respective connection URL would look as follows in Prisma:
+
+```sh file=.env
+DATABASE_URL="file:./blog-typeorm.db"
+```
+
+</tab>
+
+</TabbedContent>
+
+### 2.3. Run Prisma's introspection
+
+With your connection URL in place, you can introspect your database to generate your Prisma models:
+
+```terminal copy
+npx prisma introspect
+```
+
+This creates the following Prisma models:
+
+```prisma file=prisma/schema.prisma
+model typeorm_migrations {
+  id        Int    @id @default(autoincrement())
+  timestamp Int
+  name      String
+
+  @@map("_typeorm_migrations")
+}
+
+model category {
+  id                       Int                        @id @default(autoincrement())
+  name                     String
+  post_categories_category post_categories_category[]
+}
+
+model post {
+  id                       Int                        @id @default(autoincrement())
+  title                    String
+  content                  String?
+  published                Boolean                    @default(false)
+  authorId                 Int?
+  user                     user?                      @relation(fields: [authorId], references: [id])
+  post_categories_category post_categories_category[]
+}
+
+model post_categories_category {
+  postId     Int
+  categoryId Int
+  category   category @relation(fields: [categoryId], references: [id])
+  post       post     @relation(fields: [postId], references: [id])
+
+  @@id([postId, categoryId])
+  @@index([postId], name: "IDX_93b566d522b73cb8bc46f7405b")
+  @@index([categoryId], name: "IDX_a5e63f80ca58e7296d5864bd2d")
+}
+
+model profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  userId Int?    @unique
+  user   user?   @relation(fields: [userId], references: [id])
+}
+
+model user {
+  id      Int      @id @default(autoincrement())
+  name    String?
+  email   String   @unique
+  post    post[]
+  profile profile?
+}
+```
+
+The generated Prisma models represent your database tables and are the foundation for your programmatic Prisma Client API which allows you to send queries to your database.
+
+### 2.4. Adjust the Prisma schema (optional)
+
+The models that were generated via introspection currently _exactly_ map to your database tables. In this section, you'll learn how you can adjust the naming of the Prisma models to adhere to Prisma's naming conventions.
+
+All of these adjustment are entirely optional and you are free to skip to the next step already if you don't want to adjust anything for now. You can go back and make the adjustments at any later point.
+
+As opposed to the current snake_case notation of Prisma models, Prisma's naming conventions are:
+
+- PascalCase for model names
+- camelCase for field names
+
+You can adjust the naming by _mapping_ the Prisma model and field names to the existing table and column names in the underlying database using `@@map` and `@map`.
+
+Also note that you can rename [relation fields]() to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural. 
+
+You can further completely remove model that represents the TypeORM migrations table (called `_typeorm_migrations` here) from the Prisma schema.
+
+Here's an adjusted version of the Prisma schema that addresses these points:
+
+```prisma file=prisma/schema.prisma
+model Category {
+  id                Int                @id @default(autoincrement())
+  name              String
+  postsToCategories PostToCategories[]
+
+  @@map("category")
+}
+
+model Post {
+  id                Int                @id @default(autoincrement())
+  title             String
+  content           String?
+  published         Boolean            @default(false)
+  authorId          Int?
+  author            User?              @relation(fields: [authorId], references: [id])
+  postsToCategories PostToCategories[]
+
+  @@map("post")
+}
+
+model PostToCategories {
+  postId     Int
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  post       Post     @relation(fields: [postId], references: [id])
+
+
+  @@id([postId, categoryId])
+  @@index([postId], name: "IDX_93b566d522b73cb8bc46f7405b")
+  @@index([categoryId], name: "IDX_a5e63f80ca58e7296d5864bd2d")
+  @@map("post_categories_category")
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  userId Int?    @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@map("profile")
+}
+
+model User {
+  id      Int      @id @default(autoincrement())
+  name    String?
+  email   String   @unique
+  posts   Post[]
+  profile Profile?
+
+  @@map("user")
+}
+```
+
+## Step 3. Install Prisma Client
+
+As a next step, you can install Prisma Client in your project so that you can start replacing the database queries in your project that are currently made with TypeORM:
+
+```terminal
+npm install @prisma/client
+```
+
+## Step 4. Replace your TypeORM queries with Prisma Client
+
+In this section, we'll show a few sample queries that are being migrated from TypeORM to Prisma Client based on the example routes from the sample REST API project. For a comprehensive overview of how the Prisma Client API differs from TypeORM, check out the [API comparison]() page.
+
+First, to set up the `PrismaClient` instance that you'll use to send database queries from the different route handlers. Create a new file called `prisma.ts` in the `src` directory:
+
+```terminal copy
+touch src/prisma.ts
+```
+
+Now, instantiate `PrismaClient` and export it from the file so you can use it in your route handlers later:
+
+```ts copy
+import { PrismaClient } from "@prisma/client"
+
+export const prisma = new PrismaClient()
+```
+
+### 4.1. Replacing queries in `GET` requests
+
+The REST API has three routes that accept `GET` requests:
+
+- `/feed`: Return all published posts
+- `/filterPosts?searchString=SEARCH_STRING`: Filter returned posts by `title` and `content`
+- `/post/:postId`: Returns a specific post by its `id`
+
+Let's dive into the route handlers that implement these requests.
+
+#### `/feed`
+
+The `/feed` handler is currently implemented as follows:
+
+```ts
+import { getManager } from "typeorm";
+import { Post } from "../entity/Post";
+
+export async function feedAction(request, response) {
+  const postRepository = getManager().getRepository(Post);
+
+  const publishedPosts = await postRepository.find({
+    where: { published: true },
+    relations: ["author"]
+  });
+
+  response.send(publishedPosts);
+}
+```
+
+Note that each returned `Post` object includes the relation to the `author` it's associated with. With TypeORM, including the relation is not type-safe. For example, if there was a typo in the relation that is retrieved, your database query would fail only at _runtime_ – the TypeScript compiler does not provide any safety here.
+
+Here is how the query is implemented using Prisma Client:
+
+
+```ts
+
+```
