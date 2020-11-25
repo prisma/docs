@@ -549,7 +549,7 @@ npm install @prisma/client
 
 In this section, we'll show a few sample queries that are being migrated from TypeORM to Prisma Client based on the example routes from the sample REST API project. For a comprehensive overview of how the Prisma Client API differs from TypeORM, check out the [API comparison]() page.
 
-First, to set up the `PrismaClient` instance that you'll use to send database queries from the different route handlers. Create a new file called `prisma.ts` in the `src` directory:
+First, to set up the `PrismaClient` instance that you'll use to send database queries from the various route handlers. Create a new file called `prisma.ts` in the `src` directory:
 
 ```terminal copy
 touch src/prisma.ts
@@ -557,7 +557,7 @@ touch src/prisma.ts
 
 Now, instantiate `PrismaClient` and export it from the file so you can use it in your route handlers later:
 
-```ts copy
+```ts copy file=src/prisma.ts
 import { PrismaClient } from "@prisma/client"
 
 export const prisma = new PrismaClient()
@@ -577,11 +577,11 @@ Let's dive into the route handlers that implement these requests.
 
 The `/feed` handler is currently implemented as follows:
 
-```ts
+```ts file=src/controllers/FeedAction.ts
 import { getManager } from "typeorm";
 import { Post } from "../entity/Post";
 
-export async function feedAction(request, response) {
+export async function feedAction(req, res) {
   const postRepository = getManager().getRepository(Post);
 
   const publishedPosts = await postRepository.find({
@@ -589,15 +589,459 @@ export async function feedAction(request, response) {
     relations: ["author"]
   });
 
-  response.send(publishedPosts);
+  res.send(publishedPosts);
 }
 ```
 
 Note that each returned `Post` object includes the relation to the `author` it's associated with. With TypeORM, including the relation is not type-safe. For example, if there was a typo in the relation that is retrieved, your database query would fail only at _runtime_ – the TypeScript compiler does not provide any safety here.
 
-Here is how the query is implemented using Prisma Client:
+Here is how the same route is implemented using Prisma Client:
 
+
+```ts file=src/controllers/FeedAction.ts
+import { prisma } from '../prisma'
+
+export async function feedAction(req, res) {
+
+  const publishedPosts = await prisma.post.findMany({
+    where: { published: true },
+    include: { author: true }
+  })
+
+  res.send(publishedPosts);
+}
+```
+
+Note that the way how Prisma Client includes the `author` relation is absolutely type-safe. The TypeScript compiler would throw an error if you were trying to include a relation that does not exist on the `User` model.
+
+
+#### `/filterPosts?searchString=SEARCH_STRING`
+
+The `/filterPosts` handler is currently implemented as follows:
+
+```ts file=src/controllers/FilterPostsActions.ts
+import { getManager, Like } from "typeorm";
+import { Post } from "../entity/Post";
+
+export async function filterPostsAction(req, res) {
+  const { searchString } = req.query
+  const postRepository = getManager().getRepository(Post);
+
+  const filteredPosts = await postRepository.find({
+    where: [
+      { title: Like(`%${searchString}%`) },
+      { content: Like(`%${searchString}%`) },
+    ],
+  });
+
+  res.send(filteredPosts);
+}
+```
+
+With Prisma, the route is implemented as follows:
+
+```ts file=src/controllers/FilterPostsActions.ts
+import { prisma } from '../prisma'
+
+export async function filterPostsAction(req, res) {
+  const { searchString } = req.query;
+
+  const filteredPosts = prisma.post.findMany({
+    where: {
+      OR: [{
+        title: { contains: searchString }
+      }, {
+        content: { contains: searchString }
+      }]
+    }
+  })
+
+  res.send(filteredPosts);
+}
+```
+
+Note that TypeORM by default combines several `where` conditions with an implicit `OR` operator. Prisma on the other hand [combines several `where` conditions with an implicit `AND` operator](https://www.prisma.io/docs/concepts/components/prisma-client/filtering#retrieve-all-post-records-where-the-content-field-contains-prisma-and-published-is-false), so in this case the Prisma query needs to make the `OR` explicit.
+
+#### `/post/:postId`
+
+The `/post/:postId` handler is currently implemented as follows:
+
+```ts file=src/controllers/GetPostByIdAction.ts
+import { getManager } from "typeorm";
+import { Post } from "../entity/Post";
+
+export async function getPostByIdAction(req, res) {
+  const { postId } = req.params
+  const postRepository = getManager().getRepository(Post);
+
+  const post = await postRepository.findOne(postId);
+
+  res.send(post);
+}
+```
+
+With Prisma, the route is implemented as follows:
+
+```ts file=src/controllers/GetPostByIdAction.ts
+import { prisma } from '../prisma'
+
+export async function getPostByIdAction(req, res) {
+  const { postId } = req.params
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId }
+  })
+
+  res.send(post);
+}
+```
+
+### 4.2. Replacing queries in `POST` requests
+
+The REST API has three routes that accept `POST` requests:
+
+- `/user`: Creates a new `User` record
+- `/post`: Creates a new `User` record
+- `/user/:userId/profile`: Creates a new `Profile` record for a `User` record with a given ID
+
+#### `/user`
+
+The `/user` handler is currently implemented as follows:
+
+```ts file=src/controllers/CreateUserAction.ts
+import { getManager } from "typeorm";
+import { User } from "../entity/User";
+
+export async function createUserAction(req, res) {
+  const { name, email } = req.body
+
+  const userRepository = getManager().getRepository(User);
+
+  const newUser = new User()
+  newUser.name = name
+  newUser.email = email
+  userRepository.save(newUser)
+
+  res.send(newUser);
+}
+```
+
+With Prisma, the route is implemented as follows:
+
+```ts file=src/controllers/CreateUserAction.ts
+import { prisma } from "../prisma";
+
+export async function createUserAction(req, res) {
+  const { name, email } = req.body;
+
+  const newUser = await prisma.user.create({
+    data: {
+      name,
+      email,
+    },
+  });
+
+  res.send(newUser);
+}
+```
+
+#### `/post`
+
+The `/post` handler is currently implemented as follows:
+
+```ts file=src/controllers/CreateDraftAction.ts
+import { getManager } from "typeorm";
+import { Post } from "../entity/Post";
+import { User } from "../entity/User";
+
+export async function createDraftAction(req, res) {
+  const { title, content, authorEmail } = req.body
+
+  const userRepository = getManager().getRepository(User);
+  const user = await userRepository.findOne({ email: authorEmail })
+
+  const postRepository = getManager().getRepository(Post);
+
+  const newPost = new Post()
+  newPost.title = title
+  newPost.content = content
+  newPost.author = user
+  postRepository.save(newPost)
+
+  res.send(newPost);
+}
+```
+
+With Prisma, the route is implemented as follows:
+
+```ts file=src/controllers/CreateDraftAction.ts
+import { prisma } from "../prisma";
+
+export async function createDraftAction(req, res) {
+  const { title, content, authorEmail } = req.body;
+
+  const newPost = await prisma.post.create({
+    data: {
+      title,
+      content,
+      author: {
+        connect: { email: authorEmail },
+      },
+    },
+  });
+
+  res.send(newPost);
+}
+```
+
+Note that Prisma Client's nested write here save an initial query where first the `User` record needs to be retrieved by its `email`. That's because, with Prisma you can connect records in relations using any unique property.
+
+
+#### `/user/:userId/profile`
+
+The `/user/:userId/profile` handler is currently implemented as follows:
+
+```ts file=src/controllers/SetBioForUserAction.ts.ts
+import { getManager } from "typeorm";
+import { Profile } from "../entity/Profile";
+import { User } from "../entity/User";
+
+export async function setBioForUserAction(req, res) {
+  const { userId } = req.params;
+  const { bio } = req.body;
+
+  const userRepository = getManager().getRepository(User);
+  const user = await userRepository.findOne(userId, {
+    relations: ["profile"],
+  });
+
+  const profileRepository = getManager().getRepository(Profile);
+  user.profile.bio = bio;
+
+  profileRepository.save(user.profile);
+
+  res.send(user);
+}
+```
+
+With Prisma, the route is implemented as follows:
+
+```ts file=src/controllers/SetBioForUserAction.ts.ts
+import { prisma } from '../prisma'
+
+export async function setBioForUserAction(req, res) {
+  const { userId } = req.params;
+  const { bio } = req.body;
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      profile: {
+        update: {
+          bio
+        }
+      }
+    }
+  })
+
+  res.send(user);
+}
+```
+
+### 4.3. Replacing queries in `PUT` requests
+
+The REST API has one route that accept a `PUT` request:
+
+- `/addPostToCategory?postId=POST_ID&categoryId=CATEGORY_ID`: Adds the post with `POST_ID` to the category with `CATEGORY_ID`
+
+Let's dive into the route handlers that implement these requests.
+
+#### `/addPostToCategory?postId=POST_ID&categoryId=CATEGORY_ID`
+
+The `/addPostToCategory?postId=POST_ID&categoryId=CATEGORY_ID` handler is currently implemented as follows:
+
+```ts file=src/controllers/AddPostToCategoryAction.ts
+import { getManager } from "typeorm";
+import { Post } from "../entity/Post";
+import { Category } from "../entity/Category";
+
+export async function addPostToCategoryAction(req, res) {
+  const { postId, categoryId } = req.query
+
+  const postRepository = getManager().getRepository(Post);
+  const post = await postRepository.findOne(postId, {
+    relations: ['categories']
+  })
+
+  const categoryRepository = getManager().getRepository(Category);
+  const category = await categoryRepository.findOne(categoryId)
+
+  post.categories.push(category)
+  postRepository.save(post)
+
+  res.send(post);
+}
+```
+
+With Prisma, the route is implemented as follows:
+
+```ts file=src/controllers/AddPostToCategoryAction.ts
+import { prisma } from "../prisma";
+
+export async function addPostToCategoryAction(req, res) {
+  const { postId, categoryId } = req.query;
+
+  const post = await prisma.post.update({
+    data: {
+      postsToCategories: {
+        create: {
+          category: {
+            connect: { id: categoryId },
+          },
+        },
+      },
+    },
+    where: {
+      id: postId,
+    },
+  });
+
+  res.send(post);
+}
+```
+
+Note that this Prisma Client can be made less verbose by modeling the relation as an [implicit many-to-many relation](#implicit-many-to-many-relations) instead. In that case, the query would look as follows:
+
+```ts file=src/controllers/AddPostToCategoryAction.ts
+const post = await prisma.post.update({
+  data: {
+    categories: {
+      connect: { id: categoryId },
+    },
+  },
+  where: { id: postId },
+});
+```
+
+## More
+
+### Implicit many-to-many relations
+
+Similar to the `@manyToMany` decorator in TypeORM, Prisma allows you to [model many-to-many relations _implicitly_](). That is, a many-to-many relation where you do not have to manage the [relation table]() (also sometimes called JOIN table) _explicitly_ in your schema. Here is an example with TypeORM:
 
 ```ts
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToMany,
+  JoinTable,
+} from "typeorm";
+import { Category } from "./Category";
 
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToMany((type) => Category, (category) => category.posts)
+  @JoinTable()
+  categories: Category[];
+}
 ```
+
+```ts
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Post } from "./Post";
+
+@Entity()
+export class Category {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToMany((type) => Post, (post) => post.categories)
+  posts: Post[];
+}
+```
+
+If you generate and run a migration with TypeORM based on these models, TypeORM will automatically create the following relation table for you:
+
+```sql
+-- Table Definition ----------------------------------------------
+CREATE TABLE post_categories_category (
+    "postId" integer REFERENCES post(id) ON DELETE CASCADE,
+    "categoryId" integer REFERENCES category(id) ON DELETE CASCADE,
+    CONSTRAINT "PK_91306c0021c4901c1825ef097ce" PRIMARY KEY ("postId", "categoryId")
+);
+
+-- Indices -------------------------------------------------------
+CREATE UNIQUE INDEX "PK_91306c0021c4901c1825ef097ce" ON post_categories_category("postId" int4_ops,"categoryId" int4_ops);
+CREATE INDEX "IDX_93b566d522b73cb8bc46f7405b" ON post_categories_category("postId" int4_ops);
+CREATE INDEX "IDX_a5e63f80ca58e7296d5864bd2d" ON post_categories_category("categoryId" int4_ops);
+```
+
+If you introspect the database with Prisma, you'll get the following result in the Prisma schema (note that some relation field names have been adjusted to look friendlier compared to the raw version from introspection):
+
+```prisma
+model Category {
+  id                Int                @id @default(autoincrement())
+  name              String
+  postsToCategories PostToCategories[]
+
+  @@map("category")
+}
+
+model Post {
+  id                Int                @id @default(autoincrement())
+  title             String
+  content           String?
+  published         Boolean            @default(false)
+  authorId          Int?
+  author            User?              @relation(fields: [authorId], references: [id])
+  postsToCategories PostToCategories[]
+
+  @@map("post")
+}
+
+model PostToCategories {
+  postId     Int
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  post       Post     @relation(fields: [postId], references: [id])
+
+  @@id([postId, categoryId])
+  @@index([postId], name: "IDX_93b566d522b73cb8bc46f7405b")
+  @@index([categoryId], name: "IDX_a5e63f80ca58e7296d5864bd2d")
+  @@map("post_categories_category")
+}
+```
+
+In this Prisma schema, the many-to-many relation is modeled explicitly via the relation table `PostToCategories`
+
+By adhering to the [conventions for Prisma relation tables](), the relation could look as follows:
+
+```prisma
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  posts Post[]
+
+  @@map("category")
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String
+  content    String?
+  published  Boolean    @default(false)
+  authorId   Int?
+  author     User?      @relation(fields: [authorId], references: [id])
+  categories Category[]
+
+  @@map("post")
+}
+```
+
+This would also result in a more ergonomic and less verbose Prisma Client API to modify the records in this relation, because you have a direct path from `Post` to `Category` (and the other way around) instead of needing to traverse the `PostToCategories` model first.
+
+> TODO: Concrete instructions for running SQL to migrate from TypeORM to Prisma conventions
