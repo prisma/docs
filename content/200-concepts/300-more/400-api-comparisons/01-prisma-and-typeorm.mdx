@@ -1,0 +1,640 @@
+---
+title: 'TypeORM'
+metaTitle: 'Prisma vs TypeORM'
+metaDescription: 'Learn how Prisma compares to TypeORM.'
+---
+
+<TopBlock>
+
+This page compares Prisma and [TypeORM](https://typeorm.io/#/). If you want to learn how to migrate from TypeORM to Prisma, check out this [guide](../../../guides/migrate-to-prisma/migrate-from-typeorm).
+
+</TopBlock>
+
+## Overview
+
+While Prisma and TypeORM solve similar problems, they work in very different ways. 
+
+#### TypeORM
+
+TypeORM is a traditional ORM which maps tables to model classes. These model classes can be used to generate SQL migrations. Instances of the model classes then provide an interface for CRUD queries to an application. 
+
+#### Prisma
+
+Prisma is a new kind of ORM that mitigates many problems of traditional ORMs, such as bloated model instances, mixing business with storage logic, lack of type-safety or unpredictible queries caused e.g. by lazy loading. 
+
+It uses the [Prisma schema](../../components/prisma-schema) to define application models in a declarative way. Prisma Migrate then allows to generate SQL migrations from the Prisma schema and executes them against the database. CRUD queries are provided by Prisma Client, a lightweight and entirely type-safe database client for Node.js and TypeScript.
+
+## Comparing type safety
+
+TypeORM has been one of the first ORMs in the Node.js ecosystem to fully embrace TypeScript and has done a great job in enabling developers to get a certain level of type safety for their database queries.
+
+However, there are numerous situations where the type safety guarantees of TypeORM fall short. The following sections describe the scenarios where Prisma can provide stronger guarantees for the types of query results.
+
+### Selecting fields
+
+This section explains the differences in type safety when selecting a subset of a model's fields in a query.
+
+#### TypeORM 
+
+TypeORM provides a `select` option for its [`find`](https://typeorm.io/#/find-options) methods (e.g. `find`, `findByIds`, `findOne`, ...), for example:
+
+<TabbedContent tabs={[<FileWithIcon text="`find` with `select`" icon="code"/>, <FileWithIcon text="`Post`" icon="code"/>]}>	
+
+<tab>	
+
+```ts
+const postRepository = getManager().getRepository(Post);
+const publishedPosts: Post[] = await postRepository.find({
+  where: { published: true },
+  select: ["id", "title"]
+});
+```
+
+</tab>	
+
+<tab>	
+
+```ts
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true })
+  content: string;
+
+  @Column({ default: false })
+  published: boolean;
+
+  @ManyToOne((type) => User, (user) => user.posts)
+  author: User;
+}
+```
+
+</tab>	
+
+</TabbedContent>
+
+While each object in the returned `publishedPosts` array only carries the selected `id` and `title` properties at runtime, the TypeScript compiler doesn't have any knowledge of this. It will allow you to access any other properties defined on the `Post` entity after the query, for example:
+
+```ts
+const post = publishedPost[0]
+
+// The TypeScript compiler has no issue with this
+if (post.content.length > 0) {
+  console.log(`This post has some content.`)
+}
+```
+
+This code will result in an error at runtime: 
+
+```
+TypeError: Cannot read property 'length' of undefined
+```
+
+The TypeScript compiler only sees the `Post` type of the returned objects, but it doesn't know about the fields that these objects _actually_ carry at runtime. It therefore can't protect you from accessing fields that have not been retrieved in the database query, resulting in a runtime error.
+
+#### Prisma
+
+Prisma Client can guarantee full type safety in the same situation and protects you from accessing fields that were not retrieved from the database.
+
+Consider the same example with a Prisma Client query:
+
+<TabbedContent tabs={[<FileWithIcon text="`findMany` with `select`" icon="code"/>, <FileWithIcon text="`Post`" icon="code"/>]}>	
+
+<tab>	
+
+```ts
+const publishedPosts = await prisma.post.findMany({
+  select: { 
+    id: true,
+    title: true
+  }
+})
+const post = publishedPosts[0]
+
+// The TypeScript compiler will not allow this
+if (post.content.length > 0) { 
+  console.log(`This post has some content.`)
+}
+```
+
+</tab>	
+
+<tab>	
+
+```prisma
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  Int?
+  author    User?   @relation(fields: [authorId], references: [id])
+}
+```
+
+</tab>	
+
+</TabbedContent>
+
+In this case, the TypeScript compiler will throw the following error already at compile-time:
+
+```
+[ERROR] 14:03:39 ⨯ Unable to compile TypeScript:
+src/index.ts:36:12 - error TS2339: Property 'content' does not exist on type '{ id: number; title: string; }'.
+
+42   if (post.content.length > 0) {
+```
+
+This is because Prisma Client generates the return type for its queries _on the fly_. In this case, `publishedPosts` is typed as follows:
+
+```ts
+const publishedPosts: {
+    id: number;
+    title: string;
+}[]
+```
+
+It therefore is impossible for you to accidentally access a property on a model that has not been retrieved in a query.
+
+### Loading relations
+
+This section explains the differences in type safety when loading relations of a model in a query. In traditional ORMs, this is sometimes called _eager loading_.
+
+#### TypeORM
+
+TypeORM allows to eagerly load relations from the database via the `relations` option that can be passed to its [`find`](https://typeorm.io/#/find-options) methods.
+
+Consider this example:
+
+<TabbedContent tabs={[<FileWithIcon text="`find` with `relations`" icon="code"/>, <FileWithIcon text="Models" icon="code"/>]}>	
+
+<tab>	
+
+```ts
+const postRepository = getManager().getRepository(Post);
+const publishedPosts: Post[] = await postRepository.find({
+  where: { published: true },
+  relations: ["author"]
+});
+```
+
+</tab>	
+
+<tab>	
+
+```ts
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true })
+  content: string;
+
+  @Column({ default: false })
+  published: boolean;
+
+  @ManyToOne((type) => User, (user) => user.posts)
+  author: User;
+}
+```
+
+```ts
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ nullable: true })
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @OneToMany((type) => Post, (post) => post.author)
+  posts: Post[];
+}
+```
+
+</tab>	
+
+</TabbedContent>
+
+Unlike with `select`, TypeORM does not provide auto-completion, nor any type-safety for the strings that are passed to the `relations` option. This means, the TypeScript compiler is not able to catch any typos that are made when requesting these relations. For example, it would allow for the following query:
+
+```ts
+const publishedPosts: Post[] = await postRepository.find({
+  where: { published: true },
+  relations: ["authors"]
+});
+```
+
+This subtle typo would now lead to the following runtime error:
+
+```
+UnhandledPromiseRejectionWarning: Error: Relation "authors" was not found; please check if it is correct and really exists in your entity.
+```
+
+#### Prisma
+
+Prisma protects you from mistakes like this and thus eliminates a whole class of errors that can occur in your application at runtime. When using `include` to load a relation in a Prisma Client query, you can take advantage of auto-completion to specify the query and the result of the query will be properly typed:
+
+### Filtering
+
+## Data modeling and migrations
+
+## API comparison
+
+### Fetching single objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.findUnique({
+  where: {
+    id: 1,
+  },
+});
+```
+
+**TypeORM**
+
+```ts
+const userRepository = getRepository(User)
+const user = await userRepository.findOne(id)
+```
+
+### Fetching selected scalars of single objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.findUnique({
+  where: {
+    id: 1,
+  },
+  select: {
+    name: true,
+  },
+});
+```
+
+**TypeORM**
+
+```ts
+const userRepository = getRepository(User) 
+const user = await userRepository.findOne(id, {
+  select: ["id", "email"]
+})
+```
+
+### Fetching relations
+
+**Prisma**
+
+
+<CodeBlock languages={["Using include", "Fluent API"]}>
+
+```ts
+const posts = await prisma.user.findUnique({
+  where: {
+    id: 2,
+  },
+  include: {
+    post: true,
+  },
+});
+```
+
+```ts
+const posts = await prisma.user.findUnique({
+  where: {
+    id: 2,
+  },
+})
+.post();
+```
+
+</CodeBlock>
+
+> **Note**: `select` return a `user` object that includes a `post` array, whereas the fluent API only returns a `post` array. 
+
+**TypeORM**
+
+<CodeBlock languages={["Using `relations`", "Using JOIN", "Eager relations"]}>
+
+```ts
+const userRepository = getRepository(User)
+const user = await userRepository.findOne(id, {
+  relations: ["posts"]
+})
+```
+
+```ts
+const userRepository = getRepository(User)
+const user = await userRepository.findOne(id, {
+  join: {
+    alias: "user",
+    leftJoinAndSelect: {
+      posts: "user.posts"
+    }
+  }
+})
+```
+
+```ts
+const userRepository = getRepository(User)
+const user = await userRepository.findOne(id)
+```
+
+</CodeBlock>
+
+### Filtering for concrete values
+
+**Prisma**
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    title: {
+      contains: "Hello",
+    },
+  },
+});
+```
+
+**TypeORM**
+
+```ts
+const userRepository = getRepository(User)
+const users = await userRepository.find({
+  where: {
+    name: "Alice"
+  }
+})
+```
+
+### Other filter criteria
+
+**Prisma**
+
+Prisma generates many [additional filters](../../../components/prisma-client/filtering) that are commonly used in modern application development.
+
+**TypeORM**
+
+TypeORM provides [built-in operators](https://typeorm.io/#/find-options/advanced-options) that can be used to create more complex comparisons
+
+### Relation filters
+
+**Prisma**
+
+Prisma lets you filter a list based on a criteria that applies not only to the models of the list being retrieved, but to a _relation_ of that model. 
+
+For example, the following query returns users with one or more posts with "Hello" in the title:
+
+```ts
+const posts = await prisma.user.findMany({
+  where: {
+    Post: {
+      some: {
+        title: {
+          contains: "Hello",
+        },
+      },
+    },
+  }
+});
+```
+
+**TypeORM**
+
+TypeORM doesn't offer a dedicated API for relation filters. You can get similar functionality by using the `QueryBuilder` or writing the queries by hand.
+
+### Pagination
+
+**Prisma**
+
+Cursor-style pagination:
+
+```ts
+const page = prisma.post.findMany({
+    before: {
+      id: 242,
+    },
+    last: 20,
+  });
+```
+Offset pagination:
+
+```ts
+const cc = prisma.post.findMany({
+  skip: 200,
+  first: 20,
+});
+```
+
+**TypeORM**
+
+```ts
+const postRepository = getRepository(Post)
+const posts = await postRepository.find({
+  skip: 5,
+  take: 10
+})
+```
+
+### Creating objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: "alice@prisma.io",
+  },
+});
+```
+
+**TypeORM**
+
+<CodeBlock languages={["Using `save`", "Using `create`", "Using `insert`"]}>
+
+```ts
+const user = new User()
+user.name = "Alice"
+user.email = "alice@prisma.io"
+await user.save()
+```
+
+```ts
+const userRepository = getRepository(User)
+const user = await userRepository.create({
+  name: "Alice",
+  email: "alice@prisma.io"
+})
+await user.save()
+```
+
+```ts
+const userRepository = getRepository(User)
+await userRepository.insert({
+  name: "Alice",
+  email: "alice@prisma.io"
+})
+```
+
+</CodeBlock>
+
+### Updating objects
+
+**Prisma**
+
+```ts
+const user = await prisma.user.update({
+  data: {
+    name: "Alicia",
+  },
+  where: {
+    id: 2
+  }
+});
+```
+
+**TypeORM**
+
+```ts
+const userRepository = getRepository(User)
+const updatedUser = await userRepository.update(id, {
+  name: "James",
+  email: "james@prisma.io"
+})
+```
+
+### Deleting objects
+
+**Prisma**
+
+```ts
+const user = prisma.user.delete({
+  where: {
+    id: 10,
+  },
+});
+```
+
+**TypeORM**
+
+<CodeBlock languages={["Using `delete`", "Using `remove`"]}>
+
+```ts
+const userRepository = getRepository(User)
+await userRepository.delete(id)
+```
+
+```ts
+const userRepository = getRepository(User)
+const deletedUser = await userRepository.remove(user)
+```
+
+</CodeBlock>
+
+### Batch updates
+
+**Prisma**
+
+```ts
+const user = await prisma.user.updateMany({
+  data: {
+    name: "Published author!",
+  },
+  where: {
+    Post: {
+      some: {
+        published: true,
+      },
+    },
+  },
+});
+```
+
+**TypeORM**
+
+You can use the [query builder to update entities in your database](https://typeorm.io/#/update-query-builder).
+
+### Batch deletes
+
+**Prisma**
+
+```ts
+const users = await prisma.user.deleteMany({
+  where: {
+    id: {
+      in: [1, 2, 6, 6, 22, 21, 25],
+    },
+  },
+});
+```
+
+**TypeORM**
+
+<CodeBlock languages={["Using `delete`", "Using `remove`"]}>
+
+```ts
+const userRepository = getRepository(User)
+await userRepository.delete([id1, id2, id3])
+```
+
+```ts
+const userRepository = getRepository(User)
+const deleteUsers = await userRepository
+  .remove([user1, user2, user3])
+```
+
+</CodeBlock>
+
+### Transactions
+
+**Prisma**
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: "bob.rufus@prisma.io",
+    name: "Bob Rufus",
+    Post: {
+      create: [
+        { title: "Working at Prisma" },
+        { title: "All about databases" },
+      ],
+    },
+  },
+});
+```
+
+**TypeORM**
+
+```ts
+await getConnection().$transaction(async transactionalEntityManager => {
+    const user = getRepository(User).create({
+      name: "Bob",
+      email: "bob@prisma.io"
+    })
+    const post1 = getRepository(Post).create({
+      title: "Join us for GraphQL Conf in 2019",
+    })
+    const post2 = getRepository(Post).create({
+      title: "Subscribe to GraphQL Weekly for GraphQL news",
+    })
+    user.posts = [post1, post2]
+    await transactionalEntityManager.save(post1)
+    await transactionalEntityManager.save(post2)
+    await transactionalEntityManager.save(user)
+  })
