@@ -3,20 +3,26 @@ title: 'Prisma Migrate'
 metaTitle: 'Prisma Migrate (Reference)'
 metaDescription: 'Prisma Migrate is a declarative data modeling and schema migration tool that is available via the Prisma CLI.'
 preview: true
+tocDepth: 3
 ---
 
 <TopBlock>
 
-Prisma Migrate is a **declarative** migration system that enables you to make changes to your database schema - for example, creating tables or modifying columns. Prisma Migrate:
+Prisma Migrate is a **declarative migration system** that enables you to make changes to your database schema - for example, creating tables or modifying columns. A simple Prisma Migrate workflow includes:
 
-1. Parses your [Prisma schema](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-schema)
-2. Generates `.sql` migration files with changes that are run against your database.
+1. Detecting changes in your [Prisma schema](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-schema), which is the source of truth for your data model
+2. Generating `.sql` migration files with changes (which you can optionally modify)
+3. Applying the migration files to your database
+
+Prisma Migrate was introduced as a Preview feature in 2.13.0 and replaces [legacy Prisma Migrate](legacy-prisma-migrate).
 
 </TopBlock>
 
-## Example
+## Basic example
 
-1. Create schema
+The following example demonstrates how to get started with Prisma Migrate:
+
+1. Create a Prisma schema:
 
   ```prisma
   datasource db {
@@ -39,59 +45,197 @@ Prisma Migrate is a **declarative** migration system that enables you to make ch
   }
   ```
 
-2. Migrate schema:
+1. Migrate your schema - you will be prompted to name the migration file (for example, `first_migration`):
 
-   ```terminal
-   prisma migrate dev --preview-feature
-   ```
+  <CodeWithResult>
 
-   Creates the following SQL file:
+  <Cmd>
 
-   ```sql file=migration.sql
-   -- CreateTable
-    CREATE TABLE "User" (
-    "id" SERIAL,
-        "name" TEXT NOT NULL,
+  ```terminal
+  prisma migrate dev --preview-feature
+  ```
 
-        PRIMARY KEY ("id")
-    );
+  </Cmd>
+
+  <CmdResult>
+
+  ```
+  √ Name of migration ... first-migration
+
+  Prisma Migrate created and applied the following migration(s) from new schema changes:
+
+  migrations/
+  └─ 20201127130602_first_migration/
+     └─ migration.sql
+
+  ✔ Generated Prisma Client (2.13.0-dev.3) to .\node_modules\@prisma\client in 146ms
+
+  Everything is now in sync.
+  ```
+
+  </CmdResult>
+
+  </CodeWithResult>
+  
+  Prisma Migrate creates a `migration.sql` file with the following SQL and runs it against your database:
+
+  ```sql
     -- CreateTable
-    CREATE TABLE "Post" (
-    "id" SERIAL,
-        "title" TEXT NOT NULL,
-        "published" BOOLEAN NOT NULL DEFAULT true,
-        "authorId" INTEGER NOT NULL,
+  CREATE TABLE "User" (
+  "id" SERIAL,
+      "name" TEXT NOT NULL,
 
-        PRIMARY KEY ("id")
-    );
+      PRIMARY KEY ("id")
+  );
+    -- CreateTable
+  CREATE TABLE "Post" (
+  "id" SERIAL,
+      "title" TEXT NOT NULL,
+      "published" BOOLEAN NOT NULL DEFAULT true,
+      "authorId" INTEGER NOT NULL,
+
+      PRIMARY KEY ("id")
+  );
+
     -- AddForeignKey
-    ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-    ```
+  ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  ```
+  
+  After you first migration, your Prisma Schema and database are now in sync.
 
-3. Change schema slightly by adding a field:
+1. Change the schema by adding two new fields:
 
-4. _Draft_ a migration:
+     * One optional field (`bio`)
+     * One mandatory field with a default value (`jobTitle`)
 
-   
-   This creats a migration without applying it, which gives you the opportunity to edit the SQL script.
+      ```prisma
+      datasource db {
+        provider = "postgresql"
+        url      = env("DATABASE_URL")
+      }
 
-5. Edit migration:
+      model User {
+        id    Int      @id @default(autoincrement())
+        name  String
+      |  bio   String?
+        posts Post[]
+      |  jobTitle  String  @default("Blogger")
+      }
 
-6. Migrate:
+      model Post {
+        id        Int     @id @default(autoincrement())
+        title     String
+        published Boolean @default(true)
+        authorId  Int
+        author    User    @relation(fields: [authorId], references: [id])
+      }
+      ```
 
-## Shadow database
+1. Migrate your schema again:
 
-## Paths
+  <CodeWithResult>
 
-### Happy path
+  <Cmd>
 
-### Cannot apply migration
+  ```terminal
+  prisma migrate dev --preview-feature
+  ```
 
-### Migration history conflict
+  </Cmd>
 
-### Database schema drift
+  <CmdResult>
+
+  ```
+  √ Name of migration ... added_bio_jobTitle
+  Prisma Migrate created and applied the following migration(s) from new schema changes:
+
+  migrations/
+    └─ 20201127133437_added_bio_job_title/
+      └─ migration.sql
+
+  ✔ Generated Prisma Client (2.13.0-dev.3) to .\node_modules\@prisma\client in 118ms
+
+  Everything is now in sync.
+  ```
+
+  </CmdResult>
+
+  </CodeWithResult>
+
+  Prisma Migrate creates a second `migration.sql` file with the following contents and runs it against your database:
+
+  ```sql
+  ALTER TABLE "User" ADD COLUMN     "bio" TEXT,
+  ADD COLUMN     "jobTitle" TEXT NOT NULL DEFAULT E'Blogger';
+  ```
+
+  Your Prisma Schema and database are now in sync again.
+
+1. Push the schema and the `prisma/migrations` folder to a shared repository - your team can now re-play the changes you made on their local database and contribute their own migrations:
+
+  <CodeWithResult>
+
+  <Cmd>
+
+  ```terminal
+  prisma migrate dev --preview-feature
+  ```
+
+  </Cmd>
+
+  <CmdResult>
+
+  ```
+  Prisma Migrate applied the following unapplied migration(s):
+
+  migrations/
+    └─ 20201127130602_first_migration/
+      └─ migration.sql
+    └─ 20201127133437_added_bio_job_title/
+      └─ migration.sql
+
+  ✔ Generated Prisma Client (2.13.0-dev.3) to .\node_modules\@prisma\client in 107ms
+
+  Everything is now in sync.
+  ```
+
+  </CmdResult>
+
+  </CodeWithResult>
+
+This example shows a 'happy path' without any complicating factors such as a populated database. For more advanced examples, see [Prisma Migrate flows](prisma-migrate-flows).  
+
+## How Prisma Migrate works
+
+* `prisma/migrations` folder in the file system (source of truth)
+* `_prisma_migrations` table in the database - generated from folder
+
+### Shadow database
+
+When using the development focused commands in Prisma Migrate:  `prisma migrate dev` and `prisma migrate reset`), Prisma Migrate uses a second — temporary — database to replay the migration history, detect drift, and for other purposes.
+
+This shadow database is used internally only and should not have any impact on you. However, it does require that your database credentials allow Prisma Migrate to create new databases.
+
+> **Note**: The shadow database is **not** required for the production-focused commands: `prisma migrate deploy` and `prisma migrate resolve`.
+
+Requirements:
+
+- SQLite - no special requirement
+- MySQL - `CREATE *.*` privileges ([documentation on DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-create-a-new-user-and-grant-permissions-in-mysql))
+- PostgreSQL - the user must be a superuser or have the special `CREATEDB` privilege. See `CREATE ROLE` ([PostgreSQL official documentation](https://www.postgresql.org/docs/12/sql-createdatabase.html)).
+
+Note that these requirements will be fulfilled in most local development setups, so you do not need to worry about this unless you encounter an error, or you have a special development setup.
+
+## Migration flows
+
+See [migration flows](migration-flows) for more advanced flows, including:
+
+* Drafting and editing a `migration.sql` file before applying it
+* Working with a populated database
 
 ## CLI command reference
+
+See [Prisma Migrate CLI reference](../../../reference/api-reference/command-reference#prisma-migrate-preview) <span class="api"></span>.
 
 ## Guides
 
@@ -99,3 +243,5 @@ Prisma Migrate is a **declarative** migration system that enables you to make ch
 * Guide: Upgrading from a third party migration tool
 
 ## Limitations and known issues
+
+TO DO
