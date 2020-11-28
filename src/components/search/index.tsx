@@ -117,7 +117,7 @@ const getHits = (children: any, res: any) => {
 }
 const Results = connectStateResults(
   ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
-    ((isSearchStalled || (state.query === '' ))? <div className="loader">Searching...</div> : null) ||
+    (isSearchStalled || res.query === '' ? <div className="loader">Searching...</div> : null) ||
     (res && res.nbHits > 0 ? (
       getHits(children, res)
     ) : (
@@ -144,7 +144,7 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} isOpened={showHits}/>
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits} />
       <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
