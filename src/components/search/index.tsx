@@ -20,7 +20,7 @@ const HitsWrapper = styled.div`
   position: absolute;
   left: 50%;
   top: 97px;
-  
+
   transform: translate(-50%, -0%);
   max-width: 1200px;
   width: 100%;
@@ -37,10 +37,9 @@ const HitsWrapper = styled.div`
     list-style: none;
     margin: 0;
   }
-  .no-results,
-  // .loader {
-  //   padding: ${p => p.theme.space[24]} ${p => p.theme.space[40]};
-  // }
+  .no-results {
+    padding: 2rem;
+  }
   .loader,
   .loader:after {
     border-radius: 50%;
@@ -52,9 +51,9 @@ const HitsWrapper = styled.div`
     font-size: 10px;
     position: relative;
     text-indent: -9999em;
-    border-top: 0.5em solid rgba(215,215,215, 0.2);
-    border-right: 0.5em solid rgba(215,215,215, 0.2);
-    border-bottom: 0.5em solid rgba(215,215,215, 0.2);
+    border-top: 0.5em solid rgba(215, 215, 215, 0.2);
+    border-right: 0.5em solid rgba(215, 215, 215, 0.2);
+    border-bottom: 0.5em solid rgba(215, 215, 215, 0.2);
     border-left: 0.5em solid #d7d7d7;
     -webkit-transform: translateZ(0);
     -ms-transform: translateZ(0);
@@ -85,7 +84,7 @@ const HitsWrapper = styled.div`
   @media (min-width: 0px) and (max-width: 1024px) {
     // left: 0;
     top: 88px;
-   // max-width: 100%;
+    // max-width: 100%;
     border-top: 1px solid ${p => p.theme.colors.gray300};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
@@ -121,7 +120,9 @@ const Results = connectStateResults(
     (res && res.nbHits > 0 ? (
       getHits(children, res)
     ) : (
-      <div className="no-results">No results for '{state.query}'</div>
+      <div className="no-results">
+        No results for '<i>{state.query}</i>'
+      </div>
     ))
 )
 
