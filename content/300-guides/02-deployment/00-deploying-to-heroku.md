@@ -40,12 +40,12 @@ While the example uses REST, the same principles apply to a GraphQL server, with
 
 Prisma supports different workflows depending on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, i.e. `schema.prisma` file.
 
-This guide starts with an empty database created with the [`prisma db push`](/reference/api-reference/command-reference#db-push) and looks as follows:
+In this guide, you will start from scratch and create the database with [Prisma Migrate](/concepts/components/prisma-migrate). The workflow for that looks as follows:
 
 1. Define the database schema using Prisma schema.
-2. Run `prisma db push --preview-feature` which will create the database schema in a single step and generate Prisma Client.
+2. Run `prisma migrate dev --preview-feature` which will create the SQL to create the database schema and run it against the database.
 
-> **Note:** The `prisma db push` command is intended for prototyping and should be avoided in production as it can lead to data loss.
+> **Note:** Prisma Migrate is currently in [preview](/about/releases#preview) and is not recommended for use in production.
 
 
 ## 1. Download the example and install dependencies
@@ -201,15 +201,19 @@ export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATA
 
 ## 7. Save and run the database migration
 
-With the Heroku app and database created, you will create the database schema using the `prisma db push` command. The command lets you push the state of your Prisma schema file to the database without using migrations.
+With the Heroku app and database created, you will create the database schema with [Prisma Migrate](/concepts/components/prisma-migrate) using the `prisma migrate dev` command.
+
+The command will create an SQL migration file based on the Prisma schema in the `prisma/migrations` folder and run it against the database to create the database schema..
 
 To do so run the following command:
 
 ```no-lines
-npx prisma db push --preview-feature
+npx prisma migrate dev --preview-feature
 ```
 
-> **Note:** The `db push` is currently in preview mode. This means that it is not recommended to use in production. Moreover, the command is intended for prototying and local development. In production it's recommended to use manage the database schema with a [database migration tool](https://en.wikipedia.org/wiki/Schema_migration) like [Prisma Migrate](/concepts/components/prisma-migrate) which is also in preview mode. If you're intending to deploy a production app while Prisma Migrate is still in preview,you can perform schema migrations using plain SQL or another migration tool of your choice and then bring the changes into your Prisma schema using [introspection](/concepts/components/introspection).
+You will be prompted to give the migration a name after which Migrate will run the migration.
+
+> **Note:** Prisma Migrate is currently in [preview](/about/releases#preview). This means that it is not recommended to use in production.
 
 **Checkpoint:** `heroku pg:psql --command="\dt"` should show the newly created database tables:
 
