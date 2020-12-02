@@ -14,7 +14,7 @@ This page compares Prisma and [TypeORM](https://typeorm.io/#/). If you want to l
 
 While Prisma and TypeORM solve similar problems, they work in very different ways. 
 
-**TypeORM** is a traditional ORM which maps tables to model classes. These model classes can be used to generate SQL migrations. Instances of the model classes then provide an interface for CRUD queries to an application. 
+**TypeORM** is a traditional ORM which maps _tables_ to _model classes_. These model classes can be used to generate SQL migrations. Instances of the model classes then provide an interface for CRUD queries to an application at runtime. 
 
 **Prisma** is a new kind of ORM that mitigates many problems of traditional ORMs, such as bloated model instances, mixing business with storage logic, lack of type-safety or unpredictible queries caused e.g. by lazy loading. 
 
@@ -146,7 +146,6 @@ const posts = await postRepository.find({
 
 </ParallelBlocks>
 
-
 ### Pagination
 
 TypeORM only offers limit-offset pagination while Prisma conveniently provides dedicated APIs for both limit-offset but also cursor-based. You can learn more about both approaches in the [Pagination](../../components/prisma-client/pagination) section of the docs or in the API comparison [below](#pagination-1).
@@ -168,17 +167,96 @@ You can learn more about the rationale behind these techniques and Prisma's tran
 
 Working with records that are connected via foreign keys can become very complex in SQL. Prisma's concept of [virtual relation field](../../components/prisma-schema/relations#relation-fields) enables an intuitive and convenient way for application developers to work with related data. Some benefits of Prisma's approach are:
 
-- traversing relationships via the fluent API
-- nested writes that enable updating/creating connected records
-- applying filters on related records
-- easy and type-safe querying of nested data without worrying about JOINs
-- intuitive modeling of relations in the data model
+- traversing relationships via the [fluent API](../../components/prisma-client/relation-queries#fluent-api)
+- [nested writes](../../components/prisma-client/relation-queries#nested-writes) that enable updating/creating connected records
+- applying [filters on related records](../../components/prisma-client/relation-filters)
+- easy and type-safe [querying of nested data](../../components/prisma-client/relation-queries#nested-reads) without worrying about JOINs
+- creating [nested TypeScript typings](../../components/prisma-client/advanced-usage-of-generated-types) based on models and their relations
+- intuitive modeling of [relations in the data model](../../components/prisma-schema/relations) via relation fields
+- [implicit handling of relation tables](../../components/prisma-schema/relations#implicit-many-to-many-relations) (also sometimes called JOIN, link, privot or junction tables)
 
 ### Data modeling and migrations
 
-Prisma models are defined in the [Prisma schema]() while TypeORM uses TypeScript classes and decorators for model definitions. With the Active Record ORM pattern, TypeORM's approach often leads to complex model instances that are becoming hard to maintain as an application grows. Prisma on the other hand generates a database client that exposes a fully type-safe API to read and write data for the models that are defined in the Prisma schema.
+Prisma models are defined in the [Prisma schema](../../components/prisma-schema) while TypeORM uses classes and experimental TypeScript decorators for model definitions. With the Active Record ORM pattern, TypeORM's approach often leads to complex model instances that are becoming hard to maintain as an application grows. 
 
+Prisma on the other hand generates a lightweight database client that exposes a tailored and fully type-safe API to read and write data for the models that are defined in the Prisma schema, following the DataMapper ORM pattern rather than Active Record.
 
+Prisma's DSL for data modeling is lean, simple and intuitive to use. When modeling data in VS Code, you can further take advantage of Prisma's powerful VS Code extension with features like autocompletion, quick fixes, jump to definition and other benefits that increase developer productivity.
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```prisma
+model User {
+  id      Int      @id @default(autoincrement())
+  name    String?
+  email   String   @unique
+  posts   Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  Int?
+  author    User?   @relation(fields: [authorId], references: [id])
+}
+```
+
+</block>
+
+<block content="TypeORM">
+
+```ts
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne
+} from "typeorm";
+
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ nullable: true })
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @OneToMany((type) => Post, (post) => post.author)
+  posts: Post[];
+}
+
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true })
+  content: string;
+
+  @Column({ default: false })
+  published: boolean;
+
+  @ManyToOne((type) => User, (user) => user.posts)
+  author: User;
+}
+```
+
+</block>
+
+</ParallelBlocks>
+
+Migrations work in similar fashions in TypeORM and Prisma. Both tools follow the approach of generating SQL files based on the provided model definitions and provide a CLI to execute them against the database. The SQL files can be modified before the migrations are executed so that any custom database operation can be performed with either migration system.
 
 ## Type safety
 
