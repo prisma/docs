@@ -116,7 +116,7 @@ const getHits = (children: any, res: any) => {
 }
 const Results = connectStateResults(
   ({ isSearchStalled, searchState: state, searchResults: res, children }: any) =>
-    (isSearchStalled || res.query === '' ? <div className="loader">Searching...</div> : null) ||
+    (isSearchStalled || res?.query === '' ? <div className="loader">Searching...</div> : null) ||
     (res && res.nbHits > 0 ? (
       getHits(children, res)
     ) : (
