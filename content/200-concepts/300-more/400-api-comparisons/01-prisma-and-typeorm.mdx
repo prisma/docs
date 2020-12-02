@@ -14,17 +14,171 @@ This page compares Prisma and [TypeORM](https://typeorm.io/#/). If you want to l
 
 While Prisma and TypeORM solve similar problems, they work in very different ways. 
 
-#### TypeORM
+**TypeORM** is a traditional ORM which maps tables to model classes. These model classes can be used to generate SQL migrations. Instances of the model classes then provide an interface for CRUD queries to an application. 
 
-TypeORM is a traditional ORM which maps tables to model classes. These model classes can be used to generate SQL migrations. Instances of the model classes then provide an interface for CRUD queries to an application. 
-
-#### Prisma
-
-Prisma is a new kind of ORM that mitigates many problems of traditional ORMs, such as bloated model instances, mixing business with storage logic, lack of type-safety or unpredictible queries caused e.g. by lazy loading. 
+**Prisma** is a new kind of ORM that mitigates many problems of traditional ORMs, such as bloated model instances, mixing business with storage logic, lack of type-safety or unpredictible queries caused e.g. by lazy loading. 
 
 It uses the [Prisma schema](../../components/prisma-schema) to define application models in a declarative way. Prisma Migrate then allows to generate SQL migrations from the Prisma schema and executes them against the database. CRUD queries are provided by Prisma Client, a lightweight and entirely type-safe database client for Node.js and TypeScript.
 
-## Level of abstraction
+## Level of abstraction & API design
+
+TypeORM and Prisma operate on different levels of abstraction. TypeORM is closer to mirroring SQL in its API while Prisma Client provides a higher-level abstraction that was carefully designed with the common tasks of application developers in mind. Prisma's API design heavily leans on the idea of [making the right thing easy](https://lengstorf.com/right-thing-easy-thing/).
+
+While Prisma Client operates on a higher-level of abstraction, it strives to expose the full power of the underlying database and lets you drop down to [raw SQL](../../components/prisma-client/raw-database-access) at any time if your use case requires it.
+
+The following sections examine a few examples for how the Prisma's and TypeORM's APIs differ in certain scenarios and what the rationale of Prisma's API design is in these cases.
+
+### Filtering
+
+TypeORM primarly leans on SQL operators for filtering lists or records, e.g. with the `find` method. Prisma on the other hand, provides a more [generic set of operators](../../components/prisma-client/filtering#filter-conditions) that are intuitive to use. It should also be noted that, as explained in the type-safety section [below](#filtering-1), TypeORM looses type-safety in for filter queries in many scenarios.
+
+A good example of how the filtering APIs of both TypeORM and Prisma differ is by looking at `string` filters. While TypeORM primarily provides the filter based on the `ILike` operator which comes directly from SQL, Prisma provides more specific operators that developers can use, e.g.: `contains`, `startsWith` and `endsWith`.
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: "Hello World" 
+  },
+});
+```
+
+</block>
+
+<block content="TypeORM">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: ILike("Hello World")  
+  },
+});
+```
+
+</block>
+
+</ParallelBlocks>
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: { contains: "Hello World" }
+  },
+});
+```
+
+</block>
+
+<block content="TypeORM">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: ILike("%Hello World%")  
+  },
+});
+```
+
+</block>
+
+</ParallelBlocks>
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: { startsWith: "Hello World" }
+  },
+});
+```
+
+</block>
+
+<block content="TypeORM">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: ILike("Hello World%")  
+  },
+});
+```
+
+</block>
+
+</ParallelBlocks>
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: { endsWith: "Hello World" }
+  },
+});
+```
+
+</block>
+
+<block content="TypeORM">
+
+```ts
+const posts = await postRepository.find({
+  where: { 
+    title: ILike("%Hello World")  
+  },
+});
+```
+
+</block>
+
+</ParallelBlocks>
+
+
+### Pagination
+
+TypeORM only offers limit-offset pagination while Prisma conveniently provides dedicated APIs for both limit-offset but also cursor-based. You can learn more about both approaches in the [Pagination](../../components/prisma-client/pagination) section of the docs or in the API comparison [below](#pagination-1).
+
+### Transactions
+
+Long-running database transactions often are a major source of complexity in server-side applications. In many scenarios, they turn out to be footguns that are the cause of major performance bottlenecks and subtle bugs. They're also not a pattern that works well with modern deployment techniques like serverless functions since they require holding a stateful connection between the application server and its database. 
+
+While TypeORM provides a low-level transaction API that directly exposes SQL transactions to the application developer, Prisma offers dedicated APIs that handle the use cases long-running transactions are commonly (mis)used for:
+
+- [Nested writes](../../components/prisma-client/relation-queries#nested-writes) for creating and updating relationships
+- The [`$transaction`](../../components/prisma-client/transactions#the-transaction-api) API for sending multiple operations in bulk
+- [Atomic operators](../../components/prisma-client/crud#atomic-operations-on-update) for updating values in a single database query
+- Application-level optimistic concurrency control (OCC) for making writes conditional on previously read data ([coming soon](https://github.com/prisma/prisma-client-js/issues/2))
+
+You can learn more about the rationale behind these techniques and Prisma's transaction patterns in this blog post: [How Prisma Supports Database Transactions](https://www.prisma.io/blog/how-prisma-supports-transactions-x45s1d5l0ww1).
+
+### Relations
+
+Working with records that are connected via foreign keys can become very complex in SQL. Prisma's concept of [virtual relation field](../../components/prisma-schema/relations#relation-fields) enables an intuitive and convenient way for application developers to work with related data. Some benefits of Prisma's approach are:
+
+- traversing relationships via the fluent API
+- nested writes that enable updating/creating connected records
+- applying filters on related records
+- easy and type-safe querying of nested data without worrying about JOINs
+- intuitive modeling of relations in the data model
+
+### Data modeling and migrations
+
+Prisma models are defined in the [Prisma schema]() while TypeORM uses TypeScript classes and decorators for model definitions. With the Active Record ORM pattern, TypeORM's approach often leads to complex model instances that are becoming hard to maintain as an application grows. Prisma on the other hand generates a database client that exposes a fully type-safe API to read and write data for the models that are defined in the Prisma schema.
+
+
 
 ## Type safety
 
@@ -508,7 +662,6 @@ With TypeORM, there are two main ways to create new records in the database: `in
 
 Consider this example:
 
-
 <TabbedContent tabs={[<FileWithIcon text="Create with `save`" icon="code"/>, <FileWithIcon text="Create with `insert`" icon="code"/>, <FileWithIcon text="Model" icon="code"/>]}>	
 
 <tab>	
@@ -584,7 +737,6 @@ const newUser = await prisma.user.create({
 
 </tab>	
 
-
 <tab>	
 
 ```prisma
@@ -597,10 +749,15 @@ model User {
 
 </tab>	
 
-
 </TabbedContent>
 
-## Data modeling and migrations
+It would lead to the following compile-time error:
+
+```
+[ERROR] 10:39:07 ⨯ Unable to compile TypeScript:
+src/index.ts:39:5 - error TS2741: Property 'email' is missing in type '{ name: string; }' but required in type 'UserCreateInput'.
+```
+
 
 ## API comparison
 
@@ -783,6 +940,7 @@ const page = prisma.post.findMany({
     last: 20,
   });
 ```
+
 Offset pagination:
 
 ```ts
