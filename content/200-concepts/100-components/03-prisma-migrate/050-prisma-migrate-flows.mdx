@@ -10,20 +10,95 @@ Happy path.
 
 </TopBlock>
 
-
-
 ### Modifying migration behavior
 
-**Scenario**: Renaming a field.
+Prisma Migrate cannot automatically detect that you want to _rename_ a field - instead, it will add a new field and remove the old one. To rename a field (for example, `name` &rarr; `fullname`) and maintain data, you must modify the migration.
 
 1. Generate draft
 2. Edit draft
 3. Run draft
 
-### Migration history conflict
+### Collaborating with a team
 
-**Scenario**: 
+To bring in changes to the database schema and migrations from collaborators, pull the changed  Prisma Schema and the new migration files and use `prisma migrate dev` to apply the changes.
 
-### Database schema drift
+![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/8bdb1aad-8801-418a-8723-b41e315706dd/New_Migrate_flows_-_Development_workflow_with_collaborators.jpg](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/8bdb1aad-8801-418a-8723-b41e315706dd/New_Migrate_flows_-_Development_workflow_with_collaborators.jpg)
 
-**Scenario**:  
+When calling `prisma migrate dev`, Prisma Migrate will check first if there are any migrations that are yet to be applied and applies them. After applying these pending migrations, it will look for changes in the Prisma schema, and if there are any, create new migrations and apply them.
+
+### Handling migration history conflicts
+
+As you and your team iterate on a Prisma schema in development and create migrations, the database schema can get out of sync with the migration history. This can happen if:
+
+
+* A migration that has already been applied is modified, i.e. modifying the SQL code to iterate on a migration after applying it
+3. when a migration that has already been applied is missing from the filesystem
+
+When using `prisma migrate dev`, if the database schema gets out of sync with the migration history, it will be detected and the CLI will ask to reset the database. Resetting the database works as follows:
+
+1. Drop the database
+2. Create the database
+3. Update the database schema by applying all migrations from scratch
+
+### Handling database schema drift
+
+Database schema drift occurs when your database schema is out of sync with your migration history - the database schema has 'drifted away' from the source of truth, which should be your migration history. Schema drift can occur if:
+
+* The database schema was changed _without_ using migrations - for example, by using [`prisma db push`](../../reference/api-reference/command-reference#db-push) or manually changing the database schema.
+
+#### Option 1: Revert the change
+
+Revert the manual change in your database schema (for example, remove a field or index that you added) and use Prisma Migrate to implement the change instead. This option might result in data loss (for example, deleting a field), and might not be appropriate for production databases.
+
+1. Make an equivalent change in the Prisma schema - for example, adding a field named `bio`:
+
+  ```prisma
+  model User {
+      bio   String?
+  }
+  ```
+
+1. Create a new migration:
+
+   ```terminal
+   prisma migrate dev
+   ```
+
+#### Option 2: Reconcile your migration history and database schema (hotfix)
+
+Manually create a migration that matches the changes you made to your database. For example, if you manually added an index in production, you can use a 'forged' migration to bring all other databases up to date with production.
+
+1. Manually create a `migrations.sql` file:
+
+   ```  
+    -- prisma
+        |
+        -- migrations 
+            |   
+            -- 20201127134938_added_bio
+                |
+                -- migrations.sql
+    ```
+
+    > **Tip**: The folder naming convention is timestamp + migration name.
+
+1. Replicate the changes that you made to the database schema. For example, if you manually added column named `bio`, your `migrations.sql` file should contain the following:
+
+    ```sql
+     -- AlterTable
+    ALTER TABLE "User" ADD COLUMN     "bio" TEXT,
+    ```
+
+1. In the database that already contains the change, mark the 'forged' migration as 'already applied' so that Prisma Migrate does not try to create a field that already exists:
+
+   ```terminal
+   prisma migrate resolve --applied "20201127134938_added_bio"
+   ```
+
+   This command adds the migration to the migration history table without running the actual SQL.
+
+1. Commit the 'forged' migration to source control and run the following command to apply it to all databases (development, testing, and so on):
+
+   ```terminal
+   prisma migrate dev
+   ```
