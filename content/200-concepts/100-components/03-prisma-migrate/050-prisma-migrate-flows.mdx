@@ -6,13 +6,11 @@ metaDescription: 'Prisma Migrate is a declarative data modeling and schema migra
 
 <TopBlock>
 
-Happy path.
-
 </TopBlock>
 
 ## Modifying migration behavior
 
-Prisma Migrate cannot automatically detect that you want to _rename_ a field - instead, it will add a new field and remove the old one. To rename a field (for example, `name` &rarr; `fullname`) and maintain data, you must modify the migration.
+Prisma Migrate cannot automatically detect that you want to _rename_ a field - instead, it will add a new field and remove the old one. To rename a field (for example, `name` &rarr; `fullname`) and maintain data, you must create and modify a **draft migration**:
 
 1. Generate draft
 2. Edit draft
@@ -30,15 +28,27 @@ When calling `prisma migrate dev`, Prisma Migrate will check first if there are 
 
 A migration history conflict occurs when there are discrepancies between the **migrations folder in the file system** and the **`_prisma_migrations` table in the database**. This can happen if:
 
+* A migration that has already been applied is later modified - for example, adding a comment or modifying the actual SQL of a `migration.sql` file. The SQL statement in the `migration.sql` file and the `_prisma_migrations` table are now different, resulting in a conflict.
+* A migration that has already been applied is missing from the file system.  This can occur if you switch branches without committing your migrations, or as a result of a `git merge` issue.
 
-* A migration that has already been applied has been modified. For example, adding a comment or changing the SQL* of a `migration.sql` file. The SQL statement in the `migration.sql` file and the `_prisma_migrations` table are now different, resulting in a conflict.
-3. when a migration that has already been applied is missing from the filesystem
+### Option 1: Drop and recreate the database
 
-When using `prisma migrate dev`, if the database schema gets out of sync with the migration history, it will be detected and the CLI will ask to reset the database. Resetting the database works as follows:
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate dev`, the CLI will ask to reset the database. Resetting the database:
 
-1. Drop the database
-2. Create the database
-3. Update the database schema by applying all migrations from scratch
+1. Drops the database
+2. Recreates the database
+3. Applies all migrations
+
+This approach makes sense if you modified a migrations file on purpose to do something that cannot be done via the Prisma Schema - for example, create a new column with an unsupported type.
+
+### Option 2: Manually resolve conflict
+
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate dev`, you can deny the reset and manually reconcile the differences between your migrations folder and the `_prisma_migrations` table. For example:
+
+* Manually recreate a missing migrations files from the relevant `script` and `migration_name` fields in the `_prisma_migrations` table 
+* Change statement in relevant `script` field in the `_prisma_migrations` table to match the change you made to the `migrations.sql` file
+
+This approach makes sense if the conflict was the result of a mistake or a very small change that is not worth dropping and recreating the database.
 
 ## Handling database schema drift
 
