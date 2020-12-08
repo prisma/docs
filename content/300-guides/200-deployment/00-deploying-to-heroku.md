@@ -199,19 +199,21 @@ export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATA
 
 > **Note:** It's considered best practice to keep secrets out of your codebase. If you open up the `prisma/schema.prisma` file, you should see `env("DATABASE_URL")` in the _datasource_ block. By setting an environment variable you keep secrets out of the codebase.
 
-## 7. Save and run the database migration
+## 7. Save and apply the database migration
 
-With the Heroku app and database created, you will create the database schema with [Prisma Migrate](/concepts/components/prisma-migrate) using the `prisma migrate dev` command.
+With the Heroku app and database created, you will create the database schema with [Prisma Migrate](/concepts/components/prisma-migrate).
 
-The command will create an SQL migration file based on the Prisma schema in the `prisma/migrations` folder and run it against the database to create the database schema..
-
-To do so run the following command:
+When working with a production database, this is done in two steps:
 
 ```no-lines
-npx prisma migrate dev --preview-feature
+# Create the migration file
+npx prisma migrate dev --create-only --name "init" --preview-feature
+
+# Apply the migration
+npx prisma migrate deploy --preview-feature
 ```
 
-You will be prompted to give the migration a name after which Migrate will run the migration.
+The first command will create an SQL migration file based on the Prisma schema in the `prisma/migrations` folder and the second command will apply it against the database to create the database schema.
 
 > **Note:** Prisma Migrate is currently in [preview](/about/releases#preview). This means that it is not recommended to use in production.
 
