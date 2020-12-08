@@ -4,6 +4,7 @@ import styled from 'styled-components'
 import SearchPic from '../../icons/Search'
 import Clear from '../../icons/Clear'
 import useWindowDimensions from '../../hooks/useWindowDimensions'
+import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
   width: 250px;
@@ -11,6 +12,7 @@ const SearchBoxDiv = styled.div`
 
   form {
     width: 250px;
+    position: relative;
   }
 
   &.opened {
@@ -76,7 +78,7 @@ const SearchBoxDiv = styled.div`
       width: 100%;
       background: transparent;
       outline: none;
-      padding: 0rem ${p => p.theme.space[16]};
+      padding: 0rem ${p => p.theme.space[32]};
       font-family: ${p => p.theme.fonts.text};
       font-style: normal;
       font-weight: normal;
@@ -119,6 +121,14 @@ const SearchIcon = styled(SearchPic)`
   min-width: 1em;
   pointer-events: none;
   z-index: 100001;
+  position: absolute;
+`
+
+const SearchSlashIcon = styled(SearchSlash)`
+  pointer-events: none;
+  z-index: 100001;
+  position: absolute;
+  right: 0;
 `
 
 const ClearIcon = styled(Clear)`
@@ -221,7 +231,7 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
             <ClearIcon onClick={clearInput} />
           </span>
         )}
-        {!isOpened && <span className="slash">/</span>}
+        {!isOpened && <SearchSlashIcon />}
       </form>
     </SearchBoxDiv>
   )
