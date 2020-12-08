@@ -541,12 +541,12 @@ datasource db {
 
 #### Options
 
-| Options               | Required | Description                                                                                                                |
-| :-------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------- |
-| `--preview-feature`   | Yes      | Enables use of Preview feature commands                                                                                    |
-| `--skip-generate`     | No       | Skip generation of artifacts such as Prisma Client                                                                         |
-| `--force`             | No       | Ignore data loss warnings. This option is required if as a result of making the schema changes, data may be lost.          |
-| `--help` / `--h`      | No       | Displays the help message                                                                                                  |
+| Options             | Required | Description                                                                                                       |
+| :------------------ | :------- | :---------------------------------------------------------------------------------------------------------------- |
+| `--preview-feature` | Yes      | Enables use of Preview feature commands                                                                           |
+| `--skip-generate`   | No       | Skip generation of artifacts such as Prisma Client                                                                |
+| `--force`           | No       | Ignore data loss warnings. This option is required if as a result of making the schema changes, data may be lost. |
+| `--help` / `--h`    | No       | Displays the help message                                                                                         |
 
 #### Examples
 
@@ -574,36 +574,140 @@ npx prisma db push --preview-feature --schema=/tmp/schema.prisma
 
 ### <inlinecode>migrate dev</inlinecode>
 
-1. Applies migrations that have not yet been applied
-1. Generates a new migration based on the changes in the Prisma schema (you will be prompted to name the migration)
-1. Applies the new migration to the database
-1. Updates the migrations table with a new entry
-1. Triggers generation of artifacts such as Prisma Client (`prisma generate`)
+**For use in development environments only, requires shadow database**
+
+The `migrate dev` command updates your database using migrations during development. In the simplest case, it does the following:  
+
+1. Applies pending  migrations
+2. Generate a new migration based on the changes in the Prisma schema
+3. Applies the new migration to the database and updates the `_prisma_migrations` table
+4. Trigger the generation of artifacts (for example, the Prisma Client)
+
+The `migrate dev` command will prompt you to reset the database in the following scenarios:
+
+- Migration history conflicts caused by modified or missing migration
+- The database schema has drifted away from the end-state of the migration history
+
+#### Options
+
+| Argument       | Required | Description                                                                                                                                       | Default                                          |
+| :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| `--create-only`    | No       | Creates a new migration based on the changes in the schema but does not apply that migration. Run `migrate dev` to apply migration. |  |
 
 #### Examples
 
+Apply all migrations, then create and apply any new migrations:
+
+```terminal
+prisma migrate dev --preview-feature
+```
+
+Apply all migrations and create a new migration if there are schema changes, but do not apply it:
+
+```terminal
+prisma migrate dev --create-only --preview-feature
+```
+
 ### <inlinecode>migrate reset</inlinecode>
+
+**For use in development environments only.**
+
+The `migrate reset` command:
 
 1. Drops the database
 1. Creates a new database with the same name
 1. Applies all migrations
 
-#### Examples
-
-### <inlinecode>migrate deploy</inlinecode>
-
-#### Examples
-
-### <inlinecode>migrate resolve</inlinecode>
+> **Note**: There is currently no built-in functionality to re-populate existing data or seed the database.
 
 #### Arguments
 
-| Argument   | Required | Description                                                                                                                                       | Default                                          |
-| :--------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
-| `--applied` | No       | Specifies the path to the desired schema.prisma file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`<br /> `./prisma/schema.prisma` |
-| `--rolledback` | No       | Specifies the path to the desired schema.prisma file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`<br /> `./prisma/schema.prisma` |
+| Argument       | Required | Description                                                                                                                                       | Default                                          |
+| :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| `--schema`    | No       | Specifies the path to the desired schema.prisma file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`<br /> `./prisma/schema.prisma` |
+
+#### Options
+
+| Argument       | Required | Description                                                                                                                                       | Default                                          |
+| :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| `--skip-generate`    | No       | Skip triggering generators (for example, Prisma Client) |  |
 
 #### Examples
+
+```terminal
+prisma migrate reset --preview-feature
+```
+
+### <inlinecode>migrate deploy</inlinecode>
+
+The `migrate deploy` command applies all pending migrations. Primarily used in non-development environments. This command:
+
+* Does **not** look for drift in the database or changes in the Prisma schema
+* Does **not** reset the database or generate artifacts
+* Does **not** rely on a shadow database
+
+#### Arguments
+
+| Argument       | Required | Description                                                                                                                                       | Default                                          |
+| :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| `--schema`    | No       | Specifies the path to the desired schema.prisma file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`<br /> `./prisma/schema.prisma` |
+
+#### Examples
+
+```terminal
+prisma migrate deploy --preview-feature
+```
+
+### <inlinecode>migrate resolve</inlinecode>
+
+The `migrate resolve` command allows you to solve migration history issues in production by marking a migration as already applied (supports baselining) or rolled back.
+
+#### Arguments
+
+| Argument       | Required | Description                                                                                                                                       | Default                                          |
+| :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| `--applied` | No*       | Record a specific migration as applied - for example `--applied "20201231000000_add_users_table"` |  |
+| `--rolledback` | No*       | Record a specific migration as rolled back - for example `--rolledback "20201231000000_add_users_table"`. | `./schema.prisma`<br /> `./prisma/schema.prisma` |
+| `--schema`    | No       | Specifies the path to the desired schema.prisma file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`<br /> `./prisma/schema.prisma` |
+
+You must specify either `--rolledback` _or_ `--applied`.
+
+#### Examples
+
+```terminal
+prisma migrate resolve --applied 20201231000000_add_users_table --preview-feature
+```
+
+### <inlinecode>migrate status</inlinecode>
+
+The `prisma migrate status` command looks up the migrations in `/prisma/migrations/*` folder and the entries in the `_prisma_migrations` table and compiles informatoin about the state of the migrations in your databae. For example:
+
+```
+Status
+3 migrations found in prisma/migrations
+
+Your local migration history and the migrations table from your database are different:
+
+The last common migration is: 20201127134938_new_migration
+
+The migration have not yet been applied:
+20201208100950_test_migration
+
+The migrations from the database are not found locally in prisma/migrations:
+20201208100950_new_migration
+```
+
+#### Arguments
+
+| Argument       | Required | Description                                                                                                                                       | Default                                          |
+| :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| `--schema`    | No       | Specifies the path to the desired schema.prisma file to be processed instead of the default path. Both absolute and relative paths are supported. | `./schema.prisma`<br /> `./prisma/schema.prisma` |
+
+#### Examples
+
+```terminal
+prisma migrate status --preview-feature
+```
 
 ## Studio
 
