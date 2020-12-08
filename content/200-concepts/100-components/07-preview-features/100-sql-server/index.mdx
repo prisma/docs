@@ -75,16 +75,15 @@ Prisma Migrate (Preview) is supported in 2.13.0 and later with the following cav
 
 Prisma Migrate (Preview) does not yet support native types, which means that you cannot use SQL Server, Prisma Migrate, and native types together.
 
-
 #### Database schema names
 
-SQL Server does not have an equivalent to the PostgreSQL `SET search_path` command familiar from PostgreSQL. This means that when you create migrations, you must define the same schema name in the connection string that’s being used on production. For most of the users this is `dbo` (the default value). But if the production database is using some other schema name, all the migration SQL must be either edited by hand to reflect the production, or in connection string before creating any migrations (defined as `schema=name`).
+SQL Server does not have an equivalent to the PostgreSQL `SET search_path` command familiar from PostgreSQL. This means that when you create migrations, you must define the same schema name in the connection string that is used by the production database. For most of the users this is `dbo` (the default value). However, if the production database uses another schema name, all the migration SQL must be either edited by hand to reflect the production _or_ the connection string must be changed before creating migrations (for example: `schema=name`).
 
 #### Cascading rules
 
-We made the decision to follow the same cascading rules as we do in the other databases. It means for most of the relations (with certain restrictions), we get `ON DELETE CASCADE ON UPDATE CASCADE`. This is a good default for how simple it is to delete all children from a parent automatically, but with SQL Server the cascading has certain restrictions that do not allow us to create certain kinds of relations.
+SQL Server follows the same cascading rules as other database providers - for most relations (with certain restrictions), Prisma runs `ON DELETE CASCADE ON UPDATE CASCADE` (delete all children from a parent automatically).
 
-First we’ll see a working schema:
+However, SQL Server cascading has certain restrictions that do not allow us to create certain kinds of relations. Consider the following schema:
 
 ```prisma
 model Album {
@@ -99,22 +98,22 @@ model Artist {
 }
 ```
 
-Now we want to add the favorite album to every artist:
+Next, add a favorite album to every artist:
 
 ```prisma
 model Artist {
   id             Int      @id @default(autoincrement())
   album_id       Int
-  favorite_album Album    @relation(fields: [album_id], references: [id], name: "FK_fav_album")
+|  favorite_album Album    @relation(fields: [album_id], references: [id], name: "FK_fav_album")
   albums Album[]
 }
 ```
 
-We’ll get an error:
+This results in an error:
 
 > Introducing FOREIGN KEY constraint `FK__Artist__album_id__2D3D91F9` on table `Artist` may cause cycles or multiple cascade paths. Specify `ON DELETE NO ACTION` or `ON UPDATE NO ACTION`, or modify other FOREIGN KEY constraints.
 
-SQL Server doesn’t allow cyclic cascading, and in our example our relations go from `Album` to `Artist` and through another relation from `Artist` back to `Album`. In [Microsoft's words](https://support.microsoft.com/en-us/help/321843/error-message-1785-occurs-when-you-create-a-foreign-key-constraint-tha), the cause for this is:
+SQL Server does not allow cyclic cascading, and in our example our relations go from `Album` to `Artist` and through another relation from `Artist` back to `Album`. In [Microsoft's words](https://support.microsoft.com/en-us/help/321843/error-message-1785-occurs-when-you-create-a-foreign-key-constraint-tha), the cause for this is:
 
 > You receive this error message because in SQL Server, a table cannot appear more than one time in a list of all the cascading referential actions that are started by either a DELETE or an UPDATE statement. For example, the tree of cascading referential actions must only have one path to a particular table on the cascading referential actions tree.
 
@@ -134,9 +133,10 @@ Right now, if wanting to use relations as described here, one must first create 
 
 #### Destructive changes
 
-Certain migrations will cause more changes than the user might expect. First of them is when changing a column in an existing table to `autoincrement()` or removing the property. This is not possible by just changing the column, but requires us to completely recreate the table, including all constraints, indices and foreign keys and moving all data between the tables.
+Certain migrations will cause more changes than you might expect. For example:
 
-The other is how we can't delete all the columns from a table like we can with PostgreSQL or MySQL. If a migration will need to recreate all columns from a table, the whole new table will be created as we do with `autoincrement()`.
+* Adding or removing `autoincrement()`. This cannot be achieved by modifying the column, but requires recreating the table (including all constraints, indices, and foreign keys) and moving all data between the tables.
+* Additionally, it is not possible to delete all the columns from a table (possible with PostgreSQL or MySQL). If a migration needs to recreate all table columns, it will also re-create the table.
 
 ### Data model limitations
 
