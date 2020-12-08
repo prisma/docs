@@ -53,6 +53,16 @@ You can choose to change the behavior of a migration **when you create it**. For
    prisma migrate dev --preview-feature
    ```
 
+## Deploying migrations in a non-development environment
+
+Use the following command in non-development environments to apply migrations:
+
+```terminal
+prisma migrate deploy --preview-feature
+```
+
+The `prisma migrate dev` command is reserved for development environments.
+
 ## Collaborating with a team
 
 To bring in changes to the database schema and migrations from collaborators, pull the changed Prisma Schema and the new migration files. Run `prisma migrate dev` to apply the changes. Running this command:
@@ -62,29 +72,39 @@ To bring in changes to the database schema and migrations from collaborators, pu
 
 ## Handling migration history conflicts
 
-A migration history conflict occurs when there are discrepancies between the **migrations folder in the file system** and the **`_prisma_migrations` table in the database**. This can happen if:
+A migration history conflict occurs when there are discrepancies between the **migrations folder in the file system** and the **`_prisma_migrations` table in the database**. 
 
-* A migration that has already been applied is later modified - for example, adding a comment or modifying the actual SQL of a `migration.sql` file. The SQL statement in the `migration.sql` file and the `_prisma_migrations` table are now different, resulting in a conflict.
-* A migration that has already been applied is missing from the file system.  This can occur if you switch branches without committing your migrations, or as a result of a `git merge` issue.
+### Development environments
 
-### Developer environments
+In a development environment, history conflicts can occur in the following scenarios:
 
-If Prisma Migrate detects a migration history conflict when you run `prisma migrate dev`, the CLI will ask to reset the database. Resetting the database:
+* A migration that has already been applied is later modified - this check requires a shadow database and is therefore only available in a development environment
+* A migration that has already been applied is missing from the file system
+* A migration failed
+
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate dev` (Development command), the CLI will ask to reset the database. Resetting the database:
 
 1. Drops the database
 2. Recreates the database
 3. Applies all migrations
 
-This approach makes sense if you modified a migrations file on purpose to do something that cannot be done via the Prisma Schema - for example, create a new column with an unsupported type.
-
 ### Production environments
 
-If Prisma Migrate detects a migration history conflict when you run `prisma migrate dev`, you can deny the reset and manually reconcile the differences between your migrations folder and the `_prisma_migrations` table. For example:
+In a production environment, history conflicts can occur in the following scenarios:
 
-1. Copy the missing or changed migrations files from source control
-* Change statement in relevant `script` field in the `_prisma_migrations` table to match the change you made to the `migrations.sql` files
+* A migration that has already been applied is missing from the file system
+* A migration failed
 
-This approach makes sense if the conflict was the result of a mistake or a very small change that is not worth dropping and recreating the database.
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate deploy` (Production command)
+
+* Add the missing migration file - for example, from source control
+* Address the cause of the failed migration - each migration in the `_prisma_migrations` table has a `logs` column that stores the error. For example:
+
+  ```
+  Database error: Error accessing result set, column not found: name
+   0: migration_core::api::ApplyMigrations
+             at migration-engine\core\src\api.rs:102
+  ```
 
 ## Handling database schema drift
 
@@ -134,6 +154,8 @@ A migration might fail if:
 * You add a mandatory (`NOT NULL`) column to a table that already has data
 * The migration process stopped unexpectedly
 * The database shut down in the middle of the migration process
+
+Each migration in the `_prisma_migrations` table has a `logs` column that stores the error.
 
 ### Developer environments
 
@@ -208,9 +230,3 @@ The following example demonstrates how to manually complete the steps of a migra
    ```terminal
    prisma migrate resolve --applied "20201127134938_my_migration"
    ```
-
-## Baselining a database
-
-**Baselining**
-
-M
