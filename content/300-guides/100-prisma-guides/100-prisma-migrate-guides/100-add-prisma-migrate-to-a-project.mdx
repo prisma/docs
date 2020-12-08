@@ -58,25 +58,25 @@ In other development environments (for example, other team members' computers):
 
 Assuming you have successfully transitioned to the new version of Prisma Migrate and initialized a new migration history in your repository, you now need to **baseline** any database that contains important data - such as production or staging.
 
-In development, we assume it is acceptable to reset your database to make sure your migration files are in sync with your database schema, but this happens at the expense of losing data. For production and any other environments, you probably cannot afford to lose data.
+In development, we assume it is acceptable to reset your database to make sure your migration files are in sync with your database schema. This is not acceptable in a production environment, or any other environment where data must be maintained.
 
-This is why we support something we call baselining. Baselining works by:
+Baselining works by creating the `_prisma_migrations` table (if it does not exist) and registering each baselined migration in the `_prisma_migrations` and as "already applied". Prisma Migrate will assume that the changes contained within "already applied" migrations already exist in the database, and will not run those migrations. Any migrations that come _after_ baselined migrations will actually be applied to the database.
 
-1. Creating the `_prisma_migrations` table if it does not exist yet
-2. For each migration you baseline, Prisma Migrate will register the migration in the `_prisma_migrations` as applied, without actually running it.
-
-Any migrations that come after baselined migrations will actually be run, so by baselining a database you are making sure you can create new migrations to make future changes to the database schema, but skipping the migrations that led to this current database state, which are not needed and would require starting from an empty database schema.
-
-In your production environment or against the production environment, do the following steps:
+To baseline a production database:
 
 1. Make sure you have a working copy of the new migrations directory
-2. Call `prisma migrate resolve --applied "20201124-create-users"  --preview-feature` to baseline a migration. If you are baselining multiple migrations, repeat this step with each migration.
+2. Run the following command to baseline  a migration:
+
+   ```terminal
+   prisma migrate resolve --applied "20201124-create-users"  --preview-feature` to baseline a migration.
+   ```
+
+   If you need to baseline multiple migrations (for example, if you generated more migrations after transitioning your development environment), run the `prisma migrate resolve --preview-feature` command for each migration separately.
 
 ## Resolve migration issues in production databases
 
-In certain cases, it's possible to run into issues with the migration history and that prevent  from applying further database migrations with `prisma migrate resolve --preview-feature`.
+In certain cases, you can run into issues with the migration history and that prevent you from applying further database migrations with `prisma migrate resolve --preview-feature`. This can happen if:
 
-This can fall in two categories:
 
-- a migration failed, because of an error or because it was interrupted while running, i.e. the process died, the database was shutdown
-- the database needs to be baselined to skip certain migrations that are unnecessary on this database schema - this can be the case when a change to the database schema was done manually, i.e. hotfix, or when the database needs to be baselined.
+- A migration failed, either because of an error or because it was interrupted while running (for example, unexepected shutdown)
+- The database needs to be baselined to skip certain migrations that are unnecessary on this database schema - this can be the case when a change to the database schema was done manually, such as a hotfix, or when the database needs to be baselined
