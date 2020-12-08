@@ -1,0 +1,239 @@
+---
+title: 'Migration flows'
+metaTitle: 'Migration flows (Concepts)'
+metaDescription: 'Prisma Migrate is a declarative data modeling and schema migration tool that is available via the Prisma CLI.'
+---
+
+<TopBlock>
+
+</TopBlock>
+
+## Modifying a migration
+
+You can choose to change the behavior of a migration **when you create it**. For example, Prisma Migrate cannot automatically detect that you want to _rename_ a field - instead, it will add a new field and remove the old one. To rename the field instead (for example, `name` &rarr; `fullname`), you must create and modify a **draft migration**:
+
+1. Make a change to your schema - for example, renaming a field:
+ 
+    ```prisma file=schema.prisma
+    model User {
+    +  fullname String?
+    -  name     String?
+    }
+    ```
+
+1. Use the `--create-only` option to generate a **draft** migration:
+
+    <CodeWithResult>
+    <Cmd>
+
+    ```terminal
+    prisma migrate dev --create-only --preview-feature
+    ```
+    </Cmd>
+    <CmdResult>
+    ```
+    Prisma Migrate created the following migration without applying it 20201208100950_fullname_field
+    ```    
+    </CmdResult>
+    </CodeWithResult>
+
+    Prisma Migrate does not apply this migration.
+
+2. Edit the generated `20201208100950_fullname_field/migration.sql` file:
+
+   ```sql
+   ALTER TABLE "User" DROP COLUMN "name",
+   - ADD COLUMN     "fullname" TEXT,
+   + RENAME "name" TO  "fullname"
+   ```
+
+3. Migrate:
+
+   ```terminal
+   prisma migrate dev --preview-feature
+   ```
+
+## Deploying migrations in a non-development environment
+
+Use the following command in non-development environments to apply migrations:
+
+```terminal
+prisma migrate deploy --preview-feature
+```
+
+The `prisma migrate dev --preview-feature` command is reserved for development environments and requires the [shadow database](../#shadow-database), which is not available in production.
+
+## Collaborating with a team
+
+To bring in changes to the database schema and migrations from collaborators, pull the changed Prisma Schema and the new migration files. Run `prisma migrate dev --preview-feature` to apply the changes. Running this command:
+
+1. Checks if there are any migrations that have not yet been applied and applies those migrations
+1. Checks for changes in the Prisma schema - if there are changes, Prisma creates and applies new migrations
+
+## Handling migration history conflicts
+
+A migration history conflict occurs when there are discrepancies between the **migrations folder in the file system** and the **`_prisma_migrations` table in the database**. 
+
+### Development environments
+
+In a development environment, history conflicts can occur in the following scenarios:
+
+* A migration that has already been applied is later modified - this check requires a shadow database and is therefore only available in a development environment
+* A migration that has already been applied is missing from the file system
+* A migration failed
+
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate dev --preview-feature` (Development command), the CLI will ask to reset the database. Resetting the database:
+
+1. Drops the database
+2. Recreates the database
+3. Applies all migrations
+
+### Production environments
+
+In a production environment, history conflicts can occur in the following scenarios:
+
+* A migration that has already been applied is missing from the file system
+* A migration failed
+
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate deploy --preview-feature` (Production command)
+
+* Add the missing migration file - for example, from source control
+* Address the cause of the failed migration - each migration in the `_prisma_migrations` table has a `logs` column that stores the error. For example:
+
+  ```
+  Database error: Error accessing result set, column not found: name
+   0: migration_core::api::ApplyMigrations
+             at migration-engine\core\src\api.rs:102
+  ```
+
+## Handling database schema drift
+
+Database schema drift occurs when your database schema is out of sync with your migration history - the database schema has 'drifted away' from the source of truth. Schema drift can occur if:
+
+* The database schema was changed _without_ using migrations - for example, by using [`prisma db push`](../../reference/api-reference/command-reference#db-push) or manually changing the database schema.
+
+> **Note**: Schema drift can only be detected in a development environment as this requires the shadow database.
+
+The following scenario assume that you made a manual change in production and want to propagate that change to your migration history and other databases.
+
+### Development environments
+
+1. Make an equivalent change in the Prisma schema - for example, adding a field named `bio` and an index:
+
+  ```prisma
+  model User {
+      // Other fields
+      bio   String?
+
+      @@index([bio])
+  }
+  ```
+
+1. Create and apply the new migration in dev:
+
+   ```terminal
+   prisma migrate dev --preview-feature
+   ```
+
+1. Commit the new migration and allow your CI process to apply the migration to all other non-production databases.
+
+### Production environments
+
+When the manual change has been replicated in the Prisma schema, you must reconcile your migration history and database schema in production:
+
+1. Mark the migration as 'already applied' so that Prisma Migrate does not try to create a field and index that already exists:
+
+   ```terminal
+   prisma migrate resolve --applied "20201127134938_added_bio_index" --preview-feature
+   ```
+
+   This command adds the migration to the migration history table without running the actual SQL.
+
+## Handling a failed migration
+
+A migration might fail if:
+
+* You [modify a migration before running it]() and introduce a syntax error
+* You add a mandatory (`NOT NULL`) column to a table that already has data
+* The migration process stopped unexpectedly
+* The database shut down in the middle of the migration process
+
+Each migration in the `_prisma_migrations` table has a `logs` column that stores the error.
+
+### Developer environments
+
+The easiest way to handle a failed migration in a developer environment is to address the root cause and reset the database. For example:
+
+* If you introduced a SQL syntax error by manually editing the database, update the `migration.sql` file that failed and reset the database:
+
+    ```terminal
+    prisma migrate reset --preview-feature
+    ```
+
+* If you introduced a change in the Prisma schema that cannot be applied to a database with data (for example, a mandatory column in a table with data):
+
+    1. Delete the `migration.sql` file.
+
+    2. Modify the schema - for example, add a default value to the mandatory field.
+
+    3. Migrate:
+
+        ```terminal
+        prisma migrate dev --preview-feature
+        ```
+
+        Prisma Migrate will prompt you to reset the database and re-apply all migrations.
+
+* If something interrupted the migration process, reset the database:
+
+    ```terminal
+    prisma migrate reset --preview-feature
+    ```
+
+### Production environments
+
+There are two ways to deal with failed migrations in a production environment:
+
+* Roll back, optionally fix issues, and re-deploy
+* Manually complete the migration steps and resolve the migration
+
+#### Option 1: Roll back and re-deploy
+
+The following example demonstrates how to roll back a migration, optionally make changes to fix the issue, and re-deploy:
+
+1. Roll back the migration - this updates the migration record in the `_prisma_migrations` table to register it as rolled back, allowing it to be applied again:
+
+   ```terminal
+   prisma migrate resolve --rolled-back "20201127134938_added_bio_index" --preview-feature
+   ```
+
+1. If the migration was partially run, you can either:
+
+    * Modify the migration to check if a step was already completed (for example: `CREATE TABLE ... IF NOT EXISTS`) _OR_
+    * Manually revert the steps that were completed (for example, delete created databases)
+
+    > If you modify the migration, make sure you copy it back to source control to ensure that state of your production database is reflected exactly in development.
+
+1. Fix the root cause of the failed migration, if relevant - for example, if the migration failed due to an issue with the SQL script itself. Make sure that you copy any changed migrations back to source control.
+
+1. Re-deploy the migration:
+
+    ```terminal
+    prisma migrate deploy --preview-feature
+    ```
+
+### Option 2: Manually complete migration and resolve as applied
+
+The following example demonstrates how to manually complete the steps of a migration and mark that migration as applied.
+
+1. Manually complete the migration steps on the production database. Make sure that any manual steps exactly match the steps in the migration file, and copy any changes back to source control.
+
+1. Resolve the migration as applied - this tells Prisma Migrate to consider the migration successfully applied:
+
+   ```terminal
+   prisma migrate resolve --applied "20201127134938_my_migration" --preview-feature
+   ```
+
+## Baselining
+
+See [Guide: Add Prisma Migrate to an existing project](../../../guides/prisma-guides/prisma-migrate-guides/add-prisma-migrate-to-a-project)
