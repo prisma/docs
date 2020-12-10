@@ -102,18 +102,7 @@ exports.createPages = ({ graphql, actions }) => {
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
         const { langSwitcher, dbSwitcher } = node.frontmatter
-
-        if (!langSwitcher && !dbSwitcher) {
-          createPage({
-            path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
-            component: path.resolve(`./src/layouts/articleLayout.tsx`),
-            context: {
-              id: node.fields.id,
-              seoTitle: getTitle(node.frontmatter),
-              seoDescription: getDesc(node.frontmatter),
-            },
-          })
-        } else if (langSwitcher && dbSwitcher) {
+        if (langSwitcher && dbSwitcher) {
           langSwitcher.forEach(lang =>
             dbSwitcher.forEach(db => {
               createPage({
@@ -151,6 +140,16 @@ exports.createPages = ({ graphql, actions }) => {
               },
             })
           )
+        } else if (!langSwitcher && !dbSwitcher) {
+          createPage({
+            path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
+            component: path.resolve(`./src/layouts/articleLayout.tsx`),
+            context: {
+              id: node.fields.id,
+              seoTitle: getTitle(node.frontmatter),
+              seoDescription: getDesc(node.frontmatter),
+            },
+          })
         }
       })
       resolve()
