@@ -118,11 +118,11 @@ const PageBottom = ({ editDocsPath }: any) => {
 
   const sendFeedback = async (selectedSentiment: string) => {
     const body = JSON.stringify({ pageUrl, sentiment: sentiments[selectedSentiment] })
-    const requestOptions: any = {
+    await fetch(config.feedback.function_name, {
       method: 'POST',
+      mode: 'no-cors',
       body,
-    }
-    await fetch(config.feedback.function_name, requestOptions)
+    })
   }
 
   const handleSentiment = (e: any) => {
