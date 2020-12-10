@@ -103,7 +103,17 @@ exports.createPages = ({ graphql, actions }) => {
       result.data.allMdx.edges.forEach(({ node }) => {
         const { langSwitcher, dbSwitcher } = node.frontmatter
 
-        if (langSwitcher && dbSwitcher) {
+        if (!langSwitcher && !dbSwitcher) {
+          createPage({
+            path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
+            component: path.resolve(`./src/layouts/articleLayout.tsx`),
+            context: {
+              id: node.fields.id,
+              seoTitle: getTitle(node.frontmatter),
+              seoDescription: getDesc(node.frontmatter),
+            },
+          })
+        } else if (langSwitcher && dbSwitcher) {
           langSwitcher.forEach(lang =>
             dbSwitcher.forEach(db => {
               createPage({
@@ -117,8 +127,7 @@ exports.createPages = ({ graphql, actions }) => {
               })
               })
           )
-        }
-        if (langSwitcher && !dbSwitcher) {
+        } else if (langSwitcher && !dbSwitcher) {
           langSwitcher.forEach(lang =>
             createPage({
               path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}`,
@@ -130,10 +139,7 @@ exports.createPages = ({ graphql, actions }) => {
               },
             })
           )
-        }
-
-
-        if (!langSwitcher && dbSwitcher) {
+        } else if (!langSwitcher && dbSwitcher) {
           node.frontmatter.dbSwitcher.forEach(db =>
             createPage({
               path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${db}`,
@@ -145,18 +151,6 @@ exports.createPages = ({ graphql, actions }) => {
               },
             })
           )
-        }
-
-        if (!langSwitcher && !dbSwitcher) {
-          createPage({
-            path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
-            component: path.resolve(`./src/layouts/articleLayout.tsx`),
-            context: {
-              id: node.fields.id,
-              seoTitle: getTitle(node.frontmatter),
-              seoDescription: getDesc(node.frontmatter),
-            },
-          })
         }
       })
       resolve()
