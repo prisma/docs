@@ -8,10 +8,11 @@ import SEO from '../components/seo'
 import { graphql } from 'gatsby'
 import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
 import { useNavigate } from '@reach/router'
+import { CreatePageContext } from 'src/interfaces/Layout.interface'
 
-type ArticleLayoutProps = ArticleQueryData & RouterProps
+type ArticleLayoutProps = ArticleQueryData & RouterProps & CreatePageContext
 
-const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
+const ArticleLayout = ({ data, pageContext: { seoTitle, seoDescription }, ...props }: ArticleLayoutProps) => {
   if (!data) {
     return null
   }
@@ -20,8 +21,6 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       fields: { slug, modSlug },
       frontmatter: {
         title,
-        metaTitle,
-        metaDescription,
         langSwitcher,
         dbSwitcher,
         toc,
@@ -39,7 +38,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const navigate = useNavigate()
   return (
     <Layout {...props} toc={toc || toc == null ? tableOfContents : []} tocDepth={tocDepth} slug={slug}>
-      <SEO title={metaTitle || title} description={metaDescription || title} />
+      <SEO title={seoTitle} description={seoDescription} />
       <section className="top-section">
         <TopSection
           location={props.location}

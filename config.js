@@ -49,6 +49,12 @@ const config = {
         type: 'bucket',
         bucketName: '/400-reference',
       },
+      {
+        text: 'Support',
+        to: '/support',
+        type: 'bucket',
+        bucketName: '/500-support',
+      },
       { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
       { text: 'Prisma 1 Docs', to: 'https://v1.prisma.io/docs/1.34', type: 'external-link' },
     ],
@@ -83,7 +89,7 @@ const config = {
     },
   },
   feedback: {
-    function_name: 'https://prisma2.netlify.app/.netlify/functions/index',
+    function_name: 'https://prisma2-docs.netlify.app/.netlify/functions/index',
   },
   sidebar: {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
