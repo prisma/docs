@@ -2,6 +2,7 @@
 title: 'Aggregation, grouping, and summarizing'
 metaTitle: 'Aggregation, grouping, and summarizing (Reference)'
 metaDescription: 'Use Prisma Client to find the count, sum, average, or min/max values of a number fields.'
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -11,11 +12,11 @@ Prisma Client allows you to perform aggregations operations on the **number** fi
 ```ts
 const aggregations = await prisma.user.aggregate({
   avg: {
-      age: true,
+    age: true,
   },
-});
+})
 
-console.log("Average age:" + aggregations.avg.age);
+console.log('Average age:' + aggregations.avg.age)
 ```
 
 </TopBlock>
@@ -24,9 +25,9 @@ console.log("Average age:" + aggregations.avg.age);
 
 You can combine aggregation with filtering and ordering. For example, the following query returns the average age of users:
 
-* Ordered by `age` ascending
-* Where `email` contains `prisma.io`
-* Limited to the 10 users
+- Ordered by `age` ascending
+- Where `email` contains `prisma.io`
+- Limited to the 10 users
 
 ```ts
 const aggregations = await prisma.user.aggregate({
@@ -35,25 +36,139 @@ const aggregations = await prisma.user.aggregate({
   },
   where: {
     email: {
-      contains: "prisma.io",
+      contains: 'prisma.io',
     },
   },
   orderBy: {
-    age: "asc",
+    age: 'asc',
   },
   take: 10,
-});
+})
 
-console.log("Average age:" + aggregations.avg.age);
+console.log('Average age:' + aggregations.avg.age)
 ```
 
 ## Count
 
 ```ts
-const userCount = await prisma.user.count();
+const userCount = await prisma.user.count()
 ```
 
 ## Select distinct
+
+
+Prisma Client allows you to filter duplicate rows from a Prisma Query response to a [`findMany`](./crud#findMany) query using `distinct`. 
+
+`distinct` is often used in combination with [`select`](./field-selection#select) to identify certain unique combinations of values in the rows of your table.
+
+```ts
+const result = await prisma.user.findMany({
+  where: {},
+  distinct: ['name'],
+})
+```
+
+### <inlinecode>distinct</inlinecode> under the hood
+
+Prisma's `distinct` option does not use SQL `SELECT DISTINCT`. Instad, `distinct` uses:
+
+- A `SELECT` query
+- In-memory post-processing to select distinct
+
+It was designed in this way in order to **support `select` and `include`** as part of `distinct` queries.
+
+The following example selects distinct on `gameId` and `playerId`, ordered by `score`, in order to return **each player's highest score per game**. The query uses `include` and `select` to include additional data:
+
+* Select `score` (field on `Play`)
+* Select related player name (relation between `Play` and `User`)
+* Select related game name (relation between `Play` and `Game`)
+
+<details><summary>Expand for sample schema</summary>
+
+```prisma
+model User {
+  id           Int              @id @default(autoincrement())
+  name         String?
+  Play         Play[]
+}
+
+model Game {
+  id   Int     @id @default(autoincrement())
+  name String?
+}
+
+model Play {
+  id       Int   @id @default(autoincrement())
+  score    Int?  @default(0)
+  playerId Int?
+  player   User? @relation(fields: playerId, references: id)
+  gameId Int? 
+  game Game? @relation(fields: gameId, references: id)
+}
+```
+
+</details>
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const distinctScores = await prisma.play.findMany({
+  distinct: ['playerId', 'gameId'],
+  orderBy: {
+    score: 'desc',
+  },
+  select: {
+    score: true,
+    game: {
+      select: {
+        name: true,
+      },
+    },
+    player: {
+      select: {
+        name: true,
+      },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```
+[
+  {
+    score: 900,
+    game: { name: 'Pacman' },
+    player: { name: 'Bert Bobberton' }
+  },
+  {
+    score: 400,
+    game: { name: 'Pacman' },
+    player: { name: 'Nellie Bobberton' }
+  }
+]
+```
+
+</CmdResult>
+</CodeWithResult>
+
+Without `select` and `distinct`, the query would return: 
+
+```
+[
+  {
+    gameId: 2,
+    playerId: 5
+  },
+  { 
+    gameId: 2,
+    playerId: 10
+  }
+]
+```
 
 ## Group by
 
