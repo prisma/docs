@@ -17,3 +17,10 @@ interface SiteMeta {
 export interface LayoutQueryData {
   site: SiteMeta
 }
+
+export interface CreatePageContext {
+  pageContext: {
+    seoTitle: string
+    seoDescription: string
+  }
+}

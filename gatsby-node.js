@@ -101,38 +101,34 @@ exports.createPages = ({ graphql, actions }) => {
       }
     `).then(result => {
       result.data.allMdx.edges.forEach(({ node }) => {
-        if (node.frontmatter.langSwitcher) {
-          if (node.frontmatter.dbSwitcher) {
-
-            node.frontmatter.langSwitcher.forEach(lang =>
-              node.frontmatter.dbSwitcher.forEach(db =>
-                createPage({
-                  path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}-${db}`,
-                  component: path.resolve(`./src/layouts/articleLayout.tsx`),
-                  context: {
-                    id: node.fields.id,
-                    seoTitle: getTitle(node.frontmatter, lang, db),
-                    seoDescription: getDesc(node.frontmatter, lang, db),
-                  },
-                })
-              )
-            )
-          } else {
-            node.frontmatter.langSwitcher.forEach(lang =>
+        const { langSwitcher, dbSwitcher } = node.frontmatter
+        if (langSwitcher && dbSwitcher) {
+          langSwitcher.forEach(lang =>
+            dbSwitcher.forEach(db => {
               createPage({
-                path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}`,
+                path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}-${db}`,
                 component: path.resolve(`./src/layouts/articleLayout.tsx`),
                 context: {
                   id: node.fields.id,
-                  seoTitle: getTitle(node.frontmatter, lang, null),
-                  seoDescription: getDesc(node.frontmatter, lang, null),
+                  seoTitle: getTitle(node.frontmatter, lang, db),
+                  seoDescription: getDesc(node.frontmatter, lang, db),
                 },
               })
-            )
-          }
-        }
-
-        if (node.frontmatter.dbSwitcher && !node.frontmatter.langSwitcher) {
+              })
+          )
+        } else if (langSwitcher && !dbSwitcher) {
+          langSwitcher.forEach(lang =>
+            createPage({
+              path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}`,
+              component: path.resolve(`./src/layouts/articleLayout.tsx`),
+              context: {
+                id: node.fields.id,
+                seoTitle: getTitle(node.frontmatter, lang, null),
+                seoDescription: getDesc(node.frontmatter, lang, null),
+              },
+            })
+          )
+        } else if (!langSwitcher && dbSwitcher) {
           node.frontmatter.dbSwitcher.forEach(db =>
             createPage({
               path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${db}`,
@@ -144,16 +140,17 @@ exports.createPages = ({ graphql, actions }) => {
               },
             })
           )
+        } else if (!langSwitcher && !dbSwitcher) {
+          createPage({
+            path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
+            component: path.resolve(`./src/layouts/articleLayout.tsx`),
+            context: {
+              id: node.fields.id,
+              seoTitle: getTitle(node.frontmatter),
+              seoDescription: getDesc(node.frontmatter),
+            },
+          })
         }
-        createPage({
-          path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
-          component: path.resolve(`./src/layouts/articleLayout.tsx`),
-          context: {
-            id: node.fields.id,
-            seoTitle: getTitle(node.frontmatter),
-            seoDescription: getDesc(node.frontmatter),
-          },
-        })
       })
       resolve()
       const redirects = result.data.site.siteMetadata.redirects
