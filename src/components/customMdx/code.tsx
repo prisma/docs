@@ -1,5 +1,6 @@
 import React from 'react'
 import Highlight, { defaultProps } from 'prism-react-renderer'
+import rangeParser from 'parse-numeric-range'
 import theme from 'prism-react-renderer/themes/github'
 import CopyButton from './copy'
 import Copy from '../../icons/Copy'
@@ -14,6 +15,27 @@ interface CodeProps {
 }
 
 type PreCodeProps = CodeProps & React.ReactNode
+
+const diffBgColorMap: any = {
+  '+': 'var(--code-added-bg-color)',
+  '-': 'var(--code-deleted-bg-color)',
+  '|': 'var(--code-highlight-bg-color)',
+  '✎': 'var(--code-edit-bg-color)',
+}
+
+const symColorMap: any = {
+  '+': 'var(--code-added-color)',
+  '-': 'var(--code-deleted-color)',
+  '|': 'var(--code-highlight-color)',
+  '✎': 'var(--code-highlight-color)',
+}
+
+const symbols: any = {
+  normal: '|',
+  add: '+',
+  delete: '-',
+  edit: '✎',
+}
 
 function cleanTokens(tokens: any[]) {
   const tokensLength = tokens.length
@@ -33,6 +55,15 @@ const propList = ['copy', 'bash-symbol', 'terminal', 'no-lines']
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   let language = className && className.replace(/language-/, '')
   let breakWords = false
+
+  let diffArray: any = []
+
+  if (props && props.metastring && props.metastring.includes('highlight')) {
+    const parts = props.highlight.split('|')
+    parts.forEach((part: any) => {
+      diffArray = [part.split(';'), ...diffArray]
+    })
+  }
 
   if (propList.includes(language)) {
     breakWords = true
@@ -80,22 +111,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   }
 
                   let isDiff = false
-                  // let isHidden = false
                   let diffSymbol = ''
-
-                  const diffBgColorMap: any = {
-                    '+': 'var(--code-added-bg-color)',
-                    '-': 'var(--code-deleted-bg-color)',
-                    '|': 'var(--code-highlight-bg-color)',
-                    '✎': 'var(--code-edit-bg-color)',
-                  }
-
-                  const symColorMap: any = {
-                    '+': 'var(--code-added-color)',
-                    '-': 'var(--code-deleted-color)',
-                    '|': 'var(--code-highlight-color)',
-                    '✎': 'var(--code-highlight-color)',
-                  }
 
                   if (
                     (line[0] &&
@@ -121,6 +137,19 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     isDiff = true
                   }
 
+                  if (diffArray.length !== 0) {
+                    diffArray.forEach((arr: any) => {
+                      if (rangeParser(arr[0]).includes(i + 1)) {
+                        diffSymbol = symbols[arr[1]]
+                        lineClass = {
+                          backgroundColor: diffBgColorMap[diffSymbol],
+                          symbColor: symColorMap[diffSymbol],
+                        }
+                        isDiff = true
+                      }
+                    })
+                  }
+
                   const lineProps = getLineProps({ line, key: i })
 
                   lineProps.style = { ...lineClass }
@@ -133,7 +162,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                       )}
                       {isDiff && !hasNoLine && (
                         <LineNo className="line-no" style={{ color: lineClass.symbColor }}>
-                          {['+', '-','✎'].includes(diffSymbol) ? diffSymbol : i + 1}
+                          {['+', '-', '✎'].includes(diffSymbol) ? diffSymbol : i + 1}
                         </LineNo>
                       )}
                       <LineContent className={`${tokenCopyClass}`}>
@@ -149,7 +178,10 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                               return (
                                 <span
                                   {...getTokenProps({
-                                    token: { ...token, content: token.content.slice(1) },
+                                    token: {
+                                      ...token,
+                                      content: token.content.slice(1),
+                                    },
                                     key,
                                   })}
                                 />
@@ -189,6 +221,7 @@ const AbsoluteCopyButton = styled.div`
   top: 20px;
   right: 16px;
   z-index: 2;
+
   > div {
     right: -${p => p.theme.space[8]};
     top: -6px;
@@ -212,10 +245,7 @@ const LineNo = styled.span`
   line-height: ${p => p.theme.space[24]};
   color: ${p => p.theme.colors.gray400};
   display: inline-block;
-  text-align: right;
-  // padding-left: 1em;
-  user-select: none;
-  width: 24px;
+  text-align: right; // padding-left: 1em; user-select: none; width: 24px;
 `
 
 const LineContent = styled.span`
