@@ -11,6 +11,22 @@ exports.handler = async function(event, context, callback) {
     throw new Error(`Please provide id to set the feedback for`)
   }
 
+  const fetchedFeedback = await client.feedback.findUnique({
+    where: {
+      id: body.id
+    },
+    select: {
+      feedback: true
+    }
+  })
+
+  if(fetchedFeedback.feedback) {
+    // Don't allow updating existing feedback
+    return {
+      statusCode: 400
+    }
+  }
+
   const feedback = await client.feedback.update({
     data: {
       feedback: body.feedback
