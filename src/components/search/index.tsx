@@ -1,11 +1,18 @@
 import React, { useState } from 'react'
-import { InstantSearch, Index, Hits, connectStateResults } from 'react-instantsearch-dom'
+import { InstantSearch, Index, connectStateResults, connectHits } from 'react-instantsearch-dom'
 import algoliasearch from 'algoliasearch/lite'
 import config from '../../../config'
 import DocHit from './hitComps'
 import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
+
+const NO_LINE_SELECTED = -1
+const UP_KEY = 38
+const DOWN_KEY = 40
+const ENTER_KEY = 13
+const ESCAPE_KEY = 27
+
 
 const HitsWrapper = styled.div`
   display: none;
@@ -129,12 +136,39 @@ const Results = connectStateResults(
 export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
+  const [selectedIndex, setSelectedIndex] = React.useState(NO_LINE_SELECTED)
 
   const hideSearch = () => setShowHits(false)
 
   const showSearch = () => setShowHits(true)
 
+  const onKeyDown = (e: any) => {
+    const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
+    console.log(nbHits, selectedIndex, e.keyCode)
+    if(e && e.keyCode == ESCAPE_KEY) {
+      hideSearch()
+    }
+
+    // arrow up/down button should select next/previous list element
+    // if (e.keyCode === UP_KEY) {
+    //   if (selectedIndex > 0) {
+    //     setSelectedIndex(selectedIndex - 1)
+    //   } else {
+    //     setSelectedIndex(nbHits - 1)
+    //   }
+    // } else if (e.keyCode === DOWN_KEY) {
+    //   if (selectedIndex < nbHits - 1) {
+    //     setSelectedIndex(selectedIndex + 1)
+    //   } else {
+    //     setSelectedIndex(0)
+    //   }
+    // }
+  }
+
+  const setIndex = (index: number) => {console.log(index); setSelectedIndex(index)}
+
   React.useEffect(() => {
+   // document.addEventListener('keydown', onKeyDown)
     hitsStatus(showHits)
   }, [showHits, query])
 
@@ -145,14 +179,37 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} isOpened={showHits} />
-      <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} onIndexSet={setIndex} selectedIndex={selectedIndex}/>
+      {/* closeSearch={hideSearch} onIndexSet={setIndex} */}
+      {query !== '' && <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
-            <Hits hitComponent={DocHit} />
+            <Hits hitComponent={DocHit} selectedIndex={selectedIndex}/>
           </Results>
         </Index>
-      </HitsWrapper>
+      </HitsWrapper>}
     </InstantSearch>
   )
 }
+
+const Hits = connectHits(
+  ({
+    hits,
+    hitComponent,
+    onMouseHoverHit,
+    selectedIndex,
+    onMouseLeaverHits,
+  }:any) => (
+    <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
+      {hits.map((hit: any, index: number) => (
+        <li key={hit.objectID} className="ais-Hits-item">
+          {React.createElement(hitComponent, {
+            hit,
+            selected: index === selectedIndex,
+            onMouseHover: () => onMouseHoverHit(index),
+          })}
+        </li>
+      ))}
+    </ul>
+  )
+)
