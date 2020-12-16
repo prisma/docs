@@ -16,6 +16,7 @@ interface LayoutContentProps {
   toc: any
   tocDepth?: number
   slug?: string
+  homePage?: boolean
 }
 
 type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
@@ -26,6 +27,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
   tocDepth,
   location,
   slug,
+  homePage
 }) => {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
@@ -34,7 +36,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     display: flex;
     width: 100%;
     justify-content: center;
-    padding: 0 ${p => p.theme.space[24]};
+    //padding: 0 ${p => p.theme.space[24]};
     @media (max-width: ${p => p.theme.breakpoints.tablet}) {
       padding: 0;
     }
@@ -45,7 +47,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     position: relative;
     z-index: 100;
     // flex: 1;
-    max-width: 748px;
+    //max-width: 748px;
     width: 100%;
     @media (min-width: 0px) and (max-width: 1024px) {
       margin: 0;
@@ -89,7 +91,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
   `
 
   const Container = styled.div`
-    max-width: 1200px;
+    //max-width: 1200px;
     width: 100%;
     justify-content: center;
     display: flex;
@@ -120,19 +122,19 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     <ThemeProvider theme={theme}>
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
-        <Wrapper>
-          <Container>
-            <NotMobile id="sidebar-holder">
+        <Wrapper style={{padding: homePage ? '0' : '0 24px'}}>
+          <Container style={{maxWidth: homePage ? '100%' : '1200px'}}>
+            {!homePage && <NotMobile id="sidebar-holder">
               <SidebarLayout isMobile={false} location={location} slug={slug} />
-            </NotMobile>
-            <Content>
+            </NotMobile>}
+            <Content style={{maxWidth: homePage ? '100%' : '748px'}}>
               <MaxWidth>{children}</MaxWidth>
             </Content>
-            <TOCWrapper id="toc-holder">
+            {!homePage && <TOCWrapper id="toc-holder">
               {toc && toc.items && toc.items.length > 0 && (
                 <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
               )}
-            </TOCWrapper>
+            </TOCWrapper>}
           </Container>
         </Wrapper>
         <Footer footerProps={footer} />
