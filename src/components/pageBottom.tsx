@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useState, useCallback, ChangeEvent, MouseEvent } from 'react'
 import styled from 'styled-components'
 import Up from '../icons/Up'
 import Down from '../icons/Down'
@@ -13,8 +13,104 @@ const sentiments: any = {
   happy: 'Happy',
 }
 
-const gitIssueUrl = `https://github.com/prisma/prisma2-docs/issues/new?labels=kind/docs,content`
 const twitterShareUrl = `https://twitter.com/intent/tweet?text=I%27ve%20found%20this%20%40prisma%20docs%20page%20helpful%21%20`
+
+const PageBottom = ({ editDocsPath }: any) => {
+  const [submittedFeedback, setSubmittedFeedback] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [feedbackId, setFeedbackId] = useState(null)
+  const [submittedSentiment, setSubmittedSentiment] = useState(false)
+  const [sentiment, setSentiment] = useState(sentiments['happy'])
+
+  let location = useLocation()
+  const pageUrl = location ? location.pathname : '/'
+  const currentDocsPageURL = encodeURIComponent(location ? location.href : '/')
+
+  // Send the initial sentiment
+  const sendSentiment = useCallback(async () => {
+    const createdSetiment = await fetch(config.feedback.sentimentUrl, {
+      method: 'POST',
+      body: JSON.stringify({ pageUrl, sentiment }),
+    }).then(response => response.json())
+
+    setFeedbackId(createdSetiment.id)
+    setSubmittedSentiment(true)
+  }, [pageUrl, sentiment])
+
+  // Optional callback to add textual feedback
+  const sendFeedback = async (e) => {
+    e.preventDefault()
+    await fetch(config.feedback.feedbackUrl, {
+      method: 'POST',
+      body: JSON.stringify({ id: feedbackId, feedback }),
+    })
+    setSubmittedFeedback(true)
+  }
+
+  const handleFeedbackChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setFeedback(e.target.value)
+  }, [])
+
+  const handleSentiment = (e: MouseEvent<HTMLButtonElement>) => {
+    const selectedSentiment = e.currentTarget.id
+    setSentiment(sentiments[selectedSentiment])
+    sendSentiment()
+  }
+
+  return (
+    <PageBottomWrapper>
+      {!submittedSentiment ? (
+        <Feedback>
+          <h4>Was this helpful?</h4>
+          <div className="sentiments">
+            <button id="happy" onClick={handleSentiment}>
+              <Up />
+            </button>
+            <button id="unhappy" onClick={handleSentiment}>
+              <Down />
+            </button>
+          </div>
+        </Feedback>
+      ) : (
+        <Wrapper>
+          <Content>
+            {submittedFeedback ? (
+              <>
+                <Button
+                  color="dark"
+                  type="primary"
+                  href={`${twitterShareUrl}${currentDocsPageURL}`}
+                >
+                  <Twitter /> Share the Prisma docs on Twitter
+                </Button>
+              </>
+            ) : (
+              <FeedbackForm>
+                <Title>Any other feedback?</Title>
+                <form>
+                  <input
+                    type="text"
+                    name="feedback"
+                    onChange={handleFeedbackChange}
+                    value={feedback}
+                  />
+                  <button onClick={sendFeedback} type="submit"><Arrow /></button>
+                </form>
+              </FeedbackForm>
+            )}
+          </Content>
+        </Wrapper>
+      )}
+      {editDocsPath && (
+        <Link className="edit-git" to={`${editDocsPath}`}>
+          Edit this page on GitHub
+        </Link>
+      )}
+    </PageBottomWrapper>
+  )
+}
+
+export default PageBottom
 
 const PageBottomWrapper = styled.div`
   display: flex;
@@ -99,6 +195,7 @@ const Button = styled(ButtonWrapper)`
       stroke: ${p => p.theme.colors.white};
     }
   }
+  background: ${p => p.theme.colors.green}
   @media (min-width: 0px) and (max-width: 767px) {
     font-size: ${p => p.theme.fontSizes[12]};
     text-transform: none;
@@ -108,80 +205,72 @@ const Button = styled(ButtonWrapper)`
   }
 `
 
-const PageBottom = ({ editDocsPath }: any) => {
-  const [submitted, setSubmitted] = React.useState(false)
-  const [sentiment, setSentiment] = React.useState(sentiments['happy'])
+const FeedbackForm = styled.div`
+  position: relative;
+  margin-top: ${p => p.theme.space[24]};
+  display: flex;
+  align-items: center;
+  input {
+    background: ${p => p.theme.colors.white};
+    box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
+    border-radius: ${p => p.theme.radii.small};
+    width: 100%;
+    border: 0;
+    padding: ${p => p.theme.space[12]} 20px;
+    font-size: 100%;
+    font-family: Open Sans;
+    font-weight: normal;
 
-  let location = useLocation()
-  const pageUrl = location ? location.pathname : '/'
-  const currentDocsPageURL = encodeURIComponent(location ? location.href : '/')
-
-  const sendFeedback = async (selectedSentiment: string) => {
-    const body = JSON.stringify({ pageUrl, sentiment: sentiments[selectedSentiment] })
-    await fetch(config.feedback.function_name, {
-      method: 'POST',
-      mode: 'no-cors',
-      body,
-    })
+    &::placeholder {
+      color: ${p => p.theme.colors.gray500};
+    }
   }
+  button {
+    outline: 0;
+    position: absolute;
+    right: 24px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    circle {
+      transition: 0.2s fill ease;
+      fill: ${p => p.theme.colors.green500};
+    }
+    path {
+      transition: 0.2s stroke ease;
+      stroke: ${p => p.theme.colors.white};
+    }
+    &[disabled] {
+      cursor: default;
 
-  const handleSentiment = (e: any) => {
-    const selectedSentiment = e.currentTarget.id
-    setSentiment(sentiments[selectedSentiment])
-    setSubmitted(true)
-    sendFeedback(selectedSentiment)
+      circle {
+        fill: ${p => p.theme.colors.gray300};
+      }
+      path {
+        stroke: ${p => p.theme.colors.gray600};
+      }
+    }
   }
+`
 
-  return (
-    <PageBottomWrapper>
-      {!submitted ? (
-        <Feedback>
-          <h4>Was this helpful?</h4>
-          <div className="sentiments">
-            <button id="happy" onClick={handleSentiment}>
-              <Up />
-            </button>
-            <button id="unhappy" onClick={handleSentiment}>
-              <Down />
-            </button>
-          </div>
-        </Feedback>
-      ) : (
-        <Wrapper>
-          <Content>
-            <Title>Thank you for your feedback!</Title>
-            {sentiment !== 'Happy' ? (
-              <>
-                <P>
-                  We love to hear back from our community.
-                  <br />
-                  Tell us why on GitHub!
-                </P>
-                <Button target="_blank" href={gitIssueUrl} type="primary" color="dark">
-                  Tell us On GitHub
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  color="dark"
-                  type="primary"
-                  href={`${twitterShareUrl}${currentDocsPageURL}`}
-                >
-                  <Twitter /> Share the Prisma docs on Twitter
-                </Button>
-              </>
-            )}
-          </Content>
-        </Wrapper>
-      )}
-      {editDocsPath && (
-        <Link className="edit-git" to={`${editDocsPath}`}>
-          Edit this page on GitHub
-        </Link>
-      )}
-    </PageBottomWrapper>
-  )
-}
-
-export default PageBottom
+const Arrow = (props: any) => (
+  <svg
+    width="32"
+    height="32"
+    viewBox="0 0 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <circle cx="16" cy="16" r="16" fill="#E2E8F0" />
+    <path
+      d="M8 15.5H21.5M18 11L23 15.5L18 20"
+      stroke="#718096"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
