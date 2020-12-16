@@ -82,27 +82,109 @@ await prisma.post.update({
 
 ### Explicit relations
 
-Explicit relations mostly need to be created in cases where you would need to store extra fields in the join table or if you're introspecting an existing database that already has many-to-many relations setup. A sample schema for an explicit many-to-many relation would be something like:
+Explicit relations mostly need to be created in cases where you would need to store extra fields in the join table or if you're introspecting an existing database that already has many-to-many relations setup. This is the same schema used above but with an explicit join table:
 
 ```prisma
-model Recipe {
-  id          Int                   @id @default(autoincrement())
-  name        String
-  ingredients IngredientsInRecipe[]
+model Post {
+  id    Int        @id @default(autoincrement())
+  title String
+  tags  PostTags[]
 }
 
-model IngredientsInRecipe {
-  id           Int         @id @default(autoincrement())
-  recipe       Recipe?     @relation(fields: [recipeId], references: [id])
-  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
-  quantity     Int         @default(1)
-  recipeId     Int?
-  ingredientId Int?
+model PostTags {
+  id     Int   @id @default(autoincrement())
+  post   Post? @relation(fields: [postId], references: [id])
+  tag    Tag?  @relation(fields: [tagId], references: [id])
+  postId Int?
+  tagId  Int?
 }
 
-model Ingredient {
-  id      Int                   @id @default(autoincrement())
-  name    String                @unique
-  recipes IngredientsInRecipe[]
+model Tag {
+  id    Int        @id @default(autoincrement())
+  name  String     @unique
+  posts PostTags[]
 }
 ```
+
+Adding tags to a post would be a create into the join table (`PostTags`) as well as into the tags table (`Tag`):
+
+```ts
+await prisma.post.create({
+  data: {
+    title: 'Types of relations',
+    tags: {
+      create: [{ tag: { create: { name: 'dev' } } }, { tag: { create: { name: 'prisma' } } }],
+    },
+  },
+})
+```
+
+Also querying for posts along with their tags would require an extra `include` as follows:
+
+```ts
+await prisma.post.findMany({
+  include: { tags: { include: { tag: true } } },
+})
+```
+
+This will provide the following output:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Types of relations",
+    "tags": [
+      {
+        "id": 1,
+        "postId": 1,
+        "tagId": 1,
+        "tag": {
+          "id": 1,
+          "name": "prisma"
+        }
+      },
+      {
+        "id": 2,
+        "postId": 1,
+        "tagId": 2,
+        "tag": {
+          "id": 2,
+          "name": "dev"
+        }
+      }
+    ]
+  }
+]
+```
+
+Sometimes, it's not ideal to show the data for the join table in your UI. In this case, it's best to map the data after fetching it on the server itself and sending that response to the frontend.
+
+```ts
+const result = posts.map(post => {
+  return { ...post, tags: post.tags.map(tag => tag.tag) }
+})
+```
+
+This will provide an output similar to the one you received with implicit relations.
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Types of relations",
+    "tags": [
+      {
+        "id": 1,
+        "name": "prisma"
+      },
+      {
+        "id": 2,
+        "name": "dev"
+      }
+    ]
+  }
+]
+```
+
+So this was how you can implement Implicit and Explicit many-to-many relations and querying for them using Prisma.
