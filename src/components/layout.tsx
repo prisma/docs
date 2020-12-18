@@ -90,14 +90,14 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     }
   `
 
-  const Container = styled.div`
-    //max-width: 1200px;
+  const Container = styled.div<{ fullWidth?: boolean }>`
+    ${(p) => p.fullWidth ? 'max-width: 100%;': 'max-width: 1200px'};
     width: 100%;
     justify-content: center;
     display: flex;
-    margin-top: ${p => p.theme.space[40]};
+    ${(p) => p.fullWidth ? `margin-top: 0` :`margin-top: ${p.theme.space[40]};`}
     @media (max-width: 1024px) {
-      margin-top: ${p => p.theme.space[8]};
+      ${(p) => p.fullWidth ? `margin-top: 0` :`margin-top: ${p.theme.space[8]};`}
     }
   `
 
@@ -123,7 +123,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
         <Wrapper style={{padding: homePage ? '0' : '0 24px'}}>
-          <Container style={{maxWidth: homePage ? '100%' : '1200px'}}>
+          <Container fullWidth={homePage}>
             {!homePage && <NotMobile id="sidebar-holder">
               <SidebarLayout isMobile={false} location={location} slug={slug} />
             </NotMobile>}

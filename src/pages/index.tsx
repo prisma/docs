@@ -1,9 +1,83 @@
 import * as React from 'react';
 import Layout from '../components/layout';
 import styled from 'styled-components';
-import Schema from '../icons/Schema';
-import DbLink from '../icons/DbLink';
-import CLI from '../icons/CLI';
+import background from "images/home-bg.png"
+import listDot from "images/list-dot.png"
+import { ButtonSize, PrimaryButton, SpecialButton } from '../components/button';
+
+import Schema from '../icons/HomePage/Schema';
+import DbLink from '../icons/HomePage/DbLink';
+import CLI from '../icons/HomePage/CLI';
+import DoubleArrow from '../icons/HomePage/DoubleArrow';
+import OverviewIcon from '../icons/HomePage/Overview';
+import ComponentsIcon from '../icons/HomePage/Components';
+import DatabaseIcon from '../icons/HomePage/Database';
+import MoreIcon from '../icons/HomePage/More';
+
+
+const GeneralLinkData = [{
+  "category_name": "Overview",
+  "links": [{
+    "text": "What is Prisma",
+    "url": ""
+  },{
+    "text": "Why Prisma?",
+    "url": ""
+  },{
+    "text": "Prisma in your stack",
+    "url": ""
+  },{
+    "text": "Under the hood ",
+    "url": ""
+  }]
+}, {
+  "category_name": "Overview",
+  "links": [{
+    "text": "What is Prisma",
+    "url": ""
+  },{
+    "text": "Why Prisma?",
+    "url": ""
+  },{
+    "text": "Prisma in your stack",
+    "url": ""
+  },{
+    "text": "Under the hood ",
+    "url": ""
+  }]
+}, 
+{
+  "category_name": "Overview",
+  "links": [{
+    "text": "What is Prisma",
+    "url": ""
+  },{
+    "text": "Why Prisma?",
+    "url": ""
+  },{
+    "text": "Prisma in your stack",
+    "url": ""
+  },{
+    "text": "Under the hood ",
+    "url": ""
+  }]
+}, {
+  "category_name": "Overview",
+  "links": [{
+    "text": "What is Prisma",
+    "url": ""
+  },{
+    "text": "Why Prisma?",
+    "url": ""
+  },{
+    "text": "Prisma in your stack",
+    "url": ""
+  },{
+    "text": "Under the hood ",
+    "url": ""
+  }]
+}]
+
 
 const Summary = styled.div`
   font-family: 'Open Sans';
@@ -11,10 +85,57 @@ const Summary = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  h2 {
+  background: url(${background}) center -150px no-repeat;
+  h1 {
     font-weight: bold;
+    font-family: Montserrat;
+    font-size: 32px;
+    margin: 0;
+  }
+
+  p {
+    max-width: 750px;
+    width: 100%;
+    color: #4A5568;
+    line-height: 24px;
+    margin: 32px 0;
+    text-align: center;
+
+    a {
+      color: inherit !important;
+      text-decoration: underline;
+      cursor: pointer;
+    }
   }
 `;
+
+const List = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin-left: 1rem;
+  list-style-image: url(${listDot});
+  li {
+    padding-left: 8px;
+    margin-top: 10px;
+
+    a {
+      color: #2D3748 !important;
+      cursor: pointer;
+    }
+  }
+`
+
+const SummaryLinks = styled.div`
+    max-width: 435px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+  a {
+    text-transform: uppercase !important;
+    color: #ffffff !important;
+    font-weight: bold;
+  }
+`
 
 const QuickLinks = styled.div`
   background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 100%), #edf2f7;
@@ -22,6 +143,13 @@ const QuickLinks = styled.div`
   flex-direction: column;
   align-items: center;
   padding: ${p => p.theme.space[48]} 0;
+
+  h4 {
+    text-transform: uppercase !important;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    font-size: 14px;
+  }
 `;
 
 const GenaralLinks = styled.div`
@@ -29,6 +157,9 @@ const GenaralLinks = styled.div`
   justify-content: space-around;
   max-width: 996px;
   width: 100%;
+  svg {
+    margin-left: -6px;
+  }
 `;
 
 const Row = styled.div`
@@ -57,24 +188,48 @@ const LinkCard = styled.div`
 const Homepage = () => (
   <Layout homePage={true}>
     <Summary>
-      <h2>Prisma Documentation</h2>
+      <h1>Prisma Documentation</h1>
       <p>
-        To get started with Prisma, choose one of our getting started tutorials or explore our
-        ready-to-run examples on GitHub. Join our thriving community on Slack and GitHub for help
+        To get started with Prisma, choose one of our <a>getting started tutorials</a> or explore our 
+        <a> ready-to-run examples on GitHub</a>. Join our thriving community on <a>Slack</a> and <a>GitHub</a> for help
         and ideas.
       </p>
-      <div>
-        <a>Quick Start</a>
-        <a>Set up Prisma</a>
-        <a>Examples</a>
-      </div>
+      <SummaryLinks>
+        <SpecialButton
+          href=""
+          size={ButtonSize.SMALL}
+          target="_blank"
+        >
+          <DoubleArrow/>&nbsp;
+          Quick Start
+        </SpecialButton>
+        <PrimaryButton
+          href=""
+          icon=""
+          size={ButtonSize.SMALL}
+          target="_blank"
+          style={{background: '#2D3748'}}
+        >
+          Set up Prisma
+        </PrimaryButton>
+        <PrimaryButton
+          href=""
+          icon=""
+          size={ButtonSize.SMALL}
+          target="_blank"
+          style={{background: '#2D3748'}}
+        >
+          Examples
+        </PrimaryButton>
+       
+      </SummaryLinks>
     </Summary>
     <QuickLinks>
       <GenaralLinks>
         <div>
-          <span>I</span>
+          <OverviewIcon/>
           <h4>Overview</h4>
-          <ul>
+          <List>
             <li>
               <a>What is Prisma?</a>
             </li>
@@ -90,12 +245,12 @@ const Homepage = () => (
             <li>
               <a>What is Prisma?</a>
             </li>
-          </ul>
+          </List>
         </div>
         <div>
-          <span>I</span>
-          <h4>Overview</h4>
-          <ul>
+          <ComponentsIcon/>
+          <h4>Components</h4>
+          <List>
             <li>
               <a>What is Prisma?</a>
             </li>
@@ -111,12 +266,12 @@ const Homepage = () => (
             <li>
               <a>What is Prisma?</a>
             </li>
-          </ul>
+          </List>
         </div>
         <div>
-          <span>I</span>
-          <h4>Overview</h4>
-          <ul>
+          <DatabaseIcon/>
+          <h4>Database Connectors</h4>
+          <List>
             <li>
               <a>What is Prisma?</a>
             </li>
@@ -132,12 +287,12 @@ const Homepage = () => (
             <li>
               <a>What is Prisma?</a>
             </li>
-          </ul>
+          </List>
         </div>
         <div>
-          <span>I</span>
-          <h4>Overview</h4>
-          <ul>
+        <MoreIcon/>
+          <h4>More</h4>
+          <List>
             <li>
               <a>What is Prisma?</a>
             </li>
@@ -153,7 +308,7 @@ const Homepage = () => (
             <li>
               <a>What is Prisma?</a>
             </li>
-          </ul>
+          </List>
         </div>
       </GenaralLinks>
 
@@ -248,6 +403,55 @@ const Homepage = () => (
             </li>
           </ul>
           </LinkCard>
+      </Row>
+
+      <h4>More useful resources</h4>
+      <hr/>
+      <Row>
+      <ul>
+            <li>
+              <a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+            <li>
+						<a>datasource</a>
+            </li>
+          </ul>
       </Row>
 
     </QuickLinks>
