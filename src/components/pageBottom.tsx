@@ -30,6 +30,7 @@ const PageBottom = ({ editDocsPath }: any) => {
   const sendSentiment = useCallback(async () => {
     const createdSetiment = await fetch(config.feedback.sentimentUrl, {
       method: 'POST',
+      mode: 'cors',
       body: JSON.stringify({ pageUrl, sentiment }),
     }).then(response => response.json())
 
@@ -42,6 +43,7 @@ const PageBottom = ({ editDocsPath }: any) => {
     e.preventDefault()
     await fetch(config.feedback.feedbackUrl, {
       method: 'POST',
+      mode: 'cors',
       body: JSON.stringify({ id: feedbackId, feedback }),
     })
     setSubmittedFeedback(true)
