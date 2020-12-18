@@ -4,33 +4,40 @@ metaTitle: 'Logging (Reference)'
 metaDescription: 'Learn how to configure Prisma Client to log the raw SQL queries it sends to the database and other information.'
 ---
 
-## Overview
+<TopBlock>
 
-You can view the generated database queries that Prisma Client sends to your database as well as warnings and other information by configuring different _log levels_ in the `PrismaClient` constructor. 
+Use the `PrismaClient` [`log`](../../../reference/api-reference/prisma-client-reference#log) <span class="api"></span> parameter to configure [log levels](../../../reference/api-reference/prisma-client-reference#log-levels) <span class="api"></span>, including warnings, errors, and information about the queries sent to the database.
 
+Prisma supports two types of logging:
 
+* Logging to [stdout](https://en.wikipedia.org/wiki/Standard_streams) (default)
+* Event-based logging (use [`$on()`](../../../reference/api-reference/prisma-client-reference#on) <span class="api"></span> method to [subscribe to event](#subscribe-to-events))
 
-By default, logs are printed to [stdout](https://en.wikipedia.org/wiki/Standard_streams) so you can directly observe them. Alternatively, you can also configure event-based logging and observe the logs by providing a callback to the `$on()` function.
+</TopBlock>
 
-### Logging to stdout
+## Log to stdout
 
-If you want to print your logs to stdout, you can provide the `LogLevel` values directly to the `log` option:
+The simplest way to print _all_ log levels to stdout is to pass in an array `LogLevel` objects:
 
 ```ts
 const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn'],
+  log: ['query', 'info', `warn`, `error`],
 });
 ```
 
-Since stdout is the default, the above code snippet is equivalent to the following one where you're explicitly passing `stdout` to the `emit` option:
+This is short form of passing in an array of `LogDefinition` objects where the value of `emit` is always `stdout`:
 
 ```ts
 const prisma = new PrismaClient({
   log: [
     {
-      emit: 'stdout',
+      emit: 'event',
       level: 'query',
     },
+    {
+      emit: 'stdout',
+      level: 'error',
+    },    
     {
       emit: 'stdout',
       level: 'info',
@@ -43,33 +50,40 @@ const prisma = new PrismaClient({
 });
 ```
 
-### Event-based logging
+## Event-based logging
 
-If you want to apply some custom logic to your logs, you can also set `emit` to `event`:
+To use event-based logging:
+
+1. Set `emit` to `event` for a specific log level, such as query
+2. Use the `$on()` method to subscribe to the event
+
+The following example subscribes to all `query` events:
 
 ```ts
 const prisma = new PrismaClient({
   log: [
     {
-      emit: 'event',
-      level: 'query',
+|      emit: 'event',
+|      level: 'query',
     },
     {
-      emit: 'event',
+      emit: 'stdout',
+      level: 'error',
+    },    
+    {
+      emit: 'stdout',
       level: 'info',
     },
     {
-      emit: 'event',
+      emit: 'stdout',
       level: 'warn',
     },
   ],
 });
 
-// ... must now call prisma.$on(...) in order to handle the logging events
+|prisma.$on('query', e => {
+|  console.log(e)
+|})
 ```
 
-If you do this, you need to call the `.$on` function on your `PrismaClient` instance and provide a callback function which then receives the logging event. Depending on the selected log level, the input event will carry different arguments.
-
-
-
-Note that `query` contains the SQL query and `params` contains any query parameters for the SQL query.
+The exact [event (`e`) type and the properties available](/reference/api-reference/prisma-client-reference#event-types) <span class="api"></span> depends on the log level.
