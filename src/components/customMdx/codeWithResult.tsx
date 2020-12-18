@@ -40,7 +40,7 @@ const Wrapper = styled.div`
     background-color: var(--main-font-color) !important;
     color: var(--code-inline-bgd-color) !important;
     border-radius: 0px 0px 8px 8px;
-    margin-top: -13px;
+    margin-top: -16px;
 
     pre {
       background-color: var(--main-font-color) !important;
