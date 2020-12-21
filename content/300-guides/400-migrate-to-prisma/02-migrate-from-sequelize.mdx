@@ -453,68 +453,78 @@ Also note that you can rename [relation fields](../../concepts/components/prisma
 Here's an adjusted version of the Prisma schema that addresses these points:
 
 ```prisma file=prisma/schema.prisma
-model Categories {
-  id             Int              @id @default(autoincrement())
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id             Int                @id @default(autoincrement())
   name           String
   createdAt      DateTime
   updatedAt      DateTime
-  PostCategories PostCategories[]
+  PostCategories PostToCategories[]
 
-  @@map("category")
+  @@map("Categories")
 }
 
-model PostCategories {
+model PostToCategories {
   createdAt  DateTime
   updatedAt  DateTime
   CategoryId Int
   PostId     Int
-  Categories Categories @relation(fields: [CategoryId], references: [id])
-  Posts      Posts      @relation(fields: [PostId], references: [id])
+  Categories Category @relation(fields: [CategoryId], references: [id])
+  Posts      Post     @relation(fields: [PostId], references: [id])
 
   @@id([CategoryId, PostId])
   @@map("PostCategories")
 }
 
-model Posts {
-  id             Int              @id @default(autoincrement())
+model Post {
+  id             Int                @id @default(autoincrement())
   title          String
   content        String?
-  published      Boolean?         @default(false)
+  published      Boolean?           @default(false)
   createdAt      DateTime
   updatedAt      DateTime
   authorId       Int?
-  Users          Users?           @relation(fields: [authorId], references: [id])
-  PostCategories PostCategories[]
+  Users          User?              @relation(fields: [authorId], references: [id])
+  PostCategories PostToCategories[]
 
-  @@map("post")
+  @@map("Posts")
 }
 
-model Profiles {
+model Profile {
   id        Int      @id @default(autoincrement())
   bio       String
   createdAt DateTime
   updatedAt DateTime
   userId    Int?
-  Users     Users?   @relation(fields: [userId], references: [id])
+  Users     User?    @relation(fields: [userId], references: [id])
 
-  @@map("profile")
+  @@map("Profiles")
 }
 
 model SequelizeMeta {
   name String @id
 }
 
-model Users {
-  id        Int       @id @default(autoincrement())
+model User {
+  id        Int      @id @default(autoincrement())
   name      String?
-  email     String    @unique
+  email     String   @unique
   createdAt DateTime
   updatedAt DateTime
-  Posts     Posts[]
-  Profiles  Profiles?
+  Posts     Post[]
+  Profiles  Profile?
 
-  @@map("user")
+  @@map("Users")
 }
+
 ```
 
 ## Step 3. Install Prisma Client
@@ -582,9 +592,9 @@ Here is how the same route is implemented using Prisma Client:
 ```js file=src/controllers/post.js
 const feed = async (req, res) => {
   try {
-    const feed = await prisma.posts.findMany({
+    const feed = await prisma.post.findMany({
       where: { published: true },
-      include: { author: true, categories: true }
+      include: { author: true, category: true }
     })
     return res.json(feed)
   } catch (error) {
@@ -637,7 +647,7 @@ const filterPosts = async (req, res) => {
   const { searchString } = req.query
 
   try {
-    const filteredPosts = prisma.posts.findMany({
+    const filteredPosts = prisma.post.findMany({
       where: {
         OR: [{
           title: { contains: searchString }
@@ -684,7 +694,7 @@ const getPostById = async (req, res) => {
   const { postId } = req.params
 
   try {
-    const post = await prisma.posts.findUnique({
+    const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { author: true }
     })
@@ -732,7 +742,7 @@ const createUser = async (req, res) => {
   const { name, email } = req.body
 
   try {
-    const user = await prisma.users.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
@@ -777,7 +787,7 @@ const createDraft = async (req, res) => {
   const { title, content, authorEmail } = req.body
 
   try {
-    const draft = await prisma.posts.create({
+    const draft = await prisma.post.create({
       data: {
         title,
         content,
@@ -831,7 +841,7 @@ const setUserBio = async (req, res) => {
   const { bio } = req.body
 
   try {
-    const user = await prisma.users.update({
+    const user = await prisma.user.update({
       where: { id: userId },
       data: {
         profile: {
@@ -893,7 +903,7 @@ const addPostToCategory = async (req, res) => {
   const { postId, categoryId } = req.query
 
   try {
-    const post = await prisma.posts.update({
+    const post = await prisma.post.update({
       data: {
         postsToCategories: {
           create: {
@@ -919,9 +929,9 @@ const addPostToCategory = async (req, res) => {
 Note that this Prisma Client can be made less verbose by modeling the relation as an [implicit many-to-many relation](#implicit-many-to-many-relations) instead. In that case, the query would look as follows:
 
 ```js file=src/controllers/posts.js
-const post = await prisma.posts.update({
+const post = await prisma.post.update({
   data: {
-    categories: {
+    category: {
       connect: { id: categoryId },
     },
   },
@@ -930,6 +940,65 @@ const post = await prisma.posts.update({
 ```
 
 ## More
+
+### Primary Key Column 
+
+By default, Sequelize defines a `primaryKey` and used `id` with the autoby default if not defined. This is optional. 
+If you would like to set your own primary key, you can use the `primaryKey: true` and define your preferred data type in your field of choice:
+
+```js
+// changing the primary key column
+module.exports = (sequelize, DataTypes) => {
+  const Post = sequelize.define("Post", {
+    postId : {
+      type: DataTypes.INTEGER,
+      primaryKey: true
+    }
+  })
+  return Post
+}
+
+// changing the id DataType
+module.exports = (sequelize, DataTypes) => {
+  const Post = sequelize.define("Post", {
+    id: {
+      type: DataTypes.UUID, // alternative: DataTypes.STRING
+      primaryKey: true
+    }
+  })
+  return Post
+}
+```
+
+### Table name inference
+
+Sequelize infers table names from the model name. When the name of a table isn't provided Sequelize automatically pluralizes the model name and uses that as the table name using a library called [inflection](https://www.npmjs.com/package/inflection). 
+Prisma on the other hand maps the model name to the table name in your database [modelling your data](../../concepts/components/prisma-schema/data-model/). 
+If you wish to change this default behaviour in Sequelize, you can either enforce the table name to be equal to the model name or provide the table name directly:
+
+```js
+// enforcing table name to be equal to model name
+module.exports = (sequelize, DataTypes) => {
+  const Post = sequelize.define("Post", {
+    // ... attributes
+  }, {
+    freezeTableName: true
+  })
+  return Post
+}
+```
+
+```js
+// providing the table name directly
+module.exports = (sequelize, DataTypes) => {
+  const Post = sequelize.define("Post", {
+    // ... attributes
+  }, {
+    tableName: 'Post'
+  })
+  return Post
+}
+```
 
 ### Implicit many-to-many relations
 
@@ -962,8 +1031,6 @@ module.exports = (sequelize, DataTypes) => {
   }
   return Post
 }
-
-
 ```
 
 ```js
@@ -982,7 +1049,6 @@ module.exports = (sequelize, DataTypes) => {
   }
   return Category
 }
-
 ```
 
 When you start your application, Sequelize will create the the tables for you - based on these models:
