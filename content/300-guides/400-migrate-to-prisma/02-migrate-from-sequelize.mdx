@@ -424,7 +424,66 @@ model Users {
 }
 ```
 
-The generated Prisma models represent your database tables and are the foundation for your programmatic Prisma Client API which allows you to send queries to your database.
+The generated Prisma models represent your database tables and are the foundation for your programmatic Prisma Client API which allows you to send queries to your database. 
+We'll adjust the `createdAt` and `updatedAt` fields in our models. Sequelize doesn't add the `DEFAULT` constraint to `createdAt` when creating the tables in the database. 
+Therefore, we'll add `@default(now())` and `@updatedAt` attributes to the `createdAt` and `updatedAt` columns respectively.
+Our updated schema will be as follows:
+
+```prisma file=prisma/schema.prisma
+model Categories {
+  id             Int              @id @default(autoincrement())
+  name           String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  PostCategories PostCategories[]
+}
+
+model PostCategories {
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  CategoryId Int
+  PostId     Int
+  Categories Categories @relation(fields: [CategoryId], references: [id])
+  Posts      Posts      @relation(fields: [PostId], references: [id])
+
+  @@id([CategoryId, PostId])
+}
+
+model Posts {
+  id             Int              @id @default(autoincrement())
+  title          String
+  content        String?
+  published      Boolean?         @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  authorId       Int?
+  Users          Users?           @relation(fields: [authorId], references: [id])
+  PostCategories PostCategories[]
+}
+
+model Profiles {
+  id        Int      @id @default(autoincrement())
+  bio       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int?
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model SequelizeMeta {
+  name String @id
+}
+
+model Users {
+  id        Int       @id @default(autoincrement())
+  name      String?
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Posts     Posts[]
+  Profiles  Profiles?
+}
+```
 
 ### 2.4. Adjust the Prisma schema (optional)
 
@@ -456,35 +515,35 @@ datasource db {
 model Category {
   id             Int                @id @default(autoincrement())
   name           String
-  createdAt      DateTime
-  updatedAt      DateTime
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   PostCategories PostToCategories[]
 
   @@map("Categories")
 }
 
 model PostToCategories {
-  createdAt  DateTime
-  updatedAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   CategoryId Int
   PostId     Int
   Categories Category @relation(fields: [CategoryId], references: [id])
-  Posts      Post     @relation(fields: [PostId], references: [id])
+  posts      Post     @relation(fields: [PostId], references: [id])
 
   @@id([CategoryId, PostId])
   @@map("PostCategories")
 }
 
 model Post {
-  id             Int                @id @default(autoincrement())
-  title          String
-  content        String?
-  published      Boolean?           @default(false)
-  createdAt      DateTime
-  updatedAt      DateTime
-  authorId       Int?
-  Users          User?              @relation(fields: [authorId], references: [id])
-  PostCategories PostToCategories[]
+  id               Int                @id @default(autoincrement())
+  title            String
+  content          String?
+  published        Boolean?           @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  authorId         Int?
+  author           User?              @relation(fields: [authorId], references: [id])
+  PostToCategories PostToCategories[]
 
   @@map("Posts")
 }
@@ -492,10 +551,10 @@ model Post {
 model Profile {
   id        Int      @id @default(autoincrement())
   bio       String
-  createdAt DateTime
-  updatedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   userId    Int?
-  Users     User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@map("Profiles")
 }
@@ -508,14 +567,13 @@ model User {
   id        Int      @id @default(autoincrement())
   name      String?
   email     String   @unique
-  createdAt DateTime
-  updatedAt DateTime
-  Posts     Post[]
-  Profiles  Profile?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts     Post[]
+  profile   Profile?
 
   @@map("Users")
 }
-
 ```
 
 ## Step 3. Install Prisma Client
