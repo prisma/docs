@@ -3,7 +3,7 @@ import Layout from '../components/layout'
 import styled from 'styled-components'
 
 const NotFoundWrapper = styled.div`
-  font-family: 'Open Sans';
+  font-family: 'Inter';
   margin-top: 200px;
   padding: ${p => p.theme.space[40]};
   display: flex;
