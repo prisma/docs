@@ -55,7 +55,7 @@ const Wrapper = styled.div`
     }
 
     .show-btn {
-      font-family: Open Sans;
+      font-family: Inter;
       font-style: normal;
       font-weight: 600;
       font-size: 12px;
