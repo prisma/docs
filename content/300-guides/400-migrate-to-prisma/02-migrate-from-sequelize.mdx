@@ -150,7 +150,7 @@ The models have the following relations:
 
 The corresponding tables have been created using a generated Sequelize migration.
 
-In this guide, the route handlers are located in the `src/controllers` directory. The models/entities are located in the `src/models` directory. From there, they are pulled into a central `src/routes.js` file which is used to set up the required routes in `src/index.js`:
+In this guide, the route handlers are located in the `src/controllers` directory. The models are located in the `src/models` directory. From there, they are pulled into a central `src/routes.js` file which is used to set up the required routes in `src/index.js`:
 
 ```
 └── blog-sequelize
@@ -424,9 +424,12 @@ model Users {
 }
 ```
 
+### 2.4. Adjust `createdAt` and `updatedAt` fields
+
 The generated Prisma models represent your database tables and are the foundation for your programmatic Prisma Client API which allows you to send queries to your database. 
-We'll adjust the `createdAt` and `updatedAt` fields in our models. Sequelize doesn't add the `DEFAULT` constraint to `createdAt` when creating the tables in the database. 
-Therefore, we'll add `@default(now())` and `@updatedAt` attributes to the `createdAt` and `updatedAt` columns respectively.
+You'll adjust the `createdAt` and `updatedAt` fields in our models. Sequelize doesn't add the `DEFAULT` constraint to `createdAt` when creating the tables in the database. 
+Therefore, you'll add `@default(now())` and `@updatedAt` attributes to the `createdAt` and `updatedAt` columns respectively.
+To learn more how Prisma does this, you can read more [`@default(now())`](../../reference/api-reference/prisma-schema-reference#now) and [`@updatedAt`](../../reference/api-reference/prisma-schema-reference#updatedat) here. 
 Our updated schema will be as follows:
 
 ```prisma file=prisma/schema.prisma
@@ -485,7 +488,7 @@ model Users {
 }
 ```
 
-### 2.4. Adjust the Prisma schema (optional)
+### 2.5. Adjust the Prisma schema (optional)
 
 The models that were generated via introspection currently _exactly_ map to your database tables. In this section, you'll learn how you can adjust the naming of the Prisma models to adhere to [Prisma's naming conventions](../../reference/api-reference/prisma-schema-reference#naming-conventions).
 
@@ -498,7 +501,9 @@ As opposed to the current snake_case notation of Prisma models, Prisma's naming 
 
 You can adjust the naming by _mapping_ the Prisma model and field names to the existing table and column names in the underlying database using `@@map` and `@map`.
 
-Also note that you can rename [relation fields](../../concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural. 
+Also note that you can rename [relation fields](../../concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural.
+
+Sequelize generates a `SequelizeMeta` model that is used internally by the library that is not needed. Therefore, you'll manually delete it from the schema.
 
 Here's an adjusted version of the Prisma schema that addresses these points:
 
@@ -517,7 +522,7 @@ model Category {
   name           String
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
-  PostCategories PostToCategories[]
+  postCategories PostToCategories[]
 
   @@map("Categories")
 }
@@ -525,12 +530,12 @@ model Category {
 model PostToCategories {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  CategoryId Int
-  PostId     Int
-  Categories Category @relation(fields: [CategoryId], references: [id])
-  posts      Post     @relation(fields: [PostId], references: [id])
+  categoryId Int
+  postId     Int
+  categories Category @relation(fields: [categoryId], references: [id])
+  posts      Post     @relation(fields: [postId], references: [id])
 
-  @@id([CategoryId, PostId])
+  @@id([categoryId, postId])
   @@map("PostCategories")
 }
 
@@ -543,7 +548,7 @@ model Post {
   updatedAt        DateTime           @updatedAt
   authorId         Int?
   author           User?              @relation(fields: [authorId], references: [id])
-  PostToCategories PostToCategories[]
+  postToCategories PostToCategories[]
 
   @@map("Posts")
 }
@@ -557,10 +562,6 @@ model Profile {
   user      User?    @relation(fields: [userId], references: [id])
 
   @@map("Profiles")
-}
-
-model SequelizeMeta {
-  name String @id
 }
 
 model User {
@@ -615,7 +616,7 @@ const { Op } = require("sequelize")
 const { User } = require("../models")
 ```
 
-We'll update the controller imports as we migrate from Sequelize to Prisma:
+You'll update the controller imports as you migrate from Sequelize to Prisma:
 
 ```js file=src/controllers/post.js
 const prisma = require("../prisma")
@@ -664,7 +665,7 @@ const feed = async (req, res) => {
   try {
     const feed = await prisma.post.findMany({
       where: { published: true },
-      include: { author: true, PostToCategories: true },
+      include: { author: true, postToCategories: true },
     })
     return res.json(feed)
   } catch (error) {
@@ -969,9 +970,9 @@ const addPostToCategory = async (req, res) => {
   try {
     const post = await prisma.post.update({
       data: {
-        PostToCategories: {
+        postToCategories: {
           create: {
-            Categories: {
+            categories: {
               connect: { id: Number(categoryId) },
             },
           },
@@ -1004,7 +1005,7 @@ const post = await prisma.post.update({
 
 ## More
 
-### Primary Key Column 
+### Primary key column 
 
 By default, Sequelize defines a `primaryKey` and used `id` with the autoby default if not defined. This is optional. 
 If you would like to set your own primary key, you can use the `primaryKey: true` and define your preferred data type in your field of choice:
@@ -1076,7 +1077,7 @@ sequelize.define('User', {
 ```
 
 Prisma offers you the flexibility to define these fields in your model. You add the `createdAt` and [`updatedAt`](../../reference/api-reference/prisma-schema-reference#updatedat) fields by defining them explicitly in your model. 
-To set the `createdAt` field in your model, add the `default(now())` to the column. In order to set the `updatedAt` column, update your model by adding the `@updatedAt` attribute to the column.
+To set the `createdAt` field in your model, add the `default(now())` attribute to the column. In order to set the `updatedAt` column, update your model by adding the `@updatedAt` attribute to the column.
 
 ```prisma
 model User {
