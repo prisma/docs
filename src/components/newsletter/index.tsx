@@ -25,7 +25,7 @@ const NewsLetterWrapper = styled.div`
       border: 0;
       padding: ${p => p.theme.space[24]} 60px;
       font-size: 100%;
-      font-family: Open Sans;
+      font-family: Inter;
       font-weight: normal;
 
       &::placeholder {
