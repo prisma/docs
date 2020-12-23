@@ -5,15 +5,15 @@ import background from 'images/home-bg.png';
 import listDot from 'images/list-dot.png';
 import { ButtonSize, PrimaryButton, SpecialButton } from '../components/button';
 
-import Schema from '../icons/homepage/Schema';
-import DbLink from '../icons/homepage/DbLink';
-import CLI from '../icons/homepage/CLI';
-import DoubleArrow from '../icons/homepage/DoubleArrow';
-import OverviewIcon from '../icons/homepage/Overview';
-import ComponentsIcon from '../icons/homepage/Components';
-import DatabaseIcon from '../icons/homepage/Database';
-import MoreIcon from '../icons/homepage/More';
-import ArrowIcon from '../icons/homepage/Arrow';
+import Schema from '../icons/home/Schema';
+import DbLink from '../icons/home/DbLink';
+import CLI from '../icons/home/CLI';
+import DoubleArrow from '../icons/home/DoubleArrow';
+import OverviewIcon from '../icons/home/Overview';
+import ComponentsIcon from '../icons/home/Components';
+import DatabaseIcon from '../icons/home/Database';
+import MoreIcon from '../icons/home/More';
+import ArrowIcon from '../icons/home/Arrow';
 import { graphql, useStaticQuery } from 'gatsby';
 
 const icons: any = {
