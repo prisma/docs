@@ -96,7 +96,7 @@ const config = {
     GeneralLinkData:[
       {
         categoryName: 'Overview',
-        icon:' OverviewIcon',
+        icon:'OverviewIcon',
         links: [
           {
             text: 'What is Prisma',

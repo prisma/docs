@@ -277,7 +277,7 @@ const Homepage = () => {
           {GeneralLinkData.map((generalLink: any, index: number) => (
             <div>
               {icons[generalLink.icon]}
-              <CapTitle>{generalLink.category_name}</CapTitle>
+              <CapTitle>{generalLink.categoryName}</CapTitle>
               <List>
                 {generalLink.links.map((link: any) => (
                   <li key={index}>
@@ -319,7 +319,7 @@ const Homepage = () => {
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
               <ListTitle>
-                {rLinkData.category_name} &nbsp;
+                {rLinkData.categoryName} &nbsp;
                 <a href={rLinkData.mainUrl}>
                   <ArrowIcon />{' '}
                 </a>
