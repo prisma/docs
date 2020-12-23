@@ -206,6 +206,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 export default Code
 
 const CodeWrapper = styled.div`
+margin-top: ${p=>p.theme.space[24]};
+margin-bottom: ${p=>p.theme.space[24]};
   .file {
     font-weight: 600;
     color: ${p => p.theme.colors.gray600};
