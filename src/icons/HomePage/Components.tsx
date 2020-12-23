@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React from 'react'
 export default () => (
   <svg width="68" height="68" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_dd)">
