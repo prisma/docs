@@ -135,6 +135,7 @@ module.exports = {
     footer: config.footer,
     docsLocation: config.siteMetadata.docsLocation,
     redirects: config.redirects,
+    homepage: config.homepage
   },
   plugins,
 }

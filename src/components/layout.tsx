@@ -32,22 +32,21 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
-  const Wrapper = styled.div`
+  const Wrapper = styled.div<{fullWidth?: boolean}>`
     display: flex;
     width: 100%;
     justify-content: center;
-    //padding: 0 ${p => p.theme.space[24]};
+    ${(p) => p.fullWidth ? 'padding: 0': 'padding: 0 24px'};
     @media (max-width: ${p => p.theme.breakpoints.tablet}) {
       padding: 0;
     }
   `
 
-  const Content = styled.article`
+  const Content = styled.article<{fullWidth?: boolean}>`
     margin: 0 0 ${p => p.theme.space[16]};
+    ${(p) => p.fullWidth ? 'max-width: 100%': 'max-width: 748px'};
     position: relative;
     z-index: 100;
-    // flex: 1;
-    //max-width: 748px;
     width: 100%;
     @media (min-width: 0px) and (max-width: 1024px) {
       margin: 0;
@@ -56,7 +55,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
     @media (min-width: 1024px) and (max-width: 1200px) {
       margin: 0;
-      max-width: 570px;
+      ${(p) => p.fullWidth ? 'max-width: 100%': 'max-width: 570px'};
     }
   `
 
@@ -67,7 +66,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
         padding-top: 0;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
-        margin-top: 0.5rem;
+        margin-top: ${p => p.theme.space[8]};
       }
       @media (min-width: 0px) and (max-width: 1024px) {
         padding: 0 ${p => p.theme.space[24]};
@@ -122,12 +121,12 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     <ThemeProvider theme={theme}>
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
-        <Wrapper style={{padding: homePage ? '0' : '0 24px'}}>
+        <Wrapper fullWidth={homePage}>
           <Container fullWidth={homePage}>
             {!homePage && <NotMobile id="sidebar-holder">
               <SidebarLayout isMobile={false} location={location} slug={slug} />
             </NotMobile>}
-            <Content style={{maxWidth: homePage ? '100%' : '748px'}}>
+            <Content fullWidth={homePage}>
               <MaxWidth>{children}</MaxWidth>
             </Content>
             {!homePage && <TOCWrapper id="toc-holder">
