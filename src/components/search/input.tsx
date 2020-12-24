@@ -1,10 +1,10 @@
-import React from 'react';
-import { connectSearchBox } from 'react-instantsearch-dom';
-import styled from 'styled-components';
-import SearchPic from '../../icons/Search';
-import Clear from '../../icons/Clear';
-import useWindowDimensions from '../../hooks/useWindowDimensions';
-import SearchSlash from '../../icons/SearchSlash';
+import React from 'react'
+import { connectSearchBox } from 'react-instantsearch-dom'
+import styled from 'styled-components'
+import SearchPic from '../../icons/Search'
+import Clear from '../../icons/Clear'
+import useWindowDimensions from '../../hooks/useWindowDimensions'
+import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
   width: 250px;
@@ -16,62 +16,60 @@ const SearchBoxDiv = styled.div`
   }
 
   &.opened {
-  position: relative;
-  z-index: 100001;
-  max-width: 1200px;
-  width: 100%;
-  height: 77px;
-  background: ${p => p.theme.colors.white};
-  padding: ${p => p.theme.space[20]};
-  border-bottom: 1px solid ${p => p.theme.colors.gray300};
-  border-radius: ${p => p.theme.radii.small};
-
-  form {
+    position: relative;
+    z-index: 100001;
+    max-width: 1200px;
     width: 100%;
-    input {
-      color: ${p => p.theme.colors.gray700};
+    height: 77px;
+    background: ${p => p.theme.colors.white};
+    padding: ${p => p.theme.space[20]};
+    border-bottom: 1px solid ${p => p.theme.colors.gray300};
+    border-radius: ${p => p.theme.radii.small};
+
+    form {
+      width: 100%;
+      input {
+        color: ${p => p.theme.colors.gray700};
+      }
+    }
+
+    .clear {
+      background: \${p => p.theme.colors.gray300};
+      border-radius: 6px;
+      height: 36px;
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      svg path {
+        stroke: ${p => p.theme.colors.gray700};
+      }
+    }
+  }
+  @media (max-width: \${p => p.theme.breakpoints.phone}) {
+    width: auto;
+    flex: 1;
+    form {
+      width: 100%;
     }
   }
 
   .clear {
-    background: ${p => p.theme.colors.gray300};
-    border-radius: 6px;
-    height: 36px;
-    width: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg path {
-      stroke: ${p => p.theme.colors.gray700};
-    }
-  }
-
-}
-@media (max-width: \${p => p.theme.breakpoints.phone}) {
-  width: auto;
-  flex: 1;
-  form {
-    width: 100%;
-  }
-}
-
-.clear {
-  display: none;
-}
-
-form {
-  display: flex;
-  align-items: center;
-
-  button.ais-SearchBox-submit {
     display: none;
   }
-  button.ais-SearchBox-reset {
-    background: transparent;
-    border: transparent;
-    outline: none;
-  }
+
+  form {
+    display: flex;
+    align-items: center;
+
+    button.ais-SearchBox-submit {
+      display: none;
+    }
+    button.ais-SearchBox-reset {
+      background: transparent;
+      border: transparent;
+      outline: none;
+    }
 
   input {
     width: 100%;
@@ -81,10 +79,9 @@ form {
     font-family: ${p => p.theme.fonts.text};
     font-style: normal;
     font-weight: normal;
-    font-size: ${p => p.theme.fontSizes[16]};
+    font-size: \${p => p.theme.fontSizes[16]};
     line-height: 100%;
     border-width: 0;
-
     &::placeholder {
       content: 'Search';
       color: ${p => p.theme.colors.gray500};
@@ -99,97 +96,90 @@ form {
     -webkit-appearance: none;
   }
 
-}
+  }
 
-.slash {
-  border: 1px solid ${p => p.theme.colors.gray400};
-  border-radius: 4px;
-  color: ${p => p.theme.colors.gray400};
-  min-width: 18px;
-  display: flex;
-  justify-content: center;
-}
-
-@media (min-width: 0px) and (max-width: \${p => p.theme.breakpoints.tablet}) {
   .slash {
-    display: none;
+    border: 1px solid ${p => p.theme.colors.gray400};
+    border-radius: 4px;
+    color: ${p => p.theme.colors.gray400};
+    min-width: 18px;
+    display: flex;
+    justify-content: center;
+  }
+
+  @media (min-width: 0px) and (max-width: \${p => p.theme.breakpoints.tablet}) {
+    .slash {
+      display: none;
     }
   }
-`;
+`
 
 const SearchIcon = styled(SearchPic)`
   min-width: 1em;
   pointer-events: none;
   z-index: 100001;
   position: absolute;
-`;
+`
 
 const SearchSlashIcon = styled(SearchSlash)`
   pointer-events: none;
   z-index: 100001;
   position: absolute;
   right: 0;
-`;
+`
 
 const ClearIcon = styled(Clear)`
   cursor: pointer;
-`;
+`
 
-const DEBOUNCE_DELAY = 500;
-const ESCAPE_KEY = 27;
-const focusShortcuts = ['s', 191];
+const DEBOUNCE_DELAY = 500
+const ESCAPE_KEY = 27
+const focusShortcuts = ['s', 191]
 
-const SearchBox = ({
-  refine,
-  onFocus,
-  currentRefinement,
-  isOpened,
-  closeSearch,
-  ...rest
-}: any) => {
-  const [value, setValue] = React.useState(currentRefinement);
+const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, closeSearch, ...rest }: any) => {
+  const [value, setValue] = React.useState(currentRefinement)
 
-  const timeoutId = React.useRef(null);
-  const inputEl = React.useRef(null);
-  const { width } = useWindowDimensions();
-  const [placeholderText, setPlaceholderText] = React.useState('Search');
+  const timeoutId = React.useRef(null)
+  const inputEl = React.useRef(null)
+  const { width } = useWindowDimensions()
+  const [placeholderText, setPlaceholderText] = React.useState('Search')
 
   const onChange = (e: any) => {
-    const { value: newValue } = e.target;
+    const { value: newValue } = e.target
 
     // After the user manually cleared the input, call `refine` without waiting so that the search
     // closes instantly.
     if (newValue === '') {
-      return clearInput();
+      return clearInput()
     }
 
     // Otherwise, debounce the search to avoid triggering many queries at once, which could also
     // make the UI freeze.
-    window.clearTimeout(timeoutId.current);
-    timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY);
-    setValue(newValue);
-    inputEl.current.blur();
-    inputEl.current.focus();
-  };
+    window.clearTimeout(timeoutId.current)
+    timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY)
+    setValue(newValue)
+    inputEl.current.blur()
+    inputEl.current.focus()
+  }
 
   const clearInput = () => {
-    window.clearTimeout(timeoutId.current);
-    setValue('');
-    refine('');
-  };
+    window.clearTimeout(timeoutId.current)
+    setValue('')
+    refine('')
+  }
 
   // Focus shortcuts on keydown
   const onKeyDown = (e: any) => {
     if (e && e.keyCode == ESCAPE_KEY) {
-      closeSearch();
+      closeSearch()
     }
 
     const shortcuts = focusShortcuts.map(key =>
       typeof key === 'string' ? key.toUpperCase().charCodeAt(0) : key
-    );
+    )
 
-    const elt = e.target || e.srcElement;
-    const tagName = elt.tagName;
+    const elt = e.target || e.srcElement
+    const tagName = elt.tagName
     if (
       elt.isContentEditable ||
       tagName === 'INPUT' ||
@@ -197,34 +187,34 @@ const SearchBox = ({
       tagName === 'TEXTAREA'
     ) {
       // already in an input
-      return;
+      return
     }
 
-    const which = e.which || e.keyCode;
+    const which = e.which || e.keyCode
     if (shortcuts.indexOf(which) === -1) {
       // not the right shortcut
-      return;
+      return
     }
-    
-    inputEl.current.focus();
-    e.stopPropagation();
-    e.preventDefault();
-  };
+
+    inputEl.current.focus()
+    e.stopPropagation()
+    e.preventDefault()
+  }
 
   const onSubmit = (e: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    inputEl.current.blur();
+    e.preventDefault()
+    e.stopPropagation()
+    inputEl.current.blur()
 
-    return false;
-  };
+    return false
+  }
 
   React.useEffect(() => {
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown)
     if (width > 640) {
-      setPlaceholderText('Search Documentation...');
+      setPlaceholderText('Search Documentation...')
     }
-  }, []);
+  }, [])
 
   return (
     <SearchBoxDiv className={isOpened ? 'opened' : ''}>
@@ -249,8 +239,8 @@ const SearchBox = ({
         {!isOpened && <SearchSlashIcon />}
       </form>
     </SearchBoxDiv>
-  );
-};
+  )
+}
 
-const CustomSearchBox = connectSearchBox(SearchBox);
-export default CustomSearchBox;
+const CustomSearchBox = connectSearchBox(SearchBox)
+export default CustomSearchBox
