@@ -52,9 +52,9 @@ const HitComp = styled.div`
   }
 `
 
-const DocHit = ({ hit, selected }: any) =>
+const DocHit = ({ hit }: any) =>
   hit._distinctSeqID == 0 ? (
-    <HitComp style={{background: selected ? 'blue': 'white' }}>
+    <HitComp>
       <Link style={{ boxShadow: `none`, textDecoration: 'none'}} to={hit.path}>
         <ParentTitle slug={hit.slug} nonLink={true} />
         <h3>

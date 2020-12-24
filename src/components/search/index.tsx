@@ -7,12 +7,6 @@ import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
 
-const NO_LINE_SELECTED = -1
-const UP_KEY = 38
-const DOWN_KEY = 40
-const ENTER_KEY = 13
-const ESCAPE_KEY = 27
-
 
 const HitsWrapper = styled.div`
   display: none;
@@ -136,49 +130,13 @@ const Results = connectStateResults(
 export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
-  const [selectedIndex, setSelectedIndex] = React.useState(NO_LINE_SELECTED)
   const hideSearch = () => setShowHits(false)
 
   const showSearch = () => setShowHits(true)
 
-  // const onKeyDown = (e: any) => {
-  //   const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
-  //   console.log(nbHits, selectedIndex, e.keyCode)
-  //   if(e && e.keyCode == ESCAPE_KEY) {
-  //     hideSearch()
-  //   }
-
-  //  // arrow up/down button should select next/previous list element
-  //   else if (e.keyCode === UP_KEY) {
-  //     console.log('up')
-  //     if (selectedIndex > 0) {
-  //       setSelectedIndex(selectedIndex - 1)
-  //     } else {
-  //       setSelectedIndex(nbHits - 1)
-  //     }
-  //   } else if (e.keyCode === DOWN_KEY) {
-  //     console.log('down')
-  //     if (selectedIndex < nbHits - 1) {
-  //       setSelectedIndex(selectedIndex + 1)
-  //     } else {
-  //       setSelectedIndex(0)
-  //     }
-  //   }
-  // }
-
-  // const setIndex = (index: any) => {
-  //   setSelectedIndex(index)
-  // }
-
   React.useEffect(() => {
-   //document.addEventListener('keydown', onKeyDown)
     hitsStatus(showHits)
   }, [showHits, query])
-
-
-  // React.useEffect(() => {
-  //    console.log(selectedIndex)
-  //  }, [selectedIndex])
 
   return (
     <InstantSearch
@@ -188,11 +146,10 @@ export default function Search({ hitsStatus }: any) {
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
       <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} />
-      {/* closeSearch={hideSearch} onIndexSet={setIndex} */}
       {query !== '' && <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
-            <Hits hitComponent={DocHit} selectedIndex={selectedIndex}/>
+            <Hits hitComponent={DocHit} />
           </Results>
         </Index>
       </HitsWrapper>}
@@ -205,7 +162,7 @@ const Hits = connectHits(
     hits,
     hitComponent,
     onMouseHoverHit,
-    selectedIndex,
+    // selectedIndex,
     onMouseLeaverHits,
   }:any) => (
     <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
@@ -213,7 +170,7 @@ const Hits = connectHits(
         <li key={hit.objectID} className="ais-Hits-item">
           {React.createElement(hitComponent, {
             hit,
-            selected: index === selectedIndex,
+            // selected: index === selectedIndex,
             onMouseHover: () => onMouseHoverHit(index),
           })}
         </li>
