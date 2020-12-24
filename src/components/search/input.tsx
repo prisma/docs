@@ -24,9 +24,7 @@ const SearchBoxDiv = styled.div`
     background: ${p => p.theme.colors.white};
     padding: ${p => p.theme.space[20]};
     border-bottom: 1px solid ${p => p.theme.colors.gray300};
-
-    border-top-left-radius: ${p => p.theme.radii.small};
-    border-top-right-radius: ${p => p.theme.radii.small};
+    border-radius: ${p => p.theme.radii.small};
 
     form {
       width: 100%;
@@ -43,7 +41,6 @@ const SearchBoxDiv = styled.div`
       display: flex;
       align-items: center;
       justify-content: center;
-
       svg path {
         stroke: ${p => p.theme.colors.gray700};
       }
@@ -74,31 +71,31 @@ const SearchBoxDiv = styled.div`
       outline: none;
     }
 
-    input {
-      width: 100%;
-      background: transparent;
-      outline: none;
-      padding: 0rem ${p => p.theme.space[32]};
-      font-family: ${p => p.theme.fonts.text};
-      font-style: normal;
-      font-weight: normal;
-      font-size: ${p => p.theme.fontSizes[16]};
-      line-height: 100%;
-      border-width: 0;
-
-      &::placeholder {
-        content: 'Search';
-        color: ${p => p.theme.colors.gray500};
-        opacity: 1; /* Firefox */
-      }
+  input {
+    width: 100%;
+    background: transparent;
+    outline: none;
+    padding: 0rem ${p => p.theme.space[32]};
+    font-family: ${p => p.theme.fonts.text};
+    font-style: normal;
+    font-weight: normal;
+    font-size: ${p => p.theme.fontSizes[16]};
+    line-height: 100%;
+    border-width: 0;
+    &::placeholder {
+      content: 'Search';
+      color: ${p => p.theme.colors.gray500};
+      opacity: 1; /* Firefox */
     }
+  }
 
-    input[type='search']::-webkit-search-decoration,
-    input[type='search']::-webkit-search-cancel-button,
-    input[type='search']::-webkit-search-results-button,
-    input[type='search']::-webkit-search-results-decoration {
-      -webkit-appearance: none;
-    }
+  input[type='search']::-webkit-search-decoration,
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-results-button,
+  input[type='search']::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+  }
+
   }
 
   .slash {
@@ -136,15 +133,17 @@ const ClearIcon = styled(Clear)`
 `
 
 const DEBOUNCE_DELAY = 500
+const ESCAPE_KEY = 27
 const focusShortcuts = ['s', 191]
 
-const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: any) => {
+const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, closeSearch, ...rest }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
+
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
   const { width } = useWindowDimensions()
-  // const placeholderText = width > 640 ? 'Search Documentation...' : 'Search'
   const [placeholderText, setPlaceholderText] = React.useState('Search')
+
   const onChange = (e: any) => {
     const { value: newValue } = e.target
 
@@ -159,6 +158,8 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
     window.clearTimeout(timeoutId.current)
     timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY)
     setValue(newValue)
+    inputEl.current.blur()
+    inputEl.current.focus()
   }
 
   const clearInput = () => {
@@ -169,6 +170,10 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, ...rest }: an
 
   // Focus shortcuts on keydown
   const onKeyDown = (e: any) => {
+    if (e && e.keyCode == ESCAPE_KEY) {
+      closeSearch()
+    }
+
     const shortcuts = focusShortcuts.map(key =>
       typeof key === 'string' ? key.toUpperCase().charCodeAt(0) : key
     )
