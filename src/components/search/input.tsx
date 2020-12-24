@@ -34,7 +34,7 @@ const SearchBoxDiv = styled.div`
     }
 
     .clear {
-      background: \${p => p.theme.colors.gray300};
+      background: ${p => p.theme.colors.gray300};
       border-radius: 6px;
       height: 36px;
       width: 36px;
@@ -46,7 +46,7 @@ const SearchBoxDiv = styled.div`
       }
     }
   }
-  @media (max-width: \${p => p.theme.breakpoints.phone}) {
+  @media (max-width: ${p => p.theme.breakpoints.phone}) {
     width: auto;
     flex: 1;
     form {
@@ -79,7 +79,7 @@ const SearchBoxDiv = styled.div`
     font-family: ${p => p.theme.fonts.text};
     font-style: normal;
     font-weight: normal;
-    font-size: \${p => p.theme.fontSizes[16]};
+    font-size: ${p => p.theme.fontSizes[16]};
     line-height: 100%;
     border-width: 0;
     &::placeholder {
@@ -107,7 +107,7 @@ const SearchBoxDiv = styled.div`
     justify-content: center;
   }
 
-  @media (min-width: 0px) and (max-width: \${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
     .slash {
       display: none;
     }
