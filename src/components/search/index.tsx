@@ -137,40 +137,48 @@ export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
   const [selectedIndex, setSelectedIndex] = React.useState(NO_LINE_SELECTED)
-
   const hideSearch = () => setShowHits(false)
 
   const showSearch = () => setShowHits(true)
 
-  const onKeyDown = (e: any) => {
-    const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
-    console.log(nbHits, selectedIndex, e.keyCode)
-    if(e && e.keyCode == ESCAPE_KEY) {
-      hideSearch()
-    }
+  // const onKeyDown = (e: any) => {
+  //   const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
+  //   console.log(nbHits, selectedIndex, e.keyCode)
+  //   if(e && e.keyCode == ESCAPE_KEY) {
+  //     hideSearch()
+  //   }
 
-    // arrow up/down button should select next/previous list element
-    // if (e.keyCode === UP_KEY) {
-    //   if (selectedIndex > 0) {
-    //     setSelectedIndex(selectedIndex - 1)
-    //   } else {
-    //     setSelectedIndex(nbHits - 1)
-    //   }
-    // } else if (e.keyCode === DOWN_KEY) {
-    //   if (selectedIndex < nbHits - 1) {
-    //     setSelectedIndex(selectedIndex + 1)
-    //   } else {
-    //     setSelectedIndex(0)
-    //   }
-    // }
-  }
+  //  // arrow up/down button should select next/previous list element
+  //   else if (e.keyCode === UP_KEY) {
+  //     console.log('up')
+  //     if (selectedIndex > 0) {
+  //       setSelectedIndex(selectedIndex - 1)
+  //     } else {
+  //       setSelectedIndex(nbHits - 1)
+  //     }
+  //   } else if (e.keyCode === DOWN_KEY) {
+  //     console.log('down')
+  //     if (selectedIndex < nbHits - 1) {
+  //       setSelectedIndex(selectedIndex + 1)
+  //     } else {
+  //       setSelectedIndex(0)
+  //     }
+  //   }
+  // }
 
-  const setIndex = (index: number) => {console.log(index); setSelectedIndex(index)}
+  // const setIndex = (index: any) => {
+  //   setSelectedIndex(index)
+  // }
 
   React.useEffect(() => {
-   // document.addEventListener('keydown', onKeyDown)
+   //document.addEventListener('keydown', onKeyDown)
     hitsStatus(showHits)
   }, [showHits, query])
+
+
+  // React.useEffect(() => {
+  //    console.log(selectedIndex)
+  //  }, [selectedIndex])
 
   return (
     <InstantSearch
@@ -179,7 +187,7 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} onIndexSet={setIndex} selectedIndex={selectedIndex}/>
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} />
       {/* closeSearch={hideSearch} onIndexSet={setIndex} */}
       {query !== '' && <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>

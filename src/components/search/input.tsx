@@ -5,6 +5,7 @@ import SearchPic from '../../icons/Search';
 import Clear from '../../icons/Clear';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import SearchSlash from '../../icons/SearchSlash';
+import { number } from 'prop-types';
 
 const SearchBoxDiv = styled.div`
   width: 250px;
@@ -135,10 +136,11 @@ const ClearIcon = styled(Clear)`
   cursor: pointer;
 `;
 
+// const NO_LINE_SELECTED = -1
 const DEBOUNCE_DELAY = 500;
-const UP_KEY = 38;
-const DOWN_KEY = 40;
-const ENTER_KEY = 13;
+// const UP_KEY = 38;
+// const DOWN_KEY = 40;
+// const ENTER_KEY = 13;
 const ESCAPE_KEY = 27;
 const focusShortcuts = ['s', 191];
 
@@ -148,8 +150,9 @@ const SearchBox = ({
   currentRefinement,
   isOpened,
   closeSearch,
-  onIndexSet,
-  selectedIndex,
+  // onIndexSet,
+  //selectedIndex,
+  // handleKeyDown,
   ...rest
 }: any) => {
   const [value, setValue] = React.useState(currentRefinement);
@@ -160,6 +163,7 @@ const SearchBox = ({
   const { width } = useWindowDimensions();
   // const placeholderText = width > 640 ? 'Search Documentation...' : 'Search'
   const [placeholderText, setPlaceholderText] = React.useState('Search');
+
   const onChange = (e: any) => {
     const { value: newValue } = e.target;
 
@@ -186,33 +190,39 @@ const SearchBox = ({
 
   // Focus shortcuts on keydown
   const onKeyDown = (e: any) => {
-    const nbHits = document.querySelectorAll('.ais-Hits-list .ais-Hits-item')?.length;
-    console.log(nbHits, selectedIndex, e.keyCode);
+    // const nbHits = document.querySelectorAll('.ais-Hits-list .ais-Hits-item')?.length;
+    // console.log(nbHits, selectedIndex, e.keyCode);
     if (e && e.keyCode == ESCAPE_KEY) {
       closeSearch();
     }
 
-    // arrow up/down button should select next/previous list element
-    else if (e.keyCode === UP_KEY) {
-      if (selectedIndex > 0) {
-        // setSelectedIndex(selectedIndex - 1)
-        onIndexSet(selectedIndex - 1);
-      } else {
-        // setSelectedIndex(nbHits - 1)
-        onIndexSet(nbHits - 1);
-      }
-    } else if (e.keyCode === DOWN_KEY) {
-      if (selectedIndex < nbHits - 1) {
-        console.log(nbHits, selectedIndex)
-        // setSelectedIndex(selectedIndex + 1)
-        onIndexSet(selectedIndex + 1);
-      } else {
-        // setSelectedIndex(0)
-        onIndexSet(0);
-      }
-    }
+    
+    // // arrow up/down button should select next/previous list element
+    // else if (e.keyCode === UP_KEY) {
+    //   if (selectedIndex > 0) {
+    //     setSelectedIndex(selectedIndex - 1)
+    //     // onIndexSet(selectedIndex - 1);
+    //   } else {
+    //     setSelectedIndex(nbHits - 1)
+    //     // onIndexSet(nbHits - 1);
+    //   }
+    // } else if (e.keyCode === DOWN_KEY) {
+    //   if (selectedIndex < nbHits - 1) {
+    //     setSelectedIndex(selectedIndex + 1)
+    //     // onIndexSet(selectedIndex + 1);
+    //   } else {
+    //     setSelectedIndex(0)
+    //     // onIndexSet(0);
+    //   }
+    // }
 
     // onIndexSet(selectedIndex)
+
+    // if(e.keyCode === UP_KEY || e.keyCode === DOWN_KEY || e.keyCode === ENTER_KEY) {
+    //   handleKeyDown(e)
+      
+    // } 
+    // else {
 
     const shortcuts = focusShortcuts.map(key =>
       typeof key === 'string' ? key.toUpperCase().charCodeAt(0) : key
@@ -235,10 +245,11 @@ const SearchBox = ({
       // not the right shortcut
       return;
     }
-
+    
     inputEl.current.focus();
     e.stopPropagation();
     e.preventDefault();
+  // }
   };
 
   const onSubmit = (e: any) => {
@@ -255,6 +266,11 @@ const SearchBox = ({
       setPlaceholderText('Search Documentation...');
     }
   }, []);
+
+  // React.useEffect(() => {
+  //   onIndexSet(selectedIndex)
+  //   console.log(selectedIndex)
+  // }, [selectedIndex]);
 
   return (
     <SearchBoxDiv className={isOpened ? 'opened' : ''}>
