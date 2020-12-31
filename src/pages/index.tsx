@@ -1,27 +1,23 @@
 import * as React from 'react';
 import Layout from '../components/layout';
 import styled from 'styled-components';
-import background from 'images/home-bg.png';
+import background from 'images/home-bg.svg';
 import listDot from 'images/list-dot.png';
-import { ButtonSize, PrimaryButton, SpecialButton } from '../components/button';
+import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'; 
+import { graphql, useStaticQuery } from 'gatsby';
 
+import { ButtonSize, PrimaryButton, SpecialButton } from '../components/button';
 import Schema from '../icons/home/Schema';
 import DbLink from '../icons/home/DbLink';
 import CLI from '../icons/home/CLI';
-import DoubleArrow from '../icons/home/DoubleArrow';
-import OverviewIcon from '../icons/home/Overview';
-import ComponentsIcon from '../icons/home/Components';
-import DatabaseIcon from '../icons/home/Database';
-import MoreIcon from '../icons/home/More';
-import ArrowIcon from '../icons/home/Arrow';
-import { graphql, useStaticQuery } from 'gatsby';
+
 
 const icons: any = {
-  DoubleArrow: <DoubleArrow />,
-  OverviewIcon: <OverviewIcon />,
-  ComponentsIcon: <ComponentsIcon />,
-  DatabaseIcon: <DatabaseIcon />,
-  MoreIcon: <MoreIcon />,
+  DoubleArrow: <ChevronsRight opacity="0.5"/>,
+  OverviewIcon: <BookOpen color="#48BB78"/>,
+  ComponentsIcon: <Package color="#ED64A6"/>,
+  DatabaseIcon: <Database color="#4299E1"/>,
+  MoreIcon: <Menu color="#805AD5"/>,
   Schema: <Schema />,
   DbLink: <DbLink />,
   CLI: <CLI />,
@@ -74,7 +70,6 @@ const SubHeading = styled.h3`
   line-height: ${p => p.theme.space[24]};
   margin: 0;
   text-align: center;
-
   color: ${p => p.theme.colors.gray900};
 `;
 
@@ -87,6 +82,9 @@ const ListTitle = styled.h5`
   line-height: ${p => p.theme.space[16]};
   font-size: ${p => p.theme.fontSizes[16]};
   color: ${p => p.theme.colors.gray900};
+  svg {
+    transition: transform 0.3s ease-out 0s;
+  }
 `;
 
 const List = styled.ul<{ split?: boolean }>`
@@ -128,6 +126,8 @@ const SummaryLinks = styled.div`
     text-transform: uppercase !important;
     color: ${p => p.theme.colors.white} !important;
     font-weight: bold;
+    display: flex;
+    align-items: center;
   }
   @media (min-width: 0) and (max-width: 420px) {
     flex-direction: column;
@@ -169,9 +169,9 @@ const GenaralLinks = styled.div`
   justify-content: space-around;
   max-width: 996px;
   width: 100%;
-  svg {
-    margin-left: -6px;
-  }
+  // svg {
+  //   margin-left: -6px;
+  // }
   @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
     flex-direction: column;
   }
@@ -186,7 +186,7 @@ const Row = styled.div`
   margin-top: ${p => p.theme.space[32]};
 `;
 
-const LinkCard = styled.div`
+const LinkCard = styled.a`
   background: ${p => p.theme.colors.gray200};
   border-radius: ${p => p.theme.radii.medium};
   padding: 0 ${p => p.theme.space[24]};
@@ -195,7 +195,8 @@ const LinkCard = styled.div`
   position: relative;
   flex-grow: 1;
   margin-bottom: ${p => p.theme.space[40]};
-
+  text-decoration: none;
+  
   .icon {
     position: absolute;
     top: -30px;
@@ -203,6 +204,12 @@ const LinkCard = styled.div`
 
   h5 {
     margin-bottom: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  &:hover h5 svg {
+    transform: translateX(4px);
   }
 
   p {
@@ -218,6 +225,17 @@ const LinkCard = styled.div`
     max-width: 100% !important;
   }
 `;
+
+const IconHolder = styled.span`
+  background: ${p => p.theme.colors.white};
+  box-shadow: 0px 2px 4px rgba(26, 32, 44, 0.1), 0px 3px 6px rgba(26, 32, 44, 0.05);
+  border-radius: 50%;
+  height: 56px;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`
 
 const Homepage = () => {
   const { site } = useStaticQuery(query);
@@ -276,7 +294,7 @@ const Homepage = () => {
         <GenaralLinks>
           {GeneralLinkData.map((generalLink: any, index: number) => (
             <div>
-              {icons[generalLink.icon]}
+              <IconHolder>{icons[generalLink.icon]}</IconHolder>
               <CapTitle>{generalLink.categoryName}</CapTitle>
               <List>
                 {generalLink.links.map((link: any) => (
@@ -294,6 +312,7 @@ const Homepage = () => {
         <Row>
           {GuideLinkData.map((gLinkData: any, index: number) => (
             <LinkCard
+            href={gLinkData.url}
               key={index}
               style={{
                 maxWidth: gLinkData.small ? '274px' : '384px',
@@ -302,9 +321,9 @@ const Homepage = () => {
             >
               <ListTitle>
                 {gLinkData.title} &nbsp;
-                <a href={gLinkData.url}>
-                  <ArrowIcon />{' '}
-                </a>
+                
+                  <ArrowRight color="#A0AEC0"/>{' '}
+                
               </ListTitle>
               <NormalPara>{gLinkData.content}</NormalPara>
             </LinkCard>
@@ -315,14 +334,12 @@ const Homepage = () => {
         <NormalPara>{ReferenceText}</NormalPara>
         <Row>
           {ReferenceLinkData.map((rLinkData: any, index: number) => (
-            <LinkCard style={{ maxWidth: '316px' }} key={index}>
+            <LinkCard style={{ maxWidth: '316px' }} key={index} href={rLinkData.mainUrl}>
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
               <ListTitle>
                 {rLinkData.categoryName} &nbsp;
-                <a href={rLinkData.mainUrl}>
-                  <ArrowIcon />{' '}
-                </a>
+                  <ArrowRight color="#A0AEC0" />{' '}
               </ListTitle>
               <List>
                 {rLinkData.links.map((link: any, index: number) => (
