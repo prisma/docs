@@ -47,7 +47,6 @@ In this guide, you will start from scratch and create the database with [Prisma 
 
 > **Note:** Prisma Migrate is currently in [preview](/about/releases#preview) and is not recommended for use in production.
 
-
 ## 1. Download the example and install dependencies
 
 Open your terminal and navigate to a location of your choice. Create the directory that will hold the application code and download the example code:
@@ -191,7 +190,7 @@ Connection URL:
    postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__
 ```
 
-Copy the connection URL and set it as an environment variable (make sure your .env is located in the prisma directory): 
+Copy the connection URL and set it as an environment variable (make sure your .env is located in the prisma directory):
 
 ```no-lines
 export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__"
@@ -235,7 +234,7 @@ The first command will create an SQL migration file based on the Prisma schema i
 Deploy the app by pushing the changes to the Heroku app repository:
 
 ```no-lines
-git push heroku master
+git push heroku main
 ```
 
 This will trigger a build and deploy your application to Heroku.

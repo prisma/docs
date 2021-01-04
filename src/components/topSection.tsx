@@ -28,7 +28,7 @@ const Header = styled.div`
 
 const MainTitle = styled.h1`
   font-family: ${p => p.theme.fonts.display};
-  font-size: ${p => p.theme.fontSizes[32]} !important;
+  font-size: ${p => p.theme.fontSizes[40]} !important;
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;

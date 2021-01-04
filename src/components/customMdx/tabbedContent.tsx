@@ -65,10 +65,11 @@ const Tabs = styled.div`
   }
 `
 const Wrapper = styled.div`
-  margin-top: ${p => p.theme.space[32]};
+  margin-top: ${p => p.theme.space[24]};
   position: relative;
+  font-size: ${p => p.theme.fontSizes[14]};
 
-  tab > * {
+  tab pre > * {
     margin-top: 0.5em;
   }
 `
