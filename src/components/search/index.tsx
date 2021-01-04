@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { InstantSearch, Index, Hits, connectStateResults } from 'react-instantsearch-dom'
+import { InstantSearch, Index, connectStateResults, connectHits } from 'react-instantsearch-dom'
 import algoliasearch from 'algoliasearch/lite'
 import config from '../../../config'
 import DocHit from './hitComps'
 import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
+
 
 const HitsWrapper = styled.div`
   display: none;
@@ -129,7 +130,6 @@ const Results = connectStateResults(
 export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
-
   const hideSearch = () => setShowHits(false)
 
   const showSearch = () => setShowHits(true)
@@ -145,14 +145,36 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} isOpened={showHits} />
-      <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} />
+      {query !== '' && <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
             <Hits hitComponent={DocHit} />
           </Results>
         </Index>
-      </HitsWrapper>
+      </HitsWrapper>}
     </InstantSearch>
   )
 }
+
+const Hits = connectHits(
+  ({
+    hits,
+    hitComponent,
+    onMouseHoverHit,
+    // selectedIndex,
+    onMouseLeaverHits,
+  }:any) => (
+    <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
+      {hits.map((hit: any, index: number) => (
+        <li key={hit.objectID} className="ais-Hits-item">
+          {React.createElement(hitComponent, {
+            hit,
+            // selected: index === selectedIndex,
+            onMouseHover: () => onMouseHoverHit(index),
+          })}
+        </li>
+      ))}
+    </ul>
+  )
+)

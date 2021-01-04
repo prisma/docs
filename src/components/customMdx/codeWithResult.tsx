@@ -40,7 +40,7 @@ const Wrapper = styled.div`
     background-color: var(--main-font-color) !important;
     color: var(--code-inline-bgd-color) !important;
     border-radius: 0px 0px 8px 8px;
-    margin-top: -13px;
+    margin-top: -24px;
 
     pre {
       background-color: var(--main-font-color) !important;
@@ -55,7 +55,7 @@ const Wrapper = styled.div`
     }
 
     .show-btn {
-      font-family: Open Sans;
+      font-family: Inter;
       font-style: normal;
       font-weight: 600;
       font-size: 12px;
@@ -67,6 +67,15 @@ const Wrapper = styled.div`
       padding-left: 1rem;
       align-items: center;
       cursor: pointer;
+    }
+  }
+
+  @media (min-width: 0px) and (max-width: 767px) {
+    margin-left: -24px;
+    margin-right: -24px;
+    .pre-highlight {
+      margin-right: 0;
+      margin-left: 0;
     }
   }
 `
