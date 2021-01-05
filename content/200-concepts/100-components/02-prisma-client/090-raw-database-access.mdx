@@ -128,6 +128,7 @@ Be aware that:
 
 - `$executeRaw` does not support multiple queries in a single string (for example, `ALTER TABLE` and `CREATE TABLE` together).
 - Prisma Client submits prepared statements, and prepared statements only allow a subset of SQL statements (`START TRANSACTION`is not permitted). For example, ["MySQL: SQL Syntax Allowed in Prepared Statements"](https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html).
+- [`PREPARE` does not support `ALTER`](https://www.postgresql.org/docs/current/sql-prepare.html) - see [workaround](#inlinecodealterinlinecode-limitation-postgresql).
 
 ### Return type
 
@@ -231,6 +232,21 @@ const result = await prisma.$queryRaw(
   userName,
   `%${emailFragment}`
 );
+```
+
+#### <inlinecode>ALTER</inlinecode> limitation (PostgreSQL)
+
+PostgreSQL [does not support using `ALTER` in a prepared statement](https://www.postgresql.org/docs/current/sql-prepare.html), which means that the following queries will not work:
+
+```ts
+await prisma.$executeRaw`ALTER USER prisma WITH PASSWORD '${password}'` // Tagged template
+await prisma.$executeRaw(`ALTER USER prisma WITH PASSWORD $1`, newPassword) // Parameterized query
+```
+
+You can use the following query to [work around the issue](https://github.com/prisma/prisma-client-js/issues/940#issuecomment-748014175), but be aware that this is potentially **unsafe** as `${password}` is not escaped:
+
+```ts
+await prisma.$executeRaw(`ALTER USER prisma WITH PASSWORD '${password}'`)
 ```
 
 ## SQL injection

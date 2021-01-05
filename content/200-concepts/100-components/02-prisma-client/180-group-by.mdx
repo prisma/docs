@@ -1,7 +1,7 @@
 ---
 title: 'Group by'
 metaTitle: 'Group by (Reference)'
-metaDescription: 'Use Prisma Client to group rows that have the same values.'
+metaDescription: 'Use Prisma Client to group records by one or more fields and perform aggregations.'
 preview: true
 ---
 
@@ -44,7 +44,7 @@ generator client {
 
 </TopBlock>
 
-## `groupBy` and filtering
+## <inlinecode>groupBy</inlinecode> and filtering
 
 `groupBy` supports two levels of filtering: `where` and `having`.
 
@@ -66,11 +66,11 @@ const groupUsers = await prisma.user.groupBy({
 })
 ```
 
-### Filter groups with `having`
+### Filter groups with <inlinecode>having</inlinecode>
 
 Use `having` to filter **entire groups** by an aggregate value such as the sum or average of a field, not individual records - for example, only return groups where the _average_ `profileViews` is greater than 100:
 
-```ts
+```ts highlight=11-17;normal
 const groupUsers = await prisma.user.groupBy({
   by: ["country"],
   where: {
@@ -91,28 +91,34 @@ const groupUsers = await prisma.user.groupBy({
 })
 ```
 
-```js file=test.ts highlight=2;add|4;delete|6,7;edit|9-12;normal
-async function main() {  
-  added code 
- 
-  deleted code   
-   
-  edited 
-  code 
-   
-  highlights 
-  over multiple 
-  lines can be done by using 
-  a hyphen 
-}    
-``` 
+#### Use case for <inlinecode>having</inlinecode>
 
-Within `having`, you can only filter on the following:
+The primary use case for `having` is to filter on aggregations. We recommend that you use `where` to reduce the size of your data set as far as possible _before_ grouping, because doing so ✔ reduces the number of records the database has to return and ✔ makes use of indices.
 
-* The aggregate value of any number field - for example, the `avg` or `sum` of profile views
-* Any field provided in `by`
+For example, the following query groups all users that are _not_ from Sweden or Ghana:
 
-However, it is more succinct and 
+```ts
+const fd = await prisma.user.groupBy({
+  by: ["country"],
+  where: {
+|      country: {
+|        notIn: ["Sweden", "Ghana"]
+|      }
+  },
+  sum: {
+    profileViews: true
+  }
+  having: {
+    profileViews: {
+      min: {
+        gte: 10
+      }
+    }
+  }    
+})
+```
+
+The following query technically achieves the same result, but excludes users from Ghana _after_ grouping. This does not confer any benefit and is not recommended practice.
 
 ```ts
 const groupUsers = await prisma.user.groupBy({
@@ -129,97 +135,59 @@ const groupUsers = await prisma.user.groupBy({
 |    country: {
 |      not: "Ghana"
 |    }
+     profileViews: {
+       min: {
+        gte: 10
+      }
+    }
   }
 })
 ```
 
-```ts
-  const fd = await prisma.user.groupBy({
-    by: ["country"],
-    where: {
-|      country: {
-|        notIn: ["Sweden", "Ghana"]
-|      }
-    },
-    sum: {
-      profileViews: true
-    }
-  })
-```
+> **Note**: Within `having`, you can only filter on aggregate values _or_ fields available in `by`.
 
-## `groupBy` and ordering
+## <inlinecode>groupBy</inlinecode> and ordering
 
 The following constraints apply when you combine `groupBy` and `orderBy`:
 
+* You can only `orderBy` fields that are present in `by`
 * If you use `skip` and/or `take` with `groupBy`, you must also include `orderBy` in the query
-* Any field included in `orderBy` must also be present in `by`
 
-## Examples
+The following query orders groups by country, skips the first two groups, and returns the 3rd and 4th group:
 
-The following examples are based on a sample schema:
-
-<a  id="sample-model"></a>
- 
-<details>
-  <summary>Expand sample schema</summary>
-
-```prisma
-generator client {
-  provider             = "prisma-client-js"
-}
-
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-
-model Post {
-  id         Int     @default(autoincrement()) @id  
-  authorId   Int?
-  content    String?
-  published  Boolean @default(false)
-  title      String
-  adEarnings Float? 
-  user       User?   @relation(fields: [authorId], references: [id])  
-
-  @@index([authorId], name: "authorId")
-}
-
-model User {
-  id              Int     @default(autoincrement()) @id
-  email           String  @unique  
-  name            String?
-  age             Int?
-  profileViews    Int?
-  role            Role    @default(USER)
-  posts           Post[]  
-}
-
-enum Role {
-  ADMIN
-  USER
-  MODERATOR
-}
+```ts
+const groupBy = await prisma.user.groupBy({
+  by: ["country"],
+  sum: {
+    profileViews: true
+  },
+  orderBy: {
+    country: "desc"
+  },
+  skip: 2,
+  take: 2
+})
 ```
-
-</details>
-
-
-## Examples
-
-### Group by a single field
-
-### Group by multiple fields
-
-### Group by with aggregation
-
-### Group by with a `where` filter
-
-### Group by with a `having` filter
 
 ## Generated types
 
-The following types relating to aggregation are generated from the `User` model in the [sample schema](#sample-model) - aggregation types are generated for any `model` with number fields:
+The following types relating to group by are generated from the `User` model:
+
+```ts
+export type GroupByUserArgs = {
+  where?: UserWhereInput
+  orderBy?: Enumerable<UserOrderByInput>
+  by: Array<UserScalarFieldEnum>
+  having?: UserScalarWhereWithAggregatesInput
+  take?: number
+  skip?: number
+  count?: UserCountAggregateInputType
+  avg?: UserAvgAggregateInputType
+  sum?: UserSumAggregateInputType
+  min?: UserMinAggregateInputType
+  max?: UserMaxAggregateInputType
+}
+```
 
 ## FAQ
 
@@ -229,11 +197,8 @@ You cannot use `select` with `groupBy`. However, all fields included in `by` are
 
 ### What is the difference between using `where` and `having` with `groupBy`?
 
-`where` filers all records before grouping, and `having` filters entire groups.
+`where` filers all records before grouping, and `having` filters entire groups and supports filtering on an aggregate field value, such as the average or sum of a particular field in that group.
 
 ### What is the difference between `groupBy` and `distinct`?
 
-Both `distinct` and `groupBy` remove duplicate rows
-
-* `groupBy` allows you to aggregate values within each group (for example, `max`)
-* `distinct` allows you to `select` and `include` any additional fields you want - `groupBy` only returns aggregations (such as `max` or `avg`) and the fields specified in `by`
+Both `distinct` and `groupBy` group records by one or more unique field values. `groupBy` allows you to aggregate data within each group - for example, return the average number of views on posts from Denmark - whereas distinct does not.
