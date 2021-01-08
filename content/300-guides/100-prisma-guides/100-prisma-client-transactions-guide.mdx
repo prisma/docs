@@ -8,23 +8,241 @@ A **transaction** is a unit of work that only succeeds if every operation within
 
 Prisma Client supports six different ways of handling transactions for three different scenarios:
 
-| Scenario            | Available techniques                                                |
-| :------------------ | :------------------------------------------------------------------ |
-| Dependent writes    | Nested writes                                                       |
-| Independent writes  | `$transaction` API<br />Batch operations<br />Pre-compute row IDs   |
-| Read, modify, write | Idempotent operations<br />Implement optimistic concurrency control |
+| Scenario            | Available techniques                                                                      |
+| :------------------ | :---------------------------------------------------------------------------------------- |
+| Dependent writes    | <ul><li>Nested writes</li><li>`$transaction` API</li></ul>                                |
+| Independent writes  | <ul><li>`$transaction` API</li><li>Batch operations</li><li>Pre-compute row IDs</li></ul> |
+| Read, modify, write | <ul><li>Idempotent operations</li><li>Implement optimistic concurrency control</li></ul>  |
 
 The technique you choose depends on your particular use case.
+
+> **Note**: For the purposes of this guide, _writing_ to a database encompasses creating, updating, and deleting data.
 
 </TopBlock>
 
 ## Scenario: Dependent writes
 
+Writes are considered dependent if:
+
+* They must occur in a specific order
+* Ay operation depends on the result of a preceeding operation (for example, the database generating an ID)
+
+Examples include:
+
+- Creating a user and two related blog posts (a one-to-many relationship) - the author ID must be known before creating blog posts
+- Creating a team and assigning members (a many-to-many relationship) - the team ID must be known before assigning members
+
+Dependent writes must succeed together in order to maintain data consistency and prevent unexpected behavior, such as blog post without an author or a team without members.
+
 ### Solution: Nested writes
+
+Prisma's solution to dependent creates and updates is the **nested writes feature**. Consider the Slack sign-up flow, which:
+
+1. Creates a team
+2. Add one user to that team, which automatically becomes that team's administrator
+
+This scenario can be represented by the following schema - note that users can belong to many teams, and teams can have many users (a many-to-many relationship):
+
+```prisma
+model Team {
+  id   Int    @id @default(autoincrement())
+  name String
+  members User[] // Many team members
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  teams Team[] // Many teams
+}
+```
+
+The most straightforward approach is to create a team, then create and attach a user to that team:
+
+```ts
+// Create a team
+await prisma.team.create({
+  data: {
+    name: 'Aurora Adventures',
+  },
+})
+
+// Create a user and assign them to the team
+await client.user.create({
+  data: {
+    email: 'alice@prisma.io',
+    team: {
+      connect: {
+        id: team.id,
+      },
+    },
+  },
+})
+```
+
+However, this code has an problem - consider the following scenario:
+
+1. Creating the team succeeds - "Aurora Adventures" is now taken
+2. Creating and connecting the user fails - the team "Aurora Adventures" exists, but has no users
+3. Going through the sign-up flow again and attempting recreate "Aurora Adventures" fails - the team already exists
+
+Creating a team and adding a user should be one atomic operation that **succeeds or fails as a whole**.
+
+To implement atomic writes in a low-level database clients, you must wrap your inserts in `BEGIN`, `COMMIT` and `ROLLBACK` queries. Prisma Client solves the problem with nested writes. The following query creates a team, creates a user, and connects the records in a single transaction:
+
+```ts
+await client.team.create({
+  data: {
+    name: 'Aurora Adventures',
+    members: {
+      create: {
+        email: 'alice@prisma.io',
+      },
+    },
+  },
+})
+```
+
+Furthermore, if an error occurs at any point, Prisma Client rolls back the entire transaction.
+
+### Why can't I use the `$transaction` API to solve the same problem?
+
+The `$transaction` API does not allow you to pass IDs between distinct operations. In the following example, `createUserOperation.id` is not available yet:
+
+```ts highlight=12;delete
+const createUserOperation = prisma.user.create({
+  data: {
+    email: 'ebony@prisma.io',
+  },
+})
+
+const createTeamOperation = prisma.team.create({
+  data: {
+    name: 'Aurora Adventures',
+    members: {
+      connect: {
+        id: createUserOperation.id, // Not possible, ID not yet available
+      },
+    },
+  },
+})
+
+await prisma.$transaction([createUserOperation, createTeamOperation])
+```
+
+### Are cascading deletes supported by the Prisma Client nested writes?
+
+No, you cannot use nested writes to perform a cascading delete - for example, delete a team and all of its members. You can, however, use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can perform both operations independently or within a `$transaction`.
+
+### Nested writes support nested updates, but updates are not dependent writes - should I use the `$transaction` API?
+
+Correct - because you know the ID of the team, you can update the team and its team members independently, or within a `$transaction`. The following example performs both operations in a `$transaction`:
+
+```ts
+const updateTeam = prisma.team.update({
+  where: {
+    id: 1,
+  },
+  data: {
+    name: 'Aurora Adventures Ltd',
+  },
+})
+
+const updateUsers = prisma.user.updateMany({
+  where: {
+    teams: {
+      some: {
+        id: 1,
+      },
+    },
+    name: {
+      equals: null,
+    },
+  },
+  data: {
+    name: 'Unknown User',
+  },
+})
+
+await prisma.$transaction([deleteUsers, updateTeam])
+```
+
+However, if you prefer the syntax of nested writes, you can write the same query like this:
+
+```ts
+const updateTeam = await prisma.team.update({
+  where: {
+    id: 1,
+  },
+  data: {
+    name: 'Aurora Adventures Ltd', // Update team name
+    members: {
+      updateMany: {
+        // Update team members that do not have a name
+        data: {
+          name: 'Unknown User',
+        },
+        where: {
+          name: {
+            equals: null,
+          },
+        },
+      },
+    },
+  },
+})
+```
 
 ## Scenario: Independent writes
 
-- Updating the status field of 100 orders to 'Dispatched'
-- Marking 100 emails in Gmail as 'Read'
+Writes are considered independent if they do not rely on the result of a previous operation. The following groups of independent writes can occur in any order:
+
+- Updating the status field of a list of orders to "Dispatched"
+- Marking a list of emails as "Read"
+
+> **Note**: Independent writes may have to occur in a specific order if constraints are present - for example, you must delete blog posts before the blog author if the post have a mandatory `authorId` field. However, they are still still considered independent writes because no operations depend on the _result_ of a previous operation, such as the database returning a generated ID.
+
+Depending on your requirements, Prisma Client has three options for handling writes that do not depend on each other.
+
+### Bulk operations
+
+Prisma currently supports the following bulk operations:
+
+- `updateMany`
+- `deleteMany`
+
+The ability to [create and upsert in bulk](https://github.com/prisma/prisma-client-js/issues/332) is planned.
+
+### `$transaction` API
+
+The `$transaction` API
+
+```ts
+const teamId = 1
+
+const deleteUsers = prisma.user.deleteMany({
+  where: {
+    teams: {
+      every: {
+        // Only users that are only in team 1, no other teams
+        id: teamId,
+      },
+    },
+  },
+})
+
+const deleteTeam = prisma.team.delete({
+  where: {
+    id: teamId,
+  },
+})
+
+// Delete the team and the users on that team
+await prisma.$transaction([deleteUsers, deleteTeam])
+```
+
+### Pre-computed IDs
+
+### Nested writes
 
 ## Scenario: Read, modify, write pattern
