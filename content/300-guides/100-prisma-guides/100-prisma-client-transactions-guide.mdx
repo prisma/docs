@@ -588,20 +588,71 @@ This example has a problem: you can only run the logic _once_. Consider the foll
 4. Running the same code again either:
 
    * Results in an error because the team (defined by `externalId`) already exists - Stripe never returns a customer ID
-   * If `externalId` is not unique, Stripe creates a yet another subscription
+   * If `externalId` is not subject to a unique constraint, Stripe creates a yet another subscription (**not idempotent**)
 
-You cannot re-run this code in case of error and you cannot change to another plan without being charged twice.
+You cannot re-run this code in case of error and you cannot change to another plan without being charged twice. 
+
+The following refactor (highlighted) introduces a mechanism that checks if a subscription already exists, and either creates the description or updates the existing subscription (which will remain unchanged if the input is identical):
+
+```ts highlight=12-27;normal
+// Calculate the number of users times the cost per user
+const numTeammates = await client.user.count({
+  where: {
+    teams: {
+      some: {
+        id: teamId,
+      },
+    },
+  },
+})
+
+// Find customer in Stripe
+let customer = await stripe.customers.get({ externalId: teamID })
+
+if (customer) {
+  customer = await stripe.customers.update({ // If team already exists, update
+    externalId: teamId,
+    plan: "plan_id",
+    quantity: numTeammates
+  })
+} else {
+  customer = await stripe.customers.create({ // If team does not exist, create customer
+    externalId: teamId,
+    plan: "plan_id",
+    quantity: numTeammates
+  })
+}
+
+// Update the team with the customer id to indicate that they are a customer
+// and support querying this customer in Stripe from our application code.
+await client.team.update({
+  data:{
+    customerId: customer.id
+  },
+  where: {
+    id: teamId,
+  }
+})
+```
+
+You can now retry the same logic multiple times with the same input without adverse effect. To further enhance this example, you can introduce a mechanism whereby the subscription is cancelled or temporarily deactivated if the update does not succeed after a set number of attempts.
 
 ### Optimistic concurrency control
 
+Optimistic concurrency control (OCC) is a model for handling concurrent operations that does not rely on 🔒 locking. Instead, we **optimistically** assume that a record will remain unchanged in between reading and writing, and use some kind of concurrency token (a timestamp or version field) to detect if a record has changed - if the record has changed, cancel the transaction.
+
 #### When to use optimistic concurrency control
 
-
-In between steps 1 and 3, you might find that someone else has managed to reserve the same seat.
+* ✔ You
+* ✔ You anticipate that conflicts will be rare
 
 #### When to implement optimistic concurrency control
 
 #### Scenario: Reserving a seat at the cinema
+
+```terminal
+/webinar subscribe 2943
+```
 
 1. Read: Retrieve the first available seat in a cinema
 2. Modify: Reserve the seat by setting a `reserved` property to your session ID
