@@ -503,18 +503,94 @@ There's no compelling reason to switch to manually generated IDs and the `$trans
 
 ## Read, modify, write
 
-In some cases you may need to perform custom logic as part of an atomic operation, such as writing to an external service or performing a check. However, all operations should still succeed or fail together.
+In some cases you may need to perform custom logic as part of an atomic operation - also known as the [read-modify-write pattern](https://en.wikipedia.org/wiki/Read%E2%80%93modify%E2%80%93write). The following is an example of the read-modify-write pattern:s
+
+* Read a value from the database
+* Run some logic to manipulate that value (for example, contacting an external API)
+* Write the value back to the databases
+
+All operations should **succeed or fail together** without making unwanted changes to the databases, but you do not necessarily need to use an actual database transactions. This section of the guide describes two ways to work with Prisma Client and the read-modify-write pattern:
+
+* Designing idempotent APIs
+* Optimistic concurrency control
 
 ### Idempotent APIs
 
-Idempotency is the ability to run the same logic multiple times **without creating undesirable side-effects in the database**. For example:
+Idempotency is the ability to run the same logic with the same parameters multiple times with the same result: the **effect on the database** is the same whether you run the logic one or one thousand times. For example:
 
-* When you get a user by ID, you always get a user record or null - never a product record
-* When you create a user with a unique email address, that user is created _once_ - attempting to create a second user with the same email address will fail
+* **NOT IDEMPOTENT**: Create a user in the database with email address "letoya@prisma.io". The `User` table **does not** enforce unique email addresses. The effect on the database is different if you run the logic once (one user created) or ten times (ten users created).
+* **IDEMPOTENT**: Create a user in the database with email address "letoya@prisma.io". The `User` table **does** unique email addresses. The effect on the database is the same if you run the logic once (one user created) or ten times (subsequent attempts to create a user with the same email address will fail due to `UNIQUE` constraint).
 
-#### When to design an idempotent API 
+Idempotency is something you can actively design, and is not always needed or possible.
 
-#### Scenario: 
+#### When to design an idempotent API
+
+* ✔ You need to be able to retry the same logic without creating unwanted side-effects in the databases
+
+#### Scenario: Upgrading a Slack team
+
+You are creating an upgrade flow for Slack that allows teams to unlock paid features. Teams can choose between different plans and pay per user, per month. You use Stripe as your payment gateway, and extend your `Team` model to store a `stripeCustomerId`. Subscriptions are managed in Stripe.
+
+```prisma
+model Team {
+  id                 Int    @id @default(autoincrement())
+  name               String
+  User               User[]
+|  stripeCustomerId   String?
+}
+```
+
+The upgrade flow looks like this:
+
+1. Count the number of users
+2. Create a subscription in Stripe that includes the number of users
+3. Associate the team with the Stripe custsomer ID to unlock paid features
+
+```ts
+const teamId = 9;
+const planId = "plan_id";
+
+// Count team members
+const numTeammates = await prisma.user.count({
+  where: {
+    teams: {
+      some: {
+        id: teamId,
+      },
+    },
+  },
+})
+
+// Create a customer in Stripe for plan-9454549
+const customer = await stripe.customers.create({
+  externalId: teamId,
+  plan: planId,
+  quantity: numTeammates
+})
+
+// Update the team with the customer id to indicate that they are a customer
+// and support querying this customer in Stripe from our application code.
+await prisma.team.update({
+  data:{
+    customerId: customer.id
+  },
+  where: {
+    id: teamId,
+  }
+})
+```
+
+This example has a problem: you can only run the logic _once_. Consider the following scenario:
+
+1. Stripe creates a new customer and subscription, and returns a customer ID
+2. Updating the team **fails** - the team is not marked as a customer in the Slack database
+3. The customer is charged by Stripe, but paid features are not unlocked in Slack because the team lacks a valid `customerId`
+4. Running the same code again either:
+
+   * Results in an error because the team (defined by `externalId`) already exists - Stripe never returns a customer ID
+   * If `externalId` is not unique, Stripe creates a yet another subscription
+
+You cannot re-run this code in case of error and you cannot change to another plan without being charged twice.
 
 ### Optimistic concurrency control
 
