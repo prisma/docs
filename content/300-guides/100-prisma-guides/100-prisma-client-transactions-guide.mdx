@@ -11,9 +11,9 @@ Prisma Client supports six different ways of handling transactions for three dif
 
 | Scenario            | Available techniques                                                                      |
 | :------------------ | :---------------------------------------------------------------------------------------- |
-| Dependent writes    | <ul><li>Nested writes</li><li>`$transaction` API</li></ul>                                |
-| Independent writes  | <ul><li>`$transaction` API</li><li>Batch operations</li><li>Pre-compute row IDs</li></ul> |
-| Read, modify, write | <ul><li>Idempotent operations</li><li>Implement optimistic concurrency control</li></ul>  |
+| Dependent writes    | <ul><li>Nested writes</li></ul>                                |
+| Independent writes  | <ul><li>`$transaction` API</li><li>Batch operations</li></ul> |
+| Read, modify, write | <ul><li>Idempotent operations</li><li>Optimistic concurrency control</li></ul>  |
 
 The technique you choose depends on your particular use case.
 
@@ -60,6 +60,8 @@ Consider using nested writes if:
 
 * ✔ You want to write to create two or more records related by ID at the same time (for example, create a blog post and a user)
 * ✔ You want to update and create records related by ID at the same time (for example, change a user's name and create a new blog post)
+
+> **Tip:** If you [pre-compute your IDs, you can choose between a nested write or using the `$transaction` API](#scenario-pre-computed-ids-and-the-transaction-api).
 
 #### Scenario: Sign-up flow
 
@@ -161,7 +163,7 @@ await prisma.$transaction([createUserOperation, createTeamOperation])
 
 ##### Are cascading deletes supported by the Prisma Client nested writes?
 
-No, you cannot use nested writes to perform a cascading delete - for example, delete a team and all of its members. You can, however, use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can [perform both operations within a `$transaction`]().
+No, you cannot use nested writes to perform a cascading delete - for example, delete a team and all of its members. You can, however, use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can [perform both operations within a `$transaction`](#scenario-privacy-legislation).
 
 ##### Nested writes support nested updates, but updates are not dependent writes - should I use the `$transaction` API?
 
@@ -348,7 +350,7 @@ You an use the [`$transaction` API to perform a cascading delete](#scenario-casc
 
 Yes - for exapmle, you can include multiple `deleteMany` operations inside a `$transaction`.
 
-### `$transaction` API
+### <inlinecode>$transaction</inlinecode> API
 
 The `$transaction` API is generic solution to independent writes that allows you to run multiple operations as a single, atomic operation - if any operation fails, Prisma rolls back the entire transaction. As Prisma Client evolves, use cases for the `$transaction` API will increasingly be replaced by more specialized bulk operations (such as `createMany`) and nested writes.
 
@@ -639,21 +641,133 @@ You can now retry the same logic multiple times with the same input without adve
 
 ### Optimistic concurrency control
 
-Optimistic concurrency control (OCC) is a model for handling concurrent operations that does not rely on 🔒 locking. Instead, we **optimistically** assume that a record will remain unchanged in between reading and writing, and use some kind of concurrency token (a timestamp or version field) to detect if a record has changed - if the record has changed, cancel the transaction.
+Optimistic concurrency control (OCC) is a model for handling concurrent operations on a single entity that does not rely on 🔒 locking. Instead, we **optimistically** assume that a record will remain unchanged in between reading and writing, and use some kind of concurrency token (a timestamp or version field) to detect if a record has changed. 
+
+If a conflict ❌ occurs (someone else has changed the record since you read it), cancel the transaction. Depending on your scenario, you can then:
+
+* Re-try the transaction (book another cinema seat)
+* Throw an error (alert the user that they will overwrite made by someone else)
 
 #### When to use optimistic concurrency control
 
-* ✔ You
-* ✔ You anticipate that conflicts will be rare
-
-#### When to implement optimistic concurrency control
+* ✔ You anticipate that conflicts will be _rare_ - in some scenarios, such as editing shared documents, a lock (pessimistic concurrency control) might be more appropriate
 
 #### Scenario: Reserving a seat at the cinema
 
-```terminal
-/webinar subscribe 2943
+You are creating a booking system for a cinema. Each movie has a set number of seats. The following schema models movies and seats:
+
+```ts
+model Seat {
+  id        Int   @id @default(autoincrement())
+  userId    Int?
+  claimedBy User? @relation(fields: [userId], references: [id])
+  movieId   Int
+  movie     Movie @relation(fields: [movieId], references: [id])
+}
+
+model Movie {
+  id    Int    @id     @default(autoincrement())
+  name  String @unique
+  seats Seat[]
+}
 ```
 
-1. Read: Retrieve the first available seat in a cinema
-2. Modify: Reserve the seat by setting a `reserved` property to your session ID
-3. Write: Write the updated `reserved` field to the database
+The following sample code finds the first available seat and assigns that seat to a user:s
+
+```ts
+const movieName = "Hidden Figures";
+
+// Find first available seat
+const availableSeat = await client.seat.findFirst({
+  where: {
+    movie: {
+      name: movieName,
+    },
+    claimedBy: null,
+  },
+})
+
+// Throw an error if no seats are available
+if (!availableSeat) {
+  throw new Error(`Oh no! ${movieName} is all booked.`)
+}
+
+// Claim the seat
+await client.seat.update({
+  data: {
+    claimedBy: userId,
+  },
+  where: {
+    id: availableSeat.id,
+  },
+})
+```
+
+However, this code suppers from the "double booking problem" - it is possible for two people to book the same seats:
+
+1. Seat 3A returned to Sorcha (`findFirst`)
+2. Seat 3A returned to Ellen (`findFirst`)
+3. Seat 3A claimed by Sorcha (`update`)
+4. Seat 3A claimed by Ellen (`update` - overwrites Sorcha's claim)
+
+Even though Sorcha has successfully booked the seat, the system ultimately stores Ellen's claim. To solve this problem with optimistic concurrency control, add a `version` field to the seat:
+
+```prisma highlight=7;normal
+model Seat {
+  id        Int   @id @default(autoincrement())
+  userId    Int?
+  claimedBy User? @relation(fields: [userId], references: [id])
+  movieId   Int
+  Movie     Movie @relation(fields: [movieId], references: [id])
+  version   Int
+}
+```
+
+Next, adjust the code to check the `version` field before updating:
+
+```ts highlight=18-37;normal
+const movieName = "Hidden Figures";
+
+// Find the first available seat
+// availableSeat.version might be 0
+const availableSeat = await client.seat.findFirst({
+  where: {
+    Movie: {
+      name: movieName,
+    },
+    claimedBy: null,
+  },
+})
+
+if (!availableSeat) {
+  throw new Error(`Oh no! ${movieName} is all booked.`)
+}
+
+// Only mark the seat as claimed if the availableSeat.version 
+// matches the version we're updating. Additionally, increment the
+// version when we perform this update so all other clients trying
+// to book this same seat will have an outdated version.
+const seats = await client.seat.updateMany({
+  data: {
+    claimedBy: userId,
+    version: {
+      increment: 1,
+    },
+  },
+  where: {
+    id: availableSeat.id,
+    version: availableSeat.version, // This version field is the key; only claim seat if in-memory version matches database version, indicating that the field has not been updated
+  },
+})
+
+if (seats.count === 0) {
+  throw new Error(`That seat is already booked! Please try again.`)
+}
+```
+
+It is now impossible for two people to book the same seat:
+
+1. Seat 3A returned to Sorcha (`version` is 0)
+2. Seat 3A returned to Ellen (`version` is 0)
+3. Seat 3A claimed by Sorcha (`version` is incremented to 1, booking succeeds)
+4. Seat 3A claimed by Ellen (in-memory `version` (0) does not match database `version` (1) - booking does not succeed)
