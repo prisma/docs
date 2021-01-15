@@ -25,7 +25,7 @@ The technique you choose depends on your particular use case.
 
 Writes are considered **dependent** on each other if:
 
-* Operations depends on the result of a preceeding operation (for example, the database generating an ID)
+* Operations depend on the result of a preceeding operation (for example, the database generating an ID)
 
 The most common scenario is creating a record and using the generated ID to create or update a related record. Examples include:
 
@@ -90,14 +90,14 @@ The most straightforward approach is to create a team, then create and attach a 
 
 ```ts
 // Create a team
-await prisma.team.create({
+const team = await prisma.team.create({
   data: {
     name: 'Aurora Adventures',
   },
 })
 
 // Create a user and assign them to the team
-await client.user.create({
+const user = await prisma.user.create({
   data: {
     email: 'alice@prisma.io',
     team: {
@@ -120,7 +120,7 @@ Creating a team and adding a user should be one atomic operation that **succeeds
 To implement atomic writes in a low-level database clients, you must wrap your inserts in `BEGIN`, `COMMIT` and `ROLLBACK` queries. Prisma Client solves the problem with nested writes. The following query creates a team, creates a user, and connects the records in a single transaction:
 
 ```ts
-await client.team.create({
+const team = await prisma.team.create({
   data: {
     name: 'Aurora Adventures',
     members: {
@@ -163,7 +163,7 @@ await prisma.$transaction([createUserOperation, createTeamOperation])
 
 ##### Are cascading deletes supported by the Prisma Client nested writes?
 
-No, you cannot use Prisma Client's nested writes to perform a cascading delete - for example, delete a team and all of its members. Instead, you can:
+Although you cannot specifically use _nested writes_ to perform a cascading delete (for example, delete a team and all of its members), you can still perform cascading deletes in the following ways:
 
 * Use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can [perform both operations within a `$transaction`](#scenario-privacy-legislation).
 * [Configure cascading deletes at the database level](../../general-guides/database-workflows/cascading-deletes).
@@ -240,7 +240,7 @@ Yes, but this is a combination of scenarios and techniques:
 
 ```ts
 // Nested write
-const createOne = client.team.create({
+const createOne = prisma.team.create({
   data: {
     name: 'Aurora Adventures',
     members: {
@@ -252,7 +252,7 @@ const createOne = client.team.create({
 })
 
 // Nested write
-const createTwo = client.team.create({
+const createTwo = prisma.team.create({
   data: {
     name: 'Cool Crew',
     members: {
@@ -319,7 +319,7 @@ model Email {
 Based on this schema, you can use `updateMany` to mark all unread emails as read:
 
 ```ts
-await client.email.updateMany({
+await prisma.email.updateMany({
   where: {
     user: {
       id: 10,
@@ -337,16 +337,16 @@ await client.email.updateMany({
 No - neither `updateMany` nor `deleteMany` currently supports nested writes. For example, you cannot delete multiple teams and all of their members (a cascading delete):
 
 ```ts highlight=8;delete
-  const deleteMany = await prisma.team.deleteMany({
-    where: {
-      id: {
-        in: [2, 99, 2, 11]
-      }
-    },
-    data: {
-      members: { } // Cannot access members here
-    },
-  })
+await prisma.team.deleteMany({
+  where: {
+    id: {
+      in: [2, 99, 2, 11]
+    }
+  },
+  data: {
+    members: { } // Cannot access members here
+  },
+})
 ```
 
 You an use the [`$transaction` API to perform a cascading delete](#scenario-cascading-delete).
@@ -357,7 +357,7 @@ Yes - for example, you can include multiple `deleteMany` operations inside a `$t
 
 ### <inlinecode>$transaction</inlinecode> API
 
-The `$transaction` API is generic solution to independent writes that allows you to run multiple operations as a single, atomic operation - if any operation fails, Prisma rolls back the entire transaction. As Prisma Client evolves, use cases for the `$transaction` API will increasingly be replaced by more specialized bulk operations (such as `createMany`) and nested writes.
+The `$transaction` API is generic solution to independent writes that allows you to run multiple operations as a single, atomic operation - if any operation fails, Prisma rolls back the entire transaction. As the Prisma Client evolves, use cases for the `$transaction` API will increasingly be replaced by more specialized bulk operations (such as `createMany`) and nested writes.
 
 #### When to use the `$transaction` API
 
@@ -404,7 +404,7 @@ const deletePosts = prisma.post.deleteMany({
   }
 })
 
-const deleteMessages = prisma.privatemessage.deleteMany({
+const deleteMessages = prisma.privateMessage.deleteMany({
   where: {
     userId: id
   }
@@ -424,7 +424,7 @@ await prisma.$transaction([deletePosts, deleteMessages, deleteUser]) // Operatio
 Dependent writes are not supported by the `$transaction` API - if operation A relies on the ID generated by operation B, use [nested writes](#nested-writes). However, if you _pre-computed_ IDs (for example, by generating GUIDs), your writes become independent. Consider the sign-up flow from the nested writes example:
 
 ```ts
-await client.team.create({
+await prisma.team.create({
   data: {
     name: 'Aurora Adventures',
     members: {
@@ -440,14 +440,14 @@ Instead of auto-generating IDs, change the `id` fields of `Team` and `User` to a
 
 ```prisma highlight=2,9;delete|3,10;add
 model Team {
-  id   Int    @id @default(autoincrement())  
-  id   String  @id @default(uuid())
+  id   Int       @id @default(autoincrement())  
+  id   String    @id @default(uuid())
   name String
   members User[]
 }
 
 model User {
-  id   Int    @id @default(autoincrement())  
+  id   Int     @id @default(autoincrement())  
   id   String  @id @default(uuid())
   email String @unique
   teams Team[]
@@ -472,7 +472,7 @@ await prisma.$transaction([
         }
       }
     }),
-    client.team.create({
+    prisma.team.create({
       data: {
         id: teamID,
         name: 'Aurora Adventures'
@@ -489,7 +489,7 @@ import { v4 } from 'uuid'
 const teamID = v4();
 const userID = v4();
 
-await client.team.create({
+await prisma.team.create({
   data: {
     id: teamID,    
     name: 'Aurora Adventures',
@@ -523,12 +523,12 @@ All operations should **succeed or fail together** without making unwanted chang
 
 ### Idempotent APIs
 
-Idempotency is the ability to run the same logic with the same parameters multiple times with the same result: the **effect on the database** is the same whether you run the logic one or one thousand times. For example:
+Idempotency is the ability to run the same logic with the same parameters multiple times with the same result: the **effect on the database** is the same whether you run the logic once or one thousand times. For example:
 
-* **NOT IDEMPOTENT**: Create a user in the database with email address "letoya@prisma.io". The `User` table **does not** enforce unique email addresses. The effect on the database is different if you run the logic once (one user created) or ten times (ten users created).
-* **IDEMPOTENT**: Create a user in the database with the email address "letoya@prisma.io". The `User` table **does** enforce unique email addresses. The effect on the database is the same if you run the logic once (one user created) or ten times (subsequent attempts to create a user with the same email address will fail due to `UNIQUE` constraint).
+* **NOT IDEMPOTENT**: Create a user in the database with email address `"letoya@prisma.io"`. The `User` table **does not** enforce unique email addresses. The effect on the database is different if you run the logic once (one user created) or ten times (ten users created).
+* **IDEMPOTENT**: Create a user in the database with the email address `"letoya@prisma.io"`. The `User` table **does** enforce unique email addresses. The effect on the database is the same if you run the logic once (one user created) or ten times (subsequent attempts to create a user with the same email address will fail due to `UNIQUE` constraint).
 
-Idempotency is something you can actively design, and is not always needed or possible.
+Idempotency is something you can and should actively design into your application wherever possible.
 
 #### When to design an idempotent API
 
@@ -538,12 +538,12 @@ Idempotency is something you can actively design, and is not always needed or po
 
 You are creating an upgrade flow for Slack that allows teams to unlock paid features. Teams can choose between different plans and pay per user, per month. You use Stripe as your payment gateway, and extend your `Team` model to store a `stripeCustomerId`. Subscriptions are managed in Stripe.
 
-```prisma
+```prisma highlight=5;normal
 model Team {
   id                 Int    @id @default(autoincrement())
   name               String
   User               User[]
-|  stripeCustomerId   String?
+  stripeCustomerId   String?
 }
 ```
 
@@ -617,7 +617,8 @@ const numTeammates = await client.user.count({
 let customer = await stripe.customers.get({ externalId: teamID })
 
 if (customer) {
-  customer = await stripe.customers.update({ // If team already exists, update
+  // If team already exists, update
+  customer = await stripe.customers.update({ 
     externalId: teamId,
     plan: "plan_id",
     quantity: numTeammates
@@ -632,7 +633,7 @@ if (customer) {
 
 // Update the team with the customer id to indicate that they are a customer
 // and support querying this customer in Stripe from our application code.
-await client.team.update({
+await prisma.team.update({
   data:{
     customerId: customer.id
   },
@@ -689,7 +690,7 @@ The following sample code finds the first available seat and assigns that seat t
 const movieName = "Hidden Figures";
 
 // Find first available seat
-const availableSeat = await client.seat.findFirst({
+const availableSeat = await prisma.seat.findFirst({
   where: {
     movie: {
       name: movieName,
@@ -704,7 +705,7 @@ if (!availableSeat) {
 }
 
 // Claim the seat
-await client.seat.update({
+await prisma.seat.update({
   data: {
     claimedBy: userId,
   },
@@ -729,7 +730,7 @@ model Seat {
   userId    Int?
   claimedBy User? @relation(fields: [userId], references: [id])
   movieId   Int
-  Movie     Movie @relation(fields: [movieId], references: [id])
+  movie     Movie @relation(fields: [movieId], references: [id])
   version   Int
 }
 ```
