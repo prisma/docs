@@ -234,7 +234,7 @@ The first command will create an SQL migration file based on the Prisma schema i
 Deploy the app by pushing the changes to the Heroku app repository:
 
 ```no-lines
-git push heroku main
+git push heroku master
 ```
 
 This will trigger a build and deploy your application to Heroku.
