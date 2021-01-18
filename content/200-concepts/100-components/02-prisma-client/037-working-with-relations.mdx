@@ -1,5 +1,5 @@
 ---
-title: 'Working with relations'
+title: 'Relation queries'
 metaTitle: 'Working with relations (Reference)'
 metaDescription: 'Prisma Client provides convenient queries for working with relations, such as a fluent API, nested writes (transactions), nested reads and relation filters.'
 tocDepth: 3
@@ -9,11 +9,293 @@ tocDepth: 3
 
 </TopBlock>
 
-## Include related records
+## Nested reads
 
-Related records are not returned by default. For example, to return a user _and_ that user's posts, you must explicitly `include` <span class="api"></span> posts. See [Select fields and include relations](select-and-include) for more information and examples.
+Use  <span class="api"></span> to include related records, such as a user's posts or profile, in the response. This is known as a **nested read**. The following example returns a single user _and_ that user's posts:
 
-## Add or remove related records
+<CodeWithResult>
+<Cmd>
+
+```ts
+const getUser = await prisma.user.findUnique({
+  where: {
+    id: 19,
+  },
+|  include: {
+|    posts: true,
+|  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  id: 19,
+  name: null,
+  email: 'emma@prisma.io',
+  profileViews: 0,
+  role: 'USER',
+  coinflips: [],
+  posts: [
+    {
+      id: 20,
+      title: 'My first post',
+      published: true,
+      authorId: 19,
+      comments: null,
+      views: 0,
+      likes: 0
+    },
+    {
+      id: 21,
+      title: 'How to make cookies',
+      published: true,
+      authorId: 19,
+      comments: null,
+      views: 0,
+      likes: 0
+    }
+  ]
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+The following example returns all posts with the word `cookie` in the `title` field _and_ the author of each post.
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const getPosts = await prisma.post.findMany({
+  where: {
+    title: {
+      contains: 'cookies',
+    },
+  },
+|   include: {
+|    author: true,
+|  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+;[
+  {
+    id: 17,
+    title: 'How to make cookies',
+    published: true,
+    authorId: 16,
+    comments: null,
+    views: 0,
+    likes: 0,
+    author: {
+      id: 16,
+      name: null,
+      email: 'orla@prisma.io',
+      profileViews: 0,
+      role: 'USER',
+      coinflips: [],
+    },
+  },
+  {
+    id: 21,
+    title: 'How to make cookies',
+    published: true,
+    authorId: 19,
+    comments: null,
+    views: 0,
+    likes: 0,
+    author: {
+      id: 19,
+      name: null,
+      email: 'emma@prisma.io',
+      profileViews: 0,
+      role: 'USER',
+      coinflips: [],
+    },
+  },
+]
+```
+
+</CmdResult>
+</CodeWithResult>
+
+Note that you **cannot** use `select` <span class="api"></span> and `include` <span class="api"></span> _on the same level_:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+// The follwing query returns an exception
+const getUser = await prisma.user.findUnique({
+  where: {
+    id: 19,
+  },
+|  select: { // No!
+    email:  true
+  }
+|   include: { // No!
+    posts: {
+      select: {
+        title: true
+      }
+    }
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```
+Invalid `prisma.user.findUnique()` invocation:
+
+{
+  where: {
+    id: 19
+  },
+  select: {
+  ~~~~~~
+    email: true
+  },
+  include: {
+  ~~~~~~~
+    posts: {
+      select: {
+        title: true
+      }
+    }
+  }
+}
+
+
+Please either use `include` or `select`, but not both at the same time.
+```
+
+</CmdResult>
+</CodeWithResult>
+
+To `select` specific record and related record fields, use a [nested `select`](#select-relation-fields).
+
+### Include a filtered list of relations
+
+When you use `select` to return a subset of data from related records (for example, a user's posts), you can filter which related records should be returned. For example, you might want to query all users with a `prisma.io` email address and select the titles of their published posts.
+
+#### Return _all_ `User` records where `email` contains `prisma.io`, and select the `title` of all `Post` records that have not been published yet
+
+```js
+const result = await prisma.user.findMany({
+  where: {
+    email: {
+      contains: 'prisma.io',
+    },
+  },
+  select: {
+    Post: {
+      where: {
+        published: false,
+      },
+      select: {
+        title: true,
+      },
+    },
+  },
+})
+```
+
+You can use the `post` model property to write the same query:
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    published: false,
+    User: {
+      email: {
+        contains: 'prisma.io',
+      },
+    },
+  },
+  select: {
+    title: true,
+  },
+})
+```
+
+### Select specific relation fields
+
+The following example selects the user's `name` and the `title` of each related post:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const getUser = await prisma.user.findUnique({
+  where: {
+    id: 19,
+  },
+  select: {
+    name: true,
+    posts: {
+      select: {
+        title: true,
+      },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  name: "Elsa",
+  posts: [ { title: 'My first post' }, { title: 'How to make cookies' } ]
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+## Advanced examples
+
+```ts
+const getUser = await prisma.user.findMany({
+  where: {
+    posts: {
+      some: {
+        categories: {
+          some: {
+            name: {
+              in: ['Food', 'Introductions'],
+            },
+          },
+        },
+      },
+    },
+  },
+  select: {
+    posts: {
+      select: {
+        categories: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    },
+  },
+})
+```
+
+## Nested writes
 
 ### Create a related record
 
@@ -331,8 +613,6 @@ To `disconnect` <span class="api"></span> _all_ related records in a one-to-many
 </CmdResult>
 </CodeWithResult>
 
-## Delete related records
-
 ### Delete all related records
 
 Delete all related `Post` records:
@@ -383,8 +663,6 @@ const update = await prisma.user.update({
   },
 })
 ```
-
-## Update related records
 
 ### Update all related records (or filter)
 
@@ -455,7 +733,7 @@ const update = await prisma.post.update({
 })
 ```
 
-## Filtering
+## Relation filters
 
 ### Filter records by relation fields
 
@@ -499,49 +777,6 @@ Prisma Client provides the `some`, `every`, and `none` options to filter records
   }
 ```
 
-### Filter the relations list
-
-When you use `select` to return a subset of data from related records (for example, a user's posts), you can filter which related records should be returned. For example, you might want to query all users with a `prisma.io` email address and select the titles of their published posts.
-
-#### Return _all_ `User` records where `email` contains `prisma.io`, and select the `title` of all `Post` records that have not been published yet
-
-```js
-const result = await prisma.user.findMany({
-  where: {
-    email: {
-      contains: 'prisma.io',
-    },
-  },
-  select: {
-    Post: {
-      where: {
-        published: false,
-      },
-      select: {
-        title: true,
-      },
-    },
-  },
-})
-```
-
-You can use the `post` model property to write the same query:
-
-```js
-const result = await prisma.post.findMany({
-  where: {
-    published: false,
-    User: {
-      email: {
-        contains: 'prisma.io',
-      },
-    },
-  },
-  select: {
-    title: true,
-  },
-})
-```
 
 ## Fluent API
 
