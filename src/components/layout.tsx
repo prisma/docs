@@ -9,7 +9,7 @@ import customMdx from '../components/customMdx'
 import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
-import theme, {BaseStyle} from 'prisma-lens'
+import theme, { BaseStyle } from 'prisma-lens'
 import { stickWhenNeeded } from '../utils/stickWhenNeeded'
 
 interface LayoutContentProps {

@@ -168,15 +168,20 @@ const TreeNode = ({
   lastLevel,
   hidePage,
   codeStyle,
+  parentLabel,
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
+    if (label === '04-unique-constraints-and-indexes') {
+      console.log(parentLabel)
+    }
     Object.keys(collapsed).map(lbl => {
       if (lbl !== label) {
         collapsed[lbl] = collapsed[lbl] == false ? (collapsed[lbl] = true) : collapsed[lbl]
       }
     })
     setCollapsed(label, false)
+   // setCollapsed(parentLabel, false)
   }
   const location = useLocation()
 

@@ -16,7 +16,6 @@ const Tree = ({ edges }: AllEdges) => {
     return calculateTreeData(edges, defaultCollapsed, location)
   })
   const [collapsed, setCollapsed] = useGlobalState('collapsedState')
-
   const toggle = (label: string, toggleContent: boolean) => {
     setCollapsed({
       ...collapsed,
