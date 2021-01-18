@@ -9,14 +9,14 @@ This repository contains the [source code](./src) and the [content](./content) f
 Clone this repository and get started by running the following commands:
 
 ```
-yarn
-yarn dev
+npm install
+npm run dev
 ```
 
 To prettify or format the code, run:
 
 ```
-yarn prettify
+npm run prettify
 ```
 
 Visit `http://localhost:8000/` to view the app.

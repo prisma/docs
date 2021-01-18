@@ -18,6 +18,7 @@ const HitComp = styled.div`
   }
   a {
     color: ${p => p.theme.colors.gray900} !important;
+    display: block;
   }
   h4 {
     font-weight: normal;

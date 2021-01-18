@@ -9,7 +9,7 @@ import customMdx from '../components/customMdx'
 import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
-import theme from 'prisma-lens'
+import theme, {BaseStyle} from 'prisma-lens'
 import { stickWhenNeeded } from '../utils/stickWhenNeeded'
 
 interface LayoutContentProps {
@@ -118,6 +118,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
   return (
     <ThemeProvider theme={theme}>
+      <BaseStyle/>
       <MDXProvider components={customMdx}>
         <Header headerProps={header} />
         <Wrapper>

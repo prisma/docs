@@ -127,7 +127,7 @@ const ListItem = styled.li`
     margin-left: ${p => p.theme.space[20]};
   }
   &.static-link {
-    margin-top: ${p => p.theme.space[12]};
+    margin-top: ${p => p.theme.space[20]};
   }
   &.static-link > a {
     color: ${p => p.theme.colors.gray900} !important;
