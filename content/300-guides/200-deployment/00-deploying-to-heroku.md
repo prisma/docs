@@ -1,6 +1,6 @@
 ---
 title: 'Deploying to Heroku'
-metaTitle: 'Deploying to Heroku'
+metaTitle: 'Deploy a Prisma app to Heroku'
 metaDescription: 'Learn how to deploy a Node.js server that uses Prisma to Heroku.'
 ---
 
@@ -195,7 +195,7 @@ Connection URL:
    postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__
 ```
 
-Copy the connection URL and set it as an environment variable (make sure your .env is located in the prisma directory):
+Copy the connection URL and set it as an environment variable:
 
 ```no-lines
 export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__"
@@ -203,23 +203,20 @@ export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATA
 
 > **Note:** It's considered best practice to keep secrets out of your codebase. If you open up the `prisma/schema.prisma` file, you should see `env("DATABASE_URL")` in the _datasource_ block. By setting an environment variable you keep secrets out of the codebase.
 
-## 7. Save and apply the database migration
+## 7. Create the database schema
 
-With the Heroku app and database created, you will create the database schema with [Prisma Migrate](/concepts/components/prisma-migrate).
+With the Heroku app and database created, you will create the database schema using the [`prisma db push`](/reference/api-reference/command-reference#db-push) command.
 
-When working with a production database, this is done in two steps:
+
+> **Note:** While the `prisma db push` command creates the database schema for you. It's mostly as a quick way while prototyping. When working on a production project with multiple environments, Prisma Migrate gives you more control over how the database schema is created and evolved.
+
+Run the following command to create the database schema:
 
 ```no-lines
-# Create the migration file
-npx prisma migrate dev --create-only --name "init" --preview-feature
-
-# Apply the migration
-npx prisma migrate deploy --preview-feature
+npx prisma db push --preview-feature
 ```
 
-The first command will create an SQL migration file based on the Prisma schema in the `prisma/migrations` folder and the second command will apply it against the database to create the database schema.
-
-> **Note:** Prisma Migrate is currently in [preview](/about/releases#preview). This means that it is not recommended to use in production.
+> **Note:** The `db push` command is currently in [Preview](/about/releases#preview). This means that it is not recommended to use in production.
 
 **Checkpoint:** `heroku pg:psql --command="\dt"` should show the newly created database tables:
 
@@ -230,8 +227,7 @@ The first command will create an SQL migration file based on the Prisma schema i
   --------+------------+-------+----------------
   public | Post       | table | alice
   public | User       | table | alice
-  public | _Migration | table | alice
-  (3 rows)
+  (2 rows)
 ```
 
 ## 8. Push to deploy
