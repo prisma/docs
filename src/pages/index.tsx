@@ -32,14 +32,28 @@ const Summary = styled.div`
   h1 {
     font-weight: bold;
     font-family: ${p => p.theme.fonts.display};
-    font-size: ${p => p.theme.fontSizes[32]};
+    font-size: ${p => p.theme.fontSizes[56]};
     margin: 0;
+    text-align: center;
   }
   p {
-    max-width: 100%;
+    max-width: 800px;
+    font-size:${p=>p.theme.fontSizes[20]};
+    line-height:1.5;
   }
   @media (min-width: 0) and (max-width: 1024px) {
     padding: ${p => p.theme.space[80]} ${p => p.theme.space[16]};
+    p{
+      max-width:85%;
+    }
+  }
+  @media (max-width:${p=>p.theme.breakpoints.tablet}){
+    h1{
+      font-size:${p=>p.theme.fontSizes[32]};
+    }
+    p {
+      font-size:${p=>p.theme.fontSizes[16]};
+    }
   }
 `;
 
@@ -66,8 +80,9 @@ const NormalPara = styled.p`
 
 const SubHeading = styled.h3`
   font-weight: 600;
-  font-size: ${p => p.theme.fontSizes[24]};
-  line-height: ${p => p.theme.space[24]};
+  font-size: ${p => p.theme.fontSizes[36]};
+  line-height: ${p => p.theme.space[36]};
+  font-family:${p=>p.theme.fonts.display};
   margin: 0;
   text-align: center;
   color: ${p => p.theme.colors.gray900};
@@ -123,7 +138,6 @@ const SummaryLinks = styled.div`
   display: flex;
   justify-content: space-around;
   a {
-    text-transform: uppercase !important;
     color: ${p => p.theme.colors.white} !important;
     font-weight: bold;
     display: flex;
@@ -176,6 +190,16 @@ const GenaralLinks = styled.div`
     flex-direction: column;
   }
 `;
+
+const GeneralLink = styled.div`
+  display:flex;
+  flex-direction: column;
+  @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
+    flex-direction: row;
+    margin-bottom :${p=>p.theme.space[32]};
+  }
+`;
+
 
 const Row = styled.div`
   display: flex;
@@ -235,6 +259,9 @@ const IconHolder = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
+  @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
+    margin: ${p=>p.theme.space[16]} ${p=>p.theme.space[24]};
+  }
 `
 
 const Homepage = () => {
@@ -260,11 +287,11 @@ const Homepage = () => {
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
-          To get started with Prisma, choose one of our{' '}
-          <a href={SummaryLinkData.gettingStarted}>getting started tutorials</a> or explore our
-          <a href={SummaryLinkData.readyToRun}>
-            {' '}
-            ready-to-run <br className="hide-mobile" /> examples on GitHub
+          Choose one of our {' '}
+          <a href={SummaryLinkData.gettingStarted}>getting started tutorials</a> or explore the
+          {' '}<a href={SummaryLinkData.readyToRun}>
+            
+            ready-to-run examples on GitHub
           </a>
           . Join our thriving community on <a href={SummaryLinkData.slack}>Slack</a> and{' '}
           <a href={SummaryLinkData.git}>GitHub</a> for help and ideas.
@@ -272,14 +299,13 @@ const Homepage = () => {
         <SummaryLinks>
           {SummaryLinkData.buttons.map((slink: any, index: number) =>
             slink.special ? (
-              <SpecialButton href={slink.url} size={ButtonSize.SMALL} target="_blank" key={index}>
-                {icons[slink.icon]}
+              <SpecialButton href={slink.url} target="_blank" key={index} icon={icons[slink.icon]}>
+                
                 &nbsp; {slink.text}
               </SpecialButton>
             ) : (
               <PrimaryButton
                 href={slink.url}
-                size={ButtonSize.SMALL}
                 target="_blank"
                 style={{ background: '#2D3748' }}
                 key={index}
@@ -293,17 +319,19 @@ const Homepage = () => {
       <QuickLinks>
         <GenaralLinks>
           {GeneralLinkData.map((generalLink: any, index: number) => (
-            <div>
+            <GeneralLink>
               <IconHolder>{icons[generalLink.icon]}</IconHolder>
-              <CapTitle>{generalLink.categoryName}</CapTitle>
-              <List>
-                {generalLink.links.map((link: any) => (
-                  <li key={index}>
-                    <a href={link.url}>{link.text}</a>
-                  </li>
-                ))}
-              </List>
-            </div>
+              <div>
+                <CapTitle>{generalLink.categoryName}</CapTitle>
+                <List>
+                  {generalLink.links.map((link: any) => (
+                    <li key={index}>
+                      <a href={link.url}>{link.text}</a>
+                    </li>
+                  ))}
+                </List>
+              </div>
+            </GeneralLink>
           ))}
         </GenaralLinks>
         <Space height={80} />

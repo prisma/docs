@@ -68,9 +68,9 @@ const config = {
   homepage: {
     SummaryLinkData: {
       gettingStarted: '/getting-started',
-      readyToRun: '',
-      slack: '',
-      git: '',
+      readyToRun: 'https://github.com/prisma/prisma-examples',
+      slack: 'https://slack.prisma.io/',
+      git: 'https://github.com/prisma',
       buttons: [
         {
           text: 'Quick start',
@@ -86,7 +86,7 @@ const config = {
         },
         {
           text: 'Examples',
-          url: '',
+          url: 'https://github.com/prisma/prisma-examples',
           special: false,
           icon: null,
         },
@@ -145,7 +145,7 @@ const config = {
             url: '/concepts/components/prisma-studio',
           },
           {
-            text: 'Prisma features',
+            text: 'Preview features',
             url: '/concepts/components/preview-features',
           },
         ],
@@ -191,47 +191,47 @@ const config = {
     
     GuideLinkData : [
       {
-        title: 'Setting up a database',
+        title: 'Spotlight: Transaction guide',
         color: '#48BB78',
-        small: true,
+        small: false,
         content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
         url: '',
       },
       {
-        title: 'Data import and export',
+        title: 'Prisma guides',
         color: '#38B2AC',
         small: true,
         content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
         url: '',
       },
       {
-        title: 'Foreign keys',
+        title: 'Database workflows',
         color: '#4299E1',
-        small: false,
+        small: true,
         content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
         url: '/guides/general-guides/database-workflows/foreign-keys',
       },
       {
-        title: 'Deploying to Vercel (ZEIT Now)',
-        color: '#667EEA',
-        small: false,
-        content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
-        url: '/guides/deployment/deploying-to-vercel',
-      },
-      {
-        title: 'Deploying to Heroku',
+        title: 'Migration guides',
         color: '#9F7AEA',
         small: true,
-        content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
-        url: '/guides/deployment/deploying-to-heroku',
+        content: 'Migrate to Prisma from other ORMs.',
+        url: '/guides/migrate-to-prisma',
       },
       {
-        title: 'Deploying to Netlify',
+        title: 'Upgrade guides',
         color: '#ED64A6',
         small: true,
-        content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
-        url: '/guides/deployment/deploying-to-netlify',
+        content: 'Upgrade to Prisma from Prisma 1 or Graphcool.',
+        url: '/guides/upgrade-guides',
       },
+      {
+        title: 'Deployment guides',
+        color: '#667EEA',
+        small: false,
+        content: 'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
+        url: '/guides/deployment',
+      }
     ],
     ReferenceText: 'Egestas in tincidunt dui, integer at. Ultrices ipsum lectus ornare velit vestibulum. Porttitor nulla faucibus commodo purus eget. Vitae pretium.',
     
@@ -264,20 +264,21 @@ const config = {
         icon: 'CLI',
         links: [
           {
-            text: 'init',
-            url: '/reference/api-reference/command-reference#init',
-            codeBlock: true,
-          },
-          {
-            text: 'generate',
-            url: '/reference/api-reference/command-reference#generate',
-            codeBlock: true,
-          },
-          {
             text: 'introspect',
             url: '/reference/api-reference/command-reference#introspect',
             codeBlock: true,
           },
+          {
+            text: 'migrate',
+            url: '/reference/api-reference/command-reference#prisma-migrate-preview',
+            codeBlock: true,
+          },
+          {
+            text: 'db',
+            url: '/reference/api-reference/command-reference#db',
+            codeBlock: true,
+          },
+
         ],
       },
       {
@@ -331,7 +332,7 @@ const config = {
       },
       {
         text: 'Slack',
-        url: '',
+        url: 'https://slack.prisma.io/',
       },
       {
         text: 'FAQ',
