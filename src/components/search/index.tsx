@@ -130,6 +130,7 @@ const Results = connectStateResults(
 export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
+  const [selectedIndex, setSelectedIndex] = React.useState(-1)
   const hideSearch = () => setShowHits(false)
 
   const showSearch = () => setShowHits(true)
@@ -138,6 +139,8 @@ export default function Search({ hitsStatus }: any) {
     hitsStatus(showHits)
   }, [showHits, query])
 
+  const incrementIndex = (index:number) => {console.log(index);setSelectedIndex(index)}
+
   return (
     <InstantSearch
       searchClient={searchClient}
@@ -145,11 +148,11 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} />
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} upClicked={incrementIndex} selectedInd={selectedIndex}/>
       {query !== '' && <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
         <Index key={indexName} indexName={indexName}>
           <Results>
-            <Hits hitComponent={DocHit} />
+            <Hits hitComponent={DocHit} selectedIndex={selectedIndex}/>
           </Results>
         </Index>
       </HitsWrapper>}
@@ -162,7 +165,7 @@ const Hits = connectHits(
     hits,
     hitComponent,
     onMouseHoverHit,
-    // selectedIndex,
+    selectedIndex,
     onMouseLeaverHits,
   }:any) => (
     <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
@@ -170,7 +173,7 @@ const Hits = connectHits(
         <li key={hit.objectID} className="ais-Hits-item">
           {React.createElement(hitComponent, {
             hit,
-            // selected: index === selectedIndex,
+            selected: index === selectedIndex,
             onMouseHover: () => onMouseHoverHit(index),
           })}
         </li>
