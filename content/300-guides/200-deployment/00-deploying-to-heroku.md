@@ -90,6 +90,11 @@ git init
 > Initialized empty Git repository in /Users/alice/prisma-heroku/.git/
 ```
 
+To use the `main` branch as the default branch, run the following command:
+```no-lines
+git branch -M main
+```
+
 With the repository initialized, add and commit the files:
 
 ```no-lines
@@ -101,7 +106,7 @@ git commit -m 'Initial commit'
 
 ```no-lines
 git log -1
-commit 895534590fdd260acee6396e2e1c0438d1be7fed (HEAD -> master)
+commit 895534590fdd260acee6396e2e1c0438d1be7fed (HEAD -> main)
 ```
 
 ## 3. Heroku CLI login
