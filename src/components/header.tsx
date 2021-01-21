@@ -281,7 +281,8 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
   }
 
   const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
-    const [showExpanded, setShowExpanded] = React.useState(false)
+    const isCurrent = location && link && location.pathname.includes(link)
+    const [showExpanded, setShowExpanded] = React.useState(isCurrent)
     const toggle = () => setShowExpanded(!showExpanded)
     return type === 'bucket' ? (
       <>
@@ -307,7 +308,6 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
         return (
           <MenuItem
             componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
-            // componentToShow={item.expandContent === 'mainDocs' ? <Sidebar isMobile={true} /> : null}
             type={item.type}
             text={item.text}
             link={item.to}

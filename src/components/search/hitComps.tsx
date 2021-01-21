@@ -18,6 +18,7 @@ const HitComp = styled.div`
   }
   a {
     color: ${p => p.theme.colors.gray900} !important;
+    display: block;
   }
   h4 {
     font-weight: normal;
@@ -55,7 +56,7 @@ const HitComp = styled.div`
 const DocHit = ({ hit }: any) =>
   hit._distinctSeqID == 0 ? (
     <HitComp>
-      <Link style={{ boxShadow: `none`, textDecoration: 'none' }} to={hit.path}>
+      <Link style={{ boxShadow: `none`, textDecoration: 'none'}} to={hit.path}>
         <ParentTitle slug={hit.slug} nonLink={true} />
         <h3>
           <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}
