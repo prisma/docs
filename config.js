@@ -192,8 +192,13 @@ const config = {
         icon: 'MoreIcon',
         links: [
           {
-            text: 'Support and help articles',
-            url: '/support',
+            text: 'Editor setup',
+            url: '/concepts/more/editor-setup',
+            codeBlock: false,
+          },
+          {
+            text: 'Codemod',
+            url: '/concepts/more/codemod',
             codeBlock: false,
           },
           {
@@ -201,6 +206,11 @@ const config = {
             url: '/concepts/more/telemetry',
             codeBlock: false,
           },
+          {
+            text: 'Comparing Prisma',
+            url: '/concepts/more/comparisons',
+            codeBlock: false,
+          },          
         ],
       },
     ],
