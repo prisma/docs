@@ -197,60 +197,70 @@ const config = {
             codeBlock: false,
           },
           {
+            text: 'Codemod',
+            url: '/concepts/more/codemod',
+            codeBlock: false,
+          },
+          {
             text: 'Telemetry',
             url: '/concepts/more/telemetry',
             codeBlock: false,
           },
+          {
+            text: 'Comparing Prisma',
+            url: '/concepts/more/comparisons',
+            codeBlock: false,
+          },          
         ],
       },
     ],
-    GuideText: 'This section includes end-to-end guides for upgrading and deploying Node.js applications that use Prisma, as well as guides for common database-related tasks.',
+    GuideText: 'Guides for building and deploying applications with Prisma.',
     
     GuideLinkData : [
       {
         title: 'Spotlight: Transaction guide',
         color: '#48BB78',
         small: false,
-        content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
-        url: '',
+        content: 'Explore techniques for handling transactions with Prisma Client.',
+        url: '/guides/prisma-guides/prisma-client-transactions-guide',
       },
       {
-        title: 'Prisma guides',
+        title: 'Using Prisma',
         color: '#38B2AC',
         small: true,
-        content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
-        url: '',
+        content: 'How to integrate Prisma into your stack.',
+        url: '/guides/prisma-guides',
       },
       {
         title: 'Database workflows',
         color: '#4299E1',
         small: true,
-        content: 'Vitae tincidunt convallis arcu pretium amet ut porttitor.',
+        content: 'Guides for common database workflow such as configuring constraints or cascading deletes.',
         url: '/guides/general-guides/database-workflows/foreign-keys',
       },
       {
-        title: 'Migration guides',
+        title: 'Adopting Prisma',
         color: '#9F7AEA',
         small: true,
         content: 'Migrate to Prisma from other ORMs.',
         url: '/guides/migrate-to-prisma',
       },
       {
-        title: 'Upgrade guides',
+        title: 'Upgrading to Prisma',
         color: '#ED64A6',
         small: true,
         content: 'Upgrade to Prisma from Prisma 1 or Graphcool.',
         url: '/guides/upgrade-guides',
       },
       {
-        title: 'Deployment guides',
+        title: 'Deploying Prisma apps',
         color: '#667EEA',
         small: false,
         content: 'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
         url: '/guides/deployment',
       }
     ],
-    ReferenceText: 'Egestas in tincidunt dui, integer at. Ultrices ipsum lectus ornare velit vestibulum. Porttitor nulla faucibus commodo purus eget. Vitae pretium.',
+    ReferenceText: 'Reference documentation for Prisma Client, the Prisma Schema Language (PSL), the Prisma CLI, and supported database providers.',
     
     ReferenceLinkData : [
       {
@@ -325,32 +335,32 @@ const config = {
     MoreUsefulLinks : [
       {
         text: `What's new in Prisma docs`,
-        url: '',
+        url: '/about/whats-new-in-prisma-docs',
         codeBlock: false,
       },
       {
         text: 'About the docs ',
-        url: '',
+        url: '/about/about-the-docs',
         codeBlock: false,
       },
       {
         text: 'Prisma style guide',
-        url: '',
+        url: '/about/style-guide',
         codeBlock: false,
       },
       {
         text: 'Ask a question on Github',
-        url: '',
+        url: '/support#ask-a-question-about-prisma',
         codeBlock: false,
       },
       {
         text: 'Create a bug report',
-        url: '',
+        url: '/support#create-a-bug-report-for-prisma',
         codeBlock: false,
       },
       {
         text: 'Submit a feature request',
-        url: '',
+        url: '/support#submit-a-feature-request',
         codeBlock: false,
       },
       {
@@ -360,27 +370,26 @@ const config = {
       },
       {
         text: 'FAQ',
-        url: '',
-        codeBlock: false,
+        url: '/about/faq',
       },
       {
         text: 'Limitations',
-        url: '',
+        url: '/about/limitations',
         codeBlock: false,
       },
       {
         text: 'Community',
-        url: '',
+        url: 'https://www.prisma.io/community',
         codeBlock: false,
       },
       {
         text: 'Roadmap',
-        url: '',
+        url: '/about/roadmap',
         codeBlock: false,
       },
       {
         text: 'Releases and maturity levels',
-        url: '',
+        url: '/about/releases',
         codeBlock: false,
       },
     ]
