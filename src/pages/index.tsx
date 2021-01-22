@@ -92,11 +92,19 @@ const Space = styled.div<{ height: number }>`
   ${p => `height: ${p.height}px;`};
 `;
 
+const ListTitleLink = styled.a`
+  text-decoration: none;
+`
+
 const ListTitle = styled.h5`
   font-weight: bold;
   line-height: ${p => p.theme.space[16]};
   font-size: ${p => p.theme.fontSizes[16]};
-  color: ${p => p.theme.colors.gray900};
+  color: ${p => p.theme.colors.gray900} !important;
+  display: flex;
+  margin: 24px 0 0;
+  align-items: center;
+  
   svg {
     transition: transform 0.3s ease-out 0s;
   }
@@ -326,7 +334,7 @@ const Homepage = () => {
                 <List>
                   {generalLink.links.map((link: any) => (
                     <li key={index}>
-                      <a href={link.url}>{link.text}</a>
+                      <a href={link.url}><span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span></a>
                     </li>
                   ))}
                 </List>
@@ -362,13 +370,14 @@ const Homepage = () => {
         <NormalPara>{ReferenceText}</NormalPara>
         <Row>
           {ReferenceLinkData.map((rLinkData: any, index: number) => (
-            <LinkCard style={{ maxWidth: '316px' }} key={index} href={rLinkData.mainUrl}>
+            <LinkCard style={{ maxWidth: '316px' }} key={index}>
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
-              <ListTitle>
-                {rLinkData.categoryName} &nbsp;
+              <ListTitleLink href={rLinkData.mainUrl}>
+                <ListTitle>{rLinkData.categoryName} &nbsp;
                   <ArrowRight color="#A0AEC0" />{' '}
-              </ListTitle>
+                </ListTitle>
+              </ListTitleLink>
               <List>
                 {rLinkData.links.map((link: any, index: number) => (
                   <li key={index}>
@@ -387,7 +396,7 @@ const Homepage = () => {
           <List split={true}>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
-                <a href={uLink.url}>{uLink.text}</a>
+                <a href={uLink.url}><span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span></a>
               </li>
             ))}
           </List>
@@ -422,6 +431,7 @@ const query = graphql`
             links {
               url
               text
+              codeBlock
             }
           }
           GuideText
@@ -440,11 +450,13 @@ const query = graphql`
             links {
               url
               text
+              codeBlock
             }
           }
           MoreUsefulLinks {
             text
             url
+            codeBlock
           }
         }
       }

@@ -101,18 +101,22 @@ const config = {
           {
             text: 'What is Prisma',
             url: '/concepts/overview/what-is-prisma',
+            codeBlock: false,
           },
           {
             text: 'Why Prisma?',
             url: '/concepts/overview/why-prisma',
+            codeBlock: false,
           },
           {
             text: 'Prisma in your stack',
             url: '/concepts/overview/prisma-in-your-stack',
+            codeBlock: false,
           },
           {
             text: 'Under the hood ',
             url: '/concepts/overview/under-the-hood',
+            codeBlock: false,
           },
         ],
       },
@@ -123,30 +127,37 @@ const config = {
           {
             text: 'Prisma schema',
             url: '/concepts/components/prisma-schema',
+            codeBlock: false,
           },
           {
             text: 'Prisma Client',
             url: '/concepts/components/prisma-client',
+            codeBlock: false,
           },
           {
             text: 'Prisma Migrate',
             url: '/concepts/components/prisma-migrate',
+            codeBlock: false,
           },
           {
             text: 'Introspection',
             url: '/concepts/components/introspection',
+            codeBlock: false,
           },
           {
             text: 'Prisma CLI',
             url: '/concepts/components/prisma-cli',
+            codeBlock: false,
           },
           {
             text: 'Prisma Studio',
             url: '/concepts/components/prisma-studio',
+            codeBlock: false,
           },
           {
             text: 'Preview features',
             url: '/concepts/components/preview-features',
+            codeBlock: false,
           },
         ],
       },
@@ -157,18 +168,22 @@ const config = {
           {
             text: 'PostgreSQL',
             url: '/concepts/database-connectors/postgresql',
+            codeBlock: false,
           },
           {
             text: 'MySQL',
             url: '/concepts/database-connectors/mysql',
+            codeBlock: false,
           },
           {
             text: 'SQLite',
             url: '/concepts/database-connectors/sqlite',
+            codeBlock: false,
           },
           {
             text: 'SQL Server',
             url: '/concepts/database-connectors/microsoft-sql-server',
+            codeBlock: false,
           },
         ],
       },
@@ -179,10 +194,12 @@ const config = {
           {
             text: 'Support and help articles',
             url: '/support',
+            codeBlock: false,
           },
           {
             text: 'Telemetry',
             url: '/concepts/more/telemetry',
+            codeBlock: false,
           },
         ],
       },
@@ -309,30 +326,37 @@ const config = {
       {
         text: `What's new in Prisma docs`,
         url: '/about/whats-new-in-prisma-docs',
+        codeBlock: false,
       },
       {
         text: 'About the docs ',
         url: '/about/about-the-docs',
+        codeBlock: false,
       },
       {
         text: 'Prisma style guide',
         url: '/about/style-guide',
+        codeBlock: false,
       },
       {
         text: 'Ask a question on Github',
         url: '/support#ask-a-question-about-prisma',
+        codeBlock: false,
       },
       {
         text: 'Create a bug report',
         url: '/support#create-a-bug-report-for-prisma',
+        codeBlock: false,
       },
       {
         text: 'Submit a feature request',
         url: '/support#submit-a-feature-request',
+        codeBlock: false,
       },
       {
         text: 'Slack',
         url: 'https://slack.prisma.io/',
+        codeBlock: false,
       },
       {
         text: 'FAQ',
@@ -341,18 +365,22 @@ const config = {
       {
         text: 'Limitations',
         url: '/about/limitations',
+        codeBlock: false,
       },
       {
         text: 'Community',
         url: 'https://www.prisma.io/community',
+        codeBlock: false,
       },
       {
         text: 'Roadmap',
         url: '/about/roadmap',
+        codeBlock: false,
       },
       {
         text: 'Releases and maturity levels',
         url: '/about/releases',
+        codeBlock: false,
       },
     ]
   },
