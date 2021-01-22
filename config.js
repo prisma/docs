@@ -308,27 +308,27 @@ const config = {
     MoreUsefulLinks : [
       {
         text: `What's new in Prisma docs`,
-        url: '',
+        url: '/about/whats-new-in-prisma-docs',
       },
       {
         text: 'About the docs ',
-        url: '',
+        url: '/about/about-the-docs',
       },
       {
         text: 'Prisma style guide',
-        url: '',
+        url: '/about/style-guide',
       },
       {
         text: 'Ask a question on Github',
-        url: '',
+        url: '/support#ask-a-question-about-prisma',
       },
       {
         text: 'Create a bug report',
-        url: '',
+        url: '/support#create-a-bug-report-for-prisma',
       },
       {
         text: 'Submit a feature request',
-        url: '',
+        url: '/support#submit-a-feature-request',
       },
       {
         text: 'Slack',
@@ -336,23 +336,23 @@ const config = {
       },
       {
         text: 'FAQ',
-        url: '',
+        url: '/about/faq',
       },
       {
         text: 'Limitations',
-        url: '',
+        url: '/about/limitations',
       },
       {
         text: 'Community',
-        url: '',
+        url: 'https://www.prisma.io/community',
       },
       {
         text: 'Roadmap',
-        url: '',
+        url: '/about/roadmap',
       },
       {
         text: 'Releases and maturity levels',
-        url: '',
+        url: '/about/releases',
       },
     ]
   },
