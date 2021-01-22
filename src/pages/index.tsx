@@ -10,6 +10,7 @@ import { ButtonSize, PrimaryButton, SpecialButton } from '../components/button';
 import Schema from '../icons/home/Schema';
 import DbLink from '../icons/home/DbLink';
 import CLI from '../icons/home/CLI';
+import Link from '../components/link';
 
 
 const icons: any = {
@@ -92,18 +93,21 @@ const Space = styled.div<{ height: number }>`
   ${p => `height: ${p.height}px;`};
 `;
 
-const ListTitleLink = styled.a`
-  text-decoration: none;
-`
 
 const ListTitle = styled.h5`
   font-weight: bold;
   line-height: ${p => p.theme.space[16]};
   font-size: ${p => p.theme.fontSizes[16]};
   color: ${p => p.theme.colors.gray900} !important;
-  display: flex;
   margin: 24px 0 0;
-  align-items: center;
+  
+
+  a {
+    text-decoration: none;
+    color: ${p => p.theme.colors.gray900} !important;
+    align-items: center;
+    display: flex;
+  }
   
   svg {
     transition: transform 0.3s ease-out 0s;
@@ -373,11 +377,10 @@ const Homepage = () => {
             <LinkCard style={{ maxWidth: '316px' }} key={index}>
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
-              <ListTitleLink href={rLinkData.mainUrl}>
-                <ListTitle>{rLinkData.categoryName} &nbsp;
-                  <ArrowRight color="#A0AEC0" />{' '}
-                </ListTitle>
-              </ListTitleLink>
+              <ListTitle>
+               <Link href={rLinkData.mainUrl}>{rLinkData.categoryName} &nbsp;
+                  <ArrowRight color="#A0AEC0" />{' '}</Link>
+              </ListTitle>
               <List>
                 {rLinkData.links.map((link: any, index: number) => (
                   <li key={index}>
