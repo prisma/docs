@@ -113,6 +113,14 @@ let plugins = [
   'gatsby-plugin-remove-trailing-slashes',
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
+  {
+    resolve: 'gatsby-plugin-google-tagmanager',
+    options: {
+      id: 'GTM-KCGZPWB',
+      includeInDevelopment: false,
+      defaultDataLayer: { website: 'docs' },
+    },
+  },
 ]
 
 if (process.env.INDEX_ALGOLIA === 'true') {
