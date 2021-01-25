@@ -370,7 +370,7 @@ const config = {
       },
       {
         text: 'FAQ',
-        url: '/about/faq',
+        url: 'about/faq',
       },
       {
         text: 'Limitations',
