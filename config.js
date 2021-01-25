@@ -265,7 +265,7 @@ const config = {
     ReferenceLinkData : [
       {
         categoryName: 'Prisma Schema API',
-        mainUrl: '/reference/api-reference/prisma-schema-reference',
+        mainUrl: 'reference/api-reference/prisma-schema-reference',
         icon: 'Schema',
         links: [
           {
@@ -287,7 +287,7 @@ const config = {
       },
       {
         categoryName: 'CLI Commands',
-        mainUrl: '/reference/api-reference/command-reference',
+        mainUrl: 'reference/api-reference/command-reference',
         icon: 'CLI',
         links: [
           {
@@ -335,32 +335,32 @@ const config = {
     MoreUsefulLinks : [
       {
         text: `What's new in Prisma docs`,
-        url: '/about/whats-new-in-prisma-docs',
+        url: 'about/whats-new-in-prisma-docs',
         codeBlock: false,
       },
       {
         text: 'About the docs ',
-        url: '/about/about-the-docs',
+        url: 'about/about-the-docs',
         codeBlock: false,
       },
       {
         text: 'Prisma style guide',
-        url: '/about/style-guide',
+        url: 'about/style-guide',
         codeBlock: false,
       },
       {
         text: 'Ask a question on Github',
-        url: '/support#ask-a-question-about-prisma',
+        url: 'support#ask-a-question-about-prisma',
         codeBlock: false,
       },
       {
         text: 'Create a bug report',
-        url: '/support#create-a-bug-report-for-prisma',
+        url: 'support#create-a-bug-report-for-prisma',
         codeBlock: false,
       },
       {
         text: 'Submit a feature request',
-        url: '/support#submit-a-feature-request',
+        url: 'support#submit-a-feature-request',
         codeBlock: false,
       },
       {
@@ -374,7 +374,7 @@ const config = {
       },
       {
         text: 'Limitations',
-        url: '/about/limitations',
+        url: 'about/limitations',
         codeBlock: false,
       },
       {
@@ -384,12 +384,12 @@ const config = {
       },
       {
         text: 'Roadmap',
-        url: '/about/roadmap',
+        url: 'about/roadmap',
         codeBlock: false,
       },
       {
         text: 'Releases and maturity levels',
-        url: '/about/releases',
+        url: 'about/releases',
         codeBlock: false,
       },
     ]
