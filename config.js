@@ -67,20 +67,20 @@ const config = {
   },
   homepage: {
     SummaryLinkData: {
-      gettingStarted: '/getting-started',
+      gettingStarted: 'getting-started',
       readyToRun: 'https://github.com/prisma/prisma-examples',
       slack: 'https://slack.prisma.io/',
       git: 'https://github.com/prisma',
       buttons: [
         {
           text: 'Quick start',
-          url: '/getting-started/quickstart-typescript',
+          url: 'getting-started/quickstart-typescript',
           special: true,
           icon: 'DoubleArrow',
         },
         {
           text: 'Set up prisma',
-          url: '/getting-started/setup-prisma',
+          url: 'getting-started/setup-prisma',
           special: false,
           icon: null,
         },
@@ -100,22 +100,22 @@ const config = {
         links: [
           {
             text: 'What is Prisma',
-            url: '/concepts/overview/what-is-prisma',
+            url: 'concepts/overview/what-is-prisma',
             codeBlock: false,
           },
           {
             text: 'Why Prisma?',
-            url: '/concepts/overview/why-prisma',
+            url: 'concepts/overview/why-prisma',
             codeBlock: false,
           },
           {
             text: 'Prisma in your stack',
-            url: '/concepts/overview/prisma-in-your-stack',
+            url: 'concepts/overview/prisma-in-your-stack',
             codeBlock: false,
           },
           {
             text: 'Under the hood ',
-            url: '/concepts/overview/under-the-hood',
+            url: 'concepts/overview/under-the-hood',
             codeBlock: false,
           },
         ],
@@ -126,37 +126,37 @@ const config = {
         links: [
           {
             text: 'Prisma schema',
-            url: '/concepts/components/prisma-schema',
+            url: 'concepts/components/prisma-schema',
             codeBlock: false,
           },
           {
             text: 'Prisma Client',
-            url: '/concepts/components/prisma-client',
+            url: 'concepts/components/prisma-client',
             codeBlock: false,
           },
           {
             text: 'Prisma Migrate',
-            url: '/concepts/components/prisma-migrate',
+            url: 'concepts/components/prisma-migrate',
             codeBlock: false,
           },
           {
             text: 'Introspection',
-            url: '/concepts/components/introspection',
+            url: 'concepts/components/introspection',
             codeBlock: false,
           },
           {
             text: 'Prisma CLI',
-            url: '/concepts/components/prisma-cli',
+            url: 'concepts/components/prisma-cli',
             codeBlock: false,
           },
           {
             text: 'Prisma Studio',
-            url: '/concepts/components/prisma-studio',
+            url: 'concepts/components/prisma-studio',
             codeBlock: false,
           },
           {
             text: 'Preview features',
-            url: '/concepts/components/preview-features',
+            url: 'concepts/components/preview-features',
             codeBlock: false,
           },
         ],
@@ -167,22 +167,22 @@ const config = {
         links: [
           {
             text: 'PostgreSQL',
-            url: '/concepts/database-connectors/postgresql',
+            url: 'concepts/database-connectors/postgresql',
             codeBlock: false,
           },
           {
             text: 'MySQL',
-            url: '/concepts/database-connectors/mysql',
+            url: 'concepts/database-connectors/mysql',
             codeBlock: false,
           },
           {
             text: 'SQLite',
-            url: '/concepts/database-connectors/sqlite',
+            url: 'concepts/database-connectors/sqlite',
             codeBlock: false,
           },
           {
             text: 'SQL Server',
-            url: '/concepts/database-connectors/microsoft-sql-server',
+            url: 'concepts/database-connectors/microsoft-sql-server',
             codeBlock: false,
           },
         ],
@@ -193,22 +193,22 @@ const config = {
         links: [
           {
             text: 'Editor setup',
-            url: '/concepts/more/editor-setup',
+            url: 'concepts/more/editor-setup',
             codeBlock: false,
           },
           {
             text: 'Codemod',
-            url: '/concepts/more/codemod',
+            url: 'concepts/more/codemod',
             codeBlock: false,
           },
           {
             text: 'Telemetry',
-            url: '/concepts/more/telemetry',
+            url: 'concepts/more/telemetry',
             codeBlock: false,
           },
           {
             text: 'Comparing Prisma',
-            url: '/concepts/more/comparisons',
+            url: 'concepts/more/comparisons',
             codeBlock: false,
           },          
         ],
@@ -222,42 +222,42 @@ const config = {
         color: '#48BB78',
         small: false,
         content: 'Explore techniques for handling transactions with Prisma Client.',
-        url: '/guides/prisma-guides/prisma-client-transactions-guide',
+        url: 'guides/prisma-guides/prisma-client-transactions-guide',
       },
       {
         title: 'Using Prisma',
         color: '#38B2AC',
         small: true,
         content: 'How to integrate Prisma into your stack.',
-        url: '/guides/prisma-guides',
+        url: 'guides/prisma-guides',
       },
       {
         title: 'Database workflows',
         color: '#4299E1',
         small: true,
         content: 'Guides for common database workflow such as configuring constraints or cascading deletes.',
-        url: '/guides/general-guides/database-workflows/foreign-keys',
+        url: 'guides/general-guides/database-workflows/foreign-keys',
       },
       {
         title: 'Adopting Prisma',
         color: '#9F7AEA',
         small: true,
         content: 'Migrate to Prisma from other ORMs.',
-        url: '/guides/migrate-to-prisma',
+        url: 'guides/migrate-to-prisma',
       },
       {
         title: 'Upgrading to Prisma',
         color: '#ED64A6',
         small: true,
         content: 'Upgrade to Prisma from Prisma 1 or Graphcool.',
-        url: '/guides/upgrade-guides',
+        url: 'guides/upgrade-guides',
       },
       {
         title: 'Deploying Prisma apps',
         color: '#667EEA',
         small: false,
         content: 'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
-        url: '/guides/deployment',
+        url: 'guides/deployment',
       }
     ],
     ReferenceText: 'Reference documentation for Prisma Client, the Prisma Schema Language (PSL), the Prisma CLI, and supported database providers.',
@@ -270,17 +270,17 @@ const config = {
         links: [
           {
             text: 'datasource',
-            url: '/reference/api-reference/prisma-schema-reference#datasource',
+            url: 'reference/api-reference/prisma-schema-reference#datasource',
             codeBlock: true,
           },
           {
             text: 'generator',
-            url: '/reference/api-reference/prisma-schema-reference#generator',
+            url: 'reference/api-reference/prisma-schema-reference#generator',
             codeBlock: true,
           },
           {
             text: 'model',
-            url: '/reference/api-reference/prisma-schema-reference#model',
+            url: 'reference/api-reference/prisma-schema-reference#model',
             codeBlock: true,
           },
         ],
@@ -292,17 +292,17 @@ const config = {
         links: [
           {
             text: 'introspect',
-            url: '/reference/api-reference/command-reference#introspect',
+            url: 'reference/api-reference/command-reference#introspect',
             codeBlock: true,
           },
           {
             text: 'migrate',
-            url: '/reference/api-reference/command-reference#prisma-migrate-preview',
+            url: 'reference/api-reference/command-reference#prisma-migrate-preview',
             codeBlock: true,
           },
           {
             text: 'db',
-            url: '/reference/api-reference/command-reference#db',
+            url: 'reference/api-reference/command-reference#db',
             codeBlock: true,
           },
 
@@ -310,22 +310,22 @@ const config = {
       },
       {
         categoryName: 'Database',
-        mainUrl: '/reference/database-reference',
+        mainUrl: 'reference/database-reference',
         icon: 'DbLink',
         links: [
           {
             text: 'Features matrix',
-            url: '/reference/database-reference/database-features',
+            url: 'reference/database-reference/database-features',
             codeBlock: false,
           },
           {
             text: 'Connection URLs',
-            url: '/reference/database-reference/connection-urls',
+            url: 'reference/database-reference/connection-urls',
             codeBlock: false,
           },
           {
             text: 'Supported databases',
-            url: '/reference/database-reference/supported-databases',
+            url: 'reference/database-reference/supported-databases',
             codeBlock: false,
           },
         ],
