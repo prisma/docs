@@ -11,6 +11,7 @@ import Schema from '../icons/home/Schema';
 import DbLink from '../icons/home/DbLink';
 import CLI from '../icons/home/CLI';
 import Link from '../components/link';
+import SEO from '../components/seo';
 
 
 const icons: any = {
@@ -280,6 +281,8 @@ const Homepage = () => {
   const { site } = useStaticQuery(query);
   const {
     siteMetadata: {
+      title,
+      description,
       homepage: {
         SummaryLinkData,
         GeneralLinkData,
@@ -296,6 +299,7 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
+      <SEO title={title} description={description} />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
@@ -415,6 +419,8 @@ const query = graphql`
   query Homepage {
     site {
       siteMetadata {
+        title
+        description
         homepage {
           SummaryLinkData {
             gettingStarted
