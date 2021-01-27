@@ -12,17 +12,17 @@ Projects using Prisma Client can be deployed to many different cloud platforms. 
 
 Here are two common deployment paradigms for a Node.js based project:
 
-- **Long running process (PaaS)**: Your Node.js process is continuously running and handles multiple requests. Your application can be deployed to a Platform-as-a-Service like Heroku, as a Docker container to Kubernetes, or as a Node.js process on a virtual machine.
+- **Long-running process (PaaS)**: Your Node.js process is continuously running and handles multiple requests. Your application can be deployed to a Platform-as-a-Service like Heroku, as a Docker container to Kubernetes, or as a Node.js process on a virtual machine.
 - **Serverless (FaaS)**: Node.js processes of your application (or subsets of it broken into functions) are started as requests come in.
 
 Each paradigm has different tradeoffs that affect the performance, scalability, and operational costs of your application.
 
-Moreover, the user traffic pattern of your application is also an important factor to consider. For example, any application with consistent user traffic may be better suited for a continuously running paradigm whereas an application with sudden spikes may be better suited for serverless.
+Moreover, the user traffic pattern of your application is also an important factor to consider. For example, any application with consistent user traffic may be better suited for a continuously running paradigm, whereas an application with sudden spikes may be better suited for serverless.
 
 ## Database connection limit
 
 Databases have a limit on the number of open connections they can handle.
-A higher connection limit allows more processes to connect, however, this comes with a significant performance cost on the database side. Moreover, many databases recommended not overpassing a certain connection number.
+A higher connection limit allows more processes to connect. However, this comes with a significant performance cost on the database side. Moreover, many databases recommended not overpassing a certain connection number.
 Several approaches can be used to mitigate such problems.
 Choosing the right approach depends on the deployment paradigm.
 
@@ -60,7 +60,7 @@ If your machine four physical CPUs, your connection pool will contain nine conne
 #### Recommended connection limit
 
 - **Long running process (PaaS)**: It's recommended to use the default of `num_physical_cpus * 2 + 1`. That number should be multiplied by the number of application instances to ensure it's under the database's limit. For example if your database's connection limit is _10_ and you have _two_ instances of your app, the connection limit should be no more than _5_.
-- **Serverless (FaaS)**: It's recommended to set the connection limit to 1 because each incoming request will start a short-lived Node.js process. This can cause the database connection pool to be quickly exhausted from a short spike in user traffic.
+- **Serverless (FaaS)**: It's recommended to set the connection limit to 1 if you're not using an external connection pooler because each incoming request starts a short-lived Node.js process. This can cause the database connection pool to be quickly exhausted from a short spike in user traffic.
 
 **PostgreSQL**
 
@@ -76,9 +76,9 @@ mysql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=1
 
 ### Usage with PgBouncer
 
-PostgreSQL supports only a certain amount of concurrent connections and this limit can be reached quite fast when the service usage goes up – especially in serverless environments.
+PostgreSQL supports only a certain amount of concurrent connections, and this limit can be reached quite fast when the service usage goes up – especially in serverless environments.
 
-A connection pooler like PgBouncer prevents your application from exhausing the database's connection limit.
+A connection pooler like PgBouncer prevents your application from exhausting the database's connection limit.
 
 PgBouncer holds a connection pool to the database and proxies incoming client connections by sitting between Prisma Client and the database. This reduces the number of processes a database has to handle at any given time. PgBouncer passes on a limited number of connections to the database and queues additional connections for delivery when space becomes available.
 
@@ -90,20 +90,19 @@ postgresql://USER:PASSWORD@HOST:PORT/DATABASE?pgbouncer=true
 
 Additionally, for Prisma Client to work reliably, PgBouncer must run in [**Transaction mode**](https://www.pgbouncer.org/features.html).
 
-_Transaction mode_ offers a connection for every transaction which is required for the Prisma query engine to work with PgBouncer.
+_Transaction mode_ offers a connection for every transaction – a requirement for the Prisma query engine to work with PgBouncer.
 
 <details>
   <summary>How `pgbouncer` mode works in Prisma</summary>
 
-- Prisma will clean up already present prepared statements in the connection by running `DEALLOCATE ALL` before trying to prepare and execute the Prisma Client query.
-- Prisma will trigger a transaction for every query case – even when just reading data – which allows Prisma to use prepared statements.
-in Prisma.
+- Prisma cleans up already present prepared statements in the connection by running `DEALLOCATE ALL` before preparing and executing Prisma Client queries.
+- Prisma opens a transaction for every query case – even when just reading data, allowing Prisma to use prepared statements.
 
 </details>
 
 ## Serverless (FaaS)
 
-Serverless environments have the concept of warm starts which means that for subsequent invocations of the same function it may use an already existing container that has the allocated processes, memory, file system (`/tmp` is writable on AWS Lambda), and even DB connection still available.
+Serverless environments have the concept of warm starts, which means that for subsequent invocations of the same function, it may use an already existing container that has the allocated processes, memory, file system (`/tmp` is writable on AWS Lambda), and even DB connection still available.
 
 Typically, any piece of code [outside the handler](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-features.html#gettingstarted-features-programmingmodel) remains initialized. This is a great place for
 `PrismaClient` to call `connect` or at least call `PrismaClient` constructor so that subsequent invocations can share a connection. There are some implications though that are not directly related to Prisma Client JS but any system that would require a DB connection from serverless environment:
