@@ -50,7 +50,7 @@ This section describes the `PrismaClient` constructor and its parameters.
 
 ### Remarks
 
-* Parameters are validated at runtime.
+- Parameters are validated at runtime.
 
 ### <inlinecode>datasources</inlinecode>
 
@@ -59,8 +59,8 @@ Programmatically overrides properties of the `datasource` block in the `schema.p
 #### Properties
 
 | Example property | Example value                 | Description                                                              |
-| -------------- | ----------------------------- | ------------------------------------------------------------------------ |
-| `db`           | `{ url: 'file:./dev_qa.db' }` |  The database [connection string](../database-reference/connection-urls).            |
+| ---------------- | ----------------------------- | ------------------------------------------------------------------------ |
+| `db`             | `{ url: 'file:./dev_qa.db' }` | The database [connection string](../database-reference/connection-urls). |
 
 #### Remarks
 
@@ -103,12 +103,12 @@ Determines the type and level of logging. See also: [Logging](../../../concepts/
 
 ##### Log levels
 
-| Name    | Description                                          |
-| ------- | ---------------------------------------------------- |
+| Name    | Description                                           |
+| ------- | ----------------------------------------------------- |
 | `query` | The query sent to the database, including parameters. |
-| `info`  | Information.                                         |
-| `warn`  | Warnings.                                            |
-| `error` | Errors.                                              |
+| `info`  | Information.                                          |
+| `warn`  | Warnings.                                             |
+| `error` | Errors.                                               |
 
 ##### Emit formats
 
@@ -203,8 +203,8 @@ prisma:query SELECT COUNT(*) FROM (SELECT "public"."User"."id" FROM "public"."Us
 ```ts
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient({ 
-  log: [{ level: 'query', emit: 'event' }] 
+const prisma = new PrismaClient({
+  log: [{ level: 'query', emit: 'event' }],
 })
 
 prisma.$on('query', e => {
@@ -364,21 +364,61 @@ const prisma = new PrismaClient({
 
 ### <inlinecode>rejectOnNotFound</inlinecode>
 
-Configure `findUnique` and/or `findFirst` to throw an error if the query returns `null`.
+Use the `rejectOnNotFound` parameter to configure `findUnique` and/or `findFirst` to throw an error if the record was not found. By default, both operations return `null` if the record is not found.
+
+### Remarks
+
+- You can configure `reectOnNotFound` on a per-request level for both [`findUnique`](#findunique) and `findFirst`(#findfirst)
 
 #### Options
 
-| Option                                           | Option example                      |
-| ------------------------------------------------ | ----------------------------------- |
-| `RejectOnNotFound` (`boolean`)                   | `rejectOnNotFound: true,`    |
-| `RejectOnNotFound` (`((error: Error) => Error)`) | `rejectOnNotFound: err => new Error("An error occurred!")`    |
-| `RejectPerOperation`                    | ```ts
+| Option               | Description                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `RejectOnNotFound`   | Enable globally (`true` / `false`) _or_ throw a custom error.                               |
+| `RejectPerOperation` | Enable per operation (`true` / `false`) _or_ throw a custom error per operation, per model. |
+
+#### Reference
 
 ```ts
 rejectOnNotFound?: RejectOnNotFound | RejectPerOperation
 ```
 
 #### Examples
+
+##### Enable globally for `findUnique` and `findFirst`
+
+```ts
+const prisma = new PrismaClient({
+  rejectOnNotFound: true,
+})
+```
+
+##### Enable globally for a specific operation
+
+```ts
+const prisma = new PrismaClient({
+  rejectOnNotFound: {
+    findUnique: true,
+  },
+})
+```
+
+##### Throw a custom error per model and operation if record is not found
+
+```ts
+const prisma = new PrismaClient({
+  rejectOnNotFound: {
+    findFirst: {
+      User: err => new Error('User error'),
+      Post: err => new Error('Post error!'),
+    },
+    findUnique: {
+      User: err => new Error('User error'),
+      Post: err => new Error('Post error!'),
+    },
+  },
+})
+```
 
 ## Model queries
 
@@ -395,26 +435,28 @@ Use model queries to perform CRUD operations on your models. See also: [CRUD](..
 
 #### Options
 
-| Name      | Example type (`User`)    | Required | Description                                                                      |
-| --------- | ------------------------ | -------- | -------------------------------------------------------------------------------- |
-| `where`   | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected. |
-| `select`  | `XOR<UserSelect, null>`  | No       | Specifies which properties to include on the returned object.                    |
-| `include` | `XOR<UserInclude, null>` | No       | Specifies which relations should be eagerly loaded on the returned object.       |
+| Name               | Example type (`User`)    | Required | Description                                                                                                                     |
+| ------------------ | ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `where`            | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected.                                                |
+| `select`           | `XOR<UserSelect, null>`  | No       | Specifies which properties to include on the returned object.                                                                   |
+| `include`          | `XOR<UserInclude, null>` | No       | Specifies which relations should be eagerly loaded on the returned object.                                                      |
+| `rejectOnNotFound` | `RejectOnNotFound`       | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). |
 
 #### Return type
 
-| Return type               | Example                    | Description                                                     |
-| ------------------------- | -------------------------- | --------------------------------------------------------------- |
-| Javascript object (typed) | `User`                     |                                                                 |
-| Javascript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return. |
-| `null`                    | `null`                     | Record not found                                                |
+| Return type               | Example                    | Description                                                                                                                                                          |
+| ------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Javascript object (typed) | `User`                     |                                                                                                                                                                      |
+| Javascript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return.                                                                                                      |
+| `null`                    | `null`                     | Record not found                                                                                                                                                     |
+| Error                     |                            | If `rejectOnNotFound` is true, `findUnique` throws an error (`NotFoundError` by default, [customizable globally](<(#rejectonnotfound)>)) insted of returning `null`. |
 
 #### Reference
 
 `findUnique` accepts the following input type:
 
 ```ts file=index.d.ts
-export type FindOneUserArgs = {
+export type UserFindOneArgs = {
   where: UserWhereUniqueInput
   select?: UserSelect | null
   include?: UserInclude | null
@@ -502,24 +544,26 @@ const result = await prisma.user.findUnique({
 
 #### Options
 
-| Name       | Example type (`User`)                                        | Required | Description                                                                                                                                                                                                                                |
-| ---------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `distinct` | `Enumerable<UserDistinct`<br />`FieldEnum>`                  | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                  |
-| `where`    | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                       |
-| `cursor`   | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                       |
-| `orderBy`  | `XOR<Enumerable<User`<br />`OrderByInput>,UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                          |
-| `include`  | `XOR<UserInclude, null>`                                     | No       | Specifies which relations should be eagerly loaded on the returned object.                                                                                                                                                                 |
-| `select`   | `XOR<UserSelect, null>`                                      | No       | Specifies which properties to include on the returned object.                                                                                                                                                                              |
-| `skip`     | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                  |
-| `take`     | `number`                                                     | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list. |
+| Name               | Example type (`User`)                                        | Required | Description                                                                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `distinct`         | `Enumerable<UserDistinct`<br />`FieldEnum>`                  | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                  |
+| `where`            | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                       |
+| `cursor`           | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                       |
+| `orderBy`          | `XOR<Enumerable<User`<br />`OrderByInput>,UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                          |
+| `include`          | `XOR<UserInclude, null>`                                     | No       | Specifies which relations should be eagerly loaded on the returned object.                                                                                                                                                                 |
+| `select`           | `XOR<UserSelect, null>`                                      | No       | Specifies which properties to include on the returned object.                                                                                                                                                                              |
+| `skip`             | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                  |
+| `take`             | `number`                                                     | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list. |
+| `rejectOnNotFound` | `RejectOnNotFound`                                           | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound).                                                                                                            |
 
 #### Return type
 
-| Return type               | Example                    | Description                                                     |
-| ------------------------- | -------------------------- | --------------------------------------------------------------- |
-| Javascript object (typed) | `User`                     | Specifies which properties to include on the returned object.   |
-| Javascript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return. |
-| `null`                    | `null`                     | Record not found                                                |
+| Return type               | Example                    | Description                                                                                                                                                          |
+| ------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Javascript object (typed) | `User`                     | Specifies which properties to include on the returned object.                                                                                                        |
+| Javascript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return.                                                                                                      |
+| `null`                    | `null`                     | Record not found                                                                                                                                                     |
+| Error                     |                            | If `rejectOnNotFound` is true, `findUnique` throws an error (`NotFoundError` by default, [customizable globally](<(#rejectonnotfound)>)) insted of returning `null`. |
 
 #### Remarks
 
@@ -623,7 +667,7 @@ mainAsync()
 `findMany` accepts the following input type:
 
 ```ts file=index.d.ts
-export type FindManyUserArgs = {
+export type UserFindManyArgs = {
   select?: XOR<UserSelect, null>
   include?: XOR<UserInclude, null>
   where?: UserWhereInput
@@ -1058,19 +1102,21 @@ const deletedUserCount = await prisma.user.deleteMany({
 | `take`     | `number`                                                      | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (+ve value) or _end_ (-ve value) **either** of the list **or** from the `cursor` position if mentioned) |
 | `orderBy`  | `XOR<Enumerable<PostOrder`<br />`ByInput>, PostOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                               |
 | `distinct` | `Enumerable<UserDistinctFieldEnum>`                           | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                       |
+| `select ` | `UserCountAggregateInputType`                           | No       | Select which fields to count (non-`null` values) - you can also count `_all`. |  
 
 #### Return type
 
 | Return type | Example | Description           |
 | ----------- | ------- | --------------------- |
 | `number`    | `29`    | The count of records. |
+| `UserCountAggregateOutputType` | `{ _all: 27, name: 10 }` | Returned if `select` is used. |
 
 #### Reference
 
 `count` accepts the following input type:
 
 ```ts file=index.d.ts
-export type FindManyUserArgs = {
+export type UserFindManyArgs = {
   // select and include are excluded
   where?: UserWhereInput
   orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
@@ -1079,6 +1125,20 @@ export type FindManyUserArgs = {
   skip?: number
   distinct?: Enumerable<UserDistinctFieldEnum>
 }
+
+export type UserCountAggregateOutputType = {
+  id: number
+  name: number | null
+  email: number | null
+  profileViews: number
+  role: number | null
+  coinflips: number | null
+  testing: number | null
+  city: number | null
+  country: number | null
+  _all: number
+}
+
 ```
 
 #### Examples
@@ -1103,6 +1163,24 @@ const result = await prisma.user.count({
 })
 ```
 
+##### Use `select` to perform three separate counts
+
+The following query returns:
+
+* A count of all records (`_all`)
+* A count of all records with non-`null` `name` fields
+* A count of all records with non-`null` `city` fields
+
+```ts
+const c = await prisma.user.count({
+  select: {
+    _all: true,
+    city: true,
+    name: true,
+  }
+})
+```
+
 ### <inlinecode>aggregate</inlinecode>
 
 See also: [Aggregation, grouping, and summarizing](../../../concepts/components/prisma-client/aggregation-grouping-summarizing#aggregate) <span class="concept"></span>
@@ -1117,7 +1195,7 @@ See also: [Aggregation, grouping, and summarizing](../../../concepts/components/
 | `skip`     | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                       |
 | `take`     | `number`                                                     | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (+ve value) or _end_ (-ve value) **either** of the list **or** from the `cursor` position if mentioned) |
 | `distinct` | `Enumerable<UserDistinctFieldEnum>`                          | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                       |
-| `count`    | `true`                                                       | No       | Returns a count of matching records.                                                                                                                                                            |
+| `count`    | `true`                                                       | No       | Returns a count of matching records or non-`null` fields.                                                                                                                                                            |
 | `avg`      | `UserAvgAggregateInputType`                                  | No       | Returns an average of all values of the specified field.                                                                                                                                        |
 | `sum`      | `UserSumAggregateInputType`                                  | No       | Returns the sume of all values of the specified field.                                                                                                                                          |
 | `min`      | `UserMinAggregateInputType`                                  | No       | Returns the smallest available value of the specified field.                                                                                                                                    |
@@ -1128,14 +1206,14 @@ See also: [Aggregation, grouping, and summarizing](../../../concepts/components/
 `aggregate` accepts the following input type:
 
 ```ts
-export type AggregateUserArgs = {
+export type UserAggregateArgs = {
   where?: UserWhereInput
   orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
   cursor?: UserWhereUniqueInput
   take?: number
   skip?: number
   distinct?: Enumerable<UserDistinctFieldEnum>
-  count?: true
+  count?: true | UserCountAggregateInputType
   avg?: UserAvgAggregateInputType
   sum?: UserSumAggregateInputType
   min?: UserMinAggregateInputType
@@ -1145,13 +1223,16 @@ export type AggregateUserArgs = {
 
 #### Examples
 
-##### Return `min` and `max` `profileViews` of all `User` records
+##### Return `min`, `max`, and `count` of `profileViews` of all `User` records
 
 <CodeWithResult>
 <Cmd>
 
 ```ts
 const minMaxAge = await prisma.user.aggregate({
+  count: {
+    _all: true
+  }
   max: {
     profileViews: true,
   },
@@ -1166,12 +1247,9 @@ const minMaxAge = await prisma.user.aggregate({
 
 ```js
 {
-    "max": {
-        "profileViews": 440
-    },
-    "min": {
-        "profileViews": 93
-    }
+  count: { _all: 29 },
+  max: { profileViews: 90 },
+  min: { profileViews: 0 }
 }
 ```
 
@@ -1220,7 +1298,7 @@ See also: [Aggregation, grouping, and summarizing](../../../concepts/components/
 | `having`  | `number`                                                     | No       | Allows you to filter groups by an aggregate value - for example, only return groups _having_ an average age less than 50.                                                                       |
 | `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                       |
 | `take`    | `number`                                                     | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (+ve value) or _end_ (-ve value) **either** of the list **or** from the `cursor` position if mentioned) |
-| `count`   | `true`                                                       | No       | Returns a count of matching records.                                                                                                                                                            |
+| `count`   | `true`                                                       | No       | Returns a count of matching records or non-`null` fields.                                                                                                                                                            |
 | `avg`     | `UserAvgAggregateInputType`                                  | No       | Returns an average of all values of the specified field.                                                                                                                                        |
 | `sum`     | `UserSumAggregateInputType`                                  | No       | Returns the sume of all values of the specified field.                                                                                                                                          |
 | `min`     | `UserMinAggregateInputType`                                  | No       | Returns the smallest available value of the specified field.                                                                                                                                    |
@@ -1231,14 +1309,14 @@ See also: [Aggregation, grouping, and summarizing](../../../concepts/components/
 `groupBy` accepts the following input type:
 
 ```ts
-export type GroupByUserArgs = {
+export type UserGroupByArgs = {
   where?: UserWhereInput
   orderBy?: Enumerable<UserOrderByInput>
   by: Array<UserScalarFieldEnum>
   having?: UserScalarWhereWithAggregatesInput
   take?: number
   skip?: number
-  count?: UserCountAggregateInputType
+  count?: true | UserCountAggregateInputType
   avg?: UserAvgAggregateInputType
   sum?: UserSumAggregateInputType
   min?: UserMinAggregateInputType
@@ -1248,7 +1326,40 @@ export type GroupByUserArgs = {
 
 #### Examples
 
-TBD.
+<CodeWithResult expanded="{true}">
+<Cmd>
+
+```ts
+const groupUsers = await prisma.user.groupBy({
+  by: ['country', 'country'],
+  sum: {
+    profileViews: true,
+  },
+  orderBy: {
+    country: 'desc',
+  },
+  having: {
+    profileViews: {
+      avg: {
+        gt: 200,
+      },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+;[
+  { country: 'Denmark', city: 'Copenhagen', sum: { profileViews: 490 } },
+  { country: 'Sweden', city: 'Stockholm', sum: { profileViews: 500 } },
+]
+```
+
+</CmdResult>
+</CodeWithResult>
 
 ## Model query options
 
@@ -1270,7 +1381,7 @@ export type UserSelect = {
   profileViews?: boolean
   role?: boolean
   coinflips?: boolean
-  posts?: boolean | FindManyPostArgs
+  posts?: boolean | PostFindManyArgs
 }
 ```
 
@@ -3059,28 +3170,28 @@ Scalar list filters allow you to filter by the contents of a list / array field 
 
 ### Remarks
 
-* Scalar list / array filters [ignore `NULL` values](../../../concepts/components/prisma-client/working-with-advanced-types#null-values-in-arrays) <span class="concept"></span>. Using `isEmpty` or `NOT` does not return records with `NULL` value lists / arrays, and `{ equals: null }` results in an error.
+- Scalar list / array filters [ignore `NULL` values](../../../concepts/components/prisma-client/working-with-advanced-types#null-values-in-arrays) <span class="concept"></span>. Using `isEmpty` or `NOT` does not return records with `NULL` value lists / arrays, and `{ equals: null }` results in an error.
 
 ### Reference
 
 ```ts
-  export type StringNullableListFilter = {
-    equals?: Enumerable<string> | null
-    has?: string | null
-    hasEvery?: Enumerable<string>
-    hasSome?: Enumerable<string>
-    isEmpty?: boolean
-  }
+export type StringNullableListFilter = {
+  equals?: Enumerable<string> | null
+  has?: string | null
+  hasEvery?: Enumerable<string>
+  hasSome?: Enumerable<string>
+  isEmpty?: boolean
+}
 ```
 
 ```ts
-  export type BoolNullableListFilter = {
-    equals?: Enumerable<boolean> | null
-    has?: boolean | null
-    hasEvery?: Enumerable<boolean>
-    hasSome?: Enumerable<boolean>
-    isEmpty?: boolean
-  }
+export type BoolNullableListFilter = {
+  equals?: Enumerable<boolean> | null
+  has?: boolean | null
+  hasEvery?: Enumerable<boolean>
+  hasSome?: Enumerable<boolean>
+  isEmpty?: boolean
+}
 ```
 
 ### <inlinecode>has</inlinecode>
@@ -3109,7 +3220,7 @@ const posts = await client.post.findMany({
     NOT: {
       tags: {
         has: 'databases',
-      }
+      },
     },
   },
 })
@@ -3163,7 +3274,7 @@ The following query returns all `Post` records that have no tags:
 const posts = await prisma.post.findMany({
   where: {
     tags: {
-      isEmpty: true
+      isEmpty: true,
     },
   },
 })
@@ -3276,8 +3387,6 @@ const updatePosts = await prisma.post.updateMany({
 })
 ```
 
-
-
 ## Client methods
 
 Client-level methods are prefixed by `$`.
@@ -3337,7 +3446,7 @@ prisma.$use(async (params, next) => {
 | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `action`           | The query type - for example, `create` or `findMany`. See [CRUD reference](../crud) for all available queries.                                     |
 | `args`             | Arguments that were passed into the query - for example, `where`, `data`, or `orderBy`. See [CRUD reference](../crud) for all available arguments. |
-| `dataPath`         | Populated if you use the [fluent API](../relation-queries#fluent-api).                                                                             |
+| `dataPath`         | Populated if you use the [fluent API](../../../concepts/components/prisma-client/relation-queries#fluent-api).                                                                             |
 | `model`            | The model type - for example, `Post` or `User`.                                                                                                    |
 | `runInTransaction` | Returns `true` if the query ran in the context of a [transaction](../transactions).                                                                |
 
