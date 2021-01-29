@@ -7,7 +7,7 @@ tocDepth: 2
 
 <TopBlock>
 
-
+Prisma Client supports filtering and sorting with the `where` and `orderBy` query options respectively.
 
 </TopBlock>
 
@@ -17,11 +17,14 @@ Prisma Client allows you to filter records on any combination of model fields, i
 
 The following query:
 
-* Returns all `User` records with at least one published post _and_ an email address that ends with `prisma.io`
-* Returns all `User` fields
-* Includes all related `Post` records where `published` equals `true`
+- Returns all `User` records with at least one published post _and_ an email address that ends with `prisma.io`
+- Returns all `User` fields
+- Includes all related `Post` records where `published` equals `true`
 
-```js
+<CodeWithResult>
+<Cmd>
+
+```ts
 const result = await prisma.user.findMany({
   where: {
     email: {
@@ -43,35 +46,147 @@ const result = await prisma.user.findMany({
 })
 ```
 
-### Filter condtions and operators
+</Cmd>
+<CmdResult>
 
-Reference:
+```js
+;[
+  {
+    id: 1,
+    name: 'Ellen',
+    email: 'ellen@prisma.io',
+    role: 'USER',
+    posts: [
+      {
+        id: 1,
+        title: 'How to build a house',
+        published: true,
+        authorId: 1,
+      },
+      {
+        id: 2,
+        title: 'How to cook kohlrabi',
+        published: true,
+        authorId: 1,
+      },
+    ],
+  },
+]
+```
 
-- Operators list (`AND`, `OR`, `equals`, `contains`)
-- Nested operators (`some`, `every`, `none`)
+</CmdResult>
+</CodeWithResult>
 
-### Basic filtering
+### Filter conditions and operators
 
-- [Basic filtering](crud#get-a-filtered-list-of-records) - for example, return all users with `prisma.io` email addresses
+Refer to the Prisma Client reference documentation for [a full list of operators](../../../reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span>, such as `startsWith` and `contains`.
 
+#### Combining operators
+
+You can use (such as [`NOT`](../../../reference/api-reference/prisma-client-reference#not) <span class="api"></span> and [`OR`](../../../reference/api-reference/prisma-client-reference#not) <span class="api"></span>) to filter by a combination of conditions. The following query returns all users with an `email` that ends in `"prisma.io"` or `"gmail.com"`, but not `"hotmail.com"`:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    OR: [
+      {
+        email: {
+          endsWith: 'prisma.io',
+        },
+      },
+      { email: { endsWith: 'gmail.com' } },
+    ],
+    NOT: {
+      email: {
+        endsWith: 'hotmail.com',
+      },
+    },
+  },
+  select: {
+    email: true,
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+[
+  { email: 'yewande@prisma.io' }, 
+  { email: `raheem@gmail.com` }
+]
+```
+
+</CmdResult>
+</CodeWithResult>
 
 ### Filter on relations
 
-- [Filter related records](relation-queries#filter-the-relations-list) - for example, return users and their published posts from the last year _only_
-- [Filter _on_ related record properties](relation-queries#filtering) - for example, only return users _with_ at least one published post
+Prisma Client supports [filtering on related records](relation-queries#filtering). For example, in the following schema, a user can have many blog posts:
 
-### Advanced field filtering
+```prisma highlight=5,11-12;normal
+model User {
+  id           Int             @id @default(autoincrement())
+  name         String?
+  email        String          @unique
+  posts        Post[] // User can have many posts
+}
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
+}
+```
 
-#### Filter on `Json` fields
+The one-to-many relation between `User` and `Post` allows you to query users based on their posts - for example, the following query returns all users where _at least one_ post (`some`) has more than 10 views:
 
-See: [Filtering Json]()
+```ts
+  const result = await prisma.user.findMany({
+    where: {
+      posts: {
+        some: {
+         views: {
+           gt: 10
+         } 
+        }
+      }
+    }
+  })
+```
 
-#### Filter on scalar lists / arrays
+You can also query posts based on the properties of the author. For example, the following query returns all posts where the author's `email` contains `"prisma.io"`:
 
-See: 
+```ts
+  const res = await prisma.post.findMany({
+    where: {
+      author: {
+        email: {
+          contains: "prisma.io"
+        }
+      }
+    }
+  })
+```
 
-* [Filtering scalar lists / arrays]()
-* [Scalar list filter conditions]() <span class="api"></span>
+### Filter on scalar lists / arrays
+
+Scalar lists (for example, `String[]`) have a special set of [filter conditions](../../../reference/api-reference/prisma-client-reference#scalar-list-filters) <span class="api"></span>
+
+```ts
+const posts = await client.post.findMany({
+  where: {
+    tags: {
+      has: 'databases',
+    },
+  },
+})
+```
 
 ### Case-insensitive filtering
 
@@ -116,14 +231,14 @@ const usersWithPosts = await prisma.user.findMany({
   include: {
     posts: {
       orderBy: {
-        title: "desc",
+        title: 'desc',
       },
       select: {
         title: true,
       },
     },
   },
-});
+})
 ```
 
 </Cmd>
@@ -133,35 +248,35 @@ const usersWithPosts = await prisma.user.findMany({
 ```json
 [
   {
-      "email": "kwame@prisma.io",
-      "id": 2,
-      "name": "Kwame",
-      "role": "USER",
-      "posts": [
-          {
-              "title": "Prisma in five minutes"
-          },
-          {
-              "title": "Happy Table Friends: Relations in Prisma"
-          }
-      ]
+    "email": "kwame@prisma.io",
+    "id": 2,
+    "name": "Kwame",
+    "role": "USER",
+    "posts": [
+      {
+        "title": "Prisma in five minutes"
+      },
+      {
+        "title": "Happy Table Friends: Relations in Prisma"
+      }
+    ]
   },
   {
-      "email": "emily@prisma.io",
-      "id": 5,
-      "name": "Emily",
-      "role": "USER",
-      "posts": [
-          {
-              "title": "Prisma Day 2020"
-          },
-          {
-              "title": "My first day at Prisma"
-          },
-          {
-              "title": "All about databases"
-          }
-      ]
+    "email": "emily@prisma.io",
+    "id": 5,
+    "name": "Emily",
+    "role": "USER",
+    "posts": [
+      {
+        "title": "Prisma Day 2020"
+      },
+      {
+        "title": "My first day at Prisma"
+      },
+      {
+        "title": "All about databases"
+      }
+    ]
   }
 ]
 ```
@@ -171,10 +286,10 @@ const usersWithPosts = await prisma.user.findMany({
 </CodeWithResult>
 
 > **Note**: You can also [sort lists of nested records when you use `findUnique`](#sort-one-users-nested-list-of-post-records)
- to retrieve a single record by ID.
+> to retrieve a single record by ID.
 
 ### Sorting FAQs
- 
+
 #### Can I sort by the property of a nested `model`?
 
 Follow [issue #249 on GitHub](https://github.com/prisma/prisma-client-js/issues/249).
@@ -186,4 +301,3 @@ Follow [issue #1 on GitHub](https://github.com/prisma/prisma-client-js/issues/1)
 #### Can I perform case-insensitive sorting?
 
 Follow [issue #841 on GitHub](https://github.com/prisma/prisma-client-js/issues/841).
-
