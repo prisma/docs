@@ -395,7 +395,7 @@ const config = {
     ]
   },
   siteMetadata: {
-    title: 'Prisma - Database tools for modern application development',
+    title: 'Prisma',
     description:
       'Prisma replaces traditional ORMs and can be used to build GraphQL servers, REST APIs, microservices & more.',
     keywords: 'Docs, prisma, 2.0',
