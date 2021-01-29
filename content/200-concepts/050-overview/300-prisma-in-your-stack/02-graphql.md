@@ -34,12 +34,11 @@ The GraphQL schema and HTTP server are typically handled by separate libraries. 
 | `fastify-gql`         | HTTP server                 | Yes                    | n/a                                                                        |
 | `graphql-yoga`        | HTTP server                 | Yes                    | n/a                                                                        |
 
-
 In addition to these standalone and single-purpose libraries, there are several projects building integrated _application frameworks_:
 
 | Framework                                  | Stack        | Built by                                          | Prisma                 | Description                                                                      |
 | :----------------------------------------- | :----------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------- |
-| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                          |
+| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack._                                           |
 | [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Rails-like framework for monolithic, full-stack React apps — built on Next.js._ |
 
 > **Note**: If you notice any GraphQL libraries/frameworks missing from the list, please let us know.
@@ -81,4 +80,3 @@ In the resolver of a GraphQL query, Prisma typically reads data from the databas
 ## Other GraphQL Resources
 
 Prisma curates [GraphQL Weekly](https://www.graphqlweekly.com/), a newsletter highlighting resources and updates from the GraphQL community. Subscribe to keep up-to-date with GraphQL articles, videos, tutorials, libraries, and more.
-
