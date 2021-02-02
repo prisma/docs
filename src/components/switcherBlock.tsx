@@ -46,17 +46,17 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: a
 
     if (langSwitcher && !dbSwitcher) {
       // for paths without tech or lang in the url - to redirect to one with default tech and lang
-      if (!langSwitcher.includes((pathTechParams.split('-').slice(-1))[0])) {
+      if (!langSwitcher.includes(pathTechParams.split('-').slice(-1)[0])) {
         pathTechParams = `${pathTechParams}-${langSwitcher[0]}`
       }
     } else if (!langSwitcher && dbSwitcher) {
       // for paths without tech or lang in the url - to redirect to one with default tech and lang
-      if (!dbSwitcher.includes((pathTechParams.split('-').slice(-1))[0])) {
+      if (!dbSwitcher.includes(pathTechParams.split('-').slice(-1)[0])) {
         pathTechParams = `${pathTechParams}-${dbSwitcher[0]}`
       }
     } else if (langSwitcher && dbSwitcher) {
       // for paths without tech or lang in the url - to redirect to one with default tech and lang
-      if (!dbSwitcher.includes((pathTechParams.split('-').slice(-1))[0])) {
+      if (!dbSwitcher.includes(pathTechParams.split('-').slice(-1)[0])) {
         pathTechParams = `${pathTechParams}-${langSwitcher[0]}-${dbSwitcher[0]}`
       }
     }

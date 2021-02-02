@@ -23,24 +23,23 @@ Note that a GraphQL schema can be written code-first or SDL-first. Check out thi
 
 The GraphQL schema and HTTP server are typically handled by separate libraries. Here is an overview of current GraphQL server tools and their purpose:
 
-| Library (npm package) | Purpose                     | Compatible with Prisma | Prisma integration                                                         |
-| :-------------------- | :-------------------------- | :--------------------- | :------------------------------------------------------------------------- |
-| `graphql`             | GraphQL schema (code-first) | Yes                    | No                                                                         |
-| `graphql-tools`       | GraphQL schema (SDL-first)  | Yes                    | No                                                                         |
-| `type-graphql`        | GraphQL schema (code-first) | Yes                    | [`typegraphql-prisma`](https://www.npmjs.com/package/typegraphql-prisma)   |
+| Library (npm package) | Purpose                     | Compatible with Prisma | Prisma integration                                                        |
+| :-------------------- | :-------------------------- | :--------------------- | :------------------------------------------------------------------------ |
+| `graphql`             | GraphQL schema (code-first) | Yes                    | No                                                                        |
+| `graphql-tools`       | GraphQL schema (SDL-first)  | Yes                    | No                                                                        |
+| `type-graphql`        | GraphQL schema (code-first) | Yes                    | [`typegraphql-prisma`](https://www.npmjs.com/package/typegraphql-prisma)  |
 | `@nexus/schema`       | GraphQL schema (code-first) | Yes                    | [`nexus-plugin-prisma`](https://nexusjs.org/docs/plugins/prisma/overview) |
-| `apollo-server`       | HTTP server                 | Yes                    | n/a                                                                        |
-| `express-graphql`     | HTTP server                 | Yes                    | n/a                                                                        |
-| `fastify-gql`         | HTTP server                 | Yes                    | n/a                                                                        |
-| `graphql-yoga`        | HTTP server                 | Yes                    | n/a                                                                        |
-
+| `apollo-server`       | HTTP server                 | Yes                    | n/a                                                                       |
+| `express-graphql`     | HTTP server                 | Yes                    | n/a                                                                       |
+| `fastify-gql`         | HTTP server                 | Yes                    | n/a                                                                       |
+| `graphql-yoga`        | HTTP server                 | Yes                    | n/a                                                                       |
 
 In addition to these standalone and single-purpose libraries, there are several projects building integrated _application frameworks_:
 
-| Framework                                  | Stack        | Built by                                          | Prisma                 | Description                                                                      |
-| :----------------------------------------- | :----------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------- |
-| [Redwood.js](https://redwoodjs.com)        | Fullstack    | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                          |
-| [Blitz](https://github.com/blitz-js/blitz) | Fullstack    | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Rails-like framework for monolithic, full-stack React apps — built on Next.js._ |
+| Framework                                  | Stack     | Built by                                          | Prisma                 | Description                                                                      |
+| :----------------------------------------- | :-------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------- |
+| [Redwood.js](https://redwoodjs.com)        | Fullstack | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                          |
+| [Blitz](https://github.com/blitz-js/blitz) | Fullstack | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Rails-like framework for monolithic, full-stack React apps — built on Next.js._ |
 
 > **Note**: If you notice any GraphQL libraries/frameworks missing from the list, please let us know.
 
@@ -58,7 +57,7 @@ Below you find several ready-to-run examples that showcase how to use Prisma wit
 | [GraphQL API (TypeGraphQL)](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql-typegraphql)     | `graphql-yoga`  | `type-graphql`  | GraphQL server based on the code-first approach of [TypeGraphQL](https://typegraphql.com/)                                      |
 | [GraphQL API (Auth)](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql-auth)                   | `graphql-yoga`  | `@nexus/schema` | GraphQL server with email-password authentication & permissions                                                                 |
 | [Fullstack app](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql-nextjs)                      | `apollo-server` | `@nexus/schema` | Fullstack app with Next.js (React), Apollo Client, Apollo Server and Nexus Schema                                               |
-| [GraphQL subscriptions](https://github.com/prisma/prisma-examples/tree/latest/typescript/subscriptions-pubsub)                                                                                             | `apollo-server` | `@nexus/schema` | GraphQL server implementing realtime GraphQL subscriptions                                                                      |
+| [GraphQL subscriptions](https://github.com/prisma/prisma-examples/tree/latest/typescript/subscriptions-pubsub)        | `apollo-server` | `@nexus/schema` | GraphQL server implementing realtime GraphQL subscriptions                                                                      |
 
 ### JavaScript (Node.js)
 
@@ -68,7 +67,7 @@ Below you find several ready-to-run examples that showcase how to use Prisma wit
 | [GraphQL API (Apollo Server)](https://github.com/prisma/prisma-examples/tree/latest/javascript/graphql-apollo-server) | `apollo-server` | `@nexus/schema` | GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/)                                    |
 | [GraphQL API (SDL-first)](https://github.com/prisma/prisma-examples/tree/latest/javascript/graphql-sdl-first)         | `graphql-yoga`  | `graphql-tools` | GraphQL server based on the SDL-first approach of [`graphql-tools`](https://www.apollographql.com/docs/graphql-tools/) (Apollo) |
 | [GraphQL API (Auth)](https://github.com/prisma/prisma-examples/tree/latest/javascript/graphql-auth)                   | `graphql-yoga`  | `@nexus/schema` | GraphQL server with email-password authentication & permissions                                                                 |
-                                                               |
+|  |
 
 ## FAQ
 
@@ -81,4 +80,3 @@ In the resolver of a GraphQL query, Prisma typically reads data from the databas
 ## Other GraphQL Resources
 
 Prisma curates [GraphQL Weekly](https://www.graphqlweekly.com/), a newsletter highlighting resources and updates from the GraphQL community. Subscribe to keep up-to-date with GraphQL articles, videos, tutorials, libraries, and more.
-

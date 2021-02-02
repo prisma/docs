@@ -91,6 +91,7 @@ git init
 ```
 
 To use the `main` branch as the default branch, run the following command:
+
 ```no-lines
 git branch -M main
 ```
@@ -206,7 +207,6 @@ export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATA
 ## 7. Create the database schema
 
 With the Heroku app and database created, you will create the database schema using the [`prisma db push`](/reference/api-reference/command-reference#db-push) command.
-
 
 > **Note:** While the `prisma db push` command creates the database schema for you. It's mostly as a quick way while prototyping. When working on a production project with multiple environments, Prisma Migrate gives you more control over how the database schema is created and evolved.
 
