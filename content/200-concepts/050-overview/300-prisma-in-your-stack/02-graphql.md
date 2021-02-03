@@ -38,7 +38,7 @@ In addition to these standalone and single-purpose libraries, there are several 
 
 | Framework                                  | Stack     | Built by                                          | Prisma                 | Description                                                                      |
 | :----------------------------------------- | :-------- | :------------------------------------------------ | :--------------------- | :------------------------------------------------------------------------------- |
-| [Redwood.js](https://redwoodjs.com)        | Fullstack | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack. _                                          |
+| [Redwood.js](https://redwoodjs.com)        | Fullstack | [Tom Preston-Werner](https://github.com/mojombo/) | Built on top of Prisma | _Bringing full-stack to the JAMstack._                                           |
 | [Blitz](https://github.com/blitz-js/blitz) | Fullstack | [Brandon Bayer](https://github.com/flybayer)      | Built on top of Prisma | _Rails-like framework for monolithic, full-stack React apps — built on Next.js._ |
 
 > **Note**: If you notice any GraphQL libraries/frameworks missing from the list, please let us know.
@@ -67,7 +67,7 @@ Below you find several ready-to-run examples that showcase how to use Prisma wit
 | [GraphQL API (Apollo Server)](https://github.com/prisma/prisma-examples/tree/latest/javascript/graphql-apollo-server) | `apollo-server` | `@nexus/schema` | GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/)                                    |
 | [GraphQL API (SDL-first)](https://github.com/prisma/prisma-examples/tree/latest/javascript/graphql-sdl-first)         | `graphql-yoga`  | `graphql-tools` | GraphQL server based on the SDL-first approach of [`graphql-tools`](https://www.apollographql.com/docs/graphql-tools/) (Apollo) |
 | [GraphQL API (Auth)](https://github.com/prisma/prisma-examples/tree/latest/javascript/graphql-auth)                   | `graphql-yoga`  | `@nexus/schema` | GraphQL server with email-password authentication & permissions                                                                 |
-|  |
+|                                                                                                                       |
 
 ## FAQ
 

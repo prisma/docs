@@ -150,8 +150,8 @@ Creating the Heroku app will add the git remote Heroku created to your local rep
 **Checkpoint:** `git remote -v` should show the Heroku git remote for your application:
 
 ```no-lines
-heroku	https://git.heroku.com/your-app-name.git (fetch)
-heroku	https://git.heroku.com/your-app-name.git (push)
+heroku https://git.heroku.com/your-app-name.git (fetch)
+heroku https://git.heroku.com/your-app-name.git (push)
 ```
 
 If you don't see the heroku remote, use the following command to add it:
@@ -184,7 +184,7 @@ Created postgresql-parallel-73780 as DATABASE_URL
 
 ## 6. Set the DATABASE_URL environment variable locally
 
-In the previous step you created the database and saw how Heroku defines `DATABASE_URL` for the application when running on Heroku. In this step, you will to set the `DATABASE_URL` environment variable locally so that you can run the database migration from locally using Prisma.
+In the previous step you created the database and saw how Heroku defines `DATABASE_URL` for the application when running on Heroku. In this step, you will set the `DATABASE_URL` environment variable locally so that you can run the database migration from locally using Prisma.
 
 Get the connection URL with the Heroku CLI:
 
