@@ -65,8 +65,8 @@ const DocHit = ({ hit, selected }: any) =>
           </span>
         </h3>
         <Snippet hit={hit} attribute="content" tagName="mark" />
+        {hit.moreCount > 1 && <p className="more">... More results on this page</p>}
       </Link>
-      {hit.moreCount > 1 && <p className="more">... More results on this page</p>}
     </HitComp>
   ) : null
 

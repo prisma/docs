@@ -32,7 +32,7 @@ The following example demonstrates how to get started with Prisma Migrate:
 
     model User {
       id    Int      @id @default(autoincrement())
-      name  String
+      name  String 
       posts Post[]
     }
 
@@ -166,7 +166,7 @@ The following example demonstrates how to get started with Prisma Migrate:
 
     ```sql
     ALTER TABLE "User" ADD COLUMN     "bio" TEXT,
-    ADD COLUMN     "jobTitle" TEXT NOT NULL DEFAULT E'Blogger';
+    ADD COLUMN     "jobTitle" TEXT NOT NULL DEFAULT 'Blogger';
     ```
 
     Your Prisma Schema and database are now in sync again.
@@ -221,7 +221,7 @@ In order to create and delete the shadow database when using development command
 | Database   | Database user requirements                                                                                                                                                                                            |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | SQLite     | No special requirements.                                                                                                                                                                                              |
-| MySQL      | Database user must have `CREATE *.*` privileges                                                                                                                                                                       |
+| MySQL      | Database user must have `CREATE, ALTER, DROP, REFERENCES ON *.*` privileges                                                                                                                                                                       |
 | PostgreSQL | The user must be a super user or have `CREATEDB` privilege. See `CREATE ROLE` ([PostgreSQL official documentation](https://www.postgresql.org/docs/12/sql-createdatabase.html))                                       |
 | SQL Server | The user must be a site admin or have the `SERVER` securable. See the [official documentation](https://docs.microsoft.com/en-us/sql/relational-databases/security/permissions-database-engine?view=sql-server-ver15). |
 
@@ -242,9 +242,66 @@ The resolve this error:
 
 > **Important**: The shadow database is _only_ required in a development environment (specifically for the `prisma migrate dev --preview-feature` command) - you **do not** need to make any changes to your production environment.
 
-## Default type mappings
+## Native types field attributes
 
-Refer to the following documentation for information about how Prisma Migrate maps Prisma types to native database types:
+In [2.15.0](https://github.com/prisma/prisma/releases/2.15.0) and later, you can use Prisma Migrate and the [native types Preview](../preview-features/native-types) together. Native type field attributes allow you to specify which _specific_ native type should be created in the database.
+
+> See [type mappings](#type-mappings) for a complete list of supported native types for each Prisma type.
+
+In the following example, the `name` and `title` fields have a `@VarChar(X)` type attribute:
+
+```prisma highlight=8,14;normal
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int      @id @default(autoincrement())
+  name  String   @db.VarChar(200)
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String   @db.VarChar(150)
+  published Boolean @default(true)
+  authorId  Int
+  author    User    @relation(fields: [authorId], references: [id])
+}
+```
+
+Prisma Migrate uses the specified types when it creates a migration:
+
+```sql highlight=4,11;normal
+  -- CreateTable
+CREATE TABLE "User" (
+"id" SERIAL,
+    "name" VARCHAR(200) NOT NULL,
+
+    PRIMARY KEY ("id")
+);
+  -- CreateTable
+CREATE TABLE "Post" (
+"id" SERIAL,
+    "title" VARCHAR(150) NOT NULL,
+    "published" BOOLEAN NOT NULL DEFAULT true,
+    "authorId" INTEGER NOT NULL,
+
+    PRIMARY KEY ("id")
+);
+
+  -- AddForeignKey
+ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+
+
+## Type mappings
+
+If you are using the `nativeTypes` preview, refer to the following documentation: [Native types mapping reference](../preview-features/native-types/native-types-mappings)
+
+If you are not using the `nativeTypes` preview, refer to the following documentation for information about how Prisma Migrate maps Prisma types to native database types:
 
 - [PostgreSQL mappings](../../database-connectors/postgresql#prisma-migrate)
 - [MySQL mappings](../../database-connectors/mysql#prisma-migrate)
@@ -264,13 +321,26 @@ See [Prisma Migrate CLI reference](../../../reference/api-reference/command-refe
 
 ## Guides
 
-- [Guide: Add Prisma Migrate to an existing project](../../../guides/prisma-guides/prisma-migrate-guides/add-prisma-migrate-to-a-project)
+- [Guide: Add Prisma Migrate to an existing project](../../../guides/prisma-guides/add-prisma-migrate-to-a-project)
 
 ## Limitations and known issues
 
+### You cannot switch database providers
+
+Prisma Migrate generates SQL files that are specific to your provider. This means that you cannot use PostgreSQL in production and SQLite in development, because the migrations cannot run.
+
+In 2.15.0 and later, Prisma Migrate detects when the migrations do not match the configured provider and prints a helpful error message. For example, if your migrations are for a PostgreSQL database but you are using a `provider` is set to `mysql`:
+
+```
+Error: P3014
+
+The datasource provider `mysql` specified in your schema does not match the one specified in the migration_lock.toml. You will encounter errors when you try to apply migrations generated for a different provider. Please archive your current migration directory at a different location and start a new migration history with `prisma migrate dev`.
+```
+
 ### Lack of rollbacks / down migrations
 
-Prisma Migrate does not currently roll back a migration without [resetting the database](#data-loss-when-resetting-database). Follow [GitHub issue #9](https://github.com/prisma/prisma/issues/9) for information about database seeding, which can mitigate the effect of data loss in a _development_ environment by allowing you to automatically repopulate your database.
+Prisma Migrate does not currently roll back a migration without [resetting the database](#data-loss-when-resetting-database).
+For a simple and integrated way to re-create data in your development database when the database is reset, check out our [seeding guide](../../../guides/prisma-guides/seed-database).
 
 ### Data loss when resetting database
 
@@ -281,6 +351,6 @@ In a development environment, Prisma Migrate sometimes prompts you to reset the 
 
 The `prisma migrate dev --preview-feature` and `prisma migrate reset --preview-feature` commands are designed to be used **in development only**, and should not affect production data.
 
-### Native types preview not yet supported
+When the database is reset, if Prisma Migrate detects a seed script, it will trigger seeding.
 
-Prisma Migrate does not yet support [native database type attributes (Preview)](../preview-features/native-types).
+> **Note**: For a simple and integrated way to re-create data when the database is reset, check out our [seeding guide](../../../guides/prisma-guides/seed-database).

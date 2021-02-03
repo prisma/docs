@@ -17,7 +17,7 @@ export const stickWhenNeeded = (id: string) => {
         var scrollBottom = scrollTop + windowHeight
 
         var sidebarTop = $sidebar.position().top
-        var sidebarBottom = sidebarTop + sidebarHeight
+        var sidebarBottom = Math.round(sidebarTop + sidebarHeight)
 
         var heightDelta = Math.abs(windowHeight - sidebarHeight)
         var scrollDelta = lastScrollTop - scrollTop
@@ -36,7 +36,6 @@ export const stickWhenNeeded = (id: string) => {
 
         var dragBottomDown = sidebarBottom <= scrollBottom && isScrollingDown
         var dragTopUp = sidebarTop >= scrollTop && !isScrollingDown
-
         if (dragBottomDown) {
           if (isWindowLarger) {
             $sidebar.css('top', 0)
@@ -47,7 +46,6 @@ export const stickWhenNeeded = (id: string) => {
           $sidebar.css('top', 0)
         } else if ($sidebar.hasClass('fixed')) {
           var currentTop = parseInt(($sidebar.css('top') === 'auto' ?  1 : $sidebar.css('top')), 10)
-
           var minTop = -heightDelta
           var scrolledTop = currentTop + scrollDelta
 
