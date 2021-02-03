@@ -6,9 +6,9 @@ metaDescription: 'Learn how to upgrade existing Prisma 1 projects with prisma-bi
 
 ## Overview
 
-This upgrade guide describes how to migrate a Node.js project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses `prisma-binding` to implement a GraphQL server. 
+This upgrade guide describes how to migrate a Node.js project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses `prisma-binding` to implement a GraphQL server.
 
-The code will keep the [SDL-first approach](https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3) for constructing the GraphQL schema. When migrating from `prisma-binding` to Prisma Client, the main difference is that the `info` object can't be used to resolve relations automatically any more, instead you'll need to implement your _type resolvers_ to ensure that relations get resolved properly. 
+The code will keep the [SDL-first approach](https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3) for constructing the GraphQL schema. When migrating from `prisma-binding` to Prisma Client, the main difference is that the `info` object can't be used to resolve relations automatically any more, instead you'll need to implement your _type resolvers_ to ensure that relations get resolved properly.
 
 The guide assumes that you already went through the [guide for upgrading the Prisma layer](./upgrading-the-prisma-layer). This means you already:
 
@@ -46,7 +46,7 @@ If this is not what your project structure looks like, you'll need to adjust the
 
 With `prisma-binding`, your approach for defining your GraphQL schema (sometimes called [application schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#a-note-on-the-application-schema)) is based on _importing_ GraphQL types from the generated `prisma.graphql` file (in Prisma 1, this is typically called [Prisma GraphQL schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#the-prisma-graphql-schema)). These types mirror the types from your Prisma 1 datamodel and serve as foundation for your GraphQL API.
 
-With Prisma 2, there's no `prisma.graphql` file any more that you could import from. Therefore, you have to spell out all the types of your GraphQL schema directly inside your `schema.graphql` file. 
+With Prisma 2, there's no `prisma.graphql` file any more that you could import from. Therefore, you have to spell out all the types of your GraphQL schema directly inside your `schema.graphql` file.
 
 The easiest way to do so is by downloading the full GraphQL schema from the GraphQL Playground. To do so, open the **SCHEMA** tab and click the **DOWNLOAD** button in the top-right corner, then select **SDL**:
 
@@ -60,7 +60,7 @@ npx graphql get-schema --endpoint __GRAPHQL_YOGA_ENDPOINT__ --output schema.grap
 
 > **Note**: With the above command, you need to replace the `__GRAPHQL_YOGA_ENDPOINT__` placeholder with the actual endpoint of your GraphQL Yoga server.
 
-Once you obtained the `schema.graphql` file, replace your current version in `src/schema.graphql` with the new contents. Note that the two schemas are 100% equivalent, except that the new one doesn't use [`graphql-import`](https://github.com/ardatan/graphql-import) for  importing types from a different file. Instead, it spells out all types in a single file.
+Once you obtained the `schema.graphql` file, replace your current version in `src/schema.graphql` with the new contents. Note that the two schemas are 100% equivalent, except that the new one doesn't use [`graphql-import`](https://github.com/ardatan/graphql-import) for importing types from a different file. Instead, it spells out all types in a single file.
 
 Here's a comparison of these two versions of the sample GraphQL schema that we'll migrate in this guide (you can use the tabs to switch between the two versions):
 
@@ -861,11 +861,13 @@ Thanks to these extra resolvers, you'll now be able to nest relations in your Gr
   users {
     id
     name
-    posts {   # fetching this relation is enabled by the new type resolver
+    posts {
+      # fetching this relation is enabled by the new type resolver
       id
       title
     }
-    profile { # fetching this relation is enabled by the new type resolver
+    profile {
+      # fetching this relation is enabled by the new type resolver
       id
       bio
     }
@@ -942,11 +944,13 @@ Thanks to these extra resolvers, you'll now be able to nest relations in your Gr
   posts {
     id
     title
-    author {   # fetching this relation is enabled by the new type resolver
+    author {
+      # fetching this relation is enabled by the new type resolver
       id
       name
     }
-    categories { # fetching this relation is enabled by the new type resolver
+    categories {
+      # fetching this relation is enabled by the new type resolver
       id
       name
     }
@@ -996,7 +1000,7 @@ const resolvers = {
 }
 ```
 
-Inside of this resolver, you're using your new `PrismaClient` to perform a query against the database. Inside the `user` resolver, the database query loads the `User` records from the specified `profile` (whose `id` is carried in the `parent` object). 
+Inside of this resolver, you're using your new `PrismaClient` to perform a query against the database. Inside the `user` resolver, the database query loads the `User` records from the specified `profile` (whose `id` is carried in the `parent` object).
 
 Thanks to this extra resolver, you'll now be able to nest relations in your GraphQL queries/mutations whenever you're requesting information about the `Profile` type in a query.
 
@@ -1053,7 +1057,7 @@ const resolvers = {
 }
 ```
 
-Inside of this resolver, you're using your new `PrismaClient` to perform a query against the database. Inside the `posts` resolver, the database query loads all `Post` records from the specified `categories` (whose `id` is carried in the `parent` object). 
+Inside of this resolver, you're using your new `PrismaClient` to perform a query against the database. Inside the `posts` resolver, the database query loads all `Post` records from the specified `categories` (whose `id` is carried in the `parent` object).
 
 Thanks to this extra resolver, you'll now be able to nest relations in your GraphQL queries/mutations whenever you're requesting information about a `Category` type in a query.
 
@@ -1085,7 +1089,7 @@ const resolvers = {
   Query: {
     users: forwardTo('prisma'),
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1106,24 +1110,27 @@ const resolvers = {
         first,
         last,
         after,
-        before
+        before,
       })
     },
     // ... other resolvers
-  }
+  },
 }
 ```
 
 Note that this approach does **not** work yet because the _structures_ of the incoming arguments is different from the ones expected by `PrismaClient`. To ensure the structures are compatible, you can use the `prisma-binding-argument-transform` npm package which ensures compatibility:
 
-``` copy
+```copy
 npm install @prisma/binding-argument-transform
 ```
 
 You can now use this package as follows:
 
 ```js
-const { makeOrderByPrisma2Compatible, makeWherePrisma2Compatible } = require('@prisma/binding-argument-transform')
+const {
+  makeOrderByPrisma2Compatible,
+  makeWherePrisma2Compatible,
+} = require('@prisma/binding-argument-transform')
 
 const resolvers = {
   Query: {
@@ -1138,11 +1145,12 @@ const resolvers = {
         skip,
         first,
         last,
-        after,before
+        after,
+        before,
       })
     },
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1155,7 +1163,10 @@ The last remaining issue with this are the pagination arguments. Prisma 2 introd
 Here is how you can adjust the call to make it compliant with the new Prisma Client pagination API:
 
 ```js
-const { makeOrderByPrisma2Compatible, makeWherePrisma2Compatible } = require('prisma-binding-argument-transform')
+const {
+  makeOrderByPrisma2Compatible,
+  makeWherePrisma2Compatible,
+} = require('prisma-binding-argument-transform')
 
 const resolvers = {
   Query: {
@@ -1164,11 +1175,16 @@ const resolvers = {
       const prisma2Where = makeWherePrisma2Compatible(where)
       const prisma2OrderBy = makeOrderByPrisma2Compatible(orderBy)
       const skipValue = skip || 0
-      const prisma2Skip = Boolean(before) ? skipValue+1 : skipValue
+      const prisma2Skip = Boolean(before) ? skipValue + 1 : skipValue
       const prisma2Take = Boolean(last) ? -last : first
       const prisma2Before = { id: before }
       const prisma2After = { id: after }
-      const prisma2Cursor = !Boolean(before) && !Boolean(after) ? undefined : (Boolean(before) ? prisma2Before : prisma2After)
+      const prisma2Cursor =
+        !Boolean(before) && !Boolean(after)
+          ? undefined
+          : Boolean(before)
+          ? prisma2Before
+          : prisma2After
       return context.prismaClient.user.findMany({
         where: prisma2Where,
         orderBy: prisma2OrderBy,
@@ -1178,7 +1194,7 @@ const resolvers = {
       })
     },
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1206,17 +1222,14 @@ const resolvers = {
       return context.prisma.query.posts(
         {
           where: {
-            OR: [
-              { title_contains: args.searchString },
-              { content_contains: args.searchString },
-            ],
+            OR: [{ title_contains: args.searchString }, { content_contains: args.searchString }],
           },
         },
-        info,
+        info
       )
     },
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1241,7 +1254,6 @@ const resolvers = {
   }
 }
 ```
-
 
 You can now send the respective query in the GraphQL Playground:
 
@@ -1286,11 +1298,11 @@ const resolvers = {
         {
           where: args.userUniqueInput,
         },
-        info,
+        info
       )
     },
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1322,8 +1334,6 @@ You can now send the respective query via the GraphQL Playground:
 }
 ```
 
-
-
 ### 3.1. Migrate GraphQL mutations
 
 In this section, you'll migrate the GraphQL mutations from the sample schema.
@@ -1348,7 +1358,7 @@ const resolvers = {
   Mutation: {
     createUser: forwardTo('prisma'),
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1373,12 +1383,9 @@ You can now write your first mutation against the new API, e.g.:
 
 ```graphql
 mutation {
- 	createUser(data: {
-     name: "Alice",
-     email: "alice@prisma.io"
-   }) {
-     id
-   }
+  createUser(data: { name: "Alice", email: "alice@prisma.io" }) {
+    id
+  }
 }
 ```
 
@@ -1413,11 +1420,11 @@ const resolvers = {
             },
           },
         },
-        info,
+        info
       )
     },
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1450,10 +1457,7 @@ You can now send the respective mutation via the GraphQL Playground:
 
 ```graphql
 mutation {
-  createDraft(
-    title: "Hello World",
-    authorId: "__AUTHOR_ID__"
-  ) {
+  createDraft(title: "Hello World", authorId: "__AUTHOR_ID__") {
     id
     published
     author {
@@ -1487,16 +1491,16 @@ const resolvers = {
         {
           data: {
             profile: {
-              update: { bio: args.bio }
-            }
+              update: { bio: args.bio },
+            },
           },
-          where: { id: args.userId }
+          where: { id: args.userId },
         },
-        info,
+        info
       )
     },
     // ... other resolvers
-  }
+  },
 }
 ```
 
@@ -1526,12 +1530,7 @@ You can now send the respective mutation via the GraphQL Playground :
 
 ```graphql
 mutation {
-  updateBio(
-    userUniqueInput: {
-      email: "alice@prisma.io"
-    }
-    bio: "I like turtles"
-  ){
+  updateBio(userUniqueInput: { email: "alice@prisma.io" }, bio: "I like turtles") {
     id
     name
     profile {
@@ -1566,21 +1565,20 @@ const resolvers = {
         {
           data: {
             categories: {
-              connect: ids
-            }
+              connect: ids,
+            },
           },
           where: {
-            id: args.postId
-          }
+            id: args.postId,
+          },
         },
-        info,
+        info
       )
     },
     // ... other resolvers
-  }
+  },
 }
 ```
-
 
 ##### Implementing the `addPostToCategories` resolver with Prisma Client
 
@@ -1609,12 +1607,9 @@ You can now send the respective query via the GraphQL Playground:
 
 ```graphql
 mutation {
-	addPostToCategories(
+  addPostToCategories(
     postId: "__AUTHOR_ID__"
-    categoryIds: [
-      "__CATEGORY_ID_1__",
-      "__CATEGORY_ID_2__",
-    ]
+    categoryIds: ["__CATEGORY_ID_1__", "__CATEGORY_ID_2__"]
   ) {
     id
     title
@@ -1626,7 +1621,7 @@ mutation {
 }
 ```
 
-## 4. Cleaning up 
+## 4. Cleaning up
 
 Since the entire app has now been upgraded to Prisma 2, you can delete all unnecessary files and remove the no longer needed dependencies.
 
@@ -1634,7 +1629,7 @@ Since the entire app has now been upgraded to Prisma 2, you can delete all unnec
 
 You can start by removing npm dependencies that were related to the Prisma 1 setup:
 
-``` copy
+```copy
 npm uninstall graphql-cli prisma-binding prisma1
 ```
 
@@ -1642,7 +1637,7 @@ npm uninstall graphql-cli prisma-binding prisma1
 
 Next, delete the files of your Prisma 1 setup:
 
-``` copy
+```copy
 rm prisma1/datamodel.prisma prisma1/prisma.yml
 ```
 

@@ -7,7 +7,6 @@ import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
 
-
 const HitsWrapper = styled.div`
   display: none;
   &.show {
@@ -146,35 +145,30 @@ export default function Search({ hitsStatus }: any) {
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
       <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} />
-      {query !== '' && <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
-        <Index key={indexName} indexName={indexName}>
-          <Results>
-            <Hits hitComponent={DocHit} />
-          </Results>
-        </Index>
-      </HitsWrapper>}
+      {query !== '' && (
+        <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
+          <Index key={indexName} indexName={indexName}>
+            <Results>
+              <Hits hitComponent={DocHit} />
+            </Results>
+          </Index>
+        </HitsWrapper>
+      )}
     </InstantSearch>
   )
 }
 
-const Hits = connectHits(
-  ({
-    hits,
-    hitComponent,
-    onMouseHoverHit,
-    // selectedIndex,
-    onMouseLeaverHits,
-  }:any) => (
-    <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
-      {hits.map((hit: any, index: number) => (
-        <li key={hit.objectID} className="ais-Hits-item">
-          {React.createElement(hitComponent, {
-            hit,
-            // selected: index === selectedIndex,
-            onMouseHover: () => onMouseHoverHit(index),
-          })}
-        </li>
-      ))}
-    </ul>
-  )
-)
+const Hits = connectHits(({ hits, hitComponent, onMouseHoverHit, // selectedIndex,
+  onMouseLeaverHits }: any) => (
+  <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
+    {hits.map((hit: any, index: number) => (
+      <li key={hit.objectID} className="ais-Hits-item">
+        {React.createElement(hitComponent, {
+          hit,
+          // selected: index === selectedIndex,
+          onMouseHover: () => onMouseHoverHit(index),
+        })}
+      </li>
+    ))}
+  </ul>
+))

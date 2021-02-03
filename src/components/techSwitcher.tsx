@@ -4,11 +4,10 @@ import { Typescript } from '../icons/technologies/Typescript'
 import SelectComponent from './select'
 import PostgreSQL from '../icons/technologies/PostgreSQL'
 import MySQL from '../icons/technologies/MySQL'
-import SQLite from '../icons/technologies/SQLite' 
+import SQLite from '../icons/technologies/SQLite'
 import JS from '../icons/technologies/JS'
 import { components } from 'react-select'
 import ArrowDown from '../icons/ArrowDown'
-
 
 interface TechSwitchProps {
   type: string
@@ -66,9 +65,8 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
     )
   }
 
-  
   const IndicatorSeparator = () => {
-    return <span style={{display: 'none'}} />;
+    return <span style={{ display: 'none' }} />
   }
 
   const Option = (props: any) => {
@@ -78,8 +76,10 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
   }
 
   const SingleValue = (props: any) => (
-    <components.SingleValue {...props}>{renderItem({ technology: props.children })}</components.SingleValue>
-  );
+    <components.SingleValue {...props}>
+      {renderItem({ technology: props.children })}
+    </components.SingleValue>
+  )
 
   const handleChange = (item: TechItem) => {
     setSelectedItem(item)
