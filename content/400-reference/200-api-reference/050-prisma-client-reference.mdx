@@ -982,48 +982,57 @@ const deleteUser = await prisma.user.delete({
 
 </CodeWithResult>
 
-### <inlinecode>createMany</inlinecode>
+### <inlinecode>createMany</inlinecode> (Preview)
 
-`createMany` creates multiple records in a transaction.
+`createMany` creates multiple records in a transaction. To enable this feature, add `createMany` to the `previewFeatures` list in your schema:
+
+```prisma highlight=3;normal
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["createMany"]
+}
+```
+
 
 #### Options
 
 | Name                  | Type                                                     | Required | Description                                                                                                                                                                                                                                                                   |
 | --------------------- | -------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data`                | `XOR<UserCreateInput,` <br />`UserUncheckedCreateInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. It also includes relation fields which lets you perform (transactional) nested inserts. Fields that are marked as optional or have default values in the datamodel are optional. |
-| [`select`](#select)   | `XOR<UserSelect, null>`                                  | No       | [Specifies which properties to include](../../concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                                                        |
-| [`include`](#include) | `XOR<UserInclude, null>`                                 | No       | [Specifies which relations should be eagerly loaded](../../concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                                                        |
+| `data`                | `Enumerable<UserCreateManyInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. It also includes relation fields which lets you perform (transactional) nested inserts. Fields that are marked as optional or have default values in the datamodel are optional. |
+| `skipDuplicates?`     | `boolean` | No | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT).
 
 #### Return type
 
 | Return type               | Example                        | Description                                                     |
 | ------------------------- | ------------------------------ | --------------------------------------------------------------- |
-| JavaScript object (typed) | `User`                         |                                                                 |
-| JavaScript object (plain) | `{ name: "Alice Wonderland" }` | Use `select` and `include` to determine which fields to return. |
+| `BatchPayload` | `{ count: 3 }`                         |      A count of the number of records created.                                                           |
 
 #### Remarks
 
-- You can also perform a nested [`create`](#create-1) - for example, add a `User` and two `Post` records at the same time.
+- You **cannot** create or connect relations - you cannot nest `create`, `createMany`, `connect`, `connectOrCreate` inside a top-level `createMany`
+- You can nest a [`createMany`](#createmany-preview-1) inside an `update` or `create` query - for example, add a `User` and two `Post` records at the same time.
 
 #### Reference
 
-`create` accepts the following input type:
+`createMany` accepts the following input type:
 
 ```ts file=index.d.ts
-export type UserCreateArgs = {
-  select?: XOR<UserSelect, null>
-  include?: XOR<UserInclude, null>
-  data: XOR<UserCreateInput, UserUncheckedCreateInput>
+export type UserCreateManyArgs = {
+  data: Enumerable<UserCreateManyInput>
+  skipDuplicates?: boolean
 }
 ```
 
 #### Examples
 
-##### Create a single new record with the only required field `email`
+##### Create a several new users
 
 ```ts
-const user = await prisma.user.create({
-  data: { email: 'alice@prisma.io' },
+const users = await prisma.user.createMany({
+  data: [
+    { name: "Sonali", email: "sonali@prisma.io"},
+    { name: "Alex", email: "alex@prisma.io" }
+  ]
 })
 ```
 
@@ -2242,6 +2251,8 @@ A nested `create` query adds a new related record or set of records to a parent 
 
 - `create` is available as a nested query when you `create` (`prisma.user.create(...)`) a new parent record or `update` (`prisma.user.update(...)`) an existing parent record.
 
+> You can use a nested `create` _or_ a nested `createMany` to create multiple related records - [each technique pros and cons](../../concepts/components/prisma-client/relation-queries/#create-a-single-record-and-multiple-related-records) <span class="concept"></span>.
+
 #### Examples
 
 ##### Create a new `User` record with a new `Profile` record
@@ -2287,12 +2298,12 @@ const user = await prisma.user.create({
 
 Because it's a one-to-many relation, you can also create several `Post` records at once by passing an array to `create`:
 
-```ts
+```ts highlight=5;normal
 const user = await prisma.user.create({
   data: {
     email: 'alice@prisma.io',
     posts: {
-|      create: [{ 
+      create: [{ 
         title: 'This is my first post' 
       }, { 
         title: 'Here comes a second post' 
@@ -2301,6 +2312,8 @@ const user = await prisma.user.create({
   },
 })
 ```
+
+You can also use a nested [`createMany`](#createmany-preview-1) to achieve the same result.
 
 ##### Update an existing `User` record by creating a new `Profile` record
 
@@ -2328,9 +2341,46 @@ const user = await prisma.user.update({
 })
 ```
 
+### <inlinecode>createMany</inlinecode> (Preview)
+
+A nested `createMany` query adds a new set of records to a parent record. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>.
+
+#### Remarks
+
+- `createMany` is available as a nested query when you `create` (`prisma.user.create(...)`) a new parent record or `update` (`prisma.user.update(...)`) an existing parent record.
+- Available in the context of a has-many relation - for example, you can `prisma.user.create(...)` a user and use a nested `createMany` to create multiple posts (posts have one user).
+- **Not** available in the context of a many-to-many relation - for example, you **cannot** you can `prisma.post.create(...)` a post and use a nested `createMany` to create categories (many posts have many categories).
+- Does not support nesting additional relations - you cannot nest an additional `create` or `createMany`.
+- Allows setting foreign keys directly - for example, setting the `categoryId` on a post.
+
+> You can use a nested `create` _or_ a nested `createMany` to create multiple related records - [each technique pros and cons](../../concepts/components/prisma-client/relation-queries/#create-a-single-record-and-multiple-related-records) <span class="concept"></span>.
+
+#### Examples
+
+##### Update a `User` and multiple new related `Post` records
+
+```ts
+const user = await prisma.user.update({
+  where: {
+    id: 9
+  },
+  data: {
+    name: "Elliott",
+    posts: {        
+      createMany: {
+        data: [
+          { title: "My first post", },
+          { title: "My second post" }
+        ]
+      }
+    }
+  }
+})
+```
+
 ### <inlinecode>set</inlinecode>
 
-`set` overwrites the value of a relation - for example, replacing a list of `Post` records with a different list. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries#add-or-remove-related-records) <span class="concept"></span>
+`set` overwrites the value of a relation - for example, replacing a list of `Post` records with a different list. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>
 
 #### Examples
 
