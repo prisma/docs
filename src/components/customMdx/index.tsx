@@ -41,5 +41,5 @@ export default {
       <img {...props} />
     </a>
   ),
-  AlgoliaTerm: () => <span style={{display: 'none'}}/>
+  AlgoliaTerm: () => <span style={{ display: 'none' }} />,
 }

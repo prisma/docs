@@ -6,7 +6,7 @@ metaDescription: 'Learn how to migrate from TypeORM to Prisma'
 
 <TopBlock>
 
-This guide describes how to migrate from TypeORM to Prisma. It uses an extended version of the [TypeORM Express example](https://github.com/typeorm/typescript-express-example/) as a [sample project](https://github.com/prisma/migrate-from-typeorm-to-prisma) to demonstrate the migration steps. You can find the example used for this guide on [GitHub](https://github.com/prisma/migrate-from-typeorm-to-prisma). 
+This guide describes how to migrate from TypeORM to Prisma. It uses an extended version of the [TypeORM Express example](https://github.com/typeorm/typescript-express-example/) as a [sample project](https://github.com/prisma/migrate-from-typeorm-to-prisma) to demonstrate the migration steps. You can find the example used for this guide on [GitHub](https://github.com/prisma/migrate-from-typeorm-to-prisma).
 
 This migration guide uses PostgreSQL as as an example database, but it equally applies to any other relational database that's [supported by Prisma](../../reference/database-reference/supported-databases).
 
@@ -17,7 +17,7 @@ You can learn how Prisma compares to TypeORM on the [Prisma vs TypeORM](../../co
 ## Overview of the migration process
 
 Note that the steps for migrating from TypeORM to Prisma are always the same, no matter what kind of application or API layer you're building:
- 
+
 1. Install the Prisma CLI
 1. Introspect your database
 1. Install Prisma Client
@@ -31,27 +31,34 @@ Prisma lends itself really well for **incremental adoption**. This means, you do
 
 For this guide, we'll use a REST API built with Express as a [sample project](https://github.com/prisma/migrate-from-typeorm-to-prisma) to migrate to Prisma. It has four models/entities:
 
-<TabbedContent tabs={[<FileWithIcon text="User.ts" icon="file"/>, <FileWithIcon text="Post.ts" icon="file"/>, <FileWithIcon text="Profile.ts" icon="file"/>, <FileWithIcon text="Category.ts" icon="file"/>]}>     
- 
+<TabbedContent tabs={[<FileWithIcon text="User.ts" icon="file"/>, <FileWithIcon text="Post.ts" icon="file"/>, <FileWithIcon text="Profile.ts" icon="file"/>, <FileWithIcon text="Category.ts" icon="file"/>]}>
+
 <tab>
 
 ```ts
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column({ nullable: true })
-  name: string;
+  name: string
 
   @Column({ unique: true })
-  email: string;
+  email: string
 
-  @OneToMany((type) => Post, (post) => post.author)
-  posts: Post[];
+  @OneToMany(
+    type => Post,
+    post => post.author
+  )
+  posts: Post[]
 
-  @OneToOne((type) => Profile, (profile) => profile.user,  { cascade: true })
-  profile: Profile;
+  @OneToOne(
+    type => Profile,
+    profile => profile.user,
+    { cascade: true }
+  )
+  profile: Profile
 }
 ```
 
@@ -63,23 +70,29 @@ export class User {
 @Entity()
 export class Post {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column()
-  title: string;
+  title: string
 
   @Column({ nullable: true })
-  content: string;
+  content: string
 
   @Column({ default: false })
-  published: boolean;
+  published: boolean
 
-  @ManyToOne((type) => User, (user) => user.posts)
-  author: User;
+  @ManyToOne(
+    type => User,
+    user => user.posts
+  )
+  author: User
 
-  @ManyToMany((type) => Category, (category) => category.posts)
+  @ManyToMany(
+    type => Category,
+    category => category.posts
+  )
   @JoinTable()
-  categories: Category[];
+  categories: Category[]
 }
 ```
 
@@ -91,14 +104,17 @@ export class Post {
 @Entity()
 export class Profile {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column({ nullable: true })
-  bio: string;
+  bio: string
 
-  @OneToOne((type) => User, (user) => user.profile)
+  @OneToOne(
+    type => User,
+    user => user.profile
+  )
   @JoinColumn()
-  user: User;
+  user: User
 }
 ```
 
@@ -110,13 +126,16 @@ export class Profile {
 @Entity()
 export class Category {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column()
-  name: string;
+  name: string
 
-  @ManyToMany((type) => Post, (post) => post.categories)
-  posts: Post[];
+  @ManyToMany(
+    type => Post,
+    post => post.categories
+  )
+  posts: Post[]
 }
 ```
 
@@ -132,54 +151,81 @@ The models have the following relations:
 
 The corresponding tables have been created using a generated TypeORM migration.
 
-<details><summary>Expand to view details of the migration</summary>  
+<details><summary>Expand to view details of the migration</summary>
 
-The migration has been created using 
+The migration has been created using
 
 ```terminal
 typeorm migration:generate -n Init
 ```
 
-This created the following migration file: 
+This created the following migration file:
 
 ```ts file=migrations/1605698662257-Init.ts
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class Init1605698662257 implements MigrationInterface {
-    name = 'Init1605698662257'
+  name = 'Init1605698662257'
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "profile" ("id" SERIAL NOT NULL, "bio" character varying, "userId" integer, CONSTRAINT "REL_a24972ebd73b106250713dcddd" UNIQUE ("userId"), CONSTRAINT "PK_3dd8bfc97e4a77c70971591bdcb" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "user" ("id" SERIAL NOT NULL, "name" character varying, "email" character varying NOT NULL, CONSTRAINT "UQ_e12875dfb3b1d92d7d7c5377e22" UNIQUE ("email"), CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "post" ("id" SERIAL NOT NULL, "title" character varying NOT NULL, "content" character varying, "published" boolean NOT NULL DEFAULT false, "authorId" integer, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "category" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_9c4e4a89e3674fc9f382d733f03" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "post_categories_category" ("postId" integer NOT NULL, "categoryId" integer NOT NULL, CONSTRAINT "PK_91306c0021c4901c1825ef097ce" PRIMARY KEY ("postId", "categoryId"))`);
-        await queryRunner.query(`CREATE INDEX "IDX_93b566d522b73cb8bc46f7405b" ON "post_categories_category" ("postId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_a5e63f80ca58e7296d5864bd2d" ON "post_categories_category" ("categoryId") `);
-        await queryRunner.query(`ALTER TABLE "profile" ADD CONSTRAINT "FK_a24972ebd73b106250713dcddd9" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_c6fb082a3114f35d0cc27c518e0" FOREIGN KEY ("authorId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "post_categories_category" ADD CONSTRAINT "FK_93b566d522b73cb8bc46f7405bd" FOREIGN KEY ("postId") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "post_categories_category" ADD CONSTRAINT "FK_a5e63f80ca58e7296d5864bd2d3" FOREIGN KEY ("categoryId") REFERENCES "category"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    }
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `CREATE TABLE "profile" ("id" SERIAL NOT NULL, "bio" character varying, "userId" integer, CONSTRAINT "REL_a24972ebd73b106250713dcddd" UNIQUE ("userId"), CONSTRAINT "PK_3dd8bfc97e4a77c70971591bdcb" PRIMARY KEY ("id"))`
+    )
+    await queryRunner.query(
+      `CREATE TABLE "user" ("id" SERIAL NOT NULL, "name" character varying, "email" character varying NOT NULL, CONSTRAINT "UQ_e12875dfb3b1d92d7d7c5377e22" UNIQUE ("email"), CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`
+    )
+    await queryRunner.query(
+      `CREATE TABLE "post" ("id" SERIAL NOT NULL, "title" character varying NOT NULL, "content" character varying, "published" boolean NOT NULL DEFAULT false, "authorId" integer, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`
+    )
+    await queryRunner.query(
+      `CREATE TABLE "category" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_9c4e4a89e3674fc9f382d733f03" PRIMARY KEY ("id"))`
+    )
+    await queryRunner.query(
+      `CREATE TABLE "post_categories_category" ("postId" integer NOT NULL, "categoryId" integer NOT NULL, CONSTRAINT "PK_91306c0021c4901c1825ef097ce" PRIMARY KEY ("postId", "categoryId"))`
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_93b566d522b73cb8bc46f7405b" ON "post_categories_category" ("postId") `
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_a5e63f80ca58e7296d5864bd2d" ON "post_categories_category" ("categoryId") `
+    )
+    await queryRunner.query(
+      `ALTER TABLE "profile" ADD CONSTRAINT "FK_a24972ebd73b106250713dcddd9" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+    )
+    await queryRunner.query(
+      `ALTER TABLE "post" ADD CONSTRAINT "FK_c6fb082a3114f35d0cc27c518e0" FOREIGN KEY ("authorId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+    )
+    await queryRunner.query(
+      `ALTER TABLE "post_categories_category" ADD CONSTRAINT "FK_93b566d522b73cb8bc46f7405bd" FOREIGN KEY ("postId") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+    )
+    await queryRunner.query(
+      `ALTER TABLE "post_categories_category" ADD CONSTRAINT "FK_a5e63f80ca58e7296d5864bd2d3" FOREIGN KEY ("categoryId") REFERENCES "category"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+    )
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "post_categories_category" DROP CONSTRAINT "FK_a5e63f80ca58e7296d5864bd2d3"`);
-        await queryRunner.query(`ALTER TABLE "post_categories_category" DROP CONSTRAINT "FK_93b566d522b73cb8bc46f7405bd"`);
-        await queryRunner.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_c6fb082a3114f35d0cc27c518e0"`);
-        await queryRunner.query(`ALTER TABLE "profile" DROP CONSTRAINT "FK_a24972ebd73b106250713dcddd9"`);
-        await queryRunner.query(`DROP INDEX "IDX_a5e63f80ca58e7296d5864bd2d"`);
-        await queryRunner.query(`DROP INDEX "IDX_93b566d522b73cb8bc46f7405b"`);
-        await queryRunner.query(`DROP TABLE "post_categories_category"`);
-        await queryRunner.query(`DROP TABLE "category"`);
-        await queryRunner.query(`DROP TABLE "post"`);
-        await queryRunner.query(`DROP TABLE "user"`);
-        await queryRunner.query(`DROP TABLE "profile"`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "post_categories_category" DROP CONSTRAINT "FK_a5e63f80ca58e7296d5864bd2d3"`
+    )
+    await queryRunner.query(
+      `ALTER TABLE "post_categories_category" DROP CONSTRAINT "FK_93b566d522b73cb8bc46f7405bd"`
+    )
+    await queryRunner.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_c6fb082a3114f35d0cc27c518e0"`)
+    await queryRunner.query(
+      `ALTER TABLE "profile" DROP CONSTRAINT "FK_a24972ebd73b106250713dcddd9"`
+    )
+    await queryRunner.query(`DROP INDEX "IDX_a5e63f80ca58e7296d5864bd2d"`)
+    await queryRunner.query(`DROP INDEX "IDX_93b566d522b73cb8bc46f7405b"`)
+    await queryRunner.query(`DROP TABLE "post_categories_category"`)
+    await queryRunner.query(`DROP TABLE "category"`)
+    await queryRunner.query(`DROP TABLE "post"`)
+    await queryRunner.query(`DROP TABLE "user"`)
+    await queryRunner.query(`DROP TABLE "profile"`)
+  }
 }
 ```
 
-</details>  
+</details>
 
 As mentioned before, this guide is an extended variation of the TypeORM Express example and uses the same file structure. The route handlers are located in the `src/controller` directory. From there, they are pulled into a central `src/routes.ts` file which is used to set up the required routes in `src/index.ts`:
 
@@ -208,7 +254,6 @@ As mentioned before, this guide is an extended variation of the TypeORM Express 
     └── tsconfig.json
 ```
 
-
 ## Step 1. Install the Prisma CLI
 
 The first step to adopt Prisma is to [install the Prisma CLI](../../concepts/components/prisma-cli/installation#local-installation-recommended) in your project:
@@ -230,7 +275,7 @@ npx prisma init
 This command created a new directory called `prisma` with the following files for you:
 
 - `schema.prisma`: Your Prisma schema file that specifies your database connection and models
-- `.env`: A [`dotenv`](https://github.com/motdotla/dotenv) to configure your database connection URL as an environment variable 
+- `.env`: A [`dotenv`](https://github.com/motdotla/dotenv) to configure your database connection URL as an environment variable
 
 The Prisma schema file currently looks as follows:
 
@@ -248,17 +293,17 @@ generator client {
 }
 ```
 
-> **Tip**: If you're using VS Code, be sure to install the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) for syntax highlighting, formatting, auto-completion and a lot more cool features. 
+> **Tip**: If you're using VS Code, be sure to install the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) for syntax highlighting, formatting, auto-completion and a lot more cool features.
 
 ### 2.2. Connect your database
 
 If you're not using PostgreSQL, you need to adjust the `provider` field on the `datasource` block to the database you currently use:
 
-<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>     
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>
 
 <tab>
 
-```prisma
+```prisma file=schema.prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -269,7 +314,7 @@ datasource db {
 
 <tab>
 
-```prisma
+```prisma file=schema.prisma
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -280,7 +325,7 @@ datasource db {
 
 <tab>
 
-```prisma
+```prisma file=schema.prisma
 datasource db {
   provider = "sqlserver"
   url      = env("DATABASE_URL")
@@ -291,7 +336,7 @@ datasource db {
 
 <tab>
 
-```prisma
+```prisma file=schema.prisma
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
@@ -304,7 +349,7 @@ datasource db {
 
 Once that's done, you can configure your [database connection URL](../../reference/database-reference/connection-urls) in the `.env` file. Here's how the database connection from TypeORM maps to the connection URL format used by Prisma:
 
-<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>     
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>
 
 <tab>
 
@@ -487,7 +532,7 @@ As opposed to the current snake_case notation of Prisma models, Prisma's naming 
 
 You can adjust the naming by _mapping_ the Prisma model and field names to the existing table and column names in the underlying database using `@@map` and `@map`.
 
-Also note that you can rename [relation fields](../../concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural. 
+Also note that you can rename [relation fields](../../concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural.
 
 You can further completely remove model that represents the TypeORM migrations table (called `_typeorm_migrations` here) from the Prisma schema.
 
@@ -568,7 +613,7 @@ touch src/prisma.ts
 Now, instantiate `PrismaClient` and export it from the file so you can use it in your route handlers later:
 
 ```ts copy file=src/prisma.ts
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient } from '@prisma/client'
 
 export const prisma = new PrismaClient()
 ```
@@ -588,18 +633,18 @@ Let's dive into the route handlers that implement these requests.
 The `/feed` handler is currently implemented as follows:
 
 ```ts file=src/controllers/FeedAction.ts
-import { getManager } from "typeorm";
-import { Post } from "../entity/Post";
+import { getManager } from 'typeorm'
+import { Post } from '../entity/Post'
 
 export async function feedAction(req, res) {
-  const postRepository = getManager().getRepository(Post);
+  const postRepository = getManager().getRepository(Post)
 
   const publishedPosts = await postRepository.find({
     where: { published: true },
-    relations: ["author"]
-  });
+    relations: ['author'],
+  })
 
-  res.send(publishedPosts);
+  res.send(publishedPosts)
 }
 ```
 
@@ -607,44 +652,38 @@ Note that each returned `Post` object includes the relation to the `author` it's
 
 Here is how the same route is implemented using Prisma Client:
 
-
 ```ts file=src/controllers/FeedAction.ts
 import { prisma } from '../prisma'
 
 export async function feedAction(req, res) {
-
   const publishedPosts = await prisma.post.findMany({
     where: { published: true },
-    include: { author: true }
+    include: { author: true },
   })
 
-  res.send(publishedPosts);
+  res.send(publishedPosts)
 }
 ```
 
 Note that the way how Prisma Client includes the `author` relation is absolutely type-safe. The TypeScript compiler would throw an error if you were trying to include a relation that does not exist on the `User` model.
-
 
 #### `/filterPosts?searchString=SEARCH_STRING`
 
 The `/filterPosts` handler is currently implemented as follows:
 
 ```ts file=src/controllers/FilterPostsActions.ts
-import { getManager, Like } from "typeorm";
-import { Post } from "../entity/Post";
+import { getManager, Like } from 'typeorm'
+import { Post } from '../entity/Post'
 
 export async function filterPostsAction(req, res) {
   const { searchString } = req.query
-  const postRepository = getManager().getRepository(Post);
+  const postRepository = getManager().getRepository(Post)
 
   const filteredPosts = await postRepository.find({
-    where: [
-      { title: Like(`%${searchString}%`) },
-      { content: Like(`%${searchString}%`) },
-    ],
-  });
+    where: [{ title: Like(`%${searchString}%`) }, { content: Like(`%${searchString}%`) }],
+  })
 
-  res.send(filteredPosts);
+  res.send(filteredPosts)
 }
 ```
 
@@ -654,39 +693,42 @@ With Prisma, the route is implemented as follows:
 import { prisma } from '../prisma'
 
 export async function filterPostsAction(req, res) {
-  const { searchString } = req.query;
+  const { searchString } = req.query
 
   const filteredPosts = prisma.post.findMany({
     where: {
-      OR: [{
-        title: { contains: searchString }
-      }, {
-        content: { contains: searchString }
-      }]
-    }
+      OR: [
+        {
+          title: { contains: searchString },
+        },
+        {
+          content: { contains: searchString },
+        },
+      ],
+    },
   })
 
-  res.send(filteredPosts);
+  res.send(filteredPosts)
 }
 ```
 
-Note that TypeORM by default combines several `where` conditions with an implicit `OR` operator. Prisma on the other hand [combines several `where` conditions with an implicit `AND` operator](../../concepts/components/prisma-client/filtering#retrieve-all-post-records-where-the-content-field-contains-prisma-and-published-is-false), so in this case the Prisma query needs to make the `OR` explicit.
+Note that TypeORM by default combines several `where` conditions with an implicit `OR` operator. Prisma on the other hand [combines several `where` conditions with an implicit `AND` operator](../../concepts/components/prisma-client/filtering-and-sorting#retrieve-all-post-records-where-the-content-field-contains-prisma-and-published-is-false), so in this case the Prisma query needs to make the `OR` explicit.
 
 #### `/post/:postId`
 
 The `/post/:postId` handler is currently implemented as follows:
 
 ```ts file=src/controllers/GetPostByIdAction.ts
-import { getManager } from "typeorm";
-import { Post } from "../entity/Post";
+import { getManager } from 'typeorm'
+import { Post } from '../entity/Post'
 
 export async function getPostByIdAction(req, res) {
   const { postId } = req.params
-  const postRepository = getManager().getRepository(Post);
+  const postRepository = getManager().getRepository(Post)
 
-  const post = await postRepository.findOne(postId);
+  const post = await postRepository.findOne(postId)
 
-  res.send(post);
+  res.send(post)
 }
 ```
 
@@ -699,10 +741,10 @@ export async function getPostByIdAction(req, res) {
   const { postId } = req.params
 
   const post = await prisma.post.findUnique({
-    where: { id: postId }
+    where: { id: postId },
   })
 
-  res.send(post);
+  res.send(post)
 }
 ```
 
@@ -719,39 +761,39 @@ The REST API has three routes that accept `POST` requests:
 The `/user` handler is currently implemented as follows:
 
 ```ts file=src/controllers/CreateUserAction.ts
-import { getManager } from "typeorm";
-import { User } from "../entity/User";
+import { getManager } from 'typeorm'
+import { User } from '../entity/User'
 
 export async function createUserAction(req, res) {
   const { name, email } = req.body
 
-  const userRepository = getManager().getRepository(User);
+  const userRepository = getManager().getRepository(User)
 
   const newUser = new User()
   newUser.name = name
   newUser.email = email
   userRepository.save(newUser)
 
-  res.send(newUser);
+  res.send(newUser)
 }
 ```
 
 With Prisma, the route is implemented as follows:
 
 ```ts file=src/controllers/CreateUserAction.ts
-import { prisma } from "../prisma";
+import { prisma } from '../prisma'
 
 export async function createUserAction(req, res) {
-  const { name, email } = req.body;
+  const { name, email } = req.body
 
   const newUser = await prisma.user.create({
     data: {
       name,
       email,
     },
-  });
+  })
 
-  res.send(newUser);
+  res.send(newUser)
 }
 ```
 
@@ -760,17 +802,17 @@ export async function createUserAction(req, res) {
 The `/post` handler is currently implemented as follows:
 
 ```ts file=src/controllers/CreateDraftAction.ts
-import { getManager } from "typeorm";
-import { Post } from "../entity/Post";
-import { User } from "../entity/User";
+import { getManager } from 'typeorm'
+import { Post } from '../entity/Post'
+import { User } from '../entity/User'
 
 export async function createDraftAction(req, res) {
   const { title, content, authorEmail } = req.body
 
-  const userRepository = getManager().getRepository(User);
+  const userRepository = getManager().getRepository(User)
   const user = await userRepository.findOne({ email: authorEmail })
 
-  const postRepository = getManager().getRepository(Post);
+  const postRepository = getManager().getRepository(Post)
 
   const newPost = new Post()
   newPost.title = title
@@ -778,17 +820,17 @@ export async function createDraftAction(req, res) {
   newPost.author = user
   postRepository.save(newPost)
 
-  res.send(newPost);
+  res.send(newPost)
 }
 ```
 
 With Prisma, the route is implemented as follows:
 
 ```ts file=src/controllers/CreateDraftAction.ts
-import { prisma } from "../prisma";
+import { prisma } from '../prisma'
 
 export async function createDraftAction(req, res) {
-  const { title, content, authorEmail } = req.body;
+  const { title, content, authorEmail } = req.body
 
   const newPost = await prisma.post.create({
     data: {
@@ -798,39 +840,38 @@ export async function createDraftAction(req, res) {
         connect: { email: authorEmail },
       },
     },
-  });
+  })
 
-  res.send(newPost);
+  res.send(newPost)
 }
 ```
 
 Note that Prisma Client's nested write here save an initial query where first the `User` record needs to be retrieved by its `email`. That's because, with Prisma you can connect records in relations using any unique property.
-
 
 #### `/user/:userId/profile`
 
 The `/user/:userId/profile` handler is currently implemented as follows:
 
 ```ts file=src/controllers/SetBioForUserAction.ts.ts
-import { getManager } from "typeorm";
-import { Profile } from "../entity/Profile";
-import { User } from "../entity/User";
+import { getManager } from 'typeorm'
+import { Profile } from '../entity/Profile'
+import { User } from '../entity/User'
 
 export async function setBioForUserAction(req, res) {
-  const { userId } = req.params;
-  const { bio } = req.body;
+  const { userId } = req.params
+  const { bio } = req.body
 
-  const userRepository = getManager().getRepository(User);
+  const userRepository = getManager().getRepository(User)
   const user = await userRepository.findOne(userId, {
-    relations: ["profile"],
-  });
+    relations: ['profile'],
+  })
 
-  const profileRepository = getManager().getRepository(Profile);
-  user.profile.bio = bio;
+  const profileRepository = getManager().getRepository(Profile)
+  user.profile.bio = bio
 
-  profileRepository.save(user.profile);
+  profileRepository.save(user.profile)
 
-  res.send(user);
+  res.send(user)
 }
 ```
 
@@ -840,21 +881,21 @@ With Prisma, the route is implemented as follows:
 import { prisma } from '../prisma'
 
 export async function setBioForUserAction(req, res) {
-  const { userId } = req.params;
-  const { bio } = req.body;
+  const { userId } = req.params
+  const { bio } = req.body
 
   const user = await prisma.user.update({
     where: { id: userId },
     data: {
       profile: {
         update: {
-          bio
-        }
-      }
-    }
+          bio,
+        },
+      },
+    },
   })
 
-  res.send(user);
+  res.send(user)
 }
 ```
 
@@ -871,35 +912,35 @@ Let's dive into the route handlers that implement these requests.
 The `/addPostToCategory?postId=POST_ID&categoryId=CATEGORY_ID` handler is currently implemented as follows:
 
 ```ts file=src/controllers/AddPostToCategoryAction.ts
-import { getManager } from "typeorm";
-import { Post } from "../entity/Post";
-import { Category } from "../entity/Category";
+import { getManager } from 'typeorm'
+import { Post } from '../entity/Post'
+import { Category } from '../entity/Category'
 
 export async function addPostToCategoryAction(req, res) {
   const { postId, categoryId } = req.query
 
-  const postRepository = getManager().getRepository(Post);
+  const postRepository = getManager().getRepository(Post)
   const post = await postRepository.findOne(postId, {
-    relations: ['categories']
+    relations: ['categories'],
   })
 
-  const categoryRepository = getManager().getRepository(Category);
+  const categoryRepository = getManager().getRepository(Category)
   const category = await categoryRepository.findOne(categoryId)
 
   post.categories.push(category)
   postRepository.save(post)
 
-  res.send(post);
+  res.send(post)
 }
 ```
 
 With Prisma, the route is implemented as follows:
 
 ```ts file=src/controllers/AddPostToCategoryAction.ts
-import { prisma } from "../prisma";
+import { prisma } from '../prisma'
 
 export async function addPostToCategoryAction(req, res) {
-  const { postId, categoryId } = req.query;
+  const { postId, categoryId } = req.query
 
   const post = await prisma.post.update({
     data: {
@@ -914,9 +955,9 @@ export async function addPostToCategoryAction(req, res) {
     where: {
       id: postId,
     },
-  });
+  })
 
-  res.send(post);
+  res.send(post)
 }
 ```
 
@@ -930,7 +971,7 @@ const post = await prisma.post.update({
     },
   },
   where: { id: postId },
-});
+})
 ```
 
 ## More
@@ -940,37 +981,37 @@ const post = await prisma.post.update({
 Similar to the `@manyToMany` decorator in TypeORM, Prisma allows you to [model many-to-many relations _implicitly_](../../concepts/components/prisma-schema/relations#implicit-vs-explicit-many-to-many-relations). That is, a many-to-many relation where you do not have to manage the [relation table](../../concepts/components/prisma-schema/relations#relation-tables) (also sometimes called JOIN table) _explicitly_ in your schema. Here is an example with TypeORM:
 
 ```ts
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToMany,
-  JoinTable,
-} from "typeorm";
-import { Category } from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm'
+import { Category } from './Category'
 
 @Entity()
 export class Post {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
-  @ManyToMany((type) => Category, (category) => category.posts)
+  @ManyToMany(
+    type => Category,
+    category => category.posts
+  )
   @JoinTable()
-  categories: Category[];
+  categories: Category[]
 }
 ```
 
 ```ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
-import { Post } from "./Post";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm'
+import { Post } from './Post'
 
 @Entity()
 export class Category {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
-  @ManyToMany((type) => Post, (post) => post.categories)
-  posts: Post[];
+  @ManyToMany(
+    type => Post,
+    post => post.categories
+  )
+  posts: Post[]
 }
 ```
 
@@ -992,7 +1033,7 @@ CREATE INDEX "IDX_a5e63f80ca58e7296d5864bd2d" ON post_categories_category("categ
 
 If you introspect the database with Prisma, you'll get the following result in the Prisma schema (note that some relation field names have been adjusted to look friendlier compared to the raw version from introspection):
 
-```prisma
+```prisma file=schema.prisma
 model Category {
   id                Int                @id @default(autoincrement())
   name              String
@@ -1030,7 +1071,7 @@ In this Prisma schema, the many-to-many relation is modeled explicitly via the r
 
 By adhering to the [conventions for Prisma relation tables](), the relation could look as follows:
 
-```prisma
+```prisma file=schema.prisma
 model Category {
   id    Int    @id @default(autoincrement())
   name  String

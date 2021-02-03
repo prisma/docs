@@ -97,7 +97,6 @@ const Newsletter = ({ newsletter }: any) => {
 
   return (
     <NewsLetterWrapper>
-
       <form className="email" onSubmit={submitEmail}>
         <Email className="email-icon" />
         <input
