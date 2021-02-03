@@ -7,9 +7,10 @@ import { useLocation } from '@reach/router'
 type SEOProps = {
   title?: string
   description?: string
+  homepage?: boolean
 }
 
-const SEO = ({ title, description }: SEOProps) => {
+const SEO = ({ title, description, homepage }: SEOProps) => {
   const location = useLocation()
   const { site } = useStaticQuery(query)
   const {
@@ -35,9 +36,9 @@ const SEO = ({ title, description }: SEOProps) => {
       {/* <meta charSet="utf-8" /> */}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>
-        {titlePrefix}
+        {homepage ? '': titlePrefix}
         {title}
-        {titleSuffix}
+        {homepage ? '' : titleSuffix}
       </title>
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
