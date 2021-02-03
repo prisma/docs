@@ -295,7 +295,7 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
-      <SEO title={title} description={description} />
+      <SEO title={title} description={description} homepage/>
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
