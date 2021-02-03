@@ -267,25 +267,25 @@ const config = {
 
     ReferenceLinkData: [
       {
-        categoryName: 'Prisma Schema API',
-        mainUrl: 'reference/api-reference/prisma-schema-reference',
+        categoryName: 'Prisma Reference',
+        mainUrl: 'reference',
         icon: 'Schema',
-        links: [
+        links: [        
           {
-            text: 'datasource',
-            url: 'reference/api-reference/prisma-schema-reference#datasource',
-            codeBlock: true,
+            text: 'Prisma Client API reference',
+            url: 'reference/api-reference/prisma-client-reference',
+            codeBlock: false,
           },
           {
-            text: 'generator',
-            url: 'reference/api-reference/prisma-schema-reference#generator',
-            codeBlock: true,
+            text: 'Prisma schema reference',
+            url: 'reference/api-reference/prisma-schema-reference',
+            codeBlock: false,
           },
           {
-            text: 'model',
-            url: 'reference/api-reference/prisma-schema-reference#model',
-            codeBlock: true,
-          },
+            text: 'Prisma error reference',
+            url: 'reference/api-reference/error-reference',
+            codeBlock: false,
+          },          
         ],
       },
       {
