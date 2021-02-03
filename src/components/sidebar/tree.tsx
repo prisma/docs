@@ -15,12 +15,21 @@ const Tree = ({ edges }: AllEdges) => {
   let [treeData] = useState(() => {
     return calculateTreeData(edges, defaultCollapsed, location)
   })
+
   const [collapsed, setCollapsed] = useGlobalState('collapsedState')
-  const toggle = (label: string, toggleContent: boolean) => {
-    setCollapsed({
-      ...collapsed,
-      [label]: !toggleContent ? false : !collapsed[label],
-    })
+  const toggle = (label: string, toggleContent: boolean, parentLabel?: string) => {
+    if (!parentLabel || collapsed[parentLabel] === null)
+      setCollapsed({
+        ...collapsed,
+        [label]: !toggleContent ? false : !collapsed[label],
+      })
+    else {
+      setCollapsed({
+        ...collapsed,
+        [label]: !toggleContent ? false : !collapsed[label],
+        [parentLabel]: false,
+      })
+    }
   }
 
   return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} />
