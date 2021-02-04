@@ -79,7 +79,7 @@ const config = {
           icon: 'DoubleArrow',
         },
         {
-          text: 'Set up prisma',
+          text: 'Set up Prisma',
           url: 'getting-started/setup-prisma',
           special: false,
           icon: null,
