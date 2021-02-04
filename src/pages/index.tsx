@@ -6,7 +6,7 @@ import listDot from 'images/list-dot.png'
 import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'
 import { graphql, useStaticQuery } from 'gatsby'
 
-import { ButtonSize, PrimaryButton, SpecialButton } from '../components/button'
+import { PrimaryButton, SpecialButton } from '../components/button'
 import Schema from '../icons/home/Schema'
 import DbLink from '../icons/home/DbLink'
 import CLI from '../icons/home/CLI'
@@ -79,7 +79,7 @@ const NormalPara = styled.p`
   }
 `
 
-const SubHeading = styled.h3`
+const SubHeading = styled.h2`
   font-weight: 600;
   font-size: ${p => p.theme.fontSizes[36]};
   line-height: ${p => p.theme.space[36]};
@@ -93,7 +93,7 @@ const Space = styled.div<{ height: number }>`
   ${p => `height: ${p.height}px;`};
 `
 
-const ListTitle = styled.h5`
+const ListTitle = styled.h3`
   font-weight: bold;
   line-height: ${p => p.theme.space[16]};
   font-size: ${p => p.theme.fontSizes[16]};
@@ -235,13 +235,13 @@ const LinkCard = styled.a`
     top: -30px;
   }
 
-  h5 {
+  h3 {
     margin-bottom: 0;
     display: flex;
     align-items: center;
   }
 
-  &:hover h5 svg {
+  &:hover h3 svg {
     transform: translateX(4px);
   }
 
@@ -290,8 +290,6 @@ const Homepage = () => {
       },
     },
   } = site
-
-  console.log(site.siteMetadata.homepage)
 
   return (
     <Layout homePage={true}>
