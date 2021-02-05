@@ -397,7 +397,7 @@ const config = {
     ],
   },
   siteMetadata: {
-    title: 'Prisma',
+    title: 'Prisma Documentation | Concepts, Guides, and Reference',
     description:
       "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
     keywords: 'Docs, prisma, 2.0',
