@@ -1,0 +1,59 @@
+---
+title: 'Best practice for instantiating PrismaClient with Next.js'
+metaTitle: 'Best practice for instantiating PrismaClient with Next.js'
+metaDescription: 'Best practice for instantiating PrismaClient with Next.js'
+---
+
+## Problem
+
+Lots of users have come across this warning while working with [Next.js](https://nextjs.org/) in development:
+
+```
+warn(prisma-client) Already 10 Prisma Clients are actively running
+```
+
+There's a related [discussion](https://github.com/prisma/prisma/discussions/4399) and [issue](https://github.com/prisma/prisma/issues/5103) for the same. The reason is that in development due to hot reloading, a new instance of `PrismaClient` is created which makes a lot of connections to the database which is not ideal.
+
+## Solution
+
+The solution in this case is to instantiate `PrismaClient` and save it on the `global` object. Then we keep a check to only instantiate `PrismaClient` if it's not on the `global` object otherwise use the same instance again if already present to prevent instantiating extra `PrismaClient` instances.
+
+```ts
+// db.ts
+
+import { PrismaClient } from '@prisma/client'
+
+let prisma: PrismaClient
+
+// check to use this workaround only in development and not in production
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient()
+} else {
+  if (!global.prisma) {
+    global.prisma = new PrismaClient()
+  }
+
+  prisma = global.prisma
+}
+
+export default prisma
+```
+
+After creating this file, you can now import this `PrismaClient` instance anywhere in your Next.js `pages` as follows:
+
+```ts
+import prisma from './db'
+
+export const getServerSideProps = async ({ req }) => {
+  const token = req.headers.AUTHORIZATION
+  const userId = await getUserId(token)
+  const posts = await prisma.post.findMany({
+    where: {
+      author: { id: userId },
+    },
+  })
+  return { props: { posts } }
+}
+```
+
+So this is how you can prevent the above warning when using Next.js in development.
