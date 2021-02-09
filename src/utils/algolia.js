@@ -2,13 +2,23 @@ require('dotenv').config({
   path: `.env`,
 })
 
+const flat = (array) => {
+  var result = [];
+  array.forEach(function (a) {
+      result.push(a);
+      if (Array.isArray(a.items)) {
+          result = result.concat(flat(a.items));
+      }
+  });
+  return result;
+}
+
 const removeInlineCode = (heading, path) =>
   path
     ? heading.replace(/inlinecode/g, '')
     : heading.replace('<inlinecode>', '').replace('</inlinecode>', '')
 
 const isApiTerm = term => term.includes('AlgoliaTerm') && term.split('"')[1] === 'apiReference'
-const getApiVal = term => term.split('"')[3]
 
 const handleRawBody = node => {
   const { rawBody, ...rest } = node
@@ -17,9 +27,7 @@ const handleRawBody = node => {
     .slice(2)
     .join('---')
   const blocks = rawBodyWithoutFrontmatter
-    .split(/#{3,}/i)
-    .join(' ')
-    .split('##')
+    .split(/#{2,}/i)
   const headingWithcontent = blocks
     .filter(block => block !== '\n\n')
     .map(block => {
@@ -59,7 +67,7 @@ const handleRawBody = node => {
     const tocItem =
       rest.tableOfContents &&
       rest.tableOfContents.items &&
-      rest.tableOfContents.items.find(t => t.title === fSection.heading.replace(/`/g, ''))
+      flat(rest.tableOfContents.items).find(t => t.title === fSection.heading.replace(/`/g, ''))
     return tocItem ? removeInlineCode(tocItem.url, true) : ''
   }
 
@@ -71,7 +79,7 @@ const handleRawBody = node => {
     apiReference: isApiTerm(fSection.para) ? getApiVal(fSection.para) : null,
     heading: removeInlineCode(fSection.heading),
     content: isApiTerm(fSection.para)
-      ? getApiVal(fSection.para)
+      ? finalSections[index + 1].para
       : fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
     path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
   }))
