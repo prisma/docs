@@ -19,6 +19,7 @@ const removeInlineCode = (heading, path) =>
     : heading.replace('<inlinecode>', '').replace('</inlinecode>', '')
 
 const isApiTerm = term => term.includes('AlgoliaTerm') && term.split('"')[1] === 'apiReference'
+const getApiVal = term => term.split('"')[3]
 
 const handleRawBody = node => {
   const { rawBody, ...rest } = node
