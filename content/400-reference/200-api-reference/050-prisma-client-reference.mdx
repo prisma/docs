@@ -102,7 +102,7 @@ datasource db {
 
 ### <inlinecode>log</inlinecode>
 
-Determines the type and level of logging. See also: [Logging](../../../concepts/components/prisma-client/logging) <span class="concept"></span>
+Determines the type and level of logging. See also: [Logging](../../../concepts/components/prisma-client/working-with-prismaclient/logging) <span class="concept"></span>
 
 #### Options
 
@@ -173,10 +173,10 @@ export type LogEvent = {
 
 <Cmd>
 
-```ts
+```ts highlight=3;normal;
 import { PrismaClient } from '@prisma/client'
 
-|const prisma = new PrismaClient({ log: ['query', 'info'] })
+  const prisma = new PrismaClient({ log: ['query', 'info'] })
 
 async function main() {
   const countUsers = await prisma.user.count({})
@@ -992,7 +992,7 @@ const deleteUser = await prisma.user.delete({
 
 ### <inlinecode>createMany</inlinecode> (Preview)
 
-`createMany` creates multiple records in a transaction. To enable this feature, add `createMany` to the `previewFeatures` list in your schema:
+`createMany` creates multiple records in a transaction. To enable this feature, add `createMany` to `previewFeatures` in your schema:
 
 ```prisma highlight=3;normal
 generator client {
@@ -1001,22 +1001,22 @@ generator client {
 }
 ```
 
-
 #### Options
 
-| Name                  | Type                                                     | Required | Description                                                                                                                                                                                                                                                                   |
-| --------------------- | -------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data`                | `Enumerable<UserCreateManyInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. It also includes relation fields which lets you perform (transactional) nested inserts. Fields that are marked as optional or have default values in the datamodel are optional. |
-| `skipDuplicates?`     | `boolean` | No | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT).
+| Name              | Type                              | Required | Description                                                                                                                                                                                                                                                                   |
+| ----------------- | --------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`            | `Enumerable<UserCreateManyInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. It also includes relation fields which lets you perform (transactional) nested inserts. Fields that are marked as optional or have default values in the datamodel are optional. |
+| `skipDuplicates?` | `boolean`                         | No       | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT).                                                           |
 
 #### Return type
 
-| Return type               | Example                        | Description                                                     |
-| ------------------------- | ------------------------------ | --------------------------------------------------------------- |
-| `BatchPayload` | `{ count: 3 }`                         |      A count of the number of records created.                                                           |
+| Return type    | Example        | Description                               |
+| -------------- | -------------- | ----------------------------------------- |
+| `BatchPayload` | `{ count: 3 }` | A count of the number of records created. |
 
 #### Remarks
 
+- `createMany` is not supported by SQLite.
 - You **cannot** create or connect relations - you cannot nest `create`, `createMany`, `connect`, `connectOrCreate` inside a top-level `createMany`
 - You can nest a [`createMany`](#createmany-preview-1) inside an `update` or `create` query - for example, add a `User` and two `Post` records at the same time.
 
@@ -1038,9 +1038,9 @@ export type UserCreateManyArgs = {
 ```ts
 const users = await prisma.user.createMany({
   data: [
-    { name: "Sonali", email: "sonali@prisma.io"},
-    { name: "Alex", email: "alex@prisma.io" }
-  ]
+    { name: 'Sonali', email: 'sonali@prisma.io' },
+    { name: 'Alex', email: 'alex@prisma.io' },
+  ],
 })
 ```
 
@@ -1145,7 +1145,11 @@ export type UserDeleteManyArgs = {
 
 #### Examples
 
-See [Filter conditions and operators](#filter-conditions-and-operators) for examples of how to filter the records to delete.
+##### Delete all `User` records
+
+```ts
+const deletedUserCount = await prisma.user.deleteMany({})
+```
 
 ##### Delete all `User` records where the `name` is `Alice`
 
@@ -1154,6 +1158,8 @@ const deletedUserCount = await prisma.user.deleteMany({
   where: { name: 'Alice' },
 })
 ```
+
+See [Filter conditions and operators](#filter-conditions-and-operators) for examples of how to filter the records to delete.
 
 ### <inlinecode>count</inlinecode>
 
@@ -1389,12 +1395,20 @@ export type UserGroupByArgs = {
 
 #### Examples
 
+##### Group by `country`/`city` where the average `profileViews` is greater than `200`, and return the `sum` of `profileViews` for each group
+
+The query also returns a count of `_all` records in each group, and all records with non-`null` `city` field values in each group.
+
 <CodeWithResult expanded="{true}">
 <Cmd>
 
 ```ts
 const groupUsers = await prisma.user.groupBy({
-  by: ['country', 'country'],
+  by: ['country', 'city'],
+  count: {
+    _all: true,
+    city: true,
+  },
   sum: {
     profileViews: true,
   },
@@ -1416,8 +1430,24 @@ const groupUsers = await prisma.user.groupBy({
 
 ```js
 ;[
-  { country: 'Denmark', city: 'Copenhagen', sum: { profileViews: 490 } },
-  { country: 'Sweden', city: 'Stockholm', sum: { profileViews: 500 } },
+  {
+    country: 'Denmark',
+    city: 'Copenhagen',
+    sum: { profileViews: 490 },
+    count: {
+      _all: 70,
+      city: 8,
+    },
+  },
+  {
+    country: 'Sweden',
+    city: 'Stockholm',
+    sum: { profileViews: 500 },
+    count: {
+      _all: 50,
+      city: 3,
+    },
+  },
 ]
 ```
 
@@ -1700,7 +1730,7 @@ Sorts a list of records. See also: [Sorting](../../../concepts/components/prisma
 
 #### Remarks
 
-* In [2.16.0](https://github.com/prisma/prisma/releases/2.16.0) and later, you can [order by relation fields](#sort-post-by-the-related-user-records--name) - for example, order posts by the author's name
+- In [2.16.0](https://github.com/prisma/prisma/releases/2.16.0) and later, you can [order by relation fields](#sort-post-by-the-related-user-records-name) (Preview) - for example, order posts by the author's name
 
 #### Inputs
 
@@ -1721,7 +1751,7 @@ export type UserOrderByInput = {
   profileViews?: SortOrder
   role?: SortOrder
   coinflips?: SortOrder
-  profile?: ExtendedProfileOrderByInput  
+  profile?: ExtendedProfileOrderByInput
 }
 
 export declare const SortOrder: {
@@ -1754,15 +1784,24 @@ const users = await prisma.user.findMany({
 })
 ```
 
-#### Sort `Post` by the related `User` record's  `name`
+#### Sort `Post` by the related `User` record's `name`
+
+Sorting by relation fields is a Preview feature. To enable this feature, add `orderByRelation` to `previewFeatures` in your schema:
+
+```prisma highlight=3;normal
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["orderByRelation"]
+}
+```
 
 ```ts
 const posts = await prisma.post.findMany({
   orderBy: {
     author: {
-      name: "asc"
-    }
-  }
+      name: 'asc',
+    },
+  },
 })
 ```
 
@@ -2270,7 +2309,7 @@ const distinctCitiesAndCountries = await prisma.user.findMany({
 
 ### <inlinecode>create</inlinecode>
 
-A nested `create` query adds a new related record or set of records to a parent record. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries#add-or-remove-related-records) <span class="concept"></span>.
+A nested `create` query adds a new related record or set of records to a parent record. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>.
 
 #### Remarks
 
@@ -2328,11 +2367,14 @@ const user = await prisma.user.create({
   data: {
     email: 'alice@prisma.io',
     posts: {
-      create: [{ 
-        title: 'This is my first post' 
-      }, { 
-        title: 'Here comes a second post' 
-      }],
+      create: [
+        {
+          title: 'This is my first post',
+        },
+        {
+          title: 'Here comes a second post',
+        },
+      ],
     },
   },
 })
@@ -2387,19 +2429,16 @@ A nested `createMany` query adds a new set of records to a parent record. See: [
 ```ts
 const user = await prisma.user.update({
   where: {
-    id: 9
+    id: 9,
   },
   data: {
-    name: "Elliott",
-    posts: {        
+    name: 'Elliott',
+    posts: {
       createMany: {
-        data: [
-          { title: "My first post", },
-          { title: "My second post" }
-        ]
-      }
-    }
-  }
+        data: [{ title: 'My first post' }, { title: 'My second post' }],
+      },
+    },
+  },
 })
 ```
 
@@ -2424,7 +2463,9 @@ const user = await prisma.user.update({
 
 ### <inlinecode>connect</inlinecode>
 
-A nested `connect` query connects a record to an existing related record by specifying an ID or unique identifier. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries#add-or-remove-related-records) <span class="concept"></span>
+<AlgoliaTerm name="apiReference" value="connect" />
+
+A nested `connect` query connects a record to an existing related record by specifying an ID or unique identifier. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>
 
 #### Remarks
 
@@ -2515,7 +2556,9 @@ const user = await prisma.user.update({
 
 ### <inlinecode>connectOrCreate</inlinecode>
 
-`connectOrCreate` _either_ connects a record to an existing related record by ID or unique identifier _or_ creates a new related record if the record does not exist. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries#add-or-remove-related-records) <span class="concept"></span>
+<AlgoliaTerm name="apiReference" value="connectOrCreate" />
+
+`connectOrCreate` _either_ connects a record to an existing related record by ID or unique identifier _or_ creates a new related record if the record does not exist. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>
 
 #### Examples
 
@@ -2603,7 +2646,9 @@ const user = await prisma.user.update({
 
 ### <inlinecode>disconnect</inlinecode>
 
-A nested `disconnect` query breaks the connection between a parent record and a related record, but does not delete either record. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries#add-or-remove-related-records) <span class="concept"></span>
+<AlgoliaTerm name="apiReference" value="disconnect" />
+
+A nested `disconnect` query breaks the connection between a parent record and a related record, but does not delete either record. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>
 
 #### Remarks
 
@@ -2643,6 +2688,8 @@ const user = await prisma.user.update({
 ```
 
 ### <inlinecode>update</inlinecode>
+
+<AlgoliaTerm name="apiReference" value="update" />
 
 A nested `update` query updates one or more related records where the parent record's ID is `n`. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries#update-related-records) <span class="concept"></span>
 
@@ -2700,6 +2747,8 @@ const user = await prisma.user.update({
 
 ### <inlinecode>upsert</inlinecode>
 
+<AlgoliaTerm name="apiReference" value="upsert" />
+
 A nested `upsert` query updates a related record if it exists, or creates a new related record.
 
 #### Examples
@@ -2746,6 +2795,8 @@ const user = await prisma.user.update({
 
 ### <inlinecode>delete</inlinecode>
 
+<AlgoliaTerm name="apiReference" value="delete" />
+
 A nested `delete` query deletes a related record. The parent record is not deleted.
 
 #### Remarks
@@ -2782,6 +2833,8 @@ const user = await prisma.user.update({
 
 ### <inlinecode>updateMany</inlinecode>
 
+<AlgoliaTerm name="apiReference" value="updateMany" />
+
 A nested `updateMany` updates a list of related records and supports filtering - for example, you can update a user's unpublished posts.
 
 #### Examples
@@ -2809,6 +2862,8 @@ const result = await prisma.user.update({
 ```
 
 ### <inlinecode>deleteMany</inlinecode>
+
+<AlgoliaTerm name="apiReference" value="deleteMany" />
 
 A nested `deleteMany` deletes related records and supports filtering. For example, you can delete a user's posts while updating other properties of that user.
 
@@ -3354,6 +3409,10 @@ const result = await prisma.post.findMany({
 
 Returns all records where **one or more** ("some") _related_ records match filtering criteria.
 
+#### Remarks
+
+- You can use `some` without parameters to return all records with at least one relation
+
 #### Reference
 
 ```ts file=index.d.ts
@@ -3424,6 +3483,10 @@ const result = await prisma.user.findMany({
 
 Returns all records where **zero** _related_ records match filtering criteria.
 
+#### Remarks
+
+- You can use `none` without parameters to [return all records with no relations](#get-all-user-records-with-zero-posts)
+
 #### Reference
 
 ```ts file=index.d.ts
@@ -3431,6 +3494,34 @@ export type PostFilter = {
   every?: PostWhereInput | null
   some?: PostWhereInput | null
 |  none?: PostWhereInput | null
+}
+```
+
+#### Examples
+
+##### Get all `User` records with zero posts
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    post: {
+        none: {} // User has no posts
+    }
+  }
+}
+```
+
+##### Get all `User` records with zero published posts
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    post: {
+        none: {
+          published: true
+        }
+    }
+  }
 }
 ```
 
@@ -3664,7 +3755,7 @@ Client-level methods are prefixed by `$`.
 <!-- prettier-ignore -->
 ### <inlinecode>$disconnect()</inlinecode>
 
-The `$disconnect()` method closes the database connections that were established when `$connect` was called and stops the process that was running Prisma's query engine. See [Connection management](../../..//concepts/components/prisma-client/connection-management) for an overview of `$connect()` and `$disconnect()`.
+The `$disconnect()` method closes the database connections that were established when `$connect` was called and stops the process that was running Prisma's query engine. See [Connection management](../../..//concepts/components/prisma-client/working-with-prismaclient/connection-management) for an overview of `$connect()` and `$disconnect()`.
 
 #### Remarks
 
@@ -3679,7 +3770,7 @@ $disconnect(): Promise<void>
 <!-- prettier-ignore -->
 ### <inlinecode>$connect()</inlinecode>
 
-The `$connect()` method establishes a physical connection to the database via Prisma's query engine. See [Connection management](../../..//concepts/components/prisma-client/connection-management) for an overview of `$connect()` and `$disconnect()`.
+The `$connect()` method establishes a physical connection to the database via Prisma's query engine. See [Connection management](../../..//concepts/components/prisma-client/working-with-prismaclient/connection-management) for an overview of `$connect()` and `$disconnect()`.
 
 #### Remarks
 
@@ -3694,7 +3785,27 @@ $connect(): Promise<void>
 <!-- prettier-ignore -->
 ### <inlinecode>$on()</inlinecode>
 
-The `$on()` method allows you to subscribe to events - for example, for logging purposes. See: [`log`](#log)
+The `$on()` method allows you to subscribe to events.
+
+#### Hooks
+
+| Hook         | Decription                                                                          |
+| :----------- | :---------------------------------------------------------------------------------- |
+| `beforeExit` | Runs before the Prisma process exits and allows you to perform additional queries - for example, as part of a graceful shutdown.  |
+
+You can also subscribe to [logging events](#log).
+
+#### Examples
+
+##### Using the `beforeExit` hook
+
+```ts
+const prisma = new PrismaClient()
+
+prisma.$on('beforeExit', () => {
+    await prisma.user.deleteMany(); // Delete all users
+})
+```
 
 <!-- prettier-ignore -->
 ### <inlinecode>$use()</inlinecode>
