@@ -11,9 +11,13 @@ Prisma Client connects and disconnects from your data sources using the followin
 - [`$connect()`](../../../../reference/api-reference/prisma-client-reference#connect-1) <span class="api"></span>
 - [`$disconnect()`](../../../../reference/api-reference/prisma-client-reference#disconnect-1) <span class="api"></span>
 
-Unless you want to employ a specific optimization, calling `prisma.$connect()` is not necessary thanks to the _lazy connect_ behavior: The `PrismaClient` instance connects lazily when the first request is made to the API (`$connect()` is called for you under the hood).
+</TopBlock>
 
-If you need the first request to respond instantly and can't wait for the lazy connection to be established, you can explicitly call `prisma.$connect()` to establish a connection to the Prisma data source:
+## Calling `$connect()` explicitly
+
+It is not necessary to call `prisma.$connect()` thanks to the _lazy connect_ behavior: The `PrismaClient` instance connects lazily when the first request is made to the API (`$connect()` is called for you under the hood).
+
+If you need the first request to respond instantly and cannot wait for a lazy connection to be established, you can explicitly call `prisma.$connect()` to establish a connection to the data source:
 
 ```ts
 const prisma = new PrismaClient()
@@ -22,15 +26,39 @@ const prisma = new PrismaClient()
 await prisma.$connect()
 ```
 
-**Note**: When deploying your application as a long-running process or when running a Node.js script that uses Prisma Client, it's recommended to always explicitly call `prisma.$disconnect()` in your code even when an exception is thrown as shown below. Otherwise, the Node.js process will not exit automatically.
+## Calling `$disconnect()` explicitly
 
-> In serverless environments, there are nuances that make it sensible to reuse database connections, i.e. not call `$disconnect()`. The [deployment docs](../deployment) cover those cases in more detail.
+When you call `$disconnect()`, Prisma:
 
-</TopBlock>
+1. Runs the [`beforeExit` hook](#exit-hooks)
+2. Ends child processes
+3. Ends the Node.JS process _if there are no other active listeners_ (for example, `SIGINT`)
 
-## Calling disconnect explicitly
+In a long-running application such as a GraphQL API, which constantly serves requests, it does not make sense to `$disconnect()` after each request - it takes time to establish a connection, and doing so as part of each request will slow down your application.
 
-```ts
+> **Tip**: To avoid too _many_ connections, we recommend that you [use a single instance of `PrismaClient` across your application](instantiate-prisma-client).
+
+One scenario where you should call `$disconnect()` explicitly is where a script:
+
+* Runs infrequently (for example, a scheduled job to send emails each night), which means it does not benefit from a long-running connection to the database
+* Exists in the context of a long-running application, such as a background service, which means that Prisma Client does not automatically disconnect when Node.JS process exits
+
+The following script creates a new instance of `PrismaClient`, performs a task, and then disconnects:
+
+```ts highlight=18;normal
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient()
+const emailService = new EmailService();
+
+async function main() {
+
+    const allUsers = await prisma.user.findMany();
+    const emails = allUsers.map(x => x.email)
+
+    await emailService.send(emails, "Hello!");
+}
+
 main()
   .catch(e => {
     throw e
@@ -39,6 +67,10 @@ main()
     await prisma.$disconnect()
   })
 ```
+
+## Connection management in serverless environments
+
+In serverless environments, there are nuances that make it sensible to reuse database connections and _not_ call `$disconnect()`. Refer to the [deployment docs](../deployment) for more examples.
 
 ## Connection pool
 
@@ -63,3 +95,20 @@ datasource db {
 ```
 
 If your machine has four physical CPUs, your connection pool will contain nine connections (`4 * 2 + 1 = 9`).
+
+## Exit hooks
+
+The `beforeExit` hook runs _before_ Prisma ends its child processes and allows you to issue queries beore the client disconnects - for example, as part of a graceful shutdown of a service:
+
+```ts
+const prisma = new PrismaClient();
+
+prisma.$on('beforeExit', async () => {
+    // PrismaClient still available
+    await prisma.message.create({
+      data: {
+        message: "Shutting down server";
+      }
+    })
+})
+```
