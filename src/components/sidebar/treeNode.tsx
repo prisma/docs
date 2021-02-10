@@ -121,6 +121,11 @@ const ListItem = styled.li`
   }
   &.last-level {
     padding-left: ${p => p.theme.space[24]};
+
+    .last-level {
+      /*this one is last for real*/
+      padding-left: ${p => p.theme.space[16]};
+    }
   }
   .collapse-title {
     cursor: pointer;

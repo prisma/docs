@@ -79,7 +79,7 @@ const config = {
           icon: 'DoubleArrow',
         },
         {
-          text: 'Set up prisma',
+          text: 'Set up Prisma',
           url: 'getting-started/setup-prisma',
           special: false,
           icon: null,
@@ -397,9 +397,9 @@ const config = {
     ],
   },
   siteMetadata: {
-    title: 'Prisma',
+    title: 'Prisma Documentation | Concepts, Guides, and Reference',
     description:
-      'Prisma replaces traditional ORMs and can be used to build GraphQL servers, REST APIs, microservices & more.',
+      "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
     keywords: 'Docs, prisma, 2.0',
     docsLocation: 'https://github.com/prisma/docs/tree/master/content',
     twitter: {
