@@ -31,13 +31,6 @@ const ListItem = styled.li`
       color: ${p => p.theme.colors.gray900} !important;
     }
 
-    // @media (min-width: 0px) and (max-width: 1024px) {
-    //   color: ${p => p.theme.colors.gray300} !important;
-    //   &:hover {
-    //     color: ${p => p.theme.colors.white} !important;
-    //   }
-    // }
-
     .tag {
       position: absolute;
       right: 0;
@@ -51,10 +44,6 @@ const ListItem = styled.li`
       &.small {
         font-size: 13px;
       }
-      // @media (min-width: 0px) and (max-width: 1024px) {
-      //   background: ${p => p.theme.colors.gray800};
-      //   color: ${p => p.theme.colors.gray500};
-      // }
     }
 
     .item-collapser {
@@ -100,24 +89,14 @@ const ListItem = styled.li`
   .active-item {
     color: ${p => p.theme.colors.blue600} !important;
     font-weight: 700;
-    // @media (min-width: 0px) and (max-width: 1024px) {
-    //   color: ${p => p.theme.colors.gray300} !important;
-    // }
   }
   &.top-level {
     margin-top: ${p => p.theme.space[32]};
-
-    // &:nth-child(1) {
-    //   margin-top: 0;
-    // }
     > a {
       font-size: 1.125rem;
       color: ${p => p.theme.colors.gray900} !important;
       font-weight: 600;
       letter-spacing: -0.01em;
-      // @media (min-width: 0px) and (max-width: 1024px) {
-      //   color: ${p => p.theme.colors.gray100} !important;
-      // }
     }
     > ul {
       margin-top: ${p => p.theme.space[12]};
@@ -142,6 +121,11 @@ const ListItem = styled.li`
   }
   &.last-level {
     padding-left: ${p => p.theme.space[24]};
+
+    .last-level {
+      /*this one is last for real*/
+      padding-left: ${p => p.theme.space[16]};
+    }
   }
   .collapse-title {
     cursor: pointer;
@@ -168,6 +152,7 @@ const TreeNode = ({
   lastLevel,
   hidePage,
   codeStyle,
+  parentLabel,
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
@@ -176,7 +161,7 @@ const TreeNode = ({
         collapsed[lbl] = collapsed[lbl] == false ? (collapsed[lbl] = true) : collapsed[lbl]
       }
     })
-    setCollapsed(label, false)
+    setCollapsed(label, false, parentLabel)
   }
   const location = useLocation()
 

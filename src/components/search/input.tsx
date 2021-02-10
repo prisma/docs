@@ -71,31 +71,30 @@ const SearchBoxDiv = styled.div`
       outline: none;
     }
 
-  input {
-    width: 100%;
-    background: transparent;
-    outline: none;
-    padding: 0rem ${p => p.theme.space[32]};
-    font-family: ${p => p.theme.fonts.text};
-    font-style: normal;
-    font-weight: normal;
-    font-size: ${p => p.theme.fontSizes[16]};
-    line-height: 100%;
-    border-width: 0;
-    &::placeholder {
-      content: 'Search';
-      color: ${p => p.theme.colors.gray500};
-      opacity: 1; /* Firefox */
+    input {
+      width: 100%;
+      background: transparent;
+      outline: none;
+      padding: 0rem ${p => p.theme.space[32]};
+      font-family: ${p => p.theme.fonts.text};
+      font-style: normal;
+      font-weight: normal;
+      font-size: ${p => p.theme.fontSizes[16]};
+      line-height: 100%;
+      border-width: 0;
+      &::placeholder {
+        content: 'Search';
+        color: ${p => p.theme.colors.gray500};
+        opacity: 1; /* Firefox */
+      }
     }
-  }
 
-  input[type='search']::-webkit-search-decoration,
-  input[type='search']::-webkit-search-cancel-button,
-  input[type='search']::-webkit-search-results-button,
-  input[type='search']::-webkit-search-results-decoration {
-    -webkit-appearance: none;
-  }
-
+    input[type='search']::-webkit-search-decoration,
+    input[type='search']::-webkit-search-cancel-button,
+    input[type='search']::-webkit-search-results-button,
+    input[type='search']::-webkit-search-results-decoration {
+      -webkit-appearance: none;
+    }
   }
 
   .slash {

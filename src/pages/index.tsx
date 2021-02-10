@@ -1,29 +1,28 @@
-import * as React from 'react';
-import Layout from '../components/layout';
-import styled from 'styled-components';
-import background from 'images/home-bg.svg';
-import listDot from 'images/list-dot.png';
-import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'; 
-import { graphql, useStaticQuery } from 'gatsby';
+import * as React from 'react'
+import Layout from '../components/layout'
+import styled from 'styled-components'
+import background from 'images/home-bg.svg'
+import listDot from 'images/list-dot.png'
+import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'
+import { graphql, useStaticQuery } from 'gatsby'
 
-import { ButtonSize, PrimaryButton, SpecialButton } from '../components/button';
-import Schema from '../icons/home/Schema';
-import DbLink from '../icons/home/DbLink';
-import CLI from '../icons/home/CLI';
-import Link from '../components/link';
-import SEO from '../components/seo';
-
+import { PrimaryButton, SpecialButton } from '../components/button'
+import Schema from '../icons/home/Schema'
+import DbLink from '../icons/home/DbLink'
+import CLI from '../icons/home/CLI'
+import Link from '../components/link'
+import SEO from '../components/seo'
 
 const icons: any = {
-  DoubleArrow: <ChevronsRight opacity="0.5"/>,
-  OverviewIcon: <BookOpen color="#48BB78"/>,
-  ComponentsIcon: <Package color="#ED64A6"/>,
-  DatabaseIcon: <Database color="#4299E1"/>,
-  MoreIcon: <Menu color="#805AD5"/>,
+  DoubleArrow: <ChevronsRight opacity="0.5" />,
+  OverviewIcon: <BookOpen color="#48BB78" />,
+  ComponentsIcon: <Package color="#ED64A6" />,
+  DatabaseIcon: <Database color="#4299E1" />,
+  MoreIcon: <Menu color="#805AD5" />,
   Schema: <Schema />,
   DbLink: <DbLink />,
   CLI: <CLI />,
-};
+}
 
 const Summary = styled.div`
   padding: ${p => p.theme.space[80]} 0;
@@ -40,24 +39,24 @@ const Summary = styled.div`
   }
   p {
     max-width: 800px;
-    font-size:${p=>p.theme.fontSizes[20]};
-    line-height:1.5;
+    font-size: ${p => p.theme.fontSizes[20]};
+    line-height: 1.5;
   }
   @media (min-width: 0) and (max-width: 1024px) {
     padding: ${p => p.theme.space[80]} ${p => p.theme.space[16]};
-    p{
-      max-width:85%;
+    p {
+      max-width: 85%;
     }
   }
-  @media (max-width:${p=>p.theme.breakpoints.tablet}){
-    h1{
-      font-size:${p=>p.theme.fontSizes[32]};
+  @media (max-width: ${p => p.theme.breakpoints.tablet}) {
+    h1 {
+      font-size: ${p => p.theme.fontSizes[32]};
     }
     p {
-      font-size:${p=>p.theme.fontSizes[16]};
+      font-size: ${p => p.theme.fontSizes[16]};
     }
   }
-`;
+`
 
 const NormalPara = styled.p`
   color: ${p => p.theme.colors.gray700};
@@ -78,30 +77,28 @@ const NormalPara = styled.p`
       display: none;
     }
   }
-`;
+`
 
-const SubHeading = styled.h3`
+const SubHeading = styled.h2`
   font-weight: 600;
   font-size: ${p => p.theme.fontSizes[36]};
   line-height: ${p => p.theme.space[36]};
-  font-family:${p=>p.theme.fonts.display};
+  font-family: ${p => p.theme.fonts.display};
   margin: 0;
   text-align: center;
   color: ${p => p.theme.colors.gray900};
-`;
+`
 
 const Space = styled.div<{ height: number }>`
   ${p => `height: ${p.height}px;`};
-`;
+`
 
-
-const ListTitle = styled.h5`
+const ListTitle = styled.h3`
   font-weight: bold;
   line-height: ${p => p.theme.space[16]};
   font-size: ${p => p.theme.fontSizes[16]};
   color: ${p => p.theme.colors.gray900} !important;
   margin: 24px 0 0;
-  
 
   a {
     text-decoration: none;
@@ -109,11 +106,11 @@ const ListTitle = styled.h5`
     align-items: center;
     display: flex;
   }
-  
+
   svg {
     transition: transform 0.3s ease-out 0s;
   }
-`;
+`
 
 const List = styled.ul<{ split?: boolean }>`
   list-style: none;
@@ -143,7 +140,7 @@ const List = styled.ul<{ split?: boolean }>`
     font-weight: normal;
     line-height: 0;
   }
-`;
+`
 
 const SummaryLinks = styled.div`
   max-width: 435px;
@@ -162,7 +159,7 @@ const SummaryLinks = styled.div`
       margin-top: ${p => p.theme.space[16]};
     }
   }
-`;
+`
 
 const QuickLinks = styled.div`
   background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, ${p => p.theme.colors.white} 100%),
@@ -175,7 +172,7 @@ const QuickLinks = styled.div`
   @media (min-width: 0) and (max-width: 1024px) {
     padding: ${p => p.theme.space[48]} ${p => p.theme.space[16]};
   }
-`;
+`
 
 const CapTitle = styled.h4<{ withBorder?: boolean }>`
   text-transform: uppercase !important;
@@ -189,7 +186,7 @@ const CapTitle = styled.h4<{ withBorder?: boolean }>`
   width: 100%;
   max-width: 996px;
   padding-bottom: ${(p: any) => p.theme.space[16]};`}
-`;
+`
 
 const GenaralLinks = styled.div`
   display: flex;
@@ -202,17 +199,16 @@ const GenaralLinks = styled.div`
   @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
     flex-direction: column;
   }
-`;
+`
 
 const GeneralLink = styled.div`
-  display:flex;
+  display: flex;
   flex-direction: column;
   @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
     flex-direction: row;
-    margin-bottom :${p=>p.theme.space[32]};
+    margin-bottom: ${p => p.theme.space[32]};
   }
-`;
-
+`
 
 const Row = styled.div`
   display: flex;
@@ -221,7 +217,7 @@ const Row = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   margin-top: ${p => p.theme.space[32]};
-`;
+`
 
 const LinkCard = styled.a`
   background: ${p => p.theme.colors.gray200};
@@ -233,19 +229,19 @@ const LinkCard = styled.a`
   flex-grow: 1;
   margin-bottom: ${p => p.theme.space[40]};
   text-decoration: none;
-  
+
   .icon {
     position: absolute;
     top: -30px;
   }
 
-  h5 {
+  h3 {
     margin-bottom: 0;
     display: flex;
     align-items: center;
   }
 
-  &:hover h5 svg {
+  &:hover h3 svg {
     transform: translateX(4px);
   }
 
@@ -261,7 +257,7 @@ const LinkCard = styled.a`
   @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
     max-width: 100% !important;
   }
-`;
+`
 
 const IconHolder = styled.span`
   background: ${p => p.theme.colors.white};
@@ -273,12 +269,12 @@ const IconHolder = styled.span`
   align-items: center;
   justify-content: center;
   @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
-    margin: ${p=>p.theme.space[16]} ${p=>p.theme.space[24]};
+    margin: ${p => p.theme.space[16]} ${p => p.theme.space[24]};
   }
 `
 
 const Homepage = () => {
-  const { site } = useStaticQuery(query);
+  const { site } = useStaticQuery(query)
   const {
     siteMetadata: {
       title,
@@ -293,30 +289,23 @@ const Homepage = () => {
         MoreUsefulLinks,
       },
     },
-  } = site;
-
-  console.log(site.siteMetadata.homepage);
+  } = site
 
   return (
     <Layout homePage={true}>
-      <SEO title={title} description={description} />
+      <SEO title={title} description={description} homepage/>
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
-          Choose one of our {' '}
-          <a href={SummaryLinkData.gettingStarted}>getting started tutorials</a> or explore the
-          {' '}<a href={SummaryLinkData.readyToRun}>
-            
-            ready-to-run examples on GitHub
-          </a>
-          . Join our thriving community on <a href={SummaryLinkData.slack}>Slack</a> and{' '}
+          Choose one of our <a href={SummaryLinkData.gettingStarted}>getting started tutorials</a>{' '}
+          or explore the <a href={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</a>.
+          Join our thriving community on <a href={SummaryLinkData.slack}>Slack</a> and{' '}
           <a href={SummaryLinkData.git}>GitHub</a> for help and ideas.
         </NormalPara>
         <SummaryLinks>
           {SummaryLinkData.buttons.map((slink: any, index: number) =>
             slink.special ? (
               <SpecialButton href={slink.url} target="_blank" key={index} icon={icons[slink.icon]}>
-                
                 &nbsp; {slink.text}
               </SpecialButton>
             ) : (
@@ -342,7 +331,11 @@ const Homepage = () => {
                 <List>
                   {generalLink.links.map((link: any) => (
                     <li key={index}>
-                      <a href={link.url}><span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span></a>
+                      <a href={link.url}>
+                        <span className={`${link.codeBlock ? 'inline-code' : ''}`}>
+                          {link.text}
+                        </span>
+                      </a>
                     </li>
                   ))}
                 </List>
@@ -356,7 +349,7 @@ const Homepage = () => {
         <Row>
           {GuideLinkData.map((gLinkData: any, index: number) => (
             <LinkCard
-            href={gLinkData.url}
+              href={gLinkData.url}
               key={index}
               style={{
                 maxWidth: gLinkData.small ? '274px' : '384px',
@@ -365,9 +358,7 @@ const Homepage = () => {
             >
               <ListTitle>
                 {gLinkData.title} &nbsp;
-                
-                  <ArrowRight color="#A0AEC0"/>{' '}
-                
+                <ArrowRight color="#A0AEC0" />{' '}
               </ListTitle>
               <NormalPara>{gLinkData.content}</NormalPara>
             </LinkCard>
@@ -382,8 +373,10 @@ const Homepage = () => {
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
               <ListTitle>
-               <Link href={rLinkData.mainUrl}>{rLinkData.categoryName} &nbsp;
-                  <ArrowRight color="#A0AEC0" />{' '}</Link>
+                <Link href={rLinkData.mainUrl}>
+                  {rLinkData.categoryName} &nbsp;
+                  <ArrowRight color="#A0AEC0" />{' '}
+                </Link>
               </ListTitle>
               <List>
                 {rLinkData.links.map((link: any, index: number) => (
@@ -403,17 +396,19 @@ const Homepage = () => {
           <List split={true}>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
-                <a href={uLink.url}><span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span></a>
+                <a href={uLink.url}>
+                  <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
+                </a>
               </li>
             ))}
           </List>
         </Row>
       </QuickLinks>
     </Layout>
-  );
-};
+  )
+}
 
-export default Homepage;
+export default Homepage
 
 const query = graphql`
   query Homepage {
@@ -471,4 +466,4 @@ const query = graphql`
       }
     }
   }
-`;
+`

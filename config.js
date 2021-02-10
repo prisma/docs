@@ -79,7 +79,7 @@ const config = {
           icon: 'DoubleArrow',
         },
         {
-          text: 'Set up prisma',
+          text: 'Set up Prisma',
           url: 'getting-started/setup-prisma',
           special: false,
           icon: null,
@@ -92,11 +92,11 @@ const config = {
         },
       ],
     },
-    
-    GeneralLinkData:[
+
+    GeneralLinkData: [
       {
         categoryName: 'Overview',
-        icon:'OverviewIcon',
+        icon: 'OverviewIcon',
         links: [
           {
             text: 'What is Prisma',
@@ -210,13 +210,13 @@ const config = {
             text: 'Comparing Prisma',
             url: 'concepts/more/comparisons',
             codeBlock: false,
-          },          
+          },
         ],
       },
     ],
     GuideText: 'Guides for building and deploying applications with Prisma.',
-    
-    GuideLinkData : [
+
+    GuideLinkData: [
       {
         title: 'Spotlight: Transaction guide',
         color: '#48BB78',
@@ -235,7 +235,8 @@ const config = {
         title: 'Database workflows',
         color: '#4299E1',
         small: true,
-        content: 'Guides for common database workflow such as configuring constraints or cascading deletes.',
+        content:
+          'Guides for common database workflow such as configuring constraints or cascading deletes.',
         url: 'guides/general-guides/database-workflows/foreign-keys',
       },
       {
@@ -256,33 +257,35 @@ const config = {
         title: 'Deploying Prisma apps',
         color: '#667EEA',
         small: false,
-        content: 'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
+        content:
+          'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
         url: 'guides/deployment',
-      }
+      },
     ],
-    ReferenceText: 'Reference documentation for Prisma Client, the Prisma Schema Language (PSL), the Prisma CLI, and supported database providers.',
-    
-    ReferenceLinkData : [
+    ReferenceText:
+      'Reference documentation for Prisma Client, the Prisma Schema Language (PSL), the Prisma CLI, and supported database providers.',
+
+    ReferenceLinkData: [
       {
-        categoryName: 'Prisma Schema API',
-        mainUrl: 'reference/api-reference/prisma-schema-reference',
+        categoryName: 'Prisma Reference',
+        mainUrl: 'reference',
         icon: 'Schema',
-        links: [
+        links: [        
           {
-            text: 'datasource',
-            url: 'reference/api-reference/prisma-schema-reference#datasource',
-            codeBlock: true,
+            text: 'Prisma Client API reference',
+            url: 'reference/api-reference/prisma-client-reference',
+            codeBlock: false,
           },
           {
-            text: 'generator',
-            url: 'reference/api-reference/prisma-schema-reference#generator',
-            codeBlock: true,
+            text: 'Prisma schema reference',
+            url: 'reference/api-reference/prisma-schema-reference',
+            codeBlock: false,
           },
           {
-            text: 'model',
-            url: 'reference/api-reference/prisma-schema-reference#model',
-            codeBlock: true,
-          },
+            text: 'Prisma error reference',
+            url: 'reference/api-reference/error-reference',
+            codeBlock: false,
+          },          
         ],
       },
       {
@@ -305,7 +308,6 @@ const config = {
             url: 'reference/api-reference/command-reference#db',
             codeBlock: true,
           },
-
         ],
       },
       {
@@ -331,8 +333,8 @@ const config = {
         ],
       },
     ],
-    
-    MoreUsefulLinks : [
+
+    MoreUsefulLinks: [
       {
         text: `What's new in Prisma docs`,
         url: 'about/whats-new-in-prisma-docs',
@@ -392,12 +394,12 @@ const config = {
         url: 'about/releases',
         codeBlock: false,
       },
-    ]
+    ],
   },
   siteMetadata: {
-    title: 'Prisma - Database tools for modern application development',
+    title: 'Prisma Documentation | Concepts, Guides, and Reference',
     description:
-      'Prisma replaces traditional ORMs and can be used to build GraphQL servers, REST APIs, microservices & more.',
+      "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
     keywords: 'Docs, prisma, 2.0',
     docsLocation: 'https://github.com/prisma/docs/tree/master/content',
     twitter: {

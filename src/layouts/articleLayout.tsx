@@ -12,21 +12,18 @@ import { CreatePageContext } from 'src/interfaces/Layout.interface'
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps & CreatePageContext
 
-const ArticleLayout = ({ data, pageContext: { seoTitle, seoDescription }, ...props }: ArticleLayoutProps) => {
+const ArticleLayout = ({
+  data,
+  pageContext: { seoTitle, seoDescription },
+  ...props
+}: ArticleLayoutProps) => {
   if (!data) {
     return null
   }
   const {
     mdx: {
       fields: { slug, modSlug },
-      frontmatter: {
-        title,
-        langSwitcher,
-        dbSwitcher,
-        toc,
-        tocDepth,
-        codeStyle,
-      },
+      frontmatter: { title, langSwitcher, dbSwitcher, toc, tocDepth, codeStyle },
       body,
       parent,
       tableOfContents,
@@ -37,7 +34,12 @@ const ArticleLayout = ({ data, pageContext: { seoTitle, seoDescription }, ...pro
   } = data
   const navigate = useNavigate()
   return (
-    <Layout {...props} toc={toc || toc == null ? tableOfContents : []} tocDepth={tocDepth} slug={slug}>
+    <Layout
+      {...props}
+      toc={toc || toc == null ? tableOfContents : []}
+      tocDepth={tocDepth}
+      slug={slug}
+    >
       <SEO title={seoTitle} description={seoDescription} />
       <section className="top-section">
         <TopSection

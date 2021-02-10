@@ -1,7 +1,7 @@
 import Link from '../components/link'
 import * as React from 'react'
 import styled from 'styled-components'
-import {Footer } from 'prisma-lens'
+import { Footer } from 'prisma-lens'
 import NewsLetter from '../components/newsletter'
 
 type FooterViewProps = {
@@ -19,7 +19,7 @@ const FooterWrapper = styled.div`
       a {
         color: currentcolor !important;
         text-decoration: none;
-    
+
         &:hover {
           color: ${p => p.theme.colors.gray600} !important;
         }
@@ -32,14 +32,11 @@ const FooterWrapper = styled.div`
   }
 `
 
-
 const FooterSec = ({ footerProps }: FooterViewProps) => {
-  const {
-    newsletter,
-  } = footerProps
+  const { newsletter } = footerProps
   return (
     <FooterWrapper>
-      <Footer newsletterComponent={<NewsLetter newsletter={newsletter} />}/>
+      <Footer newsletterComponent={<NewsLetter newsletter={newsletter} />} />
     </FooterWrapper>
   )
 }

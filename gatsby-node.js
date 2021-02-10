@@ -114,7 +114,7 @@ exports.createPages = ({ graphql, actions }) => {
                   seoDescription: getDesc(node.frontmatter, lang, db),
                 },
               })
-              })
+            })
           )
         } else if (langSwitcher && !dbSwitcher) {
           langSwitcher.forEach(lang =>

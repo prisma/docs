@@ -206,8 +206,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 export default Code
 
 const CodeWrapper = styled.div`
-margin-top: ${p=>p.theme.space[24]};
-margin-bottom: ${p=>p.theme.space[24]};
+  margin-top: ${p => p.theme.space[24]};
+  margin-bottom: ${p => p.theme.space[24]};
   .file {
     font-weight: 600;
     color: ${p => p.theme.colors.gray600};
@@ -248,7 +248,7 @@ const LineNo = styled.span`
   color: ${p => p.theme.colors.gray400};
   display: inline-block;
   text-align: right;
-  user-select: none; 
+  user-select: none;
   width: 24px;
 `
 

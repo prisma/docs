@@ -69,7 +69,7 @@ let plugins = [
         `/getting-started/setup-prisma/add-to-existing-project`,
         `/getting-started/setup-prisma/start-from-scratch-prisma-migrate`,
         `/getting-started/setup-prisma/start-from-scratch-sql`,
-      ]
+      ],
     },
   },
   {
@@ -143,7 +143,7 @@ module.exports = {
     footer: config.footer,
     docsLocation: config.siteMetadata.docsLocation,
     redirects: config.redirects,
-    homepage: config.homepage
+    homepage: config.homepage,
   },
   plugins,
 }

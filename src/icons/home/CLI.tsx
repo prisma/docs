@@ -17,4 +17,4 @@ export default () => (
       strokeLinejoin="round"
     />
   </svg>
-);
+)

@@ -7,7 +7,6 @@ import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
 
-
 const HitsWrapper = styled.div`
   display: none;
   &.show {
