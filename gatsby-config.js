@@ -17,14 +17,6 @@ const gatsbyRemarkPlugins = [
     },
   },
   {
-    resolve: "gatsby-plugin-netlify",
-    options: {
-      headers: {
-        "/*.(woff|woff2)": ["Cache-Control: public, max-age=31536000"],
-      },
-    },
-  },
-  {
     resolve: `gatsby-remark-images`,
     options: {
       disableBgImageOnAlpha: true,

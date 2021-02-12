@@ -366,7 +366,7 @@ Variable length text.
 | `ntext`              | `@db.NText`                                                            |
 | `xml`                | `@db.Xml`                                                              |
 
-### SQLite
+##### SQLite
 
 `TEXT`
 
@@ -422,7 +422,6 @@ True or false value.
 
 ### <inlinecode>Int</inlinecode>
 
-
 #### Migrate defaults
 
 | Connector     | Default mapping |
@@ -469,6 +468,46 @@ True or false value.
 | ---------------- |
 | `number`         |
 
+### <inlinecode>BigInt</inlinecode>
+
+`BigInt` is available in version [2.17.0]() and later.
+
+#### Migrate defaults
+
+| Connector     | Default mapping |
+| ------------- | --------------- |
+| PostgreSQL    | `integer`       |
+| Microsoft SQL | `int`           |
+| MySQL         | `INT`    |
+| SQLite        | `INTEGER`       |
+
+
+#### Introspection
+
+##### PostgreSQL
+
+| Native database types | Native database type attribute | Notes                                                                                                                                                      |
+| --------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bigint`              | `@db.BigInt`                   | <ul><li>Aliases: `int8`, `serial8`, `bigserial`</li><!-- <li>`@db.BigInt @default(autoincrement())` is equivalent to `bigserial` / `serial8`</li> --></ul> |
+
+##### MySQL
+
+| Native database types | Native database type attribute | Notes |
+| --------------------- | ------------------------------ | ----- |
+| `BIGINT`              | `@db.BigInt`                   |       |
+
+##### SQL Server
+
+| Native database types | Native database type attribute | Notes |
+| --------------------- | ------------------------------ | ----- |
+| `bigint`              | `@db.BigInt`                   |       |
+
+#### Clients
+
+| Prisma Client JS                                                                                    |
+| --------------------------------------------------------------------------------------------------- |
+| [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) |
+
 ### <inlinecode>Float</inlinecode>
 
 Floating point number
@@ -488,6 +527,37 @@ Floating point number
 | `number`         |
 
 ### <inlinecode>Decimal</inlinecode>
+
+#### Migrate defaults
+
+#### Introspection
+
+##### PostgreSQL
+
+| **Native database types** | **Native database type attribute** | Notes                                                                         |
+| ------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
+| `decimal`                 | `@db.Decimal(X, Y)`                | <ul><li>Default size (`X, Y`) is `2, 2`.</li><li>Aliases: `numeric`</li></ul> |
+| `money`                   | `@db.Money`
+
+##### MySQL
+
+| **Native database types** | **Native database type attribute** | Notes                                |
+| ------------------------- | ---------------------------------- | ------------------------------------ |
+| `DECIMAL`                 | `@db.Decimal(X, Y)`                | <ul><li>Aliases: `numeric`</li></ul> |
+
+##### SQL Server
+
+The following table lists the SQL Server native database types that map to Prisma's `Decimal` scalar type:
+| Native database types | Native database type attribute | Notes                                                                                                                                                                                                                                                    |
+| --------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `integer`             | `@db.Integer`                  | <ul><li>⭐ Prisma Migrate default native type <a href="#prisma-migrate-default-native-types" class="question"></a> for `Int`.</li><li>`@db.Int @default(autoincrement())` is equivalent to `serial4`</li><li>Aliases: `int`, `int4`, `serial4`</li></ul> |
+| `oid`                 | `@db.Oint`                     |
+| `smallint`            | `@db.SmallInt`                 | <!-- `@db.SmallInt @default(autoincrement())` is equivalent to `serial2` --> <ul><li>Aliases: `int2`, `serial2`</li></ul>                                                                                                                                |
+
+
+##### SQLite connector
+
+`DECIMAL` (changed from `REAL` in 2.17.0)
 
 ### <inlinecode>DateTime</inlinecode>
 
@@ -853,14 +923,12 @@ Defines a [default value for a field](../../../concepts/components/prisma-schema
 - Default values can be a static value (`4`, `"hello"`) or one of the following [functions](#attribute-functions):
 
   - [`autoincrement()`](#autoincrement)
+  - [`dbgenerated()`](#dbgenerated)
   - [`cuid()`](#cuid)
   - [`uuid()`](#uuid)
   - [`now()`](#now)
 
 - Default values that cannot yet be represented in the Prisma schema are represented by the `dbgenerated()` function when you use [introspection](../../concepts/components/introspection).
-
-  > **Note**: You cannot manually add `dbgenerated()` to your schema.
-
 - Default values are currently not allowed on relation fields in the Prisma schema. Note however that you can still define default values _manually_ in the underlying database using plain SQL. These will not be represented in the Prisma schema though, this is a temporary limitation which you can [track on GitHub](https://github.com/prisma/prisma/issues/1111).
 
 #### Arguments
@@ -1381,6 +1449,38 @@ model Post {
 }
 ```
 
+### <inlinecode>@ignore</inlinecode>
+
+<AlgoliaTerm name="apiReference" value="@ignore" />
+
+```prisma highlight=5,10;normal
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model Tag {
+  id String? @db.VarChar
+  @@ignore
+}
+
+model Product {
+  id     Int @default(autoincrement())
+  tags   Tag[] @ignore
+}
+```
+
+### <inlinecode>@@ignore</inlinecode>
+
+<AlgoliaTerm name="apiReference" value="@@ignore" />
+
+In [2.17.0]() and later, Prisma adds `@@ignore` to an invalid model instead of commenting it out. In the following example, `Tag` is ignored because it does not have a valid unique identifier.
+
+```prisma highlight=5,10;normal
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model Tag {
+  id String? @db.VarChar
+  @@ignore
+}
+```
+
+
 ## Attribute functions
 
 ### <inlinecode>autoincrement()</inlinecode>
@@ -1462,11 +1562,34 @@ Set a timestamp of the time when a record is created.
 
 ### <inlinecode>dbgenerated()</inlinecode>
 
-Represents default values that can't be expressed in the Prisma schema (such as `random()`). Only available after [introspection](../../concepts/components/introspection).
+Represents default values that cannot be expressed in the Prisma schema (such as `random()`).
+
+In 2.17.0 and later, `dbgenerated()` accepts a `String`. This allows you to set the default value of `Unsupported` types, such as `circle` in PostgreSQL.
 
 #### Remarks
 
 - Compatible with any type
+- Can be used to 
+
+#### Examples
+
+##### Set default value for `Unsupported` type
+
+```prisma
+circle     Unsupported("circle")?   @default(dbgenerated("'<(10,4),11>'::circle"))
+```
+
+##### Override default value behavior for supported types
+
+You can also use `dbgenerated()` to set the default value for supported types. For example, you can generate UUIDs at database level rather than rely on Prisma's `uuid()`:
+
+```prisma highlight=2;add|3;delete
+model User {
+  id   String  @id @db.Uuid @default(dbgenerated("gen_random_uuid()"))
+  id   String  @id @db.Uuid @default(uuid())
+  test String?
+}
+```
 
 ## Attribute argument types
 
