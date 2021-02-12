@@ -1,7 +1,7 @@
 ---
 title: 'CRUD'
 metaTitle: 'CRUD (Reference)'
-metaDescription: 'This page provides a detailed reference of the auto-generated CRUD queries that are exposed in the Prisma Client API, such as findUnique, findMany, create, ...'
+metaDescription: 'How to perform CRUD with Prisma CLient.'
 tocDepth: 3
 ---
 
@@ -170,7 +170,7 @@ For more information about working with generated types, see: [Generated types](
 
 ### Create multiple records
 
-Prisma Client supports bulk inserts as a Preview feature in [2.16.0](https://github.com/prisma/prisma/releases/2.16.0) and later. To enable this feature, add `createMany` to the `previewFeatures` list as shown:
+Prisma Client supports bulk inserts as a Preview feature in [2.16.0](https://github.com/prisma/prisma/releases/2.16.0) and later. To enable this feature, add `createMany` to `previewFeatures` in your schema:
 
 ```prisma highlight=3;normal
 generator client {
@@ -179,7 +179,9 @@ generator client {
 }
 ```
 
-The following [`createMany`](../../../reference/api-reference/prisma-client-reference#createmany-preview) query creates multiple users and skips any duplicates (`email` must be unique):
+> `createMany` is not supported by SQLite.
+
+The following [`createMany`](../../../reference/api-reference/prisma-client-reference#createmany-preview) <span class="api"></span> query creates multiple users and skips any duplicates (`email` must be unique):
 
 <CodeWithResult expanded="{true}">
 <Cmd>
@@ -209,7 +211,7 @@ const createMany = await prisma.user.createMany({
 
 </CodeWithResult>
 
-The SQL query looks like this:
+`createMany` uses a single `INSERT INTO` statement with multiple values, which is generally more efficient than a separate `INSERT` per row:
 
 ```sql
 BEGIN
@@ -217,6 +219,14 @@ INSERT INTO "public"."User" ("id","name","email","profileViews","role","coinflip
 COMMIT
 SELECT "public"."User"."country", "public"."User"."city", "public"."User"."email", SUM("public"."User"."profileViews"), COUNT(*) FROM "public"."User" WHERE 1=1 GROUP BY "public"."User"."country", "public"."User"."city", "public"."User"."email" HAVING AVG("public"."User"."profileViews") >= $1 ORDER BY "public"."User"."country" ASC OFFSET $2
 ```
+
+> **Note**: Multiple `create` statements inside a `$transaction` results in multple `INSERT` statements.
+
+The following video demonstrates how to use `createMany` and [faker.js](https://github.com/marak/Faker.js/) to seed a database with sample data:
+
+<div class="videoWrapper">
+<iframe width="560" height="315" src="https://www.youtube.com/embed/QxyqR4yh1GI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
 
 ### Create records and connect or create related records
 
@@ -281,9 +291,11 @@ The following [`findFirst`](../../../reference/api-reference/prisma-client-refer
 
 ### Get a filtered list of records
 
+Prisma Client supports [filtering](filtering-and-sorting) on record fields and related record fields.
+
 #### Filter by a single field value
 
-The following query returns all users with an email that ends in `prisma.io`:
+The following query returns all `User` records with an email that ends in `"prisma.io"`:
 
 ```ts
   const users = await prisma.user.findMany({
@@ -297,7 +309,7 @@ The following query returns all users with an email that ends in `prisma.io`:
 
 #### Filter by multiple field values
 
-The following query uses a combinations of operators to return users whose name start with `E` _or_ administrators with at least 1 profile view:
+The following query uses a combinations of [operators](../../../reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span> to return users whose name start with `E` _or_ administrators with at least 1 profile view:
 
 ```ts
 const users = await prisma.user.findMany({
@@ -346,6 +358,8 @@ See [Working with relations](relation-queries) for more examples of filtering on
 
 ### Select a subset of fields
 
+The following `findUnique` query uses `select` to return the `email` and `name` fields of a specific `User` record:
+
 <CodeWithResult>
 <Cmd>
 
@@ -371,9 +385,17 @@ const user = await prisma.user.findUnique({
 </CmdResult>
 </CodeWithResult>
 
-For more information about including relations, see [Select fields](select-fields) and [Relation queries](relation-queries).
+For more information about including relations, refer to:
+
+- [Select fields](select-fields)
+- [Relation queries](relation-queries)
 
 #### Select a subset of related record fields
+
+The following query uses a nested `select` to return:
+
+- The user's `email`
+- The `likes` field of each post
 
 <CodeWithResult>
 <Cmd>
@@ -639,6 +661,16 @@ const deleteUsers = await prisma.user.deleteMany({
 ```
 
 Attempting to delete a user with one or more posts result in an error, as every `Post` requires an author - see [cascading deletes](#cascading-deletes-deleting-related-records).
+
+### Delete all records
+
+The following query uses `deleteMany` to delete all `User` records:
+
+```ts
+const deleteUsers = await prisma.user.deleteMany({})
+```
+
+Be aware that this query will fail if the user has any related records (such as posts). In this case, you need to [delete the related records first](#cascading-deletes-deleting-related-records).
 
 ### Cascading deletes (deleting related records)
 
