@@ -129,6 +129,7 @@ const Results = connectStateResults(
 export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
+  const [selectedIndex, setSelectedIndex] = React.useState(-1)
   const hideSearch = () => setShowHits(false)
 
   const showSearch = () => setShowHits(true)
@@ -137,6 +138,26 @@ export default function Search({ hitsStatus }: any) {
     hitsStatus(showHits)
   }, [showHits, query])
 
+  const incrementIndex = () => {
+    setSelectedIndex((prevCount: number) => {
+      const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
+      if (prevCount < nbHits - 1) {
+        return prevCount + 1
+      } else {
+        return 0
+      }
+    })
+  }
+  const decrementIndex = () => {
+    const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
+    setSelectedIndex((prevCount: number) => {
+      if (prevCount > 0) {
+        return prevCount - 1
+      } else {
+        return nbHits - 1
+      }
+    })
+  }
   return (
     <InstantSearch
       searchClient={searchClient}
@@ -144,12 +165,18 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
-      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} />
+      <CustomSearchBox
+        onFocus={showSearch}
+        isOpened={showHits}
+        closeSearch={hideSearch}
+        upClicked={decrementIndex}
+        downClicked={incrementIndex}
+      />
       {query !== '' && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
           <Index key={indexName} indexName={indexName}>
             <Results>
-              <Hits hitComponent={DocHit} />
+              <Hits hitComponent={DocHit} selectedIndex={selectedIndex} />
             </Results>
           </Index>
         </HitsWrapper>
@@ -158,17 +185,18 @@ export default function Search({ hitsStatus }: any) {
   )
 }
 
-const Hits = connectHits(({ hits, hitComponent, onMouseHoverHit, // selectedIndex,
-  onMouseLeaverHits }: any) => (
-  <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
-    {hits.map((hit: any, index: number) => (
-      <li key={hit.objectID} className="ais-Hits-item">
-        {React.createElement(hitComponent, {
-          hit,
-          // selected: index === selectedIndex,
-          onMouseHover: () => onMouseHoverHit(index),
-        })}
-      </li>
-    ))}
-  </ul>
-))
+const Hits = connectHits(
+  ({ hits, hitComponent, onMouseHoverHit, selectedIndex, onMouseLeaverHits }: any) => (
+    <ul className="ais-Hits-list" onMouseLeave={onMouseLeaverHits}>
+      {hits.map((hit: any, index: number) => (
+        <li key={hit.objectID} className="ais-Hits-item">
+          {React.createElement(hitComponent, {
+            hit,
+            selected: index === selectedIndex,
+            onMouseHover: () => onMouseHoverHit(index),
+          })}
+        </li>
+      ))}
+    </ul>
+  )
+)

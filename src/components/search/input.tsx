@@ -135,7 +135,7 @@ const DEBOUNCE_DELAY = 500
 const ESCAPE_KEY = 27
 const focusShortcuts = ['s', 191]
 
-const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, closeSearch, ...rest }: any) => {
+const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, closeSearch, upClicked, downClicked, selectedInd, ...rest }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
 
   const timeoutId = React.useRef(null)
@@ -171,6 +171,10 @@ const SearchBox = ({ refine, onFocus, currentRefinement, isOpened, closeSearch, 
   const onKeyDown = (e: any) => {
     if (e && e.keyCode == ESCAPE_KEY) {
       closeSearch()
+    } else if(e && e.keyCode === 40) {
+      downClicked()
+    } else if(e && e.keyCode === 38) {
+      upClicked()
     }
 
     const shortcuts = focusShortcuts.map(key =>

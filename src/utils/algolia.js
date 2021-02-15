@@ -99,7 +99,7 @@ const unnestFrontmatter = node => {
 }
 
 const settings = {
-  searchableAttributes: ['title', 'heading', 'content'],
+  searchableAttributes: ['apiReference', 'title', 'heading', 'content'],
   attributesToHighlight: ['title', 'heading', 'content'],
   attributesToSnippet: ['title:20', 'heading:20', 'content:25'],
   hitsPerPage: 20,
