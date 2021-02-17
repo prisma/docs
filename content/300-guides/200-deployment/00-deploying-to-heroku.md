@@ -40,12 +40,12 @@ While the example uses REST, the same principles apply to a GraphQL server, with
 
 Prisma supports different workflows depending on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, i.e. `schema.prisma` file.
 
-In this guide, you will start from scratch and create the database with [Prisma Migrate](/concepts/components/prisma-migrate). The workflow for that looks as follows:
+In this guide, you will start from scratch and create the database with the [`prisma db push` command](/reference/api-reference/command-reference/#db). The workflow for that looks as follows:
 
 1. Define the database schema using Prisma schema.
-2. Run `prisma migrate dev --preview-feature` which will create the SQL to create the database schema and run it against the database.
+2. Run `prisma db push --preview-feature` which will create the SQL to create the database schema and run it against the database.
 
-> **Note:** Prisma Migrate is currently in [preview](/about/releases#preview) and is not recommended for use in production.
+> **Note:** The `prisma db push` command is currently in [preview](/about/releases#preview) and is not recommended for use in production.
 
 ## 1. Download the example and install dependencies
 
