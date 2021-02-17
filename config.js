@@ -22,6 +22,10 @@ const config = {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
       to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
     },
+        {
+      from: '/docs/getting-started/setup-prisma/start-from-scratch',
+    to: '/docs/getting-started/setup-prisma/start-from-scratch-typescript-postgres'
+  }
   ],
   header: {
     secondLevelHeaderMenuItems: [
