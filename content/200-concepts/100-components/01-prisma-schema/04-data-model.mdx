@@ -245,12 +245,17 @@ With this model definition, Prisma automatically maps the `Comment` model to the
 
 ## Defining fields
 
-The properties of a model are called _fields_. Fields map to _columns_ and consist of:
+The properties of a model are called _fields_, which consist of:
 
 - A **[field name](../../../reference/api-reference/prisma-schema-reference#model-fields)** <span class="api"></span>
-- A **[field type](#field-types)**
+- A **field type]**
 - Optional **[type modifiers](#type-modifiers)**
-- Optional **[attributes](#defining-attributes)**
+- Optional **[attributes](#defining-attributes)**, including [native database type attributes](#native-types-mapping)
+
+A field's type determines its _structure_, and fits into one of two categories:
+
+- [Scalar types](data-model#scalar-fields) (includes [enums](data-model#defining-enums)) that map to columns in the database - for example, [`String`](../../../reference/api-reference/prisma-schema-reference#string) <span class="api"></span> or [`Int`](../../../reference/api-reference/prisma-schema-reference#int) <span class="api"></span>
+- Model types (the field is then called [relation field](relations#relation-fields)) - for example `Post` or `Comment[]`.
 
 The following table describes `User` model's fields from the sample schema:
 
@@ -267,14 +272,7 @@ The following table describes `User` model's fields from the sample schema:
 
 </details>
 
-### Field types
-
-A field's type determines its _structure_, and fits into one of two categories:
-
-- [Scalar types](data-model#scalar-fields) (includes [enums](data-model#defining-enums)) - for example, [`String`](../../../reference/api-reference/prisma-schema-reference#string) <span class="api"></span> or [`Int`](../../../reference/api-reference/prisma-schema-reference#int) <span class="api"></span>
-- Model types (the field is then called [relation field](relations#relation-fields)) - for example `Post` or `Comment[]`.
-
-#### Scalar fields
+### Scalar fields
 
 The following example extends the `Comment` and `Tag` models with several scalar types. Some fields include [attributes](#defining-attributes):
 
@@ -292,22 +290,7 @@ model Tag {
 
 See [complete list of scalar field types](../../../reference/api-reference/prisma-schema-reference#model-field-scalar-types) <span class="api"></span>.
 
-##### Unsupported types
-
-When you introspect a database, unsupported types are commented out:
-
-```prisma
-  // This type is currently not supported
-  // mydata                   geometric?
-```
-
-Follow [`topic:types`](https://github.com/prisma/prisma/issues?q=is%3Aissue+is%3Aopen+label%3A%22topic%3A+types%22+) for information about type support.
-
-#### Native database type attributes
-
-[Native database type attributes](../preview-features/native-types) are a Preview feature in [2.11.0](https://github.com/prisma/prisma/releases/2.11.0).
-
-#### Relation fields
+### Relation fields
 
 A relation field's type is another model - for example, a post (`Post`) can have multiple comments (`Comment[]`):
 
@@ -327,6 +310,31 @@ model Comment {
 ```
 
 Refer to the [relations documentation](relations) for more examples and information about relationships between models.
+
+### Native types mapping
+
+Version [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later supports **native database type attributes** (type attributes) that describe the underlying database type:
+
+```prisma highlight=3;normal
+model Post {
+  id         Int    @id
+  title      String @db.VarChar(200)
+  content    String
+}
+```
+
+Type attributes are _only_ added to the schema if the underlying native type is **not the default type**. For example, if you are using the PostgreSQL provider, `String` fields where the underlying native type is `text` will not have a type attribute.
+
+Furthermore,type attributes are:
+
+- Specific to the underlying provider - for example, PostgreSQL uses `@db.Boolean` for `Boolean` whereas MySQL uses `@db.TinyInt(1)`
+- Written in PascalCase (for example, `VarChar` or `Text`)
+- Prefixed by `@db`, where `db` is the name of the `datasource` block in your schema
+
+#### Benefits and workflows
+
+- Control **the exact native type** that [Prisma Migrate](../prisma-migrate) creates in the database - for example, a `String` can be `@db.VarChar(200)` or `@db.Char(50)`
+- See an **enriched schema** when you introspect
 
 ### Type modifiers
 
@@ -371,18 +379,26 @@ When **not** annotating a field with the `?` type modifier, the field will be _r
 - **Database**: Required fields are represented via `NOT NULL` constraints in the underlying database.
 - **Prisma Client**: Prisma Client's generated [TypeScript types](#type-definitions) that represent the models in your application code will also define these fields as required to ensure they always carry values at runtime.
 
+### Unsupported types
+
+When you introspect a database, unsupported types are added as `Unsupported`:
+
+```prisma
+    location    Unsupported("geometry")?
+```
+
 ## Defining attributes
 
 Attributes modify the behavior of fields or model blocks. The following example includes two field attributes ([`@unique`](../../../reference/api-reference/prisma-schema-reference#unique) <span class="api"></span> and [`@default`](../../../reference/api-reference/prisma-schema-reference#default)) <span class="api"></span> and one block attribute (`@@id`):
 
-```prisma
+```prisma highlight=4,5,7;normal
 model User {
   firstName String
   lastName  String
-|  email     String @unique
-|  isAdmin   Boolean @default(false) // @default(value: false)
+  email     String @unique
+  isAdmin   Boolean @default(false) // @default(value: false)
 
-|  @@id([firstName, lastName])
+  @@id([firstName, lastName])
 }
 ```
 
@@ -510,7 +526,7 @@ If you do not specify an index name, introspection generates [a name based on Pr
 
 You can define enums in your data model [if they're supported by the data source you use](../../../reference/database-reference/database-features#misc).
 
-Enums are considered [scalar](#field-types) types in the Prisma data model. They're therefore [by default](../prisma-client/select-fields#return-the-default-selection-set) included as return values in [Prisma Client queries](../prisma-client/crud).
+Enums are considered [scalar](#scalar-fields) types in the Prisma data model. They're therefore [by default](../prisma-client/select-fields#return-the-default-selection-set) included as return values in [Prisma Client queries](../prisma-client/crud).
 
 Enums are defined via the [`enum`](../../../reference/api-reference/prisma-schema-reference#enum) <span class="api"></span> block. For example, a `User` has a `Role`:
 

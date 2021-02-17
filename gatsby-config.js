@@ -16,7 +16,6 @@ const gatsbyRemarkPlugins = [
       enableCustomId: true,
     },
   },
-
   {
     resolve: `gatsby-remark-images`,
     options: {
