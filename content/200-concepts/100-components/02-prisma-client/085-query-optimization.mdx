@@ -8,13 +8,189 @@ metaDescription: 'How Prisma optimizes queries under the hood'
 
 </TopBlock>
 
-## `findUnique` batching
+## Solving the n+1 problem with <inlinecode>findUnique</inlinecode>
 
-## n+1
+Consider the following query, which returns all users and each user's posts:
 
-<div class="videoWrapper">
-https://www.youtube.com/watch?v=7oMfBGEdwsc
-</div>
+```js
+query {
+  allUsers {
+    id,
+    posts {
+      id
+    }
+  }
+}
+```
+
+### Get all users
+
+The all `allUsers` query uses `user.findMany(..)` to return all users:
+
+```ts highlight=7;normal
+const Query = objectType({
+  name: 'Query',
+  definition(t) {
+    t.nonNull.list.nonNull.field('allUsers', {
+      type: 'User',
+      resolve: (_parent, _args, context) => {
+        return context.prisma.user.findMany()
+      },
+    })
+  }
+})
+```
+
+This results in a single SQL query:
+
+```js
+{
+  timestamp: 2021-02-19T09:43:06.332Z,
+  query: 'SELECT `dev`.`User`.`id`, `dev`.`User`.`email`, `dev`.`User`.`name` FROM `dev`.`User` WHERE 1=1 LIMIT ? OFFSET ?',
+  params: '[-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+```
+
+> **Tip**: [Log query events to your console](../../../reference/api-reference/prisma-client-reference#log-a-query-event-to-console) to see the underlying SQL queries.
+
+### Get all users' posts
+
+However, the resolver function for `posts` is then invoked **once per user**. This results in a `findMany` query **per user** rather than a single `findMany` to return all posts by all users (expand CLI output to see queries). 
+
+<CodeWithResult>
+<Cmd>
+
+```ts highlight=10-13;normal;
+const User = objectType({
+  name: 'User',
+  definition(t) {
+    t.nonNull.int('id')
+    t.string('name')
+    t.nonNull.string('email')
+    t.nonNull.list.nonNull.field('posts', {
+      type: 'Post',
+      resolve: (parent, _, context) => {
+        return context.prisma.post
+          .findMany({
+            where: { authorId: parent.id || undefined },
+          })
+      },
+    })
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  timestamp: 2021-02-19T09:43:06.343Z,
+  query: 'SELECT `dev`.`Post`.`id`, `dev`.`Post`.`createdAt`, `dev`.`Post`.`updatedAt`, `dev`.`Post`.`title`, `dev`.`Post`.`content`, `dev`.`Post`.`published`, `dev`.`Post`.`viewCount`, `dev`.`Post`.`authorId` FROM `dev`.`Post` WHERE `dev`.`Post`.`authorId` = ? LIMIT ? OFFSET ?',
+  params: '[1,-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+{
+  timestamp: 2021-02-19T09:43:06.347Z,
+  query: 'SELECT `dev`.`Post`.`id`, `dev`.`Post`.`createdAt`, `dev`.`Post`.`updatedAt`, `dev`.`Post`.`title`, `dev`.`Post`.`content`, `dev`.`Post`.`published`, `dev`.`Post`.`viewCount`, `dev`.`Post`.`authorId` FROM `dev`.`Post` WHERE `dev`.`Post`.`authorId` = ? LIMIT ? OFFSET ?',
+  params: '[3,-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+{
+  timestamp: 2021-02-19T09:43:06.348Z,
+  query: 'SELECT `dev`.`Post`.`id`, `dev`.`Post`.`createdAt`, `dev`.`Post`.`updatedAt`, `dev`.`Post`.`title`, `dev`.`Post`.`content`, `dev`.`Post`.`published`, `dev`.`Post`.`viewCount`, `dev`.`Post`.`authorId` FROM `dev`.`Post` WHERE `dev`.`Post`.`authorId` = ? LIMIT ? OFFSET ?',
+  params: '[2,-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+{
+  timestamp: 2021-02-19T09:43:06.348Z,
+  query: 'SELECT `dev`.`Post`.`id`, `dev`.`Post`.`createdAt`, `dev`.`Post`.`updatedAt`, `dev`.`Post`.`title`, `dev`.`Post`.`content`, `dev`.`Post`.`published`, `dev`.`Post`.`viewCount`, `dev`.`Post`.`authorId` FROM `dev`.`Post` WHERE `dev`.`Post`.`authorId` = ? LIMIT ? OFFSET ?',
+  params: '[4,-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+{
+  timestamp: 2021-02-19T09:43:06.348Z,
+  query: 'SELECT `dev`.`Post`.`id`, `dev`.`Post`.`createdAt`, `dev`.`Post`.`updatedAt`, `dev`.`Post`.`title`, `dev`.`Post`.`content`, `dev`.`Post`.`published`, `dev`.`Post`.`viewCount`, `dev`.`Post`.`authorId` FROM `dev`.`Post` WHERE `dev`.`Post`.`authorId` = ? LIMIT ? OFFSET ?',
+  params: '[5,-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+Instead, use `findUnique` in combination with [the fluent API](../relation-queries#fluent-api) (`.posts()`) as shown to return a user's posts:
+
+<CodeWithResult>
+<Cmd>
+
+```ts highlight=14-18;add|10-13;delete
+const User = objectType({
+  name: 'User',
+  definition(t) {
+    t.nonNull.int('id')
+    t.string('name')
+    t.nonNull.string('email')
+    t.nonNull.list.nonNull.field('posts', {
+      type: 'Post',
+      resolve: (parent, _, context) => {
+        return context.prisma.post
+          .findMany({
+           where: { authorId: parent.id || undefined },
+          })          
+        return context.prisma.user
+          .findUnique({
+            where: { id: parent.id || undefined },
+          })
+          .posts()
+      },
+    })
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  timestamp: 2021-02-19T09:59:46.340Z,
+  query: 'SELECT `dev`.`User`.`id`, `dev`.`User`.`email`, `dev`.`User`.`name` FROM `dev`.`User` WHERE 1=1 LIMIT ? OFFSET ?',
+  params: '[-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+{
+  timestamp: 2021-02-19T09:59:46.350Z,
+  query: 'SELECT `dev`.`User`.`id` FROM `dev`.`User` WHERE `dev`.`User`.`id` IN (?,?,?) LIMIT ? OFFSET ?',
+  params: '[1,2,3,-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+{
+  timestamp: 2021-02-19T09:59:46.350Z,
+  query: 'SELECT `dev`.`Post`.`id`, `dev`.`Post`.`createdAt`, `dev`.`Post`.`updatedAt`, `dev`.`Post`.`title`, `dev`.`Post`.`content`, `dev`.`Post`.`published`, `dev`.`Post`.`viewCount`, `dev`.`Post`.`authorId` FROM `dev`.`Post` WHERE `dev`.`Post`.`authorId` IN (?,?,?) LIMIT ? OFFSET ?',
+  params: '[1,2,3,-1,0]',
+  duration: 0,
+  target: 'quaint::connector::metrics'
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+If the `posts` resolver is invoked once per user, Prisma's DataLoader groups `findUnique` queries with the same parameters and selection set. Each group is optimized into a `findMany`, which 
+
+> Prisma's DataLoader does not currently [batch `findMany` queries automatically](https://github.com/prisma/prisma/issues/1477).
 
 ## Bulk queries
 
+`createMany`
+`deleteMany`
