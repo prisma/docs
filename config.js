@@ -17,7 +17,7 @@ const config = {
     {
       from: '/reference/tools-and-interfaces/prisma-client/api',
       to: '/concepts/components/prisma-client',
-    },
+    },  
     {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
       to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
