@@ -10,6 +10,7 @@ assignees: ""
 
 - [ ] Merge in new content
 - [ ] Update 'What's new' page
+- [ ] Add links to release notes
 
 ## After release
 
