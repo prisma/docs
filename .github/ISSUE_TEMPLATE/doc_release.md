@@ -1,6 +1,6 @@
 ---
 name: 🎉 Documentation release
-about: Suggest changes or new content to the documentation.
+about: Documentation release tasks.
 title: "Release:"
 labels: "docs,docs/task"
 assignees: ""
