@@ -2,18 +2,92 @@
 title: 'Query optimization and performance'
 metaTitle: 'Query optimization and performance'
 metaDescription: 'How Prisma optimizes queries under the hood'
+tocDepth: 2
 ---
 
 <TopBlock>
 
 </TopBlock>
 
-## Solving the n+1 problem with <inlinecode>findUnique</inlinecode>
+## The n+1 problem
 
-The n+1 occurs when you:
+The n+1 problem occurs when you loop through the results of a query and perform one additional query **per result**, resulting in `n` number of queries plus the original (n+1). This is a common problem in ORMs because it is not always immediately obvious that your code is generating inefficient queries.
 
-* Retrieve 100 users as a single query 
-* Loop through the results and get each user's blog post (100 additional queries)
+Consider a scenario where you want to:
+
+* Get all users
+* For each user, get all blog posts
+
+The following code results in n+1 queries - one additional query per user:
+
+ <CodeWithResult expanded="{true}">
+ <Cmd>
+
+ ```ts
+// One query to get all users
+const users = await prisma.user.findMany({
+});
+
+// One query PER USER to get all posts
+users.forEach(async(usr) => {
+  const posts = await prisma.post.findMany({ where: {
+    authorId: usr.id
+  }})
+
+  // Do something with the users' posts
+})
+```
+
+ </Cmd>
+ <CmdResult>
+
+ ```sql
+SELECT "public"."User"."id", "public"."User"."email", "public"."User"."name" FROM "public"."User" WHERE 1=1 OFFSET $1
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+```
+
+ </CmdResult>
+ </CodeWithResult>
+
+
+The following code results in two queries - one to get users, and one to get related posts:
+
+ <CodeWithResult expanded="{true}">
+ <Cmd>
+
+ ```ts
+ const usersWithPosts = await prisma.user.findMany({
+   include: {
+     posts: true
+    }
+ })
+ ```
+
+ </Cmd>
+ <CmdResult>
+
+ ```sql
+SELECT "public"."User"."id", "public"."User"."email", "public"."User"."name" FROM "public"."User" WHERE 1=1 OFFSET $1
+SELECT "public"."Post"."id", "public"."Post"."title", "public"."Post"."authorId" FROM "public"."Post" WHERE "public"."Post"."authorId" IN ($1,$2,$3,$4) OFFSET $5
+```
+ </CmdResult>
+ </CodeWithResult>
+
+### How Prisma automatically addresses the n+1 problem
+
+* Batches `findUnique` queries with the same shape
+
+### How you can address the n+1 problem
+
+Enable logging and check queries you aren't sure of - > **Tip**: [Log query events to your console](../../../reference/api-reference/prisma-client-reference#log-a-query-event-to-console) to see the underlying SQL queries.
+
+
+`in` filter - findmany posts where IDs in X
+
+### Example: Use <inlinecode>findUnique</inlinecode> to avoid the n+1 issue in your GraphQL resolvers
 
 Consider the following query, which returns all users and each user's posts:
 
@@ -28,8 +102,6 @@ query {
 }
 ```
 
-### Get all users
-
 The all `allUsers` query uses `user.findMany(..)` to return all users:
 
 ```ts highlight=7;normal
@@ -42,7 +114,7 @@ const Query = objectType({
         return context.prisma.user.findMany()
       },
     })
-  }
+  },
 })
 ```
 
@@ -58,11 +130,7 @@ This results in a single SQL query:
 }
 ```
 
-> **Tip**: [Log query events to your console](../../../reference/api-reference/prisma-client-reference#log-a-query-event-to-console) to see the underlying SQL queries.
-
-### Get all users' posts
-
-However, the resolver function for `posts` is then invoked **once per user**. This results in a `findMany` query **per user** rather than a single `findMany` to return all posts by all users (expand CLI output to see queries). 
+However, the resolver function for `posts` is then invoked **once per user**. This results in a `findMany` query **per user** rather than a single `findMany` to return all posts by all users (expand CLI output to see queries).
 
 <CodeWithResult>
 <Cmd>
@@ -77,10 +145,9 @@ const User = objectType({
     t.nonNull.list.nonNull.field('posts', {
       type: 'Post',
       resolve: (parent, _, context) => {
-        return context.prisma.post
-          .findMany({
-            where: { authorId: parent.id || undefined },
-          })
+        return context.prisma.post.findMany({
+          where: { authorId: parent.id || undefined },
+        })
       },
     })
   },
@@ -146,10 +213,9 @@ const User = objectType({
     t.nonNull.list.nonNull.field('posts', {
       type: 'Post',
       resolve: (parent, _, context) => {
-        return context.prisma.post
-          .findMany({
-           where: { authorId: parent.id || undefined },
-          })          
+        return context.prisma.post.findMany({
+          where: { authorId: parent.id || undefined },
+        })
         return context.prisma.user
           .findUnique({
             where: { id: parent.id || undefined },
@@ -191,19 +257,19 @@ const User = objectType({
 </CmdResult>
 </CodeWithResult>
 
-If the `posts` resolver is invoked once per user, Prisma's DataLoader groups `findUnique` queries with the same parameters and selection set. Each group is optimized into a `findMany`, which 
-
-### Are any
+If the `posts` resolver is invoked once per user, Prisma's DataLoader groups `findUnique` queries with the same parameters and selection set. Each group is optimized into a `findMany`, which
 
 Not currently - > Prisma's DataLoader does not currently [batch `findMany` queries automatically](https://github.com/prisma/prisma/issues/1477).
 
-
-## Bulk queries
+## Using bulk queries
 
 `createMany`
 `deleteMany`
 `updateMany`
 
-## Use cases for raw SQL
+## Using <inlinecode>select</inlinecode> to limit response size
 
-Very performant ways to do something - you can use raw SQ\l
+Unlikely to be the first
+
+* Giant columns
+* A lot of columns
