@@ -132,19 +132,19 @@ az group create --location germanywestcentral --name prisma-azure-example
 To create the Azure SQL database server, copy the command below into your terminal:
 
 ```terminal copy
-az sql server create -l germanywestcentral -g prisma-azure-example --name CHOOSE_A_UNIQUE_DB_NAME --admin-user prisma --admin-password CHOOSE_A_PASSWORD --enable-public-network true
+az sql server create -l germanywestcentral -g prisma-azure-example --name UNIQUE_DB_SERVER_NAME --admin-user prisma --admin-password CHOOSE_A_PASSWORD --enable-public-network true
 ```
 
-Before running the command, replace a unique name for the database in place of `CHOOSE_A_UNIQUE_DB_NAME`, set a password in place of `CHOOSE_A_PASSWORD`, and note it down.
+Before running the command, replace a unique name for the database in place of `UNIQUE_DB_SERVER_NAME`, set a password in place of `CHOOSE_A_PASSWORD`, and note it down.
 
 The command does the following:
 
-- Create the database server in the `germanywestcentral` region.
-- Associate it with the `prisma-azure-example` resource group created in the previous step.
-- Set the Azure SQL server name.
-- Set the admin user to `prisma`.
-- Set the admin password.
-- Enable public network access so you can create the database schema from your machine.
+- Creates the database server in the `germanywestcentral` region.
+- Associates it with the `prisma-azure-example` resource group created in the previous step.
+- Sets a unique name for the Azure SQL server with `UNIQUE_DB_SERVER_NAME`.
+- Sets the admin user to `prisma`.
+- Sets the admin password.
+- Enables public network access so you can create the database schema from your machine.
 
 In the next step, you will create the database that Prisma will use in the REST API.
 
@@ -152,10 +152,10 @@ In the next step, you will create the database that Prisma will use in the REST 
 
 In this step, you will create a database in the server you created in the previous step.
 
-Run the following command in the terminal, replace `UNIQUE_DB_NAME` with the database name you chose in the previous step:
+Run the following command in the terminal, replace `UNIQUE_DB_SERVER_NAME` with the database name you chose in the previous step:
 
 ```terminal copy
-az sql db create --resource-group prisma-azure-example --server UNIQUE_DB_NAME --name prisma-azure-example --service-objective Basic
+az sql db create --resource-group prisma-azure-example --server UNIQUE_DB_SERVER_NAME --name prisma-azure-example --service-objective Basic
 ```
 
 Here's a breakdown of the command's parameters:
@@ -167,7 +167,7 @@ Here's a breakdown of the command's parameters:
 
 ## 6. Create a firewall rule to allow local access to the database
 
-In this step, you will add a firewall rule to allow remote access from your public IP to the database on Azure. This is necessary so you can create the database schema and use the database for testing locally.
+In this step, you will add a firewall rule to allow remote access from your local computer's public IP to the Azure SQL database. This is necessary so you can create the database schema and use the database for testing locally.
 
 Begin by determining your public IP with the following command:
 
@@ -175,10 +175,10 @@ Begin by determining your public IP with the following command:
 curl ifconfig.me
 ```
 
-Copy the IP from the output and run the following command, replacing YOUR_PUBLIC_IP with the IP address:
+Copy the IP from the output and run the following command, replacing `YOUR_PUBLIC_IP` with the IP address and `UNIQUE_DB_SERVER_NAME` with the name from step 4:
 
 ```terminal copy
-az sql server firewall-rule create --resource-group prisma-azure-example --server prisma-db --name allow-local-acccess --start-ip-address YOUR_PUBLIC_IP --end-ip-address YOUR_PUBLIC_IP
+az sql server firewall-rule create --resource-group prisma-azure-example --server UNIQUE_DB_SERVER_NAME --name allow-local-acccess --start-ip-address YOUR_PUBLIC_IP --end-ip-address YOUR_PUBLIC_IP
 ```
 
 > **Checkpoint:** After creating the firewall rule, the command should output the following:
@@ -200,17 +200,17 @@ az sql server firewall-rule create --resource-group prisma-azure-example --serve
 
 In this step, you will create a storage account used to maintain state and other information about your functions.
 
-Run the following command to create the storage account:
+Run the following command to create the storage account, replacing `UNIQUE_STORAGE_ACCOUNT_NAME` with a name for the stroage account:
 
 ```terminal copy
-az storage account create --name prismaazure --location germanywestcentral --resource-group prisma-azure-example --sku Standard_LRS
+az storage account create --name UNIQUE_STORAGE_ACCOUNT_NAME --location germanywestcentral --resource-group prisma-azure-example --sku Standard_LRS
 ```
 
 > **Checkpoint:** If the command succeeds, it will output a large json object. Verify that `provisioningState` is `Succeeded`:
 
 ```json
 {
-  "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/prisma-azure-example/providers/Microsoft.Storage/storageAccounts/prismaazure",
+  "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/prisma-azure-example/providers/Microsoft.Storage/storageAccounts/UNIQUE_STORAGE_ACCOUNT_NAME",
   "provisioningState": "Succeeded",
   "resourceGroup": "prisma-azure-example",
   "type": "Microsoft.Storage/storageAccounts"
@@ -221,10 +221,10 @@ az storage account create --name prismaazure --location germanywestcentral --res
 
 In this step, you will create the function app, which provides the environment for executing your function code. A function app maps to your local function project and lets you group functions as a logical unit for easier management, deployment, and sharing of resources.
 
-Copy the following command and replace `FUNCTION_APP_NAME` with a unique name for your function app:
+Copy the following command and replace `FUNCTION_APP_NAME` with a unique name for your function app, and `STORAGE_ACCOUNT_NAME` with the name you chose in the previous step:
 
 ```terminal copy
-az functionapp create --resource-group prisma-azure-example --consumption-plan-location germanywestcentral --runtime node --runtime-version 14 --functions-version 3 --name FUNCTION_APP_NAME --storage-account prismaazure --os-type Linux
+az functionapp create --resource-group prisma-azure-example --consumption-plan-location germanywestcentral --runtime node --runtime-version 14 --functions-version 3 --name FUNCTION_APP_NAME --storage-account STORAGE_ACCOUNT_NAME --os-type Linux
 ```
 
 > **Note:** The Function App name must be globally unique as it will determine the subdomain of the deployed function.
@@ -281,9 +281,7 @@ In this step, you will expose the `DATABASE_URL` environment variable to the fun
 Run the following command, after replacing `FUNCTION_APP_NAME_FROM_STEP_8` with the name of the **Function App** created in step 8:
 
 ```terminal copy
-az functionapp config appsettings set --name FUNCTION_APP_NAME_FROM_STEP_8 \
---resource-group prisma-azure-example \
---settings DATABASE_URL=$DATABASE_URL
+az functionapp config appsettings set --name FUNCTION_APP_NAME_FROM_STEP_8 --resource-group prisma-azure-example --settings DATABASE_URL=$DATABASE_URL
 ```
 
 The command will set the `DATABASE_URL` app setting using the locally defined `DATABASE_URL` environment variable set in step 9.
@@ -348,7 +346,7 @@ In this step, you will test the API's different endpoints using the URLs from th
 Begin by making a POST HTTP request to the _CreateUser_ endpoint with curl:
 
 ```terminal copy
-curl --request POST --data '"email":"alice@prisma.io","name":"Alice "}' https://FUNCTION_APP_NAME.azurewebsites.net/api/user
+curl --request POST --data '{"email":"alice@prisma.io","name":"Alice"}' https://FUNCTION_APP_NAME.azurewebsites.net/api/user
 ```
 
 > **Note:** Replace the **`FUNCTION_APP_NAME`** in the URL with the app name you chose in step 8.
