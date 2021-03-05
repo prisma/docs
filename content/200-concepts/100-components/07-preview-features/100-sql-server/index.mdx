@@ -126,6 +126,50 @@ Certain migrations will cause more changes than you might expect. For example:
 - Adding or removing `autoincrement()`. This cannot be achieved by modifying the column, but requires recreating the table (including all constraints, indices, and foreign keys) and moving all data between the tables.
 - Additionally, it is not possible to delete all the columns from a table (possible with PostgreSQL or MySQL). If a migration needs to recreate all table columns, it will also re-create the table.
 
+#### Shared default values are not supported
+
+In some cases, user might want to define default values as shared objects:
+
+```sql file=default_objects.sql
+CREATE DEFAULT catcat AS 'musti';
+
+CREATE TABLE cats (
+    id INT IDENTITY PRIMARY KEY,
+    name NVARCHAR(1000)
+);
+
+sp_bindefault 'catcat', 'dbo.cats.name';
+```
+
+Using the stored procedure `sp_bindefault`, the default value `catcat` can be used in more than one table. The way Prisma manages default values is per table:
+
+```sql file=default_per_table.sql
+CREATE TABLE cats (
+    id INT IDENTITY PRIMARY KEY,
+    name NVARCHAR(1000) CONSTRAINT DF_cat_name DEFAULT 'musti'
+);
+```
+
+The last example, when introspected, leads to the following model:
+
+```prisma file=schema.prisma
+model cats {
+  id   Int     @id @default(autoincrement())
+  name String? @default("musti")
+}
+```
+
+And the first doesn't get the default value introspected:
+
+```prisma file=schema.prisma
+model cats {
+  id   Int     @id @default(autoincrement())
+  name String?
+}
+```
+
+If using Prisma Migrate together with shared default objects, changes to them must be done manually to the SQL.
+
 ### Data model limitations
 
 #### Cannot use column with `UNIQUE` constraint and filtered index as foreign key

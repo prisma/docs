@@ -293,7 +293,7 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
-      <SEO title={title} description={description} homepage/>
+      <SEO title={title} description={description} homepage />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
@@ -305,7 +305,7 @@ const Homepage = () => {
         <SummaryLinks>
           {SummaryLinkData.buttons.map((slink: any, index: number) =>
             slink.special ? (
-              <SpecialButton href={slink.url} target="_blank" key={index} icon={icons[slink.icon]}>
+              <SpecialButton href={slink.url} key={index} icon={icons[slink.icon]}>
                 &nbsp; {slink.text}
               </SpecialButton>
             ) : (
