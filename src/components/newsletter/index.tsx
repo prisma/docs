@@ -17,6 +17,9 @@ const NewsLetterWrapper = styled.div`
     margin-top: ${p => p.theme.space[24]};
     display: flex;
     align-items: center;
+    label {
+      display: none;
+    }
     input {
       background: ${p => p.theme.colors.white};
       box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
@@ -99,7 +102,10 @@ const Newsletter = ({ newsletter }: any) => {
     <NewsLetterWrapper>
       <form className="email" onSubmit={submitEmail}>
         <Email className="email-icon" />
+        <label htmlFor="email">Email</label>
         <input
+          name="email"
+          id="email"
           type="text"
           placeholder={submitted ? 'Thank you!' : 'your@email.com'}
           value={email}
