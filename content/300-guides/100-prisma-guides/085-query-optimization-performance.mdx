@@ -19,78 +19,9 @@ Alternatively, if you are only interested in the time taken to run a query, you 
 
 ## Solving the n+1 problem
 
-The n+1 problem occurs when you loop through the results of a query and perform one additional query **per result**, resulting in `n` number of queries plus the original (n+1). This is a common problem in ORMs because it is not always immediately obvious that your code is generating inefficient queries.
+The n+1 problem occurs when you loop through the results of a query and perform one additional query **per result**, resulting in `n` number of queries plus the original (n+1). This is a common problem with ORMs, particularly in combination with GraphQL, because it is not always immediately obvious that your code is generating inefficient queries.
 
-### n+1 example
-
-The following code results in n+1 queries - one `findMany` to get all users, and one `findMany` **per user** to get each user's posts:
-
- <CodeWithResult expanded="{true}">
- <Cmd>
-
-```ts
-// One query to get all users
-const users = await prisma.user.findMany({})
-
-// One query PER USER to get all posts
-users.forEach(async usr => {
-  const posts = await prisma.post.findMany({
-    where: {
-      authorId: usr.id,
-    },
-  })
-
-  // Do something with the users' posts
-})
-```
-
-</Cmd>
-<CmdResult>
-
-```sql
-SELECT "public"."User"."id", "public"."User"."email", "public"."User"."name" FROM "public"."User" WHERE 1=1 OFFSET $1
-SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
-SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
-SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
-SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
-/* ..and so on .. */
-```
-
-</CmdResult>
-</CodeWithResult>
-
-This is not an efficient way to query. In a GraphQL context specifically, you are 
-
-* Use Prisma's automatic batching of [`findUnique`](../../../reference/api-reference/prisma-client-reference#findUnique) <span class="api"></span> (particularly useful in a [GraphQL context](#example-use-findunique-to-avoid-the-n1-issue-in-your-graphql-resolvers)
-
-
-
-* Use nested reads ([`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span>) to return related records
-* Use the [`in`](../../../reference/api-reference/prisma-client-reference#in) <span class="api"></span> filter
-
-### Solving n+1 with <inlinecode>findUnique</inlinecode> and Prisma's dataloader
-
-The Prisma Client dataloader **automatically** batches `findUnique` queries that:
-
-* Occur in the same tick
-* Have the same the same `where` and `include` parameters
-
-This is particularly useful in a **GraphQL context** because GraphQL runs a separate resolver function for every field.
-
-For example - the following GraphQL runs the `allUsers` resolver to get all users, and the `posts` resolver **once per user** to get each user's posts (n+1). Because the queries are in **separate resolvers**, you cannot solve n+1 with the `in` filter or `include`:
-
-```js
-query {
-  allUsers {
-    id,
-    posts {
-      id
-    }
-  }
-}
-```
-
-In this scenario, you should take advantage of Prisma's automatic batching of `findUnique`. For a detailed explanation, review our [example](#example-use-findunique-to-avoid-the-n1-issue-in-your-graphql-resolvers) or watch the following video:
+### Solving n+1 in GraphQL with <inlinecode>findUnique</inlinecode> and Prisma's dataloader
 
 <div class="videoWrapper">
 
@@ -98,9 +29,11 @@ In this scenario, you should take advantage of Prisma's automatic batching of `f
 
 </div>
 
-#### Example: Use <inlinecode>findUnique</inlinecode> to avoid the n+1 issue in your GraphQL resolvers
+The Prisma Client dataloader automatically **batches** `findUnique` queries that ✔ occur in the same tick and ✔ have the same the same `where` and `include` parameters.
 
-This example demonstrates how to use `findUnique` to mitigate the n+1 problem in GraphQL resolvers. The following GraphQL query gets all users and and their posts:
+Automatic batching of `findUnique` is particularly useful in a **GraphQL context**. GraphQL runs a separate resolver function for every field, which can make it difficult to optimize a nested query.
+
+For example - the following GraphQL runs the `allUsers` resolver to get all users, and the `posts` resolver **once per user** to get each user's posts (n+1):
 
 ```js
 query {
@@ -204,6 +137,7 @@ const User = objectType({
   duration: 0,
   target: 'quaint::connector::metrics'
 }
+// And so on
 ```
 
 </CmdResult>
@@ -211,7 +145,7 @@ const User = objectType({
 
 Instead, use `findUnique` in combination with [the fluent API](../../../concepts/components/prisma-client/relation-queries#fluent-api) (`.posts()`) as shown to return a user's posts. Even though the resolver is called once per user, the Prisma dataloader **✔ batches the queries**.
 
-> **Note**: Prisma's dataloader batches `findUnique` queries even if you do not use the fluent API. In this particular example, the fluent API is syntactically the best way to return a user's posts even though it results in an additional query to get all users a second time.
+> **Note**: Prisma's dataloader batches `findUnique` queries even if you do not use the fluent API.
 
 <CodeWithResult>
 <Cmd>
@@ -274,9 +208,54 @@ If the `posts` resolver is invoked once per user, Prisma's dataloader groups `fi
 
 > **Note**: Prisma's dataloader does not currently [batch `findMany` queries automatically](https://github.com/prisma/prisma/issues/1477), which is why we recommend using `findUnique` as demonstrated.
 
-### Solving n+1 with <inlinecode>include</inlinecode>
+### n+1 in other contexts
 
-You can use `include` to return each user's posts and and only results in **two** SQL queries - one to get users, and one to get posts:
+The n+1 problem is most commonly seen in a GraphQL context because you have to find a way to optimize a single query across multiple resolvers. However, you can just as easily introduce the n+1 problem by looping through results with `forEach` in your own code.
+
+The following code results in n+1 queries - one `findMany` to get all users, and one `findMany` **per user** to get each user's posts:
+
+ <CodeWithResult expanded="{true}">
+ <Cmd>
+
+```ts
+// One query to get all users
+const users = await prisma.user.findMany({})
+
+// One query PER USER to get all posts
+users.forEach(async usr => {
+  const posts = await prisma.post.findMany({
+    where: {
+      authorId: usr.id,
+    },
+  })
+
+  // Do something with each users' posts
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```sql
+SELECT "public"."User"."id", "public"."User"."email", "public"."User"."name" FROM "public"."User" WHERE 1=1 OFFSET $1
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+SELECT "public"."Post"."id", "public"."Post"."title" FROM "public"."Post" WHERE "public"."Post"."authorId" = $1 OFFSET $2
+/* ..and so on .. */
+```
+
+</CmdResult>
+</CodeWithResult>
+
+This is not an efficient way to query. Instead, you can:
+
+* Use nested reads ([`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span>) to return users and related posts
+* Use the [`in`](../../../reference/api-reference/prisma-client-reference#in) <span class="api"></span> filter
+
+#### Solving n+1 with <inlinecode>include</inlinecode>
+
+You can use `include` to return each user's posts and and only results in **two** SQL queries - one to get users, and one to get posts. This is known a [nested read](../../../concepts/components/prisma-client/relation-queries#nested-reads).
  
 <CodeWithResult expanded="{true}">
 <Cmd>
@@ -300,9 +279,9 @@ SELECT "public"."Post"."id", "public"."Post"."title", "public"."Post"."authorId"
 </CmdResult>
 </CodeWithResult>
 
-### Solving n+1 with <inlinecode>in</inlinecode>
+#### Solving n+1 with <inlinecode>in</inlinecode>
 
-If you have a list of IDs, you can use the `in` filter to return all users, create a list of user IDs, then all posts where the `authorId` is `in` that list:
+If you have a list of user IDs, you can use the `in` filter to return all posts where the `authorId` is `in` that list of IDs:
 
 <CodeWithResult expanded="{true}">
 <Cmd>
