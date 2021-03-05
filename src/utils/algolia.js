@@ -58,7 +58,7 @@ const handleRawBody = node => {
         !section.includes('CmdResult>') &&
         !section.includes('<Subsections') &&
         !section.includes('Cmd>') &&
-        !section.includes('! prettier ignore')
+        !section.includes('<!-- prettier-ignore -->')
     )
     filteredSections.map(
       para => (para !== '\n' || para !== '') && finalSections.push({ para, heading: fSec.heading })
