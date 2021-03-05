@@ -9,7 +9,9 @@ export default (props: any) => (
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
-    <circle cx="16" cy="16" r="16" fill="#E2E8F0" />
+    <circle cx="16" cy="16" r="16" fill="#E2E8F0">
+    <title>Subscribe to Prisma newsletter</title>
+    </circle>
     <path
       d="M8 15.5H21.5M18 11L23 15.5L18 20"
       stroke="#718096"
