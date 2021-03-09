@@ -19,7 +19,7 @@ export const stickWhenNeeded = (id: string) => {
       var sidebarTop = $sidebar.position().top
       var sidebarBottom = sidebarTop + sidebarHeight
 
-      var heightDelta = Math.abs(windowHeight - sidebarHeight)
+      var heightDelta = Math.ceil(Math.abs(windowHeight - sidebarHeight))
       var scrollDelta = lastScrollTop - scrollTop
 
       var isScrollingDown = scrollTop > lastScrollTop
