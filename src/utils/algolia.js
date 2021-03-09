@@ -73,6 +73,10 @@ const handleRawBody = node => {
     return tocItem ? removeInlineCode(tocItem.url, true) : ''
   }
 
+  const techParams = `${rest.langSwitcher ? `${rest.langSwitcher[0]}${rest.dbSwitcher ? '-' : ''}` : ''}${
+    rest.dbSwitcher ? `${rest.dbSwitcher[0]}` : ''
+  }`
+
   const records = finalSections.map((fSection, index) => ({
     id: index,
     objectID: rest.objectID,
@@ -83,11 +87,12 @@ const handleRawBody = node => {
     content: isApiTerm(fSection.para)
       ? finalSections[index + 1].para
       : fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
-    path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
+    path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${techParams ? '-' + techParams : ''}${getTitlePath(fSection)}`,
   }))
 
   return records
 }
+
 
 const unnestFrontmatter = node => {
   const { fields, frontmatter, ...rest } = node
@@ -123,6 +128,8 @@ const queries = [
                 }
                 frontmatter {
                   title
+                  langSwitcher
+                  dbSwitcher
                 }
                 tableOfContents
               }
