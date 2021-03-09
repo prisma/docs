@@ -1,0 +1,115 @@
+---
+title: Team development with Prisma Migrate
+---
+
+<TopBlock>
+
+To bring in changes to the database schema and migrations from collaborators:
+
+1. Pull the changed Prisma Schema and `.prisma\migrations` folder
+1. Run the `migrate dev` command to apply new migrations:
+
+   ```terminal
+   npx prisma migrate dev
+   ```
+
+   This command:
+
+    1. Checks if there are any migrations that have not yet been applied and applies those migrations
+    1. Checks for changes in the Prisma schema - if there are changes, Prisma creates and applies new migrations
+
+</TopBlock>
+
+## Troubleshooting
+
+### Handling migration history conflicts
+
+A migration history conflict occurs when there are discrepancies between the **migrations folder in the file system** and the **`_prisma_migrations` table in the database**.
+
+#### Causes of migration history conflict in a development environment
+
+- A migration that has already been applied is later modified
+- A migration that has already been applied is missing from the file system
+- A migration failed
+
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate dev --preview-feature` (Development command), the CLI will ask to reset the database. Resetting the database:
+
+1. Drops the database
+2. Recreates the database
+3. Applies all migrations
+
+### Schema drift
+
+Database schema drift occurs when your database schema is out of sync with your migration history - the database schema has 'drifted away' from the source of truth. 
+
+#### Causes of schema drift in a development environment
+
+Schema drift can occur if:
+
+- The database schema was changed _without_ using migrations - for example, by using [`prisma db push`](../../../reference/api-reference/command-reference#db-push) or manually changing the database schema.
+
+> **Note**: Schema drift can only be detected in a development environment as this requires the shadow database.
+
+#### Fixing schema drift in a development environment
+
+The following scenario assumes that you made a manual change in production and want to propagate that change to your migration history and other databases.
+
+1. Make an equivalent change in the Prisma schema - for example, adding a field named `bio` and an index:
+
+```prisma
+model User {
+    // Other fields
+    bio   String?
+
+    @@index([bio])
+}
+```
+
+1. Create and apply the new migration in dev:
+
+   ```terminal
+   prisma migrate dev --preview-feature
+   ```
+
+1. Commit the new migration and allow your CI process to apply the migration to all other non-production databases.
+
+## Failed migrations
+
+A migration might fail if:
+
+- You [modify a migration before running it]() and introduce a syntax error
+- You add a mandatory (`NOT NULL`) column to a table that already has data
+- The migration process stopped unexpectedly
+- The database shut down in the middle of the migration process
+
+Each migration in the `_prisma_migrations` table has a `logs` column that stores the error.
+
+### Developer environments
+
+The easiest way to handle a failed migration in a developer environment is to address the root cause and reset the database. For example:
+
+- If you introduced a SQL syntax error by manually editing the database, update the `migration.sql` file that failed and reset the database:
+
+  ```terminal
+  prisma migrate reset --preview-feature
+  ```
+
+- If you introduced a change in the Prisma schema that cannot be applied to a database with data (for example, a mandatory column in a table with data):
+
+  1. Delete the `migration.sql` file.
+
+  2. Modify the schema - for example, add a default value to the mandatory field.
+
+  3. Migrate:
+
+     ```terminal
+     prisma migrate dev --preview-feature
+     ```
+
+     Prisma Migrate will prompt you to reset the database and re-apply all migrations.
+
+- If something interrupted the migration process, reset the database:
+
+  ```terminal
+  prisma migrate reset --preview-feature
+  ```

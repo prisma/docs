@@ -2,3 +2,101 @@
 title: Production troubleshooting
 metaDescription:
 ---
+
+<TopBlock>
+</TopBlock>
+
+## Handling migration history conflicts
+
+A migration history conflict occurs when there are discrepancies between the **migrations folder in the file system** and the **`_prisma_migrations` table in the database**.
+
+### Production environments
+
+In a production environment, history conflicts can occur in the following scenarios:
+
+- A migration that has already been applied is missing from the file system
+- A migration failed
+
+If Prisma Migrate detects a migration history conflict when you run `prisma migrate deploy --preview-feature` (Production command)
+
+- Add the missing migration file - for example, from source control
+- Address the cause of the failed migration - each migration in the `_prisma_migrations` table has a `logs` column that stores the error. For example:
+
+  ```
+  Database error: Error accessing result set, column not found: name
+   0: migration_core::api::ApplyMigrations
+             at migration-engine\core\src\api.rs:102
+  ```
+
+## Schema drift
+
+Database schema drift occurs when your database schema is out of sync with your migration history - the database schema has 'drifted away' from the source of truth. Schema drift can occur if:
+
+- The database schema was changed _without_ using migrations - for example, by using [`prisma db push`](../../../reference/api-reference/command-reference#db-push) or manually changing the database schema.
+
+> **Note**: Schema drift can only be detected in a development environment as this requires the shadow database.
+
+The following scenario assumes that you made a manual change in production and want to propagate that change to your migration history and other databases.
+
+When the manual change has been replicated in the Prisma schema, you must reconcile your migration history and database schema in production:
+
+1. Mark the migration as 'already applied' so that Prisma Migrate does not try to create a field and index that already exists:
+
+   ```terminal
+   prisma migrate resolve --applied "20201127134938_added_bio_index" --preview-feature
+   ```
+
+   This command adds the migration to the migration history table without running the actual SQL.
+
+## Failed migration
+
+A migration might fail if:
+
+- You [modify a migration before running it]() and introduce a syntax error
+- You add a mandatory (`NOT NULL`) column to a table that already has data
+- The migration process stopped unexpectedly
+- The database shut down in the middle of the migration process
+
+Each migration in the `_prisma_migrations` table has a `logs` column that stores the error.
+
+There are two ways to deal with failed migrations in a production environment:
+
+- Roll back, optionally fix issues, and re-deploy
+- Manually complete the migration steps and resolve the migration
+
+#### Option 1: Roll back and re-deploy
+
+The following example demonstrates how to roll back a migration, optionally make changes to fix the issue, and re-deploy:
+
+1. Roll back the migration - this updates the migration record in the `_prisma_migrations` table to register it as rolled back, allowing it to be applied again:
+
+   ```terminal
+   prisma migrate resolve --rolled-back "20201127134938_added_bio_index" --preview-feature
+   ```
+
+1. If the migration was partially run, you can either:
+
+   - Modify the migration to check if a step was already completed (for example: `CREATE TABLE ... IF NOT EXISTS`) _OR_
+   - Manually revert the steps that were completed (for example, delete created databases)
+
+   > If you modify the migration, make sure you copy it back to source control to ensure that state of your production database is reflected exactly in development.
+
+1. Fix the root cause of the failed migration, if relevant - for example, if the migration failed due to an issue with the SQL script itself. Make sure that you copy any changed migrations back to source control.
+
+1. Re-deploy the migration:
+
+   ```terminal
+   prisma migrate deploy --preview-feature
+   ```
+
+### Option 2: Manually complete migration and resolve as applied
+
+The following example demonstrates how to manually complete the steps of a migration and mark that migration as applied.
+
+1. Manually complete the migration steps on the production database. Make sure that any manual steps exactly match the steps in the migration file, and copy any changes back to source control.
+
+1. Resolve the migration as applied - this tells Prisma Migrate to consider the migration successfully applied:
+
+   ```terminal
+   prisma migrate resolve --applied "20201127134938_my_migration" --preview-feature
+   ```
