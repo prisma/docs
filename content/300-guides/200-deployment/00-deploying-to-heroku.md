@@ -6,22 +6,22 @@ metaDescription: 'Learn how to deploy a Node.js server that uses Prisma to Herok
 
 ## Overview
 
-In this guide, you will set up and deploy a Node.js server that uses Prisma with PostgreSQL to [Heroku](https://www.heroku.com). The application will expose a REST API and use Prisma Client to handle fetching, creating, and deleting records from a database.
+In this guide, you will set up and deploy a Node.js server that uses Prisma with PostgreSQL to [Heroku](https://www.heroku.com). The application exposes a REST API and uses Prisma Client to handle fetching, creating, and deleting records from a database.
 
-Heroku is a cloud platform as a service (PaaS). In contrast to the popular serverless deployment model, with Heroku, your application will be constantly running even if no requests are made to it. This has several benefits due to the connection limits of a PostgreSQL database. For more information, check out the [general deployment documentation](/concepts/components/prisma-client/deployment)
+Heroku is a cloud platform as a service (PaaS). In contrast to the popular serverless deployment model, with Heroku, your application is constantly running even if no requests are made to it. This has several benefits due to the connection limits of a PostgreSQL database. For more information, check out the [general deployment documentation](/concepts/components/prisma-client/deployment)
 
-Typically Heroku integrates with a Git repository for automatic deployments upon commits. You can deploy to Heroku from a GitHub repository, or by pushing your source to a [Git repository that Heroku creates per app](https://devcenter.heroku.com/articles/git). This guide will use the latter approach where you will push your code to the repository created by Heroku which will trigger a build and deploy the application.
+Typically Heroku integrates with a Git repository for automatic deployments upon commits. You can deploy to Heroku from a GitHub repository or by pushing your source to a [Git repository that Heroku creates per app](https://devcenter.heroku.com/articles/git). This guide uses the latter approach where you push your code to the repository created by Heroku, which triggers a build and deploys the application.
 
 The application has the following components:
 
-- **Backend**: Node.js REST API built with Express.js with resource endpoints that use Prisma Client to handle database operations against a PostgreSQL database (e.g. hosted on Heroku).
+- **Backend**: Node.js REST API built with Express.js with resource endpoints that use Prisma Client to handle database operations against a PostgreSQL database (e.g., hosted on Heroku).
 - **Frontend**: Static HTML page to interact with the API.
 
 ![architecture diagram](./heroku-architecture.png)
 
-The focus of this guide is showing how project using Prisma can be deployed to Heroku. The starting point will the [Prisma Heroku example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/heroku) which contains an Express.js server with a couple of pre-configured REST endpoints and a simple frontend.
+The focus of this guide is showing how projects using Prisma are deployed to Heroku. The starting point will the [Prisma Heroku example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/heroku), which contains an Express.js server with a couple of pre-configured REST endpoints and a simple frontend.
 
-> **Note:** Throughout the guide you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
+> **Note:** The various **checkpoints** throughout the guide allowing you to validate whether you performed the steps correctly.
 
 ## A note on deploying GraphQL servers to Heroku
 
@@ -38,14 +38,19 @@ While the example uses REST, the same principles apply to a GraphQL server, with
 
 ## Prisma workflow
 
-Prisma supports different workflows depending on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, i.e. `schema.prisma` file.
+At the core of Prisma is the [Prisma schema](/concepts/components/prisma-schema) – a declarative configuration where you define your data model and other Prisma related configration. The Prisma schema is also a single source of truth for both Prisma Client and Prisma Migrate.
 
-In this guide, you will start from scratch and create the database with the [`prisma db push` command](/reference/api-reference/command-reference/#db). The workflow for that looks as follows:
+In this guide, you will use Prisma Migrate to create the database schema. Prisma Migrate is based on the Prisma schema and works by generating `.sql` migration files that are executed against the database.
 
-1. Define the database schema using Prisma schema.
-2. Run `prisma db push --preview-feature` which will create the SQL to create the database schema and run it against the database.
+Migrate comes with two main workflows:
+- Creating migrations and applying during local development with `prisma migrate dev`
+- Applying generated migration to production with `prisma migrate deploy`
 
-> **Note:** The `prisma db push` command is currently in [preview](/about/releases#preview) and is not recommended for use in production.
+For brevity, the guide does not cover how migrations are created with `prisma migrate dev`. Rather, it focuses on the production workflow and uses the Prisma schema and SQL migration that are included in the example code.
+
+You will use Heroku's [release phase](https://devcenter.heroku.com/articles/release-phase) to run the `prisma migrate deploy` command so that the migrations are applied before the application starts.
+
+To learn more about Prisma Migrate's workflows, check out the [start from scratch guide](/getting-started/setup-prisma/start-from-scratch-typescript-postgres)
 
 ## 1. Download the example and install dependencies
 
@@ -77,7 +82,7 @@ Install the dependencies:
 npm install
 ```
 
-> **Note:** The `Procfile` tells Heroku the command needed to start the application, i.e. `npm start`
+> **Note:** The `Procfile` tells Heroku the command needed to start the application, i.e. `npm start`, and the comand to run during the release phase, i.e., `npx prisma migrate deploy`
 
 ## 2. Create a Git repository for the application
 
@@ -180,58 +185,9 @@ Database has been created and is available
 Created postgresql-parallel-73780 as DATABASE_URL
 ```
 
-> **Note:** Heroku will automatically set the `DATABASE_URL` environment variable when the app is running on Heroku. Prisma will use this environment variable because it's declared in the _datasource_ block of the Prisma schema (`prisma/schema.prisma`) with `env("DATABASE_URL")`.
+> **Note:** Heroku automatically sets the `DATABASE_URL` environment variable when the app is running on Heroku. Prisma uses this environment variable because it's declared in the _datasource_ block of the Prisma schema (`prisma/schema.prisma`) with `env("DATABASE_URL")`.
 
-## 6. Set the DATABASE_URL environment variable locally
-
-In the previous step you created the database and saw how Heroku defines `DATABASE_URL` for the application when running on Heroku. In this step, you will set the `DATABASE_URL` environment variable locally so that you can run the database migration from locally using Prisma.
-
-Get the connection URL with the Heroku CLI:
-
-```no-lines
-heroku pg:credentials:url
-
-Connection information for default credential.
-Connection URL:
-   postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__
-```
-
-Copy the connection URL and set it as an environment variable:
-
-```no-lines
-export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/__DATABASE__"
-```
-
-> **Note:** It's considered best practice to keep secrets out of your codebase. If you open up the `prisma/schema.prisma` file, you should see `env("DATABASE_URL")` in the _datasource_ block. By setting an environment variable you keep secrets out of the codebase.
-
-## 7. Create the database schema
-
-With the Heroku app and database created, you will create the database schema using the [`prisma db push`](/reference/api-reference/command-reference#db-push) command.
-
-
-> **Note:** While the `prisma db push` command creates the database schema for you. It's intended for quick prototyping. When working on a production project with multiple environments, Prisma Migrate gives you more control over how the database schema is created and evolved.
-
-Run the following command to create the database schema:
-
-```no-lines
-npx prisma db push --preview-feature
-```
-
-> **Note:** The `db push` command is currently in [Preview](/about/releases#preview). This means that it is not recommended to use in production.
-
-**Checkpoint:** `heroku pg:psql --command="\dt"` should show the newly created database tables:
-
-```no-lines
-  --> Connecting to postgresql-parallel-111222
-                List of relations
-  Schema |    Name    | Type  |     Owner
-  --------+------------+-------+----------------
-  public | Post       | table | alice
-  public | User       | table | alice
-  (2 rows)
-```
-
-## 8. Push to deploy
+## 6. Push to deploy
 
 Deploy the app by pushing the changes to the Heroku app repository:
 
@@ -239,19 +195,37 @@ Deploy the app by pushing the changes to the Heroku app repository:
 git push heroku main
 ```
 
-This will trigger a build and deploy your application to Heroku.
+This will trigger a build and deploy your application to Heroku. Heroku will also run the `npx prisma migrate deploy` command which executes the migrations to create the database schema before deploying the app (as defined in the `release` step of the `Profile`).
 
-**Checkpoint:** `git push` will emit the build progress and if succeeds will display the URL of the deployed app:
+**Checkpoint:** `git push` will emit the logs from the build and release phase and display the URL of the deployed app:
 
 ```no-lines
 remote: -----> Launching...
-remote:        Released v1
+remote:  !     Release command declared: this new release will not be available until the command succeeds.
+remote:        Released v5
 remote:        https://your-app-name.herokuapp.com/ deployed to Heroku
+remote:
+remote: Verifying deploy... done.
+remote: Running release command...
+remote:
+remote: Prisma schema loaded from prisma/schema.prisma
+remote: Datasource "db": PostgreSQL database "your-db-name", schema "public" at "your-db-host.compute-1.amazonaws.com:5432"
+remote:
+remote: 1 migration found in prisma/migrations
+remote:
+remote: The following migration have been applied:
+remote:
+remote: migrations/
+remote:   └─ 20210310152103_init/
+remote:     └─ migration.sql
+remote:
+remote: All migrations have been successfully applied.
+remote: Waiting for release.... done.
 ```
 
-> **Note:** Heroku will also set the `PORT` environment variable to which your application will be bound.
+> **Note:** Heroku will also set the `PORT` environment variable to which your application is bound.
 
-## 9. Test your deployed application
+## 7. Test your deployed application
 
 You can use the static frontend to interact with the API you deployed via the preview URL.
 
