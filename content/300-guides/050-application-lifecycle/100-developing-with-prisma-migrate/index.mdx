@@ -6,9 +6,30 @@ tocDepth: 2
 
 <TopBlock>
 
+This guide takes you through a typical **development workflow** with [Prisma Migrate](), from defining a schema to committing migrations to source control. This guide starts with an empty database, but you can also [add Prisma Migrate to an existing project](../add-prisma-migrate-to-a-project). 
+
+In a development environment, you use the `migrate dev` command to create and apply migrations:
+
+```terminal
+npx prisma migrate dev
+```
+
+When you are comfortable with using Prisma Migrate in development, consider the following more advanced guides:
+
+* [How to use Prisma Migrate as a team]()
+* [How Prisma Migrate fits into your continuous integration pipeline]()
+* [How to use Prisma Migrate as part of your deployment workflow]()
+* [Advanced migration techniques]()
+
 </TopBlock>
 
-## Creating a schema
+## Are you prototyping?
+
+If you are at the **prototyping stage**, where data loss and breaking changes do not matter, consider using `db push`.
+
+## Create a schema
+
+This guide uses the following schema as a starting point:
 
 ```prisma
 generator client {
@@ -29,7 +50,7 @@ model User {
 
 model Profile {
   id       Int    @id @default(autoincrement())
-  biograpy String
+  biograpy String // Intentional typo!
   userId   Int
   user     User   @relation(fields: userId, references: id)
 }
@@ -53,34 +74,48 @@ model Category {
 }
 ```
 
-### Defining native type mappings
+### Refine your schema with native type attributes
 
-```prisma highlight=5;normal;
-// ...
+Prisma Migrate supports [native field type attributes](../../../concepts/components/prisma-schema/data-model#native-types-mapping), which allow you to specify which underlying database type should be created.
 
-model Post {
-  id         Int        @id @default(autoincrement())
-  title      String     @db.VarChar(200)
-  published  Boolean    @default(true)
-  content    String
-  authorId   Int
-  author     User       @relation(fields: [authorId], references: [id])
-  categories Category[]
-}
+For example, the PostgreSQL provider maps `String` to `text` by default. To change the default mapping:
 
-// ...
-```
+1. Add a makes the `title` field a `varchar(200)` in the underlying database:
 
-## Configure shadow database
+    ```prisma highlight=5;normal;
+    // ...
 
-## Initializing migrations
+    model Post {
+      id         Int        @id @default(autoincrement())
+      title      String     @db.VarChar(200)
+      published  Boolean    @default(true)
+      content    String
+      authorId   Int
+      author     User       @relation(fields: [authorId], references: [id])
+      categories Category[]
+    }
 
-```terminal
-npm prisma migrate dev
-```
+    // ...
+    ```
+
+## Configure the shadow database
+
+In a **development environment only**, Prisma Migrate uses a [temporary shadow database]() to perform tasks such as detecting schema drift.
+
+- Your database user does not have sufficient privileges
+- You use a cloud-hosted database for development
+
+## Initialize migration history
+
+Run the following command to initialize a migration history and get started with Prisma Migrate:
 
 <CodeWithResult>
 <Cmd>
+
+```terminal
+npm prisma migrate dev --name first-migration
+```
+
 </Cmd>
 <CmdResult>
 
@@ -96,184 +131,127 @@ migrations/
 </CmdResult>
 </CodeWithResult>
 
-## Writing a seed script
+> **Note**: If you do not provide a `--name`, the CLI will prompt you for a name.
 
-You should expect to reset your database
+When you run the `migrate dev` command for the first time, Prisma Migrate:
 
-## Common scenarios
+* Creates a `./prisma/migrations` folder with your initial migration:
 
-### Renaming a field
+  ```
+  migrations/
+  └─ 20210305110829_first_migration/
+    └─ migration.sql
+  ```
+ 
+* Creates a table named `_prisma_migrations` in the database with an entry for the first migration:
 
-By default, renaming a field in the schema results in a `CREATE` and `DROP` in the migration SQL. To rename a field, you need to modify the generated migration SQL before applying it to the database.
+  | id                                   | checksum                                                    | finished_at                | migration_name                 | logs | rolled_back_at | started_at                 | applied_steps_count |
+  | :----------------------------------- | :---------------------------------------------------------- | :------------------------- | :----------------------------- | :--- | :------------- | :------------------------- | :------------------ |
+  | 5f285eeb-3714-461c-bb3a-03a7adad6aad | 1beaf4ec9e8cfdc1f fa546aa0b0d94ba2b382293d 7b7237619202f2372c | 2021-03-09 14:55:38.712883 | 20210305110829_first_migration | NULL | NULL           | 2021-03-09 14:55:38.542458 | 1                   |
 
-```prisma highlight=3;normal;
-model Profile {
-  id       Int    @id @default(autoincrement())
-  biograpy String
-  userId   Int
-  user     User   @relation(fields: userId, references: id)
-}
-```
+## Evolve your schema
 
-To rename the `biograpy` field to `biography`:
+### Add new fields
 
-1. Rename the field in the schema:
+1. Add two fields to your schema:
 
-   ```prisma highlight=3;delete|4;add;
-   model Profile {
-     id        Int    @id @default(autoincrement())
-     biograpy  String
-     biography String
-     userId    Int
-     user      User   @relation(fields: userId, references: id)
-   }
-   ```
+    ```prisma highlight=4,16;add
+    model User {
+      id         Int      @id @default(autoincrement())
+      name       String
+      jobTitle   String   @db.VarChar(100)
+      posts      Post[]
+      profile    Profile?
+    }
 
-1. Run the following command to create a **draft migration** that you can edit before applying to the database:
+    model Post {
+      id         Int        @id @default(autoincrement())
+      title      String
+      published  Boolean    @default(true)
+      content    String
+      authorId   Int
+      author     User       @relation(fields: [authorId], references: [id])
+      tags       String[]
+      categories Category[]
+    }
+    ```
 
-   ```terminal
-   npx prisma migrate dev --name rename-migration --create-only
-   ```
-
-1. Edit the draft migration as shown, changing `DROP` / `DELETE` to a single `RENAME COLUMN`:
-
-      <TabbedContent tabs={[<FileWithIcon text="Before" icon="code"/>, <FileWithIcon text="After" icon="code" />]}>
-
-      <tab>
-
-      ```sql file=./prisma/migrations/20210308092620_rename_migration/migration.sql
-      ALTER TABLE "Profile" DROP COLUMN "biograpy",
-      ADD COLUMN  "biography" TEXT NOT NULL;
-      ```
-
-      </tab>
-
-      <tab>
-
-      ```sql file=./prisma/migrations/20210308092620_rename_migration/migration.sql
-      ALTER TABLE "Profile"
-      RENAME COLUMN "biograpy" TO "biography"
-      ```
-      </tab>
-
-      </TabbedContent>
-
-1. Save and apply the migration:
+1. Generate a migration:
 
    ```terminal
    npx prisma migrate dev
    ```
 
-### Changing the direction of a 1-1 relation
+    Your `_prisma_migrations` table now has two entries:
 
-To change the direction of a 1-1 relation:
+    | id | checksum | finished\_at | migration\_name | logs | rolled\_back\_at | started\_at | applied\_steps\_count |
+    | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+    | 5f285eeb-3714-461c-bb3a-03a7adad6aad | 1beaf4ec9e8cfdc1ffa 546aa0b0d94ba2b382293d 7b7237619202f2372c | 2021-03-09 14:55:38.712883 | 20210305110829\_first\_migration | NULL | NULL | 2021-03-09 14:55:38.542458 | 1 |
+    | 034e198c-dd9f-482a-afdc-26437708ed1e | b12be494d0f81 716d6732ae221b02a65677c6 2aafbb76f6e3fea4929f77f3d | 2021-03-09 14:55:38.767893 | 20210308102042\_change\_1\_1 | NULL | NULL | 2021-03-09 14:55:38.724587 | 1 |
 
-1. Make the change in the schema:
+    Your `migrations` folder now has two migrations:
 
-   ```prisma
-   model User {
-    id      Int      @id @default(autoincrement())
-    name    String
-    posts   Post[]
-    profile Profile?
-    profileId  @relation(fields: profileId, references: id)
-   }
-
-    model Profile {
-    id Int @id @default(autoincrement())
-    biography String
-    user User
-    }
+    ```
+    migrations/
+    └─ 20210305110829_first_migration/
+      └─ migration.sql
+    └─ 20210305120829_add_fields/
+      └─ migration.sql    
     ```
 
-1. Run the following command to create a **draft migration** that you can edit before applying to the database:
+### Change a field type to a compatible type
 
-    <CodeWithResult expanded={true}>
-    <Cmd>
+1. Change the `name` field to a `varchar(50)` (default is `text`):
 
-      ```terminal
-      npx prisma migrate dev --name rename-migration --create-only
-      ```
+```prisma highlight=3;delete|4;add
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  name  String @db.VarChar(50)
+  posts Post[]
+  @@unique([name])
+}
+```
 
-    </Cmd>
-    <CmdResult>
+1. Generate a migration:
 
-      ```
-      ⚠️  There will be data loss when applying the migration:
+   ```terminal
+   npx prisma migrate dev --name type-change
+   ```
 
-      • The migration will add a unique constraint covering the columns `[profileId]` on the table `User`. If there are existing duplicate values, the migration will fail.
-      ```
+    Your `_prisma_migrations` table now has three entries:
 
-    </CmdResult>
-    </CodeWithResult>
+    | id | checksum | finished\_at | migration\_name | logs | rolled\_back\_at | started\_at | applied\_steps\_count |
+    | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+    | 5f285eeb-3714-461c-bb3a-03a7adad6aad | 1beaf4ec9e8cfdc1ffa 546aa0b0d94ba2b382293d 7b7237619202f2372c | 2021-03-09 14:55:38.712883 | 20210305110829\_first\_migration | NULL | NULL | 2021-03-09 14:55:38.542458 | 1 |
+    | 034e198c-dd9f-482a-afdc-26437708ed1e | b12be494d0f81 716d6732ae221b02a65677c6 2aafbb76f6e3fea4929f77f3d | 2021-03-09 14:55:38.767893 | 20210308102042\_change\_1\_1 | NULL | NULL | 2021-03-09 14:55:38.724587 | 1 |
+    | 932e198c-2d9f-182a-afdc-26437708ed1e | cd14e494d0f81 216d3732ae221b02a65677c6 fddfbb76f6e3fea4929f77f3d | 2021-03-09 14:55:38.767893 | 20210308102042\_change\_1\_1 | NULL | NULL | 2021-03-09 14:55:38.724587 | 1 |
 
-1. Edit the draft migration as shown:
+    Your `migrations` folder now has two migrations:
 
-      <TabbedContent tabs={[<FileWithIcon text="Before" icon="code"/>, <FileWithIcon text="After" icon="code"/>]}>
+    ```
+    migrations/
+    └─ 20210305110829_first_migration/
+      └─ migration.sql
+    └─ 20210305120829_add_fields/
+      └─ migration.sql    
+    ```
 
-      <tab>
 
-      ```sql
-      -- DropForeignKey
-      ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
+### Advanced scenarios
 
-        -- DropIndex
-      DROP INDEX "Profile_userId_unique";
+* Prototyping
+* 
 
-      -- AlterTable
-      ALTER TABLE "Profile" DROP COLUMN "userId";
+## Write a seed script
 
-      -- AlterTable
-      ALTER TABLE "User" ADD COLUMN     "profileId" INTEGER NOT NULL;
+You should expect to reset your database
 
-      -- CreateIndex
-      CREATE UNIQUE INDEX "User_profileId_unique" ON "User"("profileId");
+## Advanced scenarios
 
-      -- AddForeignKey
-      ALTER TABLE "User" ADD FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      ```
 
-      </tab>
-
-      <tab>
-
-      ```sql
-      -- DropForeignKey
-      ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
-
-      -- DropIndex
-      DROP INDEX "Profile_userId_unique";
-
-      -- AlterTable
-      ALTER TABLE "User" ADD COLUMN "profileId" INTEGER;
-
-      UPDATE "User"
-      SET "profileId" = "Profile".id
-      FROM "Profile"
-      WHERE "User".id = "Profile"."userId";
-
-      ALTER TABLE "User" ALTER COLUMN "profileId" SET NOT NULL;
-
-      -- AlterTable
-      ALTER TABLE "Profile" DROP COLUMN "userId";
-
-      -- CreateIndex
-      CREATE UNIQUE INDEX "User_profileId_unique" ON "User"("profileId");
-
-      -- AddForeignKey
-      ALTER TABLE "User" ADD FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      ```
-
-      </tab>
-
-      </TabbedContent>
-
-### Populating new required fields with data from existing records
-
-For example, changing name to mandatory `firstName` and `lastName` fields:
-
-## Managing migration files in source control
+## Manage migration files in source control
 
 Folders to add:
 
-* `./prisma/migrations/*`
+- `./prisma/migrations/*`
