@@ -12,7 +12,6 @@ const TabbedContent = ({ tabs, children }: CodeBlockProps) => {
   const tabContent =
     children &&
     children.filter((child: any) => child.props && child.props.originalType === 'tab')[activeIndex]
-console.log(children)
   return (
     <Wrapper>
       {tabs && Array.isArray(tabs) && (

@@ -85,7 +85,7 @@ const handleRawBody = node => {
     heading: removeInlineCode(fSection.heading),
     content: isApiTerm(fSection.para)
       ? finalSections[index + 1].para
-      : fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
+      : fSection.para.replace(/[\*\/\n/{\}\|\`\/|:\<\>\[\]]+/g, ' ').trim(),
     path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
       techParams ? '-' + techParams : ''
     }${getTitlePath(fSection)}`,
@@ -154,3 +154,6 @@ module.exports = {
   indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
   queries,
 }
+
+
+
