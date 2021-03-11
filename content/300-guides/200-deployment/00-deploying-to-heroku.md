@@ -195,7 +195,7 @@ Deploy the app by pushing the changes to the Heroku app repository:
 git push heroku main
 ```
 
-This will trigger a build and deploy your application to Heroku. Heroku will also run the `npx prisma migrate deploy` command which executes the migrations to create the database schema before deploying the app (as defined in the `release` step of the `Profile`).
+This will trigger a build and deploy your application to Heroku. Heroku will also run the `npx prisma migrate deploy` command which executes the migrations to create the database schema before deploying the app (as defined in the `release` step of the `Procfile`).
 
 **Checkpoint:** `git push` will emit the logs from the build and release phase and display the URL of the deployed app:
 
