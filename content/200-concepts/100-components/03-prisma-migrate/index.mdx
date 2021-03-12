@@ -9,8 +9,12 @@ tocDepth: 3
 
 Prisma Migrate is an **imperative database schema migration tool** that enables you to:
 
-* Keep your database schema in sync with your evolving [Prisma schema]() 
+* Keep your database schema in sync with your [Prisma schema](../prisma-schema) as it evolves
 * Maintain existing data in your database
+
+Prisma Migrate generates a history of `.sql` files, and plays a role in both [development](#development) and [deployment](#deployment).
+
+> If you are at the schema prototyping stage, consider using the [`db push` command](#prisma-migrate-and-db-push).
 
 </TopBlock>
 
@@ -83,7 +87,7 @@ To get started with Prisma Migrate in a development environment:
     </CmdResult>
     </CodeWithResult>
 
-    Your Prisma schema is now in sync with your database schema.
+    Your Prisma schema is now in sync with your database schema and you have initialized a migration history.
 
 1. Evolve your schema by introducing additional fields:
 
@@ -116,24 +120,35 @@ To get started with Prisma Migrate in a development environment:
     </CmdResult>
     </CodeWithResult>
 
-    Your Prisma schema is once again in sync with your database schema.
+    Your Prisma schema is once again in sync with your database schema, and your migration history contains two migrations.
+
+You now have a migration history that you can [source control](#team-development) and use to [deploy changes to test environments and production](#deployment).
 
 ## Prisma Migrate workflow
 
 ### Development
 
-A simple Prisma Migrate workflow includes:
+In a development environment, you should always use the following command to generate and apply migrations:
 
+```terminal
+npx prisma migrate dev
+```
+
+This command:
+
+1. Replays the existing migration history in the [shadow database](shadow-database) to create a baseline
+1. Applies unappplied migrations (for example, migrations1)
 1. Detecting changes in your [Prisma schema](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-schema), which is the **source of truth** for your data model
 2. Generating `.sql` migration files with changes (which you can [optionally modify]())
 3. Applying the migration files to your database
 
-> In a development environment, Prisma Migrate uses a [shadow database](shadow-database) to detect issues such as schema drift.
-Add migration history to source control, share with team, and [deploy]() to production and testing environments.
+#### Advanced migrations
 
-### Advanced migrations
+Modify SQL e.g. to preserve data - split 'name' into 'first name and last name' you need to write some custom SQL to preserve your data
 
-### Team development
+#### Team development
+
+Source control, sorting out issues
 
 ### Deployment
 
@@ -150,23 +165,46 @@ Deployment overview guide
 Examples of prisma migrate in deployment
 Production troubleshooting
 
+### Advisory locking
+
+## Prisma Migrate artifacts
+
+Prisma Migrate generates the following:
+
+* A `prisma/migrations` folder with migration sub-folders and `.sql` files
+* A `prisma/migrations/migration_lock.tml` file, which is used to detect if you have [attempted to change providers](prisma-migrate-limitations-issues#you-cannot-switch-database-providers)
+* A `_prisma_migrations` table in the database
+
+You should commit the entire `prisma/migrations` folder to source control, including `migration_lock.toml`.
+
+## Advisory locking
+
+Make sure multiple migrations do not run at the same time
+
+* 10 second timeout (not configurable)
+* Uses default advisory locking mechanism for the provider
+
+  * Postgrse
+  * Mysql
+  * SQL server
 
 ## Prisma Migrate and <inlinecode>db push</inlinecode>
 
-Two ways to synchronize schema and db - migrate or `db push`. `db push` command used in prorotyping, accept data loss. See guide.
+Two ways to synchronize your Prisma schema and the database: Prisma Migrate or `db push`.
 
-`db push` works well if:
+`db push` is well suited for prototyping, and works well if:
 
--   You want to quickly prototype and iterate on schema design locally without the need to deploy these changes to other environments such as other developers, or staging and production environments.
--   You are prioritizing reaching a **desired end-state** and not the changes or steps executed to reach that end-state. There is no way to Preview the changes that will be made to the database.
--   You do not need control over how schema changes impact data. There is no way to orchestrate schema and data migrations - if `db push` anticipates that changes will result in data loss, it will require specific confirmation via a `--accept-data-loss` option. You can either accept data loss by specifying the option or stop the process, but there is no way to customize the changes.
+-   You want to **quickly prototype and iterate** on schema design locally without the need to deploy these changes to other environments such as other developers, or staging and production environments.
+-   You are prioritizing reaching a **desired end-state** and not the changes or steps executed to reach that end-state (there is no way to preview changes made by `db push`)
+-   You do not need to control how schema changes impact data. There is no way to orchestrate schema and data migrations - if `db push` anticipates that changes will result in data loss, you can either accept data loss with the `--accept-data-loss` option or stop the process - there is no way to customize the changes.
 
-`db push` is not recommended if:
+`db push` is **not recommended** if:
 
--   You want to replicate your schema changes in other environments where there could be important data you cannot afford to lose. You can use `db push` for prototyping, but you should use migrations to commit the schema changes and apply these in your other environments.
--   You want fine-grained control over how the schema changes are executed - for example, renaming a column instead of dropping it and creating a new one.
+-   You want to replicate your schema changes in other environments without losing data. You can use `db push` for prototyping, but you should use migrations to commit the schema changes and apply these in your other environments.
+-   You want fine-grained control over how the schema changes are executed - for example, [renaming a column instead of dropping it and creating a new one](../../../guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios#renaming-a-field).
 -   You want to keep track of changes made to the database schema over time. `db push` does not create any artifacts that allow you to keep track of these changes.
--   You want the schema changes to be reversible. You can use `db push` again to revert to the original state, but this might result in data loss and there will be no mechanism for you to orchestrate these changes.
+-   You want the schema changes to be reversible. You can use `db push` again to revert to the original state, but this might result in data loss.
+
 ## Commands
 
 See [Prisma Migrate CLI reference](../../../reference/api-reference/command-reference#prisma-migrate-preview) <span class="api"></span>.
