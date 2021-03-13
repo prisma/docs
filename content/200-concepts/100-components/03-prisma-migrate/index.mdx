@@ -9,12 +9,12 @@ tocDepth: 3
 
 Prisma Migrate is an **imperative database schema migration tool** that enables you to:
 
-* Keep your database schema in sync with your [Prisma schema](../prisma-schema) as it evolves
+* Keep your database schema in sync with your [Prisma schema](../prisma-schema) as it evolves _and_
 * Maintain existing data in your database
 
-Prisma Migrate generates a history of `.sql` files, and plays a role in both [development](#development) and [deployment](#deployment).
+Prisma Migrate generates [a history of `.sql` migration files](#migration-history), and plays a role in both [development](#development) and [deployment](#deployment).
 
-> If you are at the schema prototyping stage, consider using the [`db push` command](#prisma-migrate-and-db-push).
+> **Tip**: If you are prototyping, consider using the [`db push` command](db-push) - see [Schema prototyping with `db push`]() <span class="guide"></span> for examples.
 
 </TopBlock>
 
@@ -87,7 +87,13 @@ To get started with Prisma Migrate in a development environment:
     </CmdResult>
     </CodeWithResult>
 
-    Your Prisma schema is now in sync with your database schema and you have initialized a migration history.
+    Your Prisma schema is now in sync with your database schema and you have initialized a migration history:
+
+    ```
+    migrations/
+      └─ 20210313140442_init/
+        └─ migration.sql
+    ```    
 
 1. Evolve your schema by introducing additional fields:
 
@@ -120,21 +126,101 @@ To get started with Prisma Migrate in a development environment:
     </CmdResult>
     </CodeWithResult>
 
-    Your Prisma schema is once again in sync with your database schema, and your migration history contains two migrations.
+    Your Prisma schema is once again in sync with your database schema, and your migration history contains two migrations:
+
+    ```
+    migrations/
+      └─ 20210313140442_init/
+        └─ migration.sql
+      └─ 20210313140442_added_job_title/
+        └─ migration.sql        
+    ```        
 
 You now have a migration history that you can [source control](#team-development) and use to [deploy changes to test environments and production](#deployment).
 
-## Prisma Migrate workflow
+## Migration history
 
-### Development
+Your migration history is the story of the changes to your data model, and is represented by:
 
-In a development environment, you should always use the following command to generate and apply migrations:
+* A `prisma/migrations` folder with a sub-folder and `migration.sql` file for each migration:
+
+    ```
+    migrations/
+      └─ 20210313140442_init/
+        └─ migration.sql
+      └─ 20210313140442_added_job_title/
+        └─ migration.sql
+    ```
+
+  This folder is the **source of truth** for the history of your data model.
+
+* A `_prisma_migrations` table in the database, which is used to check:
+
+  * If a migration has been run against the database  
+  * If an applied migration has been deleted
+  * If an applied migration has been changed
+
+  If you change or delete a migration (**not** recommended), the next steps depend on whether you are in a [development environment](#development-environments) (and therefore using `migrate dev`) or a [production / testing environment](#production-and-testing-environments) (and therefore using `migrate deploy`).
+
+
+### Do not edit or delete migrations that have been applied
+
+I general, you **should not edit or delete** a migration that have already been applied. Doing so can lead to inconsistencies between development and production environment migration histories, which may have unforseen consequences - even if the change does not _appear_ to break anything at first.
+
+The following scenario simulates a change that creates a seemingly harmless inconsistency:
+
+1. Modify an **existing migration** that has **already been applied** in a development environment by changing the value of `VARCHAR(550)` to `VARCHAR(560)`:
+
+   ```sql file=./prisma/migrations/20210310143435_default_value/migrations.sql
+     -- AlterTable
+    ALTER TABLE "Post" ALTER COLUMN "content" SET DATA TYPE VARCHAR(560);   
+    ```
+
+    After making this change, the end state of the migration history no longer matches the Prisma schema, which still has `@db.VarChar(550)`.
+
+1. Run `prisma migrate dev` - Prisma Migrate detects that a migration has changed, and asks to `reset` the database:
+
+   ```bash
+   ? The migration `20210310143435_change_type` was modified after it was applied.
+
+    We need to reset the PostgreSQL database "migrate-example" at "localhost:5432".
+    Do you want to continue? All data will be lost. » (y/N)
+    ```
+
+1. If you accept resetting, Prisma Migrate resets the database and replays all migrations, including the migration you edited.
+
+1. After applying all existing migrations, Prisma Migrate compares the end state of the migration history to the Prisma schema and detects a discrepancy:
+
+    * Prisma schema has `@db.VarChar(550)`
+    * Database schema has `VARCHAR(560)`
+
+1. Prisma Migrate generates a new migration to change the value back to `550`, because the end state of the migration history should match the Prisma schema.
+
+1. From now on, when you use `prisma migrate deploy` to deploy migrations to production and test environments, Prisma Migrate will always **warn you** that migration histories do not match (and continue to warn you each time you run the command ) - even though the schema end states match:
+
+  ```bash
+  6 migrations found in prisma/migrations
+  WARNING The following migrations have been modified since they were applied:
+  20210310143435_change_type
+  ```
+
+A change that does not appear to break anything when you `reset` can hide problems problems - you may end up with a bug in production that you cannot replicate in development, or the other way around - particularly if the change concerns a highly customized migration. 
+
+If Prisma Migrate reports a missing or edited migration that has already been applied, we recommend fixing the **root cause** (restoring the file or reverting the change) rather than resetting.
+
+### Source-controlling the migration history
+
+You should commit the entire `prisma/migrations` folder to source control. This includes the `prisma/migrations/migration_lock.tml` file, which is used to detect if you have [attempted to change providers](prisma-migrate-limitations-issues#you-cannot-switch-database-providers).
+
+## Development environments
+
+In a development environment, use the `migrate dev` command to generate and apply migrations:
 
 ```terminal
 npx prisma migrate dev
 ```
 
-In the simplest case, it does the following:
+This command:
 
 1. Applies pending migrations
 2. Generate a new migration based on the changes in the Prisma schema
@@ -150,18 +236,11 @@ When the database is reset, if Prisma Migrate detects a seed script, the databas
 
 > **Note**: For a simple and integrated way to re-create data in your development database as often as needed, check out our [seeding guide](../../../guides/application-lifecycle/seed-database).
 
-This command:
-
-1. Replays the existing migration history in the [shadow database](shadow-database) to create a baseline
-1. Applies unappplied migrations (for example, migrations1)
-1. Detecting changes in your [Prisma schema](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-schema), which is the **source of truth** for your data model
-2. Generating `.sql` migration files with changes (which you can [optionally modify]())
-3. Applying the migration files to your database
-
-
 ```terminal
 npx prisma migrate reset
 ```
+
+This command:
 
 1. Drops the database
 1. Creates a new database with the same name
@@ -175,9 +254,9 @@ Modify SQL e.g. to preserve data - split 'name' into 'first name and last name' 
 
 #### Team development
 
-Source control, sorting out issues
+* Team development and troubleshooting
 
-### Deployment
+## Production and testing environments
 
 ```terminal
 npx prisma migrate deploy
@@ -194,18 +273,6 @@ Production troubleshooting
 
 ### Advisory locking
 
-## Prisma Migrate artifacts
-
-Prisma Migrate generates the following:
-
-* A `prisma/migrations` folder with migration sub-folders and `.sql` files
-* A `prisma/migrations/migration_lock.tml` file, which is used to detect if you have [attempted to change providers](prisma-migrate-limitations-issues#you-cannot-switch-database-providers)
-* A `_prisma_migrations` table in the database
-
-You should commit the entire `prisma/migrations` folder to source control, including `migration_lock.toml`.
-
-## Advisory locking
-
 Make sure multiple migrations do not run at the same time
 
 * 10 second timeout (not configurable)
@@ -214,6 +281,8 @@ Make sure multiple migrations do not run at the same time
   * Postgrse
   * Mysql
   * SQL server
+
+Used by `deploy` and `resolve`
 
 ## Commands
 
@@ -230,3 +299,7 @@ In a production environment, or
 ```terminal
 npx prisma migrate deploy
 ```
+
+## FAQ
+
+### When should I use <inlinecode>migrate deploy</inlinecode> and when should I use <inlinecode>migrate dev</inlinecode>?
