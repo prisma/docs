@@ -204,7 +204,7 @@ The following scenario simulates a change that creates a seemingly harmless inco
   20210310143435_change_type
   ```
 
-A change that does not appear to break anything when you `reset` can hide problems problems - you may end up with a bug in production that you cannot replicate in development, or the other way around - particularly if the change concerns a highly customized migration. 
+A change that does not appear to break anything after a `migrate reset` can hide problems - you may end up with a bug in production that you cannot replicate in development, or the other way around - particularly if the change concerns a highly customized migration. 
 
 If Prisma Migrate reports a missing or edited migration that has already been applied, we recommend fixing the **root cause** (restoring the file or reverting the change) rather than resetting.
 
@@ -222,19 +222,18 @@ npx prisma migrate dev
 
 This command:
 
-1. Applies pending migrations
-2. Generate a new migration based on the changes in the Prisma schema
-3. Applies the new migration to the database and updates the `_prisma_migrations` table
+1. Replays the existing migration history in the [shadow database](shadow-database) in order to detect schema drift (edited or deleted migration file, or a manual changes to the database schema)
+1. Applies pending migrations to the shadow database (for example, new migrations created by colleagues)
+2. Generates a new migration from any changes you made to the Prisma schema before running `migrate dev`
+3. Applies all unapplied migrations to the development database and updates the `_prisma_migrations` table
 4. Trigger the generation of artifacts (for example, the Prisma Client)
 
 The `migrate dev` command will prompt you to reset the database in the following scenarios:
 
-- Migration history conflicts caused by modified or missing migration
+- Migration history conflicts caused by [modified or missing migrations](#do-not-edit-or-delete-migrations-that-have-been-applied)
 - The database schema has drifted away from the end-state of the migration history
 
-When the database is reset, if Prisma Migrate detects a seed script, the database will be automatically seeded.
-
-> **Note**: For a simple and integrated way to re-create data in your development database as often as needed, check out our [seeding guide](../../../guides/application-lifecycle/seed-database).
+You can also `reset` the database yourself to undo manual changes or `db push` experiments by running:
 
 ```terminal
 npx prisma migrate reset
@@ -245,16 +244,31 @@ This command:
 1. Drops the database
 1. Creates a new database with the same name
 1. Applies all migrations
+1. Runs seed scripts
 
-> **Note**: For a simple way to re-create data in your development database as often as needed, check out our [seeding guide](../../../guides/application-lifecycle/seed-database).
+> **Note**: For a simple and integrated way to re-create data in your development database as often as needed, check out our [seeding guide](../../../guides/application-lifecycle/seed-database).
 
-#### Advanced migrations
+### Customizing migrations to prevent data loss
 
-Modify SQL e.g. to preserve data - split 'name' into 'first name and last name' you need to write some custom SQL to preserve your data
+In some cases, you need to modify your migration **before applying it** to retain existing data. This is the case if you, for example:
 
-#### Team development
+* Introduce a significant refactor (for example, changing blog post tags from a `String[]` to a `Tag[]`, which involves introducing a new model)
+* [Rename a field]() (by default, Prisma Migrate will drop the existing field)
+* [Change the direction of a 1-1 relationship]()
 
-* Team development and troubleshooting
+The `--create-only` command allows you to create a migration without applying it:
+
+```terminal
+npx prisma migrate dev --create-only
+```
+
+To apply the edited migration, run `prisma migrate dev` again.
+
+See: [Advanced migrations]() <span class="guide"></span> for examples
+
+### Team development
+
+* Team development and troubleshooting <span class="guide"></span>
 
 ## Production and testing environments
 
@@ -273,33 +287,25 @@ Production troubleshooting
 
 ### Advisory locking
 
-Make sure multiple migrations do not run at the same time
+Prisma Migrate makes use of advisory locking when you run production commands like:
 
-* 10 second timeout (not configurable)
-* Uses default advisory locking mechanism for the provider
+* `prisma migrate deploy`
+* `prisma migrate resolve`
 
-  * Postgrse
-  * Mysql
-  * SQL server
+This safeguard ensures that multiple commands cannot run at the same time - for example, if you merge two pull requests in quick succession.
 
-Used by `deploy` and `resolve`
+Advisory locking has a **10 second timeout** (not configurable), and uses the default advisory locking mechanism available in the underlying provider:
+
+  * [PostgreSQL](https://www.postgresql.org/docs/9.4/explicit-locking.html#ADVISORY-LOCKS)
+  * [MySQL](https://dev.mysql.com/doc/refman/5.7/en/locking-functions.html)
+  * [SQL server](https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-getapplock-transact-sql?view=sql-server-ver15)
+
+Prisma Migrate's implementation of advisory locking is purely to avoid catastrophic errors - if your command times out, you will need to run it again.
 
 ## Commands
 
-See [Prisma Migrate CLI reference](../../../reference/api-reference/command-reference#prisma-migrate) <span class="api"></span>.
+See [Prisma Migrate CLI reference](../../../reference/api-reference/command-reference#prisma-migrate) <span class="api"></span> for all available Prisma Migrate commands.
 
-In a development environment, 
+<!-- ## FAQ
 
-```terminal
-npx prisma migrate dev
-```
-
-In a production environment, or 
-
-```terminal
-npx prisma migrate deploy
-```
-
-## FAQ
-
-### When should I use <inlinecode>migrate deploy</inlinecode> and when should I use <inlinecode>migrate dev</inlinecode>?
+### When should I use <inlinecode>migrate deploy</inlinecode> and when should I use <inlinecode>migrate dev</inlinecode>? -->
