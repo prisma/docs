@@ -114,6 +114,11 @@ const config = {
             codeBlock: false,
           },
           {
+            text: 'Should you use Prisma?',
+            url: 'concepts/overview/should-you-use-prisma',
+            codeBlock: false,
+          },
+          {
             text: 'Prisma in your stack',
             url: 'concepts/overview/prisma-in-your-stack',
             codeBlock: false,
@@ -223,11 +228,11 @@ const config = {
 
     GuideLinkData: [
       {
-        title: 'Spotlight: Transaction guide',
+        title: 'Developing with Prisma Migrate',
         color: '#48BB78',
         small: false,
-        content: 'Explore techniques for handling transactions with Prisma Client.',
-        url: 'guides/prisma-guides/prisma-client-transactions-guide',
+        content: 'Get started with Prisma Migrate.',
+        url: 'guides/application-lifecycle/developing-with-prisma-migrate',
       },
       {
         title: 'Using Prisma',
