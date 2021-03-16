@@ -2,15 +2,15 @@ require('dotenv').config({
   path: `.env`,
 })
 
-const flat = (array) => {
-  var result = [];
-  array.forEach(function (a) {
-      result.push(a);
-      if (Array.isArray(a.items)) {
-          result = result.concat(flat(a.items));
-      }
-  });
-  return result;
+const flat = array => {
+  var result = []
+  array.forEach(function(a) {
+    result.push(a)
+    if (Array.isArray(a.items)) {
+      result = result.concat(flat(a.items))
+    }
+  })
+  return result
 }
 
 const removeInlineCode = (heading, path) =>
@@ -27,8 +27,7 @@ const handleRawBody = node => {
     .split('---')
     .slice(2)
     .join('---')
-  const blocks = rawBodyWithoutFrontmatter
-    .split(/#{2,}/i)
+  const blocks = rawBodyWithoutFrontmatter.split(/#{2,}/i)
   const headingWithcontent = blocks
     .filter(block => block !== '\n\n')
     .map(block => {
@@ -58,7 +57,7 @@ const handleRawBody = node => {
         !section.includes('CmdResult>') &&
         !section.includes('<Subsections') &&
         !section.includes('Cmd>') &&
-        !section.includes('! prettier ignore')
+        !section.includes('<!-- prettier-ignore -->')
     )
     filteredSections.map(
       para => (para !== '\n' || para !== '') && finalSections.push({ para, heading: fSec.heading })
@@ -73,6 +72,10 @@ const handleRawBody = node => {
     return tocItem ? removeInlineCode(tocItem.url, true) : ''
   }
 
+  const techParams = `${
+    rest.langSwitcher ? `${rest.langSwitcher[0]}${rest.dbSwitcher ? '-' : ''}` : ''
+  }${rest.dbSwitcher ? `${rest.dbSwitcher[0]}` : ''}`
+
   const records = finalSections.map((fSection, index) => ({
     id: index,
     objectID: rest.objectID,
@@ -82,8 +85,10 @@ const handleRawBody = node => {
     heading: removeInlineCode(fSection.heading),
     content: isApiTerm(fSection.para)
       ? finalSections[index + 1].para
-      : fSection.para.replace(/[\*\/\n/{\}\|\-\`\/|:\<\>\[\]]+/g, ' ').trim(),
-    path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${getTitlePath(fSection)}`,
+      : fSection.para.replace(/[\*\/\n/{\}\|\`\/|:\<\>\[\]]+/g, ' ').trim(),
+    path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
+      techParams ? '-' + techParams : ''
+    }${getTitlePath(fSection)}`,
   }))
 
   return records
@@ -123,6 +128,8 @@ const queries = [
                 }
                 frontmatter {
                   title
+                  langSwitcher
+                  dbSwitcher
                 }
                 tableOfContents
               }
@@ -147,3 +154,6 @@ module.exports = {
   indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
   queries,
 }
+
+
+
