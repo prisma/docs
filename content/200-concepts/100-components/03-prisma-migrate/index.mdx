@@ -2,25 +2,27 @@
 title: 'Prisma Migrate'
 metaTitle: 'Prisma Migrate | Database, Schema, SQL Migration Tool'
 metaDescription: 'Prisma Migrate is a database migration tool available via the Prisma CLI that integrates with Prisma schema for data modeling.'
-preview: true
 tocDepth: 3
 ---
 
 <TopBlock>
 
-Prisma Migrate is an imperative database schema migration tool that enables you to make changes to your database schema. Migrations are auto-generated based on schema changes but are fully customizable. A simple Prisma Migrate workflow includes:
+Prisma Migrate is an **imperative database schema migration tool** that enables you to:
 
-1. Detecting changes in your [Prisma schema](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-schema), which is the source of truth for your data model
-2. Generating `.sql` migration files with changes (which you can optionally modify)
-3. Applying the migration files to your database
+- Keep your database schema in sync with your [Prisma schema](../prisma-schema) as it evolves _and_
+- Maintain existing data in your database
 
-Prisma Migrate was introduced as a Preview feature in [2.13.0](https://github.com/prisma/prisma/releases/tag/2.13.0) and replaces [legacy Prisma Migrate](legacy-migrate).
+Prisma Migrate generates [a history of `.sql` migration files](#migration-history), and plays a role in both [development](#development-environments) and [deployment](#production-and-testing-environments).
+
+> **Tip**: If you are prototyping, consider using the [`db push` command](db-push) - see [Schema prototyping with `db push`](../../../guides/application-lifecycle/prototyping-schema-db-push) <span class="guide"></span> for examples.
 
 </TopBlock>
 
-## Basic example
+## Getting started with Prisma Migrate
 
-The following example demonstrates how to get started with Prisma Migrate:
+> See [Developing with Prisma Migrate](../../../guides/application-lifecycle/developing-with-prisma-migrate) <span class="guide"></span> for a more in-depth development workflow.
+
+To get started with Prisma Migrate in a development environment:
 
 1. Create a Prisma schema:
 
@@ -45,331 +47,281 @@ The following example demonstrates how to get started with Prisma Migrate:
    }
    ```
 
-1. Migrate your schema - you will be prompted to name the migration file (for example, `first_migration`):
+   > **Tip**: You can use [native type mapping attributes](type-mapping) in your schema to decide which exact database type to create (for example, `String` can map to `varchar(100)` or `text`).
 
-  <CodeWithResult>
+1. Create the first migration:
 
-  <Cmd>
+   <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
+   <Cmd>
 
-    ```terminal
-    prisma migrate dev --preview-feature
-    ```
+   ```terminal
+   prisma migrate dev --name init
+   ```
 
-  </Cmd>
+   </Cmd>
+   <CmdResult>
 
-  <CmdResult>
+   ```sql
+     -- CreateTable
+   CREATE TABLE "User" (
+   "id" SERIAL,
+       "name" TEXT NOT NULL,
 
-    ```
-    √ Name of migration ... first-migration
+       PRIMARY KEY ("id")
+   );
+     -- CreateTable
+   CREATE TABLE "Post" (
+   "id" SERIAL,
+       "title" TEXT NOT NULL,
+       "published" BOOLEAN NOT NULL DEFAULT true,
+       "authorId" INTEGER NOT NULL,
 
-    Prisma Migrate created and applied the following migration(s) from new schema changes:
+       PRIMARY KEY ("id")
+   );
 
-    migrations/
-    └─ 20201127130602_first_migration/
-      └─ migration.sql
+     -- AddForeignKey
+   ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+   ```
 
-    ✔ Generated Prisma Client (2.13.0-dev.3) to .\node_modules\@prisma\client in 146ms
+   </CmdResult>
+   </CodeWithResult>
 
-    Everything is now in sync.
-    ```
+   Your Prisma schema is now in sync with your database schema and you have initialized a migration history:
 
-  </CmdResult>
+   ```
+   migrations/
+     └─ 20210313140442_init/
+       └─ migration.sql
+   ```
 
-  </CodeWithResult>
-  
-    Prisma Migrate creates a `migration.sql` file with the following SQL and runs it against your database:
+1. Evolve your schema by introducing additional fields:
 
-    ```sql
-      -- CreateTable
-    CREATE TABLE "User" (
-    "id" SERIAL,
-        "name" TEXT NOT NULL,
-
-        PRIMARY KEY ("id")
-    );
-      -- CreateTable
-    CREATE TABLE "Post" (
-    "id" SERIAL,
-        "title" TEXT NOT NULL,
-        "published" BOOLEAN NOT NULL DEFAULT true,
-        "authorId" INTEGER NOT NULL,
-
-        PRIMARY KEY ("id")
-    );
-
-      -- AddForeignKey
-    ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-    ```
-
-    After your first migration, your Prisma Schema and database are now in sync.
-
-1. Change the schema by adding two new fields:
-
-   - One optional field (`bio`)
-   - One mandatory field with a default value (`jobTitle`)
-
-   ```prisma file=schema.prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
-
+   ```prisma highlight=3;add
    model User {
-     id    Int      @id @default(autoincrement())
-     name  String
-   |  bio   String?
-     posts Post[]
-   |  jobTitle  String  @default("Blogger")
-   }
-
-   model Post {
-     id        Int     @id @default(autoincrement())
-     title     String
-     published Boolean @default(true)
-     authorId  Int
-     author    User    @relation(fields: [authorId], references: [id])
+     id       Int      @id @default(autoincrement())
+     jobTitle String
+     name     String
+     posts    Post[]
    }
    ```
 
-1. Migrate your schema again:
+1. Create the second migration:
 
-  <CodeWithResult>
+   <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
+   <Cmd>
 
-  <Cmd>
+   ```terminal
+   prisma migrate dev --name added_job_title
+   ```
 
-    ```terminal
-    prisma migrate dev --preview-feature
-    ```
+   </Cmd>
+   <CmdResult>
 
-  </Cmd>
+   ```sql
+     -- AlterTable
+   ALTER TABLE "User" ADD COLUMN     "jobTitle" TEXT NOT NULL;
+   ```
 
-  <CmdResult>
+   </CmdResult>
+   </CodeWithResult>
 
-    ```
-    √ Name of migration ... added_bio_jobTitle
-    Prisma Migrate created and applied the following migration(s) from new schema changes:
+   Your Prisma schema is once again in sync with your database schema, and your migration history contains two migrations:
 
-    migrations/
-      └─ 20201127133437_added_bio_job_title/
-        └─ migration.sql
+   ```
+   migrations/
+     └─ 20210313140442_init/
+       └─ migration.sql
+     └─ 20210313140442_added_job_title/
+       └─ migration.sql
+   ```
 
-    ✔ Generated Prisma Client (2.13.0-dev.3) to .\node_modules\@prisma\client in 118ms
+You now have a migration history that you can [source control](#team-development) and use to [deploy changes to test environments and production](#production-and-testing-environments).
 
-    Everything is now in sync.
-    ```
+## Migration history
 
-  </CmdResult>
+Your migration history is the story of the changes to your data model, and is represented by:
 
-  </CodeWithResult>
+- A `prisma/migrations` folder with a sub-folder and `migration.sql` file for each migration:
 
-    Prisma Migrate creates a second `migration.sql` file with the following contents and runs it against your database:
+  ```
+  migrations/
+    └─ 20210313140442_init/
+      └─ migration.sql
+    └─ 20210313140442_added_job_title/
+      └─ migration.sql
+  ```
 
-    ```sql
-    ALTER TABLE "User" ADD COLUMN     "bio" TEXT,
-    ADD COLUMN     "jobTitle" TEXT NOT NULL DEFAULT 'Blogger';
-    ```
+  This folder is the **source of truth** for the history of your data model.
 
-    Your Prisma Schema and database are now in sync again.
+- A `_prisma_migrations` table in the database, which is used to check:
 
-1. Push the schema and the `prisma/migrations` folder to a shared repository - your team can now re-play the changes you made on their local database and contribute their own migrations:
+  - If a migration has been run against the database
+  - If an applied migration has been deleted
+  - If an applied migration has been changed
 
-  <CodeWithResult>
+  If you change or delete a migration (**not** recommended), the next steps depend on whether you are in a [development environment](#development-environments) (and therefore using `migrate dev`) or a [production / testing environment](#production-and-testing-environments) (and therefore using `migrate deploy`).
 
-  <Cmd>
+### Do not edit or delete migrations that have been applied
 
-    ```terminal
-    prisma migrate dev --preview-feature
-    ```
+In general, you **should not edit or delete** a migration that have already been applied. Doing so can lead to inconsistencies between development and production environment migration histories, which may have unforseen consequences - even if the change does not _appear_ to break anything at first.
 
-  </Cmd>
+The following scenario simulates a change that creates a seemingly harmless inconsistency:
 
-  <CmdResult>
+1. Modify an **existing migration** that has **already been applied** in a development environment by changing the value of `VARCHAR(550)` to `VARCHAR(560)`:
 
-    ```
-    Prisma Migrate applied the following unapplied migration(s):
+   ```sql file=./prisma/migrations/20210310143435_default_value/migrations.sql
+     -- AlterTable
+    ALTER TABLE "Post" ALTER COLUMN "content" SET DATA TYPE VARCHAR(560);
+   ```
 
-    migrations/
-      └─ 20201127130602_first_migration/
-        └─ migration.sql
-      └─ 20201127133437_added_bio_job_title/
-        └─ migration.sql
+   After making this change, the end state of the migration history no longer matches the Prisma schema, which still has `@db.VarChar(550)`.
 
-    ✔ Generated Prisma Client (2.13.0-dev.3) to .\node_modules\@prisma\client in 107ms
+1. Run `prisma migrate dev` - Prisma Migrate detects that a migration has changed, and asks to `reset` the database:
 
-    Everything is now in sync.
-    ```
+   ```bash
+   ? The migration `20210310143435_change_type` was modified after it was applied.
 
-  </CmdResult>
+    We need to reset the PostgreSQL database "migrate-example" at "localhost:5432".
+    Do you want to continue? All data will be lost. » (y/N)
+   ```
 
-  </CodeWithResult>
+1. If you accept resetting, Prisma Migrate resets the database and replays all migrations, including the migration you edited.
 
-This example shows a 'happy path' without any complicating factors such as a populated database. For more advanced examples, see [Prisma Migrate flows](prisma-migrate-flows).
+1. After applying all existing migrations, Prisma Migrate compares the end state of the migration history to the Prisma schema and detects a discrepancy:
 
-### Shadow database
+   - Prisma schema has `@db.VarChar(550)`
+   - Database schema has `VARCHAR(560)`
 
-Prisma Migrate uses a second, _temporary_ database when you run development-focused commands such as `prisma migrate dev --preview-feature` and `prisma migrate reset --preview-feature`.
-The shadow database is created and deleted each time you run a command, and is used for tasks such as:
+1. Prisma Migrate generates a new migration to change the value back to `550`, because the end state of the migration history should match the Prisma schema.
 
-- When creating a new migration: replaying the migration history to obtain the final database schema through introspection and create the SQL migrations
-- Detecting drift
+1. From now on, when you use `prisma migrate deploy` to deploy migrations to production and test environments, Prisma Migrate will always **warn you** that migration histories do not match (and continue to warn you each time you run the command ) - even though the schema end states match:
 
-> **Note**: The shadow database is **not** required for production-focused commands: `prisma migrate resolve --preview-feature` and `prisma migrate deploy --preview-feature`.
-
-#### Shadow database user permissions
-
-In order to create and delete the shadow database when using development commands such as `migrate dev` and `migrate reset`, Prisma Migrate currently requires that the database user defined in your `datasource` has permission to **create databases**.
-
-| Database   | Database user requirements                                                                                                                                                                                            |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SQLite     | No special requirements.                                                                                                                                                                                              |
-| MySQL      | Database user must have `CREATE, ALTER, DROP, REFERENCES ON *.*` privileges                                                                                                                                                                       |
-| PostgreSQL | The user must be a super user or have `CREATEDB` privilege. See `CREATE ROLE` ([PostgreSQL official documentation](https://www.postgresql.org/docs/12/sql-createdatabase.html))                                       |
-| SQL Server | The user must be a site admin or have the `SERVER` securable. See the [official documentation](https://docs.microsoft.com/en-us/sql/relational-databases/security/permissions-database-engine?view=sql-server-ver15). |
-
-> If you use a cloud-hosted database for development, see: [Cloud-hosted shadow databases](#cloud-hosted-shadow-databases)
-
-Prisma Migrate throws the following error if it cannot create the shadow database with the credentials your connection string supplied:
-
-```
-Error: A migration failed when applied to the shadow database
-Database error: Error querying the database: db error: ERROR: permission denied to create database
+```bash
+6 migrations found in prisma/migrations
+WARNING The following migrations have been modified since they were applied:
+20210310143435_change_type
 ```
 
-The resolve this error:
+A change that does not appear to break anything after a `migrate reset` can hide problems - you may end up with a bug in production that you cannot replicate in development, or the other way around - particularly if the change concerns a highly customized migration.
 
-- If you are working locally, we recommend that you change the database user's privileges.
-- If you are developing against a cloud-based database (for example, on Heroku), we recommend that you change to a local web environment (such as running your development database on Docker) for the time being and follow the discussions on [GitHub issue #4571](https://github.com/prisma/prisma/issues/4571).
-- If you are developing against a cloud-based database (for example, on Heroku) and **cannot** switch, please remain on version 2.12.0 and follow the discussions on [GitHub issue #4571](https://github.com/prisma/prisma/issues/4571).
-- If you are developing against a cloud-based database (for example, on Heroku) and are currently **prototyping** such that you don't care about generated migration files and only need to apply your Prisma data model to the database schema, you can run [`prisma db push`](../../../reference/api-reference/command-reference#db) instead of the `prisma migrate dev` command.
+If Prisma Migrate reports a missing or edited migration that has already been applied, we recommend fixing the **root cause** (restoring the file or reverting the change) rather than resetting.
 
-> **Important**: The shadow database is _only_ required in a development environment (specifically for the `prisma migrate dev --preview-feature` command) - you **do not** need to make any changes to your production environment.
+### Source-controlling the migration history
 
-#### Cloud-hosted shadow databases
+You should commit the entire `prisma/migrations` folder to source control. This includes the `prisma/migrations/migration_lock.toml` file, which is used to detect if you have [attempted to change providers](prisma-migrate-limitations-issues#you-cannot-switch-database-providers).
 
-Cloud providers do not generally allow you to drop and create databases. If you develop in a cloud-hosted environment:
+## Development environments
 
-1. Create a dedicated cloud-hosted shadow database
-2. Add the URL to the [`shadowDatabaseUrl`](../../../reference/api-reference/prisma-schema-reference#datasource) <span class="api"></span> field:
+In a development environment, use the `migrate dev` command to generate and apply migrations:
 
-```prisma highlight=4;normal
-datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-}
+```terminal
+npx prisma migrate dev
 ```
 
-## Native types attributes
+This command:
 
-In [2.17.0](https://github.com/prisma/prisma/releases/2.17.0) and later, you can use Prisma Migrate and [native database type attributes](../prisma-schema/data-model#native-type-mapping) together. Native database type attributes allow you to specify which _specific_ native type should be created in the database.
+1. Replays the existing migration history in the [shadow database](shadow-database) in order to detect schema drift (edited or deleted migration file, or a manual changes to the database schema)
+1. Applies pending migrations to the shadow database (for example, new migrations created by colleagues)
+1. Generates a new migration from any changes you made to the Prisma schema before running `migrate dev`
+1. Applies all unapplied migrations to the development database and updates the `_prisma_migrations` table
+1. Trigger the generation of artifacts (for example, the Prisma Client)
 
-> See [type mappings](#type-mappings) for a complete list of supported native types for each Prisma type.
+The `migrate dev` command will prompt you to reset the database in the following scenarios:
 
-In the following example, the `name` and `title` fields have a `@VarChar(X)` type attribute:
+- Migration history conflicts caused by [modified or missing migrations](#do-not-edit-or-delete-migrations-that-have-been-applied)
+- The database schema has drifted away from the end-state of the migration history
 
-```prisma highlight=8,14;normal
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+You can also `reset` the database yourself to undo manual changes or `db push` experiments by running:
 
-model User {
-  id    Int      @id @default(autoincrement())
-  name  String   @db.VarChar(200)
-  posts Post[]
-}
-
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String   @db.VarChar(150)
-  published Boolean @default(true)
-  authorId  Int
-  author    User    @relation(fields: [authorId], references: [id])
-}
+```terminal
+npx prisma migrate reset
 ```
 
-Prisma Migrate uses the specified types when it creates a migration:
+This command:
 
-```sql highlight=4,11;normal
-  -- CreateTable
-CREATE TABLE "User" (
-"id" SERIAL,
-    "name" VARCHAR(200) NOT NULL,
+1. Drops the database
+1. Creates a new database with the same name
+1. Applies all migrations
+1. Runs seed scripts
 
-    PRIMARY KEY ("id")
-);
-  -- CreateTable
-CREATE TABLE "Post" (
-"id" SERIAL,
-    "title" VARCHAR(150) NOT NULL,
-    "published" BOOLEAN NOT NULL DEFAULT true,
-    "authorId" INTEGER NOT NULL,
+> **Note**: For a simple and integrated way to re-create data in your development database as often as needed, check out our [seeding guide](../../../guides/application-lifecycle/seed-database).
 
-    PRIMARY KEY ("id")
-);
+### Customizing migrations to prevent data loss
 
-  -- AddForeignKey
-ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+Sometimes, you need to modify a migration **before applying it** to ensure that existing data is preserved when you run the migration. This is the case if you, for example:
+
+* Introduce a significant refactor, such as changing blog post tags from a `String[]` to a `Tag[]`
+* [Rename a field](../../../guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios#renaming-a-field) (by default, Prisma Migrate will drop the existing field)
+* [Change the direction of a 1-1 relationship](/guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios#changing-the-direction-of-a-1-1-rela)
+
+The `--create-only` command allows you to create a migration without applying it:
+
+```terminal
+npx prisma migrate dev --create-only
 ```
 
-## Type mappings
+To apply the edited migration, run `prisma migrate dev` again.
 
-### Mappings by Prisma type
+Refer to the [Advanced migrations](../../../guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios) <span class="guide"></span> for examples.
 
-For type mappings organized by Prisma type, refer to the [Prisma schema reference](../../../reference/api-reference/prisma-schema-reference#model-field-scalar-types) documentation.
+### Team development
 
-### Mappings by database provider
+See: [Team development with Prisma Migrate](../../../guides/application-lifecycle/developing-with-prisma-migrate/team-development) <span class="guide"></span>.
 
-For type mappings organized by database provider, see:
+## Production and testing environments
 
-- [PostgreSQL mappings](../../database-connectors/postgresql#prisma-migrate)
-- [MySQL mappings](../../database-connectors/mysql#prisma-migrate)
-- [SQL Server mappings](../preview-features/sql-server#type-mapping)
-- [SQLite mappings](../../database-connectors/sqlite#prisma-migrate)
+In production and testing environments, use the `migrate deploy` command to apply migrations:
 
-## Migration flows
-
-See [migration flows](prisma-migrate-flows) for more advanced flows, including:
-
-- Drafting and editing a `migration.sql` file before applying it
-- Working with a populated database
-
-## CLI command reference
-
-See [Prisma Migrate CLI reference](../../../reference/api-reference/command-reference#prisma-migrate-preview) <span class="api"></span>.
-
-## Guides
-
-- [Guide: Add Prisma Migrate to an existing project](../../../guides/prisma-guides/add-prisma-migrate-to-a-project)
-
-## Limitations and known issues
-
-### You cannot switch database providers
-
-Prisma Migrate generates SQL files that are specific to your provider. This means that you cannot use PostgreSQL in production and SQLite in development, because the migrations cannot run.
-
-In 2.15.0 and later, Prisma Migrate detects when the migrations do not match the configured provider and prints a helpful error message. For example, if your migrations are for a PostgreSQL database but you are using a `provider` is set to `mysql`:
-
-```
-Error: P3014
-
-The datasource provider `mysql` specified in your schema does not match the one specified in the migration_lock.toml. You will encounter errors when you try to apply migrations generated for a different provider. Please archive your current migration directory at a different location and start a new migration history with `prisma migrate dev`.
+```terminal
+npx prisma migrate deploy
 ```
 
-### Lack of rollbacks / down migrations
+> **Note**: `migrate deploy` should generally be part of an automated CI/CD pipeline, and we do not recommend running this command locally to deploy changes to a production database (for example, by temporarily changing the `DATABASE_URL` environment variable). It is not genreally considered good practice to store the production database URL locally.
 
-Prisma Migrate does not currently roll back a migration without [resetting the database](#data-loss-when-resetting-database).
-For a simple and integrated way to re-create data in your development database when the database is reset, check out our [seeding guide](../../../guides/prisma-guides/seed-database).
+This command:
 
-### Data loss when resetting database
+1. Compares applied migrations against the migration history and **warns** if any migrations have been modified:
 
-In a development environment, Prisma Migrate sometimes prompts you to reset the database. Resetting drops and recreates the database, which results in data loss. The database is reset when:
+  ```bash
+  WARNING The following migrations have been modified since they were applied:
+  20210313140442_favorite_colors
+  ```
 
-- You call `prisma migrate reset --preview-feature` explicitly
-- You call `prisma migrate dev --preview-feature` and Prisma Migrate detects drift in the database or a migration history conflict
+1. Applies pending migrations
 
-The `prisma migrate dev --preview-feature` and `prisma migrate reset --preview-feature` commands are designed to be used **in development only**, and should not affect production data.
+The `migrate deploy` command:
 
-When the database is reset, if Prisma Migrate detects a seed script, it will trigger seeding.
+* **Does not** issue a warning if an already applied migration is _missing_ from migration history
+* **Does not** detect drift (production database schema differs from migration history end state - for example, due to a hotfix
+* **Does not** reset the database or generate artifacts (such as Prisma Client)
+* **Does not** rely on a shadow database
 
-> **Note**: For a simple and integrated way to re-create data when the database is reset, check out our [seeding guide](../../../guides/prisma-guides/seed-database).
+See also:
+
+* [Prisma Migrate in deployment](../../../guides/deployment/deployment#prisma-migrate) <span class="guide"></span>
+* [Production troubleshooting](../../../guides/deployment/production-troubleshooting) <span class="guide"></span>
+
+### Advisory locking
+
+Prisma Migrate makes use of advisory locking when you run production commands like:
+
+- `prisma migrate deploy`
+- `prisma migrate resolve`
+
+This safeguard ensures that multiple commands cannot run at the same time - for example, if you merge two pull requests in quick succession.
+
+Advisory locking has a **10 second timeout** (not configurable), and uses the default advisory locking mechanism available in the underlying provider:
+
+- [PostgreSQL](https://www.postgresql.org/docs/9.4/explicit-locking.html#ADVISORY-LOCKS)
+- [MySQL](https://dev.mysql.com/doc/refman/5.7/en/locking-functions.html)
+- [SQL server](https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-getapplock-transact-sql?view=sql-server-ver15)
+
+Prisma Migrate's implementation of advisory locking is purely to avoid catastrophic errors - if your command times out, you will need to run it again.
+
+## Commands
+
+See [Prisma Migrate CLI reference](../../../reference/api-reference/command-reference#prisma-migrate) <span class="api"></span> for all available Prisma Migrate commands.
+
+<!-- ## FAQ
+
+### When should I use <inlinecode>migrate deploy</inlinecode> and when should I use <inlinecode>migrate dev</inlinecode>? -->

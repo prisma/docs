@@ -4,9 +4,15 @@ import styled from 'styled-components'
 interface ExpandedProps {
   expanded?: boolean
 }
-type CodeWithResultProps = React.ReactNode & ExpandedProps
 
-const CodeWithResult = ({ children, expanded }: CodeWithResultProps) => {
+interface ShowHideProps {
+  showText? : string
+  hideText? : string
+}
+
+type CodeWithResultProps = React.ReactNode & ExpandedProps & ShowHideProps
+
+const CodeWithResult = ({ children, expanded, showText, hideText }: CodeWithResultProps) => {
   const [showResult, setShowResult] = React.useState(expanded)
   const cmd =
     children && children.filter((child: any) => child.props && child.props.mdxType === 'Cmd')
@@ -14,13 +20,15 @@ const CodeWithResult = ({ children, expanded }: CodeWithResultProps) => {
     children && children.filter((child: any) => child.props && child.props.mdxType === 'CmdResult')
 
   const toggleResult = () => setShowResult(!showResult)
+  const toggleShowText = showText ? showText : "Show CLI results"
+  const toggleHideText = hideText ? hideText : "Hide CLI results"
 
   return (
     <Wrapper>
       <div className="cmd">{cmd}</div>
       <div className="result">
         <div onClick={toggleResult} className="show-btn">
-          {showResult ? `Hide CLI output` : `Show CLI output`}
+          {showResult ? toggleHideText : toggleShowText}
         </div>
         {showResult && <div className="result-code">{result}</div>}
       </div>
@@ -69,6 +77,7 @@ const Wrapper = styled.div`
       height: 24px;
       display: flex;
       padding-left: 1rem;
+      padding-bottom: 0.7rem;
       align-items: center;
       cursor: pointer;
     }
