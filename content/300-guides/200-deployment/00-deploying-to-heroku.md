@@ -10,7 +10,7 @@ In this guide, you will set up and deploy a Node.js server that uses Prisma with
 
 Heroku is a cloud platform as a service (PaaS). In contrast to the popular serverless deployment model, with Heroku, your application is constantly running even if no requests are made to it. This has several benefits due to the connection limits of a PostgreSQL database. For more information, check out the [general deployment documentation](/concepts/components/prisma-client/deployment)
 
-Typically Heroku integrates with a Git repository for automatic deployments upon commits. You can deploy to Heroku from a GitHub repository or by pushing your source to a [Git repository that Heroku creates per app](https://devcenter.heroku.com/articles/git). This guide uses the latter approach where you push your code to the repository created by Heroku, which triggers a build and deploys the application.
+Typically Heroku integrates with a Git repository for automatic deployments upon commits. You can deploy to Heroku from a GitHub repository or by pushing your source to a [Git repository that Heroku creates per app](https://devcenter.heroku.com/articles/git). This guide uses the latter approach whereby you push your code to the app's repository on Heroku, which triggers a build and deploys the application.
 
 The application has the following components:
 
@@ -19,7 +19,7 @@ The application has the following components:
 
 ![architecture diagram](./heroku-architecture.png)
 
-The focus of this guide is showing how projects using Prisma are deployed to Heroku. The starting point will the [Prisma Heroku example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/heroku), which contains an Express.js server with a couple of pre-configured REST endpoints and a simple frontend.
+The focus of this guide is showing how to deploy projects using Prisma to Heroku. The starting point will the [Prisma Heroku example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/heroku), which contains an Express.js server with a couple of pre-configured REST endpoints and a simple frontend.
 
 > **Note:** The various **checkpoints** throughout the guide allowing you to validate whether you performed the steps correctly.
 
@@ -38,11 +38,12 @@ While the example uses REST, the same principles apply to a GraphQL server, with
 
 ## Prisma workflow
 
-At the core of Prisma is the [Prisma schema](/concepts/components/prisma-schema) – a declarative configuration where you define your data model and other Prisma related configration. The Prisma schema is also a single source of truth for both Prisma Client and Prisma Migrate.
+At the core of Prisma is the [Prisma schema](/concepts/components/prisma-schema) – a declarative configuration where you define your data model and other Prisma-related configuration. The Prisma schema is also a single source of truth for both Prisma Client and Prisma Migrate.
 
-In this guide, you will use Prisma Migrate to create the database schema. Prisma Migrate is based on the Prisma schema and works by generating `.sql` migration files that are executed against the database.
+In this guide, you will use [Prisma Migrate](/concepts/components/prisma-migrate) to create the database schema. Prisma Migrate is based on the Prisma schema and works by generating `.sql` migration files that are executed against the database.
 
-Migrate comes with two main workflows:
+Migrate comes with two primary workflows:
+
 - Creating migrations and applying during local development with `prisma migrate dev`
 - Applying generated migration to production with `prisma migrate deploy`
 
@@ -50,7 +51,7 @@ For brevity, the guide does not cover how migrations are created with `prisma mi
 
 You will use Heroku's [release phase](https://devcenter.heroku.com/articles/release-phase) to run the `prisma migrate deploy` command so that the migrations are applied before the application starts.
 
-To learn more about Prisma Migrate's workflows, check out the [start from scratch guide](/getting-started/setup-prisma/start-from-scratch-typescript-postgres)
+To learn more about how migrations are created with Prisma Migrate, check out the [start from scratch guide](/getting-started/setup-prisma/start-from-scratch-typescript-postgres)
 
 ## 1. Download the example and install dependencies
 
@@ -251,10 +252,6 @@ You can view the application's logs with the `heroku logs --tail` command:
 2020-07-07T14:39:07.657505+00:00 app[web.1]: 🚀 Server ready at: http://localhost:12516
 2020-07-07T14:39:07.657526+00:00 app[web.1]: ⭐️ See sample requests: http://pris.ly/e/ts/rest-express#3-using-the-rest-api
 2020-07-07T14:39:07.842546+00:00 heroku[web.1]: State changed from starting to up
-2020-07-07T14:39:08.197831+00:00 heroku[router]: at=info method=GET path="/" host=your-app-name.herokuapp.com request_id=1 fwd="1.1.1.1" dyno=web.1 connect=0ms service=20ms status=304 bytes=237 protocol=https
-2020-07-07T14:39:16.876090+00:00 heroku[router]: at=info method=GET path="/api/" host=your-app-name.herokuapp.com request_id=2 fwd="1.1.1.1" dyno=web.1 connect=0ms service=7ms status=304 bytes=149 protocol=https
-2020-07-07T14:39:28.261619+00:00 heroku[router]: at=info method=GET path="/api/seed" host=your-app-name.herokuapp.com request_id=3 fwd="1.1.1.1" dyno=web.1 connect=0ms service=175ms status=200 bytes=254 protocol=https
-2020-07-07T14:39:30.645923+00:00 heroku[router]: at=info method=GET path="/api/feed" host=your-app-name.herokuapp.com request_id=4 fwd="1.1.1.1" dyno=web.1 connect=1ms service=24ms status=200 bytes=680 protocol=https
 ```
 
 ## Heroku specific notes
