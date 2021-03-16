@@ -5,8 +5,125 @@ metaDescription: How to use db push to prototype a new feature or an entirely ne
 
 <TopBlock>
 
+IN PROGRESS
+
 </TopBlock>
 
 ## Prototyping a new schema
+
+1.  Create a first draft of your schema:
+
+    ```prisma
+    generator client {
+        provider        = "prisma-client-js"
+    }
+
+    datasource db {
+        provider = "postgresql"
+        url      = env("DATABASE_URL")
+    }
+
+    model User {
+        id      Int      @id @default(autoincrement())
+        name    String
+        jobTitle  String
+        posts   Post[]
+        profile Profile?
+    }
+
+    model Profile {
+        id       Int    @id @default(autoincrement())
+        biograpy String // Intentional typo!
+        userId   Int
+        user     User   @relation(fields: userId, references: id)
+    }
+
+    model Post {
+        id         Int        @id @default(autoincrement())
+        title      String
+        published  Boolean    @default(true)
+        content    String     @db.VarChar(500)
+        authorId   Int
+        author     User       @relation(fields: [authorId], references: [id])
+        categories Category[]
+    }
+
+    model Category {
+        id    Int    @id @default(autoincrement())
+        name  String @db.VarChar(50)
+        posts Post[]
+        @@unique([name])
+    }
+    ```
+
+2.  Use `db push` to push the initial schema to the database:
+
+    ```terminal
+    npx prisma db push --preview-feature
+    ```
+
+3.  Create some example content:
+
+    ```ts
+    const add = await prisma.user.create({
+      data: {
+        name: 'Eloise',
+        jobTitle: 'Programmer',
+        posts: {
+          create: {
+            title: 'How to create a MySQL database',
+            content: 'Some content',
+          },
+        },
+      },
+    })
+    ```
+
+4.  Make an additive change - for example, create a new field:
+
+    ```prisma highlight=add;11
+    /* ... */
+
+    model Post {
+        id               Int        @id @default(autoincrement())
+        title            String
+        shortDescription String
+        published        Boolean    @default(true)
+        content          String     @db.VarChar(500)
+        authorId         Int
+        author           User       @relation(fields: [authorId], references: [id])
+        categories       Category[]
+    }
+
+    /* ... */
+    ```
+
+5. Push the changes:
+
+```terminal
+npx prisma db push --preview-feature
+```
+
+Make change:
+
+```
+ We found changes that cannot be executed:
+
+  • Added the required column `firstName` to the `User` table without a default value. There are 2 rows in this table, it is not possible to execute this migration.
+  • Added the required column `surname` to the `User` table without a default value. There are 2 rows in this table, it is not possible to execute this migration.
+
+
+√ To apply this unexecutable migration we need to reset the database, do you want to continue?
+```
+
+```prisma highlight=3;delete|4-5;add
+model User {
+  id      Int      @id @default(autoincrement())
+  name         String
+  firstName    String
+  surname      String
+  /* .. more fields */
+}
+```
 
 ## Prototyping with an existing migration history
