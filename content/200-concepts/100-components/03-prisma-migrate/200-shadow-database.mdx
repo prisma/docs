@@ -25,30 +25,31 @@ The shadow database and is **created and deleted automatically**\* each time you
 
 When you run `prisma migrate dev` to create a new migration, Prisma Migrate uses the shadow database to:
 
-* Detect schema drift
+* Detect schema drift, which means checking that no **manual changes** have been made to the development database
 * Generate new migrations
 
-### Detecting drift
+### Detecting schema drift
 
-To detect drift, Prisma Migrate:
+To detect drift in development, Prisma Migrate:
 
+1. Creates a fresh copy of the shadow database (or performs a soft reset if the shadow database is cloud-hosted)
 1. Replays the **current** migration history in the shadow database.
 1. **Introspects** the shadow database to generate the 'current state' of you Prisma schema.
 1. Compares the end state of the current migration history to the development database.
 1. Reports **schema drift** if the end state of the current migration history does not match the development database (for example, due to a manual change)
 
-If Prisma Migrate does not detect schema drift, it moves on to generating new migrations.
+If Prisma Migrate does not detect schema drift, it moves on to [generating new migrations](#generating-new-migrations).
 
-> **Note**: The shadow database is not responsible for checking if a **migration file** has been edited or deleted.
+> **Note**: The shadow database is not responsible for checking if a migration file has been **edited or deleted**. This is done using a the `checksum` field in the `_prisma_migrations` table.
 
 ### Generating new migrations
 
-To generate new migrations, Prisma Migrate:
+Assuming Prisma Migrate did not [detect schema drift](#detecting-schema-drift), it moves on to generating new mirations from schema changes. To generate new migrations, Prisma Migrate:
 
-1. Compare the starting point and the target schema, and generate steps to get from one to the other. 
-1. Render these steps to a SQL string and save it in the new migration file.
-
-
+1. Calculates the target database schema as a function of the current Prisma schema.
+1. Compares the end state of the existing migration history and the target schema, and generate steps to get from one to the other.
+1. Renders these steps to a SQL string and saves it in the new migration file.
+1. Applies the generated migration to the development database (assuming you have not specified the `--create-only` flag)
 
 ## Shadow database user permissions
 
