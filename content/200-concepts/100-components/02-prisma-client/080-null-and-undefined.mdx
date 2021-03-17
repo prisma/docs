@@ -134,3 +134,156 @@ updateUser: (parent, args, ctx: Context) => {
   })
 },
 ```
+
+## The effect of <inlinecode>NULL</inlinecode> on conditionals
+
+There are some caveats to filtering with conditionals which might produce unexpected results. When filtering with conditionals you might expect one result but receive another given how Prisma treats `nullable` values.
+
+### A high level overview
+
+
+|Operator                     | 0 filters              | 1 filter               | n filters            |
+|-----------------------------|------------------------|------------------------|----------------------|
+|<inlinecode>OR</inlinecode>  | return empty list      | validate single filter | validate all filters |
+|<inlinecode>AND</inlinecode> | return all items       | validate single filter | validate all filters |
+|<inlinecode>NOT</inlinecode> | return all items       | validate single filter | validate all filters |
+
+
+### <inlinecode>OR</inlinecode>
+
+The `OR` operator states that one or more conditions must be true for the result to return any data. It is therefore logical to assume that using the `OR`
+operator but supplying no filters, returns no results.
+
+```js
+prisma.myTable.findMany({
+    where: {
+        OR: [],
+    },
+});
+```
+
+When supplying the operator with a single filter, that filter will be run and it's results returned. If multiple filters are supplied then `n` results will be returned dependant on the filters supplied.
+
+```js
+// Single filter
+prisma.myTable.findMany({
+    where: {
+        OR: [{name: 'Emelie'}],
+    },
+});
+
+// Multiple filters
+prisma.myTable.findMany({
+    where: {
+        OR: [{
+          name: 'Emelie',
+          drivesCar: true
+        }],
+    },
+});
+```
+
+See the `OR` section in the [Prisma Client reference](../../../reference/api-reference/prisma-client-reference#or) for more information about the operator.
+
+### <inlinecode>AND</inlinecode>
+
+The `AND` operator expects all conditions to be true, that is, all filters must return something for it to return anything if it is to return data.
+As stated above, Prisma treats `null` values as having a value, where as `undefined` means do nothing.
+To that end if the `AND` operator is used but no filters are supplied then it will return all items requested in the query because providing no filter is like providing no condition,
+which means that the query will return it's default data.
+
+```js
+// This is the same
+prisma.myTable.findMany({
+    where: {
+        AND: [],
+    },
+});
+
+// As this
+prisma.myTable.findMany();
+```
+
+Prioviding a single filter to the `AND` operator works the same way as the `OR` condition except that the filter **must** return true for it to return the filtered data.
+The same applies for multiple filters, where all filters must return true for the query to return any data.
+
+```js
+// Single filter
+prisma.myTable.findMany({
+    where: {
+        AND: [
+          {
+            name: {
+              contains: 'Emelie'
+            },
+          }
+        ],
+    },
+});
+
+// Multiple filters
+prisma.myTable.findMany({
+    where: {
+        AND: [
+          {
+            name: {
+              contains: 'Emelie'
+            },
+          },
+          {
+            drivesCar: {
+              equals: true
+            },
+          }
+        ],
+    },
+});
+```
+
+See the `AND` section in the [Prisma Client reference](../../../reference/api-reference/prisma-client-reference#and) for more information about the operator.
+
+### <inlinecode>NOT</inlinecode>
+
+The `NOT` operator expects that all conditions are false before it will return any data. Much like the `AND` operator, `NOT` will return the queries default data if no filters are passed.
+
+```js
+// This is the same
+prisma.myTable.findMany({
+    where: {
+        NOT: [],
+    },
+});
+
+// As this
+prisma.myTable.findMany();
+```
+
+`NOT` is most often used in conjunction with other operators to form fluid conditions from which the data should be filtered through. Using all three conditional operators:
+
+```js
+const result = await prisma.post.findMany({
+  where: {
+    OR: [
+      {
+        name: {
+          contains: 'Emelie',
+        },
+      },
+    ],
+    AND: [
+      {
+        drivesCar: {
+          equals: true
+        },
+      }
+    ],
+    NOT: {
+      name: {
+        contains: 'Mrs',
+      },
+    },
+  },
+})
+```
+
+See the `NOT` section in the [Prisma Client reference](../../../reference/api-reference/prisma-client-reference#not) for more information about the operator.
