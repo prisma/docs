@@ -1,0 +1,110 @@
+---
+title: 'Advanced usage of generated types'
+metaTitle: 'Advanced usage of generated TypeScript types (Reference)'
+metaDescription: 'Prisma Client provides full type safety for queries, even for partial queries or included relations. This page explains how to leverage the generated types.'
+---
+
+<TopBlock>
+
+The generated code for Prisma Client contains several helpful types that you can use to make your application more type-safe. This page describes patterns for leveraging some of the generated types.
+
+By importing the `Prisma` namespace from `@prisma/client` you can access types related to your defined schema models. These types can be used to compose queries outside of the context of the query, meaning you can re-use query parameters
+or create functions from them.
+
+> Note that you can find all type definitions inside the `index.d.ts` file inside the [generated `.prisma/client` folder](working-with-prismaclient/generating-prisma-client#the-prismaclient-npm-package).
+
+</TopBlock>
+
+## Prisma utility types
+
+All examples are based on the following schema:
+
+<details><summary>Expand for sample schema</summary>
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ExtendedProfile {
+  id        Int    @id @default(autoincrement())
+  bio       String
+  user      User   @relation(fields: userId, references: id)
+  userId    Int
+}
+
+model User {
+  id           Int             @id @default(autoincrement())
+  name         String?
+  email        String          @unique
+  profileViews Int             @default(0)
+  posts        Post[]
+  profile      ExtendedProfile?
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
+  comments   Json?
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  categories Category[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[]
+}
+```
+
+</details>
+
+### <inlinecode>Prisma validator</inlinecode>
+
+The `validator` is a function that exists on the Prisma namespace. It helps you create re-usable query parameters based on your schema models while making sure that the objects you create are valid.
+
+The following example composes a `select` param outside of the queries context using the `validator` function.
+
+```ts
+import { PrismaClient, Prisma } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+const selectId = Prisma.validator<Prisma.UserSelect>()({
+    id: true,
+})
+
+const data = await prisma.user.findFirst({ select: selectId })
+```
+
+The `selectId` is created by using the `validator` function and passing a generated type (`UserSelect`) to the type assertion of the function. This generated type comes from your schema models.
+The type assertion means that only fields that can be used in a `select` can be called inside the function. This new `selectId` function can be re-used in other queries.
+
+You can also wrap a `validator` function and accept input, they can then be used when interacting with user created data, such as form inputs.
+
+```ts
+import { Prisma } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// Create a new function that wraps the validator function and accepts input.
+const findSpecificUser = (name: string, email: string) => {
+  return Prisma.validator<Prisma.UserWhereInput>()({
+    name,
+    email
+  })
+}
+
+// Can be used to find a specific user based on form input
+const oneUser = await prisma.user.findUnique({ where: findSpecificUser('Rich', 'rich@boop.com') })
+```
+
