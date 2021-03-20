@@ -10,7 +10,7 @@ import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
-import { Header } from 'prisma-lens'
+import { WebsiteHeader } from '@prisma/lens/dist/web'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -40,7 +40,7 @@ const Container = styled.div`
   > * {
     padding: 0;
 
-    .menu {
+    .nav-menu {
       background: transparent;
       border: 0;
     }
@@ -49,7 +49,7 @@ const Container = styled.div`
       z-index: 120;
     }
 
-    .menu,
+    .nav-menu,
     .list {
       a {
         color: currentcolor !important;
@@ -322,7 +322,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <Header />
+          <WebsiteHeader />
         </Container>
       </HeaderWrapper>
 
