@@ -40,7 +40,7 @@ const Container = styled.div`
   > * {
     padding: 0;
 
-    .nav-menu {
+    .menu {
       background: transparent;
       border: 0;
     }
@@ -49,7 +49,7 @@ const Container = styled.div`
       z-index: 120;
     }
 
-    .nav-menu,
+    .menu,
     .list {
       a {
         color: currentcolor !important;
