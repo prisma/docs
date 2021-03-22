@@ -11,6 +11,7 @@ import ButtonLink from './button'
 import FileWithIcon from './fileWithIcon'
 import Subsections from './subSections'
 import TopBlock from './topBlock'
+import FootNote from './footnote'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -36,6 +37,7 @@ export default {
   ButtonLink,
   Subsections,
   TopBlock,
+  FootNote,
   img: (props: any) => (
     <a href={props.src} target="_blank">
       <img {...props} />

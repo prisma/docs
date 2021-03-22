@@ -83,7 +83,7 @@ const SearchBoxDiv = styled.div`
       line-height: 100%;
       border-width: 0;
       &::placeholder {
-        content: 'Search';
+        content: 'Search Documentation...';
         color: ${p => p.theme.colors.gray500};
         opacity: 1; /* Firefox */
       }
@@ -151,7 +151,7 @@ const SearchBox = ({
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
   const { width } = useWindowDimensions()
-  const [placeholderText, setPlaceholderText] = React.useState('Search')
+  const [placeholderText, setPlaceholderText] = React.useState('Search Documentation...')
 
   const onChange = (e: any) => {
     const { value: newValue } = e.target

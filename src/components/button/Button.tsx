@@ -1,7 +1,7 @@
 import styled from 'styled-components'
 import { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from 'react'
 import React from 'react'
-import theme from 'prisma-lens'
+import { theme } from '@prisma/lens/dist/web'
 
 const fontSizeForSize = (size?: ButtonSize) => {
   switch (size) {
