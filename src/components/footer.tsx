@@ -1,7 +1,7 @@
 import Link from '../components/link'
 import * as React from 'react'
 import styled from 'styled-components'
-import { Footer } from 'prisma-lens'
+import { WebsiteFooter } from '@prisma/lens/dist/web'
 import NewsLetter from '../components/newsletter'
 
 type FooterViewProps = {
@@ -36,7 +36,7 @@ const FooterSec = ({ footerProps }: FooterViewProps) => {
   const { newsletter } = footerProps
   return (
     <FooterWrapper>
-      <Footer newsletterComponent={<NewsLetter newsletter={newsletter} />} />
+      <WebsiteFooter newsletterComponent={<NewsLetter newsletter={newsletter} />} />
     </FooterWrapper>
   )
 }
