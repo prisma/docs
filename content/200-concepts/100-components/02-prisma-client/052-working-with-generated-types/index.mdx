@@ -31,38 +31,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model ExtendedProfile {
-  id        Int    @id @default(autoincrement())
-  bio       String
-  user      User   @relation(fields: userId, references: id)
-  userId    Int
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String   @db.VarChar(255)
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  user   User    @relation(fields: [userId], references: [id])
+  userId Int     @unique
 }
 
 model User {
-  id           Int             @id @default(autoincrement())
-  name         String?
-  email        String          @unique
-  profileViews Int             @default(0)
-  posts        Post[]
-  profile      ExtendedProfile?
-}
-
-model Post {
-  id         Int        @id @default(autoincrement())
-  title      String
-  published  Boolean    @default(true)
-  author     User       @relation(fields: [authorId], references: [id])
-  authorId   Int
-  comments   Json?
-  views      Int        @default(0)
-  likes      Int        @default(0)
-  categories Category[]
-}
-
-model Category {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  posts Post[]
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  posts   Post[]
+  profile Profile?
 }
 ```
 
@@ -97,6 +89,25 @@ import { Prisma } from '@prisma/client'
 const prisma = new PrismaClient()
 
 // Create a new function that wraps the validator function and accepts input.
+// Create a new user and a post from user input
+const createUserAndPost =(name: string, email: string, postTitle: string, profileBio: string) => {
+  return Prisma.validator<Prisma.UserCreateInput>()({
+        name,
+        email,
+        posts: {
+            create: {
+                title: postTitle
+            }
+        },
+        profile: {
+            create: {
+                bio: profileBio
+            }
+        }
+    })
+}
+
+// Find a specific user from user input
 const findSpecificUser = (name: string, email: string) => {
   return Prisma.validator<Prisma.UserWhereInput>()({
     name,
@@ -104,16 +115,30 @@ const findSpecificUser = (name: string, email: string) => {
   })
 }
 
+// Create the user in the database
+await prisma.user.create({ data: createUserAndPost })
+
 // Can be used to find a specific user based on form input
 const oneUser = await prisma.user.findUnique({ where: findSpecificUser('Rich', 'rich@boop.com') })
 ```
 
-This is a powerful method for creating re-usable blocks of code that interact with your database. Taking the form example further:
+All model query options are avaliable as types. The following list will use the model `User` as an example of a model in your schema, except in the cases where a type exists on a model with relation fields,
+then `Post` will be used.
 
-```ts
-import { Prisma } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
-
-```
+- [`select`](../../../../reference/api-reference/prisma-client-reference/#select) <span class="api"></span>
+  - `SelectAndInclude`
+  - `UserSelect`
+  - `HasSelect`
+- [`include`](../../../../reference/api-reference/prisma-client-reference/#include) <span class="api"></span>
+  - `SelectAndInclude`
+  - `UserInclude`
+  - `HasInclude`
+- [`where`](../../../../reference/api-reference/prisma-client-reference/#where) <span class="api"></span>
+  - `UserWhereInput`
+  - `UserWhereUniqueInput`
+  - `PostScalerWhereInput`
+  - `PostUpdateWithWhereUniqueWithoutAuthorInput`
+  - `PostUpsertWithWhereUniqueWithoutAuthorInput`
+  - `PostUpdateManyWithWhereWithoutAuthorInput`
+- [`orderBy`](../../../../reference/api-reference/prisma-client-reference/#orderby) <span class="api"></span>
+  - `UserOrderByInput`
