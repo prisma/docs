@@ -172,7 +172,7 @@ export default function Search({ hitsStatus }: any) {
         upClicked={decrementIndex}
         downClicked={incrementIndex}
       />
-      {query !== '' && (
+      {query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
           <Index key={indexName} indexName={indexName}>
             <Results>
