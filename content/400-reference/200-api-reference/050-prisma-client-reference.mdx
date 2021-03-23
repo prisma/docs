@@ -2566,6 +2566,47 @@ const user = await prisma.user.update({
 
 `connectOrCreate` _either_ connects a record to an existing related record by ID or unique identifier _or_ creates a new related record if the record does not exist. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>
 
+#### Remarks
+
+* Multiple `connectOrCreate` queries running in parallel can result in a **race condition**. Consider the following example, where two queries attempt to `connectOrCreate` a blog post tag named `computing` at the same time:
+
+Query A:
+
+```ts
+const addBlogPost = await prisma.post.create({
+  data: {
+    title: "How to writer a compiler",
+    content: "..."
+    connectOrCreate: {
+      tag: 
+    }
+  }
+})
+```
+
+Query B:
+
+```ts
+const addBlogPost = await prisma.post.create({
+  data: {
+    title: "How to ",
+    content: "..."
+    connectOrCreate: {
+      tag: 
+    }
+  }
+})
+```
+
+| Query A (Fail ❌)  | Query B (Success ✅) |
+| :-----------------  | :------------------- |
+| Query hits server, starts transaction A | Query hits server, starts transaction B |
+|                     | Find record where `tagName` equals `computing`, record not found
+| Find record where `tagName` equals `computing`, record not found | |
+|                     | Create record where `tagName` equals `computing` and connect
+| Create record where `tagName` equals `computing` | |
+| Unique violation, record already created by transaction B | |
+
 #### Examples
 
 ##### Create a new `Profile` record, then connect it to an existing `User` record _or_ create a new `User`
