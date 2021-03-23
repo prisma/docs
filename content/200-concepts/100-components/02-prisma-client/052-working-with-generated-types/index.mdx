@@ -8,8 +8,23 @@ metaDescription: 'Prisma Client provides full type safety for queries, even for 
 
 The generated code for Prisma Client contains several helpful types that you can use to make your application more type-safe. This page describes patterns for leveraging some of the generated types.
 
-By importing the `Prisma` namespace from `@prisma/client` you can access types related to your defined schema models. These types can be used to compose queries outside of the context of the query, meaning you can re-use query parameters
-or create functions from them.
+By importing the `Prisma` namespace from `@prisma/client` you can access types related to your defined schema models.
+
+The following example composes a `select` param outside of the queries context using the [`validator`](#prisma-validator) function, it passes in a generated type (`UserSelect`) meaning only fields available on a `select` can be used.
+
+```ts
+// Import the Prisma namespace from the client package
+import { PrismaClient, Prisma } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// Pass in the UserSelect type assertion
+const selectId = Prisma.validator<Prisma.UserSelect>()({
+    id: true,
+})
+
+const data = await prisma.user.findFirst({ select: selectId })
+```
 
 > Note that you can find all type definitions inside the `index.d.ts` file inside the [generated `.prisma/client` folder](working-with-prismaclient/generating-prisma-client#the-prismaclient-npm-package).
 
@@ -58,28 +73,9 @@ model User {
 
 </details>
 
-## Accessing custom types
-
-To access the generated types you need to import the Prisma namespace from the `@prisma/client` package. You can then access the `validator` function. It helps you create re-usable query parameters based on your schema models while making sure that the objects you create are valid.
+### <inlinecode>Prisma validator</inlinecode>
 
 The `validator` is a function that exists on the Prisma namespace. It helps you create re-usable query parameters based on your schema models while making sure that the objects you create are valid.
-
-The following example composes a `select` param outside of the queries context using the `validator` function.
-
-```ts
-import { PrismaClient, Prisma } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
-const selectId = Prisma.validator<Prisma.UserSelect>()({
-    id: true,
-})
-
-const data = await prisma.user.findFirst({ select: selectId })
-```
-
-The `selectId` is created by using the `validator` function and passing a generated type (`UserSelect`) to the type assertion of the function. This generated type comes from your schema models.
-The type assertion means that only fields that can be used in a `select` can be called inside the function. This new `selectId` function can be re-used in other queries.
 
 You can also wrap a `validator` function and accept input, they can then be used when interacting with user created data, such as form inputs.
 
@@ -95,14 +91,14 @@ const createUserAndPost =(name: string, email: string, postTitle: string, profil
         name,
         email,
         posts: {
-            create: {
-                title: postTitle
-            }
+          create: {
+            title: postTitle
+          }
         },
         profile: {
-            create: {
-                bio: profileBio
-            }
+          create: {
+            bio: profileBio
+          }
         }
     })
 }
@@ -122,13 +118,18 @@ await prisma.user.create({ data: createUserAndPost })
 const oneUser = await prisma.user.findUnique({ where: findSpecificUser('Rich', 'rich@boop.com') })
 ```
 
-All model query options are avaliable as types. The following list will use the model `User` as an example of a model in your schema, except in the cases where a type exists on a model with relation fields,
+The `createUserAndPost` custom function is created using the `validator` and passing a generated type (`UserCreateInput`) to the type assertion of the function. This generated type comes from your schema models.
+The type assertion means that only fields that can be used when creating a user can be called inside the function.
+
+All model query options are avaliable as types. The following will use the model `User` as an example of a model in your schema, except in the cases where a type exists on a model with relation fields,
 then `Post` will be used.
 
-- [`select`](../../../../reference/api-reference/prisma-client-reference/#select) <span class="api"></span>
+### Generated types for `select`
+
+The following examples demonstrate how to use the `validator` with [`select`](../../../../reference/api-reference/prisma-client-reference/#select) <span class="api"></span>:
+
   - `SelectAndInclude`
   - `UserSelect`
-  - `HasSelect`
 
 ```ts
 // SelectAndInclude
@@ -147,21 +148,14 @@ const selectNameEmailNotPosts = Prisma.validator<Prisma.UserSelect>()({
       email: true,
       posts: false
 })
-
-// HasSelect
-const hasSelect = Prisma.validator<Prisma.HasSelect>()({
-      select: {
-        name: true,
-        email: true,
-        posts: false
-      }
-})
 ```
 
-- [`include`](../../../../reference/api-reference/prisma-client-reference/#include) <span class="api"></span>
+### Generated types for `include`
+
+The following examples demonstrate how to use the `validator` with [`include`](../../../../reference/api-reference/prisma-client-reference/#include) <span class="api"></span>:
+
   - `SelectAndInclude`
   - `UserInclude`
-  - `HasInclude`
 
 ```ts
 // SelectAndInclude
@@ -178,21 +172,94 @@ const selectNameIncludeEmail = Prisma.validator<Prisma.SelectAndInclude>()({
 const includePosts = Prisma.validator<Prisma.UserInclude>()({
       posts: true
 })
-
-// HasInclude
-const hasInclude = Prisma.validator<Prisma.HasInclude>()({
-      include: {
-        posts: true
-      }
-})
 ```
 
-- [`where`](../../../../reference/api-reference/prisma-client-reference/#where) <span class="api"></span>
+### Generated types for `where`
+
+The following examples demonstrate how to use the `validator` with [`where`](../../../../reference/api-reference/prisma-client-reference/#where) <span class="api"></span>:
+
   - `UserWhereInput`
-  - `UserWhereUniqueInput`
-  - `PostScalerWhereInput`
-  - `PostUpdateWithWhereUniqueWithoutAuthorInput`
-  - `PostUpsertWithWhereUniqueWithoutAuthorInput`
-  - `PostUpdateManyWithWhereWithoutAuthorInput`
-- [`orderBy`](../../../../reference/api-reference/prisma-client-reference/#orderby) <span class="api"></span>
-  - `UserOrderByInput`
+```ts
+// UserWhereInput
+const whereNameIs = Prisma.validator<Prisma.UserWhereInput>()({
+      name: 'Rich'
+})
+
+// It can be combined with conditional operators too
+const whereNameIs = Prisma.validator<Prisma.UserWhereInput>()({
+      name: 'Rich',
+      AND: [
+        {
+          email: {
+            contains: 'rich@boop.com'
+          }
+        }
+      ]
+})
+```
+  - `UserWhereUniqueInput` This type works by exposing any unique fields on the model. A field assigned `@id` is considered unique,
+  as is one assigned `@unique`.
+```ts
+// UserWhereUniqueInput
+const whereEmailIsUnique = Prisma.validator<Prisma.UserWhereUniqueInput>()({
+      email: 'rich@boop.com'
+})
+```
+  - `PostScalarWhereInput`
+  ```ts
+const whereScalarTitleIs = Prisma.validator<Prisma.PostScalarWhereInput>()({
+        title: 'boop'
+})
+  ```
+  - `PostUpdateWithWhereUniqueWithoutAuthorInput` - This type accepts a unique `where` field (an `@id` or another assigned `@unique`)
+  and updates any field on the `Post` model except the `Author`. The `Author` is the scalar field on the `Post` model.
+  ```ts
+const updatePostByIdWithoutAuthor = Prisma.validator<Prisma.PostUpdateWithWhereUniqueWithoutAuthorInput>()({
+      where: {
+        id: 1
+      },
+      data: {
+        content: 'This is some updated content',
+        published: true,
+        title: 'This is a new title'
+      }
+})
+  ```
+  - `PostUpsertWithWhereUniqueWithoutAuthorInput` - This type will update the `Post` records title field where the id matches, if it doesn't exist it will create it instead.
+  ```ts
+const updatePostTitleOrCreateIfNotExist = Prisma.validator<Prisma.PostUpsertWithWhereUniqueWithoutAuthorInput>()({
+      where: {
+        id: 1
+      },
+      update: {
+        title: 'This is a new title'
+      },
+      create: {
+        id: 1,
+        title: 'If the title doesnt exist, then create one with this text'
+      }
+})
+  ```
+  - `PostUpdateManyWithWhereWithoutAuthorInput` - This type will update all `Post` records where published is set to false.
+  ```ts
+const publishAllPosts = Prisma.validator<Prisma.PostUpdateManyWithWhereWithoutAuthorInput>()({
+      where: {
+        published: {
+          equals: false
+        }
+      },
+      data: {
+        published: true
+      }
+})
+  ```
+### Generated types for `orderBy`
+
+The following examples demonstrate how to use the `validator` with [`orderBy`](../../../../reference/api-reference/prisma-client-reference/#orderBy) <span class="api"></span>:
+
+- `UserOrderByInput`
+  ```ts
+const orderEmailsByDescending = Prisma.validator<Prisma.UserOrderByInput>()({
+      email: 'desc'
+})
+  ```
