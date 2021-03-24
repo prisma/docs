@@ -9,7 +9,7 @@ import customMdx from '../components/customMdx'
 import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
-import theme, { BaseStyle } from 'prisma-lens'
+import { LensProvider, theme } from '@prisma/lens/dist/web'
 import { stickWhenNeeded } from '../utils/stickWhenNeeded'
 
 interface LayoutContentProps {
@@ -119,30 +119,31 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <BaseStyle />
-      <MDXProvider components={customMdx}>
-        <Header headerProps={header} />
-        <Wrapper fullWidth={homePage}>
-          <Container fullWidth={homePage}>
-            {!homePage && (
-              <NotMobile id="sidebar-holder">
-                <SidebarLayout isMobile={false} location={location} slug={slug} />
-              </NotMobile>
-            )}
-            <Content fullWidth={homePage}>
-              <MaxWidth>{children}</MaxWidth>
-            </Content>
-            {!homePage && (
-              <TOCWrapper id="toc-holder">
-                {toc && toc.items && toc.items.length > 0 && (
-                  <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
-                )}
-              </TOCWrapper>
-            )}
-          </Container>
-        </Wrapper>
-        <Footer footerProps={footer} />
-      </MDXProvider>
+      <LensProvider>
+        <MDXProvider components={customMdx}>
+          <Header headerProps={header} />
+          <Wrapper fullWidth={homePage}>
+            <Container fullWidth={homePage}>
+              {!homePage && (
+                <NotMobile id="sidebar-holder">
+                  <SidebarLayout isMobile={false} location={location} slug={slug} />
+                </NotMobile>
+              )}
+              <Content fullWidth={homePage}>
+                <MaxWidth>{children}</MaxWidth>
+              </Content>
+              {!homePage && (
+                <TOCWrapper id="toc-holder">
+                  {toc && toc.items && toc.items.length > 0 && (
+                    <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+                  )}
+                </TOCWrapper>
+              )}
+            </Container>
+          </Wrapper>
+          <Footer footerProps={footer} />
+        </MDXProvider>
+      </LensProvider>
     </ThemeProvider>
   )
 }
