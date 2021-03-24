@@ -2568,44 +2568,81 @@ const user = await prisma.user.update({
 
 #### Remarks
 
-* Multiple `connectOrCreate` queries running in parallel can result in a **race condition**. Consider the following example, where two queries attempt to `connectOrCreate` a blog post tag named `computing` at the same time:
+#### Remarks
 
-Query A:
+- Multiple `connectOrCreate` queries that run _in parallel_ can result in a **race condition**. Consider the following example, where two queries attempt to `connectOrCreate` a blog post tag named `computing` at the same time (tag names must be unique):
 
-```ts
-const addBlogPost = await prisma.post.create({
-  data: {
-    title: "How to writer a compiler",
-    content: "..."
-    connectOrCreate: {
-      tag: 
-    }
-  }
-})
-```
+  <TabbedContent tabs={[<FileWithIcon text="Query A" icon="code"/>, <FileWithIcon text="Query B" icon="code"/>]}>
+  <tab>
 
-Query B:
+  ```ts
+  const createPost = await prisma.post.create({
+    data: {
+      title: 'How to create a compiler',
+      content: '...',
+      author: {
+        connect: {
+          id: 9,
+        },
+      },
+      tags: {
+        connectOrCreate: {
+          create: {
+            name: 'computing',
+          },
+          where: {
+            name: 'computing',
+          },
+        },
+      },
+    },
+  })
+  ```
 
-```ts
-const addBlogPost = await prisma.post.create({
-  data: {
-    title: "How to ",
-    content: "..."
-    connectOrCreate: {
-      tag: 
-    }
-  }
-})
-```
+  </tab>
+    <tab>
 
-| Query A (Fail ❌)  | Query B (Success ✅) |
-| :-----------------  | :------------------- |
-| Query hits server, starts transaction A | Query hits server, starts transaction B |
-|                     | Find record where `tagName` equals `computing`, record not found
-| Find record where `tagName` equals `computing`, record not found | |
-|                     | Create record where `tagName` equals `computing` and connect
-| Create record where `tagName` equals `computing` | |
-| Unique violation, record already created by transaction B | |
+  ```ts
+  const createPost = await prisma.post.create({
+    data: {
+      title: 'How to handle schema drift in production',
+      content: '...',
+      author: {
+        connect: {
+          id: 15,
+        },
+      },
+      tags: {
+        connectOrCreate: {
+          create: {
+            name: 'computing',
+          },
+          where: {
+            name: 'computing',
+          },
+        },
+      },
+    },
+  })
+  ```
+
+  </tab>
+  </TabbedContent>
+
+  If query A and query B overlap in the following way, query A results in an exception:
+
+  | Query A (Fail ❌)                                                | Query B (Success ✅)                                             |
+  | :--------------------------------------------------------------- | :--------------------------------------------------------------- |
+  | Query hits server, starts transaction A                          | Query hits server, starts transaction B                          |
+  |                                                                  | Find record where `tagName` equals `computing`, record not found |
+  | Find record where `tagName` equals `computing`, record not found |                                                                  |
+  |                                                                  | Create record where `tagName` equals `computing` and connect     |
+  | Create record where `tagName` equals `computing`                 |                                                                  |
+  | Unique violation, record already created by transaction B        |                                                                  |
+
+  ```
+
+  ```
 
 #### Examples
 
