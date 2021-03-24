@@ -1757,7 +1757,23 @@ export type UserOrderByInput = {
   profileViews?: SortOrder
   role?: SortOrder
   coinflips?: SortOrder
-  profile?: ExtendedProfileOrderByInput
+  posts?: PostOrderByAggregateInput
+  profile?: ExtendedProfileOrderByWithRelationInput
+}
+```
+
+Related types:
+
+```ts
+export type PostOrderByAggregateInput = {
+  count: SortOrder
+}
+
+export type ExtendedProfileOrderByWithRelationInput = {
+  id?: SortOrder
+  biograpy?: SortOrder
+  userId?: SortOrder
+  user?: UserOrderByWithRelationInput
 }
 
 export declare const SortOrder: {
@@ -1801,6 +1817,8 @@ generator client {
 }
 ```
 
+The following query orders posts by user name:
+
 ```ts
 const posts = await prisma.post.findMany({
   orderBy: {
@@ -1808,6 +1826,29 @@ const posts = await prisma.post.findMany({
       name: 'asc',
     },
   },
+})
+```
+
+#### Sort `User` by the `posts` count
+
+Sorting by relation count is a Preview feature. To enable this feature, add `orderByRelation` to `previewFeatures` in your schema:
+
+```prisma highlight=3;normal
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["orderByRelation"]
+}
+```
+
+The following query orders users by post count:
+
+```ts
+const getActiveusers = await prisma.user.findMany({
+  orderBy: {
+    posts: {
+      count: "desc"
+    }
+  }    
 })
 ```
 
@@ -2568,9 +2609,7 @@ const user = await prisma.user.update({
 
 #### Remarks
 
-#### Remarks
-
-- Multiple `connectOrCreate` queries that run _in parallel_ can result in a **race condition**. Consider the following example, where two queries attempt to `connectOrCreate` a blog post tag named `computing` at the same time (tag names must be unique):
+- Multiple `connectOrCreate` queries that run _as concurrent transactions_ can result in a **race condition**. Consider the following example, where two queries attempt to `connectOrCreate` a blog post tag named `computing` at the same time (tag names must be unique):
 
   <TabbedContent tabs={[<FileWithIcon text="Query A" icon="code"/>, <FileWithIcon text="Query B" icon="code"/>]}>
   <tab>
@@ -2640,9 +2679,7 @@ const user = await prisma.user.update({
   | Create record where `tagName` equals `computing`                 |                                                                  |
   | Unique violation, record already created by transaction B        |                                                                  |
 
-  ```
-
-  ```
+  To work around this scenario, we recommed catching the unique violation exception (`PrismaClientKnownRequestError`, error `P2002`) and retrying failed queries.
 
 #### Examples
 
