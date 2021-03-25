@@ -1,0 +1,182 @@
+---
+title: 'Advanced type safety'
+metaTitle: 'Advanced type safety (Reference)'
+metaDescription: 'Prisma Client provides full type safety for queries, even for partial queries or included relations. This page explains how to leverage the generated types and utilities.'
+tocDepth: 3
+---
+
+<TopBlock>
+
+The generated code for Prisma Client contains several helpful types and utilities that you can use to make your application more type-safe. This page describes patterns for leveraging them.
+
+By importing the `Prisma` namespace from `@prisma/client` you can access types and utilities related to your defined models.
+
+The following example shows how to import the `Prisma` namespace and use it to access the `validator` utility function and a generated type. The function accepts the generated type as its [type assertion](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions).
+
+```ts
+// Import the `Prisma` namespace from the `@prisma/client` package
+import { Prisma } from '@prisma/client'
+
+const selectId = Prisma.validator<Prisma.UserSelect>()({
+  id: true,
+})
+```
+
+</TopBlock>
+
+## What are generated types?
+
+Generated types are TypeScript types that are derived from your models. They allow you to perform operations such as a `select` or `include` on your records in a type-safe manner.
+
+Looking at the above example again you can see a `UserSelect` type passed as a type assertion to the `validator` utility function. This means that you can only use fields available to a `select` operation within this function. It's type-safe.
+
+All generated types follow the same naming convention of `ModelOperation(s)`.
+
+See the [modal query options](../../../../reference/api-reference/prisma-client-reference#model-query-options) reference for more information about the different types available.
+
+## Using Prisma.validator to create reusable query parameters
+
+Sometimes you want to make the `select` or `include` statements you use in Prisma Client reusable, so you don't need to repeat them across your application.
+
+You can achieve this with a utility function called `Prisma.validator`. This function allows you to construct arguments for Prisma Client while not losing the important type information it needs.
+
+<details>
+<summary>Prisma.validator TypeScript signature</summary>
+
+```ts
+type Exact<A, W = unknown> = W extends unknown
+  ? A extends Narrowable
+    ? Cast<A, W>
+    : Cast<
+        { [K in keyof A]: K extends keyof W ? Exact<A[K], W[K]> : never },
+        { [K in keyof W]: K extends keyof A ? Exact<A[K], W[K]> : W[K] }
+      >
+  : never
+
+type Narrowable = string | number | boolean | bigint
+
+type Cast<A, B> = A extends B ? A : B
+
+export const type: unique symbol
+
+export function validator<V>(): <S>(select: Exact<S, V>) => S
+```
+
+</details>
+
+## Scenarios
+
+### Reusable model query options
+
+In a real world scenario you might be faced with creating multiple queries in different files. These queries might be based upon the same building blocks and composed with many of the same query options such as `select` or `include`.
+
+The following example shows two files duplicating query options.
+
+```ts file=find-users.js
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// Returns all users `name` and `email` but omits their `posts`
+const users = await prisma.user.findMany({
+  select: {
+    name: true,
+    email: true,
+    posts: false,
+  },
+})
+```
+
+```ts file=find-unique-user.js
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// Returns a single users `name` and `email` but omits their `posts`
+const user = await prisma.user.findUnique({
+  where: { id: 1 }
+  select: {
+    name: true,
+    email: true,
+    posts: false,
+  }
+})
+```
+
+Notice both files use the same `select` options. Although there is nothing wrong with this approach, this code could be streamlined and the duplicated code removed.
+
+The following uses the `validator` and the generated type `UserSelect` to create a reusable `select` query option.
+
+```ts file=my-custom-query
+import { Prisma, PrismaClient } from '@prisma/client'
+
+export const selectNameEmailNotPosts = Prisma.validator<Prisma.UserSelect>()({
+  name: true,
+  email: true,
+  posts: false,
+})
+```
+
+This new query option can now be used in both of the above queries, its type-safe and it reduces code duplication in your codebase.
+
+```ts
+import { PrismaClient } from '@prisma/client'
+import { selectNameEmailNotPosts } from './my-custom-query'
+
+const prisma = new PrismaClient()
+
+const users = await prisma.user.findMany({
+  select: selectNameEmailNotPosts,
+})
+
+const user = await prisma.user.findUnique({
+  where: { id: 1 }
+  select: selectNameEmailNotPosts
+})
+```
+
+### Combining Prisma.validator with form input
+
+The following example creates a function from the `Prisma.validator` which can be used when interacting with user created data, such as form inputs.
+
+```ts
+import { Prisma, PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// Create a new function and pass the parameters onto the validator
+const createUserAndPost = (name: string, email: string, postTitle: string, profileBio: string) => {
+  return Prisma.validator<Prisma.UserCreateInput>()({
+    name,
+    email,
+    posts: {
+      create: {
+        title: postTitle,
+      },
+    },
+    profile: {
+      create: {
+        bio: profileBio,
+      },
+    },
+  })
+}
+
+const findSpecificUser = (name: string, email: string) => {
+  return Prisma.validator<Prisma.UserWhereInput>()({
+    name,
+    email,
+  })
+}
+
+// Create the user in the database based on form input
+await prisma.user.create({
+  data: createUserAndPost('Rich', 'rich@boop.com', 'Life of Pie', 'Learning each day'),
+})
+
+// Find the specific user based on form input
+const oneUser = await prisma.user.findUnique({ where: findSpecificUser('Rich', 'rich@boop.com') })
+```
+
+The `createUserAndPost` custom function is created using the `Prisma.validator` and passing a generated type (`UserCreateInput`) to the type assertion of the function. This generated type comes from your models.
+The type assertion means that only fields that can be used when creating a user can be called inside the function.
