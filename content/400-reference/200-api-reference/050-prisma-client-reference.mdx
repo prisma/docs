@@ -1757,7 +1757,23 @@ export type UserOrderByInput = {
   profileViews?: SortOrder
   role?: SortOrder
   coinflips?: SortOrder
-  profile?: ExtendedProfileOrderByInput
+  posts?: PostOrderByAggregateInput
+  profile?: ExtendedProfileOrderByWithRelationInput
+}
+```
+
+Related types:
+
+```ts
+export type PostOrderByAggregateInput = {
+  count: SortOrder
+}
+
+export type ExtendedProfileOrderByWithRelationInput = {
+  id?: SortOrder
+  biograpy?: SortOrder
+  userId?: SortOrder
+  user?: UserOrderByWithRelationInput
 }
 
 export declare const SortOrder: {
@@ -1801,6 +1817,8 @@ generator client {
 }
 ```
 
+The following query orders posts by user name:
+
 ```ts
 const posts = await prisma.post.findMany({
   orderBy: {
@@ -1808,6 +1826,29 @@ const posts = await prisma.post.findMany({
       name: 'asc',
     },
   },
+})
+```
+
+#### Sort `User` by the `posts` count
+
+Sorting by relation count is a Preview feature. To enable this feature, add `orderByRelation` to `previewFeatures` in your schema:
+
+```prisma highlight=3;normal
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["orderByRelation"]
+}
+```
+
+The following query orders users by post count:
+
+```ts
+const getActiveusers = await prisma.user.findMany({
+  orderBy: {
+    posts: {
+      count: "desc"
+    }
+  }    
 })
 ```
 
@@ -2565,6 +2606,80 @@ const user = await prisma.user.update({
 <AlgoliaTerm name="apiReference" value="connectOrCreate" />
 
 `connectOrCreate` _either_ connects a record to an existing related record by ID or unique identifier _or_ creates a new related record if the record does not exist. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>
+
+#### Remarks
+
+- Multiple `connectOrCreate` queries that run _as concurrent transactions_ can result in a **race condition**. Consider the following example, where two queries attempt to `connectOrCreate` a blog post tag named `computing` at the same time (tag names must be unique):
+
+  <TabbedContent tabs={[<FileWithIcon text="Query A" icon="code"/>, <FileWithIcon text="Query B" icon="code"/>]}>
+  <tab>
+
+  ```ts
+  const createPost = await prisma.post.create({
+    data: {
+      title: 'How to create a compiler',
+      content: '...',
+      author: {
+        connect: {
+          id: 9,
+        },
+      },
+      tags: {
+        connectOrCreate: {
+          create: {
+            name: 'computing',
+          },
+          where: {
+            name: 'computing',
+          },
+        },
+      },
+    },
+  })
+  ```
+
+  </tab>
+    <tab>
+
+  ```ts
+  const createPost = await prisma.post.create({
+    data: {
+      title: 'How to handle schema drift in production',
+      content: '...',
+      author: {
+        connect: {
+          id: 15,
+        },
+      },
+      tags: {
+        connectOrCreate: {
+          create: {
+            name: 'computing',
+          },
+          where: {
+            name: 'computing',
+          },
+        },
+      },
+    },
+  })
+  ```
+
+  </tab>
+  </TabbedContent>
+
+  If query A and query B overlap in the following way, query A results in an exception:
+
+  | Query A (Fail ❌)                                                | Query B (Success ✅)                                             |
+  | :--------------------------------------------------------------- | :--------------------------------------------------------------- |
+  | Query hits server, starts transaction A                          | Query hits server, starts transaction B                          |
+  |                                                                  | Find record where `tagName` equals `computing`, record not found |
+  | Find record where `tagName` equals `computing`, record not found |                                                                  |
+  |                                                                  | Create record where `tagName` equals `computing` and connect     |
+  | Create record where `tagName` equals `computing`                 |                                                                  |
+  | Unique violation, record already created by transaction B        |                                                                  |
+
+  To work around this scenario, we recommend catching the unique violation exception (`PrismaClientKnownRequestError`, error `P2002`) and retrying failed queries.
 
 #### Examples
 
