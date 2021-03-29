@@ -1,29 +1,160 @@
 ---
 title: Connection management
+tocDepth: 2
 ---
 
 <TopBlock>
 
-* Connection limit overview
+Databases have a limit on the number of open connections they can handle. A higher connection limit allows more processes to connect. However, this comes with a significant performance cost on the database side. Moreover, many databases recommended not overpassing a certain connection number. Several approaches can be used to mitigate such problems. Choosing the right approach depends on the deployment paradigm.
 
 </TopBlock>
 
-## Connection management for long-running processes (PaaS)
+## Long-running processes (PaaS)
 
 Configure limit
 SINGLE INSTANCE of `PrismaClient`
 
-## Connection management for serverless environments (FaaS)
+### Connection limits
+
+## Serverless environments (FaaS)
+
+### Connection limits
+
+It's recommended to set the connection limit to 1 if you're not using an external connection pooler because each incoming request starts a short-lived Node.js process. This can cause the database connection pool to be quickly exhausted from a short spike in user traffic.
+
+* 
+
+### Connection pooling
+
+### Scenario:
+
+
+Connection management in serverless environments complicated. Consider following scenario:
+
+1. You have a function that does one thing - gets the top `n` blog posts: `getDashboard`:
+
+```ts
+import { PrismaClient, Prisma } from '@prisma/client'
+
+const client = new PrismaClient()
+
+export async function handler() {
+
+  const topBlogPosts = client.posts.findMany({
+      take: 10,
+      orderBy: {
+          created: "desc"
+      }
+  })
+
+  const topUsers = client.user.findMany({
+      take: 10,
+      orderBy: {
+          posts: {
+              count: "desc"
+          }
+      }
+  })  
+
+  let data = await Promise.all(topUsers, blogPosts);
+
+  return {
+    data
+  }
+}
+```
+
+Notice two things about this function:
+
+* Instantiates `PrismaClient` outside scope of handler (default pool size is X) - as long as the handler remains 'warm' (in use), the connection is reusable:
+
+  ```ts highlight=3;normal
+    import { PrismaClient, Prisma } from '@prisma/client'
+
+    const client = new PrismaClient()
+
+    export async function handler() {
+        /* ... */
+    }
+  ```
+* Does not explicitly disconnect - we're expecting this function to run frequently and for the handler to remain 'warm', and don't want to use the resources connecting and disconnect each time we run the function.
+
+1. Request comes in - one lambda spins up to handle the request: by default, pool size is 1 + CPU *2 - so five
+1. Suddenly traffic spikes - 10x 
+
+    
+     
+2. Suddenly you have a traffic spike - suddenly 40 lambdas, each opening 1 connection => 40 connections
+3. Gets worse - 
+
+Might solve this by:
+
+* Implementing connection pooling (e.g. pgBouncer)
 
 Depends on scenario.
 
 This is a great place for
-`PrismaClient` to call `connect` or at least call `PrismaClient` constructor so that subsequent invocations can share a connection. There are some implications though that are not directly related to Prisma Client JS but any system that would require a DB connection from serverless environment:
+`PrismaClient` to call `connect` or at least call `PrismaClient` constructor so that subsequent invocations can share a connection. 
 
-| Implication                         | Description                                                                                                                                                                                                                                       | Potential Solution                                                                                                                                                       |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Container reuse                     | It is not guaranteed that subsequent nearby invocations of a function will hit the same container. AWS can choose to create a new container at any time.                                                                                          | Code should assume the container to be stateless and create a connection only if it does not exist. Prisma Client JS already implements that logic.                      |
+Typically, any piece of code [outside the handler](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-features.html#gettingstarted-features-programmingmodel) remains initialized. 
+
+* Connection limit to `1`
+* Use a connection pooler
+
+
+### Option 1: Set connection limit to 1
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+  ```
+  postgresql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=1
+  ```
+
+</tab>
+<tab>
+
+  ```
+  mysql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=1
+  ```
+
+</tab>
+</TabbedContent>
+
+1. Serverless function receives request
+1. Creates an instance of `PrismaClient`, which creates a pool with `1` connection
+1. Does whatever it needs to do
+1. Closes connection (`.$disconnect()`)
+
+Scenario: I have 20 serverless functions that connect to the database a looooot
+
+Goal: I don't want to exhaust the database, but I don't necessarily want to connect/disconnect from the database every single time either
+
+Suggested steps:
+
+* Initialize PrismaClient *outside the specific serverless function* because I want to keep the connection open - the handler is going run again and again and again
+* No need to disconnect explicitly
+* To make sure you don't exhaust the db connection pool, try: a) setting the connection limit to 1.
+
+### Option 2: Use a connection pooler
+
+### Special considerations
+
+There are some implications though that are not directly related to Prisma Client JS but any system that would require a DB connection from serverless environment:
+
+#### Container reuse
+
+t is not guaranteed that subsequent nearby invocations of a function will hit the same container. AWS can choose to create a new container at any time. 
+
+Code should assume the container to be stateless and create a connection only if it does not exist. Prisma Client JS already implements that logic.
+
+#### Zombie connections
+
 | Zombie connections                  | The containers that are marked to be removed and are not being reused still keep a connection open and can stay in that state for some time (unknown and not documented from AWS), this can lead to sub-optimal utilization of the DB connections | One potential solution is to use a lower idle connection timeout. Another solution can be to clean up the idle connections in a separate service<sup>1, 2</sup>.         |
+
+
+#### Database connection pool exhaustion
+
 | Database connection pool exhaustion | Concurrent requests create multiple new connections to the database thereby exhausting the database's connection limit.                                                                                                                            | Add a connection pooler, e.g. [PgBouncer](#pgbouncer) or limiting the serverless function concurrency to a number lower than the database's connection limit. |
 
 <br />
@@ -42,10 +173,6 @@ This is a great place for
 
 Note that depending on your serverless concurrency limit (the number of serverless functions running), you might still exhaust your database's connection limit. This can happen when too many functions are invoked concurrently (i.e. the number of concurrent Lambdas that each hold a DB connection exceeds the connection limit of your database). To prevent this, [set your serverless concurrency limit](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html) to a number lower than the connection limit of your database (as you might want to be able to connect from another client for other purposes).
 
-
-### Scenario:
-
-### Scenario: 
 
 ## Database connection limit
 
@@ -93,19 +220,7 @@ It's recommended to use the default of `num_physical_cpus * 2 + 1`. That number 
 
 #### Serverless (FaaS)
 
-It's recommended to set the connection limit to 1 if you're not using an external connection pooler because each incoming request starts a short-lived Node.js process. This can cause the database connection pool to be quickly exhausted from a short spike in user traffic.
 
-  **PostgreSQL**
-
-  ```
-  postgresql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=1
-  ```
-
-  **MySQL**
-
-  ```
-  mysql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=1
-  ```
 
 ## Connectiong pooling
 
