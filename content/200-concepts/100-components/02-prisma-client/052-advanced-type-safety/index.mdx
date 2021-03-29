@@ -2,43 +2,141 @@
 title: 'Advanced type safety'
 metaTitle: 'Advanced type safety (Reference)'
 metaDescription: 'Prisma Client provides full type safety for queries, even for partial queries or included relations. This page explains how to leverage the generated types and utilities.'
-tocDepth: 3
+tocDepth: 4
 ---
 
 <TopBlock>
 
 The generated code for Prisma Client contains several helpful types and utilities that you can use to make your application more type-safe. This page describes patterns for leveraging them.
 
-By importing the `Prisma` namespace from `@prisma/client` you can access types and utilities related to your defined models.
+</TopBlock>
 
-The following example shows how to import the `Prisma` namespace and use it to access the `validator` utility function and a generated type. The function accepts the generated type as its [type assertion](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions).
+## Using the <inlinecode>Prisma</inlinecode> namespace
+
+The `Prisma` namespace can be imported and various utilities accessed using dot notation. Generated types are one such utility. The following example shows how to import the `Prisma` namespace and use it to access a [generated type](#what-are-generated-types). This type is then used to create a typed `select` statement which can be used when composing queries.
 
 ```ts
-// Import the `Prisma` namespace from the `@prisma/client` package
 import { Prisma } from '@prisma/client'
 
-const selectId = Prisma.validator<Prisma.UserSelect>()({
-  id: true,
-})
-```
+type Select = Prisma.UserSelect
 
-</TopBlock>
+const userEmail: Select = {
+  email: true,
+}
+```
 
 ## What are generated types?
 
-Generated types are TypeScript types that are derived from your models. They allow you to perform operations such as a `select` or `include` on your records in a type-safe manner.
+Generated types are TypeScript types that are derived from your models. They allow you to perform operations such as a `select` or `include` on your records in a typed manner.
 
-Looking at the above example again you can see a `UserSelect` type passed as a type assertion to the `validator` utility function. This means that you can only use fields available to a `select` operation within this function. It's type-safe.
+`UserSelect` is one such generated type. Its object properties match those that are supported by `select` statements according to the model.
 
-All generated types follow the same naming convention of `ModelOperation(s)`.
+The code below shows the `UserSelect` generated type and how each property on the object has a type annotation.
 
-See the [modal query options](../../../../reference/api-reference/prisma-client-reference#model-query-options) reference for more information about the different types available.
+```ts
+type Prisma.UserSelect = {
+    id?: boolean | undefined;
+    email?: boolean | undefined;
+    name?: boolean | undefined;
+    posts?: boolean | Prisma.PostFindManyArgs | undefined;
+    profile?: boolean | Prisma.ProfileArgs | undefined;
+}
+```
 
-## Using Prisma.validator to create reusable query parameters
+In TypeScript the concept of [type annotations](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-annotations-on-variables) is when you declare a variable and add a type annotation to describe the type of the variable. See the below example.
 
-Sometimes you want to make the `select` or `include` statements you use in Prisma Client reusable, so you don't need to repeat them across your application.
+```ts
+const myAge: number = 37
+const myName: string = 'Rich'
+```
 
-You can achieve this with a utility function called `Prisma.validator`. This function allows you to construct arguments for Prisma Client while not losing the important type information it needs.
+Both of these variable declarations have been given a type annotation to specify what primitive type they are, `number` and `string` respectively. Most of the time this kind of annotation is not needed as TypeScript will infer the type of the variable based on how its initialized. In the above example `myAge` was initialized with a number so TypeScript guesses that it should be typed as a number.
+
+Going back to the `UserSelect` type, if you were to use dot notation on the created variable `userEmail`, you would have access to all of the fields on the `User` model that can be interacted with using a `select` statement.
+
+```prisma file=schema.prisma
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  posts   Post[]
+  profile Profile?
+}
+```
+
+```ts
+import { Prisma } from '@prisma/client'
+
+type Select = Prisma.UserSelect
+
+const userEmail: Select = {
+  email: true,
+}
+
+// properties available on the typed object
+userSelect.id
+userSelect.email
+userSelect.name
+userSelect.posts
+userSelect.profile
+```
+
+In the same mould, you can type an object with an `include` generated type then your object would have access to those properties on which you can use an `include` statement.
+
+```ts
+import { Prisma } from '@prisma/client'
+
+type Include = Prisma.UserInclude
+
+const userInclude: Include = {
+  posts: true,
+}
+
+// properties available on the typed object
+userInclude.posts
+userInclude.profile
+```
+
+> See the [modal query options](../../../../reference/api-reference/prisma-client-reference#model-query-options) reference for more information about the different types available.
+
+### Creating a typed query statement
+
+Let's imagine that you wanted to re-use your new `userEmail` object in different queries throughout your application. As seen above it's typed and can be safely used in queries.
+
+The below example asks `Prisma` to return the `email` of the user who's `id` is 3, if no user exists it will return `null`.
+
+```ts
+import { Prisma } from '@prisma/client'
+
+type Select = Prisma.UserSelect
+
+const userEmail: Select = {
+  email: true,
+}
+
+const getUser = await prisma.user.findUnique({
+  where: {
+    id: 3,
+  },
+  select: userEmail,
+})
+```
+
+This works well but there is a caveat to extracting query statements this way.
+
+You'll notice that if you hover your mouse over `userEmail` TypeScript wont infer the objects key or value (that is, `email: true`).
+
+The same applies if you use dot notation on `userEmail` within the `getUser` query, you will be able to access all of the properties available to a `select` statement.
+
+If you are using this in one file that may be fine, but if you are going to export this object and use it in other queries, or if you are compiling an external library where you want to control how the user uses this object within their queries then this wont be type-safe.
+
+The object `userEmail` has been created to select only the users `email`, and yet it still gives access to all the other properties available. It is typed, but not type-safe.
+
+`Prisma` has a way to validate generated types to make sure they are type-safe, a utility function available on the namespace called `validator`.
+
+## What is the <inlinecode>Prisma.validator</inlinecode>?
+
+The `Prisma.validator` is a utility function that takes a generated type and returns a type-safe object which adheres to the generated types model fields.
 
 <details>
 <summary>Prisma.validator TypeScript signature</summary>
@@ -64,80 +162,38 @@ export function validator<V>(): <S>(select: Exact<S, V>) => S
 
 </details>
 
-## Scenarios
+### Using <inlinecode>Prisma.validator</inlinecode> to extract query statements
 
-### Reusable model query options
+The following example passes the `UserSelect` generated type into the `Prisma.validator` utility function and defines the expected return type in much the same way as the previous example.
 
-In a real world scenario you might be faced with creating multiple queries in different files. These queries might be based upon the same building blocks and composed with many of the same query options such as `select` or `include`.
+```ts highlight=3,5-7;delete|9-11;add
+import { Prisma } from '@prisma/client'
 
-The following example shows two files duplicating query options.
+type Select = Prisma.UserSelect
 
-```ts file=find-users.js
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
-// Returns all users `name` and `email` but omits their `posts`
-const users = await prisma.user.findMany({
-  select: {
-    name: true,
-    email: true,
-    posts: false,
-  },
-})
-```
-
-```ts file=find-unique-user.js
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
-// Returns a single users `name` and `email` but omits their `posts`
-const user = await prisma.user.findUnique({
-  where: { id: 1 }
-  select: {
-    name: true,
-    email: true,
-    posts: false,
-  }
-})
-```
-
-Notice both files use the same `select` options. Although there is nothing wrong with this approach, this code could be streamlined and the duplicated code removed.
-
-The following uses the `validator` and the generated type `UserSelect` to create a reusable `select` query option.
-
-```ts file=my-custom-query
-import { Prisma, PrismaClient } from '@prisma/client'
-
-export const selectNameEmailNotPosts = Prisma.validator<Prisma.UserSelect>()({
-  name: true,
+const userEmail: Select = {
   email: true,
-  posts: false,
+}
+
+const userEmail = Prisma.validator<Prisma.UserSelect>()({
+  email: true,
+})
+
+const getUser = await prisma.user.findUnique({
+  where: {
+    id: 3,
+  },
+  select: userEmail,
 })
 ```
 
-This new query option can now be used in both of the above queries, its type-safe and it reduces code duplication in your codebase.
+The big difference is that the `userEmail` object is now type-safe. If you hover your mouse over it TypeScript will tell you the objects key, value pair. If you use dot notation to access the objects properties you will only be able to access the `email` property of the object.
 
-```ts
-import { PrismaClient } from '@prisma/client'
-import { selectNameEmailNotPosts } from './my-custom-query'
+This functionality is handy when combined with user defined input, like form data.
 
-const prisma = new PrismaClient()
+### Combining <inlinecode>Prisma.validator</inlinecode> with form input
 
-const users = await prisma.user.findMany({
-  select: selectNameEmailNotPosts,
-})
-
-const user = await prisma.user.findUnique({
-  where: { id: 1 }
-  select: selectNameEmailNotPosts
-})
-```
-
-### Combining Prisma.validator with form input
-
-The following example creates a function from the `Prisma.validator` which can be used when interacting with user created data, such as form inputs.
+The following example creates a type-safe function from the `Prisma.validator` which can be used when interacting with user created data, such as form inputs.
 
 ```ts
 import { Prisma, PrismaClient } from '@prisma/client'
@@ -162,9 +218,8 @@ const createUserAndPost = (name: string, email: string, postTitle: string, profi
   })
 }
 
-const findSpecificUser = (name: string, email: string) => {
+const findSpecificUser = (email: string) => {
   return Prisma.validator<Prisma.UserWhereInput>()({
-    name,
     email,
   })
 }
@@ -175,8 +230,7 @@ await prisma.user.create({
 })
 
 // Find the specific user based on form input
-const oneUser = await prisma.user.findUnique({ where: findSpecificUser('Rich', 'rich@boop.com') })
+const oneUser = await prisma.user.findUnique({ where: findSpecificUser('rich@boop.com') })
 ```
 
-The `createUserAndPost` custom function is created using the `Prisma.validator` and passing a generated type (`UserCreateInput`) to the type assertion of the function. This generated type comes from your models.
-The type assertion means that only fields that can be used when creating a user can be called inside the function.
+The `createUserAndPost` custom function is created using the `Prisma.validator` and passed a generated type, `UserCreateInput`. The `Prisma.validator` validates the functions input because the types assigned to the parameters must match those the generated type expects.
