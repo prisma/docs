@@ -43,7 +43,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
     .map((edge, i) => {
       // Skip the 404 pages and pages without seoTitle
       if (!edge.node.context || !edge.node.context.seoTitle) return null
-      console.log(edge.node.path)
       // Skip explicitly excluded paths
       if (excludedPaths.includes(edge.node.path)) return null
 
