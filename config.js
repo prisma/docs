@@ -79,13 +79,13 @@ const config = {
       buttons: [
         {
           text: 'Quick start',
-          url: 'getting-started/quickstart-typescript',
+          url: '/docs/getting-started/quickstart-typescript',
           special: true,
           icon: 'DoubleArrow',
         },
         {
           text: 'Set up Prisma',
-          url: 'getting-started/setup-prisma',
+          url: '/docs/getting-started/setup-prisma',
           special: false,
           icon: null,
         },
@@ -105,27 +105,27 @@ const config = {
         links: [
           {
             text: 'What is Prisma',
-            url: 'concepts/overview/what-is-prisma',
+            url: '/docs/concepts/overview/what-is-prisma',
             codeBlock: false,
           },
           {
             text: 'Why Prisma?',
-            url: 'concepts/overview/why-prisma',
+            url: '/docs/concepts/overview/why-prisma',
             codeBlock: false,
           },
           {
             text: 'Should you use Prisma?',
-            url: 'concepts/overview/should-you-use-prisma',
+            url: '/docs/concepts/overview/should-you-use-prisma',
             codeBlock: false,
           },
           {
             text: 'Prisma in your stack',
-            url: 'concepts/overview/prisma-in-your-stack',
+            url: '/docs/concepts/overview/prisma-in-your-stack',
             codeBlock: false,
           },
           {
             text: 'Under the hood ',
-            url: 'concepts/overview/under-the-hood',
+            url: '/docs/concepts/overview/under-the-hood',
             codeBlock: false,
           },
         ],
@@ -232,14 +232,14 @@ const config = {
         color: '#48BB78',
         small: false,
         content: 'Get started with Prisma Migrate.',
-        url: 'guides/application-lifecycle/developing-with-prisma-migrate',
+        url: '/docs/guides/application-lifecycle/developing-with-prisma-migrate',
       },
       {
         title: 'Using Prisma',
         color: '#38B2AC',
         small: true,
         content: 'How to integrate Prisma into your stack.',
-        url: 'guides/prisma-guides',
+        url: '/docs/guides/prisma-guides',
       },
       {
         title: 'Database workflows',
@@ -247,21 +247,21 @@ const config = {
         small: true,
         content:
           'Guides for common database workflow such as configuring constraints or cascading deletes.',
-        url: 'guides/general-guides/database-workflows/foreign-keys',
+        url: '/docs/guides/general-guides/database-workflows/foreign-keys',
       },
       {
         title: 'Adopting Prisma',
         color: '#9F7AEA',
         small: true,
         content: 'Migrate to Prisma from other ORMs.',
-        url: 'guides/migrate-to-prisma',
+        url: '/docs/guides/migrate-to-prisma',
       },
       {
         title: 'Upgrading to Prisma',
         color: '#ED64A6',
         small: true,
         content: 'Upgrade to Prisma from Prisma 1 or Graphcool.',
-        url: 'guides/upgrade-guides',
+        url: '/docs/guides/upgrade-guides',
       },
       {
         title: 'Deploying Prisma apps',
@@ -269,7 +269,7 @@ const config = {
         small: false,
         content:
           'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
-        url: 'guides/deployment',
+        url: '/docs/guides/deployment',
       },
     ],
     ReferenceText:
@@ -283,17 +283,17 @@ const config = {
         links: [        
           {
             text: 'Prisma Client API reference',
-            url: 'reference/api-reference/prisma-client-reference',
+            url: '/docs/reference/api-reference/prisma-client-reference',
             codeBlock: false,
           },
           {
             text: 'Prisma schema reference',
-            url: 'reference/api-reference/prisma-schema-reference',
+            url: '/docs/reference/api-reference/prisma-schema-reference',
             codeBlock: false,
           },
           {
             text: 'Prisma error reference',
-            url: 'reference/api-reference/error-reference',
+            url: '/docs/reference/api-reference/error-reference',
             codeBlock: false,
           },          
         ],
@@ -305,17 +305,17 @@ const config = {
         links: [
           {
             text: 'introspect',
-            url: 'reference/api-reference/command-reference#introspect',
+            url: '/docs/reference/api-reference/command-reference#introspect',
             codeBlock: true,
           },
           {
             text: 'migrate',
-            url: 'reference/api-reference/command-reference#prisma-migrate-preview',
+            url: '/docs/reference/api-reference/command-reference#prisma-migrate-preview',
             codeBlock: true,
           },
           {
             text: 'db',
-            url: 'reference/api-reference/command-reference#db',
+            url: '/docs/reference/api-reference/command-reference#db',
             codeBlock: true,
           },
         ],
@@ -327,17 +327,17 @@ const config = {
         links: [
           {
             text: 'Features matrix',
-            url: 'reference/database-reference/database-features',
+            url: '/docs/reference/database-reference/database-features',
             codeBlock: false,
           },
           {
             text: 'Connection URLs',
-            url: 'reference/database-reference/connection-urls',
+            url: '/docs/reference/database-reference/connection-urls',
             codeBlock: false,
           },
           {
             text: 'Supported databases',
-            url: 'reference/database-reference/supported-databases',
+            url: '/docs/reference/database-reference/supported-databases',
             codeBlock: false,
           },
         ],
@@ -347,32 +347,32 @@ const config = {
     MoreUsefulLinks: [
       {
         text: `What's new in Prisma docs`,
-        url: 'about/whats-new-in-prisma-docs',
+        url: '/docs/about/whats-new-in-prisma-docs',
         codeBlock: false,
       },
       {
         text: 'About the docs ',
-        url: 'about/about-the-docs',
+        url: '/docs/about/about-the-docs',
         codeBlock: false,
       },
       {
         text: 'Prisma style guide',
-        url: 'about/style-guide',
+        url: '/docs/about/style-guide',
         codeBlock: false,
       },
       {
         text: 'Ask a question on Github',
-        url: 'support#ask-a-question-about-prisma',
+        url: '/docs/support#ask-a-question-about-prisma',
         codeBlock: false,
       },
       {
         text: 'Create a bug report',
-        url: 'support#create-a-bug-report-for-prisma',
+        url: '/docs/support#create-a-bug-report-for-prisma',
         codeBlock: false,
       },
       {
         text: 'Submit a feature request',
-        url: 'support#submit-a-feature-request',
+        url: '/docs/support#submit-a-feature-request',
         codeBlock: false,
       },
       {
@@ -386,7 +386,7 @@ const config = {
       },
       {
         text: 'Limitations',
-        url: 'about/limitations',
+        url: '/docs/about/limitations',
         codeBlock: false,
       },
       {
@@ -396,12 +396,12 @@ const config = {
       },
       {
         text: 'Roadmap',
-        url: 'about/roadmap',
+        url: '/docs/about/roadmap',
         codeBlock: false,
       },
       {
         text: 'Releases and maturity levels',
-        url: 'about/releases',
+        url: '/docs/about/releases',
         codeBlock: false,
       },
     ],
