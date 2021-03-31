@@ -51,24 +51,14 @@ module.exports = async function plugin(
     }
 
     if (!node.url.startsWith('mailto:') && !/^https?:\/\//.test(node.url)) {
-      const frontmatter = markdownNode.frontmatter
-      const langSwitcher = frontmatter.langSwitcher
-      const dbSwitcher = frontmatter.dbSwitcher
-      const newParams = `${langSwitcher ? `${langSwitcher[0]}${dbSwitcher ? '-' : ''}` : ''}${
-        dbSwitcher ? `${dbSwitcher[0]}` : ''
-      }`
-      let tranformedUrl = `${node.url}${newParams ? '-' + newParams : ''}`
-
+      let tranformedUrl = node.url
       links.push({
         ...node,
         tranformedUrl,
         frontmatter: markdownNode.frontmatter,
-        langSwitcher: markdownNode.frontmatter.langSwitcher,
-        dbSwitcher: markdownNode.frontmatter.dbSwitcher
       })
     }
   }
-
 
   visit(markdownAST, 'link', visitor)
 
@@ -106,8 +96,6 @@ module.exports = async function plugin(
         headingsMap[visited.path] = visited.headings
         continue
       }
-
-      console.log(linksMap)
 
       // don't continue if a page hasn't been visited yet
       return
