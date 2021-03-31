@@ -36,7 +36,7 @@ const SEO = ({ title, description, homepage }: SEOProps) => {
       {/* <meta charSet="utf-8" /> */}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>
-        {homepage ? '': titlePrefix}
+        {homepage ? '' : titlePrefix}
         {title}
         {homepage ? '' : titleSuffix}
       </title>
