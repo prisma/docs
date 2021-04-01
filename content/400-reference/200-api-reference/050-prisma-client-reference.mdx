@@ -378,7 +378,7 @@ Use the `rejectOnNotFound` parameter to configure `findUnique` and/or `findFirst
 
 ### Remarks
 
-- You can configure `reectOnNotFound` on a per-request level for both [`findUnique`](#findunique) and [`findFirst`](#findfirst)
+- You can configure `rejectOnNotFound` on a per-request level for both [`findUnique`](#findunique) and [`findFirst`](#findfirst)
 
 #### Options
 
@@ -920,7 +920,12 @@ const user = await prisma.user.upsert({
 
 ### <inlinecode>delete</inlinecode>
 
-`delete` deletes an existing database record. Even though the record is being deleted, `delete` still returns the object that was deleted.
+`delete` deletes an existing database record. You can delete a record:
+
+- By _ID_
+- By a _unique_ attribute
+
+To delete records that match a certain criteria, use [`deleteMany`](#deleteMany) with a filter.
 
 #### Options
 
@@ -996,16 +1001,9 @@ const deleteUser = await prisma.user.delete({
 
 </CodeWithResult>
 
-### <inlinecode>createMany</inlinecode> (Preview)
+### <inlinecode>createMany</inlinecode>
 
-`createMany` creates multiple records in a transaction. To enable this feature, add `createMany` to `previewFeatures` in your schema:
-
-```prisma highlight=3;normal
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["createMany"]
-}
-```
+`createMany` creates multiple records in a transaction.
 
 #### Options
 
@@ -1024,7 +1022,7 @@ generator client {
 
 - `createMany` is not supported by SQLite.
 - You **cannot** create or connect relations - you cannot nest `create`, `createMany`, `connect`, `connectOrCreate` inside a top-level `createMany`
-- You can nest a [`createMany`](#createmany-preview-1) inside an `update` or `create` query - for example, add a `User` and two `Post` records at the same time.
+- You can nest a [`createMany`](#createmany-1) inside an `update` or `create` query - for example, add a `User` and two `Post` records at the same time.
 
 #### Reference
 
@@ -1359,7 +1357,7 @@ const setValue = await prisma.user.aggregate({
 </CmdResult>
 </CodeWithResult>
 
-### <inlinecode>groupBy</inlinecode> (Preview)
+### <inlinecode>groupBy</inlinecode>
 
 See also: [Aggregation, grouping, and summarizing](../../../concepts/components/prisma-client/aggregation-grouping-summarizing#group-by-preview) <span class="concept"></span>
 
@@ -1469,6 +1467,7 @@ const groupUsers = await prisma.user.groupBy({
 #### Remarks
 
 - You cannot combine `select` and `include` on the same level.
+- In [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later, you can [select a `_count` of relations](#select-a-_count-of-relations).
 
 #### Reference
 
@@ -1481,6 +1480,7 @@ export type UserSelect = {
   role?: boolean
   coinflips?: boolean
   posts?: boolean | PostFindManyArgs
+  _count?: boolean | UserCountOutputTypeArgs
 }
 ```
 
@@ -1542,6 +1542,35 @@ const result = await prisma.user.findMany({
     role: 'USER',
   },
 ]
+```
+
+</CmdResult>
+</CodeWithResult>
+
+##### Select a `_count` of relations
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const usersWithCount = await prisma.user.findMany({
+  select: {
+    _count: {
+      select: { posts: true },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  _count: {
+    posts: 3
+  }
+}
 ```
 
 </CmdResult>
@@ -1683,6 +1712,19 @@ const selectNameEmailNotPosts = Prisma.validator<Prisma.UserSelect>()({
 
 `include` defines which relations are included in the result that the Prisma Client returns. See: [Select fields and include relations](../../../concepts/components/prisma-client/select-fields) <span class="concept"></span>.
 
+#### Remarks
+
+- In [2.20.0](https://github.com/prisma/prisma/releases/2.20.0)P and later, you can [`include` a `_count` of relations](#include-a-_count-of-relations)
+
+#### Reference
+
+```ts
+export type UserInclude = {
+  posts?: boolean | PostFindManyArgs
+  _count?: boolean | UserCountOutputTypeArgs
+}
+```
+
 #### Examples
 
 ##### Include the `posts` and `profile` relation when loading `User` records
@@ -1733,6 +1775,32 @@ const includePosts = Prisma.validator<Prisma.UserInclude>()({
   posts: true,
 })
 ```
+
+##### Include a `_count` of relations
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const usersWithCount = await prisma.user.findMany({
+  include: {
+    _count: {
+      select: { posts: true },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{ id: 1, name: "Bob", email: "bob@prisma.io", _count: { posts: 3 } },
+{ id: 2,  name: "Enya", email: "enya@prisma.io", _count: { posts: 2 } }
+```
+
+</CmdResult>
+</CodeWithResult>
 
 ### <inlinecode>where</inlinecode>
 
@@ -1902,7 +1970,23 @@ export type UserOrderByInput = {
   profileViews?: SortOrder
   role?: SortOrder
   coinflips?: SortOrder
-  profile?: ExtendedProfileOrderByInput
+  posts?: PostOrderByAggregateInput
+  profile?: ExtendedProfileOrderByWithRelationInput
+}
+```
+
+Related types:
+
+```ts
+export type PostOrderByAggregateInput = {
+  count: SortOrder
+}
+
+export type ExtendedProfileOrderByWithRelationInput = {
+  id?: SortOrder
+  biograpy?: SortOrder
+  userId?: SortOrder
+  user?: UserOrderByWithRelationInput
 }
 
 export declare const SortOrder: {
@@ -1946,11 +2030,36 @@ generator client {
 }
 ```
 
+The following query orders posts by user name:
+
 ```ts
 const posts = await prisma.post.findMany({
   orderBy: {
     author: {
       name: 'asc',
+    },
+  },
+})
+```
+
+#### Sort `User` by the `posts` count
+
+Sorting by relation count is a Preview feature. To enable this feature, add `orderByRelation` to `previewFeatures` in your schema:
+
+```prisma highlight=3;normal
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["orderByRelation"]
+}
+```
+
+The following query orders users by post count:
+
+```ts
+const getActiveusers = await prisma.user.findMany({
+  orderBy: {
+    posts: {
+      count: 'desc',
     },
   },
 })
@@ -2542,7 +2651,7 @@ const user = await prisma.user.create({
 })
 ```
 
-You can also use a nested [`createMany`](#createmany-preview-1) to achieve the same result.
+You can also use a nested [`createMany`](#createmany-1) to achieve the same result.
 
 ##### Update an existing `User` record by creating a new `Profile` record
 
@@ -2570,7 +2679,7 @@ const user = await prisma.user.update({
 })
 ```
 
-### <inlinecode>createMany</inlinecode> (Preview)
+### <inlinecode>createMany</inlinecode>
 
 A nested `createMany` query adds a new set of records to a parent record. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>.
 
@@ -2721,6 +2830,80 @@ const user = await prisma.user.update({
 <AlgoliaTerm name="apiReference" value="connectOrCreate" />
 
 `connectOrCreate` _either_ connects a record to an existing related record by ID or unique identifier _or_ creates a new related record if the record does not exist. See: [Working with relations](../../../concepts/components/prisma-client/relation-queries) <span class="concept"></span>
+
+#### Remarks
+
+- Multiple `connectOrCreate` queries that run _as concurrent transactions_ can result in a **race condition**. Consider the following example, where two queries attempt to `connectOrCreate` a blog post tag named `computing` at the same time (tag names must be unique):
+
+  <TabbedContent tabs={[<FileWithIcon text="Query A" icon="code"/>, <FileWithIcon text="Query B" icon="code"/>]}>
+  <tab>
+
+  ```ts
+  const createPost = await prisma.post.create({
+    data: {
+      title: 'How to create a compiler',
+      content: '...',
+      author: {
+        connect: {
+          id: 9,
+        },
+      },
+      tags: {
+        connectOrCreate: {
+          create: {
+            name: 'computing',
+          },
+          where: {
+            name: 'computing',
+          },
+        },
+      },
+    },
+  })
+  ```
+
+  </tab>
+    <tab>
+
+  ```ts
+  const createPost = await prisma.post.create({
+    data: {
+      title: 'How to handle schema drift in production',
+      content: '...',
+      author: {
+        connect: {
+          id: 15,
+        },
+      },
+      tags: {
+        connectOrCreate: {
+          create: {
+            name: 'computing',
+          },
+          where: {
+            name: 'computing',
+          },
+        },
+      },
+    },
+  })
+  ```
+
+  </tab>
+  </TabbedContent>
+
+  If query A and query B overlap in the following way, query A results in an exception:
+
+  | Query A (Fail ❌)                                                | Query B (Success ✅)                                             |
+  | :--------------------------------------------------------------- | :--------------------------------------------------------------- |
+  | Query hits server, starts transaction A                          | Query hits server, starts transaction B                          |
+  |                                                                  | Find record where `tagName` equals `computing`, record not found |
+  | Find record where `tagName` equals `computing`, record not found |                                                                  |
+  |                                                                  | Create record where `tagName` equals `computing` and connect     |
+  | Create record where `tagName` equals `computing`                 |                                                                  |
+  | Unique violation, record already created by transaction B        |                                                                  |
+
+  To work around this scenario, we recommend catching the unique violation exception (`PrismaClientKnownRequestError`, error `P2002`) and retrying failed queries.
 
 #### Examples
 
@@ -3686,6 +3869,102 @@ const result = await prisma.user.findMany({
     }
   }
 }
+```
+
+## Scalar list methods
+
+### Reference
+
+```ts
+export type PostUpdatetagsInput = {
+  set?: Enumerable<string>
+  push?: string
+}
+```
+
+### <inlinecode>set</inlinecode>
+
+Use `set` to overwrite the value of a scalar list field.
+
+#### Remarks
+
+- `set` is optional - you can set the value directly:
+
+  ```ts
+  tags: ['computers', 'books']
+  ```
+
+#### Examples
+
+##### Set the value of `tags` to a list of string values
+
+```ts
+const setTags = await prisma.post.update({
+  where: {
+    id: 9
+  },
+  data: {
+      tags: {
+        set: ["computing", "books"]
+      }
+    }
+  })
+}
+```
+
+##### Set `tags` to a list of values _without_ using the `set` keyword
+
+```ts
+const setTags = await prisma.post.update({
+  where: {
+    id: 9
+  },
+  data: {
+      tags: "computing", "books"
+    }
+  })
+}
+```
+
+#### Set the value of `tags` to a single string value
+
+```ts
+const setTags = await prisma.post.update({
+  where: {
+    id: 9,
+  },
+  data: {
+    tags: {
+      set: 'computing',
+    },
+  },
+})
+```
+
+### <inlinecode>push</inlinecode>
+
+`push` is available in version [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later. Use `push` to add _one_ value to a scalar list field.
+
+#### Remarks
+
+- Available for PostgreSQL only.
+- You cannot push a list of values - only a single value.
+
+#### Examples
+
+##### Add a `computing` item to the `tags` list
+
+```ts
+const addTag = await prisma.post.update({
+  where: {
+    id: 9,
+  },
+  data: {
+    tags: {
+      push: 'computing',
+    },
+  },
+})
 ```
 
 ## Scalar list filters
