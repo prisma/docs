@@ -127,7 +127,9 @@ if (process.env.INDEX_ALGOLIA === 'true') {
 }
 
 module.exports = {
-  pathPrefix: process.env.ADD_PREFIX === 'true' ? config.gatsby.pathPrefix : '/',
+  // The line below has been disabled so that both PR previews and production use the same paths
+  // pathPrefix: process.env.ADD_PREFIX === 'true' ? config.gatsby.pathPrefix : '/',
+  pathPrefix: config.gatsby.pathPrefix,
   siteMetadata: {
     pathPrefix: config.gatsby.pathPrefix,
     title: config.siteMetadata.title,

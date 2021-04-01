@@ -140,7 +140,7 @@ export default function Search({ hitsStatus }: any) {
 
   const incrementIndex = () => {
     setSelectedIndex((prevCount: number) => {
-      const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
+      const nbHits = document.querySelectorAll('.ais-Hits-list .ais-Hits-item')?.length
       if (prevCount < nbHits - 1) {
         return prevCount + 1
       } else {
@@ -149,7 +149,7 @@ export default function Search({ hitsStatus }: any) {
     })
   }
   const decrementIndex = () => {
-    const nbHits = document.querySelectorAll(".ais-Hits-list .ais-Hits-item")?.length
+    const nbHits = document.querySelectorAll('.ais-Hits-list .ais-Hits-item')?.length
     setSelectedIndex((prevCount: number) => {
       if (prevCount > 0) {
         return prevCount - 1

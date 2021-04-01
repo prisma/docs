@@ -69,7 +69,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.topLevel = topLevel
           tmp.hidePage = hidePage
           tmp.codeStyle = codeStyle
-          tmp.parentLabel = parts[parts.length-3]
+          tmp.parentLabel = parts[parts.length - 3]
         }
         if (defaultCollapsed && location) {
           defaultCollapsed[part.toLowerCase()] =
@@ -95,7 +95,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           topLevel,
           hidePage,
           codeStyle,
-          parentLabel: parts[parts.length-3]
+          parentLabel: parts[parts.length - 3],
         })
       }
 
