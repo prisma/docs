@@ -50,9 +50,9 @@ const aggregations = await prisma.user.aggregate({
 console.log('Average age:' + aggregations.avg.age)
 ```
 
-## Group by (Preview)
+## Group by
 
-Prisma Client's [`groupBy`](../../../reference/api-reference/prisma-client-reference#group-by-preview) <span class="api"></span> allows you to **group records** by one or more field values - such as `country`, or `country` and `city` and **perform aggregations** on each group, such as finding the average age of people living in a particular city.
+Prisma Client's [`groupBy`](../../../reference/api-reference/prisma-client-reference#group-by) <span class="api"></span> allows you to **group records** by one or more field values - such as `country`, or `country` and `city` and **perform aggregations** on each group, such as finding the average age of people living in a particular city. `groupBy` is a GA in [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later.
 
 The following video uses `groupBy` to summarize total COVID-19 cases by continent:
 
@@ -80,7 +80,7 @@ const groupUsers = await prisma.user.groupBy({
 <CmdResult>
 
 ```js
-[
+;[
   { country: 'Germany', sum: { profileViews: 126 } },
   { country: 'Sweden', sum: { profileViews: 0 } },
 ]
@@ -88,15 +88,6 @@ const groupUsers = await prisma.user.groupBy({
 
 </CmdResult>
 </CodeWithResult>
-
-`groupBy` is a preview feature. To enable this feature, add `"groupBy"` to the generator block in your schema as shown and run `prisma generate`:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["groupBy"]
-}
-```
 
 ### <inlinecode>groupBy</inlinecode> and filtering
 
@@ -245,9 +236,154 @@ Use [`count`](../../../reference/api-reference/prisma-client-reference#count) <s
 const userCount = await prisma.user.count()
 ```
 
+### Count relations
+
+The ability to count relations is avaliable in version [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later. To enable this feature, add `selectRelationCount` to `previewFeatures` in your schema:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["selectRelationCount"]
+}
+```
+
+To return a count of relations (for example, a user's post count), use the `_count` parameter with a nested `select` as shown:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const usersWithCount = await prisma.user.findMany({
+  include: {
+    _count: {
+      select: { posts: true },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{ id: 1, _count: { posts: 3 } },
+{ id: 2, _count: { posts: 2 } },
+{ id: 3, _count: { posts: 2 } },
+{ id: 4, _count: { posts: 0 } },
+{ id: 5, _count: { posts: 0 } }
+```
+
+</CmdResult>
+</CodeWithResult>
+
+The `_count` parameter:
+
+- Can be used inside a top-level `include` _or_ `select`
+- Can be used with any query that returns records (including `delete`, `update`, and `findFirst`)
+- Can return [multiple relation counts](#return-multiple-relation-counts)
+
+#### Return a relations count with `include`
+
+The following query includes each user's post count in the results:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const usersWithCount = await prisma.user.findMany({
+  include: {
+    _count: {
+      select: { posts: true },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{ id: 1, _count: { posts: 3 } },
+{ id: 2, _count: { posts: 2 } },
+{ id: 3, _count: { posts: 2 } },
+{ id: 4, _count: { posts: 0 } },
+{ id: 5, _count: { posts: 0 } }
+```
+
+</CmdResult>
+</CodeWithResult>
+
+#### Return a relations count with `select`
+
+The following query uses `select` to return each user's post count and no other fields:
+
+<CodeWithResult>
+<Cmd>
+
+
+```ts
+const usersWithCount = await prisma.user.findMany({
+  select: {
+    _count: {
+      select: { posts: true },
+    },
+  },
+})
+```
+
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  _count: {
+    posts: 3
+  }
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+#### Return multiple relation counts
+
+The following query returns a count of each user's `posts` and `recipes` and no other fields:
+
+<CodeWithResult>
+<Cmd>
+
+```ts
+const usersWithCount = await prisma.user.findMany({
+  select: {
+    _count: {
+      select: { 
+        posts: true, 
+        recipes: true 
+        },
+    },
+  },
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  _count: {
+    posts: 3,
+    recipes: 9
+  }
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
 ### Count non-`null` field values
 
-In 2.15.0 and later, you can count all records as well as all instances of non-`null` field values. The following query returns a count of:
+In [2.15.0](https://github.com/prisma/prisma/releases/2.15.0) and later, you can count all records as well as all instances of non-`null` field values. The following query returns a count of:
 
 - All `User` records (`_all`)
 - All non-`null` `name` values (not distinct values, just values that are not `null`)
@@ -329,7 +465,7 @@ const distinctRoles = await prisma.user.findMany({
 <CmdResult>
 
 ```js
-[
+;[
   {
     role: 'USER',
   },
