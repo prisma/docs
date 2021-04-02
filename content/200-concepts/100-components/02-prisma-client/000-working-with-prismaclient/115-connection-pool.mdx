@@ -1,0 +1,74 @@
+---
+title: Connection pool
+metaDescription: Prisma's query engine creates a connection pool to store and manage database connections.
+---
+
+<TopBlock>
+
+When the first connection to the database is opened (either by [explicitly calling `$connect()`](connection-management#connect) or running the first query) the query engine first creates a **connection pool** to store and manage database connections.
+
+</TopBlock>
+
+## How the connection pool works
+
+1. Connection pool instantiated with a [congfigurable pool size]()
+2. Queries come in and are added to queue (FIFO - First In First Out)
+3. QE does its best to clear queue within [configurable pool timeout]() (5s by default)
+4. If the pool has no connections available, 
+
+Query engine creates pool with configurable pool size and pool timeout.
+High volume of queries come in (e.g. many people using your app simultaneously or 1000 queries sent at once using Promise.all()
+If all connections are busy, queries go into a queue (channel?) - queue is FIFO (first in, first out)
+QE will attempt to check out a connection at set intervals (not each time a new query arrives in queue) to avoid using up all RAM as a result of too many queries being added to the pool (that is how I read this part: then checking out a connection from the pool is raced with a timer, because if you don't do this and just push more and more queries too fast to the channel, you'll eat up all the RAM
+If QE cannot process a query before the 5s timeout, you will get an error, and should consider increasing connection limit (if your db can handle it) or disable timeouts by setting timeout to zero (queries will now take the time they take, uses up more RAM as queue size grows, not recommended unless you know what you're doing)
+
+the queries will go to a channel in the pool if the pool has no ready connections. then checking out a connection from the pool is raced with a timer, because if you don't do this and just push more and more queries too fast to the channel, you'll eat up all the RAM
+
+
+## Default connection pool size
+
+The default number of connections is calculated with the following formula:
+
+```bash
+num_physical_cpus * 2 + 1
+```
+
+`num_physical_cpus` represents the number of physical CPUs on your machine. If your machine has **four** physical CPUs, your connection pool will contain **nine** connections (`4 * 2 + 1 = 9`).
+
+## Setting the connection limit
+
+You can specify the number of connections by explicitly setting the `connection_limit` parameter in your database connection URL. For example, with the following `datasource` configuration in your [Prisma schema](../../prisma-schema) the connection pool will have exactly five connections:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5"
+}
+```
+
+## Connection pool timeout
+
+TODO
+
+### Setting the connection pool timeout
+
+You can specify the pool timeout explicitly setting the `pool_timeout` parameter in your database connection URL. In the following example, the pool times out after 2 seconds:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5&pool_timeout=2"
+}
+```
+
+## Recommended connection limit
+
+The [default connection pool size](#default-connection-pool-size) represents a good starting point that can be tuned with testing.
+
+TODO: For example, many parallel queries (and you send 1000 queries to prisma without awaiting them) - may get a timeout issue. First solution is to increase connection pool size.
+
+Your deployment paradigm also affects the recommended connection limit - for example, [in some serverless environments, it makes sense to set the connection limit to `1`]() <span class="guide"></span>.
+
+## External connection poolers
+
+In serverless environments, you might end up with 3000 concurrently running functions - even if _each_ instance has a `connection_limit` of `1`. Limit concurrency or set up a connection pooler like pgBouncer.
