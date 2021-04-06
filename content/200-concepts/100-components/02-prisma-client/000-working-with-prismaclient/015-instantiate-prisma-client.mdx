@@ -15,8 +15,8 @@ The following example demonstrates how to import and instantiate your [generated
 
 ```ts
 import { PrismaClient } from '@prisma/client'
+
 const prisma = new PrismaClient()
-// use `prisma` in your application to read and write data in your DB
 ```
 
 </tab>
@@ -25,27 +25,32 @@ const prisma = new PrismaClient()
 
 ```js
 const { PrismaClient } = require('@prisma/client')
+
 const prisma = new PrismaClient()
-// use `prisma` in your application to read and write data in your DB
 ```
 
 </tab>
 
 </TabbedContent>
 
+> **Tip**: You can further customize `PrismaClient` with [constructor parameters](../../../../reference/api-reference/prisma-client-reference#prismaclient) <span class="api"></span> - for example, set [logging levels](logging) or customize [error formatting](error-formatting).
+
 </TopBlock>
-
-## Client parameters
-
-You can further customize [`PrismaClient` accepts parameters](../../../../reference/api-reference/prisma-client-reference#prismaclient) <span class="api"></span> that determine:
-
-* [Logging levels](logging)
-* [Error formatting](error-formatting)
-* [The global behavior of `findUnique` and `findFirst` queries](../../../../reference/api-reference/prisma-client-reference#rejectonnotfound) <span class="api"></span>
 
 ## The the number of `PrismaClient` instances matters
 
-Each instance of `PrismaClient` manages a [database connection pool](connection-management#connection-pool), which means that a large number of clients can **exhaust the database connection limit**. The way to address this challenge depends on whether you are using Prisma in a [long-running application](#prismaclient-in-long-running-applications) or in a [serverless environment](#prismaclient-in-serverless-environments).
+Each instance of `PrismaClient` manages a [database connection pool](connection-pool), which means that a large number of clients can **exhaust the database connection limit**:
+
+1. Each client creates its own instance of the [query engine](../query-engine).
+2. Each query engine creates a [connection pool](connection-pool) with a default pool size of `num_physical_cpus * 2 + 1`. 
+3. Too many connections may start to **slow down your database** and eventually lead to the following error:
+
+    ```
+    Error in connector: Error querying the database: db error: FATAL: sorry, too many clients already
+        at PrismaClientFetcher.request
+    ```
+
+How to address this challenge depends on whether you are using Prisma in a [long-running application](#prismaclient-in-long-running-applications) or in a [serverless environment](#prismaclient-in-serverless-environments).
 
 ## <inlinecode>PrismaClient</inlinecode> in long-running applications
 
@@ -55,13 +60,6 @@ In **long-running** applications, we recommend that you:
 * ✔ Assign `PrismaClient` to a global variable _in dev environments only_ to [prevent hot reloading from creating new instances](#prevent-hot-reloading-from-creating-new-instances-of-prismaclient)
 
 > **Note**: You [do not need to explicitly `$disconnect()`](connection-management#calling-disconnect-explicitly) in the context of a long-running application, such as a GraphQL server.
-
-Multiple instances of `PrismaClient` results in multiple instances of the [query engine](../query-engine). Each query engine creates a [connection pool](connection-management#connection-pool) with a default pool size of `num_physical_cpus * 2 + 1`. Too many connections may start to slow down your database and eventually lead to the following error:
-
-```
-Error in connector: Error querying the database: db error: FATAL: sorry, too many clients already
-    at PrismaClientFetcher.request
-```
 
 To re-use a single instance, create a module that exports a `PrismaClient` object:
 
@@ -131,11 +129,13 @@ main();
 
 ## <inlinecode>PrismaClient</inlinecode> in serverless environments
 
-In a serverless environment, each function creates its own instance of `PrismaClient`. Each instance has its own connection pool. Since you cannot create and share a single instance, you must find other ways to avoid exhausting the database connection limit. Options include:
+In a serverless environment, each function **creates its own instance of `PrismaClient`** and therefore has its own connection pool. Even if the `connection_limit` is set to `1`, `n` _concurrent functions_ responding to a traffic spike 📈 results in `n` connections.
+
+Since you cannot create and share a single instance across functions, you must find other ways to avoid exhausting the database connection limit. Strategies include:
 
 * Creating `PrismaClient` [outside of function handler](https://github.com/prisma/e2e-tests/blob/5d1041d3f19245d3d237d959eca94d1d796e3a52/platforms/serverless-lambda/index.ts#L3) to increase the chances of reuse
-* [Setting the Prisma Client `connection_limit` to `1`](../connection-management#setting-the-connection-limit)
+* [Setting the Prisma Client `connection_limit` to `1`](connection-pool#setting-the-connection-limit)
 * Using an external [connection pooler like pgBouncer]()
-* Limiting the number of concurrent functions (example: [AWS Lambda concurrency](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html)
+* Limiting the number of concurrent functions (example: [AWS Lambda concurrency](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html))
 
 Refer to the [connection management guide](../../../../guides/deployment/connection-management#serverless-environments-faas) <span class="guide"></span> for more information about managing database connections in serverless environments.
