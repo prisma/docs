@@ -305,7 +305,7 @@ const config = {
           },
           {
             text: 'migrate',
-            url: 'reference/api-reference/command-reference#prisma-migrate-preview',
+            url: 'reference/api-reference/command-reference#prisma-migrate',
             codeBlock: true,
           },
           {
