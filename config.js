@@ -44,6 +44,12 @@ const config = {
         bucketName: '/300-guides',
       },
       {
+        text: 'Deployment',
+        to: '/deployment',
+        type: 'bucket',
+        bucketName: '/400-deployment',
+      },      
+      {
         text: 'Reference',
         to: '/reference',
         type: 'bucket',
