@@ -113,11 +113,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     }
   `
 
-  // React.useEffect(() => {
-  //   stickWhenNeeded('#sidebar-holder')
-  //   stickWhenNeeded('#toc-holder')
-  // })
-
   return (
     <ThemeProvider theme={theme}>
       <LensProvider>
