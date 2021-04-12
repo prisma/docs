@@ -1,5 +1,4 @@
 import React from 'react'
-import StickyBox from 'react-sticky-box'
 import Tree from './tree'
 import styled from 'styled-components'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
