@@ -17,6 +17,7 @@ export const useAllArticlesQuery = () => {
               dbSwitcher
               hidePage
               codeStyle
+              navTitle
             }
             fields {
               slug
