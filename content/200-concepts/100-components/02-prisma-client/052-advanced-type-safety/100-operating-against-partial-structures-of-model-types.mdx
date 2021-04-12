@@ -1,18 +1,10 @@
 ---
-title: 'Advanced usage of generated types'
-metaTitle: 'Advanced usage of generated TypeScript types (Reference)'
-metaDescription: 'Prisma Client provides full type safety for queries, even for partial queries or included relations. This page explains how to leverage the generated types.'
+title: 'Operating against partial structures of your model types'
+metaTitle: 'Operating against partial structures of your model types'
+metaDescription: 'This page documents various scenarios for using the generated types from the Prisma namespace'
 ---
 
 <TopBlock>
-
-The generated code for Prisma Client contains several helpful types that you can use to make your application more type-safe. This page describes patterns for leveraging some of the generated types.
-
-Note that you can find all type definitions inside the `index.d.ts` file inside the [generated `.prisma/client` folder](working-with-prismaclient/generating-prisma-client#the-prismaclient-npm-package).
-
-</TopBlock>
-
-## Operating against partial structures of your model types
 
 When using Prisma Client, every model from your [Prisma schema](../prisma-schema) is translated into a dedicated TypeScript type. For example, assume you have the following `User` and `Post` models:
 
@@ -42,13 +34,15 @@ export declare type User = {
 }
 ```
 
-### Problem: Using variations of the generated model type
+</TopBlock>
 
-#### Description
+## Problem: Using variations of the generated model type
+
+### Description
 
 In some scenarios, you may need a _variation_ of the generated `User` type. For example, when you have a function that expects an instance of the `User` model that carries the `posts` relation. Or when you need a type to pass only the `User` model's `email` and `name` fields around in your application code.
 
-#### Solution
+### Solution
 
 As a solution, you can customize the generated model type using Prisma Client's helper types.
 
@@ -74,20 +68,20 @@ type UserPersonalData = {
 }
 ```
 
-While this is certainly feasible, this approach increases the maintenance burden upon changes to the Prisma schema as you need to manually maintain the types. A cleaner solution to this is to use the `UserGetPayload` type that is generated and exposed by Prisma Client under the `Prisma` namespace:
+While this is certainly feasible, this approach increases the maintenance burden upon changes to the Prisma schema as you need to manually maintain the types. A cleaner solution to this is to use the `UserGetPayload` type that is generated and exposed by Prisma Client under the `Prisma` namespace in combination with the [`validator`](./advanced-type-safety/prisma-validator):
 
 ```ts
 import { Prisma } from '@prisma/client'
 
 // Define a type that includes the relation to `Post`
-type UserWithPosts = Prisma.UserGetPayload<{
+const userWithPosts =  Prisma.validator<Prisma.UserGetPayload>()({
   include: { posts: true }
-}>
+})
 
 // Define a type that only contains a subset of the scalar fields
-type UserPersonalData = Prisma.UserGetPayload<{
+const userPersonalData = Prisma.validator<Prisma.UserGetPayload>()({
   select: { email: true; name: true }
-}>
+})
 ```
 
 The main benefits of the latter approach are:
@@ -95,9 +89,9 @@ The main benefits of the latter approach are:
 - Cleaner approach as it leverages Prisma Client's generated types
 - Reduced maintenance burden and improved type safety when the schema changes
 
-### Problem: Getting access to the return type of a function
+## Problem: Getting access to the return type of a function
 
-#### Description
+### Description
 
 When doing [`select`](../../../reference/api-reference/prisma-client-reference#select) <span class="api"></span> or [`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span>operations on your models and returning these variants from a function, it can be difficult to gain access to the return type, e.g:
 
@@ -126,9 +120,9 @@ type UsersWithPosts = ThenArg<ReturnType<typeof getUsersWithPosts>>
 const usersWithPosts: UsersWithPosts = await getUsersWithPosts()
 ```
 
-#### Solution
+### Solution
 
-With the `PromiseReturnType` that is exposed by Prisma Client, you can solve this more elegantly:
+With the `PromiseReturnType` that is exposed by Prisma namespace, you can solve this more elegantly:
 
 ```ts
 import { PromiseReturnType } from '@prisma/client'

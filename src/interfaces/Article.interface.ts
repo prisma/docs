@@ -5,6 +5,7 @@ export interface ArticleFields {
 
 export interface ArticleFrontmatter {
   title: string
+  navTitle?: string
   metaTitle?: string
   metaDescription?: string
   langSwitcher?: string[]

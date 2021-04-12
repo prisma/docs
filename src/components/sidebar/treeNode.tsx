@@ -142,6 +142,7 @@ const TreeNode = ({
   url,
   slug,
   title,
+  navTitle,
   items,
   label,
   topLevel,
@@ -198,6 +199,7 @@ const TreeNode = ({
   // Fix for issue https://github.com/prisma/prisma2-docs/issues/161
   const [isOpen, setIsOpen] = React.useState('close')
   React.useEffect(() => {
+  
     let mounted = true
 
     if (mounted) {
@@ -231,10 +233,10 @@ const TreeNode = ({
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />
               </button>
-              <span className={`${codeStyle ? 'inline-code' : ''}`}>{title}</span>
+              <span className={`${codeStyle ? 'inline-code' : ''}`}>{navTitle || title}</span>
             </span>
           ) : (
-            <span className={`${codeStyle ? 'inline-code' : ''}`}>{title}</span>
+            <span className={`${codeStyle ? 'inline-code' : ''}`}>{navTitle || title}</span>
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag small">Experimental</span>}
