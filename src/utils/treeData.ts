@@ -22,6 +22,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           fields: { slug, modSlug },
           frontmatter: {
             title,
+            navTitle,
             staticLink,
             duration,
             experimental,
@@ -62,6 +63,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.url = `${urlGenerator(modSlug)}${newParams ? '-' + newParams : ''}`
           tmp.slug = slug
           tmp.title = title
+          tmp.navTitle = navTitle
           tmp.staticLink = staticLink
           tmp.duration = duration
           tmp.experimental = experimental
@@ -88,6 +90,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           slug: slug,
           items: [],
           title,
+          navTitle,
           staticLink,
           duration,
           experimental,

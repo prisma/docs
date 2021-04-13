@@ -76,10 +76,9 @@ const Wrapper = styled.div`
       color: var(--code-inner-color);
       height: 24px;
       display: flex;
-      padding-left: 1rem;
-      padding-bottom: 0.7rem;
       align-items: center;
       cursor: pointer;
+      padding: 1rem;
     }
   }
 

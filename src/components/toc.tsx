@@ -15,7 +15,7 @@ const ChapterTitle = styled.div`
 `
 
 const TOCList = styled.ul`
-  padding: 0;
+  padding: 0 0 1em;
   list-style-type: none;
   margin: 0;
   li {
