@@ -14,6 +14,10 @@ const SearchBoxDiv = styled.div`
   width: 250px;
   display: flex;
 
+  & > span {
+    width: 100%;
+  }
+
   form {
     width: 250px;
     position: relative;
