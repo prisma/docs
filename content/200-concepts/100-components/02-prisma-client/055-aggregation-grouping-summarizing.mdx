@@ -50,6 +50,50 @@ const aggregations = await prisma.user.aggregate({
 console.log('Average age:' + aggregations.avg.age)
 ```
 
+### Aggregate values are nullable
+
+In [2.21.0](https://github.com/prisma/prisma/releases/tag/2.21.0) and later, aggregations on **nullable fields** can return a `number` or `null` . This excludes `count`, which always returns 0 if no records are found.
+
+Consider the following query, where `age` is nullable in the schema:
+
+<CodeWithResult expanded={true}>
+<Cmd>
+
+```ts
+const aggregations = await prisma.user.aggregate({
+  avg: {
+    age: true,
+  },
+  count: {
+    age: true
+  }
+})
+```
+
+</Cmd>
+<CmdResult>
+
+```js
+{
+  avg: {
+    age: null
+  },
+  count: {
+    age: 9
+  }
+}
+```
+
+</CmdResult>
+</CodeWithResult>
+
+The query returns `{ avg: { age: null } }` in either of the following scenarios:
+
+* There are no users
+* The value of every user's `age` field is `null`
+
+This allows you to differentiate between the true aggregate value (which could be zero) and no data.
+
 ## Group by
 
 Prisma Client's [`groupBy`](../../../reference/api-reference/prisma-client-reference#group-by) <span class="api"></span> allows you to **group records** by one or more field values - such as `country`, or `country` and `city` and **perform aggregations** on each group, such as finding the average age of people living in a particular city. `groupBy` is a GA in [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later.
@@ -201,7 +245,9 @@ The following constraints apply when you combine `groupBy` and `orderBy`:
 
 #### Order by aggregate group (Preview)
 
-In [2.21.0](https://github.com/prisma/prisma/releases/2.21.0) and later, you can **order by aggregate group**. To enable this feature, add `orderByAggregateGroup` to `previewFeatures` in your schema:
+In [2.21.0](https://github.com/prisma/prisma/releases/2.21.0) and later, you can **order by aggregate group**.
+
+To enable this feature, add `orderByAggregateGroup` to `previewFeatures` in your schema:
 
 ```prisma highlight=3;normal
 generator client {
@@ -210,18 +256,38 @@ generator client {
 }
 ```
 
-The following example sorts results by the `country` with the most users:
+The following example sorts each `city` group by the number of users in that group (largest group first):
+
+<CodeWithResult>
+<Cmd>
 
 ```ts
 const groupBy = await prisma.user.groupBy({
-  by: ['country'],
+  by: ['city'],
+  count: {
+    city  : true,
+  },  
   orderBy: {
     _count: {
-      country: 'desc'
+      city: 'desc'
     }
   },
 })
 ```
+
+</Cmd>
+<CmdResult>
+
+```js
+[
+  { city: 'Berlin', count: { city: 3 } },
+  { city: 'Paris', count: { city: 2 } },
+  { city: 'Amsterdam', count: { city: 1 } },
+]
+```
+
+</CmdResult>
+</CodeWithResult>
 
 #### Order by field
 
