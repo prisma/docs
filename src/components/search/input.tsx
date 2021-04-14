@@ -5,12 +5,10 @@ import SearchPic from '../../icons/Search'
 import Clear from '../../icons/Clear'
 import useWindowDimensions from '../../hooks/useWindowDimensions'
 import SearchSlash from '../../icons/SearchSlash'
-import loadable from "@loadable/component";
+import loadable from '@loadable/component'
 
 // react-keyboard-event-handler uses the window object under the hood so we need to dynamically import it
-const KeyboardEventHandler = loadable(() =>
-  import("react-keyboard-event-handler")
-);
+const KeyboardEventHandler = loadable(() => import('react-keyboard-event-handler'))
 
 const SearchBoxDiv = styled.div`
   width: 250px;
@@ -203,8 +201,8 @@ const SearchBox = ({
   }, [])
 
   return (
-    <KeyboardEventHandler handleKeys={['40', '38', '27', '191']}>
       <SearchBoxDiv className={isOpened ? 'opened' : ''}>
+        <KeyboardEventHandler handleKeys={['40', '38', '27', '191']}>
         <form onSubmit={onSubmit}>
           <SearchIcon />
           <input
@@ -225,8 +223,8 @@ const SearchBox = ({
           )}
           {!isOpened && <SearchSlashIcon />}
         </form>
+        </KeyboardEventHandler>
       </SearchBoxDiv>
-    </KeyboardEventHandler>
   )
 }
 
