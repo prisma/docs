@@ -199,7 +199,6 @@ const TreeNode = ({
   // Fix for issue https://github.com/prisma/prisma2-docs/issues/161
   const [isOpen, setIsOpen] = React.useState('close')
   React.useEffect(() => {
-  
     let mounted = true
 
     if (mounted) {

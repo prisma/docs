@@ -144,11 +144,7 @@ export default function Search({ hitsStatus }: any) {
       onSearchStateChange={({ query }: any) => setQuery(query)}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
-      <CustomSearchBox
-        onFocus={showSearch}
-        isOpened={showHits}
-        closeSearch={hideSearch}
-      />
+      <CustomSearchBox onFocus={showSearch} isOpened={showHits} closeSearch={hideSearch} />
       {query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
           <Index key={indexName} indexName={indexName}>

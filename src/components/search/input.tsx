@@ -5,7 +5,12 @@ import SearchPic from '../../icons/Search'
 import Clear from '../../icons/Clear'
 import useWindowDimensions from '../../hooks/useWindowDimensions'
 import SearchSlash from '../../icons/SearchSlash'
-import * as KeyboardEventHandler from 'react-keyboard-event-handler';
+import loadable from "@loadable/component";
+
+// react-keyboard-event-handler uses the window object under the hood so we need to dynamically import it
+const KeyboardEventHandler = loadable(() =>
+  import("react-keyboard-event-handler")
+);
 
 const SearchBoxDiv = styled.div`
   width: 250px;
@@ -135,11 +140,11 @@ const ClearIcon = styled(Clear)`
 const DEBOUNCE_DELAY = 500
 
 interface SearchBoxProps {
-  refine: (value: string) => void;
-  onFocus: () => void;
-  isOpened: boolean;
-  closeSearch: () => void;
-  currentRefinement: any;
+  refine: (value: string) => void
+  onFocus: () => void
+  isOpened: boolean
+  closeSearch: () => void
+  currentRefinement: any
 }
 
 const SearchBox = ({
@@ -168,19 +173,19 @@ const SearchBox = ({
 
     // Otherwise, debounce the search to avoid triggering many queries at once, which could also
     // make the UI freeze.
-    window.clearTimeout(timeoutId.current as number) 
+    window.clearTimeout(timeoutId.current as number)
     timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY)
     setValue(newValue)
-    
+
     inputEl.current?.blur()
     inputEl.current?.focus()
   }
 
   const clearInput = () => {
     if (timeoutId.current) {
-    window.clearTimeout(timeoutId.current)
-    setValue('')
-    refine('')
+      window.clearTimeout(timeoutId.current)
+      setValue('')
+      refine('')
     }
   }
 
@@ -199,28 +204,28 @@ const SearchBox = ({
 
   return (
     <KeyboardEventHandler handleKeys={['40', '38', '27', '191']}>
-    <SearchBoxDiv className={isOpened ? 'opened' : ''}>
-      <form onSubmit={onSubmit}>
-        <SearchIcon />
-        <input
-          ref={inputEl}
-          type="text"
-          placeholder={placeholderText}
-          aria-label="Search Documentation..."
-          onChange={onChange}
-          onFocus={onFocus}
-          value={value}
-          {...rest}
-        />
+      <SearchBoxDiv className={isOpened ? 'opened' : ''}>
+        <form onSubmit={onSubmit}>
+          <SearchIcon />
+          <input
+            ref={inputEl}
+            type="text"
+            placeholder={placeholderText}
+            aria-label="Search Documentation..."
+            onChange={onChange}
+            onFocus={onFocus}
+            value={value}
+            {...rest}
+          />
 
-        {value !== '' && isOpened && (
-          <span className="clear">
-            <ClearIcon onClick={clearInput} />
-          </span>
-        )}
-        {!isOpened && <SearchSlashIcon />}
-      </form>
-    </SearchBoxDiv>
+          {value !== '' && isOpened && (
+            <span className="clear">
+              <ClearIcon onClick={clearInput} />
+            </span>
+          )}
+          {!isOpened && <SearchSlashIcon />}
+        </form>
+      </SearchBoxDiv>
     </KeyboardEventHandler>
   )
 }
