@@ -4,7 +4,7 @@ import { AllArticles } from '../interfaces/AllArticles.interface'
 export const useAllArticlesQuery = () => {
   const { allMdx }: AllArticles = useStaticQuery(graphql`
     query {
-      allMdx(sort: { fields: fields___slug }) {
+      allMdx {
         edges {
           node {
             frontmatter {
