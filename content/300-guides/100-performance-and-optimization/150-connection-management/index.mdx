@@ -116,7 +116,7 @@ main();
 Examples of serverless environments include Node.js functions hosted on AWS Lambda, Vercel or Netlify Functions. Use the following checklist as a guide to connection management in serverless environments:
 
 - ☐ Familiarize yourself with the [serverless connection management challenge](#the-serverless-challenge)
-- ☐ [Set pool size (`connection_limit`)](#recommended-connection-limit-1) based on whether you have an external connection pooler, and optionally [tune the pool size](#optimizing-the-connection-pool)
+- ☐ [Set pool size (`connection_limit`)](#recommended-connection-pool-size-1) based on whether you have an external connection pooler, and optionally [tune the pool size](#optimizing-the-connection-pool)
 - ☐ [Instantiate `PrismaClient` outside the handler](#instantiate-prismaclient-outside-the-handler) and do not explicitly `$disconnect()
 - ☐ Configure [function concurrency](#concurrency-limits) and handle [idle connections](#zombie-connections)
 
@@ -134,12 +134,12 @@ A traffic spike causes AWS Lambda to spawn two additional lambdas to handle the 
  
 200 _concurrent functions_ (and therefore 600 possible connections) responding to a traffic spike 📈 can exhaust the database connection limit very quickly. Furthermore, any functions that are **paused** keep their connections open by default and block them from being used by another function.
 
-1. Start by [setting the `connection_limit` to `1`](#recommended-connection-limit-1)
-2. If a lower connection limit is not enough, consider using an [external connection pooler like PgBouncer](#external-connection-poolers)
+1. Start by [setting the `connection_limit` to `1`](#recommended-connection-pool-size-1)
+2. If a smaller pool size is not enough, consider using an [external connection pooler like PgBouncer](#external-connection-poolers)
 
-### Recommended connection limit
+### Recommended connection pool size
 
-The recommended connection limit in serverless environments depends on:
+The recommended pool size (`connection_limit`) in serverless environments depends on:
 
 * Whether you are using an [external connection pooler](#external-connection-poolers)
 * Whether your functions are [designed to send queries in parallel](#optimizing-for-parallel-requests)
@@ -171,11 +171,11 @@ The following example demonstrates how to set the `connection_limit` to 1 in you
 
 #### With an external connection pooler
 
-If you are using an external connection pooler, use the default connection limit (`num_physical_cpus * 2 + 1`) as a starting point and then [tune the pool size](#optimizing-the-connection-pool). The external connection pooler should prevent a traffic spike from overwhelming the database.
+If you are using an external connection pooler, use the default pool size (`num_physical_cpus * 2 + 1`) as a starting point and then [tune the pool size](#optimizing-the-connection-pool). The external connection pooler should prevent a traffic spike from overwhelming the database.
 
 #### Optimizing for parallel requests
 
-If you rarely or never exceed the database connection limit with the `connection_limit` parameter set to 1, you can further optimize the connection pool size. Consider a function that is sends queries in parallel:
+If you rarely or never exceed the database connection limit with the pool size set to 1, you can further optimize the connection pool size. Consider a function that is sends queries in parallel:
 
 ```ts
 Promise.all() {
@@ -239,13 +239,13 @@ If the query engine cannot [process a query in the queue before the time limit](
 * Many users are accessing your app simultanously
 * You send a large number of queries in parallel (for example, using `await Promise.all()`)
 
-If you consistently experience connection pool timeouts after configuring the recommended connection limit, you can further tune the `connection_limit` and `pool_timeout` parameters.
+If you consistently experience connection pool timeouts after configuring the recommended pool size, you can further tune the `connection_limit` and `pool_timeout` parameters.
 
-### Increasing the connection limit
+### Increasing the pool size
 
-Increasing the connection limit allows the query engine to process a larger number of queries in parallel. Be aware that your database must be able to support the increased number of concurrent connections, otherwise you will **exhaust the connection limit**.
+Increasing the pool size allows the query engine to process a larger number of queries in parallel. Be aware that your database must be able to support the increased number of concurrent connections, otherwise you will **exhaust the database connection limit**.
 
-To increase the connection limit, manually set the `connection_limit` to a higher number:
+To increase the pool size, manually set the `connection_limit` to a higher number:
 
 ```prisma
 datasource db {
