@@ -143,7 +143,7 @@ The recommended connection limit in serverless environments depends on whether y
 
 #### Without an external connection pooler
 
-If you are **not** using an external connection pooler, _start_ by setting the pool size (`connection_limit`) to **1**. Each incoming request starts a short-lived Node.js process, and many concurrent functions with a high `connection_limit` can quickly **exhaust the _database_ connection limit** during a traffic spike.
+If you are **not** using an external connection pooler, _start_ by setting the pool size (`connection_limit`) to **1**, then [optimize](#optimizing-for-parallel-requests). Each incoming request starts a short-lived Node.js process, and many concurrent functions with a high `connection_limit` can quickly **exhaust the _database_ connection limit** during a traffic spike.
 
 The following example demonstrates how to set the `connection_limit` to 1 in your connection string:
 
@@ -164,11 +164,28 @@ The following example demonstrates how to set the `connection_limit` to 1 in you
 </tab>
 </TabbedContent>
 
-Further optimize value if you have parallel requests
-
 #### With an external connection pooler
 
 If you are using an external connection pooler, use the default connection limit (`num_physical_cpus * 2 + 1`) as a starting point and then [tune the pool size](#optimizing-the-connection-pool). The external connection pooler should prevent a traffic spike from overwhelming the database.
+
+#### Optimizing for parallel requests
+
+If you rarely or never exceed the database connection limit with the `connection_limit` parameter set to 1, you can further optimize the connection pool size. Consider a function that is sends queries in parallel:
+
+```ts
+Promise.all() {
+  query1,
+  query2,
+  query3
+  query4,
+  ...
+}
+```
+
+If the `connection_limit` is 1, this function is forced to send queries **serially** (one after the other) rather than **in parallel**. This slows down the function's ability to process requests, and may result in pool timeout errors. Tune the `connection_limit` parameter until a traffic spike:
+
+* Does not exhaust the database connection limit
+* Does not result in pool timeout errors
 
 ### <inlinecode>PrismaClient</inlinecode> in serverless environments
 
