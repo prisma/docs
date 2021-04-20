@@ -10,12 +10,138 @@ Unit testing aims to isolate a small portion of code and test it for logically p
 
 This means that you should aim to remove as many dependencies as possible, such as external services and databases, to keep the tests and their environments as lightweight as possible.
 
-- intro about mocking here
-
 </TopBlock>
+
+#### Prerequisites
+
+This guide assumes you have the JavaScript testing library [`Jest`](https://jestjs.io/) already setup in your project. If you do not then the following short guide will help you to get up and running.
+
+<details><summary>Add Jest to your project</summary>
+
+Prisma uses TypeScript and Jest supports TypeScript via Babel. Add the following dependencies to install Jest, Babel presets and a types module:
+
+```terminal
+npm install --save-dev jest @babel/preset-typescript babel-jest @babel/core @babel/preset-env @types/jest
+```
+
+Next create a `babel.config.js` file at your projects root, adding the following configuration:
+
+```js file=babel.config.js
+module.exports = {
+  presets: [['@babel/preset-env', { targets: { node: 'current' } }], +'@babel/preset-typescript'],
+}
+```
+
+Add a script to your `package.json` file which will run the tests. The `-i` flag will ensure that the tests are run one at a time to avoid any race conditions. The scripts will look for a folder at your projects root called `__tests__` (double\_\_underscore), and run any tests within files, within that folder.
+
+```json file=package.json
+  "scripts": {
+    ...otherScripts
+    "test": "jest -i"
+  },
+```
+
+</details>
 
 ## Mocking the Prisma client
 
-- describe how to mock the prisma client use https://github.com/prisma/prisma/discussions/2083 as a basis
+To ensure your unit tests are isolated from external factors you can mock the Prisma client, this means you get the benefits of being able to use your schema (**_type-safety_**), without having to make actual calls to your database when your test are run.
+
+Add the following package to your project, [`jest-mock-extended`](https://github.com/marchaos/jest-mock-extended). This will be used to assign the mocked client to a variable, which will then be used to mock the Prisma client.
+
+```terminal
+npm install jest-mock-extended --save-dev
+```
+
+Create a `context.ts` file and add the following.
+
+```ts file=context.ts
+import { PrismaClient } from '@prisma/client'
+import { MockProxy, mockDeep } from 'jest-mock-extended'
+
+export type Context = {
+  prisma: PrismaClient
+}
+
+export type MockContext = {
+  prisma: MockProxy<PrismaClient>
+}
+
+export const createMockContext = (): MockContext => {
+  return {
+    prisma: mockDeep<PrismaClient>(),
+  }
+}
+```
+
+Next, inside your `__tests__` folder create a new file `unit-tests.ts` and import the new mock contexts.
+
+```ts file=__tests__/unit-tests.ts
+import { MockContext, Context, createMockContext } from '../context'
+
+let mockCtx: MockContext
+let ctx: Context
+
+beforeEach(() => {
+  mockCtx = createMockContext()
+  ctx = (mockCtx as unknown) as Context
+})
+```
+
+This will create a new context before each test is run via the `createMockContext` function. This (`mockCtx`) context will be used to make a mock call to Prisma and run a query to test. The `ctx` context will be used to run a scenario query that is tested against.
 
 ## Example unit tests
+
+Prisma already tests query functions like `findMany`. A real world use case for unit testing Prisma might be a signup form. Your user fills in a form which calls a function, which in turn uses Prisma to make a call to your database.
+
+All of the examples that follow use the following schema model:
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+```
+
+The following unit test will mock the process of creating a new user in your database. Open up the `unit-tests.ts` and modify it by adding the following test.
+
+```ts file=__tests__/unit-tests.ts
+import { MockContext, Context, createMockContext } from '../context'
+
+let mockCtx: MockContext
+let ctx: Context
+
+// Runs before each test, creating the mocked Prisma contexts
+beforeEach(() => {
+  mockCtx = createMockContext()
+  ctx = (mockCtx as unknown) as Context
+})
+
+interface User {
+  name: string
+  email: string
+}
+
+// This function mocks us creating a user in the db
+function createUser(user: User, ctx: Context) {
+  return ctx.prisma.user.create({
+    data: user,
+  })
+}
+
+
+test('should create new user ', async () => {
+  // The input
+  const user = { id: 1, name: 'Rich', email: 'hello@prisma.io' }
+  // Making the mock call to the database via the mocked context
+  mockCtx.prisma.user.create.mockResolvedValue(user)
+
+  // Validating the result. toEqual checks two objects have the same value.
+  await expect(createUser(user, ctx)).resolves.toEqual({
+    id: 1,
+    name: 'Rich',
+    email: 'hello@prisma.io',
+  })
+})
+```
