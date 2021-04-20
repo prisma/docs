@@ -44,6 +44,14 @@ const Wrapper = styled.div`
     border-radius: 8px 8px 0px 0px;
   }
 
+  code {
+    padding-bottom: 1em;
+  }
+  
+  .codeWrapperDiv {
+    margin-top: 0;
+  }
+
   .result {
     background-color: var(--main-font-color) !important;
     color: var(--code-inline-bgd-color) !important;
