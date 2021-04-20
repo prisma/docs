@@ -47,7 +47,7 @@ const Wrapper = styled.div`
   code {
     padding-bottom: 1em;
   }
-  
+
   .codeWrapperDiv {
     margin-top: 0;
   }
