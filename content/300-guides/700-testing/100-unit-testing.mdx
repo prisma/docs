@@ -47,13 +47,13 @@ Add a script to your `package.json` file which will run the tests. The `-i` flag
 
 To ensure your unit tests are isolated from external factors you can mock the Prisma client, this means you get the benefits of being able to use your schema (**_type-safety_**), without having to make actual calls to your database when your test are run.
 
-Add the following package to your project, [`jest-mock-extended`](https://github.com/marchaos/jest-mock-extended). This will be used to assign the mocked client to a variable, which will then be used to mock the Prisma client.
+1. Add the following package to your project, [`jest-mock-extended`](https://github.com/marchaos/jest-mock-extended). This will be used to assign the mocked client to a variable, which will then be used to mock the Prisma client.
 
 ```terminal
 npm install jest-mock-extended --save-dev
 ```
 
-Create a `context.ts` file and add the following.
+2. Create a `context.ts` file and add the following.
 
 ```ts file=context.ts
 import { PrismaClient } from '@prisma/client'
@@ -74,7 +74,7 @@ export const createMockContext = (): MockContext => {
 }
 ```
 
-Next, inside your `__tests__` folder create a new file `unit-tests.ts` and import the new mock contexts.
+3. Next, inside your `__tests__` folder create a new file `unit-tests.ts` and import the new mock contexts.
 
 ```ts file=__tests__/unit-tests.ts
 import { MockContext, Context, createMockContext } from '../context'
@@ -96,7 +96,7 @@ Prisma already tests query functions like `findMany`. A real world use case for 
 
 All of the examples that follow use the following schema model:
 
-```prisma
+```prisma file=schema.prisma
 model User {
   id    Int     @id @default(autoincrement())
   email String  @unique
@@ -104,7 +104,12 @@ model User {
 }
 ```
 
-The following unit test will mock the process of creating a new user in your database. Open up the `unit-tests.ts` and modify it by adding the following test.
+The following unit tests will mock the process of
+
+- Creating a new user
+- Updating a users name
+
+Open up the `unit-tests.ts` and modify it by adding the following test.
 
 ```ts file=__tests__/unit-tests.ts
 import { MockContext, Context, createMockContext } from '../context'
@@ -130,6 +135,19 @@ function createUser(user: User, ctx: Context) {
   })
 }
 
+interface UpdateUser {
+  id: number
+  name: string
+  email: string
+}
+
+// This function mocks updating a user in the db. The user is found by their id.
+function updateUsername(user: UpdateUser, ctx: Context) {
+  return ctx.prisma.user.update({
+    where: { id: user.id },
+    data: user,
+  })
+}
 
 test('should create new user ', async () => {
   // The input
@@ -144,4 +162,61 @@ test('should create new user ', async () => {
     email: 'hello@prisma.io',
   })
 })
+
+test('should update a users name ', async () => {
+  // The user has added their surname to their account
+  const user = { id: 1, name: 'Rich Haines', email: 'hello@prisma.io' }
+  mockCtx.prisma.user.update.mockResolvedValue(user)
+
+  await expect(updateUsername(user, ctx)).resolves.toEqual({
+    id: 1,
+    name: 'Rich Haines',
+    email: 'hello@prisma.io',
+  })
+})
 ```
+
+## Using <inlinecode>Prisma.validator</inlinecode> for type-safe testing
+
+When writing tests it helps greatly that you can take advantage of Prismas type-safety. The above examples manually create interfaces to keep the mock functions type-safe. Using the [`Prisma.validator`](../../concepts/components/prisma-client/advanced-type-safety/prisma-validator) you can let Prisma handle this logic for you.
+
+The following example converts the create user unit test to use `Prisma.validator`.
+
+> Note the adding of the `id` field outside of the `user` object. This is because our schema requires the `id` field to be present. In a real world scenario this would be auto-incremented and added by Prisma.
+
+```ts file=__tests__/unit-tests.ts
+import { MockContext, Context, createMockContext } from '../context'
+import { Prisma } from '@prisma/client'
+
+// This function mocks us creating a user in the db
+function createUser(user: Prisma.UserCreateInput, ctx: Context) {
+  return ctx.prisma.user.create({
+    data: user,
+  })
+}
+
+beforeEach(() => {
+  mockCtx = createMockContext()
+  ctx = (mockCtx as unknown) as Context
+})
+
+test('should create new user using the validator', async () => {
+  const user = Prisma.validator<Prisma.UserCreateInput>()({
+    name: 'Rich',
+    email: 'hello@prisma.io',
+  })
+
+  mockCtx.prisma.user.create.mockResolvedValue({
+    id: 1,
+    ...user,
+  })
+
+  await expect(createUser(user, ctx)).resolves.toEqual({
+    id: 1,
+    name: 'Rich',
+    email: 'hello@prisma.io',
+  })
+})
+```
+
+The `createUser` functions `user` input parameter is typed using the Prisma namespace type `Prisma.UserCreateInput`. This automatically ensures that you cannot add any fields that are not expected when running the `create` query. The same type is used in the `Prisma.validator`, making the test type-safe by taking advantage of Prisma in-built typings.
