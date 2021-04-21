@@ -2,6 +2,7 @@
 title: 'Unit testing'
 metaTitle: 'Unit testing with Prisma'
 metaDescription: 'Learn how to setup and run unit tests with the Prisma client'
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -45,15 +46,58 @@ Add a script to your `package.json` file which will run the tests. The `-i` flag
 
 ## Mocking the Prisma client
 
-To ensure your unit tests are isolated from external factors you can mock the Prisma client, this means you get the benefits of being able to use your schema (**_type-safety_**), without having to make actual calls to your database when your test are run.
+To ensure your unit tests are isolated from external factors you can mock the Prisma client, this means you get the benefits of being able to use your schema (**_type-safety_**), without having to make actual calls to your database when your tests are run.
 
-1. Add the following package to your project, [`jest-mock-extended`](https://github.com/marchaos/jest-mock-extended). This will be used to assign the mocked client to a variable, which will then be used to mock the Prisma client.
+This guide will cover two approaches to mocking the client, a singleton instance and dependency injection. Both have their merits depending on your use cases. To help with mocking the client the [`jest-mock-extended`](https://github.com/marchaos/jest-mock-extended) package will be used.
 
 ```terminal
 npm install jest-mock-extended --save-dev
 ```
 
-2. Create a `context.ts` file and add the following.
+### Singleton
+
+Create a file called `singleton.ts` at your projects root and add the following class:
+
+```ts file=singleton.ts
+import { PrismaClient } from '@prisma/client'
+import { MockProxy, mockDeep } from 'jest-mock-extended'
+
+export class MockClient {
+  // A static property to store the instance
+  static instance: MockClient
+
+  // A deep mock of the Prisma client. This will be available on the instance
+  public prisma = mockDeep<PrismaClient>()
+
+  // A private constructor so the instance cant be instantiated many times.
+  private constructor() {}
+
+  // Public method to use the instance of the class
+  public static getMockInstance(): MockClient {
+    if (!MockClient.instance) {
+      MockClient.instance = new MockClient()
+    }
+
+    return MockClient.instance
+  }
+}
+```
+
+The singleton class has a static property which is used internally to create a new instance. This property uses the `mockDeep` method from `jest-mock-extended` to enable access to the objects and methods available on the Prisma client.
+
+The constructor is set to private to prevent it be instantiated many times and a public method is declared which allows the user to get a single instance of the class.
+
+To use the singleton instance you would do the following in your test file:
+
+```ts
+import { MockClient } from './singleton'
+
+const mockClient = MockClient.getMockInstance()
+```
+
+### Dependency injection
+
+Create a `context.ts` file and add the following:
 
 ```ts file=context.ts
 import { PrismaClient } from '@prisma/client'
@@ -74,9 +118,9 @@ export const createMockContext = (): MockContext => {
 }
 ```
 
-3. Next, inside your `__tests__` folder create a new file `unit-tests.ts` and import the new mock contexts.
+To use the context, you would do the following in your test file:
 
-```ts file=__tests__/unit-tests.ts
+```ts
 import { MockContext, Context, createMockContext } from '../context'
 
 let mockCtx: MockContext
@@ -109,28 +153,17 @@ The following unit tests will mock the process of
 - Creating a new user
 - Updating a users name
 
-Open up the `unit-tests.ts` and modify it by adding the following test.
+```ts file=functions-to-test.ts
+import { PrismaClient } from '@prisma/client'
 
-```ts file=__tests__/unit-tests.ts
-import { MockContext, Context, createMockContext } from '../context'
-
-let mockCtx: MockContext
-let ctx: Context
-
-// Runs before each test, creating the mocked Prisma contexts
-beforeEach(() => {
-  mockCtx = createMockContext()
-  ctx = (mockCtx as unknown) as Context
-})
-
-interface User {
+interface CreateUser {
   name: string
   email: string
 }
 
 // This function mocks us creating a user in the db
-function createUser(user: User, ctx: Context) {
-  return ctx.prisma.user.create({
+export function createUser(user: CreateUser, ctx: PrismaClient) {
+  return ctx.user.create({
     data: user,
   })
 }
@@ -141,22 +174,30 @@ interface UpdateUser {
   email: string
 }
 
-// This function mocks updating a user in the db. The user is found by their id.
-function updateUsername(user: UpdateUser, ctx: Context) {
-  return ctx.prisma.user.update({
+// This function mocks updating a user in the db
+export function updateUsername(user: UpdateUser, ctx: PrismaClient) {
+  return ctx.user.update({
     where: { id: user.id },
     data: user,
   })
 }
+```
+
+<TabbedContent tabs={[<FileWithIcon text="with-singleton.ts" icon="file"/>, <FileWithIcon text="with-dependency-injection" icon="file"/>]}>
+
+<tab>
+
+```ts
+import { createUser, updateUsername } from './functions-to-test.ts'
+import { MockClient } from './singleton'
+
+const mockClient = MockClient.getMockInstance()
 
 test('should create new user ', async () => {
-  // The input
   const user = { id: 1, name: 'Rich', email: 'hello@prisma.io' }
-  // Making the mock call to the database via the mocked context
-  mockCtx.prisma.user.create.mockResolvedValue(user)
+  mockClient.prisma.user.create.mockResolvedValue(user)
 
-  // Validating the result. toEqual checks two objects have the same value.
-  await expect(createUser(user, ctx)).resolves.toEqual({
+  await expect(createUser(user, mockClient.prisma)).resolves.toEqual({
     id: 1,
     name: 'Rich',
     email: 'hello@prisma.io',
@@ -164,17 +205,59 @@ test('should create new user ', async () => {
 })
 
 test('should update a users name ', async () => {
-  // The user has added their surname to their account
   const user = { id: 1, name: 'Rich Haines', email: 'hello@prisma.io' }
-  mockCtx.prisma.user.update.mockResolvedValue(user)
+  mockClient.prisma.user.update.mockResolvedValue(user)
 
-  await expect(updateUsername(user, ctx)).resolves.toEqual({
+  await expect(updateUsername(user, mockClient.prisma)).resolves.toEqual({
     id: 1,
     name: 'Rich Haines',
     email: 'hello@prisma.io',
   })
 })
 ```
+
+</tab>
+
+<tab>
+
+```ts
+import { MockContext, Context, createMockContext } from './context'
+import { createUser, updateUsername } from './functions-to-test.ts'
+
+let mockCtx: MockContext
+let ctx: Context
+
+beforeEach(() => {
+  mockCtx = createMockContext()
+  ctx = (mockCtx as unknown) as Context
+})
+
+test('should create new user ', async () => {
+  const user = { id: 1, name: 'Rich', email: 'hello@prisma.io' }
+  mockCtx.prisma.user.create.mockResolvedValue(user)
+
+  await expect(createUser(user, ctx.prisma)).resolves.toEqual({
+    id: 1,
+    name: 'Rich',
+    email: 'hello@prisma.io',
+  })
+})
+
+test('should update a users name ', async () => {
+  const user = { id: 1, name: 'Rich Haines', email: 'hello@prisma.io' }
+  mockCtx.prisma.user.update.mockResolvedValue(user)
+
+  await expect(updateUsername(user, ctx.prisma)).resolves.toEqual({
+    id: 1,
+    name: 'Rich Haines',
+    email: 'hello@prisma.io',
+  })
+})
+```
+
+</tab>
+
+</TabbedContent>
 
 ## Using <inlinecode>Prisma.validator</inlinecode> for type-safe testing
 
