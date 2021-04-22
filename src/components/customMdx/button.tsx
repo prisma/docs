@@ -6,7 +6,7 @@ import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
 
-import * as path from 'path'
+// import * as path from 'path'
 
 export interface ButtonProps {
   href?: string
@@ -75,25 +75,25 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
 //       background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
 //     }
 
-const getAbsPath = (href: any, location: any) => {
-  return withPrefix(
-    path
-      .resolve(
-        location.pathname
-          .replace('/docs', '')
-          .replace('docs', '')
-          .replace(/\/$/, '')
-          .split(path.sep)
-          .slice(0, -1)
-          .join(path.sep) || '/',
-        href
-      )
-      .replace(/\/?(\?|#|$)/, '/$1')
-  )
-}
+// const getAbsPath = (href: any, location: any) => {
+//   return withPrefix(
+//     path
+//       .resolve(
+//         location.pathname
+//           .replace('/docs', '')
+//           .replace('docs', '')
+//           .replace(/\/$/, '')
+//           .split(path.sep)
+//           .slice(0, -1)
+//           .join(path.sep) || '/',
+//         href
+//       )
+//       .replace(/\/?(\?|#|$)/, '/$1')
+//   )
+// }
 const ButtonLink = ({ href, ...props }: ButtonProps) => {
   const location = useLocation()
-  const newHref = isAbsoluteUrl(href) ? href : getAbsPath(href, location)
+  const newHref = href 
   return (
     <ButtonWrapper href={newHref} {...props}>
       {props.arrowLeft && <StyledArrowLeft />}
