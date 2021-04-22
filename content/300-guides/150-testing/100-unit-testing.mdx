@@ -7,7 +7,7 @@ tocDepth: 3
 
 <TopBlock>
 
-Unit testing aims to isolate a small portion of code and test it for logically predictable behaviors. In the context of Prisma, this generally means testing a function which makes database calls using the Prisma client. 
+Unit testing aims to isolate a small portion of code and test it for logically predictable behaviors. In the context of Prisma, this generally means testing a function which makes database calls using the Prisma client.
 
 A single test should focus on the data returned by the Prisma client and how the function handles that data, ensuring that it behaves as expected.
 
@@ -21,19 +21,24 @@ This guide assumes you have the JavaScript testing library [`Jest`](https://jest
 
 <details><summary>Add Jest to your project</summary>
 
-Prisma uses TypeScript and Jest supports TypeScript via Babel. Add the following dependencies to install Jest, Babel presets and a types module:
+Prisma uses TypeScript and Jest can be setup to use TypeScript with the help of the [`ts-jest`](https://github.com/kulshekhar/ts-jest) package.
 
 ```terminal
-npm install --save-dev jest @babel/preset-typescript babel-jest @babel/core @babel/preset-env @types/jest
+npm install --save-dev jest typescript ts-jest @types/jest
 ```
 
-Next create a `babel.config.js` file at your projects root, adding the following configuration:
+Next create a `jest.config.js` file at your projects root, adding the following configuration:
 
-```js file=babel.config.js
+```js file=jest.config.js
 module.exports = {
-  presets: [['@babel/preset-env', { targets: { node: 'current' } }], +'@babel/preset-typescript'],
+  clearMocks: true,
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/singleton.ts'],
 }
 ```
+
+The above configuration declares a path to a `singleton.ts` file, this can be called anything you like, the following guide will name it `singleton.ts`. The module the path points towards is the code that runs setting up the testing framework before each test file is executed.
 
 Add a script to your `package.json` file which will run the tests. The `-i` flag will ensure that the tests are run one at a time to avoid any race conditions. The scripts will look for a folder at your projects root called `__tests__` (double\_\_underscore), and run any tests within files, within that folder.
 
@@ -58,44 +63,36 @@ npm install jest-mock-extended --save-dev
 
 ### Singleton
 
-Create a file called `singleton.ts` at your projects root and add the following class:
+1. Create a file at your projects root called `client.ts` and add the following code. This will instantiate a Prisma client instance.
+
+```ts file=client.ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+export default prisma
+```
+
+2. Next create a file called `singleton.ts` at your projects root and add the following:
 
 ```ts file=singleton.ts
 import { PrismaClient } from '@prisma/client'
-import { mockDeep } from 'jest-mock-extended'
+import { mockDeep, mockReset, MockProxy } from 'jest-mock-extended'
 
-export class MockClient {
-  // A static property to store the instance
-  static instance: MockClient
+import prisma from './client'
 
-  // A deep mock of the Prisma client. This will be available on the instance
-  public prisma = mockDeep<PrismaClient>()
+jest.mock('./client', () => ({
+  __esModule: true,
+  default: mockDeep<PrismaClient>(),
+}))
 
-  // A private constructor so the instance cant be instantiated many times.
-  private constructor() {}
+beforeEach(() => {
+  mockReset(prismaMock)
+})
 
-  // Public method to use the instance of the class
-  public static getMockInstance(): MockClient {
-    if (!MockClient.instance) {
-      MockClient.instance = new MockClient()
-    }
-
-    return MockClient.instance
-  }
-}
+export const prismaMock = (prisma as unknown) as MockProxy<PrismaClient>
 ```
 
-The singleton class has a static property which is used internally to create a new instance. This property uses the `mockDeep` method from `jest-mock-extended` to enable access to the objects and methods available on the Prisma client.
-
-The constructor is set to private to prevent it be instantiated many times and a public method is declared which allows the user to get a single instance of the class.
-
-To use the singleton instance you would do the following in your test file:
-
-```ts
-import { MockClient } from './singleton'
-
-const mockClient = MockClient.getMockInstance()
-```
+The singleton file tells Jest to mock a default export (the Prisma client instantiated in `./client.ts`), and uses the `mockDeep` method from `jest-mock-extended` to enable access to the objects and methods available on the Prisma client. It then resets the mocked instance before each test is run.
 
 ### Dependency injection
 
@@ -155,17 +152,22 @@ The following unit tests will mock the process of
 - Creating a new user
 - Updating a users name
 
-```ts file=functions-to-test.ts
-import { PrismaClient } from '@prisma/client'
+The functions that use the dependency injection pattern will have the context injected (passed in as a parameter) into them, whereas the functions that use the singleton pattern will use the singleton instance of the Prisma client.
+
+<TabbedContent tabs={[<FileWithIcon text="functions-with-context.ts" icon="file"/>, <FileWithIcon text="functions-without-context.ts" icon="file"/>]}>
+
+<tab>
+
+```ts
+import { Context } from './context'
 
 interface CreateUser {
   name: string
   email: string
 }
 
-// This function mocks us creating a user in the db
-export function createUser(user: CreateUser, ctx: PrismaClient) {
-  return ctx.user.create({
+export async function createUser(user: CreateUser, ctx: Context) {
+  return await ctx.user.create({
     data: user,
   })
 }
@@ -176,30 +178,70 @@ interface UpdateUser {
   email: string
 }
 
-// This function mocks updating a user in the db
-export function updateUsername(user: UpdateUser, ctx: PrismaClient) {
-  return ctx.user.update({
+export async function updateUsername(user: UpdateUser, ctx: Context) {
+  return await ctx.user.update({
     where: { id: user.id },
     data: user,
   })
 }
 ```
 
+</tab>
+
+<tab>
+
+```ts
+import prisma from './client'
+
+interface CreateUser {
+  name: string
+  email: string
+}
+
+export async function createUser(user: CreateUser) {
+  return await prisma.user.create({
+    data: user,
+  })
+}
+
+interface UpdateUser {
+  id: number
+  name: string
+  email: string
+}
+
+export async function updateUsername(user: UpdateUser) {
+  return await prisma.user.update({
+    where: { id: user.id },
+    data: user,
+  })
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+The tests for each methodology are fairly similar, the difference is how the mocked Prisma client is used.
+
+The **_dependency injection_** example passes the context through to the function that is being tested as well as using it to call the mock implementation.
+
+The **_singleton_** example uses the singleton client instance to call the mock implementation.
+
 <TabbedContent tabs={[<FileWithIcon text="with-singleton.ts" icon="file"/>, <FileWithIcon text="with-dependency-injection" icon="file"/>]}>
 
 <tab>
 
 ```ts
-import { createUser, updateUsername } from './functions-to-test.ts'
-import { MockClient } from './singleton'
-
-const mockClient = MockClient.getMockInstance()
+import { createUser, updateUsername } from './src/functions-without-context.ts'
+import { prismaMock } from './../singleton'
 
 test('should create new user ', async () => {
   const user = { id: 1, name: 'Rich', email: 'hello@prisma.io' }
-  mockClient.prisma.user.create.mockResolvedValue(user)
 
-  await expect(createUser(user, mockClient.prisma)).resolves.toEqual({
+  prismaMock.user.create.mockResolvedValue(user)
+
+  await expect(createUser(user)).resolves.toEqual({
     id: 1,
     name: 'Rich',
     email: 'hello@prisma.io',
@@ -208,9 +250,10 @@ test('should create new user ', async () => {
 
 test('should update a users name ', async () => {
   const user = { id: 1, name: 'Rich Haines', email: 'hello@prisma.io' }
-  mockClient.prisma.user.update.mockResolvedValue(user)
 
-  await expect(updateUsername(user, mockClient.prisma)).resolves.toEqual({
+  prismaMock.user.update.mockResolvedValue(user)
+
+  await expect(updateUsername(user)).resolves.toEqual({
     id: 1,
     name: 'Rich Haines',
     email: 'hello@prisma.io',
@@ -260,4 +303,3 @@ test('should update a users name ', async () => {
 </tab>
 
 </TabbedContent>
-
