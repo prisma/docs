@@ -94,6 +94,63 @@ To rename the `biograpy` field to `biography`:
 
 You can use the same technique to rename a `model` - edit the generated SQL to _rename_ the table rather than drop and re-create it.
 
+## Using the expand and contract pattern to evolve the schema without downtime
+
+Making schema changes to existing fields, e.g., renaming a field can lead to downtime. It happens in the time frame between applying a migration that modifies an existing field, and deploying a new version of the application code which uses the modified field.
+
+You can prevent downtime by breaking down the steps required to alter a field into a series of discrete steps designed to introduce the change gradually. This pattern is known as the _expand and contract pattern_.
+
+The pattern involves two components: your application code accessing the database and the database schema you intend to alter.
+
+With the _expand and contract_ pattern, renaming the field `bio` to `biography` would look as follows with Prisma:
+
+1. Add the new `biography` field to your Prisma schema and create a migration
+   ```prisma highlight=4;add;
+   model Profile {
+     id        Int    @id @default(autoincrement())
+     bio       String
+     biography String
+     userId    Int
+     user      User   @relation(fields: userId, references: id)
+   }
+   ```
+
+2. _Expand_: update the application code and write to both the `bio` and `biography` fields, but continue reading from the `bio` field, and deploy the code
+3. Create an empty migration and copy existing data from the `bio` to the `biography` field
+   ```terminal
+   npx prisma migrate dev --name copy_biography --create-only
+   ```
+
+   ```sql file=prisma/migrations/20210420000000_copy_biography/migration.sql
+   UPDATE table SET biography = bio;
+   ```
+
+4. Verify the integrity of the `biography` field in the database
+5. Update application code to **read** from the new `biography` field
+6. Update application code to **stop writing** to the `bio` field
+7. _Contract_: remove the `bio` from the Prisma schema, and create a migration to remove the `bio` field
+
+   ```prisma highlight=3;delete;
+   model Profile {
+     id        Int    @id @default(autoincrement())
+     bio       String
+     biography String
+     userId    Int
+     user      User   @relation(fields: userId, references: id)
+   }
+   ```
+
+   ```terminal
+   npx prisma migrate dev --name remove_bio
+   ```
+
+
+By using this approach, you avoid potential downtime that altering existing fields that are used in the application code are prone to, and reduce the amount of coordination required between applying the migration and deploying the updated application code.
+
+Note that this pattern is applicable in any situation involving a change to a column that has data and is in use by the application code. Examples include combining two fields into one, or transforming a `1:n` relation to a `m:n` relation.
+
+To learn more, check out the Data Guide article on [the expand and contact pattern](https://www.prisma.io/dataguide/types/relational/expand-and-contract-pattern)
+
 ## Changing the direction of a 1-1 relation
 
 To change the direction of a 1-1 relation:
