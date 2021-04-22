@@ -86,7 +86,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
   return (
-    <CodeWrapper>
+    <CodeWrapper className="codeWrapperDiv">
       {fileName && (
         <div className="file">
           <FileWithIcon text={fileName} icon="file" />

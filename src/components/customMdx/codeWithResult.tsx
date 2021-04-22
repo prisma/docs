@@ -15,9 +15,9 @@ type CodeWithResultProps = React.ReactNode & ExpandedProps & ShowHideProps
 const CodeWithResult = ({ children, expanded, showText, hideText }: CodeWithResultProps) => {
   const [showResult, setShowResult] = React.useState(expanded)
   const cmd =
-    children && children.filter((child: any) => child.props && child.props.mdxType === 'cmd')
+    children && children.filter((child: any) => child.props && child.props.mdxType === 'Cmd')
   const result =
-    children && children.filter((child: any) => child.props && child.props.mdxType === 'cmdResult')
+    children && children.filter((child: any) => child.props && child.props.mdxType === 'CmdResult')
 
   const toggleResult = () => setShowResult(!showResult)
   const toggleShowText = showText ? showText : 'Show CLI results'
@@ -42,6 +42,14 @@ const Wrapper = styled.div`
   margin-top: 2rem;
   .cmd .pre-highlight pre {
     border-radius: 8px 8px 0px 0px;
+  }
+
+  code {
+    padding-bottom: 1em;
+  }
+
+  .codeWrapperDiv {
+    margin-top: 0;
   }
 
   .result {
