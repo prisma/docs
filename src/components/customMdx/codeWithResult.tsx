@@ -44,6 +44,14 @@ const Wrapper = styled.div`
     border-radius: 8px 8px 0px 0px;
   }
 
+  code {
+    padding-bottom: 1em;
+  }
+
+  .codeWrapperDiv {
+    margin-top: 0;
+  }
+
   .result {
     background-color: var(--main-font-color) !important;
     color: var(--code-inline-bgd-color) !important;
@@ -59,7 +67,7 @@ const Wrapper = styled.div`
       }
 
       .token.punctuation {
-        color: ${p => p.theme.colors.gray500} !important;
+        color: ${(p) => p.theme.colors.gray500} !important;
       }
 
       border-radius: 0px 0px 8px 8px;
