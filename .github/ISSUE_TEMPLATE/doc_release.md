@@ -1,5 +1,5 @@
 ---
-name: [INTERNAL] 🎉 Documentation release
+name: INTERNAL 🎉 Documentation release
 about: Documentation release tasks.
 title: "Release:"
 labels: "docs,docs/task"
