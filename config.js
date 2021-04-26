@@ -119,8 +119,8 @@ const config = {
             codeBlock: false,
           },
           {
-            text: 'Under the hood ',
-            url: 'concepts/overview/under-the-hood',
+            text: 'Under the hood',
+            url: 'concepts/components/prisma-engines',
             codeBlock: false,
           },
         ],
