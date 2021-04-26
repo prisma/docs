@@ -1,6 +1,7 @@
 ---
 title: Adding Prisma Migrate to an existing project
 metaDescription: Learn how to add Prisma Migrate to an existing project.
+tocDepth: 2
 ---
 
 <TopBlock>
@@ -16,7 +17,7 @@ This guide describes how to add [Prisma Migrate](../../../concepts/components/pr
 
 During the initial transition to Prisma Migrate, you must reset your database - this will result in data loss in the _development database_. For production and other environments, the database should be [baselined to avoid data loss](#baseline-your-production-environment).
 
-To transition your development database:
+### Introspect to create a Prisma schema
 
 1. Make sure your Prisma schema is in sync with your database schema. This should already be true if you are using a previous version of Prisma Migrate. To make sure, introspect your database to align your database schema and Prisma schema:
 
@@ -24,22 +25,35 @@ To transition your development database:
    prisma introspect
    ```
 
+### Generate the initial migration
+
+To transition your development database:
+
 1. If you have a `prisma/migrations` folder, delete, move, rename, or otherwise archive this folder.
 
 1. Initialize a new migration history by running the following command:
 
    ```terminal
-   prisma migrate dev
+   prisma migrate dev --name initial-migration --create-only
    ```
 
    Prisma Migrate will:
 
    1. Create a new migration directory with a SQL migration file in it
-   1. Detect that the database is out of sync with the migration history and will prompt you to reset it. You should confirm to reset to the database (**development environment only!**)
+   1. Prompt you to
+
+### Modify the initial migration
 
    The new migration history and the new database schema should now be in sync with your Prisma schema.
 
+1. Detect that the database is out of sync with the migration history and will prompt you to reset it. You should confirm to reset to the database (**development environment only!**)
+
 1. Review the schema to ensure the migration leads to the desired end-state (for example, by comparing the schema to the production database)
+
+### Apply the initial migration
+
+### Commit the migration history and Prisma schema
+
 
 1. Commit the entire migrations directory to your repository.
 
@@ -56,21 +70,11 @@ In other development environments (for example, other team members' computers):
 
 ## Baseline your production environment
 
-Baselining is for introducing Prisma Migrate to existing databases / brownfield projects. Concretely it's to tell Prisma Migrate to assume that one or more migration(s) were already executed so the generated migration(s) won't fail when they will try to create tables that already exist.
+[Baselining](baselining) initializes a migration history for databases that contain data and **cannot be reset** - such as the production database. Baselining tells Prisma Migrate to assume that one or more migrations have already been applied.
 
-Assuming you started a new migration history in your repository using `prisma migrate dev`, you now need to **baseline** any database that contains important data – such as production or staging. Trying to apply this new migration history with `prisma migrate deploy` will normally fail as the migrations are trying to re-create a state that is already there. Instead, the database should be baselined.
+To baseline a database:
 
-In development, we assume it is acceptable to reset and seed your database to make sure your migration files are in sync with your database schema. This is not acceptable in a production environment, or any other environment where data must be maintained.
-
-You will need to use `prisma migrate resolve --applied "MIGRATION_NAME"` (see example below) to register migration(s) in the `_prisma_migrations` table as "already applied", this table will be created if it does not exist.
-This will cause Prisma Migrate to ignore the "applied" migrations in your deployments.
-When running `prisma migrate deploy`:
-* Any "applied" migrations, whether actually applied or baselined (marked as applied) will be skipped.
-* Any new migrations that come _after_ baselined migrations will be applied.
-
-To baseline a production database:
-
-1. Make sure you have a working copy of the new migrations directory
+1. Make sure you have a working copy of the new migrations directory.
 2. Run the following command to baseline a migration:
 
    ```terminal
@@ -78,6 +82,7 @@ To baseline a production database:
    ```
 
    If you need to baseline multiple migrations (for example, if you generated more migrations after transitioning your development environment), run the `prisma migrate resolve` command for each migration separately.
+1. Baseline all databases that need it.
 
 ## Resolve migration issues in production databases
 
