@@ -1,6 +1,6 @@
 ---
 name: 🎉 Documentation release
-about: Documentation release tasks.
+about: INTERNAL ONLY. Documentation release tasks.
 title: "Release:"
 labels: "docs,docs/task"
 assignees: ""

@@ -86,7 +86,6 @@ let plugins = [
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
-      decks: [],
       defaultLayouts: {
         default: require.resolve('./src/layouts/articleLayout.tsx'),
       },
