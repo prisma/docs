@@ -297,9 +297,10 @@ const Homepage = () => {
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
-          Choose one of our <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link>{' '}
-          or explore the <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>.
-          Join our thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
+          Choose one of our{' '}
+          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore the{' '}
+          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join our
+          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
           <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
         </NormalPara>
         <SummaryLinks>
