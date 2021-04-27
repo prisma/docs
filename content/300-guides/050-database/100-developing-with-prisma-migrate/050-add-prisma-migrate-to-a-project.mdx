@@ -6,66 +6,103 @@ tocDepth: 2
 
 <TopBlock>
 
-This guide describes how to add [Prisma Migrate](../../../concepts/components/prisma-migrate) to an existing project, including upgrading from the Experimental version of Prisma Migrate.
-
-- For users who are transitioning from the Experimental Prisma Migrate, the flow is conceptually very similar.
-- For users coming from a third party migration tool, the flow differs from the old "introspection flow". With Prisma Migrate, you no longer modify your database schema and then use `prisma introspect` to pull the changes into your Prisma schema.
+This guide describes how to add [Prisma Migrate](../../../concepts/components/prisma-migrate) to an existing project.
 
 </TopBlock>
 
 ## Update the development environment
 
-During the initial transition to Prisma Migrate, you must reset your database - this will result in data loss in the _development database_. For production and other environments, the database should be [baselined to avoid data loss](#baseline-your-production-environment).
+As part of adding Prisma Migrate to your development environment, you must **reset your development database**. This will result in data loss in the development database only.
 
-### Introspect to create a Prisma schema
+Production databases and any other database that cannot be reset should be [baselined to avoid data loss](#baseline-your-production-environment).
 
-1. Make sure your Prisma schema is in sync with your database schema. This should already be true if you are using a previous version of Prisma Migrate. To make sure, introspect your database to align your database schema and Prisma schema:
+### Introspect to create or update your Prisma schema
 
-   ```
+Make sure your Prisma schema is in sync with your database schema. This should already be true if you are using a previous version of Prisma Migrate.
+
+1. Introspect the database to make sure that your Prisma schema is up-to-date:
+
+   ```terminal
    prisma introspect
    ```
 
-### Generate the initial migration
+### Initialize migration history
 
-To transition your development database:
+To initialize a new migration history:
 
-1. If you have a `prisma/migrations` folder, delete, move, rename, or otherwise archive this folder.
+1. If you have a `prisma/migrations` folder, delete, move, rename, or archive this folder.
 
-1. Initialize a new migration history by running the following command:
+1. Run the following command to create the first migration **without applying it**, in case you need to [modify the initial migration](#modify-initial-migration-to-include-feautres-not-supported-by-the-prisma-schema-language):
 
    ```terminal
    prisma migrate dev --name initial-migration --create-only
    ```
 
-   Prisma Migrate will:
+   Prisma Migrate will create a new migration directory with a SQL migration file in it:
 
-   1. Create a new migration directory with a SQL migration file in it
-   1. Prompt you to
+   ```
+   ./prisma/migrations/20210426141759_initial-migration
+   ```
 
-### Modify the initial migration
+### Account for features not supported by Prisma Schema Language
 
-   The new migration history and the new database schema should now be in sync with your Prisma schema.
+Some database features cannot be represented in the Prisma schema, including but not limited to:
 
-1. Detect that the database is out of sync with the migration history and will prompt you to reset it. You should confirm to reset to the database (**development environment only!**)
+* Stored procedures
+* Triggers
+* Views
+* Partial indexes
 
-1. Review the schema to ensure the migration leads to the desired end-state (for example, by comparing the schema to the production database)
+To include unsupported features, you must replace or modify the initial migration SQL:
 
-### Apply the initial migration
+1. Open the `migration.sql` file generated in the [Initialize migration history](#initialize-migration-history) section.
+
+1. Modify the generated SQL. For example:
+
+   * Option 1: Add additional SQL - the following example creates a partial index:
+
+   ```sql highlight=3,4;add
+   /* Generated migration SQL */
+
+   CREATE UNIQUE INDEX tests_success_constraint ON posts (subject, target)
+    WHERE success;
+   ```
+
+   * Option 2: Replace the entire migration file with the result of a database dump ([`mysqldump`](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html), [`pg_dump`](https://www.postgresql.org/docs/12/app-pgdump.html))
+
+
+### Apply the initial migrations
+
+To apply your initial migration(s):
+
+1. Run the following command against your development database:
+
+   ```terminal
+   npx prisma migrate dev
+   ```
+
+   Prisma Migrate detects that the database is out of sync with the migration history and will prompt you to reset it. Confirm the reset (**in development environments only!**)
+
+1. Review the database schema to ensure the migration leads to the desired end-state (for example, by comparing the schema to the production database).
+
+The new migration history and the new database schema should now be in sync with your Prisma schema.
 
 ### Commit the migration history and Prisma schema
 
+Commit the following to source control:
 
-1. Commit the entire migrations directory to your repository.
+* The entire migration history folder
+* The `schema.prisma` file
 
 ## Reset other development environments
 
-In other development environments (for example, other team members' computers):
+To reset other development environments (for example, other team members' computers):
 
-1. Check out a copy of the repository with the new migration directory and the initial migration
+1. Check out a copy of the repository with the new migration directory and the `schema.prisma` file
 2. Run the following command to reset the development database:
 
    ```terminal
-   prisma migrate dev
+   npx prisma migrate dev
    ```
 
 ## Baseline your production environment
@@ -74,19 +111,20 @@ In other development environments (for example, other team members' computers):
 
 To baseline a database:
 
+1. Switch to an environment that has access to the database you want to baseline.
 1. Make sure you have a working copy of the new migrations directory.
-2. Run the following command to baseline a migration:
+1. Run the following command to baseline a migration - this example marks the migration genreated by the [Initialize migration history](#initialize-migration-history) step as already applied:
 
    ```terminal
-   prisma migrate resolve --applied "20201124-create-users"
+   prisma migrate resolve --applied 20210426141759_initial-migration
    ```
 
-   If you need to baseline multiple migrations (for example, if you generated more migrations after transitioning your development environment), run the `prisma migrate resolve` command for each migration separately.
-1. Baseline all databases that need it.
+1. If you need to baseline multiple migrations (for example, if you generated more migrations after transitioning your development environment), run the `prisma migrate resolve` command for each migration separately.
+
 
 ## Resolve migration issues in production databases
 
 In certain cases, you can run into issues with the migration history and that prevent you from applying further database migrations with `prisma migrate resolve`. This can happen if:
 
 - A migration failed, either because of an error or because it was interrupted while running (for example, unexepected shutdown)
-- The database needs to be baselined to skip certain migrations that are unnecessary on this database schema - this can be the case when a change to the database schema was done manually, such as a hotfix, or when the database needs to be baselined
+- The database needs to be baselined to skip certain migrations that are unnecessary on this database schema - this can be the case when a change to the database schema was done manually, such as a hotfix.
