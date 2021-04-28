@@ -36,15 +36,15 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     display: flex;
     width: 100%;
     justify-content: center;
-    ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
-    @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+    ${p => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
+    @media (max-width: ${p => p.theme.breakpoints.tablet}) {
       padding: 0;
     }
   `
 
   const Content = styled.article<{ fullWidth?: boolean }>`
-    margin: 0 0 ${(p) => p.theme.space[16]};
-    ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 748px')};
+    margin: 0 0 ${p => p.theme.space[16]};
+    ${p => (p.fullWidth ? 'max-width: 100%' : 'max-width: 748px')};
     position: relative;
     z-index: 100;
     width: 100%;
@@ -55,23 +55,23 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
     @media (min-width: 1024px) and (max-width: 1200px) {
       margin: 0;
-      ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 570px')};
+      ${p => (p.fullWidth ? 'max-width: 100%' : 'max-width: 570px')};
     }
   `
 
   const MaxWidth = styled.div`
     > section {
-      padding: 0 ${(p) => p.theme.space[40]};
+      padding: 0 ${p => p.theme.space[40]};
       &.top-section {
         padding-top: 0;
       }
       @media (min-width: 0px) and (max-width: 1024px) {
-        margin-top: ${(p) => p.theme.space[8]};
+        margin-top: ${p => p.theme.space[8]};
       }
       @media (min-width: 0px) and (max-width: 1024px) {
-        padding: 0 ${(p) => p.theme.space[24]};
+        padding: 0 ${p => p.theme.space[24]};
         &.top-section {
-          padding-top: ${(p) => p.theme.space[24]};
+          padding-top: ${p => p.theme.space[24]};
         }
       }
     }
@@ -90,13 +90,13 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
   `
 
   const Container = styled.div<{ fullWidth?: boolean }>`
-    ${(p) => (p.fullWidth ? 'max-width: 100%;' : 'max-width: 1200px')};
+    ${p => (p.fullWidth ? 'max-width: 100%;' : 'max-width: 1200px')};
     width: 100%;
     justify-content: center;
     display: flex;
-    ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[40]};`)}
+    ${p => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[40]};`)}
     @media (max-width: 1024px) {
-      ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[8]};`)}
+      ${p => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[8]};`)}
     }
   `
 
