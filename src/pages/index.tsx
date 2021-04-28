@@ -25,43 +25,43 @@ const icons: any = {
 }
 
 const Summary = styled.div`
-  padding: ${(p) => p.theme.space[80]} 0;
+  padding: ${p => p.theme.space[80]} 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: url(${background}) center -150px no-repeat;
   h1 {
     font-weight: bold;
-    font-family: ${(p) => p.theme.fonts.display};
-    font-size: ${(p) => p.theme.fontSizes[56]};
+    font-family: ${p => p.theme.fonts.display};
+    font-size: ${p => p.theme.fontSizes[56]};
     margin: 0;
     text-align: center;
   }
   p {
     max-width: 800px;
-    font-size: ${(p) => p.theme.fontSizes[20]};
+    font-size: ${p => p.theme.fontSizes[20]};
     line-height: 1.5;
   }
   @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${(p) => p.theme.space[80]} ${(p) => p.theme.space[16]};
+    padding: ${p => p.theme.space[80]} ${p => p.theme.space[16]};
     p {
       max-width: 85%;
     }
   }
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (max-width: ${p => p.theme.breakpoints.tablet}) {
     h1 {
-      font-size: ${(p) => p.theme.fontSizes[32]};
+      font-size: ${p => p.theme.fontSizes[32]};
     }
     p {
-      font-size: ${(p) => p.theme.fontSizes[16]};
+      font-size: ${p => p.theme.fontSizes[16]};
     }
   }
 `
 
 const NormalPara = styled.p`
-  color: ${(p) => p.theme.colors.gray700};
-  line-height: ${(p) => p.theme.space[24]};
-  margin: ${(p) => p.theme.space[32]} 0;
+  color: ${p => p.theme.colors.gray700};
+  line-height: ${p => p.theme.space[24]};
+  margin: ${p => p.theme.space[32]} 0;
   text-align: center;
   max-width: 650px;
   width: 100%;
@@ -72,7 +72,7 @@ const NormalPara = styled.p`
     cursor: pointer;
   }
 
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (max-width: ${p => p.theme.breakpoints.tablet}) {
     .hide-mobile {
       display: none;
     }
@@ -81,28 +81,28 @@ const NormalPara = styled.p`
 
 const SubHeading = styled.h2`
   font-weight: 600;
-  font-size: ${(p) => p.theme.fontSizes[36]};
-  line-height: ${(p) => p.theme.space[36]};
-  font-family: ${(p) => p.theme.fonts.display};
+  font-size: ${p => p.theme.fontSizes[36]};
+  line-height: ${p => p.theme.space[36]};
+  font-family: ${p => p.theme.fonts.display};
   margin: 0;
   text-align: center;
-  color: ${(p) => p.theme.colors.gray900};
+  color: ${p => p.theme.colors.gray900};
 `
 
 const Space = styled.div<{ height: number }>`
-  ${(p) => `height: ${p.height}px;`};
+  ${p => `height: ${p.height}px;`};
 `
 
 const ListTitle = styled.h3`
   font-weight: bold;
-  line-height: ${(p) => p.theme.space[16]};
-  font-size: ${(p) => p.theme.fontSizes[16]};
-  color: ${(p) => p.theme.colors.gray900} !important;
+  line-height: ${p => p.theme.space[16]};
+  font-size: ${p => p.theme.fontSizes[16]};
+  color: ${p => p.theme.colors.gray900} !important;
   margin: 24px 0 0;
 
   a {
     text-decoration: none;
-    color: ${(p) => p.theme.colors.gray900} !important;
+    color: ${p => p.theme.colors.gray900} !important;
     align-items: center;
     display: flex;
   }
@@ -115,9 +115,9 @@ const ListTitle = styled.h3`
 const List = styled.ul<{ split?: boolean }>`
   list-style: none;
   padding: 0;
-  margin-left: ${(p) => p.theme.space[16]};
+  margin-left: ${p => p.theme.space[16]};
   list-style-image: url(${listDot});
-  ${(p) =>
+  ${p =>
     p.split &&
     ` -moz-column-count: 4;
   -moz-column-gap: ${(p: any) => p.theme.space[32]};
@@ -126,12 +126,12 @@ const List = styled.ul<{ split?: boolean }>`
   column-count: 4;
   column-gap: ${(p: any) => p.theme.space[32]};`}
   li {
-    padding-left: ${(p) => p.theme.space[8]};
-    ${(p) =>
+    padding-left: ${p => p.theme.space[8]};
+    ${p =>
       p.split ? 'line-height: 24px; margin-top: 0;' : 'line-height: 1rem; margin-top: 10px;'};
 
     a {
-      color: ${(p) => p.theme.colors.gray800} !important;
+      color: ${p => p.theme.colors.gray800} !important;
       cursor: pointer;
       text-decoration: none;
     }
@@ -148,7 +148,7 @@ const SummaryLinks = styled.div`
   display: flex;
   justify-content: space-around;
   a {
-    color: ${(p) => p.theme.colors.white} !important;
+    color: ${p => p.theme.colors.white} !important;
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -156,25 +156,21 @@ const SummaryLinks = styled.div`
   @media (min-width: 0) and (max-width: 420px) {
     flex-direction: column;
     a {
-      margin-top: ${(p) => p.theme.space[16]};
+      margin-top: ${p => p.theme.space[16]};
     }
   }
 `
 
 const QuickLinks = styled.div`
-  background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0) 0%,
-      ${(p) => p.theme.colors.white} 100%
-    ),
-    ${(p) => p.theme.colors.gray200};
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, ${p => p.theme.colors.white} 100%),
+    ${p => p.theme.colors.gray200};
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: ${(p) => p.theme.space[48]} 0;
+  padding: ${p => p.theme.space[48]} 0;
 
   @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${(p) => p.theme.space[48]} ${(p) => p.theme.space[16]};
+    padding: ${p => p.theme.space[48]} ${p => p.theme.space[16]};
   }
 `
 
@@ -182,8 +178,8 @@ const CapTitle = styled.h4<{ withBorder?: boolean }>`
   text-transform: uppercase !important;
   font-weight: bold;
   letter-spacing: 0.02em;
-  font-size: ${(p) => p.theme.fontSizes[14]};
-  ${(p) =>
+  font-size: ${p => p.theme.fontSizes[14]};
+  ${p =>
     p.withBorder &&
     `
   border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
@@ -200,7 +196,7 @@ const GenaralLinks = styled.div`
   // svg {
   //   margin-left: -6px;
   // }
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
     flex-direction: column;
   }
 `
@@ -208,9 +204,9 @@ const GenaralLinks = styled.div`
 const GeneralLink = styled.div`
   display: flex;
   flex-direction: column;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
     flex-direction: row;
-    margin-bottom: ${(p) => p.theme.space[32]};
+    margin-bottom: ${p => p.theme.space[32]};
   }
 `
 
@@ -220,18 +216,18 @@ const Row = styled.div`
   width: 100%;
   justify-content: space-between;
   flex-wrap: wrap;
-  margin-top: ${(p) => p.theme.space[32]};
+  margin-top: ${p => p.theme.space[32]};
 `
 
 const LinkCard = styled.a`
-  background: ${(p) => p.theme.colors.gray200};
-  border-radius: ${(p) => p.theme.radii.medium};
-  padding: 0 ${(p) => p.theme.space[24]};
+  background: ${p => p.theme.colors.gray200};
+  border-radius: ${p => p.theme.radii.medium};
+  padding: 0 ${p => p.theme.space[24]};
   width: 100%;
-  border-top: ${(p) => p.theme.space[8]} solid ${(p) => p.theme.colors.gray200};
+  border-top: ${p => p.theme.space[8]} solid ${p => p.theme.colors.gray200};
   position: relative;
   flex-grow: 1;
-  margin-bottom: ${(p) => p.theme.space[40]};
+  margin-bottom: ${p => p.theme.space[40]};
   text-decoration: none;
 
   .icon {
@@ -251,20 +247,20 @@ const LinkCard = styled.a`
 
   p {
     text-align: left;
-    margin: ${(p) => p.theme.space[16]} 0;
+    margin: ${p => p.theme.space[16]} 0;
   }
 
-  @media (min-width: ${(p) => p.theme.breakpoints.phone}) and (max-width: 1024px) {
+  @media (min-width: ${p => p.theme.breakpoints.phone}) and (max-width: 1024px) {
     max-width: 48% !important;
   }
 
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
     max-width: 100% !important;
   }
 `
 
 const IconHolder = styled.span`
-  background: ${(p) => p.theme.colors.white};
+  background: ${p => p.theme.colors.white};
   box-shadow: 0px 2px 4px rgba(26, 32, 44, 0.1), 0px 3px 6px rgba(26, 32, 44, 0.05);
   border-radius: 50%;
   height: 56px;
@@ -272,8 +268,8 @@ const IconHolder = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    margin: ${(p) => p.theme.space[16]} ${(p) => p.theme.space[24]};
+  @media (min-width: 0) and (max-width: ${p => p.theme.breakpoints.phone}) {
+    margin: ${p => p.theme.space[16]} ${p => p.theme.space[24]};
   }
 `
 
@@ -301,9 +297,10 @@ const Homepage = () => {
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
-          Choose one of our <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link>{' '}
-          or explore the <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>.
-          Join our thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
+          Choose one of our{' '}
+          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore the{' '}
+          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join our
+          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
           <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
         </NormalPara>
         <SummaryLinks>
