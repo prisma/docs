@@ -78,7 +78,7 @@ const handleRawBody = node => {
 
   const records = finalSections.map((fSection, index) => ({
     id: index,
-    objectID: rest.objectID,
+    objectID: rest.id,
     title: rest.title,
     slug: rest.modSlug,
     apiReference: isApiTerm(fSection.para) ? getApiVal(fSection.para) : null,
@@ -122,6 +122,7 @@ const queries = [
             edges {
               node {
                 rawBody
+                id
                 fields {
                   slug
                   modSlug
