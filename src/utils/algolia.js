@@ -118,7 +118,7 @@ const queries = [
   {
     query: `
         {
-          allMdx(sort: {fields: fields___slug}) {
+          allMdx {
             edges {
               node {
                 rawBody
