@@ -47,13 +47,13 @@ interface ItemProps {
 }
 
 const ListItem = styled.a<ItemProps>`
-transition: all 0.2s ease-out;
-border-bottom: ${props => props.isActive ? `solid 1px var(--dark-color)` : ''};
+  transition: all 0.2s ease-out;
+  border-bottom: ${props => (props.isActive ? `solid 1px var(--dark-color)` : '')};
 
-& > inlinecode {
-  background: ${props => props.isActive ? `var(--dark-color)` : ''};
-  color: ${props => props.isActive ? 'var( --main-bgd-color)' : '#000'};
-}
+  & > inlinecode {
+    background: ${props => (props.isActive ? `var(--dark-color)` : '')};
+    color: ${props => (props.isActive ? 'var( --main-bgd-color)' : '#000')};
+  }
 `
 
 const getIds = (headings: TableOfContents[]) => {
