@@ -6,7 +6,7 @@ import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
 
-import * as path from 'path'
+import * as path from 'path-browserify'
 
 export interface ButtonProps {
   href?: string

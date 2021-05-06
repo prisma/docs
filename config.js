@@ -119,8 +119,8 @@ const config = {
             codeBlock: false,
           },
           {
-            text: 'Under the hood ',
-            url: 'concepts/overview/under-the-hood',
+            text: 'Under the hood',
+            url: 'concepts/components/prisma-engines',
             codeBlock: false,
           },
         ],
@@ -227,22 +227,22 @@ const config = {
         color: '#48BB78',
         small: false,
         content: 'Get started with Prisma Migrate.',
-        url: 'guides/application-lifecycle/developing-with-prisma-migrate',
+        url: 'guides/database/developing-with-prisma-migrate',
       },
       {
-        title: 'Using Prisma',
+        title: 'Performance and optimization',
         color: '#38B2AC',
         small: true,
-        content: 'How to integrate Prisma into your stack.',
-        url: 'guides/prisma-guides',
+        content: 'Tune your queries and monitor your application.',
+        url: 'guides/performance-and-optimization',
       },
       {
-        title: 'Database workflows',
+        title: 'Working with your database',
         color: '#4299E1',
         small: true,
         content:
           'Guides for common database workflow such as configuring constraints or cascading deletes.',
-        url: 'guides/general-guides/database-workflows/foreign-keys',
+        url: 'guides/database',
       },
       {
         title: 'Adopting Prisma',
@@ -305,7 +305,7 @@ const config = {
           },
           {
             text: 'migrate',
-            url: 'reference/api-reference/command-reference#prisma-migrate-preview',
+            url: 'reference/api-reference/command-reference#prisma-migrate',
             codeBlock: true,
           },
           {

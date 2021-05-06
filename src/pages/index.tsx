@@ -297,10 +297,11 @@ const Homepage = () => {
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
-          Choose one of our <a href={SummaryLinkData.gettingStarted}>getting started tutorials</a>{' '}
-          or explore the <a href={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</a>.
-          Join our thriving community on <a href={SummaryLinkData.slack}>Slack</a> and{' '}
-          <a href={SummaryLinkData.git}>GitHub</a> for help and ideas.
+          Choose one of our{' '}
+          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore the{' '}
+          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join our
+          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
+          <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
         </NormalPara>
         <SummaryLinks>
           {SummaryLinkData.buttons.map((slink: any, index: number) =>
@@ -331,11 +332,11 @@ const Homepage = () => {
                 <List>
                   {generalLink.links.map((link: any) => (
                     <li key={index}>
-                      <a href={link.url}>
+                      <Link to={link.url}>
                         <span className={`${link.codeBlock ? 'inline-code' : ''}`}>
                           {link.text}
                         </span>
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </List>
@@ -381,9 +382,9 @@ const Homepage = () => {
               <List>
                 {rLinkData.links.map((link: any, index: number) => (
                   <li key={index}>
-                    <a href={link.url}>
+                    <Link to={link.url}>
                       <span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </List>
@@ -396,9 +397,9 @@ const Homepage = () => {
           <List split={true}>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
-                <a href={uLink.url}>
+                <Link to={uLink.url}>
                   <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
-                </a>
+                </Link>
               </li>
             ))}
           </List>
