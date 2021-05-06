@@ -406,7 +406,7 @@ const config = {
     description:
       "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
     keywords: 'Docs, prisma, 2.0',
-    docsLocation: 'https://github.com/prisma/docs/tree/master/content',
+    docsLocation: 'https://github.com/prisma/docs/tree/main/content',
     twitter: {
       site: '@prisma',
       creator: '@prisma',
