@@ -11,7 +11,7 @@ const ChapterTitle = styled.div`
   line-height: 100%;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: ${p => p.theme.colors.gray900} !important;
+  color: ${p => p.theme.colors.gray900};
   margin: ${p => p.theme.space[16]} 0 0;
 `
 
@@ -29,9 +29,9 @@ const TOCList = styled.ol`
     }
     a {
       text-decoration: none;
-      color: ${p => p.theme.colors.gray600} !important;
+      color: ${p => p.theme.colors.gray600};
       &:hover {
-        color: ${p => p.theme.colors.gray900} !important;
+        color: ${p => p.theme.colors.gray900};
       }
     }
   }
@@ -44,25 +44,16 @@ const TOCContainer = styled.div`
 
 interface ItemProps {
   isActive: boolean
-  textLength: number
 }
 
 const ListItem = styled.a<ItemProps>`
-  ${({ isActive, textLength }) =>
-    isActive &&
-    textLength &&
-    css`
-      &:after {
-        content: '';
-        display: block;
-        width: ${textLength}ch;
-        padding-top: 3px;
-        border-bottom: 2px solid;
-        border-bottom-color: ${p => p.theme.colors.gray900};
-        z-index: 999;
-        position: absolute;
-      }
-    `}
+transition: all 0.2s ease-out;
+border-bottom: ${props => props.isActive ? `solid 1px var(--dark-color)` : ''};
+
+& > inlinecode {
+  background: ${props => props.isActive ? `var(--dark-color)` : ''};
+  color: ${props => props.isActive ? 'var( --main-bgd-color)' : '#000'};
+}
 `
 
 const getIds = (headings: TableOfContents[]) => {
@@ -117,12 +108,10 @@ const TOC = ({ headings, tocDepth }: any) => {
       <TOCList>
         {headings &&
           headings.map((heading: any, index: number) => {
-            const textLength = heading.url.replaceAll('inlinecode', '').length
             const isActive: boolean = activeId === heading.url.replaceAll('inlinecode', '').slice(1)
             return (
               <li key={index}>
                 <ListItem
-                  textLength={textLength}
                   isActive={isActive}
                   dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
                 />
