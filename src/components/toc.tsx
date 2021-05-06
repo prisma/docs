@@ -42,83 +42,79 @@ const TOCContainer = styled.div`
 `
 
 interface ItemProps {
-  isActive: boolean;
+  isActive: boolean
 }
 
 const ListItem = styled.a<ItemProps>`
-  border-bottom: ${props => props.isActive ? "1px solid" : ""};
+  border-bottom: ${props => (props.isActive ? '1px solid' : '')};
   border-bottom-color: gray-900;
-`;
+`
 
 const getIds = (headings: TableOfContents[]) => {
   return headings.reduce((acc: any, item: any) => {
     if (item.url) {
       // url has a # as first character, remove it to get the raw CSS-id
-      acc.push(item.url.slice(1));
+      acc.push(item.url.slice(1))
     }
     if (item.items) {
-      acc.push(...getIds(item.items));
+      acc.push(...getIds(item.items))
     }
-    return acc;
-  }, []);
+    return acc
+  }, [])
 }
 
 const useActiveId = (idList: string[]) => {
-  const [activeId, setActiveId] = React.useState(``);
+  const [activeId, setActiveId] = React.useState(``)
   React.useEffect(() => {
-    
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
+            setActiveId(entry.target.id)
           }
-        });
+        })
       },
       { rootMargin: `0% 0% -80% 0%` }
-    );
+    )
     idList.forEach((id: string) => {
-      const el: HTMLElement | null = document.getElementById(id);
+      const el: HTMLElement | null = document.getElementById(id)
       if (el) {
-        observer.observe(el);
+        observer.observe(el)
       }
-    });
+    })
     return () => {
       idList.forEach((id: string) => {
-        const el: HTMLElement | null = document.getElementById(id);
+        const el: HTMLElement | null = document.getElementById(id)
         if (el) {
-          observer.unobserve(el);
+          observer.unobserve(el)
         }
-      });
-    };
- 
-  }, [idList]);
-  return activeId;
+      })
+    }
+  }, [idList])
+  return activeId
 }
 
 const TOC = ({ headings, tocDepth }: any) => {
-  const idList = getIds(headings);
-  const activeId = useActiveId(idList);
+  const idList = getIds(headings)
+  const activeId = useActiveId(idList)
   const navItems = (headings: any[], depth: number, activeId: string) => {
     return (
       <TOCList>
         {headings &&
           headings.map((heading: any, index: number) => {
-            const isActive: boolean = activeId === heading.url.slice(1);
+            const isActive: boolean = activeId === heading.url.slice(1)
             return (
-            <li key={index}>
-              <ListItem
-                isActive={isActive}
-                href={heading.url.replace(/inlinecode/g, '')}  
-              >
-                {heading.title}
-              </ListItem>
-              {heading.items &&
-                heading.items.length > 0 &&
-                depth > 1 &&
-                navItems(heading.items, depth - 1, activeId)}
-            </li>
-          )})}
+              <li key={index}>
+                <ListItem isActive={isActive} href={heading.url.replace(/inlinecode/g, '')}>
+                  {heading.title}
+                </ListItem>
+                {heading.items &&
+                  heading.items.length > 0 &&
+                  depth > 1 &&
+                  navItems(heading.items, depth - 1, activeId)}
+              </li>
+            )
+          })}
       </TOCList>
     )
   }
