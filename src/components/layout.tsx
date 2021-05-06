@@ -79,7 +79,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
   const NotMobile = styled.section`
     display: flex;
-    height: fit-content;
+
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
@@ -102,7 +102,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
   const TOCWrapper = styled.div`
     width: 180px;
-    height: fit-content;
+
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
@@ -135,7 +135,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
               {!homePage && (
                 <TOCWrapper id="toc-holder">
                   {toc && toc.items && toc.items.length > 0 && (
-                    // <TOC items={toc.items} tocDepth={tocDepth}/>
                     <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
                   )}
                 </TOCWrapper>

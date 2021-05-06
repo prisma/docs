@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { TableOfContents } from 'src/interfaces/Article.interface'
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
+import { stringify } from '../utils/stringify'
 
 const ChapterTitle = styled.div`
   font-family: ${p => p.theme.fonts.text};
@@ -32,6 +33,7 @@ const TOCList = styled.ol`
       &:hover {
         color: ${p => p.theme.colors.gray900} !important;
       }
+
     }
   }
 `
@@ -42,19 +44,33 @@ const TOCContainer = styled.div`
 `
 
 interface ItemProps {
-  isActive: boolean
+  isActive: boolean;
+  textLength: number;
 }
 
 const ListItem = styled.a<ItemProps>`
-  border-bottom: ${props => (props.isActive ? '1px solid' : '')};
-  border-bottom-color: gray-900;
+
+  ${({isActive, textLength}) => isActive && textLength && 
+  css`
+  &:after {
+    content: "";
+    display: block;
+    width: ${textLength}ch;
+    padding-top: 3px;
+    border-bottom: 2px solid;
+    border-bottom-color: ${p => p.theme.colors.gray900};
+    z-index: 999;
+    position: absolute;
+  }
+  `}
+
 `
 
 const getIds = (headings: TableOfContents[]) => {
   return headings.reduce((acc: any, item: any) => {
     if (item.url) {
       // url has a # as first character, remove it to get the raw CSS-id
-      acc.push(item.url.slice(1))
+      acc.push(item.url.replaceAll('inlinecode', '').slice(1))
     }
     if (item.items) {
       acc.push(...getIds(item.items))
@@ -102,12 +118,11 @@ const TOC = ({ headings, tocDepth }: any) => {
       <TOCList>
         {headings &&
           headings.map((heading: any, index: number) => {
-            const isActive: boolean = activeId === heading.url.slice(1)
+            const textLength = heading.url.replaceAll('inlinecode', '').length;
+            const isActive: boolean = activeId === heading.url.replaceAll('inlinecode', '').slice(1)
             return (
               <li key={index}>
-                <ListItem isActive={isActive} href={heading.url.replace(/inlinecode/g, '')}>
-                  {heading.title}
-                </ListItem>
+                <ListItem textLength={textLength} isActive={isActive} dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}/>
                 {heading.items &&
                   heading.items.length > 0 &&
                   depth > 1 &&
