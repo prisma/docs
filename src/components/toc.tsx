@@ -33,7 +33,6 @@ const TOCList = styled.ol`
       &:hover {
         color: ${p => p.theme.colors.gray900} !important;
       }
-
     }
   }
 `
@@ -44,26 +43,26 @@ const TOCContainer = styled.div`
 `
 
 interface ItemProps {
-  isActive: boolean;
-  textLength: number;
+  isActive: boolean
+  textLength: number
 }
 
 const ListItem = styled.a<ItemProps>`
-
-  ${({isActive, textLength}) => isActive && textLength && 
-  css`
-  &:after {
-    content: "";
-    display: block;
-    width: ${textLength}ch;
-    padding-top: 3px;
-    border-bottom: 2px solid;
-    border-bottom-color: ${p => p.theme.colors.gray900};
-    z-index: 999;
-    position: absolute;
-  }
-  `}
-
+  ${({ isActive, textLength }) =>
+    isActive &&
+    textLength &&
+    css`
+      &:after {
+        content: '';
+        display: block;
+        width: ${textLength}ch;
+        padding-top: 3px;
+        border-bottom: 2px solid;
+        border-bottom-color: ${p => p.theme.colors.gray900};
+        z-index: 999;
+        position: absolute;
+      }
+    `}
 `
 
 const getIds = (headings: TableOfContents[]) => {
@@ -118,11 +117,15 @@ const TOC = ({ headings, tocDepth }: any) => {
       <TOCList>
         {headings &&
           headings.map((heading: any, index: number) => {
-            const textLength = heading.url.replaceAll('inlinecode', '').length;
+            const textLength = heading.url.replaceAll('inlinecode', '').length
             const isActive: boolean = activeId === heading.url.replaceAll('inlinecode', '').slice(1)
             return (
               <li key={index}>
-                <ListItem textLength={textLength} isActive={isActive} dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}/>
+                <ListItem
+                  textLength={textLength}
+                  isActive={isActive}
+                  dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
+                />
                 {heading.items &&
                   heading.items.length > 0 &&
                   depth > 1 &&
