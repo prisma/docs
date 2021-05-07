@@ -113,6 +113,7 @@ const TOC = ({ headings, tocDepth }: any) => {
               <li key={index}>
                 <ListItem
                   isActive={isActive}
+                  href={heading.url.replace(/inlinecode/g, '')}
                   dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
                 />
                 {heading.items &&
