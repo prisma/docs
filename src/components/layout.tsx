@@ -21,18 +21,7 @@ interface LayoutContentProps {
 
 type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
 
-const Layout: React.FunctionComponent<LayoutProps> = ({
-  children,
-  toc,
-  tocDepth,
-  location,
-  slug,
-  homePage,
-}) => {
-  const { site } = useLayoutQuery()
-  const { header, footer } = site.siteMetadata
-
-  const Wrapper = styled.div<{ fullWidth?: boolean }>`
+const Wrapper = styled.div<{ fullWidth?: boolean }>`
     display: flex;
     width: 100%;
     justify-content: center;
@@ -112,6 +101,19 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     }
   `
 
+  
+const Layout: React.FunctionComponent<LayoutProps> = ({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+  homePage,
+}) => {
+  const { site } = useLayoutQuery()
+  const { header, footer } = site.siteMetadata
+
+  
   React.useEffect(() => {
     stickWhenNeeded('#sidebar-holder')
     stickWhenNeeded('#toc-holder')
