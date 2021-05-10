@@ -21,18 +21,7 @@ interface LayoutContentProps {
 
 type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
 
-const Layout: React.FunctionComponent<LayoutProps> = ({
-  children,
-  toc,
-  tocDepth,
-  location,
-  slug,
-  homePage,
-}) => {
-  const { site } = useLayoutQuery()
-  const { header, footer } = site.siteMetadata
-
-  const Wrapper = styled.div<{ fullWidth?: boolean }>`
+const Wrapper = styled.div<{ fullWidth?: boolean }>`
     display: flex;
     width: 100%;
     justify-content: center;
@@ -52,7 +41,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
       margin: 0;
       max-width: 100%;
     }
-
     @media (min-width: 1024px) and (max-width: 1200px) {
       margin: 0;
       ${p => (p.fullWidth ? 'max-width: 100%' : 'max-width: 570px')};
@@ -83,7 +71,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
-
     &.fixed {
       position: sticky;
     }
@@ -107,11 +94,21 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
-
     &.fixed {
       position: sticky;
     }
   `
+  
+const Layout: React.FunctionComponent<LayoutProps> = ({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+  homePage,
+}) => {
+  const { site } = useLayoutQuery()
+  const { header, footer } = site.siteMetadata
 
   return (
     <ThemeProvider theme={theme}>

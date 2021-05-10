@@ -14,6 +14,7 @@ export interface ArticleFrontmatter {
   duration?: string
   experimental?: boolean
   preview?: boolean
+  earlyaccess?: boolean
   toc?: boolean
   hidePage?: boolean
   tocDepth?: number

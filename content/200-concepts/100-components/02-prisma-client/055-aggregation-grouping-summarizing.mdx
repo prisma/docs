@@ -50,6 +50,50 @@ const aggregations = await prisma.user.aggregate({
 console.log('Average age:' + aggregations.avg.age)
 ```
 
+### Aggregate values are nullable
+
+In [2.21.0](https://github.com/prisma/prisma/releases/tag/2.21.0) and later, aggregations on **nullable fields** can return a `number` or `null` . This excludes `count`, which always returns 0 if no records are found.
+
+Consider the following query, where `age` is nullable in the schema:
+
+<CodeWithResult expanded={true}>
+<cmd>
+
+```ts
+const aggregations = await prisma.user.aggregate({
+  avg: {
+    age: true,
+  },
+  count: {
+    age: true
+  }
+})
+```
+
+</cmd>
+<cmdResult>
+
+```js
+{
+  avg: {
+    age: null
+  },
+  count: {
+    age: 9
+  }
+}
+```
+
+</cmdResult>
+</CodeWithResult>
+
+The query returns `{ avg: { age: null } }` in either of the following scenarios:
+
+* There are no users
+* The value of every user's `age` field is `null`
+
+This allows you to differentiate between the true aggregate value (which could be zero) and no data.
+
 ## Group by
 
 Prisma Client's [`groupBy`](../../../reference/api-reference/prisma-client-reference#group-by) <span class="api"></span> allows you to **group records** by one or more field values - such as `country`, or `country` and `city` and **perform aggregations** on each group, such as finding the average age of people living in a particular city. `groupBy` is a GA in [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later.
@@ -65,7 +109,7 @@ The following video uses `groupBy` to summarize total COVID-19 cases by continen
 The following example groups all users by the `country` field and returns the total number of profile views for each country:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const groupUsers = await prisma.user.groupBy({
@@ -76,8 +120,8 @@ const groupUsers = await prisma.user.groupBy({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 ;[
@@ -86,7 +130,7 @@ const groupUsers = await prisma.user.groupBy({
 ]
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ### <inlinecode>groupBy</inlinecode> and filtering
@@ -195,8 +239,57 @@ const groupUsers = await prisma.user.groupBy({
 
 The following constraints apply when you combine `groupBy` and `orderBy`:
 
-- You can only `orderBy` fields that are present in `by`
+- You can `orderBy` fields that are present in `by`
+- You can `orderBy` aggregate (Preview in 2.21.0 and later)
 - If you use `skip` and/or `take` with `groupBy`, you must also include `orderBy` in the query
+
+#### Order by aggregate group (Preview)
+
+In [2.21.0](https://github.com/prisma/prisma/releases/2.21.0) and later, you can **order by aggregate group**.
+
+To enable this feature, add `orderByAggregateGroup` to `previewFeatures` in your schema:
+
+```prisma highlight=3;normal
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["orderByAggregateGroup"]
+}
+```
+
+The following example sorts each `city` group by the number of users in that group (largest group first):
+
+<CodeWithResult>
+<cmd>
+
+```ts
+const groupBy = await prisma.user.groupBy({
+  by: ['city'],
+  count: {
+    city  : true,
+  },  
+  orderBy: {
+    _count: {
+      city: 'desc'
+    }
+  },
+})
+```
+
+</cmd>
+<cmdResult>
+
+```js
+[
+  { city: 'Berlin', count: { city: 3 } },
+  { city: 'Paris', count: { city: 2 } },
+  { city: 'Amsterdam', count: { city: 1 } },
+]
+```
+
+</cmdResult>
+</CodeWithResult>
+
+#### Order by field
 
 The following query orders groups by country, skips the first two groups, and returns the 3rd and 4th group:
 
@@ -238,7 +331,7 @@ const userCount = await prisma.user.count()
 
 ### Count relations
 
-The ability to count relations is avaliable in version [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later. To enable this feature, add `selectRelationCount` to `previewFeatures` in your schema:
+The ability to count relations is available in version [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later. To enable this feature, add `selectRelationCount` to `previewFeatures` in your schema:
 
 ```prisma
 generator client {
@@ -250,7 +343,7 @@ generator client {
 To return a count of relations (for example, a user's post count), use the `_count` parameter with a nested `select` as shown:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const usersWithCount = await prisma.user.findMany({
@@ -262,8 +355,8 @@ const usersWithCount = await prisma.user.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 { id: 1, _count: { posts: 3 } },
@@ -273,7 +366,7 @@ const usersWithCount = await prisma.user.findMany({
 { id: 5, _count: { posts: 0 } }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 The `_count` parameter:
@@ -287,7 +380,7 @@ The `_count` parameter:
 The following query includes each user's post count in the results:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const usersWithCount = await prisma.user.findMany({
@@ -299,8 +392,8 @@ const usersWithCount = await prisma.user.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 { id: 1, _count: { posts: 3 } },
@@ -310,7 +403,7 @@ const usersWithCount = await prisma.user.findMany({
 { id: 5, _count: { posts: 0 } }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 #### Return a relations count with `select`
@@ -318,7 +411,7 @@ const usersWithCount = await prisma.user.findMany({
 The following query uses `select` to return each user's post count and no other fields:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 
 ```ts
@@ -332,8 +425,8 @@ const usersWithCount = await prisma.user.findMany({
 ```
 
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -343,7 +436,7 @@ const usersWithCount = await prisma.user.findMany({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 #### Return multiple relation counts
@@ -351,7 +444,7 @@ const usersWithCount = await prisma.user.findMany({
 The following query returns a count of each user's `posts` and `recipes` and no other fields:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const usersWithCount = await prisma.user.findMany({
@@ -366,8 +459,8 @@ const usersWithCount = await prisma.user.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -378,7 +471,7 @@ const usersWithCount = await prisma.user.findMany({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ### Count non-`null` field values
@@ -389,7 +482,7 @@ In [2.15.0](https://github.com/prisma/prisma/releases/2.15.0) and later, you can
 - All non-`null` `name` values (not distinct values, just values that are not `null`)
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const userCount = await prisma.user.count({
@@ -400,14 +493,14 @@ const userCount = await prisma.user.count({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 { _all: 30, name: 10 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ### Filtered count
@@ -450,7 +543,7 @@ const result = await prisma.user.findMany({
 The following example returns distinct `role` field values (for example, `ADMIN` and `USER`):
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const distinctRoles = await prisma.user.findMany({
@@ -461,8 +554,8 @@ const distinctRoles = await prisma.user.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 ;[
@@ -475,12 +568,12 @@ const distinctRoles = await prisma.user.findMany({
 ]
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ### <inlinecode>distinct</inlinecode> under the hood
 
-Prisma's `distinct` option does not use SQL `SELECT DISTINCT`. Instad, `distinct` uses:
+Prisma's `distinct` option does not use SQL `SELECT DISTINCT`. Instead, `distinct` uses:
 
 - A `SELECT` query
 - In-memory post-processing to select distinct
@@ -520,7 +613,7 @@ model Play {
 </details>
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const distinctScores = await prisma.play.findMany({
@@ -544,8 +637,8 @@ const distinctScores = await prisma.play.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```
 [
@@ -562,7 +655,7 @@ const distinctScores = await prisma.play.findMany({
 ]
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 Without `select` and `distinct`, the query would return:

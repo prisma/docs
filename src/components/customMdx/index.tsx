@@ -12,6 +12,7 @@ import FileWithIcon from './fileWithIcon'
 import Subsections from './subSections'
 import TopBlock from './topBlock'
 import FootNote from './footnote'
+import Admonition from './admonition'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -38,6 +39,7 @@ export default {
   Subsections,
   TopBlock,
   FootNote,
+  Admonition,
   img: (props: any) => (
     <a href={props.src} target="_blank">
       <img {...props} />
