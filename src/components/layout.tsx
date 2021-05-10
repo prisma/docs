@@ -10,7 +10,7 @@ import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
 import { LensProvider, theme } from '@prisma/lens/dist/web'
-import { stickWhenNeeded } from '../utils/stickWhenNeeded'
+import StickyBox from 'react-sticky-box'
 
 interface LayoutContentProps {
   toc: any
@@ -41,7 +41,6 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
       margin: 0;
       max-width: 100%;
     }
-
     @media (min-width: 1024px) and (max-width: 1200px) {
       margin: 0;
       ${p => (p.fullWidth ? 'max-width: 100%' : 'max-width: 570px')};
@@ -72,7 +71,6 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
-
     &.fixed {
       position: sticky;
     }
@@ -83,6 +81,7 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
     width: 100%;
     justify-content: center;
     display: flex;
+    align-items: flex-start;
     ${p => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[40]};`)}
     @media (max-width: 1024px) {
       ${p => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[8]};`)}
@@ -95,12 +94,10 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
-
     &.fixed {
       position: sticky;
     }
   `
-
   
 const Layout: React.FunctionComponent<LayoutProps> = ({
   children,
@@ -113,12 +110,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
-  
-  React.useEffect(() => {
-    stickWhenNeeded('#sidebar-holder')
-    stickWhenNeeded('#toc-holder')
-  })
-
   return (
     <ThemeProvider theme={theme}>
       <LensProvider>
@@ -127,19 +118,23 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
               {!homePage && (
-                <NotMobile id="sidebar-holder">
-                  <SidebarLayout isMobile={false} location={location} slug={slug} />
-                </NotMobile>
+                <StickyBox offsetTop={20} offsetBottom={20}>
+                  <NotMobile id="sidebar-holder">
+                    <SidebarLayout isMobile={false} location={location} slug={slug} />
+                  </NotMobile>
+                </StickyBox>
               )}
               <Content fullWidth={homePage}>
                 <MaxWidth>{children}</MaxWidth>
               </Content>
               {!homePage && (
-                <TOCWrapper id="toc-holder">
-                  {toc && toc.items && toc.items.length > 0 && (
-                    <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
-                  )}
-                </TOCWrapper>
+                <StickyBox offsetTop={20} offsetBottom={20}>
+                  <TOCWrapper id="toc-holder">
+                    {toc && toc.items && toc.items.length > 0 && (
+                      <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+                    )}
+                  </TOCWrapper>
+                </StickyBox>
               )}
             </Container>
           </Wrapper>
