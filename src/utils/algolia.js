@@ -118,10 +118,11 @@ const queries = [
   {
     query: `
         {
-          allMdx(sort: {fields: fields___slug}) {
+          allMdx {
             edges {
               node {
                 rawBody
+                id
                 fields {
                   slug
                   modSlug
