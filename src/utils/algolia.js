@@ -54,9 +54,9 @@ const handleRawBody = node => {
         !section.includes('```') &&
         !section.includes('block>') &&
         !section.includes('ParallelBlocks>') &&
-        !section.includes('CmdResult>') &&
+        !section.includes('cmdResult>') &&
         !section.includes('<Subsections') &&
-        !section.includes('Cmd>') &&
+        !section.includes('cmd>') &&
         !section.includes('<!-- prettier-ignore -->')
     )
     filteredSections.map(

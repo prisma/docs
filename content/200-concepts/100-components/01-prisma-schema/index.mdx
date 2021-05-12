@@ -281,7 +281,9 @@ You can use `dotenv-cli` if you want to:
 There are two types of comments that are supported in the schema file:
 
 - `// comment`: This comment is for the reader's clarity and is not present in the abstract syntax tree (AST) of the schema file.
-- `/// comment`: These comments will show up in the abstract syntax tree (AST) of the schema file, either as descriptions to AST nodes or as free-floating comments. Tools can then use these comments to provide additional information.
+- `/// comment`: These comments will show up in the abstract syntax tree (AST) of the schema file as descriptions to AST nodes. Tools can then use these comments to provide additional information. All comments are attached to the next available node - [free-floating comments](https://github.com/prisma/prisma/issues/3544) are not supported and are not included in the AST.
+
+> **Note**: `///` comments are **not** present of the generated Prisma Client, but are present in the internal Data Model Meta Format (DMMF).
 
 Here are some different examples:
 
@@ -297,19 +299,94 @@ model User {
 // This comment is just for you. It will not
 // show up in the AST.
 
-/// This is a free-floating comment that will show up
-/// in the AST as a `Comment` node, but is not attached
-/// to any other node. We can use these for documentation
-/// in the same way that godoc.org works.
+/// This comment will get attached to the
+/// Customer node.
 
 model Customer {}
 ```
 
 ## Auto formatting
 
-Similar to tools like [gofmt](https://golang.org/cmd/gofmt/) and [prettier](https://github.com/prettier/prettier), PSL syntax ships with a formatter for
-`.prisma` files. The formatter can be enabled in the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma).
+Prisma supports formatting `.prisma` files automatically. There are two ways to format `.prisma` files:
 
-Like `gofmt` and unlike `prettier`, there are no options for configuration here. **There is exactly one way to format a prisma file**.
+* Run the [`prisma format`](../../../reference/api-reference/command-reference#forma) <span class="api"></span> command.
+* Install the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) and invoke the [VS Code format action](https://code.visualstudio.com/docs/editor/codebasics#_formatting) - manually or on save.
 
-Learn more about the formatting rules in the [spec](https://github.com/prisma/specs/tree/master/schema#formatting-rules).
+There are no configuration options - [formatting rules](#formatting-rules) are fixed (similar to Golang's `gofmt` but unlike Javascript's `prettier`):
+
+### Formatting rules
+
+#### Configuration blocks are aligned by their `=` sign.
+
+```
+block _ {
+  key      = "value"
+  key2     = 1
+  long_key = true
+}
+```
+
+A newline resets block alignment:
+
+```
+block _ {
+  key   = "value"
+  key2  = 1
+  key10 = true
+
+  long_key   = true
+  long_key_2 = true
+}
+```
+
+<!--
+Multiline objects follow their own nested formatting rules:
+
+```
+block _ {
+  key   = "value"
+  key2  = 1
+  key10 = {
+    a = "a"
+    b = "b"
+  }
+  key10 = [
+    1,
+    2
+  ]
+}
+
+```
+-->
+````
+
+#### Field definitions are aligned into columns separated by 2 or more spaces
+
+```
+block _ {
+  id          String       @id
+  first_name  LongNumeric  @default
+}
+```
+
+#### Multiline field attributes are properly aligned with the rest of the field attributes
+
+```
+block _ {
+  id          String       @id
+                           @default
+  first_name  LongNumeric  @default
+}
+```
+
+A newline resets formatting rules:
+
+```
+block _ {
+  id  String  @id
+              @default
+
+  first_name  LongNumeric  @default
+}
+
+```
