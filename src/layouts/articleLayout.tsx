@@ -78,7 +78,7 @@ export const query = graphql`
           relativePath
         }
       }
-      tableOfContents(maxDepth: 3)
+      tableOfContents
       frontmatter {
         title
         metaTitle
