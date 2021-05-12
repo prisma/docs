@@ -1,7 +1,7 @@
 ---
 title: 'Integration testing'
 metaTitle: 'Integration testing with Prisma'
-metaDescription: 'Learn how to setup and run integration tests with Prisma'
+metaDescription: 'Learn how to setup and run integration tests with Prisma and Docker'
 tocDepth: 3
 ---
 
@@ -33,8 +33,7 @@ model Order {
 }
 
 // Can have 1 order
-// Can have 1 product
-// The quantity filed dictates how many products are in the order
+// Can have many products
 model OrderDetails {
   id        Int     @id @default(autoincrement())
   products  Product @relation(fields: [productId], references: [id])
@@ -73,6 +72,7 @@ model Customer {
   name    String?
   orders  Order[]
 }
+
 ```
 
 </details>
@@ -81,7 +81,7 @@ The guide uses a singleton pattern for Prisma Client setup. Refer to the [single
 
 ## Add Docker to your project
 
-With Docker and Docker compose both installed on your machine you can add use them in your project.
+With Docker and Docker compose both installed on your machine you can use them in your project.
 
 1. Begin by creating a `docker-compose.yml` file at your projects root. Here you will add a Postgres image and specify the environments credentials.
 
@@ -103,7 +103,7 @@ services:
       POSTGRES_DB: tests
 ```
 
-> **Note**: The version used here is the latest at the time of writing, if you are following along be sure to use the same version for consistency.
+> **Note**: The compose version used here (`3.9`) is the latest at the time of writing, if you are following along be sure to use the same version for consistency.
 
 The `docker-compose.yml` file defines the following:
 
@@ -117,15 +117,13 @@ The `docker-compose.yml` file defines the following:
 DATABASE_URL="postgresql://prisma:prisma@localhost:5433/tests"
 ```
 
-3. To create the container in a detached state so that you can continue to use the terminal tab, run the following command from a terminal:
+3. To create the container in a detached state so that you can continue to use the terminal tab, run the following command:
 
 ```terminal
 docker compose up -d
 ```
 
-4. Next you can check that the database has been created by executing a `psql` command inside the container.
-
-🆔 Get the containers id:
+4. Next you can check that the database has been created by executing a `psql` command inside the container. Make a note of the container id.
 
 <CodeWithResult expanded={true}>
 
@@ -141,14 +139,16 @@ docker ps
 
 ```
 CONTAINER ID   IMAGE             COMMAND                  CREATED         STATUS        PORTS                    NAMES
-1322e42d833f   postgres:latest   "docker-entrypoint.s…"   2 seconds ago   Up 1 second   0.0.0.0:5433->5432/tcp   integration-tests-prisma
+1322e42d833f   postgres:13       "docker-entrypoint.s…"   2 seconds ago   Up 1 second   0.0.0.0:5433->5432/tcp   integration-tests-prisma
 ```
 
 </CmdResult>
 
 </CodeWithResult>
 
-💾 Run `psql` in the container, login with the created user and check the database is created:
+> **Note**: The container id is unique to each container, you will see a different id displayed.
+
+5. Using the container id from the previous step, run `psql` in the container, login with the created user and check the database is created:
 
 <CodeWithResult expanded={true}>
 
@@ -180,115 +180,49 @@ tests=# \l
 
 </CodeWithResult>
 
-## Add a seed script
-
-Integration tests will be run against a database in a dedicated test environment instead of the production or development environments.
-
-For the tests to best simulate real world scenarios you can seed the database on startup, thus providing your tests with some data to test against.
-
-Inside the `/prisma` folder, create a new file named `seed.ts` and add the following:
-
-<details><summary>Seed script</summary>
-
-```ts file=seed.ts
-import prisma from '../src/client'
-
-/**
- * A seed function to insert data into the database for running test against.
- */
-async function seed() {
-  // Check if the database already has data. This could be due to a test failing and the container not being destroyed, thus leaving data in the database
-  const hasData = await prisma.customer.findFirst()
-
-  if (hasData) {
-    console.log('The database has data. Skipping seed.')
-    return
-  }
-
-  // create product categories
-  await prisma.category.createMany({
-    data: [{ name: 'Wand' }, { name: 'Broomstick' }],
-  })
-
-  console.log('✨ 2 product categories successfully created!')
-
-  // create products
-  await prisma.product.createMany({
-    data: [
-      {
-        name: 'Holly, 11", phoenix feather',
-        description: 'Harry Potters wand',
-        price: 100,
-        sku: 1,
-        categoryId: 1,
-      },
-      {
-        name: 'Nimbus 2000',
-        description: 'Harry Potters broom',
-        price: 500,
-        sku: 2,
-        categoryId: 2,
-      },
-    ],
-  })
-
-  console.log('✨ 2 products successfully created!')
-
-  // create the customer
-  await prisma.customer.create({
-    data: {
-      name: 'Harry Potter',
-      email: 'harry@hogwarts.io',
-      address: '4 Privet Drive',
-    },
-  })
-
-  console.log('✨ 1 customer successfully created!')
-}
-
-// Seed the database then disconnect
-seed()
-  .catch(error => console.log({ error }))
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
-```
-
-</details>
-
-The above script first checks if there is any data in the database, in this instance, a customer. It then creates a couple of categories, before creating a product for each.
-
-> **Note**: There should **never** be data left in the database after the test have run. The container will be destroyed after the test have finished, but in the event that they fail for some reason, this check will make sure the seed script doesn't run and crash the application.
-
-Finally it creates a single customer. When the script is called it runs then disconnects the client instance.
-
 ## Integration testing
+
+Integration tests will be run against a database in a **dedicated test environment** instead of the production or development environments. 
+
+### The flow of operations
+
+The flow for running said tests goes as follows:
+
+1. Start the container and create the database
+1. Migrate the schema
+1. Run the tests
+1. Destroy the container
+
+Each test suite will seed the database before all the test are run. After all the tests in the suite have finished, the data from all the tables will be dropped and the connection terminated.
+
+### The function to test
 
 The ecommerce application you are testing has a function which creates an order. This function does the following:
 
-1. Accepts input about the customer making the order
-1. Accepts input about the product being ordered
-1. Checks if the customer has an existing account
-1. Checks if the product is in stock
-1. Creates an account if the customer doesn't exist in the database
-1. Create the order
+- Accepts input about the customer making the order
+- Accepts input about the product being ordered
+- Checks if the customer has an existing account
+- Checks if the product is in stock
+- Returns an "Out of stock" message if the product doesn't exist
+- Creates an account if the customer doesn't exist in the database
+- Create the order
 
 An example of how such a function might look can be seen below:
 
 ```ts file=create-order.ts
-import prisma from '../client'
+import prisma from "../client";
 
 export interface Customer {
-  id?: number
-  name?: string
-  email: string
-  address?: string
+  id?: number;
+  name?: string;
+  email: string;
+  address?: string;
 }
 
 export interface OrderInput {
-  customer: Customer
-  productId: number
-  quantity: number
+  customer: Customer;
+  productId: number;
+  quantity: number;
 }
 
 /**
@@ -296,22 +230,20 @@ export interface OrderInput {
  * @param input The order parameters
  */
 export async function createOrder(input: OrderInput) {
-  const { productId, quantity, customer } = input
-  const { name, email, address } = customer
+  const { productId, quantity, customer } = input;
+  const { name, email, address } = customer;
 
   // Get the product
   const product = await prisma.product.findUnique({
     where: {
       id: productId,
     },
-  })
+  });
 
-  // If the product is null its out of stock, return null.
-  if (!product) return
+  // If the product is null its out of stock, return error.
+  if (!product) return new Error('Out of stock');
 
-  // If the customer is new then create the record,
-  // otherwise connect via their unique email.
-  // Creates the order
+  // If the customer is new then create the record, otherwise connect via their unique email
   await prisma.order.create({
     data: {
       customer: {
@@ -338,49 +270,102 @@ export async function createOrder(input: OrderInput) {
         },
       },
     },
-  })
+  });
 }
+
 ```
 
-### Testing the function
+### The test suite
 
 The following tests will check if the `createOrder` function works as it should do. They will test:
 
 - Creating a new order with a new customer
 - Creating an order with an existing customer
+- Show an "Out of stock" error message if a product doesn't exist
 
 ```ts file=__tests__/create-order.ts
-import prisma from '../src/client'
-import { createOrder, Customer, OrderInput } from '../src/functions/index'
+import prisma from "../src/client";
+import { createOrder, Customer, OrderInput } from "../src/functions/index";
+
+beforeAll(async () => {
+    // create product categories
+    await prisma.category.createMany({
+      data: [{ name: "Wand" }, { name: "Broomstick" }],
+    });
+  
+    console.log("✨ 2 categories successfully created!");
+  
+    // create products
+    await prisma.product.createMany({
+      data: [
+        {
+          name: 'Holly, 11", phoenix feather',
+          description: "Harry Potters wand",
+          price: 100,
+          sku: 1,
+          categoryId: 1,
+        },
+        {
+          name: "Nimbus 2000",
+          description: "Harry Potters broom",
+          price: 500,
+          sku: 2,
+          categoryId: 2,
+        },
+      ],
+    });
+  
+    console.log("✨ 2 products successfully created!");
+  
+    // create the customer
+    await prisma.customer.create({
+      data: {
+        name: "Harry Potter",
+        email: "harry@hogwarts.io",
+        address: "4 Privet Drive",
+      },
+    });
+  
+    console.log("✨ 1 customer successfully created!");
+});
 
 afterAll(async () => {
-  await prisma.$disconnect()
-})
+  for (const {
+    tablename,
+  } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
+    
+      if (tablename !== '_prisma_migrations') {
+        await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
+    }
+  }
 
-it('should create 1 new customer with 1 order', async () => {
+  await prisma.$disconnect();
+});
+
+it("should create 1 new customer with 1 order", async (done) => {
   // The new customers details
   const customer: Customer = {
     id: 2,
-    name: 'Hermione Granger',
-    email: 'hermione@hogwarts.io',
-    address: '2 Hampstead Heath',
-  }
+    name: "Hermione Granger",
+    email: "hermione@hogwarts.io",
+    address: "2 Hampstead Heath",
+  };
   // The new orders details
   const order: OrderInput = {
     customer,
     productId: 1,
     quantity: 1,
-  }
+  };
 
   // Create the order and customer
-  await createOrder(order)
+  await createOrder(order);
 
   // Check if the new customer was created by filtering on unique email field
   const newCustomer = await prisma.customer.findUnique({
     where: {
       email: customer.email,
     },
-  })
+  });
 
   // Check if the new order was created by filtering on unique email field of the customer
   const newOrder = await prisma.order.findFirst({
@@ -389,28 +374,30 @@ it('should create 1 new customer with 1 order', async () => {
         email: customer.email,
       },
     },
-  })
+  });
 
   // Expect the new customer to have been created and match the input
-  expect(newCustomer).toEqual(customer)
+  expect(newCustomer).toEqual(customer);
   // Expect the new order to have been created and contain the new customer
-  expect(newOrder).toHaveProperty('customerId', 2)
-})
+  expect(newOrder).toHaveProperty("customerId", 2);
 
-it('should create 1 order with an existing customer', async () => {
+  done()
+});
+
+it("should create 1 order with an existing customer", async (done) => {
   // The existing customers email
   const customer: Customer = {
-    email: 'harry@hogwarts.io',
-  }
+    email: "harry@hogwarts.io",
+  };
   // The new orders details
   const order: OrderInput = {
     customer,
     productId: 1,
     quantity: 1,
-  }
+  };
 
   // Create the order and connect the existing customer
-  await createOrder(order)
+  await createOrder(order);
 
   // Check if the new order was created by filtering on unique email field of the customer
   const newOrder = await prisma.order.findFirst({
@@ -419,34 +406,53 @@ it('should create 1 order with an existing customer', async () => {
         email: customer.email,
       },
     },
-  })
+  });
 
   // Expect the new order to have been created and contain the existing customer with an id of 1 (Harry Potter from the seed script)
-  expect(newOrder).toHaveProperty('customerId', 1)
-})
+  expect(newOrder).toHaveProperty("customerId", 1);
+
+  done()
+});
+
+it("should show 'Out of stock' message if productId doesn't exit", async (done) => {
+  // The existing customers email
+  const customer: Customer = {
+    email: "harry@hogwarts.io",
+  };
+  // The new orders details
+  const order: OrderInput = {
+    customer,
+    productId: 3,
+    quantity: 1,
+  };
+
+  // The productId supplied doesnt exit so the function should return an "Out of stock" message
+  await expect(createOrder(order)).resolves.toEqual(new Error('Out of stock'));
+
+  done()
+});
+
 ```
 
 ## Running the tests
 
-The idea with this setup is to isolate a real world scenario so that you can test your applications functionality against real data in a controlled environment.
+This setup isolates a real world scenario so that you can test your applications functionality against real data in a controlled environment. 
 
-To that end you have setup a Docker container which will be home to a Postgres database. This database will be seeded with some data, have tests run against it and then be destroyed. You can set this all up via some scripts in your projects `package.json` file.
+You can add some scripts to your projects `package.json` file which will setup the database and run the tests, then afterwards manually destroy the container.
 
 ```json file=package.json
   "scripts": {
     "migrate": "npx prisma migrate dev --name init",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker compose down",
-    "seed": "node --loader ts-node/esm ./prisma/seed.ts",
-    "bootstrap": "yarn docker:up && yarn migrate && yarn seed",
-    "test": "yarn bootstrap && jest -i && yarn docker:down"
+    "test": "yarn docker:up && yarn migrate && jest -i"
   },
 ```
 
-To run create the container and run the test you would run the `test` script. Breaking this down:
+To create the container and run the test you would run the `test` script, which does the following:
 
 1. `docker compose up -d` is run to create the container with the Postgres image, creating the database.
 1. A migration is run on the database using your projects schema, this creates the tables in the containers database.
-1. The seed script is then run to add some initial data to the database.
 1. The test are run.
-1. The container is destroyed, along with the database and its data.
+
+Once you are satisfied you can run `yarn docker:down` to destroy the container, its database and any test data.
