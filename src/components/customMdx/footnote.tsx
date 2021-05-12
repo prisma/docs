@@ -10,7 +10,7 @@ const FootNote = ({ children, ...props }: FootNoteProps) => {
 export default FootNote
 
 const FootNoteWrapper = styled.div`
- * {
+  * {
     font-size: 0.9em;
     font-style: italic;
   }
