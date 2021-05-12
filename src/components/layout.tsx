@@ -10,29 +10,9 @@ import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
 import { LensProvider, theme } from '@prisma/lens/dist/web'
-import { stickWhenNeeded } from '../utils/stickWhenNeeded'
+import StickyBox from 'react-sticky-box'
 
-interface LayoutContentProps {
-  toc: any
-  tocDepth?: number
-  slug?: string
-  homePage?: boolean
-}
-
-type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
-
-const Layout: React.FunctionComponent<LayoutProps> = ({
-  children,
-  toc,
-  tocDepth,
-  location,
-  slug,
-  homePage,
-}) => {
-  const { site } = useLayoutQuery()
-  const { header, footer } = site.siteMetadata
-
-  const Wrapper = styled.div<{ fullWidth?: boolean }>`
+const Wrapper = styled.div<{ fullWidth?: boolean }>`
     display: flex;
     width: 100%;
     justify-content: center;
@@ -52,7 +32,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
       margin: 0;
       max-width: 100%;
     }
-
     @media (min-width: 1024px) and (max-width: 1200px) {
       margin: 0;
       ${p => (p.fullWidth ? 'max-width: 100%' : 'max-width: 570px')};
@@ -83,7 +62,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
-
     &.fixed {
       position: sticky;
     }
@@ -94,6 +72,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     width: 100%;
     justify-content: center;
     display: flex;
+    align-items: flex-start;
     ${p => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[40]};`)}
     @media (max-width: 1024px) {
       ${p => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[8]};`)}
@@ -106,16 +85,30 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     @media (min-width: 0px) and (max-width: 1024px) {
       display: none;
     }
-
     &.fixed {
       position: sticky;
     }
   `
 
-  React.useEffect(() => {
-    stickWhenNeeded('#sidebar-holder')
-    stickWhenNeeded('#toc-holder')
-  })
+interface LayoutContentProps {
+  toc: any
+  tocDepth?: number
+  slug?: string
+  homePage?: boolean
+}
+
+type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
+
+const Layout: React.FunctionComponent<LayoutProps> = ({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+  homePage,
+}) => {
+  const { site } = useLayoutQuery()
+  const { header, footer } = site.siteMetadata
 
   return (
     <ThemeProvider theme={theme}>
@@ -125,19 +118,23 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
               {!homePage && (
-                <NotMobile id="sidebar-holder">
-                  <SidebarLayout isMobile={false} location={location} slug={slug} />
-                </NotMobile>
+                <StickyBox offsetTop={20} offsetBottom={20}>
+                  <NotMobile id="sidebar-holder">
+                    <SidebarLayout isMobile={false} location={location} slug={slug} />
+                  </NotMobile>
+                </StickyBox>
               )}
               <Content fullWidth={homePage}>
                 <MaxWidth>{children}</MaxWidth>
               </Content>
               {!homePage && (
-                <TOCWrapper id="toc-holder">
-                  {toc && toc.items && toc.items.length > 0 && (
-                    <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
-                  )}
-                </TOCWrapper>
+                <StickyBox offsetTop={20} offsetBottom={20}>
+                  <TOCWrapper id="toc-holder">
+                    {toc && toc.items && toc.items.length > 0 && (
+                      <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+                    )}
+                  </TOCWrapper>
+                </StickyBox>
               )}
             </Container>
           </Wrapper>
