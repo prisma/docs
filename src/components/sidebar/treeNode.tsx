@@ -154,7 +154,7 @@ const TreeNode = ({
   lastLevel,
   hidePage,
   codeStyle,
-  parents
+  parents,
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
@@ -236,7 +236,9 @@ const TreeNode = ({
               <span className={`${codeStyle ? 'inline-code' : ''}`}>{navTitle || title}</span>
             </span>
           ) : (
-            <span className={`${codeStyle ? 'inline-code' : ''}`} onClick={collapse}>{navTitle || title}</span>
+            <span className={`${codeStyle ? 'inline-code' : ''}`} onClick={collapse}>
+              {navTitle || title}
+            </span>
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag small">Experimental</span>}
