@@ -122,10 +122,10 @@ const ListItem = styled.li`
   &.last-level {
     padding-left: ${p => p.theme.space[24]};
 
-    .last-level {
-      /*this one is last for real*/
-      padding-left: ${p => p.theme.space[16]};
-    }
+    // .last-level {
+    //   /*this one is last for real*/
+    //   padding-left: ${p => p.theme.space[16]};
+    // }
   }
   .collapse-title {
     cursor: pointer;
@@ -150,19 +150,20 @@ const TreeNode = ({
   duration,
   experimental,
   preview,
+  earlyaccess,
   lastLevel,
   hidePage,
   codeStyle,
-  parentLabel,
+  parents
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
     Object.keys(collapsed).map(lbl => {
-      if (lbl !== label) {
+      if ((lbl !== label && !parents) || (lbl !== label && parents && !parents.includes(lbl))) {
         collapsed[lbl] = collapsed[lbl] == false ? (collapsed[lbl] = true) : collapsed[lbl]
       }
     })
-    setCollapsed(label, false, parentLabel)
+    setCollapsed(label, false, parents)
   }
   const location = useLocation()
 
@@ -235,11 +236,12 @@ const TreeNode = ({
               <span className={`${codeStyle ? 'inline-code' : ''}`}>{navTitle || title}</span>
             </span>
           ) : (
-            <span className={`${codeStyle ? 'inline-code' : ''}`}>{navTitle || title}</span>
+            <span className={`${codeStyle ? 'inline-code' : ''}`} onClick={collapse}>{navTitle || title}</span>
           )}
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag small">Experimental</span>}
           {preview && <span className="tag small">Preview</span>}
+          {earlyaccess && <span className="tag small">Early Access</span>}
         </Link>
       )}
 

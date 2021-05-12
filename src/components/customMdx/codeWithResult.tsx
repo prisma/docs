@@ -15,9 +15,9 @@ type CodeWithResultProps = React.ReactNode & ExpandedProps & ShowHideProps
 const CodeWithResult = ({ children, expanded, showText, hideText }: CodeWithResultProps) => {
   const [showResult, setShowResult] = React.useState(expanded)
   const cmd =
-    children && children.filter((child: any) => child.props && child.props.mdxType === 'Cmd')
+    children && children.filter((child: any) => child.props && child.props.mdxType === 'cmd')
   const result =
-    children && children.filter((child: any) => child.props && child.props.mdxType === 'CmdResult')
+    children && children.filter((child: any) => child.props && child.props.mdxType === 'cmdResult')
 
   const toggleResult = () => setShowResult(!showResult)
   const toggleShowText = showText ? showText : 'Show CLI results'

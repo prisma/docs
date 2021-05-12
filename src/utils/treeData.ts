@@ -27,6 +27,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             duration,
             experimental,
             preview,
+            earlyaccess,
             dbSwitcher,
             langSwitcher,
             hidePage,
@@ -55,6 +56,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             topLevel,
             experimental,
             preview,
+            earlyaccess,
             staticLink,
           }
           prevItems.push(tmp)
@@ -68,10 +70,12 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.duration = duration
           tmp.experimental = experimental
           tmp.preview = preview
+          tmp.earlyaccess = earlyaccess
           tmp.topLevel = topLevel
           tmp.hidePage = hidePage
           tmp.codeStyle = codeStyle
           tmp.parentLabel = parts[parts.length - 3]
+          tmp.parents = parts.filter(part => part !== 'index' )
         }
         if (defaultCollapsed && location) {
           defaultCollapsed[part.toLowerCase()] =
@@ -95,10 +99,12 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           duration,
           experimental,
           preview,
+          earlyaccess,
           topLevel,
           hidePage,
           codeStyle,
           parentLabel: parts[parts.length - 3],
+          parents : parts.filter(part => part !== 'index' )
         })
       }
 
