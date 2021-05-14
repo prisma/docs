@@ -12,7 +12,7 @@ interface QuestionAndAnswer {
 }
 
 interface ChosenAnswerProps {
-  isCorrect: boolean;
+  isCorrect: boolean
 }
 
 const Wrapper = styled.section`
