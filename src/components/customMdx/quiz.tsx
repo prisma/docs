@@ -150,10 +150,18 @@ const RadioButton = styled.input<ChosenAnswerProps>`
 
 function Tick() {
   return (
-    <svg width="35px" height="35px" fill="#15bd76" xmlns="http://www.w3.org/2000/svg" x="0" y="0" viewBox="0 0 100 125">
+    <svg
+      width="35px"
+      height="35px"
+      fill="#15bd76"
+      xmlns="http://www.w3.org/2000/svg"
+      x="0"
+      y="0"
+      viewBox="0 0 100 125"
+    >
       <path d="M79.8 29.1c-1.2-1.2-3.1-1.2-4.2 0L40.9 63.8 26.5 49.4c-1.2-1.2-3.1-1.2-4.2 0-1.2 1.2-1.2 3.1 0 4.2l16.5 16.5c.6.6 1.4.9 2.1.9s1.5-.3 2.1-.9l36.8-36.8c1.1-1.1 1.1-3 0-4.2z"></path>
     </svg>
-  );
+  )
 }
 
 const Button = styled.button<ChosenAnswerProps>`
@@ -161,7 +169,8 @@ const Button = styled.button<ChosenAnswerProps>`
   font-weight: 600;
   padding: 0.5rem 0.75rem;
   display: inline-block;
-  background: ${props => props.isCorrect ? p => p.theme.colors.gray100 : p => p.theme.colors.gray300};
+  background: ${props =>
+    props.isCorrect ? p => p.theme.colors.gray100 : p => p.theme.colors.gray300};
   text-align: left;
   border-radius: 5px;
   line-height: 1.5;
@@ -267,10 +276,14 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
         <Button disabled={disabled} onClick={onSubmit}>
           {chosenAnswer.isCorrect ? (
             <div>
-              <Tick/>
+              <Tick />
               <p>Correct Answer!</p>
             </div>
-          ) : !!chosenAnswer.isCorrect ? 'Try again' : 'Submit your answer'}
+          ) : !!chosenAnswer.isCorrect ? (
+            'Try again'
+          ) : (
+            'Submit your answer'
+          )}
         </Button>
       </ButtonsWrapper>
       {/* {answerSubmitted ? (
