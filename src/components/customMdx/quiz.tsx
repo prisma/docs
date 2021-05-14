@@ -3,7 +3,7 @@ import styled from 'styled-components'
 
 type AnswerOptions = {
   answer: string
-  isCorrect: boolean | null
+  isCorrect: boolean
 }
 
 interface QuestionAndAnswer {
@@ -13,6 +13,7 @@ interface QuestionAndAnswer {
 
 interface ChosenAnswerProps {
   isCorrect: boolean
+  answerSubmitted?: boolean
 }
 
 const Wrapper = styled.section`
@@ -42,31 +43,11 @@ const AnswersWrapper = styled.label`
   }
 `
 
-const ChosenAnswer = styled.div<ChosenAnswerProps>`
-  background-color: ${props => (props.isCorrect ? '#A3F5D3' : '#F5B7B7')};
-  padding: 0.5rem 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1rem auto;
-  border-radius: 8px;
-  border: ${props => (props.isCorrect ? '2px solid #15bd76' : '2px solid #ff4f56')};
-
-  & > div {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.25rem;
-    min-width: 100px;
-    font-weight: 500;
-  }
-`
-
-const ButtonsWrapper = styled.div`
+const ButtonsWrapper = styled.div<ChosenAnswerProps>`
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  margin: 2rem 0.5rem 0 0.5rem;
+  margin: ${props => props.isCorrect ? '1rem 0.25rem' : '1rem 0.5rem'};
 `
 
 const Row = styled.div`
@@ -74,7 +55,7 @@ const Row = styled.div`
   align-items: center;
   height: 30px;
   position: relative;
-  margin-left: 0.55rem;
+  margin-left: 0.5rem;
 
   & > span {
     font-size: 0.85rem;
@@ -98,18 +79,8 @@ const RadioButton = styled.input<ChosenAnswerProps>`
   height: 20px;
   margin-right: 0.25rem;
   cursor: pointer;
-  &:hover ~ ${RadioButtonLabel} {
-    background: ${p => p.theme.colors.gray500};
-    &::after {
-      content: '';
-      display: block;
-      border-radius: 50%;
-      width: 10px;
-      height: 10px;
-      margin: 3px;
-      background: ${p => p.theme.colors.gray100};
-    }
-  }
+  position: relative;
+
   ${props =>
     props.checked &&
     ` 
@@ -130,47 +101,54 @@ const RadioButton = styled.input<ChosenAnswerProps>`
   `}
 
   ${props =>
-    props.disabled &&
-    ` &:disabled + ${RadioButtonLabel} {
-      background: #a0aec0;
-      border: 1px solid #c3dafe;
+    props.isCorrect === true && props.answerSubmitted && props.answerSubmitted === true &&
+    ` 
+    & + ${RadioButtonLabel} {
+      background: #15bd76;
+      border: 1px solid #A3F5D3;
       &::after {
-        content: "";
-        display: block;
+        color: white;
+        content: "✔";
+        font-size: 0.6rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         border-radius: 50%;
         width: 10px;
         height: 10px;
-        margin: 4px;
-        box-shadow: 1px 3px 3px 1px rgba(0, 0, 0, 0.1);
-        background: white;
+        margin: 4px
+      }
+    }
+  `}
+
+  ${props =>
+    props.isCorrect === false && props.answerSubmitted && props.answerSubmitted === true &&
+    ` 
+    & + ${RadioButtonLabel} {
+      background: #ff4f56;
+      border: 1px solid #F5B7B7;
+      &::after {
+        color: white;
+        content: "✖";
+        font-size: 0.6rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        width: 10px;
+        height: 10px;
+        margin: 0.26rem;
       }
     }
   `}
 `
 
-function Tick() {
-  return (
-    <svg
-      width="35px"
-      height="35px"
-      fill="#15bd76"
-      xmlns="http://www.w3.org/2000/svg"
-      x="0"
-      y="0"
-      viewBox="0 0 100 125"
-    >
-      <path d="M79.8 29.1c-1.2-1.2-3.1-1.2-4.2 0L40.9 63.8 26.5 49.4c-1.2-1.2-3.1-1.2-4.2 0-1.2 1.2-1.2 3.1 0 4.2l16.5 16.5c.6.6 1.4.9 2.1.9s1.5-.3 2.1-.9l36.8-36.8c1.1-1.1 1.1-3 0-4.2z"></path>
-    </svg>
-  )
-}
-
-const Button = styled.button<ChosenAnswerProps>`
+const Button = styled.button`
   font-size: 1rem;
   font-weight: 600;
   padding: 0.5rem 0.75rem;
   display: inline-block;
-  background: ${props =>
-    props.isCorrect ? p => p.theme.colors.gray100 : p => p.theme.colors.gray300};
+  background: ${p => p.theme.colors.gray300};
   text-align: left;
   border-radius: 5px;
   line-height: 1.5;
@@ -192,24 +170,75 @@ const Button = styled.button<ChosenAnswerProps>`
     color: ${p => p.theme.colors.gray700};
     cursor: default;
   }
-
-  & > div {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: ${p => p.theme.colors.gray100};
-
-    & > p {
-      color: #15bd76;
-      margin: 0 0 0 0.25rem;
-    }
-  }
 `
+
+const NotificationContainer = styled.div<ChosenAnswerProps>`
+  display: flex;
+  width: 250px;
+  justify-content: flex-start;
+  align-items: center;
+  background: ${p => p.theme.colors.gray100};
+  position: relative;
+
+  ${props =>
+    props.isCorrect === true &&
+    `
+      &::after {
+        order: 0;
+        background: #15bd76;
+        border: 1px solid #A3F5D3;
+        color: white;
+        content: "✔";
+        font-size: 0.8rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        margin: 0 0.75rem 0 0.3rem;
+      }
+  `}
+
+  ${props =>
+    props.isCorrect === false &&
+    `
+      &::after {
+        order: 0;
+        background: #ff4f56;
+        border: 1px solid #F5B7B7;
+        color: white;
+        content: "✖";
+        font-size: 0.8rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        margin: 0 0.75rem 0 0;
+      }
+  `}
+
+  & > p {
+    order: 1;
+    font-size: 1rem;
+    font-weight: 600;
+    color: ${props => props.isCorrect ? '#15bd76' : '#ff4f56'}
+  }
+
+`;
+
+const AnswerNotification = ({isCorrect} : ChosenAnswerProps) => (
+  <NotificationContainer isCorrect={isCorrect}>
+    <p>{isCorrect ? `Yay, that's correct!` : `Oh no, that's incorrect!`}</p>
+  </NotificationContainer>
+)
 
 const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
   const [chosenAnswer, setChosenAnswer] = React.useState<AnswerOptions>({
     answer: '',
-    isCorrect: null,
+    isCorrect: false,
   })
   const [answerSubmitted, setAnswerSubmitted] = React.useState<boolean>(false)
   const [disabled, setDisabled] = React.useState<boolean>(false)
@@ -259,7 +288,8 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
         <AnswersWrapper key={index}>
           <Row>
             <RadioButton
-              isCorrect={!!chosenAnswer.isCorrect}
+              answerSubmitted={answerSubmitted}
+              isCorrect={item.isCorrect}
               disabled={disabled}
               type="radio"
               name="radio"
@@ -267,24 +297,17 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
               checked={chosenAnswer.answer === item.answer}
               onChange={event => handleSelectChange(event)}
             />
-            <RadioButtonLabel />
+            <RadioButtonLabel/>
             <span>{item.answer}</span>
           </Row>
         </AnswersWrapper>
       ))}
-      <ButtonsWrapper>
+      <ButtonsWrapper isCorrect={chosenAnswer.isCorrect}>
+        {answerSubmitted ? <AnswerNotification isCorrect={chosenAnswer.isCorrect}/> : (
         <Button disabled={disabled} onClick={onSubmit}>
-          {chosenAnswer.isCorrect ? (
-            <div>
-              <Tick />
-              <p>Correct Answer!</p>
-            </div>
-          ) : !!chosenAnswer.isCorrect ? (
-            'Try again'
-          ) : (
-            'Submit your answer'
-          )}
-        </Button>
+        Submit your answer
+      </Button>
+        )}
       </ButtonsWrapper>
       {/* {answerSubmitted ? (
         <ChosenAnswer isCorrect={chosenAnswer.isCorrect}>
