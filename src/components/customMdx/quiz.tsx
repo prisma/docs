@@ -43,11 +43,8 @@ const AnswersWrapper = styled.label`
   }
 `
 
-const ButtonsWrapper = styled.div<ChosenAnswerProps>`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  margin: ${props => props.isCorrect ? '1rem 0.25rem' : '1rem 0.5rem'};
+const NotificationWrapper = styled.div<ChosenAnswerProps>`
+  margin: ${props => (props.isCorrect ? '1rem 0.25rem' : '1rem 0.5rem')};
 `
 
 const Row = styled.div`
@@ -101,7 +98,9 @@ const RadioButton = styled.input<ChosenAnswerProps>`
   `}
 
   ${props =>
-    props.isCorrect === true && props.answerSubmitted && props.answerSubmitted === true &&
+    props.isCorrect === true &&
+    props.answerSubmitted &&
+    props.answerSubmitted === true &&
     ` 
     & + ${RadioButtonLabel} {
       background: #15bd76;
@@ -122,7 +121,9 @@ const RadioButton = styled.input<ChosenAnswerProps>`
   `}
 
   ${props =>
-    props.isCorrect === false && props.answerSubmitted && props.answerSubmitted === true &&
+    props.isCorrect === false &&
+    props.answerSubmitted &&
+    props.answerSubmitted === true &&
     ` 
     & + ${RadioButtonLabel} {
       background: #ff4f56;
@@ -224,12 +225,11 @@ const NotificationContainer = styled.div<ChosenAnswerProps>`
     order: 1;
     font-size: 1rem;
     font-weight: 600;
-    color: ${props => props.isCorrect ? '#15bd76' : '#ff4f56'}
+    color: ${props => (props.isCorrect ? '#15bd76' : '#ff4f56')};
   }
+`
 
-`;
-
-const AnswerNotification = ({isCorrect} : ChosenAnswerProps) => (
+const AnswerNotification = ({ isCorrect }: ChosenAnswerProps) => (
   <NotificationContainer isCorrect={isCorrect}>
     <p>{isCorrect ? `Yay, that's correct!` : `Oh no, that's incorrect!`}</p>
   </NotificationContainer>
@@ -270,15 +270,6 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
     }
   }
 
-  const onReset = () => {
-    setAnswerSubmitted(false)
-    setChosenAnswer({
-      answer: '',
-      isCorrect: false,
-    })
-    setDisabled(false)
-  }
-
   return (
     <Wrapper>
       <QuestionTitle>
@@ -297,18 +288,20 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
               checked={chosenAnswer.answer === item.answer}
               onChange={event => handleSelectChange(event)}
             />
-            <RadioButtonLabel/>
+            <RadioButtonLabel />
             <span>{item.answer}</span>
           </Row>
         </AnswersWrapper>
       ))}
-      <ButtonsWrapper isCorrect={chosenAnswer.isCorrect}>
-        {answerSubmitted ? <AnswerNotification isCorrect={chosenAnswer.isCorrect}/> : (
-        <Button disabled={disabled} onClick={onSubmit}>
-        Submit your answer
-      </Button>
+      <NotificationWrapper isCorrect={chosenAnswer.isCorrect}>
+        {answerSubmitted ? (
+          <AnswerNotification isCorrect={chosenAnswer.isCorrect} />
+        ) : (
+          <Button disabled={disabled} onClick={onSubmit}>
+            Submit your answer
+          </Button>
         )}
-      </ButtonsWrapper>
+      </NotificationWrapper>
       {/* {answerSubmitted ? (
         <ChosenAnswer isCorrect={chosenAnswer.isCorrect}>
           <div>{chosenAnswer.answer}</div>
