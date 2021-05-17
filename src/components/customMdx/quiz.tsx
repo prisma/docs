@@ -2,7 +2,7 @@ import * as React from 'react'
 import styled from 'styled-components'
 
 type AnswerOptions = {
-  answer: string
+  answer?: string
   isCorrect: boolean
 }
 
@@ -138,7 +138,7 @@ const RadioButton = styled.input<ChosenAnswerProps>`
         border-radius: 50%;
         width: 10px;
         height: 10px;
-        margin: 0.26rem;
+        margin: 0.2rem 0.2rem 0.3rem 0.28rem;
       }
     }
   `}
@@ -243,8 +243,7 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
   const [answerSubmitted, setAnswerSubmitted] = React.useState<boolean>(false)
   const [disabled, setDisabled] = React.useState<boolean>(false)
 
-  const handleSelectChange = (event: any) => {
-    console.log(event.target.value)
+  const handleSelectChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChosenAnswer({
       answer: event.target.value,
       isCorrect: false,
@@ -254,17 +253,13 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
   const onSubmit = () => {
     setAnswerSubmitted(true)
     setDisabled(true)
-    const foundAnswer = answerOptions.find(answer => answer.answer === chosenAnswer.answer)
-    if (foundAnswer && foundAnswer.isCorrect) {
-      const correctAnswerText = `Correct! ${foundAnswer.answer}`
+    const foundAnswer = answerOptions.find(answer => answer.answer === chosenAnswer.answer)?.isCorrect
+    if (foundAnswer) {
       setChosenAnswer({
-        answer: correctAnswerText,
         isCorrect: true,
       })
     } else {
-      const wrongAnswerText = `Oh no! Please read through the section again.`
       setChosenAnswer({
-        answer: wrongAnswerText,
         isCorrect: false,
       })
     }
@@ -302,11 +297,6 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
           </Button>
         )}
       </NotificationWrapper>
-      {/* {answerSubmitted ? (
-        <ChosenAnswer isCorrect={chosenAnswer.isCorrect}>
-          <div>{chosenAnswer.answer}</div>
-        </ChosenAnswer>
-      ) : null} */}
     </Wrapper>
   )
 }
