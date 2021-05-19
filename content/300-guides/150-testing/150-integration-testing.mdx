@@ -284,6 +284,16 @@ The following tests will check if the `createOrder` function works as it should 
 - Creating an order with an existing customer
 - Show an "Out of stock" error message if a product doesn't exist
 
+Before the test suite is run the database is seeded with data. After the test suite has finished a [`deleteMany`](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference/#deletemany) <span class="api"></span> is used to clear the database of its data.
+
+<Tip>
+
+  Using `deleteMany` may suffice in situations where you know ahead of time how your schema is structured. This is because the operations need to be executed in the correct order according to how the model relations are setup.
+
+  However, this doesn't scale as well as having a more generic solution that maps over your models and performs a truncate on them. For those scenarios and examples of using raw SQL queries see [Delete all records from all tables](../../concepts/components/prisma-client/crud#delete-all-records-from-all-tables)
+
+</Tip>
+
 ```ts file=__tests__/create-order.ts
 import prisma from "../src/client";
 import { createOrder, Customer, OrderInput } from "../src/functions/index";
@@ -331,14 +341,19 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  for (const {
-    tablename,
-  } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
-    
-      if (tablename !== '_prisma_migrations') {
-        await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
-    }
-  }
+  const deleteOrderDetails = prisma.orderDetails.deleteMany();
+  const deleteProduct = prisma.product.deleteMany();
+  const deleteCategory = prisma.category.deleteMany();
+  const deleteCustomerOrder = prisma.customerOrder.deleteMany();
+  const deleteCustomer = prisma.customer.deleteMany();
+
+  await prisma.$transaction([
+    deleteOrderDetails,
+    deleteProduct,
+    deleteCategory,
+    deleteCustomerOrder,
+    deleteCustomer
+  ])
 
   await prisma.$disconnect();
 });
@@ -432,53 +447,7 @@ it("should show 'Out of stock' message if productId doesn't exit", async () => {
 
 ```
 
-### Using MySQL
 
-If you are using MySQL as your database of choice you will have to change the `afterAll` function to perform the truncate successfully. 
-
-This is due to the foreign key constraints, they will need to be removed prior to truncating each table, then set back again once the truncate is finished. These operations are performed within a transaction.
-
-```ts file=__tests__/create-order.ts highlight=2-10;delete|1-33;add
-import { PrismaPromise } from "@prisma/client";
-
-afterAll(async () => {
-   for (const {
-     tablename,
-   } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
-       if (tablename !== '_prisma_migrations') {
-         await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
-     }
-   }
-
-  const transactions: PrismaPromise<any>[] = [];
-    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
-
-    for (const { TABLE_NAME } of 
-    await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
-      if (TABLE_NAME !== "_prisma_migrations") {
-        try {
-          transactions.push(prisma.$executeRaw(
-            `TRUNCATE ${TABLE_NAME};`
-          ));
-        } catch (error) {
-          console.log({error})
-        }
-      }
-    }
-    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`);
-
-    try {
-      await prisma.$transaction(transactions);
-    } catch (error) {
-      console.log({error})
-    }
-    await prisma.$disconnect();
-});
-
-```
-
-> **Note**: MySQL will throw an error if your table names clash with a reserved word. One way to escape this issue is to use quotes around the table name in the raw query. 
-Another altogether easier way to handle this is to make sure your table names (models) don't clash with the [MySQL reserved words](https://dev.mysql.com/doc/refman/8.0/en/keywords.html).
 
 ## Running the tests
 
