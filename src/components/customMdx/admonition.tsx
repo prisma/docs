@@ -31,6 +31,7 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
 export default Admonition
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`
+  min-height: 50px;
   font-family: Inter;
   font-style: normal;
   font-weight: 600;
