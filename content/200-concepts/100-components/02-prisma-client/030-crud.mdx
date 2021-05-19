@@ -776,40 +776,7 @@ The following shows how to delete all records from all tables with Prisma Client
 
 #### Deleting all data with `deleteMany`
 
-#### Deleting all data with raw SQL / `TRUNCATE`
-
-#### Deleting all data with raw SQL / `TRUNCATE` in a transaction
-
-The following examples show how to remove all data (including relations) from all tables in your PostgreSQL, SQLite and MySQL databases.
-
-The MySQL example uses a [`$transaction`](../../../guides/performance-and-optimization/prisma-client-transactions-guide/) to batch the queries together so that they are executed on the same connection.
-
-The SQLite example uses [`deleteMany`](../../../reference/api-reference/prisma-client-reference#deletemany) in combination with a [`$transaction`](../../../guides/performance-and-optimization/prisma-client-transactions-guide/) to synchronously delete each tables data.
-
-> **Note**: The SQLite `$transaction` performs a cascading delete on each models table so they have to be called in order.
-
-<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
-
-<tab>
-
-```ts
-// Special fast path to drop data from a postgres database.
-// This is an optimization which is particularly crucial in a unit testing context.
-// This code path takes milliseconds, vs ~7 seconds for a migrate reset + db push
-for (const { tablename } of await this.prisma
-  .$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='${this.dbSchemaName}'`) {
-  await this.prisma.$queryRaw`TRUNCATE TABLE \"${this.dbSchemaName}\".\"${tablename}\" CASCADE;`
-}
-for (const { relname } of await this.prisma
-  .$queryRaw`SELECT c.relname FROM pg_class AS c JOIN pg_namespace AS n ON c.relnamespace = n.oid WHERE c.relkind='S' AND n.nspname='${this.dbSchemaName}';`) {
-  await this.prisma
-    .$queryRaw`ALTER SEQUENCE \"${this.dbSchemaName}\".\"${relname}\" RESTART WITH 1;`
-}
-```
-
-</tab>
-
-<tab>
+When you know the order in which your tables should be deleted, you can use the [`deleteMany`](../../../reference/api-reference/prisma-client-reference#deletemany) function. This is executed synchronously in a [`$transaction`](../../../guides/performance-and-optimization/prisma-client-transactions-guide/) and can be used with all types of databases.
 
 ```ts
 const deletePosts = prisma.post.deleteMany()
@@ -820,22 +787,82 @@ const deleteUsers = prisma.user.deleteMany()
 await prisma.$transaction([deleteProfile, deletePosts, deleteUsers])
 ```
 
+✅ **Pros**: 
+- Works well when you know the structure of your schema ahead of time
+- Synchronously deletes each tables data
+
+❌ **Cons**:
+- Doesn't scale as well as having a more generic solution which looks up and `TRUNCATES` your tables regardless of their relational constraints.
+
+> **Note**: The `$transaction` performs a cascading delete on each models table so they have to be called in order.
+
+#### Deleting all data with raw SQL / `TRUNCATE`
+
+If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$queryRaw`](./prisma-client/raw-database-access#queryraw).
+
+In the following examples, the first tab shows how to perform a `TRUNCATE` on a Postgres database by using a `$queryRaw` look up that maps over the table and `TRUNCATES` each table.
+
+The second tab show performing the same function but with a MySQL database. In this instance the constraints must be removed before the `TRUNCATE` can be executed, before being reinstated once finished. The whole process is run as a `$transaction`
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+
+<tab>
+
+```ts
+  for (const {
+    tablename,
+  } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
+
+      if (tablename !== '_prisma_migrations') {
+        try {
+        await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
+        } catch (error) {
+          console.log({error})
+        }
+    }
+  }
+```
+
 </tab>
 
 <tab>
 
 ```ts
-const [numberOfRowsDeleted] = await prisma.$transaction([
-  prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`,
-  prisma.$executeRaw`TRUNCATE TABLE teams;`,
-  prisma.$executeRaw`TRUNCATE TABLE players;`,
-  prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`,
-])
+  const transactions: PrismaPromise<any>[] = [];
+    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
+
+    for (const { TABLE_NAME } of await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
+      if (TABLE_NAME !== "_prisma_migrations") {
+        try {
+          transactions.push(prisma.$executeRaw(
+            `TRUNCATE ${TABLE_NAME};`
+          ));
+        } catch (error) {
+          console.log({error})
+        }
+      }
+    }
+
+    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`);
+
+    try {
+      await prisma.$transaction(transactions);
+    } catch (error) {
+      console.log({error})
+    }
 ```
 
 </tab>
 
 </TabbedContent>
+
+✅ **Pros**: 
+- Scalable 
+- Very fast
+
+❌ **Cons**:
+- Can't undo the operation
+- Using reserved SQL key words as tables names can cause issues when trying to run a raw query
 
 #### Deleting all records with Prisma Migrate
 

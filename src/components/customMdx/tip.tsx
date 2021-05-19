@@ -10,8 +10,8 @@ const Wrapper = styled.section`
   position: relative;
 
   &::before {
-    content: "💡";
-    position:absolute;
+    content: '💡';
+    position: absolute;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -26,19 +26,16 @@ const Wrapper = styled.section`
   }
 
   & > div {
-      margin-left: 1.5rem; 
+    margin-left: 1.5rem;
   }
 `
 
-const Tip = ({children}: any) => {
-
-    return (
-        <Wrapper>
-            <div>
-            {children}
-            </div>
-        </Wrapper>
-    )
+const Tip = ({ children }: any) => {
+  return (
+    <Wrapper>
+      <div>{children}</div>
+    </Wrapper>
+  )
 }
 
-export default Tip;
+export default Tip

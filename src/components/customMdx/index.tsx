@@ -49,5 +49,5 @@ export default {
   ),
   AlgoliaTerm: () => <span style={{ display: 'none' }} />,
   Quiz,
-  Tip: (props: any) => <Tip>{props.children}</Tip>
+  Tip: (props: any) => <Tip>{props.children}</Tip>,
 }
