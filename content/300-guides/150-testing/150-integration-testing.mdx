@@ -24,7 +24,7 @@ The following ecommerce schema will be used throughout the guide. This varies fr
 ```prisma file=schema.prisma
 // Can have 1 customer
 // Can have many order details
-model Order {
+model CustomerOrder {
   id           Int            @id @default(autoincrement())
   createdAt    DateTime       @default(now())
   customer     Customer       @relation(fields: [customerId], references: [id])
@@ -38,7 +38,7 @@ model OrderDetails {
   id        Int     @id @default(autoincrement())
   products  Product @relation(fields: [productId], references: [id])
   productId Int
-  order     Order   @relation(fields: [orderId], references: [id])
+  order     CustomerOrder   @relation(fields: [orderId], references: [id])
   orderId   Int
   total     Decimal
   quantity  Int
@@ -70,7 +70,7 @@ model Customer {
   email   String  @unique
   address String?
   name    String?
-  orders  Order[]
+  orders  CustomerOrder[]
 }
 ```
 
@@ -431,6 +431,54 @@ it("should show 'Out of stock' message if productId doesn't exit", async () => {
 });
 
 ```
+
+### Using MySQL
+
+If you are using MySQL as your database of choice you will have to change the `afterAll` function to perform the truncate successfully. 
+
+This is due to the foreign key constraints, they will need to be removed prior to truncating each table, then set back again once the truncate is finished. These operations are performed within a transaction.
+
+```ts file=__tests__/create-order.ts highlight=2-10;delete|1-33;add
+import { PrismaPromise } from "@prisma/client";
+
+afterAll(async () => {
+   for (const {
+     tablename,
+   } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
+       if (tablename !== '_prisma_migrations') {
+         await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
+     }
+   }
+
+  const transactions: PrismaPromise<any>[] = [];
+    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
+
+    for (const { TABLE_NAME } of 
+    await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
+      if (TABLE_NAME !== "_prisma_migrations") {
+        try {
+          transactions.push(prisma.$executeRaw(
+            `TRUNCATE ${TABLE_NAME};`
+          ));
+        } catch (error) {
+          console.log({error})
+        }
+      }
+    }
+    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`);
+
+    try {
+      await prisma.$transaction(transactions);
+    } catch (error) {
+      console.log({error})
+    }
+    await prisma.$disconnect();
+});
+
+```
+
+> **Note**: MySQL will throw an error if your table names clash with a reserved word. One way to escape this issue is to use quotes around the table name in the raw query. 
+Another altogether easier way to handle this is to make sure your table names (models) don't clash with the [MySQL reserved words](https://dev.mysql.com/doc/refman/8.0/en/keywords.html).
 
 ## Running the tests
 
