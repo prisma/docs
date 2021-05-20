@@ -24,7 +24,7 @@ The following ecommerce schema will be used throughout the guide. This varies fr
 ```prisma file=schema.prisma
 // Can have 1 customer
 // Can have many order details
-model Order {
+model CustomerOrder {
   id           Int            @id @default(autoincrement())
   createdAt    DateTime       @default(now())
   customer     Customer       @relation(fields: [customerId], references: [id])
@@ -38,7 +38,7 @@ model OrderDetails {
   id        Int     @id @default(autoincrement())
   products  Product @relation(fields: [productId], references: [id])
   productId Int
-  order     Order   @relation(fields: [orderId], references: [id])
+  order     CustomerOrder   @relation(fields: [orderId], references: [id])
   orderId   Int
   total     Decimal
   quantity  Int
@@ -70,7 +70,7 @@ model Customer {
   email   String  @unique
   address String?
   name    String?
-  orders  Order[]
+  orders  CustomerOrder[]
 }
 ```
 
@@ -284,6 +284,16 @@ The following tests will check if the `createOrder` function works as it should 
 - Creating an order with an existing customer
 - Show an "Out of stock" error message if a product doesn't exist
 
+Before the test suite is run the database is seeded with data. After the test suite has finished a [`deleteMany`](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference/#deletemany) <span class="api"></span> is used to clear the database of its data.
+
+<Tip>
+
+  Using `deleteMany` may suffice in situations where you know ahead of time how your schema is structured. This is because the operations need to be executed in the correct order according to how the model relations are setup.
+
+  However, this doesn't scale as well as having a more generic solution that maps over your models and performs a truncate on them. For those scenarios and examples of using raw SQL queries see [Deleting all data with raw SQL / `TRUNCATE`](../../concepts/components/prisma-client/crud#deleting-all-data-with-raw-sql--truncate)
+
+</Tip>
+
 ```ts file=__tests__/create-order.ts
 import prisma from "../src/client";
 import { createOrder, Customer, OrderInput } from "../src/functions/index";
@@ -331,14 +341,19 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  for (const {
-    tablename,
-  } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
-    
-      if (tablename !== '_prisma_migrations') {
-        await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
-    }
-  }
+  const deleteOrderDetails = prisma.orderDetails.deleteMany();
+  const deleteProduct = prisma.product.deleteMany();
+  const deleteCategory = prisma.category.deleteMany();
+  const deleteCustomerOrder = prisma.customerOrder.deleteMany();
+  const deleteCustomer = prisma.customer.deleteMany();
+
+  await prisma.$transaction([
+    deleteOrderDetails,
+    deleteProduct,
+    deleteCategory,
+    deleteCustomerOrder,
+    deleteCustomer
+  ])
 
   await prisma.$disconnect();
 });
@@ -431,6 +446,8 @@ it("should show 'Out of stock' message if productId doesn't exit", async () => {
 });
 
 ```
+
+
 
 ## Running the tests
 
