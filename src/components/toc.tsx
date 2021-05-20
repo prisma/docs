@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { TableOfContents } from 'src/interfaces/Article.interface'
-import styled, { css } from 'styled-components'
+import styled from 'styled-components'
 import { stringify } from '../utils/stringify'
 
 const ChapterTitle = styled.div`
@@ -39,7 +39,7 @@ const TOCList = styled.ol`
 
 const TOCContainer = styled.div`
   position: sticky;
-  top: 10px;
+  top: 0;
 `
 
 interface ItemProps {
@@ -47,8 +47,14 @@ interface ItemProps {
 }
 
 const ListItem = styled.a<ItemProps>`
-  transition: all 0.2s ease-out;
-  border-bottom: ${props => (props.isActive ? `solid 1px var(--dark-color)` : '')};
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, var(--dark-color));
+  background-position: 0% 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 2px;
+  transition: background-size 0.7s;
+
+  ${props => props.isActive ? 'background-size: 100% 2px;' : null}
 
   & > inlinecode {
     background: ${props => (props.isActive ? `var(--dark-color)` : '')};
@@ -103,6 +109,7 @@ const useActiveId = (idList: string[]) => {
 const TOC = ({ headings, tocDepth }: any) => {
   const idList = getIds(headings)
   const activeId = useActiveId(idList)
+
   const navItems = (headings: any[], depth: number, activeId: string) => {
     return (
       <TOCList>
