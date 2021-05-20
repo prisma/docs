@@ -54,9 +54,9 @@ const handleRawBody = node => {
         !section.includes('```') &&
         !section.includes('block>') &&
         !section.includes('ParallelBlocks>') &&
-        !section.includes('CmdResult>') &&
+        !section.includes('cmdResult>') &&
         !section.includes('<Subsections') &&
-        !section.includes('Cmd>') &&
+        !section.includes('cmd>') &&
         !section.includes('<!-- prettier-ignore -->')
     )
     filteredSections.map(
@@ -78,7 +78,7 @@ const handleRawBody = node => {
 
   const records = finalSections.map((fSection, index) => ({
     id: index,
-    objectID: rest.id,
+    objectID: rest.objectID,
     title: rest.title,
     slug: rest.modSlug,
     apiReference: isApiTerm(fSection.para) ? getApiVal(fSection.para) : null,

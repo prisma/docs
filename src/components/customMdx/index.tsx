@@ -13,6 +13,7 @@ import Subsections from './subSections'
 import TopBlock from './topBlock'
 import FootNote from './footnote'
 import Admonition from './admonition'
+import Quiz from './quiz'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -46,4 +47,5 @@ export default {
     </a>
   ),
   AlgoliaTerm: () => <span style={{ display: 'none' }} />,
+  Quiz,
 }
