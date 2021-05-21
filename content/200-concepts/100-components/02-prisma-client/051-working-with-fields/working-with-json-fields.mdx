@@ -7,7 +7,7 @@ tocDepth: 2
 
 <TopBlock>
 
-Use the [`Json`](../../../../reference/api-reference/prisma-schema-reference#json) <span class="api"></span> Prisma field type to read, write, and perform basic filtering on `JSON` types in the underlying database. In the following example, the `User` model has an optional `Json` field named `extendedProfile`:
+Use the [`Json`](../../../../reference/api-reference/prisma-schema-reference#json) <span class="api"></span> Prisma field type to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `extendedProfile`:
 
 ```prisma highlight=6;normal
 model User {
@@ -36,7 +36,7 @@ Example field value:
 }
 ```
 
-> **Note**: The `Json` field is only supported if the [underlying database](../../../database-connectors) has a corresponding `JSON` data type.
+> **Note**: The `Json` field is only supported if the [underlying database](../../../database-connectors) has a corresponding JSON data type.
 
 The `Json` field supports a few additional types, such as `string` and `boolean`. These additional types exist to match the types supported by [`JSON.parse()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse):
 
@@ -53,16 +53,16 @@ Reasons to ues the `Json` field type include:
 - You need to store data that does not adhere to a consistent structure
 - You are importing data from another system and do not want to map that data to Prisma models
 
-## Accessing specific fields inside a block of `JSON`
+## Reading a <inlinecode>Json</inlinecode> field
 
-To access a specific field inside a block of `JSON`, cast the Prisma `Json` field value as `Prisma.JsonObject`:
+To access a specific field inside a block of JSON, cast the Prisma `Json` field value as `Prisma.JsonObject`:
 
 ```ts
 const { PrismaClient, Prisma } = require('@prisma/client')
 
 const user = await prisma.user.findFirst({
   where: {
-    id: 9
+    id: 9,
   },
 })
 
@@ -70,12 +70,12 @@ const user = await prisma.user.findFirst({
 // { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
 
 const jsonField = user?.extendedProfile as Prisma.JsonObject
-const pets = jsonField["pets"]
+const pets = jsonField['pets']
 ```
 
 ## Writing to a <inlinecode>Json</inlinecode> field
 
-The following example writes a `JSON` object to the `extendedProfile` field:
+The following example writes a JSON object to the `extendedProfile` field:
 
 ```ts
 var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
@@ -88,57 +88,33 @@ const createUser = await prisma.user.create({
 })
 ```
 
-> **Note**: JavaScript objects (for example, `{ pets: "none"}`) are automatically converted to `JSON`.
+> **Note**: JavaScript objects (for example, `{ pets: "none"}`) are automatically converted to JSON.
 
-## Filtering <inlinecode>Json</inlinecode> fields
+## Filtering on a <inlinecode>Json</inlinecode> field
 
-Prisma Client supports [**basic** filtering](#filtering-json-fields) for `Json` fields. [Advanced filtering is available as a Preview feature in 2.23.0 and later](https://github.com/prisma/prisma/releases/tag/2.23.0).
+Advanced `Json` filtering is available as a Preview feature in [2.23.0 and later](https://github.com/prisma/prisma/releases/tag/2.23.0). In earlier versions, you can [filter on the exact `Json` field value](#filter-on-exact-field-value).
 
-The examples in this section are based on the following schema:
-
-<a  id="sample-model"></a>
-
-<details>
-  <summary>Expand sample schema</summary>
+To enable advanced filtering, add `filterJson` to `previewFeatures` in your schema:
 
 ```prisma
 generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-
-model Post {
-  authorId  Int?
-  content   String?
-  id        Int     @default(autoincrement()) @id
-  published Boolean @default(false)
-  title     String
-  user      User?   @relation(fields: [authorId], references: [id])
-
-  @@index([authorId], name: "authorId")
-}
-
-model User {
-  email           String  @unique
-  id              Int     @default(autoincrement()) @id
-  name            String?
-  posts           Post[]
-  extendedProfile Json?
-  role            Role    @default(USER)
-}
-
-enum Role {
-  ADMIN
-  USER
-  MODERATOR
+  provider        = "prisma-client-js"
+  previewFeatures = ["filterJson"]
 }
 ```
 
-</details>
+### Database connector implementation differences
+
+The implementation of `Json` filtering differs between connectors:
+
+- The [MySQL connector]() uses [MySQL's implementation of JSON path](https://dev.mysql.com/doc/refman/8.0/en/json.html#json-path-syntax)
+- The [PostgreSQL connector]() uses the custom JSON functions and operators [supported in version 12 _and earlier_](https://www.postgresql.org/docs/11/functions-json.html)
+
+The result is that the `path` option syntax differs between database connectors.
+
+### Filter on exact field value
+
+The following query returns all users where the value of `extendedProfile` matches _exactly_:
 
 ```ts
 var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
@@ -152,7 +128,7 @@ const get = await prisma.user.findMany({
 })
 ```
 
-The following example omits the `equals` but produces the same result:
+The following query omits the `equals` option but produces the same result:
 
 ```ts
 var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
@@ -164,7 +140,7 @@ const get = await prisma.user.findMany({
 })
 ```
 
-The following example returns all users where the `extendedProfile` field does **not** match `json`:
+The following query returns all users where the value of `extendedProfile` does **not** match:
 
 ```ts
 var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
@@ -173,6 +149,88 @@ const get = await prisma.user.findMany({
   where: {
     extendedProfile: {
       not: json,
+    },
+  },
+})
+```
+
+### Filter on object property
+
+The following example
+
+```json highlight=11;normal
+{
+   "petName": "Claudine",
+   "petType": "House cat"
+}
+```
+
+```ts
+const filterPost = await prisma.post.findMany({
+  where: {
+    comments: {
+      path: 'petName',
+      equals: 'Claudine',
+    },
+  },
+})
+```
+
+```ts
+const filterPost = await prisma.post.findMany({
+  where: {
+    comments: {
+      path: 'petType',
+      string_contains: 'cat',
+    },
+  },
+})
+```
+
+### Filter on nested object property
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const filterPost = await prisma.post.findMany({
+  where: {
+    comments: {
+      path: ['settings', 'displayComments'],
+      equals: false,
+    },
+  },
+})
+```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+### Filter on array value
+
+```ts
+const filterPost = await prisma.post.findMany({
+  where: {
+    comments: {
+      path: ['emoticons'],
+      array_contains: 'sadface',
+    },
+  },
+})
+```
+
+### Filter on nested object property inside array
+
+Only possible to target SPECIFIC INDEX:
+
+```ts
+const filterPost = await prisma.post.findMany({
+  where: {
+    comments: {
+      path: ['comments', '0', 'author', 'name'],
+      string_contains: 'Chichi',
     },
   },
 })
