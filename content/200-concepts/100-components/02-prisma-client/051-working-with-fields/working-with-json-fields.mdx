@@ -7,16 +7,15 @@ tocDepth: 2
 
 <TopBlock>
 
-Use the [`Json`](../../../../reference/api-reference/prisma-schema-reference#json) <span class="api"></span> Prisma field type to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `extendedProfile`:
+Use the [`Json`](../../../../reference/api-reference/prisma-schema-reference#json) <span class="api"></span> Prisma field type to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `pets`:
 
 ```prisma highlight=6;normal
 model User {
-  email           String  @unique
-  id              Int     @default(autoincrement()) @id
-  name            String?
-  posts           Post[]
-  extendedProfile Json?
-  role            Role    @default(USER)
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+  pets   Json?
 }
 ```
 
@@ -24,15 +23,14 @@ Example field value:
 
 ```json
 {
-  "bio": [
-    {
-      "languages": "Danish, English"
-    },
-    {
-      "age": "87"
-    }
-  ],
-  "pets": "none"
+   "pet1": {
+    "petName": "Claudine",
+    "petType": "House cat"
+   },
+   "pet2": {
+    "petName": "Sunny",
+    "petType": "Gerbil"
+   }
 }
 ```
 
@@ -69,8 +67,8 @@ const user = await prisma.user.findFirst({
 // Example extendedProfile data:
 // { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
 
-const jsonField = user?.extendedProfile as Prisma.JsonObject
-const pets = jsonField['pets']
+const jsonField = user?.pets as Prisma.JsonObject
+const pets = jsonField.pets.pet1;
 ```
 
 ## Writing to a <inlinecode>Json</inlinecode> field
@@ -114,12 +112,12 @@ The result is that the `path` option syntax differs between database connectors.
 
 ### Filter on exact field value
 
-The following query returns all users where the value of `extendedProfile` matches _exactly_:
+The following query returns all users where the value of `extendedProfile` matches the `json` variable exactly:
 
 ```ts
 var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
 
-const get = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     extendedProfile: {
       equals: json,
@@ -128,24 +126,12 @@ const get = await prisma.user.findMany({
 })
 ```
 
-The following query omits the `equals` option but produces the same result:
+The following query returns all users where the value of `extendedProfile` does **not** match the `json` variable exactly:
 
 ```ts
 var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
 
-const get = await prisma.user.findMany({
-  where: {
-    extendedProfile: json,
-  },
-})
-```
-
-The following query returns all users where the value of `extendedProfile` does **not** match:
-
-```ts
-var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
-
-const get = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     extendedProfile: {
       not: json,
@@ -156,7 +142,7 @@ const get = await prisma.user.findMany({
 
 ### Filter on object property
 
-The following example
+In 2.23.0 and later, you can filter on a specific property inside a block of JSON. In the following examples, the value of `pets` is a one-dimensional, unnested JSON object:
 
 ```json highlight=11;normal
 {
@@ -165,10 +151,12 @@ The following example
 }
 ```
 
+The following query returns all users where the value of `petName` is `"Claudine"`:
+
 ```ts
-const filterPost = await prisma.post.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
-    comments: {
+    pets: {
       path: 'petName',
       equals: 'Claudine',
     },
@@ -176,10 +164,12 @@ const filterPost = await prisma.post.findMany({
 })
 ```
 
+The following query returns all users where the value of `petType` _contains_ '"cat"':
+
 ```ts
 const filterPost = await prisma.post.findMany({
   where: {
-    comments: {
+    pets: {
       path: 'petType',
       string_contains: 'cat',
     },
@@ -187,19 +177,42 @@ const filterPost = await prisma.post.findMany({
 })
 ```
 
+`string_startswith` and `string_endswith`.
+
 ### Filter on nested object property
+
+You can filter on nested JSON properties. In the following examples, the value of `pets` is a JSON object with one level of nesting:
+
+```json
+{
+   "pet1": {
+    "petName": "Claudine",
+    "petType": "House cat"
+   },
+   "pet2": {
+    "petName": "Sunny",
+    "petType": "Gerbil",
+    "features": {
+      "eyeColor": "Brown",
+      "furColor": "White and black"
+    }
+   }
+}
+```
+
+The following query returns all users where `"pet2"` &rarr; `"petName"` is `"Sunny"`:
 
 <TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
 <tab>
 
 ```ts
-const filterPost = await prisma.post.findMany({
+const filterUser = await prisma.user.findMany({
   where: {
-    comments: {
-      path: ['settings', 'displayComments'],
-      equals: false,
-    },
-  },
+    pets: {
+      path: ["pet2", "petName"],
+      equals: "Sunny"
+    }
+  }
 })
 ```
 
@@ -207,6 +220,32 @@ const filterPost = await prisma.post.findMany({
 <tab>
 </tab>
 </TabbedContent>
+
+The following query returns all users where:
+
+* `"pet2"` &rarr; `"petName"` is `"Sunny"`
+* `"pet2"` &rarr; `"features"` &rarr; `"furColor"` contains `"black"`
+
+```ts
+const filterUser = await prisma.user.findMany({
+  where: {
+    AND: [
+      {
+        pets: {
+          path: ["pet2", "petName"],
+          equals: "Sunny"
+        },
+      },
+      {
+        pets: {
+          path: ["pet2", "features", "furColor"],
+          string_contains: "black",
+        }
+      }
+    ]
+  },
+})
+```
 
 ### Filter on array value
 

@@ -253,7 +253,8 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
   const onSubmit = () => {
     setAnswerSubmitted(true)
     setDisabled(true)
-    const foundAnswer = answerOptions.find(answer => answer.answer === chosenAnswer.answer)?.isCorrect
+    const foundAnswer = answerOptions.find(answer => answer.answer === chosenAnswer.answer)
+      ?.isCorrect
     if (foundAnswer) {
       setChosenAnswer({
         isCorrect: true,
