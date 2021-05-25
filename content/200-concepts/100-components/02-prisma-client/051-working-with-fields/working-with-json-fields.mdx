@@ -23,14 +23,14 @@ Example field value:
 
 ```json
 {
-   "pet1": {
+  "pet1": {
     "petName": "Claudine",
     "petType": "House cat"
-   },
-   "pet2": {
+  },
+  "pet2": {
     "petName": "Sunny",
     "petType": "Gerbil"
-   }
+  }
 }
 ```
 
@@ -68,7 +68,7 @@ const user = await prisma.user.findFirst({
 // { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
 
 const jsonField = user?.pets as Prisma.JsonObject
-const pets = jsonField.pets.pet1;
+const pet1 = jsonField['pet1']
 ```
 
 ## Writing to a <inlinecode>Json</inlinecode> field
@@ -108,7 +108,7 @@ The implementation of `Json` filtering differs between connectors:
 - The [MySQL connector]() uses [MySQL's implementation of JSON path](https://dev.mysql.com/doc/refman/8.0/en/json.html#json-path-syntax)
 - The [PostgreSQL connector]() uses the custom JSON functions and operators [supported in version 12 _and earlier_](https://www.postgresql.org/docs/11/functions-json.html)
 
-The result is that the `path` option syntax differs between database connectors.
+This means that `path` option syntax differs between database connectors.
 
 ### Filter on exact field value
 
@@ -142,12 +142,12 @@ const getUsers = await prisma.user.findMany({
 
 ### Filter on object property
 
-In 2.23.0 and later, you can filter on a specific property inside a block of JSON. In the following examples, the value of `pets` is a one-dimensional, unnested JSON object:
+In [2.23.0](https://github.com/prisma/prisma/releases/tag/2.23.0) and later, you can filter on a specific property inside a block of JSON. In the following examples, the value of `pets` is a one-dimensional, unnested JSON object:
 
 ```json highlight=11;normal
 {
-   "petName": "Claudine",
-   "petType": "House cat"
+  "petName": "Claudine",
+  "petType": "House cat"
 }
 ```
 
@@ -177,26 +177,30 @@ const filterPost = await prisma.post.findMany({
 })
 ```
 
-`string_startswith` and `string_endswith`.
+The following string filters are available:
+
+- [`string_contains`]() <span class="api"></span>
+- [`string_startswith`]() <span class="api"></span>
+- [`string_endswith`]() <span class="api"></span>.
 
 ### Filter on nested object property
 
-You can filter on nested JSON properties. In the following examples, the value of `pets` is a JSON object with one level of nesting:
+You can filter on nested JSON properties. In the following examples, the value of `pets` is a JSON object with several levels of nesting.
 
 ```json
 {
-   "pet1": {
+  "pet1": {
     "petName": "Claudine",
     "petType": "House cat"
-   },
-   "pet2": {
+  },
+  "pet2": {
     "petName": "Sunny",
     "petType": "Gerbil",
     "features": {
       "eyeColor": "Brown",
       "furColor": "White and black"
     }
-   }
+  }
 }
 ```
 
@@ -209,22 +213,37 @@ The following query returns all users where `"pet2"` &rarr; `"petName"` is `"Sun
 const filterUser = await prisma.user.findMany({
   where: {
     pets: {
-      path: ["pet2", "petName"],
-      equals: "Sunny"
-    }
-  }
+      path: ['pet2', 'petName'],
+      equals: 'Sunny',
+    },
+  },
 })
 ```
 
 </tab>
 <tab>
+
+```ts
+const filterUser = await prisma.user.findMany({
+  where: {
+    pets: {
+      path: '$.pet2.petName',
+      equals: 'Sunny',
+    },
+  },
+})
+```
+
 </tab>
 </TabbedContent>
 
 The following query returns all users where:
 
-* `"pet2"` &rarr; `"petName"` is `"Sunny"`
-* `"pet2"` &rarr; `"features"` &rarr; `"furColor"` contains `"black"`
+- `"pet2"` &rarr; `"petName"` is `"Sunny"`
+- `"pet2"` &rarr; `"features"` &rarr; `"furColor"` contains `"black"`
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
 
 ```ts
 const filterUser = await prisma.user.findMany({
@@ -232,45 +251,141 @@ const filterUser = await prisma.user.findMany({
     AND: [
       {
         pets: {
-          path: ["pet2", "petName"],
-          equals: "Sunny"
+          path: ['pet2', 'petName'],
+          equals: 'Sunny',
         },
       },
       {
         pets: {
-          path: ["pet2", "features", "furColor"],
-          string_contains: "black",
-        }
-      }
+          path: ['pet2', 'features', 'furColor'],
+          string_contains: 'black',
+        },
+      },
+    ],
+  },
+})
+```
+
+</tab>
+<tab>
+
+```ts
+const filterUser = await prisma.user.findMany({
+  where: {
+    AND: [
+      {
+        pets: {
+          path: '$.pet2.petName',
+          equals: 'Sunny',
+        },
+      },
+      {
+        pets: {
+          path: '$.pet2.features.furColor',
+          string_contains: 'black',
+        },
+      },
+    ],
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+### Filtering on an array value
+
+You can filter on the presence of a specific value in a scalar array (strings, integers). In the following examples, the value of `pets` is an array of strings:
+
+```json
+["Claudine", "Sunny"]
+```
+
+The following query returns all users with a pet named `"Claudine"`:
+
+```ts
+const filterUser = await prisma.user.findMany({
+  where: {
+    pets: {
+      array_contains: 'Claudine',
+    },
+  },
+})
+```
+
+### Filtering on nested array value
+
+You can filter on the presence of a specific value in a scalar array (strings, integers). In the following examples, the value of `pets` includes nested scalar arrays of names:
+
+```json
+{
+  "cats": { "owned": ["Bob", "Sunny"], "fostering": ["Fido"] },
+  "dogs": { "owned": ["Ella"], "fostering": ["Prince", "Empress"] }
+}
+```
+
+The following query returns all users that foster a cat named `"Fido"`:
+
+```ts
+const filterUser = await prisma.user.findMany({
+  where: {
+    pets: {
+      path: ['cats', 'fostering'],
+      array_contains: 'Fido',
+    },
+  },
+})
+```
+
+### Targeting an array element by index
+
+You can filter on the value of an element in a specific position.
+
+```json
+{ "owned": ["Bob", "Sunny"], "fostering": ["Fido"] }
+```
+
+```ts
+const filterUser = await prisma.user.findMany({
+  where: {
+    comments: {
+      path: ['owned', '1'],
+      string_contains: 'Bob',
+    },
+  },
+})
+```
+
+### Filtering on property value of object inside array
+
+Depending on your provider, you can filter on the property value of an object inside an array.
+
+<Admonition type="alert">
+
+Filtering on object property values within an array is supported by the [MySQL database connector]().
+
+</Admonition>
+
+In the following example, the value of `pets` is an array of objects with a nested `insurances` array, which contains two objects:
+
+```json
+[
+  {
+    "petName": "Claudine",
+    "petType": "House cat",
+    "insurances": [
+      { "insuranceID": 92, "status": expired },
+      { "insuranceID": 12, "status": active }
     ]
   },
-})
-```
-
-### Filter on array value
-
-```ts
-const filterPost = await prisma.post.findMany({
-  where: {
-    comments: {
-      path: ['emoticons'],
-      array_contains: 'sadface',
-    },
+  {
+    "petName": "Sunny",
+    "petType": "Gerbil"
   },
-})
-```
-
-### Filter on nested object property inside array
-
-Only possible to target SPECIFIC INDEX:
-
-```ts
-const filterPost = await prisma.post.findMany({
-  where: {
-    comments: {
-      path: ['comments', '0', 'author', 'name'],
-      string_contains: 'Chichi',
-    },
-  },
-})
+  {
+    "petName": "Gerald",
+    "petType": "Corn snake"
+  }
+]
 ```
