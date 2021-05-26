@@ -7,6 +7,12 @@ tocDepth: 2
 
 <TopBlock>
 
+<Admonition type="warning">
+
+Supported by [PostgreSQL]() and [MySQL]() with different syntaxes for the `path` option. PostgreSQL does not support [filtering on object property values in arrays](#filtering-on-object-property-value-inside-array).
+
+</Admonition>
+
 Use the [`Json`](../../../../reference/api-reference/prisma-schema-reference#json) <span class="api"></span> Prisma field type to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `pets`:
 
 ```prisma highlight=6;normal
@@ -53,7 +59,7 @@ Reasons to ues the `Json` field type include:
 
 ## Reading a <inlinecode>Json</inlinecode> field
 
-To access a specific field inside a block of JSON, cast the Prisma `Json` field value as `Prisma.JsonObject`:
+Use the `Prisma.JsonArray` and `Prisma.JsonObject` utility classes to work with the contents of a `Json` field:
 
 ```ts
 const { PrismaClient, Prisma } = require('@prisma/client')
@@ -67,8 +73,8 @@ const user = await prisma.user.findFirst({
 // Example extendedProfile data:
 // { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
 
-const jsonField = user?.pets as Prisma.JsonObject
-const pet1 = jsonField['pet1']
+const jsonField = user?.pets as Prisma.JsonArray
+const firstPet = jsonField[0] as Prisma.JsonObject
 ```
 
 ## Writing to a <inlinecode>Json</inlinecode> field
@@ -76,7 +82,7 @@ const pet1 = jsonField['pet1']
 The following example writes a JSON object to the `extendedProfile` field:
 
 ```ts
-var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
+var json = { pets: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] } as Prisma.JsonObject
 
 const createUser = await prisma.user.create({
   data: {
@@ -108,7 +114,17 @@ The implementation of `Json` filtering differs between connectors:
 - The [MySQL connector]() uses [MySQL's implementation of JSON path](https://dev.mysql.com/doc/refman/8.0/en/json.html#json-path-syntax)
 - The [PostgreSQL connector]() uses the custom JSON functions and operators [supported in version 12 _and earlier_](https://www.postgresql.org/docs/11/functions-json.html)
 
-This means that `path` option syntax differs between database connectors.
+This means that `path` option syntax differs between database connectors - for example, the following is a valid MySQL `path` value:
+
+```
+$pets.petFeatures.petName
+```
+
+The following is a valid PostgreSQL `path` value:
+
+```
+["pets", "petFeatures", "petName"]
+```
 
 ### Filter on exact field value
 
@@ -153,6 +169,9 @@ In [2.23.0](https://github.com/prisma/prisma/releases/tag/2.23.0) and later, you
 
 The following query returns all users where the value of `petName` is `"Claudine"`:
 
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
 ```ts
 const getUsers = await prisma.user.findMany({
   where: {
@@ -164,10 +183,32 @@ const getUsers = await prisma.user.findMany({
 })
 ```
 
-The following query returns all users where the value of `petType` _contains_ '"cat"':
+</tab>
+<tab>
+
 
 ```ts
-const filterPost = await prisma.post.findMany({
+const getUsers = await prisma.user.findMany({
+  where: {
+    pets: {
+      path: '$.petName',
+      equals: 'Claudine',
+    },
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+The following query returns all users where the value of `petType` _contains_ '"cat"':
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: 'petType',
@@ -176,6 +217,23 @@ const filterPost = await prisma.post.findMany({
   },
 })
 ```
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    pets: {
+      path: '$.petType',
+      string_contains: 'cat',
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
 
 The following string filters are available:
 
@@ -210,7 +268,7 @@ The following query returns all users where `"pet2"` &rarr; `"petName"` is `"Sun
 <tab>
 
 ```ts
-const filterUser = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: ['pet2', 'petName'],
@@ -224,7 +282,7 @@ const filterUser = await prisma.user.findMany({
 <tab>
 
 ```ts
-const filterUser = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: '$.pet2.petName',
@@ -246,7 +304,7 @@ The following query returns all users where:
 <tab>
 
 ```ts
-const filterUser = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     AND: [
       {
@@ -270,7 +328,7 @@ const filterUser = await prisma.user.findMany({
 <tab>
 
 ```ts
-const filterUser = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     AND: [
       {
@@ -305,7 +363,7 @@ You can filter on the presence of a specific value in a scalar array (strings, i
 The following query returns all users with a pet named `"Claudine"`:
 
 ```ts
-const filterUser = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       array_contains: 'Claudine',
@@ -327,8 +385,11 @@ You can filter on the presence of a specific value in a scalar array (strings, i
 
 The following query returns all users that foster a cat named `"Fido"`:
 
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
 ```ts
-const filterUser = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: ['cats', 'fostering'],
@@ -337,6 +398,23 @@ const filterUser = await prisma.user.findMany({
   },
 })
 ```
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    pets: {
+      path: '$.cats.fostering',
+      array_contains: 'Fido',
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
 
 ### Targeting an array element by index
 
@@ -347,7 +425,7 @@ You can filter on the value of an element in a specific position.
 ```
 
 ```ts
-const filterUser = await prisma.user.findMany({
+const getUsers = await prisma.user.findMany({
   where: {
     comments: {
       path: ['owned', '1'],
@@ -357,17 +435,19 @@ const filterUser = await prisma.user.findMany({
 })
 ```
 
-### Filtering on property value of object inside array
+### Filtering on object property value inside array
 
 Depending on your provider, you can filter on the property value of an object inside an array.
 
 <Admonition type="alert">
 
-Filtering on object property values within an array is supported by the [MySQL database connector]().
+Filtering on object property values within an array is **only** supported by the [MySQL database connector]().
 
 </Admonition>
 
+
 In the following example, the value of `pets` is an array of objects with a nested `insurances` array, which contains two objects:
+
 
 ```json
 [
@@ -386,6 +466,67 @@ In the following example, the value of `pets` is an array of objects with a nest
   {
     "petName": "Gerald",
     "petType": "Corn snake"
-  }
+  },
+  {
+    "petName": "Nanna",
+    "petType": "Moose"
+  },  
 ]
 ```
+
+The following query returns all users where at least one pet is a moose:
+
+<TabbedContent tabs={[<FileWithIcon text="MySQL" icon="database"/>]}>
+
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    pets: {
+      path: '$[*].petType',
+      array_contains: 'Moose',
+    },
+  },
+})
+```
+
+</tab>
+
+<tab>
+</tab>
+
+</TabbedContent>
+
+* `$[*]` is the root array of pet objects
+* `petType` matches the `petType` key in any pet object
+
+The following query returns all users where at least one pet has an expired insurance:
+
+<TabbedContent tabs={[<FileWithIcon text="MySQL" icon="database"/>]}>
+
+<tab>
+
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    pets: {
+      path: '$[*].insurances[*].status',
+      array_contains: 'expired',
+    },
+  },
+})
+```
+
+</tab>
+
+<tab>
+
+</tab>
+
+</TabbedContent>
+
+* `$[*]` is the root array of pet objects
+* `insurances[*]` mathes any `insurances` array inside any pet object
+* `status` matches any `status` key in any insurance object

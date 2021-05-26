@@ -31,7 +31,6 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
 export default Admonition
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`
-  min-height: 50px;
   font-family: Inter;
   font-style: normal;
   font-weight: 600;
@@ -56,6 +55,10 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
     left: 0px;
     background: ${p => (p.type ? colorMap[p.type] : colorMap['info'])} !important;
     border-radius: 5px;
+  }
+
+  &.alert {
+    min-height: 50px;
   }
 
   .alert-circle {
