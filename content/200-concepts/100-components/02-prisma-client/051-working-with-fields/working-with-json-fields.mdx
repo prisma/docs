@@ -11,10 +11,10 @@ Use the [`Json`](../../../../reference/api-reference/prisma-schema-reference#jso
 
 ```prisma highlight=6;normal
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+  id                 Int     @id @default(autoincrement())
+  email              String  @unique
+  name               String?
+  posts              Post[]
   extendedPetsData   Json?
 }
 ```
@@ -53,7 +53,7 @@ Reasons to store data as JSON rather than representing data as related models in
 
 ## Reading a <inlinecode>Json</inlinecode> field
 
-Use the `Prisma.JsonArray` and `Prisma.JsonObject` utility classes to work with the contents of a `Json` field:
+You can use the `Prisma.JsonArray` and `Prisma.JsonObject` utility classes to work with the contents of a `Json` field:
 
 ```ts
 const { PrismaClient, Prisma } = require('@prisma/client')
@@ -65,18 +65,23 @@ const user = await prisma.user.findFirst({
 })
 
 // Example extendedProfile data:
-// { extendedPetsData: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
+// [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }]
 
-const jsonField = user?.extendedPetsData as Prisma.JsonArray
-const firstPet = jsonField[0] as Prisma.JsonObject
+if (user?.pets && typeof user?.pets === 'object' && Array.isArray(user?.pets)) {
+  const petsObject = user?.pets as Prisma.JsonArray
+
+  const firstPet = petsObject[0]
+}
 ```
+
+See also: [Advanced example: Update a nested JSON key value](#advanced-example-update-a-nested-json-key-value)
 
 ## Writing to a <inlinecode>Json</inlinecode> field
 
 The following example writes a JSON object to the `extendedPetsData` field:
 
 ```ts
-var json = { [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] } as Prisma.JsonObject
+var json = [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] as Prisma.JsonArray
 
 const createUser = await prisma.user.create({
   data: {
@@ -87,6 +92,8 @@ const createUser = await prisma.user.create({
 ```
 
 > **Note**: JavaScript objects (for example, `{ extendedPetsData: "none"}`) are automatically converted to JSON.
+
+See also: [Advanced example: Update a nested JSON key value](#advanced-example-update-a-nested-json-key-value)
 
 ## Filtering on a <inlinecode>Json</inlinecode> field
 
@@ -425,12 +432,15 @@ const getUsers = await prisma.user.findMany({
 
 #### JSON object arrays
 
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
 ```ts
 const json = [{ status: 'expired', insuranceID: 92 }]
 
 const checkJson = await prisma.user.findMany({
   where: {
-    pets: {
+    extendedPetsData: {
       path: ['insurances'],
       array_contains: json,
     },
@@ -438,16 +448,35 @@ const checkJson = await prisma.user.findMany({
 })
 ```
 
-- You must pass in an array, even if that array only contains one object. The following format is correct for `array_contains`:
+</tab>
+<tab>
+
+```ts
+const json = { status: 'expired', insuranceID: 92 }
+
+const checkJson = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.insurances',
+      array_contains: json,
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
+
+- If you are using PostgreSQL, you must pass in an array of objects to match, even if that array only contains one object:
 
   ```json
-  [{ "status": "expired", "insuranceID": 92 }]
+  [{ "status": "expired", "insuranceID": 92 }] // PostgreSQL
   ```
 
-  The following format is incorrect:
+  If you are using MySQL, you must pass in a single object to match:
 
   ```json
-  { "status": "expired", "insuranceID": 92 }
+  { "status": "expired", "insuranceID": 92 } // MySQL
   ```
 
 - You must set `array_contains` to a JSON object, not a string. If you use a string, Prisma escapes the quotation marks and the query will not return results. For example:
@@ -574,7 +603,7 @@ const getUsers = await prisma.user.findMany({
 - `insurances[*]` matches any `insurances` array inside any pet object
 - `status` matches any `status` key in any insurance object
 
-## Advanced example: Update nested JSON key value
+## Advanced example: Update a nested JSON key value
 
 The following example assumes that the value of `extendedPetsData` is some variation of the following:
 
@@ -589,10 +618,14 @@ The following example assumes that the value of `extendedPetsData` is some varia
 }
 ```
 
-The following example
+The following example:
 
 1. Gets all users
-2.
+1. Change the `"status"` of each insurance object to `"expired"`
+1. Get all users that have an expired insurance where the ID is `92`
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
 
 ```ts
 const userQueries: string | any[] = []
@@ -623,7 +656,7 @@ getUsers.forEach(user => {
       })
 
       const dataClause = Prisma.validator<Prisma.UserUpdateInput>()({
-        pets: petsObject,
+        extendedPetsData: petsObject,
       })
 
       userQueries.push(
@@ -645,7 +678,7 @@ const json = [{ status: 'expired', insuranceID: 92 }]
 
 const checkJson = await prisma.user.findMany({
   where: {
-    pets: {
+    extendedPetsData: {
       path: ['insurances'],
       array_contains: json,
     },
@@ -654,3 +687,81 @@ const checkJson = await prisma.user.findMany({
 
 console.log(checkJson.length)
 ```
+
+</tab>
+
+<tab>
+
+```ts
+const userQueries: string | any[] = []
+
+getUsers.forEach(user => {
+  if (
+    user.extendedPetsData &&
+    typeof user.extendedPetsData === 'object' &&
+    !Array.isArray(user.extendedPetsData)
+  ) {
+    const petsObject = user.extendedPetsData as Prisma.JsonObject
+
+    const i = petsObject['insurances']
+
+    if (i && typeof i === 'object' && Array.isArray(i)) {
+      const insurancesArray = i as Prisma.JsonArray
+
+      insurancesArray.forEach(i => {
+        if (i && typeof i === 'object' && !Array.isArray(i)) {
+          const insuranceObject = i as Prisma.JsonObject
+
+          insuranceObject['status'] = 'expired'
+        }
+      })
+
+      const whereClause = Prisma.validator<Prisma.UserWhereInput>()({
+        id: user.id,
+      })
+
+      const dataClause = Prisma.validator<Prisma.UserUpdateInput>()({
+        extendedPetsData: petsObject,
+      })
+
+      userQueries.push(
+        prisma.user.update({
+          where: whereClause,
+          data: dataClause,
+        })
+      )
+    }
+  }
+})
+
+if (userQueries.length > 0) {
+  console.log(userQueries.length + ' queries to run!')
+  await prisma.$transaction(userQueries)
+}
+
+const json = { status: 'expired', insuranceID: 92 }
+
+const checkJson = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.insurances',
+      array_contains: json,
+    },
+  },
+})
+
+console.log(checkJson.length)
+```
+
+</tab>
+</TabbedContent>
+
+## <inlinecode>Json</inlinecode> FAQs
+
+## Can you select a subset of JSON key/values to return?
+
+No - it is not yet possible to select a subset of key/values to return. Prisma Client returns the entire JSON object.
+
+## Filter on the presence of a specific key
+
+No - it is not yet possible to filter on the presence of a specific key.
