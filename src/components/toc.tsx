@@ -54,7 +54,7 @@ const ListItem = styled.a<ItemProps>`
   background-size: 0% 2px;
   transition: background-size 0.7s;
 
-  ${props => props.isActive ? 'background-size: 100% 2px;' : null}
+  ${props => (props.isActive ? 'background-size: 100% 2px;' : null)}
 
   & > inlinecode {
     background: ${props => (props.isActive ? `var(--dark-color)` : '')};
@@ -103,7 +103,7 @@ const useActiveId = (idList: string[]) => {
       })
     }
   }, [idList])
-  console.log({activeId})
+  console.log({ activeId })
   return activeId
 }
 

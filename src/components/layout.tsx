@@ -11,7 +11,7 @@ import SidebarLayout from './sidebar'
 import TOC from './toc'
 import { LensProvider, theme } from '@prisma/lens/dist/web'
 import StickyBox from 'react-sticky-box'
-import Sticky from 'react-sticky-el';
+import Sticky from 'react-sticky-el'
 
 const Wrapper = styled.div<{ fullWidth?: boolean }>`
   display: flex;
@@ -142,7 +142,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
                       <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
                     )}
                   </TOCWrapper>
-                  </Sticky>
+                </Sticky>
                 // </StickyBox>
               )}
             </Container>
