@@ -103,6 +103,7 @@ const useActiveId = (idList: string[]) => {
       })
     }
   }, [idList])
+  console.log({activeId})
   return activeId
 }
 
@@ -134,10 +135,10 @@ const TOC = ({ headings, tocDepth }: any) => {
     )
   }
   return navItems && navItems.length ? (
-    <TOCContainer>
+    <>
       <ChapterTitle>CONTENT</ChapterTitle>
       {navItems(headings, tocDepth || 1, activeId)}
-    </TOCContainer>
+    </>
   ) : null
 }
 

@@ -11,6 +11,7 @@ import SidebarLayout from './sidebar'
 import TOC from './toc'
 import { LensProvider, theme } from '@prisma/lens/dist/web'
 import StickyBox from 'react-sticky-box'
+import Sticky from 'react-sticky-el';
 
 const Wrapper = styled.div<{ fullWidth?: boolean }>`
   display: flex;
@@ -134,13 +135,15 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
                 <MaxWidth>{children}</MaxWidth>
               </Content>
               {!homePage && (
-                <StickyBox offsetTop={20} offsetBottom={20}>
+                // <StickyBox offsetTop={20} offsetBottom={20}>
+                <Sticky>
                   <TOCWrapper id="toc-holder">
                     {toc && toc.items && toc.items.length > 0 && (
                       <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
                     )}
                   </TOCWrapper>
-                </StickyBox>
+                  </Sticky>
+                // </StickyBox>
               )}
             </Container>
           </Wrapper>
