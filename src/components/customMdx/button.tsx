@@ -94,6 +94,7 @@ const getAbsPath = (href: any, location: any) => {
 const ButtonLink = ({ href, ...props }: ButtonProps) => {
   const location = useLocation()
   const newHref = isAbsoluteUrl(href) ? href : getAbsPath(href, location)
+  console.log(newHref)
   return (
     <ButtonWrapper href={newHref} {...props}>
       {props.arrowLeft && <StyledArrowLeft />}

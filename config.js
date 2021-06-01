@@ -74,7 +74,7 @@ const config = {
       buttons: [
         {
           text: 'Quick start',
-          url: 'getting-started/quickstart-typescript',
+          url: 'getting-started/',
           special: true,
           icon: 'DoubleArrow',
         },
