@@ -43,10 +43,28 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
   getSubSecs(rootPath ? rootPath : location.pathname, treeData.items)
 
   const list = (subsecs: any, dep: number) => {
+    const hasNumber = /\d/;
+    let sortedOnNumber = []
+    function sortOnTitleNumbers( a: any, b: any ) {
+      if ( a.title < b.title ){
+        return -1;
+      }
+      if ( a.title > b.title ){
+        return 1;
+      }
+      return 0;
+    }
+    
     const subs = subsecs.filter((t: any) => t.label !== 'index' && !t.hidePage)
+
+    if (hasNumber.test(subs[0].title)) {
+      subs.sort(sortOnTitleNumbers)
+      sortedOnNumber.push(...subs)
+    }
+    const sectionList = sortedOnNumber.length ? sortedOnNumber : subs;
     return (
       <ul className="list">
-        {subs.map((sec: any, index: number) => (
+        {sectionList.map((sec: any, index: number) => (
           <li key={index}>
             <Link to={sec.url}>
               <span className={`${sec.codeStyle ? 'inline-code' : ''}`}>{sec.title}</span>
