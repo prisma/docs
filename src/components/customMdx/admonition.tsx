@@ -57,6 +57,10 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
     border-radius: 5px;
   }
 
+  &.alert {
+    min-height: 50px;
+  }
+
   .alert-circle {
     position: absolute;
     width: 34px;
