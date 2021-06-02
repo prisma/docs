@@ -43,28 +43,38 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
   getSubSecs(rootPath ? rootPath : location.pathname, treeData.items)
 
   const list = (subsecs: any, dep: number) => {
-    const hasNumber = /\d/;
-    let sortedOnNumber = []
-    function sortOnTitleNumbers( a: any, b: any ) {
-      if ( a.title < b.title ){
-        return -1;
-      }
-      if ( a.title > b.title ){
-        return 1;
-      }
-      return 0;
-    }
     
-    const subs = subsecs.filter((t: any) => t.label !== 'index' && !t.hidePage)
+    const titleHasNumber = /\d./
 
-    if (hasNumber.test(subs[0].title)) {
-      subs.sort(sortOnTitleNumbers)
-      sortedOnNumber.push(...subs)
+    const sortOnTitleNumbers = (a: any, b: any) => {
+      if (a.title < b.title) {
+        return -1
+      }
+      if (a.title > b.title) {
+        return 1
+      }
+      return 0
     }
-    const sectionList = sortedOnNumber.length ? sortedOnNumber : subs;
+
+    const sortOnLabel = (a: any, b: any) => {
+      if (a.label < b.label) {
+        return -1
+      }
+      if (a.label > b.label) {
+        return 1
+      }
+      return 0
+    }
+
+    const subs = subsecs.filter((t: any) => t.label !== 'index' && !t.hidePage).sort(sortOnLabel)
+    
+    // If the first title has a number (1.) then we can assume the rest to do.
+    if (titleHasNumber.test(subs[0].title)) {
+      subs.sort(sortOnTitleNumbers)
+    }
     return (
       <ul className="list">
-        {sectionList.map((sec: any, index: number) => (
+        {subs.map((sec: any, index: number) => (
           <li key={index}>
             <Link to={sec.url}>
               <span className={`${sec.codeStyle ? 'inline-code' : ''}`}>{sec.title}</span>

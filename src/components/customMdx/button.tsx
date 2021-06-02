@@ -67,13 +67,15 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     max-width: 100%;
     overflow-x: auto;
     margin-bottom: 0.5rem;
+
+    transition: opacity 0.3s ease;
+    -webkit-transition: opacity 0.3s ease;
+    -moz-transition: opacity 0.3s ease;
+    
+    &:hover {
+      opacity: 0.9;
+    }
   `
-//     &:hover {
-//       background: ${p => darken(0.04, backgroundColorMap[p.color || 'green'])};
-//     }
-//     &:focus {
-//       background: ${p => darken(0.07, backgroundColorMap[p.color || 'green'])};
-//     }
 
 const getAbsPath = (href: any, location: any) => {
   return withPrefix(
@@ -94,7 +96,6 @@ const getAbsPath = (href: any, location: any) => {
 const ButtonLink = ({ href, ...props }: ButtonProps) => {
   const location = useLocation()
   const newHref = isAbsoluteUrl(href) ? href : getAbsPath(href, location)
-  console.log(newHref)
   return (
     <ButtonWrapper href={newHref} {...props}>
       {props.arrowLeft && <StyledArrowLeft />}
