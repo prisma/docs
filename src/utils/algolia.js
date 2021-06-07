@@ -40,7 +40,7 @@ const handleRawBody = node => {
     const filteredSections = sections.filter(
       section =>
         section !== ' ' &&
-        section !== '' &&
+        // section !== '' &&
         !section.includes('details>') &&
         !section.includes('TopBlock>') &&
         !section.includes('<ButtonLink') &&
@@ -51,7 +51,6 @@ const handleRawBody = node => {
         !section.includes('CodeWithResult>') &&
         !section.includes('CodeBlock') &&
         !section.includes('tab>') &&
-        !section.includes('```') &&
         !section.includes('block>') &&
         !section.includes('ParallelBlocks>') &&
         !section.includes('cmdResult>') &&
@@ -85,7 +84,7 @@ const handleRawBody = node => {
     heading: removeInlineCode(fSection.heading),
     content: isApiTerm(fSection.para)
       ? finalSections[index + 1].para
-      : fSection.para.replace(/[\*\/\n/{\}\|\`\/|:\<\>\[\]]+/g, ' ').trim(),
+      : fSection.para.replace(/[\/\n/{\}\|\/|:\<\>\[\]]+/g, ' ').trim(),
     path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
       techParams ? '-' + techParams : ''
     }${getTitlePath(fSection)}`,
