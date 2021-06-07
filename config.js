@@ -73,19 +73,13 @@ const config = {
       git: 'https://github.com/prisma',
       buttons: [
         {
-          text: 'Quick start',
-          url: 'getting-started/quickstart-typescript',
+          text: 'Getting started',
+          url: 'getting-started/',
           special: true,
           icon: 'DoubleArrow',
         },
         {
-          text: 'Set up Prisma',
-          url: 'getting-started/setup-prisma',
-          special: false,
-          icon: null,
-        },
-        {
-          text: 'Examples',
+          text: 'Example projects',
           url: 'https://github.com/prisma/prisma-examples',
           special: false,
           icon: null,
