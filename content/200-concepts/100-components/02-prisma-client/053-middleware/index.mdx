@@ -8,27 +8,29 @@ metaDescription: 'Prisma Client middleware allows you to perform actions before 
 
 Middlewares act as query-level lifecycle hooks, which allow you to perform an action **before or after** a query runs. Use the [`prisma.$use`](../../../../reference/api-reference/prisma-client-reference#use) <span class="api"></span> method to add middlewares:
 
-```ts
+```ts highlight=4-9,12-17;normal
 const prisma = new PrismaClient()
 
 // Middleware 1
-|prisma.$use(async (params, next) => {
-|    // Manipulate params here
-|    const result = await next(params);
-|    // See results here
-|    return result;
-|})
+prisma.$use(async (params, next) => {
+    // Manipulate params here
+    const result = await next(params);
+    // See results here
+    return result;
+})
 
 // Middleware 2
-|prisma.$use(async (params, next) => {
-|    // Manipulate params here
-|    const result = await next(params);
-|    // See results here
-|    return result;
-|})
+prisma.$use(async (params, next) => {
+    // Manipulate params here
+    const result = await next(params);
+    // See results here
+    return result;
+})
 
 // Queries here
 ```
+
+[`params`](../../../../reference/api-reference/prisma-client-reference#params) <span class="api"></span> represent parameters available in the middleware, such as the name of the query, and [`next`](../../../../reference/api-reference/prisma-client-reference#next) <span class="api"></span> represents [the next middleware in the stack _or_ the original Prisma Client query](#running-order-and-the-middleware-stack).
 
 Use cases for middleware include:
 
@@ -43,28 +45,71 @@ Use cases for middleware include:
 
 <Subsections />
 
-## Running order
+## Where to add middleware
+
+Add Prisma middleware **outside the context of the request handler**. The following example demonstrates where to add Prisma middleware in the context of an Express app:
+
+```ts highlight=6-11;normal
+import express from 'express'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+prisma.$use(async (params, next) => {
+    // Manipulate params here
+    const result = await next(params);
+    // See results here
+    return result;
+})
+
+const app = express()
+app.get('/feed', async (req, res) => {
+  // NO MIDDLEWARE HERE
+  const posts = await prisma.post.findMany({
+    where: { published: true },
+    include: { author: true },
+  })
+  res.json(posts)
+})
+```
+
+## Running order and the middleware stack
 
 If you have multiple middlewares, the running order for **each separate query** is:
 
-1. All logic **before** `await next(params)`
-2. All logic **after** `await next(params)`
+1. All logic **before** `await next(params)` in each middleware, in descending order
+2. All logic **after** `await next(params)` in each middleware, in ascending order
+
+Depending on where you are in the stack, `await next(params)` either:
+
+* Runs the next middleware (middlewares #1 and #2 in the example) _or_
+* Runs the original Prisma Client query (middleware #3)
 
 ```ts
 const prisma = new PrismaClient()
 
+// Middleware 1
 prisma.$use(async (params, next) => {
   console.log(params.args.data.title)
   console.log('1')
   const result = await next(params)
-  console.log('4')
+  console.log('6')
   return result
 })
 
+// Middleware 2
 prisma.$use(async (params, next) => {
   console.log('2')
   const result = await next(params)
+  console.log('5')
+  return result
+})
+
+// Middleware 3
+prisma.$use(async (params, next) => {
   console.log('3')
+  const result = await next(params)
+  console.log('4')
   return result
 })
 
@@ -89,11 +134,15 @@ Welcome to Prisma Day 2020
 2
 3
 4
+5
+6
 How to Prisma!
 1
 2
 3
 4
+5
+6
 ```
 
 ## Performance and appropriate use cases
