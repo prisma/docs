@@ -36,7 +36,7 @@ const handleRawBody = node => {
     })
   let finalSections = []
   headingWithcontent.map(fSec => {
-    const sections = fSec.content.replace(/(\s\```)([^```]+)(\```\s)/g, '').split('\n\n')
+    const sections = fSec.content.split('\n\n')
     const filteredSections = sections.filter(
       section =>
         section !== ' ' &&
