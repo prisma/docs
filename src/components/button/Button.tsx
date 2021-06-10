@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 import { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from 'react'
-import React from 'react'
+import * as React from 'react'
 import { theme } from '@prisma/lens/dist/web'
 
 const fontSizeForSize = (size?: ButtonSize) => {
@@ -33,13 +33,13 @@ const radiusForSize = (size?: ButtonSize) => {
 }
 
 const Base = styled.a<{ size?: ButtonSize }>`
-  font-size: ${p => fontSizeForSize(p.size)};
+  font-size: ${(p) => fontSizeForSize(p.size)};
   font-weight: 600;
-  padding: ${p => paddingForSize(p.size)};
+  padding: ${(p) => paddingForSize(p.size)};
   display: inline-block;
   border: none;
   text-align: left;
-  border-radius: ${p => radiusForSize(p.size)};
+  border-radius: ${(p) => radiusForSize(p.size)};
   line-height: 1.5;
   cursor: pointer;
   text-decoration: none;

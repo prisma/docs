@@ -27,7 +27,7 @@ export function stringify(children: any): string {
 
   if (Array.isArray(children)) {
     return children
-      .map(el => {
+      .map((el) => {
         if (typeof el === 'string') {
           return el
         } else {

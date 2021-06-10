@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import styled from 'styled-components'
 import Select, { components } from 'react-select'
 
@@ -29,9 +29,9 @@ const SelectComponent = (props: SelectProps) => {
     onChange({ technology: newValue.value })
   }
 
-  const options = items.map(it => ({ value: it.technology, label: it.technology }))
+  const options = items.map((it) => ({ value: it.technology, label: it.technology }))
 
-  const selectedOption = options.filter(ff => ff.value === selectedItem.technology)
+  const selectedOption = options.filter((ff) => ff.value === selectedItem.technology)
 
   const SelectContainer = (props: any) => {
     return (
