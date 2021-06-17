@@ -23,7 +23,7 @@ const Tree = ({ edges }: AllEdges) => {
       [label]: !toggleContent ? false : !collapsed[label],
     })
     if (parents) {
-      parents.forEach((parent) => {
+      parents.forEach(parent => {
         if (parent && collapsed[parent] !== null) {
           setCollapsed({
             ...collapsed,
