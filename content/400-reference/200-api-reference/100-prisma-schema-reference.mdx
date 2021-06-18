@@ -830,7 +830,7 @@ Not supported
 
 <Admonition type="warning">
 
-**MongoDB not supported** <br />
+**Not supported by MongoDB** <br />
 The [MongoDB connector](../../database-connectors/mongodb) does not currently support the `Unsupported` type.
 
 </Admonition>
@@ -853,6 +853,9 @@ The `Unsupported` type was introduced in [2.17.0](https://github.com/prisma/pris
 
 #### Examples
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
 ```prisma
 model Star {
   id           Int                      @id @default(autoincrement())
@@ -860,6 +863,12 @@ model Star {
   example1     Unsupported("circle")
   circle       Unsupported("circle")?  @default(dbgenerated("'<(10,4),11>'::circle"))
 ```
+
+</tab>
+<tab>
+</tab>
+
+</TabbedContent>
 
 ## <inlinecode>model</inlinecode> field type modifiers
 
@@ -874,12 +883,28 @@ Makes a field a list.
 
 #### Examples
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma highlight=3;normal
 model User {
   id    Int      @id @default(autoincrement())
   posts Post[]
 }
 ```
+
+</tab>
+<tab>
+
+```prisma highlight=3;normal
+model User {
+  id    String      @id @default(dbgenerated())  @map("_id") @db.ObjectId
+  posts Post[]
+}
+```
+
+</tab>
+</TabbedContent>
 
 ### <inlinecode>?</inlinecode> modifier
 
@@ -940,7 +965,7 @@ Defines a single-field ID on the model.
 - Corresponding database type: [`ObjectId`](https://docs.mongodb.com/manual/reference/method/ObjectId/)
 - Can be annotated with a [`@default()`](#default) value that uses [the `dbgenerated()` function](#dbgenerated) to auto-generate an `ObjectId`
 - Must be defined on a `String` field
-- The underlying ID field name is always `_id`, and must be mapped with `@map(_id)`
+- The [underlying ID field name is always `_id`](https://docs.mongodb.com/manual/core/document/#the-_id-field), and must be mapped with `@map(_id)`
 - ID field must be decorated with `@db.ObjectId`, where `db` is the `datasource` name
 - `autoincrement()` is **not supported** and not required - `dbgenerated()` prompts MongoDB to generate an `ObjectId`
 - [`cuid()`](#cuid) and [`uuid()`](#uuid) are not guaranteed to generate a valid `ObjectId` and **should not be used** in the context of an `@id` - however, both functions can be used to generated default values for other fields
@@ -962,7 +987,7 @@ In most cases, you want your database to create the ID. To do this, annotate the
 ##### Generate auto-incrementing integers as IDs
 
 
-<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="display"/>, <FileWithIcon text="MongoDB" icon="display"/>]}>
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="display"/>]}>
 <tab>
 
 For relational databases, use `autoincrement()` and `Int`:
@@ -991,7 +1016,7 @@ model User {
 
 ##### Generate `cuid()` values as IDs
 
-<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="display"/>]}>
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
 <tab>
 
 ```prisma
@@ -1008,11 +1033,9 @@ model User {
 </tab>
 </TabbedContent>
 
-
-
 ##### Generate `uuid()` values as IDs
 
-<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="display"/>]}>
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
 <tab>
 
 
@@ -1034,7 +1057,7 @@ model User {
 
 In the following example, `id` does not have a default value:
 
-<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="display"/>, <FileWithIcon text="MongoDB" icon="display"/>]}>
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="display"/>]}>
 <tab>
 
 ```prisma
@@ -1058,10 +1081,6 @@ model User {
 
 Note that in the above case, you _must_ provide your own ID values when creating new records for the `User` model using Prisma Client, e.g.:
 
-
-<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="display"/>, <FileWithIcon text="MongoDB" icon="display"/>]}>
-<tab>
-
 ```ts
 const newUser = await prisma.user.create({
   data: {
@@ -1071,35 +1090,12 @@ const newUser = await prisma.user.create({
 })
 ```
 
-</tab>
-<tab>
-
-```ts
-const newUser = await prisma.user.create({
-  data: {
-    id: '507f1f77bcf86cd799439011',
-    name: 'Alice',
-  },
-})
-```
-
-</tab>
-</TabbedContent>
-
-
-
-###### Specify an ID on `String` _without_ a default value
-
-```prisma
-model User {
-  id    String  @id
-  name  String
-}
-```
-
 ###### Specify an ID on relation scalar field without a default value
 
 In the following example, `authorId` is a both a relation scalar and the ID of `Profile`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Profile {
@@ -1115,6 +1111,29 @@ model User {
   profile Profile?
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model Profile {
+  authorId String  @id @map('_id') @db.ObjectId
+  author   User    @relation(fields: [authorId], references: [id])
+  bio      String
+}
+
+model User {
+  id      String  @id @map('_id') @db.ObjectId
+  email   String  @unique
+  name    String?
+  profile Profile?
+}
+```
+
+</tab>
+</TabbedContent>
+
+
 
 In this scenario, you cannot create a `Profile` only - you must use Prisma Client's [nested writes](../../concepts/components/prisma-client/relation-queries#nested-writes) create a `User` **or** connect the profile to an existing user.
 
@@ -1155,7 +1174,7 @@ const profileWithUser = await prisma.profile.create({
 
 <Admonition type="warning">
 
-**MongoDB not supported** <br />
+**Not supported by MongoDB** <br />
 The [MongoDB connector](../../database-connectors/mongodb) does not support composite IDs.
 
 </Admonition>
@@ -1192,6 +1211,10 @@ The name of the `fields` argument on the `@@id` attribute can be omitted:
 
 ##### Specify a multi-field ID on two `String` fields
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
+
 ```prisma
 model User {
   firstName String
@@ -1203,7 +1226,15 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 When you create a user, you must provide a unique combination of `firstName` and `lastName`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const user = await prisma.user.create({
@@ -1214,7 +1245,15 @@ const user = await prisma.user.create({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 To retrieve a user, use the generated composite ID field (`firstName_lastName`):
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const user = await prisma.user.findUnique({
@@ -1227,7 +1266,15 @@ const user = await prisma.user.findUnique({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ##### Specify a multi-field ID on two `String` fields and one `Boolean` field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1240,7 +1287,15 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 When creating new `User` records, you now must provide a unique combination of values for `firstName`, `lastName` and `isAdmin`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const user = await prisma.user.create({
@@ -1252,7 +1307,17 @@ const user = await prisma.user.create({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+
+
 ##### Specify a multi-field ID that includes a relation field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Post {
@@ -1272,7 +1337,15 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 When creating new `Post` records, you now must provide a unique combination of values for `authorId` (foreign key) and `title`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const post = await prisma.post.create({
@@ -1287,6 +1360,13 @@ const post = await prisma.post.create({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+
+
 ### <inlinecode>@default</inlinecode>
 
 <AlgoliaTerm name="apiReference" value="@default, default" />
@@ -1294,6 +1374,8 @@ const post = await prisma.post.create({
 Defines a [default value for a field](../../../concepts/components/prisma-schema/data-model#defining-a-default-value) <span class="concept"></span>.
 
 #### Remarks
+
+##### Relational databases
 
 - Corresponding database type: `DEFAULT`
 - Default values can be a static value (`4`, `"hello"`) or one of the following [functions](#attribute-functions):
@@ -1306,6 +1388,15 @@ Defines a [default value for a field](../../../concepts/components/prisma-schema
 
 - Default values that cannot yet be represented in the Prisma schema are represented by the `dbgenerated()` function when you use [introspection](../../concepts/components/introspection).
 - Default values are currently not allowed on relation fields in the Prisma schema. Note however that you can still define default values _manually_ in the underlying database using plain SQL. These will not be represented in the Prisma schema though, this is a temporary limitation which you can [track on GitHub](https://github.com/prisma/prisma/issues/1111).
+
+##### MongoDB
+
+- Default values can be a static value (`4`, `"hello"`) or one of the following [functions](#attribute-functions):
+
+  - [`dbgenerated()`](#dbgenerated) // TODO: Does this work for any field?
+  - [`cuid()`](#cuid)
+  - [`uuid()`](#uuid)
+  - [`now()`](#now)
 
 #### Arguments
 
@@ -1330,12 +1421,34 @@ id Int @id @default(autoincrement())
 
 ##### Default value for an `Int`
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   email        String  @unique
   profileViews Int     @default(0)
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  email        String  @unique @map('_id')
+  profileViews Int     @default(0)
+}
+```
+
+<Admonition type="info">
+
+In this example, `email` acts as the unique identifier and therefore requires `@map('_id')`.
+
+</Admonition>
+
+</tab>
+</TabbedContent>
 
 ##### Default value for a `Float`
 
@@ -1428,14 +1541,24 @@ Defines a unique constraint for this field.
 
 #### Remarks
 
-- Corresponding database type: `UNIQUE`
-- `NULL` values are considered to be distinct (multiple rows with `NULL` values in the same column are allowed)
-- Can be defined on any scalar field
-- **Cannot** be defined on a relation field
+##### General
+
 - A field annotated with `@unique` can be optional or required
 - A field annotated with `@unique` _must_ be required if it represents the only unique constraint on a model without an `@id` / `@@id`
 - A model can have any number of unique constraints
+- Can be defined on any scalar field
+- **Cannot** be defined on a relation field
+
+##### Relational databases
+
+- Corresponding database type: `UNIQUE`
+- `NULL` values are considered to be distinct (multiple rows with `NULL` values in the same column are allowed)
 - Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
+
+##### MongoDB
+
+- Enforced by a [unique index in MongoDB](https://docs.mongodb.com/manual/core/index-unique/) - you must create this index yourself
+- A field annotated with `@unique` _must_ include `@map("_id")` if it represents the only unique constraint on a model without an `@id` - MongoDB requires an `_id`
 
 #### Arguments
 
@@ -1724,7 +1847,13 @@ Defines meta information about the relation. [Learn more](../../concepts/compone
 
 #### Remarks
 
+##### Relational databases
+
 - Corresponding database types: `FOREIGN KEY` / `REFERENCES`
+
+##### MongoDB
+
+// TODO
 
 #### Arguments
 
@@ -1942,7 +2071,7 @@ model Tag {
 
 <Admonition type="warning">
 
-**MongoDB not supported** <br />
+**Not supported by MongoDB** <br />
 The [MongoDB connector](../../database-connectors/mongodb) does not support the `autoincrement()` function.
 
 </Admonition>
