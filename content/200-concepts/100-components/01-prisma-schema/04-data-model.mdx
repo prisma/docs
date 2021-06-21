@@ -10,7 +10,7 @@ tocDepth: 2
 The data model definition part of the [Prisma schema](../) defines your application models (also called **Prisma models**). Models:
 
 - Represent the **entities** of your application domain
-- Map to the **tables** in your database
+- Map to the **tables** or **collections** in your database
 - Form the foundation of the **queries** available in the generated [Prisma Client API](../prisma-client/)
 - When used with TypeScript, Prisma Client provides generated **type definitions** for your models and any [variations](../prisma-client/advanced-type-safety/operating-against-partial-structures-of-model-types) of them to make database access entirely type safe.
 
@@ -76,11 +76,10 @@ The corresponding database looks like this:
 
 <details><summary>A model maps to the underlying structures of the data source.</summary>
 
-- In PostgreSQL, a model maps to a _table_
-- In MySQL, a model maps to a _table_
-- In SQLite, a model maps to a _table_
+- In relational databases like PostgreSQL and MySQL, a `model` maps to a **table**
+- In MongoDB, a `model` maps to a **collection**
 
-> **Note**: In the future there might be connectors for non-relational databases and other data sources. For example, for MongoDB a model would map to a _collection_, for a REST API it would map to a _resource_.
+> **Note**: In the future there might be connectors for non-relational databases and other data sources. For example, for a REST API it would map to a _resource_.
 
 </details>
 
@@ -197,6 +196,13 @@ Your data model reflects _your_ application domain. For example:
 
 ## Introspection and migration
 
+<Admonition type="warning">
+
+**Not supported by the MongoDB connector**<br />
+You cannot currently use Prisma Migrate or Introspection with the MongoDB connector. Instead, you must manually define a schema that matches the structure of your database.
+
+</Admonition>
+
 There are two ways to define a data model:
 
 - **Write the model manually and use Prisma Migrate**: You can write your data model manually and map it to your database using [Prisma Migrate](../prisma-migrate). In this case, the data model is the single source of truth for the models of your application.
@@ -218,9 +224,9 @@ model Tag {
 }
 ```
 
-### Mapping model names to tables
+### Mapping model names to tables or collections
 
-Prisma model [naming conventions (singular form, PascalCase)](../../../reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> do not always match table names in the database. A common approach for naming tables in databases is to use plural form and [snake_case](https://en.wikipedia.org/wiki/Snake_case) notation - for example: `comments`. When you introspect a database with a table named `comments`, the result Prisma model will look like this:
+Prisma model [naming conventions (singular form, PascalCase)](../../../reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> do not always match table names in the database. A common approach for naming tables/collections in databases is to use plural form and [snake_case](https://en.wikipedia.org/wiki/Snake_case) notation - for example: `comments`. When you introspect a database with a table named `comments`, the result Prisma model will look like this:
 
 ```prisma
 model comments {
@@ -313,6 +319,13 @@ Refer to the [relations documentation](relations) for more examples and informat
 
 ### Native types mapping
 
+<Admonition type="warning">
+
+**Not supported by the MongoDB connector**<br />
+The MongoDB connector does not require native type attributes, as each Prisma type maps to one BSON type. However, the MongoDB connector does use [`@db.ObjectId` to map a `String` or `Bytes` ID field](). // TODO: Link to ID section
+
+</Admonition>
+
 Version [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later supports **native database type attributes** (type attributes) that describe the underlying database type:
 
 ```prisma highlight=3;normal
@@ -383,6 +396,13 @@ When **not** annotating a field with the `?` type modifier, the field will be _r
 
 ### Unsupported types
 
+<Admonition type="warning">
+
+**Not supported by the MongoDB connector**<br />
+The MongoDB connector does not support the `Unsupported` type.
+
+</Admonition>
+
 When you introspect a database, unsupported types are added as [`Unsupported`](../../../reference/api-reference/prisma-schema-reference#unsupported) <span class="api"></span>:
 
 ```prisma
@@ -419,13 +439,16 @@ See [complete list of field and block attributes](../../../reference/api-referen
 
 ### Defining an ID field
 
-An ID uniquely identifies individual records of a model. IDs can be defined by a single field using the [`@id`](../../../reference/api-reference/prisma-schema-reference#id) <span class="api"></span> attribute, or multiple fields using the [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-1) <span class="api"></span> attribute.
+An ID uniquely identifies individual records of a model. IDs can be defined by a single field using the [`@id`](../../../reference/api-reference/prisma-schema-reference#id) <span class="api"></span> attribute, or multiple fields using the [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-1) <span class="api"></span> (relational databases only) attribute.
 
-In the following example, the `User` ID is represented by the `id` field:
+The syntax for defining an ID differs between relational databases and MongoDB. In the following example, the `User` ID is represented by the `id` field:
 
-```prisma
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma highlight=2;normal
 model User {
-|  id      Int      @id @default(autoincrement())
+  id      Int      @id @default(autoincrement())
   email   String   @unique
   name    String?
   role    Role     @default(USER)
@@ -434,7 +457,32 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma highlight=2;normal
+model User {
+  id      String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+```
+
+</tab>
+</TabbedContent>
+
 In the following example, the `User` ID is represented by a combination of the `firstName` and `lastName` fields:
+
+<Admonition type="warning">
+MongoDB does not support composite IDs.
+</Admonition>
+
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -446,6 +494,11 @@ model User {
 |  @@id([firstName, lastName])
 }
 ```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
 
 > **Note**: A model can only have _one_ ID, and that ID can either be a single field or based on multiple fields.
 
