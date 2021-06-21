@@ -86,7 +86,7 @@ Learn more about MySQL connection strings [here](../../../concepts/database-conn
 
 #### Specify a SQLite data source
 
-In this example, the target database is located in a file named `dev.db`:
+In this example, the target database is located in a file called `dev.db`:
 
 ```prisma
 datasource db {
@@ -1036,7 +1036,7 @@ model User {
 
 ```prisma
 model User {
-  id    Int     @id @map("_id") @db.ObjectId @default(dbgenerated())
+  id    String     @id @map("_id") @db.ObjectId @default(dbgenerated())
   name  String
 }
 ```
@@ -1755,7 +1755,7 @@ enum Role {
 
 ```prisma
 model User {
-  id      Int      @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  id      String      @id @default(dbgenerated()) @db.ObjectId @map("_id")
   email   String   @unique
   name    String?
 |  role    Role     @default(USER)
@@ -1853,7 +1853,7 @@ model User {
 
 ```prisma
 model User {
-  id    Int     @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id    String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
   email String? @unique
   name  String
 }
@@ -1889,13 +1889,13 @@ model User {
 ```prisma
 model Post {
   author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int     @unique @db.ObjectId
+  authorId  String  @unique @db.ObjectId
   title     String
   published Boolean @default(false)
 }
 
 model User {
-  id    Int     @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id    String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
   email String? @unique
   name  String
   Post  Post[]
@@ -2320,7 +2320,7 @@ model User {
 
 ```prisma
 model User {
-  id        Int    @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  id        String    @id @default(dbgenerated()) @db.ObjectId @map("_id")
   firstName String @map("first_name")
 }
 ```
@@ -2381,6 +2381,9 @@ The name of the `name` argument on the `@@map` attribute can be omitted
 
 ##### Map the `User` model to a database table/collection named `users`
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id   Int    @id @default(autoincrement())
@@ -2388,6 +2391,21 @@ model User {
   @@map("users")
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id   String    @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  name String
+  @@map("users")
+}
+```
+
+</tab>
+</TabbedContent>
+
 
 The generated client:
 
@@ -2413,7 +2431,7 @@ enum Role {
 
 ### <inlinecode>@updatedAt</inlinecode>
 
-Automatically stores the time when a record was last updated. If you don't supply a time yourself, the Prisma Client will automatically set the value for fields with this attribute.
+Automatically stores the time when a record was last updated. If you do not supply a time yourself, the Prisma Client will automatically set the value for fields with this attribute.
 
 #### Remarks
 
@@ -2431,25 +2449,50 @@ N/A
 
 #### Examples
 
-```prisma line-number file=schema.prisma
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma line-number
 model Post {
   id        String   @id
   updatedAt DateTime @updatedAt
 }
 ```
 
+</tab>
+<tab>
+
+```prisma line-number
+model Post {
+  id        String   @id @db.ObjectId @map("_id")
+  updatedAt DateTime @updatedAt
+}
+```
+
+</tab>
+</TabbedContent>
+
 ### <inlinecode>@ignore</inlinecode>
 
 <AlgoliaTerm name="apiReference" value="@ignore" />
 
-In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@ignore` to fields that _refer to_ invalid models. In the following example, `tags` is ignored because it refers to an invalid model.
+In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@ignore` to fields that _refer to_ invalid models when you introspect.
+
+#### Remarks
+
+* Ignored fields are excluded from the generated Prisma Client
+* You can manually add `@ignore` to a field that you want to exclude from the Prisma Client (for example, a field that you do not want Prisma users to update)
+
+#### Examples
+
+In the following example, `tags` is ignored because it refers to an invalid model (no `@id` on `Product):
 
 ```prisma highlight=5,10;normal
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Tag {
   id String? @db.VarChar
   @@ignore
-}
+} 
 
 model Product {
   id     Int @default(autoincrement())
@@ -2461,7 +2504,16 @@ model Product {
 
 <AlgoliaTerm name="apiReference" value="@@ignore" />
 
-In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@@ignore` to an invalid model instead of commenting it out. In the following example, `Tag` is ignored because it does not have a valid unique identifier.
+In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@@ignore` to an invalid model instead of commenting it out. 
+
+#### Remarks
+
+* Ignored models are excluded from the generated Prisma Client
+* You can manually add `@@ignore` to a model that you want to exclude from the Prisma Client (for example, a model that you do not want Prisma users to update)
+
+#### Examples
+
+In the following example, `Tag` is ignored because it does not have a valid unique identifier:
 
 ```prisma highlight=5,10;normal
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
@@ -2497,12 +2549,20 @@ Create a sequence of integers in the underlying database and assign the incremen
 
 ##### Generate auto-incrementing integers as IDs
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id    Int     @id @default(autoincrement())
   name  String
 }
 ```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
 
 ### <inlinecode>cuid()</inlinecode>
 
@@ -2513,9 +2573,16 @@ Generate a globally unique identifier based on the [`cuid`](https://github.com/e
 - Compatible with `String`
 - Implemented by Prisma and therefore not "visible" in the underlying database schema. You can still use `cuid()` when using [introspection](../../concepts/components/introspection) by [manually changing your Prisma schema](../../../concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) and [generating Prisma Client](../../concepts/components/prisma-client/working-with-prismaclient/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](../../concepts/components/prisma-engines/query-engine).
 
+##### MongoDB
+
+- `cuid()` does not generate a valid `ObjectId` - [use the `@db.ObjectId` syntax](#generate-objectid-as-ids-mongodb-only) if you want to use `ObjectId` in the underlying database. However, you can still use `cuid()` if your `_id` field is not of type `ObjectId`.
+
 #### Examples
 
 ##### Generate `cuid()` values as IDs
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -2523,6 +2590,22 @@ model User {
   name  String
 }
 ```
+
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(cuid()) @map("_id")
+  name  String
+}
+```
+
+
+</tab>
+</TabbedContent>
+
 
 ### <inlinecode>uuid()</inlinecode>
 
@@ -2535,13 +2618,21 @@ Generate a globally unique identifier based on the [UUID](https://en.wikipedia.o
 
 <Admonition type='info'>
 
-**Note**: If you do not want to use Prisma's `uuid()` function, you can use [the native database function with `dbgenerated`](#override-default-value-behavior-for-supported-types).
+**Note (Relational databases)**: If you do not want to use Prisma's `uuid()` function, you can use [the native database function with `dbgenerated`](#override-default-value-behavior-for-supported-types).
 
 </Admonition>
+
+##### MongoDB
+
+- `uuid()` does not generate a valid `ObjectId` - [use the `@db.ObjectId` syntax](#generate-objectid-as-ids-mongodb-only) if you want to use `ObjectId` in the underlying database. However, you can still use `uuid()` if your `_id` field is not of type `ObjectId`.
 
 #### Examples
 
 ##### Generate `uuid()` values as IDs
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 
 ```prisma
 model User {
@@ -2549,6 +2640,20 @@ model User {
   name  String
 }
 ```
+
+</tab>
+<tab>
+
+
+```prisma
+model User {
+  id    String  @id @default(uuid()) @map("_id")
+  name  String
+}
+```
+
+</tab>
+</TabbedContent>
 
 ### <inlinecode>now()</inlinecode>
 
@@ -2696,6 +2801,10 @@ Defines an [enum](../../../concepts/components/prisma-schema/data-model#defining
 
 #### Specify an `enum` with two possible values
 
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 enum Role {
   USER
@@ -2708,7 +2817,30 @@ model User {
 }
 ```
 
+
+</tab>
+<tab>
+
+```prisma
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id    String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  role  Role
+}
+```
+
+
+</tab>
+</TabbedContent>
+
 #### Specify an `enum` with two possible values and set a default value
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 enum Role {
@@ -2721,3 +2853,23 @@ model User {
   role  Role  @default(USER)
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id    String   @id @default(dbgenerated())
+  role  Role  @default(USER)
+}
+```
+
+</tab>
+</TabbedContent>
+
+
