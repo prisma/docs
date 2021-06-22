@@ -1938,11 +1938,6 @@ Defines a compound [unique constraint](../../../concepts/components/prisma-schem
 
 ##### General
 
-- A `@@unique` block is required if it represents the only unique constraint on a model without an `@id` / `@@id` (relational databases) or `@id` (MongoDB)
-
-##### Relational databases
-
-- Corresponding database type: `UNIQUE`
 - All fields that make up the unique constraint **must** be mandatory fields. The following model is **not** valid because `id` could be `null`:
 
   ```prisma
@@ -1954,7 +1949,7 @@ Defines a compound [unique constraint](../../../concepts/components/prisma-schem
   }
   ```
 
-  The reason for this behavior is that SQL considers `null` values to be distinct, which means that two rows that _look_ identical are considered unique:
+  The reason for this behavior is that all connectors consider `null` values to be distinct, which means that two rows that _look_ identical are considered unique:
 
   ```
    firstname  | lastname | id
@@ -1964,12 +1959,17 @@ Defines a compound [unique constraint](../../../concepts/components/prisma-schem
   ```
 
 - A model can have any number of `@@unique` blocks
-- Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
+
+##### Relational databases
+
+- Corresponding database type: `UNIQUE`
+- A `@@unique` block is required if it represents the only unique constraint on a model without an `@id` / `@@id`
+- Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s)
 
 ##### MongoDB
 
-- Enforced by a [unique index in MongoDB](https://docs.mongodb.com/manual/core/index-unique/) - you must create this index yourself
-- A field annotated with `@unique` _must_ include `@map("_id")` if it represents the only unique constraint on a model without an `@id` - MongoDB requires an `_id`
+- Enforced by a [compound index in MongoDB](https://docs.mongodb.com/manual/core/index-compound/) - you must create this index yourself
+- A `@@unique` block cannot be used as the only unique identifier for a model - MongoDB requires an `@id` field
 
 #### Arguments
 
@@ -1996,6 +1996,9 @@ The name of the `fields` argument on the `@@unique` attribute can be omitted:
 
 ##### Specify a multi-field unique attribute on two `String` fields
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id        Int     @default(autoincrement())
@@ -2006,6 +2009,23 @@ model User {
   @@unique([firstName, lastName])
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        Int     @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  firstName String
+  lastName  String
+  isAdmin   Boolean @default(false)
+
+  @@unique([firstName, lastName])
+}
+```
+
+</tab>
+</TabbedContent>
 
 To retrieve a user, use the generated field name (`firstname_lastname`):
 
@@ -2023,6 +2043,9 @@ const user = await prisma.user.findUnique({
 
 ##### Specify a multi-field unique attribute on two `String` fields and one `Boolean` field
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id        Int     @default(autoincrement())
@@ -2034,7 +2057,27 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        Int     @id  @default(dbgenerated()) @db.ObjectId @map("_id")
+  firstName String
+  lastName  String
+  isAdmin   Boolean @default(false)
+
+  @@unique([firstName, lastName, isAdmin])
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Specify a multi-field unique attribute that includes a relation field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Post {
@@ -2054,7 +2097,37 @@ model User {
 }
 ```
 
+
+</tab>
+<tab>
+
+```prisma
+model Post {
+  id        Int     @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  Int     @db.ObjectId
+  title     String
+  published Boolean @default(false)
+
+  @@unique([authorId, title])
+}
+
+model User {
+  id    Int    @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  email String @unique
+  posts Post[]
+}
+```
+
+
+</tab>
+</TabbedContent>
+
+
 ##### Specify a custom `name` for a multi-field unique attribute
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -2066,6 +2139,25 @@ model User {
   @@unique(fields: [firstName, lastName, isAdmin], name: "admin_identifier")
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        Int     @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  firstName String
+  lastName  String
+  isAdmin   Boolean @default(false)
+
+  @@unique(fields: [firstName, lastName, isAdmin], name: "admin_identifier")
+}
+```
+
+</tab>
+</TabbedContent>
+
+
 
 To retrieve a user, use the custom field name (`admin_identifier`):
 
