@@ -45,7 +45,7 @@ In addition to these standalone and single-purpose libraries, there are several 
 
 ## Prisma & GraphQL examples
 
-Below, you will find several ready-to-run examples that showcase how to use Prisma with different combinations of the tools mentioned in the table above.
+In the following section will find several ready-to-run examples that showcase how to use Prisma with different combinations of the tools mentioned in the table above.
 
 ### TypeScript
 
