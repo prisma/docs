@@ -389,7 +389,14 @@ model Tag {
 
 When **not** annotating a field with the `?` type modifier, the field will be _required_ on every record of the model. This has effects on two levels:
 
-- **Database**: Required fields are represented via `NOT NULL` constraints in the underlying database.
+- **Relational databases**: Required fields are represented via `NOT NULL` constraints in the underlying database.
+ 
+    <Admonition type="info">
+
+    The MongoDB connector does not enforce constraints at database level.
+
+    </Admonition>
+
 - **Prisma Client**: Prisma Client's generated [TypeScript types](#type-definitions) that represent the models in your application code will also define these fields as required to ensure they always carry values at runtime.
 
 > **Note**: The default value of an optional field is `null`.
@@ -416,18 +423,42 @@ The `Unsupported` attribute allows you to define fields in the Prisma schema for
 
 ## Defining attributes
 
-Attributes modify the behavior of fields or model blocks. The following example includes two field attributes ([`@unique`](../../../reference/api-reference/prisma-schema-reference#unique) <span class="api"></span> and [`@default`](../../../reference/api-reference/prisma-schema-reference#default) <span class="api"></span>) and one block attribute ([`@@id`](../../../reference/api-reference/prisma-schema-reference#id-1) <span class="api"></span>):
+Attributes modify the behavior of fields or model blocks. The following example includes two field attributes ([`@id`](../../../reference/api-reference/prisma-schema-reference#id) <span class="api"></span> and [`@default`](../../../reference/api-reference/prisma-schema-reference#default) <span class="api"></span>) and one block attribute ([`@@unique`](../../../reference/api-reference/prisma-schema-reference#unique-1) <span class="api"></span>):
 
-```prisma highlight=4,5,7;normal
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
 model User {
+  id        Int    @id @default(autoincrement())
   firstName String
   lastName  String
   email     String @unique
-  isAdmin   Boolean @default(false) // @default(value: false)
+  isAdmin   Boolean @default(false)
 
-  @@id([firstName, lastName])
+  @@unique([firstName, lastName])
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        Int    @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  firstName String
+  lastName  String
+  email     String @unique
+  isAdmin   Boolean @default(false)
+
+  @@unique([firstName, lastName])
+}
+```
+
+</tab>
+</TabbedContent>
+
+
 
 Some attributes accept [arguments](../../../reference/api-reference/prisma-schema-reference#attribute-argument-types) <span class="api"></span> - for example, `@default` accepts `true` or `false`:
 
@@ -439,15 +470,18 @@ See [complete list of field and block attributes](../../../reference/api-referen
 
 ### Defining an ID field
 
-An ID uniquely identifies individual records of a model. 
+An ID uniquely identifies individual records of a model. A model can only have _one_ ID:
+
+  * In **relational databases**, the ID can be a single field with or based on multiple fields. If a model does not have an define an `@id` or an `@@id`, you must define a manatory `@unique` field or `@@unique` block instead.
+  * In **MongoDB**, the ID can be a single field. If a model does  not define an `@id`, you must define a mandatory `@unique`. ID fields must always map to the underlying `"_id"` field (`@map("_id"))`.
 
 #### Defining IDs in relational databases
 
 In relational databases, an ID can be defined by a single field using the [`@id`](../../../reference/api-reference/prisma-schema-reference#id) <span class="api"></span> attribute, or multiple fields using the [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-1) <span class="api"></span> attribute.
 
-In the following example, the `User` ID is represented by the `id` field:
+In the following example, the `User` ID is represented by the `id` integer field:
 
-<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<TabbedContent tabs={[<FileWithIcon text="With default value" icon="schema"/>, <FileWithIcon text="Without default value" icon="schema"/>]}>
 <tab>
 
 ```prisma highlight=2;normal
@@ -464,14 +498,21 @@ model User {
 </tab>
 <tab>
 
+```prisma highlight=2;normal
+model User {
+  id      Int      @id
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+```
+
 </tab>
 </TabbedContent>
 
 In the following example, the `User` ID is represented by a combination of the `firstName` and `lastName` fields:
-
-<Admonition type="warning">
-MongoDB does not support composite IDs.
-</Admonition>
 
 
 <TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
@@ -493,9 +534,45 @@ model User {
 </tab>
 </TabbedContent>
 
-> **Note**: A model can only have _one_ ID, and that ID can either be a single field or based on multiple fields. If a model does not have an define an `@id` or an `@@id`, it must have a mandatory `@unique` or `@@unique` instead.
+<TabbedContent tabs={[<FileWithIcon text="With default value" icon="schema"/>, <FileWithIcon text="Without default value" icon="schema"/>]}>
+<tab>
+
+```prisma highlight=2;normal
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+```
+
+</tab>
+<tab>
+
+```prisma highlight=2;normal
+model User {
+  id      Int      @id
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+```
+
+</tab>
+</TabbedContent>
 
 #### Defining IDs in MongoDB
+
+In the following example, the `User` ID is represented by the `id` field. The default value is an auto-generated [`ObjectId`](https://docs.mongodb.com/manual/reference/method/ObjectId/). The MongoDB connector has [specific rules for defining an ID field](../../../reference/api-reference/prisma-schema-reference#mongodb) <span class="api"></span> that differs from relational databases.
+
+In the following example, the `User` ID is represented by the `id` string field that accepts an `ObjectId`:
+
+<TabbedContent tabs={[<FileWithIcon text="With default value" icon="schema"/>, <FileWithIcon text="Without default value" icon="schema"/>]}>
+<tab>
 
 ```prisma highlight=2;normal
 model User {
@@ -507,6 +584,31 @@ model User {
   profile Profile?
 }
 ```
+
+</tab>
+<tab>
+
+```prisma highlight=2;normal
+model User {
+  id      String   @id @db.ObjectId @map("_id")
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+<Admonition type="warning">
+
+**MongoDB does not support `@@id`**
+MongoDB does not support composite IDs, which means you cannot identify a model with a `@@id` block. Furthermore, you cannot use a `@@unique` block as an ID.
+
+</Admonition>
 
 ### Defining a default value
 
@@ -562,7 +664,7 @@ model Post {
 
 ### Defining an index
 
-You can define indexes on one or multiple fields of your models via the `@@index` on a model. The following example defines a multi-column index based on the `title` and `content` field:
+You can define indexes on one or multiple fields of your models via the [`@@index`](../../../reference/api-reference/prisma-schema-reference#index-2) <span class="api"></span> on a model. The following example defines a multi-column index based on the `title` and `content` field:
 
 ```prisma
 model Post {
@@ -625,7 +727,9 @@ model Post {
 
 [`cuid()`](../../../reference/api-reference/prisma-schema-reference#cuid) <span class="api"></span> and [`uuid()`](../../../reference/api-reference/prisma-schema-reference#uuid) <span class="api"></span> are implemented by Prisma and therefore are not "visible" in the underlying database schema. You can still use them when using [introspection](../introspection) by [manually changing your Prisma schema](../prisma-client/working-with-prismaclient/use-custom-model-and-field-names) and [generating Prisma Client](../prisma-client/working-with-prismaclient/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](../prisma-engines/query-engine)
 
-`autoincrement()`, `now` and `dbgenerated()` are always "implemented" on the database-level, meaning they manifest in the database schema and can be recognized through introspection.
+Support for [`autoincrement()`](../../../reference/api-reference/prisma-schema-reference#autoincrement) <span class="api"></span>, [`now()`]((../../../reference/api-reference/prisma-schema-reference#now) <span class="api"></span>) and [`dbgenerated()`](../../../reference/api-reference/prisma-schema-reference#dbgenerated) <span class="api"></span> differ between databases.
+
+Relational database connectors implement `autoincrement()`, `dbgenerated()`, and `now()` at database level. The MongoDB connector does not support `autoincrement()`, and `now()` is implemented at Prisma level. `dbgenerated()` can only be used to generate an `ObjectId`.
 
 ## Relations
 
