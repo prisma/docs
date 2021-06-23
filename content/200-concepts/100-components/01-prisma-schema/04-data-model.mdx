@@ -16,7 +16,10 @@ The data model definition part of the [Prisma schema](../) defines your applicat
 
 The following schema describes a blogging platform - the data model definition is highlighted:
 
-```prisma
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma highlight=10-45;normal
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -26,43 +29,99 @@ generator client {
   provider = "prisma-client-js"
 }
 
-|model User {
-|  id      Int      @id @default(autoincrement())
-|  email   String   @unique
-|  name    String?
-|  role    Role     @default(USER)
-|  posts   Post[]
-|  profile Profile?
-|}
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
 
-|model Profile {
-|  id      Int     @id @default(autoincrement())
-|  bio     String
-|  user    User    @relation(fields: [userId], references: [id])
-|  userId  Int
-|}
+model Profile {
+  id      Int     @id @default(autoincrement())
+  bio     String
+  user    User    @relation(fields: [userId], references: [id])
+  userId  Int
+}
 
-|model Post {
-|  id         Int         @id @default(autoincrement())
-|  createdAt  DateTime    @default(now())
-|  title      String
-|  published  Boolean     @default(false)
-|  author     User        @relation(fields: [authorId], references: [id])
-|  authorId   Int
-|  categories Category[]  @relation(references: [id])
-|}
+model Post {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+  title      String
+  published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]  @relation(references: [id])
+}
 
-|model Category {
-|  id    Int     @id @default(autoincrement())
-|  name  String
-|  posts Post[]  @relation(references: [id])
-|}
+model Category {
+  id    Int     @id @default(autoincrement())
+  name  String
+  posts Post[]  @relation(references: [id])
+}
 
-|enum Role {
-|  USER
-|  ADMIN
-|}
+enum Role {
+  USER
+  ADMIN
+}
 ```
+
+
+</tab>
+<tab>
+
+```prisma highlight=10-45;normal
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id      String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  email   String   @unique
+  name    String?
+  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+
+model Profile {
+  id     String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  bio    String
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+}
+
+model Post {
+  id         String     @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  createdAt  DateTime   @default(now())
+  title      String
+  published  Boolean    @default(false)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   String     @db.ObjectId
+  categories Category[] @relation(references: [id])
+}
+
+model Category {
+  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name  String
+  posts Post[] @relation(references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+```
+
+</tab>
+</TabbedContent>
 
 The data model definition is made up of:
 
@@ -445,7 +504,7 @@ model User {
 
 ```prisma
 model User {
-  id        Int    @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id        String    @id @default(dbgenerated()) @map("_id") @db.ObjectId
   firstName String
   lastName  String
   email     String @unique
@@ -630,6 +689,9 @@ MongoDB does not support composite IDs, which means you cannot identify a model 
 
 You can define default values for scalar fields of your models using the [`@default`](../../../reference/api-reference/prisma-schema-reference#default) <span class="api"></span> attribute:
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model Post {
   id         Int         @id @default(autoincrement())
@@ -642,12 +704,40 @@ model Post {
 }
 ```
 
-`@default` attributes typically represent `DEFAULT` values in the underlying database. However, functions like `cuid()` and `uuid()` are provided by Prisma's [query engine](../prisma-engines/query-engine/) and are therefore not "visible" in the underlying database schema.
+</tab>
+<tab>
+
+```prisma
+model Post {
+  id         String         @id @default(dbgenerated()) @db.ObjectId @map("_id")
+|  createdAt  DateTime    @default(now())
+  title      String
+|  published  Boolean     @default(false)
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   String      @db.ObjectId
+  categories Category[]  @relation(references: [id])
+}
+```
+
+</tab>
+</TabbedContent>
+
+
+`@default` attributes either:
+
+* Represent `DEFAULT` values in the underlying database (relational databases only) _or_
+* Use a Prisma-level function. For example, `cuid()` and `uuid()` are provided by Prisma's [query engine](../prisma-engines/query-engine/) for all connectors.
 
 Default values can be:
 
 - Static values that correspond to the field type, such as `5` (`Int`), `Hello` (`String`), or `false` (`Boolean`)
 - [Functions](#using-functions), such as [`now()`](../../../reference/api-reference/prisma-schema-reference#now) or [`uuid()`](../../../reference/api-reference/prisma-schema-reference#uuid)
+
+<Admonition type="info">
+
+Refer to the [attribute function reference documentation](../../../reference/api-reference/prisma-schema-reference#attribute-functions) <span class="api"></span> for information about connector support for functions.
+
+</Admonition>
 
 ### Defining a unique field
 
@@ -743,9 +833,9 @@ model Post {
 
 [`cuid()`](../../../reference/api-reference/prisma-schema-reference#cuid) <span class="api"></span> and [`uuid()`](../../../reference/api-reference/prisma-schema-reference#uuid) <span class="api"></span> are implemented by Prisma and therefore are not "visible" in the underlying database schema. You can still use them when using [introspection](../introspection) by [manually changing your Prisma schema](../prisma-client/working-with-prismaclient/use-custom-model-and-field-names) and [generating Prisma Client](../prisma-client/working-with-prismaclient/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](../prisma-engines/query-engine)
 
-Support for [`autoincrement()`](../../../reference/api-reference/prisma-schema-reference#autoincrement) <span class="api"></span>, [`now()`]((../../../reference/api-reference/prisma-schema-reference#now) <span class="api"></span>) and [`dbgenerated()`](../../../reference/api-reference/prisma-schema-reference#dbgenerated) <span class="api"></span> differ between databases.
+Support for [`autoincrement()`](../../../reference/api-reference/prisma-schema-reference#autoincrement) <span class="api"></span>, [`now()`](../../../reference/api-reference/prisma-schema-reference#now) <span class="api"></span>) and [`dbgenerated()`](../../../reference/api-reference/prisma-schema-reference#dbgenerated) <span class="api"></span> differ between databases.
 
-Relational database connectors implement `autoincrement()`, `dbgenerated()`, and `now()` at database level. The MongoDB connector does not support `autoincrement()`, and `now()` is implemented at Prisma level. `dbgenerated()` can only be used to generate an `ObjectId`.
+**Relational database connectors** implement `autoincrement()`, `dbgenerated()`, and `now()` at database level. The **MongoDB connector** does not support `autoincrement()`, and `now()` is implemented at Prisma level. `dbgenerated()` can only be used to generate an `ObjectId`.
 
 ## Relations
 
