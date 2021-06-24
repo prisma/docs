@@ -7,21 +7,47 @@ tocDepth: 3
 
 <TopBlock>
 
-A relation is a _connection_ between two models in the Prisma schema. For example, there is a one-to-many relation between `User` and `Post` because one user can have many blog posts. 
+A relation is a _connection_ between two models in the Prisma schema. For example, there is a one-to-many relation between `User` and `Post` because one user can have many blog posts.
+
 The following Prisma schema defines a one-to-many relation between the `User` and `Post` models. The fields involved in defining the relation are highlighted:
 
-```prisma line-number
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma highlight=3,8,9;normal
 model User {
   id     Int     @id @default(autoincrement())
-|  posts  Post[]
+  posts  Post[]
 }
 
 model Post {
   id        Int   @id @default(autoincrement())
-|  author    User  @relation(fields: [authorId], references: [id])
-|  authorId  Int   // relation scalar field  (used in the `@relation` attribute above)
+  author    User  @relation(fields: [authorId], references: [id])
+  authorId  Int   // relation scalar field  (used in the `@relation` attribute above)
 }
 ```
+
+
+</tab>
+<tab>
+
+```prisma highlight=3,8,9;normal
+model User {
+  id     String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  posts  Post[]
+}
+
+model Post {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String  @db.ObjectId   // relation scalar field  (used in the `@relation` attribute above)
+}
+```
+
+
+</tab>
+</TabbedContent>
+
 
 At a Prisma level, the `User` / `Post` relation is made up of:
 
@@ -30,7 +56,13 @@ At a Prisma level, the `User` / `Post` relation is made up of:
 
 At a Prisma level, a connection between two models is **always** represented by a [relation field](#relation-fields) on **each side** of the relation.
 
-The following entity relationship diagram defines the same one-to-many relation between the `User` and `Post` tables in a database:
+</TopBlock>
+
+## Relations in the database
+
+### Relational databases
+
+The following entity relationship diagram defines the same one-to-many relation between the `User` and `Post` tables in a**relational database**:
 
 ![A 1-n relationship between a user and posts table.](relations/one-to-many.png)
 
@@ -47,7 +79,15 @@ author     User        @relation(fields: [authorId], references: [id])
 
 > **Note**: Relations in the Prisma schema represent relationships that exist between tables in the database. If the relationship does not exist in the database, it does not exist in the Prisma schema.
 
-</TopBlock>
+### MongoDB
+
+// TODO
+
+In MongoDB, each document stores
+
+One-to-many:
+
+Many-to-many:
 
 ## Relations in the Prisma Client
 
@@ -126,6 +166,11 @@ The following Prisma schema includes every type of relation:
 - 1-n: `User` ↔ `Post`
 - m-n: `Post` ↔ `Category`
 
+Notice that the syntax is slightly different between relational databases and MongoDB - particularly for [many-to-many relations](many-to-many-relations).
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id      Int      @id @default(autoincrement())
@@ -152,6 +197,40 @@ model Category {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id      String    @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  posts   Post[]
+  profile Profile?
+}
+
+model Profile {
+  id      String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  user    User    @relation(fields: [userId], references: [id])
+  userId  String  @db.ObjectId   // relation scalar field (used in the `@relation` attribute above)
+}
+
+model Post {
+  id         String      @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author     User        @relation(fields: [authorId], references: [id])
+  authorId   String      @db.ObjectId     // relation scalar field  (used in the `@relation` attribute above)
+  categories Category[]  @relation(fields: [categoryIds])
+  categoryIds String[]   @db.Array(ObjectId)
+}
+
+model Category {
+  id         String      @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  posts   Post[]   @relation(fields: [postIds])
+  postIds String[] @db.Array(ObjectId)
+}
+```
+
+</tab>
+</TabbedContent>
+
 > **Note**: This schema is the same as the [example data model](data-model) but has all [scalar fields](data-model#scalar-fields) removed (except for the required [relation scalars](#annotated-relation-fields-and-relation-scalar-fields)) so you can focus on the [relation fields](#relation-fields).
 
 The following entity relationship diagram represents the database that corresponds to the sample Prisma schema:
@@ -165,6 +244,9 @@ Relation [fields](data-model#defining-fields) are fields on a Prisma [model](dat
 Every relation must have exactly two relation fields, one on each model. In case of 1-1 and 1-n relations, an additional _relation scalar field_ is required which gets linked by one of the two relation fields in the `@relation` attribute. This relation scalar is the direct representation of the _foreign key_ in the underlying database.
 
 Consider these two models:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -182,18 +264,60 @@ model Post {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  email     String   @unique
+  role      Role     @default(USER)
+  posts     Post[]
+}
+
+model Post {
+  id        String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  title      String
+  author     User    @relation(fields: [authorId], references: [id])
+  authorId   String  @db.ObjectId  // relation scalar field (used in the `@relation` attribute above)
+}
+```
+
+</tab>
+</TabbedContent>
+
 These models have the following fields:
 
-| Model  | Field      | Type     | Relation field               |
-| :----- | :--------- | :------- | :--------------------------- |
-| `User` | `id`       | `Int`    | No                           |
-|        | `email`    | `String` | No                           |
-|        | `role`     | `Role`   | No                           |
-|        | `posts`    | `Post[]` | **Yes** (Prisma-level)       |
-| `Post` | `id`       | `Int`    | No                           |
-|        | `title`    | `String` | No                           |
-|        | `authorId` | `Int`    | No (_relation scalar field_) |
-|        | `author`   | `User`   | **Yes** (_annotated_)        |
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+| Model  | Field      | Relational | Relation field               |
+| :----- | :--------- | :--------- | :--------------------------- |
+| `User` | `id`       | `Int`      | No                           |
+|        | `email`    | `String`   | No                           |
+|        | `role`     | `Role`     | No                           |
+|        | `posts`    | `Post[]`   | **Yes** (Prisma-level)       |
+| `Post` | `id`       | `Int`      | No                           |
+|        | `title`    | `String`   | No                           |
+|        | `authorId` | `Int`      | No (_relation scalar field_) |
+|        | `author`   | `User`     | **Yes** (_annotated_)        |
+
+</tab>
+<tab>
+
+| Model  | Field      | Relational | Relation field               | Notes                                  |
+| :----- | :--------- | :--------- | :--------------------------- | -------------------------------------- |
+| `User` | `id`       | `String`   | No                           | Underlying database type is `ObjectId` |
+|        | `email`    | `String`   | No                           |
+|        | `role`     | `Role`     | No                           |
+|        | `posts`    | `Post[]`   | **Yes** (Prisma-level)       |
+| `Post` | `id`       | `Int`      | No                           |
+|        | `title`    | `String`   | No                           |
+|        | `authorId` | `String`   | No (_relation scalar field_) | Underlying database type is `ObjectId` |
+|        | `author`   | `User`     | **Yes** (_annotated_)        |
+
+</tab>
+</TabbedContent>
 
 Both `posts` and `author` are relation fields because their types are not scalar types but other models.
 
@@ -282,6 +406,16 @@ model Profile {
 
 With [multi-field IDs](../../../reference/api-reference/prisma-schema-reference#id-1), there might also be multiple relation scalars on the same model which are both used in the `@relation`attribute:
 
+<Admonition type="warning">
+
+**Not supported by MongoDB** <br />
+MongoDB does not support multi-field / compound IDs.
+
+</Admonition>
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   firstName String
@@ -299,20 +433,24 @@ model Profile {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ## The @relation attribute
 
-The [`@relation`](../../../reference/api-reference/prisma-schema-reference#relation) <span class="api"></span> attribute can only be applied to the [relation fields](#relation-fields), not to [scalar fields](data-model#scalar-fields). The attributes are required on **one** side of 1-1 and 1-n relations.
+The [`@relation`](../../../reference/api-reference/prisma-schema-reference#relation) <span class="api"></span> attribute can only be applied to the [relation fields](#relation-fields), not to [scalar fields](data-model#scalar-fields).
 
-> **Note**: [Implicit m-n relations](#implicit-many-to-many-relations) do not require the `@relation` attribute.
-
-Here are some example scenarios when the `@relation` attribute is needed, e.g. when:
+The `@relation` attribute is required when:
 
 - you define a 1-1 or 1-n relation, it is required on _one side_ of the relation (with the corresponding relation scalar field)
 - you need to disambiguate a relation (that's e.g. the case when you have two relations between the same models)
 - you define a [self-relation](#self-relations)
+- you define [an m-n for MongoDB](many-to-many-relations#mongodb)
 - you need to control how the relation table is represented in the underlying database (e.g. use a specific name for a relation table)
 
-> **Note**: The leading underscore in the signature means that the argument name can be omitted.
+> **Note**: [Implicit m-n relations](#implicit-many-to-many-relations) in relational databases do not require the `@relation` attribute.
 
 
 ## Disambiguating relations
@@ -363,7 +501,6 @@ model Post {
   pinnedById  Int?
 }
 ```
-
 
 <!--
 
