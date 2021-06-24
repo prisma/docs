@@ -21,10 +21,10 @@ const Wrapper = styled.section`
   flex-direction: column;
   justify-content: 'flex-start;
   padding: 1rem;
-  background-color: ${p => p.theme.colors.gray100};
+  background-color: ${(p) => p.theme.colors.gray100};
   border-radius: 8px;
   min-height: 100px;
-  border-left: 8px solid ${p => p.theme.colors.gray500};
+  border-left: 8px solid ${(p) => p.theme.colors.gray500};
   margin: 2rem 0;
 `
 
@@ -44,7 +44,7 @@ const AnswersWrapper = styled.label`
 `
 
 const NotificationWrapper = styled.div<ChosenAnswerProps>`
-  margin: ${props => (props.isCorrect ? '1rem 0.25rem' : '1rem 0.5rem')};
+  margin: ${(props) => (props.isCorrect ? '1rem 0.25rem' : '1rem 0.5rem')};
 `
 
 const Row = styled.div`
@@ -66,7 +66,7 @@ const RadioButtonLabel = styled.label`
   height: 20px;
   border-radius: 50%;
   background: white;
-  border: 2px solid ${p => p.theme.colors.gray600};
+  border: 2px solid ${(p) => p.theme.colors.gray600};
 `
 const RadioButton = styled.input<ChosenAnswerProps>`
   opacity: 0;
@@ -78,7 +78,7 @@ const RadioButton = styled.input<ChosenAnswerProps>`
   cursor: pointer;
   position: relative;
 
-  ${props =>
+  ${(props) =>
     props.checked &&
     ` 
     &:checked + ${RadioButtonLabel} {
@@ -97,7 +97,7 @@ const RadioButton = styled.input<ChosenAnswerProps>`
     }
   `}
 
-  ${props =>
+  ${(props) =>
     props.isCorrect === true &&
     props.answerSubmitted &&
     props.answerSubmitted === true &&
@@ -120,7 +120,7 @@ const RadioButton = styled.input<ChosenAnswerProps>`
     }
   `}
 
-  ${props =>
+  ${(props) =>
     props.isCorrect === false &&
     props.answerSubmitted &&
     props.answerSubmitted === true &&
@@ -149,7 +149,7 @@ const Button = styled.button`
   font-weight: 600;
   padding: 0.5rem 0.75rem;
   display: inline-block;
-  background: ${p => p.theme.colors.gray300};
+  background: ${(p) => p.theme.colors.gray300};
   text-align: left;
   border-radius: 5px;
   line-height: 1.5;
@@ -157,18 +157,18 @@ const Button = styled.button`
   text-decoration: none;
   outline: none;
   border: none;
-  color: ${p => p.theme.colors.gray700};
+  color: ${(p) => p.theme.colors.gray700};
   transition: 0.2s ease-out;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   &:hover {
-    background: ${p => p.theme.colors.gray400};
+    background: ${(p) => p.theme.colors.gray400};
   }
   &:active {
     transform: scale(0.98);
   }
   &:disabled {
-    background: ${p => p.theme.colors.gray400};
-    color: ${p => p.theme.colors.gray700};
+    background: ${(p) => p.theme.colors.gray400};
+    color: ${(p) => p.theme.colors.gray700};
     cursor: default;
   }
 `
@@ -178,10 +178,10 @@ const NotificationContainer = styled.div<ChosenAnswerProps>`
   width: 250px;
   justify-content: flex-start;
   align-items: center;
-  background: ${p => p.theme.colors.gray100};
+  background: ${(p) => p.theme.colors.gray100};
   position: relative;
 
-  ${props =>
+  ${(props) =>
     props.isCorrect === true &&
     `
       &::after {
@@ -201,7 +201,7 @@ const NotificationContainer = styled.div<ChosenAnswerProps>`
       }
   `}
 
-  ${props =>
+  ${(props) =>
     props.isCorrect === false &&
     `
       &::after {
@@ -225,7 +225,7 @@ const NotificationContainer = styled.div<ChosenAnswerProps>`
     order: 1;
     font-size: 1rem;
     font-weight: 600;
-    color: ${props => (props.isCorrect ? '#15bd76' : '#ff4f56')};
+    color: ${(props) => (props.isCorrect ? '#15bd76' : '#ff4f56')};
   }
 `
 
@@ -253,8 +253,9 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
   const onSubmit = () => {
     setAnswerSubmitted(true)
     setDisabled(true)
-    const foundAnswer = answerOptions.find(answer => answer.answer === chosenAnswer.answer)
-      ?.isCorrect
+    const foundAnswer = answerOptions.find(
+      (answer) => answer.answer === chosenAnswer.answer
+    )?.isCorrect
     if (foundAnswer) {
       setChosenAnswer({
         isCorrect: true,
@@ -282,7 +283,7 @@ const Quiz = ({ question, answerOptions }: QuestionAndAnswer) => {
               name="radio"
               value={item.answer}
               checked={chosenAnswer.answer === item.answer}
-              onChange={event => handleSelectChange(event)}
+              onChange={(event) => handleSelectChange(event)}
             />
             <RadioButtonLabel />
             <span>{item.answer}</span>

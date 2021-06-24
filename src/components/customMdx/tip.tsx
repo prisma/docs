@@ -3,7 +3,7 @@ import styled from 'styled-components'
 
 const Wrapper = styled.section`
   padding: 1rem;
-  background-color: ${p => p.theme.colors.gray100};
+  background-color: ${(p) => p.theme.colors.gray100};
   border-radius: 8px;
   min-height: 100px;
   margin: 2rem 0;

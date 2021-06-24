@@ -43,30 +43,30 @@ const Tabs = styled.div`
   .tabHeading {
     margin-right: 10px;
     font-weight: 600;
-    color: ${p => p.theme.colors.gray600};
+    color: ${(p) => p.theme.colors.gray600};
     cursor: pointer;
-    font-size: ${p => p.theme.fontSizes[14]};
+    font-size: ${(p) => p.theme.fontSizes[14]};
     display: flex;
     align-items: center;
     padding: 3px 5px;
     svg {
-      margin-right: ${p => p.theme.space[8]};
+      margin-right: ${(p) => p.theme.space[8]};
     }
   }
 
   .tabHeading.active {
-    color: ${p => p.theme.colors.gray900};
-    background: ${p => p.theme.colors.gray100};
-    border-radius: ${p => p.theme.radii.small};
+    color: ${(p) => p.theme.colors.gray900};
+    background: ${(p) => p.theme.colors.gray100};
+    border-radius: ${(p) => p.theme.radii.small};
     svg path {
-      stroke: ${p => p.theme.colors.gray600};
+      stroke: ${(p) => p.theme.colors.gray600};
     }
   }
 `
 const Wrapper = styled.div`
-  margin-top: ${p => p.theme.space[24]};
+  margin-top: ${(p) => p.theme.space[24]};
   position: relative;
-  font-size: ${p => p.theme.fontSizes[14]};
+  font-size: ${(p) => p.theme.fontSizes[14]};
 
   tab pre > * {
     margin-top: 0.5em;
