@@ -10,13 +10,28 @@ preview: true
 
 As of **v2.26.0** Prisma now supports referential actions as part of the Prisma Schema Language.
 
-This is a [**preview feature**](../../../about/releases#preview) and can be accessed through adding `referentialActions` to the `previewFeatures` field of the [`generator`](../../../reference/api-reference/prisma-schema-reference#generator) block in the `prisma.schema` file.
+This is a [**preview feature**](../../../about/releases#preview) and can be accessed by:
+
+1. [Upgrading to version v2.26.0 of Prisma](../../../guides/upgrade-guides/upgrading-to-latest).
+2. Adding `referentialActions` to the `previewFeatures` field of the [`generator`](../../../reference/api-reference/prisma-schema-reference#generator) block in the `prisma.schema` file.
 
 ```prisma file=schema.prisma
 generator client {
     provider = "prisma-client-js"
     previewFeatures: ['referentialActions']
 }
+```
+
+You now have 3 options:
+
+1. Make your schema reflect the current state of the database by running an [Introspection](../introspection). You now have the option to opt in and use the new referential actions if you wish.
+2. Define your custom referential actions on your data model relation fields. You then update the database schema by running a [Migration](../prisma-migrate) or the [`db push`](../prisma-migrate/db-push) command.
+3. Use the new default referential actions that exist when no custom actions are added manually by running a [Migration](../prisma-migrate).
+
+To begin using referential actions you must opt in and add them to the `@relation` attribute in your schema.
+
+```prisma
+@relation(fields: [authorId], references: [id], onDelete: Restrict)
 ```
 
 </TopBlock>
@@ -81,17 +96,9 @@ Notice the part after the relation is defined, these are referential actions. Th
 - `ON DELETE CASCADE` - The users posts are deleted when the user is deleted.
 - `ON UPDATE CASCADE` - When a users `id` is updated, the corresponding `authorId` on the `Posts` table is updated too.
 
-## How to use referential actions?
-
-To use referential actions, in your schema you must opt in and add them to the `@relation` attribute.
-
-```prisma
-@relation(fields: [authorId], references: [id], onDelete: Restrict)
-```
-
 ## Types of referential actions
 
-See [https://github.com/prisma/prisma-engines/blob/master/libs/datamodel/connectors/dml/src/relation_info.rs#L55-L83](https://github.com/prisma/prisma-engines/blob/master/libs/datamodel/connectors/dml/src/relation_info.rs#L55-L83) has good descriptions, use those with real examples and code blocks for each
+<!-- See [https://github.com/prisma/prisma-engines/blob/master/libs/datamodel/connectors/dml/src/relation_info.rs#L55-L83](https://github.com/prisma/prisma-engines/blob/master/libs/datamodel/connectors/dml/src/relation_info.rs#L55-L83) has good descriptions, use those with real examples and code blocks for each -->
 
 ### Cascade
 
@@ -184,4 +191,48 @@ If a `User` has a related post in the `Post` table you will **not** be able to d
 
 ### SetNull
 
+The `SetNull` action will set relation [scalar fields](./data-model#scalar-fields) to null if the relation is updated or deleted. If one or more of the relations scalar fields are required a runtime error will be thrown.
+
+```prisma file=schema.prisma highlight=5;add|4;delete
+model Post {
+    id        Int     @id @default(autoincrement())
+    title     String
+    author    User    @relation(fields: [authorId], references: [id])
+    author    User    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+    authorId  Int
+}
+
+model User {
+  id    Int         @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+##### Result of using `SetNull`?
+
+If a `User` is deleted then the corresponding `authorId` field in the `Post` table will be set to `Null`
+
 ### SetDefault
+
+The `SetDefault` action will set relation [scalar fields](./data-model#scalar-fields) to their default values upon updated or deletion of a related record. If no defaults are provided for any of the scalar fields, a runtime error will be thrown.
+
+```prisma file=schema.prisma highlight=5;add|4;delete
+model Post {
+    id        Int     @id @default(autoincrement())
+    title     String
+    author    User    @relation(fields: [authorId], references: [id])
+    author    User    @relation(fields: [authorId], references: [id], onDelete: SetDefault)
+    authorId  Int
+}
+
+model User {
+  id    Int         @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+##### Result of using `SetDefault`?
+
+If a `User` is deleted then the corresponding `authorId` field in the `Post` table will be set to its default value.
+
+## Important caveats

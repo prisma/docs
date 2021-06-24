@@ -21,20 +21,20 @@ const SearchBoxDiv = styled.div`
     max-width: 1200px;
     width: 100%;
     height: 77px;
-    background: ${p => p.theme.colors.white};
-    padding: ${p => p.theme.space[20]};
-    border-bottom: 1px solid ${p => p.theme.colors.gray300};
-    border-radius: ${p => p.theme.radii.small};
+    background: ${(p) => p.theme.colors.white};
+    padding: ${(p) => p.theme.space[20]};
+    border-bottom: 1px solid ${(p) => p.theme.colors.gray300};
+    border-radius: ${(p) => p.theme.radii.small};
 
     form {
       width: 100%;
       input {
-        color: ${p => p.theme.colors.gray700};
+        color: ${(p) => p.theme.colors.gray700};
       }
     }
 
     .clear {
-      background: ${p => p.theme.colors.gray300};
+      background: ${(p) => p.theme.colors.gray300};
       border-radius: 6px;
       height: 36px;
       width: 36px;
@@ -42,11 +42,11 @@ const SearchBoxDiv = styled.div`
       align-items: center;
       justify-content: center;
       svg path {
-        stroke: ${p => p.theme.colors.gray700};
+        stroke: ${(p) => p.theme.colors.gray700};
       }
     }
   }
-  @media (max-width: ${p => p.theme.breakpoints.phone}) {
+  @media (max-width: ${(p) => p.theme.breakpoints.phone}) {
     width: auto;
     flex: 1;
     form {
@@ -75,16 +75,16 @@ const SearchBoxDiv = styled.div`
       width: 100%;
       background: transparent;
       outline: none;
-      padding: 0rem ${p => p.theme.space[32]};
-      font-family: ${p => p.theme.fonts.text};
+      padding: 0rem ${(p) => p.theme.space[32]};
+      font-family: ${(p) => p.theme.fonts.text};
       font-style: normal;
       font-weight: normal;
-      font-size: ${p => p.theme.fontSizes[16]};
+      font-size: ${(p) => p.theme.fontSizes[16]};
       line-height: 100%;
       border-width: 0;
       &::placeholder {
         content: 'Search Documentation...';
-        color: ${p => p.theme.colors.gray500};
+        color: ${(p) => p.theme.colors.gray500};
         opacity: 1; /* Firefox */
       }
     }
@@ -98,15 +98,15 @@ const SearchBoxDiv = styled.div`
   }
 
   .slash {
-    border: 1px solid ${p => p.theme.colors.gray400};
+    border: 1px solid ${(p) => p.theme.colors.gray400};
     border-radius: 4px;
-    color: ${p => p.theme.colors.gray400};
+    color: ${(p) => p.theme.colors.gray400};
     min-width: 18px;
     display: flex;
     justify-content: center;
   }
 
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     .slash {
       display: none;
     }
@@ -187,7 +187,7 @@ const SearchBox = ({
       upClicked()
     }
 
-    const shortcuts = focusShortcuts.map(key =>
+    const shortcuts = focusShortcuts.map((key) =>
       typeof key === 'string' ? key.toUpperCase().charCodeAt(0) : key
     )
 
