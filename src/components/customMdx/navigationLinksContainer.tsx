@@ -7,10 +7,10 @@ interface Props {
 
 const ButtonContainer = styled.section<Props>`
   display: flex;
-  justify-content: ${props => (props.isFirstLink ? 'flex-end' : 'space-between')};
+  justify-content: ${(props) => (props.isFirstLink ? 'flex-end' : 'space-between')};
   align-items: center;
   padding: 1rem 0 1rem 0;
-  border-top: solid 2px ${p => p.theme.colors.gray100};
+  border-top: solid 2px ${(p) => p.theme.colors.gray100};
   padding-top: 2rem;
   margin: 2rem 0;
 `
