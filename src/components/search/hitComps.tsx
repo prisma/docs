@@ -5,19 +5,19 @@ import styled from 'styled-components'
 import ParentTitle from '../parentTitleComp'
 
 const HitComp = styled.div`
-  padding: ${p => p.theme.space[24]} ${p => p.theme.space[40]} !important;
-  font-family: ${p => p.theme.fonts.text};
+  padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[40]} !important;
+  font-family: ${(p) => p.theme.fonts.text};
   font-style: normal;
   font-weight: normal;
-  font-size: ${p => p.theme.fontSizes[16]};
-  line-height: ${p => p.theme.space[24]};
-  border-bottom: 1px solid ${p => p.theme.colors.gray300};
+  font-size: ${(p) => p.theme.fontSizes[16]};
+  line-height: ${(p) => p.theme.space[24]};
+  border-bottom: 1px solid ${(p) => p.theme.colors.gray300};
   // max-height: 150px;
   &:last-item {
     border: 0;
   }
   a {
-    color: ${p => p.theme.colors.gray900} !important;
+    color: ${(p) => p.theme.colors.gray900} !important;
     display: block;
   }
   h4 {
@@ -31,25 +31,25 @@ const HitComp = styled.div`
   }
   &:hover,
   &:focus {
-    background: ${p => p.theme.colors.gray100};
+    background: ${(p) => p.theme.colors.gray100};
   }
   mark {
-    color: ${p => p.theme.colors.blue600} !important;
+    color: ${(p) => p.theme.colors.blue600} !important;
     background: #ebf8ff;
     padding: 2px;
     font-weight: bold;
   }
 
   .more {
-    color: ${p => p.theme.colors.blue600};
-    font-size: ${p => p.theme.fontSizes[14]};
+    color: ${(p) => p.theme.colors.blue600};
+    font-size: ${(p) => p.theme.fontSizes[14]};
     width: fit-content;
     margin: 10px 0 0;
   }
 
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     max-height: fit-content;
-    padding: ${p => p.theme.space[24]} !important;
+    padding: ${(p) => p.theme.space[24]} !important;
   }
 `
 

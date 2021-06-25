@@ -1,47 +1,46 @@
-import React, { useState, useCallback, MouseEvent } from "react";
-import styled from "styled-components";
-import Up from "../icons/Up";
-import Down from "../icons/Down";
-import Link from "./link";
-import config from "../../config";
-import { ButtonWrapper } from "./customMdx/button";
-import Twitter from "../icons/Twitter";
-import { useLocation } from "@reach/router";
-import { X } from "react-feather";
-import { theme } from "@prisma/lens/dist/web";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useState, useCallback, MouseEvent } from 'react'
+import styled from 'styled-components'
+import Up from '../icons/Up'
+import Down from '../icons/Down'
+import Link from './link'
+import config from '../../config'
+import { ButtonWrapper } from './customMdx/button'
+import Twitter from '../icons/Twitter'
+import { useLocation } from '@reach/router'
+import { X } from 'react-feather'
+import { theme } from '@prisma/lens/dist/web'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 const sentiments: any = {
-  unhappy: "Unhappy",
-  happy: "Happy",
-};
+  unhappy: 'Unhappy',
+  happy: 'Happy',
+}
 
-const twitterShareUrl = `https://twitter.com/intent/tweet?text=I%27ve%20found%20this%20%40prisma%20docs%20page%20helpful%21%20`;
+const twitterShareUrl = `https://twitter.com/intent/tweet?text=I%27ve%20found%20this%20%40prisma%20docs%20page%20helpful%21%20`
 
 const ToastForm = ({ sentiment, fbId, fbSubmitted }: any) => {
-  const currentDocsPageURL = encodeURIComponent(location ? location.href : "/");
+  const currentDocsPageURL = encodeURIComponent(location ? location.href : '/')
 
-  const [feedback, setFeedback] = useState("");
-  const handleFeedbackChange = (e: any) => setFeedback(e.target.value);
-  
+  const [feedback, setFeedback] = useState('')
+  const handleFeedbackChange = (e: any) => setFeedback(e.target.value)
 
-  const closeForm = (e: any) => toast.dismiss();
+  const closeForm = (e: any) => toast.dismiss()
   // Optional callback to add textual feedback
   const sendFeedback = async (e: any) => {
     e.preventDefault()
     await fetch(config.feedback.feedbackUrl, {
-      method: "POST",
-      mode: "cors",
+      method: 'POST',
+      mode: 'cors',
       body: JSON.stringify({ id: fbId, feedback }),
-    });
-    fbSubmitted(true);
-  };
+    })
+    fbSubmitted(true)
+  }
   return (
     <>
       <Title>
         <p>
-          {sentiment !== "Happy"
+          {sentiment !== 'Happy'
             ? `Thank you for letting us know. Any more details about what we could improve?`
             : `Thank you for letting us know! Was there anything you particularly enjoyed?`}
         </p>
@@ -61,47 +60,41 @@ const ToastForm = ({ sentiment, fbId, fbSubmitted }: any) => {
           <button onClick={sendFeedback} type="submit">
             Send
           </button>
-          {sentiment !== "Happy" ? (
-            <a
-              className="git-link"
-              href={`https://github.com/prisma/docs/issues/new/choose`}
-            >
+          {sentiment !== 'Happy' ? (
+            <a className="git-link" href={`https://github.com/prisma/docs/issues/new/choose`}>
               Open a Github Issue Instead
             </a>
           ) : (
-            <Button
-              type="primary"
-              href={`${twitterShareUrl}${currentDocsPageURL}`}
-            >
+            <Button type="primary" href={`${twitterShareUrl}${currentDocsPageURL}`}>
               <Twitter /> Tweet about Prisma
             </Button>
           )}
         </ButtonRow>
       </form>
     </>
-  );
-};
+  )
+}
 
 const PageBottom = ({ editDocsPath }: any) => {
-  const [submittedFeedback, setSubmittedFeedback] = useState(false);
-  const [, setFeedbackId] = useState(null);
-  const [submittedSentiment, setSubmittedSentiment] = useState(false);
-  const [sentiment, setSentiment] = useState(sentiments["happy"]);
-  let location = useLocation();
-  const pageUrl = location ? location.pathname : "/";
-  const closeForm = (e: any) => toast.dismiss();
+  const [submittedFeedback, setSubmittedFeedback] = useState(false)
+  const [, setFeedbackId] = useState(null)
+  const [submittedSentiment, setSubmittedSentiment] = useState(false)
+  const [sentiment, setSentiment] = useState(sentiments['happy'])
+  let location = useLocation()
+  const pageUrl = location ? location.pathname : '/'
+  const closeForm = (e: any) => toast.dismiss()
 
   const fbSumitted = (state: boolean) => {
     setSubmittedFeedback(state)
     toast.dismiss()
     toast(
       <SuccessToast>
-        <span>🎉  </span>
+        <span>🎉 </span>
         <p>Message sent! Thank you for making Prisma better for the community.</p>
         <a onClick={closeForm}>
           <X color={theme.colors.blue300} />
         </a>
-      </SuccessToast> 
+      </SuccessToast>
     )
   }
 
@@ -109,33 +102,27 @@ const PageBottom = ({ editDocsPath }: any) => {
   const sendSentiment = useCallback(
     async (sentiment) => {
       const createdSetiment = await fetch(config.feedback.sentimentUrl, {
-        method: "POST",
-        mode: "cors",
+        method: 'POST',
+        mode: 'cors',
         body: JSON.stringify({ pageUrl, sentiment }),
-      }).then((response) => response.json());
+      }).then((response) => response.json())
 
-      toast(
-        <ToastForm
-          sentiment={sentiment}
-          fbId={createdSetiment.id}
-          fbSubmitted={fbSumitted}
-        />
-      );
+      toast(<ToastForm sentiment={sentiment} fbId={createdSetiment.id} fbSubmitted={fbSumitted} />)
 
-      setFeedbackId(createdSetiment.id);
-      setSubmittedSentiment(true);
+      setFeedbackId(createdSetiment.id)
+      setSubmittedSentiment(true)
     },
     [pageUrl, sentiment]
-  );
+  )
 
   const handleSentiment = (e: MouseEvent<HTMLButtonElement>) => {
-    const selectedSentiment = e.currentTarget.id;
+    const selectedSentiment = e.currentTarget.id
     setSentiment(() => {
-      const newSentiment = sentiments[selectedSentiment];
-      sendSentiment(newSentiment);
-      return newSentiment;
-    });
-  };
+      const newSentiment = sentiments[selectedSentiment]
+      sendSentiment(newSentiment)
+      return newSentiment
+    })
+  }
 
   return (
     <PageBottomWrapper>
@@ -145,9 +132,7 @@ const PageBottom = ({ editDocsPath }: any) => {
           <button
             id="happy"
             onClick={handleSentiment}
-            className={
-              submittedSentiment && sentiment === "Happy" ? "active" : ""
-            }
+            className={submittedSentiment && sentiment === 'Happy' ? 'active' : ''}
             disabled={submittedSentiment}
           >
             <Up />
@@ -155,9 +140,7 @@ const PageBottom = ({ editDocsPath }: any) => {
           <button
             id="unhappy"
             onClick={handleSentiment}
-            className={
-              submittedSentiment && sentiment === "Unhappy" ? "active" : ""
-            }
+            className={submittedSentiment && sentiment === 'Unhappy' ? 'active' : ''}
             disabled={submittedSentiment}
           >
             <Down />
@@ -167,8 +150,8 @@ const PageBottom = ({ editDocsPath }: any) => {
       <Wrapper>
         <Content>
           {submittedFeedback ? (
-              <>
-                <ToastContainer 
+            <>
+              <ToastContainer
                 autoClose={false}
                 closeOnClick={false}
                 closeButton={false}
@@ -177,22 +160,22 @@ const PageBottom = ({ editDocsPath }: any) => {
                 toastClassName="yay-toast"
                 position="bottom-right"
                 bodyClassName="yay-body"
-                limit={1}/>
-              </>
-            ) : (
-          <ToastContainer
-            autoClose={false}
-            closeOnClick={false}
-            closeButton={false}
-            hideProgressBar
-            className="feedback-container"
-            toastClassName="feedback-toast"
-            position="bottom-right"
-            bodyClassName="feedback-body"
-            limit={1}
-          />
-
-            )}
+                limit={1}
+              />
+            </>
+          ) : (
+            <ToastContainer
+              autoClose={false}
+              closeOnClick={false}
+              closeButton={false}
+              hideProgressBar
+              className="feedback-container"
+              toastClassName="feedback-toast"
+              position="bottom-right"
+              bodyClassName="feedback-body"
+              limit={1}
+            />
+          )}
         </Content>
       </Wrapper>
       {editDocsPath && (
@@ -201,10 +184,10 @@ const PageBottom = ({ editDocsPath }: any) => {
         </Link>
       )}
     </PageBottomWrapper>
-  );
-};
+  )
+}
 
-export default PageBottom;
+export default PageBottom
 
 const PageBottomWrapper = styled.div`
   display: flex;
@@ -225,8 +208,7 @@ const PageBottomWrapper = styled.div`
   button {
     color: ${(p) => p.theme.colors.white} !important;
   }
-  @media (min-width: 0px) and (max-width: ${(p) =>
-      p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     padding: ${(p) => p.theme.space[16]};
     flex-direction: column;
     align-items: flex-start;
@@ -234,7 +216,7 @@ const PageBottomWrapper = styled.div`
       order: 1;
     }
   }
-`;
+`
 
 const Feedback = styled.div`
   h4 {
@@ -269,7 +251,7 @@ const Feedback = styled.div`
   @media (min-width: 0px) and (max-width: 767px) {
     order: 2;
   }
-`;
+`
 
 const Wrapper = styled.div`
   display: flex;
@@ -277,17 +259,17 @@ const Wrapper = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   cursor: default;
-`;
+`
 
 const Content = styled.div`
   flex: 1;
-  .feedback-container, .yay-container {
+  .feedback-container,
+  .yay-container {
     width: 360px;
   }
   .feedback-toast {
     background: #ffffff;
-    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25),
-      0px 2px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25), 0px 2px 12px rgba(0, 0, 0, 0.12);
     border-radius: 8px;
     position: relative;
     width: 360px;
@@ -330,7 +312,7 @@ const Content = styled.div`
     color: ${(p) => p.theme.colors.blue600};
     min-width: 360px;
   }
-`;
+`
 
 const Title = styled.div`
   background: ${(p) => p.theme.colors.blue100};
@@ -345,8 +327,7 @@ const Title = styled.div`
   a {
     cursor: pointer;
   }
-`;
-
+`
 
 const Button = styled(ButtonWrapper)`
   display: inline-flex !important;
@@ -371,7 +352,7 @@ const Button = styled(ButtonWrapper)`
       width: 14px;
     }
   }
-`;
+`
 
 const ButtonRow = styled.div`
   display: flex;
@@ -384,21 +365,20 @@ const ButtonRow = styled.div`
     font-weight: 600;
     font-size: 14px;
   }
-`;
+`
 
 const SuccessToast = styled.div`
-display: flex;
-align-items: center;
-justify-content: space-between;
-p {
-  font-size: 14px;
-}
-span {
-  font-size: 24px;
-  margin-right: 0.5rem;
-}
-a {
-  cursor: pointer;
-}
-
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  p {
+    font-size: 14px;
+  }
+  span {
+    font-size: 24px;
+    margin-right: 0.5rem;
+  }
+  a {
+    cursor: pointer;
+  }
 `

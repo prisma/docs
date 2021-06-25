@@ -75,7 +75,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.hidePage = hidePage
           tmp.codeStyle = codeStyle
           tmp.parentLabel = parts[parts.length - 3]
-          tmp.parents = parts.filter(part => part !== 'index')
+          tmp.parents = parts.filter((part) => part !== 'index')
         }
         if (defaultCollapsed && location) {
           defaultCollapsed[part.toLowerCase()] =
@@ -104,7 +104,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           hidePage,
           codeStyle,
           parentLabel: parts[parts.length - 3],
-          parents: parts.filter(part => part !== 'index'),
+          parents: parts.filter((part) => part !== 'index'),
         })
       }
 
