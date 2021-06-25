@@ -62,7 +62,7 @@ At a Prisma level, a connection between two models is **always** represented by 
 
 ### Relational databases
 
-The following entity relationship diagram defines the same one-to-many relation between the `User` and `Post` tables in a**relational database**:
+The following entity relationship diagram defines the same one-to-many relation between the `User` and `Post` tables in a **relational database**:
 
 ![A 1-n relationship between a user and posts table.](relations/one-to-many.png)
 
@@ -81,13 +81,49 @@ author     User        @relation(fields: [authorId], references: [id])
 
 ### MongoDB
 
-In MongoDB, each document stores
+For MongoDB, Prisma currently uses a [normalized data model design](https://docs.mongodb.com/manual/core/data-model-design/), which means that documents reference each other by ID in a similar way to relational databases.
 
-`Post` document looks like this:
+The following document represents a `User` (in the `User` collection):
 
-`User` document looks like this:
+```json
+{ "_id": { "$oid": "60d5922d00581b8f0062e3a8" }, "name": "Ella" }
+```
 
-// TODO
+The following list of `Post` documents (in the `Post` collection) each have a `userId` field which reference the same user:
+
+```json
+[
+  {
+    "_id": { "$oid": "60d5922e00581b8f0062e3a9" },
+    "title": "How to make sushi",
+    "authorId": { "$oid": "60d5922d00581b8f0062e3a8" }
+  },
+  {
+    "_id": { "$oid": "60d5922e00581b8f0062e3aa" },
+    "title": "How to re-install Windows",
+    "authorId": { "$oid": "60d5922d00581b8f0062e3a8" }
+  }
+]
+```
+
+This data structure represents a 1-n relation because multiple `Post` documents refer to the same `User` document.
+
+#### `@db.ObjectId` on IDs and relation scalar fields
+
+If your model's ID is an `ObjectId` (represented by a `String` field), you must add `@db.ObjectId` to the model's ID _and_ the relation scalar field on the other side of the relation:
+
+```prisma highlight=3,9;normal
+model User {
+  id     String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  posts  Post[]
+}
+
+model Post {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String  @db.ObjectId   // relation scalar field  (used in the `@relation` attribute above)
+}
+```
 
 ## Relations in the Prisma Client
 
