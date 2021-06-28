@@ -8,7 +8,7 @@ preview: true
 
 <TopBlock>
 
-As of **v2.26.0** Prisma now supports referential actions as part of the Prisma Schema Language.
+As of **2.26.0** Prisma now supports referential actions as part of the Prisma Schema Language.
 
 This is a [**preview feature**](../../../about/releases#preview) and can be accessed by:
 
@@ -123,6 +123,12 @@ By default the deletion will be prevented by the database because of the **new**
 | :---------- | :-------------- | :--------- |
 | `onDelete`  | `SetNull`       | `SetNull`  |
 | `onUpdate`  | `Cascade`       | `Cascade`  |
+
+<Admonition type="warning">
+
+Referential actions are **not currently** supported on [implicit many-many relations](./relations#implicit-vs-explicit-many-to-many-relations), instead you must create a [join table](./relations#how-to-use-a-relation-table-with-a-many-to-many-relationship) in your schema file and explicitly set the referential actions on the many-many relation.
+
+</Admonition>
 
 ## Types of referential actions
 
@@ -268,6 +274,42 @@ model User {
 If a `User` is deleted then the corresponding `authorId` field in the `Post` table will be set to its default value.
 
 
-## Current limitations
+## Upgrade guides
 
-Referential actions are **not currently** supported on [implicit many-many relations](./relations#implicit-vs-explicit-many-to-many-relations), instead you must create a [join table](./relations#how-to-use-a-relation-table-with-a-many-to-many-relationship) in your schema file and explicitly set the referential actions on the many-many relation.
+The following lists a number of ways to upgrade depending on your scenario.
+
+1. Upgrading Prisma to 2.26.0 _**without**_ adding the feature flag.
+
+As the preview feature is opt in, you should notice **no** difference to your database, its constraints or how it handles relations.
+
+2. Upgrading Prisma to 2.26.0 and _**enabling**_ the feature flag without adding custom referential actions. (Using the **new** defaults)
+
+If you want to keep your current database constraints but upgrade you can enable the feature flag. To do so you must have a required relation in your schema, then run either a Prisma Migration or `db push`, this will change the default for `ON DELETE` from `CASCADE` TO `RESTRICT`.
+
+The change is relevant for both the Prisma Client _and_ Migration. If an attempt is made to delete a referenced object, if their are related records, a database error will be thrown.
+
+3. Upgrading Prisma to 2.26.0, _**enabling**_ the feature flag and **adding custom referential actions**.
+
+You can begin using the new referential actions by first upgrading to version 2.26.0 of Prisma and then changing your schema to use the new clauses and actions. 
+
+An example might be changing the default behavior of `Profile` modals `User` relation to `ON DELETE CASCADE`  and setting the `Post` author relation to `ON DELETE SET NULL`
+
+```prisma file=schema.prisma
+model Profile {
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int     @unique
+}
+
+model Post {
+  author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId  Int?
+}
+```
+
+You must then run a migration (or `db push`) for the new referential actions to take affect. 
+
+If you then choose to delete a `User`, their corresponding `Profile` records will be deleted and the `authorId` scalar field on the `Post` table will be set to null.
+
+4. Upgrading Prisma to 2.26.0 and _**enabling**_ the feature flag _**without**_ running Prisma Migrate or `db push`
+
+TODO...
