@@ -24,11 +24,11 @@ generator client {
 
 You now have 3 options:
 
-1. Make your schema reflect the current state of the database by running an [Introspection](../introspection). You now have the option to opt in and use the new referential actions if you wish.
-2. Define your custom referential actions on your data model relation fields. You then update the database schema by running a [Migration](../prisma-migrate) or the [`db push`](../prisma-migrate/db-push) command.
+1. Make your schema reflect the current state of the database by running an [Introspection](../introspection). You can now opt in and use the new referential actions if you wish.
+2. Define custom referential actions on your data model relation fields. You then update the database schema by running a [Migration](../prisma-migrate) or the [`db push`](../prisma-migrate/db-push) command.
 3. Use the new default referential actions that exist when no custom actions are added manually by running a [Migration](../prisma-migrate).
 
-To begin using referential actions you must opt in and add them to the `@relation` attribute in your schema.
+To begin using referential actions you add them to the `@relation` attribute in your schema.
 
 ```prisma
 @relation(fields: [authorId], references: [id], onDelete: Restrict)
@@ -68,7 +68,7 @@ model User {
 }
 ```
 
-The foreign key constraint ensures that when saving rows into the `Post` table, any value in the authorId [scalar field](./data-model#scalar-fields) must be referencing an existing value in the id column of the `User` table. 
+The foreign key ensures that when saving rows into the `Post` table, any value in the `authorId` [scalar field](./data-model#scalar-fields) must be referencing an existing value in the `id` column of the `User` table. 
 
 When a [migration](../prisma-migrate) is run the following SQL is produced:
 
@@ -91,14 +91,40 @@ And the foreign key relation that was created can be seen here:
 FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 ```
 
-Notice the part after the relation is defined, these are referential actions. They define how the related data is handled.
+### Current behavior 
+
+Prisma creates foreign keys for each relation between data models, with the following defaults: 
 
 - `ON DELETE CASCADE` - The users posts are deleted when the user is deleted.
 - `ON UPDATE CASCADE` - When a users `id` is updated, the corresponding `authorId` on the `Posts` table is updated too.
 
-## Types of referential actions
+When invoking the [`delete()`](../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../prisma-client/crud#delete-all-records) methods using the Prisma Client, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**. 
 
-<!-- See [https://github.com/prisma/prisma-engines/blob/master/libs/datamodel/connectors/dml/src/relation_info.rs#L55-L83](https://github.com/prisma/prisma-engines/blob/master/libs/datamodel/connectors/dml/src/relation_info.rs#L55-L83) has good descriptions, use those with real examples and code blocks for each -->
+If you need to replicate the cascade behavior, you _can_ use [`$raw`](../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful, this is because the Prisma Client will **not** perform runtime checks.
+
+### New behavior
+
+With the feature flag **enabled**, the default value of `ON DELETE` is [`Restrict`](#restrict) (`ON DELETE RESTRICT`).
+
+The Prisma Client will **not** perform any runtime checks before deleting related records with `delete()` or `deleteAll()`. This means the deletion will succeed or fail according to the underlying foreign key relations and any referential actions set. 
+
+By default the deletion will be prevented by the database because of the **new** default action, [`Restrict`](#restrict) (`ON DELETE RESTRICT`). To make it succeed you will need to manually add the [`Cascade`](#cascade) action. 
+
+#### Required relations
+
+| Clause      |  < 2.26.0       | 2.26.0 +   |
+| :---------- | :-------------- | :--------- |
+| `onDelete`  | `Cascade`       | `Restrict` |
+| `onUpdate`  | `Cascade`       | `Cascade`  |
+
+#### Optional relations
+
+| Clause      |  < 2.26.0       | 2.26.0 +   |
+| :---------- | :-------------- | :--------- |
+| `onDelete`  | `SetNull`       | `SetNull`  |
+| `onUpdate`  | `Cascade`       | `Cascade`  |
+
+## Types of referential actions
 
 ### Cascade
 
@@ -160,9 +186,15 @@ model User {
 }
 ```
 
-##### Result of using Restrict?
+##### Result of using `Restrict`?
 
 If a `User` has a related post in the `Post` table you will **not** be able to delete them. This will result in a runtime error.
+
+<Admonition type="warning">
+
+The `Restrict` action is not is **not** available on [SQL Server](../../database-connectors/microsoft-sql-server) and will trigger a schema validation error. Instead, use the equivalent [`NoAction`](#noaction).
+
+</Admonition>
 
 ### NoAction
 
@@ -235,4 +267,7 @@ model User {
 
 If a `User` is deleted then the corresponding `authorId` field in the `Post` table will be set to its default value.
 
-## Important caveats
+
+## Current limitations
+
+Referential actions are **not currently** supported on [implicit many-many relations](./relations#implicit-vs-explicit-many-to-many-relations), instead you must create a [join table](./relations#how-to-use-a-relation-table-with-a-many-to-many-relationship) in your schema file and explicitly set the referential actions on the many-many relation.
