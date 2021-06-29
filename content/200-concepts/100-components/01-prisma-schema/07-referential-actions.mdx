@@ -24,14 +24,14 @@ generator client {
 
 You now have 3 options:
 
-1. Make your schema reflect the current state of the database by running an [Introspection](../introspection). You can now opt in and use the new referential actions if you wish.
+1. Make your schema reflect the current state of the database by running an [Introspection](../introspection). You can now see all relations in your data model using a different referential action compared to the new defaults.
 2. Define custom referential actions on your data model relation fields. You then update the database schema by running a [Migration](../prisma-migrate) or the [`db push`](../prisma-migrate/db-push) command.
-3. Use the new default referential actions that exist when no custom actions are added manually by running a [Migration](../prisma-migrate).
+3. Use the new default referential actions that exist when no custom actions are added manually by running a [Migration](../prisma-migrate), or [`db push`](../prisma-migrate/db-push).
 
 To begin using referential actions you add them to the `@relation` attribute in your schema.
 
 ```prisma
-@relation(fields: [authorId], references: [id], onDelete: Restrict)
+@relation(fields: [authorId], references: [id], onDelete: Cascade)
 ```
 
 </TopBlock>
@@ -77,7 +77,7 @@ CREATE TABLE "Post" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "title" TEXT NOT NULL,
     "authorId" INTEGER NOT NULL,
-    FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE "User" (
@@ -88,7 +88,7 @@ CREATE TABLE "User" (
 And the foreign key relation that was created can be seen here:
 
 ```sql
-FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 ```
 
 ### Current behavior 
@@ -134,7 +134,7 @@ Referential actions are **not currently** supported on [implicit many-many relat
 
 ### Cascade
 
-When used with `onDelete`, The `Cascade` action deletes a record if a dependant record is deleted. 
+When used with `onDelete`, The `Cascade` action deletes all records that are dependant on the record being deleted. 
 
 When used with `onUpdate`, it updates the relation scalar filed if the referenced scalar fields of the dependant record are updated.
 
@@ -165,15 +165,11 @@ model User {
 
 If a `User` record is deleted then their posts are deleted too. If a users id is updated then the corresponding `authorId` is also updated
 
-<Admonition type="warning">
-
-The `Cascade` action prevents both update and deletion operations from completing if any records are connected
-
-</Admonition>
-
 ### Restrict
 
-The `Restrict` action will prevent the update or deletion of any records which are connected. 
+The `Restrict` action will prevent the update or deletion of any parent records which have connected children. 
+
+> **Note**: The children records can still be deleted
 
 #### Example usage
 
@@ -194,7 +190,7 @@ model User {
 
 ##### Result of using `Restrict`?
 
-If a `User` has a related post in the `Post` table you will **not** be able to delete them. This will result in a runtime error.
+If a `User` has a related post in the `Post` table you will **not** be able to delete the `User`, you will be able to delete (all) the posts however.
 
 <Admonition type="warning">
 
@@ -280,36 +276,52 @@ The following lists a number of ways to upgrade depending on your scenario.
 
 1. Upgrading Prisma to 2.26.0 _**without**_ adding the feature flag.
 
-As the preview feature is opt in, you should notice **no** difference to your database, its constraints or how it handles relations.
+  As the preview feature is opt in, you should notice **no** difference to your database, its constraints or how it handles relations.
 
 2. Upgrading Prisma to 2.26.0 and _**enabling**_ the feature flag without adding custom referential actions. (Using the **new** defaults)
 
-If you want to keep your current database constraints but upgrade you can enable the feature flag. To do so you must have a required relation in your schema, then run either a Prisma Migration or `db push`, this will change the default for `ON DELETE` from `CASCADE` TO `RESTRICT`.
+  If you want to keep your current database constraints but upgrade you can enable the feature flag. To do so you must have a required relation in your schema, then run either a Prisma Migration or `db push`, this will change the default for `ON DELETE` from `CASCADE` TO `RESTRICT`.
 
-The change is relevant for both the Prisma Client _and_ Migration. If an attempt is made to delete a referenced object, if their are related records, a database error will be thrown.
+  The change is relevant for both the Prisma Client _and_ Migration. If an attempt is made to delete a referenced object, if their are related records, a database error will be thrown.
 
 3. Upgrading Prisma to 2.26.0, _**enabling**_ the feature flag and **adding custom referential actions**.
 
-You can begin using the new referential actions by first upgrading to version 2.26.0 of Prisma and then changing your schema to use the new clauses and actions. 
+  Once you have upgraded the Prisma version and added the feature flag to the generator block you can begin using the referential actions.
 
-An example might be changing the default behavior of `Profile` modals `User` relation to `ON DELETE CASCADE`  and setting the `Post` author relation to `ON DELETE SET NULL`
+  ### Using Introspection
 
-```prisma file=schema.prisma
-model Profile {
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int     @unique
-}
+  You can begin by running an [Introspection](../introspection) on your database. This will update your data modals to use `ON DELETE CASCADE` and explicitly set `onDelete: Cascade` on your modals `@relation` fields. 
 
-model Post {
-  author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  authorId  Int?
-}
-```
+  The happens because the the old defaults (`ON DELETE CASCADE`) are different from the new (`ON DELETE RESTRICT`), so when the introspection is run, it will see the old default and use that to explicitly set the referential action on the relation.
 
-You must then run a migration (or `db push`) for the new referential actions to take affect. 
+  Once the introspection has run and the referential action has been set, you can change the `Post` author relation to `onDelete: SetNull`.
 
-If you then choose to delete a `User`, their corresponding `Profile` records will be deleted and the `authorId` scalar field on the `Post` table will be set to null.
+  ### Using Migration
 
-4. Upgrading Prisma to 2.26.0 and _**enabling**_ the feature flag _**without**_ running Prisma Migrate or `db push`
+  You can begin by running a [Migration](../prisma-migrate) (or `db push`) on your database. This will change the default referential actions from `ON DELETE CASCADE` to `ON DELETE RESTRICT`. 
+  
+  Next you can manually add a custom referential action to the `User` relation on the `Profile` modal by adding the following line after the `references` property; `onDelete: Cascade`. 
+  
+  Finally you can change the `Post` author relation to `onDelete: SetNull`.
 
-TODO...
+  ```prisma file=schema.prisma
+  model Profile {
+    user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId Int     @unique
+  }
+
+  model Post {
+    author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+    authorId  Int?
+  }
+  ```
+
+  If you then choose to delete a `User`, their corresponding `Profile` records will be deleted and the `authorId` scalar field on the `Post` table will be set to null.
+
+## Important caveats
+
+If you are using the [Introspection](../introspection) workflow it's important to be aware of how the changes to the default referential actions and their subsequent behaviors could potentially affect your data. 
+
+When you run an Introspection the [old](#current-behavior) default referential actions in the database will be reflected in the Prisma schema (See [Using Introspection](#using-introspection)). 
+
+This means that if you are calling the [`delete()`](../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../prisma-client/crud#delete-all-records) methods on any required relations, cascade deletions will **not** be triggered as the Prisma Clients default implementation has changed to [`Restrict`](#restrict).
