@@ -1,0 +1,85 @@
+---
+title: 'Upgrading to referential actions (2.26.0)'
+metaTitle: 'Upgrading to referential actions (2.26.0) (Guides)'
+metaDescription: 'Upgrading your project to use referential actions.'
+---
+
+<TopBlock>
+
+These guide explain how to upgrade to Prisma 2.26.0 and use the referential actions preview feature.
+
+The feature can be accessed by:
+
+1. [Upgrading to version v2.26.0 of Prisma](../../../../guides/upgrade-guides/upgrading-to-latest).
+2. Adding `referentialActions` to the `previewFeatures` field of the Prisma Client [`generator`](../../../../reference/api-reference/prisma-schema-reference#generator) block in the `prisma.schema` file.
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialActions"]
+}
+```
+
+After enabling the preview feature flag you now have 3 options:
+
+1. Make your schema reflect the current state of the database by running [Introspection](../../../concepts/components/introspection). Afterwards you can see the referential actions of all relations your relations explicitly, which might be different than the new defaults.
+2. Define custom referential actions on your data model relation fields. You then update the database schema by using [Prisma Migrate](../../../concepts/components/prisma-migrate) or the [`db push`](../../../concepts/components/prisma-migrate/db-push) command.
+3. Apply the new default referential actions, that exist when no custom actions are added manually, by using [Prisma Migrate](../../../concepts/components/prisma-migrate), or [`db push`](../../../concepts/components/prisma-migrate/db-push), without making any changes to your existing Prisma schema.
+
+To begin using referential actions you add them to the `@relation` attribute in your schema.
+
+```prisma file=schema.prisma highlight=4;add
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int
+}
+```
+
+</TopBlock>
+
+## Upgrading _**without**_ adding the feature flag.
+
+As the preview feature is opt in, you should notice **no** difference to your database, its constraints or how it handles relations.
+
+## Upgrading and _**enabling**_ the feature flag **without** adding custom referential actions. (Using the **new** defaults)
+
+If you want to keep your current database constraints but upgrade you can enable the feature flag. To do so you must have a required relation in your schema, then run either a Prisma Migration or `db push`, this will change the default for `ON DELETE` from `CASCADE` TO `RESTRICT`.
+
+The change is relevant for both the Prisma Client _and_ Migration. If an attempt is made to delete a referenced object, if their are related records, a database error will be thrown.
+
+## Upgrading and _**enabling**_ the feature flag while **adding custom referential actions**.
+
+  Once you have upgraded the Prisma version and added the feature flag to the generator block you can begin using the referential actions.
+
+### Using Introspection
+
+You can begin by running an [Introspection](../../../concepts/components/introspection) on your database. This will update your data models to explicitly set `onDelete: Cascade` on your models `@relation` fields. This is an accordance with the current default values.
+
+Once the introspection has run and the referential action has been set, you can change the `Post` author relation to `onDelete: SetNull`.
+
+### Using Migration
+
+You can begin by running a [Migration](../../../concepts/components/prisma-migrate) (or `db push`) on your database. This will apply the new defaults to your existing database. 
+  
+The following example shows how to add custom referential actions to a blog schema. 
+  
+Begin be adding a custom referential action to the `User` relation on the `Profile` model by adding the following line after the `references` property; `onDelete: Cascade`. 
+  
+Finally you can change the `Post` author relation to `onDelete: SetNull`.
+
+```prisma file=schema.prisma
+model Profile {
+    user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId Int     @unique
+}
+
+model Post {
+    author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+    authorId  Int?
+}
+```
+
+If you then choose to delete a `User`, their corresponding `Profile` records will be deleted and the `authorId` scalar field on the `Post` table will be set to null.
+
