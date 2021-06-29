@@ -208,8 +208,8 @@ model User {
 ```prisma
 model User {
   id        String    @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  name      String?  
-  teacherId String?   @db.ObjectId 
+  name      String?
+  teacherId String?   @db.ObjectId
   teacher   User?     @relation("TeacherStudents", fields: [teacherId], references: [id])
   students  User[]    @relation("TeacherStudents")
 }
@@ -229,7 +229,7 @@ Note that you can also require each user to have a teacher by making the `teache
 
 ### Relational databases
 
-In relational databases, a one-to-one self-relation is represented by the following SQL:
+In relational databases, a one-to-many self-relation is represented by the following SQL:
 
 ```sql
 CREATE TABLE "User" (
@@ -241,29 +241,35 @@ CREATE TABLE "User" (
 ALTER TABLE "User" ADD CONSTRAINT fk_teacherid_user FOREIGN KEY ("teacherId") REFERENCES "User" (id);
 ```
 
+Notice the lack of `UNIQUE` constraint on `teacherId` - multiple students can have the same teacher.
+
 ### MongoDB
 
 For MongoDB, Prisma currently uses a [normalized data model design](https://docs.mongodb.com/manual/core/data-model-design/), which means that documents reference each other by ID in a similar way to relational databases.
 
-The following documents represent a one-to-many self-relation between three users - two users reference `"Elsa the Elder"` via a `predecessorId` field:
+The following documents represent a one-to-many self-relation between three users - one teacher and two students with the same `teacherId`:
 
-```json
-{ "_id": { "$oid": "60d97df70080618f000e3ca9" }, "name": "Elsa the Elder" }
-```
 
 ```json
 {
-  "_id": { "$oid": "60d97df70080618f000e3caa" },
-  "name": "Elsa",
-  "predecessorId": { "$oid": "60d97df70080618f000e3ca9" }
+  "_id": { "$oid": "60d9b9e600fe3d470079d6f9" },
+  "name": "Ms. Roberts"
 }
 ```
 
 ```json
 {
-  "_id": { "$oid": "92d97df71180618f000e3caa" },
-  "name": "Elsa the Third",
-  "predecessorId": { "$oid": "60d97df70080618f000e3ca9" }
+  "_id": { "$oid": "60d9b9e600fe3d470079d6fa" },
+  "name": "Student 8",
+  "teacherId": { "$oid": "60d9b9e600fe3d470079d6f9" }
+}
+```
+
+```json
+{
+  "_id": { "$oid": "60d9b9e600fe3d470079d6fb" },
+  "name": "Student 9",
+  "teacherId": { "$oid": "60d9b9e600fe3d470079d6f9" }
 }
 ```
 
@@ -288,12 +294,12 @@ model User {
 
 ```prisma
 model User {
-  id         String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  name       String?
-  followedBy User[]  @relation("UserFollows", fields: [followedByIDs])
-  followedByIDs String[] @db.Array(ObjectId)
-  following  User[]  @relation("UserFollows", fields: [followingIDs])
-  followingIDs String[] @db.Array(ObjectId)
+  id             String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name           String?
+  followedBy     User[]  @relation("UserFollows", fields: [followedByIDs])
+  followedByIDs  String[] @db.Array(ObjectId)
+  following      User[]  @relation("UserFollows", fields: [followingIDs])
+  followingIDs   String[] @db.Array(ObjectId)
 }
 ```
 
@@ -340,24 +346,43 @@ The following documents represent a many-to-many self-relation between five user
 ```
 
 ```json
-{"_id":{"$oid":"60d9866f00a3e930009a6cde"},"name":"Follower1","followingIDs":[{"$oid":"60d9866f00a3e930009a6cdd"}]}
+{
+  "_id": { "$oid": "60d9866f00a3e930009a6cde" },
+  "name": "Follower1",
+  "followingIDs": [{ "$oid": "60d9866f00a3e930009a6cdd" }]
+}
 ```
 
 ```json
-{"_id":{"$oid":"60d9867000a3e930009a6cdf"},"name":"Follower2","followingIDs":[{"$oid":"60d9866f00a3e930009a6cdd"}]}
+{
+  "_id": { "$oid": "60d9867000a3e930009a6cdf" },
+  "name": "Follower2",
+  "followingIDs": [{ "$oid": "60d9866f00a3e930009a6cdd" }]
+}
 ```
 
 ```json
-{"_id":{"$oid":"60d9867000a3e930009a6ce0"},"name":"CoolPerson1","followedByIDs":[{"$oid":"60d9866f00a3e930009a6cdd"}]}
+{
+  "_id": { "$oid": "60d9867000a3e930009a6ce0" },
+  "name": "CoolPerson1",
+  "followedByIDs": [{ "$oid": "60d9866f00a3e930009a6cdd" }]
+}
 ```
 
 ```json
-{"_id":{"$oid":"60d9867000a3e930009a6ce1"},"name":"CoolPerson2","followedByIDs":[{"$oid":"60d9866f00a3e930009a6cdd"}]}
+{
+  "_id": { "$oid": "60d9867000a3e930009a6ce1" },
+  "name": "CoolPerson2",
+  "followedByIDs": [{ "$oid": "60d9866f00a3e930009a6cdd" }]
+}
 ```
 
 ## Defining multiple self-relations on the same model
 
 You can also define multiple self-relations on the same model at once. Taking all relations from the previous sections as example, you could define a `User` model as follows:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -369,3 +394,23 @@ model User {
   following   User[]   @relation("UserFollows")
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name      String?
+  teacherId String? @db.ObjectId
+  teacher   User?   @relation("TeacherStudents", fields: [teacherId], references: [id])
+  students  User[]  @relation("TeacherStudents")
+  followedBy    User[]   @relation("UserFollows", fields: [followedByIDs])
+  followedByIDs String[] @db.Array(ObjectId)
+  following     User[]   @relation("UserFollows", fields: [followingIDs])
+  followingIDs  String[] @db.Array(ObjectId)
+}
+```
+
+</tab>
+</TabbedContent>
