@@ -587,9 +587,10 @@ const result = await prisma.user.findUnique({
 `findFirst` accepts the following input type:
 
 ```ts file=index.d.ts
-export type FindFirstUserArgs = {
+export type UserFindFirstArgs = {
   select?: XOR<UserSelect, null>
   include?: XOR<UserInclude, null>
+  rejectOnNotFound?: RejectOnNotFound
   where?: UserWhereInput
   orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
   cursor?: UserWhereUniqueInput
@@ -1365,8 +1366,8 @@ See also: [Aggregation, grouping, and summarizing](../../../concepts/components/
 | --------- | ------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `where`   | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                     |
 | `orderBy` | `XOR<Enumerable<UserOrderByInput>,`<br />`UserOrderByInput>` | No       | Lets you order the returned list by any property that is also present in `by`.                                                                                                                           |
-| `by`      | `UserWhereUniqueInput`                                       | No       | Specifies the field or combination of fields to group records by.                                                                                                                                        |
-| `having`  | `number`                                                     | No       | Allows you to filter groups by an aggregate value - for example, only return groups _having_ an average age less than 50.                                                                                |
+| `by`      | `Array<UserScalarFieldEnum>`                                 | No       | Specifies the field or combination of fields to group records by.                                                                                                                                        |
+| `having`  | `UserScalarWhereWithAggregatesInput`                         | No       | Allows you to filter groups by an aggregate value - for example, only return groups _having_ an average age less than 50.                                                                                |
 | `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                |
 | `take`    | `number`                                                     | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positve value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
 | `_count`  | `true`                                                       | No       | Returns a count of matching records or non-`null` fields.                                                                                                                                                |
@@ -3311,7 +3312,7 @@ const getUser = await prisma.user.findMany({
 
 ##### Get `User` records where `name` is **not** present in the list
 
-The following example combines `in` and [`NOT`](#not). You can also use (`notIn`)[#notin]
+The following example combines `in` and [`NOT`](#not). You can also use [`notIn`](#notin).
 
 ```ts
 const getUser = await prisma.user.findMany({
@@ -3778,9 +3779,9 @@ export type PostFilter = {
 const result = await prisma.user.findMany({
   where: {
     post: {
-        every: {
-          published: true
-        }
+      every: {
+        published: true
+      },
       some: {
         content: {
           contains: "Prisma"
@@ -3813,9 +3814,9 @@ export type PostFilter = {
 const result = await prisma.user.findMany({
   where: {
     post: {
-        every: {
-          published: true
-        }
+      every: {
+        published: true
+      },
       some: {
         content: {
           contains: "Prisma"
@@ -3867,6 +3868,65 @@ const result = await prisma.user.findMany({
         none: {
           published: true
         }
+    }
+  }
+}
+```
+
+### <inlinecode>is</inlinecode>
+
+Returns all records where related record matches filtering criteria (for example, user's name `is` Bob).
+
+#### Reference
+
+```ts file=index.d.ts highlight=2;normal
+export type UserRelationFilter = {
+  is?: UserWhereInput | null
+  isNot?: UserWhereInput | null
+}
+```
+
+#### Examples
+
+##### Get all `Post` records where user's name is `"Bob"`
+
+```ts
+const result = await prisma.post.findMany({
+  where: {
+    user: {
+        is: {
+          name: "Bob"
+        },
+    }
+  }
+}
+```
+
+
+### <inlinecode>isNot</inlinecode>
+
+Returns all records where related record matches filtering criteria (for example, user's name `isNot` Bob).
+
+#### Reference
+
+```ts file=index.d.ts highlight=3;normal
+export type UserRelationFilter = {
+  is?: UserWhereInput | null
+  isNot?: UserWhereInput | null
+}
+```
+
+#### Examples
+
+##### Get all `Post` records where user's name is NOT `"Bob"`
+
+```ts
+const result = await prisma.post.findMany({
+  where: {
+    user: {
+        isNot: {
+          name: "Bob"
+        },
     }
   }
 }
@@ -3980,7 +4040,7 @@ Scalar list filters allow you to filter by the contents of a list / array field.
 
 ### Remarks
 
-- Scalar list / array filters [ignore `NULL` values](../../../concepts/components/prisma-client/working-with-fields#null-values-in-arrays) <span class="concept"></span>. Using `isEmpty` or `NOT` does not return records with `NULL` value lists / arrays, and `{ equals: null }` results in an error.
+- Scalar list / array filters [ignore `NULL` values](../../../concepts/components/prisma-client/working-with-fields/working-with-scalar-lists-arrays#null-values-in-arrays) <span class="concept"></span>. Using `isEmpty` or `NOT` does not return records with `NULL` value lists / arrays, and `{ equals: null }` results in an error.
 
 ### Reference
 
@@ -4686,7 +4746,13 @@ prisma.$use(async (params, next) => {
 })
 ```
 
+#### <inlinecode>next</inlinecode>
+
+`next` represents the "next level" in the middleware stack, which could be the next middleware or the Prisma Query, depending on [where in the stack you are](../../concepts/components/prisma-client/middleware#running-order-and-the-middleware-stack).
+
 #### <inlinecode>params</inlinecode>
+
+`params` is an object with information to use in your middleware.
 
 | Parameter          | Description                                                                                                    |
 | :----------------- | :------------------------------------------------------------------------------------------------------------- |
