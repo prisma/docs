@@ -178,7 +178,7 @@ const config = {
             text: 'MongoDB',
             url: 'concepts/database-connectors/mongodb',
             codeBlock: false,
-          },          
+          },
           {
             text: 'SQL Server',
             url: 'concepts/database-connectors/microsoft-sql-server',
