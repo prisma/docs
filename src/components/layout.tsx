@@ -140,11 +140,11 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
               {!homePage && (
                 //  <StickyBox offsetTop={20} offsetBottom={20}>
                 // <Sticky enabled={true} top={50} bottomBoundary={1200}>
-                  <TOCWrapper id="toc-holder">
-                    {toc && toc.items && toc.items.length > 0 && (
-                      <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
-                    )}
-                  </TOCWrapper>
+                <TOCWrapper id="toc-holder">
+                  {toc && toc.items && toc.items.length > 0 && (
+                    <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+                  )}
+                </TOCWrapper>
                 // </Sticky>
                 // </StickyBox>
               )}

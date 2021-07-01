@@ -2,23 +2,17 @@ import * as React from 'react'
 import { TableOfContents } from 'src/interfaces/Article.interface'
 import styled from 'styled-components'
 import { stringify } from '../utils/stringify'
-import Sticky from 'react-stickynode'
-
- 
-// import Scrollspy from 'react-scrollspy'
 
 const ChapterTitle = styled.div`
-  font-family: ${p => p.theme.fonts.text};
+  font-family: ${(p) => p.theme.fonts.text};
   font-style: normal;
   font-weight: bold;
-  font-size: ${p => p.theme.fontSizes[14]};
+  font-size: ${(p) => p.theme.fontSizes[14]};
   line-height: 100%;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: ${p => p.theme.colors.gray900};
-  margin: ${p => p.theme.space[16]} 0 0;
-  // position: sticky;
-  // top: 0;
+  color: ${(p) => p.theme.colors.gray900};
+  margin: ${(p) => p.theme.space[16]} 0 0;
 `
 
 const TOCList = styled.ol`
@@ -26,25 +20,20 @@ const TOCList = styled.ol`
   list-style-type: none;
   margin: 0;
   li {
-    font-size: ${p => p.theme.fontSizes[14]};
-    padding: ${p => p.theme.space[16]} 0 0;
+    font-size: ${(p) => p.theme.fontSizes[14]};
+    padding: ${(p) => p.theme.space[16]} 0 0;
     line-height: 19px;
     ol {
-      margin-left: ${p => p.theme.space[12]};
+      margin-left: ${(p) => p.theme.space[12]};
     }
     a {
       text-decoration: none;
-      color: ${p => p.theme.colors.gray600};
+      color: ${(p) => p.theme.colors.gray600};
       &:hover {
-        color: ${p => p.theme.colors.gray900};
+        color: ${(p) => p.theme.colors.gray900};
       }
     }
   }
-`
-
-const TOCContainer = styled.div`
-  // position: sticky;
-  // top: 0;
 `
 
 interface ItemProps {
@@ -58,21 +47,21 @@ const ListItem = styled.a<ItemProps>`
   background-repeat: no-repeat;
   background-size: 0% 2px;
   transition: background-size 0.7s;
-  ${props => (props.isActive ? 'background-size: 100% 2px;' : null)}
+  ${(props) => (props.isActive ? 'background-size: 100% 2px;' : null)}
   & > inlinecode {
-    background: ${props => (props.isActive ? `var(--dark-color)` : '')};
-    color: ${props => (props.isActive ? 'var( --main-bgd-color)' : '#000')};
+    background: ${(props) => (props.isActive ? `var(--dark-color)` : '')};
+    color: ${(props) => (props.isActive ? 'var( --main-bgd-color)' : '#000')};
   }
 `
 
-const getIds = (headings: TableOfContents[]) => {
+const getIds = (headings: TableOfContents[], tocDepth: number) => {
   return headings.reduce((acc: any, item: any) => {
     if (item.url) {
       // url has a # as first character, remove it to get the raw CSS-id
       acc.push(item.url.replace(/inlinecode/g, '').slice(1))
     }
-    if (item.items) {
-      acc.push(...getIds(item.items))
+    if (item.items && tocDepth > 1) {
+      acc.push(...getIds(item.items, tocDepth - 1))
     }
     return acc
   }, [])
@@ -81,11 +70,17 @@ const getIds = (headings: TableOfContents[]) => {
 const useActiveId = (idList: string[]) => {
   const [activeId, setActiveId] = React.useState(``)
   React.useEffect(() => {
+    const visibleHeadings: any[] = []
     const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
+      (entries) => {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setActiveId(entry.target.id)
+            visibleHeadings.push(entry)
+            if (visibleHeadings.length === 1) {
+              setActiveId(visibleHeadings[0].target.id)
+            } else if (visibleHeadings.length > 1) {
+              setActiveId(visibleHeadings[visibleHeadings.length - 1].target.id)
+            }
           }
         })
       },
@@ -110,61 +105,42 @@ const useActiveId = (idList: string[]) => {
 }
 
 const TOC = ({ headings, tocDepth }: any) => {
-  const idList = getIds(headings)
+  const idList = getIds(headings, tocDepth || 1)
   const activeId = useActiveId(idList)
+  const isItemActive = (url: string) => activeId === url.replace(/inlinecode/g, '').slice(1)
+
+  const childrenActive = (items: any) => items.some((item: any) => isItemActive(item.url))
 
   const navItems = (headings: any[], depth: number, activeId: string) => {
     return (
-      <TOCContainer>
-      <TOCList>
-        {headings &&
-          headings.map((heading: any, index: number) => {
-            const isActive: boolean = activeId === heading.url.replace(/inlinecode/g, '').slice(1)
-            return (
-              <li key={index}>
-                <ListItem
-                  isActive={isActive}
-                  href={heading.url.replace(/inlinecode/g, '')}
-                  dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
-                />
-                {heading.items &&
-                  heading.items.length > 0 &&
-                  depth > 1 &&
-                  navItems(heading.items, depth - 1, activeId)}
-              </li>
-            )
-          })}
-      </TOCList>
-      </TOCContainer>
+      <div>
+        <TOCList>
+          {headings &&
+            headings.map((heading: any, index: number) => {
+              return (
+                <li key={index}>
+                  <ListItem
+                    isActive={isItemActive(heading.url)}
+                    href={heading.url.replace(/inlinecode/g, '')}
+                    dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
+                  />
+                  {heading.items &&
+                    heading.items.length > 0 &&
+                    depth > 1 &&
+                    childrenActive(heading.items) &&
+                    navItems(heading.items, depth - 1, activeId)}
+                </li>
+              )
+            })}
+        </TOCList>
+      </div>
     )
   }
 
-  // const navItems = (headings: any[], depth: number, activeId: string) => {
-  //   let url = headings.map(function(post) {
-  //     return post['url'].replace(/inlinecode/g, '').substring(1)
-  //   })
-  
-  //   return (
-    
-  //     <Scrollspy items={url} currentClassName="is-current" className="toc-list">
-  //       {headings.map((p:any) => (
-  //         <li key={p.url}>
-  //           <a href={p.url.replace(/inlinecode/g, '')}>{p.title}</a>
-  //           {p.items &&
-  //                 p.items.length > 0 &&
-  //                 depth > 1 &&
-  //                 navItems(p.items, depth - 1, activeId)}
-  //         </li>
-  //       ))}
-  //     </Scrollspy>
-  //   )
-  // }
   return navItems && navItems.length ? (
-<>
+    <>
       <ChapterTitle>CONTENT</ChapterTitle>
-      {/* <nav className="toc"> */}
       {navItems(headings, tocDepth || 1, activeId)}
-      {/* </nav> */}
     </>
   ) : null
 }
