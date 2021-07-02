@@ -251,11 +251,12 @@ The `Restrict` action is **not** available on [SQL Server](../../../database-con
 
 ### NoAction
 
-- `onDelete: NoAction` Prevents the deletion if any referencing records exist.
+The `NoAction` action is similar to `Restrict`, the difference between the two is dependant on the database being used:
 
-- `onUpdate: NoAction` Prevents the identifier of a referenced record from being changed.
-
-The `NoAction` action is similar to `Restrict` in that it will prevent the update or deletion of any records which are connected and throw an error. The difference between the two is dependant on the database being used.
+- **PostgreSQL**: `NoAction` allows the check (if a referenced row on the table exists) to be deferred until later in the transaction. See [the PostgreSQL docs](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK) for more information.
+- **MySQL**: `NoAction` behaves exactly the same as `Restrict`. See [the MySQL docs](https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html#foreign-key-referential-actions) for more information.
+- **SQLite**: When a related primary key is modified or deleted, no action is taken. See [the SQLite docs](https://www.sqlite.org/foreignkeys.html#fk_actions) for more information.
+- **SQLServer**: When a referenced record is deleted or modified, an error is raised. See [the SQLServer docs](https://docs.microsoft.com/en-us/sql/relational-databases/tables/graph-edge-constraints?view=sql-server-ver15#on-delete-referential-actions-on-edge-constraints) for more information.
 
 #### Example usage
 
@@ -272,10 +273,6 @@ model User {
   posts Post[]
 }
 ```
-
-##### Result of using `NoAction`?
-
-`User`'s with posts **cannot** be deleted. The `Post`'s `id` **cannot** be changed.
 
 ### SetNull
 
@@ -335,25 +332,6 @@ When deleting a `User`, its existing authored posts will now be authored by a `U
 
 When the `username` of a `User` changes, its existing authored posts will now be authored by `User` with `username` "anonymous".
 
-## Behavior in <=2.25.0 or without Preview flag <inlinecode>referentialActions</inlinecode>
-
-<a id="current"></a>
-
-The following behavior applies in 2.25.0 and earlier, and since 2.26.0 _without_ the `referentialActions` preview flag.
-
-When invoking the [`delete()`](../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
-
-The current behavior, without upgrading and enabling the feature flag, does not allow setting referential actions at all. 
-
-### The <=2.25.0 default referential actions
-
-| Clause     | Optional relations | Mandatory relations |
-| :--------- | :----------------- | :------------------ |
-| `onDelete` | `SetNull`          | `Cascade`           |
-| `onUpdate` | `Cascade`          | `Cascade`           |
-
-If you need to actually use the cascade behavior configured in the database, you _can_ use [`$raw`](../../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful. This is because the Prisma Client will **not** perform runtime checks on raw queries.
-
 ## Upgrade paths
 
 There are a couple of paths you can take when upgrading which will give different results depending on the desired outcome.
@@ -405,4 +383,25 @@ You will have to manually add them if you wish to use anything other than the ne
 
 </Admonition>
 
-Using referential actions is opt in and you are not required to add them to your prisma schema. If you choose to omit them, the [new defaults](#referential-action-defaults) will be used.
+Using referential actions is optional and you are not required to add them to your prisma schema. If you choose to omit them, the [new defaults](#referential-action-defaults) will be used. 
+
+Note that referential actions can be added on a case by case basis. This means that you can add them to one single relation and leave the rest set to the defaults by not manually specifying anything.
+
+## Behavior in <=2.25.0 or without preview flag <inlinecode>referentialActions</inlinecode>
+
+<a id="current"></a>
+
+The following behavior applies in 2.25.0 and earlier, and since 2.26.0 _without_ the `referentialActions` preview flag.
+
+When invoking the [`delete()`](../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
+
+The current behavior, without upgrading and enabling the feature flag, does not allow setting referential actions at all. 
+
+### The <=2.25.0 default referential actions
+
+| Clause     | Optional relations | Mandatory relations |
+| :--------- | :----------------- | :------------------ |
+| `onDelete` | `SetNull`          | `Cascade`           |
+| `onUpdate` | `Cascade`          | `Cascade`           |
+
+If you need to actually use the cascade behavior configured in the database, you _can_ use [`$raw`](../../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful. This is because the Prisma Client will **not** perform runtime checks on raw queries.
