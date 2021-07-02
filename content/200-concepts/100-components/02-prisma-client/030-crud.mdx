@@ -24,6 +24,9 @@ All examples are based on the following schema:
 
 <details><summary>Expand for sample schema</summary>
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 generator client {
   provider = "prisma-client-js"
@@ -76,13 +79,77 @@ enum Role {
 }
 ```
 
+</tab>
+<tab>
+
+
+```prisma
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ExtendedProfile {
+  id        String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  biography String
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String @db.ObjectId
+}
+
+model User {
+  id           String           @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name         String?
+  email        String           @unique
+  profileViews Int              @default(0)
+  role         Role             @default(USER)
+  coinflips    Boolean[]
+  posts        Post[]
+  profile      ExtendedProfile?
+}
+
+model Post {
+  id         String     @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   String     @db.ObjectId
+  comments   Json?
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  categories Category[]
+}
+
+model Category {
+  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name  String @unique
+  posts Post[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+
+</tab>
+</TabbedContent>
+
+
+
 </details>
 
-Use the `db push` command to push the example schema to your own database:
+For **relational databases**, use `db push` command to push the example schema to your own database
 
 ```terminal
 npx prisma db push
 ```
+
+For **MongoDB**, ensure your data is in a uniform shape and matches the model defined in the Prisma schema.
 
 ## Create
 
@@ -119,7 +186,8 @@ const user = await prisma.user.create({
 </cmdResult>
 </CodeWithResult>
 
-Your schema determines [which fields are mandatory](../prisma-schema/data-model#optional-and-mandatory-fields).
+The user's `id` is auto-generated, and your schema determines [which fields are mandatory](../prisma-schema/data-model#optional-and-mandatory-fields).
+
 
 #### Create a single record using generated types
 
@@ -244,11 +312,33 @@ const user = await prisma.user.findUnique({
 })
 ```
 
+If you are using the MongoDB connector and your underlying ID type is `ObjectId`, you can use the string representation of that `ObjectId`:
+
+```ts
+// By ID
+const user = await prisma.user.findUnique({
+  where: {
+    id: "60d5922d00581b8f0062e3a8",
+  },
+})
+```
+
 ### Get record by compound ID or compound unique identifier
+
+<Admonition type="warning">
+
+**MongoDB does not support `@@id`**<br />
+MongoDB does not support composite IDs, which means you cannot identify a model with a `@@id` block. Furthermore, you cannot use a `@@unique` block as an ID.
+
+</Admonition>
+
 
 The following examples demonstrate how to retrieve records by a compound ID or unique identifier, defined by [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-2) <span class="api"></span> or [`@@unique`](../../../reference/api-reference/prisma-schema-reference#unique-1) <span class="api"></span>.
 
 The following Prisma model defines a compound ID:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma highlight=6;normal
 model TimePeriod {
@@ -260,7 +350,16 @@ model TimePeriod {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+
 To retrieve a time period by this compound ID, use the generated `year_quarter` field, which follows the `fieldName1_fieldName2` pattern:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const timePeriod = await prisma.timePeriod.findUnique({
@@ -273,7 +372,16 @@ const timePeriod = await prisma.timePeriod.findUnique({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+
 The following Prisma model defines a compound unique identifier with a custom name (`timePeriodId`)
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma highlight=6;normal
 model TimePeriod {
@@ -285,7 +393,17 @@ model TimePeriod {
 }
 ```
 
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+
 To retrieve a time period by this unique identifier, use the custom `timePeriodId` field:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const timePeriod = await prisma.timePeriod.findUnique({
@@ -297,6 +415,13 @@ const timePeriod = await prisma.timePeriod.findUnique({
   },
 })
 ```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+
 
 ### Get all records
 
