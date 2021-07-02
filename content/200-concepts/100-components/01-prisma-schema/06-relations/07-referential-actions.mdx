@@ -188,9 +188,11 @@ Note that [`NoAction`](#noaction) can be used in replace of [`Restrict`](#restri
 | Database   | Cascade | Restrict | NoAction |  SetNull | SetDefault  |
 | :--------- | :------ | :------- | :------- | :------- | :---------- |
 | PostgreSQL | **✔️**  | **✔️**  | **✔️**  | **✔️**   | **✔️**     |
-| MySQL      | **✔️**  | **✔️**  | **✔️**  | **✔️**   | **✔️**     |
+| MySQL      | **✔️**  | **✔️**  | **✔️**  | **✔️**   | **✔️**†     |
 | SQLite     | **✔️**  | **✔️**  | **✔️**  | **✔️**   | **✔️**     |
 | SQLServer  | **✔️**  | **❌**  | **✔️**  | **✔️**   | **✔️**     |
+
+- † On [InnoDB](https://dev.mysql.com/doc/refman/5.6/en/innodb-introduction.html#:~:text=InnoDB%20is%20a%20general%2Dpurpose,clause%20creates%20an%20InnoDB%20table.), `SetDefault` will be ignored and silently use `NoAction`.
 
 ### <inlinecode>Cascade</inlinecode>
 
@@ -342,15 +344,29 @@ When the `username` of a `User` changes, its existing authored posts will now be
 
 There are a couple of paths you can take when upgrading which will give different results depending on the desired outcome.
 
+If you currently use the migration workflow, you can run an introspection to check how the defaults are reflected in your schema. You can then manually update your database if you need to. 
+
+You can also decide to skip checking the the defaults and run a migration to update your database with the [new default values](#referential-action-defaults).
+
 The following assumes you have upgraded to 2.26.0 and [enabled the preview feature flag](#enable-the-referentialactions-preview-feature).
 
 ### Using Introspection
 
-If you [Introspect](../introspection) your database **before modifying your data model**, the referential actions configured at the database level will be reflected in your Prisma Schema. If you have been using Prisma Migrate or `prisma db push` to manage the database schema, these are likely to be the [<=2.25.0 default values](#the-2250-default-referential-actions). 
-
-Of note is the default value of `onDelete`, which <=2.25.0 is `Cascade` (Assuming you haven't manually altered it via a [`$raw`](../../prisma-client/raw-database-access) SQL query and have been using the defaults). 
+If you [Introspect](../introspection) your database, the referential actions configured at the database level will be reflected in your Prisma Schema. If you have been using Prisma Migrate or `prisma db push` to manage the database schema, these are likely to be the [<=2.25.0 default values](#the-2250-default-referential-actions). 
 
 When you run an Introspection, Prisma compares all the foreign keys in the database with the schema, if the SQL statements `ON DELETE` and `ON UPDATE` do **not** match the default values, they will be explicitly set in the schema file.
+
+After introspecting, you can review the non-default clauses in your schema. The most important clause to review is `onDelete`, which defaults to `Cascade` in 2.25.0 and earlier.
+
+<Admonition type="alert">
+
+If you are using either the [`delete()`](../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../prisma-client/crud#delete-all-records) methods, **[cascading deletes](#how-to-use-cascading-deletes) will now be performed** as the `referentialAction` preview feature **removed the safety net in Prisma Client that previously prevented cascading deletes at runtime**. Be sure to check your code and make any adjustments accordingly.
+
+</Admonition>
+
+Make sure you are happy with every case of `onDelete: Cascade` in your schema - if not, modify your schema and push/migrate, or modify the underlying database if you are using an introspection-only workflow.
+
+The following example would result in a cascading delete, if the `User` is deleted then all of their `Post`'s will be deleted too.
 
 #### A blog schema example
 
@@ -367,12 +383,6 @@ model User {
   posts Post[]
 }
 ```
-
-<Admonition type="alert">
-
-If you are using either the [`delete()`](../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../prisma-client/crud#delete-all-records) methods, **[cascading deletes](#how-to-use-cascading-deletes) will now be performed** as the `referentialAction` preview feature **removed the safety net in Prisma Client that previously prevented cascading deletes at runtime**. Be sure to check your code and make any adjustments accordingly.
-
-</Admonition>
 
 ### Using Migration
 
