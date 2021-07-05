@@ -994,14 +994,46 @@ Support for [`autoincrement()`](../../../reference/api-reference/prisma-schema-r
 
 **Relational database connectors** implement `autoincrement()`, `dbgenerated()`, and `now()` at database level. The **MongoDB connector** does not support `autoincrement()`, and `now()` is implemented at Prisma level. `dbgenerated()` can only be used to generate an `ObjectId`.
 
+## Constraints and indexes in the Prisma schema
 
-## Constraints
+Constraints and indexes are represented by [attributes](#defining-attributes) in the Prisma schema. For example:
 
-### Constraint names in the schema
+- `@unique` represents a unique constraint on a single column
+- `@@index` represets an index on one or more columns
+- `@relation` represents a foreign key constraint
+
+Constraints and indexes have **names** in the underlying database. You can [define constraint and index names in the Prisma schema in 2.27.0 and later](#constraint-and-index-names-preview). 
+
+Foreign key constraints - also called referential constraints - also define a referential **action**. You can [define referential actions in the Prisma schema in 2.26.0 and later](#referential-actions-preview).
+
+### Constraint and index names (Preview)
+
+In [2.27.0]() and later, you can use the `map` field to define the **underlying constraint and index names** in the Prisma schema. The `map` field is _only_ visible in the schema if you use a constraint name that differs from Prisma's naming convention.
+
+Named constraints is a Preview feature. To enable this feature:
+
+1. Add `namedConstraints` to the `previewFeatures` field in the `generator` block:
 
 ```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["namedConstraints"]
+}
+```
+
+2. Choose an [an upgrade path]() depending on whether you use the Prisma Migrate or Introspection workflow.
+
+   <Admonition type="alert">
+
+   If you use Prisma Migrate and want to maintain your existing constraint and index names, **do not** enable the `namedConstraints` feature and immediately run `prisma migrate dev`. This will **change any underlying constraint name that does not follow Prisma's convention**. Follow the [upgrade path for the Prisma Migrate workflow]().
+   
+   </Admonition>
+
+In the following schema defines two constraints that follow convention, and one constraint and an index that do not:
+
+```prisma highlight=2,8,11,14;normal
 model User {
-  id    Int    @id @default(autoincrement())
+  id    Int    @id(map: "Custom_Primary_Key_Constraint_Name") @default(autoincrement())
   name  String @unique
   posts Post[]
 }
@@ -1010,12 +1042,24 @@ model Post {
   id          Int     @id @default(autoincrement())
   title       String
   authorName  String  @default("Anonymous")
-  author      User?   @relation(fields: [authorName], references: [name], onDelete: SetDefault, onUpdate: Cascade)
+  author      User?   @relation(fields: [authorName], references: [name])
 }
+
+@@index([title, authorName], map: "My_Custom_Index_Name")
 ```
 
-### Relational actions
+The following table lists the names of each underlying constraint or index:
 
+| Constraint or index                | Follows convention | Underlying constraint or index names |
+| ---------------------------------- | ------------------ | ------------------------------------ |
+| `@id` (on `User` > `id` field)     | No                 | `Custom_Primary_Key_Constraint_Name` |
+| `@@index` (on `Post`)              | No                 | `My_Custom_Index_Name`               |
+| `@id` (on `Post` > `id` field)     | Yes                | `Post_id_pk`                         |
+| `@relation` (on `Post` > `author`) | Yes                | `Post_authorName_fkey`               |
+
+### Referential constraint actions (Preview)
+
+See: [Referential actions](relations/referential-actions)
 
 ## Models in Prisma Client
 
