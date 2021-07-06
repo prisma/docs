@@ -6,7 +6,7 @@ title: "Names in the underlying database"
 
 </TopBlock>
 
-## Collection/table and field/column names
+## Mapping collection/table and field/column names
 
 Prisma model [naming conventions (singular form, PascalCase)](../../../reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> do not always match table names in the database. A common approach for naming tables/collections in databases is to use plural form and [snake_case](https://en.wikipedia.org/wiki/Snake_case) notation.
 
@@ -54,6 +54,16 @@ enum Type {
 
 In [2.27.0](https://github.com/prisma/prisma/releases/tag/2.27.0) and later, you can use the `map` field to define the **underlying constraint and index names** in the Prisma schema. The `map` field is _only_ visible in the schema if you use a constraint name that differs from Prisma's naming convention.
 
+<Admonition type="warning">
+
+
+**Not supported by MongoDB**</br >
+Custom constraint and index names apply to relational databases only.
+
+</Admonition>
+
+### Enabling the <inlinecode>namedConstraints</inlinecode> Preview feature
+
 Named constraints is a Preview feature. To enable this feature:
 
 1. Add `namedConstraints` to the `previewFeatures` field in the `generator` block:
@@ -73,9 +83,38 @@ Named constraints is a Preview feature. To enable this feature:
    
    </Admonition>
 
-In the following schema defines two constraints that follow convention, and one constraint and an index that do not:
+### Using custom constraint names
+
+The following schema defines three constraints (`@id`, `@id`, and `@relation`) and one index (`@@index`):
 
 ```prisma highlight=2,8,11,14;normal
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[]
+}
+
+model Post {
+  id          Int     @id @default(autoincrement())
+  title       String
+  authorName  String  @default("Anonymous")
+  author      User?   @relation(fields: [authorName], references: [name])
+}
+
+@@index([title, authorName])
+```
+
+By default, constraint and index names in the underlying database follow Prisma's naming convention. Constraint or index names that follow Prisma's naming convention are not included in the schema.
+
+<Admonition type="info">
+
+See the [attributes reference documentation](../../../reference/api-reference/prisma-schema-reference#attributes) <span class="api"></span> for default constraint and index naming conventions - for example: [`@unique`](../../../reference/api-reference/prisma-schema-reference#arguments-3) <span class="api"></span>
+
+</Admonition>
+
+You can use the `map` attribute field to define  **custom constraint and index names** in the underlying database. The following example adds custom names to one `@id` field and the `@@index`:
+
+```prisma highlight=2,14;normal
 model User {
   id    Int    @id(map: "Custom_Primary_Key_Constraint_Name") @default(autoincrement())
   name  String @unique
@@ -92,7 +131,7 @@ model Post {
 @@index([title, authorName], map: "My_Custom_Index_Name")
 ```
 
-The following table lists the names of each underlying constraint or index:
+The following table lists the name of each constraint and index in the underlying database:
 
 | Constraint or index                | Follows convention | Underlying constraint or index names |
 | ---------------------------------- | ------------------ | ------------------------------------ |
