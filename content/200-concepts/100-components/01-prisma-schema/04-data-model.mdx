@@ -128,18 +128,13 @@ The data model definition is made up of:
 - [Enums](#defining-enums) ([`enum`](../../../reference/api-reference/prisma-schema-reference#enum) <span class="api"></span> primitives) (if your connector supports enums)
 - [Attributes](#defining-attributes) and [functions](#using-functions) that change the behavior of fields and models
 
-The corresponding database looks like this:
+A model maps to the **underlying structures of the data source**:
 
-![](prisma-schema/sample-database.png)
+- In relational databases like PostgreSQL and MySQL, a `model` maps to a **table**. The sample schema maps to the following relational database:
 
-<details><summary>A model maps to the underlying structures of the data source.</summary>
+  ![](prisma-schema/sample-database.png)
 
-- In relational databases like PostgreSQL and MySQL, a `model` maps to a **table**
-- In MongoDB, a `model` maps to a **collection**
-
-> **Note**: In the future there might be connectors for non-relational databases and other data sources. For example, for a REST API it would map to a _resource_.
-
-</details>
+- In MongoDB, a `model` maps to a **collection**.
 
 The following query uses the Prisma Client generated from this model to create:
 
@@ -282,30 +277,12 @@ model Tag {
 }
 ```
 
-### Mapping model names to tables or collections
+<Admonition type="info">
 
-Prisma model [naming conventions (singular form, PascalCase)](../../../reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> do not always match table names in the database. A common approach for naming tables/collections in databases is to use plural form and [snake_case](https://en.wikipedia.org/wiki/Snake_case) notation - for example: `comments`. When you introspect a database with a table named `comments`, the result Prisma model will look like this:
+**Model names in relational databases** <br />
+You can optionally [map Prisma model names to a different collection / table name]() in the underlying database.
 
-```prisma
-model comments {
-   // Fields
-}
-```
-
-However, you can still adhere to the naming convention without renaming the underlying `comments` table in the database by using the [`@@map`](../../../reference/api-reference/prisma-schema-reference#map-1) <span class="api"></span> attribute:
-
-```prisma
-model Comment {
-   // Fields
-  @@map(name: "comments")
-}
-```
-
-With this model definition, Prisma automatically maps the `Comment` model to the `comments` table in the underlying database.
-
-> **Note**: You can also [`@map`](../../../reference/api-reference/prisma-schema-reference#map) <span class="api"></span> a column name or enum value, and `@@map` an enum.
-
-`@map` and `@@map` allow you to [tune the shape of your Prisma Client API](../prisma-client/working-with-prismaclient/use-custom-model-and-field-names#using-map-and-map-to-rename-fields-and-models-in-the-prisma-client-api) by decoupling model and field names from table and column names in the underlying database.
+</Admonition>
 
 ## Defining fields
 
@@ -360,13 +337,13 @@ model Tag {
 
 ```prisma
 model Comment {
-|  id      String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
-|  title   String
-|  content String
+  id  String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  title             String
+  content String
 }
 
 model Tag {
-|  name    String @id @map("_id")
+  name    String @id @map("_id")
 }
 ```
 
@@ -374,6 +351,13 @@ model Tag {
 </TabbedContent>
 
 See [complete list of scalar field types](../../../reference/api-reference/prisma-schema-reference#model-field-scalar-types) <span class="api"></span>.
+
+<Admonition type="info">
+
+**Field names in relational databases** <br />
+You can optionally [map Prisma schema field names to a different field name]() in the underlying database.
+
+</Admonition>
 
 ### Relation fields
 
@@ -692,6 +676,13 @@ model User {
 </tab>
 </TabbedContent>
 
+<Admonition type="info">
+
+**Constraint names in relational databases** <br />
+You can optionally define a [custom primary key constraint name]() in the underlying database.
+
+</Admonition>
+
 #### Defining IDs in MongoDB
 
 The MongoDB connector has [specific rules for defining an ID field](../../../reference/api-reference/prisma-schema-reference#mongodb) <span class="api"></span> that differs from relational databases. An ID can be defined by a single field using the [`@id`](../../../reference/api-reference/prisma-schema-reference#id) <span class="api"></span> attribute and must include `@map("_id")`.
@@ -898,6 +889,13 @@ model Post {
 </tab>
 </TabbedContent>
 
+<Admonition type="info">
+
+**Constraint names in relational databases** <br />
+You can optionally define a [custom constraint name]() in the underlying database.
+
+</Admonition>
+
 ### Defining an index
 
 You can define indexes on one or multiple fields of your models via the [`@@index`](../../../reference/api-reference/prisma-schema-reference#index-2) <span class="api"></span> on a model. The following example defines a multi-column index based on the `title` and `content` field:
@@ -911,20 +909,12 @@ model Post {
 }
 ```
 
-#### Index names
+<Admonition type="info">
 
-You can specify your own index `name` if you prefer a particular convention:
+**Constraint names in relational databases** <br />
+You can optionally define a [custom constraint name]() in the underlying database.
 
-```prisma
-model Post {
-  id       Int     @id @default(autoincrement())
-  title    String
-  content  String?
-|  @@index(fields: [title, content], name: "main_index")
-}
-```
-
-If you do not specify an index name, introspection generates [a name based on Prisma's naming convention for indexes (see `name`)](../../../reference/api-reference/prisma-schema-reference#arguments-5).
+</Admonition>
 
 ## Defining relations
 
@@ -994,7 +984,7 @@ Support for [`autoincrement()`](../../../reference/api-reference/prisma-schema-r
 
 **Relational database connectors** implement `autoincrement()`, `dbgenerated()`, and `now()` at database level. The **MongoDB connector** does not support `autoincrement()`, and `now()` is implemented at Prisma level. `dbgenerated()` can only be used to generate an `ObjectId`.
 
-## Constraints and indexes in the Prisma schema
+<!-- ## Constraints and indexes in the Prisma schema
 
 Constraints and indexes are represented by [attributes](#defining-attributes) in the Prisma schema. For example:
 
@@ -1002,64 +992,9 @@ Constraints and indexes are represented by [attributes](#defining-attributes) in
 - `@@index` represets an index on one or more columns
 - `@relation` represents a foreign key constraint
 
-Constraints and indexes have **names** in the underlying database. You can [define constraint and index names in the Prisma schema in 2.27.0 and later](#constraint-and-index-names-preview). 
+Constraints and indexes have **names** in the underlying database. You can [define constraint and index names in the Prisma schema in 2.27.0 and later](#constraint-and-index-names-preview).
 
-Foreign key constraints - also called referential constraints - also define a referential **action**. You can [define referential actions in the Prisma schema in 2.26.0 and later](#referential-actions-preview).
-
-### Constraint and index names (Preview)
-
-In [2.27.0](https://github.com/prisma/prisma/releases/tag/2.27.0) and later, you can use the `map` field to define the **underlying constraint and index names** in the Prisma schema. The `map` field is _only_ visible in the schema if you use a constraint name that differs from Prisma's naming convention.
-
-Named constraints is a Preview feature. To enable this feature:
-
-1. Add `namedConstraints` to the `previewFeatures` field in the `generator` block:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["namedConstraints"]
-}
-```
-
-2. Choose an [upgrade path](../../../guides/upgrade-guides/upgrading-to-latest/upgrade-to-2270#optional-enable-the-namedconstraints-preview-feature) depending on whether you use the Prisma Migrate or Introspection workflow.
-
-   <Admonition type="alert">
-
-   If you use Prisma Migrate and want to maintain your existing constraint and index names, **do not** enable the `namedConstraints` feature and immediately run `prisma migrate dev`. This will **change any underlying constraint name that does not follow Prisma's convention**. Follow the [upgrade path for the Prisma Migrate workflow](../../../guides/upgrade-guides/upgrading-to-latest/upgrade-to-2270#prisma-migrate-workflow).
-   
-   </Admonition>
-
-In the following schema defines two constraints that follow convention, and one constraint and an index that do not:
-
-```prisma highlight=2,8,11,14;normal
-model User {
-  id    Int    @id(map: "Custom_Primary_Key_Constraint_Name") @default(autoincrement())
-  name  String @unique
-  posts Post[]
-}
-
-model Post {
-  id          Int     @id @default(autoincrement())
-  title       String
-  authorName  String  @default("Anonymous")
-  author      User?   @relation(fields: [authorName], references: [name])
-}
-
-@@index([title, authorName], map: "My_Custom_Index_Name")
-```
-
-The following table lists the names of each underlying constraint or index:
-
-| Constraint or index                | Follows convention | Underlying constraint or index names |
-| ---------------------------------- | ------------------ | ------------------------------------ |
-| `@id` (on `User` > `id` field)     | No                 | `Custom_Primary_Key_Constraint_Name` |
-| `@@index` (on `Post`)              | No                 | `My_Custom_Index_Name`               |
-| `@id` (on `Post` > `id` field)     | Yes                | `Post_id_pk`                         |
-| `@relation` (on `Post` > `author`) | Yes                | `Post_authorName_fkey`               |
-
-### Referential constraint actions (Preview)
-
-See: [Referential actions](relations/referential-actions)
+Foreign key constraints - also called referential constraints - also define a referential **action**. You can [define referential actions in the Prisma schema in 2.26.0 and later](#referential-actions-preview). -->
 
 ## Models in Prisma Client
 
