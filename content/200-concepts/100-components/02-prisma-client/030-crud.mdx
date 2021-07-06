@@ -42,11 +42,11 @@ model ExtendedProfile {
 }
 
 model User {
-  id           Int             @id @default(autoincrement())
+  id           Int              @id @default(autoincrement())
   name         String?
-  email        String          @unique
-  profileViews Int             @default(0)
-  role         Role            @default(USER)
+  email        String           @unique
+  profileViews Int              @default(0)
+  role         Role             @default(USER)
   coinflips    Boolean[]
   posts        Post[]
   profile      ExtendedProfile?
@@ -157,7 +157,7 @@ async function main() {
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     throw e
   })
   .finally(async () => {
@@ -252,9 +252,9 @@ The following Prisma model defines a compound ID:
 
 ```prisma highlight=6;normal
 model TimePeriod {
-  year          Int
-  quarter       Int
-  total         Decimal
+  year    Int
+  quarter Int
+  total   Decimal
 
   @@id([year, quarter])
 }
@@ -277,9 +277,9 @@ The following Prisma model defines a compound unique identifier with a custom na
 
 ```prisma highlight=6;normal
 model TimePeriod {
-  year          Int
-  quarter       Int
-  total         Decimal
+  year    Int
+  quarter Int
+  total   Decimal
 
   @@unique(fields: [year, quarter], name: "timePeriodId")
 }
@@ -740,11 +740,11 @@ To resolve this error, you can:
 
   ```prisma
   model Post {
-  id         Int        @id @default(autoincrement())
-  + author     User?       @relation(fields: [authorId], references: [id])
-  + authorId   Int?
-  - author     User       @relation(fields: [authorId], references: [id])
-  - authorId   Int
+    id Int @id @default(autoincrement())
+    + author     User?       @relation(fields: [authorId], references: [id])
+    + authorId   Int?
+    - author     User       @relation(fields: [authorId], references: [id])
+    - authorId   Int
   }
   ```
 
@@ -770,7 +770,7 @@ To resolve this error, you can:
 
 ### Delete all records from all tables
 
-Sometimes you want to remove all data from all tables but keep the actual tables. This can be particularly useful in a development environment and whilst testing. 
+Sometimes you want to remove all data from all tables but keep the actual tables. This can be particularly useful in a development environment and whilst testing.
 
 The following shows how to delete all records from all tables with Prisma Client and with Prisma Migrate.
 
@@ -787,11 +787,13 @@ const deleteUsers = prisma.user.deleteMany()
 await prisma.$transaction([deleteProfile, deletePosts, deleteUsers])
 ```
 
-✅ **Pros**: 
+✅ **Pros**:
+
 - Works well when you know the structure of your schema ahead of time
 - Synchronously deletes each tables data
 
 ❌ **Cons**:
+
 - Doesn't scale as well as having a more generic solution which looks up and `TRUNCATES` your tables regardless of their relational constraints.
 
 > **Note**: The `$transaction` performs a cascading delete on each models table so they have to be called in order.
@@ -809,18 +811,17 @@ The second tab shows performing the same function but with a MySQL database. In 
 <tab>
 
 ```ts
-  for (const {
-    tablename,
-  } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
-
-      if (tablename !== '_prisma_migrations') {
-        try {
-          await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
-        } catch (error) {
-          console.log({error})
-        }
+for (const {
+  tablename,
+} of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
+  if (tablename !== '_prisma_migrations') {
+    try {
+      await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`)
+    } catch (error) {
+      console.log({ error })
     }
   }
+}
 ```
 
 </tab>
@@ -828,39 +829,41 @@ The second tab shows performing the same function but with a MySQL database. In 
 <tab>
 
 ```ts
-  const transactions: PrismaPromise<any>[] = [];
-    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
+const transactions: PrismaPromise<any>[] = []
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
 
-    for (const { TABLE_NAME } of await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
-      if (TABLE_NAME !== "_prisma_migrations") {
-        try {
-          transactions.push(prisma.$executeRaw(
-            `TRUNCATE ${TABLE_NAME};`
-          ));
-        } catch (error) {
-          console.log({error})
-        }
-      }
-    }
-
-    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`);
-
+for (const {
+  TABLE_NAME,
+} of await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
+  if (TABLE_NAME !== '_prisma_migrations') {
     try {
-      await prisma.$transaction(transactions);
+      transactions.push(prisma.$executeRaw(`TRUNCATE ${TABLE_NAME};`))
     } catch (error) {
-      console.log({error})
+      console.log({ error })
     }
+  }
+}
+
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`)
+
+try {
+  await prisma.$transaction(transactions)
+} catch (error) {
+  console.log({ error })
+}
 ```
 
 </tab>
 
 </TabbedContent>
 
-✅ **Pros**: 
-- Scalable 
+✅ **Pros**:
+
+- Scalable
 - Very fast
 
 ❌ **Cons**:
+
 - Can't undo the operation
 - Using reserved SQL key words as tables names can cause issues when trying to run a raw query
 
