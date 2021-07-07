@@ -166,7 +166,7 @@ const TreeNode = ({
     setCollapsed(label, false, parents)
   }
   const location = useLocation()
-
+ 
   const justExpand = (e: any) => {
     setCollapsed(label, true)
     e.preventDefault()
