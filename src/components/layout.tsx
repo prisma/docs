@@ -114,12 +114,6 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
 
-  React.useEffect(() => {
-    if (typeof window !== undefined) {
-      require('smooth-scroll')('a[href*="#"]')
-    }
-  }, [])
-
   return (
     <ThemeProvider theme={theme}>
       <LensProvider>
