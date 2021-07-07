@@ -121,9 +121,9 @@ let plugins = [
   },
 ]
 
-if (process.env.INDEX_ALGOLIA === 'true') {
+//if (process.env.INDEX_ALGOLIA === 'true') {
   plugins = [...plugins, algoliaPlugin]
-}
+//}
 
 module.exports = {
   // The line below has been disabled so that both PR previews and production use the same paths
