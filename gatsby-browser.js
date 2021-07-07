@@ -1,7 +1,6 @@
 const { init, trackPage } = require('./src/utils/stats')
 const { goToNav } = require('./src/utils/goToNavItem')
 
-
 exports.onClientEntry = () => {
   init()
 }

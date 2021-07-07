@@ -5,9 +5,8 @@ Prism.languages.prisma = Prism.languages.extend('clike', {
   'type-class-name': /(\b()\s+)[\w.\\]+/,
 })
 
-Prism.languages.javascript[
-  'class-name'
-][0].pattern = /(\b(?:model|datasource|enum|generator|type)\s+)[\w.\\]+/
+Prism.languages.javascript['class-name'][0].pattern =
+  /(\b(?:model|datasource|enum|generator|type)\s+)[\w.\\]+/
 
 Prism.languages.insertBefore('prisma', 'function', {
   annotation: {
