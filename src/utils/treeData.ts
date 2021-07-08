@@ -11,13 +11,12 @@ interface TreeNode {
 const getCollpaseState = (part: string, location: any) => {
   const mainpath = location.pathname.replace(/^\/|\/$/g, '').split('/')
   const subpath = urlGenerator(part).replace(/^\/|\/$/g, '').split('/')
-  // console.log(mainpath, subpath)
 
   const state = subpath.every(val => mainpath.includes(val))
-  // console.log(state, mainpath, subpath)
-  //return !(location && location.pathname.includes(urlGenerator(part)))
+
   return !state
 }
+
 
 // TODO::Simplify the function
 export const calculateTreeData = (edges: any, defaultCollapsed: any, location: any) => {
@@ -50,7 +49,6 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
       const newParams = `${langSwitcher ? `${langSwitcher[0]}${dbSwitcher ? '-' : ''}` : ''}${
         dbSwitcher ? `${dbSwitcher[0]}` : ''
       }`
-      console.log(parts, slicedParts)
       for (const part of slicedParts) {
         let tmp = prevItems && prevItems.find(({ label }: any) => label == part)
         if (tmp) {
@@ -70,7 +68,6 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           prevItems.push(tmp)
         }
         if (parts[parts.length - 1] === 'index' && parts[parts.length - 2] === part) {
-          console.log(part)
           tmp.url = `${urlGenerator(modSlug)}${newParams ? '-' + newParams : ''}`
           tmp.slug = slug
           tmp.title = title
@@ -85,20 +82,13 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.codeStyle = codeStyle
           tmp.parentLabel = parts[parts.length - 3]
           tmp.parents = parts.filter((part) => part !== 'index')
+          if (defaultCollapsed && location) {
+            defaultCollapsed[part.toLowerCase()] =
+              tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
+          }
         }
 
-        if (defaultCollapsed && location) {
-          defaultCollapsed[part.toLowerCase()] =
-            tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
-            //if (part === '300-prisma-in-your-stack') {console.log(tmp.items.map(i => defaultCollapsed[i.label]))}
-          // if (part === "02-graphql") {
-          //   console.log(defaultCollapsed)
-          //   console.log(tmp.items)
-          // }
-          // if(tmp.items.length !== 0 && tmp.items.some((item:any) => defaultCollapsed[item.label] === false)) {
-          //   defaultCollapsed[tmp.label] = false
-          // }
-        }
+        
 
         prevItems = tmp.items
       }

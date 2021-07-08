@@ -155,6 +155,7 @@ const TreeNode = ({
   hidePage,
   codeStyle,
   parents,
+  location
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
@@ -165,7 +166,6 @@ const TreeNode = ({
     })
     setCollapsed(label, false, parents)
   }
-  const location = useLocation()
  
   const justExpand = (e: any) => {
     setCollapsed(label, true)
