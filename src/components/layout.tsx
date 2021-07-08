@@ -116,7 +116,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
 
   React.useEffect(() => {
     if (typeof window !== undefined) {
-      require('smooth-scroll')('a[href*="#"]')
+      require('smooth-scroll')('a[href*="#"]', { speed: 1000, speedAsDuration: true })
     }
   }, [])
 
