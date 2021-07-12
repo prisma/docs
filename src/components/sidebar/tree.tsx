@@ -34,7 +34,7 @@ const Tree = ({ edges }: AllEdges) => {
       })
     }
   }
-  return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} location={location}/>
+  return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} location={location} />
 }
 
 export default Tree
