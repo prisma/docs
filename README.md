@@ -1,6 +1,7 @@
 # Prisma Documentation
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
+[![CI](https://github.com/prisma/docs/actions/workflows/ci.yml/badge.svg)](https://github.com/prisma/docs/actions/workflows/ci.yml)
 
 This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
 
