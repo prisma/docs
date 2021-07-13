@@ -1,11 +1,11 @@
 ---
-title: Upgrading to 2.27.0
+title: Upgrading to 2.XX.0
 tocDepth: 3
 ---
 
 <TopBlock>
 
-This page describes manual upgrade steps that you need to perform after [upgrading to Prisma 2.27.0](.) if you want to use the `namedConstraints` Preview feature.
+This page describes manual upgrade steps that you need to perform after [upgrading to Prisma 2.XX.0](.) if you want to use the `namedConstraints` Preview feature.
 
 </TopBlock>
 
@@ -49,7 +49,7 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
     }
     ```
    
-2. Introspect your database to populate the Prisma schema with constraint and index names in your underlying database _that do not match Prisma's naming convention_:
+1. Introspect your **development database** to populate the Prisma schema with constraint and index names in your underlying database _that do not match Prisma's naming convention_:
 
    ```terminal
    npx prisma migrate introspect
@@ -57,7 +57,7 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
 
    In this example, the highlighted constraints did not conform to Prisma's default naming convention and now include the `map` attribute field:
 
-   ```prisma
+   ```prisma highlight=11;normal
    model User {
      id    Int    @id(map: "Custom_Constraint_Name") @default(autoincrement())
      name  String @unique
@@ -72,7 +72,40 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
    }
    ```
 
-3. Optionally rename any explicitly defined constraint names where you do not want to use Prisma's naming convention, but do want to use a different constraint name:
+1. Optionally introspect your **production database** and double-check that constraint names in production and development are in sync. If you have external applications or scripts that rely on a specific constraint name in production, make sure that these constraint names are represented in the Prisma schema.
+
+    In the following example, the `Post` model has a foreign key constraint with a custom name in production that does not match development:
+
+   <TabbedContent tabs={[<FileWithIcon text="Development environment" icon="prisma"/>, <FileWithIcon text="Production environment" icon="prisma"/>]}>
+   <tab>
+
+    ```prisma highlight=5;normal
+    model Post {
+      id    Int @id @default(autoincrement())
+      title String
+      authorName String @default("Anonymous")
+      author User? @relation(fields: [authorName], references: [name], map: "Custom_Foreign_Key_Constraint")
+   } 
+   ```
+
+   </tab>
+   <tab>
+
+    ```prisma highlight=5;normal
+    model Post {
+      id    Int @id @default(autoincrement())
+      title String
+      authorName String @default("Anonymous")
+      author User? @relation(fields: [authorName], references: [name], map: "Custom_Production_Name")
+   } 
+   ```
+
+   </tab>
+   </TabbedContent>
+   
+   To synchronize constraint names between development and production, make sure that the constraint name in your Prisma schema is `map: "Custom_Production_Name"`.
+
+1. Optionally rename any explicitly defined constraint names where you do not want to use Prisma's naming convention, but do want to use a different constraint name:
 
    ```prisma highlight=2;delete|3;add
    model User {
@@ -83,7 +116,7 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
    }
    ```
 
-4. Optionally _remove_ the `map` field from any constraint or index attribute where you want to use the Prisma default:
+1. Optionally _remove_ the `map` field from any constraint or index attribute where you want to use the Prisma default:
    
    ```prisma highlight=5;delete|6;add
    model Post {
@@ -95,10 +128,16 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
    }
    ```
 
-5. Run the `prisma migrate dev` command to apply the changes to the database and generate a new migration:
+1. Run the `prisma migrate dev` command to apply the changes to the database and generate a new migration:
 
    ```terminal
    npx prisma migrate dev
+   ```
+
+1. Deploy the migration to production and test environments.
+
+   ```terminal
+   npx prisma migrate deploy
    ```
 
 #### Upgrade path 2: I want to use Prisma's default constraint and index namess
