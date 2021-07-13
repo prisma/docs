@@ -1,4 +1,5 @@
 const path = require(`path`)
+const { execSync } = require('child_process')
 
 exports.onCreateNode = ({ node, getNode, actions }) => {
   const { createNodeField } = actions
@@ -175,4 +176,14 @@ exports.onCreateWebpackConfig = ({ actions }) => {
       },
     },
   })
+}
+
+exports.onPostBuild = () => {
+  let cmd = ['npx', 'percy', 'snapshot', path.resolve(__dirname, 'public')]
+
+  if (!process.env.PERCY_TOKEN) {
+    cmd.push('--dry-run')
+  }
+
+  execSync(cmd.join(' '), { stdio: 'inherit' })
 }

@@ -119,15 +119,6 @@ let plugins = [
       defaultDataLayer: { website: 'docs' },
     },
   },
-  {
-    resolve: `gatsby-plugin-percy`,
-    options: {
-      // example options:
-      // files: [`dir/*.html`],
-      // ignore: [`ignore/*.html`],
-      // config: `config/.percy.yaml`,
-    },
-  },
 ]
 
 if (process.env.INDEX_ALGOLIA === 'true') {
