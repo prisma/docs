@@ -12,9 +12,9 @@ module.exports = {
 
     const ga = ReactGA.ga()
     ga('set', 'anonymizeIp', true)
-    ga(u => {
+    ga((u) => {
       // Override sendHitTask to proxy tracking requests
-      u.set('sendHitTask', model => {
+      u.set('sendHitTask', (model) => {
         const xhr = new XMLHttpRequest()
         xhr.open('POST', COLLECT_ADDRESS, true)
         xhr.send(model.get('hitPayload'))

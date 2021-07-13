@@ -14,11 +14,11 @@ Defines a [data source](../../concepts/components/prisma-schema/data-sources) <s
 
 A `datasource` block accepts the following fields:
 
-| Name                | Required | Type                                             | Description                                                                                                                     |
-| ------------------- | -------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `provider`          | **Yes**  | String (`postgresql`, `mysql`, `sqlite`, `sqlserver`) | Describes which data source connectors to use.                                                                                  |
-| `url`               | **Yes**  | String (URL)                                     | Connection URL including authentication info. Most connectors use [the syntax provided by the database](../database-reference/connection-urls#format).          |
-| `shadowDatabaseUrl` | No       | String (URL)                                     | Connection URL to the shadow database used by Prisma Migrate. Allows you to use a cloud-hosted database as the shadow database. |
+| Name                | Required | Type                                                             | Description                                                                                                                                            |
+| ------------------- | -------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `provider`          | **Yes**  | String (`postgresql`, `mysql`, `sqlite`, `sqlserver`, `mongodb`) | Describes which data source connectors to use.                                                                                                         |
+| `url`               | **Yes**  | String (URL)                                                     | Connection URL including authentication info. Most connectors use [the syntax provided by the database](../database-reference/connection-urls#format). |
+| `shadowDatabaseUrl` | No       | String (URL)                                                     | Connection URL to the shadow database used by Prisma Migrate. Allows you to use a cloud-hosted database as the shadow database.                        |
 
 The following providers are available:
 
@@ -26,6 +26,7 @@ The following providers are available:
 - `postgresql`
 - `mysql`
 - [`sqlserver` (Preview)](../../../concepts/components/preview-features/sql-server#enable-sql-server-preview-feature)
+- `mongodb` (Preview)
 
 ### Remarks
 
@@ -72,6 +73,24 @@ datasource db {
 ```
 
 Learn more about MySQL connection strings [here](../../../concepts/database-connectors/mysql).
+
+#### Specify a MongoDB data source
+
+- User: `root`
+- Password: `password`
+- Host: `cluster1.test1.mongodb.net`
+- Port: N/A
+- Database name: `testing`
+
+```prisma
+datasource db {
+  provider = "mongodb"
+  url      = "mongodb+srv://root:password@cluster1.test1.mongodb.net/testing?retryWrites=true&w=majority"
+}
+```
+
+Learn more about MongoDB connection strings [here](../../../concepts/database-connectors/mongodb).
+
 
 #### Specify a SQLite data source
 
@@ -288,12 +307,29 @@ Defines a Prisma [model](../../concepts/components/prisma-schema/data-model#defi
 
 #### A model named `User` with two scalar fields
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   email String  @unique // `email` can not be optional because it's the only unique field on the model
   name  String?
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  email String  @unique
+  name  String?
+}
+```
+
+</tab>
+</TabbedContent>
 
 ## <inlinecode>model</inlinecode> fields
 
@@ -313,7 +349,7 @@ model User {
 
 The _data source connector_ determines what _native database type_ each of Prisma scalar type maps to. Similarly, the _generator_ determines what _type in the target programming language_ each of these types map to.
 
-Prisma models also have [model field types](../../../concepts/components/prisma-schema/relations) <span class="concept"></span> that define relations between models.
+Prisma models also have [model field types](../../../../concepts/components/prisma-schema/relations) <span class="concept"></span> that define relations between models.
 
 ### <inlinecode>String</inlinecode>
 
@@ -326,13 +362,14 @@ Variable length text.
 | PostgreSQL    | `text`           |
 | Microsoft SQL | `nvarchar(1000)` |
 | MySQL         | `varchar(191)`   |
+| MongoDB       | `String`         |
 | SQLite        | `TEXT`           |
 
 #### PostgreSQL
 
-| Native database type | Native database type attribute | Notes                                          |
-| :------------------- | :----------------------------- | ---------------------------------------------- |
-| `text`               | `@db.Text`                     |                                                |
+| Native database type | Native database type attribute | Notes                                                                                                                                                                        |
+| :------------------- | :----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`               | `@db.Text`                     |                                                                                                                                                                              |
 | `char`               | `@db.Char(x)`                  |
 | `varchar`            | `@db.VarChar(n)`               |
 | `bit`                | `@db.Bit(x)`                   |
@@ -361,6 +398,15 @@ model Model {
   myField    String    @db.Bit(1)
 }
 ```
+
+#### MongoDB (Preview)
+
+`String`
+
+| Native database type attribute | Notes                                                                             |
+| :----------------------------- | :-------------------------------------------------------------------------------- |
+| `@db.String`                   |                                                                                   |
+| `@db.ObjectId`                 | Required if the underlying BSON type is `OBJECT_ID` (ID fields, relation scalars) |
 
 #### SQL Server (Preview)
 
@@ -396,6 +442,7 @@ True or false value.
 | PostgreSQL    | `boolean`       |
 | Microsoft SQL | `tinyint`       |
 | MySQL         | `TINYINT(1)`    |
+| MongoDB       | `Bool`          |
 | SQLite        | `INTEGER`       |
 
 #### PostgreSQL
@@ -410,6 +457,10 @@ True or false value.
 | --------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `TINYINT(1)`          | `@db.TinyInt(1)`               | `TINYINT` maps to `Int` if the max length is greater than 1 (for example, `TINYINT(2)`) _or_ the default value is anything other than `1`, `0`, or `NULL` |
 | `BIT(1)`              | `@db.Bit`                      |
+
+#### MongoDB (Preview)
+
+`Bool`
 
 #### SQL Server (Preview)
 
@@ -436,6 +487,7 @@ True or false value.
 | PostgreSQL    | `integer`       |
 | Microsoft SQL | `int`           |
 | MySQL         | `INT`           |
+| MongoDB       | `Int`           |
 | SQLite        | `INTEGER`       |
 
 #### PostgreSQL
@@ -461,6 +513,15 @@ True or false value.
 | `TINYINT`             | `@db.TinyInt`                  | `TINYINT` maps to `Int` if the max length is greater than 1 (for example, `TINYINT(2)`) _or_ the default value is anything other than `1`, `0`, or `NULL`. `TINYINT(1)` maps to `Boolean`. |
 | `TINYINT UNSIGNED`    | `@db.UnsignedTinyInt`          | `TINYINT(1) UNSIGNED` maps to `Int`, not `Boolean`                                                                                                                                         |
 | `YEAR`                | `@db.Year`                     |
+
+#### MongoDB (Preview)
+
+`Int`
+
+| Native database type attribute | Notes |
+| :----------------------------- | :---- |
+| `@db.Int`                      |       |
+| `@db.Long`                     |       |
 
 #### SQL Server (Preview)
 
@@ -491,6 +552,7 @@ True or false value.
 | PostgreSQL    | `integer`       |
 | Microsoft SQL | `int`           |
 | MySQL         | `INT`           |
+| MongoDB       | `Long`          |
 | SQLite        | `INTEGER`       |
 
 #### PostgreSQL
@@ -507,6 +569,10 @@ True or false value.
 | `BIGINT`              | `@db.BigInt`                                   |       |
 | `SERIAL`              | `@db.UnsignedBigInt @default(autoincrement())` |       |
 
+#### MongoDB (Preview)
+
+`Long`
+
 #### SQL Server (Preview)
 
 | Native database types | Native database type attribute | Notes |
@@ -519,8 +585,8 @@ True or false value.
 
 #### Clients
 
-| Client           | Type                                                                                                | Description                                                                                                                      |
-| :--------------- | :-------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| Client           | Type                                                                                                | Description                                                                                                              |
+| :--------------- | :-------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
 | Prisma Client JS | [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) | See [examples of working with `BigInt`](../../concepts/components/prisma-client/working-with-fields#working-with-bigint) |
 
 ### <inlinecode>Float</inlinecode>
@@ -536,6 +602,7 @@ Floating point number.
 | PostgreSQL    | `double precision` |
 | Microsoft SQL | `float(53)`        |
 | MySQL         | `DOUBLE`           |
+| MongoDB       | `Double`           |
 | SQLite        | `REAL`             |
 
 #### PostgreSQL
@@ -551,6 +618,10 @@ Floating point number.
 | --------------------- | ------------------------------ | ----- |
 | `FLOAT`               | `@db.Float`                    |
 | `DOUBLE`              | `@db.Double`                   |
+
+#### MongoDB (Preview)
+
+`Double`
 
 #### SQL Server (Preview)
 
@@ -580,6 +651,7 @@ Floating point number.
 | PostgreSQL    | `decimal(65,30)` |
 | Microsoft SQL | `decimal(32,16)` |
 | MySQL         | `DECIMAL(65,30)` |
+| MongoDB       | `Decimal`        |
 | SQLite        | `DECIMAL`        |
 
 #### PostgreSQL
@@ -595,6 +667,10 @@ Floating point number.
 | ---------------------- | ------------------------------ | ----- |
 | `DECIMAL` \| `NUMERIC` | `@db.Decimal(X, Y)`            |       |
 
+#### MongoDB (Preview)
+
+`Decimal`
+
 #### SQL Server (Preview)
 
 | Native database types  | Native database type attribute | Notes |
@@ -607,8 +683,8 @@ Floating point number.
 
 #### Clients
 
-| Client           | Type                                               | Description                                                                                                                        |
-| :--------------- | :------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| Client           | Type                                               | Description                                                                                                                |
+| :--------------- | :------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
 | Prisma Client JS | [`Decimal`](https://mikemcl.github.io/decimal.js/) | See [examples of working with `Decimal`](../../concepts/components/prisma-client/working-with-fields#working-with-decimal) |
 
 ### <inlinecode>DateTime</inlinecode>
@@ -624,6 +700,7 @@ Floating point number.
 | PostgreSQL    | `timestamp(3)`  |
 | Microsoft SQL | `datetime2`     |
 | MySQL         | `DATETIME(3)`   |
+| MongoDB       | `Timestamp`     |
 | SQLite        | `NUMERIC`       |
 
 #### PostgreSQL
@@ -651,6 +728,10 @@ You can also use MySQL's `YEAR` type with `Int`:
 yearField     Int    @db.Year
 ```
 
+#### MongoDB (Preview)
+
+`Timestamp`
+
 #### SQL Server (Preview)
 
 | Native database types | Native database type attribute | Notes |
@@ -669,7 +750,6 @@ yearField     Int    @db.Year
 - [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) (`1996-12-19T16:39:57-08:00`)
 - [RFC 2822](https://tools.ietf.org/html/rfc2822#section-3.3) (`Tue, 1 Jul 2003 10:52:37 +0200`)
 
-
 #### Clients
 
 | Prisma Client JS |
@@ -682,12 +762,13 @@ A JSON object.
 
 #### Default type mappings
 
-| Connector     | Default mapping  |
-| ------------- | ---------------- |
-| PostgreSQL    | `jsonb`          |
-| Microsoft SQL | `nvarchar(1000)` |
-| MySQL         | `JSON`           |
-| SQLite        | Not supported    |
+| Connector     | Default mapping                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------------------- |
+| PostgreSQL    | `jsonb`                                                                                                  |
+| Microsoft SQL | `nvarchar(1000)`                                                                                         |
+| MySQL         | `JSON`                                                                                                   |
+| MongoDB       | [A valid `BSON` object (Relaxed mode)](https://docs.mongodb.com/manual/reference/mongodb-extended-json/) |
+| SQLite        | Not supported                                                                                            |
 
 #### PostgreSQL
 
@@ -701,6 +782,10 @@ A JSON object.
 | Native database types | Native database type attribute | Notes |
 | --------------------- | ------------------------------ | ----- |
 | `JSON`                | `@db.Json`                     |
+
+#### MongoDB (Preview)
+
+[A valid `BSON` object (Relaxed mode)](https://docs.mongodb.com/manual/reference/mongodb-extended-json/)
 
 #### SQL Server (Preview)
 
@@ -731,6 +816,7 @@ Not supported
 | PostgreSQL    | `bytea`         |
 | Microsoft SQL | `varbinary`     |
 | MySQL         | `LONGBLOB`      |
+| MongoDB       | `BinData`       |
 | SQLite        | Not supported   |
 
 #### PostgreSQL
@@ -751,6 +837,15 @@ Not supported
 | `MEDIUMBLOB`          | `@db.MediumBlob`               |
 | `BIT`                 | `@db.Bit`                      |
 
+#### MongoDB (Preview)
+
+`BinData`
+
+| Native database type attribute | Notes                                                                             |
+| :----------------------------- | :-------------------------------------------------------------------------------- |
+| `@db.ObjectId`                 | Required if the underlying BSON type is `OBJECT_ID` (ID fields, relation scalars) |
+| `@db.BinData`                  |                                                                                   |
+
 #### SQL Server (Preview)
 
 | Native database types | Native database type attribute | Notes |
@@ -766,11 +861,18 @@ Not supported
 
 #### Clients
 
-| Client           | Type                                           | Description                                                                                                                      |
-| :--------------- | :--------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| Client           | Type                                           | Description                                                                                                             |
+| :--------------- | :--------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
 | Prisma Client JS | [`Buffer`](https://nodejs.org/api/buffer.html) | See [examples of working with `Buffer`](../../concepts/components/prisma-client/working-with-fields#working-with-bytes) |
 
 ### <inlinecode>Unsupported</inlinecode>
+
+<Admonition type="warning">
+
+**Not supported by MongoDB** <br />
+The [MongoDB connector](../../concepts/database-connectors/mongodb) does not currently support the `Unsupported` type.
+
+</Admonition>
 
 The `Unsupported` type was introduced in [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and allows you to represent data types in the Prisma schema that are not supported by the Prisma Client. `Unsupported` fields can be introspected with `prisma introspect` or created with Prisma Migrate or `db push`.
 
@@ -783,11 +885,14 @@ The `Unsupported` type was introduced in [2.17.0](https://github.com/prisma/pris
   ```
   *** WARNING ***
 
-  These fields are not supported by the Prisma Client, because Prisma currently does not support their types.
+  These fields are not supported by the Prisma Client, because Prisma does not currently support their types.
   * Model "Post", field: "circle", original data type: "circle"
   ```
 
 #### Examples
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Star {
@@ -796,6 +901,12 @@ model Star {
   example1     Unsupported("circle")
   circle       Unsupported("circle")?  @default(dbgenerated("'<(10,4),11>'::circle"))
 ```
+
+</tab>
+<tab>
+</tab>
+
+</TabbedContent>
 
 ## <inlinecode>model</inlinecode> field type modifiers
 
@@ -806,16 +917,41 @@ Makes a field a list.
 #### Remarks
 
 - Cannot be optional (for example `Post[]?`).
+
+##### Relational databases
+
 - Scalar lists (arrays) are only supported in the data model if your database natively supports them. Currently, scalar lists are therefore only supported when using PostgreSQL (since MySQL and SQLite don't natively support scalar lists).
+
+##### MongoDB
+
+- Scalar lists require `@db.Array(String)`, where the parameter matches the scalar type (for example, `String[]`)
 
 #### Examples
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma highlight=3;normal
 model User {
-  id    Int      @id @default(autoincrement())
-  posts Post[]
+  id              Int      @id @default(autoincrement())
+  posts           Post[]
+  favoriteColors  String[]
 }
 ```
+
+</tab>
+<tab>
+
+```prisma highlight=3;normal
+model User {
+  id              String      @id @default(dbgenerated())  @map("_id") @db.ObjectId
+  posts           Post[]
+  favoriteColors  String[]    @db.Array(String)
+}
+```
+
+</tab>
+</TabbedContent>
 
 ### <inlinecode>?</inlinecode> modifier
 
@@ -855,6 +991,13 @@ Defines a single-field ID on the model.
 
 #### Remarks
 
+##### General
+
+- Cannot be defined on a relation field
+- Cannot be optional
+
+##### Relational databases
+
 - Corresponding database type: `PRIMARY KEY`
 - Can be annotated with a [`@default()`](#default) value that uses [functions](#attribute-functions) to auto-generate an ID:
 
@@ -862,9 +1005,31 @@ Defines a single-field ID on the model.
   - [`cuid()`](#cuid)
   - [`uuid()`](#uuid)
 
-- Cannot be optional
 - Can be defined on any scalar field (`String`, `Int`, `enum`)
-- Cannot be defined on a relation field
+
+##### MongoDB
+
+- Corresponding database type: [Any valid BSON type, except arrays](https://docs.mongodb.com/manual/core/document/#the-_id-field)
+- Every model must define an `@id` field
+- The [underlying ID field name is always `_id`](https://docs.mongodb.com/manual/core/document/#the-_id-field), and must be mapped with `@map(_id)`
+- Can be defined on any scalar field (`String`, `Int`, `enum`) unless you want to use `ObjectId` in your database
+- To use an [`ObjectId`](https://docs.mongodb.com/manual/reference/method/ObjectId/) as your ID, you must:
+
+  - Use the `String` or `Bytes` field type
+  - Annotate your field with `@db.ObjectId`:
+
+    ```prisma
+    id   String  @db.ObjectId  @map("_id")
+    ```
+
+  - Optionally, annotate your field with a [`@default()`](#default) value that uses [the `dbgenerated()` function](#dbgenerated) to auto-generate an `ObjectId`
+
+    ```prisma
+    id   String  @db.ObjectId  @map("_id") @default(dbgenerated())
+    ```
+
+- [`cuid()`](#cuid) and [`uuid()`](#uuid) are supported but do not generate a valid `ObjectId` - use `dbgenerated()` instead for `@id`
+- `autoincrement()` is **not supported**
 
 #### Arguments
 
@@ -880,25 +1045,10 @@ N/A
 
 In most cases, you want your database to create the ID. To do this, annotate the ID field with the `@default` attribute and initialize the field with a [function](#attribute-functions).
 
-##### Generate `cuid()` values as IDs
-
-```prisma
-model User {
-  id    String  @id @default(cuid())
-  name  String
-}
-```
-
-##### Generate `uuid()` values as IDs
-
-```prisma
-model User {
-  id    String  @id @default(uuid())
-  name  String
-}
-```
-
 ##### Generate auto-incrementing integers as IDs
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -907,9 +1057,108 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+</tab>
+</TabbedContent>
+
+##### Generate `ObjectId` as IDs (MongoDB only)
+
+<TabbedContent tabs={[<FileWithIcon text="MongoDB only" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id    String     @id @map("_id") @db.ObjectId @default(dbgenerated())
+  name  String
+}
+```
+
+</tab>
+<tab>
+
+</tab>
+</TabbedContent>
+
+##### Generate `cuid()` values as IDs
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(cuid())
+  name  String
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(cuid()) @map("_id")
+  name  String
+}
+```
+
+<Admonition type="warning">
+
+You cannot use `cuid()` to generate a default value if your `id` field is of type `ObjectId`. Use the following syntax to generate a valid `ObjectId`:
+
+```prisma
+id    String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+```
+
+</Admonition>
+
+</tab>
+</TabbedContent>
+
+##### Generate `uuid()` values as IDs
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(uuid())
+  name  String
+}
+```
+
+</tab>
+
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(uuid()) @map("_id")
+  name  String
+}
+```
+
+<Admonition type="warning">
+
+You cannot use `uuid()` to generate a default value if your `id` field is of type `ObjectId`. Use the following syntax to generate a valid `ObjectId`:
+
+```prisma
+id    String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+```
+
+</Admonition>
+</tab>
+
+</TabbedContent>
+
 ##### Single-field IDs _without_ default values
 
 In the following example, `id` does not have a default value:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="display"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -917,6 +1166,24 @@ model User {
   name  String
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String   @id  @map("_id") @db.ObjectId
+  name  String
+```
+
+```prisma
+model User {
+  id    String   @id  @map("_id")
+  name  String
+```
+
+</tab>
+</TabbedContent>
 
 Note that in the above case, you _must_ provide your own ID values when creating new records for the `User` model using Prisma Client, e.g.:
 
@@ -929,18 +1196,12 @@ const newUser = await prisma.user.create({
 })
 ```
 
-###### Specify an ID on `String` _without_ a default value
-
-```prisma
-model User {
-  id    String  @id
-  name  String
-}
-```
-
 ###### Specify an ID on relation scalar field without a default value
 
 In the following example, `authorId` is a both a relation scalar and the ID of `Profile`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Profile {
@@ -957,6 +1218,27 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model Profile {
+  authorId String  @id @map("_id") @db.ObjectId
+  author   User    @relation(fields: [authorId], references: [id])
+  bio      String
+}
+
+model User {
+  id      String  @id @map("_id") @db.ObjectId
+  email   String  @unique
+  name    String?
+  profile Profile?
+}
+```
+
+</tab>
+</TabbedContent>
+
 In this scenario, you cannot create a `Profile` only - you must use Prisma Client's [nested writes](../../concepts/components/prisma-client/relation-queries#nested-writes) create a `User` **or** connect the profile to an existing user.
 
 The following example creates a user and a profile:
@@ -969,8 +1251,7 @@ const userWithProfile = await prisma.user.create({
     name: 'Bob Prismo',
     profile: {
       create: {
-        bio:
-          "Hello, I'm Bob Prismo and I love apples, blue nail varnish, and the sound of buzzing mosquitoes.",
+        bio: "Hello, I'm Bob Prismo and I love apples, blue nail varnish, and the sound of buzzing mosquitoes.",
       },
     },
   },
@@ -993,6 +1274,13 @@ const profileWithUser = await prisma.profile.create({
 ```
 
 ### <inlinecode>@@id</inlinecode>
+
+<Admonition type="warning">
+
+**Not supported by MongoDB** <br />
+The [MongoDB connector](../../concepts/database-connectors/mongodb) does not support composite IDs.
+
+</Admonition>
 
 Defines a multi-field ID (composite ID) on the model.
 
@@ -1026,6 +1314,9 @@ The name of the `fields` argument on the `@@id` attribute can be omitted:
 
 ##### Specify a multi-field ID on two `String` fields
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   firstName String
@@ -1037,7 +1328,15 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 When you create a user, you must provide a unique combination of `firstName` and `lastName`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const user = await prisma.user.create({
@@ -1048,7 +1347,15 @@ const user = await prisma.user.create({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 To retrieve a user, use the generated composite ID field (`firstName_lastName`):
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const user = await prisma.user.findUnique({
@@ -1056,12 +1363,20 @@ const user = await prisma.user.findUnique({
     firstName_lastName: {
       firstName: 'Alice',
       lastName: 'Smith',
-    }
+    },
   },
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ##### Specify a multi-field ID on two `String` fields and one `Boolean` field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1074,7 +1389,15 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 When creating new `User` records, you now must provide a unique combination of values for `firstName`, `lastName` and `isAdmin`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const user = await prisma.user.create({
@@ -1086,7 +1409,15 @@ const user = await prisma.user.create({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ##### Specify a multi-field ID that includes a relation field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Post {
@@ -1106,7 +1437,15 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 When creating new `Post` records, you now must provide a unique combination of values for `authorId` (foreign key) and `title`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const post = await prisma.post.create({
@@ -1121,6 +1460,11 @@ const post = await prisma.post.create({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ### <inlinecode>@default</inlinecode>
 
 <AlgoliaTerm name="apiReference" value="@default, default" />
@@ -1128,6 +1472,8 @@ const post = await prisma.post.create({
 Defines a [default value for a field](../../../concepts/components/prisma-schema/data-model#defining-a-default-value) <span class="concept"></span>.
 
 #### Remarks
+
+##### Relational databases
 
 - Corresponding database type: `DEFAULT`
 - Default values can be a static value (`4`, `"hello"`) or one of the following [functions](#attribute-functions):
@@ -1140,6 +1486,17 @@ Defines a [default value for a field](../../../concepts/components/prisma-schema
 
 - Default values that cannot yet be represented in the Prisma schema are represented by the `dbgenerated()` function when you use [introspection](../../concepts/components/introspection).
 - Default values are currently not allowed on relation fields in the Prisma schema. Note however that you can still define default values _manually_ in the underlying database using plain SQL. These will not be represented in the Prisma schema though, this is a temporary limitation which you can [track on GitHub](https://github.com/prisma/prisma/issues/1111).
+
+##### MongoDB
+
+- Default values can be a static value (`4`, `"hello"`) or one of the following [functions](#attribute-functions):
+
+  - [`dbgenerated()`](#dbgenerated) (can only be used with `@db.ObjectId` to generate an `ObjectId` in MongoDB)
+  - [`cuid()`](#cuid)
+  - [`uuid()`](#uuid)
+  - [`now()`](#now)
+
+- Default values are currently not allowed on relation fields in the Prisma schema.
 
 #### Arguments
 
@@ -1164,6 +1521,9 @@ id Int @id @default(autoincrement())
 
 ##### Default value for an `Int`
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   email        String  @unique
@@ -1171,7 +1531,23 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  profileViews Int     @default(0)
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Default value for a `Float`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1180,25 +1556,73 @@ model User {
 }
 ```
 
-##### Default value for `Decimal`
+</tab>
+<tab>
 
 ```prisma
 model User {
-  email    String  @unique
-  number   Decimal   @default(22.99)
+  id    String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  number   Float   @default(1.1)
 }
 ```
+
+</tab>
+</TabbedContent>
+
+##### Default value for `Decimal`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  email    String   @unique
+  number   Decimal  @default(22.99)
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id      String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  number  Decimal  @default(22.99)
+}
+```
+
+</tab>
+</TabbedContent>
 
 ##### Default value for `BigInt`
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   email    String  @unique
-  number   BigInt   @default(34534535435353)
+  number   BigInt  @default(34534535435353)
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id       String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  number   BigInt  @default(34534535435353)
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Default value for a `String`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1207,18 +1631,50 @@ model User {
 }
 ```
 
-##### Default value for a `Boolean`
+</tab>
+<tab>
 
 ```prisma
 model User {
-  email    String  @unique
-  isAdmin  Boolean     @default(false)
+  id    String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  name  String  @default("")
 }
 ```
+
+</tab>
+</TabbedContent>
+
+##### Default value for a `Boolean`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  email    String   @unique
+  isAdmin  Boolean  @default(false)
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id       String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  isAdmin  Boolean  @default(false)
+}
+```
+
+</tab>
+</TabbedContent>
 
 ##### Default value for a `DateTime`
 
 Note that static default values for `DateTime` are based on the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. However, they must always include the time including the [time offsets from UTC](https://en.wikipedia.org/wiki/ISO_8601#Time_offsets_from_UTC).
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1227,16 +1683,48 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  data  DateTime  @default("2020-03-19T14:21:00+0200")
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Default value for a `Bytes`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
   email    String  @unique
-  secret   Bytes  @default("SGVsbG8gd29ybGQ=")
+  secret   Bytes   @default("SGVsbG8gd29ybGQ=")
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id      String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  secret  Bytes   @default("SGVsbG8gd29ybGQ=")
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Default value for an `enum`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 enum Role {
@@ -1256,20 +1744,53 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+```prisma
+model User {
+  id      String      @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  email   String   @unique
+  name    String?
+|  role    Role     @default(USER)
+  posts   Post[]
+  profile Profile?
+}
+```
+
+</tab>
+</TabbedContent>
+
 ### <inlinecode>@unique</inlinecode>
 
 Defines a unique constraint for this field.
 
 #### Remarks
 
-- Corresponding database type: `UNIQUE`
-- `NULL` values are considered to be distinct (multiple rows with `NULL` values in the same column are allowed)
-- Can be defined on any scalar field
-- **Cannot** be defined on a relation field
+##### General
+
 - A field annotated with `@unique` can be optional or required
 - A field annotated with `@unique` _must_ be required if it represents the only unique constraint on a model without an `@id` / `@@id`
 - A model can have any number of unique constraints
+- Can be defined on any scalar field
+- **Cannot** be defined on a relation field
+
+##### Relational databases
+
+- Corresponding database type: `UNIQUE`
+- `NULL` values are considered to be distinct (multiple rows with `NULL` values in the same column are allowed)
 - Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
+
+##### MongoDB
+
+- Enforced by a [unique index in MongoDB](https://docs.mongodb.com/manual/core/index-unique/) - you must create this index yourself
 
 #### Arguments
 
@@ -1285,6 +1806,9 @@ N/A
 
 ##### Specify a unique attribute on a required `String` field
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   email String  @unique
@@ -1292,7 +1816,23 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @default(dbgenerated()) @db.ObjectId @map("_id")
+  name  String
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Specify a unique attribute on an optional `String` field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1302,7 +1842,24 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  email String? @unique
+  name  String
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Specify a unique attribute on relation scalar field `authorId`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Post {
@@ -1320,14 +1877,53 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model Post {
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String  @unique @db.ObjectId
+  title     String
+  published Boolean @default(false)
+}
+
+model User {
+  id    String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  email String? @unique
+  name  String
+  Post  Post[]
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Specify a unique attribute with `cuid()` values as default values
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
-  id    String  @unique @default(cuid())
-  name  String
+  token  String  @unique @default(cuid())
+  name   String
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id     String  @id  @default(dbgenerated()) @db.ObjectId @map("_id")
+  token  String  @unique @default(cuid())
+  name   String
+}
+```
+
+</tab>
+</TabbedContent>
 
 ### <inlinecode>@@unique</inlinecode>
 
@@ -1335,8 +1931,8 @@ Defines a compound [unique constraint](../../../concepts/components/prisma-schem
 
 #### Remarks
 
-- Corresponding database type: `UNIQUE`
-- A `@@unique` block is required if it represents the only unique constraint on a model without an `@id` / `@@id`
+##### General
+
 - All fields that make up the unique constraint **must** be mandatory fields. The following model is **not** valid because `id` could be `null`:
 
   ```prisma
@@ -1348,7 +1944,7 @@ Defines a compound [unique constraint](../../../concepts/components/prisma-schem
   }
   ```
 
-  The reason for this behavior is that SQL considers `null` values to be distinct, which means that two rows that _look_ identical are considered unique:
+  The reason for this behavior is that all connectors consider `null` values to be distinct, which means that two rows that _look_ identical are considered unique:
 
   ```
    firstname  | lastname | id
@@ -1358,7 +1954,17 @@ Defines a compound [unique constraint](../../../concepts/components/prisma-schem
   ```
 
 - A model can have any number of `@@unique` blocks
-- Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
+
+##### Relational databases
+
+- Corresponding database type: `UNIQUE`
+- A `@@unique` block is required if it represents the only unique constraint on a model without an `@id` / `@@id`
+- Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s)
+
+##### MongoDB
+
+- Enforced by a [compound index in MongoDB](https://docs.mongodb.com/manual/core/index-compound/) - you must create this index yourself
+- A `@@unique` block cannot be used as the only unique identifier for a model - MongoDB requires an `@id` field
 
 #### Arguments
 
@@ -1385,6 +1991,9 @@ The name of the `fields` argument on the `@@unique` attribute can be omitted:
 
 ##### Specify a multi-field unique attribute on two `String` fields
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id        Int     @default(autoincrement())
@@ -1396,6 +2005,23 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  firstName String
+  lastName  String
+  isAdmin   Boolean @default(false)
+
+  @@unique([firstName, lastName])
+}
+```
+
+</tab>
+</TabbedContent>
+
 To retrieve a user, use the generated field name (`firstname_lastname`):
 
 ```ts highlight=3;normal
@@ -1405,12 +2031,15 @@ const user = await prisma.user.findUnique({
       firstName: 'Alice',
       lastName: 'Smith',
       isAdmin: true,
-    }
+    },
   },
 })
 ```
 
 ##### Specify a multi-field unique attribute on two `String` fields and one `Boolean` field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1423,7 +2052,27 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  firstName String
+  lastName  String
+  isAdmin   Boolean @default(false)
+
+  @@unique([firstName, lastName, isAdmin])
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Specify a multi-field unique attribute that includes a relation field
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Post {
@@ -1443,7 +2092,34 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model Post {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String  @db.ObjectId
+  title     String
+  published Boolean @default(false)
+
+  @@unique([authorId, title])
+}
+
+model User {
+  id    String    @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  email String    @unique
+  posts Post[]
+}
+```
+
+</tab>
+</TabbedContent>
+
 ##### Specify a custom `name` for a multi-field unique attribute
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1456,6 +2132,23 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  firstName String
+  lastName  String
+  isAdmin   Boolean @default(false)
+
+  @@unique(fields: [firstName, lastName, isAdmin], name: "admin_identifier")
+}
+```
+
+</tab>
+</TabbedContent>
+
 To retrieve a user, use the custom field name (`admin_identifier`):
 
 ```ts highlight=3;normal
@@ -1465,7 +2158,7 @@ const user = await prisma.user.findUnique({
       firstName: 'Alice',
       lastName: 'Smith',
       isAdmmin: true,
-    }
+    },
   },
 })
 ```
@@ -1476,21 +2169,32 @@ Defines an index in the database.
 
 #### Remarks
 
+##### Relational databases
+
 - Corresponding database type: `INDEX`
+- It is currently not possible to provide more configuration options to the index:
+  - PostgreSQL
+    - Define index fields as expressions (e.g. `CREATE INDEX title ON public."Post"((lower(title)) text_ops);`)
+    - Specify index methods with `USING`; PostgreSQL supports these index methods: B-tree, hash, GiST, and GIN; Prisma uses B-Tree by default
+    - Define partial indexes with `WHERE`
+    - Create indexes concurrently with `CONCURRENTLY`
+  - MySQL
+    - Specify index methods with `USING`; MySQL supports these index methods: B-tree, hash; Prisma uses B-Tree by default
 
-##### Limitations
+<Admonition type="info">
+ 
+While you cannot configure these option in your Prisma schema, you can still configure them on the database-level directly.
 
-It is currently not possible to provide more configuration options to the index:
+</Admonition>
 
-- PostgreSQL
-  - Define index fields as expressions (e.g. `CREATE INDEX title ON public."Post"((lower(title)) text_ops);`)
-  - Specify index methods with `USING`; PostgreSQL supports these index methods: B-tree, hash, GiST, and GIN; Prisma uses B-Tree by default
-  - Define partial indexes with `WHERE`
-  - Create indexes concurrently with `CONCURRENTLY`
-- MySQL
-  - Specify index methods with `USING`; MySQL supports these index methods: B-tree, hash; Prisma uses B-Tree by default
+##### MongoDB
 
-Note that while you can't configure these option in your Prisma schema, you can still configure them on the database-level directly.
+<Admonition type="warning">
+
+**Not currently used by MongoDB** <br />
+Introspection and Prisma Migrate do not currently support MongoDB, which means Prisma Migrate will never use the `@@index` attribute to create an index in the database, and Introspection will never add an `@@index` attribute to the Prisma schema
+
+</Admonition>
 
 #### Arguments
 
@@ -1518,6 +2222,9 @@ Assume you want to add an index for the `title` field of the `Post` model
 
 ##### Define a single-column index
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
 ```prisma
 model Post {
   id       Int     @id @default(autoincrement())
@@ -1528,7 +2235,15 @@ model Post {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ##### Define a multi-column index
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Post {
@@ -1540,7 +2255,15 @@ model Post {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ##### Define an index with a name
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 model Post {
@@ -1552,21 +2275,32 @@ model Post {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ### <inlinecode>@relation</inlinecode>
 
 Defines meta information about the relation. [Learn more](../../concepts/components/prisma-schema/relations#the-relation-attribute).
 
 #### Remarks
 
+##### Relational databases
+
 - Corresponding database types: `FOREIGN KEY` / `REFERENCES`
+
+##### MongoDB
+
+- If your model's primary key is of type `ObjectId` in the underlying database, both the primary key _and_ the foreign key must be have the `@db.ObjectId` attribute
 
 #### Arguments
 
-| Name         | Type               | Required                                                                                                                                  | Description                                                                                                                               | Example                                               |
-| :----------- | :----------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------- |
-| `name`       | `String`           | Sometimes (e.g. to disambiguate a relation)                                                                                               | Defines the name of the relationship. In an m-n-relation, it also determines the name of the underlying relation table.                   | `"CategoryOnPost"`, `"MyRelation"`                    |
-| `fields`     | `FieldReference[]` | On [annotated](../../../concepts/components/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) relation fields | A list of [fields](../../../concepts/components/prisma-schema/data-model#defining-fields of the _current_ model                           | `["authorId"]`, `["authorFirstName, authorLastName"]` |
-| `references` | `FieldReference[]` | On [annotated](../../../concepts/components/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) relation fields | A list of [fields](../../../concepts/components/prisma-schema/data-model#defining-fields of the model on _the other side of the relation_ | `["id"]`, `["firstName, lastName"]`                   |
+| Name         | Type               | Required                                                                                                                                           | Description                                                                                                                               | Example                                               |
+| :----------- | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------- |
+| `name`       | `String`           | Sometimes (e.g. to disambiguate a relation)                                                                                                        | Defines the name of the relationship. In an m-n-relation, it also determines the name of the underlying relation table.                   | `"CategoryOnPost"`, `"MyRelation"`                    |
+| `fields`     | `FieldReference[]` | On [annotated](../../../../../../concepts/components/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) relation fields | A list of [fields](../../../concepts/components/prisma-schema/data-model#defining-fields of the _current_ model                           | `["authorId"]`, `["authorFirstName, authorLastName"]` |
+| `references` | `FieldReference[]` | On [annotated](../../../../../../concepts/components/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) relation fields | A list of [fields](../../../concepts/components/prisma-schema/data-model#defining-fields of the model on _the other side of the relation_ | `["id"]`, `["firstName, lastName"]`                   |
 
 The name of the `name` argument on the `@relation` attribute can be omitted (`references` is required):
 
@@ -1586,22 +2320,38 @@ The name of the `name` argument on the `@relation` attribute can be omitted (`re
 @relation(_ name: String?, fields: FieldReference[]?, references: FieldReference[]?)
 ```
 
+#### Examples
+
+See: [The `@relation` attribute](../../concepts/components/prisma-schema/relations#the-relation-attribute).
+
 ### <inlinecode>@map</inlinecode>
 
-Maps a field name or enum value from the Prisma schema to a column with a different name in the database. If you do not use `@map`, the field name matches the column name exactly.
+Maps a field name or enum value from the Prisma schema to a column or document field with a different name in the database. If you do not use `@map`, the Prisma field name matches the column name or document field name exactly.
 
 > See [Using custom model and field names](../../../concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) to see how `@map` and `@@map` changes the generated Prisma Client.
 
 #### Remarks
 
-- `@map` **does not** rename the column in the database
+##### General
+
+- `@map` **does not** rename the columns / fields in the database
 - `@map` **does** [change the field names in the generated client](#map-the-firstname-field-to-a-column-called-first_name)
+
+##### MongoDB
+
+Your `@id` field must include `@map("_id")`. For example:
+
+```prisma
+model User {
+  id  String  @db.ObjectId @default(dbgenerated()) @map("_id")
+}
+```
 
 #### Arguments
 
-| Name   | Type     | Required | Description               | Example                         |
-| :----- | :------- | :------- | :------------------------ | :------------------------------ |
-| `name` | `String` | **Yes**  | The database column name. | `"comments"`, `"someTableName"` |
+| Name   | Type     | Required | Description                                                                  | Example                         |
+| :----- | :------- | :------- | :--------------------------------------------------------------------------- | :------------------------------ |
+| `name` | `String` | **Yes**  | The database column (relational databases) or document field (MongoDB) name. | `"comments"`, `"someFieldName"` |
 
 The name of the `name` argument on the `@map` attribute can be omitted:
 
@@ -1620,12 +2370,28 @@ The name of the `name` argument on the `@map` attribute can be omitted:
 
 ##### Map the `firstName` field to a column called `first_name`
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id        Int    @id @default(autoincrement())
   firstName String @map("first_name")
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  firstName String  @map("first_name")
+}
+```
+
+</tab>
+</TabbedContent>
 
 The generated client:
 
@@ -1648,20 +2414,20 @@ enum Role {
 
 ### <inlinecode>@@map</inlinecode>
 
-Maps the Prisma schema model name to a table with a different name, or an enum name to a different underlying enum in the database. If you do not use `@@map`, the model name matches the table name exactly.
+Maps the Prisma schema model name to a table (relational databases) or collection (MongoDB) with a different name, or an enum name to a different underlying enum in the database. If you do not use `@@map`, the model name matches the table (relational databases) or collection (MongoDB) name exactly.
 
 > See [Using custom model and field names](../../../concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) to see how `@map` and `@@map` changes the generated Prisma Client.
 
 #### Remarks
 
-- `@@map` **does not** rename the table in the database
-- `@@map` **does** [change the model names in the generated client](#map-the-user-model-to-a-database-table-called-users)
+- `@@map` **does not** rename the table/collection in the database
+- `@@map` **does** [change the model names in the generated client](#map-the-user-model-to-a-database-tablecollection-named-users)
 
 #### Arguments
 
-| Name   | Type     | Required | Description              | Example                         |
-| :----- | :------- | :------- | :----------------------- | :------------------------------ |
-| `name` | `String` | **Yes**  | The database table name. | `"comments"`, `"someTableName"` |
+| Name   | Type     | Required | Description                                                             | Example                                     |
+| :----- | :------- | :------- | :---------------------------------------------------------------------- | :------------------------------------------ |
+| `name` | `String` | **Yes**  | The database table (relational databases) or collection (MongoDB) name. | `"comments"`, `"someTableOrCollectionName"` |
 
 The name of the `name` argument on the `@@map` attribute can be omitted
 
@@ -1678,7 +2444,10 @@ The name of the `name` argument on the `@@map` attribute can be omitted
 
 #### Examples
 
-##### Map the `User` model to a database table called `users`
+##### Map the `User` model to a database table/collection named `users`
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1687,6 +2456,20 @@ model User {
   @@map("users")
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id   String    @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  name String
+  @@map("users")
+}
+```
+
+</tab>
+</TabbedContent>
 
 The generated client:
 
@@ -1699,7 +2482,7 @@ await prisma.user.create({
 })
 ```
 
-##### Map the `Role` enum to a native enum in the database called `_Role` its values to lowercase values in the database
+##### Map the `Role` enum to a native enum in the database named `_Role` its values to lowercase values in the database
 
 ```prisma
 enum Role {
@@ -1712,11 +2495,12 @@ enum Role {
 
 ### <inlinecode>@updatedAt</inlinecode>
 
-Automatically stores the time when a record was last updated. If you don't supply a time yourself, the Prisma Client will automatically set the value for fields with this attribute.
+Automatically stores the time when a record was last updated. If you do not supply a time yourself, the Prisma Client will automatically set the value for fields with this attribute.
 
 #### Remarks
 
 - Compatible with [`DateTime`](#datetime) fields
+- Implemented at Prisma level
 
 #### Arguments
 
@@ -1730,18 +2514,43 @@ N/A
 
 #### Examples
 
-```prisma line-number file=schema.prisma
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma line-number
 model Post {
   id        String   @id
   updatedAt DateTime @updatedAt
 }
 ```
 
+</tab>
+<tab>
+
+```prisma line-number
+model Post {
+  id        String   @id @db.ObjectId @map("_id")
+  updatedAt DateTime @updatedAt
+}
+```
+
+</tab>
+</TabbedContent>
+
 ### <inlinecode>@ignore</inlinecode>
 
 <AlgoliaTerm name="apiReference" value="@ignore" />
 
-In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@ignore` to fields that _refer to_ invalid models. In the following example, `tags` is ignored because it refers to an invalid model.
+In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@ignore` to fields that _refer to_ invalid models when you introspect.
+
+#### Remarks
+
+- Ignored fields are excluded from the generated Prisma Client
+- You can manually add `@ignore` to a field that you want to exclude from the Prisma Client (for example, a field that you do not want Prisma users to update)
+
+#### Examples
+
+In the following example, `tags` is ignored because it refers to an invalid model (no `@id` on `Product):
 
 ```prisma highlight=5,10;normal
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
@@ -1760,7 +2569,16 @@ model Product {
 
 <AlgoliaTerm name="apiReference" value="@@ignore" />
 
-In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@@ignore` to an invalid model instead of commenting it out. In the following example, `Tag` is ignored because it does not have a valid unique identifier.
+In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Prisma adds `@@ignore` to an invalid model instead of commenting it out.
+
+#### Remarks
+
+- Ignored models are excluded from the generated Prisma Client
+- You can manually add `@@ignore` to a model that you want to exclude from the Prisma Client (for example, a model that you do not want Prisma users to update)
+
+#### Examples
+
+In the following example, `Tag` is ignored because it does not have a valid unique identifier:
 
 ```prisma highlight=5,10;normal
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
@@ -1773,6 +2591,13 @@ model Tag {
 ## Attribute functions
 
 ### <inlinecode>autoincrement()</inlinecode>
+
+<Admonition type="warning">
+
+**Not supported by MongoDB** <br />
+The [MongoDB connector](../../concepts/database-connectors/mongodb) does not support the `autoincrement()` function.
+
+</Admonition>
 
 Create a sequence of integers in the underlying database and assign the incremented values to the ID values of the created records based on the sequence.
 
@@ -1789,12 +2614,20 @@ Create a sequence of integers in the underlying database and assign the incremen
 
 ##### Generate auto-incrementing integers as IDs
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
 ```prisma
 model User {
   id    Int     @id @default(autoincrement())
   name  String
 }
 ```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
 
 ### <inlinecode>cuid()</inlinecode>
 
@@ -1805,9 +2638,16 @@ Generate a globally unique identifier based on the [`cuid`](https://github.com/e
 - Compatible with `String`
 - Implemented by Prisma and therefore not "visible" in the underlying database schema. You can still use `cuid()` when using [introspection](../../concepts/components/introspection) by [manually changing your Prisma schema](../../../concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) and [generating Prisma Client](../../concepts/components/prisma-client/working-with-prismaclient/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](../../concepts/components/prisma-engines/query-engine).
 
+##### MongoDB
+
+- `cuid()` does not generate a valid `ObjectId` - [use the `@db.ObjectId` syntax](#generate-objectid-as-ids-mongodb-only) if you want to use `ObjectId` in the underlying database. However, you can still use `cuid()` if your `_id` field is not of type `ObjectId`.
+
 #### Examples
 
 ##### Generate `cuid()` values as IDs
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1815,6 +2655,19 @@ model User {
   name  String
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(cuid()) @map("_id")
+  name  String
+}
+```
+
+</tab>
+</TabbedContent>
 
 ### <inlinecode>uuid()</inlinecode>
 
@@ -1827,13 +2680,20 @@ Generate a globally unique identifier based on the [UUID](https://en.wikipedia.o
 
 <Admonition type='info'>
 
-**Note**: If you do not want to use Prisma's `uuid()` function, you can use [the native database function with `dbgenerated`](#override-default-value-behavior-for-supported-types).
+**Note (Relational databases)**: If you do not want to use Prisma's `uuid()` function, you can use [the native database function with `dbgenerated`](#override-default-value-behavior-for-supported-types).
 
 </Admonition>
+
+##### MongoDB
+
+- `uuid()` does not generate a valid `ObjectId` - [use the `@db.ObjectId` syntax](#generate-objectid-as-ids-mongodb-only) if you want to use `ObjectId` in the underlying database. However, you can still use `uuid()` if your `_id` field is not of type `ObjectId`.
 
 #### Examples
 
 ##### Generate `uuid()` values as IDs
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 model User {
@@ -1842,24 +2702,48 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String  @id @default(uuid()) @map("_id")
+  name  String
+}
+```
+
+</tab>
+</TabbedContent>
+
 ### <inlinecode>now()</inlinecode>
 
 Set a timestamp of the time when a record is created.
 
 #### Remarks
 
+##### General
+
 - Compatible with [`DateTime`](#datetime)
+
+##### Relational databases
+
 - Implemented on the database-level, meaning that it manifests in the database schema and can be recognized through introspection. Database implementations:
 
   | PostgreSQL                                                                                                                                 | MySQL                                                                                                                                           | SQLite                                             |
   | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
   | [`CURRENT_TIMESTAMP`](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT) and aliases like `now()` | [`CURRENT_TIMESTAMP`](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-functions.html#function_current-timestamp) and aliases like `now()` | `CURRENT_TIMESTAMP` and aliases like `date('now')` |
 
+##### MongoDB
+
+- Implemented at Prisma level
+
 ### <inlinecode>dbgenerated()</inlinecode>
 
 Represents **default values** that cannot be expressed in the Prisma schema (such as `random()`).
 
 #### Remarks
+
+##### Relational databases
 
 - Compatible with any type
 - If a value is present, it cannot be empty (for example, `dbgenerated("")`) - [2.21.0](https://github.com/prisma/prisma/releases/tag/2.21.0) and later
@@ -1868,15 +2752,36 @@ Represents **default values** that cannot be expressed in the Prisma schema (suc
   - [Set default values for `Unsupported` types](#set-default-value-for-unsupported-type)
   - [Override default value behavior for supported types](#override-default-value-behavior-for-supported-types)
 
+##### MongoDB
+
+- Can only be used to generate `ObjectId` for `@id` fields:
+
+  ```prisma
+  id  String  @map("_id") @db.ObjectId @default(dbgenerated())
+  ```
+
+- Must be empty: `dbgenerated()`
+
 #### Examples
 
 ##### Set default value for `Unsupported` type
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma
 circle     Unsupported("circle")?   @default(dbgenerated("'<(10,4),11>'::circle"))
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 ##### Override default value behavior for supported types
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 You can also use `dbgenerated()` to set the default value for supported types. For example, you can generate UUIDs at database level rather than rely on Prisma's `uuid()`:
 
@@ -1888,11 +2793,33 @@ model User {
 }
 ```
 
-<Admonition type="info"> 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+<Admonition type="info">
 
 **Note**: [`gen_random_uuid()` is a PostgreSQL function](https://www.postgresql.org/docs/13/functions-uuid.html). To use it, you must enable the `pgcrypto` extension.
 
 </Admonition>
+
+##### Generate <inlinecode>ObjectId</inlinecode> (MongoDB only)
+
+<TabbedContent tabs={[<FileWithIcon text="MongoDB only" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id   String  @id @db.ObjectId @map("_id") @default(dbgenerated())
+  name String?
+}
+```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
 
 ## Attribute argument types
 
@@ -1910,15 +2837,21 @@ An expression that can be evaluated by Prisma: `42.0`, `""`, `Bob`, `now()`, `cu
 
 ## <inlinecode>enum</inlinecode>
 
-Defines an [enum](../../../concepts/components/prisma-schema/data-model#defining-enums) <span class="concept"></span> (only available if enums are supported natively by your database)
+<Admonition type="warning">
+
+**Not supported by SQLite and SQL Server** <br />
+The [SQLite connector](../../concepts/database-connectors/sqlite) and the The [SQL Server connector](../../concepts/database-connectors/microsoft-sql-server) do not support the `enum` type.
+
+</Admonition>
+
+Defines an [enum](../../../concepts/components/prisma-schema/data-model#defining-enums) <span class="concept"></span>.
 
 ### Remarks
 
-#### Database support
+- Enums are natively supported by [PostgreSQL](https://www.postgresql.org/docs/current/datatype-enum.html) and [MySQL](https://dev.mysql.com/doc/refman/8.0/en/enum.html)
+- Enums are implemented and enforced at Prisma level in MongoDB
 
-See [Database features &rarr; Misc](../database-reference/database-features#misc).
-
-#### Naming conventions
+### Naming conventions
 
 - Enum names must start with a letter (they are typically spelled in [PascalCase](http://wiki.c2.com/?PascalCase))
 - Enums must use the singular form (e.g. `Role` instead of `role`, `roles` or `Roles`).
@@ -1927,6 +2860,9 @@ See [Database features &rarr; Misc](../database-reference/database-features#misc
 ### Examples
 
 #### Specify an `enum` with two possible values
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 enum Role {
@@ -1940,7 +2876,28 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id    String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  role  Role
+}
+```
+
+</tab>
+</TabbedContent>
+
 #### Specify an `enum` with two possible values and set a default value
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 enum Role {
@@ -1953,3 +2910,21 @@ model User {
   role  Role  @default(USER)
 }
 ```
+
+</tab>
+<tab>
+
+```prisma
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id    String  @id @default(dbgenerated())
+  role  Role    @default(USER)
+}
+```
+
+</tab>
+</TabbedContent>

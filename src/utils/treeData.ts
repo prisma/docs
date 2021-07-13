@@ -9,7 +9,14 @@ interface TreeNode {
 }
 
 const getCollpaseState = (part: string, location: any) => {
-  return !(location && location.pathname.includes(urlGenerator(part)))
+  const mainpath = location.pathname.replace(/^\/|\/$/g, '').split('/')
+  const subpath = urlGenerator(part)
+    .replace(/^\/|\/$/g, '')
+    .split('/')
+
+  const state = subpath.every((val) => mainpath.includes(val))
+
+  return !state
 }
 
 // TODO::Simplify the function
@@ -76,10 +83,10 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.codeStyle = codeStyle
           tmp.parentLabel = parts[parts.length - 3]
           tmp.parents = parts.filter((part) => part !== 'index')
-        }
-        if (defaultCollapsed && location) {
-          defaultCollapsed[part.toLowerCase()] =
-            tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
+          if (defaultCollapsed && location) {
+            defaultCollapsed[part.toLowerCase()] =
+              tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
+          }
         }
 
         prevItems = tmp.items

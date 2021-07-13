@@ -17,7 +17,7 @@ const config = {
     {
       from: '/reference/tools-and-interfaces/prisma-client/api',
       to: '/concepts/components/prisma-client',
-    },  
+    },
     {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
       to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
@@ -175,13 +175,18 @@ const config = {
             codeBlock: false,
           },
           {
-            text: 'SQLite',
-            url: 'concepts/database-connectors/sqlite',
+            text: 'MongoDB',
+            url: 'concepts/database-connectors/mongodb',
             codeBlock: false,
           },
           {
             text: 'SQL Server',
             url: 'concepts/database-connectors/microsoft-sql-server',
+            codeBlock: false,
+          },
+          {
+            text: 'SQLite',
+            url: 'concepts/database-connectors/sqlite',
             codeBlock: false,
           },
         ],
@@ -269,7 +274,7 @@ const config = {
         categoryName: 'Prisma Reference',
         mainUrl: 'reference',
         icon: 'Schema',
-        links: [        
+        links: [
           {
             text: 'Prisma Client API reference',
             url: 'reference/api-reference/prisma-client-reference',
@@ -284,7 +289,7 @@ const config = {
             text: 'Prisma error reference',
             url: 'reference/api-reference/error-reference',
             codeBlock: false,
-          },          
+          },
         ],
       },
       {
