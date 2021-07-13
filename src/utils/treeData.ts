@@ -10,13 +10,14 @@ interface TreeNode {
 
 const getCollpaseState = (part: string, location: any) => {
   const mainpath = location.pathname.replace(/^\/|\/$/g, '').split('/')
-  const subpath = urlGenerator(part).replace(/^\/|\/$/g, '').split('/')
+  const subpath = urlGenerator(part)
+    .replace(/^\/|\/$/g, '')
+    .split('/')
 
-  const state = subpath.every(val => mainpath.includes(val))
+  const state = subpath.every((val) => mainpath.includes(val))
 
   return !state
 }
-
 
 // TODO::Simplify the function
 export const calculateTreeData = (edges: any, defaultCollapsed: any, location: any) => {
@@ -87,8 +88,6 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
               tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
           }
         }
-
-        
 
         prevItems = tmp.items
       }

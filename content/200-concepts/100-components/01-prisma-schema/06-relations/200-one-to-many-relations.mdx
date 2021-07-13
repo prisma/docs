@@ -1,0 +1,238 @@
+---
+title: One-to-many relations
+metaDescription: How to define and work with one-to-many relations in Prisma.
+tocDepth: 2
+---
+
+<TopBlock>
+
+One-to-many (1-n) relations refer to relations where one record on one side of the relation can be connected to zero or more records on the other side. In the following example, there is one 1-n-relation between `User` and `Post`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  posts     Post[]
+}
+
+model Post {
+  id        Int   @id @default(autoincrement())
+  author    User  @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  posts     Post[]
+}
+
+model Post {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String  @db.ObjectId
+}
+```
+
+</tab>
+</TabbedContent>
+
+> **Note** The `posts` field does not "manifest" in the underlying database schema. On the other side of the relation, the [annotated relation field](../relations#annotated-relation-fields-and-relation-scalar-fields) `author` and its relation scalar `authorId` represent the side of the relation that stores the foreign key in the underlying database.
+
+This 1-n-relation expresses the following:
+
+- "a user can have zero or more posts"
+- "a post must always have an author"
+
+</TopBlock>
+
+## Multi-field relations in relational databases
+
+In **relational databases only**, you can also define this relation using [multi-field IDs](../../../../reference/api-reference/prisma-schema-reference#id-1):
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  firstName String
+  lastName  String
+  post      Post[]
+
+  @@id([firstName, lastName])
+}
+
+model Post {
+  id               Int      @id @default(autoincrement())
+  author           User     @relation(fields: [authorFirstName, authorLastName], references: [firstName, lastName])
+  authorFirstName  String   // relation scalar field (used in the `@relation` attribute above)
+  authorLastName   String   // relation scalar field (used in the `@relation` attribute above)
+}
+```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
+
+## 1-n relations in the database
+
+### Relational databases
+
+The following example demonstrates how to create a 1-n relation in SQL:
+
+```sql
+CREATE TABLE "User" (
+    id SERIAL PRIMARY KEY
+);
+CREATE TABLE "Post" (
+    id SERIAL PRIMARY KEY,
+    "authorId" integer NOT NULL,
+    FOREIGN KEY ("authorId") REFERENCES "User"(id)
+);
+```
+
+Since there's no `UNIQUE` constraint on the `authorId` column (the foreign key), you can create **multiple `Post` records that point to the same `User` record**. This makes the relation a one-to-many rather than a one-to-one.
+
+The following example demonstrates how to create a 1-n relation in SQL using a composite key (`firstName` and `lastName`):
+
+```sql
+CREATE TABLE "User" (
+    firstName TEXT,
+    lastName TEXT,
+    PRIMARY KEY ("firstName","lastName")
+);
+CREATE TABLE "Post" (
+    id SERIAL PRIMARY KEY,
+    "authorFirstName" TEXT NOT NULL,
+    "authorLastName" TEXT NOT NULL,
+    FOREIGN KEY ("authorFirstName", "authorLastName") REFERENCES "User"("firstName", "lastName")
+);
+```
+
+#### Comparing one-to-one and one-to-many relations
+
+In relational databases, the main difference between a 1-1 and a 1-n-relation is that in a 1-1-relation the foreign key must have a `UNIQUE` constraint defined on it.
+
+### MongoDB
+
+For MongoDB, Prisma currently uses a [normalized data model design](https://docs.mongodb.com/manual/core/data-model-design/), which means that documents reference each other by ID in a similar way to relational databases.
+
+The following MongoDB document represents a `User`:
+
+```json
+{ "_id": { "$oid": "60d5922d00581b8f0062e3a8" }, "name": "Ella" }
+```
+
+The following list of `Post` MongoDB documents each have a `userId` field which reference the same user:
+
+```json
+[
+  {
+    "_id": { "$oid": "60d5922e00581b8f0062e3a9" },
+    "title": "How to make sushi",
+    "authorId": { "$oid": "60d5922d00581b8f0062e3a8" }
+  },
+  {
+    "_id": { "$oid": "60d5922e00581b8f0062e3aa" },
+    "title": "How to re-install Windows",
+    "authorId": { "$oid": "60d5922d00581b8f0062e3a8" }
+  }
+]
+```
+
+#### Comparing one-to-one and one-to-many relations
+
+In MongoDB, the only difference between a 1-1 and a 1-n is the number of documents referencing another doucment in the database - there are no constraints.
+
+## Required and optional relation fields in one-to-many relations
+
+A 1-n-relation always has two relation fields:
+
+- a [list](../data-model#type-modifiers) relation field which is _not_ annotated with `@relation`
+- the [annotated relation field](../relations#annotated-relation-fields-and-relation-scalar-fields) (including its relation scalar)
+
+The list side of a 1-n relation is **always mandatory**. On the other side of the relation, the annotated relation field and relation scalar can either _both_ be optional, or _both_ be mandatory.
+
+In the following example, you can create a `Post` without assigning a `User`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  posts     Post[]
+}
+
+model Post {
+  id        Int    @id @default(autoincrement())
+  author    User?  @relation(fields: [authorId], references: [id])
+  authorId  Int?
+}
+```
+
+</tab>
+<tab>
+
+
+```prisma
+model User {
+  id        String     @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  posts     Post[]
+}
+
+model Post {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author    User?   @relation(fields: [authorId], references: [id])
+  authorId  String  @db.ObjectId
+```
+
+
+</tab>
+</TabbedContent>
+
+In the following example, you must assign a `User` when you create a `Post`:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  posts     Post[]
+}
+
+model Post {
+  id        Int    @id @default(autoincrement())
+  author    User  @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String     @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  posts     Post[]
+}
+
+model Post {
+  id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String  @db.ObjectId
+}
+```
+
+</tab>
+</TabbedContent>

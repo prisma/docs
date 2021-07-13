@@ -34,6 +34,9 @@ Prisma Client can be used in _any_ Node.js (supported versions) or TypeScript ba
 
 Every project that uses a tool from the Prisma toolkit starts with a [Prisma schema file](../../components/prisma-schema). The Prisma schema allows developers to define their _application models_ in an intuitive data modeling language. It also contains the connection to a database and defines a _generator_:
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 datasource db {
   provider = "postgresql"
@@ -61,6 +64,40 @@ model User {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String   @db.ObjectId
+}
+
+model User {
+  id    String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+```
+
+</tab>
+</TabbedContent>
+
 > **Note**: The Prisma schema has powerful data modeling features. For example, it allows you to define "Prisma-level" [relation fields](../../components/prisma-schema/relations) which will make it easier to work with [relations in the Prisma Client API](../../components/prisma-client/relation-queries). In the case above, the `posts` field on `User` is defined only on "Prisma-level", meaning it does not manifest as a foreign key in the underlying database.
 
 In this schema, you configure three things:
@@ -77,7 +114,7 @@ On this page, the focus is on the data model. You can learn more about [Data sou
 
 The data model is a collection of [models](../../components/prisma-schema/data-model#defining-models). A model has two major functions:
 
-- Represent a table in the underlying database
+- Represent a table in relational databases or a collection in MongoDB
 - Provide the foundation for the queries in the Prisma Client API
 
 #### Getting a data model
@@ -87,6 +124,13 @@ There are two major workflows for "getting" a data model into your Prisma schema
 - Manually writing the data model and mapping it to the database with [Prisma Migrate](../../components/prisma-migrate)
 - Generating the data model by [introspecting](../../components/introspection) a database
 
+<Admonition type="warning">
+
+**MongoDB not supported**<br />
+Introspection and Prisma Migrate do not yet support the MongoDB connector.
+
+</Admonition>
+
 Once the data model is defined, you can [generate Prisma Client](../../components/prisma-client/working-with-prismaclient/generating-prisma-client) which will expose CRUD and more queries for the defined models. If you're using TypeScript, you'll get full type-safety for all queries (even when only retrieving the subsets of a model's fields).
 
 ### Accessing your database with Prisma Client
@@ -95,7 +139,7 @@ Once the data model is defined, you can [generate Prisma Client](../../component
 
 The first step when using Prisma Client is installing the `@prisma/client` npm package:
 
-```
+```terminal
 npm install @prisma/client
 ```
 
@@ -103,7 +147,7 @@ Installing the `@prisma/client` package invokes the `prisma generate` command, w
 
 After you change your data model, you'll need to manually re-generate Prisma Client to ensure the code inside `node_modules/.prisma/client` gets updated:
 
-```
+```terminal
 prisma generate
 ```
 
@@ -115,7 +159,8 @@ Once Prisma Client has been generated, you can import in your code and send quer
 
 ##### Import and instantiate Prisma Client
 
-<CodeBlock languages={["import", "require"]}>
+<TabbedContent tabs={[<FileWithIcon text="import" icon="code"/>, <FileWithIcon text="require" icon="code"/>]}>
+<tab>
 
 ```ts
 import { PrismaClient } from '@prisma/client'
@@ -123,13 +168,19 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 ```
 
+
+</tab>
+<tab>
+
 ```js
 const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 ```
 
-</CodeBlock>
+</tab>
+</TabbedContent>
+
 
 Now you can start sending queries via the generated Prisma Client API, here are a few sample queries. Note that all Prisma Client queries return _plain old JavaScript objects_.
 
@@ -194,6 +245,14 @@ Note that when using TypeScript, the result of this query will be _statically ty
 ## Typical Prisma workflows
 
 As mentioned above, there are two ways for "getting" your data model into the Prisma schema. Depending on which approach you choose, your main Prisma workflow might look different.
+
+<Admonition type="warning">
+
+**MongoDB not supported**<br />
+Introspection and Prisma Migrate do not yet support the MongoDB connector. To use MongoDB while it is in Preview, you must design your Prisma schema to match the shape of your data in MongoDB.
+
+</Admonition>
+
 
 ### Prisma Migrate
 
