@@ -172,7 +172,7 @@ CREATE TABLE "User" (
 
 The following caveats apply:
 
-*  Referential actions are **not** supported on [implicit many-to-many relations](many-to-many-relations#implicit-vs-explicit-many-to-many-relations). To use referential actions, you must define an explicit many-to-many relation and define your referential actions on the [join table](troubleshooting-relations#how-to-use-a-relation-table-with-a-many-to-many-relationship).
+*  Referential actions are **not** supported on [implicit many-to-many relations](many-to-many-relations#implicit-many-to-many-relations). To use referential actions, you must define an explicit many-to-many relation and define your referential actions on the [join table](troubleshooting-relations#how-to-use-a-relation-table-with-a-many-to-many-relationship).
 * Certain combinations of referential actions and required/optional relations are incompatible. For example, using `SetNull` on a required relation will lead to database errors when deleting referenced records because the non-nullable constraint would be violated. See [this GitHub issue](https://github.com/prisma/prisma/issues/7909) for more information.
 
 ## Types of referential actions
@@ -404,6 +404,105 @@ You will have to manually add them if you wish to use anything other than the ne
 Explicitly defining referential actions in your Prisma schema is optional. If you do not explicitly define a referential action for a relation, Prisma uses the [new defaults](#referential-action-defaults). 
 
 Note that referential actions can be added on a case by case basis. This means that you can add them to one single relation and leave the rest set to the defaults by not manually specifying anything.
+
+### Checking for errors
+
+**Before** upgrading to 2.26.0 and enabling the referential actions **preview feature**, Prisma prevented the deletion of records while using `delete()` or `deleteMany()` to preserve referential integrity. A custom runtime error would be thrown by the Prisma Client with the error code `P2014`.
+
+**After** upgrading and enabling the referential actions **preview feature**, Prisma no longer performs runtime checks. You can instead specify a custom referential action to preserve the referential integrity between relations. 
+
+When you use [`NoAction`](#noaction) or [`Restrict`](#restrict) to prevent the deletion of records, the error messages will be different post 2.26.0 compared to pre 2.26.0. This is because they are now triggered by the database and **not** the Prisma Client. The new error code that can be expected is `P2003`.
+
+To make sure you catch these new errors you can adjust your code accordingly. 
+
+#### Example of catching errors
+
+The following example uses the below blog schema with a 1-m relationship between `Post` and `User` and sets a [`Restrict`](#restrict) referential actions on the `author` field.
+
+This means that if a user has a post, that user (and their posts) **cannot** be deleted.
+
+```prisma file=schema.prisma
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  author    User    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  authorId  String
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+Prior to upgrading and enabling the referential actions **preview feature**, the error code you would receive when trying to delete a user which has posts would be `P2014` and it's message:
+
+> "The change you are trying to make would violate the required relation '{relation_name}' between the {model_a_name} and {model_b_name} models."
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  try {
+    await prisma.user.delete({
+      where: {
+        id: 'some-long-id'
+      }
+    })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2014') {
+        console.log(error.message)
+      }
+    }
+  }
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+To make sure you are checking for the correct errors in your code, modify your check to look for `P2003`, which will deliver the message:
+
+> "Foreign key constraint failed on the field: {field_name}"
+
+```ts highlight=14;delete|15;add
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  try {
+    await prisma.user.delete({
+      where: {
+        id: 'some-long-id'
+      }
+    })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2014') {
+      if (error.code === 'P2003') {
+        console.log(error.message)
+      }
+    }
+  }
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
 
 ## Behavior in <=2.25.0 or without preview flag <inlinecode>referentialActions</inlinecode>
 

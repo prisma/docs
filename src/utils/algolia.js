@@ -2,9 +2,9 @@ require('dotenv').config({
   path: `.env`,
 })
 
-const flat = array => {
+const flat = (array) => {
   var result = []
-  array.forEach(function(a) {
+  array.forEach(function (a) {
     result.push(a)
     if (Array.isArray(a.items)) {
       result = result.concat(flat(a.items))
@@ -18,27 +18,24 @@ const removeInlineCode = (heading, path) =>
     ? heading.replace(/inlinecode/g, '')
     : heading.replace('<inlinecode>', '').replace('</inlinecode>', '')
 
-const isApiTerm = term => term.includes('AlgoliaTerm') && term.split('"')[1] === 'apiReference'
-const getApiVal = term => term.split('"')[3]
+const isApiTerm = (term) => term.includes('AlgoliaTerm') && term.split('"')[1] === 'apiReference'
+const getApiVal = (term) => term.split('"')[3]
 
-const handleRawBody = node => {
+const handleRawBody = (node) => {
   const { rawBody, ...rest } = node
-  const rawBodyWithoutFrontmatter = rawBody
-    .split('---')
-    .slice(2)
-    .join('---')
+  const rawBodyWithoutFrontmatter = rawBody.split('---').slice(2).join('---')
   const blocks = rawBodyWithoutFrontmatter.split(/#{2,}/i)
   const headingWithcontent = blocks
-    .filter(block => block !== '\n\n')
-    .map(block => {
+    .filter((block) => block !== '\n\n')
+    .map((block) => {
       const parts = block.split('\n\n')
       return { heading: parts[0].trim(), content: parts.splice(1).join('\n\n') }
     })
   let finalSections = []
-  headingWithcontent.map(fSec => {
+  headingWithcontent.map((fSec) => {
     const sections = fSec.content.split('\n\n')
     const filteredSections = sections.filter(
-      section =>
+      (section) =>
         section !== ' ' &&
         // section !== '' &&
         !section.includes('details>') &&
@@ -59,15 +56,16 @@ const handleRawBody = node => {
         !section.includes('<!-- prettier-ignore -->')
     )
     filteredSections.map(
-      para => (para !== '\n' || para !== '') && finalSections.push({ para, heading: fSec.heading })
+      (para) =>
+        (para !== '\n' || para !== '') && finalSections.push({ para, heading: fSec.heading })
     )
   })
 
-  const getTitlePath = fSection => {
+  const getTitlePath = (fSection) => {
     const tocItem =
       rest.tableOfContents &&
       rest.tableOfContents.items &&
-      flat(rest.tableOfContents.items).find(t => t.title === fSection.heading.replace(/`/g, ''))
+      flat(rest.tableOfContents.items).find((t) => t.title === fSection.heading.replace(/`/g, ''))
     return tocItem ? removeInlineCode(tocItem.url, true) : ''
   }
 
@@ -93,7 +91,7 @@ const handleRawBody = node => {
   return records
 }
 
-const unnestFrontmatter = node => {
+const unnestFrontmatter = (node) => {
   const { fields, frontmatter, ...rest } = node
 
   return {
@@ -139,7 +137,7 @@ const queries = [
       `,
     transformer: ({ data }) =>
       data.allMdx.edges
-        .map(edge => edge.node)
+        .map((edge) => edge.node)
         .map(unnestFrontmatter)
         .map(handleRawBody)
         .reduce((acc, cur) => [...acc, ...cur], []),
@@ -154,6 +152,3 @@ module.exports = {
   indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
   queries,
 }
-
-
-
