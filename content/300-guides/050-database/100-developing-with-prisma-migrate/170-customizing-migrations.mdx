@@ -36,8 +36,8 @@ To edit a migration file before applying it:
 
 By default, renaming a field in the schema results in a migration that will:
 
-* `CREATE` a new column (for example, `fullname`)
-* `DROP` the existing column (for example, `name`) and the data in that column
+- `CREATE` a new column (for example, `fullname`)
+- `DROP` the existing column (for example, `name`) and the data in that column
 
 To actually **rename** a field and avoid data loss when you run the migration in production, you need to modify the generated migration SQL before applying it to the database. Consider the following schema fragment - the `biograpy` field is spelled wrong.
 
@@ -72,26 +72,27 @@ To rename the `biograpy` field to `biography`:
 
 1. Edit the draft migration as shown, changing `DROP` / `DELETE` to a single `RENAME COLUMN`:
 
-      <TabbedContent tabs={[<FileWithIcon text="Before" icon="code"/>, <FileWithIcon text="After" icon="code" />]}>
+   <TabbedContent tabs={[<FileWithIcon text="Before" icon="code"/>, <FileWithIcon text="After" icon="code" />]}>
 
-      <tab>
+   <tab>
 
-      ```sql file=./prisma/migrations/20210308092620_rename_migration/migration.sql
-      ALTER TABLE "Profile" DROP COLUMN "biograpy",
-      ADD COLUMN  "biography" TEXT NOT NULL;
-      ```
+   ```sql file=./prisma/migrations/20210308092620_rename_migration/migration.sql
+   ALTER TABLE "Profile" DROP COLUMN "biograpy",
+   ADD COLUMN  "biography" TEXT NOT NULL;
+   ```
 
-      </tab>
+   </tab>
 
-      <tab>
+   <tab>
 
-      ```sql file=./prisma/migrations/20210308092620_rename_migration/migration.sql
-      ALTER TABLE "Profile"
-      RENAME COLUMN "biograpy" TO "biography"
-      ```
-      </tab>
+   ```sql file=./prisma/migrations/20210308092620_rename_migration/migration.sql
+   ALTER TABLE "Profile"
+   RENAME COLUMN "biograpy" TO "biography"
+   ```
 
-      </TabbedContent>
+   </tab>
+
+   </TabbedContent>
 
 1. Save and apply the migration:
 
@@ -112,6 +113,7 @@ The pattern involves two components: your application code accessing the databas
 With the _expand and contract_ pattern, renaming the field `bio` to `biography` would look as follows with Prisma:
 
 1. Add the new `biography` field to your Prisma schema and create a migration
+
    ```prisma highlight=4;add;
    model Profile {
      id        Int    @id @default(autoincrement())
@@ -124,6 +126,7 @@ With the _expand and contract_ pattern, renaming the field `bio` to `biography` 
 
 2. _Expand_: update the application code and write to both the `bio` and `biography` fields, but continue reading from the `bio` field, and deploy the code
 3. Create an empty migration and copy existing data from the `bio` to the `biography` field
+
    ```terminal
    npx prisma migrate dev --name copy_biography --create-only
    ```
@@ -151,7 +154,6 @@ With the _expand and contract_ pattern, renaming the field `bio` to `biography` 
    npx prisma migrate dev --name remove_bio
    ```
 
-
 By using this approach, you avoid potential downtime that altering existing fields that are used in the application code are prone to, and reduce the amount of coordination required between applying the migration and deploying the updated application code.
 
 Note that this pattern is applicable in any situation involving a change to a column that has data and is in use by the application code. Examples include combining two fields into one, or transforming a `1:n` relation to a `m:n` relation.
@@ -166,11 +168,11 @@ To change the direction of a 1-1 relation:
 
    ```prisma
    model User {
-        id        Int      @id @default(autoincrement())
-        name      String
-        posts     Post[]
-        profile   Profile? @relation(fields: [profileId], references: [id])
-        profileId Int
+       id        Int      @id @default(autoincrement())
+       name      String
+       posts     Post[]
+       profile   Profile? @relation(fields: [profileId], references: [id])
+       profileId Int
    }
 
     model Profile {
@@ -178,89 +180,92 @@ To change the direction of a 1-1 relation:
         biography String
         user      User
     }
-    ```
+   ```
 
 1. Run the following command to create a **draft migration** that you can edit before applying to the database:
 
-    <CodeWithResult expanded={true}>
-    <cmd>
+   <CodeWithResult expanded={true}>
 
-      ```terminal
-      npx prisma migrate dev --name rename-migration --create-only
-      ```
+   <cmd>
 
-    </cmd>
-    <cmdResult>
+   ```terminal
+   npx prisma migrate dev --name rename-migration --create-only
+   ```
 
-      ```
-      ⚠️  There will be data loss when applying the migration:
+   </cmd>
 
-      • The migration will add a unique constraint covering the columns `[profileId]` on the table `User`. If there are existing duplicate values, the migration will fail.
-      ```
+   <cmdResult>
 
-    </cmdResult>
-    </CodeWithResult>
+   ```
+   ⚠️  There will be data loss when applying the migration:
+
+   • The migration will add a unique constraint covering the columns `[profileId]` on the table `User`. If there are existing duplicate values, the migration will fail.
+   ```
+
+   </cmdResult>
+
+   </CodeWithResult>
 
 1. Edit the draft migration as shown:
 
-      <TabbedContent tabs={[<FileWithIcon text="Before" icon="code"/>, <FileWithIcon text="After" icon="code"/>]}>
+  <TabbedContent tabs={[<FileWithIcon text="Before" icon="code"/>, <FileWithIcon text="After" icon="code"/>]}>
 
-      <tab>
+  <tab>
 
-      ```sql
-      -- DropForeignKey
-      ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
+    ```sql
+    -- DropForeignKey
+    ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
 
-      -- DropIndex
-      DROP INDEX "Profile_userId_unique";
+    -- DropIndex
+    DROP INDEX "Profile_userId_unique";
 
-      -- AlterTable
-      ALTER TABLE "Profile" DROP COLUMN "userId";
+    -- AlterTable
+    ALTER TABLE "Profile" DROP COLUMN "userId";
 
-      -- AlterTable
-      ALTER TABLE "User" ADD COLUMN     "profileId" INTEGER NOT NULL;
+    -- AlterTable
+    ALTER TABLE "User" ADD COLUMN     "profileId" INTEGER NOT NULL;
 
-      -- CreateIndex
-      CREATE UNIQUE INDEX "User_profileId_unique" ON "User"("profileId");
+    -- CreateIndex
+    CREATE UNIQUE INDEX "User_profileId_unique" ON "User"("profileId");
 
-      -- AddForeignKey
-      ALTER TABLE "User" ADD FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      ```
+    -- AddForeignKey
+    ALTER TABLE "User" ADD FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ```
 
-      </tab>
+  </tab>
 
-      <tab>
+  <tab>
 
-      ```sql
-      -- DropForeignKey
-      ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
+    ```sql
+    -- DropForeignKey
+    ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
 
-      -- DropIndex
-      DROP INDEX "Profile_userId_unique";
+    -- DropIndex
+    DROP INDEX "Profile_userId_unique";
 
-      -- AlterTable
-      ALTER TABLE "User" ADD COLUMN "profileId" INTEGER;
+    -- AlterTable
+    ALTER TABLE "User" ADD COLUMN "profileId" INTEGER;
 
-      UPDATE "User"
-      SET "profileId" = "Profile".id
-      FROM "Profile"
-      WHERE "User".id = "Profile"."userId";
+    UPDATE "User"
+    SET "profileId" = "Profile".id
+    FROM "Profile"
+    WHERE "User".id = "Profile"."userId";
 
-      ALTER TABLE "User" ALTER COLUMN "profileId" SET NOT NULL;
+    ALTER TABLE "User" ALTER COLUMN "profileId" SET NOT NULL;
 
-      -- AlterTable
-      ALTER TABLE "Profile" DROP COLUMN "userId";
+    -- AlterTable
+    ALTER TABLE "Profile" DROP COLUMN "userId";
 
-      -- CreateIndex
-      CREATE UNIQUE INDEX "User_profileId_unique" ON "User"("profileId");
+    -- CreateIndex
+    CREATE UNIQUE INDEX "User_profileId_unique" ON "User"("profileId");
 
-      -- AddForeignKey
-      ALTER TABLE "User" ADD FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      ```
+    -- AddForeignKey
+    ALTER TABLE "User" ADD FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ```
 
-      </tab>
+  </tab>
 
-      </TabbedContent>
+  </TabbedContent>
 
 1. Save and apply the migration:
 
