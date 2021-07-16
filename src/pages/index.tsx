@@ -223,7 +223,7 @@ const Row = styled.div`
   margin-top: ${(p) => p.theme.space[32]};
 `
 
-const LinkCard = styled.a`
+const LinkCard = styled.div`
   background: ${(p) => p.theme.colors.gray200};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
