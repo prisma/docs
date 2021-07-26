@@ -50,7 +50,7 @@ model Post {
   title     String
   content   String?
   published Boolean @default(false)
-  author    User?   @relation(fields:  [authorId], references: [id])
+  author    User?   @relation(fields: [authorId], references: [id])
   authorId  Int?
 }
 
