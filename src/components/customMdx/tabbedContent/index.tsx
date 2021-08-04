@@ -1,17 +1,40 @@
 import * as React from 'react'
 import styled from 'styled-components'
 
+import { defaultOSIndex } from './DefaultTabOS'
+
+enum DefaultTabType {
+  OS = 'OS',
+}
+
 interface CodeProps {
   tabs?: any[]
+  defaultTabType?: DefaultTabType
 }
 
 type CodeBlockProps = CodeProps & React.ReactNode
 
-const TabbedContent = ({ tabs, children }: CodeBlockProps) => {
+const TabbedContent = ({ tabs, defaultTabType, children }: CodeBlockProps) => {
   const [activeIndex, setActiveIndex] = React.useState(0)
   const tabContent =
     children &&
     children.filter((child: any) => child.props && child.props.originalType === 'tab')[activeIndex]
+
+  React.useEffect(() => {
+    if (tabs && tabs.length > 1) {
+      // check if any default tab behaviour has been stipulated
+      switch (defaultTabType) {
+        case DefaultTabType.OS: {
+          setActiveIndex(defaultOSIndex(tabs))
+          break
+        }
+        default: {
+          break
+        }
+      }
+    } // else the current default of [0] will remain
+  }, [])
+
   return (
     <Wrapper>
       {tabs && Array.isArray(tabs) && (
