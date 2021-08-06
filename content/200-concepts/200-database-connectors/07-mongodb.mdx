@@ -1,19 +1,189 @@
 ---
 title: 'MongoDB'
-metaTitle: 'MongoDB'
-metaDescription: 'Updates on future support for MongoDB.'
+metaTitle: 'MongoDB database connector'
+metaDescription: 'How Prisma can connect to a MongoDB database using the MongoDB database connector.'
 hidePage: false
-toc: false
+tocDepth: 2
 codeStyle: false
-earlyaccess: true
+preview: true
 ---
 
 <TopBlock>
 
-MongoDB support is in [Early Access](../../about/releases#early-access).
+The MongoDB data source connector connects Prisma to a hosted [MongoDB](https://www.mongodb.com/) instance.
 
-If you're interested in beta testing the MongoDB connector for Prisma, please fill out this <a href="https://pris.ly/mongo">2-minute form</a>, and we'll reach out with details.
+<Admonition type="info">
 
-You can also follow our progress in [issue #1277 on GitHub](https://github.com/prisma/prisma/issues/1277).
+If you'd like to be kept up to date on the latest updates and stories about the Prisma MongoDB Connector, <a href="https://pris.ly/mongo">sign up here</a>.
+
+</Admonition>
 
 </TopBlock>
+
+## Example
+
+To connect to a MongoDB server, you need to configure a [`datasource`](../components/prisma-schema/data-sources) block in your [Prisma schema file](../components/prisma-schema):
+
+```prisma file=schema.prisma
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+```
+
+The fields passed to the `datasource` block are:
+
+- `provider`: Specifies the `mongodb` data source connector.
+- `url`: Specifies the [connection URL](#connection-url) for the MongoDB server. In this case, an [environment variable is used](../more/environment-variables) to provide the connection URL.
+
+<Admonition type="warning">
+
+The MongoDB database connector uses transactions to support nested writes. Transactions **requires** a [replica set](https://docs.mongodb.com/manual/tutorial/deploy-replica-set/) deployment. The easiest way to deploy a replica set is with [Atlas](https://docs.atlas.mongodb.com/getting-started/). It's free to get started.
+
+</Admonition>
+
+Because MongoDB is currently a preview feature, you need to explicitly define that in the [`generator`]() block.
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+```
+
+## Connection details
+
+### Connection URL
+
+The MongoDB connection URL can be configured in different ways depending on how you are hosting your database. The standard configuration is made up of the following components:
+
+![Structure of the MongoDB connection URL](./mongodb.png)
+
+#### Base URL and path
+
+The base URL and path sections of the connection URL are made up of your authentication credentials followed by the host (and optionally, a port number) and database.
+
+```
+mongodb://USERNAME:PASSWORD@HOST/DATABASE
+```
+
+The following components make up the _base URL_ of your database:
+
+| Name     | Placeholder | Description                                                                                                                                                                                                                                                                                                                                                |
+| :------- | :---------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User     | `USERNAME`  | Name of your database user, e.g. `janedoe`                                                                                                                                                                                                                                                                                                                 |
+| Password | `PASSWORD`  | Password for your database user                                                                                                                                                                                                                                                                                                                            |
+| Host     | `HOST`      | The host where a [`mongod`](https://docs.mongodb.com/manual/reference/program/mongod/#mongodb-binary-bin.mongod) instance is running. If you are running a sharded cluster this will a [`mongos`](https://docs.mongodb.com/manual/reference/program/mongos/#mongodb-binary-bin.mongos) instance. This can be a hostname, IP address or UNIX domain socket. |
+| Port     | `PORT`      | Port on which your database server is running, e.g. `1234`. If none is provided the default `27017` is used.                                                                                                                                                                                                                                               |
+| Database | `DATABASE`  | Name of the database to use. If none is specified but the `authSource` option is set then the `authSource` database name is used. If neither the database in the connection string nor the `authSource` option is specified then it defaults to `admin`                                                                                                    |
+
+<Admonition type="info">
+
+You must [percentage-encode special characters](../../../reference/database-reference/connection-urls#special-characters).
+
+</Admonition>
+
+#### Arguments
+
+A connection URL can also take arguments. The following example sets three arguments:
+
+- An `ssl` connection
+- A `connectTimeoutMS`
+- And the `maxPoolSize`
+
+```
+mongodb://USERNAME:PASSWORD@HOST/DATABASE?ssl=true&connectTimeoutMS=5000&maxPoolSize=50
+```
+
+Refer to the [MongoDB connection string documentation](https://docs.mongodb.com/manual/reference/connection-string/#connection-string-options) for a complete list of connection string arguments. There are no Prisma-specific arguments.
+
+## Using <inlinecode>ObjectId</inlinecode>
+
+It is common practice for the `_id` field of a MongoDB document to contain an `ObjectId`:
+
+```json
+{
+  "_id": { "$oid": "60d599cb001ef98000f2cad2" },
+  "createdAt": { "$date": { "$numberLong": "1624611275577" } },
+  "email": "ella@prisma.io",
+  "name": "Ella",
+  "role": "ADMIN"
+}
+```
+
+Any field (most commonly IDs and relation scalar fields) that maps to an `ObjectId` in the underlying database:
+
+- Must be of type `String` or `Bytes`
+- Must include the `@db.ObjectId` attribute
+- Can optionally use `@default(dbgenerated())` to auto-generate a valid `ObjectId`
+
+```prisma
+model User {
+  id  String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  // Other fields
+}
+```
+
+```prisma
+model User {
+  id  Bytes  @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  // Other fields
+}
+```
+
+See also: [Defining ID fields in MongoDB](../components/prisma-schema/data-model#defining-ids-in-mongodb)
+
+### Generating `ObjectId`
+
+To generate a valid `ObjectId` (for testing purposes or to manually set an ID field value), use the [`bson`](https://www.npmjs.com/package/bson) package.
+
+```
+npm install --save bson
+```
+
+```ts
+import { ObjectId } from 'bson'
+
+const id = new ObjectId()
+```
+
+## Known limitations
+
+As MongoDB support is currently in preview there are some known limitations that come with adopting Prisma into your MongoDB project, these include:
+
+- Currently **no embedded collection support**. See [github.com/prisma/prisma/issues/6708](https://github.com/prisma/prisma/issues/6708).
+  - Instead try to [normalize your data models](https://docs.mongodb.com/manual/core/data-model-design/#normalized-data-models). This involves
+    describing relationships using references between documents.
+- The [Migrate](../components/prisma-migrate) and [Introspection](../components/introspection) workflows are currently **not** supported.
+- [`@@id`](../../reference/api-reference/prisma-schema-reference#id-1) and [auto-increment](../../reference/api-reference/prisma-schema-reference#generate-auto-incrementing-integers-as-ids) are **not** currently supported.
+- Error handling is incomplete.
+
+## Troubleshooting
+
+### Error: Transactions are not supported by this deployment
+
+MongoDB only allows you to start a transaction on a replica set. Prisma uses transactions internally to avoid partial writes on nested queries. This means we inherit the requirement of needing a replica set configured.
+
+When you try to use Prisma's MongoDB connector on a deployment that has no replica set configured, you can experience an error message as the following:
+
+```
+PrismaClientUnknownRequestError2 [PrismaClientUnknownRequestError]:
+Invalid `prisma.post.create()` invocation in
+/index.ts:9:21
+
+   6 await prisma.$connect()
+   7
+   8 // Create the first post
+→  9 await prisma.post.create(
+  Error in connector: Database error. error code: unknown, error message: Transactions are not supported by this deployment
+    at cb (/node_modules/@prisma/client/runtime/index.js:34804:17)
+    at processTicksAndRejections (internal/process/task_queues.js:97:5) {
+  clientVersion: '2.xx.0'
+}
+```
+
+To resolve this, we suggest you change your deployment to one with a replica set configured.
+
+One simple way for this is to use use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) to launch a free instance that has replica set support out of the box.
+
+There's also an option to run the replica set locally with this guide: https://docs.mongodb.com/manual/tutorial/convert-standalone-to-replica-set

@@ -45,13 +45,19 @@ You can further customize `PrismaClient` with [constructor parameters](../../../
 
 Your application should generally only create **one instance** of `PrismaClient`. How to achieve this depends on whether you are using Prisma in a [long-running application](../../../../guides/performance-and-optimization/connection-management#prismaclient-in-long-running-applications) <span class="guide"></span> or in a [serverless environment](../../../../guides/performance-and-optimization/connection-management#prismaclient-in-serverless-environments) <span class="guide"></span>.
 
-The reason for this is that each instance of `PrismaClient` manages a [database connection pool](connection-pool), which means that a large number of clients can **exhaust the database connection limit**:
+The reason for this is that each instance of `PrismaClient` manages a connection pool, which means that a large number of clients can **exhaust the database connection limit**. This applies to all database connectors.
+
+If you use the **MongoDB connector**, connections are managed by the MongoDB driver connection pool. If you use a **relational database connector**, connections are managed by Prisma's [connection pool](connection-pool). Each instance of `PrismaClient` creates its own pool.
 
 1. Each client creates its own instance of the [query engine](../../prisma-engines/query-engine).
-2. Each query engine creates a [connection pool](connection-pool) with a default pool size of `num_physical_cpus * 2 + 1`.
-3. Too many connections may start to **slow down your database** and eventually lead to the following error:
+1. Each query engine creates a [connection pool](connection-pool) with a default pool size of:
 
-    ```
-    Error in connector: Error querying the database: db error: FATAL: sorry, too many clients already
-        at PrismaClientFetcher.request
-    ```
+   - `num_physical_cpus * 2 + 1` for relational databases
+   - [`100` for MongoDB](https://docs.mongodb.com/manual/reference/connection-string/#mongodb-urioption-urioption.maxPoolSize)
+
+1. Too many connections may start to **slow down your database** and eventually lead to errors such as:
+
+   ```
+   Error in connector: Error querying the database: db error: FATAL: sorry, too many clients already
+       at PrismaClientFetcher.request
+   ```

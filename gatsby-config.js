@@ -119,11 +119,20 @@ let plugins = [
       defaultDataLayer: { website: 'docs' },
     },
   },
+  {
+    resolve: `gatsby-plugin-percy`,
+    options: {
+      // example options:
+      // files: [`dir/*.html`],
+      // ignore: [`ignore/*.html`],
+      // config: `config/.percy.yaml`,
+    },
+  },
 ]
 
-//if (process.env.INDEX_ALGOLIA === 'true') {
+if (process.env.INDEX_ALGOLIA === 'true') {
   plugins = [...plugins, algoliaPlugin]
-//}
+}
 
 module.exports = {
   // The line below has been disabled so that both PR previews and production use the same paths
