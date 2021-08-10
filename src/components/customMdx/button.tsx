@@ -43,23 +43,23 @@ export const ButtonWrapper = withProps<ButtonProps>(styled.a)`
     margin-right: 10px;
     display: inline-flex;
     align-items: center;
-    ${p => (p.block ? 'width: 100%;' : '')}
+    ${(p) => (p.block ? 'width: 100%;' : '')}
     border: none;
     text-decoration: none;
     height: 40px;
-    font-size: ${p => p.theme.fontSizes[16]};
+    font-size: ${(p) => p.theme.fontSizes[16]};
     box-sizing: border-box;
     outline: none;
-    opacity: ${p => (p.disabled ? '0.2' : 1)};
+    opacity: ${(p) => (p.disabled ? '0.2' : 1)};
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    background: ${p => backgroundColorMap[p.color || 'green']};
-    color: ${p => colorMap[p.color || 'green']} !important;
+    background: ${(p) => backgroundColorMap[p.color || 'green']};
+    color: ${(p) => colorMap[p.color || 'green']} !important;
     line-height: 1;
     font-size: 14px;
     font-weight: 700;
-    cursor: ${p => (p.disabled ? 'default' : 'pointer')};
-    pointer-events: ${p => (p.disabled ? 'none' : 'all')};
+    cursor: ${(p) => (p.disabled ? 'default' : 'pointer')};
+    pointer-events: ${(p) => (p.disabled ? 'none' : 'all')};
     border-radius: 6px;
     transition: color 150ms ease 0s, background 150ms ease 0s, transform 100ms ease 0s;
     white-space: nowrap;

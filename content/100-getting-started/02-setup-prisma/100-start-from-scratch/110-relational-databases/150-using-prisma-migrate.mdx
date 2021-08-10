@@ -1,0 +1,309 @@
+---
+title: 'Using Prisma Migrate'
+metaTitle: 'Using Prisma Migrate'
+metaDescription: 'Create database tables with Prisma Migrate'
+langSwitcher: ['typescript', 'node']
+dbSwitcher: ['postgres', 'mysql']
+toc: false
+---
+
+## Create database tables with Prisma Migrate
+
+In this guide, you'll use [Prisma Migrate](../../../../concepts/components/prisma-migrate) to create the tables in your database. Add the following Prisma data model to your Prisma schema in `prisma/schema.prisma`:
+
+```prisma file=prisma/schema.prisma copy
+model Post {
+  id        Int      @default(autoincrement()) @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String   @db.VarChar(255)
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+
+model Profile {
+  id     Int     @default(autoincrement()) @id
+  bio    String?
+  user   User    @relation(fields: [userId], references: [id])
+  userId Int     @unique
+}
+
+model User {
+  id      Int      @default(autoincrement()) @id
+  email   String   @unique
+  name    String?
+  posts   Post[]
+  profile Profile?
+}
+```
+
+To map your data model to the database schema, you need to use the `prisma migrate` CLI commands:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+This command does two things:
+
+1. It creates a new SQL migration file for this migration
+1. It runs the SQL migration file against the database
+
+> **Note**: `generate` is called under the hood by default, after running `prisma migrate dev`. If the `prisma-client-js` generator is defined in your schema, this will check if `@prisma/client` is installed and install it if it's missing.
+
+Great, you now created three tables in your database with Prisma Migrate 🚀
+
+<SwitchTech technologies={['*', 'postgresql']}>
+
+<TabbedContent tabs={[<FileWithIcon text="SQL" icon="code"/>, <FileWithIcon text="Tables" icon="database"/>]}>
+
+<tab>
+
+```sql
+CREATE TABLE "Post" (
+  "id" SERIAL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  "title" VARCHAR(255) NOT NULL,
+  "content" TEXT,
+  "published" BOOLEAN NOT NULL DEFAULT false,
+  "authorId" INTEGER NOT NULL,
+  PRIMARY KEY ("id")
+);
+
+CREATE TABLE "Profile" (
+  "id" SERIAL,
+  "bio" TEXT,
+  "userId" INTEGER NOT NULL,
+  PRIMARY KEY ("id")
+);
+
+CREATE TABLE "User" (
+  "id" SERIAL,
+  "email" TEXT NOT NULL,
+  "name" TEXT,
+  PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "Profile.userId_unique" ON "Profile"("userId");
+CREATE UNIQUE INDEX "User.email_unique" ON "User"("email");
+ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+</tab>
+
+<tab>
+
+**User**
+
+| Column name | Type      | Primary key | Foreign key | Required | Default            |
+| :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER` | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `name`      | `TEXT`    | No          | No          | No       | -                  |
+| `email`     | `TEXT`    | No          | No          | **✔️**   | -                  |
+
+**Post**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER`      | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**   | `now()`            |
+| `title`     | `VARCHAR(255)` | No          | No          | **✔️**   | -                  |
+| `content`   | `TEXT`         | No          | No          | No       | -                  |
+| `published` | `BOOLEAN`      | No          | No          | **✔️**   | `false`            |
+| `authorId`  | `INTEGER`      | No          | **✔️**      | **✔️**   | -                  |
+
+**Profile**
+
+| Column name | Type      | Primary key | Foreign key | Required | Default            |
+| :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER` | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `bio`       | `TEXT`    | No          | No          | No       | -                  |
+| `userId`    | `INTEGER` | No          | **✔️**      | **✔️**   | -                  |
+
+</tab>
+
+</TabbedContent>
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+<TabbedContent tabs={[<FileWithIcon text="SQL" icon="code"/>, <FileWithIcon text="Tables" icon="database"/>]}>
+
+<tab>
+
+```sql
+CREATE TABLE "Post" (
+  "id" SERIAL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  "title" TEXT NOT NULL,
+  "content" TEXT,
+  "published" BOOLEAN NOT NULL DEFAULT false,
+  "authorId" INTEGER NOT NULL,
+  PRIMARY KEY ("id")
+);
+
+CREATE TABLE "Profile" (
+  "id" SERIAL,
+  "bio" TEXT,
+  "userId" INTEGER NOT NULL,
+  PRIMARY KEY ("id")
+);
+
+CREATE TABLE "User" (
+  "id" SERIAL,
+  "email" TEXT NOT NULL,
+  "name" TEXT,
+  PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "Profile.userId_unique" ON "Profile"("userId");
+CREATE UNIQUE INDEX "User.email_unique" ON "User"("email");
+ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+</tab>
+
+<tab>
+
+**User**
+
+| Column name | Type      | Primary key | Foreign key | Required | Default            |
+| :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER` | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `name`      | `TEXT`    | No          | No          | No       | -                  |
+| `email`     | `TEXT`    | No          | No          | **✔️**   | -                  |
+
+**Post**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER`      | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**   | `now()`            |
+| `title`     | `VARCHAR(255)` | No          | No          | **✔️**   | -                  |
+| `content`   | `TEXT`         | No          | No          | No       | -                  |
+| `published` | `BOOLEAN`      | No          | No          | **✔️**   | `false`            |
+| `authorId`  | `INTEGER`      | No          | **✔️**      | **✔️**   | -                  |
+
+**Profile**
+
+| Column name | Type      | Primary key | Foreign key | Required | Default            |
+| :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER` | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `bio`       | `TEXT`    | No          | No          | No       | -                  |
+| `userId`    | `INTEGER` | No          | **✔️**      | **✔️**   | -                  |
+
+</tab>
+
+</TabbedContent>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'postgresql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-node-postgres"
+  arrowLeft
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-postgres"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'mysql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-node-mysql"
+  arrowRight
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-mysql"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'postgresql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-typescript-postgres"
+  arrowLeft
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-postgres"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'mysql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-typescript-mysql"
+  arrowRight
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-mysql"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>

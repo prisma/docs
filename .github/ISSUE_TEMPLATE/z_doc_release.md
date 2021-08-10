@@ -1,9 +1,9 @@
 ---
 name: 🎉 Documentation release
 about: INTERNAL ONLY. Documentation release tasks.
-title: "Release:"
-labels: "docs,docs/task"
-assignees: ""
+title: 'Release:'
+labels: 'docs,docs/task'
+assignees: ''
 ---
 
 ## Release
@@ -14,5 +14,5 @@ assignees: ""
 
 ## After release
 
-- [ ] Add the 'What's new' video 
+- [ ] Add the 'What's new' video
 - [ ] Clean up milestone

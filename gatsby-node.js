@@ -35,7 +35,7 @@ exports.createPages = ({ graphql, actions }) => {
     if (lang || db) {
       const queryParam = `${lang ? `${lang}${db ? '-' : ''}` : ''}${db ? `${db}` : ''}`
       const titleEntry = frontmatter.techMetaTitles
-        ? frontmatter.techMetaTitles.find(item => item.name === queryParam)
+        ? frontmatter.techMetaTitles.find((item) => item.name === queryParam)
         : null
       pageSeoTitle = titleEntry ? titleEntry.value : pageSeoTitle
     }
@@ -47,7 +47,7 @@ exports.createPages = ({ graphql, actions }) => {
     if (lang || db) {
       const queryParam = `${lang ? `${lang}${db ? '-' : ''}` : ''}${db ? `${db}` : ''}`
       const descEntry = frontmatter.techMetaDescriptions
-        ? frontmatter.techMetaDescriptions.find(item => item.name === queryParam)
+        ? frontmatter.techMetaDescriptions.find((item) => item.name === queryParam)
         : null
       pageSeoDesc = descEntry ? descEntry.value : pageSeoDesc
     }
@@ -99,12 +99,12 @@ exports.createPages = ({ graphql, actions }) => {
           }
         }
       }
-    `).then(result => {
+    `).then((result) => {
       result.data.allMdx.edges.forEach(({ node }) => {
         const { langSwitcher, dbSwitcher } = node.frontmatter
         if (langSwitcher && dbSwitcher) {
-          langSwitcher.forEach(lang =>
-            dbSwitcher.forEach(db => {
+          langSwitcher.forEach((lang) =>
+            dbSwitcher.forEach((db) => {
               createPage({
                 path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}-${db}`,
                 component: path.resolve(`./src/layouts/articleLayout.tsx`),
@@ -117,7 +117,7 @@ exports.createPages = ({ graphql, actions }) => {
             })
           )
         } else if (langSwitcher && !dbSwitcher) {
-          langSwitcher.forEach(lang =>
+          langSwitcher.forEach((lang) =>
             createPage({
               path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}`,
               component: path.resolve(`./src/layouts/articleLayout.tsx`),
@@ -129,7 +129,7 @@ exports.createPages = ({ graphql, actions }) => {
             })
           )
         } else if (!langSwitcher && dbSwitcher) {
-          node.frontmatter.dbSwitcher.forEach(db =>
+          node.frontmatter.dbSwitcher.forEach((db) =>
             createPage({
               path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${db}`,
               component: path.resolve(`./src/layouts/articleLayout.tsx`),
@@ -154,7 +154,7 @@ exports.createPages = ({ graphql, actions }) => {
       })
       resolve()
       const redirects = result.data.site.siteMetadata.redirects
-      redirects.map(redirect =>
+      redirects.map((redirect) =>
         createRedirect({
           fromPath: redirect.from,
           toPath: redirect.to,

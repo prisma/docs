@@ -8,31 +8,31 @@ import sendToMailchimp from './mailChimp'
 const NewsLetterWrapper = styled.div`
   h4 {
     margin: 0;
-    line-height: ${p => p.theme.space[48]};
+    line-height: ${(p) => p.theme.space[48]};
     font-weight: bold;
     letter-spacing: 0.1em;
   }
   .email {
     position: relative;
-    margin-top: ${p => p.theme.space[24]};
+    margin-top: ${(p) => p.theme.space[24]};
     display: flex;
     align-items: center;
     label {
       display: none;
     }
     input {
-      background: ${p => p.theme.colors.white};
+      background: ${(p) => p.theme.colors.white};
       box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-      border-radius: ${p => p.theme.radii.small};
+      border-radius: ${(p) => p.theme.radii.small};
       width: 100%;
       border: 0;
-      padding: ${p => p.theme.space[24]} 60px;
+      padding: ${(p) => p.theme.space[24]} 60px;
       font-size: 100%;
       font-family: Inter;
       font-weight: normal;
 
       &::placeholder {
-        color: ${p => p.theme.colors.gray500};
+        color: ${(p) => p.theme.colors.gray500};
       }
     }
     .email-icon {
@@ -50,20 +50,20 @@ const NewsLetterWrapper = styled.div`
       height: 32px;
       circle {
         transition: 0.2s fill ease;
-        fill: ${p => p.theme.colors.green500};
+        fill: ${(p) => p.theme.colors.green500};
       }
       path {
         transition: 0.2s stroke ease;
-        stroke: ${p => p.theme.colors.white};
+        stroke: ${(p) => p.theme.colors.white};
       }
       &[disabled] {
         cursor: default;
 
         circle {
-          fill: ${p => p.theme.colors.gray300};
+          fill: ${(p) => p.theme.colors.gray300};
         }
         path {
-          stroke: ${p => p.theme.colors.gray600};
+          stroke: ${(p) => p.theme.colors.gray600};
         }
       }
     }

@@ -82,7 +82,7 @@ Since you'll be using TypeScript in this guide, you need to add the required dep
 npm install typescript ts-node-dev --save-dev
 ```
 
-Create a new file called `tsconfig.json` in the root directory of your project:
+Create a new file named `tsconfig.json` in the root directory of your project:
 
 ```terminal copy
 touch tsconfig.json
@@ -157,7 +157,7 @@ new GraphQLServer({ schema, context: createContext() }).start(() =>
 
 Note that this setup already contains the configuration of the Prisma plugin for Nexus. This will enable the `t.model` and `t.crud` functionality that you'll get to know later in this guide.
 
-In the `typegenAutoConfig` setting, you're providing additional types that help your editor to provide your autocompletion as you develop your app. Right now it references a file called `types.ts` that you don't have in your project yet. This file will contain the type of your `context` object that's passed through your GraphQL resolver chain.
+In the `typegenAutoConfig` setting, you're providing additional types that help your editor to provide your autocompletion as you develop your app. Right now it references a file named `types.ts` that you don't have in your project yet. This file will contain the type of your `context` object that's passed through your GraphQL resolver chain.
 
 Create the new `types.ts` file inside the `src` directory:
 
@@ -269,7 +269,7 @@ At this point, any _relation fields_ might give you TypeScript errors (in this c
 
 Note that the `t.model.posts` relation exposes a _list_ of `Post` objects. By default, Nexus exposes only _pagination_ properties for that list – if you want to add _ordering_ and _filtering_ for that relation as well, you'll need to explicitly enable those:
 
-```ts line-number
+```ts line-number highlight=10-13;add
 const User = objectType({
   name: 'User',
   definition(t) {
@@ -279,10 +279,10 @@ const User = objectType({
     t.model.jsonData()
     t.model.role()
     t.model.profile()
-+    t.model.posts({
-+      filtering: true,
-+      ordering: true,
-+    })
+    t.model.posts({
+      filtering: true,
+      ordering: true,
+    })
   },
 })
 ```
@@ -376,9 +376,9 @@ const Category = objectType({
 
 Be sure to include all newly defined types in the `types` option that's provided to `makeSchema`:
 
-```ts line-number
+```ts line-number highlight=2;normal
 export const schema = makeSchema({
-|types: [Query, User, Post, Profile, Category],
+  types: [Query, User, Post, Profile, Category],
   plugins: [nexusSchemaPrisma()],
   outputs: {
     schema: __dirname + '/../schema.graphql',
@@ -465,14 +465,14 @@ Similar to `model`, this property is available because you're using the `nexus-p
 
 To add the `users` query to your GraphQL API, add the following lines to the query type definition:
 
-```ts line-number
+```ts line-number highlight=3-6;add
 const Query = queryType({
   definition(t) {
-+    t.crud.users({
-+      filtering: true,
-+      ordering: true,
-+    })
-  }
+    t.crud.users({
+      filtering: true,
+      ordering: true,
+    })
+  },
 })
 ```
 
@@ -531,7 +531,10 @@ const resolvers = {
       return context.prisma.query.posts(
         {
           where: {
-            OR: [{ title_contains: args.searchString }, { content_contains: args.searchString }],
+            OR: [
+              { title_contains: args.searchString },
+              { content_contains: args.searchString },
+            ],
           },
         },
         info
@@ -546,17 +549,17 @@ const resolvers = {
 
 To get the same behavior with Nexus, you'll need to add a `t.field` definition to the `queryType`:
 
-```ts line-number
+```ts line-number highlight=5-9;add
 const Query = queryType({
   definition(t) {
     // ... previous queries
 
-+    t.list.field('posts', {
-+      type: 'Post',
-+      nullable: false,
-+      args: { searchString: stringArg() }
-+    })
-  }
+    t.list.field('posts', {
+      type: 'Post',
+      nullable: false,
+      args: { searchString: stringArg() },
+    })
+  },
 })
 ```
 
@@ -575,7 +578,7 @@ However, the code is missing the actual resolver logic. This is what you're goin
 
 You can add the resolver with Nexus as follows:
 
-```ts line-number
+```ts line-number highlight=9-21;add
 const Query = queryType({
   definition(t) {
     // ... previous queries
@@ -584,19 +587,22 @@ const Query = queryType({
       type: 'Post',
       nullable: false,
       args: { searchString: stringArg() },
-+      resolve: (_, args, context) => {
-+        return context.prisma.post.findMany({
-+          where: {
-+            OR: [{
-+              title: { contains: args.searchString }
-+            }, {
-+              content: { contains: args.searchString }
-+            }]
-+          }
-+        })
-+      }
+      resolve: (_, args, context) => {
+        return context.prisma.post.findMany({
+          where: {
+            OR: [
+              {
+                title: { contains: args.searchString },
+              },
+              {
+                content: { contains: args.searchString },
+              },
+            ],
+          },
+        })
+      },
     })
-  }
+  },
 })
 ```
 
@@ -657,39 +663,39 @@ const resolvers = {
 
 To get the same behavior with Nexus, you'll need to add a `t.field` definition to the `queryType` and define an `inputObjectType` that includes the two `@unique` fields of your `User` model:
 
-```ts line-number
-+import { inputObjectType, arg } from "@nexus/schema"
+```ts line-number highlight=1,3-9,15-23;add
+import { inputObjectType, arg } from '@nexus/schema'
 
-+const UserUniqueInput = inputObjectType({
-+  name: 'UserUniqueInput',
-+  definition(t) {
-+    t.string('id')
-+    t.string('email')
-+  },
-+})
+const UserUniqueInput = inputObjectType({
+  name: 'UserUniqueInput',
+  definition(t) {
+    t.string('id')
+    t.string('email')
+  },
+})
 
 const Query = queryType({
   definition(t) {
     // ... previous queries
 
-+    t.field('user', {
-+      type: 'User',
-+      args: {
-+        userUniqueInput: arg({
-+          type: 'UserUniqueInput',
-+          nullable: false,
-+       })
-+      }
-+    })
-  }
+    t.field('user', {
+      type: 'User',
+      args: {
+        userUniqueInput: arg({
+          type: 'UserUniqueInput',
+          nullable: false,
+        }),
+      },
+    })
+  },
 })
 ```
 
 Since `UserUniqueInput` is a new type in your GraphQL schema, you again need to add it to the `types` option that's passed to `makeSchema`:
 
-```ts line-number
+```ts line-number highlight=2;normal
 export const schema = makeSchema({
-|types: [Query, User, Post, Profile, Category, UserUniqueInput],
+  types: [Query, User, Post, Profile, Category, UserUniqueInput],
   plugins: [nexusSchemaPrisma()],
   outputs: {
     schema: __dirname + '/../schema.graphql',
@@ -708,17 +714,17 @@ export const schema = makeSchema({
 
 If you look at the generated SDL version of your GraphQL schema inside `schema.graphql`, you'll notice that this change already added the correct _definition_ to your GraphQL schema:
 
-```graphql line-number
+```graphql line-number highlight=3,7-10;normal
 type Query {
   posts(searchString: String): [Post!]
-|  user(userUniqueInput: UserUniqueInput!): User
+  user(userUniqueInput: UserUniqueInput!): User
   users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: Enumerable<UserOrderByInput>, skip: Int, where: UserWhereInput): [User!]!
 }
 
-| input UserUniqueInput {
-|   email: String
-|   id: String
-| }
+input UserUniqueInput {
+  email: String
+  id: String
+}
 ```
 
 You can even send the respective query via the GraphQL Playground already:
@@ -738,7 +744,7 @@ However, because the resolver is not yet implemented you will not get any data b
 
 That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
 
-```ts line-number
+```ts line-number highlight=22-29;add
 const UserUniqueInput = inputObjectType({
   name: 'UserUniqueInput',
   definition(t) {
@@ -758,19 +764,18 @@ const Query = queryType({
         userUniqueInput: arg({
           type: 'UserUniqueInput',
           nullable: false,
+        }),
+      },
+      resolve: (_, args, context) => {
+        return context.prisma.user.findUnique({
+          where: {
+            id: args.userUniqueInput?.id,
+            email: args.userUniqueInput?.email,
+          },
         })
       },
-+      resolve: (_, args, context) => {
-+        return context.prisma.user.findUnique({
-+          where: {
-+            id: args.userUniqueInput?.id,
-+            email: args.userUniqueInput?.email
-+          }
-+        })
-+      }
     })
   },
-  }
 })
 ```
 
@@ -796,9 +801,9 @@ const Mutation = mutationType({
 
 In order to make sure that the new `Mutation` type is picked by up Nexus, you need to add it to the `types` that are provided to `makeSchema`:
 
-```ts line-number
+```ts line-number highlight=2;normal
 export const schema = makeSchema({
-|types: [Query, User, Post, Profile, Category, UserUniqueInput, Mutation],
+  types: [Query, User, Post, Profile, Category, UserUniqueInput, Mutation],
   plugins: [nexusSchemaPrisma()],
   outputs: {
     schema: __dirname + '/../schema.graphql',
@@ -849,13 +854,13 @@ Similar to `model`, this property is available because you're using the `nexus-p
 
 To add the `createUser` mutation to your GraphQL API, add the following lines to the query type definition:
 
-```ts line-number
+```ts line-number highlight=3-5;add
 const Mutation = mutationType({
   definition(t) {
-+    t.crud.createOneUser({
-+      alias: 'createUser',
-+    })
-  }
+    t.crud.createOneUser({
+      alias: 'createUser',
+    })
+  },
 })
 ```
 
@@ -924,29 +929,29 @@ const resolvers = {
 
 To get the same behavior with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
 
-```ts line-number
+```ts line-number highlight=5-12;add
 const Mutation = mutationType({
   definition(t) {
     // ... previous mutations
 
-+    t.field('createDraft', {
-+      type: 'Post',
-+      args: {
-+        title: stringArg({ nullable: false }),
-+        content: stringArg(),
-+        authorId: stringArg({ nullable: false }),
-+      }
-+    })
-  }
+    t.field('createDraft', {
+      type: 'Post',
+      args: {
+        title: stringArg({ nullable: false }),
+        content: stringArg(),
+        authorId: stringArg({ nullable: false }),
+      },
+    })
+  },
 })
 ```
 
 If you look at the generated SDL version of your GraphQL schema inside `schema.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
 
-```graphql line-number
+```graphql line-number highlight=3;normal
 type Mutation {
   createUser(data: UserCreateInput!): User!
-|  createDraft(title: String!, content: String, authorId: String!): Post!
+  createDraft(title: String!, content: String, authorId: String!): Post!
 }
 ```
 
@@ -971,7 +976,7 @@ However, because the resolver is not yet implemented, no new `Post` record will 
 
 That's because you're still missing the _resolver_ implementation for that mutation. You can add the resolver with Nexus as follows:
 
-```ts line-number
+```ts line-number highlight=12-22;add
 const Mutation = mutationType({
   definition(t) {
     // ... previous mutations
@@ -983,19 +988,19 @@ const Mutation = mutationType({
         content: stringArg(),
         authorId: stringArg({ nullable: false }),
       },
-+      resolve: (_, args, context) => {
-+        return context.prisma.post.create({
-+          data: {
-+            title: args.title,
-+            content: args.content,
-+            author: {
-+              connect: { id: args.authorId }
-+            }
-+          }
-+        })
-+      }
+      resolve: (_, args, context) => {
+        return context.prisma.post.create({
+          data: {
+            title: args.title,
+            content: args.content,
+            author: {
+              connect: { id: args.authorId },
+            },
+          },
+        })
+      },
     })
-  }
+  },
 })
 ```
 
@@ -1041,32 +1046,32 @@ const resolvers = {
 
 To get the same behavior with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
 
-```ts line-number
+```ts line-number highlight=5-14;add
 const Mutation = mutationType({
   definition(t) {
     // ... previous mutations
 
-+    t.field('updateBio', {
-+      type: 'User',
-+      args: {
-+        userUniqueInput: arg({
-+          type: 'UserUniqueInput',
-+          nullable: false
-+        }),
-+        bio: stringArg({ nullable: false })
-+      },
-+    })
-  }
+    t.field('updateBio', {
+      type: 'User',
+      args: {
+        userUniqueInput: arg({
+          type: 'UserUniqueInput',
+          nullable: false,
+        }),
+        bio: stringArg({ nullable: false }),
+      },
+    })
+  },
 })
 ```
 
 If you look at the generated SDL version of your GraphQL schema inside `schema.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
 
-```graphql line-number
+```graphql line-number highlight=4;normal
 type Mutation {
   createUser(data: UserCreateInput!): User!
   createDraft(title: String!, content: String, authorId: String!): Post!
-|  updateBio(bio: String!, userUniqueInput: UserUniqueInput!): User
+  updateBio(bio: String!, userUniqueInput: UserUniqueInput!): User
 }
 ```
 
@@ -1074,7 +1079,10 @@ You can even send the respective mutation via the GraphQL Playground already:
 
 ```graphql
 mutation {
-  updateBio(userUniqueInput: { email: "alice@prisma.io" }, bio: "I like turtles") {
+  updateBio(
+    userUniqueInput: { email: "alice@prisma.io" }
+    bio: "I like turtles"
+  ) {
     id
     name
     profile {
@@ -1091,7 +1099,7 @@ However, because the resolver is not yet implemented, nothing will be updated in
 
 That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
 
-```ts line-number
+```ts line-number highlight=14-26;add
 const Mutation = mutationType({
   definition(t) {
     // ... previous mutations
@@ -1105,19 +1113,20 @@ const Mutation = mutationType({
         }),
         bio: stringArg()
       },
-+      resolve: (_, args, context) => {
-+        return context.prisma.user.update({
-+          where: {
-+            id: args.userUniqueInput?.id,
-+            email: args.userUniqueInput?.email
-+          },
-+          data: {
-+            profile: {
-+              create: { bio: args.bio }
-+            }
-+          }
-+        })
+      resolve: (_, args, context) => {
+        return context.prisma.user.update({
+          where: {
+            id: args.userUniqueInput?.id,
+            email: args.userUniqueInput?.email
+          },
+          data: {
+            profile: {
+              create: { bio: args.bio }
+            }
+          }
+        })
       }
+    }
   }
 })
 ```
@@ -1143,7 +1152,7 @@ type Mutation {
 const resolvers = {
   Mutation: {
     addPostToCategories: (_, args, context, info) => {
-      const ids = args.categoryIds.map(id => ({ id }))
+      const ids = args.categoryIds.map((id) => ({ id }))
       return context.prisma.mutation.updatePost(
         {
           data: {
@@ -1167,33 +1176,33 @@ const resolvers = {
 
 To get the same behavior with Nexus, you'll need to add a `t.field` definition to the `mutationType`:
 
-```ts line-number
+```ts line-number highlight=5-14;add
 const Mutation = mutationType({
   definition(t) {
     // ... mutations from before
 
-+  t.field('addPostToCategories', {
-+      type: 'Post',
-+      args: {
-+        postId: stringArg({ nullable: false }),
-+        categoryIds: stringArg({
-+          list: true,
-+          nullable: false
-+        }),
-+      },
-+    })
-  }
+    t.field('addPostToCategories', {
+      type: 'Post',
+      args: {
+        postId: stringArg({ nullable: false }),
+        categoryIds: stringArg({
+          list: true,
+          nullable: false,
+        }),
+      },
+    })
+  },
 })
 ```
 
 If you look at the generated SDL version of your GraphQL schema inside `schema.graphql`, you'll notice that this has added the correct _definition_ to your GraphQL schema already:
 
-```graphql line-number
+```graphql line-number highlight=5;normal
 type Mutation {
   createUser(data: UserCreateInput!): User!
   createDraft(title: String!, content: String, authorId: String!): Post!
   updateBio(bio: String, userUniqueInput: UserUniqueInput!): User
-|  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
 }
 ```
 
@@ -1221,7 +1230,7 @@ However, because the resolver is not yet implemented, nothing will be updated in
 
 That's because you're still missing the _resolver_ implementation for that query. You can add the resolver with Nexus as follows:
 
-```ts line-number
+```ts line-number highlight=13-23;add
 const Mutation = mutationType({
   definition(t) {
     // ... mutations from before
@@ -1231,22 +1240,22 @@ const Mutation = mutationType({
         postId: stringArg({ nullable: false }),
         categoryIds: stringArg({
           list: true,
-          nullable: false
+          nullable: false,
         }),
       },
-+      resolve: (_, args, context) => {
-+        const ids = args.categoryIds.map(id => ({ id }))
-+        return context.prisma.post.update({
-+          where: {
-+            id: args.postId
-+          },
-+          data: {
-+            categories: { connect: ids }
-+          }
-+        })
-+      }
+      resolve: (_, args, context) => {
+        const ids = args.categoryIds.map((id) => ({ id }))
+        return context.prisma.post.update({
+          where: {
+            id: args.postId,
+          },
+          data: {
+            categories: { connect: ids },
+          },
+        })
+      },
     })
-  }
+  },
 })
 ```
 

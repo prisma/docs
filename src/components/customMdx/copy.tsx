@@ -34,7 +34,7 @@ const CopyButton = ({ text, children }: CopyButtonProps) => {
 export default CopyButton
 
 const CopyComponent = styled.div`
-  font-family: ${p => p.theme.fonts.text};
+  font-family: ${(p) => p.theme.fonts.text};
   & {
     position: relative;
     cursor: pointer;

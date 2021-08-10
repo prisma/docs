@@ -29,9 +29,9 @@ const SelectComponent = (props: SelectProps) => {
     onChange({ technology: newValue.value })
   }
 
-  const options = items.map(it => ({ value: it.technology, label: it.technology }))
+  const options = items.map((it) => ({ value: it.technology, label: it.technology }))
 
-  const selectedOption = options.filter(ff => ff.value === selectedItem.technology)
+  const selectedOption = options.filter((ff) => ff.value === selectedItem.technology)
 
   const SelectContainer = (props: any) => {
     return (
