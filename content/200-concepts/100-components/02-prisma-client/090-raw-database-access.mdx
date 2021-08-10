@@ -6,6 +6,13 @@ metaDescription: 'Learn how you can send raw SQL queries to your database using 
 
 <TopBlock>
 
+<Admonition type="warning">
+
+**MongoDB not supported** <br />
+Raw queries are currently not supported by the [MongoDB connector](../../database-connectors/mongodb).
+
+</Admonition>
+
 Prisma Client exposes two methods that allow you to send raw SQL queries to your database:
 
 - Use `$queryRaw` to return actual records (for example, using `SELECT`)
@@ -18,7 +25,7 @@ Use cases for raw SQL include:
 
 </TopBlock>
 
-## <inlinecode>queryRaw</inlinecode>
+## <inlinecode>$queryRaw</inlinecode>
 
 `$queryRaw` returns actual database records. For example, the following `SELECT` query returns all fields for each record in the `User` table:
 
@@ -30,14 +37,15 @@ The same method is implemented as a [tagged template](https://developer.mozilla.
 
 ```ts no-lines
 const email = 'edna@prisma.io'
-const result = await prisma.$queryRaw`SELECT * FROM User WHERE email = ${email};`
+const result =
+  await prisma.$queryRaw`SELECT * FROM User WHERE email = ${email};`
 ```
 
 ### Return type
 
 `$queryRaw` returns an array. Each object corresponds to a database record:
 
-```js
+```json5
 [
   { id: 1, email: 'sarah@prisma.io', name: 'Sarah' },
   { id: 2, email: 'alice@prisma.io', name: 'Alice' },
@@ -85,7 +93,7 @@ When you type the results of `$queryRaw`, the raw data does not always match the
 ```prisma
 model Post {
   id         Int     @default(autoincrement()) @id
-| published  Boolean @default(false)
+|  published  Boolean @default(false)
   title      String
   content    String?
 }
@@ -96,7 +104,7 @@ The following query returns all posts and prints out the value of `published` fi
 ```ts
 const result = await prisma.$queryRaw<Post[]>`SELECT * FROM Post`
 
-result.forEach(x => {
+result.forEach((x) => {
   console.log(x.published)
 })
 ```
@@ -105,7 +113,7 @@ If the database provider is MySQL, the values are `1` or `0`. However, if the da
 
 > **Note**: The Prisma Client query engine standardizes the return type for all databases. Using the raw queries does not.
 
-## <inlinecode>executeRaw</inlinecode>
+## <inlinecode>$executeRaw</inlinecode>
 
 `$executeRaw` returns the _number of rows affected by a database operation_, such as `UPDATE` or `DELETE`. This function does **not** return database records. The following query updates records in the database and returns a count of the number of records that were updated:
 
@@ -121,7 +129,8 @@ The same method is implemented as a [tagged template](https://developer.mozilla.
 const emailValidated = true
 const active = true
 
-const result: number = await prisma.$executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`
+const result: number =
+  await prisma.$executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`
 ```
 
 Be aware that:
@@ -142,7 +151,7 @@ $executeRaw<T = any>(query: string | TemplateStringsArray, ...values: any[]): Pr
 
 ## Transactions
 
-In 2.10.0 and later, you can use `.$executeRaw()` and `.$queryRaw()` inside a transaction.
+In 2.10.0 and later, you can use `.$executeRaw()` and `.$queryRaw()` inside a [transaction](transactions).
 
 ## Using variables
 
@@ -171,23 +180,22 @@ const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${userId};`
 Prisma Client specifically uses [SQL Template Tag](https://github.com/blakeembrey/sql-template-tag), which exposes a number of helpers. For example, the following query uses `join()` to pass in a list of IDs:
 
 ```ts
-import { Prisma } from "@prisma/client";
+import { Prisma } from '@prisma/client'
 
-const ids = [1, 3, 5, 10, 20];
-const result = await prisma.$queryRaw`SELECT * FROM User WHERE id IN (${Prisma.join(
-  ids
-)})`;
+const ids = [1, 3, 5, 10, 20]
+const result =
+  await prisma.$queryRaw`SELECT * FROM User WHERE id IN (${Prisma.join(ids)})`
 ```
 
 The following example uses the `empty` and `sql` helpers to change the query depending on whether `userName` is empty:
 
 ```ts
-import { Prisma } from "@prisma/client";
+import { Prisma } from '@prisma/client'
 
 const userName = ''
 const result = await prisma.$queryRaw`SELECT * FROM User ${
   userName ? Prisma.sql`WHERE name = ${userName}` : Prisma.empty // Cannot use "" or NULL here!
-}`;
+}`
 ```
 
 ### Parameterized queries
@@ -198,7 +206,7 @@ As an alternative to tagged templates, `$queryRaw()` and `$executeRaw()` support
 const userName = 'Sarah'
 const email = 'alice@prisma.io'
 const result = await prisma.$queryRaw(
-  'SELECT * FROM User WHERE (name = ? OR email = ?)', // MySQL variable, represented by ?
+  'SELECT * FROM User WHERE (name = ? OR email = ?)', // MySQL variables, represented by ?
   userName,
   email
 )
@@ -253,14 +261,14 @@ await prisma.$executeRaw(`ALTER USER prisma WITH PASSWORD '${password}'`)
 
 Prisma Client mitigates the risk of SQL injection in the following ways:
 
-- Prisma Client escapes all variables when you use tagged templates (` queryRaw`` ` or ` executeRaw`` ` ) or parameterized queries (`$queryRaw(query, variables)` or `$executeRaw(query, variables)`), and sends all queries as prepared statements.
+- Prisma Client escapes all variables when you use tagged templates (` $queryRaw`` ` or ` $executeRaw`` ` ) or parameterized queries (`$queryRaw(query, variables)` or `$executeRaw(query, variables)`), and sends all queries as prepared statements.
 - Both versions of `$executeRaw` (standard and tagged template) can only run **one** query at a time. You cannot append a second query - for example, adding `DROP bobby_tables` to the end of an `ALTER`.
 
 If you cannot use tagged templates or parameterized queries (for example, you need to pass in table or column names as variables), be aware that your code may be vulnerable to SQL injection.
 
 ### Warning: String concatenation
 
-The following example concatenates `query`and `inputString`. Prisma Client ❌ **cannot** escape `inputString` in this example, which makes it vulnerable to SQL injection:
+The following example concatenates `query` and `inputString`. Prisma Client ❌ **cannot** escape `inputString` in this example, which makes it vulnerable to SQL injection:
 
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post' // SQL Injection
@@ -272,7 +280,7 @@ console.log(result)
 
 ### Warning: Template literals
 
-The following example uses a template literal inside `$queryRaw()`and returns all users where `name` equals `${inputString}`. Prisma Client ❌ **cannot** escape `inputString` in this example, which makes it vulnerable to SQL injection:
+The following example uses a template literal inside `$queryRaw()` and returns all users where `name` equals `${inputString}`. Prisma Client ❌ **cannot** escape `inputString` in this example, which makes it vulnerable to SQL injection:
 
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post' // SQL Injection
@@ -287,7 +295,8 @@ By contrast, the same query using **tagged templates** escapes `inputString` and
 
 ```ts
 const inputString = '"Sarah" UNION SELECT id, title, content FROM Post'
-const result = await prisma.$queryRaw`SELECT id, name, email FROM User WHERE name = ${inputString}`
+const result =
+  await prisma.$queryRaw`SELECT id, name, email FROM User WHERE name = ${inputString}`
 
 console.log(result)
 ```

@@ -9,10 +9,10 @@ export enum AccentColor {
 }
 
 export const AccentButton = styled(Button)<{ color: AccentColor }>`
-  background: ${p => colorForOption(p.color)};
+  background: ${(p) => colorForOption(p.color)};
   color: ${theme.colors.white};
   &:hover {
-    background: ${p => hoverColorForOption(p.color)};
+    background: ${(p) => hoverColorForOption(p.color)};
   }
 `
 

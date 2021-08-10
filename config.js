@@ -17,7 +17,7 @@ const config = {
     {
       from: '/reference/tools-and-interfaces/prisma-client/api',
       to: '/concepts/components/prisma-client',
-    },  
+    },
     {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
       to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
@@ -73,19 +73,13 @@ const config = {
       git: 'https://github.com/prisma',
       buttons: [
         {
-          text: 'Quick start',
-          url: 'getting-started/quickstart-typescript',
+          text: 'Getting started',
+          url: 'getting-started/',
           special: true,
           icon: 'DoubleArrow',
         },
         {
-          text: 'Set up Prisma',
-          url: 'getting-started/setup-prisma',
-          special: false,
-          icon: null,
-        },
-        {
-          text: 'Examples',
+          text: 'Example projects',
           url: 'https://github.com/prisma/prisma-examples',
           special: false,
           icon: null,
@@ -181,13 +175,18 @@ const config = {
             codeBlock: false,
           },
           {
-            text: 'SQLite',
-            url: 'concepts/database-connectors/sqlite',
+            text: 'MongoDB',
+            url: 'concepts/database-connectors/mongodb',
             codeBlock: false,
           },
           {
             text: 'SQL Server',
             url: 'concepts/database-connectors/microsoft-sql-server',
+            codeBlock: false,
+          },
+          {
+            text: 'SQLite',
+            url: 'concepts/database-connectors/sqlite',
             codeBlock: false,
           },
         ],
@@ -275,7 +274,7 @@ const config = {
         categoryName: 'Prisma Reference',
         mainUrl: 'reference',
         icon: 'Schema',
-        links: [        
+        links: [
           {
             text: 'Prisma Client API reference',
             url: 'reference/api-reference/prisma-client-reference',
@@ -290,7 +289,7 @@ const config = {
             text: 'Prisma error reference',
             url: 'reference/api-reference/error-reference',
             codeBlock: false,
-          },          
+          },
         ],
       },
       {
@@ -425,7 +424,14 @@ const config = {
     },
   },
   feedback: {
-    function_name: 'https://prisma2-docs.netlify.app/.netlify/functions/index',
+    sentimentUrl:
+      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
+        ? 'https://prisma2-docs.netlify.app/.netlify/functions/sentiment'
+        : '/.netlify/functions/sentiment',
+    feedbackUrl:
+      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
+        ? 'https://prisma2-docs.netlify.app/.netlify/functions/feedback'
+        : '/.netlify/functions/feedback',
   },
   sidebar: {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet

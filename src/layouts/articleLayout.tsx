@@ -61,7 +61,7 @@ const ArticleLayout = ({
 export default ArticleLayout
 
 export const query = graphql`
-  query($id: String!) {
+  query ($id: String!) {
     site {
       siteMetadata {
         docsLocation
@@ -78,7 +78,7 @@ export const query = graphql`
           relativePath
         }
       }
-      tableOfContents(maxDepth: 3)
+      tableOfContents
       frontmatter {
         title
         metaTitle

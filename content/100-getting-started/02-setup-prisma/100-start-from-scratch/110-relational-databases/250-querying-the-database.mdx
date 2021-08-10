@@ -1,0 +1,439 @@
+---
+title: 'Querying the database'
+metaTitle: 'Querying the database'
+metaDescription: 'Write data to and query the database'
+langSwitcher: ['typescript', 'node']
+dbSwitcher: ['postgres', 'mysql']
+toc: false
+---
+
+## Write your first query with Prisma Client
+
+Now that you have generated Prisma Client, you can start writing queries to read and write data in your database. For the purpose of this guide, you'll use a plain Node.js script to explore some basic features of Prisma Client.
+
+<SwitchTech technologies={['typescript', '*']}>
+
+Create a new file named `index.ts` and add the following code to it:
+
+```js file=index.ts copy
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // ... you will write your Prisma Client queries here
+}
+
+main()
+  .catch((e) => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+Create a new file named `index.js` and add the following code to it:
+
+```js file=index.js copy
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // ... you will write your Prisma Client queries here
+}
+
+main()
+  .catch((e) => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</SwitchTech>
+
+Here's a quick overview of the different parts of the code snippet:
+
+1. Import the `PrismaClient` constructor from the `@prisma/client` node module
+1. Instantiate `PrismaClient`
+1. Define an `async` function named `main` to send queries to the database
+1. Call the `main` function
+1. Close the database connections when the script terminates
+
+Inside the `main` function, add the following query to read all `User` records from the database and print the result:
+
+<SwitchTech technologies={['typescript', '*']}>
+
+```ts file=index.ts highlight=3,4;add
+async function main() {
+  // ... you will write your Prisma Client queries here
+  const allUsers = await prisma.user.findMany()
+  console.log(allUsers)
+}
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+```js file=index.js highlight=2;delete|3,4;add
+async function main() {
+  // ... you will write your Prisma Client queries here
+  const allUsers = await prisma.user.findMany()
+  console.log(allUsers)
+}
+```
+
+</SwitchTech>
+
+Now run the code with this command:
+
+<SwitchTech technologies={['typescript', '*']}>
+
+```terminal copy
+npx ts-node index.ts
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+```terminal copy
+node index.js
+```
+
+</SwitchTech>
+
+This should print an empty array because there are no `User` records in the database yet:
+
+```json no-lines
+[]
+```
+
+## Write data into the database
+
+The `findMany` query you used in the previous section only _reads_ data from the database (although it was still empty). In this section, you'll learn how to write a query to _write_ new records into the `Post` and `User` tables.
+
+Adjust the `main` function to send a `create` query to the database:
+
+<SwitchTech technologies={['typescript', '*']}>
+
+```ts file=index.ts copy
+async function main() {
+  await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@prisma.io',
+      posts: {
+        create: { title: 'Hello World' },
+      },
+      profile: {
+        create: { bio: 'I like turtles' },
+      },
+    },
+  })
+
+  const allUsers = await prisma.user.findMany({
+    include: {
+      posts: true,
+      profile: true,
+    },
+  })
+  console.dir(allUsers, { depth: null })
+}
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+```js file=index.js copy
+async function main() {
+  await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@prisma.io',
+      posts: {
+        create: { title: 'Hello World' },
+      },
+      profile: {
+        create: { bio: 'I like turtles' },
+      },
+    },
+  })
+
+  const allUsers = await prisma.user.findMany({
+    include: {
+      posts: true,
+      profile: true,
+    },
+  })
+  console.dir(allUsers, { depth: null })
+}
+```
+
+</SwitchTech>
+
+This code creates a new `User` record together with new `Post` and `Profile` records using a [nested write](../../../../concepts/components/prisma-client/relation-queries#nested-writes) query. The `User` record is connected to the two other ones via the `Post.author` ↔ `User.posts` and `Profile.user` ↔ `User.profile` [relation fields](../../../../concepts/components/prisma-schema/relations#relation-fields) respectively.
+
+Notice that you're passing the [`include`](../../../../concepts/components/prisma-client/select-fields#include-relations-and-select-relation-fields) option to `findMany` which tells Prisma Client to include the `posts` and `profile` relations on the returned `User` objects.
+
+Run the code with this command:
+
+<SwitchTech technologies={['typescript', '*']}>
+
+```terminal copy
+npx ts-node index.ts
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+```terminal copy
+node index.js
+```
+
+</SwitchTech>
+
+The output should look similar to this:
+
+```js no-lines
+[
+  {
+    email: 'alice@prisma.io',
+    id: 1,
+    name: 'Alice',
+    posts: [
+      {
+        content: null,
+        createdAt: 2020-03-21T16:45:01.246Z,
+        id: 1,
+        published: false,
+        title: 'Hello World',
+        authorId: 1,
+      }
+    ],
+    profile: {
+      bio: 'I like turtles',
+      id: 1,
+      userId: 1,
+    }
+  }
+]
+```
+
+<SwitchTech technologies={['typescript']}>
+
+Also note that `allUsers` is _statically typed_ thanks to [Prisma Client's generated types](../../../../concepts/components/prisma-client/advanced-type-safety/operating-against-partial-structures-of-model-types). You can observe the type by hovering over the `allUsers` variable in your editor. It should be typed as follows:
+
+```ts no-lines
+const allUsers: (User & {
+  posts: Post[]
+})[]
+
+export type Post = {
+  id: number
+  title: string
+  content: string | null
+  published: boolean
+  authorId: number | null
+}
+```
+
+</SwitchTech>
+
+The query added new records to the `User` and the `Post` tables:
+
+**User**
+
+| **id** | **email**           | **name**  |
+| :----- | :------------------ | :-------- |
+| `1`    | `"alice@prisma.io"` | `"Alice"` |
+
+**Post**
+
+| **id** | **createdAt**              | **title**       | **content** | **published** | **authorId** |
+| :----- | :------------------------- | :-------------- | :---------- | :------------ | :----------- |
+| `1`    | `2020-03-21T16:45:01.246Z` | `"Hello World"` | `null`      | `false`       | `1`          |
+
+**Profile**
+
+| **id** | **bio**            | **userId** |
+| :----- | :----------------- | :--------- |
+| `1`    | `"I like turtles"` | `1`        |
+
+> **Note**: The numbers in the `authorId` column on `Post` and `userId` column on `Profile` both reference the `id` column of the `User` table, meaning the `id` value `1` column therefore refers to the first (and only) `User` record in the database.
+
+Before moving on to the next section, you'll "publish" the `Post` record you just created using an `update` query. Adjust the `main` function as follows:
+
+<SwitchTech technologies={['typescript', '*']}>
+
+```ts file=index.ts copy
+async function main() {
+  const post = await prisma.post.update({
+    where: { id: 1 },
+    data: { published: true },
+  })
+  console.log(post)
+}
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+```js file=index.js copy
+async function main() {
+  const post = await prisma.post.update({
+    where: { id: 1 },
+    data: { published: true },
+  })
+  console.log(post)
+}
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', '*']}>
+
+Now run the code using the same command as before:
+
+```terminal copy
+npx ts-node index.ts
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', '*']}>
+
+Now run the code using the same command as before:
+
+```terminal copy
+node index.js
+```
+
+</SwitchTech>
+
+You will see the following output:
+
+```js no-lines
+{
+  id: 1,
+  title: 'Hello World',
+  content: null,
+  published: true,
+  authorId: 1
+}
+```
+
+The `Post` record with an `id` of `1` now got updated in the database:
+
+**Post**
+
+| **id** | **title**       | **content** | **published** | **authorId** |
+| :----- | :-------------- | :---------- | :------------ | :----------- |
+| `1`    | `"Hello World"` | `null`      | `true`        | `1`          |
+
+Fantastic, you just wrote new data into your database for the first time using Prisma Client 🚀
+
+<SwitchTech technologies={['node', 'postgresql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-postgres"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink color="dark" type="primary" href="./next-steps-node-postgres" arrow>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'mysql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-mysql"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink color="dark" type="primary" href="./next-steps-node-mysql" arrow>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'postgresql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-postgres"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-typescript-postgres"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'mysql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-mysql"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-typescript-mysql"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>

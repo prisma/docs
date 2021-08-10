@@ -43,6 +43,16 @@ In this guide, you will:
 - Manually update the Prisma schema to include the view as a model.
 - Generate Prisma Client and write a simple Node.js script to read data from the view.
 
+<Tip>
+
+The workaround described in this guide is by no means a best practice, it instead fills in some gaps for missing functionality in Prisma. **It will not work with Prisma Migrate or introspection**.
+
+There is an [issue](https://github.com/prisma/prisma/issues/678) currently open which aims to add support for database views in Prisma.
+
+Subscribe to the issue for updates on progress and timelines.
+
+</Tip>
+
 </TopBlock>
 
 ## Prerequisites
@@ -73,6 +83,8 @@ Be aware of the following limitations when using views with Prisma:
 - You must _manually_ add each view as a model to the Prisma schema right now. Introspection does not add views to the schema currently.
 - Views must include a unique column - such as an ID.
 - The generated Prisma Client will include queries such `create`, `delete`, and `update`, even though you cannot perform these queries on a view.
+- Models created for views will be **deleted** from your schema the next time you run an introspection. This is because they **do not** correspond to the tables in the database.
+- Prisma Migrate will treat these views as tables and try to create them. If you have view models, you **cannot** use Prisma Migrate with them.
 
 ## 1. Create a new database and project directory
 
@@ -125,7 +137,7 @@ To create a new database:
 
 In this section, you'll **create two tables where one references the other via a foreign key** in the `SqlViews` database.
 
-1. Create a new file called `sql-views-tables.sql` and add the following code to it:
+1. Create a new file named `sql-views-tables.sql` and add the following code to it:
 
    <SwitchTech technologies={['*', 'mysql']}>
 
@@ -211,7 +223,7 @@ You just created two tables named `User` and `Post` in the database. The `Post` 
 
 In this section you will create a view named `Draft`. The `Draft` view represents a query that returns the post title and author email of all posts that have not been published. To create a view:
 
-1. Create a new file called `sql-views-draft.sql` and add the following code to it:
+1. Create a new file named `sql-views-draft.sql` and add the following code to it:
 
    <SwitchTech technologies={['*', 'postgres']}>
 
@@ -227,7 +239,7 @@ In this section you will create a view named `Draft`. The `Draft` view represent
    <SwitchTech technologies={['*', 'mysql']}>
 
    ```sql
-   CREATE VIEW Drafts AS
+   CREATE VIEW Draft AS
        SELECT published, title, email, Post.id
        FROM Post, User
        WHERE published = false AND Post.authorId = User.id;
@@ -309,7 +321,7 @@ In this section you'll introspect your database to generate the Prisma models fo
    npm install prisma --save-dev
    ```
 
-2. Create a new file called `schema.prisma` and add the following code to it:
+2. Create a new file named `schema.prisma` and add the following code to it:
 
    <SwitchTech technologies={['*', 'postgres']}>
 
@@ -333,7 +345,7 @@ In this section you'll introspect your database to generate the Prisma models fo
 
    </SwitchTech>
 
-3. In order to introspect your database, you need to tell Prisma how to connect to it. You do so by configuring a `datasource` in your Prisma schema. Create a new file called `.env` and set your database connection URL as the `DATABASE_URL` environment variable:
+3. In order to introspect your database, you need to tell Prisma how to connect to it. You do so by configuring a `datasource` in your Prisma schema. Create a new file named `.env` and set your database connection URL as the `DATABASE_URL` environment variable:
 
    <SwitchTech technologies={['*', 'postgres']}>
 
@@ -369,7 +381,7 @@ In this section you'll introspect your database to generate the Prisma models fo
 
    </SwitchTech>
 
-   The database connection URL is set via an environment variable. The Prisma CLI automatically supports the [`dotenv`](https://github.com/motdotla/dotenv) format which automatically picks up environment variables defined in a file called `.env`.
+   The database connection URL is set via an environment variable. The Prisma CLI automatically supports the [`dotenv`](https://github.com/motdotla/dotenv) format which automatically picks up environment variables defined in a file named `.env`.
 
 4. With both the `schema.prisma` and `.env` files in place, run Prisma's introspection with the following command:
 
@@ -443,7 +455,7 @@ You must manually add views to the Prisma schema.
 
    <SwitchTech technologies={['*', 'mysql']}>
 
-   ```prisma file=schema.prisma
+   ```prisma file=schema.prisma highlight=22,23,24,25,26,27;add
    datasource db {
      provider = "mysql"
      url      = env("DATABASE_URL")
@@ -465,19 +477,19 @@ You must manually add views to the Prisma schema.
      Post  Post[]
    }
 
-   + model Draft {
-   +   title     String
-   +   id        Int     @unique
-   +   email     String
-   +   published Boolean
-   +  }
+   model Draft {
+     title     String
+     id        Int     @unique
+     email     String
+     published Boolean
+   }
    ```
 
     </SwitchTech>
 
    <SwitchTech technologies={['*', 'postgres']}>
 
-   ```prisma file=schema.prisma
+   ```prisma file=schema.prisma highlight=22,23,24,25,26,27;add
    datasource db {
      provider = "postgresql"
      url      = env("DATABASE_URL")
@@ -499,12 +511,12 @@ You must manually add views to the Prisma schema.
      Post  Post[]
    }
 
-   + model Draft {
-   +   title     String
-   +   id        Int     @unique
-   +   email     String
-   +   published Boolean
-   +  }
+   model Draft {
+     title     String
+     id        Int     @unique
+     email     String
+     published Boolean
+   }
    ```
 
     </SwitchTech>
@@ -583,7 +595,7 @@ In the following section, you will use the `drafts` model property to return `Po
    }
 
    main()
-     .catch(e => {
+     .catch((e) => {
        throw e
      })
      .finally(async () => {

@@ -13,7 +13,7 @@ const FooterWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  color: ${p => p.theme.colors.gray500};
+  color: ${(p) => p.theme.colors.gray500};
   > * {
     .group {
       a {
@@ -21,13 +21,13 @@ const FooterWrapper = styled.div`
         text-decoration: none;
 
         &:hover {
-          color: ${p => p.theme.colors.gray600} !important;
+          color: ${(p) => p.theme.colors.gray600} !important;
         }
       }
     }
-    @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+    @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
       flex-direction: column;
-      padding: ${p => p.theme.fontSizes[48]} 0.5rem;
+      padding: ${(p) => p.theme.fontSizes[48]} 0.5rem;
     }
   }
 `
