@@ -23,13 +23,13 @@ While there's a lot of of ambiguity and nuance to each of these properties (for 
 
 </details>
 
-Prisma Client supports five different ways of handling transactions for three different scenarios:
+Prisma Client supports six different ways of handling transactions for three different scenarios:
 
-| Scenario            | Available techniques                                                           |
-| :------------------ | :----------------------------------------------------------------------------- |
-| Dependent writes    | <ul><li>Nested writes</li></ul>                                                |
-| Independent writes  | <ul><li>`$transaction` API</li><li>Batch operations</li></ul>                  |
-| Read, modify, write | <ul><li>Idempotent operations</li><li>Optimistic concurrency control</li></ul> |
+| Scenario            | Available techniques                                                                                            |
+| :------------------ | :-------------------------------------------------------------------------------------------------------------- |
+| Dependent writes    | <ul><li>Nested writes</li></ul>                                                                                 |
+| Independent writes  | <ul><li>`$transaction` API</li><li>Batch operations</li></ul>                                                   |
+| Read, modify, write | <ul><li>Idempotent operations</li><li>Optimistic concurrency control</li><li>Interactive transactions</li></ul> |
 
 The technique you choose depends on your particular use case.
 
@@ -183,7 +183,11 @@ await prisma.$transaction([createUserOperation, createTeamOperation])
 
 ##### Are cascading deletes supported by the Prisma Client nested writes?
 
-Although you cannot specifically use _nested writes_ to perform a cascading delete (for example, delete a team and all of its members), you can still perform cascading deletes in the following ways:
+<Admonition type="warning">
+
+In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using the **preview feature** [referential actions](../../concepts/components/prisma-schema/relations/referential-actions).
+
+</Admonition>
 
 - Use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can [perform both operations within a `$transaction`](#scenario-privacy-legislation).
 - [Configure cascading deletes at the database level](../database/advanced-database-tasks/cascading-deletes).
@@ -772,6 +776,7 @@ model Seat {
 Next, adjust the code to check the `version` field before updating:
 
 ```ts highlight=18-37;normal
+const userEmail = 'alice@prisma.io'
 const movieName = 'Hidden Figures'
 
 // Find the first available seat
@@ -795,7 +800,7 @@ if (!availableSeat) {
 // to book this same seat will have an outdated version.
 const seats = await client.seat.updateMany({
   data: {
-    claimedBy: userId,
+    claimedBy: userEmail,
     version: {
       increment: 1,
     },
@@ -817,6 +822,63 @@ It is now impossible for two people to book the same seat:
 2. Seat 3A returned to Ellen (`version` is 0)
 3. Seat 3A claimed by Sorcha (`version` is incremented to 1, booking succeeds)
 4. Seat 3A claimed by Ellen (in-memory `version` (0) does not match database `version` (1) - booking does not succeed)
+
+### Interactive Transactions
+
+If you have an existing application, it can be a significant undertaking to refactor your application to use optimistic concurrency control. Interactive Transactions offers a useful escape hatch for cases like this.
+
+To support this use case and more, you can pass an async function into `$transaction`.
+
+The following is an example of purchasing a movie ticket online. This is a good use case for an interactive transactions because you don't want to sell the same ticket twice.
+
+```ts highlight=6,8,25;normal
+import { Seat } from 'prisma'
+const userEmail = 'alice@prisma.io'
+const movieName = 'HiddenFigures'
+
+// Start a transaction
+const seat: Seat = await prisma.$transaction(async (prisma) => {
+  // Find an available seat
+  const availableSeat = await prisma.seat.findFirst({
+    where: {
+      claimedBy: null,
+      movie: {
+        name: movieName,
+      },
+    },
+  })
+
+  // Throw an error if no seats are available
+  if (!availableSeat) {
+    // This will rollback the transaction
+    throw new Error(`Oh no! ${movieName} is all booked.`)
+  }
+
+  // Claim the seat, commit the transaction, and return
+  // the result
+  return prisma.seat.update({
+    data: {
+      claimedBy: userEmail,
+    },
+    where: {
+      id: availableSeat.id,
+    },
+  })
+})
+```
+
+In the example above, both the `findFirst` and `update` queries run within a database transaction. When your application reaches the end of the function, the transaction is **committed** to the database.
+
+If your application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction. To catch the exception, you can wrap `$transaction` in a try-catch block.
+
+<Admonition type="warning">
+
+**Use interactive transactions with caution**. Keeping transactions
+open for a long time hurts database performance and can even cause deadlocks.
+Try to avoid performing network requests and executing slow queries inside your
+transaction functions. We recommend you get in and out as quick as possible!
+
+</Admonition>
 
 ## Conclusion
 

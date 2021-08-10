@@ -81,7 +81,11 @@ const Container = styled.div<{ fullWidth?: boolean }>`
 
 const TOCWrapper = styled.div`
   width: 180px;
-  height: fit-content;
+  height: 100vh;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
   }
@@ -128,13 +132,15 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
                 <MaxWidth>{children}</MaxWidth>
               </Content>
               {!homePage && (
-                <StickyBox offsetTop={20} offsetBottom={20}>
-                  <TOCWrapper id="toc-holder">
-                    {toc && toc.items && toc.items.length > 0 && (
-                      <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
-                    )}
-                  </TOCWrapper>
-                </StickyBox>
+                //  <StickyBox offsetTop={20} offsetBottom={20}>
+                // <Sticky enabled={true} top={50} bottomBoundary={1200}>
+                <TOCWrapper id="toc-holder">
+                  {toc && toc.items && toc.items.length > 0 && (
+                    <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+                  )}
+                </TOCWrapper>
+                // </Sticky>
+                // </StickyBox>
               )}
             </Container>
           </Wrapper>
