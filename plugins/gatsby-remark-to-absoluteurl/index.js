@@ -53,7 +53,7 @@ module.exports = function plugin(
           .replace(/\\/g, '/')
           .slice(2)
           .replace(/(^.*)#.*/, '$1')
-        const isRedirectPath = redirects.find(url => newUrl2.includes(url.from))
+        const isRedirectPath = redirects.find((url) => newUrl2.includes(url.from))
         if (isRedirectPath) newUrl2 = isRedirectPath.to
 
         let hashVal = node.url.match(/#.*/)
@@ -61,7 +61,7 @@ module.exports = function plugin(
 
         node.url = newUrl2.replace(/^([^#]*)$/, '$1/')
       } else {
-        const isRedirectPath = redirects.find(url => newUrl.includes(url.from))
+        const isRedirectPath = redirects.find((url) => newUrl.includes(url.from))
         node.url = withPathPrefix(
           isRedirectPath ? newUrl.replace(isRedirectPath.from, isRedirectPath.to) : newUrl,
           pathPrefix

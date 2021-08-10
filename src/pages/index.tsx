@@ -134,11 +134,17 @@ const List = styled.ul<{ split?: boolean }>`
       color: ${(p) => p.theme.colors.gray800} !important;
       cursor: pointer;
       text-decoration: none;
+      &:hover {
+        color: ${(p) => p.theme.colors.gray600} !important;
+      }
     }
   }
   .inline-code {
     font-weight: normal;
     line-height: 0;
+  }
+  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+    column-count: 1;
   }
 `
 
@@ -162,16 +168,9 @@ const SummaryLinks = styled.div`
 `
 
 const QuickLinks = styled.div`
-  background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0) 0%,
-      ${(p) => p.theme.colors.white} 100%
-    ),
-    ${(p) => p.theme.colors.gray200};
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: ${(p) => p.theme.space[48]} 0;
 
   @media (min-width: 0) and (max-width: 1024px) {
     padding: ${(p) => p.theme.space[48]} ${(p) => p.theme.space[16]};
@@ -193,15 +192,17 @@ const CapTitle = styled.h4<{ withBorder?: boolean }>`
 `
 
 const GenaralLinks = styled.div`
+  background: #FFFFFF;
+  box-shadow: 0px 28px 53px rgba(0, 0, 0, 0.07), 0px 8.44118px 15.9779px rgba(0, 0, 0, 0.0393306), 0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066), 0px 1.26806px 2.40026px rgba(0, 0, 0, 0.0115598);
+  border-radius: 8px;
   display: flex;
   justify-content: space-around;
-  max-width: 996px;
+  max-width: 1200px;
+  padding: 48px 114px;
   width: 100%;
-  // svg {
-  //   margin-left: -6px;
-  // }
   @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
     flex-direction: column;
+    padding: 0;
   }
 `
 
@@ -221,9 +222,12 @@ const Row = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   margin-top: ${(p) => p.theme.space[32]};
+  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+    flex-direction: column;
+  }
 `
 
-const LinkCard = styled.a`
+const LinkCard = styled.div`
   background: ${(p) => p.theme.colors.gray200};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
@@ -245,8 +249,11 @@ const LinkCard = styled.a`
     align-items: center;
   }
 
-  &:hover h3 svg {
-    transform: translateX(4px);
+  &:hover {
+      background: ${(p) => p.theme.colors.gray300};
+      h3 svg {
+       transform: translateX(4px);
+    }
   }
 
   p {

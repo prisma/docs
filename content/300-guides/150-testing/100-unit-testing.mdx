@@ -69,37 +69,37 @@ npm install jest-mock-extended --save-dev
 
 ### Singleton
 
-
 The following steps guide you through mocking the Prisma Client using a singleton pattern.
 
 1. Create a file at your projects root called `client.ts` and add the following code. This will instantiate a Prisma client instance.
 
-  ```ts file=client.ts
-  import { PrismaClient } from '@prisma/client'
+   ```ts file=client.ts
+   import { PrismaClient } from '@prisma/client'
 
-  const prisma = new PrismaClient()
-  export default prisma
-  ```
+   const prisma = new PrismaClient()
+   export default prisma
+   ```
 
-2. Next create a file called `singleton.ts` at your projects root and add the following:
+2. Next create a file named `singleton.ts` at your projects root and add the following:
 
-  ```ts file=singleton.ts
-  import { PrismaClient } from '@prisma/client'
-  import { mockDeep, mockReset, MockProxy } from 'jest-mock-extended'
+   ```ts file=singleton.ts
+   import { PrismaClient } from '@prisma/client'
+   import { mockDeep, mockReset } from 'jest-mock-extended'
+   import { DeepMockProxy } from "jest-mock-extended/lib/Mock"
 
-  import prisma from './client'
+   import prisma from './client'
 
-  jest.mock('./client', () => ({
-    __esModule: true,
-    default: mockDeep<PrismaClient>(),
-  }))
+   jest.mock('./client', () => ({
+     __esModule: true,
+     default: mockDeep<PrismaClient>(),
+   }))
 
-  beforeEach(() => {
-    mockReset(prismaMock)
-  })
+   beforeEach(() => {
+     mockReset(prismaMock)
+   })
 
-  export const prismaMock = (prisma as unknown) as MockProxy<PrismaClient>
-  ```
+   export const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>
+   ```
 
 The singleton file tells Jest to mock a default export (the Prisma client instantiated in `./client.ts`), and uses the `mockDeep` method from `jest-mock-extended` to enable access to the objects and methods available on the Prisma client. It then resets the mocked instance before each test is run.
 
@@ -109,45 +109,46 @@ Another popular pattern that can be used is dependency injection.
 
 1. Create a `context.ts` file and add the following:
 
-  ```ts file=context.ts
-  import { PrismaClient } from '@prisma/client'
-  import { MockProxy, mockDeep } from 'jest-mock-extended'
+   ```ts file=context.ts
+   import { PrismaClient } from '@prisma/client'
+   import { mockDeep } from 'jest-mock-extended'
+   import { DeepMockProxy } from "jest-mock-extended/lib/Mock"
 
-  export type Context = {
-    prisma: PrismaClient
-  }
+   export type Context = {
+     prisma: PrismaClient
+   }
 
-  export type MockContext = {
-    prisma: MockProxy<PrismaClient>
-  }
+   export type MockContext = {
+     prisma: DeepMockProxy<PrismaClient>
+   }
 
-  export const createMockContext = (): MockContext => {
-    return {
-      prisma: mockDeep<PrismaClient>(),
-    }
-  }
-  ```
+   export const createMockContext = (): MockContext => {
+     return {
+       prisma: mockDeep<PrismaClient>(),
+     }
+   }
+   ```
 
 <Tip>
 
-  If you find that you're seeing a circular dependency error highlighted through mocking the client, try adding `"strictNullChecks": true`
-  to your `tsconfig.json`.
+If you find that you're seeing a circular dependency error highlighted through mocking the client, try adding `"strictNullChecks": true`
+to your `tsconfig.json`.
 
 </Tip>
 
 2. To use the context, you would do the following in your test file:
 
-  ```ts
-  import { MockContext, Context, createMockContext } from '../context'
+   ```ts
+   import { MockContext, Context, createMockContext } from '../context'
 
-  let mockCtx: MockContext
-  let ctx: Context
+   let mockCtx: MockContext
+   let ctx: Context
 
-  beforeEach(() => {
-    mockCtx = createMockContext()
-    ctx = (mockCtx as unknown) as Context
-  })
-  ```
+   beforeEach(() => {
+     mockCtx = createMockContext()
+     ctx = mockCtx as unknown as Context
+   })
+   ```
 
 This will create a new context before each test is run via the `createMockContext` function. This (`mockCtx`) context will be used to make a mock call to Prisma and run a query to test. The `ctx` context will be used to run a scenario query that is tested against.
 
@@ -189,9 +190,9 @@ interface CreateUser {
 
 export async function createUser(user: CreateUser, ctx: Context) {
   if (user.acceptTermsAndConditions) {
-      return await ctx.prisma.user.create({
-        data: user
-      })
+    return await ctx.prisma.user.create({
+      data: user,
+    })
   } else {
     return new Error('User must accept terms!')
   }
@@ -226,9 +227,9 @@ interface CreateUser {
 
 export async function createUser(user: CreateUser) {
   if (user.acceptTermsAndConditions) {
-      return await prisma.user.create({
-        data: user
-      })
+    return await prisma.user.create({
+      data: user,
+    })
   } else {
     return new Error('User must accept terms!')
   }
@@ -267,11 +268,11 @@ import { createUser, updateUsername } from './src/functions-without-context.ts'
 import { prismaMock } from './../singleton'
 
 test('should create new user ', async () => {
-  const user = { 
-    id: 1, 
-    name: 'Rich', 
-    email: 'hello@prisma.io', 
-    acceptTermsAndConditions: true 
+  const user = {
+    id: 1,
+    name: 'Rich',
+    email: 'hello@prisma.io',
+    acceptTermsAndConditions: true,
   }
 
   prismaMock.user.create.mockResolvedValue(user)
@@ -284,10 +285,10 @@ test('should create new user ', async () => {
 })
 
 test('should update a users name ', async () => {
-  const user = { 
-    id: 1, 
-    name: 'Rich Haines', 
-    email: 'hello@prisma.io' 
+  const user = {
+    id: 1,
+    name: 'Rich Haines',
+    email: 'hello@prisma.io',
   }
 
   prismaMock.user.update.mockResolvedValue(user)
@@ -300,16 +301,18 @@ test('should update a users name ', async () => {
 })
 
 test('should fail if user does not accept terms', async () => {
-  const user = { 
-    id: 1, 
-    name: 'Rich Haines', 
-    email: 'hello@prisma.io', 
-    acceptTermsAndConditions: false 
-  };
+  const user = {
+    id: 1,
+    name: 'Rich Haines',
+    email: 'hello@prisma.io',
+    acceptTermsAndConditions: false,
+  }
 
-  prismaMock.user.create.mockRejectedValue(new Error('User must accept terms!'));
+  prismaMock.user.create.mockRejectedValue(new Error('User must accept terms!'))
 
-  await expect(createUser(user)).resolves.toEqual(new Error('User must accept terms!'));
+  await expect(createUser(user)).resolves.toEqual(
+    new Error('User must accept terms!')
+  )
 })
 ```
 
@@ -326,15 +329,15 @@ let ctx: Context
 
 beforeEach(() => {
   mockCtx = createMockContext()
-  ctx = (mockCtx as unknown) as Context
+  ctx = mockCtx as unknown as Context
 })
 
 test('should create new user ', async () => {
-  const user = { 
-    id: 1, 
-    name: 'Rich', 
-    email: 'hello@prisma.io', 
-    acceptTermsAndConditions: true 
+  const user = {
+    id: 1,
+    name: 'Rich',
+    email: 'hello@prisma.io',
+    acceptTermsAndConditions: true,
   }
   mockCtx.prisma.user.create.mockResolvedValue(user)
 
@@ -346,10 +349,10 @@ test('should create new user ', async () => {
 })
 
 test('should update a users name ', async () => {
-  const user = { 
-    id: 1, 
-    name: 'Rich Haines', 
-    email: 'hello@prisma.io' 
+  const user = {
+    id: 1,
+    name: 'Rich Haines',
+    email: 'hello@prisma.io',
   }
   mockCtx.prisma.user.update.mockResolvedValue(user)
 
@@ -361,16 +364,20 @@ test('should update a users name ', async () => {
 })
 
 test('should fail if user does not accept terms', async () => {
-  const user = { 
-    id: 1, 
-    name: 'Rich Haines', 
-    email: 'hello@prisma.io', 
-    acceptTermsAndConditions: false 
-  };
+  const user = {
+    id: 1,
+    name: 'Rich Haines',
+    email: 'hello@prisma.io',
+    acceptTermsAndConditions: false,
+  }
 
-  mockCtx.prisma.user.create.mockRejectedValue(new Error('User must accept terms!'));
+  mockCtx.prisma.user.create.mockRejectedValue(
+    new Error('User must accept terms!')
+  )
 
-  await expect(createUser(user, ctx.prisma)).resolves.toEqual(new Error('User must accept terms!'));
+  await expect(createUser(user, ctx.prisma)).resolves.toEqual(
+    new Error('User must accept terms!')
+  )
 })
 ```
 
