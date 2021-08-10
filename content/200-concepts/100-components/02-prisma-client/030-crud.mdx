@@ -24,6 +24,9 @@ All examples are based on the following schema:
 
 <details><summary>Expand for sample schema</summary>
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 generator client {
   provider = "prisma-client-js"
@@ -37,7 +40,7 @@ datasource db {
 model ExtendedProfile {
   id        Int    @id @default(autoincrement())
   biography String
-  user      User   @relation(fields: userId, references: id)
+  user      User   @relation(fields: [userId], references: [id])
   userId    Int
 }
 
@@ -76,13 +79,73 @@ enum Role {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ExtendedProfile {
+  id        String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  biography String
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String @db.ObjectId
+}
+
+model User {
+  id           String           @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name         String?
+  email        String           @unique
+  profileViews Int              @default(0)
+  role         Role             @default(USER)
+  coinflips    Boolean[]
+  posts        Post[]
+  profile      ExtendedProfile?
+}
+
+model Post {
+  id         String     @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   String     @db.ObjectId
+  comments   Json?
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  categories Category[]
+}
+
+model Category {
+  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name  String @unique
+  posts Post[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+</tab>
+</TabbedContent>
+
 </details>
 
-Use the `db push` command to push the example schema to your own database:
+For **relational databases**, use `db push` command to push the example schema to your own database
 
 ```terminal
 npx prisma db push
 ```
+
+For **MongoDB**, ensure your data is in a uniform shape and matches the model defined in the Prisma schema.
 
 ## Create
 
@@ -119,7 +182,7 @@ const user = await prisma.user.create({
 </cmdResult>
 </CodeWithResult>
 
-Your schema determines [which fields are mandatory](../prisma-schema/data-model#optional-and-mandatory-fields).
+The user's `id` is auto-generated, and your schema determines [which fields are mandatory](../prisma-schema/data-model#optional-and-mandatory-fields).
 
 #### Create a single record using generated types
 
@@ -157,7 +220,7 @@ async function main() {
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     throw e
   })
   .finally(async () => {
@@ -215,7 +278,14 @@ SELECT "public"."User"."country", "public"."User"."city", "public"."User"."email
 The following video demonstrates how to use `createMany` and [faker.js](https://github.com/marak/Faker.js/) to seed a database with sample data:
 
 <div class="videoWrapper">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/QxyqR4yh1GI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <iframe
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/QxyqR4yh1GI"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
 </div>
 
 ### Create records and connect or create related records
@@ -244,11 +314,32 @@ const user = await prisma.user.findUnique({
 })
 ```
 
-### Get record by compound ID or unique identifier
+If you are using the MongoDB connector and your underlying ID type is `ObjectId`, you can use the string representation of that `ObjectId`:
 
-The following examples demonstrate how to retrieve records by a compound ID or unique identifier, defined by [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-2) <span class="api"></span> or [`@@unique`](../../../reference/api-reference/prisma-schema-reference#unique-2) <span class="api"></span>.
+```ts
+// By ID
+const user = await prisma.user.findUnique({
+  where: {
+    id: '60d5922d00581b8f0062e3a8',
+  },
+})
+```
+
+### Get record by compound ID or compound unique identifier
+
+<Admonition type="warning">
+
+**MongoDB does not support `@@id`**<br />
+MongoDB does not support composite IDs, which means you cannot identify a model with a `@@id` block. Furthermore, you cannot use a `@@unique` block as an ID.
+
+</Admonition>
+
+The following examples demonstrate how to retrieve records by a compound ID or unique identifier, defined by [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-2) <span class="api"></span> or [`@@unique`](../../../reference/api-reference/prisma-schema-reference#unique-1) <span class="api"></span>.
 
 The following Prisma model defines a compound ID:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma highlight=6;normal
 model TimePeriod {
@@ -260,7 +351,15 @@ model TimePeriod {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 To retrieve a time period by this compound ID, use the generated `year_quarter` field, which follows the `fieldName1_fieldName2` pattern:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const timePeriod = await prisma.timePeriod.findUnique({
@@ -273,7 +372,15 @@ const timePeriod = await prisma.timePeriod.findUnique({
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 The following Prisma model defines a compound unique identifier with a custom name (`timePeriodId`)
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma highlight=6;normal
 model TimePeriod {
@@ -285,7 +392,15 @@ model TimePeriod {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 To retrieve a time period by this unique identifier, use the custom `timePeriodId` field:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const timePeriod = await prisma.timePeriod.findUnique({
@@ -297,6 +412,11 @@ const timePeriod = await prisma.timePeriod.findUnique({
   },
 })
 ```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
 
 ### Get all records
 
@@ -353,7 +473,7 @@ The following query returns all `User` records with an email that ends in `"pris
 
 #### Filter by multiple field values
 
-The following query uses a combinations of [operators](../../../reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span> to return users whose name start with `E` _or_ administrators with at least 1 profile view:
+The following query uses a combination of [operators](../../../reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span> to return users whose name start with `E` _or_ administrators with at least 1 profile view:
 
 ```ts
 const users = await prisma.user.findMany({
@@ -543,7 +663,7 @@ For more information about including relations, see [Select fields and include r
 
 #### Include a filtered list of relations
 
-See [Working with relations](relation-queries#filter-the-relations-list) to find out how to combine [`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span> and `where` for a filtered list of relations - for example, only include a user's published posts.
+See [Working with relations](relation-queries#filter-a-list-of-relations) to find out how to combine [`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span> and `where` for a filtered list of relations - for example, only include a user's published posts.
 
 ## Update
 
@@ -718,6 +838,12 @@ Be aware that this query will fail if the user has any related records (such as 
 
 ### Cascading deletes (deleting related records)
 
+<Admonition type="warning">
+
+In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using the **preview feature** [referential actions](../prisma-schema/relations/referential-actions).
+
+</Admonition>
+
 The following query uses [`delete`](../../../reference/api-reference/prisma-client-reference#delete) <span class="api"></span> to delete a single `User` record:
 
 ```ts
@@ -738,13 +864,13 @@ To resolve this error, you can:
 
 - Make the relation optional:
 
-  ```prisma
+  ```prisma highlight=3,4;add|5,6;delete
   model Post {
   id         Int        @id @default(autoincrement())
-  + author     User?       @relation(fields: [authorId], references: [id])
-  + authorId   Int?
-  - author     User       @relation(fields: [authorId], references: [id])
-  - authorId   Int
+  author     User?       @relation(fields: [authorId], references: [id])
+  authorId   Int?
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
   }
   ```
 
@@ -770,7 +896,7 @@ To resolve this error, you can:
 
 ### Delete all records from all tables
 
-Sometimes you want to remove all data from all tables but keep the actual tables. This can be particularly useful in a development environment and whilst testing. 
+Sometimes you want to remove all data from all tables but keep the actual tables. This can be particularly useful in a development environment and whilst testing.
 
 The following shows how to delete all records from all tables with Prisma Client and with Prisma Migrate.
 
@@ -787,40 +913,41 @@ const deleteUsers = prisma.user.deleteMany()
 await prisma.$transaction([deleteProfile, deletePosts, deleteUsers])
 ```
 
-✅ **Pros**: 
+✅ **Pros**:
+
 - Works well when you know the structure of your schema ahead of time
 - Synchronously deletes each tables data
 
 ❌ **Cons**:
+
 - Doesn't scale as well as having a more generic solution which looks up and `TRUNCATES` your tables regardless of their relational constraints.
 
 > **Note**: The `$transaction` performs a cascading delete on each models table so they have to be called in order.
 
 #### Deleting all data with raw SQL / `TRUNCATE`
 
-If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$queryRaw`](./prisma-client/raw-database-access#queryraw).
+If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$queryRaw`](../prisma-client/raw-database-access#queryraw).
 
 In the following examples, the first tab shows how to perform a `TRUNCATE` on a Postgres database by using a `$queryRaw` look up that maps over the table and `TRUNCATES` each table.
 
-The second tab show performing the same function but with a MySQL database. In this instance the constraints must be removed before the `TRUNCATE` can be executed, before being reinstated once finished. The whole process is run as a `$transaction`
+The second tab shows performing the same function but with a MySQL database. In this instance the constraints must be removed before the `TRUNCATE` can be executed, before being reinstated once finished. The whole process is run as a `$transaction`
 
 <TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
 
 <tab>
 
 ```ts
-  for (const {
-    tablename,
-  } of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
-
-      if (tablename !== '_prisma_migrations') {
-        try {
-        await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
-        } catch (error) {
-          console.log({error})
-        }
+for (const {
+  tablename,
+} of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
+  if (tablename !== '_prisma_migrations') {
+    try {
+      await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`)
+    } catch (error) {
+      console.log({ error })
     }
   }
+}
 ```
 
 </tab>
@@ -828,39 +955,41 @@ The second tab show performing the same function but with a MySQL database. In t
 <tab>
 
 ```ts
-  const transactions: PrismaPromise<any>[] = [];
-    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
+const transactions: PrismaPromise<any>[] = []
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
 
-    for (const { TABLE_NAME } of await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
-      if (TABLE_NAME !== "_prisma_migrations") {
-        try {
-          transactions.push(prisma.$executeRaw(
-            `TRUNCATE ${TABLE_NAME};`
-          ));
-        } catch (error) {
-          console.log({error})
-        }
-      }
-    }
-
-    transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`);
-
+for (const {
+  TABLE_NAME,
+} of await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
+  if (TABLE_NAME !== '_prisma_migrations') {
     try {
-      await prisma.$transaction(transactions);
+      transactions.push(prisma.$executeRaw(`TRUNCATE ${TABLE_NAME};`))
     } catch (error) {
-      console.log({error})
+      console.log({ error })
     }
+  }
+}
+
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`)
+
+try {
+  await prisma.$transaction(transactions)
+} catch (error) {
+  console.log({ error })
+}
 ```
 
 </tab>
 
 </TabbedContent>
 
-✅ **Pros**: 
-- Scalable 
+✅ **Pros**:
+
+- Scalable
 - Very fast
 
 ❌ **Cons**:
+
 - Can't undo the operation
 - Using reserved SQL key words as tables names can cause issues when trying to run a raw query
 

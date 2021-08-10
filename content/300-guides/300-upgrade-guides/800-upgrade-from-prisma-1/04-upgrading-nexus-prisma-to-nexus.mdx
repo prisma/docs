@@ -85,39 +85,39 @@ npx prisma -v
 
 To get started, you can remove the old imports that are not needed any more with your new setup:
 
-```ts line-number
-- import { makePrismaSchema, prismaObjectType } from 'nexus-prisma'
-- import datamodelInfo from './generated/nexus-prisma'
-- import { prisma } from './generated/prisma-client'
+```ts line-number highlight=1-3;delete
+import { makePrismaSchema, prismaObjectType } from 'nexus-prisma'
+import datamodelInfo from './generated/nexus-prisma'
+import { prisma } from './generated/prisma-client'
 ```
 
 Instead, you now import the following into your application:
 
-```ts line-number
-+ import { nexusSchemaPrisma } from 'nexus-plugin-prisma/schema'
-+ import { objectType, makeSchema, queryType, mutationType } from '@nexus/schema'
-+ import { PrismaClient } from '@prisma/client'
+```ts line-number highlight=1-3;add
+import { nexusSchemaPrisma } from 'nexus-plugin-prisma/schema'
+import { objectType, makeSchema, queryType, mutationType } from '@nexus/schema'
+import { PrismaClient } from '@prisma/client'
 ```
 
 Next you need to adjust the code where you currently create your `GraphQLSchema`, most likely this is currently happening via the `makePrismaSchema` function in your code. Since this function was imported from the removed `nexus-prisma` package, you'll need to replace it with the `makeSchema` function from the `@nexus/schema` package. The way how the Prisma plugin for Nexus is used also changes in the latest version.
 
 Here's an example for such a configuration:
 
-```ts file=./src/index.ts line-number
-- const schema = makePrismaSchema({
-+ const schema = makeSchema({
+```ts file=./src/index.ts line-number highlight=2,12-14;add|1,8-11;delete
+ const schema = makePrismaSchema({
+ const schema = makeSchema({
 
   // Provide all the GraphQL types we've implemented
   types: [Query, Mutation, UserUniqueInput, User, Post, Category, Profile],
 
   // Configure the interface to Prisma
--  prisma: {
--    datamodelInfo,
--    client: prisma,
--  },
-+  plugins: [nexusSchemaPrisma({
-+    experimentalCRUD: true,
-+  })],
+  prisma: {
+    datamodelInfo,
+    client: prisma,
+  },
+  plugins: [nexusSchemaPrisma({
+    experimentalCRUD: true,
+  })],
 
   // Specify where Nexus should put the generated files
   outputs: {
@@ -146,13 +146,13 @@ Here's an example for such a configuration:
 
 If you previously typed the GraphQL `context` object that's passed through your resolver chain, you need to adjust the type like so:
 
-```ts file=./src/types.ts
-- import { Prisma } from './generated/prisma-client'
-+ import { PrismaClient } from '@prisma/client'
+```ts file=./src/types.ts highlight=2,6;add|1,5;delete
+import { Prisma } from './generated/prisma-client'
+import { PrismaClient } from '@prisma/client'
 
 export interface Context {
--  prisma: Prisma
-+  prisma: PrismaClient
+  prisma: Prisma
+  prisma: PrismaClient
 }
 ```
 
@@ -216,8 +216,8 @@ Note that `t.model` looks at the `name` attribute in the object that's passed as
 
 At this point, you might see errors on the relation fields `posts` and `profile`, e.g.:
 
-```
-- Missing type Post, did you forget to import a type to the root query?
+```bash highlight=1;delete
+Missing type Post, did you forget to import a type to the root query?
 ```
 
 This is because you didn't add the `Post` and `Profile` types to the GraphQL schema yet, the errors will go away once these types are part of the GraphQL schema as well!
@@ -412,7 +412,10 @@ queryType({
       resolve: (parent, { searchString }, context) => {
         return context.prisma.posts({
           where: {
-            OR: [{ title_contains: searchString }, { content_contains: searchString }],
+            OR: [
+              { title_contains: searchString },
+              { content_contains: searchString },
+            ],
           },
         })
       },
@@ -423,26 +426,26 @@ queryType({
 
 The only thing that needs to be updated for this query is the call to Prisma since the new Prisma Client API looks a bit different from the one used in Prisma 1.
 
-```ts line-number
+```ts line-number highlight=6,9,12,13;normal
 queryType({
   definition(t) {
     t.list.field('posts', {
       type: 'Post',
       args: {
-|        searchString: stringArg({ nullable: true }),
+        searchString: stringArg({ nullable: true }),
       },
       resolve: (parent, { searchString }, context) => {
-|        return context.prisma.post.findMany({
+        return context.prisma.post.findMany({
           where: {
             OR: [
-|              { title: { contains: searchString } },
-|              { content: { contains: searchString } },
+              { title: { contains: searchString } },
+              { content: { contains: searchString } },
             ],
           },
         })
       },
     })
-  }
+  },
 })
 ```
 
@@ -484,27 +487,27 @@ queryType({
 
 You now need to adjust the call to your `prisma` instance since the new Prisma Client API looks a bit different from the one used in Prisma 1.
 
-```ts line-number
+```ts line-number highlight=6,12-17;normal
 const Query = queryType({
   definition(t) {
     t.field('user', {
       type: 'User',
       args: {
-|        userUniqueInput: arg({
+        userUniqueInput: arg({
           type: 'UserUniqueInput',
           nullable: false,
-       })
+        }),
       },
       resolve: (_, args, context) => {
-|        return context.prisma.user.findUnique({
-|          where: {
-|            id: args.userUniqueInput?.id,
-|            email: args.userUniqueInput?.email
-|          }
-|        })
-      }
+        return context.prisma.user.findUnique({
+          where: {
+            id: args.userUniqueInput?.id,
+            email: args.userUniqueInput?.email,
+          },
+        })
+      },
     })
-  }
+  },
 })
 ```
 
@@ -569,7 +572,7 @@ mutationType({
 
 You now need to adjust the call to your `prisma` instance since the new Prisma Client API looks a bit different from the one used in Prisma 1.
 
-```ts line-number
+```ts line-number highlight=11-19;normal
 const Mutation = mutationType({
   definition(t) {
     t.field('createDraft', {
@@ -580,18 +583,18 @@ const Mutation = mutationType({
         authorId: stringArg({ nullable: false }),
       },
       resolve: (_, args, context) => {
-|        return context.prisma.post.create({
-|          data: {
-|            title: args.title,
-|            content: args.content,
-|            author: {
-|              connect: { id: args.authorId }
-|            }
-|          }
-|        })
-      }
+        return context.prisma.post.create({
+          data: {
+            title: args.title,
+            content: args.content,
+            author: {
+              connect: { id: args.authorId },
+            },
+          },
+        })
+      },
     })
-  }
+  },
 })
 ```
 
@@ -631,7 +634,7 @@ mutationType({
 
 You now need to adjust the call to your `prisma` instance since the new Prisma Client API looks a bit different from the one used in Prisma 1.
 
-```ts
+```ts highlight=13-23;normal
 const Mutation = mutationType({
   definition(t) {
     t.field('updateBio', {
@@ -639,25 +642,25 @@ const Mutation = mutationType({
       args: {
         userUniqueInput: arg({
           type: 'UserUniqueInput',
-          nullable: false
+          nullable: false,
         }),
-        bio: stringArg()
+        bio: stringArg(),
       },
       resolve: (_, args, context) => {
-|        return context.prisma.user.update({
-|          where: {
-|            id: args.userUniqueInput?.id,
-|            email: args.userUniqueInput?.email
-|          },
-|          data: {
-|            profile: {
-|              create: { bio: args.bio }
-|            }
-|          }
-|        })
-      }
+        return context.prisma.user.update({
+          where: {
+            id: args.userUniqueInput?.id,
+            email: args.userUniqueInput?.email,
+          },
+          data: {
+            profile: {
+              create: { bio: args.bio },
+            },
+          },
+        })
+      },
     })
-  }
+  },
 })
 ```
 
@@ -678,7 +681,7 @@ mutationType({
         }),
       },
       resolve: (_, args, context) => {
-        const ids = args.categoryIds.map(id => ({ id }))
+        const ids = args.categoryIds.map((id) => ({ id }))
         return context.prisma.updatePost({
           where: {
             id: args.postId,
@@ -695,7 +698,7 @@ mutationType({
 
 You now need to adjust the call to your `prisma` instance since the new Prisma Client API looks a bit different from the one used in Prisma 1.
 
-```ts line-number
+```ts line-number highlight=14-21;normal
 const Mutation = mutationType({
   definition(t) {
     t.field('addPostToCategories', {
@@ -704,22 +707,22 @@ const Mutation = mutationType({
         postId: stringArg({ nullable: false }),
         categoryIds: stringArg({
           list: true,
-          nullable: false
+          nullable: false,
         }),
       },
       resolve: (_, args, context) => {
-        const ids = args.categoryIds.map(id => ({ id }))
-|        return context.prisma.post.update({
-|          where: {
-|            id: args.postId
-|          },
-|          data: {
-|            categories: { connect: ids }
-|          }
-|        })
-      }
+        const ids = args.categoryIds.map((id) => ({ id }))
+        return context.prisma.post.update({
+          where: {
+            id: args.postId,
+          },
+          data: {
+            categories: { connect: ids },
+          },
+        })
+      },
     })
-  }
+  },
 })
 ```
 

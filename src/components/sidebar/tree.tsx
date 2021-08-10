@@ -12,6 +12,7 @@ const { useGlobalState } = createGlobalState(initialState)
 
 const Tree = ({ edges }: AllEdges) => {
   const location = useLocation()
+
   let [treeData] = useState(() => {
     return calculateTreeData(edges, defaultCollapsed, location)
   })
@@ -23,7 +24,7 @@ const Tree = ({ edges }: AllEdges) => {
       [label]: !toggleContent ? false : !collapsed[label],
     })
     if (parents) {
-      parents.forEach(parent => {
+      parents.forEach((parent) => {
         if (parent && collapsed[parent] !== null) {
           setCollapsed({
             ...collapsed,
@@ -33,7 +34,7 @@ const Tree = ({ edges }: AllEdges) => {
       })
     }
   }
-  return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} />
+  return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} location={location} />
 }
 
 export default Tree

@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import styled from 'styled-components'
 
 interface ExpandedProps {
@@ -67,7 +67,7 @@ const Wrapper = styled.div`
       }
 
       .token.punctuation {
-        color: ${p => p.theme.colors.gray500} !important;
+        color: ${(p) => p.theme.colors.gray500} !important;
       }
 
       border-radius: 0px 0px 8px 8px;

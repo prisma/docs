@@ -1,0 +1,884 @@
+---
+title: 'Working with Json fields'
+metaTitle: 'Working with Json fields (Concepts)'
+metaDescription: 'How to read, write, and filter by Json fields.'
+tocDepth: 2
+---
+
+<TopBlock>
+
+Use the [`Json`](../../../../reference/api-reference/prisma-schema-reference#json) <span class="api"></span> Prisma field type to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `extendedPetsData`:
+
+```prisma highlight=6;normal
+model User {
+  id                 Int     @id @default(autoincrement())
+  email              String  @unique
+  name               String?
+  posts              Post[]
+  extendedPetsData   Json?
+}
+```
+
+Example field value:
+
+```json
+{
+  "pet1": {
+    "petName": "Claudine",
+    "petType": "House cat"
+  },
+  "pet2": {
+    "petName": "Sunny",
+    "petType": "Gerbil"
+  }
+}
+```
+
+> **Note**: The `Json` field is only supported if the [underlying database](../../../database-connectors) has a corresponding JSON data type.
+
+The `Json` field supports a few additional types, such as `string` and `boolean`. These additional types exist to match the types supported by [`JSON.parse()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse):
+
+```ts
+export declare type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonObject
+  | JsonArray
+```
+
+</TopBlock>
+
+## Use cases for JSON fields
+
+Reasons to store data as JSON rather than representing data as related models include:
+
+- You need to store data that does not have a consistent structure
+- You are importing data from another system and do not want to map that data to Prisma models
+
+## Reading a <inlinecode>Json</inlinecode> field
+
+You can use the `Prisma.JsonArray` and `Prisma.JsonObject` utility classes to work with the contents of a `Json` field:
+
+```ts
+const { PrismaClient, Prisma } = require('@prisma/client')
+
+const user = await prisma.user.findFirst({
+  where: {
+    id: 9,
+  },
+})
+
+// Example extendedProfile data:
+// [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }]
+
+if (user?.pets && typeof user?.pets === 'object' && Array.isArray(user?.pets)) {
+  const petsObject = user?.pets as Prisma.JsonArray
+
+  const firstPet = petsObject[0]
+}
+```
+
+See also: [Advanced example: Update a nested JSON key value](#advanced-example-update-a-nested-json-key-value)
+
+## Writing to a <inlinecode>Json</inlinecode> field
+
+The following example writes a JSON object to the `extendedPetsData` field:
+
+```ts
+var json = [
+  { name: 'Bob the dog' },
+  { name: 'Claudine the cat' },
+] as Prisma.JsonArray
+
+const createUser = await prisma.user.create({
+  data: {
+    email: 'birgitte@prisma.io',
+    extendedPetsData: json,
+  },
+})
+```
+
+> **Note**: JavaScript objects (for example, `{ extendedPetsData: "none"}`) are automatically converted to JSON.
+
+See also: [Advanced example: Update a nested JSON key value](#advanced-example-update-a-nested-json-key-value)
+
+## Filtering on a <inlinecode>Json</inlinecode> field
+
+Advanced `Json` filtering is available as a Preview feature in [2.23.0 and later](https://github.com/prisma/prisma/releases/tag/2.23.0). In earlier versions, you can [filter on the exact `Json` field value](#filter-on-exact-field-value).
+
+<div class="videoWrapper">
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/SUQ5vem9KdM"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
+
+</div>
+
+<Admonition type="warning">
+
+Advanced `Json` filtering is supported by [PostgreSQL](../../../database-connectors/postgresql) and [MySQL](../../../database-connectors/mysql) only with different syntaxes for the `path` option. PostgreSQL does not support [filtering on object key values in arrays](#filtering-on-object-key-value-inside-array).
+
+</Admonition>
+
+To enable advanced filtering, add `filterJson` to `previewFeatures` in your schema:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["filterJson"]
+}
+```
+
+### Database connector implementation differences
+
+The implementation of `Json` filtering differs between connectors:
+
+- The [MySQL connector](../../../database-connectors/mysql) uses [MySQL's implementation of JSON path](https://dev.mysql.com/doc/refman/8.0/en/json.html#json-path-syntax)
+- The [PostgreSQL connector](../../../database-connectors/postgresql) uses the custom JSON functions and operators [supported in version 12 _and earlier_](https://www.postgresql.org/docs/11/functions-json.html)
+
+This means that `path` option syntax differs between database connectors - for example, the following is a valid MySQL `path` value:
+
+```
+$petFeatures.petName
+```
+
+The following is a valid PostgreSQL `path` value:
+
+```
+["petFeatures", "petName"]
+```
+
+### Filter on exact field value
+
+The following query returns all users where the value of `extendedPetsData` matches the `json` variable exactly:
+
+```ts
+var json = { [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }] }
+
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      equals: json,
+    },
+  },
+})
+```
+
+The following query returns all users where the value of `extendedPetsData` does **not** match the `json` variable exactly:
+
+```ts
+var json = {
+  extendedPetsData: [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }],
+}
+
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      not: json,
+    },
+  },
+})
+```
+
+### Filter on object property
+
+In [2.23.0](https://github.com/prisma/prisma/releases/tag/2.23.0) and later, you can filter on a specific property inside a block of JSON. In the following examples, the value of `extendedPetsData` is a one-dimensional, unnested JSON object:
+
+```json highlight=11;normal
+{
+  "petName": "Claudine",
+  "petType": "House cat"
+}
+```
+
+The following query returns all users where the value of `petName` is `"Claudine"`:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: ['petName'],
+      equals: 'Claudine',
+    },
+  },
+})
+```
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.petName',
+      equals: 'Claudine',
+    },
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+The following query returns all users where the value of `petType` _contains_ `"cat"`:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: ['petType'],
+      string_contains: 'cat',
+    },
+  },
+})
+```
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.petType',
+      string_contains: 'cat',
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
+
+The following string filters are available:
+
+- [`string_contains`](../../../../reference/api-reference/prisma-client-reference#string_contains) <span class="api"></span>
+- [`string_starts_with`](../../../../reference/api-reference/prisma-client-reference#string_starts_with) <span class="api"></span>
+- [`string_ends_with`](../../../../reference/api-reference/prisma-client-reference#string_ends_with) <span class="api"></span>.
+
+### Filter on nested object property
+
+You can filter on nested JSON properties. In the following examples, the value of `extendedPetsData` is a JSON object with several levels of nesting.
+
+```json
+{
+  "pet1": {
+    "petName": "Claudine",
+    "petType": "House cat"
+  },
+  "pet2": {
+    "petName": "Sunny",
+    "petType": "Gerbil",
+    "features": {
+      "eyeColor": "Brown",
+      "furColor": "White and black"
+    }
+  }
+}
+```
+
+The following query returns all users where `"pet2"` &rarr; `"petName"` is `"Sunny"`:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: ['pet2', 'petName'],
+      equals: 'Sunny',
+    },
+  },
+})
+```
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.pet2.petName',
+      equals: 'Sunny',
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
+
+The following query returns all users where:
+
+- `"pet2"` &rarr; `"petName"` is `"Sunny"`
+- `"pet2"` &rarr; `"features"` &rarr; `"furColor"` contains `"black"`
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    AND: [
+      {
+        extendedPetsData: {
+          path: ['pet2', 'petName'],
+          equals: 'Sunny',
+        },
+      },
+      {
+        extendedPetsData: {
+          path: ['pet2', 'features', 'furColor'],
+          string_contains: 'black',
+        },
+      },
+    ],
+  },
+})
+```
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    AND: [
+      {
+        extendedPetsData: {
+          path: '$.pet2.petName',
+          equals: 'Sunny',
+        },
+      },
+      {
+        extendedPetsData: {
+          path: '$.pet2.features.furColor',
+          string_contains: 'black',
+        },
+      },
+    ],
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+### Filtering on an array value
+
+You can filter on the presence of a specific value in a scalar array (strings, integers). In the following example, the value of `extendedPetsData` is an array of strings:
+
+```json
+["Claudine", "Sunny"]
+```
+
+The following query returns all users with a pet named `"Claudine"`:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      array_contains: ['Claudine'],
+    },
+  },
+})
+```
+
+<Admonition type="info">
+
+**Note**: In PostgresSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
+
+</Admonition>
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      array_contains: 'Claudine',
+    },
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+The following array filters are available:
+
+- [`array_contains`](../../../../reference/api-reference/prisma-client-reference#array_contains) <span class="api"></span>
+- [`array_starts_with`](../../../../reference/api-reference/prisma-client-reference#array_starts_with) <span class="api"></span>
+- [`array_ends_with`](../../../../reference/api-reference/prisma-client-reference#array_ends_with) <span class="api"></span>
+
+### Filtering on nested array value
+
+You can filter on the presence of a specific value in a scalar array (strings, integers). In the following examples, the value of `extendedPetsData` includes nested scalar arrays of names:
+
+```json
+{
+  "cats": { "owned": ["Bob", "Sunny"], "fostering": ["Fido"] },
+  "dogs": { "owned": ["Ella"], "fostering": ["Prince", "Empress"] }
+}
+```
+
+#### Scalar value arrays
+
+The following query returns all users that foster a cat named `"Fido"`:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: ['cats', 'fostering'],
+      array_contains: ['Fido'],
+    },
+  },
+})
+```
+
+<Admonition type="info">
+
+**Note**: In PostgresSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
+
+</Admonition>
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.cats.fostering',
+      array_contains: 'Fido',
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
+
+The following query returns all users that foster cats named `"Fido"` _and_ `"Bob"`:
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: ['cats', 'fostering'],
+      array_contains: ['Fido', 'Bob'],
+    },
+  },
+})
+```
+
+</tab>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.cats.fostering',
+      array_contains: ['Fido', 'Bob'],
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
+
+#### JSON object arrays
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const json = [{ status: 'expired', insuranceID: 92 }]
+
+const checkJson = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: ['insurances'],
+      array_contains: json,
+    },
+  },
+})
+```
+
+</tab>
+<tab>
+
+```ts
+const json = { status: 'expired', insuranceID: 92 }
+
+const checkJson = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.insurances',
+      array_contains: json,
+    },
+  },
+})
+```
+
+</tab>
+</TabbedContent>
+
+- If you are using PostgreSQL, you must pass in an array of objects to match, even if that array only contains one object:
+
+  ```json5
+  [{ status: 'expired', insuranceID: 92 }] // PostgreSQL
+  ```
+
+  If you are using MySQL, you must pass in a single object to match:
+
+  ```json5
+  { status: 'expired', insuranceID: 92 } // MySQL
+  ```
+
+- If your filter array contains multiple objects, PostgreSQL will only return results if _all_ objects are present - not if at least one object is present.
+
+- You must set `array_contains` to a JSON object, not a string. If you use a string, Prisma escapes the quotation marks and the query will not return results. For example:
+
+  ```ts
+  array_contains: '[{"status": "expired", "insuranceID": 92}]'
+  ```
+
+  is sent to the database as:
+
+  ```
+  [{\"status\": \"expired\", \"insuranceID\": 92}]
+  ```
+
+### Targeting an array element by index
+
+You can filter on the value of an element in a specific position.
+
+```json
+{ "owned": ["Bob", "Sunny"], "fostering": ["Fido"] }
+```
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    comments: {
+      path: ['owned', '1'],
+      string_contains: 'Bob',
+    },
+  },
+})
+```
+
+</tab>
+
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    comments: {
+      path: '$.owned[1],
+      string_contains: 'Bob',
+    },
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+### Filtering on object key value inside array
+
+Depending on your provider, you can filter on the key value of an object inside an array.
+
+<Admonition type="warning">
+
+Filtering on object key values within an array is **only** supported by the [MySQL database connector](../../../database-connectors/mysql). However, you can still [filter on the presence of entire JSON objects](#json-object-arrays).
+
+</Admonition>
+
+In the following example, the value of `extendedPetsData` is an array of objects with a nested `insurances` array, which contains two objects:
+
+```json
+[
+  {
+    "petName": "Claudine",
+    "petType": "House cat",
+    "insurances": [
+      { "insuranceID": 92, "status": expired },
+      { "insuranceID": 12, "status": active }
+    ]
+  },
+  {
+    "petName": "Sunny",
+    "petType": "Gerbil"
+  },
+  {
+    "petName": "Gerald",
+    "petType": "Corn snake"
+  },
+  {
+    "petName": "Nanna",
+    "petType": "Moose"
+  }
+]
+```
+
+The following query returns all users where at least one pet is a moose:
+
+<TabbedContent tabs={[<FileWithIcon text="MySQL" icon="database"/>]}>
+
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$[*].petType',
+      array_contains: 'Moose',
+    },
+  },
+})
+```
+
+</tab>
+
+<tab></tab>
+
+</TabbedContent>
+
+- `$[*]` is the root array of pet objects
+- `petType` matches the `petType` key in any pet object
+
+The following query returns all users where at least one pet has an expired insurance:
+
+<TabbedContent tabs={[<FileWithIcon text="MySQL" icon="database"/>]}>
+
+<tab>
+
+```ts
+const getUsers = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$[*].insurances[*].status',
+      array_contains: 'expired',
+    },
+  },
+})
+```
+
+</tab>
+
+<tab>
+
+</tab>
+
+</TabbedContent>
+
+- `$[*]` is the root array of pet objects
+- `insurances[*]` matches any `insurances` array inside any pet object
+- `status` matches any `status` key in any insurance object
+
+## Advanced example: Update a nested JSON key value
+
+The following example assumes that the value of `extendedPetsData` is some variation of the following:
+
+```json
+{
+  "petName": "Claudine",
+  "petType": "House cat",
+  "insurances": [
+    { "insuranceID": 92, "status": "expired" },
+    { "insuranceID": 12, "status": "active" }
+  ]
+}
+```
+
+The following example:
+
+1. Gets all users
+1. Change the `"status"` of each insurance object to `"expired"`
+1. Get all users that have an expired insurance where the ID is `92`
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+<tab>
+
+```ts
+const userQueries: string | any[] = []
+
+getUsers.forEach((user) => {
+  if (
+    user.extendedPetsData &&
+    typeof user.extendedPetsData === 'object' &&
+    !Array.isArray(user.extendedPetsData)
+  ) {
+    const petsObject = user.extendedPetsData as Prisma.JsonObject
+
+    const i = petsObject['insurances']
+
+    if (i && typeof i === 'object' && Array.isArray(i)) {
+      const insurancesArray = i as Prisma.JsonArray
+
+      insurancesArray.forEach((i) => {
+        if (i && typeof i === 'object' && !Array.isArray(i)) {
+          const insuranceObject = i as Prisma.JsonObject
+
+          insuranceObject['status'] = 'expired'
+        }
+      })
+
+      const whereClause = Prisma.validator<Prisma.UserWhereInput>()({
+        id: user.id,
+      })
+
+      const dataClause = Prisma.validator<Prisma.UserUpdateInput>()({
+        extendedPetsData: petsObject,
+      })
+
+      userQueries.push(
+        prisma.user.update({
+          where: whereClause,
+          data: dataClause,
+        })
+      )
+    }
+  }
+})
+
+if (userQueries.length > 0) {
+  console.log(userQueries.length + ' queries to run!')
+  await prisma.$transaction(userQueries)
+}
+
+const json = [{ status: 'expired', insuranceID: 92 }]
+
+const checkJson = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: ['insurances'],
+      array_contains: json,
+    },
+  },
+})
+
+console.log(checkJson.length)
+```
+
+</tab>
+
+<tab>
+
+```ts
+const userQueries: string | any[] = []
+
+getUsers.forEach((user) => {
+  if (
+    user.extendedPetsData &&
+    typeof user.extendedPetsData === 'object' &&
+    !Array.isArray(user.extendedPetsData)
+  ) {
+    const petsObject = user.extendedPetsData as Prisma.JsonObject
+
+    const i = petsObject['insurances']
+
+    if (i && typeof i === 'object' && Array.isArray(i)) {
+      const insurancesArray = i as Prisma.JsonArray
+
+      insurancesArray.forEach((i) => {
+        if (i && typeof i === 'object' && !Array.isArray(i)) {
+          const insuranceObject = i as Prisma.JsonObject
+
+          insuranceObject['status'] = 'expired'
+        }
+      })
+
+      const whereClause = Prisma.validator<Prisma.UserWhereInput>()({
+        id: user.id,
+      })
+
+      const dataClause = Prisma.validator<Prisma.UserUpdateInput>()({
+        extendedPetsData: petsObject,
+      })
+
+      userQueries.push(
+        prisma.user.update({
+          where: whereClause,
+          data: dataClause,
+        })
+      )
+    }
+  }
+})
+
+if (userQueries.length > 0) {
+  console.log(userQueries.length + ' queries to run!')
+  await prisma.$transaction(userQueries)
+}
+
+const json = { status: 'expired', insuranceID: 92 }
+
+const checkJson = await prisma.user.findMany({
+  where: {
+    extendedPetsData: {
+      path: '$.insurances',
+      array_contains: json,
+    },
+  },
+})
+
+console.log(checkJson.length)
+```
+
+</tab>
+</TabbedContent>
+
+## <inlinecode>Json</inlinecode> FAQs
+
+### Can you select a subset of JSON key/values to return?
+
+No - it is not yet possible to [select which JSON elements to return](https://github.com/prisma/prisma/issues/2431). Prisma Client returns the entire JSON object.
+
+### Can you filter on the presence of a specific key?
+
+No - it is not yet possible to filter on the presence of a specific key.
+
+### Is case insensitive filtering supported?
+
+No - [case insensitive filtering](https://github.com/prisma/prisma/issues/7390) is not yet supported.

@@ -22,13 +22,17 @@ const HeaderWrapper = styled.div`
       rgba(113, 128, 150, 0.25) 0%,
       rgba(113, 128, 150, 0) 100%
     ),
-    linear-gradient(180deg, ${p => p.theme.colors.gray900} 0%, ${p => p.theme.colors.gray800} 100%),
-    linear-gradient(180deg, ${p => p.theme.colors.gray900} 0%, rgba(27, 32, 43, 0) 100%),
-    ${p => p.theme.colors.gray800};
+    linear-gradient(
+      180deg,
+      ${(p) => p.theme.colors.gray900} 0%,
+      ${(p) => p.theme.colors.gray800} 100%
+    ),
+    linear-gradient(180deg, ${(p) => p.theme.colors.gray900} 0%, rgba(27, 32, 43, 0) 100%),
+    ${(p) => p.theme.colors.gray800};
   img {
     margin-bottom: 0;
   }
-  padding: ${p => p.theme.space[24]} ${p => p.theme.space[16]};
+  padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[16]};
   display: flex;
   justify-content: center;
 `
@@ -56,7 +60,7 @@ const Container = styled.div`
         text-decoration: none;
 
         &:hover {
-          color: ${p => p.theme.colors.white} !important;
+          color: ${(p) => p.theme.colors.white} !important;
         }
       }
     }
@@ -73,20 +77,20 @@ const SearchComponent = styled(Search)`
 `
 
 const DocsMobileButton = styled.div`
-  background: ${p => p.theme.colors.white};
-  border-radius: ${p => p.theme.radii.small};
-  color: ${p => p.theme.colors.gray700};
+  background: ${(p) => p.theme.colors.white};
+  border-radius: ${(p) => p.theme.radii.small};
+  color: ${(p) => p.theme.colors.gray700};
   display: none;
-  padding: 0 ${p => p.theme.space[14]};
+  padding: 0 ${(p) => p.theme.space[14]};
   height: 40px;
-  margin-left: ${p => p.theme.space[8]};
+  margin-left: ${(p) => p.theme.space[8]};
   font-weight: 600;
   position: relative;
   z-index: 300;
   justify-content: space-between;
   cursor: pointer;
   svg {
-    margin-left: ${p => p.theme.space[8]};
+    margin-left: ${(p) => p.theme.space[8]};
   }
   @media (min-width: 0px) and (max-width: 1024px) {
     display: flex;
@@ -100,33 +104,33 @@ const MobileOnlyNav = styled.div`
   z-index: 210;
   top: 70px;
   transition: top 0.35s;
-  padding: ${p => p.theme.space[16]};
-  border-radius: ${p => p.theme.radii.small};
+  padding: ${(p) => p.theme.space[16]};
+  border-radius: ${(p) => p.theme.radii.small};
   text-align: left;
-  background: ${p => p.theme.colors.gray800};
+  background: ${(p) => p.theme.colors.gray800};
   right: 0;
-  padding: ${p => p.theme.space[32]} ${p => p.theme.space[16]};
+  padding: ${(p) => p.theme.space[32]} ${(p) => p.theme.space[16]};
   @media (min-width: 0px) and (max-width: 1024px) {
     display: block;
   }
 `
 
 const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
-  background: ${p => p.theme.colors.gray200};
-  box-shadow: 0px 1px 0px ${p => p.theme.colors.gray300};
+  background: ${(p) => p.theme.colors.gray200};
+  box-shadow: 0px 1px 0px ${(p) => p.theme.colors.gray300};
   top: 0;
   padding: 0;
   z-index: 200;
 `
 
 const SecondLevelHeader = styled.div`
-  background: ${p => p.theme.colors.gray200};
+  background: ${(p) => p.theme.colors.gray200};
   padding: 20px 16px;
   display: flex;
   justify-content: center;
   position: relative;
   z-index: 105;
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     padding: 12px 16px;
   }
 `
@@ -134,7 +138,7 @@ const SecondLevelHeader = styled.div`
 const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
-  font-size: ${p => p.theme.fontSizes[16]};
+  font-size: ${(p) => p.theme.fontSizes[16]};
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
   }
@@ -144,14 +148,14 @@ const NavLink = styled(Link)`
   transition: color 0.1s ease-in;
   padding: 0 0.5rem;
   margin: 0 0.5rem;
-  color: ${p => p.theme.colors.gray400} !important;
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  color: ${(p) => p.theme.colors.gray400} !important;
+  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     margin: 0;
     padding: 0;
   }
 `
 const DarkNavLink = styled(NavLink)`
-  color: ${p => p.theme.colors.gray700} !important;
+  color: ${(p) => p.theme.colors.gray700} !important;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -160,7 +164,7 @@ const DarkNavLink = styled(NavLink)`
     margin: 0;
     display: flex;
     align-items: center;
-    color: ${p => p.theme.colors.gray600} !important;
+    color: ${(p) => p.theme.colors.gray600} !important;
   }
 
   .menu-item {
@@ -168,50 +172,50 @@ const DarkNavLink = styled(NavLink)`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid ${p => p.theme.colors.gray300};
-    color: ${p => p.theme.colors.gray600};
+    border-top: 1px solid ${(p) => p.theme.colors.gray300};
+    color: ${(p) => p.theme.colors.gray600};
     font-weight: 600;
     &:hover {
-      color: ${p => p.theme.colors.gray900};
+      color: ${(p) => p.theme.colors.gray900};
     }
   }
 
   &:hover {
-    color: ${p => p.theme.colors.gray900} !important;
+    color: ${(p) => p.theme.colors.gray900} !important;
   }
   &.active-item {
-    background: ${p => p.theme.colors.white};
-    border-radius: ${p => p.theme.radii.small};
-    color: ${p => p.theme.colors.gray500} !important;
+    background: ${(p) => p.theme.colors.white};
+    border-radius: ${(p) => p.theme.radii.small};
+    color: ${(p) => p.theme.colors.gray500} !important;
     padding: 0.25rem 0.5rem;
   }
 
-  @media (min-width: 0px) and (max-width: ${p => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     &.active-item {
       background: transparent;
-      color: ${p => p.theme.colors.gray700} !important;
+      color: ${(p) => p.theme.colors.gray700} !important;
       padding: 0.25rem 0.5rem;
     }
     svg {
       display: block;
     }
   }
-  @media (min-width: ${p => p.theme.breakpoints.tablet}) and (max-width: 1024px) {
+  @media (min-width: ${(p) => p.theme.breakpoints.tablet}) and (max-width: 1024px) {
     font-size: 14px;
   }
 `
 
 const SecondLevelMobileNavLink = styled.div`
-  padding: ${p => p.theme.space[24]};
+  padding: ${(p) => p.theme.space[24]};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid ${p => p.theme.colors.gray300};
-  color: ${p => p.theme.colors.gray600};
+  border-top: 1px solid ${(p) => p.theme.colors.gray300};
+  color: ${(p) => p.theme.colors.gray600};
   font-weight: 600;
   cursor: pointer;
   &:hover {
-    color: ${p => p.theme.colors.gray900};
+    color: ${(p) => p.theme.colors.gray900};
   }
 `
 
@@ -239,15 +243,15 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
 
   const SecondLevelMenu = () => {
     const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
-      item => item.type === 'bucket'
+      (item) => item.type === 'bucket'
     )
     const externalLinkItems = headerProps.secondLevelHeaderMenuItems.filter(
-      item => item.type === 'external-link'
+      (item) => item.type === 'external-link'
     )
     return (
       <SecondLevelNav>
         <div>
-          {bucketItems.map(item => {
+          {bucketItems.map((item) => {
             const isCurrent = location && item.to && location.pathname.includes(item.to)
             return (
               <DarkNavLink
@@ -262,7 +266,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
           })}
         </div>
         <div>
-          {externalLinkItems.map(item => (
+          {externalLinkItems.map((item) => (
             <DarkNavLink className="link" to={item.to}>
               {item.text} &nbsp;&nbsp;
               <ExternalLink />
@@ -304,7 +308,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
 
   const SecondLevelMobileMenu = () => (
     <SecondLevelNav>
-      {headerProps.secondLevelHeaderMenuItems.map(item => {
+      {headerProps.secondLevelHeaderMenuItems.map((item) => {
         return (
           <MenuItem
             componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}

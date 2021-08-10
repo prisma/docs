@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import styled from 'styled-components'
 import * as CopyToClipboard from 'react-copy-to-clipboard'
 
@@ -34,7 +34,7 @@ const CopyButton = ({ text, children }: CopyButtonProps) => {
 export default CopyButton
 
 const CopyComponent = styled.div`
-  font-family: ${p => p.theme.fonts.text};
+  font-family: ${(p) => p.theme.fonts.text};
   & {
     position: relative;
     cursor: pointer;
