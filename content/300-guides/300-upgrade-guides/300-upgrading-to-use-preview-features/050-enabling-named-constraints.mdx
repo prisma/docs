@@ -6,67 +6,62 @@ metaDescription: 'How to use the Preview feature `namedConstraints`.'
 
 <TopBlock>
 
-This page describes manual upgrade steps that you need to perform after upgrading to Prisma 2.29.0 (or newer) and you want to use the `namedConstraints` Preview feature.
-
-After you enable the `namedConstraints` Preview feature, choose a workflow (Prisma Migrate or Introspection) and upgrade path that suits your requirements:
-
-</TopBlock>
-
-<!-- general problem statement -->
-<!--
-- db names passed directly to client -> special character in db names could break the client generation (.,- etc...)
-- no names possible in schema for pks and fks
-- means environments could get out of sync when introspecting legacy and creating dev locally for example
-- this can result in migrations failing on prod that succeeded on dev
-- here is how to detect (link) and fix being out of sync (link to extra doc or section at the bottom)
--->
-
-<!-- detecting being out of sync -->
-<!--
-- introspect dev w. flag to extra file
-- introspect prod w. flag to extra file
-- diff files
--->
-
-<!-- fixing being out of sync -->
-
-<!-- 
-- assumes you want to keep the prod names
-- introspect prod
-- switch to dev, migrate dev `new-migration-to-sync-names`
-- switch to prod, migrate resolve --applied `new-migration-to-sync-names`
-- history now contains step to align sync names and prod won't try to reapply it again
--->
-
-<!-- general solution once envs are in sync -->
-<!--
-- names possible but suppressed if matching (now changed) convention (link)
-- just enabling flag will change meaning of schema
-- when using migrate dev / db push this would result in a change of constraint names
-- when using db pull this would mean existing db names are pulled into the datamodel (making it noisier)
-- you should consciously decide whether there is a need to keep existing names unchanged and pick a path
-- reasons (conventions you have to follow for other tools, manual indexhints in custom sql, personal preference etc..)
--->
-
-<!-- keep names -->
-<!--
-- set flag and introspect your target env
--->
-
-<!-- switch to default names / keep schema clean -->
-<!--
-- use clean schema, call migrate dev
-- apply to other envs
--->
-
-## Upgrade paths for Prisma Migrate users
-
-Use the following guide if your project uses Prisma Migrate. Choose the upgrade path that matches your requirements:
+This page describes manual upgrade steps that you need to perform after upgrading to Prisma 2.29.0 (or newer) if you want to use the `namedConstraints` Preview feature.
 
 - [I want to maintain my existing constraint and index names](#upgrade-path-1-i-want-to-maintain-my-existing-constraint-and-index-names)
 - [I want to use Prisma's default constraint and index names](#upgrade-path-2-i-want-to-use-prismas-default-constraint-and-index-names)
 
+</TopBlock>
+
+## The issue with index and constraint names
+
+The namedConstraints preview feature fixes some fundamental problems with the way Prisma handled the naming of constraints and indexes:
+
+The names of compound unique constraints (`@@unique`) were passed directly into the client after introspecting a database. This led to problems if these contained characters that resulted in invalid Typescript types.
+
+The Prisma schema did not contain syntax to describe the names of primary keys and foreign keys. This could lead to situations where introspecting an existing database and then replicating it locally based on the introspected schema yielded databases that differed in their constraint names. This results in failing migrations if later on these
+constraints are manipulated since they are addressed by name.
+
+If you started a development environment based on an initial introspection of a database you should [check whether their constraint names match](#checking-whether-your-environments-use-identical-names)! If the names are out of sync you can now [align them by following these steps](#aligning-your-environments-if-their-constraint-or-index-names-differ).
+
+## Upgrade path for introspection only users
+
+Use the following guide if you use introspection only.
+
+1. Enable the `namedConstraints` Preview:
+
+   ```prisma highlight=3;normal
+   generator client {
+     provider        = "prisma-client-js"
+     previewFeatures = ["namedConstraints"]
+   }
+   ```
+
+1. Introspect to populate your Prisma schema with any constraint names that do not follow Prisma's naming convention:
+
+   ```terminal
+   npx prisma introspect
+   ```
+
+   For example, in the following model, the `@id` primary key constraint does not follow Prisma's convention (the conventional name would be `User_pk`):
+
+   ```prisma
+   model User {
+     id    Int    @id(map: "user_id_primary_key") @default(autoincrement())
+     name  String @unique
+     posts Post[]
+   }
+   ```
+
+## Upgrade paths for Prisma migrate users
+
+When enabling the namedConstraints preview flag, you are changing the behaviour of Prisma migrate. The default naming convention for constraint and index names will change and you primary and foreign key names will now be part of the schema for databases that support them. Therefore the meaning of your existing schema to Prisma will change. Before you continue to evolve your schema and your database, you should decided which names for constraints and indexes you want to use on your project from now on.
+
+You can either keep the existing names in your database or you can switch to use the names generated by Prisma's new naming convention. You can pick either of the two options.
+
 ### Upgrade path 1: I want to maintain my existing constraint and index names
+
+If you want to keep your database unchanged and keep the existing names for constraints and indexes you need to pull them into your schema so Prisma is aware of them. Reasons to keep your existing names might be naming conventions you have to follow, other tooling relying on the names, or just personal preference. To keep existing names, run `prisma db pull` against the target environment with the preview flag enabled. This will result in all names that do not match Prisma's naming convention (LINK) for constraint and index names being pulled into your schema as `map` arguments on their respective attributes.
 
 1.  Enable the `namedConstraints` Preview:
 
@@ -118,78 +113,9 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
     }
     ```
 
-1.  Optionally introspect your **production database** and double-check that constraint names in production and development are in sync. If you have external applications or scripts that rely on a specific constraint name in production, make sure that these constraint names are represented in the Prisma schema.
-
-    In the following example, the `Post` model has a foreign key constraint with a custom name in production that does not match development:
-
-      <TabbedContent tabs={[<FileWithIcon text="Development environment" icon="prisma"/>, <FileWithIcon text="Production environment" icon="prisma"/>]}>
-
-      <tab>
-
-    ```prisma highlight=5;normal
-    model Post {
-      id    Int @id @default(autoincrement())
-      title String
-      authorName String @default("Anonymous")
-      author User? @relation(fields: [authorName], references: [name], map: "Custom_Foreign_Key_Constraint")
-    }
-    ```
-
-      </tab>
-
-      <tab>
-
-    ```prisma highlight=5;normal
-    model Post {
-      id    Int @id @default(autoincrement())
-      title String
-      authorName String @default("Anonymous")
-      author User? @relation(fields: [authorName], references: [name], map: "Custom_Production_Name")
-    }
-    ```
-
-      </tab>
-
-      </TabbedContent>
-
-    To synchronize constraint names between development and production, make sure that the constraint name in your Prisma schema is `map: "Custom_Production_Name"`.
-
-1.  Optionally rename any explicitly defined constraint names where you do not want to use Prisma's naming convention, but do want to use a different constraint name:
-
-    ```prisma highlight=2;delete|3;add
-    model User {
-      id    Int    @id(map: "Custom_Constraint_Name") @default(autoincrement())
-      id    Int    @id(map: "User_ID_Primary_Key") @default(autoincrement())
-      name  String @unique
-      posts Post[]
-    }
-    ```
-
-1.  Optionally _remove_ the `map` field from any constraint or index attribute where you want to use the Prisma default:
-
-    ```prisma highlight=5;delete|6;add
-    model Post {
-      id    Int @id @default(autoincrement())
-      title String
-      authorName String @default("Anonymous")
-      author User? @relation(fields: [authorName], references: [name], map: "Custom_Foreign_Key_Constraint")
-      author User? @relation(fields: [authorName], references: [name])
-    }
-    ```
-
-1.  Run the `prisma migrate dev` command to apply the changes to the database and generate a new migration:
-
-    ```terminal
-    npx prisma migrate dev
-    ```
-
-1.  Deploy the migration to production and test environments.
-
-    ```terminal
-    npx prisma migrate deploy
-    ```
-
 ### Upgrade path 2: I want to use Prismas default constraint and index names
+
+If you want to keep the clean look of your Prisma schema without explicitly spelled out constraint and index names and have no reasons preventing you from renaming their names in the database you can create a migration to update the names. With the preview flag enabled, run `prisma migrate dev` to create a migration updating the constraint names to Prisma's defaults. Afterwards, do not forget to `prisma migrated deploy` against your production environment if you have one to also update the names there. The schema below has no explicit constraint or index names spelled out, so Prisma will infer them.
 
 1. Enable the `namedConstraints` Preview:
 
@@ -198,6 +124,17 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
      provider        = "prisma-client-js"
      previewFeatures = ["namedConstraints"]
    }
+
+   model User {
+      name  String @id //inferred as User_pkey
+      posts Post[]
+    }
+
+    model Post {
+      id    Int @id @default(autoincrement()) //inferred as Post_pkey
+      authorName String @default("Anonymous")
+      author User? @relation(fields: [authorName], references: [name]) //inferred as Post_authorName_fkey
+    }
    ```
 
 1. Run the `prisma migrate dev` command to generate a new migration:
@@ -208,31 +145,57 @@ Use the following guide if your project uses Prisma Migrate. Choose the upgrade 
 
    This migration renames any constraints that do not currently follow Prisma's naming convention.
 
-## Upgrade path for introspection only users
-
-Use the following guide if you use introspection only.
-
-1. Enable the `namedConstraints` Preview:
-
-   ```prisma highlight=3;normal
-   generator client {
-     provider        = "prisma-client-js"
-     previewFeatures = ["namedConstraints"]
-   }
-   ```
-
-1. Introspect to populate your Prisma schema with any constraint names that do not follow Prisma's naming convention:
+1. Run the `prisma migrate deploy` command to apply the migration to your production environment:
 
    ```terminal
-   npx prisma introspect
+   npx prisma deploy
    ```
 
-   For example, in the following model, the `@id` primary key constraint does not follow Prisma's convention (the conventional name would be `User_pk`):
+## Checking whether your environments use identical names
 
-   ```prisma
-   model User {
-     id    Int    @id(map: "user_id_primary_key") @default(autoincrement())
-     name  String @unique
-     posts Post[]
-   }
-   ```
+reiterate why this might be the case
+
+In order to detect this, backup your current prisma.schema and then run prisma db pull against both environments saving the results to their own files.
+Then diff both files. If you see differences in constraint names, your production and local environments are out of sync.
+
+In the following example, the `Post` model has a foreign key constraint with a custom name in production that does not match development:
+
+  <TabbedContent tabs={[<FileWithIcon text="Development environment" icon="prisma"/>, <FileWithIcon text="Production environment" icon="prisma"/>]}>
+
+  <tab>
+
+```prisma highlight=5;normal
+model Post {
+  id    Int @id @default(autoincrement())
+  title String
+  authorName String @default("Anonymous")
+  author User? @relation(fields: [authorName], references: [name], map: "Custom_Foreign_Key_Constraint")
+}
+```
+
+  </tab>
+
+  <tab>
+
+```prisma highlight=5;normal
+model Post {
+  id    Int @id @default(autoincrement())
+  title String
+  authorName String @default("Anonymous")
+  author User? @relation(fields: [authorName], references: [name], map: "Custom_Production_Name")
+}
+```
+
+  </tab>
+
+  </TabbedContent>
+
+## Aligning your environments if their constraint or index names differ
+
+explain why you will probably want to propate the prod names into dev
+
+- assumes you want to keep the prod names
+- introspect prod
+- switch to dev, migrate dev `new-migration-to-sync-names`
+- switch to prod, migrate resolve --applied `new-migration-to-sync-names`
+- history now contains step to align sync names and prod won't try to reapply it again
