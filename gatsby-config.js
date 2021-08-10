@@ -86,7 +86,6 @@ let plugins = [
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
-      decks: [],
       defaultLayouts: {
         default: require.resolve('./src/layouts/articleLayout.tsx'),
       },
@@ -118,6 +117,12 @@ let plugins = [
       id: 'GTM-KCGZPWB',
       includeInDevelopment: false,
       defaultDataLayer: { website: 'docs' },
+    },
+  },
+  {
+    resolve: `gatsby-plugin-percy`,
+    options: {
+      // see actual configuration in `percy` key in `package.json`
     },
   },
 ]

@@ -7,6 +7,13 @@ tocDepth: 3
 
 <TopBlock>
 
+<Admonition type="warning">
+
+**MongoDB not supported** <br />
+Prisma Migrate does not currently support the [MongoDB connector](../../database-connectors/mongodb).
+
+</Admonition>
+
 Prisma Migrate is an **imperative database schema migration tool** that enables you to:
 
 - Keep your database schema in sync with your [Prisma schema](../prisma-schema) as it evolves _and_
@@ -14,13 +21,17 @@ Prisma Migrate is an **imperative database schema migration tool** that enables 
 
 Prisma Migrate generates [a history of `.sql` migration files](#migration-history), and plays a role in both [development](#development-environments) and [deployment](#production-and-testing-environments).
 
-> **Tip**: If you are prototyping, consider using the [`db push` command](db-push) - see [Schema prototyping with `db push`](../../../guides/application-lifecycle/prototyping-schema-db-push) <span class="guide"></span> for examples.
+<Tip>
+
+If you are prototyping, consider using the [`db push` command](db-push) - see [Schema prototyping with `db push`](../../../guides/database/prototyping-schema-db-push) <span class="guide"></span> for examples.
+
+</Tip>
 
 </TopBlock>
 
 ## Getting started with Prisma Migrate
 
-> See [Developing with Prisma Migrate](../../../guides/application-lifecycle/developing-with-prisma-migrate) <span class="guide"></span> for a more in-depth development workflow.
+> See [Developing with Prisma Migrate](../../../guides/database/developing-with-prisma-migrate) <span class="guide"></span> for a more in-depth development workflow.
 
 To get started with Prisma Migrate in a development environment:
 
@@ -47,19 +58,25 @@ To get started with Prisma Migrate in a development environment:
    }
    ```
 
-   > **Tip**: You can use [native type mapping attributes](type-mapping) in your schema to decide which exact database type to create (for example, `String` can map to `varchar(100)` or `text`).
+<Tip>
+
+You can use [native type mapping attributes](supported-types-and-db-features#mapping-fields-to-a-specific-native-type) in your schema to decide which exact database type to create (for example, `String` can map to `varchar(100)` or `text`).
+
+</Tip>
+
+<!-- prettier-ignore-start -->
 
 1. Create the first migration:
 
    <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
-   <Cmd>
+   <cmd>
 
    ```terminal
    prisma migrate dev --name init
    ```
 
-   </Cmd>
-   <CmdResult>
+   </cmd>
+   <cmdResult>
 
    ```sql
      -- CreateTable
@@ -83,7 +100,7 @@ To get started with Prisma Migrate in a development environment:
    ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
    ```
 
-   </CmdResult>
+   </cmdResult>
    </CodeWithResult>
 
    Your Prisma schema is now in sync with your database schema and you have initialized a migration history:
@@ -108,21 +125,21 @@ To get started with Prisma Migrate in a development environment:
 1. Create the second migration:
 
    <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
-   <Cmd>
+   <cmd>
 
    ```terminal
    prisma migrate dev --name added_job_title
    ```
 
-   </Cmd>
-   <CmdResult>
+   </cmd>
+   <cmdResult>
 
    ```sql
      -- AlterTable
    ALTER TABLE "User" ADD COLUMN     "jobTitle" TEXT NOT NULL;
    ```
 
-   </CmdResult>
+   </cmdResult>
    </CodeWithResult>
 
    Your Prisma schema is once again in sync with your database schema, and your migration history contains two migrations:
@@ -135,7 +152,9 @@ To get started with Prisma Migrate in a development environment:
        └─ migration.sql
    ```
 
-You now have a migration history that you can [source control](#team-development) and use to [deploy changes to test environments and production](#production-and-testing-environments).
+<!-- prettier-ignore-end -->
+
+You now have a migration history that you can [source control](#source-controlling-the-migration-history) and use to [deploy changes to test environments and production](#production-and-testing-environments).
 
 ## Migration history
 
@@ -208,7 +227,12 @@ If Prisma Migrate reports a missing or edited migration that has already been ap
 
 ### Source-controlling the migration history
 
-You should commit the entire `prisma/migrations` folder to source control. This includes the `prisma/migrations/migration_lock.toml` file, which is used to detect if you have [attempted to change providers](prisma-migrate-limitations-issues#you-cannot-switch-database-providers).
+You must commit the entire `prisma/migrations` folder to source control. This includes the `prisma/migrations/migration_lock.toml` file, which is used to detect if you have [attempted to change providers](prisma-migrate-limitations-issues#you-cannot-automatically-switch-database-providers).
+
+Source-controlling the `schema.prisma` file is not enough - you must include your migration history. This is because:
+
+- As you start to [customize migrations](#customizing-migrations), your migration history contains **information that cannot be represented in the Prisma schema**. For example, you can customize a migration to mitigate data loss that would be caused by a breaking change.
+- The `prisma migrate deploy` command, which is used to deploy changes to staging, testing, and production environments, _only_ runs migration files. It does not use the Prisma schema file to fetch the models.
 
 ## Development environments
 
@@ -217,6 +241,14 @@ In a development environment, use the `migrate dev` command to generate and appl
 ```terminal
 npx prisma migrate dev
 ```
+
+### Create and apply migrations
+
+<Admonition type="alert">
+
+`migrate dev` is a development command and should never be used in a production environment.
+
+</Admonition>
 
 This command:
 
@@ -237,22 +269,31 @@ You can also `reset` the database yourself to undo manual changes or `db push` e
 npx prisma migrate reset
 ```
 
+### Reset the development database
+
+<Admonition type="alert">
+
+`migrate reset` is a development command and should never be used in a production environment.
+
+</Admonition>
+
 This command:
 
-1. Drops the database
-1. Creates a new database with the same name
+1. Drops the database if possible, or performs a soft reset if the environment does not allow deleting databases
+1. Creates a new database with the same name if the database was dropped
 1. Applies all migrations
 1. Runs seed scripts
 
-> **Note**: For a simple and integrated way to re-create data in your development database as often as needed, check out our [seeding guide](../../../guides/application-lifecycle/seed-database).
+> **Note**: For a simple and integrated way to re-create data in your development database as often as needed, check out our [seeding guide](../../../guides/database/seed-database).
 
-### Customizing migrations to prevent data loss
+### Customizing migrations
 
-Sometimes, you need to modify a migration **before applying it** to ensure that existing data is preserved when you run the migration. This is the case if you, for example:
+Sometimes, you need to modify a migration **before applying it**. For example:
 
-* Introduce a significant refactor, such as changing blog post tags from a `String[]` to a `Tag[]`
-* [Rename a field](../../../guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios#renaming-a-field) (by default, Prisma Migrate will drop the existing field)
-* [Change the direction of a 1-1 relationship](/guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios#changing-the-direction-of-a-1-1-rela)
+- You want to introduce a significant refactor, such as changing blog post tags from a `String[]` to a `Tag[]`
+- You want to [rename a field](../../../guides/database/developing-with-prisma-migrate/customizing-migrations#renaming-a-field) (by default, Prisma Migrate will drop the existing field)
+- You want to [change the direction of a 1-1 relationship](../../../guides/database/developing-with-prisma-migrate/customizing-migrations#changing-the-direction-of-a-1-1-relation)
+- You want to add features that cannot be represented in Prisma Schema Language - such as a partial index or a stored procedure.
 
 The `--create-only` command allows you to create a migration without applying it:
 
@@ -262,11 +303,11 @@ npx prisma migrate dev --create-only
 
 To apply the edited migration, run `prisma migrate dev` again.
 
-Refer to the [Advanced migrations](../../../guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios) <span class="guide"></span> for examples.
+Refer to [Customizing migrations](../../../guides/database/developing-with-prisma-migrate/customizing-migrations) <span class="guide"></span> for examples.
 
 ### Team development
 
-See: [Team development with Prisma Migrate](../../../guides/application-lifecycle/developing-with-prisma-migrate/team-development) <span class="guide"></span>.
+See: [Team development with Prisma Migrate](../../../guides/database/developing-with-prisma-migrate/team-development) <span class="guide"></span>.
 
 ## Production and testing environments
 
@@ -276,30 +317,30 @@ In production and testing environments, use the `migrate deploy` command to appl
 npx prisma migrate deploy
 ```
 
-> **Note**: `migrate deploy` should generally be part of an automated CI/CD pipeline, and we do not recommend running this command locally to deploy changes to a production database (for example, by temporarily changing the `DATABASE_URL` environment variable). It is not generally considered good practice to store the production database URL locally.
+> **Note**: `migrate deploy` should generally be part of an automated CI/CD pipeline, and we do not recommend running this command locally to deploy changes to a production database.
 
 This command:
 
 1. Compares applied migrations against the migration history and **warns** if any migrations have been modified:
 
-  ```bash
-  WARNING The following migrations have been modified since they were applied:
-  20210313140442_favorite_colors
-  ```
+   ```bash
+   WARNING The following migrations have been modified since they were applied:
+   20210313140442_favorite_colors
+   ```
 
 1. Applies pending migrations
 
 The `migrate deploy` command:
 
-* **Does not** issue a warning if an already applied migration is _missing_ from migration history
-* **Does not** detect drift (production database schema differs from migration history end state - for example, due to a hotfix
-* **Does not** reset the database or generate artifacts (such as Prisma Client)
-* **Does not** rely on a shadow database
+- **Does not** issue a warning if an already applied migration is _missing_ from migration history
+- **Does not** detect drift (production database schema differs from migration history end state - for example, due to a hotfix
+- **Does not** reset the database or generate artifacts (such as Prisma Client)
+- **Does not** rely on a shadow database
 
 See also:
 
-* [Prisma Migrate in deployment](../../../guides/deployment/deployment#prisma-migrate) <span class="guide"></span>
-* [Production troubleshooting](../../../guides/deployment/production-troubleshooting) <span class="guide"></span>
+- [Prisma Migrate in deployment](../../../guides/deployment/deploy-database-changes-with-prisma-migrate) <span class="guide"></span>
+- [Production troubleshooting](../../../guides/database/production-troubleshooting) <span class="guide"></span>
 
 ### Advisory locking
 
@@ -325,3 +366,18 @@ See [Prisma Migrate CLI reference](../../../reference/api-reference/command-refe
 <!-- ## FAQ
 
 ### When should I use <inlinecode>migrate deploy</inlinecode> and when should I use <inlinecode>migrate dev</inlinecode>? -->
+
+## Troubleshooting
+
+Prisma detects when CLI commands are run in non-interactive environments, such as Docker, from Node scripts or in bash shells. When this happens a warning is displayed indicating that the environment is non-interactive and the `migrate dev` command is not supported.
+
+To ensure the Docker environment picks up the command, run the image in `interactive` mode so that it can react to the `migrate dev` command.
+
+```terminal
+docker run --interactive --tty <image name>
+# or
+docker -it <image name>
+
+# Example usage
+docker run -it node
+```

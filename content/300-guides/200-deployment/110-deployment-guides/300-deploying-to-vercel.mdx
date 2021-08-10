@@ -1,0 +1,147 @@
+---
+title: 'Deploying to Vercel'
+metaTitle: 'How to deploy a Prisma app to Vercel'
+metaDescription: 'Learn how to deploy a Next.js app with a serverless REST API using Prisma Client to Vercel.'
+---
+
+<TopBlock>
+
+In this guide, you will set up and deploy a Next.js app to [Vercel](https://vercel.com/home). The Next.js app will expose a REST API and use Prisma Client to handle fetching, creating, and deleting records from a database.
+
+Vercel is a cloud platform for static sites and serverless functions. Vercel integrates with a GitHub repository for automatic deployments upon commits. [Next.js](https://nextjs.org/) is a full-stack React serverless framework that integrates seamlessly with Vercel.
+
+The Next.js app has the following components:
+
+- **Backend**: Next.js API routes that serve a REST API and use Prisma Client to handle database operations against a PostgreSQL database (e.g., hosted on Heroku).
+- **Frontend**: Next.js page to interact with the API.
+
+![architecture diagram](https://imgur.com/GOhQXGZ.png)
+
+The focus of this guide is showing how Prisma can be used with Next.js and Vercel. The starting point will be the [Prisma Vercel example](https://github.com/prisma/deployment-example-vercel), which has a couple of serverless REST endpoints preconfigured as [Next.js API Routes](https://nextjs.org/docs/api-routes/introduction) and a Next.js page.
+
+> Throughout the guide, you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
+
+</TopBlock>
+
+## Prerequisites
+
+- Hosted PostgreSQL database and a URL from which it can be accessed, e.g. `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` (you can use Heroku, which offers a [free plan](https://dev.to/prisma/how-to-setup-a-free-postgresql-database-on-heroku-1dc1)).
+- [GitHub](https://github.com) account
+- [Vercel](https://vercel.com) account.
+- Node.js installed.
+
+## Prisma workflow
+
+At the core of Prisma is the [Prisma schema](/concepts/components/prisma-schema) – a declarative configuration where you define your data model and other Prisma-related configuration. The Prisma schema is also a single source of truth for both Prisma Client and Prisma Migrate.
+
+In this guide, you will create the database schema with [Prisma Migrate](/concepts/components/prisma-migrate). Prisma Migrate is based on the Prisma schema and works by generating `.sql` migration files that are executed against the database.
+
+Migrate comes with two primary workflows:
+
+- Creating migrations and applying during local development with `prisma migrate dev`
+- Applying generated migration to production with `prisma migrate deploy`
+
+For brevity, the guide does not cover how migrations are created with `prisma migrate dev`. Rather, it focuses on the production workflow and uses the Prisma schema and SQL migration that are included in the example code.
+
+You will use Vercel's [build step](https://vercel.com/docs/build-step) to run the `prisma migrate deploy` command so that the migrations are applied before the functions are deployed.
+
+To learn more about how migrations are created with Prisma Migrate, check out the [start from scratch guide](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres)
+
+## 1. Create and deploy the project using the Vercel deploy button
+
+Open https://github.com/prisma/deployment-example-vercel in your browser.
+
+Click on the Deploy button:
+
+![Vercel deploy button](https://imgur.com/qqTHfji.png)
+
+This will lead you to Vercel, prompting you to clone the repository:
+
+![Vercel Clone repository](https://imgur.com/9iYnP6B.png)
+
+Pick a repository name to replace `prisma-vercel-deployment-example` that is prefilled. This will be the name of the cloned repository in your GitHub account.
+
+> **Note:** If this is your first time using Vercel, you will be promted to install the Vercel app in your GitHub account.
+
+Click **Create**, which will lead you to the following:
+
+![Vercel configure project](https://imgur.com/FFZVPMm.png)
+
+Set the `DATABASE_URL` environment variable with the connection URL for your PostgreSQL database, which should look as follows: `postgresql://__USER__:__PASSWORD__@__HOST__/__DATABASE__`
+
+Finally, click **Deploy** which will start the build:
+
+![Vercel Build](https://imgur.com/zn7xFj9.png)
+
+> **Note:** The build step defined in package.json as the `vercel-build` script, will run `prisma generate && prisma migrate deploy && next build` to generate Prisma Client, apply migrations, and build the Next.js project.
+
+Once the build completes, you should see the following:
+
+![Vercel Completed Build](https://imgur.com/KqVesdT.png)
+
+Congratulations! You have successfully deployed the app to Vercel. Note that Vercel will build and deploy further commits to your GitHub repository.
+
+**Checkpoint:** Open the deployed app by clicking on the screenshot of the deployed app. Once the page loads, click on the **Check API status** button, which should return: `{"up":true}`
+
+## 2. Test your deployed application
+
+You can use the static frontend to interact with the API you deployed.
+
+Using the deployed app URL from the previous step (`https://PROJECT_NAME.VERCEL_USERNAME.vercel.app`), you should see the following:
+
+![deployed-screenshot](https://imgur.com/TfgJERN.png)
+
+The four buttons allow you to make requests to the REST API and view the response:
+
+- **Check API status**: Will call the REST API status endpoint that returns `{"up":true}`. The implementation code is in `api/index.js`
+- **Seed data**: Will delete all database records and load the database with test data `users`, `profiles`, and `posts`; returns the created users. The implementation code is in `api/seed.js`
+- **Load users with profiles**: Will load all `users` in the database with their related `profiles`. The implementation code is in `api/users.js`
+- **Load Posts**: Will load `posts` and their related `authors`. The implementation code is in `api/posts.js`
+
+## Vercel specific notes
+
+### vercel-build hook
+
+The `package.json` in the example uses the `vercel-build` hook script to run `prisma generate && prisma migrate deploy && next build`.
+
+<!-- Typically this would go in the `build` step. Because Vercel caches `node_modules` after the dependencies are installed, the functions won't have access to the generated Prisma Client. -->
+
+Generating the Prisma Client in `vercel-build` ensures that the generated Prisma Client in `node_modules/@prisma/client` is available to the functions.
+
+### Database migrations and deployments
+
+In the example you deployed, migrations are applied using the `prisma migrate deploy` command during the Vercel build (as defined in the `build-vercel` script in `package.json`).
+
+Vercel has two environments: _preview_ and _production_, where preview deployments are for pull requests and production is for the `main` branch. It's important to keep this distinction in mind in relation to the database.
+
+The `DATABASE_URL` environment variable, which you defined when you imported the project, will be available to both the preview and production environments. This can be a problem if you create a pull request containing a migration because a pull request will cause the production database schema to inadvertently change.
+
+**Therefore, we recommend having separate databases for preview and production deployments** so that pull requests containing migrations don't meddle with the production database.
+
+To ensure that the `DATABASE_URL` you defined is only available for production deployments, open your project settings on Vercel, and navigate to the **Environment Variables** tab:
+
+![Vercel environment variables](https://imgur.com/jIQPVvt.png)
+
+Click on the three vertical dots on the right of the `DATABASE_URL`, and select **edit**:
+
+![Vercel env var options](https://imgur.com/XwJUdWK.png)
+
+Uncheck the **Preview** checkbox:
+
+![Vercel env var options](https://imgur.com/jqcX0tV.png)
+
+Finally, click **Save**.
+
+Note that this prevents Preview deployments from working, as they have no access to the database.
+
+In order to enable Preview deployment for pull requests, create a separate database for preview deployments, set the `DATABASE_URL` env var , and expose it **only** to Preview deployments.
+
+> **Note**: because each pull request shares the same preview database, if you have multiple pull requests with diverging schema migrations, you will encounter problems applying them.
+
+## Summary
+
+Congratulations! You have successfully deployed the application to Vercel.
+
+For more insight into Prisma Client's API, look at the function handlers in the `api/` folder.
+
+When accessing a database from serverless functions, we recommended using a connection pooler like PgBouncer for scalability because every function invocation may result in a new connection to the database. For more information, check out our [serverless connection management guide](../../performance-and-optimization/connection-management#serverless-environments-faas).

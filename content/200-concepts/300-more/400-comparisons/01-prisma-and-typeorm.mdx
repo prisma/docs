@@ -30,7 +30,7 @@ The following sections examine a few examples for how Prisma's and TypeORM's API
 
 ### Filtering
 
-TypeORM primarly leans on SQL operators for filtering lists or records, e.g. with the `find` method. Prisma on the other hand, provides a more [generic set of operators](../../components/prisma-client/filtering-and-sorting#filter-conditions) that are intuitive to use. It should also be noted that, as explained in the type-safety section [below](#filtering-1), TypeORM looses type-safety in for filter queries in many scenarios.
+TypeORM primarly leans on SQL operators for filtering lists or records, e.g. with the `find` method. Prisma on the other hand, provides a more [generic set of operators](../../components/prisma-client/filtering-and-sorting#filter-conditions-and-operators) that are intuitive to use. It should also be noted that, as explained in the type-safety section [below](#filtering-1), TypeORM looses type-safety in for filter queries in many scenarios.
 
 A good example of how the filtering APIs of both TypeORM and Prisma differ is by looking at `string` filters. While TypeORM primarily provides the filter based on the `ILike` operator which comes directly from SQL, Prisma provides more specific operators that developers can use, e.g.: `contains`, `startsWith` and `endsWith`.
 
@@ -150,19 +150,6 @@ const posts = await postRepository.find({
 
 TypeORM only offers limit-offset pagination while Prisma conveniently provides dedicated APIs for both limit-offset but also cursor-based. You can learn more about both approaches in the [Pagination](../../components/prisma-client/pagination) section of the docs or in the API comparison [below](#pagination-1).
 
-### Transactions
-
-Long-running database transactions often are a major source of complexity in server-side applications. In many scenarios, they turn out to be footguns that are the cause of major performance bottlenecks and subtle bugs. They're also not a pattern that works well with modern deployment techniques like serverless functions since they require holding a stateful connection between the application server and its database.
-
-While TypeORM provides a low-level transaction API that directly exposes SQL transactions to the application developer, Prisma offers dedicated APIs that handle the use cases long-running transactions are commonly (mis)used for:
-
-- nested writes for creating and updating relationships ([docs](../../components/prisma-client/relation-queries#nested-writes))
-- the `$transaction` API for sending multiple operations in bulk ([docs](../../components/prisma-client/transactions#the-transaction-api))
-- atomic operators for updating values in a single database query ([docs](../../components/prisma-client/crud#atomic-number-operations))
-- application-level optimistic concurrency control (OCC) for making writes conditional on previously read data ([coming soon](https://github.com/prisma/prisma-client-js/issues/2))
-
-You can learn more about the rationale behind these techniques and Prisma's transaction patterns in this blog post: [How Prisma Supports Database Transactions](https://www.prisma.io/blog/how-prisma-supports-transactions-x45s1d5l0ww1).
-
 ### Relations
 
 Working with records that are connected via foreign keys can become very complex in SQL. Prisma's concept of [virtual relation field](../../components/prisma-schema/relations#relation-fields) enables an intuitive and convenient way for application developers to work with related data. Some benefits of Prisma's approach are:
@@ -171,9 +158,9 @@ Working with records that are connected via foreign keys can become very complex
 - nested writes that enable updating/creating connected records ([docs](../../components/prisma-client/relation-queries#nested-writes))
 - applying filters on related records ([docs](../../components/prisma-client/relation-queries#relation-filters))
 - easy and type-safe querying of nested data without worrying about JOINs ([docs](../../components/prisma-client/relation-queries#nested-reads))
-- creating nested TypeScript typings based on models and their relations ([docs](../../components/prisma-client/advanced-type-safety/operating-against-partial-structures-of-model-types))
+- creating nested TypeScript typings based on models and their relations ([docs](../../components/prisma-client/advanced-type-safety))
 - intuitive modeling of relations in the data model via relation fields ([docs](../../components/prisma-schema/relations))
-- implicit handling of relation tables (also sometimes called JOIN, link, pivot or junction tables) ([docs](../../components/prisma-schema/relations#implicit-many-to-many-relations))
+- implicit handling of relation tables (also sometimes called JOIN, link, pivot or junction tables) ([docs](../../components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations))
 
 ### Data modeling and migrations
 
@@ -210,7 +197,13 @@ model Post {
 <block content="TypeORM">
 
 ```ts
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from 'typeorm'
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+} from 'typeorm'
 
 @Entity()
 export class User {
@@ -223,10 +216,7 @@ export class User {
   @Column({ unique: true })
   email: string
 
-  @OneToMany(
-    type => Post,
-    post => post.author
-  )
+  @OneToMany((type) => Post, (post) => post.author)
   posts: Post[]
 }
 
@@ -244,10 +234,7 @@ export class Post {
   @Column({ default: false })
   published: boolean
 
-  @ManyToOne(
-    type => User,
-    user => user.posts
-  )
+  @ManyToOne((type) => User, (user) => user.posts)
   author: User
 }
 ```
@@ -303,10 +290,7 @@ export class Post {
   @Column({ default: false })
   published: boolean
 
-  @ManyToOne(
-    type => User,
-    user => user.posts
-  )
+  @ManyToOne((type) => User, (user) => user.posts)
   author: User
 }
 ```
@@ -440,10 +424,7 @@ export class Post {
   @Column({ default: false })
   published: boolean
 
-  @ManyToOne(
-    type => User,
-    user => user.posts
-  )
+  @ManyToOne((type) => User, (user) => user.posts)
   author: User
 }
 ```
@@ -460,10 +441,7 @@ export class User {
   @Column({ unique: true })
   email: string
 
-  @OneToMany(
-    type => Post,
-    post => post.author
-  )
+  @OneToMany((type) => Post, (post) => post.author)
   posts: Post[]
 }
 ```
@@ -620,10 +598,7 @@ export class Post {
   @Column({ default: false })
   published: boolean
 
-  @ManyToOne(
-    type => User,
-    user => user.posts
-  )
+  @ManyToOne((type) => User, (user) => user.posts)
   author: User
 }
 ```
@@ -789,10 +764,7 @@ export class User {
   @Column({ unique: true })
   email: string
 
-  @OneToMany(
-    type => Post,
-    post => post.author
-  )
+  @OneToMany((type) => Post, (post) => post.author)
   posts: Post[]
 }
 ```
@@ -1209,7 +1181,10 @@ const user = await prisma.user.create({
     email: 'bob.rufus@prisma.io',
     name: 'Bob Rufus',
     Post: {
-      create: [{ title: 'Working at Prisma' }, { title: 'All about databases' }],
+      create: [
+        { title: 'Working at Prisma' },
+        { title: 'All about databases' },
+      ],
     },
   },
 })
@@ -1218,7 +1193,7 @@ const user = await prisma.user.create({
 **TypeORM**
 
 ```ts
-await getConnection().$transaction(async transactionalEntityManager => {
+await getConnection().$transaction(async (transactionalEntityManager) => {
   const user = getRepository(User).create({
     name: 'Bob',
     email: 'bob@prisma.io',

@@ -106,7 +106,7 @@ module.exports = async function plugin(
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
-  const pathKeysWithoutIndex = pathKeys.map(p =>
+  const pathKeysWithoutIndex = pathKeys.map((p) =>
     p.replace(`${pathSep}index`, '').replace(/\/$/, '')
   )
 
@@ -118,7 +118,7 @@ module.exports = async function plugin(
 
     const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
-      const brokenLinks = linksForPath.filter(link => {
+      const brokenLinks = linksForPath.filter((link) => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
         if (prefixedExceptions.includes(key)) {

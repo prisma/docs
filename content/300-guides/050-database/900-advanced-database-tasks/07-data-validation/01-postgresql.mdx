@@ -1,0 +1,453 @@
+---
+title: 'Data validation with CHECK constraints (PostgreSQL)'
+metaTitle: 'Data validation with CHECK constraints (PostgreSQL)'
+metaDescription: 'Learn how to configure CHECK constraints for data validation with Prisma and PostgreSQL by following the step-by-step instructions in this practical guide.'
+---
+
+## Overview
+
+This page explains how to configure [check constraints](https://www.postgresql.org/docs/9.4/ddl-constraints.html#DDL-CONSTRAINTS-CHECK-CONSTRAINTS) in a PostgreSQL database. A check constraint is a condition that must be satisfied before a value can be saved to a table - for example, the discounted price of a product must always be less than the original price.
+
+Check constraints can be added when you create the table (using `CREATE TABLE`) or to a table that already exists (using `ALTER TABLE`). This guide covers all four combinations.
+
+At the end of the guide, you'll introspect your database, generate a Prisma Client, and write a simple Node.js script to validate the constraints.
+
+## Prerequisites
+
+In order to follow this guide, you need:
+
+- a [PostgreSQL](https://www.postgresql.org/) database server running
+- the [`createdb`](https://www.postgresql.org/docs/9.1/app-createdb.html) command line utility
+- the [`psql`]() command line client for PostgreSQL
+- [Node.js](https://nodejs.org/) installed on your machine
+
+## 1. Create a new database and project directory
+
+Start by creating a project directory for the files that you'll create throughout this guide. Open terminal or command line and run the following commands:
+
+```
+mkdir check-demo
+cd check-demo
+```
+
+Next, make sure that your PostgreSQL database server is running. Authenticate the default `postgres` user:
+
+Unix (bash):
+
+```
+sudo -u postgres
+```
+
+Windows (command line):
+
+```
+psql -U postgres
+```
+
+Then execute the following command in your terminal to create a new database called `CheckDemo`:
+
+Unix (bash):
+
+```
+createdb CheckDemo
+```
+
+Windows (command line):
+
+```
+create database CheckDemo;
+\connect CheckDemo
+```
+
+> _Tip_: Remember the trailing `;`! `postgres=#` `postgres-#`
+
+You can validate that the database was created by running the `\dt` command which lists all tables (_relations_) in your database (right now there are none):
+
+Unix (bash):
+
+```
+psql -d CheckDemo -c "\dt"
+```
+
+Windows (command line):
+
+```
+-d CheckDemo -c \dt
+```
+
+## 2. Adding a table with a single check constraint on a single column
+
+In this section, you'll **create a new table with a single check constraint on a single column** in the `CheckDemo` database.
+
+Create a new file named `single-column-check-constraint.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "public"."product" (
+  price NUMERIC CONSTRAINT price_value_check CHECK (price > 0.01 AND price <> 1240.00)
+);
+ALTER TABLE "public"."product"
+  ADD COLUMN "productid" serial,
+  ADD PRIMARY KEY ("productid");
+```
+
+Now run the SQL statement against your database to create a new table called `product`:
+
+Unix (bash):
+
+```
+psql CheckDemo < single-column-check-constraint.sql
+```
+
+Windows (command line):
+
+```
+\i 'c:/checkdemo/single-column-check-constraint.sql'
+```
+
+Congratulations, you just created a table called `product` in the database. The table has one column called `price`, which has a single check constraint that ensures price of a product is:
+
+- Never less than 0.01
+- Never equal to 1240.00
+
+Run the following command to see the a list of check constraints that apply to the `product` table:
+
+```
+\d+ product
+```
+
+You will see the following output, which includes a list of all check constraints:
+
+```
+Table "public.product"
+ Column |  Type   | Collation | Nullable | Default | Storage | Stats target | Description
+--------+---------+-----------+----------+---------+---------+--------------+-------------
+ price  | numeric |           |          |         | main    |              |
+Check constraints:
+    "price_value_check" CHECK (price > 0.01 AND price <> 1240.00)
+```
+
+Note that PostgreSQL will auto-generate a constraint name if you do not provide one. For example, the constraint created by `price NUMERIC CHECK (price > 0.01 AND price <> 1240.00)` would be `price_check`.
+
+## 3. Adding a table with a multi-column check constraint
+
+Next, you'll **create a table with a multi-column check constraint** that compares the values of two columns.
+
+Create a new file named `multi-column-check-constraint.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "public"."anotherproduct" (
+  reducedprice NUMERIC CONSTRAINT reduced_price_check CHECK (price > reducedprice),
+  price NUMERIC
+);
+ALTER TABLE "public"."anotherproduct"
+  ADD COLUMN "productid" serial,
+  ADD PRIMARY KEY ("productid");
+```
+
+Now run the SQL statement against your database to create a new table called `anotherproduct`:
+
+Unix (bash):
+
+```
+psql CheckDemo < multi-column-check-constraint.sql
+```
+
+Windows (command line):
+
+```
+\i 'c:/checkdemo/multi-column-check-constraint.sql'
+```
+
+Congratulations, you just created a table called `anotherproduct` in the database. The table has two columns called `reducedprice` and `price`. The `reducedprice` column has a check constraint that ensures that the value of `reducedprice` is always less than the value of `price`.
+
+## 4. Adding a table with multiple check constraints
+
+Next, you'll **create a table with multiple check constraint** on different columns.
+
+Create a new file named `multiple-check-constraints.sql` and add the following code to it:
+
+```sql
+  CREATE TABLE "public"."secondtolastproduct" (
+    reducedprice NUMERIC CONSTRAINT reduced_price_check CHECK (price > reducedprice),
+    price NUMERIC,
+    tags TEXT[] CONSTRAINT tags_contains_product CHECK ('product' = ANY(tags))
+  );
+ALTER TABLE "public"."secondtolastproduct"
+  ADD COLUMN "productid" serial,
+  ADD PRIMARY KEY ("productid");
+```
+
+Now run the SQL statement against your database to create a new table called `secondtolastproduct`:
+
+Unix (bash):
+
+```
+psql CheckDemo < multiple-check-constraints.sql
+```
+
+Windows (command line):
+
+```
+\i 'c:/checkdemo/multiple-check-constraints.sql'
+```
+
+Congratulations, you just created a table called `lastproduct` in the database. The table has three columns named `reducedprice`, `price` and `tags`, and the following check constraints:
+
+- The `tags` column (which is an array) must contain a tag named `product`
+- The value of `reducedprice` must be less than the value of `price`
+
+## 5. Adding a check constraint to an existing table
+
+In this section, you'll **add a check constraint to a table that already exists in your database**. To do so, you first need to create a new table and then alter the table to add the constraint.
+
+Create a new file named `add-single-check-constraint-later.sql` and add the following code:
+
+```sql
+CREATE TABLE "public"."lastproduct" (
+  category TEXT
+);
+
+ALTER TABLE "public"."lastproduct"
+  ADD CONSTRAINT "category_not_clothing" CHECK (category <> 'clothing');
+```
+
+This code contains two SQL statements:
+
+1. Create a new table called `lastproduct`
+2. Alter the table to add a check constraint named `price_not_zero_constraint`
+
+Now run the SQL statements against your database to create a new table called `lastproduct`:
+
+Unix (bash):
+
+```
+psql CheckDemo < add-single-check-constraint-later.sql
+```
+
+Windows (command line):
+
+```
+\i 'c:/checkdemo/add-single-check-constraint-later.sql'
+```
+
+Congratulations, you just created a table called `lastproduct` in the database with a single column called `price`. You added constraint named `price_not_zero_constraint` to with a second SQL command, which ensures that the price of a product is never less than 0.01.
+
+## 6. Introspect your database with Prisma
+
+In the previous sections, you created four tables with different check constraints:
+
+- The `product` table has a check constraint that ensures that the value of `price` is never less than `0.01` and enver exactly `1240.00`.
+- The `anotherproduct` table has a check constraint that ensures that the value of `reducedprice` is never greater than the value of `price`.
+- The `secondtolastproduct` table has two check constraints - one that ensures that the value of `reducedprice` is never greater than the value of `price`, and one that ensures that the `tags` array always contains the value `product`.
+- The `lastproduct` table has a check constraint that ensures that the value of `category` is never `clothing`.
+
+In this section you'll introspect your database to generate the Prisma models for these tables.
+
+> **Note**: Check constraints are currently not included in the generated Prisma schema - however, the underlying database still enforces the constraints.
+
+To start, set up a new Node.js project and add the `prisma` CLI as a development dependency:
+
+```
+npm init -y
+npm install prisma --save-dev
+```
+
+In order to introspect your database, you need to tell Prisma how to connect to it. You do so by configuring a `datasource` in your Prisma schema.
+
+Create a new file named `schema.prisma` and add the following code to it:
+
+```prisma file=schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+The database connection URL is set via an environment variable. The Prisma CLI automatically supports the [`dotenv`](https://github.com/motdotla/dotenv) format which automatically picks up environment variables defined in a file named `.env`.
+
+Create a new file named `.env` and set your database connection URL as the `DATABASE_URL` environment variable:
+
+```
+DATABASE_URL=postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/CheckDemo
+```
+
+In the above code snippet, you need to replace the uppercase placeholders with your own connection details. For example, if your database is running locally it could look like this:
+
+```
+DATABASE_URL=postgresql://janedoe:mypassword@localhost:5432/CheckDemo
+```
+
+With both the `schema.prisma` and `.env` files in place, you can run Prisma's introspection with the following command:
+
+```
+npx prisma introspect
+```
+
+This command introspects your database and for each table adds a Prisma model to the Prisma schema:
+
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model anotherproduct {
+  price        Float?
+  productid    Int    @id
+  reducedprice Float?
+}
+
+model lastproduct {
+  category  String?
+  productid Int     @id
+}
+
+model product {
+  price     Float?
+  productid Int    @id
+}
+
+model secondtolastproduct {
+  price        Float?
+  productid    Int      @id
+  reducedprice Float?
+  tags         String[]
+}
+```
+
+## 7. Generate Prisma Client
+
+To validate whether the check constraints work, you'll now generate Prisma Client and send a few sample queries to the database.
+
+First, add a `generator` block to your Prisma schema (typically added right below the `datasource` block):
+
+```prisma file=schema.prisma
+  generator client {
+    provider = "prisma-client-js"
+  }
+```
+
+Run the following command to install and generate Prisma Client in your project:
+
+```
+npx prisma generate
+```
+
+Now you can use Prisma Client to send database queries in Node.js.
+
+## 8. Validate the check constraints in a Node.js script
+
+Create a new file named `index.js` and add the following code to it:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const newProduct = await prisma.product.create({
+    data: {
+      price: 0.0,
+    },
+  })
+
+  console.log(newProduct)
+}
+
+main()
+```
+
+In this code, you're creating a product with a price of `0.00`, which does not meet the check constraint configured for the `price` column.
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+The script throws an error indicating that the `price_check_value` check constraint was not met:
+
+```
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(Error { kind: Db, cause: Some(DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState("23514"), message: "new row for relation \"product\" violates check constraint \"price_value_check\"", detail: Some("Failing row contains (0, 11)."), hint: None, position: None, where_: None, schema: Some("public"), table: Some("product"), column: None, datatype: None, constraint: Some("price_value_check"), file: Some("d:\\pginstaller_12.auto\\postgres.windows-x64\\src\\backend\\executor\\execmain.c"), line: Some(2023), routine: Some("ExecConstraints") }) }) })
+```
+
+To validate the multi-column check constraint, replace the code in `index.js` with the following:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const newProduct = await prisma.anotherproduct.create({
+    data: {
+      price: 50.0,
+      reducedprice: 100.0,
+    },
+  })
+
+  console.log(newProduct)
+}
+
+main()
+```
+
+In this code, you're creating a product where the reduced price is higher than the actual price.
+
+Run the script again with this command:
+
+```
+node index.js
+```
+
+This time, you'll see a similar error message indicating the `reduce_price_check` check constraint was not met:
+
+```
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(Error { kind: Db, cause: Some(DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState("23514"), message: "new row for relation \"anotherproduct\" violates check constraint \"reduced_price_check\"", detail: Some("Failing row contains (100, 50, 1)."), hint: None, position: None, where_: None, schema: Some("public"), table: Some("anotherproduct"), column: None, datatype: None, constraint: Some("reduced_price_check"), file: Some("d:\\pginstaller_12.auto\\postgres.windows-x64\\src\\backend\\executor\\execmain.c"), line: Some(2023), routine: Some("ExecConstraints") }) }) })
+    at PrismaClientFetcher.request (C:\Work\Personal\prisma-check-constraint\node_modules\@prisma\client\index.js:89:17)
+```
+
+Finally, modify the script to include multiple check constraint violations:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const newProduct = await prisma.secondtolastproduct.create({
+    data: {
+      tags: {
+        set: ['wrongtag'],
+      },
+      price: 90.0,
+      reducedprice: 100.0,
+    },
+  })
+
+  console.log(newProduct)
+}
+
+main()
+```
+
+In this code, you're creating a product where the reduced price is higher than the actual price, and omitting the required `product` tag.
+
+Run the script again with this command:
+
+```
+node index.js
+```
+
+Notice that the error message only mentions the `reduced_price_check` constraint:
+
+```
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(Error { kind: Db, cause: Some(DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState("23514"), message: "new row for relation \"secondtolastproduct\" violates check constraint \"reduced_price_check\"", detail: Some("Failing row contains (100, 90, {wrongtag}, 7)."), hint: None, position: None, where_: None, schema: Some("public"), table: Some("secondtolastproduct"), column: None, datatype: None, constraint: Some("reduced_price_check"), file: Some("d:\\pginstaller_12.auto\\postgres.windows-x64\\src\\backend\\executor\\execmain.c"), line: Some(2023), routine: Some("ExecConstraints") }) }) })
+```
+
+Check constraints are resolved in alphabetical order, and only the first constraint to fail appears in the error message.

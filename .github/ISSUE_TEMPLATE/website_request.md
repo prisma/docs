@@ -1,7 +1,5 @@
 ---
-name: ✨ Website request
-about: Request a website feature or improvement. For documentation, please use documentation request.
-title: "Website feature request:"
-labels: "website,website/feature"
-assignees: "nilubava"
+name: ✨ Doc site request or bug
+about: Request a website feature or improvement, or report a bug. For documentation, please use documentation request.
+labels: 'website'
 ---

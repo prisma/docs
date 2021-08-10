@@ -1,6 +1,6 @@
 ---
 title: 'Select fields'
-metaTitle: 'Select fields(Concepts)'
+metaTitle: 'Select fields (Concepts)'
 metaDescription: 'This page explains how to select only a subset of a model''s fields and/or include relations ("eager loading") in a Prisma Client query.'
 tocDepth: 2
 ---
@@ -27,6 +27,9 @@ All examples are based on the following schema:
 
 <details><summary>Expand for sample schema</summary>
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 generator client {
   provider = "prisma-client-js"
@@ -40,7 +43,7 @@ datasource db {
 model ExtendedProfile {
   id        Int    @id @default(autoincrement())
   biography String
-  user      User   @relation(fields: userId, references: id)
+  user      User   @relation(fields: [userId], references: [id])
   userId    Int
 }
 
@@ -52,7 +55,7 @@ model User {
   role         Role            @default(USER)
   coinflips    Boolean[]
   posts        Post[]
-  profile      ExtendedProfile
+  profile      ExtendedProfile?
 }
 
 model Post {
@@ -79,20 +82,80 @@ enum Role {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ExtendedProfile {
+  id        String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  biography String
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String @db.ObjectId
+}
+
+model User {
+  id           String           @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name         String?
+  email        String           @unique
+  profileViews Int              @default(0)
+  role         Role             @default(USER)
+  coinflips    Boolean[]
+  posts        Post[]
+  profile      ExtendedProfile?
+}
+
+model Post {
+  id         String     @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   String     @db.ObjectId
+  comments   Json?
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  categories Category[]
+}
+
+model Category {
+  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name  String @unique
+  posts Post[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+</tab>
+</TabbedContent>
+
 </details>
 
-Use the `db push` command to push the example schema to your own database:
+For **relational databases**, use `db push` command to push the example schema to your own database
 
 ```terminal
-npx prisma db push --preview-feature 
+npx prisma db push
 ```
+
+For **MongoDB**, ensure your data is in a uniform shape and matches the model defined in the Prisma schema.
 
 ## Return the default selection set
 
 The following query returns the default selection set (all scalar fields, no relations):
 
 <CodeWithResult expanded="{true}">
-<Cmd>
+<cmd>
 
 ```ts
 // Query returns User or null
@@ -103,12 +166,12 @@ const getUser: User | null = await prisma.user.findUnique({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
-  id: 1,
+  id: 22,
   name: "Alice",
   email: "alice@prisma.io",
   profileViews: 0,
@@ -117,7 +180,7 @@ const getUser: User | null = await prisma.user.findUnique({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ## Select specific fields
@@ -125,7 +188,7 @@ const getUser: User | null = await prisma.user.findUnique({
 Use `select` to return a limited subset of fields instead of all fields. The following example returns the `email` and `name` fields only:
 
 <CodeWithResult expanded="{true}">
-<Cmd>
+<cmd>
 
 ```ts
 // Returns an object or null
@@ -140,8 +203,8 @@ const getUser: object | null = await prisma.user.findUnique({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -150,7 +213,7 @@ const getUser: object | null = await prisma.user.findUnique({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ## Include relations and select relation fields
@@ -165,7 +228,7 @@ To return **specific relation fields**, you can:
 The following query uses a nested `select` to select each user's `name` and the `title` of each related post:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts highlight=normal;2,5
 const users = await prisma.user.findMany({
@@ -180,8 +243,8 @@ const users = await prisma.user.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -197,13 +260,13 @@ const users = await prisma.user.findMany({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 The following query uses `select` within an `include`, and returns _all_ user fields and each post's `title` field:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts highlight=normal;2,5
 const users = await prisma.user.findMany({
@@ -218,8 +281,8 @@ const users = await prisma.user.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -241,7 +304,7 @@ const users = await prisma.user.findMany({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 For more information about querying relations, refer to the following documentation:

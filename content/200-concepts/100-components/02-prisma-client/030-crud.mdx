@@ -2,7 +2,7 @@
 title: 'CRUD'
 metaTitle: 'CRUD (Reference)'
 metaDescription: 'How to perform CRUD with Prisma Client.'
-tocDepth: 3
+tocDepth: 5
 ---
 
 <TopBlock>
@@ -24,6 +24,9 @@ All examples are based on the following schema:
 
 <details><summary>Expand for sample schema</summary>
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
 ```prisma
 generator client {
   provider = "prisma-client-js"
@@ -37,7 +40,7 @@ datasource db {
 model ExtendedProfile {
   id        Int    @id @default(autoincrement())
   biography String
-  user      User   @relation(fields: userId, references: id)
+  user      User   @relation(fields: [userId], references: [id])
   userId    Int
 }
 
@@ -76,13 +79,73 @@ enum Role {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ExtendedProfile {
+  id        String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  biography String
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String @db.ObjectId
+}
+
+model User {
+  id           String           @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name         String?
+  email        String           @unique
+  profileViews Int              @default(0)
+  role         Role             @default(USER)
+  coinflips    Boolean[]
+  posts        Post[]
+  profile      ExtendedProfile?
+}
+
+model Post {
+  id         String     @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  title      String
+  published  Boolean    @default(true)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   String     @db.ObjectId
+  comments   Json?
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  categories Category[]
+}
+
+model Category {
+  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name  String @unique
+  posts Post[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+</tab>
+</TabbedContent>
+
 </details>
 
-Use the `db push` command to push the example schema to your own database:
+For **relational databases**, use `db push` command to push the example schema to your own database
 
 ```terminal
-npx prisma db push --preview-feature
+npx prisma db push
 ```
+
+For **MongoDB**, ensure your data is in a uniform shape and matches the model defined in the Prisma schema.
 
 ## Create
 
@@ -91,7 +154,7 @@ npx prisma db push --preview-feature
 The following query creates ([`create`](../../../reference/api-reference/prisma-client-reference#create) <span class="api"></span>) a single user with two fields:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const user = await prisma.user.create({
@@ -102,8 +165,8 @@ const user = await prisma.user.create({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -116,10 +179,10 @@ const user = await prisma.user.create({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
-Your schema determines [which fields are mandatory](../prisma-schema/data-model#optional-and-mandatory-fields).
+The user's `id` is auto-generated, and your schema determines [which fields are mandatory](../prisma-schema/data-model#optional-and-mandatory-fields).
 
 #### Create a single record using generated types
 
@@ -157,7 +220,7 @@ async function main() {
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     throw e
   })
   .finally(async () => {
@@ -165,7 +228,7 @@ main()
   })
 ```
 
-For more information about working with generated types, see: [Generated types](advanced-type-safety/operating-against-partial-structures-of-model-types).
+For more information about working with generated types, see: [Generated types](advanced-type-safety).
 
 ### Create multiple records
 
@@ -174,7 +237,7 @@ Prisma Client supports bulk inserts as a GA feature in [2.20.0](https://github.c
 The following [`createMany`](../../../reference/api-reference/prisma-client-reference#createmany) <span class="api"></span> query creates multiple users and skips any duplicates (`email` must be unique):
 
 <CodeWithResult expanded="{true}">
-<Cmd>
+<cmd>
 
 ```ts
 const createMany = await prisma.user.createMany({
@@ -188,8 +251,8 @@ const createMany = await prisma.user.createMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -197,7 +260,7 @@ const createMany = await prisma.user.createMany({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 
 </CodeWithResult>
 
@@ -215,7 +278,14 @@ SELECT "public"."User"."country", "public"."User"."city", "public"."User"."email
 The following video demonstrates how to use `createMany` and [faker.js](https://github.com/marak/Faker.js/) to seed a database with sample data:
 
 <div class="videoWrapper">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/QxyqR4yh1GI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <iframe
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/QxyqR4yh1GI"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
 </div>
 
 ### Create records and connect or create related records
@@ -244,11 +314,32 @@ const user = await prisma.user.findUnique({
 })
 ```
 
-### Get record by compound ID or unique identifier
+If you are using the MongoDB connector and your underlying ID type is `ObjectId`, you can use the string representation of that `ObjectId`:
 
-The following examples demonstrate how to retrieve records by a compound ID or unique identifier, defined by [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-2) <span class="api"></span> or [`@@unique`](../../../reference/api-reference/prisma-schema-reference#unique-2) <span class="api"></span>. 
+```ts
+// By ID
+const user = await prisma.user.findUnique({
+  where: {
+    id: '60d5922d00581b8f0062e3a8',
+  },
+})
+```
 
-The following Prisma model defines an compound ID:
+### Get record by compound ID or compound unique identifier
+
+<Admonition type="warning">
+
+**MongoDB does not support `@@id`**<br />
+MongoDB does not support composite IDs, which means you cannot identify a model with a `@@id` block. Furthermore, you cannot use a `@@unique` block as an ID.
+
+</Admonition>
+
+The following examples demonstrate how to retrieve records by a compound ID or unique identifier, defined by [`@@id`](../../../reference/api-reference/prisma-schema-reference#id-2) <span class="api"></span> or [`@@unique`](../../../reference/api-reference/prisma-schema-reference#unique-1) <span class="api"></span>.
+
+The following Prisma model defines a compound ID:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma highlight=6;normal
 model TimePeriod {
@@ -260,20 +351,36 @@ model TimePeriod {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 To retrieve a time period by this compound ID, use the generated `year_quarter` field, which follows the `fieldName1_fieldName2` pattern:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const timePeriod = await prisma.timePeriod.findUnique({
   where: {
     year_quarter: {
       quarter: 4,
-      year: 2020
-    }
-  }
+      year: 2020,
+    },
+  },
 })
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 The following Prisma model defines a compound unique identifier with a custom name (`timePeriodId`)
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```prisma highlight=6;normal
 model TimePeriod {
@@ -285,18 +392,31 @@ model TimePeriod {
 }
 ```
 
+</tab>
+<tab>
+</tab>
+</TabbedContent>
+
 To retrieve a time period by this unique identifier, use the custom `timePeriodId` field:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
+<tab>
 
 ```ts
 const timePeriod = await prisma.timePeriod.findUnique({
   where: {
     timePeriodId: {
       quarter: 4,
-      year: 2020
-    }
-  }
+      year: 2020,
+    },
+  },
 })
 ```
+
+</tab>
+<tab>
+</tab>
+</TabbedContent>
 
 ### Get all records
 
@@ -353,7 +473,7 @@ The following query returns all `User` records with an email that ends in `"pris
 
 #### Filter by multiple field values
 
-The following query uses a combinations of [operators](../../../reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span> to return users whose name start with `E` _or_ administrators with at least 1 profile view:
+The following query uses a combination of [operators](../../../reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span> to return users whose name start with `E` _or_ administrators with at least 1 profile view:
 
 ```ts
 const users = await prisma.user.findMany({
@@ -405,7 +525,7 @@ See [Working with relations](relation-queries) for more examples of filtering on
 The following `findUnique` query uses `select` to return the `email` and `name` fields of a specific `User` record:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const user = await prisma.user.findUnique({
@@ -419,14 +539,14 @@ const user = await prisma.user.findUnique({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 { email: 'emma@prisma.io', name: "Emma" }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 For more information about including relations, refer to:
@@ -442,7 +562,7 @@ The following query uses a nested `select` to return:
 - The `likes` field of each post
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const user = await prisma.user.findUnique({
@@ -460,14 +580,14 @@ const user = await prisma.user.findUnique({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 { email: 'emma@prisma.io', posts: [ { likes: 0 }, { likes: 0 } ] }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 For more information about including relations, see [Select fields and include relations](select-fields).
@@ -481,7 +601,7 @@ See [Select `distinct`](aggregation-grouping-summarizing#select-distinct) for in
 The following query returns all `ADMIN` users and includes each user's posts in the result:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const users = await prisma.user.findMany({
@@ -494,8 +614,8 @@ const users = await prisma.user.findMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -536,14 +656,14 @@ const users = await prisma.user.findMany({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 For more information about including relations, see [Select fields and include relations](select-fields).
 
 #### Include a filtered list of relations
 
-See [Working with relations](relation-queries#filter-the-relations-list) to find out how to combine [`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span> and `where` for a filtered list of relations - for example, only include a user's published posts.
+See [Working with relations](relation-queries#filter-a-list-of-relations) to find out how to combine [`include`](../../../reference/api-reference/prisma-client-reference#include) <span class="api"></span> and `where` for a filtered list of relations - for example, only include a user's published posts.
 
 ## Update
 
@@ -552,7 +672,7 @@ See [Working with relations](relation-queries#filter-the-relations-list) to find
 The following query uses [`update`](../../../reference/api-reference/prisma-client-reference#update) <span class="api"></span> to find and update a single `User` record by `email`:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const updateUser = await prisma.user.update({
@@ -565,8 +685,8 @@ const updateUser = await prisma.user.update({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -579,7 +699,7 @@ const updateUser = await prisma.user.update({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ### Update multiple records
@@ -587,7 +707,7 @@ const updateUser = await prisma.user.update({
 The following query uses [`updateMany`](../../../reference/api-reference/prisma-client-reference#updateMany) <span class="api"></span> to update all `User` records that contain `prisma.io`:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const updateUsers = await prisma.user.updateMany({
@@ -602,8 +722,8 @@ const updateUsers = await prisma.user.updateMany({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -611,7 +731,7 @@ const updateUsers = await prisma.user.updateMany({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ### Update _or_ create records
@@ -619,7 +739,7 @@ const updateUsers = await prisma.user.updateMany({
 The following query uses [`upsert`](../../../reference/api-reference/prisma-client-reference#upsert) <span class="api"></span> to update a `User` record with a specific email address, or create that `User` record if it does not exist:
 
 <CodeWithResult>
-<Cmd>
+<cmd>
 
 ```ts
 const upsertUser = await prisma.user.upsert({
@@ -636,8 +756,8 @@ const upsertUser = await prisma.user.upsert({
 })
 ```
 
-</Cmd>
-<CmdResult>
+</cmd>
+<cmdResult>
 
 ```js
 {
@@ -650,7 +770,7 @@ const upsertUser = await prisma.user.upsert({
 }
 ```
 
-</CmdResult>
+</cmdResult>
 </CodeWithResult>
 
 ### Update a number field
@@ -718,6 +838,12 @@ Be aware that this query will fail if the user has any related records (such as 
 
 ### Cascading deletes (deleting related records)
 
+<Admonition type="warning">
+
+In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using the **preview feature** [referential actions](../prisma-schema/relations/referential-actions).
+
+</Admonition>
+
 The following query uses [`delete`](../../../reference/api-reference/prisma-client-reference#delete) <span class="api"></span> to delete a single `User` record:
 
 ```ts
@@ -738,13 +864,13 @@ To resolve this error, you can:
 
 - Make the relation optional:
 
-  ```prisma
+  ```prisma highlight=3,4;add|5,6;delete
   model Post {
   id         Int        @id @default(autoincrement())
-  + author     User?       @relation(fields: [authorId], references: [id])
-  + authorId   Int?
-  - author     User       @relation(fields: [authorId], references: [id])
-  - authorId   Int
+  author     User?       @relation(fields: [authorId], references: [id])
+  authorId   Int?
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
   }
   ```
 
@@ -767,6 +893,114 @@ To resolve this error, you can:
 
   const transaction = await prisma.$transaction([deletePosts, deleteUser])
   ```
+
+### Delete all records from all tables
+
+Sometimes you want to remove all data from all tables but keep the actual tables. This can be particularly useful in a development environment and whilst testing.
+
+The following shows how to delete all records from all tables with Prisma Client and with Prisma Migrate.
+
+#### Deleting all data with `deleteMany`
+
+When you know the order in which your tables should be deleted, you can use the [`deleteMany`](../../../reference/api-reference/prisma-client-reference#deletemany) function. This is executed synchronously in a [`$transaction`](../../../guides/performance-and-optimization/prisma-client-transactions-guide/) and can be used with all types of databases.
+
+```ts
+const deletePosts = prisma.post.deleteMany()
+const deleteProfile = prisma.profile.deleteMany()
+const deleteUsers = prisma.user.deleteMany()
+
+// The transaction runs synchronously so deleteUsers must run last.
+await prisma.$transaction([deleteProfile, deletePosts, deleteUsers])
+```
+
+✅ **Pros**:
+
+- Works well when you know the structure of your schema ahead of time
+- Synchronously deletes each tables data
+
+❌ **Cons**:
+
+- Doesn't scale as well as having a more generic solution which looks up and `TRUNCATES` your tables regardless of their relational constraints.
+
+> **Note**: The `$transaction` performs a cascading delete on each models table so they have to be called in order.
+
+#### Deleting all data with raw SQL / `TRUNCATE`
+
+If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$queryRaw`](../prisma-client/raw-database-access#queryraw).
+
+In the following examples, the first tab shows how to perform a `TRUNCATE` on a Postgres database by using a `$queryRaw` look up that maps over the table and `TRUNCATES` each table.
+
+The second tab shows performing the same function but with a MySQL database. In this instance the constraints must be removed before the `TRUNCATE` can be executed, before being reinstated once finished. The whole process is run as a `$transaction`
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+
+<tab>
+
+```ts
+for (const {
+  tablename,
+} of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
+  if (tablename !== '_prisma_migrations') {
+    try {
+      await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`)
+    } catch (error) {
+      console.log({ error })
+    }
+  }
+}
+```
+
+</tab>
+
+<tab>
+
+```ts
+const transactions: PrismaPromise<any>[] = []
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
+
+for (const {
+  TABLE_NAME,
+} of await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
+  if (TABLE_NAME !== '_prisma_migrations') {
+    try {
+      transactions.push(prisma.$executeRaw(`TRUNCATE ${TABLE_NAME};`))
+    } catch (error) {
+      console.log({ error })
+    }
+  }
+}
+
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`)
+
+try {
+  await prisma.$transaction(transactions)
+} catch (error) {
+  console.log({ error })
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+✅ **Pros**:
+
+- Scalable
+- Very fast
+
+❌ **Cons**:
+
+- Can't undo the operation
+- Using reserved SQL key words as tables names can cause issues when trying to run a raw query
+
+#### Deleting all records with Prisma Migrate
+
+If you use Prisma Migrate, you can use `migrate reset`, this will:
+
+1. Drop the database
+2. Create a new database
+3. Apply migrations
+4. Seed the database with data
 
 ## Advanced query examples
 

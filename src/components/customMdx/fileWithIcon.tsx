@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import styled from 'styled-components'
 import File from '../../icons/File'
 import Display from '../../icons/Display'
@@ -23,10 +23,10 @@ const FileNameWrapper = styled.span`
   display: inline-flex;
   align-items: center;
   svg {
-    margin-right: ${p => p.theme.space[8]};
+    margin-right: ${(p) => p.theme.space[8]};
   }
-  @media (max-width: ${p => p.theme.breakpoints.tablet}) {
-    font-size: ${p => p.theme.fontSizes[14]};
+  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+    font-size: ${(p) => p.theme.fontSizes[14]};
   }
 `
 

@@ -1,0 +1,98 @@
+---
+title: Connection pool
+metaDescription: Prisma's query engine creates a connection pool to store and manage database connections.
+tocDepth: 3
+---
+
+<TopBlock>
+
+The query engine manages a **connection pool** of database connections. The pool is created when Prisma Client opens the _first_ connection to the database, which can happen in one of two ways:
+
+- By [explicitly calling `$connect()`](connection-management#connect) _or_
+- By running the first query, which calls `$connect()` under the hood
+
+Relational database connectors use Prisma's own connection pool, and the MongoDB connectors uses the [MongoDB driver connection pool](https://github.com/mongodb/specifications/blob/master/source/connection-monitoring-and-pooling/connection-monitoring-and-pooling.rst).
+
+</TopBlock>
+
+## Relational databases
+
+The relational database connectors use Prisma's connection pool. The connection pool has a **connection limit** and a **pool timeout**, which are controlled by connection URL parameters.
+
+### How the connection pool works
+
+The following steps describe how the query engine uses the connection pool:
+
+1. The query engine instantiates a connection pool with a [configurable pool size](#setting-the-connection-pool-size) and [pool timeout](#setting-the-connection-pool-timeout).
+1. The query engine creates on connection and adds it to the connection pool.
+1. When a query comes in, the query engine reserves a connection from the pool to process query.
+1. If there are no idle connections available in the connection pool, the query engine opens additional database connections and adds them to the connection pool until the the number of database connections reaches the limit defined by `connection_limit`.
+1. If the query engine cannot reserve a connection from the pool, queries are added to a FIFO (First In First Out) queue in memory. FIFO means that queries are processed in the order they enter the queue.
+1. If the query engine cannot process a query in the queue for **before the [time limit](#default-pool-timeout)**, it throws an exception with error code `P2024` for that query and moves on to the next one in the queue.
+
+If you consistently experience pool timeout errors, you need to [optimize the connection pool](../../../../guides/performance-and-optimization/connection-management#optimizing-the-connection-pool) <span class="guide"></span> .
+
+### Connection pool size
+
+#### Default connection pool size
+
+The default number of connections (pool size) is calculated with the following formula:
+
+```bash
+num_physical_cpus * 2 + 1
+```
+
+`num_physical_cpus` represents the number of physical CPUs on your machine. If your machine has **four** physical CPUs, your connection pool will contain **nine** connections (`4 * 2 + 1 = 9`).
+
+Although the formula represents a good starting point, the [recommended connection limit](../../../../guides/performance-and-optimization/connection-management#recommended-connection-pool-size) <span class="guide"></span> also depends on your deployment paradigm - particularly if you are using serverless.
+
+#### Setting the connection pool size
+
+You can specify the number of connections by explicitly setting the `connection_limit` parameter in your database connection URL. For example, with the following `datasource` configuration in your [Prisma schema](../../prisma-schema) the connection pool will have exactly five connections:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5"
+}
+```
+
+### Connection pool timeout
+
+#### Default pool timeout
+
+The default connection pool timeout is 10 seconds. If the query engine does not process a particular query within that time, it throws an exception and moves on to the next query in the queue.
+
+#### Setting the connection pool timeout
+
+You can specify the pool timeout by explicitly setting the `pool_timeout` parameter in your database connection URL. In the following example, the pool times out after `2` seconds:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5&pool_timeout=2"
+}
+```
+
+#### Disabling the connection pool timeout
+
+You disable the connection pool timeout by setting the `pool_timeout` parameter to `0`:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5&pool_timeout=0"
+}
+```
+
+You can choose to [disable the connection pool timeout if queries **must** remain in the queue](../../../../guides/performance-and-optimization/connection-management#disabling-the-pool-timeout) <span class="guide"></span> - for example, if you are importing a large number of records in parallel and are confident that the queue will not use up all available RAM before the job is complete.
+
+## MongoDB
+
+The MongoDB connector does not use the Prisma connection pool. The connection pool is managed internally by the MongoDB driver and [configured via connection string parameters](https://docs.mongodb.com/manual/reference/connection-string/#connection-pool-options).
+
+## External connection poolers
+
+You cannot increase the `connection_limit` beyond what the underlying database can support. This is a particular challenge in serverless environments, where each function manages an instance of `PrismaClient` - and its own connection pool.
+
+Consider introducing [an external connection pooler like PgBouncer](../../../../guides/performance-and-optimization/connection-management#pgbouncer) <span class="guide"></span> to prevent your application or functions from exhausting the database connection limit.

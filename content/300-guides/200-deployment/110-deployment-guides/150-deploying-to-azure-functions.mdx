@@ -1,0 +1,524 @@
+---
+title: 'Deploying to Azure Functions'
+metaTitle: 'How to deploy a REST API to Azure Functions with Azure SQL'
+metaDescription: 'Learn how to deploy a Prisma based REST API to Azure Functions and connect to Azure SQL database'
+---
+
+<TopBlock>
+
+In this guide, you will set up and deploy a Prisma based Node.js REST API to [Azure Functions](https://azure.microsoft.com/en-us/services/functions/) together with [Azure SQL](https://azure.microsoft.com/en-us/services/sql-database/) as the database. The application will expose a REST API and use Prisma Client to handle fetching, creating, and deleting records from a database.
+
+Azure Functions is a serverless deployment platform that allows you to deploy code without having to maintain infrastructure. Azure SQL Database is a relational database service built for the cloud with automatic scaling.
+
+In this guide, you will create the necessary resources in Azure, create the database schema using Prisma Migrate and deploy a Node.js REST API with resource endpoints that use Prisma Client to handle database operations against the Azure SQL database.
+
+This guide's focus is showing how Prisma can be used in the Azure cloud focusing on Azure Functions and Azure SQL. The starting point is the [Prisma Azure Functions example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/azure-functions) – a REST API for a simple blog with two models: `User` and `Post` (_1:n_). The example contains REST endpoints preconfigured as serverless functions.
+
+Note that Azure SQL support in Prisma is in [Preview](/about/releases#preview).
+
+With Azure Functions, the fundamental building block is a [**Function App**](https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference#function-app). A function app provides an execution context in Azure in which your functions run. It is comprised of one or more individual functions that are managed, deployed, and scaled together. That way, you can organize and collectively manage multiple functions as a single logical unit.
+
+> Throughout the guide, you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
+
+</TopBlock>
+
+## Prerequisites
+
+- Azure account.
+- Git installed
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) installed.
+- [Node.js](https://nodejs.org/) installed.
+
+## Prisma workflow
+
+At the core of Prisma is the [Prisma schema](/concepts/components/prisma-schema) – a declarative configuration where you define your data model and other Prisma-related configuration. The Prisma schema is also a single source of truth for both Prisma Client and Prisma Migrate.
+
+In this guide, you will use [Prisma Migrate](/concepts/components/prisma-migrate) to create the database schema. Prisma Migrate is based on the Prisma schema and works by generating `.sql` migration files that are executed against the database.
+
+Migrate comes with two primary workflows:
+
+- Creating migrations and applying during local development with `prisma migrate dev`
+- Applying generated migration to production with `prisma migrate deploy`
+
+For brevity, the guide does not cover how migrations are created with `prisma migrate dev`. Rather, it focuses on the production workflow with `prisma migrate deploy` and uses the Prisma schema and SQL migration that are included in the example code.
+
+To learn more about how migrations are created with Prisma Migrate, check out the [start from scratch guide](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres)
+
+## Required Azure resources
+
+- Resource group
+- Azure SQL Database server
+- Database
+- Firewall rule
+- Storage account
+- Function App
+
+## 1. Download the example and install dependencies
+
+Open your terminal and navigate to a location of your choice.
+
+Create the directory for the application code and download the example code:
+
+```terminal copy
+mkdir prisma-azure
+cd prisma-azure
+curl https://codeload.github.com/prisma/prisma-examples/tar.gz/latest | tar -xz --strip=3 prisma-examples-latest/deployment-platforms/azure-functions/
+```
+
+<!-- tar strip folder is a concatenation of the {REPOSITORY}-{BRANCH}/REF, e.g. prisma-examples-latest -->
+
+**Checkpoint:** Run the following command to list the contents of the folder:
+
+```terminal copy
+ls -1
+```
+
+You should see the following files
+
+```no-lines
+CreatePost/
+CreateUser/
+DeletePost/
+FilterPosts/
+GetFeed/
+GetPost/
+PublishPost/
+host.json
+lib/
+node_modules/
+package.json
+prisma/
+proxies.json
+```
+
+Install the dependencies:
+
+```terminal copy
+npm install
+```
+
+## 2. Sign in to Azure using the Azure CLI
+
+Begin by signing in using the following command in your terminal:
+
+```terminal copy
+az login
+```
+
+## 3. Create the Resource Group on Azure
+
+In Azure, a resource group is a way to group together different cloud resources. Whenever you create a resource, e.g., an Azure Function, you need to assign it a resource group.
+
+Since the REST API will use both Azure Functions and an Azure SQL database, you will first create the resource group with the following command:
+
+```terminal copy
+az group create --location germanywestcentral --name prisma-azure-example
+```
+
+> **Note:** The command above creates the resource group in the `germanywestcentral` region. You should create the resource group in the region closest to your users. For the full list of Azure regions, run the `az account list-locations` command.
+
+> **Checkpoint:** The command should output information about the created resource group:
+
+```json
+{
+  "id": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/prisma-azure-example",
+  "location": "germanywestcentral",
+  "managedBy": null,
+  "name": "prisma-azure-example",
+  "properties": {
+    "provisioningState": "Succeeded"
+  },
+  "tags": null,
+  "type": "Microsoft.Resources/resourceGroups"
+}
+```
+
+## 4. Create the Azure SQL database server
+
+To create the Azure SQL database server, copy the command below into your terminal:
+
+```terminal copy
+az sql server create -l germanywestcentral -g prisma-azure-example --name UNIQUE_DB_SERVER_NAME --admin-user prisma --admin-password CHOOSE_A_PASSWORD --enable-public-network true
+```
+
+Before running the command, replace a unique name for the database in place of `UNIQUE_DB_SERVER_NAME`, set a password in place of `CHOOSE_A_PASSWORD`, and note it down.
+
+The command does the following:
+
+- Creates the database server in the `germanywestcentral` region.
+- Associates it with the `prisma-azure-example` resource group created in the previous step.
+- Sets a unique name for the Azure SQL server with `UNIQUE_DB_SERVER_NAME`.
+- Sets the admin user to `prisma`.
+- Sets the admin password.
+- Enables public network access so you can create the database schema from your machine.
+
+In the next step, you will create the database that Prisma will use in the REST API.
+
+## 5. Create the database
+
+In this step, you will create a database in the server you created in the previous step.
+
+Run the following command in the terminal, replace `UNIQUE_DB_SERVER_NAME` with the database name you chose in the previous step:
+
+```terminal copy
+az sql db create --resource-group prisma-azure-example --server UNIQUE_DB_SERVER_NAME --name prisma-azure-example --service-objective Basic
+```
+
+Here's a breakdown of the command's parameters:
+
+- `--resource-group` adds the database to the resource group created in step 3
+- `--server` sets the Azure SQL database server to create it in
+- `--name` sets the name of the database
+- `--service-objective` sets the database's service tier that [determines the cost](https://azure.microsoft.com/en-us/pricing/details/sql-database/single/).
+
+## 6. Create a firewall rule to allow local access to the database
+
+In this step, you will add two firewall rules:
+
+- Allow remote access from your local computer's public IP to the Azure SQL database. This is necessary so you can create the database schema and use the database for testing locally.
+- Allow access to the Azure SQL database from Azure Functions
+
+### Allow access from your local computer
+
+Begin by determining your public IP with the following command:
+
+```terminal copy
+curl ifconfig.me
+```
+
+Copy the IP from the output and run the following command, replacing `YOUR_PUBLIC_IP` with the IP address and `UNIQUE_DB_SERVER_NAME` with the name from step 4:
+
+```terminal copy
+az sql server firewall-rule create --resource-group prisma-azure-example --server UNIQUE_DB_SERVER_NAME --name allow-local-acccess --start-ip-address YOUR_PUBLIC_IP --end-ip-address YOUR_PUBLIC_IP
+```
+
+> **Checkpoint:** After creating the firewall rule, the command should output the following:
+
+```json
+{
+  "endIpAddress": "YOUR_PUBLIC_IP",
+  "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/prisma-azure-example/providers/Microsoft.Sql/servers/prisma-db/firewallRules/allow-local-acccess",
+  "kind": "v12.0",
+  "location": "Germany West Central",
+  "name": "allow-local-acccess",
+  "resourceGroup": "prisma-azure-example",
+  "startIpAddress": "YOUR_PUBLIC_IP",
+  "type": "Microsoft.Sql/servers/firewallRules"
+}
+```
+
+### Allow access from Azure Functions
+
+To allow applications hosted inside Azure to connect to your SQL server, Azure connections must be enabled. To enable Azure connections, there must be a firewall rule with starting and ending IP addresses set to `0.0.0.0`.
+
+Create the rule with the following command:
+
+```terminal copy
+az sql server firewall-rule create --resource-group prisma-azure-example --server UNIQUE_DB_SERVER_NAME --name allow-function-acccess --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+```
+
+## 7. Create a storage account
+
+In this step, you will create a storage account used to maintain state and other information about your functions.
+
+Run the following command to create the storage account, replacing `UNIQUE_STORAGE_ACCOUNT_NAME` with a name for the storage account:
+
+```terminal copy
+az storage account create --name UNIQUE_STORAGE_ACCOUNT_NAME --location germanywestcentral --resource-group prisma-azure-example --sku Standard_LRS
+```
+
+> **Checkpoint:** If the command succeeds, it will output a large json object. Verify that `provisioningState` is `Succeeded`:
+
+```json
+{
+  "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/prisma-azure-example/providers/Microsoft.Storage/storageAccounts/UNIQUE_STORAGE_ACCOUNT_NAME",
+  "provisioningState": "Succeeded",
+  "resourceGroup": "prisma-azure-example",
+  "type": "Microsoft.Storage/storageAccounts"
+}
+```
+
+## 8. Create the function app
+
+In this step, you will create the function app, which provides the environment for executing your function code. A function app maps to your local function project and lets you group functions as a logical unit for easier management, deployment, and sharing of resources.
+
+Copy the following command and replace `FUNCTION_APP_NAME` with a unique name for your function app, and `STORAGE_ACCOUNT_NAME` with the name you chose in the previous step:
+
+```terminal copy
+az functionapp create --resource-group prisma-azure-example --consumption-plan-location germanywestcentral --runtime node --runtime-version 14 --functions-version 3 --name FUNCTION_APP_NAME --storage-account STORAGE_ACCOUNT_NAME --os-type Linux
+```
+
+> **Note:** The Function App name must be globally unique as it will determine the subdomain of the deployed function.
+
+> **Checkpoint:** If the command succeeds, you will see a large JSON object in the terminal. Verify that that the `state` key in the object is set to `Running`.
+
+## 9. Set the DATABASE_URL environment variable locally
+
+In this step, you will define the `DATABASE_URL` environment variable locally to create the database schema and test the functions locally.
+
+To construct the connection URL, copy the following connection URL template:
+
+```no-lines
+sqlserver://DB_SERVER_NAME.database.windows.net:1433;database=DB_NAME;user=DB_ADMIN_USER@DB_SERVER_NAME;password={DB_ADMIN_PASSWORD};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30
+```
+
+Replace the following parts:
+
+- `DB_SERVER_NAME` with the database server name defined in step 4
+- `DB_NAME` with the database name defined in step 5
+- `DB_ADMIN_USER` with the database admin user set in step 4 to `prisma`
+- `DB_ADMIN_PASSWORD` with the database admin password set in step 4
+
+After setting all the values, set it as a local environment variable:
+
+```terminal copy
+export DATABASE_URL="sqlserver://DB_SERVER_NAME.database.windows.net:1433;database=DB_NAME;user=DB_ADMIN_USER@DB_SERVER_NAME;password={DB_ADMIN_PASSWORD};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30"
+```
+
+## 10. Create the Azure Functions local configuration
+
+In this step, you will create the [local configuration](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local#local-settings-file) file for Azure Functions. The file is used to define local configuration such as environment variables for the functions and the runtime – in this case Node.js.
+
+Create a file named `local.settings.json` in the root of the project with the following command:
+
+```command copy
+touch local.settings.json
+```
+
+And add the following contents to it:
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node"
+  }
+}
+```
+
+## 11. Create the database schema
+
+With the `DATABASE_URL` environment variable set, you will create the database schema using the [`prisma migrate deploy`](/reference/api-reference/command-reference#migrate-deploy) command.
+
+> **Note:** The `prisma migrate deploy` command will run migration files from the `prisma/migrations` folder. The initial migration is already included in the example. To learn more about how to create migrations, check out the [Prisma Migrate](https://www.prisma.io/docs/concepts/components/prisma-migrate) docs.
+
+Run the following command to create the database schema:
+
+```terminal copy
+npx prisma migrate deploy
+```
+
+**Checkpoint:** The `prisma migrate deploy` should show the following:
+
+```no-lines
+1 migration found in prisma/migrations
+
+The following migration have been applied:
+
+migrations/
+  └─ 20210322111219_init/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+```
+
+## 12. Expose the DATABASE_URL environment variable to the functions
+
+In this step, you will expose the `DATABASE_URL` environment variable to the functions so that Prisma can connect to the database. In Azure Functions, environment variables are set using [app settings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings).
+
+Run the following command, after replacing `FUNCTION_APP_NAME_FROM_STEP_8` with the name of the **Function App** created in step 8:
+
+```terminal copy
+az functionapp config appsettings set --name FUNCTION_APP_NAME_FROM_STEP_8 --resource-group prisma-azure-example --settings DATABASE_URL=$DATABASE_URL
+```
+
+The command will set the `DATABASE_URL` app setting using the locally defined `DATABASE_URL` environment variable set in step 9.
+
+> **Note:** By default, app settings are not encrypted. Since the `DATABASE_URL` contains sensitive information, it can be stored more securely using [Azure's Key Vault](https://docs.microsoft.com/en-us/azure/app-service/app-service-key-vault-references?toc=/azure/azure-functions/toc.json)
+
+Congratulations! You have created all the necessary resources and configuration, which means your API is ready to be deployed.
+
+## 13. Deploy the functions
+
+In this step, you will generate Prisma Client and deploy the functions.
+
+From the project folder, run the following command:
+
+```terminal copy
+npx prisma generate
+```
+
+The command will generate Prisma Client into the `node_modules` folder.
+
+To deploy the functions, run the following command:
+
+```terminal copy
+npx func azure functionapp publish FUNCTION_APP_NAME
+```
+
+> **Checkpoint:** If the functions have been successfully deployed you should see the following output:
+
+```no-lines
+Getting site publishing info...
+Uploading package...
+Uploading 67.24 MB [##############################################################################]
+Upload completed successfully.
+Deployment completed successfully.
+Syncing triggers...
+Functions in FUNCTION_APP_NAME:
+    CreatePost - [httpTrigger]
+        Invoke url: https://FUNCTION_APP_NAME.azurewebsites.net/api/post
+    CreateUser - [httpTrigger]
+        Invoke url: https://FUNCTION_APP_NAME.azurewebsites.net/api/user
+    DeletePost - [httpTrigger]
+        Invoke url: https://FUNCTION_APP_NAME.azurewebsites.net/api/post/{postid}
+    FilterPosts - [httpTrigger]
+        Invoke url: https://FUNCTION_APP_NAME.azurewebsites.net/api/filterposts
+    GetFeed - [httpTrigger]
+        Invoke url: https://FUNCTION_APP_NAME.azurewebsites.net/api/feed
+    GetPost - [httpTrigger]
+        Invoke url: https://FUNCTION_APP_NAME.azurewebsites.net/api/post/{postid}
+    PublishPost - [httpTrigger]
+        Invoke url: https://FUNCTION_APP_NAME.azurewebsites.net/api/publish/{postid}
+```
+
+Congratulations 🎊! If you've made it this far, you've successfully deployed a Prisma based REST API to Azure Functions which uses Azure SQL as the database.
+
+In the next step, you'll test the functions and take a closer look at how the functions are implemented.
+
+## 14. Test the deployed functions
+
+In this step, you will test the API's different endpoints using the URLs from the previous step.
+
+Begin by making a POST HTTP request to the _CreateUser_ endpoint with curl:
+
+```terminal copy
+curl --request POST --data '{"email":"alice@prisma.io","name":"Alice"}' https://FUNCTION_APP_NAME.azurewebsites.net/api/user
+```
+
+> **Note:** Replace the **`FUNCTION_APP_NAME`** in the URL with the app name you chose in step 8.
+
+If the request succeeds, you should see the created user object returned:
+
+```json
+{
+  "createdAt": "2021-03-02T14:48:15.746Z",
+  "email": "alice@prisma.io",
+  "id": 1,
+  "name": "Alice"
+}
+```
+
+The files associated with the function can be found in the `CreateUser` folder, which contains two files:
+
+- `function.json`: Function configuration, e.g. HTTP method, path, and return value
+- `index.js`: The function handler where Prisma Client is used to create the user in the Azure SQL database
+
+Now, try creating a _post_ associated with the user you just created with the following command:
+
+```terminal copy
+curl --request POST --data '{"title":"Prisma with Azure","content":"","authorEmail":"alice@prisma.io"}' https://FUNCTION_APP_NAME.azurewebsites.net/api/post
+```
+
+If the request succeeds, you should see the created _post_ object returned:
+
+```json
+{
+  "id": 1,
+  "createdAt": "2021-03-02T17:09:53.160Z",
+  "updatedAt": "2021-03-02T17:09:53.161Z",
+  "title": "Prisma with Azure",
+  "content": "",
+  "published": false,
+  "authorId": 1
+}
+```
+
+To update the `published` field of the post, make the following request:
+
+```terminal copy
+curl --request PUT https://FUNCTION_APP_NAME.azurewebsites.net/api/publish/1
+```
+
+If the request succeeds, you should see the updated _post_ object:
+
+```json
+{
+  "authorId": 1,
+  "content": "",
+  "createdAt": "2021-03-02T17:09:53.160Z",
+  "id": 1,
+  "published": true,
+  "title": "Prisma with Azure",
+  "updatedAt": "2021-03-03T10:07:11.047Z"
+}
+```
+
+Finally, to test the _feed_ endpoint, make the following request:
+
+```terminal copy
+curl https://FUNCTION_APP_NAME.azurewebsites.net/api/feed
+```
+
+If the request succeeds, you should see the post you created and the related author:
+
+```json
+[
+  {
+    "author": {
+      "createdAt": "2021-03-02T14:48:15.746Z",
+      "email": "alice@prisma.io",
+      "id": 1,
+      "name": "Alice"
+    },
+    "authorId": 1,
+    "content": "",
+    "createdAt": "2021-03-02T17:09:53.160Z",
+    "id": 1,
+    "published": true,
+    "title": "Prisma with Azure",
+    "updatedAt": "2021-03-03T10:07:11.047Z"
+  }
+]
+```
+
+## Developing and debugging the functions locally
+
+When implementing Azure Functions, you can also start a local development environment using the Azure Functions Core tools' function runtime. That way, you can test and debug the implementation of the functions locally.
+
+To launch the functions runtime, run the following command:
+
+```terminal copy
+npx func start
+```
+
+The command starts a local server and allows you to call any of the functions in the project.
+
+You can inject environment variables into the functions by adding them to the `Values` object in the `local.settings.json` file at the root of the project.
+
+## Setting up a local database for development
+
+When developing locally, you should consider running a local Microsoft SQL Server instance. [While Microsoft SQL Server is not the same as Azure SQL, the two have high compatibility with each other.](https://docs.microsoft.com/en-us/azure/azure-sql/azure-sql-iaas-vs-paas-what-is-overview).
+
+The quickest way to set up a local Microsoft SQL Server is with Docker. Check out the [Microsoft SQL Server example](https://github.com/prisma/prisma-examples/tree/latest/databases/sql-server) for more information on how to set it up.
+
+## Bootstrapping a new function
+
+When you want to create a new function, you can use the following command to bootstrap a new function:
+
+```command copy
+npx func function new --language JavaScript --template "HTTP trigger" --name FUNCTION_NAME
+```
+
+The command creates a folder with the `index.js` and `function.json` files.
+
+## Summary
+
+Congratulations! You have successfully deployed the REST API to Azure Functions and used Prisma Client to handle database queries to the Azure SQL database.
+
+For more insight into Prisma Client's API, explore the function handlers and check out the [Prisma Client API Reference](/reference/api-reference/prisma-client-reference)
+
+It's worth noting that while this guide used the Azure CLI to create all the resources, this can also be achieved via the Azure Portal UI or the VSCode extension, which supports deployments directly from VSCode.
+
+As a next step, you could look into implementing a continuous delivery pipeline using [GitHub Actions](https://docs.microsoft.com/en-us/azure/azure-functions/functions-how-to-github-actions?tabs=javascript) to automate the deployment process from a GitHub repository.

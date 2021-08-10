@@ -13,172 +13,22 @@ Projects using Prisma Client can be deployed to many different cloud platforms. 
 
 ## Deployment paradigms
 
-Here are two common deployment paradigms for a Node.js based project:
-
-- **Long-running process (PaaS)**: Your Node.js process is continuously running and handles multiple requests. Your application can be deployed to a Platform-as-a-Service like Heroku, as a Docker container to Kubernetes, or as a Node.js process on a virtual machine.
-- **Serverless (FaaS)**: Node.js processes of your application (or subsets of it broken into functions) are started as requests come in.
-
 Each paradigm has different tradeoffs that affect the performance, scalability, and operational costs of your application.
 
-Moreover, the user traffic pattern of your application is also an important factor to consider. For example, any application with consistent user traffic may be better suited for a continuously running paradigm, whereas an application with sudden spikes may be better suited for serverless.
+Moreover, the user traffic pattern of your application is also an important factor to consider. For example, any application with consistent user traffic may be better suited for a [continuously running paradigm](#long-running-process-paas), whereas an application with sudden spikes may be better suited to [serverless](#serverless-faas).
 
-## Database connection limit
+### Long-running process (PaaS)
 
-Databases have a limit on the number of open connections they can handle.
-A higher connection limit allows more processes to connect. However, this comes with a significant performance cost on the database side. Moreover, many databases recommended not overpassing a certain connection number.
-Several approaches can be used to mitigate such problems.
-Choosing the right approach depends on the deployment paradigm.
+Your Node.js process is continuously running and handles multiple requests. Your application can be deployed to a Platform-as-a-Service like [Heroku](./deployment-guides/deploying-to-heroku), as a Docker container to Kubernetes, or as a Node.js process on a virtual machine.
 
-From a high level, the following approaches can prevent database connection issues:
+See also: [Connection management in long-running processes](../performance-and-optimization/connection-management#long-running-processes)
 
-- Limiting the connection pool of the query engine with the database as described in [connection management](../../../concepts/components/prisma-client/working-with-prismaclient/connection-management#connection-pool)
-- Using an external connection pooler like [PgBouncer](https://www.pgbouncer.org/).
+### Serverless (FaaS)
 
-Both approaches prevent exhausting the connection limit of the database.
-
-### Setting the connection limit of the Prisma query engine
-
-When the Prisma Client connects to the database, the [query engine](../../../concepts/components/prisma-client/query-engine) immediately creates a connection pool with the number of connections that were specified as the `connection_limit` parameter in your database connection URL.
-
-For example, with the following `datasource` configuration in your Prisma schema the connection pool will have exactly five connections:
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5"
-}
-```
-
-If the connection_limit argument is omitted, the default number of connections is calculated according to this formula: `num_physical_cpus * 2 + 1` where `num_physical_cpus` represents the number of physical CPUs on your machine.
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb"
-}
-```
-
-If your machine has four physical CPUs, your connection pool will contain nine connections (4 \* 2 + 1 = 9).
-
-### Recommended connection limit
-
-- **Long running process (PaaS)**: It's recommended to use the default of `num_physical_cpus * 2 + 1`. That number should be multiplied by the number of application instances to ensure it's under the database's limit. For example if your database's connection limit is _10_ and you have _two_ instances of your app, the connection limit should be no more than _5_.
-- **Serverless (FaaS)**: It's recommended to set the connection limit to 1 if you're not using an external connection pooler because each incoming request starts a short-lived Node.js process. This can cause the database connection pool to be quickly exhausted from a short spike in user traffic.
-
-  **PostgreSQL**
-
-  ```
-  postgresql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=1
-  ```
-
-  **MySQL**
-
-  ```
-  mysql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=1
-  ```
-
-### Connectiong pooling
-
-#### PgBouncer
-
-PostgreSQL supports only a certain amount of concurrent connections, and this limit can be reached quite fast when the service usage goes up – especially in serverless environments.
-
-A connection pooler like PgBouncer prevents your application from exhausting the database's connection limit.
-
-PgBouncer holds a connection pool to the database and proxies incoming client connections by sitting between Prisma Client and the database. This reduces the number of processes a database has to handle at any given time. PgBouncer passes on a limited number of connections to the database and queues additional connections for delivery when space becomes available.
-
-To use Prisma Client with PgBouncer from a serverless function, add the `?pgbouncer=true` flag to the PostgreSQL connection string:
-
-```
-postgresql://USER:PASSWORD@HOST:PORT/DATABASE?pgbouncer=true
-```
-
-Additionally, for Prisma Client to work reliably, PgBouncer must run in [**Transaction mode**](https://www.pgbouncer.org/features.html).
-
-_Transaction mode_ offers a connection for every transaction – a requirement for the Prisma query engine to work with PgBouncer.
-
-<details>
-  <summary>How `pgbouncer` mode works in Prisma</summary>
-
-- Prisma cleans up already present prepared statements in the connection by running `DEALLOCATE ALL` before preparing and executing Prisma Client queries.
-- Prisma opens a transaction for every query case – even when just reading data, allowing Prisma to use prepared statements.
-
-</details>
-
-## Deploying database changes with Prisma Migrate
-
-To apply pending migrations to development, staging, or testing environments, run the `migrate deploy` command as part of your CI/CD pipeline:
-
-```terminal
-prisma migrate deploy
-```
-
-Exactly when to run `prisma migrate deploy` depends on your platform. For example, a simplified [Heroku](deploying-to-heroku) workflow includes:
-
-1. Ensuring the `./prisma/migration` folder is in source control
-2. Running `prisma migrate deploy` during the [release phase](https://devcenter.heroku.com/articles/release-phase)
-
-> **Note**: `migrate deploy` should generally be part of an automated CI/CD pipeline, and we do not recommend running this command locally to deploy changes to a production database (for example, by temporarily changing the `DATABASE_URL` environment variable). It is not genreally considered good practice to store the production database URL locally.
-Beware that in order to run the `prisma migrate deploy` command, you need access the `prisma` dependency that is typically added to the `devDependencies`. Some platforms like Vercel, prune development dependencies during the build, thereby preventing you from calling the command. This can be worked around by making the `prisma` a production dependency, by moving it to `dependencies` in your `package.json`.
-For more information about the `migrate deploy` command, see:
-
-* [`migrate deploy` reference](../../../reference/api-reference/command-reference#migrate-deploy) <span class="api"></span>
-* [How `migrate deploy` works](../../../concepts/components/prisma-migrate##production-and-testing-environments) <span class="concept"></span>
-* [Production troubleshooting](production-troubleshooting)
-
-## Deploying to FaaS (serverless) environments
+Node.js processes of your application (or subsets of it broken into functions) are started as requests come in.
 
 Serverless environments have the concept of warm starts, which means that for subsequent invocations of the same function, it may use an already existing container that has the allocated processes, memory, file system (`/tmp` is writable on AWS Lambda), and even DB connection still available.
 
-Typically, any piece of code [outside the handler](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-features.html#gettingstarted-features-programmingmodel) remains initialized. This is a great place for
-`PrismaClient` to call `connect` or at least call `PrismaClient` constructor so that subsequent invocations can share a connection. There are some implications though that are not directly related to Prisma Client JS but any system that would require a DB connection from serverless environment:
+Typically, any piece of code [outside the handler](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-features.html#gettingstarted-features-programmingmodel) remains initialized.
 
-| Implication                         | Description                                                                                                                                                                                                                                       | Potential Solution                                                                                                                                                       |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Container reuse                     | It is not guaranteed that subsequent nearby invocations of a function will hit the same container. AWS can choose to create a new container at any time.                                                                                          | Code should assume the container to be stateless and create a connection only if it does not exist. Prisma Client JS already implements that logic.                      |
-| Zombie connections                  | The containers that are marked to be removed and are not being reused still keep a connection open and can stay in that state for some time (unknown and not documented from AWS), this can lead to sub-optimal utilization of the DB connections | One potential solution is to use a lower idle connection timeout. Another solution can be to clean up the idle connections in a separate service<sup>1, 2</sup>.         |
-| Database connection pool exhaustion | Concurrent requests create multiple new connections to the database thereby exhausting the database's connection limit.                                                                                                                            | Add a connection pooler, e.g. [PgBouncer](#pgbouncer) or limiting the serverless function concurrency to a number lower than the database's connection limit. |
-
-<br />
-<sup>
-  1. Note that these are recommendations and not best practices. These would vary from system to
-  system.
-</sup>
-<br />
-<sup>
-  2.{' '}
-  <a href="https://github.com/jeremydaly/serverless-mysql">
-    <inlineCode>serverless-mysql</inlineCode>
-  </a>{' '}
-  is a library that implements this idea.
-</sup>
-
-Note that depending on your serverless concurrency limit (the number of serverless functions running), you might still exhaust your database's connection limit. This can happen when too many functions are invoked concurrently (i.e. the number of concurrent Lambdas that each hold a DB connection exceeds the connection limit of your database). To prevent this, [set your serverless concurrency limit](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html) to a number lower than the connection limit of your database (as you might want to be able to connect from another client for other purposes).
-
-## Query engine binary
-
-Prisma Client depends on the [query engine](../../../concepts/components/prisma-client/query-engine) that is running as a binary on the same host as your application.
-
-The query engine is implemented in Rust and is used by Prisma in the form of executable binary files. The binary is downloaded when `prisma generate` is called. If the call happens on a different environment when deploying your Prisma-based application to production, you need to ensure that the `binaryTarget` in the Prisma schema is compatible with your production environment as described in [binary targets](/reference/api-reference/prisma-schema-reference#binarytargets-options).
-
-## AWS RDS Proxy
-
-Prisma is compatible with AWS RDS Proxy. However, there is no benefit in using it for connection pooling with Prisma due to the way RDS Proxy pins connections:
-
-> "Your connections to the proxy can enter a state known as pinning. When a connection is pinned, each later transaction uses the same underlying database connection until the session ends. Other client connections also can't reuse that database connection until the session ends. The session ends when the client connection is dropped." - <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/rds-proxy.html">AWS RDS Proxy Docs</a>
-
-Prepared statements (of any size) or query statements greater than 16 KB cause RDS Proxy to pin the session. Because Prisma uses prepared statements for all queries, you won't see any benefit when using RDS Proxy with Prisma.
-
-## AWS Elastic Beanstalk
-
-AWS Elastic Beanstalk is a PaaS-like deployment service that abstracts away infrastructure and allows you to deploy applications to AWS quickly.
-
-When deploying an app using Prisma Client to AWS Elastic Beanstalk, Prisma generates the Prisma Client code into `node_modules`. This is typically done in the `postinstall` hook.
-
-Because Beanstalk limits the ability to write to the filesystem in the `postinstall` hook, you need to create an [`.npmrc`](https://docs.npmjs.com/cli/v6/configuring-npm/npmrc) file in the root of your project and add the following configuration:
-
-```config file=.npmrc
-unsafe-perm=true
-```
-
-Enabling `unsafe-perm` forces _npm_ to run as _root_, avoiding the filesystem access problem, thereby allowing the `prisma generate` command in the `postinstall` hook to generate code into `node_modules`.
+See also: [Connection management in serverless environments](../performance-and-optimization/connection-management#serverless-environments-faas)

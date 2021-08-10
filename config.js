@@ -17,7 +17,7 @@ const config = {
     {
       from: '/reference/tools-and-interfaces/prisma-client/api',
       to: '/concepts/components/prisma-client',
-    },  
+    },
     {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
       to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
@@ -73,19 +73,13 @@ const config = {
       git: 'https://github.com/prisma',
       buttons: [
         {
-          text: 'Quick start',
-          url: 'getting-started/quickstart-typescript',
+          text: 'Getting started',
+          url: 'getting-started/',
           special: true,
           icon: 'DoubleArrow',
         },
         {
-          text: 'Set up Prisma',
-          url: 'getting-started/setup-prisma',
-          special: false,
-          icon: null,
-        },
-        {
-          text: 'Examples',
+          text: 'Example projects',
           url: 'https://github.com/prisma/prisma-examples',
           special: false,
           icon: null,
@@ -119,8 +113,8 @@ const config = {
             codeBlock: false,
           },
           {
-            text: 'Under the hood ',
-            url: 'concepts/overview/under-the-hood',
+            text: 'Under the hood',
+            url: 'concepts/components/prisma-engines',
             codeBlock: false,
           },
         ],
@@ -181,13 +175,18 @@ const config = {
             codeBlock: false,
           },
           {
-            text: 'SQLite',
-            url: 'concepts/database-connectors/sqlite',
+            text: 'MongoDB',
+            url: 'concepts/database-connectors/mongodb',
             codeBlock: false,
           },
           {
             text: 'SQL Server',
             url: 'concepts/database-connectors/microsoft-sql-server',
+            codeBlock: false,
+          },
+          {
+            text: 'SQLite',
+            url: 'concepts/database-connectors/sqlite',
             codeBlock: false,
           },
         ],
@@ -227,22 +226,22 @@ const config = {
         color: '#48BB78',
         small: false,
         content: 'Get started with Prisma Migrate.',
-        url: 'guides/application-lifecycle/developing-with-prisma-migrate',
+        url: 'guides/database/developing-with-prisma-migrate',
       },
       {
-        title: 'Using Prisma',
+        title: 'Performance and optimization',
         color: '#38B2AC',
         small: true,
-        content: 'How to integrate Prisma into your stack.',
-        url: 'guides/prisma-guides',
+        content: 'Tune your queries and monitor your application.',
+        url: 'guides/performance-and-optimization',
       },
       {
-        title: 'Database workflows',
+        title: 'Working with your database',
         color: '#4299E1',
         small: true,
         content:
           'Guides for common database workflow such as configuring constraints or cascading deletes.',
-        url: 'guides/general-guides/database-workflows/foreign-keys',
+        url: 'guides/database',
       },
       {
         title: 'Adopting Prisma',
@@ -275,7 +274,7 @@ const config = {
         categoryName: 'Prisma Reference',
         mainUrl: 'reference',
         icon: 'Schema',
-        links: [        
+        links: [
           {
             text: 'Prisma Client API reference',
             url: 'reference/api-reference/prisma-client-reference',
@@ -290,7 +289,7 @@ const config = {
             text: 'Prisma error reference',
             url: 'reference/api-reference/error-reference',
             codeBlock: false,
-          },          
+          },
         ],
       },
       {
@@ -305,7 +304,7 @@ const config = {
           },
           {
             text: 'migrate',
-            url: 'reference/api-reference/command-reference#prisma-migrate-preview',
+            url: 'reference/api-reference/command-reference#prisma-migrate',
             codeBlock: true,
           },
           {
@@ -406,7 +405,7 @@ const config = {
     description:
       "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
     keywords: 'Docs, prisma, 2.0',
-    docsLocation: 'https://github.com/prisma/docs/tree/master/content',
+    docsLocation: 'https://github.com/prisma/docs/tree/main/content',
     twitter: {
       site: '@prisma',
       creator: '@prisma',
@@ -425,7 +424,14 @@ const config = {
     },
   },
   feedback: {
-    function_name: 'https://prisma2-docs.netlify.app/.netlify/functions/index',
+    sentimentUrl:
+      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
+        ? 'https://prisma2-docs.netlify.app/.netlify/functions/sentiment'
+        : '/.netlify/functions/sentiment',
+    feedbackUrl:
+      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
+        ? 'https://prisma2-docs.netlify.app/.netlify/functions/feedback'
+        : '/.netlify/functions/feedback',
   },
   sidebar: {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet

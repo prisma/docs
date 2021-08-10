@@ -19,18 +19,21 @@ Whenever a `prisma` command is invoked, the CLI typically reads some information
 - `prisma generate`: Reads _all_ above mentioned information from the Prisma schema to generate the correct data source client code (e.g. Prisma Client).
 - `prisma migrate dev`: Reads the data sources and data model definition to create a new migration.
 
-You can also [use environment variables](#using-environment-variables) inside the schema file to provide configuration options when a CLI command is invoked.
+You can also [use environment variables](#accessing-environment-variables-from-the-schema) inside the schema file to provide configuration options when a CLI command is invoked.
 
 </TopBlock>
 
 ## Example
 
-Here is an example for a Prisma schema file that specifies: 
+The following is an example of a Prisma schema file that specifies:
 
-* A data source (PostgreSQL)
-* A generator (Prisma Client)
-* A data model definition with two models (with one relation) and one `enum`
-* A [native data type attribute](data-model#native-type-mapping) on the `title` field of the `Post` model because it does not use the default `String` mapping (`varchar(255)` instead of `text`)
+- A data source (PostgreSQL or MongoDB)
+- A generator (Prisma Client)
+- A data model definition with two models (with one relation) and one `enum`
+- Several [native data type attributes](data-model#native-type-mapping) (`@db.VarChar(255)`, `@db.ObjectId`)
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
 
 ```prisma
 datasource db {
@@ -46,7 +49,7 @@ model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   email     String   @unique
-  name      String?  
+  name      String?
   role      Role     @default(USER)
   posts     Post[]
 }
@@ -67,6 +70,48 @@ enum Role {
 }
 ```
 
+</tab>
+<tab>
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  createdAt DateTime @default(now())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  posts     Post[]
+}
+
+model Post {
+  id        String   @id @default(dbgenerated()) @db.ObjectId @map("_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  published Boolean  @default(false)
+  title     String
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String   @db.ObjectId
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+</tab>
+</TabbedContent>
+
 ## Naming
 
 The default name for the schema file is `schema.prisma`. When your schema file is named like this, the Prisma CLI will detect it automatically in the directory where you invoke the CLI command (or any of its subdirectories).
@@ -79,7 +124,7 @@ prisma generate --schema ./database/myschema.prisma
 
 ## Syntax
 
-The schema file is written in Prisma Schema Language (PSL). 
+The schema file is written in Prisma Schema Language (PSL).
 
 ### VS Code
 
@@ -104,7 +149,7 @@ model User {
 
 The Prisma CLI looks for the Prisma schema file in the following locations, in the following order:
 
-1.  The location specified by the [`--schema` flag](../../../reference/api-reference/command-reference), which is available when you `introspect`, `generate`, and `migrate`:
+1.  The location specified by the [`--schema` flag](../../../reference/api-reference/command-reference), which is available when you `introspect`, `generate`, `migrate`, and `studio`:
 
     ```terminal
     prisma generate --schema=./alternative/schema.prisma
@@ -136,18 +181,13 @@ Introspecting based on datasource defined in prisma/schema.prisma …
 Run prisma generate to generate Prisma Client.
 ```
 
-## Using environment variables
+## Accessing environment variables from the schema
 
-You can use environment variables to provide configuration options when a CLI command is invoked. Environment variables allow you to:
+You can use environment variables to provide configuration options when a CLI command is invoked, or a Prisma Client query is run.
 
-- Keep secrets out of the schema file
-- Improve portability of the schema file
+Using environment variables in the schema allows you to **keep secrets out of the schema file** which in turn **improves the portability of the schema** by allowing you to use it in different environments
 
-You can use machine-specific variables, `.env` files, or a combination of both.
-
-### Accessing environment variables from the schema
-
-Environment variables can be accessed using the `env` function:
+Environment variables can be accessed using the `env()` function:
 
 ```prisma
 datasource db {
@@ -164,129 +204,26 @@ DATABASE_URL=postgresql://test:test@localhost:5432/test
 DATABASE_URL_WITH_SCHEMA=${DATABASE_URL}?schema=public
 ```
 
-There are a few limitations with `env` at the moment:
+The `env()` function can be used in the following places:
 
-- It is not possible to use environment variables for the `provider` argument in `datasource` and `generator` definitions.
+- A datasource url
+- Generator binary targets
 
-### Using .env files
-
-For many developer tools, it has become a good practice to define environment variables using [`.env`](https://github.com/motdotla/dotenv) files. The Prisma CLI looks for `.env` files, in order, in the following locations:
-
-1. In the root folder of your project (`./.env`)
-1. From the same folder as the schema specified by the `--schema` argument
-1. From the same folder as the schema taken from `"prisma": {"schema": "/path/to/schema.prisma"}` in `package.json`
-1. From the `./prisma` folder
-
-If a `.env` file is located in step #1, but additional, clashing `.env` variables are located in steps #2 - 4, the CLI will throw an error. For example, if you specify a `DATABASE_URL` variable in two different `.env` files, you will get the following error:
-
-```
-Error: There is a conflict between env vars in .env and prisma/.env
-Conflicting env vars:
-  DATABASE_URL
-
-We suggest to move the contents of prisma/.env to .env to consolidate your env vars.
-```
-
-The following table describes where the Prisma CLI looks for the `.env` file:
-
-| **Command**                                     | **Schema file location**                                                        | **`.env` file locations checked, in order**               |
-| :---------------------------------------------- | :------------------------------------------------------------------------------ | :-------------------------------------------------------- |
-| `prisma [command]`                              | `./prisma/schema.prisma`                                                        | `./.env`<br />`./prisma/.env`                             |
-| `prisma [command] --schema=./a/b/schema.prisma` | `./a/b/schema.prisma`                                                           | `./.env`<br />`./a/b/.env`<br />`./prisma/.env`           |
-| `prisma [command]`                              | `"prisma": {"schema": "/path/to/schema.prisma"}`                                | `.env`<br /> `./path/to/schema/.env`<br />`./prisma/.env` |
-| `prisma [command]`                              | No schema (for example, when running `prisma introspect` in an empty directory) | `./.env`<br />`./prisma/.env`                             |
-
-Any environment variables defined in that `.env` file will automatically be loaded when running a Prisma CLI command.
-
-> **Warning**: Do not commit your `.env` files into version control.
-
-Refer to the `dotenv` documentation for information about [what happens if an environment variable is defined in two places](https://www.npmjs.com/package/dotenv#what-happens-to-environment-variables-that-were-already-set).
-
-#### Example: Set the `DATABASE_URL` environment variable in an `.env` file
-
-It is common to load your database connection URL from an environment variable:
-
-```prisma
-// schema.prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
-
-You can set the `DATABASE_URL` in your `.env` file:
-
-```
-# .env
-DATABASE_URL=postgresql://test:test@localhost:5432/test?schema=public
-```
-
-When you run a command that needs access to the database defined via the `datasource` block (for example, `prisma introspect`), the Prisma CLI automatically loads the `DATABASE_URL` environment variables from the `.env` file and makes it available to the CLI.
-
-### Using environment variables in your code
-
-If you want environment variables to be evaluated at runtime, you need to load them manually in your application code (for example, by using [`dotenv`](https://github.com/motdotla/dotenv)):
-
-```ts
-import * as dotenv from 'dotenv'
-
-dotenv.config() // Load the environment variables
-console.log(`The connection URL is ${process.env.DATABASE_URL}`)
-```
-
-### Manage `.env` files manually
-
-You can use `dotenv-cli` if you want to:
-
-- Use multiple `.env` files
-- Use `.env` files from a location that the Prisma CLI does not check [by default](#using-env-files)
-
-#### Via command line
-
-1.  Install [`dotenv-cli`](https://www.npmjs.com/package/dotenv-cli):
-
-    ```
-    npm install -g dotenv-cli
-    ```
-
-2.  Create a file - for example, `.env3` - in your project's root folder.
-
-3.  To use the `.env3` file, you can use `dotenv` when you run any Prisma command and specify which `.env` file to use. The following example uses a file named `.env3`:
-
-    ```
-    dotenv -e .env3 -- npx prisma introspect
-    ```
-
-> **Note:** dotenv doesn't pass the flags to the Prisma command by default, this is why the command includes two dashes `--` before `prisma`, making it possible to use flags like `--force`, `--schema` or `--preview-feature`.
-
-#### Via application code
-
-1.  Add [dotenv](https://www.npmjs.com/package/dotenv) to your project:
-
-    ```
-    npm install dotenv
-    ```
-
-2.  Create a file - for example, `.env3` - in your project's root folder.
-
-3.  To use the `.env3` file, include a reference to `dotenv` at the top of your project's entry file.
-
-    ```ts
-    import { config } from 'dotenv'
-    config({ path: '.env3' })
-    ```
+See [Environment variables](../../../../guides/development-environment/environment-variables) from more information.
 
 ## Comments
 
 There are two types of comments that are supported in the schema file:
 
 - `// comment`: This comment is for the reader's clarity and is not present in the abstract syntax tree (AST) of the schema file.
-- `/// comment`: These comments will show up in the abstract syntax tree (AST) of the schema file, either as descriptions to AST nodes or as free-floating comments. Tools can then use these comments to provide additional information.
+- `/// comment`: These comments will show up in the abstract syntax tree (AST) of the schema file as descriptions to AST nodes. Tools can then use these comments to provide additional information. All comments are attached to the next available node - [free-floating comments](https://github.com/prisma/prisma/issues/3544) are not supported and are not included in the AST.
+
+> **Note**: `///` comments are **not** present of the generated Prisma Client, but are present in the internal Data Model Meta Format (DMMF).
 
 Here are some different examples:
 
 ```prisma
-  /// This comment will get attached to the `User` node in the AST
+/// This comment will get attached to the `User` node in the AST
 model User {
   /// This comment will get attached to the `id` node in the AST
   id      Int    @default(autoincrement())
@@ -294,26 +231,96 @@ model User {
   weight  Float /// This comment gets attached to the `weight` node
 }
 
-  // This comment is just for you. It will not
-  // show up in the AST.
+// This comment is just for you. It will not
+// show up in the AST.
 
-  /// This is a free-floating comment that will show up
-  /// in the AST as a `Comment` node, but is not attached
-  /// to any other node. We can use these for documentation
-  /// in the same way that godoc.org works.
+/// This comment will get attached to the
+/// Customer node.
 
 model Customer {}
 ```
 
 ## Auto formatting
 
-Similar to tools like [gofmt](https://golang.org/cmd/gofmt/) and [prettier](https://github.com/prettier/prettier), PSL syntax ships with a formatter for
-`.prisma` files. The formatter can be enabled in the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma).
+Prisma supports formatting `.prisma` files automatically. There are two ways to format `.prisma` files:
 
-Like `gofmt` and unlike `prettier`, there are no options for configuration here. **There is exactly one way to format a prisma file**.
+- Run the [`prisma format`](../../../reference/api-reference/command-reference#forma) <span class="api"></span> command.
+- Install the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) and invoke the [VS Code format action](https://code.visualstudio.com/docs/editor/codebasics#_formatting) - manually or on save.
 
-Learn more about the formatting rules in the [spec](https://github.com/prisma/specs/tree/master/schema#formatting-rules).
+There are no configuration options - [formatting rules](#formatting-rules) are fixed (similar to Golang's `gofmt` but unlike Javascript's `prettier`):
 
-## In this section
+### Formatting rules
 
-<Subsections />
+#### Configuration blocks are aligned by their `=` sign.
+
+```
+block _ {
+  key      = "value"
+  key2     = 1
+  long_key = true
+}
+```
+
+A newline resets block alignment:
+
+```
+block _ {
+  key   = "value"
+  key2  = 1
+  key10 = true
+
+  long_key   = true
+  long_key_2 = true
+}
+```
+
+<!--
+Multiline objects follow their own nested formatting rules:
+
+```
+block _ {
+  key   = "value"
+  key2  = 1
+  key10 = {
+    a = "a"
+    b = "b"
+  }
+  key10 = [
+    1,
+    2
+  ]
+}
+
+```
+-->
+
+#### Field definitions are aligned into columns separated by 2 or more spaces
+
+```
+block _ {
+  id          String       @id
+  first_name  LongNumeric  @default
+}
+```
+
+#### Multiline field attributes are properly aligned with the rest of the field attributes
+
+```
+block _ {
+  id          String       @id
+                           @default
+  first_name  LongNumeric  @default
+}
+```
+
+A newline resets formatting rules:
+
+```
+block _ {
+  id  String  @id
+              @default
+
+  first_name  LongNumeric  @default
+}
+
+```

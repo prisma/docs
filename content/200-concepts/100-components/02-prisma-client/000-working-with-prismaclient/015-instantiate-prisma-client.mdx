@@ -15,8 +15,8 @@ The following example demonstrates how to import and instantiate your [generated
 
 ```ts
 import { PrismaClient } from '@prisma/client'
+
 const prisma = new PrismaClient()
-// use `prisma` in your application to read and write data in your DB
 ```
 
 </tab>
@@ -25,100 +25,39 @@ const prisma = new PrismaClient()
 
 ```js
 const { PrismaClient } = require('@prisma/client')
+
 const prisma = new PrismaClient()
-// use `prisma` in your application to read and write data in your DB
 ```
 
 </tab>
 
 </TabbedContent>
 
-[`PrismaClient` accepts parameters](../../../../reference/api-reference/prisma-client-reference#prismaclient) <span class="api"></span> that determine:
+<Tip>
 
-* [Logging levels](logging)
-* [Error formatting](error-formatting)
-* [The global behavior of `findUnique` and `findFirst` queries](../../../../reference/api-reference/prisma-client-reference#rejectonnotfound) <span class="api"></span>
+You can further customize `PrismaClient` with [constructor parameters](../../../../reference/api-reference/prisma-client-reference#prismaclient) <span class="api"></span> - for example, set [logging levels](logging) or customize [error formatting](error-formatting).
+
+</Tip>
 
 </TopBlock>
 
-## Use a single shared instance of <inlinecode>PrismaClient</inlinecode>
+## The number of `PrismaClient` instances matters
 
-In long-running applications, we recommend that you:
+Your application should generally only create **one instance** of `PrismaClient`. How to achieve this depends on whether you are using Prisma in a [long-running application](../../../../guides/performance-and-optimization/connection-management#prismaclient-in-long-running-applications) <span class="guide"></span> or in a [serverless environment](../../../../guides/performance-and-optimization/connection-management#prismaclient-in-serverless-environments) <span class="guide"></span>.
 
-* ✔ Create **one** instance of `PrismaClient` and re-use it across your application
-* ✔ Assign `PrismaClient` to a global variable _in dev environments only_ to [prevent hot reloading from creating new instances](#prevent-hot-reloading-from-creating-new-instances-of-prismaclient)
+The reason for this is that each instance of `PrismaClient` manages a connection pool, which means that a large number of clients can **exhaust the database connection limit**. This applies to all database connectors.
 
-> **Note**: You [do not need to explicitly `$disconnect()`](connection-management#calling-disconnect-explicitly) in the context of a long-running application, such as a GraphQL server.
+If you use the **MongoDB connector**, connections are managed by the MongoDB driver connection pool. If you use a **relational database connector**, connections are managed by Prisma's [connection pool](connection-pool). Each instance of `PrismaClient` creates its own pool.
 
-Multiple instances of `PrismaClient` results in multiple instances of the [query engine](../query-engine). Each query engine creates a [connection pool](connection-management#connection-pool) with a default pool size of `num_physical_cpus * 2 + 1`. Too many connections may start to slow down your database and eventually lead to the following error:
+1. Each client creates its own instance of the [query engine](../../prisma-engines/query-engine).
+1. Each query engine creates a [connection pool](connection-pool) with a default pool size of:
 
-```
-Error in connector: Error querying the database: db error: FATAL: sorry, too many clients already
-    at PrismaClientFetcher.request
-```
+   - `num_physical_cpus * 2 + 1` for relational databases
+   - [`100` for MongoDB](https://docs.mongodb.com/manual/reference/connection-string/#mongodb-urioption-urioption.maxPoolSize)
 
-To re-use a single instance, create a module that exports a `PrismaClient` object:
+1. Too many connections may start to **slow down your database** and eventually lead to errors such as:
 
-```ts file=client.ts
-import { PrismaClient } from "@prisma/client"
-
-let prisma = new PrismaClient() 
-
-export default prisma
-```
-
-The object is [cached](https://nodejs.org/api/modules.html#modules_caching) the first time the module is imported. Subsequent requests return the cached object rather than creating a new `PrismaClient`:
-
-```ts file=app.ts
-import prisma from './client'
-
-async function main() {
-  const allUsers = await prisma.user.findMany();
-}
-
-main();
-```
-
-### Prevent hot reloading from creating new instances of `PrismaClient`
-
-Frameworks like [Next.js](https://nextjs.org/) support hot reloading of changed files, which enables you to see changes to your application without restarting. However, if the framework refreshes the module responsible for exporting `PrismaClient`, this can result in **additional, unwanted instances of `PrismaClient` in a development environment**.
-
-As a workaround, you can store `PrismaClient` as a global variable in development environments only, as global variables are not reloaded:
-
-```ts file=client.ts
-import { PrismaClient } from "@prisma/client"
-
-declare global {
-    namespace NodeJS {
-        interface Global {
-            prisma: PrismaClient;
-        }
-    }
-}
-
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === "production") {
-  prisma = new PrismaClient()
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient()
-  }
-
-  prisma = global.prisma
-}
-
-export default prisma
-```
-
-The way that you import and use the client does not change:
-
-```ts file=app.ts
-import prisma from './client'
-
-async function main() {
-    const allUsers = await prisma.user.findMany();
-}
-
-main();
-```
+   ```
+   Error in connector: Error querying the database: db error: FATAL: sorry, too many clients already
+       at PrismaClientFetcher.request
+   ```

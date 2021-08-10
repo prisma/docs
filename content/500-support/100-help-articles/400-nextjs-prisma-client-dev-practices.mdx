@@ -20,27 +20,14 @@ In development, the command `next dev` clears Node.js cache on run. This in turn
 
 The solution in this case is to instantiate a single instance `PrismaClient` and save it on the [`global`](https://nodejs.org/api/globals.html#globals_global) object. Then we keep a check to only instantiate `PrismaClient` if it's not on the `global` object otherwise use the same instance again if already present to prevent instantiating extra `PrismaClient` instances.
 
-```ts
-// db.ts
-
+```ts file=./db
 import { PrismaClient } from '@prisma/client'
 
-declare global {
-  var prisma: PrismaClient
-}
+// Prevent multiple instances of Prisma Client in development
+declare const global: NodeJS.Global & { prisma?: PrismaClient }
 
-let prisma: PrismaClient
-
-// check to use this workaround only in development and not in production
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient()
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient()
-  }
-
-  prisma = global.prisma
-}
+const prisma = global.prisma || new PrismaClient()
+if (process.env.NODE_ENV === 'development') global.prisma = prisma
 
 export default prisma
 ```

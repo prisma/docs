@@ -1,0 +1,762 @@
+---
+title: 'Cascading deletes (PostgreSQL)'
+metaTitle: 'Configure cascading deletes with Prisma and PostgreSQL'
+metaDescription: 'Learn how to configure cascading deletes with Prisma and PostgreSQL by following the step-by-step instructions in this practical guide.'
+---
+
+<TopBlock>
+
+<Admonition type="warning">
+
+In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using the **preview feature** [referential actions](../../../../concepts/components/prisma-schema/relations/referential-actions).
+
+</Admonition>
+
+This page explains how to configure cascading deletes on [foreign key constraints](https://www.postgresql.org/docs/8.2/ddl-constraints.html#DDL-CONSTRAINTS-FK) (relations) in your PostgreSQL database.
+
+Cascading deletes allow you to configure deletion behavior on relations (e.g. specify a rule like "when a user is deleted, all their posts should be automatically deleted too"). The database will then enforce this behavior when records are deleted.
+
+There generally are five options for configuring deletion behavior in PostgreSQL (quoting from the [PostgreSQL docs](https://www.postgresql.org/docs/8.2/ddl-constraints.html#DDL-CONSTRAINTS-FK)):
+
+- `NO ACTION` (default): If any referencing rows still exist when the constraint is checked, an error is raised
+- `RESTRICT`: Prevents deletion of a referenced row. The essential difference between these two choices is that `NO ACTION` allows the check to be deferred until later in the transaction, whereas `RESTRICT` does not.
+- `CASCADE`: When a referenced row is deleted, row(s) referencing it should be automatically deleted as well.
+- `SET NULL`: Causes the referencing columns to be set to `NULL` when the referenced row is deleted.
+- `SET DEFAULT`: Causes the referencing columns to be set to their default values when the referenced row is deleted. Note that these do not excuse you from observing any constraints. For example, if an action specifies `SET DEFAULT` but the default value would not satisfy the foreign key, the operation will fail.
+
+In this guide, you'll create two tables where one references the other via a foreign key and explore the different options for cascading deletes.
+
+At the end of the guide, you'll introspect your database to reflect the foreign key in the Prisma schema, then you'll generate Prisma Client and write a simple Node.js script to test the deletion behaviors.
+
+</TopBlock>
+
+## Prerequisites
+
+In order to follow this guide, you need:
+
+- a [PostgreSQL](https://www.postgresql.org/) database server running
+- the [`createdb`](https://www.postgresql.org/docs/9.1/app-createdb.html) command line utility
+- the [`psql`](https://www.postgresql.org/docs/10/app-psql.html) command line client for PostgreSQL
+- the [Node.js](https://nodejs.org/) runtime for JavaScript installed on your machine
+
+## 1. Create a new database and project directory
+
+Start by creating a project directory where you can put the files you'll create throughout this guide:
+
+```
+mkdir cascading-deletes-demo
+cd cascading-deletes-demo
+```
+
+Next, make sure that your PostgreSQL database server is running. Then execute the following command in your terminal to create a new database called `CascadingDeletesDemo`:
+
+```
+createdb CascadingDeletesDemo
+```
+
+You can validate that the database was created by running the `\dt` command which lists all tables (_relations_) in your database (right now there are none):
+
+```
+psql -d CascadingDeletesDemo -c "\dt"
+```
+
+## 2. Create two tables with a foreign key and `RESTRICT` deletion behavior
+
+In this section, you'll **create two tables where one references the other via a foreign key and uses `RESTRICT`** in the `CascadingDeletesDemo` database.
+
+Create a new file named `cascading-deletes-restrict.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "public"."User" (
+  id SERIAL PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE "public"."Post" (
+  id SERIAL PRIMARY KEY,
+  title TEXT,
+  "authorId" INTEGER,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."User" (id) ON DELETE RESTRICT
+);
+```
+
+Now run the SQL statement against your database to create the two tables:
+
+```
+psql CascadingDeletesDemo < cascading-deletes-restrict.sql
+```
+
+Congratulations, you just created two tables called `User` and `Post` in the database. The `Post` table references the `User` table via the foreign key defined on the `authorId` column.
+
+The deletion behavior `RESTRICT` in this case means that it is not possible to delete a `User` record that is referenced `User` record. If you try doing that, the database will throw an error similar to this:
+
+```
+update or delete on table "User" violates foreign key constraint "Post_author_fkey" on table "Post"
+Detail: Key (id)=(1) is still referenced from table "Post".
+```
+
+<details><summary>Alternative: Define the constraint as a <strong>table constraint</strong></summary>
+<br />
+
+In the code above, you created the unique constraint as a **table constraint**. Alternatively, you can define it as a **column constraint**. There's no practical difference between the two, the alternative is just added for completeness.
+
+To add the foreign key constraint as a column constraint, you need to adjust your SQL statement for creating the `Post` table to look as follows:
+
+```sql
+CREATE TABLE "public"."Post" (
+  id SERIAL,
+  title TEXT,
+  author INTEGER REFERENCES "public"."User" (id) ON DELETE RESTRICT
+);
+```
+
+</details>
+
+## 3. Create two tables with a foreign key and `CASCADE` deletion behavior
+
+In this section, you'll **create two tables where one references the other via a foreign key and uses `CASCADE`** in the `CascadingDeletesDemo` database.
+
+Create a new file named `cascading-deletes-cascade.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "public"."AnotherUser" (
+  id SERIAL PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE "public"."AnotherPost" (
+  id SERIAL PRIMARY KEY,
+  title TEXT,
+  "authorId" INTEGER,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."AnotherUser" (id) ON DELETE CASCADE
+);
+```
+
+Now run the SQL statement against your database to create the two tables:
+
+```
+psql CascadingDeletesDemo < cascading-deletes-cascade.sql
+```
+
+Congratulations, you just created two tables called `AnotherUser` and `AnotherPost` in the database. The `AnotherPost` table references the `AnotherUser` table via the foreign key defined on the `authorId` column.
+
+The deletion behavior `CASCADE` in this case means that when you delete a `AnotherUser` record that's referenced by one or more `AnotherPost` records, these `AnotherPost` records will be deleted as well.
+
+## 4. Create two tables with a foreign key and `NO ACTION` deletion behavior
+
+In this section, you'll **create two tables where one references the other via a foreign key and uses `NO ACTION`** in the `CascadingDeletesDemo` database.
+
+Create a new file named `cascading-deletes-no-action.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "public"."OneMoreUser" (
+  id SERIAL PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE "public"."OneMorePost" (
+  id SERIAL PRIMARY KEY,
+  title TEXT,
+  "authorId" INTEGER,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."OneMoreUser" (id) ON DELETE NO ACTION
+);
+```
+
+Note that because `NO ACTION` is the default, you could also omit it:
+
+```sql
+CREATE TABLE "public"."OneMorePost" (
+  id SERIAL PRIMARY KEY,
+  title TEXT,
+  "authorId" INTEGER,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."OneMoreUser" (id)
+);
+```
+
+Now run the SQL statement against your database to create the two tables:
+
+```
+psql CascadingDeletesDemo < cascading-deletes-no-action.sql
+```
+
+Congratulations, you just created two tables called `OneMoreUser` and `OneMorePost` in the database. The `OneMorePost` table references the `OneMoreUser` table via the foreign key defined on the `authorId` column.
+
+The deletion behavior `NO ACTION` in this case means that it is not possible to delete a `OneMoreUser` record that is referenced `OneMoreUser` record. If you try doing that, the database will throw an error similar to this:
+
+```
+update or delete on table "User" violates foreign key constraint "Post_author_fkey" on table "Post"
+Detail: Key (id)=(1) is still referenced from table "Post".
+```
+
+## 5. Create two tables with a foreign key and `SET NULL` deletion behavior
+
+In this section, you'll **create two tables where one references the other via a foreign key and uses `SET NULL`** in the `CascadingDeletesDemo` database.
+
+Create a new file named `cascading-deletes-set-null.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "public"."AlmostTheLastUser" (
+  id SERIAL PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE "public"."AlmostTheLastPost" (
+  id SERIAL PRIMARY KEY,
+  title TEXT,
+  "authorId" INTEGER,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."AlmostTheLastUser" (id) ON DELETE SET NULL
+);
+```
+
+Now run the SQL statement against your database to create the two tables:
+
+```
+psql CascadingDeletesDemo < cascading-deletes-set-null.sql
+```
+
+Congratulations, you just created two tables called `AlmostTheLastUser` and `AlmostTheLastPost` in the database. The `AlmostTheLastPost` table references the `AlmostTheLastUser` table via the foreign key defined on the `authorId` column.
+
+The deletion behavior `SET NULL` in this case means that when you delete a `AlmostTheLastUser` record that's referenced by one or more `AlmostTheLastPost` records, the `authorId` column on these `AlmostTheLastPost` records will be set to `NULL` (therefore maintaining the integrity of the data and ensuring that no `AlmostTheLastPost` records point to non-existing `AlmostTheLastUser` records).
+
+## 6. Create two tables with a foreign key and `SET DEFAULT` deletion behavior
+
+In this section, you'll **create two tables where one references the other via a foreign key and uses `SET DEFAULT`** in the `CascadingDeletesDemo` database.
+
+Create a new file named `cascading-deletes-set-default.sql` and add the following code to it:
+
+```sql
+CREATE TABLE "public"."TheLastUser" (
+  id SERIAL PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE "public"."TheLastPost" (
+  id SERIAL PRIMARY KEY,
+  title TEXT,
+  "authorId" INTEGER DEFAULT 42,
+  CONSTRAINT author FOREIGN KEY ("authorId") REFERENCES "public"."TheLastUser" (id) ON DELETE SET DEFAULT
+);
+```
+
+Now run the SQL statement against your database to create the two tables:
+
+```
+psql CascadingDeletesDemo < cascading-deletes-set-default.sql
+```
+
+Congratulations, you just created two tables called `TheLastUser` and `TheLastPost` in the database. The `TheLastPost` table references the `TheLastUser` table via the foreign key defined on the `authorId` column.
+
+The deletion behavior `SET NULL` in this case means that when you delete a `TheLastUser` record that's referenced by one or more `TheLastPost` records, the `authorId` column on these `TheLastPost` records will be set to the _default_ value of the column. If no default exists, it will be set to `NULL` (in that case, the behavior would be identical to `SET NULL`). In the above table, a contrived example with a default value of `42` is used. If no `TheLastUser` record with an `id` value of `42` exists though, the operation will fail with a message similar to this:
+
+```
+insert or update on table "TheLastPost" violates foreign key constraint "TheLastPost_author_fkey"
+Detail: Key (authorId)=(42) is not present in table "TheLastUser".
+```
+
+Since `TheLastPost` records can only ever reference existing `TheLastUser` records, `SET NULL` also maintains the integrity of the data and ensures that no `TheLastPost` records can point to non-existing `TheLastUser` records.
+
+## 7. Introspect your database with Prisma
+
+In the previous sections, you created five times two tables with foreign key constraints:
+
+- The table `Post` uses `RESTRICT` behavior on the foreign key column `authorId` which points to the `User` table
+- The table `AnotherPost` uses `CASCADE` behavior on the foreign key column `authorId` which points to the `AnotherUser` table
+- The table `OneMorePost` uses `NO ACTION` behavior on the foreign key column `authorId` which points to the `OneMoreUser` table
+- The table `AlmostTheLastPost` uses `SET NULL` behavior on the foreign key column `authorId` which points to the `AlmostTheLastUser` table
+- The table `TheLastPost` uses `SET DEFAULT` behavior on the foreign key column `authorId` which points to the `TheLastUser` table
+
+In this section you'll introspect your database to generate the Prisma models for these tables.
+
+To start, set up a new Node.js project and add the `prisma` CLI as a development dependency:
+
+```
+npm init -y
+npm install prisma --save-dev
+```
+
+In order to introspect your database, you need to tell Prisma how to connect to it. You do so by configuring a `datasource` in your Prisma schema.
+
+Create a new file named `schema.prisma` and add the following code to it:
+
+```prisma file=schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+The database connection URL is set via an environment variable. The Prisma CLI automatically supports the [`dotenv`](https://github.com/motdotla/dotenv) format which automatically picks up environment variables defined in a file named `.env`.
+
+Create a new file named `.env` and set your database connection URL as the `DATABASE_URL` environment variable:
+
+```
+DATABASE_URL=postgresql://__USER__:__PASSWORD__@__HOST__:__PORT__/CascadingDeletesDemo
+```
+
+In the above code snippet, you need to replace the uppercase placeholders with your own connection details. For example, if your database is running locally it could look like this:
+
+```
+DATABASE_URL=postgresql://janedoe:mypassword@localhost:5432/CascadingDeletesDemo
+```
+
+With both the `schema.prisma` and `.env` files in place, you can run Prisma's introspection with the following command:
+
+```
+npx prisma introspect
+```
+
+This command introspects your database and for each table adds a Prisma model to the Prisma schema:
+
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AlmostTheLastPost {
+  authorId          Int?
+  id                Int                @default(autoincrement()) @id
+  title             String?
+  AlmostTheLastUser AlmostTheLastUser? @relation(fields: [authorId], references: [id])
+}
+
+model AlmostTheLastUser {
+  id                Int                 @default(autoincrement()) @id
+  name              String?
+  AlmostTheLastPost AlmostTheLastPost[]
+}
+
+model AnotherPost {
+  authorId    Int?
+  id          Int          @default(autoincrement()) @id
+  title       String?
+  AnotherUser AnotherUser? @relation(fields: [authorId], references: [id])
+}
+
+model AnotherUser {
+  id          Int           @default(autoincrement()) @id
+  name        String?
+  AnotherPost AnotherPost[]
+}
+
+model OneMorePost {
+  authorId    Int?
+  id          Int          @default(autoincrement()) @id
+  title       String?
+  OneMoreUser OneMoreUser? @relation(fields: [authorId], references: [id])
+}
+
+model OneMoreUser {
+  id          Int           @default(autoincrement()) @id
+  name        String?
+  OneMorePost OneMorePost[]
+}
+
+model Post {
+  authorId Int?
+  id       Int     @default(autoincrement()) @id
+  title    String?
+  User     User?   @relation(fields: [authorId], references: [id])
+}
+
+model TheLastPost {
+  authorId    Int?         @default(42)
+  id          Int          @default(autoincrement()) @id
+  title       String?
+  TheLastUser TheLastUser? @relation(fields: [authorId], references: [id])
+}
+
+model TheLastUser {
+  id          Int           @default(autoincrement()) @id
+  name        String?
+  TheLastPost TheLastPost[]
+}
+
+model User {
+  id   Int     @default(autoincrement()) @id
+  name String?
+  Post Post[]
+}
+```
+
+> **Note**: Deletion behaviors for relations are not yet supported in the Prisma schema so you don't see them anywhere. The behavior will still be enforced by the database though since that's where you configured it.
+
+## 8. Generate Prisma Client
+
+To validate whether the foreign key constraints work, you'll now generate Prisma Client and send a few sample queries to the database to test the relations.
+
+First, add a `generator` block to your Prisma schema (typically added right below the `datasource` block):
+
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+Run the following command to install and generate Prisma Client in your project:
+
+```
+npx prisma generate
+```
+
+Now you can use Prisma Client to send database queries in Node.js.
+
+## 9. Validate the deletion behavior in a Node.js script
+
+### 9.1. Validating `RESTRICT`
+
+The `RESTRICT` keyword prevents deletion of a referenced row. So, when trying to delete a `User` record that is reference by a `Post` record, the query will fail.
+
+To test the `RESTRICT` behavior, you need to access the `User` and `Post` tables.
+
+Create a new file named `index.js` and add the following code to it:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const userWithPost = await prisma.user.create({
+    data: {
+      name: 'Alice',
+      Post: {
+        create: { title: 'Hello World' },
+      },
+    },
+  })
+
+  try {
+    const deletedUser = await prisma.user.delete({
+      where: { id: userWithPost.id },
+    })
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+main()
+```
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+The script will throw an exception when invoking `prisma.user.delete(...)`. The error will look similar to this:
+
+```
+PrismaClientUnknownRequestError:
+Invalid `prisma.user.delete()` invocation in
+/Users/janedoe/cascading-deletes-demo/index.js:16:49
+
+PANIC: column on null constraint violation error
+    at PrismaClientFetcher.request (/Users/janedoe/cascading-deletes-demo/node_modules/@prisma/client/runtime/index.js:1:51487)
+    at processTicksAndRejections (internal/process/task_queues.js:85:5)
+Error in Prisma Client:
+PANIC: column on null constraint violation error in
+/root/.cargo/git/checkouts/quaint-9f01e008b9a89c14/a1decce/src/connector/postgres/error.rs:67:35
+
+This is a non-recoverable error which probably happens when the Prisma Query Engine has a panic.
+Please create an issue in https://github.com/prisma/prisma-client-js describing the last Prisma Client query you called.
+```
+
+TODO: Replace when https://github.com/prisma/prisma-client-js/issues/609 was closed.
+
+### 9.2. Validating `CASCADE`
+
+The `CASCADE` keyword ensures that when a referenced row is deleted, all the rows that are referencing it get deleted as well. So, when trying to delete an `AnotherUser` record that is referenced by one or more `AnotherPost` records, these `AnotherPost` records will be deleted too.
+
+To test the `CASCADE` behavior, you need to access the `AnotherUser` and `AnotherPost` tables.
+
+Open the `index.js` file and replace its contents with the following code:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const userWithPost = await prisma.anotherUser.create({
+    data: {
+      name: 'Alice',
+      anotherPost: {
+        create: { title: 'Hello World' },
+      },
+    },
+  })
+
+  const allUsers1 = await prisma.anotherUser.findMany()
+  const allPosts1 = await prisma.anotherPost.findMany()
+
+  console.log(
+    `Before deleting the \`AnotherUser\` record there are ${allUsers1.length} users and ${allPosts1.length} posts.`
+  )
+
+  const deletedUser = await prisma.anotherUser.delete({
+    where: { id: userWithPost.id },
+  })
+
+  const allUsers2 = await prisma.anotherUser.findMany()
+  const allPosts2 = await prisma.anotherPost.findMany()
+
+  console.log(
+    `After deleting the \`AnotherUser\` record there are ${allUsers2.length} users and ${allPosts2.length} posts.`
+  )
+}
+
+main()
+```
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+The console output will look similar to this:
+
+```
+Before deleting the `AnotherUser` record there are 1 users and 1 posts.
+After deleting the `AnotherUser` record there are 0 users and 0 posts.
+```
+
+### 9.3. Validating `NO ACTION`
+
+The `NO ACTION` keyword prevents deletion of a referenced row. So, when trying to delete a `OneMoreUser` record that is reference by a `OneMorePost` record, the query will fail.
+
+To test the `NO ACTION` behavior, you need to access the `OneMoreUser` and `OneMorePost` tables.
+
+Open the `index.js` file and replace its contents with the following code:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const userWithPost = await prisma.oneMoreUser.create({
+    data: {
+      name: 'Alice',
+      OneMorePost: {
+        create: { title: 'Hello World' },
+      },
+    },
+  })
+
+  try {
+    const deletedUser = await prisma.$oneMoreUser.delete({
+      where: { id: userWithPost.id },
+    })
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+main()
+```
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+The script will throw an exception when invoking `prisma.user.delete(...)`. The error will look similar to this:
+
+```
+PrismaClientUnknownRequestError:
+Invalid `const deletedUser = await prisma.$oneMoreUser.delete()` invocation in
+/Users/janedoe/cascading-deletes-demo/index.js:16:56
+
+  12   },
+  13 });
+  14
+  15 try {
+→ 16   const deletedUser = await prisma.$oneMoreUser.delete(
+
+PANIC: column on null constraint violation error
+    at PrismaClientFetcher.request (/Users/janedoe/cascading-deletes-demo/node_modules/@prisma/client/runtime/index.js:1:51487)
+    at processTicksAndRejections (internal/process/task_queues.js:85:5)
+Error in Prisma Client:
+PANIC: column on null constraint violation error in
+/root/.cargo/git/checkouts/quaint-9f01e008b9a89c14/a1decce/src/connector/postgres/error.rs:67:35
+
+This is a non-recoverable error which probably happens when the Prisma Query Engine has a panic.
+Please create an issue in https://github.com/prisma/prisma-client-js describing the last Prisma Client query you called.
+```
+
+TODO: Replace when https://github.com/prisma/prisma-client-js/issues/609 was closed.
+
+### 9.4. Validating `SET NULL`
+
+The `SET NULL` keyword ensures that when a referenced row is deleted, all the rows that are referencing it reset their foreign key to `NULL`. So, when deleting an `AlmostTheLastUser` record that is referenced by one or more `AlmostTheLastPost` records, these `AlmostTheLastPost` records will reset their `authorId` fields to `NULL`.
+
+To test the `SET NULL` behavior, you need to access the `AlmostTheLastUser` and `AlmostTheLastPost` tables.
+
+Open the `index.js` file and replace its contents with the following code:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const userWithPost = await prisma.almostTheLastUser.create({
+    data: {
+      name: 'Alice',
+      AlmostTheLastPost: {
+        create: { title: 'Hello World' },
+      },
+    },
+    include: {
+      AlmostTheLastPost: true,
+    },
+  })
+
+  const postBefore = await prisma.almostTheLastPost.findUnique({
+    where: { id: userWithPost.AlmostTheLastPost[0].id },
+    include: { AlmostTheLastUser: true },
+  })
+
+  console.log(
+    `Before deleting the \`AlmostTheLastUser\` record, the \`AlmostTheLastPost\` record looks as follows:\n${JSON.stringify(
+      postBefore
+    )}`
+  )
+
+  const deletedUser = await prisma.almostTheLastUser.delete({
+    where: { id: userWithPost.id },
+  })
+
+  const postAfter = await prisma.almostTheLastPost.findUnique({
+    where: { id: postBefore.id },
+    include: { AlmostTheLastUser: true },
+  })
+
+  console.log(
+    `After deleting the \`AlmostTheLastUser\` record, the \`AlmostTheLastPost\` record looks as follows:\n${JSON.stringify(
+      postAfter
+    )}`
+  )
+}
+
+main()
+```
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+The console output will look similar to this:
+
+```
+$ node index.js
+Before deleting the `AlmostTheLastUser` record, the `AlmostTheLastPost` record looks as follows:
+{"authorId":1,"id":1,"title":"Hello World","AlmostTheLastUser":{"id":1,"name":"Alice"}}
+After deleting the `AlmostTheLastUser` record, the `AlmostTheLastPost` record looks as follows:
+{"authorId":null,"id":1,"title":"Hello World","AlmostTheLastUser":null}
+```
+
+### 9.5. Validating `SET DEFAULT`
+
+The `SET DEFAULT` keyword ensures that when a referenced row is deleted, all the rows that are referencing it set their foreign key to their default value (if there's no default value defined, it resets the foreign key to `NULL`). So, when deleting an `TheLastUser` record that is referenced by one or more `TheLastPost` records, these `TheLastPost` records will reset their `authorId` fields to `NULL`.
+
+To test the `SET DEFAULT` behavior, you need to access the `TheLastUser` and `TheLastPost` tables.
+
+Open the `index.js` file and replace its contents with the following code:
+
+```js
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  const userWithPost = await prisma.theLastUser.create({
+    data: {
+      name: 'Alice',
+      TheLastPost: {
+        create: { title: 'Hello World' },
+      },
+    },
+    include: {
+      TheLastPost: true,
+    },
+  })
+
+  const postBefore = await prisma.theLastPost.findUnique({
+    where: { id: userWithPost.TheLastPost[0].id },
+    include: { TheLastUser: true },
+  })
+
+  console.log(
+    `Before deleting the \`TheLastUser\` record, the \`TheLastPost\` record looks as follows:\n${JSON.stringify(
+      postBefore
+    )}`
+  )
+
+  const deletedUser = await prisma.theLastUser.delete({
+    where: { id: userWithPost.id },
+  })
+
+  const postAfter = await prisma.theLastPost.findUnique({
+    where: { id: postBefore.id },
+    include: { TheLastUser: true },
+  })
+
+  console.log(
+    `After deleting the \`TheLastUser\` record, the \`TheLastPost\` record looks as follows:\n${JSON.stringify(
+      postAfter
+    )}`
+  )
+}
+
+main()
+```
+
+Run the code with this command:
+
+```
+node index.js
+```
+
+If you run this command and there's no `User` record in the database with an `id` of `42`, the script is going to fail with the following error:
+
+```
+Before deleting the `TheLastUser` record, the `TheLastPost` record looks as follows:
+{"authorId":7,"id":7,"title":"Hello World","TheLastUser":{"id":7,"name":"Alice"}}
+(node:1348) UnhandledPromiseRejectionWarning: Error:
+Invalid `deletedUser = await prisma.theLastUser.delete()` invocation in
+/Users/janedoe/cascading-deletes-demo/index.js:25:54
+
+  25     postBefore
+  26   )}`
+  27 );
+  28
+→ 29 const deletedUser = await prisma.theLastUser.delete(
+
+PANIC: column on null constraint violation error
+    at PrismaClientFetcher.request (/Users/janedoe/cascading-deletes-demo/node_modules/@prisma/client/runtime/index.js:1:51487)
+    at processTicksAndRejections (internal/process/task_queues.js:85:5)
+(node:1348) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). (rejection id: 1)
+(node:1348) [DEP0018] DeprecationWarning: Unhandled promise rejections are deprecated. In the future, promise rejections that are not handled will terminate the Node.js process with a non-zero exit code.
+```
+
+TODO: Replace when https://github.com/prisma/prisma-client-js/issues/609 was closed.
+
+If there is a `User` record with an `id` of `42`, the output will look similar to this:
+
+```
+$ node index.js
+Before deleting the `TheLastUser` record, the `TheLastPost` record looks as follows:
+{"authorId":9,"id":9,"title":"Hello World","TheLastUser":{"id":9,"name":"Alice"}}
+After deleting the `TheLastUser` record, the `TheLastPost` record looks as follows:
+{"authorId":42,"id":9,"title":"Hello World","TheLastUser":{"id":42,"name":"Bob"}}
+```

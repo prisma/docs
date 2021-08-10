@@ -1,23 +1,28 @@
 ---
-title: 'Connection management'
-metaTitle: 'Connection management (Reference)'
+title: 'Connecting and disconnecting'
+metaTitle: 'Connecting and disconnecting (Concepts)'
 metaDescription: 'This page explains how database connections are handled with Prisma Client and how to manually connect and disconnect your database.'
+tocDepth: 2
 ---
 
 <TopBlock>
 
-Prisma Client connects and disconnects from your data sources using the following two methods:
+`PrismaClient` connects and disconnects from your data source using the following two methods:
 
 - [`$connect()`](../../../../reference/api-reference/prisma-client-reference#connect-1) <span class="api"></span>
 - [`$disconnect()`](../../../../reference/api-reference/prisma-client-reference#disconnect-1) <span class="api"></span>
 
-In most cases, you do not need to explicitly call either of these methods.
+In most cases, you **do not need to explicitly call these methods**. `PrismaClient` automatically connects when you run your first query, creates a [connection pool](connection-pool), and disconnects when the Node.js process ends.
+
+See the [connection management guide](../../../../guides/performance-and-optimization/connection-management) <span class="guide"></span> for information about managing connections for different deployment paradigms (long-running processes and serverless functions).
 
 </TopBlock>
 
-## Calling `$connect()` explicitly
+## <inlinecode>$connect()</inlinecode>
 
-It is not necessary to call `prisma.$connect()` thanks to the _lazy connect_ behavior: The `PrismaClient` instance connects lazily when the first request is made to the API (`$connect()` is called for you under the hood).
+It is not necessary to call [`$connect()`](../../../../reference/api-reference/prisma-client-reference#connect-1) <span class="api"></span> thanks to the _lazy connect_ behavior: The `PrismaClient` instance connects lazily when the first request is made to the API (`$connect()` is called for you under the hood).
+
+### Calling <inlinecode>$connect()</inlinecode> explicitly
 
 If you need the first request to respond instantly and cannot wait for a lazy connection to be established, you can explicitly call `prisma.$connect()` to establish a connection to the data source:
 
@@ -28,17 +33,22 @@ const prisma = new PrismaClient()
 await prisma.$connect()
 ```
 
-## Calling `$disconnect()` explicitly
+## <inlinecode>$disconnect()</inlinecode>
 
-When Prisma Client disconnects, it:
+When you call [`$disconnect()`](../../../../reference/api-reference/prisma-client-reference#disconnect-1) <span class="api"></span>, Prisma Client:
 
 1. Runs the [`beforeExit` hook](#exit-hooks)
-2. Ends child processes
-3. Ends the Node.js process _if there are no other active listeners_ (for example, `SIGINT`)
+2. Ends the Query Engine child process and closes all connections
 
 In a long-running application such as a GraphQL API, which constantly serves requests, it does not make sense to `$disconnect()` after each request - it takes time to establish a connection, and doing so as part of each request will slow down your application.
 
-> **Tip**: To avoid too _many_ connections, we recommend that you [use a single instance of `PrismaClient` across your application](instantiate-prisma-client).
+<Tip>
+
+To avoid too _many_ connections in a long-running application, we recommend that you [use a single instance of `PrismaClient` across your application](instantiate-prisma-client).
+
+</Tip>
+
+### Calling <inlinecode>$disconnect()</inlinecode> explicitly
 
 One scenario where you should call `$disconnect()` explicitly is where a script:
 
@@ -48,21 +58,20 @@ One scenario where you should call `$disconnect()` explicitly is where a script:
 The following script creates a new instance of `PrismaClient`, performs a task, and then disconnects - which closes the connection pool:
 
 ```ts highlight=19;normal
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
-const emailService = new EmailService();
+const emailService = new EmailService()
 
 async function main() {
+  const allUsers = await prisma.user.findMany()
+  const emails = allUsers.map((x) => x.email)
 
-    const allUsers = await prisma.user.findMany();
-    const emails = allUsers.map(x => x.email)
-
-    await emailService.send(emails, "Hello!");
+  await emailService.send(emails, 'Hello!')
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     throw e
   })
   .finally(async () => {
@@ -70,26 +79,7 @@ main()
   })
 ```
 
-If the above script runs multiple times in the context of a long-running application _without_ calling `$disconnect()`, [a new connection pool is created with each new instance]() of `PrismaClient`.
-
-## Connection management in serverless environments
-
-In serverless environments, such as AWS Lambda, there are nuances that make it sensible to reuse database connections and _not_ call `$disconnect()`. Refer to the [deployment docs](../../../../guides/deployment/deployment) for more examples.
-
-## Connection pool
-
-When the first connection to the database is opened (either by explicitly calling `$connect()` or running the first query) the query engine first creates a connection pool to store and manage these connections. 
-
-The default number of connections is calculated according to this formula: `num_physical_cpus * 2 + 1` where `num_physical_cpus` represents the number of physical CPUs on your machine. If your machine has four physical CPUs, your connection pool will contain nine connections (`4 * 2 + 1 = 9`).
-
-You can also specify the amount of connections as the`connection_limit` parameter on your database connection URL. For example, with the following `datasource` configuration in your [Prisma schema](../../prisma-schema) the connection pool will have exactly five connections:
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5"
-}
-```
+If the above script runs multiple times in the context of a long-running application _without_ calling `$disconnect()`, a new connection pool is created with each new instance of `PrismaClient`.
 
 ## Exit hooks
 

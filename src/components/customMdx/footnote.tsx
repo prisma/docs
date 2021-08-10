@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import styled from 'styled-components'
 
 type FootNoteProps = React.ReactNode
@@ -10,7 +10,7 @@ const FootNote = ({ children, ...props }: FootNoteProps) => {
 export default FootNote
 
 const FootNoteWrapper = styled.div`
-  p {
+  * {
     font-size: 0.9em;
     font-style: italic;
   }

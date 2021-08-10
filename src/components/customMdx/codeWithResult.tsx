@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import styled from 'styled-components'
 
 interface ExpandedProps {
@@ -15,9 +15,9 @@ type CodeWithResultProps = React.ReactNode & ExpandedProps & ShowHideProps
 const CodeWithResult = ({ children, expanded, showText, hideText }: CodeWithResultProps) => {
   const [showResult, setShowResult] = React.useState(expanded)
   const cmd =
-    children && children.filter((child: any) => child.props && child.props.mdxType === 'Cmd')
+    children && children.filter((child: any) => child.props && child.props.mdxType === 'cmd')
   const result =
-    children && children.filter((child: any) => child.props && child.props.mdxType === 'CmdResult')
+    children && children.filter((child: any) => child.props && child.props.mdxType === 'cmdResult')
 
   const toggleResult = () => setShowResult(!showResult)
   const toggleShowText = showText ? showText : 'Show CLI results'
@@ -44,6 +44,14 @@ const Wrapper = styled.div`
     border-radius: 8px 8px 0px 0px;
   }
 
+  code {
+    padding-bottom: 1em;
+  }
+
+  .codeWrapperDiv {
+    margin-top: 0;
+  }
+
   .result {
     background-color: var(--main-font-color) !important;
     color: var(--code-inline-bgd-color) !important;
@@ -59,7 +67,7 @@ const Wrapper = styled.div`
       }
 
       .token.punctuation {
-        color: ${p => p.theme.colors.gray500} !important;
+        color: ${(p) => p.theme.colors.gray500} !important;
       }
 
       border-radius: 0px 0px 8px 8px;

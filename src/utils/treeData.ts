@@ -9,7 +9,14 @@ interface TreeNode {
 }
 
 const getCollpaseState = (part: string, location: any) => {
-  return !(location && location.pathname.includes(urlGenerator(part)))
+  const mainpath = location.pathname.replace(/^\/|\/$/g, '').split('/')
+  const subpath = urlGenerator(part)
+    .replace(/^\/|\/$/g, '')
+    .split('/')
+
+  const state = subpath.every((val) => mainpath.includes(val))
+
+  return !state
 }
 
 // TODO::Simplify the function
@@ -27,6 +34,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             duration,
             experimental,
             preview,
+            earlyaccess,
             dbSwitcher,
             langSwitcher,
             hidePage,
@@ -55,6 +63,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             topLevel,
             experimental,
             preview,
+            earlyaccess,
             staticLink,
           }
           prevItems.push(tmp)
@@ -68,14 +77,16 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.duration = duration
           tmp.experimental = experimental
           tmp.preview = preview
+          tmp.earlyaccess = earlyaccess
           tmp.topLevel = topLevel
           tmp.hidePage = hidePage
           tmp.codeStyle = codeStyle
           tmp.parentLabel = parts[parts.length - 3]
-        }
-        if (defaultCollapsed && location) {
-          defaultCollapsed[part.toLowerCase()] =
-            tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
+          tmp.parents = parts.filter((part) => part !== 'index')
+          if (defaultCollapsed && location) {
+            defaultCollapsed[part.toLowerCase()] =
+              tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
+          }
         }
 
         prevItems = tmp.items
@@ -95,10 +106,12 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           duration,
           experimental,
           preview,
+          earlyaccess,
           topLevel,
           hidePage,
           codeStyle,
           parentLabel: parts[parts.length - 3],
+          parents: parts.filter((part) => part !== 'index'),
         })
       }
 

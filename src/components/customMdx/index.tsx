@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import SwitchTech from './switchTech'
 import CodeBlock from './codeBlock'
 import TabbedContent from './tabbedContent'
@@ -12,6 +12,10 @@ import FileWithIcon from './fileWithIcon'
 import Subsections from './subSections'
 import TopBlock from './topBlock'
 import FootNote from './footnote'
+import Admonition from './admonition'
+import Quiz from './quiz'
+import Tip from './tip'
+import NavigationLinksContainer from './navigationLinksContainer'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -38,10 +42,16 @@ export default {
   Subsections,
   TopBlock,
   FootNote,
+  Admonition,
   img: (props: any) => (
     <a href={props.src} target="_blank">
       <img {...props} />
     </a>
   ),
   AlgoliaTerm: () => <span style={{ display: 'none' }} />,
+  Quiz,
+  Tip: (props: any) => <Tip>{props.children}</Tip>,
+  NavigationLinksContainer: (props: any) => (
+    <NavigationLinksContainer {...props}>{props.children}</NavigationLinksContainer>
+  ),
 }
