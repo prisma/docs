@@ -16,8 +16,7 @@ const colorMap: any = {
 }
 
 const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
-  console.log({children})
-  const isMultiline: boolean = Array.isArray(children) ? true : false;
+
   return (
     <AdmonitionWrapper {...props} type={type}>
       {type === 'alert' && (
@@ -25,7 +24,7 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
           <AlertCircle color="white" />
         </span>
       )}
-      {isMultiline ? (
+      {Array.isArray(children) ? (
         <FlexContainer>
           {children.map((child: any, index: number) => (
             <ChildContainer key={index}>
