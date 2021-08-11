@@ -16,6 +16,7 @@ import Admonition from './admonition'
 import Quiz from './quiz'
 import Tip from './tip'
 import NavigationLinksContainer from './navigationLinksContainer'
+import ListItem from './listItem'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -28,6 +29,7 @@ export default {
   p: (props: any) => <p className="paragraph" {...props} />,
   ul: (props: any) => <ul className="list" {...props} />,
   ol: (props: any) => <ol className="o-list" {...props} />,
+  li: ListItem,
   CodeBlock,
   TabbedContent,
   ParallelBlocks,
