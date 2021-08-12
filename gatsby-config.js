@@ -122,10 +122,7 @@ let plugins = [
   {
     resolve: `gatsby-plugin-percy`,
     options: {
-      // example options:
-      // files: [`dir/*.html`],
-      // ignore: [`ignore/*.html`],
-      // config: `config/.percy.yaml`,
+      // see actual configuration in `percy` key in `package.json`
     },
   },
 ]
