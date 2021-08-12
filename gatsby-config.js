@@ -1,8 +1,10 @@
+const path = require('path')
 const config = require('./config')
 require('dotenv').config()
 
 const gatsbyRemarkPlugins = [
   'gatsby-remark-sectionize',
+  'gatsby-remark-normalize-paths',
   {
     resolve: `gatsby-remark-autolink-headers`,
     options: {
