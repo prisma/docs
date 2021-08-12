@@ -16,6 +16,7 @@ const colorMap: any = {
 }
 
 const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
+
   return (
     <AdmonitionWrapper {...props} type={type}>
       {type === 'alert' && (
@@ -23,12 +24,29 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
           <AlertCircle color="white" />
         </span>
       )}
-      {children}
+      {Array.isArray(children) ? (
+        <FlexContainer>
+          {children.map((child: any, index: number) => (
+            <ChildContainer key={index}>
+              {child.props.children}
+            </ChildContainer>
+          ))}
+        </FlexContainer>
+          ) : children}
     </AdmonitionWrapper>
   )
 }
 
 export default Admonition
+
+const FlexContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+`
+
+const ChildContainer = styled.div`
+  margin: 1rem 0;
+`
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`
   font-family: Inter;
