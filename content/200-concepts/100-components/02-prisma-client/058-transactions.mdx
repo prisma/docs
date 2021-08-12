@@ -87,6 +87,97 @@ Instead of immediately awaiting the result of each operation when it's performed
 >
 > Refer to the 📖 [transactions guide](../../../guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api) for more examples.
 
+### Interactive Transactions
+
+Sometimes you need more control over what queries execute within a transaction.
+
+Interactive transactions are commonly used when the result of one query depends on another query and you want to run both queries within a single transaction.
+
+To support this use case and more, you can pass an async function into [`$transaction`](../../../guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
+
+The following is an example of purchasing a movie ticket online. In this example, we really don't want to sell the same ticket twice:
+
+```tsx
+import { Ticket } from 'prisma'
+
+const userEmail = 'alice@prisma.io'
+const movieName = 'October Sky'
+
+// Start a transaction
+const ticket: Ticket = await prisma.$transaction(async (prisma) => {
+  // Find an available ticket
+  const availableTicket = await prisma.ticket.findFirst({
+    where: {
+      claimedBy: null,
+      movie: {
+        name: movieName,
+      },
+    },
+  })
+
+  // Throw an error if no tickets are available
+  if (!availableTicket) {
+    // This will rollback the transaction
+    throw new Error(`Oh no! ${movieName} is all booked.`)
+  }
+
+  // Claim the ticket, commit the transaction, and return
+  // the result
+  return prisma.ticket.update({
+    data: {
+      claimedBy: userEmail,
+    },
+    where: {
+      id: availableTicket.id,
+    },
+  })
+})
+```
+
+In the example above, both the `findFirst` and `update` queries run within a database transaction. When your application reaches the end of the function, the transaction is **committed** to the database.
+
+If your application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction.
+
+To catch the exception, you can wrap `$transaction` in a try-catch block:
+
+```js
+try {
+  await prisma.$transaction(async (prisma) => {
+    // Code running in a transaction...
+  })
+} catch (err) {
+  // Handle the rollback...
+}
+```
+
+Additionally, the transaction API supports a 2nd parameter with the following configuration options:
+
+- `maxWait`: The maximum amount of time the Prisma Client will wait to acquire a transaction from the database. The default is 2 seconds.
+- `timeout`: The maximum amount of time the interactive transaction can run before being canceled and rolled back. The default value is 5 seconds.
+
+For example:
+
+```jsx
+await prisma.$transaction(
+  async (prisma) => {
+    // Code running in a transaction...
+  },
+  {
+    maxWait: 5000, // default: 2000
+    timeout: 10000, // default: 5000
+  }
+)
+```
+
+<Admonition type="warning">
+
+**Use interactive transactions with caution**. Keeping transactions
+open for a long time hurts database performance and can even cause deadlocks.
+Try to avoid performing network requests and executing slow queries inside your
+transaction functions. We recommend you get in and out as quick as possible!
+
+</Admonition>
+
 ## Transaction isolation level
 
 Transaction isolation level is not currently configurable at a Prisma level and is not explicitly set by Prisma.
