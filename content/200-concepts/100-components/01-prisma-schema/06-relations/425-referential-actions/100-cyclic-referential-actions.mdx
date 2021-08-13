@@ -11,4 +11,101 @@ Circular references can occur between models when each model references another 
 
 With SQLServer however, if the [referential action](./) on the related field is set to something other than `NoAction`, the data model validator will throw an error.
 
+This is dependant on whether or not the scalar field is set to be optional or required. If no referential action is specified on the relation, the default values are used:
+
+| Clause     | Scalar field is optional | At least one scalar field is required |
+| :--------- | :----------------------- | :------------------------------------ |
+| `onDelete` | `SetNull`                | `NoAction`                            |
+| `onUpdate` | `Cascade`                | `Cascade`                             |
+
 </TopBlock>
+
+## Self relation
+
+The following model describes a self relation where the chicken references itself with fields that represent both the mother and father chickens.
+
+```prisma
+model Chicken {
+    id        Int      @id @default(autoincrement())
+    cock      Chicken? @relation(name: "a_self_relation")
+    hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
+    chickenId Int?
+}
+```
+
+This will result in the following error:
+
+```terminal
+Error parsing attribute "@relation": A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. Implicit default `onDelete` and `onUpdate` values: `SetNull` and `Cascade`.
+```
+
+As the error message shows, the solution is to explicitly set the `onDelete` and `onUpdate` values to `NoAction` on one of the relations. This is because the relations are optional and the default referential action values are implicitly used.
+
+```prisma highlight=3;delete|4;add
+model Chicken {
+    id        Int      @id @default(autoincrement())
+    cock      Chicken? @relation(name: "a_self_relation")
+    cock      Chicken? @relation(name: "a_self_relation", onUpdate: NoAction, onDelete: NoAction)
+    hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
+    chickenId Int?
+}
+```
+
+## Cycle relation between three tables
+
+The following models describe a cyclic relation between a chicken, an egg and a fox, where each model references the other.
+
+```prisma
+model Chicken {
+  id        Int   @id @default(autoincrement())
+  egg       Egg   @relation(fields: [eggId], references: [id])
+  eggId     Int
+  predators Fox[]
+}
+
+model Egg {
+  id         Int       @id @default(autoincrement())
+  predator   Fox       @relation(fields: [predatorId], references: [id])
+  predatorId Int
+  parents    Chicken[]
+}
+
+model Fox {
+  id        Int     @id @default(autoincrement())
+  meal      Chicken @relation(fields: [mealId], references: [id])
+  mealId    Int
+  foodStore Egg[]
+}
+```
+
+This will result in the following error:
+
+```terminal
+Error parsing attribute "@relation": Reference causes a cycle or multiple cascade paths. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Implicit default `onUpdate` value: `Cascade`.
+```
+
+As the relation fields are required, the default referential action for `onDelete` is `NoAction`, meaning the solution is to set the `onUpdate` value to `NoAction` on any one of the relations.
+
+```prisma highlight=3;delete|4;add
+model Chicken {
+  id        Int   @id @default(autoincrement())
+  egg       Egg   @relation(fields: [eggId], references: [id])
+  egg       Egg   @relation(fields: [eggId], references: [id], onUpdate: NoAction)
+  eggId     Int
+  predators Fox[]
+}
+
+model Egg {
+  id         Int       @id @default(autoincrement())
+  predator   Fox       @relation(fields: [predatorId], references: [id])
+  predatorId Int
+  parents    Chicken[]
+}
+
+model Fox {
+  id        Int     @id @default(autoincrement())
+  meal      Chicken @relation(fields: [mealId], references: [id])
+  mealId    Int
+  foodStore Egg[]
+}
+```
