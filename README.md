@@ -111,7 +111,7 @@ $ mdtool move 05-file.mdx 2
 # Result: 05-file.mdx is move to 02-file.mdx, plus previous files 02-*, 03-*, 04-* are incremented
 ```
 
-#### `mdtool swap`
+#### `mdtool remove`
 
 Shift all other items by -1 at a given index:
 
@@ -126,4 +126,4 @@ $ mdtool remove 2
 
 #### Thanks Luca
 
-![](https://imgur.com/LJ0FGHk.png)
+![](https://res.cloudinary.com/prismaio/image/upload/v1628765536/docs/LJ0FGHk_u2jjxv.png)
