@@ -229,7 +229,7 @@ const Row = styled.div`
   }
 `
 
-const LinkCard = styled.div`
+const LinkCard = styled.a`
   background: ${(p) => p.theme.colors.gray200};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
