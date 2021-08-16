@@ -9,9 +9,27 @@ tocDepth: 2
 
 Circular references can occur between models when each model references another, creating a closed loop. Most SQL databases handle these references out of the box. 
 
-With Microsoft SQL Server, however, if the [referential actions](./) on the relation field is set to something other than `NoAction`, the data model validator will throw an error.
+With Microsoft SQL Server however, if the [referential actions](./) on the relation field are set to something other than `NoAction`, the data model validator will throw an error about the cyclic relation.
 
-This is dependent on whether or not the underlying scalar fields are set to be optional or required. If no referential action is specified on the relation, the default values are used:
+Given the below model:
+
+```prisma
+model Chicken {
+  id        Int      @id @default(autoincrement())
+  cock      Chicken? @relation(name: "a_self_relation")
+  hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
+  chickenId Int?
+}
+```
+
+When a migration is run, the validator will throw the following error:
+
+```terminal
+Database error:
+Introducing FOREIGN KEY constraint 'FK__Chicken__chickenId' on table 'Chicken' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
+```
+
+Knowing which referential action to use is dependent on whether or not the underlying [scalar fields](../../data-model#scalar-fields) are set to be optional or required. If no referential action is specified on the relation, the default values are used. 
 
 | Clause     | All of the scalar fields are optional | At least one scalar field is required |
 | :--------- | :----------------------- | :------------------------------------ |
@@ -22,7 +40,7 @@ This is dependent on whether or not the underlying scalar fields are set to be o
 
 ## Self relation
 
-The following model describes a self relation where the chicken references itself with fields that represent both the mother and father chickens.
+The following model describes a self relation where the `Chicken` references itself with fields that represent the chickens parents.
 
 ```prisma
 model Chicken {
@@ -53,7 +71,7 @@ model Chicken {
 
 ## Cycle relation between three tables
 
-The following models describe a cyclic relation between a chicken, an egg and a fox, where each model references the other.
+The following models describe a cyclic relation between a `Chicken`, an `Egg` and a `Fox`, where each model references the other.
 
 ```prisma
 model Chicken {
