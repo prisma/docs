@@ -28,11 +28,12 @@ const icons = {
   postgres: <PostgreSQL />,
   sqlite: <SQLite />,
   mongodb: <MongoDB />,
+  mssql: <MongoDB />, // TODO: change to mssql icon when we get it
 }
 
 const technologyTypes = {
   languages: ['node', 'typescript'],
-  databases: ['mysql', 'postgres', 'sqlite', 'mongodb'],
+  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'mssql'],
 }
 
 export const technologyNames = {
@@ -42,6 +43,7 @@ export const technologyNames = {
   postgres: 'PostgreSQL',
   sqlite: 'SQLite',
   mongodb: 'MongoDB',
+  mssql: 'SQL Server'
 }
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
