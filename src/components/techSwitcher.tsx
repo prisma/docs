@@ -7,6 +7,7 @@ import MySQL from '../icons/technologies/MySQL'
 import SQLite from '../icons/technologies/SQLite'
 import MongoDB from '../icons/technologies/MongoDB'
 import JS from '../icons/technologies/JS'
+import MSSQL from '../icons/technologies/MSSQL'
 import { components } from 'react-select'
 import ArrowDown from '../icons/ArrowDown'
 
@@ -28,7 +29,7 @@ const icons = {
   postgres: <PostgreSQL />,
   sqlite: <SQLite />,
   mongodb: <MongoDB />,
-  mssql: <MongoDB />, // TODO: change to mssql icon when we get it
+  mssql: <MSSQL />,
 }
 
 const technologyTypes = {
