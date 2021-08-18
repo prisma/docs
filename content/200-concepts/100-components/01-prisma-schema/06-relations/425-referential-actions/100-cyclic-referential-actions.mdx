@@ -16,7 +16,7 @@ Given the SQL:
 ```sql
 CREATE TABLE [dbo].[Employee] (
   [id] INT NOT NULL IDENTITY(1,1),
-  [managerId] INT NOT NULL,
+  [managerId] INT,
   CONSTRAINT [PK__Employee__id] PRIMARY KEY ([id])
 );
 
@@ -43,16 +43,16 @@ The following model describes a self-relation where an `Employee` can have a man
 ```prisma
 model Employee {
   id         Int        @id @default(autoincrement())
-  manager    Employee   @relation(name: "management", fields: [managerId], references: [id])
+  manager    Employee?  @relation(name: "management", fields: [managerId], references: [id])
   managees   Employee[] @relation(name: "management")
-  managerId  Int
+  managerId  Int?
 }
 ```
 
 This will result in the following error:
 
 ```terminal
-Error parsing attribute "@relation": A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. Implicit default `onUpdate` value: `Cascade`.
+Error parsing attribute "@relation": A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. Implicit default `onDelete` and `onUpdate` values: `SetNull` and `Cascade`.
 ```
 
 By not defining any actions, Prisma will use the following default values depending if the underlying [scalar fields](../../data-model#scalar-fields) are set to be optional or required.
@@ -62,13 +62,13 @@ By not defining any actions, Prisma will use the following default values depend
 | `onDelete` | `SetNull`                             | `NoAction`                            |
 | `onUpdate` | `Cascade`                             | `Cascade`                             |
 
-Since the default referential action for `onUpdate` in the above relation would be `Cascade`, it creates a cycle and the solution is to explicitly set the `onUpdate` value to `NoAction`.
+Since the default referential action for `onUpdate` in the above relation would be `Cascade` and for `onDelete` would be `SetNull`, it creates a cycle and the solution is to explicitly set the `onUpdate` and `onDelete` values to `NoAction`.
 
 ```prisma highlight=3;delete|4;add
 model Employee {
   id        Int        @id @default(autoincrement())
   manager   Employee   @relation(name: "management", fields: [managerId], references: [id])
-  manager   Employee   @relation(name: "management", fields: [managerId], references: [id], onUpdate: NoAction)
+  manager   Employee   @relation(name: "management", fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   managed   Employee[] @relation(name: "management")
   managerId Int
 }
