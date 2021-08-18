@@ -107,7 +107,8 @@ const useActiveId = (idList: string[]) => {
 const TOC = ({ headings, tocDepth }: any) => {
   const idList = getIds(headings, tocDepth || 2)
   const activeId = useActiveId(idList)
-  const isItemActive = (url: string) => activeId === url && url.replace(/inlinecode/g, '').slice(1)
+  const isItemActive = (url?: string) =>
+    url ? activeId === url.replace(/inlinecode/g, '').slice(1) : false
 
   const childrenActive = (items: any) => items.some((item: any) => isItemActive(item.url))
 
