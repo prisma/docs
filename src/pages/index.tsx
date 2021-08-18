@@ -192,8 +192,10 @@ const CapTitle = styled.h4<{ withBorder?: boolean }>`
 `
 
 const GenaralLinks = styled.div`
-  background: #FFFFFF;
-  box-shadow: 0px 28px 53px rgba(0, 0, 0, 0.07), 0px 8.44118px 15.9779px rgba(0, 0, 0, 0.0393306), 0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066), 0px 1.26806px 2.40026px rgba(0, 0, 0, 0.0115598);
+  background: #ffffff;
+  box-shadow: 0px 28px 53px rgba(0, 0, 0, 0.07), 0px 8.44118px 15.9779px rgba(0, 0, 0, 0.0393306),
+    0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066),
+    0px 1.26806px 2.40026px rgba(0, 0, 0, 0.0115598);
   border-radius: 8px;
   display: flex;
   justify-content: space-around;
@@ -227,7 +229,7 @@ const Row = styled.div`
   }
 `
 
-const LinkCard = styled.div`
+const LinkCard = styled.a`
   background: ${(p) => p.theme.colors.gray200};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
@@ -250,9 +252,9 @@ const LinkCard = styled.div`
   }
 
   &:hover {
-      background: ${(p) => p.theme.colors.gray300};
-      h3 svg {
-       transform: translateX(4px);
+    background: ${(p) => p.theme.colors.gray300};
+    h3 svg {
+      transform: translateX(4px);
     }
   }
 

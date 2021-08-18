@@ -126,4 +126,4 @@ $ mdtool remove 2
 
 #### Thanks Luca
 
-![](https://imgur.com/LJ0FGHk.png)
+![](https://res.cloudinary.com/prismaio/image/upload/v1628765536/docs/LJ0FGHk_u2jjxv.png)
