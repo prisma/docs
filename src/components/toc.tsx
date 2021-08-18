@@ -105,7 +105,7 @@ const useActiveId = (idList: string[]) => {
 }
 
 const TOC = ({ headings, tocDepth }: any) => {
-  const idList = getIds(headings, tocDepth || 1)
+  const idList = getIds(headings, tocDepth || 2)
   const activeId = useActiveId(idList)
   const isItemActive = (url: string) => activeId === url.replace(/inlinecode/g, '').slice(1)
 
@@ -140,7 +140,7 @@ const TOC = ({ headings, tocDepth }: any) => {
   return navItems && navItems.length ? (
     <>
       <ChapterTitle>CONTENT</ChapterTitle>
-      {navItems(headings, tocDepth || 1, activeId)}
+      {navItems(headings, tocDepth || 2, activeId)}
     </>
   ) : null
 }
