@@ -17,6 +17,8 @@ Prisma Client exposes two methods that allow you to send raw SQL queries to your
 
 - Use `$queryRaw` to return actual records (for example, using `SELECT`)
 - Use `$executeRaw` to return a count of affected rows (for example, after an `UPDATE` or `DELETE`)
+- Use `$queryRawUnsafe` to return actual records (for example, using `SELECT`) using a raw string. **Potential SQL injection risk**
+- Use `$executeRawUnsafe` to return a count of affected rows (for example, after an `UPDATE` or `DELETE`) using a raw string. **Potential SQL injection risk**
 
 Use cases for raw SQL include:
 
@@ -125,7 +127,7 @@ The `$queryRawUnsafe` method allows you to pass a raw string (or template string
 
 <Admonition type="warning">
 
-**By using this method you open up the possibility for SQL injection attacks**.
+**By using this method you open up the possibility for SQL injection attacks**. SQL injection attacks can expose your data, be it confidential or otherwise sensitive, to being deleted, modified, or even destroyed. For more information on SQL injection attacks, see the [OWASP SQL Injection guide](https://www.owasp.org/index.php/SQL_Injection).
 
 </Admonition>
 
@@ -171,7 +173,7 @@ const result: number =
 Be aware that:
 
 - `$executeRaw` does not support multiple queries in a single string (for example, `ALTER TABLE` and `CREATE TABLE` together).
-- Prisma Client submits prepared statements, and prepared statements only allow a subset of SQL statements (`START TRANSACTION`is not permitted). For example, ["MySQL: SQL Syntax Allowed in Prepared Statements"](https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html).
+- Prisma Client submits prepared statements, and prepared statements only allow a subset of SQL statements. For example, `START TRANSACTION` is not permitted. You can learn more about [“the syntax that MySQL allows in Prepared Statements here”](https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html).
 - [`PREPARE` does not support `ALTER`](https://www.postgresql.org/docs/current/sql-prepare.html) - see [workaround](#alter-limitation-postgresql).
 
 ### Return type
@@ -190,7 +192,7 @@ The `$executeRawUnsafe` method allows you to pass a raw string (or template stri
 
 <Admonition type="warning">
 
-**By using this method you open up the possibility for SQL injection attacks**.
+**By using this method you open up the possibility for SQL injection attacks**. SQL injection attacks can expose your data, be it confidential or otherwise sensitive, to being deleted, modified, or even destroyed. For more information on SQL injection attacks, see the [OWASP SQL Injection guide](https://www.owasp.org/index.php/SQL_Injection).
 
 </Admonition>
 
@@ -271,24 +273,27 @@ As an alternative to tagged templates, `$queryRaw()` and `$executeRaw()` support
 ```ts
 const userName = 'Sarah'
 const email = 'alice@prisma.io'
-const result = await prisma.$queryRaw(
-  'SELECT * FROM User WHERE (name = ? OR email = ?)', // MySQL variables, represented by ?
+const result = await prisma.$queryRaw`
+  SELECT * FROM User WHERE (name = ? OR email = ?),
   userName,
-  email
-)
+  email`
+
 ```
+
+> **Note**: MySQL variables are represented by ?
 
 The following example uses a PostgreSQL query:
 
 ```ts
 const userName = 'Sarah'
 const email = 'alice@prisma.io'
-const result = await prisma.$queryRaw(
-  'SELECT * FROM User WHERE (name = $1 OR email = $2)', // PostgreSQL variables, represented by $1 and $2
+const result = await prisma.$queryRaw`
+  SELECT * FROM User WHERE (name = $1 OR email = $2), 
   userName,
-  email
-)
+  email`
 ```
+
+> **Note**: PostgreSQL variables are represented by $1 and $2
 
 As with tagged templates, Prisma Client escapes all variables.
 
@@ -301,12 +306,13 @@ When you use `ILIKE`, the `%` wildcard character(s) should be included in the va
 ```ts
 const userName = 'Sarah'
 const emailFragment = 'prisma.io'
-const result = await prisma.$queryRaw(
-  'SELECT * FROM "User" WHERE (name = $1 OR email = $2)', // Using %$2 here would not work
+const result = await prisma.$queryRaw`
+  SELECT * FROM "User" WHERE (name = $1 OR email = $2), 
   userName,
-  `%${emailFragment}`
-)
+  %${emailFragment}`
 ```
+
+> **Note**: Using %$2 as an argument would not work
 
 #### <inlinecode>ALTER</inlinecode> limitation (PostgreSQL)
 
@@ -314,7 +320,7 @@ PostgreSQL [does not support using `ALTER` in a prepared statement](https://www.
 
 ```ts
 await prisma.$executeRaw`ALTER USER prisma WITH PASSWORD '${password}'` // Tagged template
-await prisma.$executeRaw(`ALTER USER prisma WITH PASSWORD $1`, newPassword) // Parameterized query
+await prisma.$executeRaw`ALTER USER prisma WITH PASSWORD $1, newPassword` // Parameterized query
 ```
 
 You can use the following query to [work around the issue](https://github.com/prisma/prisma-client-js/issues/940#issuecomment-748014175), but be aware that this is potentially **unsafe** as `${password}` is not escaped:
