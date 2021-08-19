@@ -16,8 +16,8 @@ module.exports = function plugin(
     /*To convert all uppercase links to lowercase (if used by mistake) except its search part (like: ?name='AbC'), 
       to avoid use of extrnal link errors like one of youtube */
     node.url = node.url
-      .replace(/(.+)\?|(.+)\??/, (url)=>url.toLowerCase())
-      .replace(/#.+/, (url)=>url.toLowerCase())
+      .replace(/(.+)\?|(.+)\??/, (url) => url.toLowerCase())
+      .replace(/#.+/, (url) => url.toLowerCase())
 
     node.originalUrl = node.url
     if (

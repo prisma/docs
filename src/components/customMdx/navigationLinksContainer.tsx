@@ -15,12 +15,12 @@ const ButtonContainer = styled.section<Props>`
   margin: 2rem 0;
 
   @media (max-width: 992px) {
-		flex-direction: column;
+    flex-direction: column;
 
-     & > a {
+    & > a {
       margin-bottom: 1.5rem;
-      }
-	}
+    }
+  }
 `
 
 const NavigationLinksContainer: React.FC<Props> = ({ children, isFirstLink }) => {
