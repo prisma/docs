@@ -9,45 +9,43 @@ tocDepth: 2
 
 Circular references can occur between models when each model references another, creating a closed loop. Most SQL databases handle these references out of the box.
 
-With Microsoft SQL Server however, if the [referential actions](./) on the relation field are set to something other than `NoAction`, the data model validator will throw an error about the cyclic relation.
+With Microsoft SQL Server however, if the [referential actions](./) on the foreign key are set to something other than `NO ACTION`, it will check for cycles or multiple cascade paths and return an error when executing the SQL.
 
-Given the below model:
+Given the SQL:
 
-```prisma
-model Chicken {
-  id        Int      @id @default(autoincrement())
-  cock      Chicken? @relation(name: "a_self_relation")
-  hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
-  chickenId Int?
-}
+```sql
+CREATE TABLE [dbo].[Employee] (
+  [id] INT NOT NULL IDENTITY(1,1),
+  [managerId] INT,
+  CONSTRAINT [PK__Employee__id] PRIMARY KEY ([id])
+);
+
+ALTER TABLE [dbo].[Employee]
+  ADD CONSTRAINT [FK__Employee__managerId]
+    FOREIGN KEY ([managerId]) REFERENCES [dbo].[Employee]([id])
+    ON DELETE CASCADE ON UPDATE CASCADE;
 ```
 
-When a migration is run, the validator will throw the following error:
+When the SQL is run, the database would throw the following error:
 
 ```terminal
-Database error:
-Introducing FOREIGN KEY constraint 'FK__Chicken__chickenId' on table 'Chicken' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
+Introducing FOREIGN KEY constraint 'FK__Employee__managerId' on table 'Employee' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
 ```
 
-Knowing which referential action to use is dependent on whether or not the underlying [scalar fields](../../data-model#scalar-fields) are set to be optional or required. If no referential action is specified on the relation, the default values are used. 
-
-| Clause     | All of the scalar fields are optional | At least one scalar field is required |
-| :--------- | :------------------------------------ | :------------------------------------ |
-| `onDelete` | `SetNull`                             | `NoAction`                            |
-| `onUpdate` | `Cascade`                             | `Cascade`                             |
+In more complicated data models, finding the cycles can get complex. Therefore in Prisma, the data model is validated _before_ generating any SQL to be run during any migrations, highlighting relations that are part of the cycle. This makes it much easier to find and break these cyclic referential actions.
 
 </TopBlock>
 
-## Self relation
+## Self-relation
 
-The following model describes a self relation where the `Chicken` references itself with fields that represent the chickens parents.
+The following model describes a self-relation where an `Employee` can have a manager and managees, referencing entries of the same model.
 
 ```prisma
-model Chicken {
-  id        Int      @id @default(autoincrement())
-  cock      Chicken? @relation(name: "a_self_relation")
-  hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
-  chickenId Int?
+model Employee {
+  id         Int        @id @default(autoincrement())
+  manager    Employee?  @relation(name: "management", fields: [managerId], references: [id])
+  managees   Employee[] @relation(name: "management")
+  managerId  Int?
 }
 ```
 
@@ -57,15 +55,22 @@ This will result in the following error:
 Error parsing attribute "@relation": A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. Implicit default `onDelete` and `onUpdate` values: `SetNull` and `Cascade`.
 ```
 
-Since the default referential actions (`onDelete: SetNull`, `onUpdate: Cascade`) are creating a cycle, the solution is to explicitly set the `onDelete` and `onUpdate` values to `NoAction` on one of the relations.
+By not defining any actions, Prisma will use the following default values depending if the underlying [scalar fields](../../data-model#scalar-fields) are set to be optional or required.
 
-```prisma highlight=4;delete|5;add
-model Chicken {
-  id        Int      @id @default(autoincrement())
-  cock      Chicken? @relation(name: "a_self_relation")
-  hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
-  hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  chickenId Int?
+| Clause     | All of the scalar fields are optional | At least one scalar field is required |
+| :--------- | :------------------------------------ | :------------------------------------ |
+| `onDelete` | `SetNull`                             | `NoAction`                            |
+| `onUpdate` | `Cascade`                             | `Cascade`                             |
+
+Since the default referential action for `onUpdate` in the above relation would be `Cascade` and for `onDelete` it would be `SetNull`, it creates a cycle and the solution is to explicitly set the `onUpdate` and `onDelete` values to `NoAction`.
+
+```prisma highlight=3;delete|4;add
+model Employee {
+  id        Int        @id @default(autoincrement())
+  manager   Employee   @relation(name: "management", fields: [managerId], references: [id])
+  manager   Employee   @relation(name: "management", fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  managed   Employee[] @relation(name: "management")
+  managerId Int
 }
 ```
 
@@ -96,13 +101,27 @@ model Fox {
 }
 ```
 
-This will result in the following error:
+This will result in three validation errors in every relation field that is part of the cycle.
+
+The first one is in the relation `egg` in the `Chicken` model:
 
 ```terminal
-Error parsing attribute "@relation": Reference causes a cycle or multiple cascade paths. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Implicit default `onUpdate` value: `Cascade`.
+Error parsing attribute "@relation": Reference causes a cycle or multiple cascade paths. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: Chicken.egg → Egg.predator → Fox.meal. Implicit default `onUpdate` value: `Cascade`.
 ```
 
-As the relation fields are required, the default referential action for `onDelete` is `NoAction`, meaning the solution is to set the `onUpdate` value to `NoAction` on any one of the relations.
+The second one is in the relation `predator` in the `Egg` model:
+
+```terminal
+Error parsing attribute "@relation": Reference causes a cycle or multiple cascade paths. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: Egg.predator → Fox.meal → Chicken.egg. Implicit default `onUpdate` value: `Cascade`.
+```
+
+And the third one is in the relation `meal` in the `Fox` model:
+
+```terminal
+Error parsing attribute "@relation": Reference causes a cycle or multiple cascade paths. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: Fox.meal → Chicken.egg → Egg.predator. Implicit default `onUpdate` value: `Cascade`.
+```
+
+As the relation fields are required, the default referential action for `onDelete` is `NoAction` but for `onUpdate` it is `Cascade`, which causes a referential action cycle. The solution is to set the `onUpdate` value to `NoAction` in any one of the relations.
 
 ```prisma highlight=3;delete|4;add
 model Chicken {
