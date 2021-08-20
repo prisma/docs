@@ -7,6 +7,7 @@ import MySQL from '../icons/technologies/MySQL'
 import SQLite from '../icons/technologies/SQLite'
 import MongoDB from '../icons/technologies/MongoDB'
 import JS from '../icons/technologies/JS'
+import SQLServer from '../icons/technologies/MSSQL'
 import { components } from 'react-select'
 import ArrowDown from '../icons/ArrowDown'
 
@@ -28,11 +29,12 @@ const icons = {
   postgres: <PostgreSQL />,
   sqlite: <SQLite />,
   mongodb: <MongoDB />,
+  sqlserver: <SQLServer/>,
 }
 
 const technologyTypes = {
   languages: ['node', 'typescript'],
-  databases: ['mysql', 'postgres', 'sqlite', 'mongodb'],
+  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'sqlserver'],
 }
 
 export const technologyNames = {
@@ -42,6 +44,7 @@ export const technologyNames = {
   postgres: 'PostgreSQL',
   sqlite: 'SQLite',
   mongodb: 'MongoDB',
+  sqlserver: 'SQL Server'
 }
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
