@@ -13,6 +13,16 @@ npm install
 npm run dev
 ```
 
+## Run functions locally
+
+Run a local build to run the functions using the following command:
+
+```
+netlify dev
+```
+
+> Make sure you have the correct path to `POSTGRES_URL` in your local `.env` file to test the functions
+
 To prettify or format the code, run:
 
 ```
