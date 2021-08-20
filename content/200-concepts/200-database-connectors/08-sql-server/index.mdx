@@ -1,40 +1,14 @@
 ---
-title: 'Microsoft SQL Server connector'
-metaTitle: 'Microsoft SQL Server Connector (Preview)'
-metaDescription: 'Preview content for the Microsoft SQL Server Connector.'
+title: 'Microsoft SQL Server'
+metaTitle: 'Microsoft SQL Server'
+metaDescription: 'This page explains how Prisma can connect to a Microsoft SQL Server database using the Microsoft SQL Server database connector.'
 ---
 
 <TopBlock>
 
-The Microsoft SQL Connector is available as a Preview feature in [2.10.0](https://github.com/prisma/prisma/releases/tag/2.10.0).
+The Microsoft SQL Server data source connector connects Prisma to a [Microsoft SQL Server](https://docs.microsoft.com/en-us/sql/sql-server/?view=sql-server-ver15) database server.
 
 </TopBlock>
-
-## Enable SQL Server Preview feature
-
-To enable the Microsoft SQL Server Preview feature:
-
-1. Update the `client` and `datasource` blocks in your schema as shown:
-
-   ```prisma file=prisma/schema.prisma highlight=3,7;normal
-   generator client {
-     provider        = "prisma-client-js"
-     previewFeatures = ["microsoftSqlServer"]
-   }
-   
-   datasource db {
-     provider = "sqlserver"
-     url      = env("DATABASE_URL")
-   }
-   ```
-
-1. Generate Prisma Client:
-
-   ```terminal
-   npx prisma generate
-   ```
-
-Alternatively, follow the [Microsoft SQL Server tutorial](sql-server-start-from-scratch-typescript).
 
 ## Type mapping between Microsoft SQL Server to Prisma schema
 
@@ -42,7 +16,7 @@ For type mappings organized by Prisma type, refer to the [Prisma schema referenc
 
 ## Supported versions
 
-See [Supported databases](../../../../reference/database-reference/supported-databases#preview).
+See [Supported databases](../../../reference/database-reference/supported-databases).
 
 ## Limitations and known issues
 
@@ -54,62 +28,11 @@ Prisma Migrate is supported in [2.13.0](https://github.com/prisma/prisma/release
 
 SQL Server does not have an equivalent to the PostgreSQL `SET search_path` command familiar from PostgreSQL. This means that when you create migrations, you must define the same schema name in the connection URL that is used by the production database. For most of the users this is `dbo` (the default value). However, if the production database uses another schema name, all the migration SQL must be either edited by hand to reflect the production _or_ the connection URL must be changed before creating migrations (for example: `schema=name`).
 
-#### Cascading rules
+#### Cyclic references
 
-SQL Server follows the same cascading rules as other database providers - for most relations (with certain restrictions), Prisma runs `ON DELETE CASCADE ON UPDATE CASCADE` (delete all children from a parent automatically).
+Circular references can occur between models when each model references another, creating a closed loop. When using a Microsoft SQL Server database, Prisma will show a validation error if the [referential action](../../components/prisma-schema/relations/referential-actions) on a relation is set to something other than [`NoAction`](../../components/prisma-schema/relations/referential-actions#noaction).
 
-However, SQL Server cascading has certain restrictions that do not allow us to create certain kinds of relations. Consider the following schema:
-
-```prisma file=schema.prisma
-model Album {
-  id        Int    @id @default(autoincrement())
-  artist_id Int
-  artist    Artist @relation(fields: [artist_id], references: [id])
-}
-
-model Artist {
-  id     Int     @id @default(autoincrement())
-  albums Album[]
-}
-```
-
-Next, add a favorite album to every artist:
-
-```prisma file=schema.prisma highlight=4;normal
-model Artist {
-  id             Int     @id @default(autoincrement())
-  album_id       Int
-  favorite_album Album   @relation(fields: [album_id], references: [id], name: "FK_fav_album")
-  albums         Album[]
-}
-```
-
-This results in an error:
-
-```
-Introducing FOREIGN KEY constraint `FK__Artist__album_id__2D3D91F9` on table `Artist` may cause cycles or multiple cascade paths. Specify `ON DELETE NO ACTION` or `ON UPDATE NO ACTION`, or modify other FOREIGN KEY constraints.
-```
-
-SQL Server does not allow cyclic cascading, and in our example our relations go from `Album` to `Artist` and through another relation from `Artist` back to `Album`. In [Microsoft's words](https://support.microsoft.com/en-us/help/321843/error-message-1785-occurs-when-you-create-a-foreign-key-constraint-tha), the cause for this is:
-
-```
-You receive this error message because in SQL Server, a table cannot appear more than one time in a list of all the cascading referential actions that are started by either a DELETE or an UPDATE statement. For example, the tree of cascading referential actions must only have one path to a particular table on the cascading referential actions tree.
-```
-
-Another, simpler example that is not possible in the first version of Prisma Migrate for SQL Server is a self-reference:
-
-```prisma file=schema.prisma
-model Artist {
-  id      Int    @id @default(autoincrement())
-  muse_id Int?
-  muse    Artist @relation(fields: [muse_id], references: [id])
-}
-```
-
-If you want to use relations as described here, you must:
-
-- Create the migration using the `--create-only` flag
-- Modify the cascading rules manually before writing to the database
+See [Cyclic referential actions with Microsoft SQL Server](../../components/prisma-schema/relations/referential-actions/cyclic-referential-actions) for more information.
 
 #### Destructive changes
 
