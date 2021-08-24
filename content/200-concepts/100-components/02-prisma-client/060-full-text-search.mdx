@@ -1,0 +1,94 @@
+---
+title: 'Full-Text Search'
+metaTitle: 'Full-Text Search'
+metaDescription: 'This page explains how to search for text within a field.'
+---
+
+# Full-Text Search
+
+The Prisma Client supports a full-text search API for Postgres databases. With full-text search enabled, you can add search functionality to your application by searching for text within a database column.
+
+<Admonition type="info">
+**Note**: Full text search can **only** be used in a Postgres database
+</Admonition>
+
+## Enable full-text search
+
+The full-text Search API is still in **Preview**. You can enable `fullTextSearch` in your Prisma Schema:
+
+1: Update the [`previewFeatures`](../preview-features) block in your schema:
+
+    ```prisma
+    generator client {
+      provider        = "prisma-client-js"
+      previewFeatures = ["fullTextSearch"]
+    }
+    ```
+
+2: Generate the Prisma Client:
+
+    ```terminal copy
+    npx prisma generate
+    ```
+
+After you regenerate your client, a new `search` field will be available on any `String` fields created on your models.
+
+### Example of new <inlinecode>search</inlinecode> field
+
+```ts
+// All posts that contain the words cat or dog.
+const result = await prisma.posts.findMany({
+  where: {
+    body: {
+      search: 'cat | dog',
+    },
+  },
+})
+
+// All drafts that contain the words cat and dog.
+const result = await prisma.posts.findMany({
+  where: {
+    status: 'Draft',
+    body: {
+      search: 'cat & dog',
+    },
+  },
+})
+
+## Query Format
+
+The `search` field uses the database's native querying capabilities under the hood. This means that the Prisma Client [supports what the database supports](https://www.postgresql.org/docs/12/functions-textsearch.html).
+
+To get a sense of how the query format works, consider the following text:
+
+**"The quick brown fox jumps over the lazy dog"**
+
+Here's how the following queries would match that text:
+
+| Query          | Match? | Description                         |
+| :------------- | :----- | :---------------------------------- |
+| fox & dog      | true   | The text contains fox and dog       |
+| dog & fox      | true   | The text contains dog and fox       |
+| dog & cat      | false  | The text doesn't contain cat        |
+| fox &#124; cat | true   | The text contains fox or cat        |
+| cat &#124; pig | false  | The text doesn't contain cat or pig |
+| fox <-> dog    | true   | dog follows fox in the text         |
+| dog <-> fox    | false  | dog doesn't follow fox in the text  |
+
+## Adding Indexes
+
+To speed up your full-text queries, you should add an index to your database.
+Prisma Migrate currently doesn't support adding search indices, but you can
+easily add one yourself.
+
+```sql
+CREATE INDEX post_body_index ON posts USING GIN (body);
+```
+
+You can continue using Prisma Migrate as you were before, it will ignore indexes
+that it doesn't know about.
+
+## Limitations
+
+- The `search` field is only supported in PostgreSQL
+- You'll need to manage indexes yourself.
