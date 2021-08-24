@@ -1,20 +1,13 @@
 ---
 title: 'Referential actions'
-metaTitle: 'Referential actions (Preview)'
+metaTitle: 'Referential actions'
 metaDescription: 'Referential actions let you define the update and delete behavior of related models on the database level'
 tocDepth: 2
-preview: true
 ---
 
 <TopBlock>
 
 In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later, you can define **referential actions** on your relation fields. Referential actions determine what should happen to a record when a related record is deleted or updated.
-
-<Admonition type="warning">
-
-Referential actions are currently a **Preview feature**.
-
-</Admonition>
 
 In the following example, adding `onDelete: Cascade` to the `author` field on the `Post` model means that deleting the `User` record will also delete all related `Post` records.
 
@@ -36,25 +29,9 @@ If you do not specify a referential action, Prisma [uses a default](#referential
 
 </TopBlock>
 
-## Enable the <inlinecode>referentialActions</inlinecode> Preview feature
-
-Referential actions are a preview feature. To enable the `referentialActions` preview feature:
-
-1. [Upgrade to Prisma version 2.26.0](../../../../../guides/upgrade-guides/upgrading-to-latest).
-2. Add `referentialActions` to the `previewFeatures` field of the Prisma Client [`generator`](../../../../../reference/api-reference/prisma-schema-reference#generator) block in the `prisma.schema` file:
-
-   ```prisma file=schema.prisma
-   generator client {
-     provider        = "prisma-client-js"
-     previewFeatures = ["referentialActions"]
-   }
-   ```
-
-3. Follow the [upgrade paths for referential actions](#upgrade-paths).
-
 <Admonition type="alert">
 
-It is extremely important that you check the [upgrade paths for referential actions](#upgrade-paths) section before you continue. The `referentialActions` Preview feature **removes the safety net in Prisma Client that prevents cascading deletes at runtime**. If you enable the feature _without upgrading your database_, the [old default action](#the-2250-default-referential-actions) - `ON DELETE CASCADE` - becomes active. This may result in cascading deletes that you did not expect.
+It is extremely important that you check the [upgrade paths for referential actions](#upgrade-paths) section before you continue. The `referentialActions` feature **removes the safety net in Prisma Client that prevents cascading deletes at runtime**. If you use the feature _without upgrading your database_, the [old default action](#the-2250-default-referential-actions) - `ON DELETE CASCADE` - becomes active. This may result in cascading deletes that you did not expect.
 
 </Admonition>
 
@@ -358,8 +335,6 @@ If you currently use the migration workflow, you can run an introspection to che
 
 You can also decide to skip checking the the defaults and run a migration to update your database with the [new default values](#referential-action-defaults).
 
-The following assumes you have upgraded to 2.26.0 and [enabled the preview feature flag](#enable-the-referentialactions-preview-feature).
-
 ### Using Introspection
 
 If you [Introspect](../../../introspection) your database, the referential actions configured at the database level will be reflected in your Prisma Schema. If you have been using Prisma Migrate or `prisma db push` to manage the database schema, these are likely to be the [<=2.25.0 default values](#the-2250-default-referential-actions).
@@ -370,7 +345,7 @@ After introspecting, you can review the non-default clauses in your schema. The 
 
 <Admonition type="alert">
 
-If you are using either the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods, **[cascading deletes](#how-to-use-cascading-deletes) will now be performed** as the `referentialActions` preview feature **removed the safety net in Prisma Client that previously prevented cascading deletes at runtime**. Be sure to check your code and make any adjustments accordingly.
+If you are using either the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods, **[cascading deletes](#how-to-use-cascading-deletes) will now be performed** as the `referentialActions` feature **removes the safety net in Prisma Client that previously prevented cascading deletes at runtime**. Be sure to check your code and make any adjustments accordingly.
 
 </Admonition>
 
@@ -414,9 +389,9 @@ Note that referential actions can be added on a case by case basis. This means t
 
 ### Checking for errors
 
-**Before** upgrading to 2.26.0 and enabling the referential actions **preview feature**, Prisma prevented the deletion of records while using `delete()` or `deleteMany()` to preserve referential integrity. A custom runtime error would be thrown by the Prisma Client with the error code `P2014`.
+**Before** upgrading to 2.26.0, Prisma prevented the deletion of records while using `delete()` or `deleteMany()` to preserve referential integrity. A custom runtime error would be thrown by the Prisma Client with the error code `P2014`.
 
-**After** upgrading and enabling the referential actions **preview feature**, Prisma no longer performs runtime checks. You can instead specify a custom referential action to preserve the referential integrity between relations.
+**After** upgrading, Prisma no longer performs runtime checks. You can instead specify a custom referential action to preserve the referential integrity between relations.
 
 When you use [`NoAction`](#noaction) or [`Restrict`](#restrict) to prevent the deletion of records, the error messages will be different post 2.26.0 compared to pre 2.26.0. This is because they are now triggered by the database and **not** the Prisma Client. The new error code that can be expected is `P2003`.
 
@@ -442,7 +417,7 @@ model User {
 }
 ```
 
-Prior to upgrading and enabling the referential actions **preview feature**, the error code you would receive when trying to delete a user which has posts would be `P2014` and it's message:
+Prior to upgrading, the error code you would receive when trying to delete a user which has posts would be `P2014` and it's message:
 
 > "The change you are trying to make would violate the required relation '{relation_name}' between the {model_a_name} and {model_b_name} models."
 
@@ -511,11 +486,11 @@ main()
   })
 ```
 
-## Behavior in <=2.25.0 or without preview flag <inlinecode>referentialActions</inlinecode>
+## Behavior in <=2.25.0 <inlinecode>referentialActions</inlinecode>
 
 <a id="current"></a>
 
-The following behavior applies in 2.25.0 and earlier, and since 2.26.0 _without_ the `referentialActions` preview flag.
+The following behavior applies in 2.25.0 and earlier.
 
 When invoking the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
 
