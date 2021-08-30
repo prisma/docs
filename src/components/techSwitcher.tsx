@@ -29,7 +29,7 @@ const icons = {
   postgres: <PostgreSQL />,
   sqlite: <SQLite />,
   mongodb: <MongoDB />,
-  sqlserver: <SQLServer/>,
+  sqlserver: <SQLServer />,
 }
 
 const technologyTypes = {
@@ -44,7 +44,7 @@ export const technologyNames = {
   postgres: 'PostgreSQL',
   sqlite: 'SQLite',
   mongodb: 'MongoDB',
-  sqlserver: 'SQL Server'
+  sqlserver: 'SQL Server',
 }
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {

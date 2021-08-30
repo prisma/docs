@@ -5,157 +5,127 @@ metaDescription: Learn how to seed your database using Prisma's integrated seedi
 
 <TopBlock>
 
-This guide describes how to seed your database using Prisma Client and Prisma's integrated seeding functionality (Preview). Seeding allows you to consistently re-create the same data in your database and can be used to:
+This guide describes how to seed your database using Prisma Client and Prisma's integrated seeding functionality. Seeding allows you to consistently re-create the same data in your database and can be used to:
 
 - Populate your database with data that is required for your application to start - for example, a default language or a default currency.
 - Provide basic data for validating and using your application in a development environment. This is particularly useful if you are using Prisma Migrate, which sometimes requires resetting your development database.
 
-Watch the following video for an introduction to the `db seed` command:
-
-<div class="videoWrapper">
-
-<iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/2LwTUIqjbPo"
-  frameborder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
-></iframe>
-
-</div>
-
 </TopBlock>
 
-## Requirements for seeding with TypeScript or JavaScript
+## How to seed your database in Prisma
 
-Prisma's integrated seeding functionality expects the following:
+Prisma's integrated seeding functionality expects a command in the `"seed"` key in the `"prisma"` key of your `package.json` file. This can be any command, `prisma db seed` will just execute it. In this guide and as a default, we recommend writing a seed script inside your project's `prisma/` folder and starting it with the command.
 
-<!-- prettier-ignore-start -->
+<TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="file"/>, <FileWithIcon text="JavaScript" icon="file"/>]}>
 
-1. A `seed.ts` or `seed.js` file in the [same location as your `schema.prisma` file](../../concepts/components/prisma-schema#prisma-schema-file-location).
-2. **One** of the following inside the `seed.js`/`seed.ts` file:
+<tab>
 
-    - A script inside `seed.ts` / `seed.js`
-    - An export named `seed` ([2.23.0](https://github.com/prisma/prisma/releases/tag/2.23.0) and later):
+```json
+"prisma": {
+  "seed": "ts-node prisma/seed.ts"
+},
+```
 
-      <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
-      <tab>
+</tab>
 
-      ```ts
-      export async function seed() {
-        // Prisma create query to seed models in database
-      }
-      ```
+<tab>
 
-      </tab>
-      <tab>
+```json
+"prisma": {
+  "seed": "node prisma/seed.js"
+},
+```
 
-      ```js
-      async function seed() {
-        // Prisma create query to seed models in database
-      }
+</tab>
 
-      module.exports = {
-        seed
-      }
-      ```
+</TabbedContent>
 
-      </tab>
-      </TabbedContent>
+## Integrated seeding with Prisma Migrate
 
-    - A default export ([2.23.0](https://github.com/prisma/prisma/releases/tag/2.23.0) and later):
+Database seeding happens in two ways with Prisma: manually with `prisma db seed` and automatically in `prisma migrate dev` and `prisma migrate reset`.
 
-      <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
-      <tab>
+With `prisma db seed`, _you_ decide when to invoke the seed command. It can be useful for a test setup or to prepare a new development environment, for example.
 
-      ```ts
-      async function seed() {
-        // Prisma create query to seed models in database
-      }
-      export default seed;
-      ```
+Prisma Migrate also integrates seamlessly with your seeds, assuming you follow the steps in the section below. When Prisma Migrate resets the development database, seeding is triggered automatically if you have a "seed" property in the "prisma" section in your package.json.
 
-      </tab>
-      <tab>
+Prisma Migrate resets the database and triggers seeding in the following scenarios:
 
-      ```js
-      async function seed() {
-        // Prisma create query to seed models in database
-      }
+- You manually run the `prisma migrate reset` CLI command.
+- The database is reset interactively in the context of using `prisma migrate dev` - for example, as a result of migration history conflicts or database schema drift.
+- When you want to use `prisma migrate dev` or `prisma migrate reset` without seeding, you can pass the --skip-seed flag.
 
-      module.exports = seed
-      ```
+## Example seed scripts
 
-      </tab>
-      </TabbedContent>
+Here we suggest some specific seed scripts for different situations. You are free to customize these in any way, but can also use them as presented here:
 
-<!-- prettier-ignore-end -->
+### Seeding your database with TypeScript or JavaScript
 
-3. Optional [compiler options](#compiler-options) if you are using TypeScript.
+<TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="file"/>, <FileWithIcon text="JavaScript" icon="file"/>]}>
 
-## Seeding your database with TypeScript
+<tab>
 
-To seed your database with TypeScript:
+1. Create a new file named `seed.ts`. This can be placed anywhere within your projects folder structure. The below example places it in the `/prisma` folder.
+2. In the `seed.ts` file, import Prisma Client, initialize it and create some records.
 
-1. Create a new file named `seed.ts` in the same location as your `schema.prisma`.
-2. In the `seed.ts` file, import Prisma Client, instantiate it, and create some records. The following example uses a script, but you can also [use an `export`](#requirements-for-seeding-with-typescript-or-javascript):
+  <details><summary>Expand to view example seed script</summary>
 
-   ```ts
-   import { PrismaClient } from '@prisma/client'
-   const prisma = new PrismaClient()
+    ```js
+    import { PrismaClient } from '@prisma/client'
+    const prisma = new PrismaClient()
 
-   async function main() {
-     const alice = await prisma.user.upsert({
-       where: { email: 'alice@prisma.io' },
-       update: {},
-       create: {
-         email: 'alice@prisma.io',
-         name: 'Alice',
-         posts: {
-           create: {
-             title: 'Check out Prisma with Next.js',
-             content: 'https://www.prisma.io/nextjs',
-             published: true,
-           },
-         },
-       },
-     })
+    async function main() {
+      const alice = await prisma.user.upsert({
+        where: { email: 'alice@prisma.io' },
+        update: {},
+        create: {
+          email: 'alice@prisma.io',
+          name: 'Alice',
+          posts: {
+            create: {
+              title: 'Check out Prisma with Next.js',
+              content: 'https://www.prisma.io/nextjs',
+              published: true,
+            },
+          },
+        },
+      })
 
-     const bob = await prisma.user.upsert({
-       where: { email: 'bob@prisma.io' },
-       update: {},
-       create: {
-         email: 'bob@prisma.io',
-         name: 'Bob',
-         posts: {
-           create: [
-             {
-               title: 'Follow Prisma on Twitter',
-               content: 'https://twitter.com/prisma',
-               published: true,
-             },
-             {
-               title: 'Follow Nexus on Twitter',
-               content: 'https://twitter.com/nexusgql',
-               published: true,
-             },
-           ],
-         },
-       },
-     })
-     console.log({ alice, bob })
-   }
+      const bob = await prisma.user.upsert({
+        where: { email: 'bob@prisma.io' },
+        update: {},
+        create: {
+          email: 'bob@prisma.io',
+          name: 'Bob',
+          posts: {
+            create: [
+              {
+                title: 'Follow Prisma on Twitter',
+                content: 'https://twitter.com/prisma',
+                published: true,
+              },
+              {
+                title: 'Follow Nexus on Twitter',
+                content: 'https://twitter.com/nexusgql',
+                published: true,
+              },
+            ],
+          },
+        },
+      })
+      console.log({ alice, bob })
+    }
 
-   main()
-     .catch((e) => {
-       console.error(e)
-       process.exit(1)
-     })
-     .finally(async () => {
-       await prisma.$disconnect()
-     })
-   ```
+    main()
+      .catch((e) => {
+        console.error(e)
+        process.exit(1)
+      })
+      .finally(async () => {
+        await prisma.$disconnect()
+      })
+    ```
+
+  </details>
 
 3. Add `typescript`, `ts-node` and `@types/node` development dependencies:
 
@@ -165,101 +135,133 @@ To seed your database with TypeScript:
 
 <a id="compiler-options"></a>
 
-4. Optionally, add additional `--compiler-options` to the script that Prisma uses to run the seed script ([2.18.0](https://github.com/prisma/prisma/releases/tag/2.18.0) and later). This makes `prisma db seed` work with tools that have specific requirements when used with TypeScript, such as Next.js. The name of the script is `ts-node`:
+4. Add the `prisma.seed` field to your `package.json` file:
+
+```js highlight=5;normal
+ {
+   "name": "my-project",
+   "version": "1.0.0",
+   "prisma": {
+      "seed": "ts-node prisma/seed.ts"
+   },
+   "devDependencies": {
+     "@types/node": "^14.14.21",
+     "ts-node": "^9.1.1",
+     "typescript": "^4.1.3"
+   }
+ }
+```
+
+Some projects may require you to add compile options. When using Next.js for example, you would setup your seed script like so:
+
+```ts
+"prisma": {
+  "seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts"
+},
+```
+
+5. To seed the database, run the `db seed` CLI command:
+
+   ```
+   npx prisma db seed
+   ```
+
+</tab>
+
+<tab>
+
+1. Create a new file named `seed.js`. This can be placed anywhere within your projects folder structure. The below example places it in the `/prisma` folder.
+2. In the `seed.js` file, import Prisma Client, initialize it and create some records.
+
+  <details><summary>Expand to view example seed script</summary>
+
+    ```js
+    const { PrismaClient } = require('@prisma/client')
+    const prisma = new PrismaClient()
+
+    async function main() {
+      const alice = await prisma.user.upsert({
+        where: { email: 'alice@prisma.io' },
+        update: {},
+        create: {
+          email: 'alice@prisma.io',
+          name: 'Alice',
+          posts: {
+            create: {
+              title: 'Check out Prisma with Next.js',
+              content: 'https://www.prisma.io/nextjs',
+              published: true,
+            },
+          },
+        },
+      })
+
+      const bob = await prisma.user.upsert({
+        where: { email: 'bob@prisma.io' },
+        update: {},
+        create: {
+          email: 'bob@prisma.io',
+          name: 'Bob',
+          posts: {
+            create: [
+              {
+                title: 'Follow Prisma on Twitter',
+                content: 'https://twitter.com/prisma',
+                published: true,
+              },
+              {
+                title: 'Follow Nexus on Twitter',
+                content: 'https://twitter.com/nexusgql',
+                published: true,
+              },
+            ],
+          },
+        },
+      })
+      console.log({ alice, bob })
+    }
+
+    main()
+      .catch((e) => {
+        console.error(e)
+        process.exit(1)
+      })
+      .finally(async () => {
+        await prisma.$disconnect()
+      })
+    ```
+
+  </details>
+
+3. Add the `prisma.seed` to your `package.json` file:
 
    ```js highlight=5;normal
    {
      "name": "my-project",
      "version": "1.0.0",
-     "scripts": {
-       "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\""
-     },
-     "devDependencies": {
-       "@types/node": "^14.14.21",
-       "ts-node": "^9.1.1",
-       "typescript": "^4.1.3"
+     "prisma": {
+       "seed": "node prisma/seed.js"
      }
    }
    ```
 
-5. To seed the database, run the `db seed` CLI command:
+4. To seed the database, run the `db seed` CLI command:
 
    ```
-   prisma db seed --preview-feature
+   npx prisma db seed
    ```
 
-## Seeding your database with JavaScript
+</tab>
 
-To seed your database with JavaScript:
+</TabbedContent>
 
-1. Create a new file named `seed.js` in the same location as your `schema.prisma`.
-2. In the `seed.js` file, import Prisma Client, initialize it and create some records. The following example uses a script, but you can also [use an `export`](#requirements-for-seeding-with-typescript-or-javascript):
-
-   ```js
-   const { PrismaClient } = require('@prisma/client')
-   const prisma = new PrismaClient()
-
-   async function main() {
-     const alice = await prisma.user.upsert({
-       where: { email: 'alice@prisma.io' },
-       update: {},
-       create: {
-         email: 'alice@prisma.io',
-         name: 'Alice',
-         posts: {
-           create: {
-             title: 'Check out Prisma with Next.js',
-             content: 'https://www.prisma.io/nextjs',
-             published: true,
-           },
-         },
-       },
-     })
-
-     const bob = await prisma.user.upsert({
-       where: { email: 'bob@prisma.io' },
-       update: {},
-       create: {
-         email: 'bob@prisma.io',
-         name: 'Bob',
-         posts: {
-           create: [
-             {
-               title: 'Follow Prisma on Twitter',
-               content: 'https://twitter.com/prisma',
-               published: true,
-             },
-             {
-               title: 'Follow Nexus on Twitter',
-               content: 'https://twitter.com/nexusgql',
-               published: true,
-             },
-           ],
-         },
-       },
-     })
-     console.log({ alice, bob })
-   }
-
-   main()
-     .catch((e) => {
-       console.error(e)
-       process.exit(1)
-     })
-     .finally(async () => {
-       await prisma.$disconnect()
-     })
-   ```
-
-3. To seed the database, run the `db seed` CLI command:
-
-   ```
-   prisma db seed --preview-feature
-   ```
-
-## Seeding your database with a Bash script
+### Seeding your database via any language (with a Bash script)
 
 In addition to TypeScript and JavaScript, you can also use a Bash script (`seed.sh`) to seed your database in another language such as Go, or plain SQL.
+
+<TabbedContent tabs={[<FileWithIcon text="Go" icon="file"/>, <FileWithIcon text="SQL" icon="database"/>]}>
+
+<tab>
 
 The following example runs a Go script in the same folder as `seed.sh`:
 
@@ -272,6 +274,10 @@ set -ex
 go run ./seed/
 ```
 
+</tab>
+
+<tab>
+
 The following example uses [psql](https://www.postgresql.org/docs/13/app-psql.html) to run a SQL script in the same folder as `seed.sh`:
 
 ```bash file=seed.sh
@@ -283,9 +289,7 @@ set -ex
 psql file.sql
 ```
 
-## Integrated seeding with Prisma Migrate
+</tab>
 
-Prisma Migrate integrates seamlessly with your seeds, assuming you follow the steps in the previous section. When Prisma Migrate resets the development database, seeding is triggered automatically. Prisma Migrate resets the database and triggers seeding in the following scenarios:
+</TabbedContent>
 
-- You manually run the `prisma migrate reset` CLI command.
-- The database is reset interactively in the context of using `prisma migrate dev` - for example, as a result of migration history conflicts or database drift.
