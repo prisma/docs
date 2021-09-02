@@ -2,19 +2,38 @@
 title: 'Referential actions upgrade path'
 metaTitle: 'Referential actions upgrade path'
 metaDescription: 'Guides on how to upgrade depending on your workflow using Prisma Introspect or Prisma Migrate'
-tocDepth: 2
+tocDepth: 3
 toc: true
 ---
 
 <TopBlock>
 
+The following behavior applies in Prisma 2 and earlier.
+
+When invoking the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
+
+The behavior in Prisma 2, without upgrading, does not allow setting referential actions at all.
+
+The <=2.x default referential actions
+
+| Clause     | Optional relations | Mandatory relations |
+| :--------- | :----------------- | :------------------ |
+| `onDelete` | `SetNull`          | `Cascade`           |
+| `onUpdate` | `Cascade`          | `Cascade`           |
+
+If you need to actually use the cascade behavior configured in the database, you _can_ use [`$raw`](../../../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../../../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful. This is because the Prisma Client will **not** perform runtime checks on raw queries.
+
+The new behavior with Prisma 3 let's you control what should happen when deleting or updating records through explicitly settings referential actions on your models relations.
+
+</TopBlock>
+
+## Upgrade paths
+
 There are a couple of paths you can take when upgrading which will give different results depending on the desired outcome.
 
 If you currently use the migration workflow, you can run an introspection to check how the defaults are reflected in your schema. You can then manually update your database if you need to.
 
-You can also decide to skip checking the the defaults and run a migration to update your database with the [new default values](#referential-action-defaults).
-
-</TopBlock>
+You can also decide to skip checking the defaults and run a migration to update your database with the new default values.
 
 ### Using Introspection
 
@@ -26,7 +45,7 @@ After introspecting, you can review the non-default clauses in your schema. The 
 
 <Admonition type="alert">
 
-If you are using either the [`delete()`](../../../database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../../concepts/components/prisma-client/crud#delete-all-records) methods, **cascading deletes will now be performed** as the `referentialActions` feature **removes the safety net in Prisma Client that previously prevented cascading deletes at runtime**. Be sure to check your code and make any adjustments accordingly.
+If you are using either the [`delete()`](../../../database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../../concepts/components/prisma-client/crud#delete-all-records) methods, **cascading deletes will now be performed as the safety net in Prisma Client that previously prevented cascading deletes at runtime is removed**. Be sure to check your code and make any adjustments accordingly.
 
 </Admonition>
 
@@ -166,22 +185,3 @@ main()
     await prisma.$disconnect()
   })
 ```
-
-## Behavior in <=2.25.0 <inlinecode>referentialActions</inlinecode>
-
-<a id="current"></a>
-
-The following behavior applies in 2.25.0 and earlier.
-
-When invoking the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
-
-The current behavior, without upgrading and enabling the feature flag, does not allow setting referential actions at all.
-
-### The <=2.25.0 default referential actions
-
-| Clause     | Optional relations | Mandatory relations |
-| :--------- | :----------------- | :------------------ |
-| `onDelete` | `SetNull`          | `Cascade`           |
-| `onUpdate` | `Cascade`          | `Cascade`           |
-
-If you need to actually use the cascade behavior configured in the database, you _can_ use [`$raw`](../../../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../../../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful. This is because the Prisma Client will **not** perform runtime checks on raw queries.
