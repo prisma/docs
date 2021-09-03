@@ -1,3 +1,4 @@
+// require('./src/styles/tailwind.css')
 const { init, trackPage } = require('./src/utils/stats')
 const { goToNav } = require('./src/utils/goToNavItem')
 

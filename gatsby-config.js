@@ -125,6 +125,12 @@ let plugins = [
       // see actual configuration in `percy` key in `package.json`
     },
   },
+  {
+    resolve: 'gatsby-plugin-postcss',
+    options: {
+      postCssPlugins: [require('tailwindcss')('./tailwind.config.js')],
+    },
+  },
 ]
 
 if (process.env.INDEX_ALGOLIA === 'true') {
