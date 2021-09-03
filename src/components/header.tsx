@@ -10,7 +10,7 @@ import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
-import { WebsiteHeader } from '@prisma/lens/dist/web'
+import { Navbar } from '@prisma/lens/dist/web'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -326,7 +326,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <WebsiteHeader />
+          <Navbar />
         </Container>
       </HeaderWrapper>
 

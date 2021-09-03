@@ -11,6 +11,7 @@ import SidebarLayout from './sidebar'
 import TOC from './toc'
 import { LensProvider, theme } from '@prisma/lens/dist/web'
 import StickyBox from 'react-sticky-box'
+import { Helmet } from 'react-helmet'
 
 const Wrapper = styled.div<{ fullWidth?: boolean }>`
   display: flex;
@@ -118,6 +119,9 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={customMdx}>
+          <Helmet>
+            <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet" />
+          </Helmet>
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
