@@ -40,6 +40,65 @@ This means that if your application relied on `$queryRaw` calls using _strings_,
 
 You can learn more about the new `$queryRaw` and `$queryRawUnsafe` methods in the [Raw database access](../../../../concepts/components/prisma-client/raw-database-access) section of the docs.
 
+### [Json Null Equality](../../../../concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-by-null-values)
+
+You cannot filter a `Json` field by a null value.  [See this GitHub issue](https://github.com/prisma/prisma/issues/8399). 
+This is because `{ equals: null }` checks if the column value in the database is `NULL`, not if the JSON value inside the column equals `null`.
+
+To fix this problem, we decided to split null on Json fields into `JsonNull`, `DbNull` and `AnyNull`.
+
+- **JsonNull**: Selects the null value in JSON.
+- **DbNull**: Selects the NULL value in the database.
+- **AnyNull:** Selects both null JSON values and NULL database values.
+
+Given the following model in your Prisma Schema:
+
+```ts
+model Log {
+  id Int @id
+  meta Json
+}
+```
+
+Starting in 3.0.1, you'll see a TypeError if you try to filter by null on a `Json` field:
+
+```ts
+prisma.log.findMany({
+  where: {
+    data: {
+      meta: {
+        equals: null
+                ^ TypeError: Type 'null' is not assignable to type
+        }
+    },
+  },
+});
+```
+
+To fix this, you'll import and use one of the new null types:
+
+```ts
+import { Prisma } from '@prisma/client'
+
+prisma.log.findMany({
+  where: {
+    data: {
+      meta: {
+        equals: Prisma.AnyNull,
+      },
+    },
+  },
+})
+```
+
+<Admonition type="warning">
+
+This API change does not apply to the MongoDB connector where there is not a difference between a JSON null and a database NULL.
+
+They also do not apply to the `array_contains` operator becuase there can only be a JSON null within an JSON array. Since there cannot be a database NULL within a JSON array, `{ array_contains: null }` is not ambiguous.
+
+</Admonition>
+
 ## Specific upgrade paths
 
 <Subsections />
