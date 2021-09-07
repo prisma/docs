@@ -8,11 +8,18 @@ interface ExpandedProps {
 interface ShowHideProps {
   showText?: string
   hideText?: string
+  outputResultText?: string
 }
 
 type CodeWithResultProps = React.ReactNode & ExpandedProps & ShowHideProps
 
-const CodeWithResult = ({ children, expanded, showText, hideText }: CodeWithResultProps) => {
+const CodeWithResult = ({
+  children,
+  expanded,
+  showText,
+  hideText,
+  outputResultText,
+}: CodeWithResultProps) => {
   const [showResult, setShowResult] = React.useState(expanded)
   const cmd =
     children && children.filter((child: any) => child.props && child.props.mdxType === 'cmd')
@@ -20,8 +27,16 @@ const CodeWithResult = ({ children, expanded, showText, hideText }: CodeWithResu
     children && children.filter((child: any) => child.props && child.props.mdxType === 'cmdResult')
 
   const toggleResult = () => setShowResult(!showResult)
-  const toggleShowText = showText ? showText : 'Show CLI results'
-  const toggleHideText = hideText ? hideText : 'Hide CLI results'
+  const toggleShowText = showText
+    ? showText
+    : outputResultText
+    ? `Show ${outputResultText} results`
+    : 'Show CLI results'
+  const toggleHideText = hideText
+    ? hideText
+    : outputResultText
+    ? `Hide ${outputResultText} results`
+    : 'Hide CLI results'
 
   return (
     <Wrapper>
