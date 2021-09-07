@@ -11,7 +11,7 @@ export default FootNote
 
 const FootNoteWrapper = styled.div`
   * {
-    font-size: 0.9em;
+    font-size: 14px;
     font-style: italic;
   }
 `

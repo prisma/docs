@@ -105,9 +105,10 @@ const useActiveId = (idList: string[]) => {
 }
 
 const TOC = ({ headings, tocDepth }: any) => {
-  const idList = getIds(headings, tocDepth || 1)
+  const idList = getIds(headings, tocDepth || 2)
   const activeId = useActiveId(idList)
-  const isItemActive = (url: string) => activeId === url.replace(/inlinecode/g, '').slice(1)
+  const isItemActive = (url?: string) =>
+    url ? activeId === url.replace(/inlinecode/g, '').slice(1) : false
 
   const childrenActive = (items: any) => items.some((item: any) => isItemActive(item.url))
 
@@ -121,7 +122,7 @@ const TOC = ({ headings, tocDepth }: any) => {
                 <li key={index}>
                   <ListItem
                     isActive={isItemActive(heading.url)}
-                    href={heading.url.replace(/inlinecode/g, '')}
+                    href={heading.url ? heading.url.replace(/inlinecode/g, '') : ''}
                     dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
                   />
                   {heading.items &&
@@ -140,7 +141,7 @@ const TOC = ({ headings, tocDepth }: any) => {
   return navItems && navItems.length ? (
     <>
       <ChapterTitle>CONTENT</ChapterTitle>
-      {navItems(headings, tocDepth || 1, activeId)}
+      {navItems(headings, tocDepth || 2, activeId)}
     </>
   ) : null
 }

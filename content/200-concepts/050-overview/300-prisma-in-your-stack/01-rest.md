@@ -8,7 +8,7 @@ metaDescription: 'This page gives an overview of the most important things when 
 
 When building REST APIs, Prisma Client can be used inside your _route controllers_ to send databases queries.
 
-![REST APIs with Prisma Client](https://imgur.com/5NwAOMt.png)
+![REST APIs with Prisma Client](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/5NwAOMt.png)
 
 </TopBlock>
 
@@ -50,7 +50,7 @@ model Post {
   title     String
   content   String?
   published Boolean @default(false)
-  author    User?   @relation(fields:  [authorId], references: [id])
+  author    User?   @relation(fields: [authorId], references: [id])
   authorId  Int?
 }
 

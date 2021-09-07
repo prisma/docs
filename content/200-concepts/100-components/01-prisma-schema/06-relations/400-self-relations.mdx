@@ -20,7 +20,7 @@ The following example models a one-to-one self-relation:
 
 ```prisma
 model User {
-  id          Int     @default(autoincrement()) @id
+  id          Int     @id @default(autoincrement())
   name        String?
   successorId Int?
   successor   User?   @relation("BlogOwnerHistory", fields: [successorId], references: [id])
@@ -66,7 +66,7 @@ Either side of the relation can be backed by a foreign key. In the following exa
 
 ```prisma highlight=4;normal
 model User {
-  id          Int     @default(autoincrement()) @id
+  id          Int     @id @default(autoincrement())
   name        String?
   successorId Int?
   successor   User?   @relation("BlogOwnerHistory", fields: [successorId], references: [id])
@@ -97,11 +97,11 @@ In the following example, `predecessor` is backed by `predecessorId`:
 
 ```prisma highlight=5,6;normal
 model User {
-  id              Int     @default(autoincrement()) @id
-  name            String?
-  successor       User?   @relation("BlogOwnerHistory")
-  predecessorId   Int?
-  predecessor     User?   @relation("BlogOwnerHistory", fields: [predecessorId], references: [id])
+  id            Int     @id @default(autoincrement())
+  name          String?
+  successor     User?   @relation("BlogOwnerHistory")
+  predecessorId Int?
+  predecessor   User?   @relation("BlogOwnerHistory", fields: [predecessorId], references: [id])
 }
 ```
 
@@ -110,11 +110,11 @@ model User {
 
 ```prisma highlight=5,6;normal
 model User {
-  id              String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  name            String?
-  successor       User?   @relation("BlogOwnerHistory")
-  predecessorId   String? @db.ObjectId
-  predecessor     User?   @relation("BlogOwnerHistory", fields: [predecessorId], references: [id])
+  id            String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name          String?
+  successor     User?   @relation("BlogOwnerHistory")
+  predecessorId String? @db.ObjectId
+  predecessor   User?   @relation("BlogOwnerHistory", fields: [predecessorId], references: [id])
 }
 ```
 
@@ -141,7 +141,7 @@ const x = await prisma.user.create({
 });
 ```
 
-## One-to-one self relations in the database
+### One-to-one self relations in the database
 
 ### Relational databases
 
@@ -194,11 +194,11 @@ A one-to-many self-relation looks as follows:
 
 ```prisma
 model User {
-  id        Int       @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   name      String?
   teacherId Int?
-  teacher   User?     @relation("TeacherStudents", fields: [teacherId], references: [id])
-  students  User[]    @relation("TeacherStudents")
+  teacher   User?   @relation("TeacherStudents", fields: [teacherId], references: [id])
+  students  User[]  @relation("TeacherStudents")
 }
 ```
 
@@ -207,11 +207,11 @@ model User {
 
 ```prisma
 model User {
-  id        String    @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id        String  @id @default(dbgenerated()) @map("_id") @db.ObjectId
   name      String?
-  teacherId String?   @db.ObjectId
-  teacher   User?     @relation("TeacherStudents", fields: [teacherId], references: [id])
-  students  User[]    @relation("TeacherStudents")
+  teacherId String? @db.ObjectId
+  teacher   User?   @relation("TeacherStudents", fields: [teacherId], references: [id])
+  students  User[]  @relation("TeacherStudents")
 }
 ```
 
@@ -281,10 +281,10 @@ A many-to-many self-relation looks as follows:
 
 ```prisma
 model User {
-  id          Int      @id @default(autoincrement())
-  name        String?
-  followedBy  User[]   @relation("UserFollows", references: [id])
-  following   User[]   @relation("UserFollows", references: [id])
+  id         Int     @id @default(autoincrement())
+  name       String?
+  followedBy User[]  @relation("UserFollows", references: [id])
+  following  User[]  @relation("UserFollows", references: [id])
 }
 ```
 
@@ -293,12 +293,12 @@ model User {
 
 ```prisma
 model User {
-  id             String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  name           String?
-  followedBy     User[]   @relation("UserFollows", fields: [followedByIDs])
-  followedByIDs  String[] @db.Array(ObjectId)
-  following      User[]   @relation("UserFollows", fields: [followingIDs])
-  followingIDs   String[] @db.Array(ObjectId)
+  id            String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name          String?
+  followedBy    User[]   @relation("UserFollows", fields: [followedByIDs])
+  followedByIDs String[] @db.Array(ObjectId)
+  following     User[]   @relation("UserFollows", fields: [followingIDs])
+  followingIDs  String[] @db.Array(ObjectId)
 }
 ```
 
@@ -310,7 +310,54 @@ This relation expresses the following:
 - "a user can be followed by zero or more users"
 - "a user can follow zero or more users"
 
-Note that this n-n-relation is [implicit](many-to-many-relations#implicit-many-to-many-relations). This means Prisma maintains a [relation table](../relations/many-to-many-relations#relation-tables) for it in the underlying database:
+Note that this n-n-relation is [implicit](many-to-many-relations#implicit-many-to-many-relations). This means Prisma maintains a [relation table](../relations/many-to-many-relations#relation-tables) for it in the underlying database.
+
+If you need the relation to hold other fields, you can create an [explicit](many-to-many-relations#explicit-many-to-many-relations) n-n self relation as well. The explicit version of the self relation shown previously is as follows:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id         Int       @id @default(autoincrement())
+  name       String?
+  followedBy Follows[] @relation("follower")
+  following  Follows[] @relation("following")
+}
+
+model Follows {
+  follower    User @relation("follower", fields: [followerId], references: [id])
+  followerId  Int
+  following   User @relation("following", fields: [followingId], references: [id])
+  followingId Int
+
+  @@id([followerId, followingId])
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id         Int       @id @default(autoincrement())
+  name       String?
+  followedBy Follows[] @relation("follower")
+  following  Follows[] @relation("following")
+}
+
+model Follows {
+  follower    User @relation("follower", fields: [followerId], references: [id])
+  followerId  Int
+  following   User @relation("following", fields: [followingId], references: [id])
+  followingId Int
+
+  @@id([followerId, followingId])
+}
+```
+
+</tab>
+</TabbedContent>
 
 ### Many-to-many self-relations in the database
 
@@ -391,12 +438,13 @@ You can also define multiple self-relations on the same model at once. Taking al
 
 ```prisma
 model User {
-  id          Int      @id @default(autoincrement())
-  name        String?
-  teacher     User?    @relation("TeacherStudents")
-  students    User[]   @relation("TeacherStudents")
-  followedBy  User[]   @relation("UserFollows")
-  following   User[]   @relation("UserFollows")
+  id         Int     @id @default(autoincrement())
+  name       String?
+  teacherId  Int?
+  teacher    User?   @relation("TeacherStudents", fields: [teacherId], references: [id])
+  students   User[]  @relation("TeacherStudents")
+  followedBy User[]  @relation("UserFollows")
+  following  User[]  @relation("UserFollows")
 }
 ```
 
@@ -405,15 +453,15 @@ model User {
 
 ```prisma
 model User {
-  id             String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  name           String?
-  teacherId      String?  @db.ObjectId
-  teacher        User?    @relation("TeacherStudents", fields: [teacherId], references: [id])
-  students       User[]   @relation("TeacherStudents")
-  followedBy     User[]   @relation("UserFollows", fields: [followedByIDs])
-  followedByIDs  String[] @db.Array(ObjectId)
-  following      User[]   @relation("UserFollows", fields: [followingIDs])
-  followingIDs   String[] @db.Array(ObjectId)
+  id            String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  name          String?
+  teacherId     String?  @db.ObjectId
+  teacher       User?    @relation("TeacherStudents", fields: [teacherId], references: [id])
+  students      User[]   @relation("TeacherStudents")
+  followedBy    User[]   @relation("UserFollows", fields: [followedByIDs])
+  followedByIDs String[] @db.Array(ObjectId)
+  following     User[]   @relation("UserFollows", fields: [followingIDs])
+  followingIDs  String[] @db.Array(ObjectId)
 }
 ```
 
