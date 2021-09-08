@@ -325,7 +325,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
     <>
       {/* Top level header */}
       <HeaderWrapper>
-        <Container>
+        <Container style={{ zIndex: 999 }}>
           {/* <WebsiteHeader /> */}
           <Navbar />
         </Container>
