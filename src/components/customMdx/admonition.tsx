@@ -44,7 +44,7 @@ const FlexContainer = styled.div`
 `
 
 const ChildContainer = styled.div`
-  margin: 1rem 0;
+  margin: 0;
 `
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`
