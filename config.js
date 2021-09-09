@@ -376,7 +376,7 @@ const config = {
       },
       {
         text: 'FAQ',
-        url: 'about/faq',
+        url: 'about/prisma/faq',
       },
       {
         text: 'Limitations',
