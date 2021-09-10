@@ -35,6 +35,8 @@ const gatsbyRemarkPlugins = [
     options: {
       ignore: [
         '/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
+        '/docs/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
+        '/docs/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgres',
       ]
     },
   },
