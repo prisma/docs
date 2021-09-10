@@ -32,6 +32,11 @@ const gatsbyRemarkPlugins = [
   },
   {
     resolve: require.resolve('./plugins/gatsby-remark-check-links-numberless'),
+    options: {
+      ignore: [
+        '/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
+      ]
+    },
   },
   {
     resolve: 'gatsby-remark-copy-linked-files',
