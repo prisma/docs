@@ -107,6 +107,7 @@ module.exports = async function plugin(
 
   let totalBrokenLinks = 0
   const prefixedIgnore = ignore.map(withPathPrefix)
+  console.log('prefixIgnore', prefixedIgnore)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
   const pathKeysWithoutIndex = pathKeys.map((p) =>
@@ -116,6 +117,7 @@ module.exports = async function plugin(
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
       // don't count broken links for ignored pages
+      console.log('Do not cound this borken link:', pathL)
       continue
     }
 
