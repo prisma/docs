@@ -9,7 +9,9 @@ import customMdx from '../components/customMdx'
 import './layout.css'
 import SidebarLayout from './sidebar'
 import TOC from './toc'
-import { LensProvider, theme } from '@prisma/lens/dist/web'
+// import { LensProvider, theme } from '@prisma/lens/dist/web'
+import { theme } from '@prisma/lens/dist/web'
+import { LensProvider } from '@prisma/lens'
 import StickyBox from 'react-sticky-box'
 
 const Wrapper = styled.div<{ fullWidth?: boolean }>`
