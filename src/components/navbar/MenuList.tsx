@@ -71,9 +71,6 @@ const MenuListContainer = styled.ul`
           }
         }
       }
-      &:focus {
-        outline: none;
-      }
     }
   }
   @media (min-width: 768px) {

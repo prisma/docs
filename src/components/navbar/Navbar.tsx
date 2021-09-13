@@ -121,8 +121,4 @@ const MobileMenuBtn = styled.button`
   padding: 0;
   margin: 0;
   border: 0;
-  &:focus,
-  &:active {
-    outline: none;
-  }
 `
