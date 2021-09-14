@@ -346,12 +346,12 @@ const config = {
       },
       {
         text: 'About the docs ',
-        url: 'about/about-the-docs',
+        url: 'about/prisma-docs/about-the-docs',
         codeBlock: false,
       },
       {
         text: 'Prisma style guide',
-        url: 'about/style-guide',
+        url: 'about/prisma-docs/style-guide',
         codeBlock: false,
       },
       {
@@ -380,7 +380,7 @@ const config = {
       },
       {
         text: 'Limitations',
-        url: 'about/limitations',
+        url: 'about/prisma/limitations',
         codeBlock: false,
       },
       {
@@ -390,12 +390,12 @@ const config = {
       },
       {
         text: 'Roadmap',
-        url: 'about/roadmap',
+        url: 'about/prisma/roadmap',
         codeBlock: false,
       },
       {
         text: 'Releases and maturity levels',
-        url: 'about/releases',
+        url: 'about/prisma/releases',
         codeBlock: false,
       },
     ],
