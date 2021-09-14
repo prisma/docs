@@ -181,7 +181,7 @@ const config = {
           },
           {
             text: 'SQL Server',
-            url: 'concepts/database-connectors/microsoft-sql-server',
+            url: 'concepts/database-connectors/sql-server',
             codeBlock: false,
           },
           {
