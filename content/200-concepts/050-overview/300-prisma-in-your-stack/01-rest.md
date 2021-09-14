@@ -62,7 +62,7 @@ model User {
 }
 ```
 
-You can now implement route controller (e.g. using Express) that use the generated [Prisma Client API](../../../concepts/components/prisma-client) to perform a database operation when an incoming HTTP request arrives. This page only shows few sample code snippets, if you want to run these code snippets, you can use the [REST API example](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express).
+You can now implement route controller (e.g. using Express) that use the generated [Prisma Client API](/concepts/components/prisma-client) to perform a database operation when an incoming HTTP request arrives. This page only shows few sample code snippets, if you want to run these code snippets, you can use the [REST API example](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express).
 
 #### `GET`
 
