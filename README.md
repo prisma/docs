@@ -4,6 +4,10 @@
 
 This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
 
+## Contributing to the docs
+
+Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
+
 ## Run locally
 
 Clone this repository and get started by running the following commands:
