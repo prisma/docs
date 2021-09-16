@@ -157,6 +157,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://janpiotrowski.de"><img src="https://avatars.githubusercontent.com/u/183673?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jan Piotrowski</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=janpio" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://norman.life"><img src="https://avatars.githubusercontent.com/u/1992255?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Norman</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=2color" title="Documentation">📖</a> <a href="#example-2color" title="Examples">💡</a></td>
   </tr>
 </table>
 
