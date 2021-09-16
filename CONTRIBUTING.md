@@ -1,16 +1,16 @@
-# Contributing to Prisma docs
+# Contributing to Prisma Documentation
 
 We welcome all contributions to the Prisma docs! If you come across some documentation that you feel is missing or incorrect, please open an issue or submit a pull request.
 
-## Im not sure my changes are valid
+## I am not sure my changes are valid
 
 If you are not sure your changes are valid, please open an issue and we will discuss it. Contributions from community members are welcome and will be considered for inclusion.
 
 ## Creating an issue
 
-There are no hard and fast rules for creating an issues to the repository. We only ask that you outline your reasoning for creating the issue and try to provide as much detail as possible. Depending on the issue, this could mean explaining what machine you are working on (Is it a mac? Are you on a Windows machine?), or including a code snippet that demonstrates the issue.
+There are no hard and fast rules for creating an issues to the repository. We only ask that you outline your reasoning for creating the issue and try to provide as much detail as possible. Depending on the issue, this could mean explaining what machine you are working on (Is it a Mac? Are you on a Windows machine?), or including a code snippet that demonstrates the issue.
 
-## Creating a pull request
+## Creating a pull request (PR)
 
 We have a pull request template. The basic breakdown is as follows:
 
