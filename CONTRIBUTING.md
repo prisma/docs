@@ -17,3 +17,25 @@ We have a pull request template. The basic breakdown is as follows:
 - Describe the reason for the PR. A little context goes a long way in helping to quickly scan the PR
 - Briefly describe what changes were made
 - Link to any relevant issues
+
+## Add yourself to our contributors board!
+
+This project follows the [all-contributors](https://allcontributors.org/docs/en/bot/usage) specification.
+
+To add yourself, include the following in your PR as a new comment:
+
+```
+@all-contributors please add @<username> for <contributions>
+```
+
+Where username is your github handle and contributions is any of the following:
+
+- `bug`
+- `doc`
+- `example`
+
+A full example might look like the following:
+
+```
+@all-contributors please add @molebox for doc and example
+```
