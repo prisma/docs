@@ -217,7 +217,7 @@ const TreeNode = ({
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && !hidePage && (
         <Link
-          href={staticLink || topLevel ? null : url}
+          to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'non-active'}
           id={withPrefix(url)}
