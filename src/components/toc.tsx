@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { stringify } from '../utils/stringify'
 import styled from 'styled-components'
+import { TableOfContents } from 'src/interfaces/Article.interface'
 
 const ChapterTitle = styled.div`
   font-family: ${(p) => p.theme.fonts.text};
@@ -79,7 +80,20 @@ const Headings = ({ headings, activeId, depth = 2 }: any) => {
   return navItems(headings, activeId, depth)
 }
 
-const useIntersectionObserver = (setActiveId: any) => {
+const getIds = (headings: TableOfContents[], tocDepth: number) => {
+  return headings.reduce((acc: any, item: any) => {
+    if (item.url) {
+      // url has a # as first character, remove it to get the raw CSS-id
+      acc.push(item.url.replace(/inlinecode/g, '').slice(1))
+    }
+    if (item.items && tocDepth > 1) {
+      acc.push(...getIds(item.items, tocDepth - 1))
+    }
+    return acc
+  }, [])
+}
+
+const useIntersectionObserver = (setActiveId: any, idList: any[]) => {
   const headingElementsRef: any = React.useRef({})
   React.useEffect(() => {
     const callback = (headings: any) => {
@@ -95,7 +109,7 @@ const useIntersectionObserver = (setActiveId: any) => {
         if (headingElement.isIntersecting) visibleHeadings.push(headingElement)
       })
 
-      const getIndexFromId = (id: any) => headingElements.findIndex((heading) => heading.id === id)
+      const getIndexFromId = (id: any) => idList.findIndex((heading) => heading.id === id)
 
       // If there is only one visible heading, this is our "active" heading
       if (visibleHeadings.length === 1) {
@@ -113,17 +127,21 @@ const useIntersectionObserver = (setActiveId: any) => {
 
     const observer = new IntersectionObserver(callback, { root: document.querySelector('iframe') })
 
-    const headingElements = Array.from(document.querySelectorAll('h2, h3'))
-
-    headingElements.forEach((element) => observer.observe(element))
+    idList.forEach((id: string) => {
+      const el: HTMLElement | null = document.getElementById(id)
+      if (el) {
+        observer.observe(el)
+      }
+    })
 
     return () => observer.disconnect()
   }, [setActiveId])
 }
 
-const TableOfContents = ({ headings, tocDepth }: any) => {
+const TOC = ({ headings, tocDepth }: any) => {
   const [activeId, setActiveId] = React.useState()
-  useIntersectionObserver(setActiveId)
+  const idList = getIds(headings, tocDepth || 2)
+  useIntersectionObserver(setActiveId, idList)
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>CONTENT</ChapterTitle>
@@ -132,4 +150,4 @@ const TableOfContents = ({ headings, tocDepth }: any) => {
   )
 }
 
-export default TableOfContents
+export default TOC
