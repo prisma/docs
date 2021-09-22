@@ -125,7 +125,7 @@ const useIntersectionObserver = (setActiveId: any, idList: any[]) => {
       }
     }
 
-    const observer = new IntersectionObserver(callback, { root: document.querySelector('iframe') })
+    const observer = new IntersectionObserver(callback)
 
     idList.forEach((id: string) => {
       const el: HTMLElement | null = document.getElementById(id)
