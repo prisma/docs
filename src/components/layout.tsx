@@ -8,7 +8,7 @@ import { MDXProvider } from '@mdx-js/react'
 import customMdx from '../components/customMdx'
 import './layout.css'
 import SidebarLayout from './sidebar'
-import TOC from './toc'
+import TableOfContents from './toc'
 import { LensProvider, theme } from '@prisma/lens/dist/web'
 import StickyBox from 'react-sticky-box'
 
@@ -132,15 +132,11 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
                 <MaxWidth>{children}</MaxWidth>
               </Content>
               {!homePage && (
-                //  <StickyBox offsetTop={20} offsetBottom={20}>
-                // <Sticky enabled={true} top={50} bottomBoundary={1200}>
                 <TOCWrapper id="toc-holder">
                   {toc && toc.items && toc.items.length > 0 && (
-                    <TOC headings={toc.items} tocDepth={tocDepth} location={location} />
+                    <TableOfContents headings={toc.items} tocDepth={tocDepth} />
                   )}
                 </TOCWrapper>
-                // </Sticky>
-                // </StickyBox>
               )}
             </Container>
           </Wrapper>
