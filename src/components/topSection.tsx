@@ -52,7 +52,6 @@ const TopSection = ({
   slug,
   langSwitcher,
   dbSwitcher,
-  toc,
   codeStyle,
 }: any) => {
   return (
