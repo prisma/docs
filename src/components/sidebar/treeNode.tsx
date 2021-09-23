@@ -155,7 +155,6 @@ const TreeNode = ({
   hidePage,
   codeStyle,
   parents,
-  location,
 }: any) => {
   const isCollapsed = collapsed[label]
   const collapse = () => {
@@ -173,6 +172,7 @@ const TreeNode = ({
     e.stopPropagation()
   }
 
+  const location = useLocation()
   const hasChildren = items.length !== 0
   const level = slug ? slug.split('/').indexOf(label) : ''
 
@@ -211,7 +211,8 @@ const TreeNode = ({
     }
   }, [isCollapsed])
 
-  const isCurrent = location && slug && location.pathname.includes(urlGenerator(slug))
+  const isCurrent =
+    location && slug && location.pathname.includes(urlGenerator(slug).replace('/index', ''))
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
