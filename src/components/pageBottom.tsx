@@ -104,10 +104,6 @@ const PageBottom = ({ editDocsPath }: any) => {
       const createdSetiment = await fetch(config.feedback.sentimentUrl, {
         method: 'POST',
         mode: 'cors',
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, PUT, DELETE, GET, OPTIONS',
-        },
         body: JSON.stringify({ pageUrl, sentiment }),
       }).then((response) => response.json())
 
