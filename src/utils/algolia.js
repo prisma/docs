@@ -53,7 +53,9 @@ const handleRawBody = (node) => {
         !section.includes('cmdResult>') &&
         !section.includes('<Subsections') &&
         !section.includes('cmd>') &&
-        !section.includes('<!-- prettier-ignore -->')
+        !section.includes('<!-- prettier-ignore -->') &&
+        !section.includes('<Admonition type="warning">') &&
+        !section.includes('</Admonition>')
     )
     filteredSections.map(
       (para) =>
