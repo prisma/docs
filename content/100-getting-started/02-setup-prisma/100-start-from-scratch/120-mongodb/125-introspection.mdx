@@ -1,0 +1,207 @@
+---
+title: 'Introspection'
+metaTitle: 'Introspection'
+metaDescription: 'Introspection your database with Prisma'
+langSwitcher: ['typescript', 'node']
+dbSwitcher: ['mongodb']
+toc: false
+---
+
+## Introspect your database with Prisma
+
+Prisma introspects MongoDB schema by sampling the data stored in the given database. For the purpose of this guide, we'll create three collections and add some data to them. Either using the [mongo-express](https://github.com/mongo-express/mongo-express) or from [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) console, add a new database `prisma` and three collections: `Post`, `Profile` and `User`.
+
+Now to let Prisma have an idea how our data looks like, add a few documents to each collection.
+
+User: 
+
+```json
+[
+  {
+    "_id": {
+      "$oid": "615ac7bc98a5fb484962734d"
+    },
+    "name": "Charlie Brown",
+    "email": "cbrown@example.com"
+  }
+]
+```
+
+Profile:
+
+```json
+[
+  {
+    "_id": {
+      "$oid": "615ac86f98a5fb484962734f"
+    },
+    "bio": "Was part of a comic series.",
+    "userId": {
+      "$oid": "615ac7bc98a5fb484962734d"
+    }
+  }
+]
+```
+
+Post:
+
+```json
+[
+  {
+    "_id": {
+      "$oid": "615ac8f198a5fb4849627353"
+    },
+    "title": "Hello, world!",
+    "createdAt": {
+      "$date": "2021-10-04T09:27:13.941Z"
+    },
+    "content": "Hi there!",
+    "published": true,
+    "authorId": {
+      "$oid": "615ac7bc98a5fb484962734d"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "615ac91a98a5fb4849627355"
+    },
+    "title": "Second post.",
+    "createdAt": {
+      "$date": "2021-10-04T09:27:54.386Z"
+    },
+    "published": false,
+    "authorId": {
+      "$oid": "615ac7bc98a5fb484962734d"
+    }
+  }
+]
+```
+
+For `Post` we'll add an index:
+
+```json
+{
+  "authorId": 1
+}
+```
+
+And for `Profile`, another index:
+
+```json
+{
+  "userId": 1
+}
+```
+
+Open the `prisma/schema.prisma` file and replace the default configurations with the following:
+
+```prisma file=prisma/schema.prisma
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+```
+
+Because MongoDB is currently a preview feature, you need to explicitly define that in the [`generator`](/reference/api-reference/prisma-schema-reference#generator) block with `previewFeatures = ["mongoDb"]`.
+
+As a next step, you will introspect your database. The result of the introspection will be a [data model](/concepts/components/prisma-schema/data-model) inside your Prisma schema.
+
+Run the following command to introspect your database:
+
+```terminal copy
+npx prisma db pull
+```
+
+This commands reads the `DATABASE_URL` environment variable that's defined in `.env` and connects to your database. Once the connection is established, it introspects the database (i.e. it _samples the data it finds_). It then translates the data it finds from MongoDB into a Prisma data model.
+
+The data model now looks similar to this (note that the fields on the models have been reordered for better readability):
+
+```prisma file=prisma/schema.prisma
+model Post {
+  id        String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  authorId  String   @db.ObjectId
+  content   String?
+  createdAt DateTime @db.Date
+  published Boolean
+  title     String
+
+  @@index([authorId], map: "authorId_1")
+}
+
+model Profile {
+  id     String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  bio    String
+  userId String @db.ObjectId
+
+  @@index([userId], map: "userId_1")
+}
+
+model User {
+  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  email String
+  name  String
+}
+```
+
+There are also a number of subtle differences in how the schema is setup when compared to relational databases like PostgreSQL.
+
+For example, the underlying `ID` field name is always `_id` and must be mapped with `@map("_id")`.
+
+For more information check out the [MongoDB schema reference](/reference/api-reference/prisma-schema-reference#mongodb-2).
+
+<SwitchTech technologies={['node', 'mongodb']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-node-mongodb"
+  arrowLeft
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-mongodb"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'mongodb']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-typescript-mongodb"
+  arrowLeft
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-mongodb"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
