@@ -1,4 +1,3 @@
-const path = require('path')
 const config = require('./config')
 require('dotenv').config()
 

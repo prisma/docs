@@ -178,7 +178,7 @@ module.exports = async function plugin(
       console.error(message)
     }
   } else if (verbose) {
-    console.info('No broken links found')
+    console.info('No broken linkssss found')
   }
 
   return markdownAST
