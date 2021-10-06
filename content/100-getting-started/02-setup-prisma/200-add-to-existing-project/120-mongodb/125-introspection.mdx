@@ -7,87 +7,39 @@ dbSwitcher: ['mongodb']
 toc: false
 ---
 
-## Introspect your database with Prisma
+# Introspection
 
-Prisma introspects a MongoDB schema by sampling the data stored in the given database. For the purpose of this guide, we'll create three collections and add some data to them. Either using [Robo 3T](https://robomongo.org/) GUI or from [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) console, add a new database `prisma` and three collections: `Post`, `Profile` and `User`.
+Prisma introspects a MongoDB schema by sampling the data stored in the given database and inferring the schema of that data.
 
-Now to let Prisma have an idea how our data looks like, add a few documents to each collection.
+For the purposes of this guide, we'll setup a MongoDB database from scratch. If you have a MongoDB database already, feel free to jump to [Initializing Prisma](#initializing-prisma) in your project.
 
-```json file=users.json
-[
-  {
-    "_id": {
-      "$oid": "615ac7bc98a5fb484962734d"
-    },
-    "name": "Charlie Brown",
-    "email": "cbrown@example.com"
-  }
-]
+## Setting up your Database
+
+To see this in action, first create a `blog` database with 2 collections: `User` and `Post`. We recommend [MongoDB Compass](https://www.mongodb.com/products/compass) for setting this up:
+
+![Create a blog database using Compass](./1-create-database.jpg)
+
+First, add a user to our `User` collection:
+
+![Create a user within the User collection](./2-create-user.jpg)
+
+Next add some posts to our `Post` collection. It's important that the ObjectID in `userId` matches the user you created above.
+
+![Create some posts within the Post collection](./3-create-posts.jpg)
+
+## Initializing Prisma
+
+Now that we have a MongoDB database, let's create a new project and initialize Prisma:
+
+```sh
+mkdir blog
+cd blog
+npm init -y
+npm install -D prisma
+npx prisma init
 ```
 
-```json file=profiles.json
-[
-  {
-    "_id": {
-      "$oid": "615ac86f98a5fb484962734f"
-    },
-    "bio": "Was part of a comic series.",
-    "userId": {
-      "$oid": "615ac7bc98a5fb484962734d"
-    }
-  }
-]
-```
-
-```json file=posts.json
-[
-  {
-    "_id": {
-      "$oid": "615ac8f198a5fb4849627353"
-    },
-    "title": "Hello, world!",
-    "createdAt": {
-      "$date": "2021-10-04T09:27:13.941Z"
-    },
-    "content": "Hi there!",
-    "published": true,
-    "authorId": {
-      "$oid": "615ac7bc98a5fb484962734d"
-    }
-  },
-  {
-    "_id": {
-      "$oid": "615ac91a98a5fb4849627355"
-    },
-    "title": "Second post.",
-    "createdAt": {
-      "$date": "2021-10-04T09:27:54.386Z"
-    },
-    "published": false,
-    "authorId": {
-      "$oid": "615ac7bc98a5fb484962734d"
-    }
-  }
-]
-```
-
-For `Post` we'll add an index:
-
-```json
-{
-  "authorId": 1
-}
-```
-
-And for `Profile`, another index:
-
-```json
-{
-  "userId": 1
-}
-```
-
-Open the `prisma/schema.prisma` file and replace the datasource and generator with the following:
+Initializing Prisma will create a `prisma/schema.prisma` file. Edit this file to use MongoDB:
 
 ```prisma file=prisma/schema.prisma
 datasource db {
@@ -101,85 +53,71 @@ generator client {
 }
 ```
 
-Because MongoDB is currently a preview feature, you need to explicitly define that in the [`generator`](/reference/api-reference/prisma-schema-reference#generator) block with `previewFeatures = ["mongoDb"]`.
+Next you'll need to adjust your `.env` file to point the `DATABASE_URL` to your MongoDB database
 
-As a next step, you will introspect your database. The result of the introspection will be a [data model](/concepts/components/prisma-schema/data-model) inside your Prisma schema.
+## Introspecting MongoDB with Prisma
 
-Run the following command to introspect your database:
+We're now ready to introspect. Run the following command to introspect your database:
 
-```terminal copy
+```sh copy
 npx prisma db pull
 ```
 
-This command reads the `DATABASE_URL` environment variable that's defined in `.env` and connects to your database. Once the connection is established, it introspects the database (i.e. it _samples the data it finds_). It then translates the data it finds from MongoDB into a Prisma data model.
-
-The data model now looks similar to this (note that the fields on the models have been reordered for better readability):
+This command introspects our database and writes the inferred schema into your `prisma/schema.prisma` file:
 
 ```prisma file=prisma/schema.prisma
-model Post {
-  id        String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  authorId  String   @db.ObjectId
-  content   String?
-  createdAt DateTime @db.Date
-  published Boolean
-  title     String
-
-  @@index([authorId], map: "authorId_1")
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
 }
 
-model Profile {
-  id     String @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  bio    String
-  userId String @db.ObjectId
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
 
-  @@index([userId], map: "userId_1")
+model Post {
+  id     String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
 }
 
 model User {
   id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
   email String
-  name  String
 }
 ```
 
-There are also a number of subtle differences in how the schema is setup when compared to relational databases like PostgreSQL.
+## Tweaking the Schema
 
-For example, the underlying `ID` field name is always `_id` and must be mapped with `@map("_id")`.
+To be able to join data using the Prisma Client, we'll manually add the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attributes to our models:
 
-To be able to join data using the Prisma Client, we need to manually add the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attributes to our models:
-
-```prisma file=prisma/schema.prisma highlight=8;add|17;add|26;add|27;add
-model Post {
-  id        String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  authorId  String   @db.ObjectId
-  content   String?
-  createdAt DateTime @db.Date
-  published Boolean
-  title     String
-  User      User     @relation(fields: [authorId], references: [id])
-
-  @@index([authorId], map: "authorId_1")
+```prisma file=prisma/schema.prisma highlight=15;add|21;add
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
 }
 
-model Profile {
-  id     String @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  bio    String
-  userId String @db.ObjectId
-  User   User   @relation(fields: [userId], references: [id])
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
 
-  @@index([userId], map: "userId_1")
+model Post {
+  id     String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model User {
-  id      String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  email   String
-  name    String
-  Post    Post[]
-  Profile Profile?
+  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  email String
+  posts Post[]
 }
 ```
 
-For more information check out the [MongoDB schema reference](/reference/api-reference/prisma-schema-reference#mongodb-2).
+And with that, you're ready to generate the Prisma Client!
 
 <SwitchTech technologies={['node', 'mongodb']}>
 
@@ -188,10 +126,10 @@ For more information check out the [MongoDB schema reference](/reference/api-ref
 <ButtonLink
   color="dark"
   type="primary"
-  href="./connect-your-database-node-mongodb"
+  href="/getting-started/setup-prisma/add-to-existing-project/mongodb-node-mongodb"
   arrowLeft
 >
-  Connect your database
+  Connect to your Database
 </ButtonLink>
 
 <ButtonLink
@@ -200,7 +138,7 @@ For more information check out the [MongoDB schema reference](/reference/api-ref
   href="./install-prisma-client-node-mongodb"
   arrow
 >
-  Install Prisma Client
+  Install the Prisma Client
 </ButtonLink>
 
 </NavigationLinksContainer>
@@ -214,10 +152,10 @@ For more information check out the [MongoDB schema reference](/reference/api-ref
 <ButtonLink
   color="dark"
   type="primary"
-  href="./connect-your-database-typescript-mongodb"
+  href="/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb"
   arrowLeft
 >
-  Connect your database
+  Connect to your Database
 </ButtonLink>
 
 <ButtonLink
@@ -226,7 +164,7 @@ For more information check out the [MongoDB schema reference](/reference/api-ref
   href="./install-prisma-client-typescript-mongodb"
   arrow
 >
-  Install Prisma Client
+  Install the Prisma Client
 </ButtonLink>
 
 </NavigationLinksContainer>
