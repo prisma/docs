@@ -1,0 +1,78 @@
+---
+title: 'Referential integrity'
+metaTitle: 'Referential integrity'
+metaDescription: 'Referential integrity lets you define how the consistency of relations is handled.'
+tocDepth: 2
+preview: true
+---
+
+<TopBlock>
+
+Referential integrity means a set of constraints or triggers to handle the consistency of data of a [`@relation`](/reference/api-reference/prisma-schema-reference#relation). It can mean preventing a deletion of a record referred from other records, or it can be a cascading action defined in the field's [`referential actions`](/concepts/components/prisma-schema/relations/referential-actions). 
+
+The referential integrity can either be handled in the database using foreign keys, or in the Prisma Client. There are pros and cons on both. In general, if the database supports foreign keys, it is usually the preferred choice and the default for SQL databases when using Prisma.
+
+In certain cases, either when the database doesn't support foreign keys, or when they are not preferred due to scaling reasons, Prisma can disable them and handle the referential integrity in the client.
+
+</TopBlock>
+
+## Setting the referential integrity in the datasource
+
+Changing the referential integrity can be done in the [`datasource`](/reference/api-reference/prisma-schema-reference#datasource) block, using the `referentialIntegrity` parameter. The default for all SQL databases is `foreignKeys` and MongoDB defaults to `prisma`, which is the only setting that can be used with the connector.
+
+Because referential integrity is currently a preview feature, you need to explicitly define that in the generator block with `previewFeatures = ["referentialIntegrity"]`.
+
+```prisma
+datasource db {
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  referentialIntegrity = "prisma"
+}
+
+generator js {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
+}
+```
+
+Setting the value to `prisma` will remove all foreign keys previously created in the next migration when using Prisma Migrate and the referential integrity will be handled by the client. The value `foreignKeys` creates foreign keys for all relations in the next migration when using Prisma Migrate, letting the database handle the referential integrity.
+
+## Handling the referential integrity in Prisma
+
+If the integrity is handled by the Prisma Client, for now there will be reduced amount of available [referential actions](/concepts/components/prisma-schema/relations/referential-actions) available in the data model:
+
+| action     | `onUpdate` | `onDelete` |
+|:-----------|:-----------|:-----------|
+| Restrict   | no         | yes        |
+| SetNull    | no         | yes        |
+| SetDefault | no         | no         |
+| Cascade    | no         | yes        |
+| NoAction   | yes        | yes        |
+
+In this mode, any [`raw`](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) database queries will not trigger any of the actions, and they should be handled manually if deleting or updating records using the [`raw`](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) queries.
+
+The relations are needed for the client to be able to join data between models, so when using the `db pull` command to a database with the `prisma` integrity, existing relations are kept in the data model. This has some caveats:
+
+- When a model in the database is deleted, the relation on the other side gets deleted, if existing.
+- When a scalar field used in a relation field gets deleted or renamed, the relation field is kept as-is, leading to validation errors. The user must fix the relation before continuing to use the data model in this case.
+
+Any of the actions only work with `onDelete` for now, the issue to follow for the `onUpdate` counterparts is here:
+
+https://github.com/prisma/prisma/issues/9014
+
+## Handling the referential integrity with foreign keys
+
+Having the referential integrity handled in the database, all referential actions supported by the database are available:
+
+| action      | `onUpdate` | `onDelete` |
+|:------------|:-----------|:-----------|
+| Restrict⟒   | yes        | yes        |
+| SetNull     | yes        | yes        |
+| SetDefault⟑ | yes        | yes        |
+| Cascade     | yes        | yes        |
+| NoAction    | yes        | yes        |
+
+- ⟒ Not supported on SQL Server
+- ⟑ Not supported on MySQL/InnoDB
+
+In this mode the [`raw`](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) database queries will trigger actions accordingly.

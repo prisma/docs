@@ -1,14 +1,16 @@
 import * as React from 'react'
 import styled from 'styled-components'
 
-type TopBlockProps = React.ReactNode
+type TopBlockProps = {
+  children: any
+}
 
 const TopBlock = ({ children, ...props }: TopBlockProps) => {
-  return <TopBlockWrapper {...props}>{children}</TopBlockWrapper>
+  return <section {...props}>{children}</section>
 }
 
 export default TopBlock
 
-const TopBlockWrapper = styled.section`
-  /* padding: ${(p) => p.theme.space[4]} ${(p) => p.theme.space[40]}; */
-`
+// const TopBlockWrapper = styled.section`
+//   /* padding: ${(p) => p.theme.space[4]} ${(p) => p.theme.space[40]}; */
+// `
