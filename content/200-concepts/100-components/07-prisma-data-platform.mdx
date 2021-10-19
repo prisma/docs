@@ -39,3 +39,158 @@ In order to add users, you need to use their GitHub username and they need to ha
 The Prisma Data Platform can have a static IP which you can add to an allowlist in order to connect to your database through our Data Browser.
 
 You can [create an issue](https://github.com/prisma/studio/issues/new?assignees=&labels=topic%3A+hosted+data+browser&template=hosted-data-browser-bug-report.md&title=) with your request and we will enable it for you. Please note that while this is a feature that will be part of a paid plan in the future, it is currently offered for free while we are in Early Access.
+
+## Data Proxy
+
+<Admonition type="warning">
+
+**Early Access Feature** <br />
+Please note that the Prisma Data Proxy is an early-stage product and should not be considered stable.
+</Admonition>
+
+<Admonition type="warning">
+
+**Not supported** <br />
+[Interactive Transactions](/concepts/components/prisma-client/transactions#interactive-transactions-in-preview) (Preview Feature) are not supported at this time.
+</Admonition>
+
+Prisma Data Proxy is an intermediary between your application and your database. Currently, it supports connection pooling, so you can reliably use relational databases in serverless environments.
+
+### Why use the Data Proxy?
+
+Serverless functions are ephemeral and short-lived, so their database connections are numerous and brief.
+
+Because of this, using traditional databases in serverless functions often leads to exhausting the number of concurrent database connections and increased latencies on each request to establish a database connection.
+
+### Using the Data Proxy in a Prisma application
+
+We assume you already have an account and a project on [Prisma Cloud](https://cloud.prisma.io). If you don't please do that before continuing.
+
+#### Step 1: Generate a Data Proxy connection string
+
+Navigate to the "Data Proxy" tab of your Prisma Cloud project, select desired proxy location, and click on "Enable".
+
+IMAGE
+
+> The Data Proxy is currently available in the AWS Frankfurt (eu-central-1) and N. Virginia (us-east-1) regions. If you'd like support for other providers or regions, [we'd love to hear from you](https://forms.gle/17uyd1raniRtGSPe9).
+
+Copy the connection string displayed and store it securely, similarly to how you would treat a database credentials. You may generate more connection strings in this section if you wish and of course, revoke them if you don't need them anymore.
+
+Connection strings have the following format: `prisma://{DEPLOYMENT_LOCATION}.prisma-data.com/?api_key={DATA_PROXY_API_KEY}`
+
+#### Step 2: Install Data Proxy-enabled Prisma stack
+
+To use the data proxy, you will version `3.3.0` or higher of the `prisma` and `prisma-client` npm packages. 
+
+```terminal
+npm install prisma --save-dev
+```
+
+#### Step 3: Enable the feature flag in the Prisma schema file
+
+In the generator block of your `Prisma.schema` file, enable the feature flag:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["dataProxy"]
+}
+```
+
+#### Step 4: Regenerate the client
+
+To generate the client for the deployment, a specific environment variable `PRISMA_CLIENT_ENGINE_TYPE="dataproxy"` needs to be set:
+
+```terminal
+PRISMA_CLIENT_ENGINE_TYPE='dataproxy' npx prisma generate
+```
+
+#### Running the app
+
+In the deployment you want to use the proxy, make sure that the `DATABASE_URL` environment variable is set to the proxy connection string. 
+Currently, the only supported datasource name is `db`. Make sure your `prisma.schema` file includes the `datasource db { ... }` block.
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+#### Step 4: Start your app
+
+We don't know how you run your app, but if you use `env` in your schema, nothing but the value of your environment variable should change. For example:
+
+```jsx
+DATABASE_URL='prisma://aws-us-east-1.prisma-data.com/?api_key=...' npm start
+```
+
+For guidance on how to configure environment variables on your deployment, please refer to your provider's guidance, for example:
+
+- AWS: [Using AWS Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html)
+- Heroku: [Configuration and Config Vars](https://devcenter.heroku.com/articles/config-vars)
+
+### Data Proxy Appendix
+
+#### Providing connection string to Prisma Migrate
+
+Currently, Data Proxy can only be used to query your database with Prisma Client.
+
+Migrations can be run only on a direct (non-proxied) database connection. Assuming that your schema uses `env("DATABASE_URL")`, you'll need to override `DATABASE_URL` before running `prisma migrate`. You could declare another environment variable, for example `MIGRATE_DATABASE_URL`, and use it as to override the connection:
+
+```js
+// package.json
+{
+  ...,
+  "scripts": {
+    "generate-client": "PRISMA_CLIENT_ENGINE_TYPE='dataproxy' prisma generate",
+    "migrate": "DATABASE_URL=\"$MIGRATE_DATABASE_URL\" prisma migrate deploy",
+    ...
+  }
+}
+```
+
+#### Deploying to Vercel
+
+Our Vercel Deployment sample repository has a [branch](https://github.com/prisma/deployment-example-vercel/tree/data-proxy) showing how to switch to the Data Proxy.
+
+Click [here](https://www.notion.so/prismaio/Prisma-Data-Proxy-Public-Docs-Early-Access-Program-EAP-8ca06a8b350340e3a6236689375d071e#75476aa708854867a5e4ecb3ef31691f) to create a project based on this branch.
+
+#### Connecting to a database hosted with a provider different than AWS
+
+It's possible to connect to a database hosted on any provider, but it needs to be accessible from the public internet. For best results and response times, you should configure the proxy in a region that is closest to both your application servers or functions and your database.
+
+If a region or provider is not yet supported, you can file a request for us [here](https://prisma103696.typeform.com/to/Y03RBE5c).
+
+#### Connection limits
+
+We recommend using a database that supports at least 20 concurrent connections.
+Setting a concurrency limit on AWS Lambda should not be required, but you should be aware that requests will be queued if necessary until they can be processed.
+
+#### Proxy Limits
+
+The limits for running different schemas concurrently during Early Access are:
+
+- Up to 3 schemas can be used at one moment in a single Prisma app (for example: while updating your app to a new schema version)
+- Up to 5 schemas can be used at one moment account-wide
+
+The Data Proxy is architected to seamlessly scale to support large workloads, but during the Early Access period there will be a fairly low scale limit. The actual performance for a single schema using the data proxy will depend on a large number of variables (the type of queries, latencies and deployment locations, the performance of your database, ...). The data proxy will not yield more 200 rps. The actual number is hard to predict is likely to be well below.
+
+Please reach out to us if you're seeing `429` HTTP errors in your logs - this may mean you're hitting the quotas - we'd love to know about your use case and work with you on this.
+
+#### Cost of the service
+
+The Data Proxy is provided for free during Early Access. We will use this period to learn about usage and tweak the pricing model. When the Prisma Data Platform is launched in General Availability, there will be continue to be an option to use the Data Proxy for free with some limitations, alongside paid options.
+
+#### Availability, Usage for Testing purposes only
+
+We do not expect long planned downtime periods, but we also do not provide an SLA during Early Access. As an Early Access feature, the Data Proxy is not considered stable and it should not be used in production.
+
+#### Feedback and Support
+
+You can reach us via Slack on the [#prisma-data-platform channel](https://prisma.slack.com/archives/C02EAHBAG93) on our public community Slack. If you don't have an account yet, you can join [here](https://slack.prisma.io/).
+
+You can also use [this form](https://forms.gle/17uyd1raniRtGSPe9) to submit any feedback you might have or report issues.
+
+
+  
