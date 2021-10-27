@@ -6,24 +6,15 @@ metaDescription: 'Learn how to deploy a TypeScript application to Verce Edge Fun
 
 <TopBlock>
 
-Today you'll be building and deploying a Cloudflare Worker that uses Prisma to save every request to a MongoDB database for inspection later.
+Today you'll be building and deploying a Vercel Edge Function that uses Prisma to save page visits to your database so you can display active visitors on your website.
 
-This guide will cover Prisma, Typescript, MongoDB, Prisma Data Proxy and Cloudflare Workers from the ground up. Let's get started!
+This guide will cover Prisma, Typescript, PostgreSQL, Prisma Data Proxy and Vercel Edge Functions from the ground up. Let's get started!
 
 </TopBlock>
 
-<Admonition type="warning">
-
-**Early Access Feature** <br />
-Please note that the Prisma Data Proxy is an early-stage product and should not be used in production environments.
-
-</Admonition>
-
 ## Prerequisites
 
-- Free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) database with an accessible URL
-  - e.g. `mongodb+srv://<user>:<password>@cluster.mongodb.net`.
-- Free [Cloudflare Worker](https://workers.cloudflare.com/) account.
+- Free [Vercel](https://vercel.com/) account.
 - Free [GitHub](https://github.com/) account.
 - Node.js & NPM installed.
 - Git installed.
@@ -33,117 +24,11 @@ Please note that the Prisma Data Proxy is an early-stage product and should not 
 Open your terminal and navigate to a location of your choice. Run the following commands to set up your application.
 
 ```terminal
-mkdir prisma-mongodb-cloudflare
-cd prisma-mongodb-cloudflare
+mkdir prisma-vercel-edge
+cd prisma-vercel-edge
 npm init -y
-npm install -D prisma typescript @cloudflare/wrangler webpack
-```
-
-## 2. Set up Wrangler
-
-Wrangler is the official Cloudflare Worker CLI. You'll use it to develop and deploy Cloudflare Workers.
-
-```terminal
-npx wrangler init
-```
-
-This will create a `wrangler.toml` file with some initial configuration.
-
-Next, you'll want to authenticate the Wrangler CLI with your Cloudflare Worker account. To do this, run the following command in your terminal:
-
-```terminal
-npx wrangler login
-Allow Wrangler to open a page in your browser? [y/n] y
-```
-
-You can verify that you're logged in by running `npx wrangler whoami`.
-
-## 3. Set up Typescript
-
-The Cloudflare Worker environment natively supports Javascript, Rust, C, and C++. To get Typescript working on Cloudflare Workers, you need to compile Typescript to Javascript before deploying to a Worker.
-
-To setup this up, create a `tsconfig.json` in your project root with the following content:
-
-```json
-{
-  "compilerOptions": {
-    "outDir": "./dist",
-    "module": "commonjs",
-    "target": "esnext",
-    "lib": ["esnext"],
-    "alwaysStrict": true,
-    "strict": true,
-    "preserveConstEnums": true,
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "types": ["@cloudflare/workers-types"]
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
-}
-```
-
-And then install `@cloudflare/workers-types` with npm:
-
-```terminal
-npm install -D @cloudflare/workers-types ts-loader@8.3.0
-```
-
-<Admonition type="info">
-
-You need to pin `ts-loader` for the Wrangler CLI to work properly. See [this issue](https://github.com/cloudflare/wrangler/issues/1927) for more details.
-
-</Admonition>
-
-## 4. Set up Webpack
-
-Wrangler has built-in webpack support that can be used to compile your code in development and before publishing on Cloudflare.
-
-To configure webpack support, first create a `webpack.config.js` in the project root with the following code:
-
-```js
-const path = require('path')
-
-module.exports = {
-  entry: './src/index.ts',
-  output: {
-    filename: 'worker.js',
-    path: path.join(__dirname, 'dist'),
-  },
-  // Cloudflare Worker environment is similar to a webworker
-  target: 'webworker',
-  resolve: {
-    extensions: ['.ts', '.tsx', '.js'],
-+   // Alias for resolving the Prisma Client properly
-+   alias: {
-+     '@prisma/client$': require.resolve('@prisma/client'),
-+   },
-  },
-  mode: 'development',
-  // Wrangler doesn't like eval which devtools use in development.
-  devtool: 'none',
-  module: {
-    rules: [
-      {
-        // Compile Typescript code
-        test: /\.tsx?$/,
-        loader: 'ts-loader',
-        options: {
-          transpileOnly: true,
-        },
-      },
-    ],
-  },
-}
-```
-
-Next, add the following line to your `wrangler.toml` file to point Wrangler to use this webpack configuration:
-
-```diff
-  name = "prisma-mongodb-cloudflare"
-  type = "webpack"
-+ webpack_config = "webpack.config.js"
+npm install next react react-dom
+npm install --save-dev prisma typescript vercel @types/react
 ```
 
 ## 5. Set up Prisma
@@ -161,29 +46,21 @@ Inside `prisma/schema.prisma`, add the following schema:
 ```prisma
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["mongoDb", "dataProxy"]
+  previewFeatures = ["dataProxy"]
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model Log {
-  id      String @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  level   Level
-  message String
-  meta    Json
-}
-
-enum Level {
-  Info
-  Warn
-  Error
+model Visitor {
+  ipHash   String   @id
+  lastSeen DateTime @default(now())
 }
 ```
 
-This data model will be used to store incoming requests from your Worker.
+This data model will be used to store visitor counts from your middleware.
 
 ## 6. Create Repository and Push to GitHub
 
@@ -195,7 +72,7 @@ Next, initialize your repository, then push your changes up to GitHub.
 
 ```terminal
 git init -b main
-git remote add origin https://github.com/<username>/prisma-mongodb-cloudflare
+git remote add origin https://github.com/<username>/prisma-vercel-edge
 git add .
 git commit -m "initial commit"
 git push -u origin main
@@ -263,39 +140,94 @@ subject to change.
 
 </Admonition>
 
-## 10. Develop the Cloudflare Worker function
+## 10. Develop the Vercel Edge function
 
-You're now ready to create a Cloudflare Worker. Create a `src/index.ts` file with the following code:
+You're now ready to create a Vercel Edge function. Create a `pages/_middleware.ts` file with the following code:
 
 ```ts
+import type { NextRequest, NextFetchEvent } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { NextResponse } from 'next/server'
+import { extname } from 'path'
+
 const prisma = new PrismaClient()
 
-addEventListener('fetch', (event) => {
-  event.respondWith(handleRequest(event.request))
-})
+export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
+  const { pathname } = req.nextUrl
 
-async function handleRequest(request: Request): Promise<Response> {
-  await prisma.log.create({
-    data: {
-      level: 'Info',
-      message: `${request.method} ${request.url}`,
-      meta: {
-        headers: JSON.stringify(request.headers),
+  if (extname(pathname) !== '') {
+    return NextResponse.next()
+  }
+
+  // Hash the incoming request IP
+  const ipHash = await sha256(req.ip)
+
+  // Instruct the middleware to continue processing, even
+  ev.waitUntil(
+    prisma.visitor.upsert({
+      where: {
+        ipHash: ipHash,
       },
-    },
-  })
-  return new Response(`request method: ${request.method}!`)
+      create: {
+        ipHash: ipHash,
+        lastSeen: new Date(),
+      },
+      update: {
+        ipHash: ipHash,
+        lastSeen: new Date(),
+      },
+    })
+  )
+
+  return new Response('hello from middleware')
+}
+
+async function sha256(str: string): Promise<string> {
+  const buf = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(str)
+  )
+  return Array.prototype.map
+    .call(new Uint8Array(buf), (x) => ('00' + x.toString(16)).slice(-2))
+    .join('')
 }
 ```
 
-Run `npx wrangler dev` to see your worker in development:
+## 11. Create some Pages
+
+Let's create two boilerplate-y Next.js pages to get a better sense of how middleware works.
+
+First create a `pages/index.tsx` page with the following:
+
+```tsx
+export default function () {
+  return <div>Index</div>
+}
+```
+
+And a `pages/about.tsx` page with the following:
+
+```tsx
+export default function () {
+  return <div>Index</div>
+}
+```
+
+That'll be enough to demonstrate middleware.
+
+## 12. Run next.js in development
+
+Run `npx next` to see your worker in development:
 
 ```
-👂  Listening on http://127.0.0.1:8787
+ready - started server on 0.0.0.0:3000, url: http://localhost:3000
+info  - Loaded env from /Users/m/dev/src/github.com/prisma/prisma-vercel-edge/.env
+We detected TypeScript in your project and created a tsconfig.json file for you.
+
+event - compiled successfully in 2.6s (159 modules)
 ```
 
-Go ahead and open `http://127.0.0.1:8787`. If all goes well, you should see:
+Go ahead and open `http://localhost:3000`. If all goes well, you should see:
 
 ```
 request method: GET!
@@ -307,7 +239,7 @@ Refresh the page a couple times to verify that it's working. Now if you click on
 
 It's working locally!
 
-## 11. Publishing to Cloudflare Workers
+## 11. Publishing to Vercel
 
 You're now ready to deploy to Cloudflare Workers. Run the following command:
 
