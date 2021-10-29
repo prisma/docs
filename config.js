@@ -197,7 +197,7 @@ const config = {
         links: [
           {
             text: 'Editor setup',
-            url: 'concepts/more/editor-setup',
+            url: 'guides/development-environment/editor-setup',
             codeBlock: false,
           },
           {
