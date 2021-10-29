@@ -394,8 +394,13 @@ const config = {
         codeBlock: false,
       },
       {
-        text: 'Releases and maturity levels',
+        text: 'ORM Releases and maturity levels',
         url: 'about/prisma/releases',
+        codeBlock: false,
+      },
+      {
+        text: 'Platform Releases and maturity levels',
+        url: 'about/prisma/platform-releases',
         codeBlock: false,
       },
     ],

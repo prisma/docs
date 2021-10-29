@@ -432,8 +432,8 @@ You can also [paginate your results](pagination).
 
 The following [`findFirst`](/reference/api-reference/prisma-client-reference#findfirst) <span class="api"></span> query returns the _most recently created user_ with at least one post that has more than 100 likes:
 
-1. Order users by ascending ID (largest first) - the largest ID is the most recent
-2. Return the first user in ascending order with at least one post that has more than 100 likes
+1. Order users by descending ID (largest first) - the largest ID is the most recent
+2. Return the first user in descending order with at least one post that has more than 100 likes
 
 ```ts
   const findUser = await prisma.user.findFirst({
@@ -447,7 +447,7 @@ The following [`findFirst`](/reference/api-reference/prisma-client-reference#fin
       }
     },
     orderBy: {
-      id: "asc"
+      id: "desc"
     }
   })
 }
@@ -926,7 +926,7 @@ await prisma.$transaction([deleteProfile, deletePosts, deleteUsers])
 
 #### Deleting all data with raw SQL / `TRUNCATE`
 
-If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$queryRaw`](/concepts/components/prisma-client/raw-database-access#queryraw).
+If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$executeRawUnsafe`](/concepts/components/prisma-client/raw-database-access#executerawunsafe).
 
 In the following examples, the first tab shows how to perform a `TRUNCATE` on a Postgres database by using a `$queryRaw` look up that maps over the table and `TRUNCATES` each table.
 
@@ -937,12 +937,13 @@ The second tab shows performing the same function but with a MySQL database. In 
 <tab>
 
 ```ts
-for (const {
-  tablename,
-} of await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public'`) {
+const tablenames =
+    await prisma.$queryRaw<Array<{ tablename: string }>>`SELECT tablename FROM pg_tables WHERE schemaname='public'`
+
+for (const { tablename } of tablenames) {
   if (tablename !== '_prisma_migrations') {
     try {
-      await prisma.$queryRaw(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`)
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`)
     } catch (error) {
       console.log({ error })
     }
@@ -958,12 +959,13 @@ for (const {
 const transactions: PrismaPromise<any>[] = []
 transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
 
-for (const {
-  TABLE_NAME,
-} of await prisma.$queryRaw`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`) {
-  if (TABLE_NAME !== '_prisma_migrations') {
+const tablenames =
+    await prisma.$queryRaw<Array<{ tablename: string }>>`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`
+
+for (const { tablename } of tablenames) {
+  if (tablename !== '_prisma_migrations') {
     try {
-      transactions.push(prisma.$executeRaw(`TRUNCATE ${TABLE_NAME};`))
+      transactions.push(prisma.$executeRawUnsafe(`TRUNCATE ${tablename};`))
     } catch (error) {
       console.log({ error })
     }

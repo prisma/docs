@@ -171,8 +171,7 @@ module.exports = async function plugin(
     const message = `${totalBrokenLinks} broken links found`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
-      // throw new Error(message);
-      console.info('Broken links found. Please fix before deploy!')
+      throw new Error(message)
     }
 
     if (verbose) {
