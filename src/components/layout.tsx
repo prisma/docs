@@ -11,6 +11,7 @@ import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
 import { LensProvider, theme } from '@prisma/lens/dist/web'
 import StickyBox from 'react-sticky-box'
+import Banner from './banner'
 
 const Wrapper = styled.div<{ fullWidth?: boolean }>`
   display: flex;
@@ -118,6 +119,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={customMdx}>
+          <Banner />
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
