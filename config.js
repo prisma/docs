@@ -197,7 +197,7 @@ const config = {
         links: [
           {
             text: 'Editor setup',
-            url: 'concepts/more/editor-setup',
+            url: 'guides/development-environment/editor-setup',
             codeBlock: false,
           },
           {
@@ -394,8 +394,13 @@ const config = {
         codeBlock: false,
       },
       {
-        text: 'Releases and maturity levels',
+        text: 'ORM Releases and maturity levels',
         url: 'about/prisma/releases',
+        codeBlock: false,
+      },
+      {
+        text: 'Platform Releases and maturity levels',
+        url: 'about/prisma/platform-releases',
         codeBlock: false,
       },
     ],
