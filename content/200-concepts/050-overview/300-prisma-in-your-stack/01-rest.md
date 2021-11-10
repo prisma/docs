@@ -62,7 +62,7 @@ model User {
 }
 ```
 
-You can now implement route controller (e.g. using Express) that use the generated [Prisma Client API](/concepts/components/prisma-client) to perform a database operation when an incoming HTTP request arrives. This page only shows few sample code snippets, if you want to run these code snippets, you can use the [REST API example](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express).
+You can now implement route controller (e.g. using Express) that use the generated [Prisma Client API](/concepts/components/prisma-client) to perform a database operation when an incoming HTTP request arrives. This page only shows few sample code snippets; if you want to run these code snippets, you can use a [REST API example](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express).
 
 #### `GET`
 
@@ -141,17 +141,25 @@ app.delete(`/post/:id`, async (req, res) => {
 
 ## Ready-to-run example projects
 
-You can find several ready-to-run examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
+You can find several ready-to-run examples that show how to implement a REST API with Prisma Client, as well as building full applications, in  in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
 
 ### TypeScript
 
 | **Example**            | **Stack**    | **Description**                                 |
 |------------------------|--------------|-------------------------------------------------|
 | rest-express           | Backend only | REST API with Express for TypeScript            |
-| rest-fastify           |              | REST API using Fastify and Prisma Client.       |
-| rest-hapi              |              | REST API using hapi and Prisma Client           |
+| rest-fastify           | Backend only | REST API using Fastify and Prisma Client.       |
+| rest-hapi              | Backend only | REST API using hapi and Prisma Client           |
 | rest-nestjs            | Backend only | Nest.js app (Express) with a REST API           |
 | rest-nextjs-express    | Fullstack    | Next.js app (React, Express) and Prisma Client  |
 | rest-nextjs-api-routes | Fullstack    | Next.js app (React) with a REST API             |
 | rest-nextjs-api-routes | Fullstack    | Implement authentication using NextAuth.js      |
 
+### JavaScript
+
+| **Example**  | **Stack**    | **Description**                                                  |
+|--------------|--------------|------------------------------------------------------------------|
+| rest-express | Backend only | REST API using Express and Prisma Client                         |
+| rest-fastify | Backend only | REST API using Fastify and Prisma Client                         |
+| rest-nextjs  | Fullstack    | Next.js app (React) with a REST API                              |
+| rest-nuxjs   | Fullstack    | App with NuxtJs using Vue (frontend), Express, and Prisma Client |
