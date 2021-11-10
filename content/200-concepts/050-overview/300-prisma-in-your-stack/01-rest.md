@@ -143,10 +143,15 @@ app.delete(`/post/:id`, async (req, res) => {
 
 You can find several ready-to-run examples that show how to implement a REST API with Prisma Client in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
 
-| Example                                                                                                             | Language   | Stack        | Description                                                         |
-|---------------------------------------------------------------------------------------------------------------------|------------|--------------|---------------------------------------------------------------------|
-| [`rest-nextjs-api-routes`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-nextjs-api-routes) | TypeScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API   |
-| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-express)                     | TypeScript | Backend only | Simple REST API with Express for TypeScript                                        |
-| [`rest-nestjs`](https://github.com/prisma/prisma-examples/tree/latest/typescript/rest-nestjs)                       | TypeScript | Backend only | Simple [Nest.js](https://nestjs.com/) app (Express) with a REST API |
-| [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nextjs)                       | JavaScript | Fullstack    | Simple [Next.js](https://nextjs.org/) app (React) with a REST API   |
-| [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-express)                     | JavaScript | Backend only | Simple REST API with Express for JavaScript                                    |
+### TypeScript
+
+| **Example**            | **Stack**    | **Description**                                 |
+|------------------------|--------------|-------------------------------------------------|
+| rest-express           | Backend only | REST API with Express for TypeScript            |
+| rest-fastify           |              | REST API using Fastify and Prisma Client.       |
+| rest-hapi              |              | REST API using hapi and Prisma Client           |
+| rest-nestjs            | Backend only | Nest.js app (Express) with a REST API           |
+| rest-nextjs-express    | Fullstack    | Next.js app (React, Express) and Prisma Client  |
+| rest-nextjs-api-routes | Fullstack    | Next.js app (React) with a REST API             |
+| rest-nextjs-api-routes | Fullstack    | Implement authentication using NextAuth.js      |
+
