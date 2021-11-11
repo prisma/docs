@@ -141,7 +141,7 @@ app.delete(`/post/:id`, async (req, res) => {
 
 ## Ready-to-run example projects
 
-You can find several ready-to-run examples that show how to implement a REST API with Prisma Client, as well as building full applications, in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
+You can find several ready-to-run examples that show how to implement a REST API with Prisma Client, as well as build full applications, in the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository.
 
 ### TypeScript
 
