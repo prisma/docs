@@ -83,7 +83,7 @@ export const ProductLinks: React.FC<ProductLinkProps> = ({ isMobile }: ProductLi
                 <div className="text">
                   <div className="title">
                     <span>Data Platform</span>
-                    <span className="tag">Early acess</span>
+                    <span className="tag">Early access</span>
                   </div>
                   <div className="description">
                     <span>Get started with Prisma without leaving your browser</span>
