@@ -115,7 +115,7 @@ module.exports = async function plugin(
 
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
-      // don't count broken links for ignored pages
+      // don't check links on ignored pages
       continue
     }
 
@@ -125,6 +125,7 @@ module.exports = async function plugin(
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
         if (prefixedExceptions.includes(key)) {
+          // do not test this link as it is on the list of exceptions
           return false
         }
 
@@ -170,8 +171,7 @@ module.exports = async function plugin(
     const message = `${totalBrokenLinks} broken links found`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
-      // throw new Error(message);
-      console.info('Broken links found. Please fix before deploy!')
+      throw new Error(message)
     }
 
     if (verbose) {

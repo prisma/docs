@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client')
 
 const client = new PrismaClient()
 
-exports.handler = async function(event, context, callback) {
+exports.handler = async function (event, context, callback) {
   const body = JSON.parse(event.body)
   if (!body.feedback) {
     throw new Error(`Please provide feedback `)
@@ -13,34 +13,38 @@ exports.handler = async function(event, context, callback) {
 
   const fetchedFeedback = await client.feedback.findUnique({
     where: {
-      id: body.id
+      id: body.id,
     },
     select: {
-      feedback: true
-    }
+      feedback: true,
+    },
   })
 
-  if(fetchedFeedback.feedback) {
+  if (fetchedFeedback.feedback) {
     // Don't allow updating existing feedback
     return {
-      statusCode: 400
+      statusCode: 400,
     }
   }
 
   const feedback = await client.feedback.update({
     data: {
-      feedback: body.feedback
+      feedback: body.feedback,
     },
     where: {
-      id: body.id
-    }
+      id: body.id,
+    },
   })
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ 
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': '*',
+    },
+    body: JSON.stringify({
       success: true,
-      id: feedback.id
+      id: feedback.id,
     }),
   }
 }
