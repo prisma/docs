@@ -3,11 +3,13 @@ import styled from 'styled-components'
 import background from 'images/bg-serverless.png'
 
 const BannerWrapper = styled.div`
-  background-color: #19202d;
-  background-image: url(${background});
-  background-size: cover;
-  background-position: center center;
-  color: #ffffff;
+  // background-color: #19202d;
+  // background-image: url(${background});
+  // background-size: cover;
+  // background-position: center center;
+  // color: #ffffff;
+  background: linear-gradient(90deg, #dbf3ed 0%, #ebf4ff 100%);
+  color: #4a5568;
   padding: 16px;
   > div {
     display: flex;
@@ -25,16 +27,17 @@ const BannerText = styled.div`
   margin-right: 12px;
 
   a {
-    text-decoration: underline;
-    font-weight: 600;
-    color: #ffffff;
+    text-decoration: none;
+    // font-weight: 600;
+    color: #4a5568;
   }
 `
 const Banner = () => (
   <BannerWrapper>
     <BannerText>
-      <a href="/serverless">
-        Registrations are now open for the Prisma Serverless Conference - November 18th -{'>'}
+      <a href="/dataplatform">
+        Manage your application data in one place with the <strong>Prisma Data Platform</strong>.
+        Learn more -{'>'}
       </a>
     </BannerText>
   </BannerWrapper>
