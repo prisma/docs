@@ -78,7 +78,7 @@ export const ProductLinks: React.FC<ProductLinkProps> = ({ isMobile }: ProductLi
               </a>
             </li>
             <li>
-              <a href="https://cloud.prisma.io/">
+              <a href="https://www.prisma.io/dataplatform">
                 <Layout size={isMobile ? 16 : 24} color={theme.colors.gray800} />
                 <div className="text">
                   <div className="title">
