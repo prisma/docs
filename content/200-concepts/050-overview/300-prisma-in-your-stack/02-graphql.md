@@ -49,7 +49,7 @@ In the following section will find several ready-to-run examples that showcase h
 
 ### TypeScript
 
-| Demo                                                                                                              | HTTP Server     | GraphQL schema  | Description                                                                                                                     |
+| Example                                                                                                           | HTTP Server     | GraphQL schema  | Description                                                                                                                     |
 | :---------------------------------------------------------------------------------------------------------------- | :-------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------ |
 | [GraphQL API](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql)                           | `apollo-server` | `nexus`         | GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/)                                    |
 | [GraphQL API (SDL-first)](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql-sdl-first)     | `apollo-server` | `graphql-tools` | GraphQL server based on the SDL-first approach of [`graphql-tools`](https://www.apollographql.com/docs/graphql-tools/) (Apollo) |
