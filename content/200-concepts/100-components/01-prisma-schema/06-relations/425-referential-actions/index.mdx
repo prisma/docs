@@ -43,7 +43,7 @@ Referential actions are policies that define how a referenced record is handled 
 
 Referential actions are features of foreign key constraints that exist to preserve referential integrity in your database.
 
-When you define relationships between data models in your Prisma schema, you use [relation fields/concepts/components/prisma-schema#relation-fields), **which do not exist on the database**, and [scalar fields](/concepts/components/prisma-schema/data-model#scalar-fields), **which do exist on the database**. These foreign keys connect the models on the database level.
+When you define relationships between data models in your Prisma schema, you use [relation fields](/concepts/components/prisma-schema#relation-fields), **which do not exist on the database**, and [scalar fields](/concepts/components/prisma-schema/data-model#scalar-fields), **which do exist on the database**. These foreign keys connect the models on the database level.
 
 Referential integrity states that these foreign keys must reference an existing primary key value in the related database table. In your Prisma schema, this is generally represented by the `id` field on the related model.
 
@@ -234,7 +234,7 @@ model User {
 
 ##### Result of using `Restrict`
 
-`User`'s with posts **cannot** be deleted. The `Post`'s `id` **cannot** be changed.
+`User`'s with posts **cannot** be deleted. The `User`'s `id` **cannot** be changed.
 
 <Admonition type="warning">
 
@@ -269,11 +269,11 @@ model User {
 
 ##### Result of using `NoAction`
 
-`User`'s with posts **cannot** be deleted. The `Post`'s `id` **cannot** be changed.
+`User`'s with posts **cannot** be deleted. The `User`'s `id` **cannot** be changed.
 
 ### <inlinecode>SetNull</inlinecode>
 
-- `onDelete: SetNull` The scalar field of the referenced object will be set to `NULL`.
+- `onDelete: SetNull` The scalar field of the referencing object will be set to `NULL`.
 
 - `onUpdate: SetNull` When updating the identifier of a referenced object, the scalar fields of the referencing objects will be set to `NULL`.
 
@@ -323,6 +323,186 @@ model User {
 
 ##### Result of using `SetDefault`
 
-When deleting a `User`, its existing authored posts will now be authored by a `User` with `id` "anonymous".
+When deleting a `User`, its existing posts' `authorUsername` field values will be set to 'anonymous'.
 
-When the `username` of a `User` changes, its existing authored posts will now be authored by `User` with `username` "anonymous".
+When the `username` of a `User` changes, its existing posts' `authorUsername` field values will be set to 'anonymous'.
+
+## Upgrade paths
+
+There are a couple of paths you can take when upgrading which will give different results depending on the desired outcome.
+
+If you currently use the migration workflow, you can run an introspection to check how the defaults are reflected in your schema. You can then manually update your database if you need to.
+
+You can also decide to skip checking the the defaults and run a migration to update your database with the [new default values](#referential-action-defaults).
+
+The following assumes you have upgraded to 2.26.0 and enabled the preview feature flag.
+
+### Using Introspection
+
+If you [Introspect](../../../introspection) your database, the referential actions configured at the database level will be reflected in your Prisma Schema. If you have been using Prisma Migrate or `prisma db push` to manage the database schema, these are likely to be the [<=2.25.0 default values](#the-2250-default-referential-actions).
+
+When you run an Introspection, Prisma compares all the foreign keys in the database with the schema, if the SQL statements `ON DELETE` and `ON UPDATE` do **not** match the default values, they will be explicitly set in the schema file.
+
+After introspecting, you can review the non-default clauses in your schema. The most important clause to review is `onDelete`, which defaults to `Cascade` in 2.25.0 and earlier.
+
+<Admonition type="alert">
+
+If you are using either the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods, **[cascading deletes](#how-to-use-cascading-deletes) will now be performed** as the `referentialActions` preview feature **removed the safety net in Prisma Client that previously prevented cascading deletes at runtime**. Be sure to check your code and make any adjustments accordingly.
+
+</Admonition>
+
+Make sure you are happy with every case of `onDelete: Cascade` in your schema. If not, either:
+
+- Modify your Prisma schema and `db push` or `dev migrate` to change the database*or*
+- Manually update the underlying database if you use an introspection-only workflow
+
+The following example would result in a cascading delete, if the `User` is deleted then all of their `Post`'s will be deleted too.
+
+#### A blog schema example
+
+```prisma highlight=4;add
+model Post {
+  id       Int    @id @default(autoincrement())
+  title    String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId Int
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+### Using Migration
+
+When running a [Migration](../../../prisma-migrate) (or the [`prisma db push`](../../../prisma-migrate/db-push) command) the [new defaults](#referential-action-defaults) will be applied to your database.
+
+<Admonition type="info">
+
+Unlike when you run an Introspect for the first time, the new referential actions clause and property, will **not** automatically be addded to your prisma schema by the Prisma VSCode extension.
+You will have to manually add them if you wish to use anything other than the new defaults.
+
+</Admonition>
+
+Explicitly defining referential actions in your Prisma schema is optional. If you do not explicitly define a referential action for a relation, Prisma uses the [new defaults](#referential-action-defaults).
+
+Note that referential actions can be added on a case by case basis. This means that you can add them to one single relation and leave the rest set to the defaults by not manually specifying anything.
+
+### Checking for errors
+
+**Before** upgrading to 2.26.0 and enabling the referential actions **preview feature**, Prisma prevented the deletion of records while using `delete()` or `deleteMany()` to preserve referential integrity. A custom runtime error would be thrown by the Prisma Client with the error code `P2014`.
+
+**After** upgrading and enabling the referential actions **preview feature**, Prisma no longer performs runtime checks. You can instead specify a custom referential action to preserve the referential integrity between relations.
+
+When you use [`NoAction`](#noaction) or [`Restrict`](#restrict) to prevent the deletion of records, the error messages will be different post 2.26.0 compared to pre 2.26.0. This is because they are now triggered by the database and **not** the Prisma Client. The new error code that can be expected is `P2003`.
+
+To make sure you catch these new errors you can adjust your code accordingly.
+
+#### Example of catching errors
+
+The following example uses the below blog schema with a 1-m relationship between `Post` and `User` and sets a [`Restrict`](#restrict) referential actions on the `author` field.
+
+This means that if a user has a post, that user (and their posts) **cannot** be deleted.
+
+```prisma file=schema.prisma
+model Post {
+  id       Int    @id @default(autoincrement())
+  title    String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  authorId String
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+Prior to upgrading and enabling the referential actions **preview feature**, the error code you would receive when trying to delete a user which has posts would be `P2014` and it's message:
+
+> "The change you are trying to make would violate the required relation '{relation_name}' between the {model_a_name} and {model_b_name} models."
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  try {
+    await prisma.user.delete({
+      where: {
+        id: 'some-long-id',
+      },
+    })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2014') {
+        console.log(error.message)
+      }
+    }
+  }
+}
+
+main()
+  .catch((e) => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+To make sure you are checking for the correct errors in your code, modify your check to look for `P2003`, which will deliver the message:
+
+> "Foreign key constraint failed on the field: {field_name}"
+
+```ts highlight=14;delete|15;add
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  try {
+    await prisma.user.delete({
+      where: {
+        id: 'some-long-id'
+      }
+    })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2014') {
+      if (error.code === 'P2003') {
+        console.log(error.message)
+      }
+    }
+  }
+}
+
+main()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+## Behavior in <=2.25.0 or without preview flag <inlinecode>referentialActions</inlinecode>
+
+<a id="current"></a>
+
+The following behavior applies in 2.25.0 and earlier, and since 2.26.0 _without_ the `referentialActions` preview flag.
+
+When invoking the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
+
+The current behavior, without upgrading and enabling the feature flag, does not allow setting referential actions at all.
+
+### The <=2.25.0 default referential actions
+
+| Clause     | Optional relations | Mandatory relations |
+| :--------- | :----------------- | :------------------ |
+| `onDelete` | `SetNull`          | `Cascade`           |
+| `onUpdate` | `Cascade`          | `Cascade`           |
+
+If you need to actually use the cascade behavior configured in the database, you _can_ use [`$raw`](../../../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../../../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful. This is because the Prisma Client will **not** perform runtime checks on raw queries.
