@@ -7,11 +7,11 @@ tocDepth: 2
 
 <TopBlock>
 
-In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later, you can define **referential actions** on your relation fields. Referential actions determine what should happen to a record when a related record is deleted or updated.
+Referential actions determine what should happen to a record when a related record is deleted or updated. In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later, you can define referential actions on your relation fields.
 
 In the following example, adding `onDelete: Cascade` to the `author` field on the `Post` model means that deleting the `User` record will also delete all related `Post` records.
 
-```prisma highlight=4;normal
+```prisma file=schema.prisma highlight=4;normal
 model Post {
   id       Int    @id @default(autoincrement())
   title    String
@@ -55,9 +55,9 @@ By default a database will reject any operation that violates the referential in
 
 Referential actions are defined in the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attribute and map to the actions on the **foreign key constraint** in the underlying database. If you do not specify a referential action, [Prisma falls back to a default](#referential-action-defaults).
 
-The following model defines a 1-m relation between `User` and `Post` and a n-m relation between `Post` and `Tag`, with explicitly defined referential actions:
+The following model defines a one-to-many relation between `User` and `Post` and a many-to-many relation between `Post` and `Tag`:
 
-```prisma highlight=10,16-17;normal
+```prisma file=schema.prisma highlight=10,16-17;normal
 model User {
   id    Int    @id @default(autoincrement())
   posts Post[]
@@ -86,8 +86,10 @@ model Tag {
 }
 ```
 
-- If you delete a `Tag`, the corresponding tag assignment is also deleted `TagOnPost` (`Cascade`)
-- If you delete a `User`, the author is removed from all posts (`SetNull`) - `User` and `userId` must be optional
+This model explicitly defines the following referential actions:
+
+- If you delete a `Tag`, the corresponding tag assignment is also deleted in `TagOnPosts`, using the `Cascade` referential action
+- If you delete a `User`, the author is removed from all posts, using the `SetNull` referential action. To allow this, `User` and `userId` must be optional fields in `Post`.
 
 Prisma supports the following referential actions:
 
@@ -106,7 +108,7 @@ If you do not specify a referential action, Prisma uses the following defaults:
 | `onDelete` | `SetNull`          | `Restrict`          |
 | `onUpdate` | `Cascade`          | `Cascade`           |
 
-For example - in the following schema, all `Post` records must be connected to an `author`. The schema **does not explicitly define referential actions** on the `author` field, which means that default referential actions apply (see SQL tab):
+For example, in the following model all `Post` records must be connected to an `author`:
 
 <TabbedContent tabs={[<FileWithIcon text="schema.prisma" icon="prisma"/>, <FileWithIcon text="SQL" icon="database"/>]}>
 <tab>
@@ -144,6 +146,8 @@ CREATE TABLE "User" (
 </tab>
 </TabbedContent>
 
+The schema does not explicitly define referential actions on the mandatory `author` field, which means that the default referential actions of `Restrict` for `onDelete` and `Cascade` for `onUpdate` apply. See the SQL tab for details of how this is implemented.
+
 ## Caveats
 
 The following caveats apply:
@@ -157,7 +161,7 @@ The following table shows which referential action each database supports.
 
 <Admonition type="info">
 
-Note that [`NoAction`](#noaction) can be used in replace of [`Restrict`](#restrict) when working with an SQLServer database.
+Note that [`NoAction`](#noaction) can be used in replace of [`Restrict`](#restrict) when working with an SQL Server database.
 
 </Admonition>
 
@@ -166,15 +170,21 @@ Note that [`NoAction`](#noaction) can be used in replace of [`Restrict`](#restri
 | PostgreSQL | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
 | MySQL      | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**†    |
 | SQLite     | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
-| SQLServer  | **✔️**  | **❌**   | **✔️**   | **✔️**  | **✔️**     |
+| SQL Server | **✔️**  | **❌**   | **✔️**   | **✔️**  | **✔️**     |
 
 - † On [InnoDB](https://dev.mysql.com/doc/refman/5.6/en/innodb-introduction.html#:~:text=InnoDB%20is%20a%20general%2Dpurpose,clause%20creates%20an%20InnoDB%20table.), `SetDefault` will be ignored and silently use `NoAction`.
+
+From version 3.6.0, referential actions will also be available in MongoDB if the `[referentialIntegrity](/concepts/components/prisma-schema/relations/referential-integrity)` Preview feature is enabled:
+
+| Database | Cascade | Restrict | NoAction | SetNull | SetDefault |
+| :------- | :------ | :------- | :------- | :------ | :--------- |
+| MongoDB  | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
 
 ### <inlinecode>Cascade</inlinecode>
 
 - `onDelete: Cascade` Deleting a referenced record will trigger the deletion of referencing record.
 
-- `onUpdate: Cascade` Updates the relation scalar fields if the referenced scalar fields of the dependant record are updated.
+- `onUpdate: Cascade` Updates the relation scalar fields if the referenced scalar fields of the dependent record are updated.
 
 #### Example usage
 
@@ -234,22 +244,23 @@ model User {
 
 ##### Result of using `Restrict`
 
-`User`'s with posts **cannot** be deleted. The `User`'s `id` **cannot** be changed.
+`User`s with posts **cannot** be deleted. The `User`'s `id` **cannot** be changed.
 
 <Admonition type="warning">
 
-The `Restrict` action is **not** available on [Microsoft SQL Server](/concepts/database-connectors/sql-server) and will trigger a schema validation error. Instead, you can use [`NoAction`](#noaction), which produces the same result and is compatible with SQLServer.
+The `Restrict` action is **not** available on [Microsoft SQL Server](/concepts/database-connectors/sql-server) and will trigger a schema validation error. Instead, you can use [`NoAction`](#noaction), which produces the same result and is compatible with SQL Server.
 
 </Admonition>
 
 ### <inlinecode>NoAction</inlinecode>
 
-The `NoAction` action is similar to `Restrict`, the difference between the two is dependant on the database being used:
+The `NoAction` action is similar to `Restrict`, the difference between the two is dependent on the database being used:
 
 - **PostgreSQL**: `NoAction` allows the check (if a referenced row on the table exists) to be deferred until later in the transaction. See [the PostgreSQL docs](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK) for more information.
 - **MySQL**: `NoAction` behaves exactly the same as `Restrict`. See [the MySQL docs](https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html#foreign-key-referential-actions) for more information.
 - **SQLite**: When a related primary key is modified or deleted, no action is taken. See [the SQLite docs](https://www.sqlite.org/foreignkeys.html#fk_actions) for more information.
-- **SQLServer**: When a referenced record is deleted or modified, an error is raised. See [the SQLServer docs](https://docs.microsoft.com/en-us/sql/relational-databases/tables/graph-edge-constraints?view=sql-server-ver15#on-delete-referential-actions-on-edge-constraints) for more information.
+- **SQL Server**: When a referenced record is deleted or modified, an error is raised. See [the SQL Server docs](https://docs.microsoft.com/en-us/sql/relational-databases/tables/graph-edge-constraints?view=sql-server-ver15#on-delete-referential-actions-on-edge-constraints) for more information.
+- **MongoDB** (in preview from version 3.6.0): When a record is modified or deleted, nothing is done to any related records.
 
 #### Example usage
 
@@ -353,7 +364,10 @@ If you are using either the [`delete()`](../../../../../guides/database/advanced
 
 Make sure you are happy with every case of `onDelete: Cascade` in your schema. If not, either:
 
-- Modify your Prisma schema and `db push` or `dev migrate` to change the database*or*
+- Modify your Prisma schema and `db push` or `dev migrate` to change the database
+
+_or_
+
 - Manually update the underlying database if you use an introspection-only workflow
 
 The following example would result in a cascading delete, if the `User` is deleted then all of their `Post`'s will be deleted too.
@@ -401,7 +415,7 @@ To make sure you catch these new errors you can adjust your code accordingly.
 
 #### Example of catching errors
 
-The following example uses the below blog schema with a 1-m relationship between `Post` and `User` and sets a [`Restrict`](#restrict) referential actions on the `author` field.
+The following example uses the below blog schema with a one-to-many relationship between `Post` and `User` and sets a [`Restrict`](#restrict) referential actions on the `author` field.
 
 This means that if a user has a post, that user (and their posts) **cannot** be deleted.
 
