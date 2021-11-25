@@ -14,7 +14,9 @@ Prisma allows configuration of indexes, unique constraints and primary key const
 
 - The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` fields. Additionally, SQL Server also allows it on `@id` and `@@id`.
 
-From version `3.6.0` onwards, there will also be a new `@@fulltext` attribute available as a preview feature. This provides support for introspection and migration of full text indexes in MySQL and MongoDB. The `sort` argument is also available for `@@fulltext` on MongoDB.
+In version `3.6.0` and later, a new `type` argument is also available on the `@@index` field in PostgreSQL. This argument allows Prisma to support the `Hash` index type as well as the default `BTree` type.
+
+Version `3.6.0` also introduces a new `@@fulltext` attribute, available as a preview feature. This provides support for introspection and migration of full text indexes in MySQL and MongoDB. The `sort` argument is also available for `@@fulltext` on MongoDB.
 
 <Admonition type="warning">
 
@@ -137,6 +139,33 @@ model Post {
 }
 ```
 
+### New `type` argument (PostgreSQL)
+
+In version `3.6.0` and later, a new `type` argument is available in PostgreSQL on the `@@index` attribute.
+This allows you to use `Hash` as the index algorithm, instead of the default `BTree` option. The `Hash` index algorithm can be much faster for inserts, but only supports checking for equality, whereas the `BTree` algorithm supports all comparison operators.
+
+As an example, the following model adds an index with a `type` of `Hash` to the `value` field:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int @id
+  value Int
+
+  @@index([value], type: Hash)
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  val INT NOT NULL
+);
+
+CREATE INDEX "Example_val_idx" ON "Example" USING HASH (val);
+```
+
 ### Upgrading from previous versions
 
 <Admonition type="warning">
@@ -149,8 +178,9 @@ A breaking change can occur in the following situations:
 
 - **Existing sort constraints and indexes:** earlier versions of Prisma will assume that the desired sort order is _ascending_ if no order is specified explicitly. This means that this is a breaking change if you have existing constraints or indexes that are using descending sort order and migrate your database without first specifying this in your data model.
 - **Existing length constraints and indexes:** in earlier versions of Prisma, indexes and constaints that were length constrained in MySQL could not be represented in the Prisma schema. Therefore `prisma db pull` was not fetching these and you could not manually specify them. When you ran `prisma db push` or `prisma migrate dev` they were ignored if already present in your database. Since you are now able to specify these, migrate commands will now drop them if they are missing from your data model but present in the database.
+- **Existing hash indexes (PostgreSQL):** earlier versions of Prisma did not support hash indexes in the schema. These need to be added before migrating your database.
 
-In both of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve the sort and length arguments where applicable.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev`.
+In each of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve any existing constraints.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev`.
 
 ## Full text indexes (MySQL and MongoDB)
 
