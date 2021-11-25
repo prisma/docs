@@ -1,6 +1,6 @@
 ---
 title: 'Indexes'
-metaDescription: 'How to configure index functionality'
+metaDescription: 'How to configure index functionality and add full text indexes'
 hidePage: false
 tocDepth: 2
 preview: true
@@ -8,29 +8,13 @@ preview: true
 
 <TopBlock>
 
-From version `3.5.0` onwards, Prisma allows configuration of indexes, unique constraints and primary keys constraints using extended syntax options in the Prisma schema language. Two new arguments, `length` and `sort`, can be specified in the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields in certain databases:
+Prisma allows configuration of indexes, unique constraints and primary key constraints from version `3.5.0` onwards, using extended syntax options in the Prisma schema language. Two new arguments, `length` and `sort`, can be specified in the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields in certain databases:
 
 - The `length` argument is available on MySQL on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
 
 - The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` fields. Additionally, SQL Server also allows it on `@id` and `@@id`.
 
-To enable this preview feature, add it to the `generator` block of the `schema.prisma` file:
-
-```prisma file=schema.prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["extendedIndexes"]
-}
-```
-
-From version `3.6.0` onwards, there will also be a new `@@fulltext` attribute available as a preview feature. This provides support for introspection and migration of fulltext indexes in MySQL and MongoDB. To enable this preview feature, add it to the `generator` block of the `schema.prisma` file:
-
-```prisma file=schema.prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextIndex"]
-}
-```
+From version `3.6.0` onwards, there will also be a new `@@fulltext` attribute available as a preview feature. This provides support for introspection and migration of full text indexes in MySQL and MongoDB. The `sort` argument is also available for `@@fulltext` on MongoDB.
 
 <Admonition type="warning">
 
@@ -42,7 +26,18 @@ These might be **breaking changes** if you have a database that is already makin
 
 ## Index configuration
 
-This section provides more details on new index configuration options enabled by the `extendedIndexes` preview feature.
+The `extendedIndexes` preview feature enables new configuration options for indexes, unique constraints and primary key constraints in Prisma.
+
+### Enabling the preview feature
+
+To enable this preview feature, add it to the `generator` block of the `schema.prisma` file:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["extendedIndexes"]
+}
+```
 
 ### New `length` argument (MySQL)
 
@@ -142,11 +137,39 @@ model Post {
 }
 ```
 
-## Fulltext indexes (MySQL and MongoDB)
+### Upgrading from previous versions
 
-In version 3.6.0 and later, a new `@@fulltext` attribute is available as a preview feature. This provides support for introspection and migration of fulltext indexes in MySQL and MongoDB. Existing fulltext indexes in the database will be added to your Prisma schema after introspecting with `db push`, and new fulltext indexes added in the schema will be created in the database on migration. This also prevents validation errors in some database schemas that were not working before.
+<Admonition type="warning">
 
-For now we do not enable the full-text search commands in the Prisma Client. They will be implemented separately, and the progress can be followed in the MongoDB and MySQL issues.
+These are **breaking changes** when updating from certain existing databases. After updating, always run `prisma db pull` to introspect the existing database before migrating.
+
+</Admonition>
+
+A breaking change can occur in the following situations:
+
+- **Existing sort constraints and indexes:** earlier versions of Prisma will assume that the desired sort order is _ascending_ if no order is specified explicitly. This means that this is a breaking change if you have existing constraints or indexes that are using descending sort order and migrate your database without first specifying this in your data model.
+- **Existing length constraints and indexes:** in earlier versions of Prisma, indexes and constaints that were length constrained in MySQL could not be represented in the Prisma schema. Therefore `prisma db pull` was not fetching these and you could not manually specify them. When you ran `prisma db push` or `prisma migrate dev` they were ignored if already present in your database. Since you are now able to specify these, migrate commands will now drop them if they are missing from your data model but present in the database.
+
+In both of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve the sort and length arguments where applicable.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev`.
+
+## Full text indexes (MySQL and MongoDB)
+
+In version 3.6.0 and later, a new `@@fulltext` attribute is available as a preview feature. This provides support for introspection and migration of full text indexes in MySQL and MongoDB. Existing full text indexes in the database will be added to your Prisma schema after introspecting with `db push`, and new full text indexes added in the schema will be created in the database on migration. This also prevents validation errors in some database schemas that were not working before.
+
+For now we do not enable the full text search commands in the Prisma Client. They will be implemented separately, and the progress can be followed in the MongoDB and MySQL issues.
+
+### Enabling the preview feature
+
+To enable this preview feature, add it to the `generator` block of the `schema.prisma` file:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex"]
+}
+```
+
+### Examples
 
 The following example demonstrates adding a `@@fulltext` index to the `title` and `content` fields of a `Post` model:
 
@@ -177,7 +200,7 @@ model Post {
 }
 ```
 
-## Upgrading from previous versions
+### Upgrading from previous versions
 
 <Admonition type="warning">
 
@@ -185,15 +208,4 @@ These are **breaking changes** when updating from certain existing databases. Af
 
 </Admonition>
 
-### Upgrading with existing `sort` and `length` constraints and indexes
-
-A breaking change can occur in the following situations:
-
-- **Existing sort constraints and indexes:** earlier versions of Prisma will assume that the desired sort order is _ascending_ if no order is specified explicitly. This means that this is a breaking change if you have existing constraints or indexes that are using descending sort order and migrate your database without first specifying this in your data model.
-- **Existing length constraints and indexes:** in earlier versions of Prisma, indexes and constaints that were length constrained in MySQL could not be represented in the Prisma schema. Therefore `prisma db pull` was not fetching these and you could not manually specify them. When you ran `prisma db push` or `prisma migrate dev` they were ignored if already present in your database. Since you are now able to specify these, migrate commands will now drop them if they are missing from your data model but present in the database.
-
-In both of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve the sort and length arguments where applicable.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev`.
-
-### Upgrading with existing fulltext indexes
-
-Earlier versions of Prisma converted fulltext indexes using the `@@index` attribute rather than the `@@fulltext` attribute. After enabling the `fullTextIndex` preview feature, run `prisma db pull` to convert these indexes to `@fulltext` before migrating.
+Earlier versions of Prisma converted full text indexes using the `@@index` attribute rather than the `@@fulltext` attribute. After enabling the `fullTextIndex` preview feature, run `prisma db pull` to convert these indexes to `@@fulltext` before migrating.
