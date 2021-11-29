@@ -8,19 +8,13 @@ preview: true
 
 <TopBlock>
 
-Prisma allows configuration of indexes, unique constraints and primary key constraints from version `3.5.0` onwards, using extended syntax options in the Prisma schema language. Two new arguments, `length` and `sort`, can be specified in the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields in certain databases:
+Prisma allows configuration of database indexes, unique constraints and primary key constraints through the `extendedIndexes` preview feature in version `3.5.0` and later.This provides extended syntax options in the Prisma schema language for configuring the length of indexes (MySQL only), the sort order and the index type (PostgreSQL only).
 
-- The `length` argument is available on MySQL on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
-
-- The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` fields. Additionally, SQL Server also allows it on `@id` and `@@id`.
-
-In version `3.6.0` and later, a new `type` argument is also available on the `@@index` field in PostgreSQL. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method.
-
-Version `3.6.0` also introduces a new `@@fulltext` attribute, available as a preview feature. This provides support for introspection and migration of full text indexes in MySQL and MongoDB. The `sort` argument is also available for `@@fulltext` on MongoDB.
+Version `3.6.0` also introduces support for introspection and migration of full text indexes in MySQL and MongoDB through a new `@@fulltext` attribute, available through the `fullTextIndex` preview feature.
 
 <Admonition type="warning">
 
-These might be **breaking changes** if you have a database that is already making use of these features, so they need to be explicitly enabled via preview features. See [Upgrading from previous versions](#upgrading-from-previous-versions) for details.
+These changes to index configuration and full text indexes might be **breaking changes** if you have a database that is already making use of these features, so they need to be explicitly enabled via preview features. See [Upgrading from previous versions](#upgrading-from-previous-versions) for details.
 
 </Admonition>
 
@@ -30,9 +24,17 @@ These might be **breaking changes** if you have a database that is already makin
 
 The `extendedIndexes` preview feature enables new configuration options for indexes, unique constraints and primary key constraints in Prisma.
 
-### Enabling the preview feature
+The following arguments can be specified:
 
-To enable this preview feature, add it to the `generator` block of the `schema.prisma` file:
+- The `length` argument is available **in MySQL only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields in version `3.5.0` and later. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
+
+- The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` fields in version `3.5.0` and later. Additionally, SQL Server also allows it on `@id` and `@@id`.
+
+- The`type` argument is also available **in PostgreSQL only** on the `@@index` field in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method.
+
+### Enabling the `extendedIndexes` preview feature
+
+To enable the `extendedIndexes` preview feature, add the `extendedIndexes` feature flag to the `generator` block of the `schema.prisma` file:
 
 ```prisma file=schema.prisma
 generator client {
@@ -41,13 +43,13 @@ generator client {
 }
 ```
 
-### New `length` argument (MySQL)
+### Configuring the length of indexes with `length` (MySQL)
 
-The `length` argument is specific to MySQL and will allow you to define indexes and constraints on columns of `String` and `Byte` types. For these types, MySQL requires you to specify a maximum length for the subpart of the value to be indexed in cases where the full value would exceed MySQL's limits for index sizes. See [the MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/innodb-limits.html) for more details.
+The `length` argument is specific to MySQL and allows you to define indexes and constraints on columns of `String` and `Byte` types. For these types, MySQL requires you to specify a maximum length for the subpart of the value to be indexed in cases where the full value would exceed MySQL's limits for index sizes. See [the MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/innodb-limits.html) for more details.
 
 The `length` argument is available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields.
 
-As an example, the following data model declares a field with a max length of 3000 characters as id.
+As an example, the following data model declares an `id` field with a maximum length of 3000 characters:
 
 ```prisma file=schema.prisma
 model Id {
@@ -55,7 +57,7 @@ model Id {
 }
 ```
 
-But this is not valid in MySQL because it exceeds MySQL's index storage limit and therefore Prisma rejects the data model. The generated SQL would be rejected by the database.
+This is not valid in MySQL because it exceeds MySQL's index storage limit and therefore Prisma rejects the data model. The generated SQL would be rejected by the database.
 
 ```sql
 CREATE TABLE `Id` (
@@ -63,7 +65,7 @@ CREATE TABLE `Id` (
 )
 ```
 
-With the new `length` property you can now specify that a subpart of the `id` value represents the primary key. In the example below the first 100 characters are used:
+The `length` argument allows you to specify that only a subpart of the `id` value represents the primary key. In the example below, the first 100 characters are used:
 
 ```prisma file=schema.prisma
 model Id {
@@ -71,9 +73,9 @@ model Id {
 }
 ```
 
-Prisma Migrate is able to create constraints and indexes with these length arguments if specified in your data model. This means that you can create indexes and constraints on values of Prisma type `Byte` and `String`. If you don't specify the argument the index is treated as covering the full value as before.
+Prisma Migrate is able to create constraints and indexes with the `length` argument if specified in your data model. This means that you can create indexes and constraints on values of Prisma type `Byte` and `String`. If you don't specify the argument the index is treated as covering the full value as before.
 
-Introspection will fetch these limits where they are present in your existing database. This allows Prisma to support indexes and constraints that were previously suppressed and will result in better support of existing MySQL databases that are making use of this feature.
+Introspection will fetch these limits where they are present in your existing database. This allows Prisma to support indexes and constraints that were previously suppressed and results in better support of existing MySQL databases that are making use of this feature.
 
 The `length` argument can also be used on compound primary keys, using the `@@id` field, as in the example below:
 
@@ -88,9 +90,9 @@ model CompoundId {
 
 A similar syntax can be used for the `@@unique` and `@@index` fields.
 
-### New `sort` argument
+### Configuring the index sort order with `sort`
 
-The `sort` argument is available for all databases supported by Prisma. It allows you to specify in what order the entries of the index or constraint are stored in the database. This can have an effect on whether the database is able to use an index for specific queries.
+The `sort` argument is available for all databases supported by Prisma. It allows you to specify the order that the entries of the index or constraint are stored in the database. This can have an effect on whether the database is able to use an index for specific queries.
 
 The `sort` argument is available for all databases on `@unique`, `@@unique` and `@@index`. Additionally, SQL Server also allows it on `@id` and `@@id`.
 
@@ -103,7 +105,7 @@ CREATE TABLE `Unique` (
 )
 ```
 
-will now be introspected as
+is now introspected as
 
 ```prisma file=schema.prisma
 model Unique {
@@ -139,10 +141,9 @@ model Post {
 }
 ```
 
-### New `type` argument (PostgreSQL)
+### Configuring the index type with `type` (PostgreSQL)
 
-In version `3.6.0` and later, a new `type` argument is available in PostgreSQL on the `@@index` attribute.
-This allows you to use `Hash` as the index access method, instead of the default `BTree` access method. The `Hash` access method can be much faster for inserts, but only supports checking for equality, whereas the `BTree` access method supports all comparison operators.
+The `type` argument is available for configuring the index type in PostgreSQL in version `3.6.0` and later, using the `@@index` attribute. This allows you to use `Hash` as the index access method, instead of the default `BTree` access method. The `Hash` access method can be much faster for inserts, but only supports checking for equality, whereas the `BTree` access method supports all comparison operators.
 
 As an example, the following model adds an index with a `type` of `Hash` to the `value` field:
 
@@ -170,7 +171,7 @@ CREATE INDEX "Example_val_idx" ON "Example" USING HASH (val);
 
 <Admonition type="warning">
 
-These are **breaking changes** when updating from certain existing databases. After updating, always run `prisma db pull` to introspect the existing database before migrating.
+These index configuration changes can be **breaking changes** when updating from certain existing databases. After updating, always run `prisma db pull` to introspect the existing database before migrating.
 
 </Admonition>
 
@@ -184,13 +185,13 @@ In each of the cases above unwanted changes to your database can be prevented by
 
 ## Full text indexes (MySQL and MongoDB)
 
-In version 3.6.0 and later, a new `@@fulltext` attribute is available as a preview feature. This provides support for introspection and migration of full text indexes in MySQL and MongoDB. Existing full text indexes in the database will be added to your Prisma schema after introspecting with `db push`, and new full text indexes added in the schema will be created in the database on migration. This also prevents validation errors in some database schemas that were not working before.
+The `fullTextIndex` preview feature provides support for introspection and migration of full text indexes in MySQL and MongoDB in version 3.6.0 and later. This can be configured using the `@@fulltext` attribute. Existing full text indexes in the database are added to your Prisma schema after introspecting with `db pull`, and new full text indexes added in the Prisma schema are created in the database when using Prisma Migrate. This also prevents validation errors in some database schemas that were not working before.
 
 For now we do not enable the full text search commands in the Prisma Client. They will be implemented separately, and the progress can be followed in the [MongoDB](https://github.com/prisma/prisma/issues/9413) and [MySQL](https://github.com/prisma/prisma/issues/10415) issues.
 
-### Enabling the preview feature
+### Enabling the `fullTextIndex` preview feature
 
-To enable this preview feature, add it to the `generator` block of the `schema.prisma` file:
+To enable the `fullTextIndex` preview feature, add the `fullTextIndex` feature flag to the `generator` block of the `schema.prisma` file:
 
 ```prisma file=schema.prisma
 generator client {
