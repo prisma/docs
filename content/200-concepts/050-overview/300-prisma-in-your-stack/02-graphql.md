@@ -28,7 +28,7 @@ The GraphQL schema and HTTP server are typically handled by separate libraries. 
 | `graphql`             | GraphQL schema (code-first) | Yes                    | No                                                                        |
 | `graphql-tools`       | GraphQL schema (SDL-first)  | Yes                    | No                                                                        |
 | `type-graphql`        | GraphQL schema (code-first) | Yes                    | [`typegraphql-prisma`](https://www.npmjs.com/package/typegraphql-prisma)  |
-| `nexus`               | GraphQL schema (code-first) | Yes                    | [`nexus-plugin-prisma`](https://nexusjs.org/docs/plugins/prisma/overview) |
+| `nexus`               | GraphQL schema (code-first) | Yes                    | [`nexus-prisma`](https://nexus.prisma.io/) _Early Preview_ |
 | `apollo-server`       | HTTP server                 | Yes                    | n/a                                                                       |
 | `express-graphql`     | HTTP server                 | Yes                    | n/a                                                                       |
 | `fastify-gql`         | HTTP server                 | Yes                    | n/a                                                                       |
