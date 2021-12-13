@@ -6,7 +6,7 @@ metaDescription: 'This page gives explains how to build GraphQL servers with Pri
 
 <TopBlock>
 
-[GraphQL](https://graphql.org/) is a query language for APIs. It is often used as an alternative to RESTful APIs, but can also be used as an additional "gateway" layer on top of existing RESTful services.
+<a href="https://graphql.org target="_blank">GraphQL</a> is a query language for APIs. It is often used as an alternative to RESTful APIs, but can also be used as an additional "gateway" layer on top of existing RESTful services.
 
 With Prisma, you can build GraphQL servers that connect to a database. Prisma is completely agnostic to the GraphQL tools you use. When building a GraphQL server, you can combine Prisma with tools like Apollo Server, `express-graphql`, TypeGraphQL, GraphQL.js, or pretty much any tool or library that you're using in your GraphQL server setup.
 
