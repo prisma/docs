@@ -28,7 +28,7 @@ The GraphQL schema and HTTP server are typically handled by separate libraries. 
 | `graphql`             | GraphQL schema (code-first) | Yes                    | No                                                                        |
 | `graphql-tools`       | GraphQL schema (SDL-first)  | Yes                    | No                                                                        |
 | `type-graphql`        | GraphQL schema (code-first) | Yes                    | [`typegraphql-prisma`](https://www.npmjs.com/package/typegraphql-prisma)  |
-| `nexus`               | GraphQL schema (code-first) | Yes                    | [`nexus-plugin-prisma`](https://nexusjs.org/docs/plugins/prisma/overview) |
+| `nexus`               | GraphQL schema (code-first) | Yes                    | [`nexus-prisma`](https://nexus.prisma.io/) _Early Preview_ |
 | `apollo-server`       | HTTP server                 | Yes                    | n/a                                                                       |
 | `express-graphql`     | HTTP server                 | Yes                    | n/a                                                                       |
 | `fastify-gql`         | HTTP server                 | Yes                    | n/a                                                                       |
@@ -49,7 +49,7 @@ In the following section will find several ready-to-run examples that showcase h
 
 ### TypeScript
 
-| Demo                                                                                                              | HTTP Server     | GraphQL schema  | Description                                                                                                                     |
+| Example                                                                                                           | HTTP Server     | GraphQL schema  | Description                                                                                                                     |
 | :---------------------------------------------------------------------------------------------------------------- | :-------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------ |
 | [GraphQL API](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql)                           | `apollo-server` | `nexus`         | GraphQL server based on [`apollo-server`](https://www.apollographql.com/docs/apollo-server/)                                    |
 | [GraphQL API (SDL-first)](https://github.com/prisma/prisma-examples/tree/latest/typescript/graphql-sdl-first)     | `apollo-server` | `graphql-tools` | GraphQL server based on the SDL-first approach of [`graphql-tools`](https://www.apollographql.com/docs/graphql-tools/) (Apollo) |
