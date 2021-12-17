@@ -41,7 +41,6 @@ module.exports = function plugin(
           node.url
         )
         .replace(/\/?(\?|$)/, '/$1')
-        .replace(/\/$/, '')
 
       if (/^..\\/.test(newUrl)) {
         //Code specifically for local run, to fix broken links on
