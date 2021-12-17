@@ -90,7 +90,8 @@ const getAbsPath = (href: any, location: any) => {
           .join(path.sep) || '/',
         href
       )
-      .replace(/\/?(\?|#|$)/, '/$1')
+      .replace(/\/?(\?|$)/, '/$1')
+      .replace(/\/$/, '')
   )
 }
 const ButtonLink = ({ href, ...props }: ButtonProps) => {

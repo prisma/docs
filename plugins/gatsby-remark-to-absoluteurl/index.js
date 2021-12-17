@@ -40,7 +40,8 @@ module.exports = function plugin(
             .join(pathSep) || '/',
           node.url
         )
-        .replace(/\/?(\?|#|$)/, '/$1')
+        .replace(/\/?(\?|$)/, '/$1')
+        .replace(/\/$/, '')
 
       if (/^..\\/.test(newUrl)) {
         //Code specifically for local run, to fix broken links on
@@ -53,6 +54,7 @@ module.exports = function plugin(
           .replace(/\\/g, '/')
           .slice(2)
           .replace(/(^.*)#.*/, '$1')
+
         const isRedirectPath = redirects.find((url) => newUrl2.includes(url.from))
         if (isRedirectPath) newUrl2 = isRedirectPath.to
 
