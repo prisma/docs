@@ -23,7 +23,7 @@ function getHeadingsMapKey(link, pathUrl) {
 function createPathPrefixer(pathPrefix) {
   return function withPathPrefix(url) {
     var prefixed = pathPrefix + url
-    return prefixed
+    return prefixed.replace(/\/\//, '/')
   }
 }
 
@@ -160,7 +160,7 @@ module.exports = async function plugin(
               ':'
             )
           }
-          console.warn(`${prefix} ${link.originalUrl}`)
+          console.warn(`${prefix} ${link.tranformedUrl}`)
         }
         console.log('')
       }
