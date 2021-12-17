@@ -23,7 +23,7 @@ function getHeadingsMapKey(link, pathUrl) {
 function createPathPrefixer(pathPrefix) {
   return function withPathPrefix(url) {
     var prefixed = pathPrefix + url
-    return prefixed.replace(/\/\//, '/')
+    return prefixed
   }
 }
 
