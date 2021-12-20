@@ -96,13 +96,13 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
             <Pre className={`${blockClassName} ${isTerminal ? 'is-terminal' : ''}`} style={style}>
-              {(props['copy'] || language === 'copy') && (
-                <AbsoluteCopyButton className="copy-button">
-                  <CopyButton text={code}>
-                    <Copy />
-                  </CopyButton>
-                </AbsoluteCopyButton>
-              )}
+              {/* {(props['copy'] || language === 'copy') && ( */}
+              <AbsoluteCopyButton className="copy-button">
+                <CopyButton text={code}>
+                  <Copy />
+                </CopyButton>
+              </AbsoluteCopyButton>
+              {/* )} */}
               <code>
                 {cleanTokens(tokens).map((line: any, i: number) => {
                   let lineClass = {
