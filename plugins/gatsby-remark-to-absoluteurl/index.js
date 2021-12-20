@@ -32,7 +32,7 @@ module.exports = function plugin(
       const newUrl = path
         .resolve(
           markdownNode.fields.slug
-            .replace(`${pathSep}index`, '')
+            .replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '')
             .replace(/\d{2,}-/g, '')
             .replace(/\/$/, '')
             .split(pathSep)
