@@ -202,7 +202,7 @@ const config = {
           },
           {
             text: 'Codemod',
-            url: 'concepts/more/codemod',
+            url: 'guides/upgrade-guides/upgrading-versions/codemods',
             codeBlock: false,
           },
           {
@@ -341,7 +341,7 @@ const config = {
     MoreUsefulLinks: [
       {
         text: `What's new in Prisma docs`,
-        url: 'about/whats-new-in-prisma-docs',
+        url: 'about/prisma-docs/whats-new-in-prisma-docs',
         codeBlock: false,
       },
       {
