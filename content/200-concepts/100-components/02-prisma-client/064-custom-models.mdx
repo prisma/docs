@@ -1,0 +1,93 @@
+---
+title: 'Custom Models'
+metaTitle: 'Custom Models'
+metaDescription: 'This page explains how to wrap the Prisma Client in custom models'
+---
+
+<TopBlock>
+
+As your application grows, you may find the need to group related logic together.
+
+We suggest either wrapping a model in a class or extending the Prisma Client model object.
+
+</TopBlock>
+
+## Wrap a Prisma Model in a Class
+
+In the example below, we're wrapping the `user` model in the Prisma Client within a `Users` class. This class adds a custom signup function.
+
+```tsx highlight=4,23,28-30;normal
+import { PrismaClient } from '@prisma/client'
+
+type Signup = {
+  email: string
+  firstName: string
+  lastName: string
+}
+
+class Users {
+  constructor(private readonly prisma: PrismaClient['user']) {}
+
+  // Signup a new user
+  async signup(data: Signup): Promise<User> {
+    // do some custom validation...
+    return this.prisma.create({ data })
+  }
+}
+
+async function main() {
+  const prisma = new PrismaClient()
+  const users = new Users(prisma.user)
+  const user = await users.signup({
+    email: 'alice@prisma.io',
+    firstName: 'Alice',
+    lastName: 'Prisma',
+  })
+}
+```
+
+Here we're only exposing a `signup` method from the Prisma Client. With this approach, you'll no longer be able to call Prisma Client methods like `findMany` or `upsert`. This approach works well when you have a large application and you want to intentionally limit what your models can do.
+
+## Extending the Prisma Client
+
+But what if you don't want to hide existing functionality? In this case, you can use `Object.assign` to extend the Prisma Client without limiting it's functionality:
+
+```tsx highlight=2,27-29;normal
+import { PrismaClient } from '@prisma/client'
+
+type Signup = {
+  email: string
+  firstName: string
+  lastName: string
+}
+
+function Users(prisma: PrismaClient['user']) {
+  return Object.assign(prisma, {
+    /**
+     * Signup the first user and create a new team of one. Return the User with
+     * a full name and without a password
+     */
+    async signup(data: Signup) {
+      return prisma.user.create({ data })
+    },
+  })
+}
+
+async function main() {
+  const prisma = new PrismaClient()
+  const users = Users(prisma.user)
+  const user = await users.signup({
+    email: 'alice@prisma.io',
+    firstName: 'Alice',
+    lastName: 'Prisma',
+  })
+  const numUsers = await users.count()
+  console.log(user, numUsers)
+}
+```
+
+Now you can use your custom `signup` method alongside `count`, `updateMany`, `groupBy` and all of the other wonderful methods that the Prisma Client provides. Best of all, it's all type-safe!
+
+## Going Further
+
+- This is an excerpt from a larger guide on [How to Extend the Prisma Client](/guides/database/extend-client). In the guide we talk about how to add custom validation and computed fields to your model.

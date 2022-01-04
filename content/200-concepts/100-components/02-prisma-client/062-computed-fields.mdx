@@ -1,0 +1,80 @@
+---
+title: 'Computed Fields'
+metaTitle: 'Computed Fields'
+metaDescription: 'This page explains how to add computed fields to the Prisma Client'
+---
+
+<TopBlock>
+
+Computed fields allow you to derive a new field based on existing data. A common example is when you compute a full name from a first and last name. In your database, you may only store a first and last name, but you can define a computed field that combines both fields into one. This field is read-only and is not stored in your database.
+
+</TopBlock>
+
+## Deriving a Full Name from a First and Last Name
+
+The Prisma Client does not yet natively support computed fields, but with a bit of TypeScript magic, you can define a function that accepts a generic as an input then extend that generic to ensure it conforms to a specific structure. Finally you can return that generic with additional computed fields. Let's see how that might look:
+
+<TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript (Node.js)" icon="code"/>]}>
+
+<tab>
+
+```tsx highlight=1-5,7-10m,13-15;normal
+// Define a type that needs a first and last name
+type FirstLastName = {
+  firstName: string
+  lastName: string
+}
+
+// Extend the T generic with the fullName attribute
+type WithFullName<T> = T & {
+  fullName: string
+}
+
+// Take objects that satisfy FirstLastName and computes a full name
+function computeFullName<User extends FirstLastName>(
+  user: User
+): WithFullName<User> {
+  return {
+    ...user,
+    fullName: user.firstName + ' ' + user.lastName,
+  }
+}
+
+async function main() {
+  const user = await prisma.user.findUnique({ where: 1 })
+  const userWithFullName = computeFullName(user)
+}
+```
+
+</tab>
+
+<tab>
+
+```js
+function computeFullName(user) {
+  return {
+    ...user,
+    fullName: user.firstName + ' ' + user.lastName,
+  }
+}
+
+async function main() {
+  const user = await prisma.user.findUnique({ where: 1 })
+  const userWithFullName = computeFullName(user)
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+In the TypeScript example above, a `User` generic has been defined that extends the `FirstLastName` type. This means that whatever you pass into `computeFullName` must contain `firstName` and `lastName` keys.
+
+A `WithFullName<User>` return type has also been defined, which takes whatever `User` is and tacks on a `fullName` string attribute.
+
+With this function, any object that contains `firstName` and `lastName` keys can compute a `fullName`. Pretty neat, right?
+
+## Going Further
+
+- This is an excerpt from a larger guide on [How to Extend the Prisma Client](/guides/database/extend-client). In the guide we talk about how you can move this `computeFullName` function into a custom model.
+- There's an [outstanding feature request](https://github.com/prisma/prisma/issues/3394) to add native support to the Prisma Client. If you'd like to see that happen, make sure to upvote that issue and share your use case!
