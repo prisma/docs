@@ -1,5 +1,10 @@
 import { urlGenerator } from './urlGenerator'
 
+const newParams = (langSwitcher: any, dbSwitcher: any) =>
+  `${langSwitcher ? `${langSwitcher[0]}${dbSwitcher ? '-' : ''}` : ''}${
+    dbSwitcher ? `${dbSwitcher[0]}` : ''
+  }`
+
 export const getParentTitle = (slug: string, allMdx?: any) => {
   const allContent =
     allMdx &&
@@ -9,7 +14,10 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
       title: mdx.node.frontmatter.title,
       staticLink: mdx.node.frontmatter.staticLink,
       codeStyle: mdx.node.frontmatter.codeStyle,
+      langSwitcher: mdx.node.frontmatter.langSwitcher,
+      dbSwitcher: mdx.node.frontmatter.dbSwitcher,
     }))
+
   allContent?.map((content: any) => {
     content.parentTitle = []
     const parts = content.slug.split('/')
@@ -26,12 +34,13 @@ export const getParentTitle = (slug: string, allMdx?: any) => {
         )
       })
       if (parent) {
+        const newParamsParent = newParams(parent.langSwitcher, parent.dbSwitcher)
         // const parts = parent.slug.split('/')
         // const topLevel = parts.length == 3 && parts[parts.length - 1] === 'index' ? true : false
         content.parentTitle.push({
           title: parent?.title,
           codeStyle: parent?.codeStyle,
-          link: urlGenerator(parent.modSlug),
+          link: `${urlGenerator(parent.modSlug)}${newParamsParent ? '-' + newParamsParent : ''}`,
           // link: topLevel || parent.staticLink ? null : urlGenerator(parent.modSlug),
         })
       }

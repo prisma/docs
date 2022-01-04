@@ -1,0 +1,129 @@
+---
+title: 'Referential integrity'
+metaTitle: 'Referential integrity'
+metaDescription: 'Referential integrity lets you define how the consistency of relations is handled.'
+tocDepth: 2
+preview: true
+---
+
+<TopBlock>
+
+Referential integrity is a property of a data set that states that all its references are valid. Referential integrity requires that if one record references another, then the referenced record must exist. For example, if a `Post` model defines an author, then the author must also exist. Referential integrity is enforced through constraints that prevent you making changes that break references, and through defining [referential actions](/concepts/components/prisma-schema/relations/referential-actions) that run when updating or deleting records. In the case of the `Post` model, for example, you must define what happens if its author is deleted.
+
+In Prisma, referential integrity is implemented by defining relations between records using the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attribute. The `onUpdate` and `onDelete` arguments of this attribute can be used to define which referential action take place on updating or deleting the related record.
+
+For example, take the following blog post schema, with a one-to-many relation between `Post`s and `User`s:
+
+```prisma file=schema.prisma highlight=4;normal
+model Post {
+  id       Int    @id @default(autoincrement())
+  title    String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId Int
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+In this case, the `onDelete: Cascade` argument specifies the `Cascade` referential action, deleting the `Post` if the related `User` is deleted. See [Referential actions](/concepts/components/prisma-schema/relations/referential-actions) for further details of supported actions.
+
+When using a relational database that supports foreign keys, referential integrity can be handled in the underlying database. This is the default option in Prisma when using SQL databases.
+
+Alternatively, Prisma can emulate referential integrity in the client. This is the default option when using MongoDB as a database, because it does not support foreign keys. Emulation can also be enabled for relational databases in cases where foreign keys are not supported, or where it is preferred for other reasons (for example, in cases where there are scaling concerns).
+
+<Admonition type="warning">
+  There are significant performance implications to emulating referential
+  integrity in the Prisma client. In cases where the underlying database can
+  handle referential integrity with foreign keys, it is usually the preferred
+  choice.
+</Admonition>
+
+</TopBlock>
+
+## Setting the referential integrity in the datasource
+
+Referential integrity is currently a Preview feature. To enable this, add it to the `previewFeatures` list in the `generator` block of `schema.prisma`:
+
+```prisma file=schema.prisma
+datasource db {
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  referentialIntegrity = "prisma"
+}
+
+generator js {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
+}
+```
+
+To change the type of referential integrity used, update the `referentialIntegrity` parameter in the [`datasource`](/reference/api-reference/prisma-schema-reference#datasource) block. The available options are:
+
+- `foreignKeys`: this handles referential integrity in the database using foreign keys. This is the default option when using all SQL database connectors.
+- `prisma`: this emulates referential integrity in the Prisma client. This is the default (and only available) option when using the MongoDB connector.
+
+<Admonition type="warning">
+  When using Prisma Migrate, setting the value to `prisma` will remove all
+  previously created foreign keys in the next migration. Setting the value to
+  `foreignKeys` will create foreign keys for all relations in the next
+  migration.
+</Admonition>
+
+## Handling the referential integrity in Prisma
+
+In the case where referential integrity is emulated in the Prisma client using the `prisma` option for the `referentialIntegrity` parameter, there is currently a reduced number of supported [referential actions](/concepts/components/prisma-schema/relations/referential-actions) available in the data model:
+
+| Referential action | `onUpdate` | `onDelete` |
+| :----------------- | :--------- | :--------- |
+| Restrict           | no         | yes        |
+| SetNull            | no         | yes        |
+| SetDefault         | no         | no         |
+| Cascade            | no         | yes        |
+| NoAction           | no         | yes        |
+
+Currently Prisma only implements the referential actions. Foreign keys also create constraints, which make it impossible to manipulate data in a way that would violate these constraints: instead of executing the query, the database responds with an error. These constraints will not be created if you emulate referential integrity in the client, so if you set the referential action to [`NoAction`](/concepts/components/prisma-schema/relations/referential-actions#noaction) there will be no checks to prevent you from breaking the referential integrity.
+
+Another current limitation when emulating referential integrity in Prisma is that any [`raw`](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) database queries will not trigger any of the actions, and they should be handled manually if deleting or updating records using the [`raw`](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) queries.
+
+When using the `db pull` command, existing relations are kept in the data model. This has some caveats:
+
+- If you delete a model that is part of a relation, Prisma will delete the relation.
+- If you delete or rename a scalar field used in a relation field, the relation field will still refer to the old version, leading to validation errors. For example, take the following data model:
+
+  ```prisma file=schema.prisma
+  model A {
+    field Int
+    b     B   @relation(fields: [field], references: [id])
+  }
+  ```
+
+  If you then change `field` to `renamedField`, you will end up with the following data model after then next `db pull`:
+
+  ```prisma file=schema.prisma
+  model A {
+    renamedField Int
+    b            B   @relation(fields: [field], references: [id])
+  }
+  ```
+
+  In this case, you need to manually fix the relation to point to `renamedField` instead before continuing to use the data model.
+
+## Handling the referential integrity with foreign keys
+
+In the case where referential integrity is handled in the database using the `foreignKeys` option for the `referentialIntegrity` parameter, all referential actions supported by the database are available:
+
+| action      | `onUpdate` | `onDelete` |
+| :---------- | :--------- | :--------- |
+| Restrict⟒   | yes        | yes        |
+| SetNull     | yes        | yes        |
+| SetDefault⟑ | yes        | yes        |
+| Cascade     | yes        | yes        |
+| NoAction    | yes        | yes        |
+
+- ⟒ Not supported on SQL Server
+- ⟑ Not supported on MySQL/InnoDB
+
+In this mode the [`raw`](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) database queries will trigger actions accordingly.

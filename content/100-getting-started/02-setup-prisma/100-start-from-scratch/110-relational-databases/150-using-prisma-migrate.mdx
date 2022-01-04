@@ -3,17 +3,17 @@ title: 'Using Prisma Migrate'
 metaTitle: 'Using Prisma Migrate'
 metaDescription: 'Create database tables with Prisma Migrate'
 langSwitcher: ['typescript', 'node']
-dbSwitcher: ['postgres', 'mysql']
+dbSwitcher: ['postgres', 'mysql', 'sqlserver']
 toc: false
 ---
 
 ## Create database tables with Prisma Migrate
 
-In this guide, you'll use [Prisma Migrate](../../../../concepts/components/prisma-migrate) to create the tables in your database. Add the following Prisma data model to your Prisma schema in `prisma/schema.prisma`:
+In this guide, you'll use [Prisma Migrate](/concepts/components/prisma-migrate) to create the tables in your database. Add the following Prisma data model to your Prisma schema in `prisma/schema.prisma`:
 
 ```prisma file=prisma/schema.prisma copy
 model Post {
-  id        Int      @default(autoincrement()) @id
+  id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   title     String   @db.VarChar(255)
@@ -24,14 +24,14 @@ model Post {
 }
 
 model Profile {
-  id     Int     @default(autoincrement()) @id
+  id     Int     @id @default(autoincrement())
   bio    String?
   user   User    @relation(fields: [userId], references: [id])
   userId Int     @unique
 }
 
 model User {
-  id      Int      @default(autoincrement()) @id
+  id      Int      @id @default(autoincrement())
   email   String   @unique
   name    String?
   posts   Post[]
@@ -110,6 +110,7 @@ ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE
 | :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
 | `id`        | `INTEGER`      | **✔️**      | No          | **✔️**   | _autoincrementing_ |
 | `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**   | `now()`            |
+| `updatedAt` | `TIMESTAMP`    | No          | No          | **✔️**   |                    |
 | `title`     | `VARCHAR(255)` | No          | No          | **✔️**   | -                  |
 | `content`   | `TEXT`         | No          | No          | No       | -                  |
 | `published` | `BOOLEAN`      | No          | No          | **✔️**   | `false`            |
@@ -185,6 +186,7 @@ ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE
 | :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
 | `id`        | `INTEGER`      | **✔️**      | No          | **✔️**   | _autoincrementing_ |
 | `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**   | `now()`            |
+| `updatedAt` | `TIMESTAMP`    | No          | No          | **✔️**   |                    |
 | `title`     | `VARCHAR(255)` | No          | No          | **✔️**   | -                  |
 | `content`   | `TEXT`         | No          | No          | No       | -                  |
 | `published` | `BOOLEAN`      | No          | No          | **✔️**   | `false`            |
@@ -197,6 +199,105 @@ ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE
 | `id`        | `INTEGER` | **✔️**      | No          | **✔️**   | _autoincrementing_ |
 | `bio`       | `TEXT`    | No          | No          | No       | -                  |
 | `userId`    | `INTEGER` | No          | **✔️**      | **✔️**   | -                  |
+
+</tab>
+
+</TabbedContent>
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'sqlserver']}>
+
+<TabbedContent tabs={[<FileWithIcon text="SQL" icon="code"/>, <FileWithIcon text="Tables" icon="database"/>]}>
+
+<tab>
+
+```sql
+BEGIN TRY
+
+BEGIN TRAN;
+
+-- CreateTable
+CREATE TABLE [dbo].[Post] (
+    [id] INT NOT NULL IDENTITY(1,1),
+    [createdAt] DATETIME2 NOT NULL CONSTRAINT [Post_createdAt_df] DEFAULT CURRENT_TIMESTAMP,
+    [updatedAt] DATETIME2 NOT NULL,
+    [title] VARCHAR(255) NOT NULL,
+    [content] NVARCHAR(1000),
+    [published] BIT NOT NULL CONSTRAINT [Post_published_df] DEFAULT 0,
+    [authorId] INT NOT NULL,
+    CONSTRAINT [Post_pkey] PRIMARY KEY ([id])
+);
+
+-- CreateTable
+CREATE TABLE [dbo].[Profile] (
+    [id] INT NOT NULL IDENTITY(1,1),
+    [bio] NVARCHAR(1000),
+    [userId] INT NOT NULL,
+    CONSTRAINT [Profile_pkey] PRIMARY KEY ([id]),
+    CONSTRAINT [Profile_userId_key] UNIQUE ([userId])
+);
+
+-- CreateTable
+CREATE TABLE [dbo].[User] (
+    [id] INT NOT NULL IDENTITY(1,1),
+    [email] NVARCHAR(1000) NOT NULL,
+    [name] NVARCHAR(1000),
+    CONSTRAINT [User_pkey] PRIMARY KEY ([id]),
+    CONSTRAINT [User_email_key] UNIQUE ([email])
+);
+
+-- AddForeignKey
+ALTER TABLE [dbo].[Post] ADD CONSTRAINT [Post_authorId_fkey] FOREIGN KEY ([authorId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE [dbo].[Profile] ADD CONSTRAINT [Profile_userId_fkey] FOREIGN KEY ([userId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+COMMIT TRAN;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0
+BEGIN
+    ROLLBACK TRAN;
+END;
+THROW
+
+END CATCH
+```
+
+</tab>
+
+<tab>
+
+**User**
+
+| Column name | Type             | Primary key | Foreign key | Required | Default            |
+| :---------- | :--------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INT`            | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `name`      | `NVARCHAR(1000)` | No          | No          | No       | -                  |
+| `email`     | `NVARCHAR(1000)` | No          | No          | **✔️**   | -                  |
+
+**Post**
+
+| Column name | Type             | Primary key | Foreign key | Required | Default            |
+| :---------- | :--------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INT`            | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `createdAt` | `DATETIME2`      | No          | No          | **✔️**   | `now()`            |
+| `updatedAt` | `DATETIME2`      | No          | No          | **✔️**   |                    |
+| `title`     | `VARCHAR(255)`   | No          | No          | **✔️**   | -                  |
+| `content`   | `NVARCHAR(1000)` | No          | No          | No       | -                  |
+| `published` | `BIT`            | No          | No          | **✔️**   | `false`            |
+| `authorId`  | `INT`            | No          | **✔️**      | **✔️**   | -                  |
+
+**Profile**
+
+| Column name | Type             | Primary key | Foreign key | Required | Default            |
+| :---------- | :--------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INT`            | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `bio`       | `NVARCHAR(1000)` | No          | No          | No       | -                  |
+| `userId`    | `INT`            | No          | **✔️**      | **✔️**   | -                  |
 
 </tab>
 
@@ -256,6 +357,32 @@ ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE
 
 </SwitchTech>
 
+<SwitchTech technologies={['node', 'sqlserver']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-node-sqlserver"
+  arrowRight
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-sqlserver"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
 <SwitchTech technologies={['typescript', 'postgresql']}>
 
 <NavigationLinksContainer>
@@ -290,7 +417,7 @@ ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE
   color="dark"
   type="primary"
   href="./connect-your-database-typescript-mysql"
-  arrowRight
+  arrowLeft
 >
   Connect your database
 </ButtonLink>
@@ -299,6 +426,32 @@ ALTER TABLE "Profile" ADD FOREIGN KEY("userId")REFERENCES "User"("id") ON DELETE
   color="dark"
   type="primary"
   href="./install-prisma-client-typescript-mysql"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'sqlserver']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-typescript-sqlserver"
+  arrowRight
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-sqlserver"
   arrow
 >
   Install Prisma Client

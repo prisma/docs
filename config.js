@@ -181,7 +181,7 @@ const config = {
           },
           {
             text: 'SQL Server',
-            url: 'concepts/database-connectors/microsoft-sql-server',
+            url: 'concepts/database-connectors/sql-server',
             codeBlock: false,
           },
           {
@@ -197,12 +197,12 @@ const config = {
         links: [
           {
             text: 'Editor setup',
-            url: 'concepts/more/editor-setup',
+            url: 'guides/development-environment/editor-setup',
             codeBlock: false,
           },
           {
             text: 'Codemod',
-            url: 'concepts/more/codemod',
+            url: 'guides/upgrade-guides/upgrading-versions/codemods',
             codeBlock: false,
           },
           {
@@ -341,17 +341,17 @@ const config = {
     MoreUsefulLinks: [
       {
         text: `What's new in Prisma docs`,
-        url: 'about/whats-new-in-prisma-docs',
+        url: 'about/prisma-docs/whats-new-in-prisma-docs',
         codeBlock: false,
       },
       {
         text: 'About the docs ',
-        url: 'about/about-the-docs',
+        url: 'about/prisma-docs/about-the-docs',
         codeBlock: false,
       },
       {
         text: 'Prisma style guide',
-        url: 'about/style-guide',
+        url: 'about/prisma-docs/style-guide',
         codeBlock: false,
       },
       {
@@ -376,11 +376,11 @@ const config = {
       },
       {
         text: 'FAQ',
-        url: 'about/faq',
+        url: 'about/prisma/faq',
       },
       {
         text: 'Limitations',
-        url: 'about/limitations',
+        url: 'about/prisma/limitations',
         codeBlock: false,
       },
       {
@@ -390,12 +390,17 @@ const config = {
       },
       {
         text: 'Roadmap',
-        url: 'about/roadmap',
+        url: 'about/prisma/roadmap',
         codeBlock: false,
       },
       {
-        text: 'Releases and maturity levels',
-        url: 'about/releases',
+        text: 'ORM Releases and maturity levels',
+        url: 'about/prisma/releases',
+        codeBlock: false,
+      },
+      {
+        text: 'Platform Releases and maturity levels',
+        url: 'about/prisma/platform-releases',
         codeBlock: false,
       },
     ],

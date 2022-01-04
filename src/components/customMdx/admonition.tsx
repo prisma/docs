@@ -16,7 +16,6 @@ const colorMap: any = {
 }
 
 const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
-
   return (
     <AdmonitionWrapper {...props} type={type}>
       {type === 'alert' && (
@@ -27,12 +26,12 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
       {Array.isArray(children) ? (
         <FlexContainer>
           {children.map((child: any, index: number) => (
-            <ChildContainer key={index}>
-              {child.props.children}
-            </ChildContainer>
+            <ChildContainer key={index}>{child.props.children}</ChildContainer>
           ))}
         </FlexContainer>
-          ) : children}
+      ) : (
+        children
+      )}
     </AdmonitionWrapper>
   )
 }
@@ -45,7 +44,7 @@ const FlexContainer = styled.div`
 `
 
 const ChildContainer = styled.div`
-  margin: 1rem 0;
+  margin: 0;
 `
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`

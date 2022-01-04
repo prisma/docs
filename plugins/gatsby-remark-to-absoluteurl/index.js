@@ -16,8 +16,8 @@ module.exports = function plugin(
     /*To convert all uppercase links to lowercase (if used by mistake) except its search part (like: ?name='AbC'), 
       to avoid use of extrnal link errors like one of youtube */
     node.url = node.url
-      .replace(/(.+)\?|(.+)\??/, (url)=>url.toLowerCase())
-      .replace(/#.+/, (url)=>url.toLowerCase())
+      .replace(/(.+)\?|(.+)\??/, (url) => url.toLowerCase())
+      .replace(/#.+/, (url) => url.toLowerCase())
 
     node.originalUrl = node.url
     if (
@@ -32,7 +32,7 @@ module.exports = function plugin(
       const newUrl = path
         .resolve(
           markdownNode.fields.slug
-            .replace(`${pathSep}index`, '')
+            .replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '')
             .replace(/\d{2,}-/g, '')
             .replace(/\/$/, '')
             .split(pathSep)
@@ -40,7 +40,8 @@ module.exports = function plugin(
             .join(pathSep) || '/',
           node.url
         )
-        .replace(/\/?(\?|#|$)/, '/$1')
+        .replace(/\/?(\?|$)/, '/$1')
+        .replace(/\/$/, '')
 
       if (/^..\\/.test(newUrl)) {
         //Code specifically for local run, to fix broken links on
@@ -53,6 +54,7 @@ module.exports = function plugin(
           .replace(/\\/g, '/')
           .slice(2)
           .replace(/(^.*)#.*/, '$1')
+
         const isRedirectPath = redirects.find((url) => newUrl2.includes(url.from))
         if (isRedirectPath) newUrl2 = isRedirectPath.to
 

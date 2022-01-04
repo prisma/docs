@@ -8,14 +8,14 @@ metaDescription: 'This page explains the current transactions API of Prisma Clie
 
 A database transaction refers to a sequence of read/write operations that are _guaranteed_ to either succeed or fail as a whole. This section describes the ways in which the Prisma Client API supports transactions.
 
-- For more in-depth examples and use cases, refer to the 📖 [transactions guide](../../../guides/performance-and-optimization/prisma-client-transactions-guide).
+- For more in-depth examples and use cases, refer to the 📖 [transactions guide](/guides/performance-and-optimization/prisma-client-transactions-guide).
 - For information about transactions in general and the reasoning behind Prisma's current solutions, see ✍ [Blog: How Prisma supports transactions](https://www.prisma.io/blog/how-prisma-supports-transactions-x45s1d5l0ww1/).
 
 </TopBlock>
 
 ## Nested writes
 
-A [nested write](relation-queries#nested-writes) lets you perform a single Prisma Client API call with multiple _operations_ that touch multiple [_related_](../prisma-schema/relations) records. For example, creating a _user_ together with a _post_ or updating an _order_ together with an _invoice_. Prisma Client ensures that all operations succeed or fail as a whole.
+A [nested write](relation-queries#nested-writes) lets you perform a single Prisma Client API call with multiple _operations_ that touch multiple [_related_](/concepts/components/prisma-schema/relations) records. For example, creating a _user_ together with a _post_ or updating an _order_ together with an _invoice_. Prisma Client ensures that all operations succeed or fail as a whole.
 
 The following example demonstrates a nested write with `create`:
 
@@ -49,7 +49,7 @@ const updatedPost: Post = await prisma.post.update({
 })
 ```
 
-> Refer to the 📖 [transactions guide](../../../guides/performance-and-optimization/prisma-client-transactions-guide#nested-writes) for more examples.
+> Refer to the 📖 [transactions guide](/guides/performance-and-optimization/prisma-client-transactions-guide#nested-writes) for more examples.
 
 ## Batch/bulk operations
 
@@ -59,7 +59,7 @@ The following bulk operations run as transactions:
 - `updateMany`
 - `createMany`
 
-> Refer to the 📖 [transactions guide](../../../guides/performance-and-optimization/prisma-client-transactions-guide#bulk-operations) for more examples.
+> Refer to the 📖 [transactions guide](/guides/performance-and-optimization/prisma-client-transactions-guide#bulk-operations) for more examples.
 
 ## The <inlinecode>$transaction</inlinecode> API
 
@@ -85,56 +85,89 @@ Instead of immediately awaiting the result of each operation when it's performed
 
 > **Note**: Operations are executed according to the order they are placed in the transaction. Using a query in a transaction does not influence the order of operations in the query itself.
 >
-> Refer to the 📖 [transactions guide](../../../guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api) for more examples.
+> Refer to the 📖 [transactions guide](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api) for more examples.
 
-### Interactive Transactions
+### Interactive Transactions (in Preview)
 
-Sometimes you need more control over what queries execute within a transaction.
+Sometimes you need more control over what queries execute within a transaction. Interactive transactions are meant to provide you with an escape hatch.
 
-Interactive transactions are commonly used when the result of one query depends on another query and you want to run both queries within a single transaction.
+You can enable interactive transactions by adding `interactiveTransactions` in the generator of your Prisma Schema:
 
-To support this use case and more, you can pass an async function into [`$transaction`](../../../guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
-
-The following is an example of purchasing a movie ticket online. In this example, we really don't want to sell the same ticket twice:
-
-```tsx
-import { Ticket } from 'prisma'
-
-const userEmail = 'alice@prisma.io'
-const movieName = 'October Sky'
-
-// Start a transaction
-const ticket: Ticket = await prisma.$transaction(async (prisma) => {
-  // Find an available ticket
-  const availableTicket = await prisma.ticket.findFirst({
-    where: {
-      claimedBy: null,
-      movie: {
-        name: movieName,
-      },
-    },
-  })
-
-  // Throw an error if no tickets are available
-  if (!availableTicket) {
-    // This will rollback the transaction
-    throw new Error(`Oh no! ${movieName} is all booked.`)
-  }
-
-  // Claim the ticket, commit the transaction, and return
-  // the result
-  return prisma.ticket.update({
-    data: {
-      claimedBy: userEmail,
-    },
-    where: {
-      id: availableTicket.id,
-    },
-  })
-})
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
 ```
 
-In the example above, both the `findFirst` and `update` queries run within a database transaction. When your application reaches the end of the function, the transaction is **committed** to the database.
+Then you can pass an async function into [`$transaction`](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
+
+#### Example
+
+Imagine that you are building an online banking system. One of the actions to perform is to send money from one person to another.
+
+As experienced developers, we want to make sure that during the transfer,
+
+- the amount doesn't disappear
+- the amount isn't doubled
+
+This is a great use-case for interactive transactions because we need to perform logic in-between the writes to check the balance.
+
+In the example below, Alice and Bob each have $100 in their account. If they try to send more money than they have, the transfer is rejected.
+
+Alice is expected to be able to make 1 transfer for $100 while the other transfer would be rejected. This would result in Alice having $0 and Bob having $200.
+
+```tsx
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+
+async function transfer(from: string, to: string, amount: number) {
+  return await prisma.$transaction(async (prisma) => {
+    // 1. Decrement amount from the sender.
+    const sender = await prisma.account.update({
+      data: {
+        balance: {
+          decrement: amount,
+        },
+      },
+      where: {
+        email: from,
+      },
+    })
+    // 2. Verify that the sender's balance didn't go below zero.
+    if (sender.balance < 0) {
+      throw new Error(`${from} doesn't have enough to send ${amount}`)
+    }
+    // 3. Increment the recipient's balance by amount
+    const recipient = prisma.account.update({
+      data: {
+        balance: {
+          increment: amount,
+        },
+      },
+      where: {
+        email: to,
+      },
+    })
+    return recipient
+  })
+}
+
+async function main() {
+  // This transfer is successful
+  await transfer('alice@prisma.io', 'bob@prisma.io', 100)
+  // This transfer fails because Alice doesn't have enough funds in her account
+  await transfer('alice@prisma.io', 'bob@prisma.io', 100)
+}
+
+main()
+  .catch(console.error)
+  .finally(() => {
+    prisma.$disconnect()
+  })
+```
+
+In the example above, both `update` queries run within a database transaction. When the application reaches the end of the function, the transaction is **committed** to the database.
 
 If your application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction.
 
@@ -150,7 +183,7 @@ try {
 }
 ```
 
-Additionally, the transaction API supports a 2nd parameter with the following configuration options:
+The interactive transaction API has a 2nd parameter with the following configuration options:
 
 - `maxWait`: The maximum amount of time the Prisma Client will wait to acquire a transaction from the database. The default is 2 seconds.
 - `timeout`: The maximum amount of time the interactive transaction can run before being canceled and rolled back. The default value is 5 seconds.
@@ -178,14 +211,17 @@ transaction functions. We recommend you get in and out as quick as possible!
 
 </Admonition>
 
-## Transaction isolation level
+## Limitations
+
+### Transaction Isolation Level
 
 Transaction isolation level is not currently configurable at a Prisma level and is not explicitly set by Prisma.
 
 - [Default transaction isolation level in PostgreSQL](https://www.postgresql.org/docs/9.3/runtime-config-client.html#GUC-DEFAULT-TRANSACTION-ISOLATION)
-- [Default transaction isolation level in SQL Server](https://docs.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql?view=sql-server-ver15)
+- [Default transaction isolation level in Microsoft SQL Server](https://docs.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql?view=sql-server-ver15)
 - [Default transaction isolation level in MySQL](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
 
-## Join the conversation on GitHub
+
+## Join the Conversation on GitHub
 
 If you'd like to see transactions supported in the future, [please join the discussion on GitHub](https://github.com/prisma/prisma-client-js/issues/349).

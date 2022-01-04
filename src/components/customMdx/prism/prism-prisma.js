@@ -17,7 +17,7 @@ Prism.languages.insertBefore('prisma', 'function', {
 })
 
 Prism.languages.insertBefore('prisma', 'punctuation', {
-  'type-args': /\b(?:references|fields):/,
+  'type-args': /\b(?:references|fields|onDelete|onUpdate):/,
 })
 
 Prism.languages.json5 = Prism.languages.js

@@ -94,8 +94,8 @@ This scenario can be represented by the following schema - note that users can b
 
 ```prisma
 model Team {
-  id   Int    @id @default(autoincrement())
-  name String
+  id      Int    @id @default(autoincrement())
+  name    String
   members User[] // Many team members
 }
 
@@ -137,7 +137,7 @@ However, this code has a problem - consider the following scenario:
 
 Creating a team and adding a user should be one atomic operation that **succeeds or fails as a whole**.
 
-To implement atomic writes in a low-level database clients, you must wrap your inserts in `BEGIN`, `COMMIT` and `ROLLBACK` statements. Prisma Client solves the problem with [nested writes](../../concepts/components/prisma-client/relation-queries#nested-writes). The following query creates a team, creates a user, and connects the records in a single transaction:
+To implement atomic writes in a low-level database clients, you must wrap your inserts in `BEGIN`, `COMMIT` and `ROLLBACK` statements. Prisma Client solves the problem with [nested writes](/concepts/components/prisma-client/relation-queries#nested-writes). The following query creates a team, creates a user, and connects the records in a single transaction:
 
 ```ts
 const team = await prisma.team.create({
@@ -185,14 +185,12 @@ await prisma.$transaction([createUserOperation, createTeamOperation])
 
 <Admonition type="warning">
 
-In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using the **preview feature** [referential actions](../../concepts/components/prisma-schema/relations/referential-actions).
+In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using [referential actions](/concepts/components/prisma-schema/relations/referential-actions).
 
 </Admonition>
 
 - Use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can [perform both operations within a `$transaction`](#scenario-privacy-legislation).
-- [Configure cascading deletes at the database level](../database/advanced-database-tasks/cascading-deletes).
-
-> **Note**: We are a looking into [cascading deletes support at a schema level](https://github.com/prisma/prisma/issues/2810).
+- [Configure cascading deletes at the database level](/guides/database/advanced-database-tasks/cascading-deletes).
 
 ##### Nested writes support nested updates, but updates are not dependent writes - should I use the `$transaction` API?
 
@@ -407,24 +405,24 @@ GDPR and other privacy legislation give users the right to request that an organ
 
 ```prisma
 model User {
-  id                Int       @id @default(autoincrement())
-  posts             Post[]
-  privateMessages   PrivateMessage[]
+  id              Int              @id @default(autoincrement())
+  posts           Post[]
+  privateMessages PrivateMessage[]
 }
 
 model Post {
-  id         Int     @id @default(autoincrement())
-  user       User    @relation(fields: [userId], references: [id])
-  userId     Int
-  title      String
-  content    String
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
+  title   String
+  content String
 }
 
 model PrivateMessage {
-  id         Int     @id @default(autoincrement())
-  user       User    @relation(fields: [userId], references: [id])
-  userId     Int
-  message      String
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
+  message String
 }
 ```
 
@@ -475,15 +473,15 @@ Instead of auto-generating IDs, change the `id` fields of `Team` and `User` to a
 
 ```prisma highlight=2,9;delete|3,10;add
 model Team {
-  id   Int       @id @default(autoincrement())
-  id   String    @id @default(uuid())
-  name String
+  id      Int    @id @default(autoincrement())
+  id      String @id @default(uuid())
+  name    String
   members User[]
 }
 
 model User {
-  id   Int     @id @default(autoincrement())
-  id   String  @id @default(uuid())
+  id    Int    @id @default(autoincrement())
+  id    String @id @default(uuid())
   email String @unique
   teams Team[]
 }
@@ -575,10 +573,10 @@ You are creating an upgrade flow for Slack that allows teams to unlock paid feat
 
 ```prisma highlight=5;normal
 model Team {
-  id                 Int    @id @default(autoincrement())
-  name               String
-  User               User[]
-  stripeCustomerId   String?
+  id               Int     @id @default(autoincrement())
+  name             String
+  User             User[]
+  stripeCustomerId String?
 }
 ```
 
@@ -823,53 +821,80 @@ It is now impossible for two people to book the same seat:
 3. Seat 3A claimed by Sorcha (`version` is incremented to 1, booking succeeds)
 4. Seat 3A claimed by Ellen (in-memory `version` (0) does not match database `version` (1) - booking does not succeed)
 
-### Interactive Transactions
+### Interactive Transactions (in Preview)
 
 If you have an existing application, it can be a significant undertaking to refactor your application to use optimistic concurrency control. Interactive Transactions offers a useful escape hatch for cases like this.
 
-To support this use case and more, you can pass an async function into `$transaction`.
+To support this use case and more, you can enable interactive transactions by adding `interactiveTransactions` in the generator of your Prisma Schema:
 
-The following is an example of purchasing a movie ticket online. This is a good use case for an interactive transactions because you don't want to sell the same ticket twice.
-
-```ts highlight=6,8,25;normal
-import { Seat } from 'prisma'
-const userEmail = 'alice@prisma.io'
-const movieName = 'HiddenFigures'
-
-// Start a transaction
-const seat: Seat = await prisma.$transaction(async (prisma) => {
-  // Find an available seat
-  const availableSeat = await prisma.seat.findFirst({
-    where: {
-      claimedBy: null,
-      movie: {
-        name: movieName,
-      },
-    },
-  })
-
-  // Throw an error if no seats are available
-  if (!availableSeat) {
-    // This will rollback the transaction
-    throw new Error(`Oh no! ${movieName} is all booked.`)
-  }
-
-  // Claim the seat, commit the transaction, and return
-  // the result
-  return prisma.seat.update({
-    data: {
-      claimedBy: userEmail,
-    },
-    where: {
-      id: availableSeat.id,
-    },
-  })
-})
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
 ```
 
-In the example above, both the `findFirst` and `update` queries run within a database transaction. When your application reaches the end of the function, the transaction is **committed** to the database.
+Then you can pass an async function into [$transaction](https://www.prisma.io/docs/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
 
-If your application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction. To catch the exception, you can wrap `$transaction` in a try-catch block.
+In the example below, Alice and Bob each have $100 in their account. If they try to send more money than they have, the transfer is rejected.
+
+The expected outcome would be for Alice to make 1 transfer for $100 and the other transfer would be rejected. This would result in Alice having $0 and Bob having $200.
+
+```ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+
+async function transfer(from: string, to: string, amount: number) {
+  return await prisma.$transaction(async (prisma) => {
+    // 1. Decrement amount from the sender.
+    const sender = await prisma.account.update({
+      data: {
+        balance: {
+          decrement: amount,
+        },
+      },
+      where: {
+        email: from,
+      },
+    })
+    // 2. Verify that the sender's balance didn't go below zero.
+    if (sender.balance < 0) {
+      throw new Error(`${from} doesn't have enough to send ${amount}`)
+    }
+    // 3. Increment the recipient's balance by amount
+    const recipient = prisma.account.update({
+      data: {
+        balance: {
+          increment: amount,
+        },
+      },
+      where: {
+        email: to,
+      },
+    })
+    return recipient
+  })
+}
+
+async function main() {
+  // This transfer is successful
+  await transfer('alice@prisma.io', 'bob@prisma.io', 100)
+  // This transfer fails because Alice doesn't have enough funds in her account
+  await transfer('alice@prisma.io', 'bob@prisma.io', 100)
+}
+
+main()
+  .catch(console.error)
+  .finally(() => {
+    prisma.$disconnect()
+  })
+```
+
+In the example above, both `update` queries run within a database transaction. When the application reaches the end of the function, the transaction is **committed** to the database.
+
+If the application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction.
+
+You can learn more about interactive transactions in our [Transactions and Batch Queries documentation](https://www.prisma.io/docs/concepts/components/prisma-client/transactions#interactive-transactions-in-preview).
 
 <Admonition type="warning">
 

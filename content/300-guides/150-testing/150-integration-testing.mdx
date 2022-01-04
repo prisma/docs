@@ -15,7 +15,13 @@ One way to simulate a real world environment is to use [Docker](https://www.dock
 
 ## Prerequisites
 
-This guide assumes you have [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed on your machine as well as [`Jest`](../../unit-testing#add-jest-to-project) setup in your project.
+This guide assumes you have [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed on your machine as well as [`Jest`](/guides/testing/unit-testing#add-jest-to-project) setup in your project.
+
+<Admonition type="alert">
+
+At the time of writing, this guide uses `jest-mock-extended` version `^2.0.4`. See [mocking the Prisma Client](/guides/testing/unit-testing#mocking-the-prisma-client) for information on how to use this version.
+
+</Admonition>
 
 The following ecommerce schema will be used throughout the guide. This varies from the traditional `User` and `Post` models used in other parts of the docs, mainly because it is unlikely you will be running integration tests against your blog.
 
@@ -35,10 +41,10 @@ model CustomerOrder {
 // Can have 1 order
 // Can have many products
 model OrderDetails {
-  id        Int     @id @default(autoincrement())
-  products  Product @relation(fields: [productId], references: [id])
+  id        Int           @id @default(autoincrement())
+  products  Product       @relation(fields: [productId], references: [id])
   productId Int
-  order     CustomerOrder   @relation(fields: [orderId], references: [id])
+  order     CustomerOrder @relation(fields: [orderId], references: [id])
   orderId   Int
   total     Decimal
   quantity  Int
@@ -66,8 +72,8 @@ model Category {
 
 // Can have many orders
 model Customer {
-  id      Int     @id @default(autoincrement())
-  email   String  @unique
+  id      Int             @id @default(autoincrement())
+  email   String          @unique
   address String?
   name    String?
   orders  CustomerOrder[]
@@ -120,7 +126,7 @@ DATABASE_URL="postgresql://prisma:prisma@localhost:5433/tests"
 
 <Admonition type="info">
 
-The above `.env.test` file is used as part of a multiple `.env` file setup. Checkout the [using multiple .env files.](../development-environment/environment-variables/using-multiple-env-files) section to learn more about setting up your project with multiple `.env` files
+The above `.env.test` file is used as part of a multiple `.env` file setup. Checkout the [using multiple .env files.](/guides/development-environment/environment-variables/using-multiple-env-files) section to learn more about setting up your project with multiple `.env` files
 
 </Admonition>
 
@@ -251,7 +257,7 @@ export async function createOrder(input: OrderInput) {
   if (!product) return new Error('Out of stock')
 
   // If the customer is new then create the record, otherwise connect via their unique email
-  await prisma.order.create({
+  await prisma.customerOrder.create({
     data: {
       customer: {
         connectOrCreate: {
@@ -289,13 +295,13 @@ The following tests will check if the `createOrder` function works as it should 
 - Creating an order with an existing customer
 - Show an "Out of stock" error message if a product doesn't exist
 
-Before the test suite is run the database is seeded with data. After the test suite has finished a [`deleteMany`](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference/#deletemany) <span class="api"></span> is used to clear the database of its data.
+Before the test suite is run the database is seeded with data. After the test suite has finished a [`deleteMany`](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#deletemany) <span class="api"></span> is used to clear the database of its data.
 
 <Tip>
 
 Using `deleteMany` may suffice in situations where you know ahead of time how your schema is structured. This is because the operations need to be executed in the correct order according to how the model relations are setup.
 
-However, this doesn't scale as well as having a more generic solution that maps over your models and performs a truncate on them. For those scenarios and examples of using raw SQL queries see [Deleting all data with raw SQL / `TRUNCATE`](../../concepts/components/prisma-client/crud#deleting-all-data-with-raw-sql--truncate)
+However, this doesn't scale as well as having a more generic solution that maps over your models and performs a truncate on them. For those scenarios and examples of using raw SQL queries see [Deleting all data with raw SQL / `TRUNCATE`](/concepts/components/prisma-client/crud#deleting-all-data-with-raw-sql--truncate)
 
 </Tip>
 
@@ -389,7 +395,7 @@ it('should create 1 new customer with 1 order', async () => {
   })
 
   // Check if the new order was created by filtering on unique email field of the customer
-  const newOrder = await prisma.order.findFirst({
+  const newOrder = await prisma.customerOrder.findFirst({
     where: {
       customer: {
         email: customer.email,
@@ -419,7 +425,7 @@ it('should create 1 order with an existing customer', async () => {
   await createOrder(order)
 
   // Check if the new order was created by filtering on unique email field of the customer
-  const newOrder = await prisma.order.findFirst({
+  const newOrder = await prisma.customerOrder.findFirst({
     where: {
       customer: {
         email: customer.email,
@@ -456,17 +462,16 @@ You can add some scripts to your projects `package.json` file which will setup t
 
 ```json file=package.json
   "scripts": {
-    "migrate:init": "npx prisma migrate dev --name init",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "test": "yarn docker:up && yarn migrate:init && jest -i"
+    "test": "yarn docker:up && yarn prisma migrate deploy && jest -i"
   },
 ```
 
 The `test` script does the following:
 
 1. Runs `docker-compose up -d` to create the container with the Postgres image and database.
-1. Runs a migration on the database using your projects schema, this creates the tables in the container's database.
+1. Applies the migrations found in `./prisma/migrations/` directory to the database, this creates the tables in the container's database.
 1. Executes the tests.
 
 Once you are satisfied you can run `yarn docker:down` to destroy the container, its database and any test data.
