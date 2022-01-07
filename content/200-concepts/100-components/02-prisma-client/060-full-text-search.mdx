@@ -7,24 +7,27 @@ preview: true
 
 # Full-Text Search (Preview)
 
-The Prisma Client supports a full-text search API for Postgres databases. With full-text search enabled, you can add search functionality to your application by searching for text within a database column.
+The Prisma Client supports full-text search API for **PostgreSQL** and **MySQL** databases. With full-text search enabled, you can add search functionality to your application by searching for text within a database column.
 
-<Admonition type="info">
+## Enabling full-text search
 
-**Note**: Full text search can **only** be used in a Postgres database
-
-</Admonition>
-
-## Enable full-text search
-
-The full-text Search API is still in **Preview**. You can enable `fullTextSearch` in your Prisma Schema:
+The `fullTextSearch` feature is currently a Preview feature. To enable this feature, carry out the following steps:
 
 1. Update the [`previewFeatures`](/concepts/components/preview-features) block in your schema:
 
-   ```prisma
+   ```prisma file=schema.prisma
    generator client {
      provider        = "prisma-client-js"
      previewFeatures = ["fullTextSearch"]
+   }
+   ```
+
+   For MySQL, you will also need to include the `fullTextIndex` preview feature:
+
+   ```prisma file=schema.prisma highlight=3;add
+   generator client {
+     provider        = "prisma-client-js"
+     previewFeatures = ["fullTextSearch, fullTextIndex"]
    }
    ```
 
@@ -34,12 +37,29 @@ The full-text Search API is still in **Preview**. You can enable `fullTextSearch
    npx prisma generate
    ```
 
-After you regenerate your client, a new `search` field will be available on any `String` fields created on your models.
-
-### Example of new <inlinecode>search</inlinecode> field
+After you regenerate your client, a new `search` field will be available on any `String` fields created on your models. For example, the following search will return all posts that contain the word 'cat'.
 
 ```ts
-// All posts that contain the words cat or dog.
+// All posts that contain the word 'cat'.
+const result = await prisma.posts.findMany({
+  where: {
+    body: {
+      search: 'cat',
+    },
+  },
+})
+```
+
+## Querying the database
+
+The `search` field uses the database's native querying capabilities under the hood. This means that the exact operations available will be database-specific.
+
+### PostgreSQL
+
+The following examples demonstrate use of the PostgreSQL 'and' (`&`) and 'or' (`|`) operators:
+
+```ts
+// All posts that contain the words 'cat' or 'dog'.
 const result = await prisma.posts.findMany({
   where: {
     body: {
@@ -48,7 +68,7 @@ const result = await prisma.posts.findMany({
   },
 })
 
-// All drafts that contain the words cat and dog.
+// All drafts that contain the words 'cat' and 'dog'.
 const result = await prisma.posts.findMany({
   where: {
     status: 'Draft',
@@ -59,9 +79,58 @@ const result = await prisma.posts.findMany({
 })
 ```
 
-## Query Format
+To get a sense of how the query format works, consider the following text:
 
-The `search` field uses the database's native querying capabilities under the hood. This means that the Prisma Client [supports what the database supports](https://www.postgresql.org/docs/12/functions-textsearch.html).
+**"The quick brown fox jumps over the lazy dog"**
+
+Here's how the following queries would match that text:
+
+| Query                                   | Match? | Description                             |
+| :-------------------------------------- | :----- | :-------------------------------------- |
+| `fox & dog`                             | Yes    | The text contains 'fox' and 'dog'       |
+| `dog & fox`                             | Yes    | The text contains 'dog' and 'fox'       |
+| `dog & cat`                             | No     | The text contains 'dog' but not 'cat'   |
+| `!cat`                                  | Yes    | 'cat' is not in the text                |
+| <inlinecode>fox &#124; cat</inlinecode> | Yes    | The text contains 'fox' or 'cat'        |
+| <inlinecode>cat &#124; pig</inlinecode> | No     | The text doesn't contain 'cat' or 'pig' |
+| `fox <-> dog`                           | Yes    | 'dog' follows 'fox' in the text         |
+| `dog <-> fox`                           | No     | 'fox' doesn't follow 'dog' in the text  |
+
+For the full range of supported operations, see the [PostgreSQL full text search documentation](https://www.postgresql.org/docs/12/functions-textsearch.html).
+
+### MySQL
+
+The following examples demonstrate use of the MySQL 'and' (`+`) and 'not' (`-`) operators:
+
+```ts
+// All posts that contain the words 'cat' or 'dog'.
+const result = await prisma.posts.findMany({
+  where: {
+    body: {
+      search: 'cat dog',
+    },
+  },
+})
+
+// All posts that contain the words 'cat' and not 'dog'.
+const result = await prisma.posts.findMany({
+  where: {
+    body: {
+      search: '+cat -dog',
+    },
+  },
+})
+
+// All drafts that contain the words 'cat' and 'dog'.
+const result = await prisma.posts.findMany({
+  where: {
+    status: 'Draft',
+    body: {
+      search: '+cat +dog',
+    },
+  },
+})
+```
 
 To get a sense of how the query format works, consider the following text:
 
@@ -69,31 +138,78 @@ To get a sense of how the query format works, consider the following text:
 
 Here's how the following queries would match that text:
 
-| Query                                   | Match? | Description                         |
-| :-------------------------------------- | :----- | :---------------------------------- |
-| `fox & dog`                             | Yes    | The text contains fox and dog       |
-| `dog & fox`                             | Yes    | The text contains dog and fox       |
-| `dog & cat`                             | No     | The text doesn't contain cat        |
-| `!cat`                                  | Yes    | There is not cat in the text        |
-| <inlinecode>fox &#124; cat</inlinecode> | Yes    | The text contains fox or cat        |
-| <inlinecode>cat &#124; pig</inlinecode> | No     | The text doesn't contain cat or pig |
-| `fox <-> dog`                           | Yes    | dog follows fox in the text         |
-| `dog <-> fox`                           | No     | dog doesn't follow fox in the text  |
+| Query       | Match? | Description                             |
+| :---------- | :----- | :-------------------------------------- |
+| `+fox +dog` | Yes    | The text contains 'fox' and 'dog'       |
+| `+dog +fox` | Yes    | The text contains 'dog' and 'fox'       |
+| `+dog +cat` | No     | The text contains 'dog' but not 'cat'   |
+| `-cat`      | Yes    | 'cat' is not in the text                |
+| `fox dog`   | Yes    | The text contains 'fox' or 'cat'        |
+| `-cat -pig` | No     | The text doesn't contain 'cat' or 'pig' |
 
-## Adding Indexes
+For the full range of supported operations, see the [MySQL full text search documentation](https://dev.mysql.com/doc/refman/8.0/en/fulltext-boolean.html).
 
-To speed up your full-text queries, you should add an index to your database.
-Prisma Migrate currently doesn't support adding search indices, but you can
-easily add one yourself.
+## Adding indexes
+
+### PostgreSQL
+
+To speed up your full-text queries, you should add an index to your database. Prisma Migrate currently doesn't support adding search indices in PostgreSQL, so this should be added in SQL. For example, the following SQL statement would add an index called `post_body_index` on the `posts_body_index` column of the `posts` table:
 
 ```sql
 CREATE INDEX post_body_index ON posts USING GIN (body);
 ```
 
-You can continue using Prisma Migrate as you were before, it will ignore indexes
-that it doesn't know about.
+For further information, see the [Postgres documentation on indexes](https://www.postgresql.org/docs/12/sql-createindex.html).
 
-## Limitations
+You can continue using Prisma Migrate as you were before, it will ignore indexes that it doesn't know about.
 
-- The `search` field is only supported in PostgreSQL
-- You'll need to manage indexes yourself.
+### MySQL
+
+For MySQL, it is necessary to add indexes to any columns you search using the `@@fulltext` argument in the `schema.prisma` file. To do this, the `"fullTextIndex"` preview feature must be enabled.
+
+In the following example, one full text index is added to the `content` field of the `Blog` model, and another is added to both the `content` and `title` fields together:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+model Blog {
+  id      Int    @unique
+  content String
+  title   String
+
+  @@fulltext([content])
+  @@fulltext([content, title])
+}
+```
+
+The first index allows searching the `content` field for occurrences of the word 'cat':
+
+```prisma file=schema.prisma
+const result = await prisma.blogs.findMany({
+where: {
+content: {
+search: 'cat',
+},
+},
+})
+```
+
+The second index allows searching both the `content` and `title` fields for occurrences of the word 'cat' in the `content` and 'food' in the `title`:
+
+```prisma file=schema.prisma
+const result = await prisma.blogs.findMany({
+where: {
+content: {
+search: 'cat',
+},
+title: {
+search: 'food'
+}
+},
+})
+```
+
+However, if you try to search on `title` alone, the search will fail with the error "Cannot find a fulltext index to use for the search and the message code is P2030", because the index requires a search on both fields.
