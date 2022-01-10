@@ -212,7 +212,9 @@ const TreeNode = ({
   }, [isCollapsed])
 
   const isCurrent =
-    location && slug && location.pathname.includes(urlGenerator(slug).replace('/index', ''))
+    location &&
+    slug &&
+    (location.pathname + '/').includes(urlGenerator(slug).replace(/\/index$/, '') + '/')
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
