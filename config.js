@@ -74,7 +74,7 @@ const config = {
       buttons: [
         {
           text: 'Getting started',
-          url: 'getting-started/',
+          url: 'getting-started',
           special: true,
           icon: 'DoubleArrow',
         },
