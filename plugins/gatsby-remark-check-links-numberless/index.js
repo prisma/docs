@@ -70,7 +70,7 @@ module.exports = async function plugin(
   cache.set(getCacheKey(parent), {
     path: withPathPrefix(
       markdownNode.fields.slug
-        .replace(/\/index$/, '')
+        .replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '')
         .replace(/\d+-/g, '')
         .concat(pathSep)
     ),
@@ -110,7 +110,7 @@ module.exports = async function plugin(
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
   const pathKeysWithoutIndex = pathKeys.map((p) =>
-    p.replace(`${pathSep}index`, '').replace(/\/$/, '')
+    p.replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '').replace(/\/$/, '')
   )
 
   for (const pathL in linksMap) {
