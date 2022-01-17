@@ -41,6 +41,7 @@ const gatsbyRemarkPlugins = [
         '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgres',
         '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
         '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
+        '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
       ],
     },
   },
