@@ -1,0 +1,222 @@
+---
+title: 'CockroachDB'
+metaTitle: 'CockroachDB database connector (Reference)'
+metaDescription: 'This page explains how Prisma can connect to a CockroachDB database using the CockroachDB database connector.'
+preview: true
+---
+
+<TopBlock>
+
+The CockroachDB data source connector connects Prisma to a [CockroachDB](https://www.cockroachlabs.com/) database server.
+
+</TopBlock>
+
+## Example
+
+To connect to a CockroachDB database server, you need to configure a [`datasource`](/concepts/components/prisma-schema/data-sources) block in your [Prisma schema file](/concepts/components/prisma-schema):
+
+```prisma file=schema.prisma
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+```
+
+The fields passed to the `datasource` block are:
+
+- `provider`: Specifies the `cockroachdb` data source connector.
+- `url`: Specifies the [connection URL](#connection-url) for the CockroachDB database server. In this case, an [environment variable is used](/concepts/components/prisma-schema#accessing-environment-variables-from-the-schema) to provide the connection URL.
+
+Because CockroachDB support is currently a preview feature, you also need to include it in the list of preview features in the [`generator`]() block:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["cockroachdb"]
+}
+```
+
+## Connection details
+
+### Connection URL
+
+Prisma is based on the [official PostgreSQLl format](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING) for connection URLs, but does not support all arguments and includes additional arguments such as `schema`. Here's an overview of the components needed for a PostgreSQL connection URL:
+
+![Structure of the PostgreSQL connection URL](https://res.cloudinary.com/prismaio/image/upload/v1628761154/docs/m7l8KVo.png)
+
+#### Base URL and path
+
+Here is an example of the structure of the _base URL_ and the _path_ using placeholder values in uppercase letters:
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+```
+
+The following components make up the _base URL_ of your database, they are always required:
+
+| Name     | Placeholder | Description                                                                                                     |
+| :------- | :---------- | :-------------------------------------------------------------------------------------------------------------- |
+| Host     | `HOST`      | IP address/domain of your database server, e.g. `localhost`                                                     |
+| Port     | `PORT`      | Port on which your database server is running, e.g. `5432`                                                      |
+| User     | `USER`      | Name of your database user, e.g. `janedoe`                                                                      |
+| Password | `PASSWORD`  | Password for your database user                                                                                 |
+| Database | `DATABASE`  | Name of the [database](https://www.postgresql.org/docs/12/manage-ag-overview.html) you want to use, e.g. `mydb` |
+
+<Admonition type="info">
+
+You must [percentage-encode special characters](/reference/database-reference/connection-urls#special-characters).
+
+</Admonition>
+
+#### Arguments
+
+A connection URL can also take arguments. Here is the same example from above with placeholder values in uppercase letters for three _arguments_:
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?KEY1=VALUE&KEY2=VALUE&KEY3=VALUE
+```
+
+The following arguments can be used:
+
+| Argument name      | Required | Default                | Description                                                                                                                                                                       |
+| :----------------- | :------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema`           | **Yes**  | `public`               | Name of the [schema](https://www.postgresql.org/docs/12/ddl-schemas.html) you want to use, e.g. `myschema`                                                                        |
+| `connection_limit` | No       | `num_cpus * 2 + 1`     | Maximum size of the [connection pool](/concepts/components/prisma-client/working-with-prismaclient/connection-pool)                                                               |
+| `connect_timeout`  | No       | `5`                    | Maximum number of seconds to wait for a new connection to be opened, `0` means no timeout                                                                                         |
+| `pool_timeout`     | No       | `10`                   | Maximum number of seconds to wait for a new connection from the pool, `0` means no timeout                                                                                        |
+| `sslmode`          | No       | `prefer`               | Configures whether to use TLS. Possible values: `prefer`, `disable`, `require`                                                                                                    |
+| `sslcert`          | No       |                        | Path of the server certificate. Certificate paths are [resolved relative to the `./prisma folder`](/concepts/components/prisma-schema/data-sources#securing-database-connections) |
+| `sslidentity`      | No       |                        | Path to the PKCS12 certificate                                                                                                                                                    |
+| `sslpassword`      | No       |                        | Password that was used to secure the PKCS12 file                                                                                                                                  |
+| `sslaccept`        | No       | `accept_invalid_certs` | Configures whether to check for missing values in the certificate. Possible values: `accept_invalid_certs`, `strict`                                                              |
+| `host`             | No       |                        | Points to a directory that contains a socket to be used for the connection                                                                                                        |
+| `socket_timeout`   | No       |                        | Maximum number of seconds to wait until a single query terminates                                                                                                                 |
+| `pgbouncer`        | No       | `false`                | Configure the Engine to [enable PgBouncer compatibility mode](/guides/performance-and-optimization/connection-management/configure-pg-bouncer)                                    |
+| `application_name` | No       |                        | Since 3.3.0: Specifies a value for the application_name configuration parameter                                                                                                   |
+
+As an example, if you want to connect to a schema called `myschema`, set the connection pool size to `5` and configure a timeout for queries of `3` seconds. You can use the following arguments:
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=myschema&connection_limit=5&socket_timeout=3
+```
+
+### Configuring an SSL connection
+
+You can add various parameters to the connection URL if your database server uses SSL. Here's an overview of the possible parameters:
+
+- `sslmode=(disable|prefer|require)`:
+  - `prefer` (default): Prefer TLS if possible, accept plain text connections.
+  - `disable`: Do not use TLS.
+  - `require`: Require TLS or fail if not possible.
+- `sslcert=<PATH>`: Path to the server certificate. This is the root certificate used by the database server to sign the client certificate. You need to provide this if the certificate doesn't exist in the trusted certificate store of your system. For Google Cloud this likely is `server-ca.pem`. Certificate paths are [resolved relative to the `./prisma folder`](/concepts/components/prisma-schema/data-sources#securing-database-connections)
+- `sslidentity=<PATH>`: Path to the PKCS12 certificate database created from client cert and key. This is the SSL identity file in PKCS12 format which you will generate using the client key and client certificate. It combines these two files in a single file and secures them via a password (see next parameter). You can create this file using your client key and client certificate by using the following command (using `openssl`):
+  ```
+  openssl pkcs12 -export -out client-identity.p12 -inkey client-key.pem -in client-cert.pem
+  ```
+- `sslpassword=<PASSWORD>`: Password that was used to secure the PKCS12 file. The `openssl` command listed in the previous step will ask for a password while creating the PKCS12 file, you will need to provide that same exact password here.
+- `sslaccept=(strict|accept_invalid_certs)`:
+  - `strict`: Any missing value in the certificate will lead to an error. For Google Cloud, especially if the database doesn't have a domain name, the certificate might miss the domain/IP address, causing an error when connecting.
+  - `accept_invalid_certs` (default): Bypass this check. Be aware of the security consequences of this setting.
+
+Your database connection URL will look similar to this:
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslidentity=client-identity.p12&sslpassword=mypassword&sslcert=rootca.cert
+```
+
+### Connecting via sockets
+
+To connect to your PostgreSQL database via sockets, you must add a `host` field as a _query parameter_ to the connection URL (instead of setting it as the `host` part of the URI).
+The value of this parameter then must point to the directory that contains the socket, e.g.: `postgresql://USER:POST@localhost/database?host=/var/run/postgresql/`
+
+Note that `localhost` is required, the value itself is ignored and can be anything.
+
+> **Note**: You can find additional context in this [GitHub issue](https://github.com/prisma/prisma-client-js/issues/437#issuecomment-592436707).
+
+## Type mapping between PostgreSQL to Prisma schema
+
+The PostgreSQL connector maps the [scalar types](/concepts/components/prisma-schema/data-model#scalar-fields) from the Prisma [data model](/concepts/components/prisma-schema/data-model) as follows to native column types:
+
+> Alternatively, see [Prisma schema reference](/reference/api-reference/prisma-schema-reference#model-field-scalar-types) for type mappings organized by Prisma type.
+
+### Prisma Migrate
+
+| Prisma     | PostgreSQL         |
+| ---------- | ------------------ |
+| `String`   | `text`             |
+| `Boolean`  | `boolean`          |
+| `Int`      | `integer`          |
+| `BigInt`   | `bigint`           |
+| `Float`    | `double precision` |
+| `Decimal`  | `decimal(65,30)`   |
+| `Datetime` | `timestamp(3)`     |
+| `Json`     | `jsonb`            |
+| `Bytes`    | `bytea`            |
+
+### Native type mappings
+
+When introspecting a PostgreSQL database, the database types are mapped to Prisma according to the following table:
+
+| PostgreSQL (Type \| Aliases)                | Prisma        | Supported | Native database type attribute           | Notes                                                                                                                                                                   |
+| ------------------------------------------- | ------------- | :-------: | :--------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bigint` \| `int8`                          | `BigInt`      |    ✔️     | `@db.BigInt`\*                           | \*Default mapping for `BigInt` - no type attribute added to schema.                                                                                                     |
+| `boolean` \| `bool`                         | `Bool`        |    ✔️     | `@db.Boolean`\*                          | \*Default mapping for `Bool` - no type attribute added to schema.                                                                                                       |
+| `timestamp with time zone` \| `timestamptz` | `DateTime`    |    ✔️     | `@db.Timestamptz(x)`                     |
+| `time without time zone` \| `time`          | `DateTime`    |    ✔️     | `@db.Time(x)`                            |
+| `time with time zone` \| `timetz`           | `DateTime`    |    ✔️     | `@db.Timetz(x)`                          |
+| `numeric(p,s)` \| `decimal(p,s)`            | `Decimal`     |    ✔️     | `@db.Decimal(x, y)`                      |
+| `real` \| `float`, `float4`                 | `Float`       |    ✔️     | `@db.Real`                               |
+| `double precision` \| `float8`              | `Float`       |    ✔️     | `@db.DoublePrecision`\*                  | \*Default mapping for `Float` - no type attribute added to schema.                                                                                                      |
+| `smallint` \| `int2`                        | `Int`         |    ✔️     | `@db.SmallInt`                           |                                                                                                                                                                         |
+| `integer` \| `int`, `int4`                  | `Int`         |    ✔️     | `@db.Int`\*                              | \*Default mapping for `Int` - no type attribute added to schema.                                                                                                        |
+| `smallserial` \| `serial2`                  | `Int`         |    ✔️     | `@db.SmallInt @default(autoincrement())` |
+| `serial` \| `serial4`                       | `Int`         |    ✔️     | `@db.Int @default(autoincrement())`      |
+| `bigserial` \| `serial8`                    | `Int`         |    ✔️     | `@db.BigInt @default(autoincrement()`    |
+| `character(n)` \| `char(n)`                 | `String`      |    ✔️     | `@db.Char(x)`                            |
+| `character varying(n)` \| `varchar(n)`      | `String`      |    ✔️     | `@db.VarChar(x)`                         |
+| `money`                                     | `Decimal`     |    ✔️     | `@db.Money`                              |
+| `text`                                      | `String`      |    ✔️     | `@db.Text`\*                             | \*Default mapping for `String` - no type attribute added to schema.                                                                                                     |
+| `timestamp`                                 | `DateTime`    |    ✔️     | `@db.TimeStamp`\*                        | \*Default mapping for `DateTime` - no type attribute added to schema.                                                                                                   |
+| `date`                                      | `DateTime`    |    ✔️     | `@db.Date`                               |
+| `enum`                                      | `Enum`        |    ✔️     | N/A                                      |
+| `inet`                                      | `String`      |    ✔️     | `@db.Inet`                               |
+| `bit(n)`                                    | `String`      |    ✔️     | `@Bit(x)`                                |
+| `bit varying(n)`                            | `String`      |    ✔️     | `@VarBit`                                |
+| `oid`                                       | `Int`         |    ✔️     | `@db.Oid`                                |
+| `uuid`                                      | `String`      |    ✔️     | `@db.Uuid`                               |
+| `json`                                      | `Json`        |    ✔️     | `@db.Json`                               |
+| `jsonb`                                     | `Json`        |    ✔️     | `@db.JsonB`\*                            | \*Default mapping for `Json` - no type attribute added to schema.                                                                                                       |
+| `bytea`                                     | `Bytes`       |    ✔️     | `@db.ByteA`\*                            | \*Default mapping for `Bytes` - no type attribute added to schema.                                                                                                      |
+| `xml`                                       | `String`      |    ✔️     | `@db.Xml`                                |
+| Array types                                 | `[]`          |    ✔️     |
+| `citext`                                    | `String`      |   ✔️\*    | `@db.Citext`                             | \* Only available if [Citext extension is enabled](/concepts/components/prisma-schema/features-without-psl-equivalent#enable-extensions-for-native-database-functions). |
+| `interval`                                  | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `cidr`                                      | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `macaddr`                                   | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `tsvector`                                  | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `tsquery`                                   | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `int4range`                                 | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `int8range`                                 | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `numrange`                                  | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `tsrange`                                   | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `tstzrange`                                 | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `daterange`                                 | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `point`                                     | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `line`                                      | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `lseg`                                      | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `box`                                       | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `path`                                      | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `polygon`                                   | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| `circle`                                    | `Unsupported` |  Not yet  |                                          |                                                                                                                                                                         |
+| Composite types                             | n/a           |  Not yet  |                                          |                                                                                                                                                                         |
+| Domain types                                | n/a           |  Not yet  |                                          |                                                                                                                                                                         |
+
+[Introspection](/concepts/components/introspection) adds native database types that are **not yet supported** as [`Unsupported`](/reference/api-reference/prisma-schema-reference#unsupported) <span class="api"></span> fields:
+
+```prisma file=schema.prisma
+model Device {
+  id   Int                   @id @default(autoincrement())
+  name String
+  data Unsupported("circle")
+}
+```
