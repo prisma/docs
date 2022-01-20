@@ -26,31 +26,53 @@ Benefits of PlanetScale include:
 
 ## Commonalities with other database providers
 
-Many aspects of using Prisma with PlanetScale are just like using Prisma with any other database.
+Many aspects of using Prisma with PlanetScale are just like using Prisma with any other database. You can still:
 
-- You still model your database with Prisma Schema Language
-- You can use `mysql` as the provider that you define in your schema, plus the [connection string PlanetScale provides you](https://docs.planetscale.com/concepts/connection-strings)
-- Use Introspection for existing projects if you already have a database schema in PlanetScale
-- Use `db pull` to migrate your database schema
-- Use Prisma Client in your application to talk to the database server at PlanetScale
+- model your database with the [Prisma Schema Language](/concepts/components/prisma-schema)
+- use Prisma's existing [`mysql` database connector](/concepts/database-connectors/mysql) in your schema, along with the [connection string PlanetScale provides you](https://docs.planetscale.com/concepts/connection-strings)
+- use [Introspection](/concepts/components/introspection) for existing projects if you already have a database schema in PlanetScale
+- use [`db push`](/concepts/components/prisma-migrate/db-push) to push changes in your schema to the database
+- use [Prisma Client](/concepts/components/prisma-client) in your application to talk to the database server at PlanetScale
 
 ## Differences to consider
 
-There are important considerations to be aware of when working with PlanetScale, such as how to handle referential integregrity, because PlanetScale does not enforce foreign key constriants.
+There are important considerations to be aware of when working with PlanetScale, such as how to handle referential integrity, because PlanetScale does not enforce foreign key constraints.
 
-Referential integrity is managed ....
+### Referential integrity
 
-- Prisma emulates “missing” referential integrity on PlanetScale in Prisma Client
-  .....
+PlanetScale is designed to be able to scale across multiple database servers. To support this, it [does not allow the use of foreign key constraints](https://docs.planetscale.com/tutorials/operating-without-foreign-keys), which are normally used in relational databases to enforce relationships between data in different tables.
 
-- branches + deploy requests
+To maintain these relationships in your data while using PlanetScale with Prisma, you will need to use Prisma's ability to [emulate referential integrity in the Prisma client](https://www.prisma.io/docs/concepts/components/prisma-schema/relations/referential-integrity#handling-the-referential-integrity-in-prisma).
 
-  - [https://docs.planetscale.com/concepts/branching](https://docs.planetscale.com/concepts/branching)
+Referential integrity is currently a Preview feature. To enable this, add it to the `previewFeatures` list in the `generator` block of `schema.prisma`, and set the `referentialIntegrity` type to `"prisma"` in the `datasource` block:
 
-- **Migrations** with Prisma when using multiple branches:
+```prisma file=schema.prisma
+datasource db {
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  referentialIntegrity = "prisma"
+}
 
-  - ⇒ Recommend `prisma db push` instead of `prisma migrate`
-    - TODO Reasoning
+generator js {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
+}
+```
+
+### Branches and deploy requests
+
+Planetscale provides two types of database branches: **development branches**, which allow you to test out schema changes, and **production branches**, which are protected from direct schema changes. Production branches are highly available and include automated daily backups. Once you are happy with the changes you make on a development branch, you can create a deploy request, which you can then review before deploying the changes to production.
+
+When connecting to PlanetScale with Prisma, you will need to use the correct connection string for your branch. To find
+
+The connection URL for a given database branch can be found from your PlanetScale account by going to the overview page for the branch and selecting the 'Connect' dropdown. In the 'Passwords' section, generate a new password and select 'Prisma' from the dropdown to get the Prisma format for the connection URL.
+
+See the Prisma's [Getting Started guide](/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale) for more details of how to connect to a PlanetScale database.
+
+### Pushing schema changes with `db push`
+
+- Recommend `prisma db push` instead of `prisma migrate`
+  - TODO Reasoning
 
 ## Additional considerations
 
