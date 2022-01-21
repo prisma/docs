@@ -67,27 +67,93 @@ When connecting to PlanetScale with Prisma, you will need to use the correct con
 
 See Prisma's [Getting Started guide](/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale) for more details of how to connect to a PlanetScale database.
 
-### Pushing schema changes with `db push`
+### Creating indexes on foreign keys
 
-- Recommend `prisma db push` instead of `prisma migrate`
-  - TODO Reasoning
+In a standard MySQL database, if a table has a column with a foreign key constraint, an index is automatically created on that column. As PlanetScale does not support foreign keys, these indexes are not created which can lead to issues with queries not being well optimised.
 
-## Additional considerations
+As an example, take this schema for a blog with posts and comments:
 
-- Defining indices on foreign keys (@@index)
-- using db push (migrate has no value)
-- Use expand and contract for “breaking changes” (renames aren’t supported anyways)
+```prisma file=schema.prisma
+model Post {
+  id       Int       @id @default(autoincrement())
+  title    String
+  content  String
+  likes    Int       @default(0)
+  comments Comment[]
+}
 
-  > **No schema changes on your production database**
+model Comment {
+  id      Int    @id @default(autoincrement())
+  comment String
+  postId  Int
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+```
 
-  - _have_ to use branches and deploy requests when working with production branch
+The `postId` field in the `User` model refers to the corresponding `id` field in the `Post` model. However this is not implemented as a foreign key in PlanetScale, so it doesn't have an index. This means that some queries may not be well optimised. For example, if you query for all comments with a certain post `id`, PlanetScale may have to do a full table lookup, which could be slow and expensive.
 
-  > **No data copying between branches**
+To avoid this, you can define an index on the `postId` field using [Prisma's `@@index` argument](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#index):
 
-  - Migrate needs migration table to work
-  - enable migration table copy in settings on PS
+```prisma file=schema.prisma highlight=15;add
+model Post {
+  id       Int       @id @default(autoincrement())
+  title    String
+  content  String
+  likes    Int       @default(0)
+  comments Comment[]
+}
 
-  -- defining an index on an implicit many-to-many relation... creating indices for relation scalars with referentialIntegrity set to Prisma (and the proposal: https://github.com/prisma/prisma/issues/10611)
+model Comment {
+  id      Int    @id @default(autoincrement())
+  comment String
+  postId  Int
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+```
+
+You can then add this change to your schema [using `db push`](#making-schema-changes-with-db-push).
+
+### Making schema changes with `db push`
+
+When you merge a development branch into your production branch, PlanetScale will automatically compare the two schemas and generate its own migration path. This means that Prisma's [`prisma migrate`](/concepts/components/prisma-migrate) workflow, which generates its own history of migration files, is not a natural fit when working with PlanetScale. These migration files may not reflect the actual schema changes run by PlanetScale when the branch is merged.
+
+<Admonition type="warning">
+  Instead, Prisma recommends you use the `prisma db push` command when making
+  schema changes with PlanetScale.
+</Admonition>
+
+As an example, let's say you decide to change the name of the `likes` field to `reactions`:
+
+```prisma file=schema.prisma highlight=5;edit
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String
+  reactions Int       @default(0)
+  comments  Comment[]
+}
+
+model Comment {
+  id      Int    @id @default(autoincrement())
+  comment String
+  postId  Int
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+```
+
+This will actually be implemented by PlanetScale in the database by dropping the `likes` column and adding a `reactions` column.
+
+To push these changes, run
+
+```terminal
+npx prisma db push
+```
+
+in the terminal from your project directory.
 
 ## More on using with PlanetScale and Prisma
 
