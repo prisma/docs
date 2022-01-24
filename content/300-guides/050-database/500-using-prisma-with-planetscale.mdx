@@ -53,6 +53,8 @@ PlanetScale's branching model and design for scalability means that there are al
 
   For an example of how this works, see [How to make schema changes with `db push`](#how-to-make-schema-changes-with-db-push)
 
+- **Introspection**. When you introspect on an existing database, you will get a schema with no relations, as they are usually defined based on foreign keys that connect tables. You will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-Introspection).
+
 ## How to enable emulation of referential integrity
 
 Referential integrity is currently a Preview feature. To enable this, add it to the `previewFeatures` list in the `generator` block of `schema.prisma`, and set the `referentialIntegrity` type to `"prisma"` in the `datasource` block:
@@ -156,6 +158,54 @@ npx prisma db push
 ```
 
 in the terminal from your project directory.
+
+## How to add in missing relations after Introspection
+
+After introspecting with `npx prisma db pull`, the schema you get may be missing some relations. For example, the following schema is missing a relation between the `User` and `Post` models:
+
+```prisma file=schema.prisma
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  title     String   @db.VarChar(255)
+  content   String?
+  authorId  Int
+
+  @@index([authorId])
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+```
+
+In this case you need to add the relation in manually:
+
+```prisma file=schema.prisma highlight=6,16;add
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  title     String   @db.VarChar(255)
+  content   String?
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+
+  @@index([authorId])
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+```
+
+You then need to run `npx prisma db pull` for a second time. After this, Prisma will keep the manually added fields.
+
+For a more detailed example, see the [Getting Started guide for PlanetScale](/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale).
 
 ## More on using PlanetScale with Prisma
 
