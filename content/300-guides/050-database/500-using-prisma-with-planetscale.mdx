@@ -26,7 +26,7 @@ PlanetScale uses the [Vitess](https://vitess.io/) database clustering system to 
 
 ## Commonalities with other database providers
 
-Many aspects of using Prisma with PlanetScale are just like using Prisma with any other database. You can still:
+Many aspects of using Prisma with PlanetScale are just like using Prisma with any other relational database. You can still:
 
 - model your database with the [Prisma Schema Language](/concepts/components/prisma-schema)
 - use Prisma's existing [`mysql` database connector](/concepts/database-connectors/mysql) in your schema, along with the [connection string PlanetScale provides you](https://docs.planetscale.com/concepts/connection-strings)
@@ -36,13 +36,24 @@ Many aspects of using Prisma with PlanetScale are just like using Prisma with an
 
 ## Differences to consider
 
-There are important considerations to be aware of when working with PlanetScale, such as how to handle referential integrity, because PlanetScale does not enforce foreign key constraints.
+PlanetScale's branching model and design for scalability means that there are also a number of differences to consider. You should be aware of the following points when deciding to use PlanetScale with Prisma:
 
-### Referential integrity
+- **Referential integrity.** To support scaling across multiple database servers, PlanetScale [does not allow the use of foreign key constraints](https://docs.planetscale.com/tutorials/operating-without-foreign-keys), which are normally used in relational databases to enforce relationships between data in different tables. To maintain these relationships in your data while using PlanetScale with Prisma, you will need to use Prisma's ability to [emulate referential integrity in the Prisma client](https://www.prisma.io/docs/concepts/components/prisma-schema/relations/referential-integrity#handling-the-referential-integrity-in-prisma). For more information, see [How to enable emulation of referential integrity](#how-to-enable-emulation-of-referential-integrity).
 
-PlanetScale is designed to be able to scale across multiple database servers. To support this, it [does not allow the use of foreign key constraints](https://docs.planetscale.com/tutorials/operating-without-foreign-keys), which are normally used in relational databases to enforce relationships between data in different tables.
+- **Branching and deploy requests.** PlanetScale provides two types of database branches: **development branches**, which allow you to test out schema changes, and **production branches**, which are protected from direct schema changes. Production branches are highly available and include automated daily backups. Once you are happy with the changes you make on a development branch, you can create a deploy request, which you can then review before deploying the changes to production. To learn more, see [How to use branches and deploy requests](#how-to-use-branches-and-deploy-requests).
 
-To maintain these relationships in your data while using PlanetScale with Prisma, you will need to use Prisma's ability to [emulate referential integrity in the Prisma client](https://www.prisma.io/docs/concepts/components/prisma-schema/relations/referential-integrity#handling-the-referential-integrity-in-prisma).
+- **Creating indexes on foreign keys.** In a standard MySQL database, if a table has a column with a foreign key constraint, an index is automatically created on that column. As PlanetScale does not support foreign keys, these indexes are not created which can lead to issues with queries not being well optimised. To avoid this, you can create indexes in Prisma. For more information, see [How to create indexes on foreign keys](#how-to-create-indexes-on-foreign-keys).
+
+- **Making schema changes with `db push`.** When you merge a development branch into your production branch, PlanetScale will automatically compare the two schemas and generate its own migration path. This means that Prisma's [`prisma migrate`](/concepts/components/prisma-migrate) workflow, which generates its own history of migration files, is not a natural fit when working with PlanetScale. These migration files may not reflect the actual schema changes run by PlanetScale when the branch is merged.
+
+  <Admonition type="warning">
+    Instead, Prisma recommends you use the `prisma db push` command when making
+    schema changes with PlanetScale.
+  </Admonition>
+
+  For an example of how this works, see [How to make schema changes with `db push`](#how-to-make-schema-changes-with-db-push)
+
+## How to enable emulation of referential integrity
 
 Referential integrity is currently a Preview feature. To enable this, add it to the `previewFeatures` list in the `generator` block of `schema.prisma`, and set the `referentialIntegrity` type to `"prisma"` in the `datasource` block:
 
@@ -59,19 +70,15 @@ generator js {
 }
 ```
 
-### Branches and deploy requests
-
-Planetscale provides two types of database branches: **development branches**, which allow you to test out schema changes, and **production branches**, which are protected from direct schema changes. Production branches are highly available and include automated daily backups. Once you are happy with the changes you make on a development branch, you can create a deploy request, which you can then review before deploying the changes to production.
+## How to use branches and deploy requests
 
 When connecting to PlanetScale with Prisma, you will need to use the correct connection string for your branch. The connection URL for a given database branch can be found from your PlanetScale account by going to the overview page for the branch and selecting the 'Connect' dropdown. In the 'Passwords' section, generate a new password and select 'Prisma' from the dropdown to get the Prisma format for the connection URL.
 
 See Prisma's [Getting Started guide](/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale) for more details of how to connect to a PlanetScale database.
 
-### Creating indexes on foreign keys
+## How to create indexes on foreign keys
 
-In a standard MySQL database, if a table has a column with a foreign key constraint, an index is automatically created on that column. As PlanetScale does not support foreign keys, these indexes are not created which can lead to issues with queries not being well optimised.
-
-As an example, take this schema for a blog with posts and comments:
+As an example of a situation where you would want to an add an index, take this schema for a blog with posts and comments:
 
 ```prisma file=schema.prisma
 model Post {
@@ -113,16 +120,9 @@ model Comment {
 }
 ```
 
-You can then add this change to your schema [using `db push`](#making-schema-changes-with-db-push).
+You can then add this change to your schema [using `db push`](#how-to-make-schema-changes-with-db-push).
 
-### Making schema changes with `db push`
-
-When you merge a development branch into your production branch, PlanetScale will automatically compare the two schemas and generate its own migration path. This means that Prisma's [`prisma migrate`](/concepts/components/prisma-migrate) workflow, which generates its own history of migration files, is not a natural fit when working with PlanetScale. These migration files may not reflect the actual schema changes run by PlanetScale when the branch is merged.
-
-<Admonition type="warning">
-  Instead, Prisma recommends you use the `prisma db push` command when making
-  schema changes with PlanetScale.
-</Admonition>
+## How to make schema changes with `db push`
 
 As an example, let's say you decide to change the name of the `likes` field to `reactions`:
 
