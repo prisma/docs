@@ -42,6 +42,7 @@ const gatsbyRemarkPlugins = [
         '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
         '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
         '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
+        '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
       ],
     },
   },
