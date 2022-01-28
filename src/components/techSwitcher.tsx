@@ -6,6 +6,7 @@ import PostgreSQL from '../icons/technologies/PostgreSQL'
 import MySQL from '../icons/technologies/MySQL'
 import SQLite from '../icons/technologies/SQLite'
 import MongoDB from '../icons/technologies/MongoDB'
+import Relational from '../icons/technologies/Relational'
 import JS from '../icons/technologies/JS'
 import SQLServer from '../icons/technologies/MSSQL'
 import PlanetScale from '../icons/technologies/PlanetScale'
@@ -32,11 +33,12 @@ const icons = {
   mongodb: <MongoDB />,
   sqlserver: <SQLServer />,
   planetscale: <PlanetScale />,
+  relational: <Relational />,
 }
 
 const technologyTypes = {
   languages: ['node', 'typescript'],
-  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'sqlserver', 'planetscale'],
+  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'sqlserver', 'planetscale', 'relational'],
 }
 
 export const technologyNames = {
@@ -48,6 +50,7 @@ export const technologyNames = {
   mongodb: 'MongoDB',
   sqlserver: 'SQL Server',
   planetscale: 'PlanetScale',
+  relational: 'Relational DBs'
 }
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
