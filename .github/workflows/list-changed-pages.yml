@@ -13,7 +13,9 @@ jobs:
       id: files
       uses: jitterbit/get-changed-files@v1
     - name: List Netlify Deploy URLs
+      id: links
       run: |
+        body="This PR changes the following pages (Netlify Preview Deploy links):"
         for changed_file in ${{ steps.files.outputs.all }}; do
           if [[ $changed_file == content/* ]]
           then
@@ -21,8 +23,14 @@ jobs:
             # TODO special case for index.mdx
             # TODO special case for images and similar non .mdx files
             echo "- https://deploy-preview-${{github.event.number}}--prisma2-docs.netlify.app/docs/$cleaned_file"
+            link=$(echo "\n- https://deploy-preview-${{github.event.number}}--prisma2-docs.netlify.app/docs/$cleaned_file")
+            body="$body$link"
           fi   
         done
+        body="${body//$'\n'/'%0A'}"
+        body="${body//$'\r'/'%0D'}" 
+        echo "::set-output name=body::$body"
+
     # - uses: LouisBrunner/checks-action@v1.1.1
     #   if: always()
     #   with:
@@ -38,23 +46,20 @@ jobs:
       with:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: 'github-actions[bot]'
-        body-includes: list of links
+        body-includes: following pages
 
     - name: Create comment
       if: steps.fc.outputs.comment-id == ''
       uses: peter-evans/create-or-update-comment@v1
       with:
         issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          Initial comment with list of links
-        reactions: rocket
+        body: ${{ steps.links.outputs.body }}
 
     - name: Update comment
       if: steps.fc.outputs.comment-id != ''
       uses: peter-evans/create-or-update-comment@v1
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
-        body: |
-          Comment with list of links that has been updated on another run
-        reactions: hooray
+        body: ${{ steps.links.outputs.body }}
+        edit-mode: replace
 
