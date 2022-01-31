@@ -100,7 +100,7 @@ model User {
 
 At this point, your schemas in sync, but the data in the two environments is different.
 
-You then decide to make changes to your datamodel, adding another `Post` model and making the name field on `User` unique:
+You then decide to make changes to your datamodel, adding another `Post` model and making the `name` field on `User` unique:
 
 ```prisma file=schema.prisma
 model User {
@@ -115,19 +115,26 @@ model Post {
 }
 ```
 
-You create a migration called 'Unique' with `prisma migrate dev` which is saved in your local migrations history. Applying the migration succeeds in your dev environment and now it is time to release to production. Unfortunately, the operation fails, since there is non-unique data in your production database (e.g. two users with the same name).
+You create a migration called 'Unique' with `prisma migrate dev` which is saved in your local migrations history. Applying the migration succeeds in your dev environment and now it is time to release to production.
 
-Migrate returns the error directly from the database which lets you know about the violation of the unique constraint.
+Unfortunately this migration can only be partially executed. Creating the `Post` model and adding the `email` column succeeds, but making the `name` field unique fails with the following error:
 
 ```bash
 ERROR 1062 (23000): Duplicate entry 'paul' for key 'User_name_key'
 ```
 
-You now need to recover manually from the partially executed migration ("partially" as creating the `Post` model and adding the `email` column succeeded). Until you recover from the failed state, further migrations using `prisma migrate deploy` are impossible.
+This is because there is non-unique data in your production database (e.g. two users with the same name).
+
+You now need to recover manually from the partially executed migration. Until you recover from the failed state, further migrations using `prisma migrate deploy` are impossible.
+
+At this point there are two options, depending on what you decide to do with the non-unique data:
+
+- You realize that non-unique data is valid and you cannot move forward with your current development work. You want to roll back the complete migration. To do this, see [Moving backwards and reverting all changes](#moving-backwards-and-reverting-all-changes)
+- The existence of non-unique data in your database is unintentional and you want to fix that. After fixing, you want to go ahead with the rest of the migration. To do this, see [Moving forwards and applying missing changes](#moving-forwards-and-applying-missing-changes)
 
 #### Moving backwards and reverting all changes
 
-You realize that non-unique data is valid and you cannot move forward with your current development work. You want to roll back the complete migration. For this you need to create a migration that takes your production database to the state of your datamodel before the last migration.
+In this case, you need to create a migration that takes your production database to the state of your data model before the last migration.
 
 - First you need your migration history at the time before the failed migration. You can either get this from your git history, or locally delete the folder of the last failed migration in your migration history.
 - You now want to take your production environment from its current failed state back to the state specified in your local migrations history:
@@ -158,12 +165,12 @@ You realize that non-unique data is valid and you cannot move forward with your 
 
 Your local migration history now yields the same result as the state your production database is in. You can now modify the datamodel again to create a migration that suits your new understanding of the feature you're working on (with non-unique names).
 
-#### Moving forward and applying missing changes
+#### Moving forwards and applying missing changes
 
-The existence of non-unique data in your database is unintentional and you want to fix that. Once fixed, you are able to go ahead with the migration as planned:
+In this case, you need to fix the non-unique data and then go ahead with the rest of the migration as planned:
 
 - The error message from trying to deploy the migration to production already told you there was duplicate data in the column `name`. You need to either alter or delete the offending rows.
-- Continue applying the rest of the failed migration to get to the datamodel defined in your prisma.schema:
+- Continue applying the rest of the failed migration to get to the data model defined in your prisma.schema:
 
   - Run the following `prisma migrate diff` command:
 
