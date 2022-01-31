@@ -50,7 +50,7 @@ export const technologyNames = {
   mongodb: 'MongoDB',
   sqlserver: 'SQL Server',
   planetscale: 'PlanetScale',
-  relational: 'Relational DBs'
+  relational: 'Relational DBs',
 }
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
@@ -125,7 +125,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
 const Container = styled.div`
   margin: 16px 1rem 0 0;
-  width: 170px;
+  width: 185px;
 
   @media only screen and (max-width: 767px) {
     margin: 8px 0 0;
