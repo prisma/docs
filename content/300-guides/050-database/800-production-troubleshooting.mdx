@@ -33,7 +33,7 @@ There are two ways to deal with failed migrations in a production environment:
 - Roll back, optionally fix issues, and re-deploy
 - Manually complete the migration steps and resolve the migration
 
-#### Option 1: Mark the migration as rolled back and re-deploy
+### Option 1: Mark the migration as rolled back and re-deploy
 
 The following example demonstrates how to roll back a migration, optionally make changes to fix the issue, and re-deploy:
 
@@ -69,6 +69,76 @@ The following example demonstrates how to manually complete the steps of a migra
    ```terminal
    prisma migrate resolve --applied "20201127134938_my_migration"
    ```
+
+## Fixing failed migrations with migrate diff and db execute
+
+Starting with 3.9 we are offering two new commands in preview that can be used to fix failed migrations.
+
+### New commands `migrate diff` and `db execute`
+
+The two new commands we are using to fix the scenario from above are:
+`prisma migrate diff` which diffs two database schema sources to create a migration taking one to the state of the second. You can output either a summary of the difference or a sql script. The script can be output into a file via `> file_name.sql` or be piped directly to the new execute command.
+`prisma db execute` which applies a SQL script to the database without interacting with the Prisma migrations table.
+
+### Example of a failed migration
+
+Imagine the following scenario: Your local development environment and your production database schema are in sync. But of course the data in both environments is different.
+
+```
+model User {
+  id    Int     @id
+  name  String
+ }
+```
+
+You then decide to make changes to your datamodel, adding another model and making the name field on User unique:
+
+```
+model User {
+  id    Int     @id
+  name  String  @unique
+  email String?
+}
+
+model Post {
+  id    Int    @id
+  title String
+}
+```
+
+You created a migration called 'Unique' with `prisma migrate dev` which was saved in your local migrations history. Applying the migration succeeded in your dev environment and now it is time to release to production. Unfortunately, the operation fails, since there is non-unique data in your production database (e.g. two users with the same name).
+
+Migrate returned the error directly from the database which lets you know about the violation of the unique constraint.
+
+```bash
+ERROR 1062 (23000): Duplicate entry 'paul' for key 'User_name_key'
+```
+
+You now need to recover manually from the partially executed migration ("partially" as creating the Post model and adding the email column succeeded). Before you are able to recover from the failed state further migrations using `prisma migrate deploy` are impossible.
+
+#### Moving forward and applying missing changes
+
+The existence of non-unique data in your database is unintentional and you want to fix that. Once fixed, you are able to go ahead with the migration as planned:
+
+- The error message from trying to deploy the migration to production already told you there was duplicate data in the column 'name'. You need to either alter or delete the offending rows.
+- Continue applying the rest of the failed migration to get to the datamodel defined in your prisma.schema:
+  - Run **npx prisma migrate diff --preview-feature --from-url "$DATABASE_URL_PROD" --to-schema-datamodel schema.prisma --script > forward.sql** which will create a SQL script file containing all changes necessary to take your production environment from its current failed state to the target state defined in your prisma.schema.
+  - Run **npx prisma db execute --preview-feature --url "$DATABASE_URL_PROD" --file forward.sql** which apply the changes in the sql script against the target database without interacting with the migrations table.
+  - Run **npx prisma migrate resolve --applied Unique** which will mark the failed migration called 'Unique' in the migrations table on your production environment as applied.
+
+Your local migration history now yields the same result as the state your production environment is in. You can now continue using the already known `migrate dev` /`migrate deploy` workflow.
+
+#### Moving backwards and reverting all changes
+
+You realize that non-unique data is valid and you cannot move forward with your current development work. You want to roll back the complete migration. For this you need to create a migration that takes your prod db to the state of your datamodel before the last migration.
+
+- First you need your migration history at the time before the failed migration. You can either get this from your git history, or locally delete the folder of the last failed migration in your miggration history.
+- You now want to take your production environment from its current failed state back to the state specified in your local migrations history:
+  - Run **npx prisma migrate diff --preview-feature --from-url "$DATABASE_URL_PROD" --to-migrations ./migrations --script > backward.sql** which will create a SQL script file containing all changes necessary to take your production environment from its current failed state to the target state defined by your migrations history.
+  - Run **npx prisma db execute --preview-feature --url "$DATABASE_URL_PROD" --file backward.sql** which apply the changes in the sql script against the target database without interacting with the migrations table.
+  - Run **npx prisma migrate resolve --rolled-back Unique** which will mark the failed migration called 'Unique' in the migrations table on your production environment as rolled back.
+
+Your local migration history now yields the same result as the state your prod db is in. You can now modify the datamodel again to create a migration that suits your new understanding of the feature you're working on (with non-unique names).
 
 ## Migration history conflicts
 
