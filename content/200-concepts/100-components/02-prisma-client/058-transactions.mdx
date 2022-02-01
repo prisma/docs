@@ -73,7 +73,7 @@ The following bulk operations run as transactions:
 
 ## The <inlinecode>$transaction</inlinecode> API
 
-The `$transaction` API can be used in two ways:
+The `$transaction` API can be used in two ways:
 
   - `$transaction<R>(queries: PrismaPromise<R>[]): Promise<R[]>`: Pass an array of Prisma Client queries to be executed sequentially inside of a transaction.
   - `$transaction<R>(fn: (prisma: PrismaClient) => R): R`: Pass a function that can contain user code including Prisma Client queries, non-Prisma code and other control flow to be executed in a transaction.
@@ -89,7 +89,11 @@ const [posts, totalPosts] = await prisma.$transaction([
 ])
 ```
 
-You can also use `$queryRaw` and `$executeRaw` inside a `$transaction`:
+You can also use raw queries inside of a `$transaction`:
+
+<TabbedContent tabs={[<FileWithIcon text="SQL Databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+
+<tab>
 
 ```ts
 const [userList, updateUser] = await prisma.$transaction([
@@ -97,6 +101,33 @@ const [userList, updateUser] = await prisma.$transaction([
   prisma.$executeRaw`UPDATE User SET name = 'Hello' WHERE id = 2;`,
 ])
 ```
+
+</tab>
+
+<tab>
+
+```ts
+const [findRawData, aggregateRawData, commandRawData] = await prisma.$transaction([
+  prisma.user.findRaw({
+    filter: { age: { $gt: 25 } } 
+  }),
+  prisma.user.aggregateRaw({
+    pipeline: [
+      { $match: { status: "registered" } },
+      { $group: { _id: "$country", total: { $sum: 1 } } }
+    ]
+  }),
+  prisma.$runCommandRaw({
+    aggregate: 'User',
+    pipeline: [{ $match: { name: 'Bob' } }, { $project: { email: true, _id: false } }],
+    explain: false,
+  }),
+])
+```
+
+</tab>
+
+</TabbedContent>
 
 Instead of immediately awaiting the result of each operation when it's performed, the operation itself is stored in a variable first which later is submitted to the database via a method called `$transaction`. Prisma Client will ensure that either all three `create`-operations or none of them succeed.
 
