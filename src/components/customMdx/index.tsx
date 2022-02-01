@@ -19,9 +19,9 @@ import NavigationLinksContainer from './navigationLinksContainer'
 
 export default {
   h1: () => <h1 style={{ display: 'none' }} />,
-  h2: ({ id, ...props }: any) => <h2 id={id?.replace(/inlinecode/g, '') ?? ''} {...props} />,
-  h3: ({ id, ...props }: any) => <h3 id={id?.replace(/inlinecode/g, '') ?? ''} {...props} />,
-  h4: ({ id, ...props }: any) => <h4 id={id?.replace(/inlinecode/g, '') ?? ''} {...props} />,
+  h2: ({ id, ...props }: any) => <h2 id={id.replace(/inlinecode/g, '')} {...props} />,
+  h3: ({ id, ...props }: any) => <h3 id={id.replace(/inlinecode/g, '')} {...props} />,
+  h4: ({ id, ...props }: any) => <h4 id={id.replace(/inlinecode/g, '')} {...props} />,
   a: ({ href, ...props }: any) => (
     <a href={href ? href.replace(/inlinecode/g, '') : ''} {...props} />
   ),
