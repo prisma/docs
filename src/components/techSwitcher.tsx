@@ -125,7 +125,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
 const Container = styled.div`
   margin: 16px 1rem 0 0;
-  width: 185px;
+  width: 180px;
   text-overflow: ellipsis;
 
   @media only screen and (max-width: 767px) {
