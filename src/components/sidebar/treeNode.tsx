@@ -43,7 +43,7 @@ const ListItem = styled.li`
       padding: 2px 5px;
       text-transform: capitalize;
       &.small {
-        font-size: 13px;
+        font-size: 12px;
       }
     }
 
