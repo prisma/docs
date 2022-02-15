@@ -1,0 +1,238 @@
+---
+title: 'Embedded documents'
+metaTitle: 'Embedded documents (Preview)'
+metaDescription: 'This page explains how to use embedded documents.'
+tocDepth: 2
+preview: true
+---
+
+<TopBlock>
+
+<Admonition type="info">
+
+Embedded documents are available in Preview in versions 3.10.0 and later.
+
+</Admonition>
+
+<Admonition type="warning">
+
+Embedded documents are currently only available on MongoDB.
+
+</Admonition>
+
+Embedded documents introduce a new way of linking records in Prisma. There are two ways to establish a link between two records:
+
+- **Creating a relation**, by using a foreign key to link from one record to another record.
+- **Embedding a record**, by storing a record within another record.
+
+Prisma has great [support for relations](/concepts/components/prisma-schema/relations), but support for embedded data has previously been limited to the following options:
+
+- Using [scalar lists](/concepts/components/prisma-client/working-with-fields/working-with-scalar-lists-arrays) to store multiple values in a single field. Only lists of scalar fields are supported.
+- Using [`Json` fields](/concepts/components/prisma-client/working-with-fields/working-with-json-fields) to store JSON data within a single field. `Json` fields are untyped.
+
+Embedded documents introduce a new way to embed data:
+
+- **Embedded documents** allow you to define new object types. Embedded documents are structured and typed, similar to how models are structured and typed today. By understanding the contents of the embedded data, we can offer a richer set of operations you can perform on that data.
+
+As an example of the syntax, take the following schema:
+
+```prisma file=schema.prisma
+model Product {
+id     String  @id
+name   String
+photos Photo[]
+}
+
+type Photo {
+height Int
+width  Int
+url    String
+}
+```
+
+In this case, the `Product` model has an embedded `Photo[]` type.
+
+</TopBlock>
+
+## Using embedded documents
+
+This section explains how embedded documents can be created and updated. We’ll use this schema for the examples that follow:
+
+```prisma file=schema.prisma
+model Product {
+  id     String  @id
+  name   String
+  price  Decimal
+  colors Color[]
+  sizes  Size[]
+  photos Photo[]
+}
+
+model Order {
+  id              String   @id
+  product         Product
+  color           Color
+  size            Size
+  shippingAddress Address
+  billingAddress  Address?
+}
+
+enum Color {
+  Red
+  Green
+  Blue
+}
+
+enum Size {
+	Small
+	Medium
+	Large
+  XLarge
+}
+
+type Photo {
+  height Int
+  width  Int
+  url    String
+}
+
+type Address {
+  street String
+  city   String
+  zip    String
+}
+```
+
+In this schema, the `Product` model has a `Photo[]` embedded document, and the `Order` model has two embedded `Address` types. The `shippingAddress` is required, but the `billingAddress` is optional.
+
+### Creating embedded documents
+
+The value of an embedded document can be set within a `create` or `createMany` method using the new `set` method. For example, you can use `set` within `create` to model the case where an `order` contains one `shipping address`:
+
+```ts
+
+const order = await prisma.order.create({
+  data: {
+    // Normal relation
+    product: { connect: { ... } }
+    color: "Red",
+    size: "Large",
+    // Embedded document
+    shippingAddress: {
+      set: {
+        street: "1084 Candycane Lane",
+        city: "Silverlake",
+        zip: "84323"
+      }
+    }
+  }
+})
+
+```
+
+You can also use a shorthand notation where you leave out the `set` and specify just the fields that you want to create:
+
+```ts
+
+const order = await prisma.order.create({
+  data: {
+    // Normal relation
+    product: { connect: { ... } }
+    color: "Red",
+    size: "Large",
+    // Embedded document
+    shippingAddress: {
+      {
+        street: "1084 Candycane Lane",
+        city: "Silverlake",
+        zip: "84323"
+      }
+    }
+  }
+})
+
+```
+
+For an optional type, like the `billingAddress`, you can also set the value to `null`:
+
+```ts
+const order = await prisma.order.create({
+  data: {
+    // Embedded optional type, set to null
+    billingAddress: {
+      set: null,
+    },
+  },
+})
+```
+
+To model the case where an `product` contains a list of multiple `photos`, you can `set` multiple embedded documents at once:
+
+```ts
+const product = prisma.product.create({
+  data: {
+    name: "Forest Runners",
+    price: 59.99
+    // Scalar lists that we already support
+    colors: ["Red", "Green"],
+    sizes: ["Small", "Medium", "Large"]
+    // New embedded document
+    photos: {
+      set: [
+				{ height: 100, width: 200, url: "1.jpg" },
+				{ height: 100, width: 200, url: "2.jpg" }
+      ]
+    }
+  }
+})
+```
+
+These operations also work within the `createMany` method. For example, you can create multiple `product`s which each contain a list of `photos`:
+
+```ts
+
+const product = prisma.product.createMany({
+  data: [
+    {
+      name: "Forest Runners",
+      price: 59.99
+      // Scalar lists that we already support
+      colors: ["Red", "Green"],
+      sizes: ["Small", "Medium", "Large"]
+      // New embedded document
+      photos: {
+        set: [
+				  { height: 100, width: 200, url: "1.jpg" },
+				  { height: 100, width: 200, url: "2.jpg" }
+        ]
+      }
+    },
+    {
+      name: "Alpine Blazers",
+      price: 85.99
+      // Scalar lists that we already support
+      colors: ["Blue", "Red"],
+      sizes: ["Large", "XLarge"]
+      // New embedded document
+      photos: {
+        set: [
+				  { height: 100, width: 200, url: "1.jpg" },
+				  { height: 150, width: 200, url: "4.jpg" }
+				  { height: 200, width: 200, url: "5.jpg" }
+        ]
+      }
+    }
+  ]
+})
+```
+
+### Updating embedded documents
+
+## Limitations of embedded documents
+
+Embedded documents currently have a number of limitations:
+
+- There is limited support for [attributes](/reference/api-reference/prisma-schema-reference#attributes) within embedded documents. Only `@default`, `@map` and native types (e.g. `@db.ObjectId`) are supported. The `@unique`, `@id`, `@relation`, `@ignore`, `@updatedAt` and `@createdAt` attributes are not supported.
+- Relations cannot exist inside an embedded document
+- [`findUnique`](/reference/api-reference/prisma-client-reference#findunique) can't filter on embedded documents
+- [`aggregrate`](/concepts/components/prisma-client/aggregation-grouping-summarizing#aggregate), [`groupBy`](/concepts/components/prisma-client/aggregation-grouping-summarizing#group-by), [`count`](/concepts/components/prisma-client/aggregation-grouping-summarizing#count) don’t support embedded operations.
