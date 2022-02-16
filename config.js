@@ -189,6 +189,11 @@ const config = {
             url: 'concepts/database-connectors/sqlite',
             codeBlock: false,
           },
+          {
+            text: 'CockroachDB',
+            url: 'concepts/database-connectors/cockroachdb',
+            codeBlock: false,
+          },
         ],
       },
       {
