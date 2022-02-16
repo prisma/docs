@@ -175,7 +175,7 @@ const config = {
             codeBlock: false,
           },
           {
-            text: 'MongoDB',
+            text: 'MoFooNgoDB',
             url: 'concepts/database-connectors/mongodb',
             codeBlock: false,
           },
