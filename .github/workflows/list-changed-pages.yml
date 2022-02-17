@@ -1,0 +1,75 @@
+name: Comment with Netlify Deploy URLs of changed pages
+
+on:
+  pull_request:
+  
+jobs:
+  post-comment-with-links-to-changed-pages:
+    name: Create or Update
+    runs-on: ubuntu-latest
+ 
+    steps:
+    - name: Get list of changed files
+      id: files
+      uses: Ana06/get-changed-files@v1.2 # it's a fork of jitterbit/get-changed-files@v1 which works better with pull requests
+    - name: List Netlify Deploy URLs
+      id: links
+      # Note that this uses `%0A` instead of `\n` because of https://github.com/peter-evans/create-or-update-comment#setting-the-comment-body-from-a-file which I could not get to work here - but this brute force method does.
+      run: |
+        body="This PR changes the following pages (Netlify Preview Deploy links):%0A%0A"
+        no_changed_pages="%0A- This PR does not change any pages the [GH Actions workflow](https://github.com/prisma/docs/blob/main/.github/workflows/list-changed-pages.yml) could detect."
+
+        for changed_file in ${{ steps.files.outputs.all }}; do
+          if [[ $changed_file == content/* ]]
+          then
+            no_changed_pages=""
+
+            cleaned_file=$(echo "$changed_file" | sed -e 's/[0-9]//g' | sed -e 's/.mdx//g' | sed -e 's/\/-/\//g' | sed -e 's/content\///g')
+            # TODO special case for index.mdx
+            # TODO special case for images and similar non .mdx files
+
+            # Output inside the action
+            echo "- https://deploy-preview-${{github.event.number}}--prisma2-docs.netlify.app/docs/$cleaned_file"
+
+            # Also collect into string
+            link="%0A- [/docs/$cleaned_file](https://deploy-preview-${{github.event.number}}--prisma2-docs.netlify.app/docs/$cleaned_file)"
+            body="$body$link"
+          fi   
+        done
+        body="$body$no_changed_pages"
+        body="$body%0A%0A(Note that links will only be valid after Netlify preview deploy succeeded)"
+        echo "::set-output name=body::$body"
+
+    # - uses: LouisBrunner/checks-action@v1.1.1
+    #   if: always()
+    #   with:
+    #     token: ${{ secrets.PERSONAL_GITHUB_TOKEN_FOR_GH_ACTIONS }}
+    #     name: demo cleaned_file link
+    #     conclusion: success
+    #     details_url: https://deploy-preview-${{github.event.number}}--prisma2-docs.netlify.app/docs/$cleaned_file
+    #     action_url: https://deploy-preview-${{github.event.number}}--prisma2-docs.netlify.app/docs/$cleaned_file
+    # Blocked by https://github.com/LouisBrunner/checks-action/issues/18
+    # Write a comment instead:
+
+    - name: Find existing comment
+      uses: peter-evans/find-comment@v1
+      id: fc
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: following pages
+
+    - name: Create comment
+      if: steps.fc.outputs.comment-id == ''
+      uses: peter-evans/create-or-update-comment@v1
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        body: ${{ steps.links.outputs.body }}
+
+    - name: Update comment
+      if: steps.fc.outputs.comment-id != ''
+      uses: peter-evans/create-or-update-comment@v1
+      with:
+        comment-id: ${{ steps.fc.outputs.comment-id }}
+        body: ${{ steps.links.outputs.body }}
+        edit-mode: replace
