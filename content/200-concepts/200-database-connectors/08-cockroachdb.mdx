@@ -1,0 +1,84 @@
+---
+title: 'CockroachDB'
+metaTitle: 'CockroachDB database connector (Reference)'
+metaDescription: 'This page explains how Prisma can connect to a CockroachDB database using the CockroachDB database connector.'
+preview: true
+---
+
+<TopBlock>
+
+The CockroachDB data source connector connects Prisma to a [CockroachDB](https://www.cockroachlabs.com/) database server.
+
+<Admonition type="warning">
+
+CockroachDB support is currently a [Preview feature](https://www.prisma.io/docs/concepts/components/preview-features). Introspection of an existing database is supported, but Prisma Migrate is [not yet supported](https://github.com/prisma/prisma/issues/4702), so if you are starting a new database you will first need to define the schema with SQL.
+
+</Admonition>
+
+</TopBlock>
+
+## Example
+
+To connect to a CockroachDB database server, you need to configure a [`datasource`](/concepts/components/prisma-schema/data-sources) block in your [Prisma schema file](/concepts/components/prisma-schema):
+
+```prisma file=schema.prisma
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+```
+
+The fields passed to the `datasource` block are:
+
+- `provider`: Specifies the `cockroachdb` data source connector.
+- `url`: Specifies the [connection URL](#connection-details) for the CockroachDB database server. In this case, an [environment variable is used](/concepts/components/prisma-schema#accessing-environment-variables-from-the-schema) to provide the connection URL.
+
+Because CockroachDB support is currently a Preview feature, you also need to include it in the list of preview features in the [`generator`](/reference/api-reference/prisma-schema-reference#generator) block:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["cockroachdb"]
+}
+```
+
+## Connection details
+
+CockroachDB uses the PostgreSQL format for its connection URL. See the [PostgreSQL connector documentation](/concepts/database-connectors/postgresql#connection-details) for details of this format, and the optional arguments it takes.
+
+## Differences between CockroachDB and PostgreSQL
+
+The following table lists differences between CockroachDB and PostgreSQL:
+
+| Issue                                                                                                                                                                                                                                                           | Area   | Notes                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| By default, the `INT` type is an alias for `INT8` in CockroachDB, whereas in PostgreSQL it is an alias for `INT4`. This means that Prisma will introspect an `INT` column in CockroachDB as `BigInt`, whereas in PostgreSQL Prisma will introspect it as `Int`. | Schema | For more information on the `INT` type, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/int.html#considerations-for-64-bit-signed-integers)                  |
+| When using `@default(autoincrement())` on a field, CockroachDB will automatically generate 64-bit integers for the row IDs. These integers will be increasing but not consecutive. This is in contrast to PostgreSQL, where generated row IDs are consecutive and start from 1.            | Schema | For more information on generated values, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/serial.html#generated-values-for-modes-rowid-and-virtual_sequence) |
+
+## Type mapping limitations in CockroachDB
+
+The CockroachDB connector maps the [scalar types](/concepts/components/prisma-schema/data-model#scalar-fields) from the Prisma [data model](/concepts/components/prisma-schema/data-model) to native column types. These native types are mostly the same as for PostgreSQL — see the [PostgreSQL connector documentation](/concepts/database-connectors/postgresql#type-mapping-between-postgresql-to-prisma-schema) for details. However, there are some limitations, listed below.
+
+> Alternatively, see the [Prisma schema
+> reference](/reference/api-reference/prisma-schema-reference#model-field-scalar-types)
+> for type mappings organized by Prisma type.
+
+| CockroachDB (Type \| Aliases) | Prisma    | Supported | Native database type attribute | Notes                                                                                                                      |
+| ----------------------------- | --------- | :-------: | :----------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| `money`                       | `Decimal` |  Not yet  | `@db.Money`                    | Supported in PostgreSQL but [not currently in CockroachDB](https://github.com/cockroachdb/cockroach/issues/41578)          |
+| `xml`                         | `String`  |  Not yet  | `@db.Xml`                      | Supported in PostgreSQL but [not currently in CockroachDB](https://github.com/cockroachdb/cockroach/issues/43355)          |
+| `jsonb` arrays                | `Json[]`  |  Not yet  | N/A                            | `Json[]` supported in PostgreSQL but [not currently in CockroachDB](https://github.com/cockroachdb/cockroach/issues/23468) |
+
+## Other limitations
+
+The following table lists any other current known limitations of CockroachDB compared to PostgreSQL:
+
+| Issue                                                                                            | Area          | Notes                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Primary keys are named `primary` instead of `TABLE_pkey`, the Prisma default.                    | Introspection | This means that they are introspected as `@id(map: "primary")`. This will be [fixed in CockroachDB 22.1](https://github.com/cockroachdb/cockroach/pull/70604).                                                                                         |
+| Foreign keys are named `fk_COLUMN_ref_TABLE` instead of `TABLE_COLUMN_fkey`, the Prisma default. | Introspection | This means that they are introspected as `@relation([...], map: "fk_COLUMN_ref_TABLE")`. This will be [fixed in CockroachDB 22.1](https://github.com/cockroachdb/cockroach/pull/70658)                                                                 |
+| `@@index(type: Hash)` not supported                                                              | Schema        | In PostgreSQL, Prisma allows [configuration of indexes](/concepts/components/prisma-schema/indexes#configuring-the-access-type-of-indexes-with-type-postgresql) to use the `Hash` index access method. This is currently not supported in CockroachDB. |
+| Pushing to `Enum` types not supported                                                            | Client        | Pushing to `Enum` types (e.g. `data: { enum { push: "A" }, }`) is currently [not supported in CockroachDB](https://github.com/cockroachdb/cockroach/issues/71388)                                                                                      |
+| Searching on `String` fields without a full text index not supported                             | Client        | Searching on `String` fields without a full text index (e.g. `where: { text: { search: "cat & dog", }, },`) is currently [not supported in CockroachDB](https://github.com/cockroachdb/cockroach/issues/7821)                                          |
+| Integer division not supported                                                                   | Client        | Integer division (e.g. `data: { int: { divide: 10, }, }`) is currently [not supported in CockroachDB](https://github.com/cockroachdb/cockroach/issues/41448)                                                                                           |
+| Limited filtering on `Json` fields                                                               | Client        | Currently CockroachDB [only supports](https://github.com/cockroachdb/cockroach/issues/49144) `equals` and `not` filtering on `Json` fields                                                                                                             |
