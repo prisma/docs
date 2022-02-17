@@ -42,12 +42,6 @@ module.exports = async function plugin(
   const headings = []
 
   function visitor(node, index, parent) {
-    /*To convert all uppercase links to lowercase (if used by mistake) except its search part (like: ?name='AbC'), 
-      to avoid use of extrnal link errors like one of youtube */
-    node.url = node.url
-      .replace(/(.+)\?|(.+)\??/, (url) => url.toLowerCase())
-      .replace(/#.+/, (url) => url.toLowerCase())
-
     if (parent.type === 'heading') {
       headings.push(parent.data.id.replace(/inlinecode/g, ''))
       return
@@ -70,7 +64,7 @@ module.exports = async function plugin(
   cache.set(getCacheKey(parent), {
     path: withPathPrefix(
       markdownNode.fields.slug
-        .replace(/\/index$/, '')
+        .replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '')
         .replace(/\d+-/g, '')
         .concat(pathSep)
     ),
@@ -110,7 +104,7 @@ module.exports = async function plugin(
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
   const pathKeysWithoutIndex = pathKeys.map((p) =>
-    p.replace(`${pathSep}index`, '').replace(/\/$/, '')
+    p.replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '').replace(/\/$/, '')
   )
 
   for (const pathL in linksMap) {

@@ -74,7 +74,7 @@ const config = {
       buttons: [
         {
           text: 'Getting started',
-          url: 'getting-started/',
+          url: 'getting-started',
           special: true,
           icon: 'DoubleArrow',
         },
@@ -189,6 +189,11 @@ const config = {
             url: 'concepts/database-connectors/sqlite',
             codeBlock: false,
           },
+          {
+            text: 'CockroachDB',
+            url: 'concepts/database-connectors/cockroachdb',
+            codeBlock: false,
+          },
         ],
       },
       {
@@ -202,7 +207,7 @@ const config = {
           },
           {
             text: 'Codemod',
-            url: 'concepts/more/codemod',
+            url: 'guides/upgrade-guides/upgrading-versions/codemods',
             codeBlock: false,
           },
           {
@@ -341,7 +346,7 @@ const config = {
     MoreUsefulLinks: [
       {
         text: `What's new in Prisma docs`,
-        url: 'about/whats-new-in-prisma-docs',
+        url: 'about/prisma-docs/whats-new-in-prisma-docs',
         codeBlock: false,
       },
       {
