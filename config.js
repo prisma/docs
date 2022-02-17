@@ -74,7 +74,7 @@ const config = {
       buttons: [
         {
           text: 'Getting started',
-          url: 'getting-started/',
+          url: 'getting-started',
           special: true,
           icon: 'DoubleArrow',
         },
@@ -187,6 +187,11 @@ const config = {
           {
             text: 'SQLite',
             url: 'concepts/database-connectors/sqlite',
+            codeBlock: false,
+          },
+          {
+            text: 'CockroachDB',
+            url: 'concepts/database-connectors/cockroachdb',
             codeBlock: false,
           },
         ],

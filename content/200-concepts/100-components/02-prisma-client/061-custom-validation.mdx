@@ -1,0 +1,56 @@
+---
+title: 'Custom Validation'
+metaTitle: 'Custom Validation'
+metaDescription: 'This page explains how to add custom validation to Prisma Client'
+---
+
+<TopBlock>
+
+Prisma Client has type-safety and run-time type validation but does not include validation for user input.
+
+This means you can use any validation library you'd like. The Node.js ecosystem offers a number of high-quality, easy-to-use validation libraries to choose from including: [joi](https://github.com/sideway/joi), [validator.js](https://github.com/validatorjs/validator.js), [Yup](https://github.com/jquense/yup), [Zod](https://github.com/colinhacks/zod) and [Superstruct](https://github.com/ianstormtaylor/superstruct).
+
+</TopBlock>
+
+## Custom Signup Validation
+
+Here's an example using [Superstruct](https://github.com/ianstormtaylor/superstruct) to validate that the data needed to signup a new user is correct:
+
+```tsx
+import { PrismaClient, Prisma, User } from '@prisma/client'
+import { assert, object, string, size, refine } from 'superstruct'
+import isEmail from 'isemail'
+
+const prisma = new PrismaClient()
+
+// Runtime validation
+const Signup = object({
+  // string and a valid email address
+  email: refine(string(), 'email', (v) => isEmail.validate(v)),
+  // password is between 7 and 30 characters long
+  password: size(string(), 7, 30),
+  // first name is between 2 and 50 characters long
+  firstName: size(string(), 2, 50),
+  // last name is between 2 and 50 characters long
+  lastName: size(string(), 2, 50),
+})
+
+type Signup = Omit<Prisma.UserCreateArgs['data'], 'id'>
+
+// Signup function
+async function signup(input: Signup): Promise<User> {
+  // Assert that input conforms to Signup, throwing with a helpful
+  // error message if input is invalid.
+  assert(input, Signup)
+  return prisma.user.create({
+    data: input.user,
+  })
+}
+```
+
+The example above shows how you can create a custom type-safe `signup` function that ensures the input is valid before creating a user.
+
+## Going Further
+
+- Learn how you how can organize your code better by moving the `signup` function into [a custom model](/concepts/components/prisma-client/custom-models).
+- There's an [outstanding feature request](https://github.com/prisma/prisma/issues/3528) to bake user validation into Prisma Client. If you'd like to see that happen, make sure to upvote that issue and share your use case!
