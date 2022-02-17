@@ -1,11 +1,13 @@
 # Prisma Documentation
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
+
+[badge-all-contributors]: https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
 
-[![All Contributors][allcontrib]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
+[![All Contributors][badge-all-contributors]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
 
 This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
 
