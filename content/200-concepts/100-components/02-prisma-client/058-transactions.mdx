@@ -9,9 +9,19 @@ metaDescription: 'This page explains the current transactions API of Prisma Clie
 A database transaction refers to a sequence of read/write operations that are _guaranteed_ to either succeed or fail as a whole. This section describes the ways in which the Prisma Client API supports transactions.
 
 - For more in-depth examples and use cases, refer to the 📖 [transactions guide](/guides/performance-and-optimization/prisma-client-transactions-guide).
-- For information about transactions in general and the reasoning behind Prisma's current solutions, see ✍ [Blog: How Prisma supports transactions](https://www.prisma.io/blog/how-prisma-supports-transactions-x45s1d5l0ww1/).
+- For information about transactions in general and the reasoning behind Prisma's current solutions, see ✍ [Blog: How Prisma supports transactions](https://www.prisma.io/blog/how-prisma-supports-transactions-x45s1d5l0ww1).
 
 </TopBlock>
+
+## About transactions in Prisma
+
+Prisma provides the following options for using transactions:
+
+- **Nested writes**: use the Prisma Client API to process multiple operations on one or more related records inside the same transaction.
+- **Batch / bulk transactions**: to process one or more operations in bulk via `updateMany`, `deleteMany`, and `createMany`.
+- **The `$transaction` calls**:
+  - `$transaction<R>(queries: PrismaPromise<R>[]): Promise<R[]>`: Pass an array of Prisma Client queries to be executed sequentially inside of a transaction.
+  - `$transaction<R>(fn: (prisma: PrismaClient) => R): R`: Pass a function that can contain user code including Prisma Client queries, non-Prisma code and other control flow to be executed in a transaction.
 
 ## Nested writes
 
@@ -63,6 +73,13 @@ The following bulk operations run as transactions:
 
 ## The <inlinecode>$transaction</inlinecode> API
 
+The `$transaction` API can be used in two ways:
+
+- `$transaction<R>(queries: PrismaPromise<R>[]): Promise<R[]>`: Pass an array of Prisma Client queries to be executed sequentially inside of a transaction.
+- `$transaction<R>(fn: (prisma: PrismaClient) => R): R`: Pass a function that can contain user code including Prisma Client queries, non-Prisma code and other control flow to be executed in a transaction.
+
+### Sequential Prisma Client operations
+
 The following query returns all posts that match the provided filter as well as a count of all posts:
 
 ```ts
@@ -72,7 +89,11 @@ const [posts, totalPosts] = await prisma.$transaction([
 ])
 ```
 
-You can also use `$queryRaw` and `$executeRaw` inside a `$transaction`:
+You can also use raw queries inside of a `$transaction`:
+
+<TabbedContent tabs={[<FileWithIcon text="SQL Databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+
+<tab>
 
 ```ts
 const [userList, updateUser] = await prisma.$transaction([
@@ -80,6 +101,33 @@ const [userList, updateUser] = await prisma.$transaction([
   prisma.$executeRaw`UPDATE User SET name = 'Hello' WHERE id = 2;`,
 ])
 ```
+
+</tab>
+
+<tab>
+
+```ts
+const [findRawData, aggregateRawData, commandRawData] = await prisma.$transaction([
+  prisma.user.findRaw({
+    filter: { age: { $gt: 25 } } 
+  }),
+  prisma.user.aggregateRaw({
+    pipeline: [
+      { $match: { status: "registered" } },
+      { $group: { _id: "$country", total: { $sum: 1 } } }
+    ]
+  }),
+  prisma.$runCommandRaw({
+    aggregate: 'User',
+    pipeline: [{ $match: { name: 'Bob' } }, { $project: { email: true, _id: false } }],
+    explain: false,
+  }),
+])
+```
+
+</tab>
+
+</TabbedContent>
 
 Instead of immediately awaiting the result of each operation when it's performed, the operation itself is stored in a variable first which later is submitted to the database via a method called `$transaction`. Prisma Client will ensure that either all three `create`-operations or none of them succeed.
 
@@ -102,7 +150,7 @@ generator client {
 
 Then you can pass an async function into [`$transaction`](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
 
-#### Example
+Let's look at an example:
 
 Imagine that you are building an online banking system. One of the actions to perform is to send money from one person to another.
 
@@ -220,7 +268,6 @@ Transaction isolation level is not currently configurable at a Prisma level and 
 - [Default transaction isolation level in PostgreSQL](https://www.postgresql.org/docs/9.3/runtime-config-client.html#GUC-DEFAULT-TRANSACTION-ISOLATION)
 - [Default transaction isolation level in Microsoft SQL Server](https://docs.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql?view=sql-server-ver15)
 - [Default transaction isolation level in MySQL](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
-
 
 ## Join the Conversation on GitHub
 

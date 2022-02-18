@@ -42,12 +42,6 @@ module.exports = async function plugin(
   const headings = []
 
   function visitor(node, index, parent) {
-    /*To convert all uppercase links to lowercase (if used by mistake) except its search part (like: ?name='AbC'), 
-      to avoid use of extrnal link errors like one of youtube */
-    node.url = node.url
-      .replace(/(.+)\?|(.+)\??/, (url) => url.toLowerCase())
-      .replace(/#.+/, (url) => url.toLowerCase())
-
     if (parent.type === 'heading') {
       headings.push(parent.data.id.replace(/inlinecode/g, ''))
       return
@@ -168,7 +162,7 @@ module.exports = async function plugin(
   }
 
   if (totalBrokenLinks) {
-    const message = `${totalBrokenLinks} broken links found`
+    const message = `${totalBrokenLinks} broken (or redirected) internal links found`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
       throw new Error(message)
@@ -178,7 +172,7 @@ module.exports = async function plugin(
       console.error(message)
     }
   } else if (verbose) {
-    console.info('No broken links found')
+    console.info('No internal broken links found')
   }
 
   return markdownAST

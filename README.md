@@ -1,11 +1,11 @@
 # Prisma Documentation
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
+[badge-all-contributors]: https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
 
-[![All Contributors][allcontrib]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
+[![All Contributors][badge-all-contributors]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
 
 This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
 
@@ -158,9 +158,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tr>
     <td align="center"><a href="https://janpiotrowski.de"><img src="https://avatars.githubusercontent.com/u/183673?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jan Piotrowski</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=janpio" title="Documentation">📖</a></td>
     <td align="center"><a href="https://norman.life"><img src="https://avatars.githubusercontent.com/u/1992255?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Norman</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=2color" title="Documentation">📖</a> <a href="#example-2color" title="Examples">💡</a></td>
-    <td align="center"><a href="https://gerome.dev"><img src="https://avatars.githubusercontent.com/u/32737308?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gérôme Grignon</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=geromegrignon" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://github.com/amcjen"><img src="https://avatars.githubusercontent.com/u/175249?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Allison Clift-Jennings</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=amcjen" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://gerome.dev"><img src="https://avatars.githubusercontent.com/u/32737308?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gérôme Grignon</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=geromegrignon" title="Documentation">📖</a> <a href="#example-geromegrignon" title="Examples">💡</a></td>
+    <td align="center"><a href="https://github.com/amcjen"><img src="https://avatars.githubusercontent.com/u/175249?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Allison Clift-Jennings</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=amcjen" title="Documentation">📖</a> <a href="#example-amcjen" title="Examples">💡</a></td>
     <td align="center"><a href="http://tomhsiao1260.github.io"><img src="https://avatars.githubusercontent.com/u/31985811?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Yao Hsiao</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=TomHsiao1260" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://www.linkedin.com/in/danielweinmann"><img src="https://avatars.githubusercontent.com/u/204765?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Weinmann</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=danielweinmann" title="Documentation">📖</a></td>
   </tr>
 </table>
 
