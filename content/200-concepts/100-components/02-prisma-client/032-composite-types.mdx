@@ -22,7 +22,13 @@ Composite types are currently only available on MongoDB.
 
 [Composite types](/concepts/components/prisma-schema/data-model#defining-composite-types), known as [embedded documents](https://docs.mongodb.com/manual/core/data-model-design/#std-label-data-modeling-embedding) in MongoDB, allow you to embed records within other records.
 
-This page explains how to create, update and delete composite types in the Prisma Client. We’ll use this schema for the examples that follow:
+This page explains how to create, update, delete and filter composite types in the Prisma Client.
+
+</TopBlock>
+
+## Example schema
+
+We’ll use this schema for the examples that follow:
 
 ```prisma file=schema.prisma
 model Product {
@@ -71,8 +77,6 @@ type Address {
 
 In this schema, the `Product` model has a `Photo[]` composite type, and the `Order` model has two embedded `Address` types. The `shippingAddress` is required, but the `billingAddress` is optional.
 
-</TopBlock>
-
 ## Considerations when using composite types
 
 There are currently some limitations when using composite types in the Prisma Client:
@@ -96,9 +100,9 @@ generator client {
 }
 ```
 
-## Creating composite types
+## Creating composite types with `create` and `createMany`
 
-The value of an composite type can be set within a `create` or `createMany` method using the new `set` method. For example, you can use `set` within `create` to model the case where an `order` contains one `shipping address`:
+Composite types can be created within a `create` or `createMany` method using the new `set` method. For example, you can use `set` within `create` to create an `Address` composite type inside an `Order`:
 
 ```ts
 
@@ -217,4 +221,145 @@ const product = prisma.product.createMany({
 })
 ```
 
-### Updating Composite types
+## Changing composite types within `update` and `updateMany`
+
+Composite types can be set, updated or removed within a `update` or `updateMany` method. The following section describes the methods available for updating a single type or multiple types at once, and gives examples of each.
+
+### Changing a single composite type
+
+Use the new `set`, `unset` `update` and `upsert` methods to change a single composite type:
+
+- Use `set` to set a composite type, overriding any existing value
+- Use `unset` to unset a composite type. Unlike `set: null`, `unset` removes the field entirely.
+- Use `update` to update a composite type
+- Use `upsert` to update an existing composite type if it exists, and otherwise create the composite type
+
+For example, use `update` to update a required `shipping address` with an `Address` composite type inside an `Order`:
+
+```ts
+const order = await prisma.order.update({
+  where: {
+    id: 10
+  }
+  data: {
+    shippingAddress: {
+      // Update just the zip field
+      update: {
+        zip: "41232"
+      }
+    }
+  }
+})
+```
+
+For an optional embedded type, like the `billingAddress`, use `upsert` to create a new record if it does not exist, and update the record if it does:
+
+```ts
+const order = await prisma.order.update({
+  where: {
+    id: 10
+  }
+  data: {
+    billingAddress: {
+      // Create the address if it doesn't exist,
+      // otherwise update it
+      upsert: {
+        set: {
+          street: "1084 Candycane Lane",
+          city: "Silverlake",
+          zip: "84323"
+        },
+        update: {
+          zip: "84323"
+        }
+      }
+    }
+  }
+})
+```
+
+You can also use the `unset` method to remove an optional embedded type. The following example uses `unset` to remove the `billingAddress` from an `Order`:
+
+```ts
+const order = await prisma.order.update({
+  where: {
+    id: 10
+  }
+  data: {
+    billingAddress: {
+			// Unset the billing address
+      // Removes "billingAddress" field from order
+      unset: true
+    }
+  }
+})
+```
+
+### Changing multiple composite types
+
+Use the new `set`, `push` `updateMany` and `deleteMany` methods to change a list of composite types:
+
+- `set`: Set an embedded list of composite types, overriding any existing list
+- `push`: Push values to the end of an embedded list of composite types
+- `updateMany`: Update many composite types at once
+- `deleteMany`: Delete many composite types at once
+
+For example, use `push` to add a new photo to the `photos` list:
+
+```ts
+const product = prisma.product.update({
+  where: {
+    id: 10,
+  },
+  data: {
+    photos: {
+      push: [{ height: 100, width: 200, url: '1.jpg' }],
+    },
+  },
+})
+```
+
+Use `updateMany` to update photos with a `url` of `1.jpg` or `2.png`:
+
+```ts
+const product = prisma.product.update({
+  where: {
+    id: 10,
+  },
+  data: {
+    photos: {
+      updateMany: {
+        where: {
+          url: '1.jpg',
+        },
+        data: {
+          url: '2.png',
+        },
+      },
+    },
+  },
+})
+```
+
+The following example uses `deleteMany` to delete all photos with a `height` of 100:
+
+```ts
+const product = prisma.product.update({
+  where: {
+    id: 10,
+  },
+  data: {
+    photos: {
+      deleteMany: {
+        where: {
+          height: 100,
+        },
+      },
+    },
+  },
+})
+```
+
+## Deleting composite types
+
+## Filtering composite types
