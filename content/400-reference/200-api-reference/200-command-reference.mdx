@@ -193,10 +193,10 @@ The `init` command does not interpret any existing files. Instead, it creates a 
 
 #### Arguments
 
-| Argument                | Required | Description                                                                                                                                                            | Default      |
-| ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| Argument                | Required | Description                                                                                                                                                                       | Default      |
+| ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | `--datasource-provider` | No       | Specifies the default value for the `provider` field in the `datasource` block - can be `sqlite`, `postgresql`, `mysql`, `sqlserver`, `mongodb` (Preview, requires preview flag). | `postgresql` |
-| `--url` | No       | Define a custom datasource url. |  |
+| `--url`                 | No       | Define a custom datasource url.                                                                                                                                                   |              |
 
 #### Examples
 
@@ -638,13 +638,6 @@ model Profile {
 
 ### <inlinecode>db push</inlinecode>
 
-<Admonition type="warning">
-
-**MongoDB not supported** <br />
-`db push` uses the Migration Engine and does not currently support the [MongoDB connector](/concepts/database-connectors/mongodb).
-
-</Admonition>
-
 The `db push` command pushes the state of your Prisma schema file to the database without using migrations. It creates the database if the database does not exist.
 
 This command is a good choice when you do not need to version schema changes, such as during prototyping and local development.
@@ -719,6 +712,80 @@ See [Seeding your database](/guides/database/seed-database) <span class="guide">
 ```terminal
 npx prisma db seed
 ```
+
+### <inlinecode>db execute</inlinecode>
+
+<Admonition type="info">
+
+This command is available in Preview in versions 3.9.0 and later.
+
+</Admonition>
+
+<Admonition type="warning">
+
+This command is currently not supported on MongoDB.
+
+</Admonition>
+
+This command applies a SQL script to the database without interacting with the Prisma migrations table. The script takes two inputs:
+
+- the SQL script, which can be provided either on standard input or in a file
+- the data source, which can either be the URL of the data source or the path to your Prisma schema file
+
+The output of the command is connector-specific, and is not meant for returning data, but only to report success or failure.
+
+See also:
+
+- [Migration troubleshooting in production](/guides/database/production-troubleshooting#fixing-failed-migrations-with-migrate-diff-and-db-execute) <span class="guide"></span>
+
+#### Prerequisites
+
+Before using the `db execute` command, if you do not use the `--url` option you must define a valid [`datasource`](/concepts/components/prisma-schema/data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines a SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Options
+
+One of the following data source inputs is required:
+
+| Options    | Description                                                          |
+| :--------- | :------------------------------------------------------------------- |
+| `--url`    | URL of the data source to run the command on                         |
+| `--schema` | Path to a Prisma schema file, uses the URL in the `datasource` block |
+
+One of the following script inputs is required:
+
+| Options   | Description                                                           |
+| :-------- | :-------------------------------------------------------------------- |
+| `--stdin` | Use the terminal standard input as the script to be executed          |
+| `--file`  | Path to a file. The content will be sent as the script to be executed |
+
+Other options:
+
+| Options  | Required | Description                |
+| :------- | :------- | :------------------------- |
+| `--help` | No       | Displays the help message. |
+
+#### Examples
+
+- Take the content of a SQL file located at `./script.sql` and execute it on the database specified by the URL in the `datasource` block of your `schema.prisma` file:
+
+  ```terminal
+  prisma db execute --preview-feature --file ./script.sql --schema schema.prisma
+  ```
+
+- Take the SQL script from standard input and execute it on the database specified by the data source URL given in the `DATABASE_URL` environment variable:
+
+  ```terminal
+  $ echo 'TRUNCATE TABLE dev;' | prisma db execute --preview-feature --stdin --url="$DATABASE_URL"
+  ```
 
 ## Prisma Migrate
 
@@ -889,6 +956,113 @@ The migrations from the database are not found locally in prisma/migrations:
 ```terminal
 prisma migrate status
 ```
+
+### <inlinecode>migrate diff</inlinecode>
+
+<Admonition type="info">
+
+This command is available in Preview in versions 3.9.0 and later.
+
+</Admonition>
+
+<Admonition type="warning">
+
+This command is only partially supported in MongoDB. See the command options below for details.
+
+</Admonition>
+
+This command compares two database schema sources and outputs a description of a migration taking the first to the state of the second.
+
+The output can be given either as a human-readable summary (the default) or an executable script.
+
+<Admonition type="warning">
+
+The `migrate diff` command can only compare database features that are [supported by Prisma](/reference/database-reference/database-features). If two databases differ only in unsupported features, such as views or triggers, then `migrate diff` will not show any difference between them.
+
+</Admonition>
+
+The format of the command is:
+
+```terminal
+npx prisma migrate diff --preview-feature --from-... <source1> --to-... <source2>
+```
+
+where the `--from-...` and `--to-...` options are selected based on the type of database schema source. The supported types of sources are:
+
+- live databases
+- migration histories
+- Prisma data models
+- an empty schema
+
+Both schema sources must use the same database provider. For example, a diff comparing a PostgreSQL data source with a SQLite data source is not supported.
+
+See also:
+
+- [Migration troubleshooting in production](/guides/database/production-troubleshooting#fixing-failed-migrations-with-migrate-diff-and-db-execute) <span class="guide"></span>
+
+#### Prerequisites
+
+Before using the `migrate diff` command, if you are using the `--from-schema-datasource` or `--to-schema-datasource` you must define a valid [`datasource`](/concepts/components/prisma-schema/data-sources) within your `schema.prisma` file.
+
+For example, the following `datasource` defines a SQLite database file within the current directory:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:my-database.db"
+}
+```
+
+#### Options
+
+One of the following `--from-...` options is required:
+
+| Options                    | Description                                                                       | Notes                    |
+| :------------------------- | :-------------------------------------------------------------------------------- | :----------------------- |
+| `--from-url`               | A data source URL                                                                 |                          |
+| `--from-migrations`        | Path to the Prisma Migrate migrations directory                                   | Not supported in MongoDB |
+| `--from-schema-datamodel`  | Path to a Prisma schema file, uses the data model for the diff                    |                          |
+| `--from-schema-datasource` | Path to a Prisma schema file, uses the URL in the `datasource` block for the diff |                          |
+| `--from-empty`             | Assume that you the data model you are migrating from is empty                    |                          |
+
+One of the following `--to-...` options is required:
+
+| Options                  | Description                                                                       | Notes                    |
+| :----------------------- | :-------------------------------------------------------------------------------- | :----------------------- |
+| `--to-url`               | A data source URL                                                                 |                          |
+| `--to-migrations`        | Path to the Prisma Migrate migrations directory                                   | Not supported in MongoDB |
+| `--to-schema-datamodel`  | Path to a Prisma schema file, uses the data model for the diff                    |                          |
+| `--to-schema-datasource` | Path to a Prisma schema file, uses the URL in the `datasource` block for the diff |                          |
+| `--to-empty`             | Assume that you the data model you are migrating to is empty                      |                          |
+
+Other options:
+
+| Options                 | Required | Description                                                         | Notes                                                           |
+| :---------------------- | :------- | :------------------------------------------------------------------ | :-------------------------------------------------------------- |
+| `--shadow-database-url` | No       | URL for the shadow database                                         | Only required if using `--to-migrations` or `--from-migrations` |
+| `--script`              | No       | Outputs a SQL script instead of the default human-readable summary. | Not supported in MongoDB                                        |
+| `--help`                | No       | Displays the help message.                                          |                                                                 |
+
+#### Examples
+
+- Compare two databases specified by their data source URL, and output the default human-readable summary:
+
+  ```terminal
+   prisma migrate diff \
+    --preview-feature \
+    --from-url "$DATABASE_URL" \
+    --to-url "postgresql://login:password@localhost:5432/db2"
+  ```
+
+- Compare the state of a database with a URL of `$DATABASE_URL` to the schema defined by the migrations in the `./migrations` directory, and output the differences to a script `script.sql`:
+
+  ```terminal
+  prisma migrate diff \
+   --preview-feature \
+   --from-url "$DATABASE_URL" \
+   --to-migrations ./migrations \
+   --script > script.sql
+  ```
 
 ## Studio
 
