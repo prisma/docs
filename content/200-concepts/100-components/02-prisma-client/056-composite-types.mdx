@@ -27,7 +27,7 @@ This page explains how to:
 - [create](#creating-composite-types-with-create-and-createmany) new records with composite types using `create` and `createMany`
 - [change](#changing-composite-types-within-update-and-updatemany) the composite types within existing records using `update` and `updateMany`
 - [delete](#deleting-composite-types-with-delete-and-deletemany) records with composite types using `delete` and `deleteMany`
-- [filter](#filtering-composite-types-with-find-and-findmany) records with composite types using `find` and `findMany`
+<!-- - [filter](#filtering-composite-types-with-find-and-findmany) records with composite types using `find` and `findMany` -->
 
 </TopBlock>
 
@@ -37,21 +37,23 @@ We’ll use this schema for the examples that follow:
 
 ```prisma file=schema.prisma
 model Product {
-  id     String  @id
-  name   String
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  name   String  @unique
   price  Decimal
   colors Color[]
   sizes  Size[]
   photos Photo[]
+  orders Order[]
 }
 
 model Order {
-  id              String   @id
-  product         Product
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  product         Product  @relation(fields: [productId], references: [id])
   color           Color
   size            Size
   shippingAddress Address
   billingAddress  Address?
+  productId       String   @db.ObjectId
 }
 
 enum Color {
@@ -68,8 +70,8 @@ enum Size {
 }
 
 type Photo {
-  height Int
-  width  Int
+  height Int    @default(200)
+  width  Int    @default(100)
   url    String
 }
 
@@ -107,50 +109,44 @@ generator client {
 
 ## Creating composite types with <inlinecode>create</inlinecode> and <inlinecode>createMany</inlinecode>
 
-Composite types can be created within a `create` or `createMany` method using the `set` method. For example, you can use `set` within `create` to create an `Address` composite type inside an `Order`:
+Composite types can be created within a `create` or `createMany` method using the `set` operation. For example, you can use `set` within `create` to create an `Address` composite type inside an `Order`:
 
 ```ts
-
 const order = await prisma.order.create({
   data: {
     // Normal relation
-    product: { connect: { ... } }
-    color: "Red",
-    size: "Large",
+    product: { connect: { id: 'some-object-id' } },
+    color: 'Red',
+    size: 'Large',
     // Composite type
     shippingAddress: {
       set: {
-        street: "1084 Candycane Lane",
-        city: "Silverlake",
-        zip: "84323"
-      }
-    }
-  }
+        street: '1084 Candycane Lane',
+        city: 'Silverlake',
+        zip: '84323',
+      },
+    },
+  },
 })
-
 ```
 
 You can also use a shorthand notation where you leave out the `set` and specify just the fields that you want to create:
 
 ```ts
-
 const order = await prisma.order.create({
   data: {
     // Normal relation
-    product: { connect: { ... } }
-    color: "Red",
-    size: "Large",
+    product: { connect: { id: 'some-object-id' } },
+    color: 'Red',
+    size: 'Large',
     // Composite type
     shippingAddress: {
-      {
-        street: "1084 Candycane Lane",
-        city: "Silverlake",
-        zip: "84323"
-      }
-    }
-  }
+      street: '1084 Candycane Lane',
+      city: 'Silverlake',
+      zip: '84323',
+    },
+  },
 })
-
 ```
 
 For an optional type, like the `billingAddress`, you can also set the value to `null`:
@@ -169,11 +165,10 @@ const order = await prisma.order.create({
 To model the case where an `product` contains a list of multiple `photos`, you can `set` multiple composite types at once:
 
 ```ts
-const product = prisma.product.create({
+const product = await prisma.product.create({
   data: {
     name: "Forest Runners",
-    price: 59.99
-    // Scalar lists that we already support
+    price: 59.99,
     colors: ["Red", "Green"],
     sizes: ["Small", "Medium", "Large"]
     // New composite type
@@ -187,52 +182,62 @@ const product = prisma.product.create({
 })
 ```
 
+You can also use a shorthand notation where you leave out the `set` and specify just the fields that you want to create:
+
+```ts
+const product = await prisma.product.create({
+  data: {
+    name: 'Forest Runners',
+    price: 59.99,
+    // Scalar lists that we already support
+    colors: ['Red', 'Green'],
+    sizes: ['Small', 'Medium', 'Large'],
+    // New composite type
+    photos: [
+      { height: 100, width: 200, url: '1.jpg' },
+      { height: 100, width: 200, url: '2.jpg' },
+    ],
+  },
+})
+```
+
 These operations also work within the `createMany` method. For example, you can create multiple `product`s which each contain a list of `photos`:
 
 ```ts
-
-const product = prisma.product.createMany({
+const product = await prisma.product.createMany({
   data: [
     {
-      name: "Forest Runners",
-      price: 59.99
-      // Scalar lists that we already support
-      colors: ["Red", "Green"],
-      sizes: ["Small", "Medium", "Large"]
-      // New composite type
-      photos: {
-        set: [
-          { height: 100, width: 200, url: "1.jpg" },
-          { height: 100, width: 200, url: "2.jpg" }
-        ]
-      }
+      name: 'Forest Runners',
+      price: 59.99,
+      colors: ['Red', 'Green'],
+      sizes: ['Small', 'Medium', 'Large'],
+      photos: [
+        { height: 100, width: 200, url: '1.jpg' },
+        { height: 100, width: 200, url: '2.jpg' },
+      ],
     },
     {
-      name: "Alpine Blazers",
-      price: 85.99
-      // Scalar lists that we already support
-      colors: ["Blue", "Red"],
-      sizes: ["Large", "XLarge"]
-      // New composite type
-      photos: {
-        set: [
-          { height: 100, width: 200, url: "1.jpg" },
-          { height: 150, width: 200, url: "4.jpg" }
-          { height: 200, width: 200, url: "5.jpg" }
-        ]
-      }
-    }
-  ]
+      name: 'Alpine Blazers',
+      price: 85.99,
+      colors: ['Blue', 'Red'],
+      sizes: ['Large', 'XLarge'],
+      photos: [
+        { height: 100, width: 200, url: '1.jpg' },
+        { height: 150, width: 200, url: '4.jpg' },
+        { height: 200, width: 200, url: '5.jpg' },
+      ],
+    },
+  ],
 })
 ```
 
 ## Changing composite types within <inlinecode>update</inlinecode> and <inlinecode>updateMany</inlinecode>
 
-Composite types can be set, updated or removed within an `update` or `updateMany` method. The following section describes the methods available for updating a single type or multiple types at once, and gives examples of each.
+Composite types can be set, updated or removed within an `update` or `updateMany` method. The following section describes the operations available for updating a single type or multiple types at once, and gives examples of each.
 
 ### Changing a single composite type
 
-Use the `set`, `unset` `update` and `upsert` methods to change a single composite type:
+Use the `set`, `unset` `update` and `upsert` operations to change a single composite type:
 
 - Use `set` to set a composite type, overriding any existing value
 - Use `unset` to unset a composite type. Unlike `set: null`, `unset` removes the field entirely
@@ -244,16 +249,16 @@ For example, use `update` to update a required `shippingAddress` with an `Addres
 ```ts
 const order = await prisma.order.update({
   where: {
-    id: 10
-  }
+    id: 'some-object-id',
+  },
   data: {
     shippingAddress: {
       // Update just the zip field
       update: {
-        zip: "41232"
-      }
-    }
-  }
+        zip: '41232',
+      },
+    },
+  },
 })
 ```
 
@@ -262,52 +267,52 @@ For an optional embedded type, like the `billingAddress`, use `upsert` to create
 ```ts
 const order = await prisma.order.update({
   where: {
-    id: 10
-  }
+    id: 'some-object-id',
+  },
   data: {
     billingAddress: {
       // Create the address if it doesn't exist,
       // otherwise update it
       upsert: {
         set: {
-          street: "1084 Candycane Lane",
-          city: "Silverlake",
-          zip: "84323"
+          street: '1084 Candycane Lane',
+          city: 'Silverlake',
+          zip: '84323',
         },
         update: {
-          zip: "84323"
-        }
-      }
-    }
-  }
+          zip: '84323',
+        },
+      },
+    },
+  },
 })
 ```
 
-You can also use the `unset` method to remove an optional embedded type. The following example uses `unset` to remove the `billingAddress` from an `Order`:
+You can also use the `unset` operation to remove an optional embedded type. The following example uses `unset` to remove the `billingAddress` from an `Order`:
 
 ```ts
 const order = await prisma.order.update({
   where: {
-    id: 10
-  }
+    id: 'some-object-id',
+  },
   data: {
     billingAddress: {
       // Unset the billing address
       // Removes "billingAddress" field from order
-      unset: true
-    }
-  }
+      unset: true,
+    },
+  },
 })
 ```
 
 ### Changing multiple composite types
 
-Use the `set`, `push` `updateMany` and `deleteMany` methods to change a list of composite types:
+Use the `set`, `push` `updateMany` and `deleteMany` operations to change a list of composite types:
 
 - `set`: Set an embedded list of composite types, overriding any existing list
 - `push`: Push values to the end of an embedded list of composite types
-- `updateMany`: Update many composite types at once
-- `deleteMany`: Delete many composite types at once
+  <!-- - `updateMany`: Update many composite types at once -->
+  <!-- - `deleteMany`: Delete many composite types at once -->
 
 For example, use `push` to add a new photo to the `photos` list:
 
@@ -318,12 +323,14 @@ const product = prisma.product.update({
   },
   data: {
     photos: {
+      // Push a photo to the end of the photos list
       push: [{ height: 100, width: 200, url: '1.jpg' }],
     },
   },
 })
 ```
 
+<!--
 Use `updateMany` to update photos with a `url` of `1.jpg` or `2.png`:
 
 ```ts
@@ -363,6 +370,35 @@ const product = prisma.product.update({
     },
   },
 })
+``` -->
+
+## Upserting composite types with <inlinecode>upsert</inlinecode>
+
+To create or update a composite type, use the `upsert` method. You can use the same composite operations as the `create` and `update` methods above.
+
+For example, use `upsert` to either create a new product or add a photo to an existing product:
+
+```ts
+const product = await prisma.product.upsert({
+  where: {
+    name: 'Forest Runners',
+  },
+  create: {
+    name: 'Forest Runners',
+    price: 59.99,
+    colors: ['Red', 'Green'],
+    sizes: ['Small', 'Medium', 'Large'],
+    photos: [
+      { height: 100, width: 200, url: '1.jpg' },
+      { height: 100, width: 200, url: '2.jpg' },
+    ],
+  },
+  update: {
+    photos: {
+      push: { height: 300, width: 400, url: '3.jpg' },
+    },
+  },
+})
 ```
 
 ## Deleting composite types with <inlinecode>delete</inlinecode> and <inlinecode>deleteMany</inlinecode>
@@ -379,13 +415,14 @@ const deleteProduct = await prisma.product.deleteMany({
 })
 ```
 
+<!--
 ## Filtering composite types with <inlinecode>find</inlinecode> and <inlinecode>findMany</inlinecode>
 
-Composite types can be filtered within a `find` or `findMany` method. The following section describes the methods available for filtering down to a single type or multiple types, and gives examples of each.
+Composite types can be filtered within a `find` or `findMany` method. The following section describes the operations available for filtering down to a single type or multiple types, and gives examples of each.
 
 ### Filter for one composite type
 
-Use the `is`, `equals` and `isNot` methods to change a single composite type:
+Use the `is`, `equals` and `isNot` operations to change a single composite type:
 
 - `is`: Filter results by matching composite types. Requires one or more fields to be present _(e.g. Filter orders by the street name on the shipping address)_
 - `equals`: Filter results by matching composite types. Requires all fields to be present. _(e.g. Filter orders by the full shipping address)_
@@ -449,7 +486,7 @@ const orders = await prisma.order.findMany({
 
 ### Filter for many composite types
 
-Use the `equals`, `isEmpty`, `every`, `some` and `none` methods to filter for multiple composite types:
+Use the `equals`, `isEmpty`, `every`, `some` and `none` operations to filter for multiple composite types:
 
 - `equals`: Checks exact equality of the list
 - `isEmpty`: Checks if the list is empty
@@ -527,4 +564,4 @@ const product = prisma.product.findFirst({
     }
   },
 })
-```
+``` -->
