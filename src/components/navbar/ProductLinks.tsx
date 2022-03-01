@@ -98,7 +98,7 @@ export const ProductLinks: React.FC<ProductLinkProps> = ({ isMobile }: ProductLi
   )
 }
 
-// STYLED COMPONENTES
+// STYLED COMPONENTS
 
 const ToggleBtn = styled.button`
   border: none;

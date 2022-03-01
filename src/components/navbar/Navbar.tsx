@@ -61,7 +61,7 @@ export const Navbar: React.FC<{}> = () => {
   )
 }
 
-// STYLED COMPONENTES
+// STYLED COMPONENTS
 
 const NavContainer = styled.nav`
   display: flex;
