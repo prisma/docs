@@ -7,7 +7,7 @@ tocDepth: 2
 
 <TopBlock>
 
-Referential actions determine what happens to a record when a related record is deleted or updated. In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later, you can define referential actions on your relation fields in your Prisma schema.
+Referential actions determine what happens to a record when a related record is deleted or updated. In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later (before 3.0.0 with a preview feature flag `referentialActions`, afterwards without), you can define referential actions on your relation fields in your Prisma schema.
 
 In the following example, adding `onDelete: Cascade` to the `author` field on the `Post` model means that deleting the `User` record will also delete all related `Post` records.
 
@@ -31,7 +31,8 @@ If you do not specify a referential action, Prisma [uses a default](#referential
 
 <Admonition type="alert">
 
-It is extremely important that you check the [upgrade paths for referential actions](/guides/upgrade-guides/upgrading-versions/upgrading-to-prisma-3/referential-actions) section before you continue. The `referentialActions` feature **removes the safety net in Prisma Client that prevents cascading deletes at runtime**. If you use the feature _without upgrading your database_, the [old default action](/guides/upgrade-guides/upgrading-versions/upgrading-to-prisma-3/referential-actions#prisma-2x-default-referential-actions) - `ON DELETE CASCADE` - becomes active. This may result in cascading deletes that you did not expect.
+If you upgrade from a version earlier than 2.26.0: 
+It is extremely important that you check the [upgrade paths for referential actions](/guides/upgrade-guides/upgrading-versions/upgrading-to-prisma-3/referential-actions) section if you upgrade from a version before 2.26.0. Prisma support of referential actions **removes the safety net in Prisma Client that prevents cascading deletes at runtime**. If you use the feature _without upgrading your database_, the [old default action](/guides/upgrade-guides/upgrading-versions/upgrading-to-prisma-3/referential-actions#prisma-2x-default-referential-actions) - `ON DELETE CASCADE` - becomes active. This may result in cascading deletes that you did not expect.
 
 </Admonition>
 
@@ -137,31 +138,21 @@ The following caveats apply:
 
 The following table shows which referential action each database supports.
 
-<Admonition type="info">
-
-Note that [`NoAction`](#noaction) can be used in replace of [`Restrict`](#restrict) when working with an SQL Server database.
-
-</Admonition>
-
 | Database   | Cascade | Restrict | NoAction | SetNull | SetDefault |
 | :--------- | :------ | :------- | :------- | :------ | :--------- |
 | PostgreSQL | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
 | MySQL      | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**†    |
 | SQLite     | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
-| SQL Server | **✔️**  | **❌**   | **✔️**   | **✔️**  | **✔️**     |
+| SQL Server | **✔️**  | **❌**‡  | **✔️**   | **✔️**  | **✔️**     |
+| MongoDB††  | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**     |
 
 - † On [InnoDB](https://dev.mysql.com/doc/refman/5.6/en/innodb-introduction.html#:~:text=InnoDB%20is%20a%20general%2Dpurpose,clause%20creates%20an%20InnoDB%20table.), `SetDefault` is ignored and is silently replaced with `NoAction` instead.
-
-From version 3.7.0 and later, referential actions are also available in MongoDB:
-
-| Database | Cascade | Restrict | NoAction | SetNull | SetDefault |
-| :------- | :------ | :------- | :------- | :------ | :--------- |
-| MongoDB  | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**     |
+- ‡ [`NoAction`](#noaction) can be used in place of [`Restrict`](#restrict) when working with an SQL Server database.
+- †† Referential Actions for MongoDB are available from version 3.7.0 and later.
 
 ### <inlinecode>Cascade</inlinecode>
 
 - `onDelete: Cascade` Deleting a referenced record will trigger the deletion of referencing record.
-
 - `onUpdate: Cascade` Updates the relation scalar fields if the referenced scalar fields of the dependent record are updated.
 
 #### Example usage
@@ -201,7 +192,6 @@ If a `User` record is deleted, then their posts are deleted too. If the user's `
 ### <inlinecode>Restrict</inlinecode>
 
 - `onDelete: Restrict` Prevents the deletion if any referencing records exist.
-
 - `onUpdate: Restrict` Prevents the identifier of a referenced record from being changed.
 
 #### Example usage
@@ -322,7 +312,7 @@ When deleting a `User`, its existing posts' `authorUsername` field values will b
 
 When the `username` of a `User` changes, its existing posts' `authorUsername` field values will be set to 'anonymous'.
 
-## Upgrade paths
+## Upgrade paths from versions 2.25.0 and earlier
 
 There are a couple of paths you can take when upgrading which will give different results depending on the desired outcome.
 
@@ -330,7 +320,7 @@ If you currently use the migration workflow, you can run an introspection to che
 
 You can also decide to skip checking the the defaults and run a migration to update your database with the [new default values](#referential-action-defaults).
 
-The following assumes you have upgraded to 2.26.0 and enabled the preview feature flag.
+The following assumes you have upgraded to 2.26.0 or newer and enabled the preview feature flag, or upgraded to 3.0.0 or newer:
 
 ### Using Introspection
 
@@ -490,7 +480,7 @@ main()
 
 <a id="current"></a>
 
-The following behavior applies in 2.25.0 and earlier, and since 2.26.0 _without_ the `referentialActions` preview flag.
+The following behavior applies in 2.25.0 and earlier, and since 2.26.0 until 3.0.0 _without_ the `referentialActions` preview flag. That is, if the referential actions feature is **not** implemented.
 
 When invoking the [`delete()`](../../../../../guides/database/advanced-database-tasks/cascading-deletes/postgresql#91-validating-restrict) or [`deleteAll()`](../../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
 
