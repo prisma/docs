@@ -16,7 +16,7 @@ Composite types are available in Preview in versions `3.10.0` and later.
 
 <Admonition type="warning">
 
-Composite types are currently only available on MongoDB.
+Composite types are only available with MongoDB, which is currently a [Preview feature](#enabling-composite-types-with-the-mongodb-preview-feature).
 
 </Admonition>
 
@@ -24,12 +24,28 @@ Composite types are currently only available on MongoDB.
 
 This page explains how to:
 
-- [create](#creating-composite-types-with-create-and-createmany) new records with composite types using `create` and `createMany`
-- [change](#changing-composite-types-within-update-and-updatemany) the composite types within existing records using `update` and `updateMany`
-- [delete](#deleting-composite-types-with-delete-and-deletemany) records with composite types using `delete` and `deleteMany`
-<!-- - [filter](#filtering-composite-types-with-find-and-findmany) records with composite types using `find` and `findMany` -->
+- [find](#finding-records-that-contain-composite-types-with-find-and-findmany) records that contain composite types using `findFirst` and `findMany`
+- [create](#creating-records-with-composite-types-using-create-and-createmany) new records with composite types using `create` and `createMany`
+- [update](#changing-composite-types-within-update-and-updatemany) composite types within existing records using `update` and `updateMany`
+- [delete](#deleting-records-that-contain-composite-types-with-delete-and-deletemany) records with composite types using `delete` and `deleteMany`
 
 </TopBlock>
+
+## Enabling composite types with the MongoDB Preview feature
+
+To use composite types with MongoDB, you will need to enable the `mongoDb` Preview feature in your `schema.prisma` file:
+
+```prisma file="schema.prisma"
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+```
 
 ## Example schema
 
@@ -84,13 +100,6 @@ type Address {
 
 In this schema, the `Product` model has a `Photo[]` composite type, and the `Order` model has two composite `Address` types. The `shippingAddress` is required, but the `billingAddress` is optional.
 
-## Considerations when using composite types
-
-There are currently some limitations when using composite types in the Prisma Client:
-
-- [`findUnique`](/reference/api-reference/prisma-client-reference#findunique) can't filter on composite types
-- [`aggregrate`](/concepts/components/prisma-client/aggregation-grouping-summarizing#aggregate), [`groupBy`](/concepts/components/prisma-client/aggregation-grouping-summarizing#group-by), [`count`](/concepts/components/prisma-client/aggregation-grouping-summarizing#count) don’t support composite operations
-
 ## Enabling composite types with the MongoDB Preview feature
 
 To use composite types with MongoDB, you will need to enable the `mongoDb` Preview feature in your `schema.prisma` file:
@@ -107,7 +116,157 @@ generator client {
 }
 ```
 
-## Creating composite types with <inlinecode>create</inlinecode> and <inlinecode>createMany</inlinecode>
+## Considerations when using composite types
+
+There are currently some limitations when using composite types in the Prisma Client:
+
+- [`findUnique`](/reference/api-reference/prisma-client-reference#findunique) can't filter on composite types
+- [`aggregrate`](/concepts/components/prisma-client/aggregation-grouping-summarizing#aggregate), [`groupBy`](/concepts/components/prisma-client/aggregation-grouping-summarizing#group-by), [`count`](/concepts/components/prisma-client/aggregation-grouping-summarizing#count) don’t support composite operations
+
+## Finding records that contain composite types with <inlinecode>find</inlinecode> and <inlinecode>findMany</inlinecode>
+
+Records can be filtered by a composite type within the `where` operation.
+
+The following section describes the operations available for filtering by a single type or multiple types, and gives examples of each.
+
+### Filtering for one composite type
+
+Use the `is`, `equals` and `isNot` operations to change a single composite type:
+
+- `is`: Filter results by matching composite types. Requires one or more fields to be present _(e.g. Filter orders by the street name on the shipping address)_
+- `equals`: Filter results by matching composite types. Requires all fields to be present. _(e.g. Filter orders by the full shipping address)_
+- `isNot`: Filter results by non-matching composite types
+
+For example, use `is` to filter for orders with a street name of `'555 Candy Cane Lane'`:
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      is: {
+        street: '555 Candy Cane Lane',
+      },
+    },
+  },
+})
+```
+
+You can also use a shorthand notation for this query, where you leave out the `is` and specify just the fields that you want to filter for:
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      street: '555 Candy Cane Lane',
+    },
+  },
+})
+```
+
+Use `equals` to filter for orders which match on all fields in the shipping address:
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      equals: {
+        street: '555 Candy Cane Lane',
+        city: 'Wonderland',
+        zip: '52337',
+      },
+    },
+  },
+})
+```
+
+Use `isNot` to filter for orders that do not have a `zip` code of `'52337'`:
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      isNot: {
+        zip: '52337',
+      },
+    },
+  },
+})
+```
+
+### Filtering for many composite types
+
+Use the `equals`, `isEmpty`, `every`, `some` and `none` operations to filter for multiple composite types:
+
+- `equals`: Checks exact equality of the list
+- `isEmpty`: Checks if the list is empty
+- `every`: Every item in the list must match the condition
+- `some`: One or more of the items in the list must match the condition
+- `none`: None of the items in the list can match the condition
+
+For example, you can use `equals` to find products with photos that match specific URL paths:
+
+```ts
+const product = prisma.product.findMany({
+  where: {
+    equals: {
+      photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
+    },
+  },
+})
+```
+
+You can also use a shorthand notation for this query, where you leave out the `equals` and specify just the fields that you want to filter for:
+
+```ts
+const product = prisma.product.findMany({
+  where: {
+    photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
+  },
+})
+```
+
+The following example uses `isEmpty` to filter for products with no photos:
+
+```ts
+const product = prisma.product.findMany({
+  where: {
+    photos: {
+      isEmpty: true,
+    },
+  },
+})
+```
+
+Use `some` to filter for products where one or more photos has a `url` of `"2.jpg"`:
+
+```ts
+const product = prisma.product.findFirst({
+  where: {
+    photos: {
+      some: {
+        { url: "2.jpg" },
+      }
+    }
+  },
+})
+```
+
+Use `none` to filter for products where no photos have a `url` of `"2.jpg"`:
+
+```ts
+const product = prisma.product.findFirst({
+  where: {
+    photos: {
+      none: {
+        { url: "2.jpg" },
+      }
+    }
+  },
+})
+
+```
+
+## Creating records with composite types using <inlinecode>create</inlinecode> and <inlinecode>createMany</inlinecode>
 
 Composite types can be created within a `create` or `createMany` method using the `set` operation. For example, you can use `set` within `create` to create an `Address` composite type inside an `Order`:
 
@@ -305,9 +464,32 @@ const order = await prisma.order.update({
 })
 ```
 
+You can use [filters](/concepts/components/prisma-client/composite-types#finding-records-that-contain-composite-types-with-find-and-findmany) within `updateMany` to update all records that match a composite type. The following example uses the `is` filter to match the street name from a shipping address on a list of orders:
+
+```ts
+const orders = await prisma.order.updateMany({
+  where: {
+    shippingAddress: {
+      is: {
+        street: '555 Candy Cane Lane',
+      },
+    },
+  },
+  data: {
+    shippingAddress: {
+      update: {
+        street: '111 Candy Cane Drive',
+      },
+    },
+  },
+})
+```
+
 ### Changing multiple composite types
 
-Use the `set`, `push` `updateMany` and `deleteMany` operations to change a list of composite types:
+Use the `set` and `push` operations to change a list of composite types:
+
+<!-- Use the `set`, `push`, `updateMany` and `deleteMany` operations to change a list of composite types: -->
 
 - `set`: Set an embedded list of composite types, overriding any existing list
 - `push`: Push values to the end of an embedded list of composite types
@@ -401,7 +583,7 @@ const product = await prisma.product.upsert({
 })
 ```
 
-## Deleting composite types with <inlinecode>delete</inlinecode> and <inlinecode>deleteMany</inlinecode>
+## Deleting records that contain composite types with <inlinecode>delete</inlinecode> and <inlinecode>deleteMany</inlinecode>
 
 To remove records which embed a composite type, use the `delete` or `deleteMany` methods. This will also remove the embedded composite type.
 
@@ -415,153 +597,32 @@ const deleteProduct = await prisma.product.deleteMany({
 })
 ```
 
-<!--
-## Filtering composite types with <inlinecode>find</inlinecode> and <inlinecode>findMany</inlinecode>
-
-Composite types can be filtered within a `find` or `findMany` method. The following section describes the operations available for filtering down to a single type or multiple types, and gives examples of each.
-
-### Filter for one composite type
-
-Use the `is`, `equals` and `isNot` operations to change a single composite type:
-
-- `is`: Filter results by matching composite types. Requires one or more fields to be present _(e.g. Filter orders by the street name on the shipping address)_
-- `equals`: Filter results by matching composite types. Requires all fields to be present. _(e.g. Filter orders by the full shipping address)_
-- `isNot`: Filter results by non-matching composite types
-
-For example, use `is` to filter for orders with a street name of `'555 Candy Cane Lane'`:
+You can also use [filters](/concepts/components/prisma-client/composite-types#finding-records-that-contain-composite-types-with-find-and-findmany) to delete records that match a composite type. The example below uses the `some` filter to delete products that contain a certain photo:
 
 ```ts
-const orders = await prisma.order.findMany({
-  where: {
-    shippingAddress: {
-      is: {
-        street: '555 Candy Cane Lane',
-      },
-    },
-  },
-})
-```
-
-You can also use a shorthand notation for this query, where you leave out the `is` and specify just the fields that you want to filter for:
-
-```ts
-const orders = await prisma.order.findMany({
-  where: {
-    shippingAddress: {
-      street: '555 Candy Cane Lane',
-    },
-  },
-})
-```
-
-Use `equals` to filter for orders which match on all fields in the shipping address:
-
-```ts
-const orders = await prisma.order.findMany({
-  where: {
-    shippingAddress: {
-      equals: {
-        street: '555 Candy Cane Lane',
-        city: 'Wonderland',
-        zip: '52337',
-      },
-    },
-  },
-})
-```
-
-Use `isNot` to filter for orders that do not have a `zip` code of `'52337'`:
-
-```ts
-const orders = await prisma.order.findMany({
-  where: {
-    shippingAddress: {
-      isNot: {
-        zip: '52337',
-      },
-    },
-  },
-})
-```
-
-### Filter for many composite types
-
-Use the `equals`, `isEmpty`, `every`, `some` and `none` operations to filter for multiple composite types:
-
-- `equals`: Checks exact equality of the list
-- `isEmpty`: Checks if the list is empty
-- `every`: Every item in the list must match the condition
-- `some`: One or more of the items in the list must match the condition
-- `none`: None of the items in the list can match the condition
-
-For example, you can use `equals` to find products with
-
-```ts
-const product = prisma.product.findMany({
-  where: {
-    equals: {
-      photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
-    },
-  },
-  orderBy: {
-    photos: {
-      height: 'ASC',
-    },
-  },
-})
-```
-
-You can also use a shorthand notation for this query, where you leave out the `equals` and specify just the fields that you want to filter for:
-
-```ts
-const product = prisma.product.findMany({
-  where: {
-    photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
-  },
-  orderBy: {
-    photos: {
-      height: 'ASC',
-    },
-  },
-})
-```
-
-The following example uses `isEmpty` to filter for products with no photos:
-
-```ts
-const product = prisma.product.findMany({
-  where: {
-    photos: {
-      isEmpty: true,
-    },
-  },
-})
-```
-
-Use `some` to filter for products where one or more photos has a `url` of `"2.jpg"`:
-
-```ts
-const product = prisma.product.findFirst({
+const product = await prisma.product.deleteMany({
   where: {
     photos: {
       some: {
-        { url: "2.jpg" },
-      }
-    }
+        url: '2.jpg',
+      },
+    },
   },
 })
 ```
 
-Use `none` to filter for products where no photos have a `url` of `"2.jpg"`:
+## Ordering composite types
+
+You can use the `orderBy` operation to sort results in ascending or descending order.
+
+For example, the following command finds all orders and orders them by the city name in the shipping address, in ascending order:
 
 ```ts
-const product = prisma.product.findFirst({
-  where: {
-    photos: {
-      none: {
-        { url: "2.jpg" },
-      }
-    }
+const orders = await prisma.order.findMany({
+  orderBy: {
+    shippingAddress: {
+      city: 'asc',
+    },
   },
 })
-``` -->
+```
