@@ -1,29 +1,29 @@
 ---
-title: Squashing migration
-metaDescription: How to squash multiple migrations (.sql files) into a single migration.
+title: Squashing migrations
+metaTitle: How to squash multiple migration files into a single migration
+metaDescription: How to squash multiple migration files into a single migration
 ---
 
 <TopBlock>
 
-This topic describes how to squash multiple migrations (.sql files) into a single migration.
+This guide describes how to squash multiple [migration files](/concepts/components/prisma-migrate#migration-history) into a single migration.
 
 </TopBlock>
 
 ## About squashing migrations
 
-There are two common use cases for squashing multiple migrations (.sql files) into a single migration:
+There are two common use cases for squashing multiple `migration.sql` files into a single migration:
 
 - Migrate cleanly from a development environment
 - Create a clean history in a production environment
 
 ### Migrate cleanly from a development environment
 
-In a busy development environment, whether there is only one person or 20 on a team, after a large development effort you might want to push one single migrations.sql file to your production environment, and leave out some extraneous, unneeded migrations. This practices cleans up not only the developent environment,but also helps keep your productionenvironment's migrations history less cluttered.
+Squashing migrations can be useful when developing with a branch-based workflow. During a large local development effort on a feature branch you might generate multiple migrations using `migrate dev`. After the feature is finished, the migration history might contain unnecessary intermediate steps that are unwanted in the final migration history that will be pushed to the `main` branch.
 
-Consider the following scenario:
-Your team has a branch based workflow. A developer branches from `/main` and starts working on a feature branch. This includes generating multiple migrations using `migrate dev`. After the feature is finished, the migration history might contain unnecessary intermediate steps that are unwanted in the final migration history that will be pushed to `/main`. There could also be pressing reasons why the intermediate steps can not be applied in production (they might lose data or be extremely slow / disruptive). The user therefore wants to squash all their newly created local migrations into one migration, that does not include the undeeded, extraneous migrations. The squashed migration can then be applied to production with `npx prisma migrate deploy`.
+There could be important reasons to avoid applying the intermediate steps in production — they might lose data or be extremely slow / disruptive). Even when this is not the case, you may want to avoid clutter in your production environment's migrations history.
 
-For detailed instructions, refer to --anchor link to steps below--.
+For detailed steps on how to achieve this using `migrate diff`, see the section on [how to squash local migrations into a single file](#how-to-squash-local-migrations-into-a-single-file).
 
 ### Create a clean history in a production environment
 
@@ -34,7 +34,7 @@ The productionenviroment has accumulated a longer migration history. Replaying i
 
 For detailed instructions, refer to --anchor link to steps below--.
 
-## Important Considerations
+## Important considerations
 
 <Admonition type="info">
 
@@ -45,3 +45,37 @@ For detailed instructions, refer to --anchor link to steps below--.
 ## Using migration squashing
 
 .... provide steps for both use cases here, with the code snippets and the Start and End states that Matthias provides in his Notion doc...
+
+### How to squash local migrations into a single file
+
+Before squashing migrations, make sure you have the following starting conditions:
+
+- The contents of the migrations to be squashed are not yet applied on the production database
+- All migrations applied to production are part of the local migration history already
+- There is no custom SQL in the migration files
+
+Then follow these steps:
+
+1. Reset your local migration history folder to match the migration history on the `main` branch
+
+2. Create an empty `migration.sql` file and make a note of the file path
+
+3. Create a migration that takes you:
+
+   - from the state of the `main` branch as described in your reset migration history
+   - to the state of your local feature as described in your `schema.prisma` file
+   - and outputs this to the `migration.sql` file created above
+
+   You can do this using the `migrate diff` command:
+
+   ```terminal
+   npx prisma migrate diff \
+   --preview-feature \
+   --from-migrations ./migrations \
+   --to-schema-datamodel ./schema.prisma \
+   --script > filepath
+   ```
+
+You should now have a single migration file that can be applied to production using `migrate deploy`.
+
+### Create a clean history in a production environment
