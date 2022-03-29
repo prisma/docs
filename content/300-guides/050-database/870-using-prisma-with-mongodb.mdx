@@ -41,7 +41,7 @@ For more information, see [How to migrate old data to new schemas](#how-to-migra
 
 **Introspection.** When you introspect an existing database, you will get a schema with no relations and will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-introspection).
 
-**Using `undefined` vs `null`.**
+**Filtering for `null` and undefined fields.** MongoDB makes a distinction between setting a field to `null` and not setting it at all, which is not present in relational databases. Prisma currently does not express this distinction, which means that you need to be careful when filtering for `null` and undefined fields. For more information, see [How to filter for `null` and undefined fields](#how-to-filter-for-null-and-undefined-fields).
 
 **Replica sets.**
 
@@ -55,7 +55,180 @@ Types:
 
 ## How to add in missing relations after Introspection
 
-## How to ... (something to do with `unsupported`)
+## How to filter for <inlinecode>null</inlinecode> and undefined fields
+
+To understand how MongoDB distinguishes between `null` and undefined fields, consider the example of a `User` model with an optional `name` field:
+
+```ts
+model User {
+  id    String  @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+  name  String?
+}
+```
+
+First, try creating a record with the `name` field explicitly set to `null`. Prisma will return `name: null` as expected:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const createNull = await prisma.user.create({
+  data: {
+    email: 'user1@prisma.io',
+    name: null,
+  },
+})
+console.log(createNull)
+```
+
+</cmd>
+
+<cmdResult>
+
+```
+{
+    id: '6242c4ae032bc76da250b207',
+    email: 'user1@prisma.io',
+    name: null
+}
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+If you check your MongoDB database directly, you will also see a new record with `name` set to `null`:
+
+```terminal
+_id: 6242c4af032bc76da250b207
+email: "user1@prisma.io"
+name: null
+```
+
+Next, try creating a record without explicitly setting the `name` field:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+  const createUndefined = await prisma.user.create({
+    data: {
+       email: "user2@prisma.io",
+     }
+   })
+   console.log(createUndefined)
+}
+```
+
+</cmd>
+
+<cmdResult>
+
+```
+{
+    id: '6242c4ae032bc76da250b208',
+    email: 'user2@prisma.io',
+    name: null
+},
+
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+Prisma still returns `name: null`, but if you look in the database directly you will see that the record has no `name` field defined at all:
+
+```terminal
+_id: 6242c4af032bc76da250b208
+email: "user2@prisma.io"
+```
+
+Prisma returns the same result in both cases, because we currently don't have a way to specify this difference in MongoDB between fields that are `null` in the underlying database, and fields that are not defined at all — see [this Github issue](https://github.com/prisma/prisma/issues/12555) for more information.
+
+This means that you currently have to be careful when searching for `null` and undefined fields. Searching for records with `name: null` will return both records:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const findNulls = await prisma.user.findMany({
+  where: {
+    name: null,
+  },
+})
+console.log(findNulls)
+```
+
+</cmd>
+
+<cmdResult>
+
+```terminal
+[
+  {
+    id: '6242c4ae032bc76da250b207',
+    email: 'user1@prisma.io',
+    name: null
+  },
+  {
+    id: '6242c4ae032bc76da250b208',
+    email: 'user2@prisma.io',
+    name: null
+  }
+]
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+Instead, to exclude undefined fields, use the [`isSet` filter](/reference/api-reference/prisma-client-reference#isset) to explicitly search for fields which are either `null` or not set:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const findNullNotUndefined = await prisma.user.findMany({
+  where: {
+    OR: [
+      {
+        name: null,
+      },
+      {
+        name: {
+          isSet: false,
+        },
+      },
+    ],
+  },
+})
+
+console.log(findNullNotUndefined)
+```
+
+</cmd>
+
+<cmdResult>
+
+```terminal
+[
+  {
+    id: '6242c4ae032bc76da250b207',
+    email: 'user1@prisma.io',
+    name: null
+  }
+]
+```
+
+</cmdResult>
+
+</CodeWithResult>
 
 ## How to ... (something to do with replica sets)
 
