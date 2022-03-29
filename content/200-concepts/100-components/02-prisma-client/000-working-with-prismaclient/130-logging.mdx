@@ -65,6 +65,61 @@ To use event-based logging:
 
 The following example subscribes to all `query` events and write the `duration` and `query` to console:
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+
+<tab>
+
+<CodeWithResult expanded="{true}">
+<cmd>
+
+```ts highlight=4,5,22-26;normal
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+    {
+      emit: 'stdout',
+      level: 'error',
+    },
+    {
+      emit: 'stdout',
+      level: 'info',
+    },
+    {
+      emit: 'stdout',
+      level: 'warn',
+    },
+  ],
+})
+
+prisma.$on('query', (e) => {
+  console.log('Query: ' + e.query)
+  console.log('Params: ' + e.params)
+  console.log('Duration: ' + e.duration + 'ms')
+})
+```
+
+</cmd>
+<cmdResult>
+
+```sql
+Query: SELECT "public"."User"."id", "public"."User"."email", "public"."User"."name" FROM "public"."User" WHERE 1=1 OFFSET $1
+Params: [0]
+Duration: 3ms
+Query: SELECT "public"."Post"."id", "public"."Post"."title", "public"."Post"."authorId" FROM "public"."Post" WHERE "public"."Post"."authorId" IN ($1,$2,$3,$4) OFFSET $5
+Params: [2, 7, 18, 29]
+Duration: 2ms
+```
+
+</cmdResult>
+</CodeWithResult>
+
+</tab>
+
+<tab>
+
 <CodeWithResult expanded="{true}">
 <cmd>
 
@@ -92,21 +147,22 @@ const prisma = new PrismaClient({
 
 prisma.$on('query', (e) => {
   console.log('Query: ' + e.query)
-  console.log('Duration: ' + e.duration + 'ms')
 })
 ```
 
 </cmd>
 <cmdResult>
 
-```sql
-Query: SELECT "public"."User"."id", "public"."User"."email", "public"."User"."name" FROM "public"."User" WHERE 1=1 OFFSET $1
-Duration: 3ms
-Query: SELECT "public"."Post"."id", "public"."Post"."title", "public"."Post"."authorId" FROM "public"."Post" WHERE "public"."Post"."authorId" IN ($1,$2,$3,$4) OFFSET $5
-Duration: 2ms
+```terminal
+Query: db.User.aggregate([ { $project: { _id: 1, email: 1, name: 1, }, }, ])
+Query: db.Post.aggregate([ { $match: { userId: { $in: [ "622f0bbbdf635a42016ee325", ], }, }, }, { $project: { _id: 1, slug: 1, title: 1, body: 1, userId: 1, }, }, ])
 ```
 
 </cmdResult>
 </CodeWithResult>
+
+</tab>
+
+</TabbedContent>
 
 The exact [event (`e`) type and the properties available](/reference/api-reference/prisma-client-reference#event-types) <span class="api"></span> depends on the log level.

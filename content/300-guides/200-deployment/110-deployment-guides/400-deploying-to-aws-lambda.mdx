@@ -38,7 +38,7 @@ exports.server = (event, context, cb) => {
 ## Prerequisites
 
 - Hosted PostgreSQL database and a URL from which it can be accessed, e.g. `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` (you can use Heroku, which offers a [free plan](https://dev.to/prisma/how-to-setup-a-free-postgresql-database-on-heroku-1dc1)).
-- [AWS](https://aws.amazon.com/) account and a corresponding <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html">access key</a> for programmatic access.
+- [AWS](https://aws.amazon.com/) account and a corresponding [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) for programmatic access.
 - [Serverless Framework CLI](https://www.serverless.com/framework/docs/getting-started/) installed.
 - Node.js installed.
 - PostgreSQL CLI `psql` installed.
@@ -63,6 +63,12 @@ cd prisma-aws-lambda
 curl https://codeload.github.com/prisma/prisma-examples/tar.gz/latest | tar -xz --strip=3 prisma-examples-latest/deployment-platforms/aws-lambda/
 ```
 
+After downloading the example code, install the dependencies:
+
+```
+npm install
+```
+
 <!-- tar strip folder is a concatenation of the REPOSITORY-BRANCH/REF, e.g. prisma-examples-latest -->
 
 **Checkpoint:** `ls -1` should show:
@@ -78,12 +84,6 @@ package.json
 prisma
 schema.sql
 serverless.yml
-```
-
-After downloading the example code, install the dependencies:
-
-```
-npm install
 ```
 
 ## 2. Set the DATABASE_URL environment variable locally
@@ -242,7 +242,7 @@ model User {
 
 In order for the Serverless Framework to provision the AWS resources and deploy your application, you need to configure the access key.
 
-There are different ways to get the access key, depending on whether you create you use your personal account or create a special IAM user for the Serverless Framework (this approach is recommended for security reasons as it allows to set granular permissions). To get an access key for your account, follow the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey">AWS guide</a>
+There are different ways to get the access key, depending on whether you create you use your personal account or create a special IAM user for the Serverless Framework (this approach is recommended for security reasons as it allows to set granular permissions). To get an access key for your account, follow the [AWS guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
 
 Once you have the _Access key ID_ and a _Secret access key_. Set them with the following command:
 
@@ -341,6 +341,132 @@ package:
 ```
 
 This ensures the packaged archive is as small as possible.
+
+But, if you are using `serverless-webpack`, you cannot use that method.
+
+### Deployment using `serverless-webpack`
+
+If you are using `serverless-webpack`, you can use the [serverless-webpack-prisma](https://github.com/danieluhm2004/serverless-webpack-prisma) plugin without any additional configuration. `serverless-webpack-prisma` does the following:
+
+1. Copies your `schema.prisma` via the Webpack plugin
+2. Runs the `prisma generate` command. This means there is no need to add the command to the webpack options separately
+3. Packages the correct Prisma engine used in the Lambda. This can save more than 40mb of capacity.
+
+<details><summary>If you are not using webpack yet</summary>
+
+Install dependencies.
+
+```sh
+npm install -D webpack serverless-webpack webpack-node-externals
+```
+
+Install`ts-loader` if your project uses TypeScript.
+
+```sh
+npm install -D ts-loader
+```
+
+Next, create a `webpack.config.js` file in the project root directory and copy and paste the following configuration.
+
+```javascript file=webpack.config.js
+/* eslint-disable @typescript-eslint/no-var-requires */
+const path = require('path')
+const nodeExternals = require('webpack-node-externals')
+const slsw = require('serverless-webpack')
+const { isLocal } = slsw.lib.webpack
+
+module.exports = {
+  target: 'node',
+  stats: 'normal',
+  entry: slsw.lib.entries,
+  externals: [nodeExternals()],
+  mode: isLocal ? 'development' : 'production',
+  optimization: { concatenateModules: false },
+  resolve: { extensions: ['.js'] },
+  output: {
+    libraryTarget: 'commonjs',
+    filename: '[name].js',
+    path: path.resolve(__dirname, '.webpack'),
+  },
+}
+```
+
+In the case of TypeScript, we also insert the following configuration inside `exports`:
+
+```javascript file=webpack.config.js
+// ...initial config
+module.exports = {
+  // ...initial config
+  resolve: { extensions: ['.js', '.ts'] },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  // ...initial config
+}
+```
+
+Refer to the [Serverless Webpack documentation](https://www.serverless.com/plugins/serverless-webpack) for additional configuration.
+
+</details>
+
+Install the dev dependency by entering the following command:
+
+```sh
+npm install -D serverless-webpack-prisma serverless
+```
+
+Update your `serverless.yml` by adding the `serverless-webpack` to the plugins list.
+
+```yaml file=serverless.yml
+plugins:
+  - serverless-webpack
+  - serverless-webpack-prisma
+
+custom:
+  webpack:
+    includeModules: true
+```
+
+`serverless-webpack-prisma` automatically runs `prisma generate` so you don't need to use the webpack script option separately as shown below.
+
+```yaml file=serverless.yml
+custom:
+  webpack:
+    packagerOptions:
+      scripts:
+        - prisma generate
+```
+
+`serverless-webpack-prisma` removes the unnecessary dependencies and packages the right Prisma engine to be used in your Lambda. Therefore, delete it in the `package.patterns` configuration in your `serverless.yml` file.
+
+```yaml file=serverless.yml
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
+```
+
+Once you've updated your `serverless.yml` file, redeploy your application by running `serverless deploy`. The deployment output will show you the correct Prisma Engine is packaged and distributed.
+
+```
+Serverless: Copy prisma schema for app...
+Serverless: Generate prisma client for app...
+Serverless: Remove unused prisma engine:
+Serverless: - node_modules/.prisma/client/libquery_engine-darwin.dylib.node
+Serverless: - node_modules/@prisma/engines/introspection-engine-darwin
+Serverless: - node_modules/@prisma/engines/libquery_engine-darwin.dylib.node
+Serverless: - node_modules/@prisma/engines/migration-engine-darwin
+Serverless: - node_modules/@prisma/engines/prisma-fmt-darwin
+Serverless: Copying existing artifacts...
+```
 
 ## Summary
 

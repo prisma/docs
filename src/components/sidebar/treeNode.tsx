@@ -41,8 +41,9 @@ const ListItem = styled.li`
       background: ${(p) => p.theme.colors.gray200};
       border-radius: ${(p) => p.theme.radii.small};
       padding: 2px 5px;
+      text-transform: capitalize;
       &.small {
-        font-size: 13px;
+        font-size: 12px;
       }
     }
 

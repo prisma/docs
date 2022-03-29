@@ -114,12 +114,12 @@ Determines the type and level of logging. See also: [Logging](/concepts/componen
 
 ##### Log levels
 
-| Name    | Example                                                                                                                                                                                                                                                                                                                     |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `query` | Example: <br />`prisma:query SELECT "public"."User"."id", "public"."User"."email" FROM "public"."User" WHERE ("public"."User"."id") IN (SELECT "t0"."id" FROM "public"."User" AS "t0" INNER JOIN "public"."Post" AS "j0" ON ("j0"."authorId") = ("t0"."id") WHERE ("j0"."views" > $1 AND "t0"."id" IS NOT NULL)) OFFSET $2` |
-| `info`  | Example: <br />`prisma:info Started http server on http://127.0.0.1:58471`                                                                                                                                                                                                                                                  |
-| `warn`  | Warnings.                                                                                                                                                                                                                                                                                                                   |
-| `error` | Errors.                                                                                                                                                                                                                                                                                                                     |
+| Name    | Example                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query` | Logs all queries run by Prisma. <br /><br /> For relational databases this logs all SQL queries. Example: <br />`prisma:query SELECT "public"."User"."id", "public"."User"."email" FROM "public"."User" WHERE ("public"."User"."id") IN (SELECT "t0"."id" FROM "public"."User" AS "t0" INNER JOIN "public"."Post" AS "j0" ON ("j0"."authorId") = ("t0"."id") WHERE ("j0"."views" > $1 AND "t0"."id" IS NOT NULL)) OFFSET $2` <br /> For MongoDB this logs queries using the [`mongosh` shell](https://docs.mongodb.com/mongodb-shell/#mongodb-binary-bin.mongosh) format. Example: <br /> `prisma:query db.User.deleteMany({ _id: ( $in: [ “6221ce49f756b0721fc00542”, ], }, })` |
+| `info`  | Example: <br />`prisma:info Started http server on http://127.0.0.1:58471`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `warn`  | Warnings.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `error` | Errors.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ##### Emit formats
 
@@ -155,6 +155,8 @@ export type QueryEvent = {
   target: string
 }
 ```
+
+Note that for MongoDB, the `params` and `duration` fields will be undefined.
 
 All other log level event types:
 
@@ -924,7 +926,7 @@ const user = await prisma.user.upsert({
 - By _ID_
 - By a _unique_ attribute
 
-To delete records that match a certain criteria, use [`deleteMany`](#deleteMany) with a filter.
+To delete records that match a certain criteria, use [`deleteMany`](#deletemany) with a filter.
 
 #### Options
 
@@ -1368,7 +1370,7 @@ See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-c
 | `having`  | `UserScalarWhereWithAggregatesInput`                         | No       | Allows you to filter groups by an aggregate value - for example, only return groups _having_ an average age less than 50.                                                                                 |
 | `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 | `take`    | `number`                                                     | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
-| `_count`  | `true`                                                       | No       | Returns a count of matching records or non-`null` fields.                                                                                                                                                 |
+| `_count`  | `true` \| `UserCountAggregateInputType`                      | No       | Returns a count of matching records or non-`null` fields.                                                                                                                                                 |
 | `_avg`    | `UserAvgAggregateInputType`                                  | No       | Returns an average of all values of the specified field.                                                                                                                                                  |
 | `_sum`    | `UserSumAggregateInputType`                                  | No       | Returns the sume of all values of the specified field.                                                                                                                                                    |
 | `_min`    | `UserMinAggregateInputType`                                  | No       | Returns the smallest available value of the specified field.                                                                                                                                              |
@@ -2702,7 +2704,7 @@ A nested `createMany` query adds a new set of records to a parent record. See: [
 
 - `createMany` is available as a nested query when you `create` (`prisma.user.create(...)`) a new parent record or `update` (`prisma.user.update(...)`) an existing parent record.
 - Available in the context of a has-many relation - for example, you can `prisma.user.create(...)` a user and use a nested `createMany` to create multiple posts (posts have one user).
-- **Not** available in the context of a many-to-many relation - for example, you **cannot** you can `prisma.post.create(...)` a post and use a nested `createMany` to create categories (many posts have many categories).
+- **Not** available in the context of a many-to-many relation - for example, you **cannot** `prisma.post.create(...)` a post and use a nested `createMany` to create categories (many posts have many categories).
 - Does not support nesting additional relations - you cannot nest an additional `create` or `createMany`.
 - Allows setting foreign keys directly - for example, setting the `categoryId` on a post.
 
@@ -3851,7 +3853,7 @@ export type PostFilter = {
 
 #### Examples
 
-##### Get all `User` records where _all_ posts are published and a least one related `Post` mentions `Prisma`
+##### Get all `User` records where _all_ posts are published and at least one related `Post` mentions `Prisma`
 
 ```ts
 const result = await prisma.user.findMany({
@@ -4105,13 +4107,46 @@ const addTag = await prisma.post.update({
 })
 ```
 
+### <inlinecode>unset</inlinecode>
+
+<Admonition type="warning">
+
+This method is available on MongoDB only in versions
+[3.11.1](https://github.com/prisma/prisma/releases/tag/3.11.1) and later.
+
+</Admonition>
+
+Use `unset` to unset the value of a scalar list. Unlike `set: null`, `unset` removes the list entirely.
+
+#### Examples
+
+##### Unset the value of `tags`
+
+```ts
+const setTags = await prisma.post.update({
+  where: {
+    id: 9
+  },
+  data: {
+      tags: {
+        unset: true,
+      }
+    }
+  })
+}
+```
+
 ## Scalar list filters
 
 Scalar list filters allow you to filter by the contents of a list / array field.
 
 <Admonition type="warning">
 
-**Note**: Available for the **PostgreSQL** database connector in Prisma [2.15.0](https://github.com/prisma/prisma/releases/tag/2.15.0) and later **only**.
+Available for:
+
+- PostgreSQL in versions [2.15.0](https://github.com/prisma/prisma/releases/tag/2.15.0) and later
+- CockroachDB in versions [3.9.0](https://github.com/prisma/prisma/releases/tag/3.9.0) and later
+- MongoDB in versions [3.11.0](https://github.com/prisma/prisma/releases/tag/3.11.0) and later
 
 </Admonition>
 
@@ -4222,6 +4257,31 @@ const posts = await prisma.post.findMany({
   where: {
     tags: {
       isEmpty: true,
+    },
+  },
+})
+```
+
+### <inlinecode>isSet</inlinecode>
+
+<Admonition type="warning">
+
+This filter is available on MongoDB only in versions
+[3.11.1](https://github.com/prisma/prisma/releases/tag/3.11.1) and later.
+
+</Admonition>
+
+Filter lists to include only results that have been set (either set to a value, or explicitly set to `null`). Setting this filter to `true` will exclude undefined results that are not set at all.
+
+#### Examples
+
+The following query returns all `Post` records where the `tags` have been set to either `null` or a value:
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    tags: {
+      isSet: true,
     },
   },
 })
@@ -4860,6 +4920,11 @@ See: [Raw database access (`$executeRaw()`)](/concepts/components/prisma-client/
 ### <inlinecode>$queryRaw()</inlinecode>
 
 See: [Raw database access (`$queryRaw()`)](/concepts/components/prisma-client/raw-database-access#queryRaw).
+
+<!-- prettier-ignore -->
+### <inlinecode>$runCommandRaw()</inlinecode>
+
+See: [Raw database access (`$runCommandRaw()`)](/concepts/components/prisma-client/raw-database-access#runCommandRaw).
 
 <!-- prettier-ignore -->
 ### <inlinecode>$transaction()</inlinecode>
