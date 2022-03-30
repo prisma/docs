@@ -353,17 +353,17 @@ CREATE TABLE "Post" (
 
 #### Configuring the name of the relation table in implicit many-to-many relations
 
-When using Prisma Migrate, you can configure the name of the relation table that's managed by Prisma using the `@relation` attribute. The only requirement is that it starts with an underscore. For example, if you want the relation table to be called `_MyRelationTable` instead of the default name `_CategoryToPost`, you can specify it as follows:
+When using Prisma Migrate, you can configure the name of the relation table that's managed by Prisma using the `@relation` attribute. For example, if you want the relation table to be called `_MyRelationTable` instead of the default name `_CategoryToPost`, you can specify it as follows:
 
 ```prisma
 model Post {
   id         Int        @id @default(autoincrement())
-  categories Category[] @relation("_MyRelationTable")
+  categories Category[] @relation("MyRelationTable")
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
-  posts Post[] @relation("_MyRelationTable")
+  posts Post[] @relation("MyRelationTable")
 }
 ```
 
@@ -413,28 +413,43 @@ When you don't need to attach additional information to the relation, you can mo
 
 ## MongoDB
 
-In MongoDB, m-n-relations are represented by:
+In MongoDB, many-to-many relations are represented by:
 
-- Relation fields on both sides, include a `@relation` attribute on _each side_
-- A scalar list of referenced IDs on each side, including the `@db.Array(X)` attribute, where `X` is the ID type (`ObjectId`, `String`)
+- relation fields on both sides, that each have a `@relation` attribute, with mandatory `fields` and `references` arguments
+- a scalar list of referenced IDs on each side, with a type that matches the ID field on the other side
 
-The following example demonstrate an m-n relation between posts and categories:
+The following example demonstrates a many-to-many relation between posts and categories:
 
 ```prisma
 model Post {
-  id          String     @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  categoryIDs String[]   @db.Array(ObjectId)
-  categories  Category[] @relation(fields: [categoryIDs])
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  categoryIDs String[]   @db.ObjectId
+  categories  Category[] @relation(fields: [categoryIDs], references: [id])
 }
 
 model Category {
-  id      String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  postIDs String[] @db.Array(ObjectId)
-  posts   Post[]   @relation(fields: [postIDs])
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  postIDs String[] @db.ObjectId
+  posts   Post[]   @relation(fields: [postIDs], references: [id])
 }
 ```
 
-### Querying MongoDB m-n relations
+Prisma validates many-to-many relations in MongoDB with the following rules:
+
+- The fields on both sides of the relation must have a list type (in the example above, `categories` have a type of `Category[]` and `posts` have a type of `Post[]`)
+- The `@relation` attribute must define `fields` and `references` arguments on both sides
+- The `fields` argument must have only one scalar field defined, which must be of a list type
+- The `references` argument must have only one scalar field defined. This scalar field must exist on the referenced model and must be of the same type as the scalar field in the `fields` argument, but singular (no list)
+- The scalar field to which `references` points must have the `@id` attribute
+- No [referential actions](/concepts/components/prisma-schema/relations/referential-actions) are allowed in `@relation`
+
+The implicit many-to-many relations [used in relational databases](/concepts/components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations) are not supported on MongoDB.
+
+### Querying MongoDB many-to-many relations
+
+This section demonstrates how to query many-to-many relations in MongoDB, using the example schema above.
+
+The following query finds posts with specific matching category IDs:
 
 ```ts
 const newId1 = new ObjectId()
@@ -448,6 +463,8 @@ const posts = await prisma.post.findMany({
   },
 })
 ```
+
+The following query finds posts where the category name contains the string `'Servers'`:
 
 ```ts
 const posts = await prisma.post.findMany({

@@ -1,5 +1,5 @@
 export const defaultOSIndex = (tabs: any[]): number => {
-  let detectedOS = 'unkown'
+  let detectedOS = 'unknown'
 
   // Check user OS
   if (navigator.appVersion.indexOf('Mac') != -1 || navigator.appVersion.indexOf('Linux') != -1)

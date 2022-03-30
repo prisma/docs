@@ -191,7 +191,7 @@ const CapTitle = styled.h4<{ withBorder?: boolean }>`
   padding-bottom: ${(p: any) => p.theme.space[16]};`}
 `
 
-const GenaralLinks = styled.div`
+const GeneralLinks = styled.div`
   background: #ffffff;
   box-shadow: 0px 28px 53px rgba(0, 0, 0, 0.07), 0px 8.44118px 15.9779px rgba(0, 0, 0, 0.0393306),
     0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066),
@@ -336,7 +336,7 @@ const Homepage = () => {
         </SummaryLinks>
       </Summary>
       <QuickLinks>
-        <GenaralLinks>
+        <GeneralLinks>
           {GeneralLinkData.map((generalLink: any, index: number) => (
             <GeneralLink>
               <IconHolder>{icons[generalLink.icon]}</IconHolder>
@@ -356,7 +356,7 @@ const Homepage = () => {
               </div>
             </GeneralLink>
           ))}
-        </GenaralLinks>
+        </GeneralLinks>
         <Space height={80} />
         <SubHeading>Guides</SubHeading>
         <NormalPara>{GuideText}</NormalPara>
