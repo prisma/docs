@@ -14,13 +14,15 @@ This guide discusses the concepts behind using Prisma and MongoDB, explains the 
 
 ## What is MongoDB?
 
-MongoDB is a NoSQL database that stores data in a JSON-like document format.
+MongoDB is a NoSQL database that stores data (formatted as key-value pairs) in BSON files, a JSON-like document. Commonly used for Node.js projects because of its native support for all-things Javascript, MongoDB handles high-volume data storage with rapid queries and data updates, so it is a popular database choice for JS-based application development.
 
 Features include:
 
-- **Flexible schemas** ...
-- **Support for scaling** ...
-- ...
+- **Flexible schemas**
+- **Support for horizontal scale-out with auto-sharding**
+- **Support for new data types**
+- **Fast query response**
+- **Fast data updates**
 
 ## Commonalities with other database providers
 
@@ -47,11 +49,35 @@ For more information, see [How to migrate old data to new schemas](#how-to-migra
 
 **Using a replica set.** Prisma uses [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/) internally to avoid partial writes on nested queries. When using transactions, MongoDB requires you to have a [replica set](https://www.mongodb.com/docs/manual/replication/) configured — this is a group of MongoDB processes that maintain the same data set, providing redundancy and high availability. If you use MongoDB's [Atlas](https://www.mongodb.com/atlas/database) hosting service, the replica set is configured for you, but if you are running MongoDB locally you will need to set this up yourself. For more information, see [How to configure a replica set](#how-to-configure-a-replica-set)
 
-## How to migrate old data to new schemas
+## How to implement Prisma with MongoDB
 
-## How to add in missing relations after Introspection
+This section provides How To instructions for tasks that require steps specific to MongoDB.
 
-## How to filter for <inlinecode>null</inlinecode> and undefined fields
+### How to migrate old data to new schemas
+
+Migrating your database over time is an important part of the development cycle. During development, you will need to update your schema file (for example, toads new fields), then update the data in your your development environment’s database, and eventually push both the updated schema and the new data to the production database.
+
+<Admonition type="info">
+
+When using MongoDB, be aware that the “coupling” between your schema and the database is purposefully designed to be less rigid than with with SQL databases; MongoDB will not enforce the schema, so you have to verify data integrity.
+
+</Admonition>
+
+These iterative tasks of updating the schema and the database can result in inconsistencies between your schema and the actual data in the database. Let’s look at one scenario where this can happen, and then examine several strategies for you and your team to consider for handling these inconsistencies.
+
+**Scenario**: you need to add a new field to your schema, to accommodate a billing address that is separate from the currently stored delivery address. Your data in the production database currently has no such concept; there is no table or column that reflects this new field.
+
+**Strategy #1, “on demand” updates**: with this strategy, you and your team have agreed that updates can be made to the schema as needed. However, in order to avoid migration failures due to inconsistencies between the data and schema, there is agreement in the team that any new fields added are explicitly defined as `optional`.
+
+So in our scenario above, you can go ahead and add the new `billing address` field to the User model in your Prisma schema, define it as optional, and regenerate your Prisma Client using the `npx prisma generate` command. Next, update your application to reflect the new field, and redeploy your app. The records in the database will be updated as the application’s end-users begin to enter their billing address in the new field.
+
+**Strategy #2, “no breaking changes” updates**: this strategy builds on the first one, with further consensus amongst your team that you don't rename or delete fields, only add new fields, and always define the new fields as optional. This policy can be reenforced by adding checks in the CI/CD process to verify that there are no backwards-incompatible changes to the schema.
+
+**Strategy #3, “all at once” updates**: this strategy uses a script and is similar to traditional migration systems, where all changes to the data is made immediately, so that the schema and data are in synch immediately afterwards. So in the scenario above, you create a script to add billing addresses to all old users, then you can make the field a required field in the app right away because the schema and the data are consistent.
+
+### How to add in missing relations after Introspection
+
+### How to filter for <inlinecode>null</inlinecode> and undefined fields
 
 To understand how MongoDB distinguishes between `null` and undefined fields, consider the example of a `User` model with an optional `name` field:
 
