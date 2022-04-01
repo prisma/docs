@@ -47,7 +47,7 @@ For more information, see [How to migrate old data to new schemas](#how-to-migra
 
 **Filtering for `null` and undefined fields.** MongoDB makes a distinction between setting a field to `null` and not setting it at all, which is not present in relational databases. Prisma currently does not express this distinction, which means that you need to be careful when filtering for `null` and undefined fields. For more information, see [How to filter for `null` and undefined fields](#how-to-filter-for-null-and-undefined-fields).
 
-**Using a replica set.** Prisma uses [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/) internally to avoid partial writes on nested queries. When using transactions, MongoDB requires you to have a [replica set](https://www.mongodb.com/docs/manual/replication/) configured — this is a group of MongoDB processes that maintain the same data set, providing redundancy and high availability. If you use MongoDB's [Atlas](https://www.mongodb.com/atlas/database) hosting service, the replica set is configured for you, but if you are running MongoDB locally you will need to set this up yourself. For more information, see [How to configure a replica set](#how-to-configure-a-replica-set)
+**Using a replica set.** Prisma uses [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/) internally to avoid partial writes on nested queries. When using transactions, MongoDB requires you to have a [replica set](https://www.mongodb.com/docs/manual/replication/) configured — this is a group of MongoDB processes that maintain the same data set, providing redundancy and high availability. If you use MongoDB's [Atlas](https://www.mongodb.com/atlas/database) hosting service, the replica set is configured for you, but if you are running MongoDB locally you will need to set this up yourself. For more information, see [How to configure a replica set](#how-to-configure-a-replica-set).
 
 ## How to implement Prisma with MongoDB
 
@@ -76,6 +76,53 @@ So in our scenario above, you can go ahead and add the new `billing address` fie
 **Strategy #3, “all at once” updates**: this strategy uses a script and is similar to traditional migration systems, where all changes to the data is made immediately, so that the schema and data are in synch immediately afterwards. So in the scenario above, you create a script to add billing addresses to all old users, then you can make the field a required field in the app right away because the schema and the data are consistent.
 
 ### How to add in missing relations after Introspection
+
+After Introspection of a MongoDB database, you will need to manually add in relations between databases. As an example, take a MongoDB database with two collections, `User` and `Post`. The data in these collections has the following format, with a `userId` field linking users to posts:
+
+`User` collection:
+
+- `_id` field with a type of `ObjectID`
+- `email` field with a type of `String`
+
+`Post` collection:
+
+- `_id` field with a type of `ObjectID`
+- `name` field with a type of `String`
+- `userId` with a type of `ObjectID`
+
+On introspection with `db pull`, this is pulled in to the Prisma schema file as follows:
+
+```prisma file=prisma/schema.prisma
+model Post {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
+}
+
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+}
+```
+
+This is missing the relation between the `User` and `Post` models. To fix this, manually add a `user` field to the `Post` model with a `@relation` attribute linking it to the `User` model, and a `posts` field to the `User` model:
+
+```prisma file=prisma/schema.prisma highlight=5;add|11;add
+model Post {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+  posts Post[]
+}
+```
+
+For more information on how to use relations in Prisma, see [our documentation](/concepts/components/prisma-schema/relations).
 
 ### How to filter for <inlinecode>null</inlinecode> and undefined fields
 
