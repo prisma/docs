@@ -34,15 +34,15 @@ Some aspects of using Prisma with MongoDB are the same as when using Prisma with
 
 MongoDB's document-based structure and flexible schemas means that using Prisma with MongoDB differs from using it with a relational database in a number of ways. These are some areas where there are differences that you need to be aware of:
 
-- **Defining IDs:** MongoDB documents have an `_id` field that contain an [ObjectID](https://www.mongodb.com/docs/manual/reference/bson-types/#std-label-objectid). This needs to be mapped to a Prisma field. For more information, see [Defining IDs in MongoDB](/concepts/components/prisma-schema/data-model#defining-ids-in-mongodb).
+- **Defining IDs**: MongoDB documents have an `_id` field that contain an [ObjectID](https://www.mongodb.com/docs/manual/reference/bson-types/#std-label-objectid). This needs to be mapped to a Prisma field. For more information, see [Defining IDs in MongoDB](/concepts/components/prisma-schema/data-model#defining-ids-in-mongodb).
 
-- **Migrating old data to new schemas:** In relational databases, all your data must match your schema. If you change the type of a particular field in your schema when you migrate, all the data must also be updated to match. In contrast, MongoDB does not enforce any particular schema, so you need to take care when migrating. For more information, see [How to migrate old data to new schemas](#how-to-migrate-old-data-to-new-schemas).
+- **Migrating old data to new schemas**: In relational databases, all your data must match your schema. If you change the type of a particular field in your schema when you migrate, all the data must also be updated to match. In contrast, MongoDB does not enforce any particular schema, so you need to take care when migrating. For more information, see [How to migrate old data to new schemas](#how-to-migrate-old-data-to-new-schemas).
 
-- **Introspection:** When you introspect an existing database, you will get a schema with no relations and will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-introspection).
+- **Introspection**: When you introspect an existing database, you will get a schema with no relations and will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-introspection).
 
-- **Filtering for `null` and undefined fields:** MongoDB makes a distinction between setting a field to `null` and not setting it at all, which is not present in relational databases. Prisma currently does not express this distinction, which means that you need to be careful when filtering for `null` and undefined fields. For more information, see [How to filter for `null` and undefined fields](#how-to-filter-for-null-and-undefined-fields).
+- **Filtering for `null` and undefined fields**: MongoDB makes a distinction between setting a field to `null` and not setting it at all, which is not present in relational databases. Prisma currently does not express this distinction, which means that you need to be careful when filtering for `null` and undefined fields. For more information, see [How to filter for `null` and undefined fields](#how-to-filter-for-null-and-undefined-fields).
 
-- **Using a replica set:** Prisma uses [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/) internally to avoid partial writes on nested queries. When using transactions, MongoDB requires you to have a [replica set](https://www.mongodb.com/docs/manual/replication/) configured — this is a group of MongoDB processes that maintain the same data set, providing redundancy and high availability. If you use MongoDB's [Atlas](https://www.mongodb.com/atlas/database) hosting service, the replica set is configured for you, but if you are running MongoDB locally you will need to set this up yourself. For more information, see MongoDB's [guide to deploying a replica set](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/).
+- **Using a replica set**: Prisma uses [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/) internally to avoid partial writes on nested queries. When using transactions, MongoDB requires you to have a [replica set](https://www.mongodb.com/docs/manual/replication/) configured — this is a group of MongoDB processes that maintain the same data set, providing redundancy and high availability. If you use MongoDB's [Atlas](https://www.mongodb.com/atlas/database) hosting service, the replica set is configured for you, but if you are running MongoDB locally you will need to set this up yourself. For more information, see MongoDB's [guide to deploying a replica set](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/).
 
 ## How to implement Prisma with MongoDB
 
@@ -60,15 +60,60 @@ When using MongoDB, be aware that the “coupling” between your schema and the
 
 These iterative tasks of updating the schema and the database can result in inconsistencies between your schema and the actual data in the database. Let’s look at one scenario where this can happen, and then examine several strategies for you and your team to consider for handling these inconsistencies.
 
-**Scenario**: you need to add a new field to your schema, to accommodate a billing address that is separate from the currently stored delivery address. Your data in the production database currently has no such concept; there is no table or column that reflects this new field.
+**Scenario**: you need to add a new field to your schema to accommodate a billing address that is separate from the currently stored shipping address. You currently have the following schema in your `schema.prisma` file:
 
-**Strategy #1, “on demand” updates**: with this strategy, you and your team have agreed that updates can be made to the schema as needed. However, in order to avoid migration failures due to inconsistencies between the data and schema, there is agreement in the team that any new fields added are explicitly defined as `optional`.
+```prisma file=prisma/schema.prisma
+model Product {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  name   String  @unique
+}
 
-So in our scenario above, you can go ahead and add the new `billing address` field to the User model in your Prisma schema, define it as optional, and regenerate your Prisma Client using the `npx prisma generate` command. Next, update your application to reflect the new field, and redeploy your app. The records in the database will be updated as the application’s end-users begin to enter their billing address in the new field.
+model Order {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  product         Product  @relation(fields: [productId], references: [id])
+  shippingAddress Address
+  productId       String   @db.ObjectId
+}
 
-**Strategy #2, “no breaking changes” updates**: this strategy builds on the first one, with further consensus amongst your team that you don't rename or delete fields, only add new fields, and always define the new fields as optional. This policy can be reenforced by adding checks in the CI/CD process to verify that there are no backwards-incompatible changes to the schema.
+type Address {
+  street String @id @default(auto()) @map("_id") @db.ObjectId
+  city   String
+  zip    String
+}
+```
 
-**Strategy #3, “all at once” updates**: this strategy uses a script and is similar to traditional migration systems, where all changes to the data is made immediately, so that the schema and data are in synch immediately afterwards. So in the scenario above, you create a script to add billing addresses to all old users, then you can make the field a required field in the app right away because the schema and the data are consistent.
+There are a number of strategies you could use for migrating this schema:
+
+- **"On-demand" updates**: with this strategy, you and your team have agreed that updates can be made to the schema as needed. However, in order to avoid migration failures due to inconsistencies between the data and schema, there is agreement in the team that any new fields added are explicitly defined as optional.
+
+  In our scenario above, you can go ahead and add the new `billingAddress` field to the `User` model in your Prisma schema, and define it as optional:
+
+  ```prisma file=prisma/schema.prisma highlight=10;add
+  model Product {
+    id     String  @id @default(auto()) @map("_id") @db.ObjectId
+    name   String  @unique
+  }
+
+  model Order {
+    id              String   @id @default(auto()) @map("_id") @db.ObjectId
+    product         Product  @relation(fields: [productId], references: [id])
+    shippingAddress Address
+    billingAddress  Address?
+    productId       String   @db.ObjectId
+  }
+
+  type Address {
+    street String @id @default(auto()) @map("_id") @db.ObjectId
+    city   String
+    zip    String
+  }
+  ```
+
+  Then regenerate your Prisma Client using the `npx prisma generate` command. Next, update your application to reflect the new field, and redeploy your app. The records in the database will be updated as the application's users begin to enter their billing address in the new field.
+
+- **"No breaking changes" updates**: this strategy builds on the first one, with further consensus amongst your team that you don't rename or delete fields, only add new fields, and always define the new fields as optional. This policy can be reenforced by adding checks in the CI/CD process to verify that there are no backwards-incompatible changes to the schema.
+
+- **"All-at-once" updates**: this strategy is similar to traditional migrations in relational databases, where all data is updated to reflect the new schema. In the scenario above, you would create a script to add a value for billing addresses to all existing users in your database. You can then make the field a required field in the application because the schema and the data are consistent.
 
 ### How to add in missing relations after Introspection
 
