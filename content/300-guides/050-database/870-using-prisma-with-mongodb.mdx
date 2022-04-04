@@ -58,18 +58,12 @@ When using MongoDB, be aware that the “coupling” between your schema and the
 
 These iterative tasks of updating the schema and the database can result in inconsistencies between your schema and the actual data in the database. Let’s look at one scenario where this can happen, and then examine several strategies for you and your team to consider for handling these inconsistencies.
 
-**Scenario**: you need to add a new field to your schema to accommodate a billing address that is separate from the currently stored shipping address. You currently have the following schema in your `schema.prisma` file:
+**Scenario**: you need to include a phone number for users, as well as an email. You currently have the following `User` model in your `schema.prisma` file:
 
 ```prisma file=prisma/schema.prisma
-model Order {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  shippingAddress Address
-}
-
-type Address {
-  street String @id @default(auto()) @map("_id") @db.ObjectId
-  city   String
-  zip    String
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
 }
 ```
 
@@ -77,27 +71,23 @@ There are a number of strategies you could use for migrating this schema:
 
 - **"On-demand" updates**: with this strategy, you and your team have agreed that updates can be made to the schema as needed. However, in order to avoid migration failures due to inconsistencies between the data and schema, there is agreement in the team that any new fields added are explicitly defined as optional.
 
-  In our scenario above, you can go ahead and add the new `billingAddress` field to the `Order` model in your Prisma schema, and define it as optional:
+  In our scenario above, you can add an optional `phoneNumber` field to the `User` model in your Prisma schema:
 
   ```prisma file=prisma/schema.prisma highlight=4;add
-  model Order {
-    id              String   @id @default(auto()) @map("_id") @db.ObjectId
-    shippingAddress Address
-    billingAddress  Address?
-  }
-
-  type Address {
-    street String @id @default(auto()) @map("_id") @db.ObjectId
-    city   String
-    zip    String
+  model User {
+    id          String  @id @default(auto()) @map("_id") @db.ObjectId
+    email       String
+    phoneNumber String?
   }
   ```
 
-  Then regenerate your Prisma Client using the `npx prisma generate` command. Next, update your application to reflect the new field, and redeploy your app. The records in the database will be updated as the application's users begin to enter their billing address in the new field.
+  Then regenerate your Prisma Client using the `npx prisma generate` command. Next, update your application to reflect the new field, and redeploy your app.
+
+  As the `phoneNumber` field is optional, you can still query the old users where the phone number has not been defined. The records in the database will be updated "on demand" as the application's users begin to enter their phone number in the new field.
 
 - **"No breaking changes" updates**: this strategy builds on the first one, with further consensus amongst your team that you don't rename or delete fields, only add new fields, and always define the new fields as optional. This policy can be reenforced by adding checks in the CI/CD process to verify that there are no backwards-incompatible changes to the schema.
 
-- **"All-at-once" updates**: this strategy is similar to traditional migrations in relational databases, where all data is updated to reflect the new schema. In the scenario above, you would create a script to add a value for billing addresses to all existing users in your database. You can then make the field a required field in the application because the schema and the data are consistent.
+- **"All-at-once" updates**: this strategy is similar to traditional migrations in relational databases, where all data is updated to reflect the new schema. In the scenario above, you would create a script to add a value for the phone number field to all existing users in your database. You can then make the field a required field in the application because the schema and the data are consistent.
 
 ### How to add in missing relations after Introspection
 
