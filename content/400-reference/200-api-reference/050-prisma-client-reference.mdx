@@ -4313,6 +4313,371 @@ const posts = await prisma.post.findMany({
 })
 ```
 
+## Composite type methods
+
+<Admonition type="warning">
+
+Available for MongoDB only in Prisma `3.10.0` and later.
+
+</Admonition>
+
+Composite type methods allow you to create, update and delete [composite types](/concepts/components/prisma-client/composite-types).
+
+### <inlinecode>set</inlinecode>
+
+Use `set` to overwrite the value of a composite type.
+
+#### Remarks
+
+- The `set` keyword is optional - you can set the value directly:
+
+```ts
+photos: [
+  { height: 100, width: 200, url: '1.jpg' },
+  { height: 100, width: 200, url: '2.jpg' },
+]
+```
+
+#### Examples
+
+##### Set the <inlinecode>shippingAddress</inlinecode> composite type within a new <inlinecode>order</inlinecode>
+
+```ts
+const order = await prisma.order.create({
+  data: {
+    // Normal relation
+    product: { connect: { id: 'some-object-id' } },
+    color: 'Red',
+    size: 'Large',
+    // Composite type
+    shippingAddress: {
+      set: {
+        street: '1084 Candycane Lane',
+        city: 'Silverlake',
+        zip: '84323',
+      },
+    },
+  },
+})
+```
+
+##### Set an optional composite type to <inlinecode>null</inlinecode>
+
+```ts
+const order = await prisma.order.create({
+  data: {
+    // Embedded optional type, set to null
+    billingAddress: {
+      set: null,
+    },
+  },
+})
+```
+
+### <inlinecode>unset</inlinecode>
+
+Use `unset` to unset the value of a composite type. Unlike `set: null`, this removes the field entirely from the MongoDB document.
+
+#### Examples
+
+##### Remove the <inlinecode>billingAddress</inlinecode> from an <inlinecode>order</inlinecode>
+
+```ts
+const order = await prisma.order.update({
+  where: {
+    id: 'some-object-id',
+  },
+  data: {
+    billingAddress: {
+      // Unset the billing address
+      // Removes "billingAddress" field from order
+      unset: true,
+    },
+  },
+})
+```
+
+### <inlinecode>update</inlinecode>
+
+Use `update` to update fields within a required composite type.
+
+#### Remarks
+
+The `update` method cannot be used on optional types. Instead, use [upsert](#upsert-2)
+
+#### Examples
+
+##### Update the zip field of a <inlinecode>shippingAddress</inlinecode> composite type
+
+```ts
+const order = await prisma.order.update({
+  where: {
+    id: 'some-object-id',
+  },
+  data: {
+    shippingAddress: {
+      // Update just the zip field
+      update: {
+        zip: '41232',
+      },
+    },
+  },
+})
+```
+
+### <inlinecode>upsert</inlinecode>
+
+Use `upsert` to update an existing optional composite type if it exists, and otherwise set the composite type.
+
+#### Remarks
+
+The `upsert` method cannot be used on required types. Instead, use [update](#update-2)
+
+#### Examples
+
+##### Create a new <inlinecode>billingAddress</inlinecode> if it doesn't exist, and otherwise update it
+
+```ts
+const order = await prisma.order.update({
+  where: {
+    id: 'some-object-id',
+  },
+  data: {
+    billingAddress: {
+      // Create the address if it doesn't exist,
+      // otherwise update it
+      upsert: {
+        set: {
+          street: '1084 Candycane Lane',
+          city: 'Silverlake',
+          zip: '84323',
+        },
+        update: {
+          zip: '84323',
+        },
+      },
+    },
+  },
+})
+```
+
+### <inlinecode>push</inlinecode>
+
+Use `push` to push values to the end of a list of composite types.
+
+#### Examples
+
+##### Add a new photo to the <inlinecode>photos</inlinecode> list
+
+```ts
+const product = prisma.product.update({
+  where: {
+    id: 10,
+  },
+  data: {
+    photos: {
+      // Push a photo to the end of the photos list
+      push: [{ height: 100, width: 200, url: '1.jpg' }],
+    },
+  },
+})
+```
+
+## Composite type filters
+
+<Admonition type="warning">
+
+Available for MongoDB only in Prisma `3.11.0` and later.
+
+</Admonition>
+
+Composite type filters allow you to filter the contents of [composite types](/concepts/components/prisma-client/composite-types).
+
+### Reference
+
+```ts file=index.d.ts
+export type AddressCompositeFilter = {
+  equals?: AddressObjectEqualityInput
+  is?: AddressWhereInput
+  isNot?: AddressWhereInput
+}
+```
+
+```ts file=index.d.ts
+export type PhotoCompositeListFilter = {
+  equals?: Enumerable<PhotoObjectEqualityInput>
+  every?: PhotoWhereInput
+  some?: PhotoWhereInput
+  none?: PhotoWhereInput
+  isEmpty?: boolean
+}
+```
+
+### <inlinecode>equals</inlinecode>
+
+Use `equals` to filter results by matching a composite type or a list of composite types. Requires all required fields of the composite type to match.
+
+#### Remarks
+
+When matching optional fields, you need to distinguish between undefined (missing) fields of the document, and fields that have been explicitly set to `null`:
+
+- If you omit an optional field, it will match undefined fields, but not fields that have been set to `null`
+- If you filter for `null` values of an optional field with `equals: { ... exampleField: null ... }`, then it will match only documents where the field has been set to `null`, and not undefined fields
+
+The ordering of fields and lists matters when using `equals`:
+
+- For fields, `{ "a": "1", "b": "2" }` and `{ "b": "2", "a": "1" }` are not considered equal
+- For lists, `[ { "a": 1 }, { "a": 2 } ]` and `[ { "a": 2 }, { "a": 1 } ]` are not considered equal
+
+#### Examples
+
+##### Find orders that exactly match the given <inlinecode>shippingAddress</inlinecode>
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      equals: {
+        street: '555 Candy Cane Lane',
+        city: 'Wonderland',
+        zip: '52337',
+      },
+    },
+  },
+})
+```
+
+##### Find products with photos that match all of a list of <inlinecode>url</inlinecode>s
+
+```ts
+const product = prisma.product.findMany({
+  where: {
+    equals: {
+      photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
+    },
+  },
+})
+```
+
+### <inlinecode>is</inlinecode>
+
+Use `is` to filter results by matching specific fields within composite types.
+
+#### Examples
+
+##### Find orders with a <inlinecode>shippingAddress</inlinecode> that matches the given street name
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      is: {
+        street: '555 Candy Cane Lane',
+      },
+    },
+  },
+})
+```
+
+### <inlinecode>isNot</inlinecode>
+
+Use `isNot` to filter results for composite type fields that do not match.
+
+#### Examples
+
+##### Find orders with a <inlinecode>shippingAddress</inlinecode> that does not match the given zip code
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      isNot: {
+        zip: '52337',
+      },
+    },
+  },
+})
+```
+
+### <inlinecode>isEmpty</inlinecode>
+
+Use `isEmpty` to filter results for an empty list of composite types.
+
+#### Examples
+
+##### Find products with no photos
+
+```ts
+const product = prisma.product.findMany({
+  where: {
+    photos: {
+      isEmpty: true,
+    },
+  },
+})
+```
+
+### <inlinecode>every</inlinecode>
+
+Use `every`to filter for lists of composite types where every item in the list matches the condition
+
+#### Examples
+
+##### Find the first product where every photo has a <inlinecode>height</inlinecode> of <inlinecode>™200™</inlinecode>
+
+```ts
+const product = prisma.product.findFirst({
+  where: {
+    photos: {
+      some: {
+        { height: 200 },
+      }
+    }
+  },
+})
+```
+
+### <inlinecode>some</inlinecode>
+
+Use `some` to filter for lists of composite types where one or more items in the list match the condition.
+
+#### Examples
+
+##### Find the first product where one or more photos have a <inlinecode>url</inlinecode> of <inlinecode>™2.jpg™</inlinecode>
+
+```ts
+const product = prisma.product.findFirst({
+  where: {
+    photos: {
+      some: {
+        { url: "2.jpg" },
+      }
+    }
+  },
+})
+```
+
+### <inlinecode>none</inlinecode>
+
+Use `none` to filter for lists of composite types where no items in the list match the condition.
+
+#### Examples
+
+##### Find the first product where no photos have a <inlinecode>url</inlinecode> of <inlinecode>™2.jpg™</inlinecode>
+
+```ts
+const product = prisma.product.findFirst({
+  where: {
+    photos: {
+      none: {
+        { url: "2.jpg" },
+      }
+    }
+  },
+})
+
+```
+
 ## Atomic number operations
 
 Atomic operations on update is available for number field types (`Float` and `Int`). This feature allows you to update a field based on its **current** value (such as _subtracting_ or _dividing_) without risking a race condition.
