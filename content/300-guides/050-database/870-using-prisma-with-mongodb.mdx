@@ -38,7 +38,7 @@ MongoDB's document-based structure and flexible schemas means that using Prisma 
 
 - **Introspection and Prisma relations**: When you introspect an existing MongoDB database, you will get a schema with no relations and will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-introspection).
 
-- **Filtering for `null` and undefined fields**: MongoDB makes a distinction between setting a field to `null` and not setting it at all, which is not present in relational databases. Prisma currently does not express this distinction, which means that you need to be careful when filtering for `null` and undefined fields.
+- **Filtering for `null` and missing fields**: MongoDB makes a distinction between setting a field to `null` and not setting it at all, which is not present in relational databases. Prisma currently does not express this distinction, which means that you need to be careful when filtering for `null` and missing fields.
 
 - **Enabling replication**: Prisma uses [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/) internally to avoid partial writes on nested queries. When using transactions, MongoDB requires replication of your data set to be enabled. To do this, you will need to configure a [replica set](https://www.mongodb.com/docs/manual/replication/) — this is a group of MongoDB processes that maintain the same data set. Note that it is still possible to use a single database, by creating a replica set with only one node in it. If you use MongoDB's [Atlas](https://www.mongodb.com/atlas/database) hosting service, the replica set is configured for you, but if you are running MongoDB locally you will need to set up a replica set yourself. For more information, see MongoDB's [guide to deploying a replica set](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/).
 
@@ -95,7 +95,7 @@ There are a number of strategies you could use for migrating this schema:
   }
   ```
 
-  Then when you encounter an undefined `phoneNumber`, the value will be coerced into `000-000-0000`.
+  Then when you encounter a missing `phoneNumber`, the value will be coerced into `000-000-0000`.
 
 - **"No breaking changes" updates**: this strategy builds on the first one, with further consensus amongst your team that you don't rename or delete fields, only add new fields, and always define the new fields as optional. This policy can be reenforced by adding checks in the CI/CD process to verify that there are no backwards-incompatible changes to the schema.
 
@@ -152,9 +152,9 @@ model User {
 
 For more information on how to use relations in Prisma, see [our documentation](/concepts/components/prisma-schema/relations).
 
-### How to filter for <inlinecode>null</inlinecode> and undefined fields
+### How to filter for <inlinecode>null</inlinecode> and missing fields
 
-To understand how MongoDB distinguishes between `null` and undefined fields, consider the example of a `User` model with an optional `name` field:
+To understand how MongoDB distinguishes between `null` and missing fields, consider the example of a `User` model with an optional `name` field:
 
 ```ts
 model User {
@@ -213,12 +213,12 @@ Next, try creating a record without explicitly setting the `name` field:
 <cmd>
 
 ```ts
-const createUndefined = await prisma.user.create({
+const createMissing = await prisma.user.create({
   data: {
     email: 'user2@prisma.io',
   },
 })
-console.log(createUndefined)
+console.log(createMissing)
 ```
 
 </cmd>
@@ -248,7 +248,7 @@ Prisma still returns `name: null`, but if you look in the database directly you 
 
 Prisma returns the same result in both cases, because we currently don't have a way to specify this difference in MongoDB between fields that are `null` in the underlying database, and fields that are not defined at all — see [this Github issue](https://github.com/prisma/prisma/issues/12555) for more information.
 
-This means that you currently have to be careful when filtering for `null` and undefined fields. Filtering for records with `name: null` will only return the first record, with the `name` explicitly set to `null`:
+This means that you currently have to be careful when filtering for `null` and missing fields. Filtering for records with `name: null` will only return the first record, with the `name` explicitly set to `null`:
 
 <CodeWithResult expanded={true}>
 
@@ -283,14 +283,14 @@ console.log(findNulls)
 
 This is because `name: null` is checking for equality, and a non-existing field isn't equal to `null`.
 
-To include undefined fields as well, use the [`isSet` filter](/reference/api-reference/prisma-client-reference#isset) to explicitly search for fields which are either `null` or not set. This will return both records:
+To include missing fields as well, use the [`isSet` filter](/reference/api-reference/prisma-client-reference#isset) to explicitly search for fields which are either `null` or not set. This will return both records:
 
 <CodeWithResult expanded={true}>
 
 <cmd>
 
 ```ts
-const findNullOrUndefined = await prisma.user.findMany({
+const findNullOrMissing = await prisma.user.findMany({
   where: {
     OR: [
       {
@@ -304,7 +304,7 @@ const findNullOrUndefined = await prisma.user.findMany({
     ],
   },
 })
-console.log(findNullOrUndefined)
+console.log(findNullOrMissing)
 ```
 
 </cmd>
