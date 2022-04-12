@@ -27,7 +27,7 @@ const config = {
       to: '/concepts/data-platform/data-proxy',
     },
     {
-      from: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-abc',
+      from: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-sometext',
       to: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-prisma',
     },
   ],
