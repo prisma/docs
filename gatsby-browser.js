@@ -19,7 +19,14 @@ exports.onRouteUpdate = ({ location }) => {
     return location.href.includes(redirect.from)
   })
   if (isRedirectablePath[0]) {
-    const newpath = location.href.replace(isRedirectablePath[0].from, isRedirectablePath[0].to)
-    window.location.replace(newpath)
+    const fromPathWithoutHash = isRedirectablePath[0].from.split('#')
+    const toPathWithoutHash = isRedirectablePath[0].to.split('#')
+    if (fromPathWithoutHash[0] === toPathWithoutHash[0]) {
+      window.location.hash = toPathWithoutHash[1]
+    } else {
+      const newpath = location.href.replace(isRedirectablePath[0].from, isRedirectablePath[0].to)
+      console.log(newpath)
+      window.location.replace(newpath)
+    }
   }
 }
