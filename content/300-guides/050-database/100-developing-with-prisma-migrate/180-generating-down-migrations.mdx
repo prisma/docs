@@ -1,0 +1,122 @@
+---
+title: Generating down migrations
+metaTitle: Generating down migrations
+metaDescription: How to generate down migrations
+tocDepth: 2
+---
+
+<TopBlock>
+
+This guide describes how to generate a down migration that reverses a given [migration file](/concepts/components/prisma-migrate#migration-history).
+
+</TopBlock>
+
+## About down migrations
+
+!!intro text
+
+## Considerations when generating down migrations
+
+!!text here:
+
+- manual SQL lost?
+- relational databases only?
+- general issues with just reversing schema not data
+
+## How to generate down migrations
+
+Start with the following example schema:
+
+```prisma file=schema.prisma
+model Post {
+  id       Int     @id @default(autoincrement())
+  title    String  @db.VarChar(255)
+  content  String?
+  author   User    @relation(fields: [authorId], references: [id])
+  authorId Int
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  posts Post[]
+}
+```
+
+### Creating the down migration
+
+1. Edit your Prisma schema. In this example, we'll add a new `Profile` model:
+
+   ```prisma file=schema.prisma highlight=8-14;add|20;add
+   model Post {
+     id       Int     @id @default(autoincrement())
+     title    String  @db.VarChar(255)
+     content  String?
+     author   User    @relation(fields: [authorId], references: [id])
+     authorId Int
+   }
+   
+   model Profile {
+     id     Int     @id @default(autoincrement())
+     bio    String?
+     user   User    @relation(fields: [userId], references: [id])
+     userId Int     @unique
+   }
+   
+   model User {
+     id      Int      @id @default(autoincrement())
+     name    String?
+     posts   Post[]
+     profile Profile?
+   }
+   ```
+
+2. Generate the SQL file for the down migration.
+
+   First method:
+
+   - more robust but requires shadow database
+
+   ```terminal
+   npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma \
+    --to-migrations prisma/migrations --shadow-database-url $SHADOW_DATABASE_URL \
+    --script > down.sql
+   ```
+
+   Second method:
+
+   - requires database to have up-to-date schema
+
+   ```terminal
+   npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma \
+    --to-schema-datasource prisma/schema.prisma --script > down.sql
+   ```
+
+3. Generate the "up" migration with a name of `add_profile`:
+
+   ```terminal
+   npx prisma migrate dev --name add_profile
+   ```
+
+   This will create a new `<timestamp>_add_user` directory inside the `prisma/migrations` directory, with your new `migration.sql` up migration file inside.
+
+4. Copy your `down.sql` file into the new directory along with the up migration file.
+
+### Applying the down migration
+
+To apply the down migration on your production database:
+
+1. Use `db execute` to run your `down.sql` file on the database server:
+
+   ```terminal
+   npx prisma db execute --file ./down.sql --schema prisma/schema.prisma
+   ```
+
+2. Use `migrate resolve` to record that you ran the down migration in the migrations table:
+
+   ```terminal
+   npx prisma migrate resolve --rolled-back ??
+   ```
+
+Use db execute to apply the SQL script for the down migration.
+Use prisma migrate resolve --rolled-back the-migration-nameto record that you ran the down migration in the migrations table.
