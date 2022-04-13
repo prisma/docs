@@ -10,28 +10,28 @@ This guide describes how to migrate from Mongoose to Prisma. It uses an extended
 
 This migration guide uses MongoDB as the example database.
 
-You can learn how Prisma compares to Sequelize on the [Prisma vs Sequelize](/concepts/more/comparisons/prisma-and-sequelize) page.
+You can learn how Prisma compares to Mongoose on the [Prisma vs Mongoose](/concepts/more/comparisons/prisma-and-mongoose) page.
 
 </TopBlock>
 
 ## Overview of the migration process
 
-Note that the steps for migrating from Sequelize to Prisma are always the same, no matter what kind of application or API layer you're building:
+Note that the steps for migrating from Mongoose to Prisma are always the same, no matter what kind of application or API layer you're building:
 
 1. Install the Prisma CLI
 1. Introspect your database
 1. Install Prisma Client
-1. Gradually replace your Sequelize queries with Prisma Client
+1. Gradually replace your Mongoose queries with Prisma Client
 
-These steps apply, no matter if you're building a REST API (e.g. with Express, koa or NestJS), a GraphQL API (e.g. with Apollo Server, TypeGraphQL or Nexus) or any other kind of application that uses Sequelize for database access.
+These steps apply, no matter if you're building a REST API (e.g. with Express, koa or NestJS), a GraphQL API (e.g. with Apollo Server, TypeGraphQL or Nexus) or any other kind of application that uses Mongoose for database access.
 
-Prisma lends itself really well for **incremental adoption**. This means, you don't have migrate your entire project from Sequelize to Prisma at once, but rather you can _step-by-step_ move your database queries from Sequelize to Prisma.
+Prisma lends itself really well for **incremental adoption**. This means, you don't have migrate your entire project from Mongoose to Prisma at once, but rather you can _step-by-step_ move your database queries from Mongoose to Prisma.
 
 ## Overview of the sample project
 
-For this guide, we'll use a REST API built with Express as a [sample project](https://github.com/prisma/migrate-from-mongoose-to-prisma) to migrate to Prisma. It has four models/entities:
+For this guide, we'll use a REST API built with Express as a [sample project](https://github.com/prisma/migrate-from-mongoose-to-prisma) to migrate to Prisma. It has three documents and one sub-document (embedded document):
 
-<TabbedContent tabs={[<FileWithIcon text="User.js" icon="file"/>, <FileWithIcon text="Post.js" icon="file"/>, <FileWithIcon text="Category.js" icon="file"/>]}>
+<TabbedContent tabs={[<FileWithIcon text="post.js" icon="file"/>, <FileWithIcon text="user.js" icon="file"/>, <FileWithIcon text="Category.js" icon="file"/>]}>
 
 <tab>
 
@@ -40,30 +40,25 @@ const mongoose = require('mongoose')
 
 const Schema = mongoose.Schema
 
-const PostSchema = new Schema(
-  {
-    title: String,
-    content: String,
-    published: {
-      type: Boolean,
-      default: false,
-    },
-    author: {
-      type: Schema.Types.ObjectId,
-      ref: 'author',
-      required: true,
-    },
-    categories: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Category',
-      },
-    ],
+const PostSchema = new Schema({
+  title: String,
+  content: String,
+  published: {
+    type: Boolean,
+    default: false,
   },
-  {
-    collection: 'Post',
-  }
-)
+  author: {
+    type: Schema.Types.ObjectId,
+    ref: 'author',
+    required: true,
+  },
+  categories: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+    },
+  ],
+})
 
 module.exports = mongoose.model('Post', PostSchema)
 ```
@@ -82,26 +77,21 @@ const ProfileSchema = new Schema(
     bio: String,
   },
   {
-    collection: 'Profile',
+    _id: false,
   }
 )
 
-const UserSchema = new Schema(
-  {
-    name: String,
-    email: {
-      type: String,
-      unique: true,
-    },
-    profile: {
-      type: ProfileSchema,
-      default: {},
-    },
+const UserSchema = new Schema({
+  name: String,
+  email: {
+    type: String,
+    unique: true,
   },
-  {
-    collection: 'User',
-  }
-)
+  profile: {
+    type: ProfileSchema,
+    default: () => ({}),
+  },
+})
 
 module.exports = mongoose.model('User', UserSchema)
 ```
@@ -115,17 +105,12 @@ const mongoose = require('mongoose')
 
 const Schema = mongoose.Schema
 
-const CategorySchema = new Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
+const CategorySchema = new Schema({
+  name: {
+    type: String,
+    required: true,
   },
-  {
-    collection: 'Category',
-  }
-)
+})
 
 module.exports = mongoose.model('Category', CategorySchema)
 ```
@@ -134,37 +119,31 @@ module.exports = mongoose.model('Category', CategorySchema)
 
 </TabbedContent>
 
-The models have the following relations:
+The models/documents have the following relationships:
 
 - 1-n: `User` ↔ `Post`
 - m-n: `Post` ↔ `Category`
-- Embedded document: `User` ↔ `Profile`
-
-<!--
-  Explain MongoDB is schemaless
-  Prisma uses the data
-  Run the seed to populate
- -->
-
-The corresponding tables have been created using a generated Sequelize migration.
+- Sub-document/ Embedded document: `User` ↔ `Profile`
 
 In this guide, the route handlers are located in the `src/controllers` directory. The models are located in the `src/models` directory. From there, they are pulled into a central `src/routes.js` file which is used to set up the required routes in `src/index.js`:
 
 ```
-└── blog-sequelize
+└── blog-mongoose
     ├── package.json
     └──src
         ├── controllers
         │   ├── post.js
         │   └── user.js
         ├── models
-        │   ├── Category.js
-        │   ├── Post.js
-        │   ├── Profile.js
-        │   └── User.js
+        │   ├── category.js
+        │   ├── post.js
+        │   └── user.js
         ├── index.js
-        └── routes.js
+        ├── routes.js
+        └── seed.js
 ```
+
+The example repository contains a `seed` script inside the `package.json` file. Run `npm run seed` to populate your database with the sample data in the `./src/seed.js` file.
 
 ## Step 1. Install the Prisma CLI
 
@@ -184,10 +163,10 @@ Before you can introspect your database, you need to set up your [Prisma schema]
 npx prisma init
 ```
 
-This command created a new directory called `prisma` with the following files for you:
+This command created:
 
-- `schema.prisma`: Your Prisma schema file that specifies your database connection and models
-- `.env`: A [`dotenv`](https://github.com/motdotla/dotenv) to configure your database connection URL as an environment variable
+- A new directory called `prisma` with a `schema.prisma`: Your Prisma schema file that specifies your database connectionmodels
+- `.env`: A [`dotenv`](https://github.com/motdotla/dotenv) at the root of your project, if it didn't exist, to configure your database connection URL as an environment variable
 
 The Prisma schema file currently looks as follows:
 
@@ -196,7 +175,7 @@ The Prisma schema file currently looks as follows:
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -213,149 +192,21 @@ If you're using VS Code, be sure to install the [Prisma VS Code extension](https
 
 ### 2.2. Connect your database
 
-If you're not using PostgreSQL, you need to adjust the `provider` field on the `datasource` block to the database you currently use:
+You can configure your [database connection URL](/reference/database-reference/connection-urls#mongodb) in the `.env` file.
 
-<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="Microsoft SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>
+The format of the connection URL Mongoose uses is similar to the one Prisma will use.
 
-<tab>
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+```bash file=.env
+mongodb://alice:myPassword43@localhost:27017/blog-mongoose
 ```
 
-</tab>
-
-<tab>
-
-```prisma
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-```
-
-</tab>
-
-<tab>
-
-```prisma
-datasource db {
-  provider = "sqlserver"
-  url      = env("DATABASE_URL")
-}
-```
-
-</tab>
-
-<tab>
-
-```prisma
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
-```
-
-</tab>
-
-</TabbedContent>
-
-Once that's done, you can configure your [database connection URL](/reference/database-reference/connection-urls) in the `.env` file. Here's how the database connection from Sequelize maps to the connection URL format used by Prisma:
-
-<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>, <FileWithIcon text="Microsoft SQL Server" icon="database"/>, <FileWithIcon text="SQLite" icon="database"/>]}>
-
-<tab>
-
-Assume you have the following database connection details in `src/models/index.js`:
-
-```js file=src/models/index.js
-const sequelize = new Sequelize('blog-sequelize', 'alice', 'myPassword42', {
-  host: 'localhost',
-  dialect: 'postgres',
-})
-```
-
-The respective connection URL would look as follows in Prisma:
-
-```sh file=.env
-DATABASE_URL="postgresql://alice:myPassword42@localhost:5432/blog-sequelize"
-```
-
-Note that you can optionally configure the PostgreSQL [schema](https://www.postgresql.org/docs/9.1/ddl-schemas.html) by appending the `schema` argument to the connection URL:
-
-```sh file=.env
-DATABASE_URL="postgresql://alice:myPassword42@localhost:5432/blog-sequelize?schema=myschema"
-```
-
-If not provided, the default schema called `public` is being used.
-
-</tab>
-
-<tab>
-
-Assume you have the following database connection details in `src/models/index.js`:
-
-```js file=src/models/index.js
-const sequelize = new Sequelize('blog-sequelize', 'alice', 'myPassword42', {
-  host: 'localhost',
-  dialect: 'postgres',
-})
-```
-
-The respective connection URL would look as follows in Prisma:
-
-```sh file=.env
-DATABASE_URL="mysql://alice:myPassword42@localhost:3306/blog-sequelize"
-```
-
-</tab>
-
-<tab>
-
-Assume you have the following database connection details in `src/models/index.js`:
-
-```js file=src/models/index.js
-const sequelize = new Sequelize('blog-sequelize', 'alice', 'myPassword42', {
-  host: 'localhost',
-  dialect: 'mssql',
-})
-```
-
-The respective connection URL would look as follows in Prisma:
-
-```sh file=.env
-DATABASE_URL="sqlserver://localhost:1433;database=blog-sequelize;user=alice;password=myPassword42;trustServerCertificate=true"
-```
-
-</tab>
-
-<tab>
-
-Assume you have the following database connection details in `src/models/index.js`:
-
-```js file=src/models/index.js
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: '../../blog-sequelize.sqlite',
-})
-```
-
-The respective connection URL would look as follows in Prisma:
-
-```sh file=.env
-DATABASE_URL="file:./blog-sequelize.db"
-```
-
-</tab>
-
-</TabbedContent>
+Refer to the [MongoDB connection URL specification](https://www.mongodb.com/docs/manual/reference/connection-string/#connection-string-options) for further details.
 
 ### 2.3. Run Prisma's introspection
 
 With your connection URL in place, you can [introspect](/concepts/components/introspection) your database to generate your Prisma models:
+
+> **Note**: MongoDB is a _schemaless_ database. To incrementally adopt Prisma in your project, ensure your database is populated with sample data. Prisma introspects a MongoDB schema by sampling data stored and inferring the schema from the data in the database
 
 ```terminal copy
 npx prisma db pull
@@ -364,130 +215,126 @@ npx prisma db pull
 This creates the following Prisma models:
 
 ```prisma file=prisma/schema.prisma
-model Categories {
-  id             Int              @id @default(autoincrement())
-  name           String
-  createdAt      DateTime
-  updatedAt      DateTime
-  PostCategories PostCategories[]
+type UsersProfile {
+  bio String
 }
 
-model PostCategories {
-  createdAt  DateTime
-  updatedAt  DateTime
-  CategoryId Int
-  PostId     Int
-  Categories Categories @relation(fields: [CategoryId], references: [id])
-  Posts      Posts      @relation(fields: [PostId], references: [id])
-
-  @@id([CategoryId, PostId])
+model categories {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  v    Int    @map("__v")
+  name String
 }
 
-model Posts {
-  id             Int              @id @default(autoincrement())
-  title          String
-  content        String?
-  published      Boolean?         @default(false)
-  createdAt      DateTime
-  updatedAt      DateTime
-  authorId       Int?
-  Users          Users?           @relation(fields: [authorId], references: [id])
-  PostCategories PostCategories[]
+model posts {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  v          Int      @map("__v")
+  author     String   @db.ObjectId
+  categories String[] @db.ObjectId
+  content    String
+  published  Boolean
+  title      String
 }
 
-model Profiles {
-  id        Int      @id @default(autoincrement())
-  bio       String
-  createdAt DateTime
-  updatedAt DateTime
-  userId    Int?
-  Users     Users?   @relation(fields: [userId], references: [id])
-}
-
-model SequelizeMeta {
-  name String @id
-}
-
-model Users {
-  id        Int       @id @default(autoincrement())
-  name      String?
-  email     String    @unique
-  createdAt DateTime
-  updatedAt DateTime
-  Posts     Posts[]
-  Profiles  Profiles?
+model users {
+  id      String        @id @default(auto()) @map("_id") @db.ObjectId
+  v       Int           @map("__v")
+  email   String        @unique(map: "email_1")
+  name    String
+  profile UsersProfile?
 }
 ```
 
-### 2.4. Adjust `createdAt` and `updatedAt` fields
+The generated Prisma models represent the collections and are the foundation of your programmatic Prisma Client API which allows you to send queries to your database.
 
-The generated Prisma models represent your database tables and are the foundation for your programmatic Prisma Client API which allows you to send queries to your database.
-You'll adjust the `createdAt` and `updatedAt` fields in our models. Sequelize doesn't add the `DEFAULT` constraint to `createdAt` when creating the tables in the database.
-Therefore, you'll add `@default(now())` and `@updatedAt` attributes to the `createdAt` and `updatedAt` columns respectively.
-To learn more how Prisma does this, you can read more [`@default(now())`](/reference/api-reference/prisma-schema-reference#now) and [`@updatedAt`](/reference/api-reference/prisma-schema-reference#updatedat) here.
-Our updated schema will be as follows:
+### 2.4. Adjust the relationships
+
+MongoDB doesn't support relations between different collections. However, you can create references from one document to another using the `ObjectId` schema field. or from one document to many using an array of `ObjectIds`. The reference will store id(s) of the related document(s). You can use the `populate()` method Mongoose provides to populate the reference with the data of the related document.
+
+Update the 1-n relationship between `Post` <-> `User`
+
+<!-- TODO: tab with diff and another with final version -->
 
 ```prisma file=prisma/schema.prisma
-model Categories {
-  id             Int              @id @default(autoincrement())
-  name           String
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  PostCategories PostCategories[]
+type UsersProfile {
+  bio String
 }
 
-model PostCategories {
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  CategoryId Int
-  PostId     Int
-  Categories Categories @relation(fields: [CategoryId], references: [id])
-  Posts      Posts      @relation(fields: [PostId], references: [id])
-
-  @@id([CategoryId, PostId])
+model categories {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  v    Int    @map("__v") @ignore
+  name String
 }
 
-model Posts {
-  id             Int              @id @default(autoincrement())
-  title          String
-  content        String?
-  published      Boolean?         @default(false)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  authorId       Int?
-  Users          Users?           @relation(fields: [authorId], references: [id])
-  PostCategories PostCategories[]
+model posts {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  content   String
+  published Boolean
+  v         Int     @map("__v")
+
+  author   users  @relation(fields: [authorId], references: [id])
+  authorId String @map("author") @db.ObjectId
+
+  categories String[] @db.ObjectId
 }
 
-model Profiles {
-  id        Int      @id @default(autoincrement())
-  bio       String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    Int?
-  Users     Users?   @relation(fields: [userId], references: [id])
-}
-
-model SequelizeMeta {
-  name String @id
-}
-
-model Users {
-  id        Int       @id @default(autoincrement())
-  name      String?
-  email     String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Posts     Posts[]
-  Profiles  Profiles?
+model users {
+  id      String        @id @default(auto()) @map("_id") @db.ObjectId
+  v       Int           @map("__v")
+  email   String        @unique(map: "email_1")
+  name    String
+  profile UsersProfile?
+  posts   posts[]
 }
 ```
 
-### 2.5. Adjust the Prisma schema (optional)
+<!-- highlight the mapping of author to authorId -->
 
-The models that were generated via introspection currently _exactly_ map to your database tables. In this section, you'll learn how you can adjust the naming of the Prisma models to adhere to [Prisma's naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions).
+Update the m-n between `Post` <-> `Category` references
 
-All of these adjustment are entirely optional and you are free to skip to the next step already if you don't want to adjust anything for now. You can go back and make the adjustments at any later point.
+```prisma file=prisma/schema.prisma
+type UsersProfile {
+  bio String
+}
+
+model categories {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  v    Int    @map("__v")
+
+  posts    posts[]  @relation(fields: [post_ids], references: [id])
+  post_ids String[] @db.ObjectId
+}
+
+model posts {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  content   String
+  published Boolean
+  v         Int     @map("__v")
+
+  author   users  @relation(fields: [authorId], references: [id])
+  authorId String @map("author") @db.ObjectId
+
+  categories   categories[] @relation(fields: [category_ids], references: [id])
+  category_ids String[]     @db.ObjectId
+}
+
+model users {
+  id      String        @id @default(auto()) @map("_id") @db.ObjectId
+  v       Int           @map("__v")
+  email   String        @unique(map: "email_1")
+  name    String
+  profile UsersProfile?
+  posts   posts[]
+}
+```
+
+### 2.5 Adjust the Prisma schema (optional)
+
+The models that were generated via introspection currently _exactly_ map to your database collections. In this section, you'll learn how you can adjust the naming of the Prisma models to adhere to [Prisma's naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions).
+
+Some of these adjustment are entirely optional and you are free to skip to the next step already if you don't want to adjust anything for now. You can go back and make the adjustments at any later point.
 
 As opposed to the current snake_case notation of Prisma models, Prisma's naming conventions are:
 
@@ -496,9 +343,15 @@ As opposed to the current snake_case notation of Prisma models, Prisma's naming 
 
 You can adjust the naming by _mapping_ the Prisma model and field names to the existing table and column names in the underlying database using `@@map` and `@map`.
 
-Also note that you can rename [relation fields](/concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural.
+<Tip>
 
-Sequelize generates a `SequelizeMeta` model that is used internally by the library that is not needed. Therefore, you'll manually delete it from the schema.
+You can use the [rename symbol](https://code.visualstudio.com/docs/editor/refactoring#_rename-symbol) operation to refactor model names by by highlighting the model name, pressing <kbd>F2</kbd>, and finally typing the desired name. This will rename all instances the model name is referenced, add the `@@map()` attribute to the existing model with it's former name.
+
+</Tip>
+
+If your schema includes a [`versionKey`](https://mongoosejs.com/docs/guide.html#versionKey), change it to an optional field and add the `@ignore` attribute to the `v` field to exclude it from the generated Prisma Client.
+
+Also note that you can rename [relation fields](/concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural.
 
 Here's an adjusted version of the Prisma schema that addresses these points:
 
@@ -512,77 +365,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Category {
-  id             Int                @id @default(autoincrement())
-  name           String
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  postCategories PostToCategories[]
-
-  @@map("Categories")
+type UsersProfile {
+  bio String
 }
 
-model PostToCategories {
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  categoryId Int
-  postId     Int
-  category   Category @relation(fields: [categoryId], references: [id])
-  post       Post     @relation(fields: [postId], references: [id])
+model Category {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  v    Int?    @map("__v") @ignore
 
-  @@id([categoryId, postId])
-  @@map("PostCategories")
+  posts    Post[]   @relation(fields: [post_ids], references: [id])
+  post_ids String[] @db.ObjectId
+
+  @@map("categories")
 }
 
 model Post {
-  id               Int                @id @default(autoincrement())
-  title            String
-  content          String?
-  published        Boolean?           @default(false)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  authorId         Int?
-  author           User?              @relation(fields: [authorId], references: [id])
-  postToCategories PostToCategories[]
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  content   String
+  published Boolean
+  v         Int?     @map("__v") @ignore
 
-  @@map("Posts")
-}
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String @map("author") @db.ObjectId
 
-model Profile {
-  id        Int      @id @default(autoincrement())
-  bio       String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    Int?
-  user      User?    @relation(fields: [userId], references: [id])
+  categories   Category[] @relation(fields: [category_ids], references: [id])
+  category_ids String[]   @db.ObjectId
 
-  @@map("Profiles")
+  @@map("posts")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String?
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
-  profile   Profile?
+  id      String        @id @default(auto()) @map("_id") @db.ObjectId
+  v       Int?           @map("__v") @ignore
+  email   String        @unique(map: "email_1")
+  name    String
+  profile UsersProfile?
+  posts   Post[]
 
-  @@map("Users")
+  @@map("users")
 }
 ```
 
+<!-- TODO: add @default(false) to published field -->
+
 ## Step 3. Install Prisma Client
 
-As a next step, you can install Prisma Client in your project so that you can start replacing the database queries in your project that are currently made with Sequelize:
+As a next step, you can install Prisma Client in your project so that you can start replacing the database queries in your project that are currently made with Mongoose:
 
 ```terminal
 npm install @prisma/client
 ```
 
-## Step 4. Replace your Sequelize queries with Prisma Client
+## Step 4. Replace your Mongoose queries with Prisma Client
 
-In this section, we'll show a few sample queries that are being migrated from Sequelize to Prisma Client based on the example routes from the sample REST API project. For a comprehensive overview of how the Prisma Client API differs from Sequelize, check out the [API comparison](/concepts/more/comparisons/prisma-and-sequelize#api-comparison) page.
+In this section, we'll show a few sample queries that are being migrated from Mongoose to Prisma Client based on the example routes from the sample REST API project. For a comprehensive overview of how the Prisma Client API differs from Mongoose, check out the [API comparison](/concepts/more/comparisons/prisma-and-mongoose#api-comparison) page.
 
 First, to set up the `PrismaClient` instance that you'll use to send database queries from the various route handlers. Create a new file named `prisma.js` in the `src` directory:
 
@@ -603,15 +441,17 @@ module.exports = prisma
 The imports in our controller files are as follows:
 
 ```js file=src/controllers/post.js
-const { Post, User, Category } = require('../models')
-const { Op } = require('sequelize')
+const Post = require('../models/post')
+const User = require('../models/user')
+const Category = require('../models/category')
 ```
 
 ```js file=src/controllers/user.js
-const { User } = require('../models')
+const Post = require('../models/post')
+const User = require('../models/user')
 ```
 
-You'll update the controller imports as you migrate from Sequelize to Prisma:
+You'll update the controller imports as you migrate from Mongoose to Prisma:
 
 ```js file=src/controllers/post.js
 const prisma = require('../prisma')
@@ -625,9 +465,12 @@ const prisma = require('../prisma')
 
 The REST API has four routes that accept `GET` requests:
 
-- `/feed`: Return all published posts
-- `/filterPosts?searchString=SEARCH_STRING`: Filter returned posts by `SEARCH_STRING`
-- `/post/:postId`: Returns a specific post
+- `/feed?searchString={searchString}&take={take}&skip={skip}`: Return all published posts
+  - Query Parameters (optional):
+    - `searchString`: Filter posts by `title` or `content`
+    - `take`: Specifies how many objects should be returned in the list
+    - `skip`: Specifies how many of the returned objects should be skipped
+- `/post/:id`: Returns a specific post
 - `/authors`: Returns a list of authors
 
 Let's dive into the route handlers that implement these requests.
@@ -639,29 +482,68 @@ The `/feed` handler is currently implemented as follows:
 ```js file=src/controllers/post.js
 const feed = async (req, res) => {
   try {
-    const feed = await Post.findAll({
-      where: { published: true },
-      include: ['author', 'categories'],
-    })
-    return res.json(feed)
+    const { searchString, skip, take } = req.query
+
+    const or =
+      searchString !== undefined
+        ? {
+            $or: [
+              { title: { $regex: searchString, $options: 'i' } },
+              { content: { $regex: searchString, $options: 'i' } },
+            ],
+          }
+        : {}
+
+    const feed = await Post.find(
+      {
+        ...or,
+        published: true,
+      },
+      null,
+      {
+        skip,
+        batchSize: take,
+      }
+    )
+      .populate({ path: 'author', model: User })
+      .populate('categories')
+
+    return res.status(200).json(feed)
   } catch (error) {
     return res.status(500).json(error)
   }
 }
 ```
 
-Note that each returned `Post` object includes the relation to the `author` and `category` it's associated with. With Sequelize, including the relation is not type-safe. For example, if there was a typo in the relation that is retrieved, your database query would fail only at _runtime_ – the JavaScript compiler does not provide any safety here.
+Note that each returned `Post` object includes the relation to the `author` and `category` it's associated with. With Mongoose, including the relation is not type-safe. For example, if there was a typo in the relation that is retrieved, your database query would fail only at _runtime_ – the JavaScript compiler does not provide any safety here.
 
-Here is how the same route is implemented using Prisma Client:
+Here is how the same route handler is implemented using Prisma Client:
 
 ```js file=src/controllers/post.js
 const feed = async (req, res) => {
   try {
+    const { searchString, skip, take } = req.query
+
+    const or = searchString
+      ? {
+          OR: [
+            { title: { contains: searchString } },
+            { content: { contains: searchString } },
+          ],
+        }
+      : {}
+
     const feed = await prisma.post.findMany({
-      where: { published: true },
-      include: { author: true, postToCategories: true },
+      where: {
+        published: true,
+        ...or,
+      },
+      include: { author: true, categories: true },
+      take: Number(take) || undefined,
+      skip: Number(skip) || undefined,
     })
-    return res.json(feed)
+
+    return res.status(200).json(feed)
   } catch (error) {
     return res.status(500).json(error)
   }
@@ -670,103 +552,42 @@ const feed = async (req, res) => {
 
 Note that the way how Prisma Client includes the `author` relation is absolutely type-safe. The JavaScript compiler would throw an error if you were trying to include a relation that does not exist on the `Post` model.
 
-#### `/filterPosts?searchString=SEARCH_STRING`
+#### `/post/:id`
 
-The `/filterPosts` handler is currently implemented as follows:
-
-```js file=src/controllers/post.js
-const filterPosts = async (req, res) => {
-  const { searchString } = req.query
-
-  try {
-    const filteredPosts = await Post.findAll({
-      where: {
-        [Op.or]: [
-          {
-            title: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            content: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-        ],
-      },
-      include: 'author',
-    })
-
-    res.json(filteredPosts)
-  } catch (error) {
-    return res.status(500).json(error)
-  }
-}
-```
-
-With Prisma, the route is implemented as follows:
-
-```js file=src/controllers/post.js
-const filterPosts = async (req, res) => {
-  const { searchString } = req.query
-
-  try {
-    const filteredPosts = prisma.post.findMany({
-      where: {
-        OR: [
-          {
-            title: { contains: searchString },
-          },
-          {
-            content: { contains: searchString },
-          },
-        ],
-      },
-    })
-
-    res.json(filteredPosts)
-  } catch (error) {
-    return res.status(500).json(error)
-  }
-}
-```
-
-Note that Sequelize provides [Operator symbols](https://sequelize.org/master/variable/index.html#static-variable-Op) - `Op` - to be used when querying data. Prisma on the other hand [combines several `where` conditions with an implicit `AND` operator](/concepts/components/prisma-client/filtering-and-sorting#retrieve-all-post-records-where-the-content-field-contains-prisma-and-published-is-false), so in this case the Prisma query needs to make the `OR` explicit.
-
-#### `/post/:postId`
-
-The `/post/:postId` handler is currently implemented as follows:
+The `/post/:id` handler is currently implemented as follows:
 
 ```js file=src/controllers/post.js
 const getPostById = async (req, res) => {
-  const { postId } = req.params
+  const { id } = req.params
 
   try {
-    const post = await Post.findOne({
-      where: { id: postId },
-      include: 'author',
-    })
+    const post = await Post.findById(id)
+      .populate({ path: 'author', model: User })
+      .populate('categories')
 
-    return res.json(post)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+
+    return res.status(200).json(post)
   } catch (error) {
     return res.status(500).json(error)
   }
 }
 ```
 
-With Prisma, the route is implemented as follows:
+With Prisma, the route handler is implemented as follows:
 
 ```js file=src/controllers/post.js
 const getPostById = async (req, res) => {
-  const { postId } = req.params
+  const { id } = req.params
 
   try {
     const post = await prisma.post.findUnique({
-      where: { id: Number(postId) },
-      include: { author: true },
+      where: { id },
     })
 
-    return res.json(post)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+
+    return res.status(200).json(post)
   } catch (error) {
     return res.status(500).json(error)
   }
@@ -779,7 +600,7 @@ The REST API has three routes that accept `POST` requests:
 
 - `/user`: Creates a new `User` record
 - `/post`: Creates a new `User` record
-- `/user/:userId/profile`: Creates a new `Profile` record for a `User` record with a given ID
+- `/user/:id/profile`: Creates a new `Profile` record for a `User` record with a given ID
 
 #### `/user`
 
@@ -795,14 +616,14 @@ const createUser = async (req, res) => {
       email,
     })
 
-    return res.json(user)
+    return res.status(201).json(user)
   } catch (error) {
     return res.status(500).json(error)
   }
 }
 ```
 
-With Prisma, the route is implemented as follows:
+With Prisma, the route handler is implemented as follows:
 
 ```js file=src/controllers/user.js
 const createUser = async (req, res) => {
@@ -816,7 +637,7 @@ const createUser = async (req, res) => {
       },
     })
 
-    return res.json(user)
+    return res.status(201).json(user)
   } catch (error) {
     return res.status(500).json(error)
   }
@@ -832,22 +653,24 @@ const createDraft = async (req, res) => {
   const { title, content, authorEmail } = req.body
 
   try {
-    const user = await User.findOne({ email: authorEmail })
+    const author = await User.findOne({ email: authorEmail })
+
+    if (!author) return res.status(404).json({ message: 'Author not found' })
 
     const draft = await Post.create({
       title,
       content,
-      authorId: user.id,
+      author: author._id,
     })
 
-    res.json(draft)
+    res.status(201).json(draft)
   } catch (error) {
     return res.status(500).json(error)
   }
 }
 ```
 
-With Prisma, the route is implemented as follows:
+With Prisma, the route handler is implemented as follows:
 
 ```js file=src/controllers/post.js
 const createDraft = async (req, res) => {
@@ -859,12 +682,14 @@ const createDraft = async (req, res) => {
         title,
         content,
         author: {
-          connect: { email: authorEmail },
+          connect: {
+            email: authorEmail,
+          },
         },
       },
     })
 
-    res.json(draft)
+    res.status(201).json(draft)
   } catch (error) {
     return res.status(500).json(error)
   }
@@ -873,50 +698,82 @@ const createDraft = async (req, res) => {
 
 Note that Prisma Client's nested write here save an initial query where first the `User` record needs to be retrieved by its `email`. That's because, with Prisma you can connect records in relations using any unique property.
 
-#### `/user/:userId/profile`
+#### `/user/:id/profile`
 
-The `/user/:userId/profile` handler is currently implemented as follows:
+The `/user/:id/profile` handler is currently implemented as follows:
 
 ```js file=src/controllers/user.js
 const setUserBio = async (req, res) => {
-  const { userId } = req.params
+  const { id } = req.params
   const { bio } = req.body
 
   try {
-    const user = await User.findOne({
-      where: {
-        id: Number(userId),
+    const user = await User.findByIdAndUpdate(
+      id,
+      {
+        profile: {
+          bio,
+        },
       },
-    })
+      { new: true }
+    )
 
-    const updatedUser = await user.createProfile({ bio })
+    if (!user) return res.status(404).json({ message: 'Author not found' })
 
-    return res.json(updatedUser)
+    return res.status(200).json(user)
   } catch (error) {
     return res.status(500).json(error)
   }
 }
 ```
 
-With Prisma, the route is implemented as follows:
+With Prisma, the route handler is implemented as follows:
 
 ```js file=src/controllers/user.js
 const setUserBio = async (req, res) => {
-  const { userId } = req.params
+  const { id } = req.params
   const { bio } = req.body
 
   try {
     const user = await prisma.user.update({
-      where: { id: Number(userId) },
+      where: { id },
       data: {
         profile: {
-          create: { bio },
+          bio,
         },
       },
     })
 
-    return res.json(user)
+    return res.status(200).json(user)
   } catch (error) {
+    console.log(error)
+    return res.status(500).json(error)
+  }
+}
+```
+
+Alternatively, you can use the `set` property to update the value of an embedded document as follows:
+
+```js file=src/controllers/user.js
+const setUserBio = async (req, res) => {
+  const { id } = req.params
+  const { bio } = req.body
+
+  try {
+    const user = await prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        profile: {
+          set: { bio },
+        },
+      },
+    })
+
+    return res.status(200).json(user)
+  } catch (error) {
+    console.log(error)
     return res.status(500).json(error)
   }
 }
@@ -924,302 +781,170 @@ const setUserBio = async (req, res) => {
 
 ### 4.3. Replacing queries in `PUT` requests
 
-The REST API has one route that accept a `PUT` request:
+The REST API has two routes that accept a `PUT` request:
 
-- `/addPostToCategory?postId=POST_ID&categoryId=CATEGORY_ID`: Adds the post with `POST_ID` to the category with `CATEGORY_ID`
+- `/post/:id/:categoryId`: Adds the post with `:id` to the category with `:categoryId`
+- `/post/:id`: Updates the `published` status of a post to true.
 
 Let's dive into the route handlers that implement these requests.
 
-#### `/addPostToCategory?postId=POST_ID&categoryId=CATEGORY_ID`
+#### `/post/:id/:categoryId`
 
-The `/addPostToCategory?postId=POST_ID&categoryId=CATEGORY_ID` handler is currently implemented as follows:
+The `/post/:id/:categoryId` handler is currently implemented as follows:
 
 ```js file=src/controllers/post.js
 const addPostToCategory = async (req, res) => {
-  const { postId, categoryId } = req.query
+  const { id, categoryId } = req.params
 
   try {
-    const post = await Post.findOne({
-      where: { id: postId },
-    })
+    const category = await Category.findById(categoryId)
 
-    const category = await Category.findOne({
-      where: { id: categoryId },
-    })
+    if (!category)
+      return res.status(404).json({ message: 'Category not found' })
 
-    const updatedPost = await post.addCategory(category)
+    const post = await Post.findByIdAndUpdate(
+      { _id: id },
+      {
+        categories: [{ _id: categoryId }],
+      },
+      { new: true }
+    )
 
-    return res.json(updatedPost)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+    return res.status(200).json(post)
   } catch (error) {
     return res.status(500).json(error)
   }
 }
 ```
 
-With Prisma, the route is implemented as follows:
+With Prisma, the handler is implemented as follows:
 
 ```js file=src/controllers/post.js
 const addPostToCategory = async (req, res) => {
-  const { postId, categoryId } = req.query
+  const { id, categoryId } = req.query
 
   try {
     const post = await prisma.post.update({
+      where: {
+        id,
+      },
       data: {
-        postToCategories: {
-          create: {
-            categories: {
-              connect: { id: Number(categoryId) },
-            },
+        categories: {
+          connect: {
+            id: categoryId,
           },
         },
       },
-      where: {
-        id: Number(postId),
-      },
     })
 
-    return res.json(post)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+
+    return res.status(200).json(post)
+  } catch (error) {
+    console.log({ error })
+    return res.status(500).json(error)
+  }
+}
+```
+
+#### `/post/:id`
+
+The `/post/:id` handler is currently implemented as follows:
+
+```js file=src/controllers/post.js
+const publishDraft = async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const post = await Post.findByIdAndUpdate(
+      { id },
+      { published: true },
+      { new: true }
+    )
+    return res.status(200).json(post)
   } catch (error) {
     return res.status(500).json(error)
   }
 }
 ```
 
-Note that this Prisma Client can be made less verbose by modeling the relation as an [implicit many-to-many relation](#implicit-many-to-many-relations) instead. In that case, the query would look as follows:
+With Prisma, the handler is implemented as follows:
 
-```js file=src/controllers/posts.js
-const post = await prisma.post.update({
-  data: {
-    category: {
-      connect: { id: categoryId },
-    },
-  },
-  where: { id: postId },
-})
+```js file=src/controllers/post.js
+const publishDraft = async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const post = await prisma.post.update({
+      where: { id },
+      data: { published: true },
+    })
+    return res.status(200).json(post)
+  } catch (error) {
+    return res.status(500).json(error)
+  }
+}
 ```
 
 ## More
 
-### Primary key column
+### Embedded documents `_id` field
 
-By default, Sequelize defines a `primaryKey` and used `id` with the autoby default if not defined. This is optional.
-If you would like to set your own primary key, you can use the `primaryKey: true` and define your preferred data type in your field of choice:
-
-```js
-// changing the primary key column
-module.exports = (sequelize, DataTypes) => {
-  const Post = sequelize.define('Post', {
-    postId: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-    },
-  })
-  return Post
-}
-
-// changing the id DataType
-module.exports = (sequelize, DataTypes) => {
-  const Post = sequelize.define('Post', {
-    id: {
-      type: DataTypes.UUID, // alternative: DataTypes.STRING
-      primaryKey: true,
-    },
-  })
-  return Post
-}
-```
-
-### Table name inference
-
-Sequelize infers table names from the model name. When the name of a table isn't provided Sequelize automatically pluralizes the model name and uses that as the table name using a library called [inflection](https://www.npmjs.com/package/inflection).
-Prisma on the other hand maps the model name to the table name in your database [modelling your data](/concepts/components/prisma-schema/data-model).
-If you wish to change this default behaviour in Sequelize, you can either enforce the table name to be equal to the model name or provide the table name directly:
+By default, Mongoose assigns each document and embedded document an `_id` field. If you wish to disable this option for embedded documents, you can set the `_id` option to false.
 
 ```js
-// enforcing table name to be equal to model name
-module.exports = (sequelize, DataTypes) => {
-  const Post = sequelize.define(
-    'Post',
-    {
-      // ... attributes
-    },
-    {
-      freezeTableName: true,
-    }
-  )
-  return Post
-}
-```
-
-```js
-// providing the table name directly
-module.exports = (sequelize, DataTypes) => {
-  const Post = sequelize.define(
-    'Post',
-    {
-      // ... attributes
-    },
-    {
-      tableName: 'Post',
-    }
-  )
-  return Post
-}
-```
-
-### Timestamps
-
-Sequelize automatically adds the fields `createdAt` and `updatedAt` to every model using the data type `DataTypes.DATE`, by default. You can disable this for a model with the `timestamps: false` option:
-
-```js
-sequelize.define(
-  'User',
+const ProfileSchema = new Schema(
   {
-    // ... (attributes)
+    bio: String,
   },
   {
-    timestamps: false,
+    _id: false,
   }
 )
 ```
 
-Prisma offers you the flexibility to define these fields in your model. You add the `createdAt` and [`updatedAt`](/reference/api-reference/prisma-schema-reference#updatedat) fields by defining them explicitly in your model.
-To set the `createdAt` field in your model, add the `default(now())` attribute to the column. In order to set the `updatedAt` column, update your model by adding the `@updatedAt` attribute to the column.
+### Document version key
 
-```prisma
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String?
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-```
-
-### Implicit many-to-many relations
-
-Similar to the `belongsToMany()` association method in Sequelize, Prisma allows you to [model many-to-many relations _implicitly_](/concepts/components/prisma-schema/relations#implicit-vs-explicit-many-to-many-relations). That is, a many-to-many relation where you do not have to manage the [relation table](/concepts/components/prisma-schema/relations/many-to-many-relations#relation-tables) (also sometimes called JOIN table) _explicitly_ in your schema. Here is an example with TypeORM:
+Mongoose assigns each document a version when created. You can disable Mongoose from versioning your documents by setting the `versionKey` option of a model to false. It is [not recommended](http://aaronheckmann.blogspot.com/2012/06/mongoose-v3-part-1-versioning.html) to disable this unless you know what you're doing.
 
 ```js
-module.exports = (sequelize, DataTypes) => {
-  const Post = sequelize.define('Post', {
-    title: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    content: {
-      type: DataTypes.STRING,
-    },
-    published: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-  })
-  Post.associate = (models) => {
-    Post.belongsTo(models.User, {
-      foreignKey: 'authorId',
-      as: 'author',
-    })
-    Post.belongsToMany(models.Category, {
-      through: 'PostCategories',
-      as: 'categories',
-    })
+const ProfileSchema = new Schema(
+  {
+    bio: String,
+  },
+  {
+    versionKey: false,
   }
-  return Post
-}
+)
 ```
+
+### Collection name inference
+
+Mongoose infers the collection names by automatically lowercasing and pluralizing the model names. .
+
+Prisma on the other hand maps the model name to the table name in your database [modelling your data](/concepts/components/prisma-schema/data-model).
+
+You can enforce the colleciton name in Mongoose to have the same name as the model by setting the [](https://mongoosejs.com/docs/guide.html#collection) option while creating your schema
 
 ```js
-module.exports = (sequelize, DataTypes) => {
-  const Category = sequelize.define('Category', {
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-  })
-  Category.associate = (models) => {
-    Category.belongsToMany(models.Post, {
-      through: 'PostCategories',
-      as: 'posts',
-    })
+const PostSchema = new Schema(
+  {
+    title: String,
+    content: String,
+    // more fields here
+  },
+  {
+    collection: 'Post',
   }
-  return Category
-}
+)
 ```
 
-When you start your application, Sequelize will create the the tables for you - based on these models:
+### Modeling relations
 
-```sql
-Executing (default): CREATE TABLE IF NOT EXISTS "PostCategories"
-("createdAt" TIMESTAMP WITH TIME ZONE NOT NULL, "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL,
-"CategoryId" INTEGER  REFERENCES "Categories" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-"PostId" INTEGER  REFERENCES "Posts" ("id") ON DELETE CASCADE ON UPDATE CASCADE, PRIMARY KEY ("CategoryId","PostId"));
-```
+You can model relations between documents by either using:
 
-If you introspect the database with Prisma, you'll get the following result in the Prisma schema (note that some relation field names have been adjusted to look friendlier compared to the raw version from introspection):
+- Embedded documents
+- References
 
-```prisma
-model Categories {
-  id             Int              @id @default(autoincrement())
-  name           String
-  createdAt      DateTime
-  updatedAt      DateTime
-  PostCategories PostCategories[]
-
-  @@map("category")
-}
-
-model PostCategories {
-  createdAt  DateTime
-  updatedAt  DateTime
-  CategoryId Int
-  PostId     Int
-  Categories Categories @relation(fields: [CategoryId], references: [id])
-  Posts      Posts      @relation(fields: [PostId], references: [id])
-
-  @@id([CategoryId, PostId])
-  @@map("PostCategories")
-}
-
-model Posts {
-  id             Int              @id @default(autoincrement())
-  title          String
-  content        String?
-  published      Boolean?         @default(false)
-  createdAt      DateTime
-  updatedAt      DateTime
-  authorId       Int?
-  Users          Users?           @relation(fields: [authorId], references: [id])
-  PostCategories PostCategories[]
-
-  @@map("post")
-}
-```
-
-In this Prisma schema, the many-to-many relation is modeled explicitly via the relation table `PostCategories`
-
-By adhering to the [conventions for Prisma relation tables](), the relation could look as follows:
-
-```prisma
-model Categories {
-  id    Int     @id @default(autoincrement())
-  name  String
-  posts Posts[]
-
-  @@map("category")
-}
-
-model Posts {
-  id         Int          @id @default(autoincrement())
-  title      String
-  content    String?
-  published  Boolean      @default(false)
-  authorId   Int?
-  author     User?        @relation(fields: [authorId], references: [id])
-  categories Categories[]
-
-  @@map("post")
-}
-```
-
-This would also result in a more ergonomic and less verbose Prisma Client API to modify the records in this relation, because you have a direct path from `Post` to `Category` (and the other way around) instead of needing to traverse the `PostCategories` model first.
+<!-- TODO: expound on this and how to model the different kinds of relations -->
