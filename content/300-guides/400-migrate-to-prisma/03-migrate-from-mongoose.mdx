@@ -31,7 +31,7 @@ Prisma lends itself really well for **incremental adoption**. This means, you do
 
 For this guide, we'll use a REST API built with Express as a [sample project](https://github.com/prisma/migrate-from-mongoose-to-prisma) to migrate to Prisma. It has three documents and one sub-document (embedded document):
 
-<TabbedContent tabs={[<FileWithIcon text="post.js" icon="file"/>, <FileWithIcon text="user.js" icon="file"/>, <FileWithIcon text="Category.js" icon="file"/>]}>
+<TabbedContent tabs={[<FileWithIcon text="post.js" icon="file"/>, <FileWithIcon text="user.js" icon="file"/>, <FileWithIcon text="category.js" icon="file"/>]}>
 
 <tab>
 
@@ -127,7 +127,7 @@ The models/documents have the following relationships:
 
 In this guide, the route handlers are located in the `src/controllers` directory. The models are located in the `src/models` directory. From there, they are pulled into a central `src/routes.js` file which is used to set up the required routes in `src/index.js`:
 
-```
+```copy=false
 └── blog-mongoose
     ├── package.json
     └──src
@@ -165,8 +165,8 @@ npx prisma init
 
 This command created:
 
-- A new directory called `prisma` with a `schema.prisma`: Your Prisma schema file that specifies your database connectionmodels
-- `.env`: A [`dotenv`](https://github.com/motdotla/dotenv) at the root of your project, if it didn't exist, to configure your database connection URL as an environment variable
+- A new directory called `prisma` with a `schema.prisma`: Your Prisma schema file that specifies your database connection and models
+- `.env`: A [`dotenv`](https://github.com/motdotla/dotenv) at the root of your project, if it doesn't exist, to configure your database connection URL as an environment variable
 
 The Prisma schema file currently looks as follows:
 
@@ -250,18 +250,62 @@ The generated Prisma models represent the collections and are the foundation of 
 
 MongoDB doesn't support relations between different collections. However, you can create references from one document to another using the `ObjectId` schema field. or from one document to many using an array of `ObjectIds`. The reference will store id(s) of the related document(s). You can use the `populate()` method Mongoose provides to populate the reference with the data of the related document.
 
-Update the 1-n relationship between `Post` <-> `User`
+Update the 1-n relationship between `Post` <-> `User` as follows:
 
-<!-- TODO: tab with diff and another with final version -->
+- Rename the existing `author` reference in the `Post` to `authorId` and add the `@map("author")` attribute
+- Add the `posts` relation in the `users` model
 
-```prisma file=prisma/schema.prisma
+<TabbedContent tabs={[<FileWithIcon text="diff" icon="file"/>, <FileWithIcon text="schema.prisma" icon="file"/>]}>
+
+<tab>
+
+```prisma
 type UsersProfile {
   bio String
 }
 
 model categories {
   id   String @id @default(auto()) @map("_id") @db.ObjectId
-  v    Int    @map("__v") @ignore
+  v    Int    @map("__v")
+  name String
+}
+
+model posts {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  v          Int      @map("__v")
+  title      String
+  content    String
+  published  Boolean
+
+-  author     String   @db.ObjectId
++  author     users  @relation(fields: [authorId], references: [id])
++  authorId   String @map("author") @db.ObjectId
+
+  categories String[] @db.ObjectId
+}
+
+model users {
+  id      String        @id @default(auto()) @map("_id") @db.ObjectId
+  v       Int           @map("__v")
+  email   String        @unique(map: "email_1")
+  name    String
+  profile UsersProfile?
++  posts   posts[]
+}
+```
+
+</tab>
+
+<tab>
+
+```prisma
+type UsersProfile {
+  bio String
+}
+
+model categories {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  v    Int    @map("__v")
   name String
 }
 
@@ -288,11 +332,64 @@ model users {
 }
 ```
 
-<!-- highlight the mapping of author to authorId -->
+</tab>
 
-Update the m-n between `Post` <-> `Category` references
+</TabbedContent>
 
-```prisma file=prisma/schema.prisma
+Update the m-n between `Post` <-> `Category` references as follows:
+
+- Update the `categories` field data type in the `posts` from `String[]`
+- Add the `posts` relation in the `categories` model
+- Add a [relation scalar](https://www.prisma.io/docs/concepts/components/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) on both models
+- Add the `@relation` attribute specifying the `fields` and `references` arguments on both sides.
+
+<TabbedContent tabs={[<FileWithIcon text="diff" icon="file"/>, <FileWithIcon text="schema.prisma" icon="file"/>]}>
+
+<tab>
+
+```prisma
+type UsersProfile {
+  bio String
+}
+
+model categories {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  v        Int    @map("__v")
+  name     String
++  posts    posts[]  @relation(fields: [post_ids], references: [id])
++  post_ids String[] @db.ObjectId
+}
+
+model posts {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  content      String
+  published    Boolean
+  v            Int     @map("__v")
+
+  author       users  @relation(fields: [authorId], references: [id])
+  authorId     String @map("author") @db.ObjectId
+
+-  categories   String[] @db.ObjectId
++  categories   categories[] @relation(fields: [categoryIds], references: [id])
++  categoryIds String[]     @db.ObjectId
+}
+
+model users {
+  id      String        @id @default(auto()) @map("_id") @db.ObjectId
+  v       Int           @map("__v")
+  email   String        @unique(map: "email_1")
+  name    String
+  profile UsersProfile?
+  posts   posts[]
+}
+```
+
+</tab>
+
+<tab>
+
+```prisma
 type UsersProfile {
   bio String
 }
@@ -302,8 +399,8 @@ model categories {
   name String
   v    Int    @map("__v")
 
-  posts    posts[]  @relation(fields: [post_ids], references: [id])
-  post_ids String[] @db.ObjectId
+  posts    posts[]  @relation(fields: [postIds], references: [id])
+  postIds String[] @db.ObjectId
 }
 
 model posts {
@@ -316,8 +413,8 @@ model posts {
   author   users  @relation(fields: [authorId], references: [id])
   authorId String @map("author") @db.ObjectId
 
-  categories   categories[] @relation(fields: [category_ids], references: [id])
-  category_ids String[]     @db.ObjectId
+  categories   categories[] @relation(fields: [categoryIds], references: [id])
+  categoryIds String[]     @db.ObjectId
 }
 
 model users {
@@ -329,6 +426,10 @@ model users {
   posts   posts[]
 }
 ```
+
+</tab>
+
+</TabbedContent>
 
 ### 2.5 Adjust the Prisma schema (optional)
 
@@ -349,13 +450,15 @@ You can use the [rename symbol](https://code.visualstudio.com/docs/editor/refact
 
 </Tip>
 
-If your schema includes a [`versionKey`](https://mongoosejs.com/docs/guide.html#versionKey), change it to an optional field and add the `@ignore` attribute to the `v` field to exclude it from the generated Prisma Client.
+If your schema includes a [`versionKey`](https://mongoosejs.com/docs/guide.html#versionKey), change it to an optional field and add the `@ignore` attribute to the `v` field to exclude it from the generated Prisma Client. Marking the field as optional will allow you to create records in the collection.
 
 Also note that you can rename [relation fields](/concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural.
 
+You can adjust update the `published` field by including the `@default` attribute to define the default value of the field.
+
 Here's an adjusted version of the Prisma schema that addresses these points:
 
-```prisma file=prisma/schema.prisma
+```prisma file=prisma/schema.prisma highlight=14,17,22,25,29,30,38,41,43,49;normal
 generator client {
   provider = "prisma-client-js"
 }
@@ -370,9 +473,9 @@ type UsersProfile {
 }
 
 model Category {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  v    Int?    @map("__v") @ignore
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  v        Int?    @map("__v") @ignore
 
   posts    Post[]   @relation(fields: [post_ids], references: [id])
   post_ids String[] @db.ObjectId
@@ -381,17 +484,17 @@ model Category {
 }
 
 model Post {
-  id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  title     String
-  content   String
-  published Boolean
-  v         Int?     @map("__v") @ignore
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  content      String
+  published    Boolean  @default(false)
+  v            Int?     @map("__v") @ignore
 
-  author   User   @relation(fields: [authorId], references: [id])
-  authorId String @map("author") @db.ObjectId
+  author       User   @relation(fields: [authorId], references: [id])
+  authorId     String @map("author") @db.ObjectId
 
-  categories   Category[] @relation(fields: [category_ids], references: [id])
-  category_ids String[]   @db.ObjectId
+  categories   Category[] @relation(fields: [categoryIds], references: [id])
+  categoryIds String[]   @db.ObjectId
 
   @@map("posts")
 }
@@ -407,8 +510,6 @@ model User {
   @@map("users")
 }
 ```
-
-<!-- TODO: add @default(false) to published field -->
 
 ## Step 3. Install Prisma Client
 
@@ -942,9 +1043,9 @@ const PostSchema = new Schema(
 
 ### Modeling relations
 
-You can model relations between documents by either using:
+You can model relations in Mongoose between documents by either using:
 
 - Embedded documents
 - References
 
-<!-- TODO: expound on this and how to model the different kinds of relations -->
+TODO: expound on embedded documents and references. Link to different kinds of relations and how to model them here
