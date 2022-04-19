@@ -40,9 +40,11 @@ When generating a down migration file, there are some considerations to be aware
   - Manually add your custom SQL to the up migration (e.g. adding a view)
   - Manually add the inverted custom SQL to the down migration (e.g. dropping the view)
 
-## How to generate down migrations
+## How to generate and run down migrations
 
-Start with the following example schema:
+This section describes how to generate a down migration SQL file along with the corresponding up migration, and then run it on production.
+
+As an example, take the following Prisma schema with a `User` and `Post` model as a starting point:
 
 ```prisma file=schema.prisma
 model Post {
@@ -60,9 +62,11 @@ model User {
 }
 ```
 
-### Creating the down migration
+You will need to create the down migration first, before creating the corresponding up migration.
 
-1. Edit your Prisma schema. In this example, we'll add a new `Profile` model:
+### Generating the migrations
+
+1. Edit your Prisma schema to make the changes you require for your up migration. In this example, you will add a new `Profile` model:
 
    ```prisma file=schema.prisma highlight=8-14;add|20;add
    model Post {
@@ -88,28 +92,34 @@ model User {
    }
    ```
 
-2. Generate the SQL file for the down migration.
+2. Generate the SQL file for the down migration. To do this, you will use `migrate diff` to make a comparison:
 
-   First method:
+   - from the newly edited schema
+   - to the state of the schema after the last migration
 
-   - more robust but requires shadow database
+   and output this to a SQL script.
 
-   ```terminal
-   npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma \
-    --to-migrations prisma/migrations --shadow-database-url $SHADOW_DATABASE_URL \
-    --script > down.sql
-   ```
+   There are two potential options for specifying the 'to' state:
 
-   Second method:
+   - Using `--to-migrations`: this makes a comparison to the state of the migrations given in the migrations directory. This is the preferred option, as it is more robust, but it requires a shadow database. To use this option, run:
 
-   - requires database to have up-to-date schema
+     ```terminal
+     npx prisma migrate diff \
+      --from-schema-datamodel prisma/schema.prisma \
+      --to-migrations prisma/migrations --shadow-database-url $SHADOW_DATABASE_URL \
+      --script > down.sql
+     ```
 
-   ```terminal
-   npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma \
-    --to-schema-datasource prisma/schema.prisma --script > down.sql
-   ```
+   - Using `--to-schema-datasource`: this makes a comparison to the state of the database. This does not require a shadow database, but it does rely on the database having an up-to-date schema. To use this option, run:
 
-3. Generate the "up" migration with a name of `add_profile`:
+     ```terminal
+     npx prisma migrate diff \
+      --from-schema-datamodel prisma/schema.prisma \
+      --to-schema-datasource prisma/schema.prisma \
+      --script > down.sql
+     ```
+
+3. Generate the up migration with a name of `add_profile`:
 
    ```terminal
    npx prisma migrate dev --name add_profile
