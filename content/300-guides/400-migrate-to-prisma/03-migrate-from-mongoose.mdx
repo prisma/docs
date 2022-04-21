@@ -8,7 +8,6 @@ metaDescription: 'Learn how to migrate from Mongoose to Prisma'
 
 This guide describes how to migrate from Mongoose to Prisma. It uses an extended version of the [Mongoose Express example](https://github.com/Automattic/mongoose/tree/master/examples/express) as a [sample project](https://github.com/prisma/migrate-from-mongoose-to-prisma) to demonstrate the migration steps. You can find the example used for this guide on [GitHub](https://github.com/prisma/migrate-from-mongoose-to-prisma).
 
-This migration guide uses MongoDB as the example database.
 
 You can learn how Prisma compares to Mongoose on the [Prisma vs Mongoose](/concepts/more/comparisons/prisma-and-mongoose) page.
 
@@ -186,7 +185,7 @@ generator client {
 
 <Tip>
 
-If you're using VS Code, be sure to install the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) for syntax highlighting, formatting, auto-completion and a lot more cool features.
+For a more optimal development experience when working with Prisma, refer to [editor setup](/guides/development-environment/editor-setup) – syntax highlighting, formatting, auto-completion and a lot more cool features.
 
 </Tip>
 
@@ -248,11 +247,12 @@ The generated Prisma models represent the collections and are the foundation of 
 
 ### 2.4. Adjust the relationships
 
-MongoDB doesn't support relations between different collections. However, you can create references from one document to another using the `ObjectId` schema field or from one document to many using an array of `ObjectIds`. The reference will store id(s) of the related document(s). You can use the `populate()` method Mongoose provides to populate the reference with the data of the related document.
+MongoDB doesn't support relations between different collections. However, you can create references between documents using the `ObjectId` field type or from one document to many using an array of `ObjectIds` in the collection. The reference will store id(s) of the related document(s). You can use the `populate()` method Mongoose provides to populate the reference with the data of the related document.
 
 Update the 1-n relationship between `Post` <-> `User` as follows:
 
 - Rename the existing `author` reference in the `Post` to `authorId` and add the `@map("author")` attribute
+- Add the `author` relation field in the `posts` model and it's `@relation` attribute specifying the `fields` and `references`
 - Add the `posts` relation in the `users` model
 
 <TabbedContent tabs={[<FileWithIcon text="diff" icon="file"/>, <FileWithIcon text="schema.prisma" icon="file"/>]}>
@@ -272,10 +272,10 @@ model categories {
 
 model posts {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  v          Int      @map("__v")
   title      String
   content    String
   published  Boolean
+  v          Int      @map("__v")
 
 -  author     String   @db.ObjectId
 +  author     users  @relation(fields: [authorId], references: [id])
@@ -338,7 +338,8 @@ model users {
 
 Update the m-n between `Post` <-> `Category` references as follows:
 
-- Update the `categories` field data type in the `posts` from `String[]`
+- Rename the `categories` field to `categoryIds` and map it using `@map("categories") in the `posts` model
+- Add a new `categories` relation field in the `posts` model
 - Add the `posts` relation in the `categories` model
 - Add a [relation scalar](https://www.prisma.io/docs/concepts/components/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) on both models
 - Add the `@relation` attribute specifying the `fields` and `references` arguments on both sides.
@@ -450,7 +451,7 @@ You can use the [rename symbol](https://code.visualstudio.com/docs/editor/refact
 
 </Tip>
 
-If your schema includes a [`versionKey`](https://mongoosejs.com/docs/guide.html#versionKey), change it to an optional field and add the `@ignore` attribute to the `v` field to exclude it from the generated Prisma Client. Marking the field as optional will allow you to create records in the collection.
+If your schema includes a [`versionKey`](https://mongoosejs.com/docs/guide.html#versionKey), update it by adding the `@ignore` attribute and adding a `@default(0)` to the `v` field. This means the field will be excluded from the generated Prisma Client. Prisma does not handle document versioning.
 
 Also note that you can rename [relation fields](/concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural.
 
@@ -475,7 +476,7 @@ type UsersProfile {
 model Category {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   name     String
-  v        Int?   @map("__v") @ignore
+  v        Int    @default(0) @map("__v") @ignore
 
   posts    Post[]   @relation(fields: [post_ids], references: [id])
   post_ids String[] @db.ObjectId
@@ -488,7 +489,7 @@ model Post {
   title        String
   content      String
   published    Boolean @default(false)
-  v            Int?    @map("__v") @ignore
+  v            Int    @default(0) @map("__v") @ignore
 
   author       User   @relation(fields: [authorId], references: [id])
   authorId     String @map("author") @db.ObjectId
@@ -501,7 +502,7 @@ model Post {
 
 model User {
   id      String        @id @default(auto()) @map("_id") @db.ObjectId
-  v       Int?          @map("__v") @ignore
+  v       Int           @default(0) @map("__v") @ignore
   email   String        @unique(map: "email_1")
   name    String
   profile UsersProfile?
@@ -797,7 +798,7 @@ const createDraft = async (req, res) => {
 }
 ```
 
-Note that Prisma Client's nested write here save an initial query where first the `User` record needs to be retrieved by its `email`. That's because, with Prisma you can connect records in relations using any unique property.
+Note that Prisma Client's nested write here saves the initial query where the `User` record is first retrieved by its `email`. That's because, with Prisma you can connect records in relations using any unique property.
 
 #### `/user/:id/profile`
 
@@ -844,6 +845,8 @@ const setUserBio = async (req, res) => {
         },
       },
     })
+
+    if(!user) return res.status(404).json({ message: 'Author not found' })
 
     return res.status(200).json(user)
   } catch (error) {
