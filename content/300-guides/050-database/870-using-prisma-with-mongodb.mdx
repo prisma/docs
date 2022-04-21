@@ -1,0 +1,344 @@
+---
+title: 'Using Prisma with MongoDB'
+metaTitle: 'Using Prisma with MongoDB'
+metaDescription: 'Guide to using Prisma with MongoDB'
+tocDepth: 2
+toc: true
+---
+
+<TopBlock>
+
+This guide discusses the concepts behind using Prisma and MongoDB, explains the commonalities and differences between MongoDB and other database providers, and leads you through the process for configuring your application to integrate with MongoDB using Prisma.
+
+</TopBlock>
+
+## What is MongoDB?
+
+[MongoDB](https://www.mongodb.com/) is a NoSQL database that stores data in [BSON](https://bsonspec.org/) format, a JSON-like document format designed for storing data in key-value pairs. It is commonly used in JavaScript application development because the document model maps easily to objects in application code, and there is built in support for high availability and horizontal scaling.
+
+MongoDB stores data in collections that do not need a schema to be defined in advance, as you would need to do with tables in a relational database. The structure of each collection can also be changed over time. This flexibility can allow rapid iteration of your data model, but it does mean that there are a number of differences when using Prisma to work with your MongoDB database.
+
+## Commonalities with other database providers
+
+Some aspects of using Prisma with MongoDB are the same as when using Prisma with a relational database. You can still:
+
+- model your database with the [Prisma Schema Language](/concepts/components/prisma-schema)
+- connect to your database, using the [`mongodb` database connector](/concepts/database-connectors/mongodb)
+- use [Introspection](/concepts/components/introspection) for existing projects if you already have a MongoDB database
+- use [`db push`](/concepts/components/prisma-migrate/db-push) to push changes in your schema to the database
+- use [Prisma Client](/concepts/components/prisma-client) in your application to query your database in a type safe way based on your Prisma Schema
+
+## Differences to consider
+
+MongoDB's document-based structure and flexible schemas means that using Prisma with MongoDB differs from using it with a relational database in a number of ways. These are some areas where there are differences that you need to be aware of:
+
+- **Defining IDs**: MongoDB documents have an `_id` field (that often contains an [ObjectID](https://www.mongodb.com/docs/manual/reference/bson-types/#std-label-objectid)). Prisma does not support fields starting with `_`, so this needs to be mapped to a Prisma field using the `@map` attribute. For more information, see [Defining IDs in MongoDB](/concepts/components/prisma-schema/data-model#defining-ids-in-mongodb).
+
+- **Migrating existing data to match your Prisma schema**: In relational databases, all your data must match your schema. If you change the type of a particular field in your schema when you migrate, all the data must also be updated to match. In contrast, MongoDB does not enforce any particular schema, so you need to take care when migrating. For more information, see [How to migrate old data to new schemas](#how-to-migrate-existing-data-to-match-your-prisma-schema).
+
+- **Introspection and Prisma relations**: When you introspect an existing MongoDB database, you will get a schema with no relations and will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-introspection).
+
+- **Filtering for `null` and missing fields**: MongoDB makes a distinction between setting a field to `null` and not setting it at all, which is not present in relational databases. Prisma currently does not express this distinction, which means that you need to be careful when filtering for `null` and missing fields. For more information, see [How to filter for `null` and missing fields](#how-to-filter-for-null-and-missing-fields)
+
+- **Enabling replication**: Prisma uses [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/) internally to avoid partial writes on nested queries. When using transactions, MongoDB requires replication of your data set to be enabled. To do this, you will need to configure a [replica set](https://www.mongodb.com/docs/manual/replication/) — this is a group of MongoDB processes that maintain the same data set. Note that it is still possible to use a single database, by creating a replica set with only one node in it. If you use MongoDB's [Atlas](https://www.mongodb.com/atlas/database) hosting service, the replica set is configured for you, but if you are running MongoDB locally you will need to set up a replica set yourself. For more information, see MongoDB's [guide to deploying a replica set](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/).
+
+## How to use Prisma with MongoDB
+
+This section provides instructions for how to carry out tasks that require steps specific to MongoDB.
+
+### How to migrate existing data to match your Prisma schema
+
+Migrating your database over time is an important part of the development cycle. During development, you will need to update your Prisma schema file (for example, to add new fields), then update the data in your your development environment’s database, and eventually push both the updated schema and the new data to the production database.
+
+<Admonition type="info">
+
+When using MongoDB, be aware that the “coupling” between your schema and the database is purposefully designed to be less rigid than with with SQL databases; MongoDB will not enforce the schema, so you have to verify data integrity.
+
+</Admonition>
+
+These iterative tasks of updating the schema and the database can result in inconsistencies between your schema and the actual data in the database. Let’s look at one scenario where this can happen, and then examine several strategies for you and your team to consider for handling these inconsistencies.
+
+**Scenario**: you need to include a phone number for users, as well as an email. You currently have the following `User` model in your `schema.prisma` file:
+
+```prisma file=prisma/schema.prisma
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+}
+```
+
+There are a number of strategies you could use for migrating this schema:
+
+- **"On-demand" updates**: with this strategy, you and your team have agreed that updates can be made to the schema as needed. However, in order to avoid migration failures due to inconsistencies between the data and schema, there is agreement in the team that any new fields added are explicitly defined as optional.
+
+  In our scenario above, you can add an optional `phoneNumber` field to the `User` model in your Prisma schema:
+
+  ```prisma file=prisma/schema.prisma highlight=4;add
+  model User {
+    id          String  @id @default(auto()) @map("_id") @db.ObjectId
+    email       String
+    phoneNumber String?
+  }
+  ```
+
+  Then regenerate your Prisma Client using the `npx prisma generate` command. Next, update your application to reflect the new field, and redeploy your app.
+
+  As the `phoneNumber` field is optional, you can still query the old users where the phone number has not been defined. The records in the database will be updated "on demand" as the application's users begin to enter their phone number in the new field.
+
+  Another option is to add a default value on a required field, for example:
+
+  ```prisma file=prisma/schema.prisma highlight=4;add
+  model User {
+    id          String @id @default(auto()) @map("_id") @db.ObjectId
+    email       String
+    phoneNumber String @default("000-000-0000")
+  }
+  ```
+
+  Then when you encounter a missing `phoneNumber`, the value will be coerced into `000-000-0000`.
+
+- **"No breaking changes" updates**: this strategy builds on the first one, with further consensus amongst your team that you don't rename or delete fields, only add new fields, and always define the new fields as optional. This policy can be reenforced by adding checks in the CI/CD process to verify that there are no backwards-incompatible changes to the schema.
+
+- **"All-at-once" updates**: this strategy is similar to traditional migrations in relational databases, where all data is updated to reflect the new schema. In the scenario above, you would create a script to add a value for the phone number field to all existing users in your database. You can then make the field a required field in the application because the schema and the data are consistent.
+
+### How to add in missing relations after Introspection
+
+After introspecting an existing MongoDB database, you will need to manually add in relations between models. MongoDB does not have the concept of defining relations via foreign keys, as you would in a relational database. However, if you have a collection in MongoDB with a "foreign-key-like" field that matches the ID field of another collection, Prisma will allow you to emulate relations between the collections.
+
+As an example, take a MongoDB database with two collections, `User` and `Post`. The data in these collections has the following format, with a `userId` field linking users to posts:
+
+`User` collection:
+
+- `_id` field with a type of `objectId`
+- `email` field with a type of `string`
+
+`Post` collection:
+
+- `_id` field with a type of `objectId`
+- `title` field with a type of `string`
+- `userId` with a type of `objectID`
+
+On introspection with `db pull`, this is pulled in to the Prisma schema file as follows:
+
+```prisma file=prisma/schema.prisma
+model Post {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
+}
+
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+}
+```
+
+This is missing the relation between the `User` and `Post` models. To fix this, manually add a `user` field to the `Post` model with a `@relation` attribute using `userId` as the `fields` value, linking it to the `User` model, and a `posts` field to the `User` model as the back relation:
+
+```prisma file=prisma/schema.prisma highlight=5;add|11;add
+model Post {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+  posts Post[]
+}
+```
+
+For more information on how to use relations in Prisma, see [our documentation](/concepts/components/prisma-schema/relations).
+
+### How to filter for <inlinecode>null</inlinecode> and missing fields
+
+To understand how MongoDB distinguishes between `null` and missing fields, consider the example of a `User` model with an optional `name` field:
+
+```ts
+model User {
+  id    String  @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+  name  String?
+}
+```
+
+First, try creating a record with the `name` field explicitly set to `null`. Prisma will return `name: null` as expected:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const createNull = await prisma.user.create({
+  data: {
+    email: 'user1@prisma.io',
+    name: null,
+  },
+})
+console.log(createNull)
+```
+
+</cmd>
+
+<cmdResult>
+
+```
+{
+  id: '6242c4ae032bc76da250b207',
+  email: 'user1@prisma.io',
+  name: null
+}
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+If you check your MongoDB database directly, you will also see a new record with `name` set to `null`:
+
+```json
+{
+  "_id": "6242c4af032bc76da250b207",
+  "email": "user1@prisma.io",
+  "name": null
+}
+```
+
+Next, try creating a record without explicitly setting the `name` field:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const createMissing = await prisma.user.create({
+  data: {
+    email: 'user2@prisma.io',
+  },
+})
+console.log(createMissing)
+```
+
+</cmd>
+
+<cmdResult>
+
+```
+{
+  id: '6242c4ae032bc76da250b208',
+  email: 'user2@prisma.io',
+  name: null
+}
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+Prisma still returns `name: null`, but if you look in the database directly you will see that the record has no `name` field defined at all:
+
+```json
+{
+  "_id": "6242c4af032bc76da250b208",
+  "email": "user2@prisma.io"
+}
+```
+
+Prisma returns the same result in both cases, because we currently don't have a way to specify this difference in MongoDB between fields that are `null` in the underlying database, and fields that are not defined at all — see [this Github issue](https://github.com/prisma/prisma/issues/12555) for more information.
+
+This means that you currently have to be careful when filtering for `null` and missing fields. Filtering for records with `name: null` will only return the first record, with the `name` explicitly set to `null`:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const findNulls = await prisma.user.findMany({
+  where: {
+    name: null,
+  },
+})
+console.log(findNulls)
+```
+
+</cmd>
+
+<cmdResult>
+
+```terminal
+[
+  {
+    id: '6242c4ae032bc76da250b207',
+    email: 'user1@prisma.io',
+    name: null
+  }
+]
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+This is because `name: null` is checking for equality, and a non-existing field isn't equal to `null`.
+
+To include missing fields as well, use the [`isSet` filter](/reference/api-reference/prisma-client-reference#isset) to explicitly search for fields which are either `null` or not set. This will return both records:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const findNullOrMissing = await prisma.user.findMany({
+  where: {
+    OR: [
+      {
+        name: null,
+      },
+      {
+        name: {
+          isSet: false,
+        },
+      },
+    ],
+  },
+})
+console.log(findNullOrMissing)
+```
+
+</cmd>
+
+<cmdResult>
+
+```terminal
+[
+  {
+    id: '6242c4ae032bc76da250b207',
+    email: 'user1@prisma.io',
+    name: null
+  },
+  {
+    id: '6242c4ae032bc76da250b208',
+    email: 'user2@prisma.io',
+    name: null
+  }
+]
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+## More on using MongoDB with Prisma
+
+The fastest way to start using MongoDB with Prisma is to refer to our Getting Started documentation:
+
+- [Start from scratch](https://www.prisma.io/docs/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb)
+- [Add to existing project](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb)
+
+These tutorials will take you through the process of connecting to MongoDB, pushing schema changes, and using the Prisma Client.
+
+Further reference information is available in the [MongoDB connector documentation](/concepts/database-connectors/mongodb).
+
+For more information on how to set up and manage a MongoDB database, see the [Prisma Data Guide](https://www.prisma.io/dataguide/#mongodb).

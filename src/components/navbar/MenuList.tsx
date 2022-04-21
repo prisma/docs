@@ -44,7 +44,7 @@ export const MenuList: React.FC<MenuListProps> = ({ isMobile }: MenuListProps) =
   )
 }
 
-// STYLED COMPONENTES
+// STYLED COMPONENTS
 
 const MenuListContainer = styled.ul`
   display: flex;

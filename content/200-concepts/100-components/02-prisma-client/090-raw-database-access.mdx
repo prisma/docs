@@ -12,7 +12,7 @@ Prisma Client supports the option of sending raw queries to your database. You m
 - you want to run a heavily optimized query
 - you require a feature that Prisma Client does not yet support (please [consider raising an issue](https://github.com/prisma/prisma/issues/new/choose))
 
-Raw queries are available for all relational databases Prisma supports. In addition, from version `3.9.0` raw queries are supported in MongoDB as part of the [`mongodb` Preview feature](https://www.prisma.io/docs/concepts/database-connectors/mongodb). For more details, see the relevant sections:
+Raw queries are available for all relational databases Prisma supports. In addition, from version `3.9.0` raw queries are supported in MongoDB. For more details, see the relevant sections:
 
 - [Raw queries with relational databases](#raw-queries-with-relational-databases)
 - [Raw queries with MongoDB](#raw-queries-with-mongodb)
@@ -200,9 +200,7 @@ const result = await prisma.$queryRawUnsafe(
 
 > **Note**: Using `%$2` as an argument would not work
 
-<h2 id="executeraw">
-  <inlinecode>$executeRaw</inlinecode>
-</h2>
+### <inlinecode>$executeRaw</inlinecode>
 
 `$executeRaw` returns the _number of rows affected by a database operation_, such as `UPDATE` or `DELETE`. This function does **not** return database records. The following query updates records in the database and returns a count of the number of records that were updated:
 
@@ -286,14 +284,12 @@ In 2.10.0 and later, you can use `.$executeRaw()` and `.$queryRaw()` inside a [t
 
 `$executeRaw` and `$queryRaw` are implemented as [**tagged templates**](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates). Tagged templates are the recommended way to use variables with raw SQL in the Prisma Client.
 
-The following example includes a placeholder named `${userId}`. Note the double backticks (` `` `) instead of `()`:
+The following example includes a placeholder named `${userId}`:
 
 ```ts
 const userId = 42
 const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${userId};`
 ```
-
-> **Important**: You _must_ use double backticks - the same query using `$queryRaw()` is not secure because `${userId}` is not escaped.
 
 ✔ Benefits of using the tagged template versions of `$queryRaw` and `$executeRaw` include:
 
@@ -379,24 +375,47 @@ For MongoDB in versions `3.9.0` and later, Prisma Client exposes three methods t
 - `<model>.findRaw` to find zero or more documents that match the filter.
 - `<model>.aggregateRaw` to perform aggregation operations on a collection.
 
-### Enabling the <inlinecode>mongoDb</inlinecode> connector
+### <inlinecode>$runCommandRaw</inlinecode>
 
-The [`mongodb` connector](/concepts/database-connectors/mongodb) is currently a Preview feature. To enable this feature, first update the `datasource` block in your Prisma schema fil to use the `mongodb` provider:
+`$runCommandRaw` runs a raw MongoDB command against the database. For example, this query inserts two records with the same `_id`, bypassing normal document validation:
 
-```prisma file=schema.prisma
-datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
-}
+```ts no-lines
+prisma.$runCommandRaw({
+  insert: 'Pets',
+  bypassDocumentValidation: true,
+  documents: [
+    {
+      _id: 1,
+      name: 'Felinecitas',
+      type: 'Cat',
+      breed: 'Russian Blue',
+      age: 12,
+    },
+    {
+      _id: 1,
+      name: 'Nao Nao',
+      type: 'Dog',
+      breed: 'Chow Chow',
+      age: 2,
+    },
+  ],
+})
 ```
 
-Then update the [`previewFeatures`](/concepts/components/preview-features) block in your schema to include the `mongoDb` preview feature flag:
+<Admonition type="warning">
 
-```prisma file=schema.prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["mongoDb"]
-}
+Note that the `$runCommandRaw` command should not be used for queries which contain the `"find"` or `"aggregate"` commands, as you may be unable to fetch all data. This is because MongoDB returns a [cursor](https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/) that is attached to your MongoDB session, and you may not hit the same MongoDB session every time. For these queries, you should use the specialised [`findRaw`](#findraw) and [`aggregateRaw`](#aggregateraw) methods instead.
+
+</Admonition>
+
+#### Return type
+
+`$runCommandRaw` returns a `JSON` object whose shape depends on the inputs.
+
+#### Signature
+
+```ts no-lines
+$runCommandRaw(command: InputJsonObject): PrismaPromise<JsonObject>;
 ```
 
 ### <inlinecode>findRaw</inlinecode>
@@ -450,28 +469,3 @@ const result = await prisma.user.aggregateRaw({
 - `pipeline`: An array of aggregation stages to process and transform the document stream via the [aggregation pipeline](https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline).
 
 - `options`: Additional options to pass to the [`aggregate` command](https://docs.mongodb.com/manual/reference/command/aggregate/#command-fields).
-
-### <inlinecode>$runCommandRaw</inlinecode>
-
-`$runCommandRaw` runs any command against the database:
-
-```ts no-lines
-const result = await prisma.$runCommandRaw({
-  aggregate: 'User',
-  pipeline: [
-    { $match: { name: 'Bob' } },
-    { $project: { email: true, _id: false } },
-  ],
-  explain: false,
-})
-```
-
-#### Return type
-
-`$runCommandRaw` returns a `JSON` object whose shape depends on the inputs.
-
-#### Signature
-
-```ts no-lines
-$runCommandRaw(command: InputJsonObject): PrismaPromise<JsonObject>;
-```

@@ -5,7 +5,6 @@ metaDescription: 'How Prisma can connect to a MongoDB database using the MongoDB
 hidePage: false
 tocDepth: 2
 codeStyle: false
-preview: true
 ---
 
 <TopBlock>
@@ -38,18 +37,9 @@ The fields passed to the `datasource` block are:
 
 <Admonition type="warning">
 
-The MongoDB database connector uses transactions to support nested writes. Transactions **requires** a [replica set](https://docs.mongodb.com/manual/tutorial/deploy-replica-set/) deployment. The easiest way to deploy a replica set is with [Atlas](https://docs.atlas.mongodb.com/getting-started/). It's free to get started.
+The MongoDB database connector uses transactions to support nested writes. Transactions **require** a [replica set](https://docs.mongodb.com/manual/tutorial/deploy-replica-set/) deployment. The easiest way to deploy a replica set is with [Atlas](https://docs.atlas.mongodb.com/getting-started/). It's free to get started.
 
 </Admonition>
-
-Because MongoDB is currently a preview feature, you need to explicitly define that in the [`generator`]() block.
-
-```prisma file=schema.prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["mongoDb"]
-}
-```
 
 ## Connection details
 
@@ -99,7 +89,7 @@ Refer to the [MongoDB connection string documentation](https://docs.mongodb.com/
 
 ## Using <inlinecode>ObjectId</inlinecode>
 
-It is common practice for the `_id` field of a MongoDB document to contain an `ObjectId`:
+It is common practice for the `_id` field of a MongoDB document to contain an [ObjectId](https://docs.mongodb.com/manual/reference/bson-types/#std-label-objectid):
 
 ```json
 {
@@ -115,18 +105,18 @@ Any field (most commonly IDs and relation scalar fields) that maps to an `Object
 
 - Must be of type `String` or `Bytes`
 - Must include the `@db.ObjectId` attribute
-- Can optionally use `@default(dbgenerated())` to auto-generate a valid `ObjectId`
+- Can optionally use `@default(auto())` to auto-generate a valid `ObjectId` on document creation
 
 ```prisma
 model User {
-  id String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
   // Other fields
 }
 ```
 
 ```prisma
 model User {
-  id Bytes @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id Bytes @id @default(auto()) @map("_id") @db.ObjectId
   // Other fields
 }
 ```
@@ -135,7 +125,7 @@ See also: [Defining ID fields in MongoDB](/concepts/components/prisma-schema/dat
 
 ### Generating `ObjectId`
 
-To generate a valid `ObjectId` (for testing purposes or to manually set an ID field value), use the [`bson`](https://www.npmjs.com/package/bson) package.
+To generate a valid `ObjectId` (for testing purposes or to manually set an ID field value) in your application, use the [`bson`](https://www.npmjs.com/package/bson) package.
 
 ```
 npm install --save bson
@@ -147,18 +137,15 @@ import { ObjectId } from 'bson'
 const id = new ObjectId()
 ```
 
-## Known limitations
+## Considerations
 
-As MongoDB support is currently in preview there are some known limitations that come with adopting Prisma into your MongoDB project, these include:
+There are some considerations that come with adopting Prisma into your MongoDB project, these include:
 
-- Currently **no embedded collection support**. See [github.com/prisma/prisma/issues/6708](https://github.com/prisma/prisma/issues/6708).
-  - Instead try to [normalize your data models](https://docs.mongodb.com/manual/core/data-model-design/#normalized-data-models). This involves
-    describing relationships using references between documents.
-- Currently no plans to add support for [Prisma Migrate](/concepts/components/prisma-migrate) as MongoDB projects don't rely on internal schemas where changes need to be managed with an extra tool 
+- Currently no plans to add support for [Prisma Migrate](/concepts/components/prisma-migrate) as MongoDB projects don't rely on internal schemas where changes need to be managed with an extra tool
   - Management of `@unique` indexes is realized through `db push`
-- [`@@id`](/reference/api-reference/prisma-schema-reference#id-1) and [auto-increment](/reference/api-reference/prisma-schema-reference#generate-auto-incrementing-integers-as-ids) are **not** currently supported.
+- [`@@id`](/reference/api-reference/prisma-schema-reference#id-1) and [auto-increment](/reference/api-reference/prisma-schema-reference#generate-auto-incrementing-integers-as-ids) are **not** supported.
 
-- Error handling is incomplete.
+<!--For more information, refer to [Using Prisma with MongoDB](/content/300-guides/050-database/870-using-prisma-with-mongodb.mdx).-->
 
 ## Troubleshooting
 
@@ -180,7 +167,7 @@ Invalid `prisma.post.create()` invocation in
   Error in connector: Database error. error code: unknown, error message: Transactions are not supported by this deployment
     at cb (/node_modules/@prisma/client/runtime/index.js:34804:17)
     at processTicksAndRejections (internal/process/task_queues.js:97:5) {
-  clientVersion: '2.xx.0'
+  clientVersion: '3.xx.0'
 }
 ```
 
@@ -189,3 +176,56 @@ To resolve this, we suggest you change your deployment to one with a replica set
 One simple way for this is to use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) to launch a free instance that has replica set support out of the box.
 
 There's also an option to run the replica set locally with this guide: https://docs.mongodb.com/manual/tutorial/convert-standalone-to-replica-set
+
+## Type mapping between MongoDB and the Prisma schema
+
+> Alternatively, see the [Prisma schema reference](/reference/api-reference/prisma-schema-reference#model-field-scalar-types) for type mappings organized by Prisma type.
+
+### Mapping from Prisma to MongoDB types on migration
+
+The MongoDB connector maps the [scalar types](/concepts/components/prisma-schema/data-model#scalar-fields) from the Prisma [data model](/concepts/components/prisma-schema/data-model) to MongoDB's native column types as follows:
+
+| Prisma     | MongoDB                                                                |
+| ---------- | ---------------------------------------------------------------------- |
+| `String`   | `string`                                                               |
+| `Boolean`  | `bool`                                                                 |
+| `Int`      | `int`                                                                  |
+| `BigInt`   | `long`                                                                 |
+| `Float`    | `double`                                                               |
+| `Decimal`  | [Currently unsupported](https://github.com/prisma/prisma/issues/12637) |
+| `DateTime` | `timestamp`                                                            |
+| `Date`     | `date`                                                                 |
+| `Bytes`    | `binData`                                                              |
+| `Json`     |                                                                        |
+
+MongoDB types that are currently unsupported:
+
+- `Decimal128`
+- `Undefined`
+- `DBPointer`
+- `Null`
+- `Symbol`
+- `MinKey`
+- `MaxKey`
+- `Object`
+- `Javascript`
+- `JavascriptWithScope`
+- `Regex`
+
+### Mapping from MongoDB to Prisma types on Introspection
+
+When introspecting a MongoDB database, Prisma uses the relevant [scalar types](/concepts/components/prisma-schema/data-model#scalar-fields). Some special types also get additional native type annotations:
+
+| MongoDB (Type \| Aliases) | Prisma   | Supported | Native database type attribute | Notes |
+| ------------------------- | -------- | :-------: | :----------------------------- | :---- |
+| `objectId`                | `String` |    ✔️     | `@db.ObjectId`                 |       |
+
+[Introspection](/concepts/components/introspection) adds native database types that are **not yet supported** as [`Unsupported`](/reference/api-reference/prisma-schema-reference#unsupported) <span class="api"></span> fields:
+
+```prisma file=schema.prisma
+model Example {
+  id    String                           @id @default(auto()) @map("_id") @db.ObjectId
+  name  String
+  regex Unsupported("RegularExpression")
+}
+```
