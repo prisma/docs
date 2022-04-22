@@ -196,7 +196,7 @@ You can configure your [database connection URL](/reference/database-reference/c
 The format of the connection URL Mongoose uses is similar to the one Prisma will use.
 
 ```bash file=.env
-mongodb://alice:myPassword43@localhost:27017/blog-mongoose
+DATABASE_URL="mongodb://alice:myPassword43@localhost:27017/blog-mongoose"
 ```
 
 Refer to the [MongoDB connection URL specification](https://www.mongodb.com/docs/manual/reference/connection-string/#connection-string-options) for further details.
@@ -245,13 +245,13 @@ model users {
 
 The generated Prisma models represent the collections and are the foundation of your programmatic Prisma Client API which allows you to send queries to your database.
 
-### 2.4. Adjust the relationships
+### 2.4. Update the relations
 
 MongoDB doesn't support relations between different collections. However, you can create references between documents using the `ObjectId` field type or from one document to many using an array of `ObjectIds` in the collection. The reference will store id(s) of the related document(s). You can use the `populate()` method Mongoose provides to populate the reference with the data of the related document.
 
 Update the 1-n relationship between `Post` <-> `User` as follows:
 
-- Rename the existing `author` reference in the `Post` to `authorId` and add the `@map("author")` attribute
+- Rename the existing `author` reference in the `posts` model to `authorId` and add the `@map("author")` attribute
 - Add the `author` relation field in the `posts` model and it's `@relation` attribute specifying the `fields` and `references`
 - Add the `posts` relation in the `users` model
 
@@ -338,8 +338,9 @@ model users {
 
 Update the m-n between `Post` <-> `Category` references as follows:
 
-- Rename the `categories` field to `categoryIds` and map it using `@map("categories") in the `posts` model
+- Rename the `categories` field to `categoryIds` and map it using `@map("categories")` in the `posts` model
 - Add a new `categories` relation field in the `posts` model
+- Add the `postIds` scalar list field in the `categories` model
 - Add the `posts` relation in the `categories` model
 - Add a [relation scalar](https://www.prisma.io/docs/concepts/components/prisma-schema/relations#annotated-relation-fields-and-relation-scalar-fields) on both models
 - Add the `@relation` attribute specifying the `fields` and `references` arguments on both sides.
@@ -357,8 +358,8 @@ model categories {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   v        Int    @map("__v")
   name     String
-+  posts    posts[]  @relation(fields: [post_ids], references: [id])
-+  post_ids String[] @db.ObjectId
++  posts    posts[]  @relation(fields: [postIds], references: [id])
++  postIds String[] @db.ObjectId
 }
 
 model posts {
@@ -451,11 +452,11 @@ You can use the [rename symbol](https://code.visualstudio.com/docs/editor/refact
 
 </Tip>
 
-If your schema includes a [`versionKey`](https://mongoosejs.com/docs/guide.html#versionKey), update it by adding the `@ignore` attribute and adding a `@default(0)` to the `v` field. This means the field will be excluded from the generated Prisma Client. Prisma does not handle document versioning.
+If your schema includes a [`versionKey`](https://mongoosejs.com/docs/guide.html#versionKey), update it by adding the `@default(0)` and `@ignore` attributes to the `v` field. This means the field will be excluded from the generated Prisma Client and will have a default value of 0. Prisma does not handle document versioning.
 
 Also note that you can rename [relation fields](/concepts/components/prisma-schema/relations#relation-fields) to optimize the Prisma Client API that you'll use later to send queries to your database. For example, the `post` field on the `user` model is a _list_, so a better name for this field would be `posts` to indicate that it's plural.
 
-You can adjust update the `published` field by including the `@default` attribute to define the default value of the field.
+Update the `published` field by including the `@default` attribute to define the default value of the field.
 
 Here's an adjusted version of the Prisma schema that addresses these points:
 
@@ -685,6 +686,10 @@ const getPostById = async (req, res) => {
   try {
     const post = await prisma.post.findUnique({
       where: { id },
+      include: {
+        author: true,
+        category: true,
+      }
     })
 
     if (!post) return res.status(404).json({ message: 'Post not found' })
@@ -846,7 +851,7 @@ const setUserBio = async (req, res) => {
       },
     })
 
-    if(!user) return res.status(404).json({ message: 'Author not found' })
+    if (!user) return res.status(404).json({ message: 'Author not found' })
 
     return res.status(200).json(user)
   } catch (error) {
