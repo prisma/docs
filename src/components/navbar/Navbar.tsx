@@ -61,7 +61,7 @@ export const Navbar: React.FC<{}> = () => {
   )
 }
 
-// STYLED COMPONENTES
+// STYLED COMPONENTS
 
 const NavContainer = styled.nav`
   display: flex;
@@ -92,11 +92,7 @@ const NavContainer = styled.nav`
     position: fixed;
     z-index: 999;
     inset: 0;
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-
+    padding: 1.5rem 1rem;
     background-color: ${theme.colors.white};
     flex-wrap: wrap;
   }
