@@ -1,5 +1,6 @@
 const { init, trackPage } = require('./src/utils/stats')
 const { goToNav } = require('./src/utils/goToNavItem')
+const { redirects } = require('./config')
 
 exports.onClientEntry = () => {
   init()
