@@ -14,20 +14,21 @@ Defines a [data source](/concepts/components/prisma-schema/data-sources) <span c
 
 A `datasource` block accepts the following fields:
 
-| Name                   | Required | Type                                                             | Description                                                                                                                                                    |
-| ---------------------- | -------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `provider`             | **Yes**  | String (`postgresql`, `mysql`, `sqlite`, `sqlserver`, `mongodb`) | Describes which data source connectors to use.                                                                                                                 |
-| `url`                  | **Yes**  | String (URL)                                                     | Connection URL including authentication info. Most connectors use [the syntax provided by the database](/reference/database-reference/connection-urls#format). |
-| `shadowDatabaseUrl`    | No       | String (URL)                                                     | Connection URL to the shadow database used by Prisma Migrate. Allows you to use a cloud-hosted database as the shadow database.                                |
-| `referentialIntegrity` | No       | String (`foreignKeys`, `prisma`)                                 | Allows setting the [referential integrity](/concepts/components/prisma-schema/relations/referential-integrity).                                                |
+| Name                   | Required | Type                                                                            | Description                                                                                                                                                    |
+| ---------------------- | -------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provider`             | **Yes**  | String (`postgresql`, `mysql`, `sqlite`, `sqlserver`, `mongodb`, `cockroachdb`) | Describes which data source connectors to use.                                                                                                                 |
+| `url`                  | **Yes**  | String (URL)                                                                    | Connection URL including authentication info. Most connectors use [the syntax provided by the database](/reference/database-reference/connection-urls#format). |
+| `shadowDatabaseUrl`    | No       | String (URL)                                                                    | Connection URL to the shadow database used by Prisma Migrate. Allows you to use a cloud-hosted database as the shadow database.                                |
+| `referentialIntegrity` | No       | String (`foreignKeys`, `prisma`)                                                | Allows setting the [referential integrity](/concepts/components/prisma-schema/relations/referential-integrity).                                                |
 
 The following providers are available:
 
-- `sqlite`
-- `postgresql`
-- `mysql`
+- [`sqlite`](/concepts/database-connectors/sqlite)
+- [`postgresql`](/concepts/database-connectors/postgresql)
+- [`mysql`](/concepts/database-connectors/mysql)
 - [`sqlserver`](/concepts/database-connectors/sql-server)
-- `mongodb`
+- [`mongodb`](/concepts/database-connectors/mongodb)
+- [`cockroachdb`](/concepts/database-connectors/cockroachdb) (Preview)
 
 ### Remarks
 
@@ -55,6 +56,32 @@ datasource db {
 ```
 
 Learn more about PostgreSQL connection strings [here](/concepts/database-connectors/postgresql).
+
+#### Specify a PostgreSQL data source via an environment variable
+
+In this example, the target database is available with the following credentials:
+
+- User: `johndoe`
+- Password: `mypassword`
+- Host: `localhost`
+- Port: `5432`
+- Database name: `mydb`
+- Schema name: `public`
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+When running a Prisma CLI command that needs the database connection URL (e.g. `prisma generate`), you need to make sure that the `DATABASE_URL` environment variable is set.
+
+One way to do so is by creating a [`.env`](https://github.com/motdotla/dotenv) file with the following contents. Note that the file must be in the same directory as your `schema.prisma` file to automatically picked up the Prisma CLI.
+
+```
+DATABASE_URL=postgresql://johndoe:mypassword@localhost:5432/mydb?schema=public
+```
 
 #### Specify a MySQL data source
 
@@ -105,31 +132,30 @@ datasource db {
 
 Learn more about SQLite connection strings [here](/concepts/database-connectors/sqlite).
 
-#### Specify a PostgreSQL data source via an environment variable
+#### Specify a CockroachDB data source
 
 In this example, the target database is available with the following credentials:
 
 - User: `johndoe`
 - Password: `mypassword`
 - Host: `localhost`
-- Port: `5432`
+- Port: `26257`
 - Database name: `mydb`
 - Schema name: `public`
 
 ```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["cockroachdb"]
+}
+
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "cockroachdb"
+  url      = "postgresql://johndoe:mypassword@localhost:26257/mydb?schema=public"
 }
 ```
 
-When running a Prisma CLI command that needs the database connection URL (e.g. `prisma generate`), you need to make sure that the `DATABASE_URL` environment variable is set.
-
-One way to do so is by creating a [`.env`](https://github.com/motdotla/dotenv) file with the following contents. Note that the file must be in the same directory as your `schema.prisma` file to automatically picked up the Prisma CLI.
-
-```
-DATABASE_URL=postgresql://johndoe:mypassword@localhost:5432/mydb?schema=public
-```
+The format for connection strings is the same as for PostgreSQL. Learn more about PostgreSQL connection strings [here](/concepts/database-connectors/postgresql).
 
 ## <inlinecode>generator</inlinecode>
 
@@ -364,6 +390,7 @@ Variable length text.
 | MySQL         | `varchar(191)`   |
 | MongoDB       | `String`         |
 | SQLite        | `TEXT`           |
+| CockroachDB   | `STRING`         |
 
 #### PostgreSQL
 
@@ -425,6 +452,20 @@ model Model {
 
 `TEXT`
 
+#### CockroachDB (Preview)
+
+| Native database type              | Native database type attribute | Notes |
+| :-------------------------------- | :----------------------------- | ----- |
+| `STRING` \| `TEXT` \| `VARCHAR`   | `@db.String`                   |       |
+| `CHAR`                            | `@db.Char(x)`                  |       |
+| `"char"`                          | `@db.SingleChar`               |       |
+| `BIT`                             | `@db.Bit(x)`                   |       |
+| `VARBIT`                          | `@db.VarBit`                   |       |
+| `UUID`                            | `@db.Uuid`                     |       |
+| `INET`                            | `@db.Inet`                     |       |
+
+Note that the `xml` and `citext` types supported in PostgreSQL are not currently supported in CockroachDB.
+
 #### Clients
 
 | Prisma Client JS |
@@ -444,6 +485,7 @@ True or false value.
 | MySQL         | `TINYINT(1)`    |
 | MongoDB       | `Bool`          |
 | SQLite        | `INTEGER`       |
+| CockroachDB   | `BOOL`          |
 
 #### PostgreSQL
 
@@ -472,6 +514,12 @@ True or false value.
 
 `INTEGER`
 
+#### CockroachDB (Preview)
+
+| Native database types | Native database type attribute | Notes |
+| :-------------------- | :----------------------------- | ----- |
+| `BOOL`                | `@db.Bool`                  |       |
+
 #### Clients
 
 | Prisma Client JS |
@@ -489,6 +537,7 @@ True or false value.
 | MySQL         | `INT`           |
 | MongoDB       | `Int`           |
 | SQLite        | `INTEGER`       |
+| CockroachDB   | `INT`           |
 
 #### PostgreSQL
 
@@ -496,9 +545,9 @@ True or false value.
 | -------------------------- | ---------------------------------------- | ----- |
 | `integer` \| `int`, `int4` | `@db.Integer`                            |       |
 | `smallint` \| `int2`       | `@db.SmallInt`                           |       |
-| `smallserial` \| `serial2` | `@db.SmallInt @default(autoincrement())` |
-| `serial` \| `serial4`      | `@db.Int @default(autoincrement())`      |
-| `oid`                      | `@db.Oid`                                |
+| `smallserial` \| `serial2` | `@db.SmallInt @default(autoincrement())` |       |
+| `serial` \| `serial4`      | `@db.Int @default(autoincrement())`      |       |
+| `oid`                      | `@db.Oid`                                |       |
 
 #### MySQL
 
@@ -536,6 +585,17 @@ True or false value.
 
 `INTEGER`
 
+#### CockroachDB (Preview)
+
+| Native database types        | Native database type attribute           | Notes                                                                                                             |
+| ---------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `INTEGER` \| `INT` \| `INT8` | `@db.Int8`                               | Note that this differs from PostgreSQL, where `integer` and `int` are aliases for `int4` and map to `@db.Integer` |
+| `INT4`                       | `@db.Int4`                               |                                                                                                                   |
+| `INT2` \| `SMALLINT`         | `@db.Int2`                               |                                                                                                                   |
+| `SMALLSERIAL` \| `SERIAL2`   | `@db.Int2 @default(autoincrement())`     |                                                                                                                   |
+| `SERIAL` \| `SERIAL4`        | `@db.Int4 @default(autoincrement())`     |                                                                                                                   |
+| `SERIAL8` \| `BIGSERIAL`     | `@db.Int8 @default(autoincrement())`     |                                                                                                                   |
+
 #### Clients
 
 | Prisma Client JS |
@@ -555,6 +615,7 @@ True or false value.
 | MySQL         | `INT`           |
 | MongoDB       | `Long`          |
 | SQLite        | `INTEGER`       |
+| CockroachDB   | `INTEGER`       |
 
 #### PostgreSQL
 
@@ -584,6 +645,13 @@ True or false value.
 
 `INTEGER`
 
+#### CockroachDB (Preview)
+
+| Native database types       | Native database type attribute         | Notes                                                                      |
+| --------------------------- | -------------------------------------- | -------------------------------------------------------------------------- |
+| `BIGINT` \| `INT` \| `INT8` | `@db.Int8`                             | Note that this differs from PostgreSQL, where `int` is an alias for `int4` |
+| `bigserial` \| `serial8`    | `@db.Int8 @default(autoincrement())`   |                                                                            |
+
 #### Clients
 
 | Client           | Type                                                                                                | Description                                                                                                         |
@@ -605,13 +673,14 @@ Floating point number.
 | MySQL         | `DOUBLE`           |
 | MongoDB       | `Double`           |
 | SQLite        | `REAL`             |
+| CockroachDB   | `DOUBLE PRECISION` |
 
 #### PostgreSQL
 
 | Native database types | Native database type attribute | Notes |
 | --------------------- | ------------------------------ | ----- |
-| `double precision`    | `@db.DoublePrecision`          |
-| `real`                | `@db.Real`                     |
+| `double precision`    | `@db.DoublePrecision`          |       |
+| `real`                | `@db.Real`                     |       |
 
 #### MySQL
 
@@ -637,6 +706,13 @@ Floating point number.
 
 `REAL`
 
+#### CockroachDB (Preview)
+
+| Native database types          | Native database type attribute | Notes |
+| ------------------------------ | ------------------------------ | ----- |
+| `DOUBLE PRECISION` \| `FLOAT8` | `@db.Float8`                   |       |
+| `REAL` \| `FLOAT4` \| `FLOAT`  | `@db.Float4`                   |       |
+
 #### Clients
 
 | Prisma Client JS |
@@ -654,13 +730,14 @@ Floating point number.
 | MySQL         | `DECIMAL(65,30)`                                               |
 | MongoDB       | [Not supported](https://github.com/prisma/prisma/issues/12637) |
 | SQLite        | `DECIMAL`                                                      |
+| CockroachDB   | `DECIMAL`                                                      |
 
 #### PostgreSQL
 
 | Native database types  | Native database type attribute | Notes |
 | ---------------------- | ------------------------------ | ----- |
 | `decimal` \| `numeric` | `@db.Decimal(p, s)`†           |       |
-| `money`                | `@db.Money`                    |
+| `money`                | `@db.Money`                    |       |
 
 - † `p` (precision), the maximum total number of decimal digits to be stored. `s` (scale), the number of decimal digits that are stored to the right of the decimal point.
 
@@ -688,6 +765,15 @@ Floating point number.
 
 `DECIMAL` (changed from `REAL` in 2.17.0)
 
+#### CockroachDB (Preview)
+
+| Native database types           | Native database type attribute | Notes                                                         |
+| ------------------------------- | ------------------------------ | ------------------------------------------------------------- |
+| `DECIMAL` \| `DEC` \| `NUMERIC` | `@db.Decimal(p, s)`†           |                                                               |
+| `money`                         | Not yet                        | PostgreSQL's `money` type is not yet supported by CockroachDB |
+
+- † `p` (precision), the maximum total number of decimal digits to be stored. `s` (scale), the number of decimal digits that are stored to the right of the decimal point.
+
 #### Clients
 
 | Client           | Type                                               | Description                                                                                                           |
@@ -709,16 +795,17 @@ Floating point number.
 | MySQL         | `DATETIME(3)`   |
 | MongoDB       | `Timestamp`     |
 | SQLite        | `NUMERIC`       |
+| CockroachDB   | `TIMESTAMP`     |
 
 #### PostgreSQL
 
 | Native database types | Native database type attribute | Notes |
 | --------------------- | ------------------------------ | ----- |
 | `timestamp`           | `@db.Timestamp(x)`             |       |
-| `timestamptz`         | `@db.Timestamptz(x)`           |
-| `date`                | `@db.Date`                     |
-| `time`                | `@db.Time(x)`                  |
-| `timetz`              | `@db.Timetz(x)`                |
+| `timestamptz`         | `@db.Timestamptz(x)`           |       |
+| `date`                | `@db.Date`                     |       |
+| `time`                | `@db.Time(x)`                  |       |
+| `timetz`              | `@db.Timetz(x)`                |       |
 
 #### MySQL
 
@@ -757,6 +844,16 @@ yearField     Int    @db.Year
 - [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) (`1996-12-19T16:39:57-08:00`)
 - [RFC 2822](https://tools.ietf.org/html/rfc2822#section-3.3) (`Tue, 1 Jul 2003 10:52:37 +0200`)
 
+#### CockroachDB (Preview)
+
+| Native database types | Native database type attribute | Notes |
+| --------------------- | ------------------------------ | ----- |
+| `TIMESTAMP`           | `@db.Timestamp(x)`             |       |
+| `TIMESTAMPTZ`         | `@db.Timestamptz(x)`           |       |
+| `DATE`                | `@db.Date`                     |       |
+| `TIME`                | `@db.Time(x)`                  |       |
+| `TIMETZ`              | `@db.Timetz(x)`                |       |
+
 #### Clients
 
 | Prisma Client JS |
@@ -776,6 +873,7 @@ A JSON object.
 | MySQL         | `JSON`                                                                                                   |
 | MongoDB       | [A valid `BSON` object (Relaxed mode)](https://docs.mongodb.com/manual/reference/mongodb-extended-json/) |
 | SQLite        | Not supported                                                                                            |
+| CockroachDB   | `JSONB`                                                                                                  |
 
 #### PostgreSQL
 
@@ -806,6 +904,12 @@ Microsoft SQL Server does not have a specific data type for JSON - however, ther
 
 Not supported
 
+#### CockroachDB (Preview)
+
+| Native database types | Native database type attribute | Notes       |
+| --------------------- | ------------------------------ | ----------- |
+| `JSON` \| `JSONB`       | `@db.JsonB`          |         |
+
 #### Clients
 
 | Prisma Client JS |
@@ -825,6 +929,7 @@ Not supported
 | MySQL         | `LONGBLOB`      |
 | MongoDB       | `BinData`       |
 | SQLite        | Not supported   |
+| CockroachDB   | `BYTES`         |
 
 #### PostgreSQL
 
@@ -864,6 +969,12 @@ Not supported
 #### SQLite
 
 Not supported
+
+#### CockroachDB (Preview)
+
+| Native database types        | Native database type attribute |
+| ---------------------------- | ------------------------------ |
+| `BYTES` \| `BYTEA` \| `BLOB` | `@db.Bytes`                    |
 
 #### Clients
 
@@ -927,7 +1038,7 @@ Makes a field a list.
 
 ##### Relational databases
 
-- Scalar lists (arrays) are only supported in the data model if your database natively supports them. Currently, scalar lists are therefore only supported when using PostgreSQL (since MySQL and SQLite don't natively support scalar lists).
+- Scalar lists (arrays) are only supported in the data model if your database natively supports them. Currently, scalar lists are therefore only supported when using PostgreSQL, or CockroachDB in Preview (since MySQL and SQLite don't natively support scalar lists).
 
 ##### MongoDB
 
@@ -2269,12 +2380,12 @@ Defines an index in the database.
 
 - Corresponding database type: `INDEX`
 - It is currently not possible to provide more configuration options to the index:
-  - PostgreSQL
+  - PostgreSQL (or CockroachDB in Preview):
     - Define index fields as expressions (e.g. `CREATE INDEX title ON public."Post"((lower(title)) text_ops);`)
     - Specify index methods with `USING`; PostgreSQL supports these index methods: B-tree, hash, GiST, and GIN; Prisma uses B-Tree by default
     - Define partial indexes with `WHERE`
     - Create indexes concurrently with `CONCURRENTLY`
-  - MySQL
+  - MySQL:
     - Specify index methods with `USING`; MySQL supports these index methods: B-tree, hash; Prisma uses B-Tree by default
 
 <Admonition type="info">
@@ -2799,9 +2910,12 @@ Create a sequence of integers in the underlying database and assign the incremen
 - Compatible with `Int`
 - Implemented on the database-level, meaning that it manifests in the database schema and can be recognized through introspection. Database implementations:
 
-  | PostgreSQL                                                                                 | MySQL                                                                                             | SQLite                                                         |
-  | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-  | [`SERIAL`](https://www.postgresql.org/docs/9.1/datatype-numeric.html#DATATYPE-SERIAL) type | [`AUTO_INCREMENT`](https://dev.mysql.com/doc/refman/8.0/en/example-auto-increment.html) attribute | [`AUTOINCREMENT`](https://www.sqlite.org/autoinc.html) keyword |
+  | Database              | Implementation                                                                                    |
+  | --------------------- | ------------------------------------------------------------------------------------------------- |
+  | PostgreSQL            | [`SERIAL`](https://www.postgresql.org/docs/9.1/datatype-numeric.html#DATATYPE-SERIAL) type        |
+  | MySQL                 | [`AUTO_INCREMENT`](https://dev.mysql.com/doc/refman/8.0/en/example-auto-increment.html) attribute |
+  | SQLite                | [`AUTOINCREMENT`](https://www.sqlite.org/autoinc.html) keyword                                    |
+  | CockroachDB (Preview) | [`SERIAL`](https://www.postgresql.org/docs/9.1/datatype-numeric.html#DATATYPE-SERIAL) type        |
 
 #### Examples
 
@@ -2923,9 +3037,12 @@ Set a timestamp of the time when a record is created.
 
 - Implemented on the database-level, meaning that it manifests in the database schema and can be recognized through introspection. Database implementations:
 
-  | PostgreSQL                                                                                                                                 | MySQL                                                                                                                                           | SQLite                                             |
-  | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-  | [`CURRENT_TIMESTAMP`](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT) and aliases like `now()` | [`CURRENT_TIMESTAMP`](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-functions.html#function_current-timestamp) and aliases like `now()` | `CURRENT_TIMESTAMP` and aliases like `date('now')` |
+  | Database              | Implementation                                                                                                                                  |
+  | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+  | PostgreSQL            | [`CURRENT_TIMESTAMP`](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT) and aliases like `now()`      |
+  | MySQL                 | [`CURRENT_TIMESTAMP`](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-functions.html#function_current-timestamp) and aliases like `now()` |
+  | SQLite                | `CURRENT_TIMESTAMP` and aliases like `date('now')`                                                                                              |
+  | CockroachDB (Preview) | [`CURRENT_TIMESTAMP`](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT) and aliases like `now()`      |
 
 ##### MongoDB
 
