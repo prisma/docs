@@ -16,11 +16,11 @@ Read through the [contributing guide](CONTRIBUTING.md) to learn how you can cont
 ## Prerequisites for macOS Monterey (Apple M1 chip)
 
 1. Install [homebrew](https://brew.sh/).
-2. Install libvips via homebrew.
+2. Install [`libvips`](https://github.com/libvips/libvips) via homebrew.
 
-```
-brew install libvips
-```
+    ```
+    brew install libvips
+    ```
 
 
 ## Run locally
