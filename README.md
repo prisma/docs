@@ -13,6 +13,16 @@ This repository contains the [source code](./src) and the [content](./content) f
 
 Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
 
+## Prerequisites for macOS Monterey (Apple M1 chip)
+
+1. Install [homebrew](https://brew.sh/).
+2. Install libvips via homebrew.
+
+```
+brew install libvips
+```
+
+
 ## Run locally
 
 Clone this repository and get started by running the following commands:
