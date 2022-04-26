@@ -8,7 +8,7 @@ preview: true
 
 <TopBlock>
 
-Prisma allows configuration of database indexes, unique constraints and primary key constraints through the `extendedIndexes` preview feature in version `3.5.0` and later. This provides extended syntax options in the Prisma schema language for configuring the length of indexes (MySQL only), the sort order (all databases) and the index type (PostgreSQL only).
+Prisma allows configuration of database indexes, unique constraints and primary key constraints through the `extendedIndexes` preview feature in version `3.5.0` and later. This provides extended syntax options in the Prisma schema language for configuring the length of indexes (MySQL only), the sort order (all databases), the index type (PostgreSQL only) and to configure indexes as clustered or non-clustered (SQL Server only).
 
 Version `3.6.0` also introduces support for introspection and migration of full text indexes in MySQL and MongoDB through a new `@@fulltext` attribute, available through the `fullTextIndex` preview feature.
 
@@ -26,11 +26,13 @@ The `extendedIndexes` preview feature enables new configuration options for inde
 
 The following arguments can be specified:
 
-- The `length` argument is available **in MySQL only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields in version `3.5.0` and later. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
+- The `length` argument is available **in MySQL only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes in version `3.5.0` and later. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
 
-- The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` fields in version `3.5.0` and later. Additionally, SQL Server also allows it on `@id` and `@@id`.
+- The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` attributes in version `3.5.0` and later. Additionally, SQL Server also allows it on `@id` and `@@id`.
 
-- The`type` argument is also available **in PostgreSQL only** on the `@@index` field in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method.
+- The `type` argument is also available **in PostgreSQL only** on the `@@index` attribute in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method.
+
+- The `clustered` argument is available **in SQL Server only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attribute in version `3.13.0` and later. It allows Prisma to configure (non)clustered indexes.
 
 ### Enabling the `extendedIndexes` preview feature
 
@@ -47,7 +49,7 @@ generator client {
 
 The `length` argument is specific to MySQL and allows you to define indexes and constraints on columns of `String` and `Byte` types. For these types, MySQL requires you to specify a maximum length for the subpart of the value to be indexed in cases where the full value would exceed MySQL's limits for index sizes. See [the MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/innodb-limits.html) for more details.
 
-The `length` argument is available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields.
+The `length` argument is available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes.
 
 As an example, the following data model declares an `id` field with a maximum length of 3000 characters:
 
@@ -77,7 +79,7 @@ Prisma Migrate is able to create constraints and indexes with the `length` argum
 
 Introspection will fetch these limits where they are present in your existing database. This allows Prisma to support indexes and constraints that were previously suppressed and results in better support of existing MySQL databases that are making use of this feature.
 
-The `length` argument can also be used on compound primary keys, using the `@@id` field, as in the example below:
+The `length` argument can also be used on compound primary keys, using the `@@id` attribute, as in the example below:
 
 ```prisma file=schema.prisma
 model CompoundId {
@@ -88,7 +90,7 @@ model CompoundId {
 }
 ```
 
-A similar syntax can be used for the `@@unique` and `@@index` fields.
+A similar syntax can be used for the `@@unique` and `@@index` attributes.
 
 ### Configuring the index sort order with `sort`
 
@@ -169,6 +171,41 @@ CREATE TABLE "Example" (
 CREATE INDEX "Example_val_idx" ON "Example" USING HASH (val);
 ```
 
+### Configuring if indexes are clustered or non-clustered with `clustered` (SQL Server)
+
+The `clustered` argument is available to configure (non)clustered indexes in SQL Server in version `3.13.0` and later. It can be used on `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes.
+
+As an example, the following model configures the `@id` to be non-clustered (instead of the clustered default):
+
+```prisma file=schema.prisma
+model Example {
+  id    Int @id(clustered: false)
+  value Int
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE [Example] (
+  id INT NOT NULL,
+  value INT,
+  CONSTRAINT [Example_pkey] PRIMARY KEY NONCLUSTERED (id)
+)
+```
+
+The default value of `clustered` for each attribute is as follows:
+
+| Attribute  | Value   |
+| ---------- | ------- |
+| `@id`      | `true`  |
+| `@@id`     | `true`  |
+| `@unique`  | `false` |
+| `@@unique` | `false` |
+| `@@index`  | `false` |
+
+A table can have at most one clustered index.
+
 ### Upgrading from previous versions
 
 <Admonition type="warning">
@@ -182,8 +219,9 @@ A breaking change can occur in the following situations:
 - **Existing sort constraints and indexes:** earlier versions of Prisma will assume that the desired sort order is _ascending_ if no order is specified explicitly. This means that this is a breaking change if you have existing constraints or indexes that are using descending sort order and migrate your database without first specifying this in your data model.
 - **Existing length constraints and indexes:** in earlier versions of Prisma, indexes and constaints that were length constrained in MySQL could not be represented in the Prisma schema. Therefore `prisma db pull` was not fetching these and you could not manually specify them. When you ran `prisma db push` or `prisma migrate dev` they were ignored if already present in your database. Since you are now able to specify these, migrate commands will now drop them if they are missing from your data model but present in the database.
 - **Existing hash indexes (PostgreSQL):** earlier versions of Prisma did not support hash indexes in the schema. These need to be added before migrating your database.
+- **Existing (non-)clustered indexes (SQL Server):** earlier versions of Prisma did not support configuring an index as clustered or non-clustered. For indexes that do not use the default, these need to be added before migrating your database.
 
-In each of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve any existing constraints.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev`.
+In each of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve any existing constraints or configuration.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev` the first time after the upgrade.
 
 ## Full text indexes (MySQL and MongoDB)
 
@@ -191,7 +229,7 @@ The `fullTextIndex` preview feature provides support for introspection and migra
 
 <Admonition type="warning">
 
-For now we do not enable the full text search commands in the Prisma Client. They will be implemented separately, and the progress can be followed in the [MongoDB](https://github.com/prisma/prisma/issues/9413) and [MySQL](https://github.com/prisma/prisma/issues/10415) issues.
+For now we do not enable the full text search commands in the Prisma Client for MongoDB; the progress can be followed in the [MongoDB](https://github.com/prisma/prisma/issues/9413) issue.
 
 </Admonition>
 
