@@ -22,6 +22,14 @@ const config = {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
       to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
     },
+    {
+      from: '/concepts/components/prisma-data-platform#prisma-data-proxy',
+      to: '/concepts/data-platform/data-proxy',
+    },
+    {
+      from: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-sometext',
+      to: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-prisma',
+    },
   ],
   header: {
     secondLevelHeaderMenuItems: [
