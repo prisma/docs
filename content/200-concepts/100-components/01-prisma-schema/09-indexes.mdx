@@ -30,7 +30,7 @@ The following arguments can be specified:
 
 - The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` attributes in version `3.5.0` and later. Additionally, SQL Server also allows it on `@id` and `@@id`.
 
-- The `type` argument is also available **in PostgreSQL only** on the `@@index` attribute in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method.
+- The `type` argument is also available **in PostgreSQL only** on the `@@index` attribute in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method. Version `3.14.0` adds additional access methods `Gist`, `Gin`, `SpGist` and `Brin`.
 
 - The `clustered` argument is available **in SQL Server only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attribute in version `3.13.0` and later. It allows Prisma to configure (non)clustered indexes.
 
@@ -145,7 +145,9 @@ model Post {
 
 ### Configuring the access type of indexes with `type` (PostgreSQL)
 
-The `type` argument is available for configuring the index type in PostgreSQL in version `3.6.0` and later, using the `@@index` attribute. This allows you to use `Hash` as the index access method, instead of the default `BTree` access method.
+The `type` argument is available for configuring the index type in PostgreSQL in version `3.6.0` and later, using the `@@index` attribute. This allows you to use `Hash` as the index access method, instead of the default `BTree` access method. Versions `3.14.0` and later allows additionally the `Gist`, `Gin`, `SpGist` and `Brin` access methods.
+
+#### Hash
 
 The `Hash` type will store the index data in a format that is much faster to search and insert, and that will use less disk space. However, only the `=` and `<>` comparisons can use the index, so other comparison operators such as `<` and `>` will be much slower with `Hash` than when using the default `BTree` type.
 
@@ -165,11 +167,114 @@ This translates to the following SQL commands:
 ```sql
 CREATE TABLE "Example" (
   id INT PRIMARY KEY,
-  val INT NOT NULL
+  value INT NOT NULL
 );
 
-CREATE INDEX "Example_val_idx" ON "Example" USING HASH (val);
+CREATE INDEX "Example_value_idx" ON "Example" USING HASH (val);
 ```
+
+#### Gist, Gin, SpGist and Brin
+
+These four index types are special in how they let you in some cases to define the operators catched by the index. Depending on the field type, it is sometimes required to write the operators to the indexed field. As an example, the following model adds an index with a `type` of `Gist` to the `value` field with `InetOps` as the operators that will be using the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int    @id
+  value String @db.Inet
+
+  @@index([value(ops: InetOps)], type: Gist)
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value INET NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING GIST (val inet_ops);
+```
+
+The allowed value to the operator class (`ops`) argument depends on the native type of the field, and the type of the index. Prisma Schema Language provides all operator classes provided natively by PostgreSQL version 14.0, if the native type is supported by Prisma. For cases where we don't yet support the operator class, or the native type of the indexed field, the `raw` function can be used as an escape hatch:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int                     @id
+  value Unsupported("tsvector")
+
+  @@index([value(ops: raw("tsvector_ops"))], type: Gist)
+}
+```
+
+<details>
+<summary>Operator classes currently supported in the Prisma Schema Language<summary>
+| index type | operator class              | operator class in database     | allowed field type | allowed native types      | default | postgres version |
+|------------|-----------------------------|--------------------------------|--------------------|---------------------------|---------|------------------|
+| `Gist`     | `InetOps`                   | `inet_ops`                     | `String`           | `@db.Inet`                |         |                  |
+| `Gin`      | `ArrayOps`                  | `array_ops`                    | any array          |                           | ✅      | also CockroachDB |
+| `Gin`      | `JsonbOps`                  | `jsonb_ops`                    | `Json`             | `@db.JsonB`               | ✅      | also CockroachDB |
+| `Gin`      | `JsonbPathOps`              | `jsonb_path_ops`               | `Json`             | `@db.JsonB`               |         |                  |
+| `SpGist`   | `InetOps`                   | `inet_ops`                     | `String`           | `@db.Inet`                | ✅      | 10+              |
+| `SpGist`   | `TextOps`                   | `text_ops`                     | `String`           | `@db.Text`, `@db.VarChar` | ✅      |                  |
+| `Brin`     | `BitMinMaxOps`              | `bit_minmax_ops`               | `String`           | `@db.Bit`                 | ✅      |                  |
+| `Brin`     | `VarBitMinMaxOps`           | `varbit_minmax_ops`            | `String`           | `@db.VarBit`              | ✅      |                  |
+| `Brin`     | `BpcharBloomOps`            | `bpchar_bloom_ops`             | `String`           | `@db.Char`                |         | 14+              |
+| `Brin`     | `BpcharMinMaxOps`           | `bpchar_minmax_ops`            | `String`           | `@db.Char`                | ✅      |                  |
+| `Brin`     | `ByteaBloomOps`             | `bytea_bloom_ops`              | `Bytes`            | `@db.Bytea`               |         | 14+              |
+| `Brin`     | `ByteaMinMaxOps`            | `bytea_minmax_ops`             | `Bytes`            | `@db.Bytea`               | ✅      |                  |
+| `Brin`     | `DateBloomOps`              | `date_bloom_ops`               | `DateTime`         | `@db.Date`                |         | 14+              |
+| `Brin`     | `DateMinMaxOps`             | `date_minmax_ops`              | `DateTime`         | `@db.Date`                | ✅      |                  |
+| `Brin`     | `DateMinMaxMultiOps`        | `date_minmax_multi_ops`        | `DateTime`         | `@db.Date`                |         | 14+              |
+| `Brin`     | `Float4BloomOps`            | `float4_bloom_ops`             | `Float`            | `@db.Real`                |         | 14+              |
+| `Brin`     | `Float4MinMaxOps`           | `float4_minmax_ops`            | `Float`            | `@db.Real`                | ✅      |                  |
+| `Brin`     | `Float4MinMaxMultiOps`      | `float4_minmax_multi_ops`      | `Float`            | `@db.Real`                |         | 14+              |
+| `Brin`     | `Float8BloomOps`            | `float8_bloom_ops`             | `Float`            | `@db.DoublePrecision`     |         | 14+              |
+| `Brin`     | `Float8MinMaxOps`           | `float8_minmax_ops`            | `Float`            | `@db.DoublePrecision`     | ✅      |                  |
+| `Brin`     | `Float8MinMaxMultiOps`      | `float8_minmax_multi_ops`      | `Float`            | `@db.DoublePrecision`     |         | 14+              |
+| `Brin`     | `InetInclusionOps`          | `inet_inclusion_ops`           | `String`           | `@db.Inet`                | ✅      | 14+              |
+| `Brin`     | `InetBloomOps`              | `inet_bloom_ops`               | `String`           | `@db.Inet`                |         | 14+              |
+| `Brin`     | `InetMinMaxOps`             | `inet_minmax_ops`              | `String`           | `@db.Inet`                |         |                  |
+| `Brin`     | `InetMinMaxMultiOps`        | `inet_minmax_multi_ops`        | `String`           | `@db.Inet`                |         | 14+              |
+| `Brin`     | `Int2BloomOps`              | `int2_bloom_ops`               | `Int`              | `@db.SmallInt`            |         | 14+              |
+| `Brin`     | `Int2MinMaxOps`             | `int2_minmax_ops`              | `Int`              | `@db.SmallInt`            | ✅      |                  |
+| `Brin`     | `Int2MinMaxMultiOps`        | `int2_minmax_multi_ops`        | `Int`              | `@db.SmallInt`            |         | 14+              |
+| `Brin`     | `Int4BloomOps`              | `int4_bloom_ops`               | `Int`              | `@db.Integer`             |         | 14+              |
+| `Brin`     | `Int4MinMaxOps`             | `int4_minmax_ops`              | `Int`              | `@db.Integer`             | ✅      |                  |
+| `Brin`     | `Int4MinMaxMultiOps`        | `int4_minmax_multi_ops`        | `Int`              | `@db.Integer`             |         | 14+              |
+| `Brin`     | `Int8BloomOps`              | `int8_bloom_ops`               | `BigInt`           | `@db.BigInt`              |         | 14+              |
+| `Brin`     | `Int8MinMaxOps`             | `int8_minmax_ops`              | `BigInt`           | `@db.BigInt`              | ✅      |                  |
+| `Brin`     | `Int8MinMaxMultiOps`        | `int8_minmax_multi_ops`        | `BigInt`           | `@db.BigInt`              |         | 14+              |
+| `Brin`     | `NumericBloomOps`           | `numeric_bloom_ops`            | `Decimal`          | `@db.Decimal`             |         | 14+              |
+| `Brin`     | `NumericMinMaxOps`          | `numeric_minmax_ops`           | `Decimal`          | `@db.Decimal`             | ✅      |                  |
+| `Brin`     | `NumericMinMaxMultiOps`     | `numeric_minmax_multi_ops`     | `Decimal`          | `@db.Decimal`             |         | 14+              |
+| `Brin`     | `OidBloomOps`               | `oid_bloom_ops`                | `Int`              | `@db.Oid`                 |         | 14+              |
+| `Brin`     | `OidMinMaxOps`              | `oid_minmax_ops`               | `Int`              | `@db.Oid`                 | ✅      |                  |
+| `Brin`     | `OidMinMaxMultiOps`         | `oid_minmax_multi_ops`         | `Int`              | `@db.Oid`                 |         | 14+              |
+| `Brin`     | `TextBloomOps`              | `text_bloom_ops`               | `String`           | `@db.Text`, `@db.VarChar` |         | 14+              |
+| `Brin`     | `TextMinMaxOps`             | `text_minmax_ops`              | `String`           | `@db.Text`, `@db.VarChar` | ✅      |                  |
+| `Brin`     | `TextMinMaxMultiOps`        | `text_minmax_multi_ops`        | `String`           | `@db.Text`, `@db.VarChar` |         | 14+              |
+| `Brin`     | `TimestampBloomOps`         | `timestamp_bloom_ops`          | `DateTime`         | `@db.Timestamp`           |         | 14+              |
+| `Brin`     | `TimestampMinMaxOps`        | `timestamp_minmax_ops`         | `DateTime`         | `@db.Timestamp`           | ✅      |                  |
+| `Brin`     | `TimestampMinMaxMultiOps`   | `timestamp_minmax_multi_ops`   | `DateTime`         | `@db.Timestamp`           |         | 14+              |
+| `Brin`     | `TimestampTzBloomOps`       | `timestamptz_bloom_ops`        | `DateTime`         | `@db.Timestamptz`         |         | 14+              |
+| `Brin`     | `TimestampTzMinMaxOps`      | `timestamptz_minmax_ops`       | `DateTime`         | `@db.Timestamptz`         | ✅      |                  |
+| `Brin`     | `TimestampTzMinMaxMultiOps` | `timestamptz_minmax_multi_ops` | `DateTime`         | `@db.Timestamptz`         |         | 14+              |
+| `Brin`     | `TimeBloomOps`              | `time_bloom_ops`               | `DateTime`         | `@db.Time`                |         | 14+              |
+| `Brin`     | `TimeMinMaxOps`             | `time_minmax_ops`              | `DateTime`         | `@db.Time`                | ✅      |                  |
+| `Brin`     | `TimeMinMaxMultiOps`        | `time_minmax_multi_ops`        | `DateTime`         | `@db.Time`                |         | 14+              |
+| `Brin`     | `TimeTzBloomOps`            | `timetz_bloom_ops`             | `DateTime`         | `@db.Timetz`              |         | 14+              |
+| `Brin`     | `TimeTzMinMaxOps`           | `timetz_minmax_ops`            | `DateTime`         | `@db.Timetz`              | ✅      |                  |
+| `Brin`     | `TimeTzMinMaxMultiOps`      | `timetz_minmax_multi_ops`      | `DateTime`         | `@db.Timetz`              |         | 14+              |
+| `Brin`     | `UuidBloomOps`              | `uuid_bloom_ops`               | `String`           | `@db.Uuid`                |         | 14+              |
+| `Brin`     | `UuidMinMaxOps`             | `uuid_minmax_ops`              | `String`           | `@db.Uuid`                | ✅      |                  |
+| `Brin`     | `UuidMinMaxMultiOps`        | `uuid_minmax_multi_ops`        | `String`           | `@db.Uuid`                |         | 14+              |
+
+Default operator classes are not required to be explicitly written in the data model for the given native types.
+
+The operator classes marked to work with CockroachDB are the only ones allowed on that database. On CockroachDB the operator class must be emitted from the field definition.
+</details>
 
 ### Configuring if indexes are clustered or non-clustered with `clustered` (SQL Server)
 
