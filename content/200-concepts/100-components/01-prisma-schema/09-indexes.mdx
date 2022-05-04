@@ -145,7 +145,7 @@ model Post {
 
 ### Configuring the access type of indexes with `type` (PostgreSQL)
 
-The `type` argument is available for configuring the index type in PostgreSQL in version `3.6.0` and later, using the `@@index` attribute. This allows you to use `Hash` as the index access method, instead of the default `BTree` access method. Versions `3.14.0` and later allow additionally the `Gist`, `Gin`, `SpGist` and `Brin` access methods.
+The `type` argument is available for configuring the index type in PostgreSQL, with the `@@index` attribute (version `3.6.0` and later). This allows you to use `Hash` as the index access method, instead of the default `BTree` access method. The `Gist`, `Gin`, `SpGist` and `Brin` index types provide additional access methods (version `3.14.0` and later).
 
 #### Hash
 
@@ -173,16 +173,70 @@ CREATE TABLE "Example" (
 CREATE INDEX "Example_value_idx" ON "Example" USING HASH (value);
 ```
 
-#### Gist, Gin, SpGist and Brin
+#### Generalized Inverted Index (GIN)
 
-These four index types are special in how they let you in some cases to define the operators catched by the index. Depending on the field type, it is sometimes required to write the operators to the indexed field. As an example, the following model adds an index with a `type` of `Gist` to the `value` field with `InetOps` as the operators that will be using the index:
+The GIN index stores composite values, such as arrays or `JsonB`, speeding up queries such as is an object part of another object. Also commonly used for full-text searches.
+
+An indexed field can define the operator class, which defines the operators handled by the index.
+
+As an example, the following model adds a `Gin` index, to the `value` field, with `JsonbPathOps` as the class of operators allowed to use the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int  @id
+  value Json
+  //    ^ field type macthing the operator class
+
+  @@index([value(ops: JsonbPathOps)], type: Gin)
+  //                  ^ operator class      ^ index type
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value JSONB NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING GIN (value jsonb_path_ops);
+```
+
+As part of the `JsonbPathOps` the `@>` operator is handled by the index, speeding up queries such as `value @> '{"foo": 2}'`.
+
+##### Supported Operator Classes for GIN
+
+Prisma generally supports operator classes delivered with Postgres version 10 forward. If the operator class requires the field type to be of a type Prisma does not yet support, using the `raw` function with a string input allows using these operator classes without validation.
+
+The default operator class (marked with ✅) can be omitted from the index definition.
+
+| operator class | allowed field type (native types) | default | other            |
+|----------------|-----------------------------------|---------|------------------|
+| `ArrayOps`     | any array                         | ✅      | also CockroachDB |
+| `JsonbOps`     | `Json` (`@db.JsonB`)              | ✅      | also CockroachDB |
+| `JsonbPathOps` | `Json` (`@db.JsonB`)              |         |                  |
+| `raw("other")` |                                   |         |                  |
+
+##### CockroachDB
+
+GIN and BTree index types are the only ones supported by CockroachDB. The operator classes marked to work with CockroachDB are the only ones allowed on that database and supported by Prisma. The operator class cannot be defined in the Prisma Schema Language: the `ops` argument is not necessary or allowed on CockroachDB.
+
+#### Generalized Search Tree (GiST)
+
+An index type meant to implement arbitrary indexing schemes to user-defined types. By default there are not many direct uses for GiST indexes, but for example the B-Tree index type is built using a GiST index.
+
+As an example, the following model adds a `Gist` index to the `value` field with `InetOps` as the operators that will be using the index:
 
 ```prisma file=schema.prisma
 model Example {
   id    Int    @id
   value String @db.Inet
+  //           ^ native type macthing the operator class
 
   @@index([value(ops: InetOps)], type: Gist)
+  //                                   ^ index type
+  //                  ^ operator class
 }
 ```
 
@@ -197,38 +251,57 @@ CREATE TABLE "Example" (
 CREATE INDEX "Example_value_idx" ON "Example" USING GIST (value inet_ops);
 ```
 
-The allowed value to the operator class (`ops`) argument depends on the native type of the field, and the type of the index. Prisma Schema Language provides all operator classes provided natively by PostgreSQL version 14.0, if the native type is supported by Prisma. 
+Now queries comparing IP addresses, such as `value > '10.0.0.2'` are captured by the index.
 
-For cases where we don't yet support the operator class, or the native type of the indexed field, the `raw` function can be used as an escape hatch:
+##### Supported Operator Classes for GiST
 
-```prisma file=schema.prisma
-model Example {
-  id    Int                     @id
-  value Unsupported("tsvector")
+Prisma generally supports operator classes delivered with Postgres version 10 forward. If the operator class requires field type to be of a type Prisma yet does not support, using the `raw` function with a string input allows using these operator classes without validation.
 
-  @@index([value(ops: raw("tsvector_ops"))], type: Gist)
-}
-```
-
-Default operator classes are not required to be explicitly written in the data model for the given native types.
-
-Operator classes currently supported in the Prisma Schema Language for **Gin** indexes:
-
-| operator class | allowed field type (native types) | default | other            |
-|----------------|-----------------------------------|---------|------------------|
-| `ArrayOps`     | any array                         | ✅      | also CockroachDB |
-| `JsonbOps`     | `Json` (`@db.JsonB`)              | ✅      | also CockroachDB |
-| `JsonbPathOps` | `Json` (`@db.JsonB`)              |         |                  |
-| `raw("other")` |                                   |         |                  |
-
-Operator classes currently supported in the Prisma Schema Language for **Gist** indexes:
+The default operator class (marked with ✅) can be omitted from the index definition.
 
 | operator class | allowed field type (allowed native types) |
 |----------------|-------------------------------------------|
 | `InetOps`      | `String` (`@db.Inet`)                     |
 | `raw("other")` |                                           |
 
-Operator classes currently supported in the Prisma Schema Language for **SpGist** indexes:
+#### Space-Partitioned GiST (SP-GiST)
+
+The SP-GiST index is a good choice for many different non-balanced data structures. If the query matches to the partitioning rule, it can be very fast.
+
+As with GiST, SP-GiST is important as a building block for user-defined types; allowing implementation of custom search operators directly with the database.
+
+As an example, the following model adds a `SpGist` index to the `value` field with `TextOps` as the operators that will be using the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int    @id
+  value String
+  //    ^ field type macthing the operator class
+
+  @@index([value], type: SpGist)
+  //                     ^ index type
+  //       ^ using the default ops: TextOps
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING SPGIST (value);
+```
+
+Now a query, such as `value LIKE 'something%'` is sped by the index.
+
+##### Supported Operator Classes for SP-GiST
+
+Prisma generally supports operator classes delivered with Postgres version 10 forward. If the operator class requires field type to be of a type Prisma yet does not support, using the `raw` function with a string input allows using these operator classes without validation.
+
+The default operator class (marked with ✅) can be omitted from the index definition.
 
 | operator class | allowed field type (native types)    | default | supported PostgreSQL versions |
 |----------------|--------------------------------------|---------|-------------------------------|
@@ -236,7 +309,41 @@ Operator classes currently supported in the Prisma Schema Language for **SpGist*
 | `TextOps`      | `String` (`@db.Text`, `@db.VarChar`) | ✅      |                               |
 | `raw("other")` |                                      |         |                               |
 
-Operator classes currently supported in the Prisma Schema Language for **Brin** indexes:
+#### Block Range Index (BRIN)
+
+BRIN index is useful if having lots of data that does not change after inserted, such as a date and time values. If the data fits well to the index, it can store large datasets into a minimal space.
+
+As an example, the following model adds a `Brin` index to the `value` field with `Int4BloomOps` as the operators that will be captured by the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int    @id
+  value Int
+  //    ^ field type macthing the operator class
+
+  @@index([value(ops: Int4BloomOps)], type: Brin)
+  //                  ^ operator class      ^ index type
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value INT4 NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING BRIN (value int4_bloom_ops);
+```
+
+Now a query, such as `value = 2` is captured by the index, which uses a fraction of a space compared to the `BTree` or a `Hash` indexexes.
+
+##### Supported Operator Classes for BRIN
+
+Prisma generally supports operator classes delivered with PostgreSQL version 10 forward, and the bloom operators with PostgreSQL version 14 forward. If the operator class requires field type to be of a type Prisma yet does not support, using the `raw` function with a string input allows using these operator classes without validation.
+
+The default operator class (marked with ✅) can be omitted from the index definition.
 
 | operator class              | allowed field type (native types)    | default | supported PostgreSQL versions |
 |-----------------------------|--------------------------------------|---------|-------------------------------|
@@ -293,10 +400,6 @@ Operator classes currently supported in the Prisma Schema Language for **Brin** 
 | `UuidMinMaxOps`             | `String` (`@db.Uuid`)                | ✅      |                               |
 | `UuidMinMaxMultiOps`        | `String` (`@db.Uuid`)                |         | 14+                           |
 | `raw("other")`              |                                      |         |                               |
-
-The operator classes marked to work with CockroachDB are the only ones allowed on that database. The operator class can further not be changed from the one possible value, `ops` is not necessary or allowed for CockroachDB.
-
-More details on operator and index types can be read from the official documentation: [PostgreSQL](https://www.postgresql.org/docs/14/indexes-types.html), [CockroachDB](https://www.cockroachlabs.com/docs/v21.2/inverted-indexes.html)
 
 ### Configuring if indexes are clustered or non-clustered with `clustered` (SQL Server)
 
