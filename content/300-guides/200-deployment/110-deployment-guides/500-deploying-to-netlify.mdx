@@ -6,11 +6,6 @@ metaDescription: 'Learn how to deploy Node.js and TypeScript applications that a
 
 <TopBlock>
 
-<Admonition type="alert">
-  This deployment guide is currently outdated. We are in the process of updating
-  the contents. Stay tuned.
-</Admonition>
-
 In this guide, you will set up and deploy a serverless Node.js application to [Netlify](https://www.netlify.com/). The application will expose a REST API and use Prisma Client to handle fetching, creating, and deleting records from a database.
 
 Netlify is a cloud platform for continuous deployment, static sites, and serverless functions. Netlify integrates seamlessly with GitHub for automatic deployments upon commits. In this guide, you will use this approach to create a CI/CD pipeline that deploys your application from a GitHub repository.
@@ -22,11 +17,11 @@ The application has the following components:
 
 ![architecture diagram](https://res.cloudinary.com/prismaio/image/upload/v1628765080/docs/ybRH5wH_bpimat.png)
 
-The focus of this guide is showing how Prisma integrates with Netlify. The starting point will the [Prisma Netlify example](https://github.com/prisma/deployment-example-netlify) which has a couple of REST endpoints preconfigured as serverless functions and a static HTML page.
+The focus of this guide is showing how Prisma integrates with Netlify. The starting point is the [Prisma Netlify example](https://github.com/prisma/deployment-example-netlify) which has a couple of REST endpoints preconfigured as serverless functions and a static HTML page.
 
 With Netlify, the fundamental building block is a [**Site**](https://docs.netlify.com/configure-builds/get-started/). Sites are typically connected to a Git repository and have a publicly accessible URL that looks like `https://site-name.netlify.com`. In this guide, you will connect a GitHub repository to a Netlify site.
 
-> Throughout the guide you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
+> Throughout the guide you'll find various **checkpoints** that you can use to validate if you performed the steps correctly.
 
 </TopBlock>
 
@@ -37,27 +32,25 @@ With Netlify, the fundamental building block is a [**Site**](https://docs.netlif
 - [Netlify](https://app.netlify.com/signup) account connected to your GitHub account (Netlify will need access to the repository you will create as part of this guide).
 - [Netlify CLI](https://docs.netlify.com/cli/get-started/) installed.
 - Node.js installed.
-- PostgreSQL CLI `psql` installed.
 
 ## Prisma workflow
 
-Prisma supports different workflows depending on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, i.e. `schema.prisma` file.
+Prisma supports different workflows depending on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, that is the `schema.prisma` file.
 
 This guide starts with an empty database created with plain SQL and looks as follows:
 
-1. Define the database schema using SQL.
-1. Run `prisma db pull` locally which will introspect and populate the `schema.prisma` with models based on the database schema.
-1. Run `prisma generate` which will generate Prisma Client based on the Prisma schema.
+1. Define the database schema using `prisma migrate`.
+2. Run `prisma generate` to generate the Prisma Client based on the Prisma schema.
 
 ## 1. Fork the `deployment-example-netlify` repository
 
-Go to [`deployment-example-netlify`](https://github.com/prisma/deployment-example-netlify) and **Fork** the repository by clicking on the fork button on the top right corner:
+Go to [`deployment-example-netlify`](https://github.com/prisma/deployment-example-netlify) and fork the repository by clicking the **Fork** button in the top-right corner:
 
 ![fork button](https://res.cloudinary.com/prismaio/image/upload/v1628765101/docs/nyap5pW_g0tbuw.png)
 
 By forking, you create a copy of the repository to which you will be able to commit your changes. Later in the guide, you will connect the forked repository to Netlify so that changes are automatically built and deployed.
 
-**Checkpoint:** After cloning you should see the forked repository in your account, i.e. `https://github.com/YOUR_GITHUB_USERNAME/deployment-example-netlify`
+**Checkpoint:** After you complete the forking, you should see the forked repository in your account, for example `https://github.com/YOUR_GITHUB_USERNAME/deployment-example-netlify`
 
 ## 2. Clone the fork and install dependencies
 
@@ -79,24 +72,42 @@ npm install
 ```terminal
 ls -1
 README.md
-functions
+functions/
 netlify.toml
-node_modules
+node_modules/
 package.json
-prisma
-public
+prisma/
+public/
 schema.sql
 ```
 
-## 3. Set the DATABASE_URL environment variable locally
+## 3. Obtain the Heroku PostgreSQL connection string
 
-Set the `DATABASE_URL` environment variable locally so you can create the database schema and Prisma can access the database to introspect:
+You need the Heroku PostgreSQL connection string to define the necessary Prisma connection variable.
+
+1. In Heroku, open your app and select the **Resources** tab.
+2. Click the **Heroku Postgres** database add-on.
+3. Select the **Settings** tab in the page of the Heroku Postgres add-on.
+4. Click **View Credentials**.
+5. From the **URI** field, copy the entire connection string.
+
+**Checkpoint:** The Heroku connection string has the following format:
+
+```
+postgres://__USER__:__PASSWORD__@__HOST__/__DATABASE__
+```
+
+When you next set the `DATABASE_URL` environment variable, you need to change the beginning string from `postgres` to `postgresql`.
+
+## 4. Set the DATABASE_URL environment variable locally
+
+Set the `DATABASE_URL` environment variable locally. The `prisma.schema` file uses this variable so that Prisma can access the database to introspect:
 
 ```terminal
 export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
 ```
 
-> **Note:** you will need the `DATABASE_URL` environment variable for the subsequent steps. Set it in all terminal sessions related to this project.
+> **Note:** You need the `DATABASE_URL` environment variable for the subsequent steps. Set it in all terminal sessions related to this project.
 
 You need to replace the uppercase placeholders with your database credentials, e.g.:
 
@@ -104,47 +115,54 @@ You need to replace the uppercase placeholders with your database credentials, e
 postgresql://janedoe:randompassword@yourpostgres.compute-1.amazonaws.com:5432/yourdbname
 ```
 
-## 4. Create the database schema
+Or simply copy and paste the connection string you obtain from your cloud database provider.
 
-To create your database schema, run the `schema.sql` from the example code as follows:
+## 5. Create a shadow database in your cloud provider and get the connection string
 
-```terminal
-psql $DATABASE_URL -f schema.sql
-```
+In the later stages of this guide, you will run the `prisma migrate dev --name init` command to map the data model (that is pre-defined for this project in the `schema.prisma` file) to the database. As you develop your app, you continuously need to run `prisma migrate dev` whenever you make a change to `schema.prisma` so that the changes are migrated to the database.
 
-**Checkpoint:** `psql $DATABASE_URL -c "\dt"` should show the list of tables:
+This is part of the development cycle of your app and for all such operations Prisma requires the availability of a [shadow database](https://www.prisma.io/docs/concepts/components/prisma-migrate/shadow-database).
 
-```text
-      List of relations
-Schema |  Name   | Type  |     Owner
---------+---------+-------+----------------
-public | Post    | table | janedoe
-public | Profile | table | janedoe
-public | User    | table | janedoe
-```
+Cloud database providers do not allow the automated creation of a shadow database. To enable a shadow database, you need to create a new database manually in your provider.
 
-Congratulations, you have successfully created the database schema.
+After you create a new database, obtains its connection string.
 
-## 5. Introspect the database
+## 4. Set the SHADOW_DATABASE_URL environment variable locally
 
-Introspect the database with the Prisma CLI:
+Set the `SHADOW_DATABASE_URL` environment variable locally for the shadow database.
 
 ```terminal
-npx prisma db pull
+export SHADOW_DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
 ```
 
-Prisma will introspect the database defined in the `datasource` block of the Prisma schema and populate the Prisma schema with models corresponding to the database tables.
+> **Note:** You need the `SHADOW_DATABASE_URL` environment variable for the subsequent steps. Set it in all terminal sessions related to this project.
 
-**Checkpoint:** Open `prisma/schema.prisma` and ensure there are three models: `Post`, `Profile`, and `User`.
-
-## 6. Commit the Prisma schema to the repository
-
-The result of `prisma db pull` is the `schema.prisma` Prisma schema file.
-
-Since the Prisma schema is used to generate Prisma Client, commit it to your repository so that Prisma Client can be generated when Netlify builds the project:
+Again, replace the uppercase placeholders with your database credentials, like so:
 
 ```terminal
-git commit prisma/schema.prisma -m 'Add Prisma schema'
+postgresql://janedoe:randompassword@yourpostgres.compute-1.amazonaws.com:5432/yourdbname
+```
+
+Or simply copy and paste the connection string you obtain from your cloud database provider.
+
+## 5. Add the `shadowDatabaseUrl` parameter to `schema.prisma`
+
+To enable the use of the shadow database, you must also add the `shadowDatabaseUrl` parameter to the `schema.prisma` file in the `database db` section.
+
+```prisma highlight=4;normal
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+```
+
+## 6. Migrate the Prisma schema to the database
+
+The `prisma/schema.prisma` file contains a pre-defined model for the app. It defines the `Post`, `Profile`, and `User` models which the `prisma migrate` command uses to create the database tables and relationships.
+
+```terminal
+npx prisma migrate dev --name init
 ```
 
 ## 7. Netlify login
