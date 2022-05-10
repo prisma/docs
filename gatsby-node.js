@@ -154,13 +154,15 @@ exports.createPages = ({ graphql, actions }) => {
       })
       resolve()
       const redirects = result.data.site.siteMetadata.redirects
-      redirects.map((redirect) =>
-        createRedirect({
-          fromPath: redirect.from,
-          toPath: redirect.to,
-          statusCode: 301,
-        })
-      )
+      redirects
+        .filter((redirect) => !redirect.from.includes('#'))
+        .map((redirect) =>
+          createRedirect({
+            fromPath: redirect.from,
+            toPath: redirect.to,
+            statusCode: 301,
+          })
+        )
     })
   })
 }

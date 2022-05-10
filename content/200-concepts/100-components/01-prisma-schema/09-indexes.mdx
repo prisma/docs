@@ -8,7 +8,7 @@ preview: true
 
 <TopBlock>
 
-Prisma allows configuration of database indexes, unique constraints and primary key constraints through the `extendedIndexes` preview feature in version `3.5.0` and later. This provides extended syntax options in the Prisma schema language for configuring the length of indexes (MySQL only), the sort order (all databases) and the index type (PostgreSQL only).
+Prisma allows configuration of database indexes, unique constraints and primary key constraints through the `extendedIndexes` preview feature in version `3.5.0` and later. This provides extended syntax options in the Prisma schema language for configuring the length of indexes (MySQL only), the sort order (all databases), the index type (PostgreSQL only) and to configure indexes as clustered or non-clustered (SQL Server only).
 
 Version `3.6.0` also introduces support for introspection and migration of full text indexes in MySQL and MongoDB through a new `@@fulltext` attribute, available through the `fullTextIndex` preview feature.
 
@@ -26,11 +26,13 @@ The `extendedIndexes` preview feature enables new configuration options for inde
 
 The following arguments can be specified:
 
-- The `length` argument is available **in MySQL only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields in version `3.5.0` and later. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
+- The `length` argument is available **in MySQL only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes in version `3.5.0` and later. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
 
-- The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` fields in version `3.5.0` and later. Additionally, SQL Server also allows it on `@id` and `@@id`.
+- The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` attributes in version `3.5.0` and later. Additionally, SQL Server also allows it on `@id` and `@@id`.
 
-- The`type` argument is also available **in PostgreSQL only** on the `@@index` field in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method.
+- The `type` argument is available **in PostgreSQL only** on the `@@index` attribute in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method. In version `3.14.0` and later the `Gist`, `Gin`, `SpGist` and `Brin` access methods are also available.
+
+- The `clustered` argument is available **in SQL Server only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attribute in version `3.13.0` and later. It allows Prisma to configure (non)clustered indexes.
 
 ### Enabling the `extendedIndexes` preview feature
 
@@ -47,7 +49,7 @@ generator client {
 
 The `length` argument is specific to MySQL and allows you to define indexes and constraints on columns of `String` and `Byte` types. For these types, MySQL requires you to specify a maximum length for the subpart of the value to be indexed in cases where the full value would exceed MySQL's limits for index sizes. See [the MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/innodb-limits.html) for more details.
 
-The `length` argument is available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` fields.
+The `length` argument is available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes.
 
 As an example, the following data model declares an `id` field with a maximum length of 3000 characters:
 
@@ -77,7 +79,7 @@ Prisma Migrate is able to create constraints and indexes with the `length` argum
 
 Introspection will fetch these limits where they are present in your existing database. This allows Prisma to support indexes and constraints that were previously suppressed and results in better support of existing MySQL databases that are making use of this feature.
 
-The `length` argument can also be used on compound primary keys, using the `@@id` field, as in the example below:
+The `length` argument can also be used on compound primary keys, using the `@@id` attribute, as in the example below:
 
 ```prisma file=schema.prisma
 model CompoundId {
@@ -88,7 +90,7 @@ model CompoundId {
 }
 ```
 
-A similar syntax can be used for the `@@unique` and `@@index` fields.
+A similar syntax can be used for the `@@unique` and `@@index` attributes.
 
 ### Configuring the index sort order with `sort`
 
@@ -120,7 +122,7 @@ model CompoundUnique {
   unique_1 Int
   unique_2 Int
 
-  @@unique([unique_1(sort: Desc),unique_2])
+  @@unique([unique_1(sort: Desc), unique_2])
 }
 ```
 
@@ -143,7 +145,9 @@ model Post {
 
 ### Configuring the access type of indexes with `type` (PostgreSQL)
 
-The `type` argument is available for configuring the index type in PostgreSQL in version `3.6.0` and later, using the `@@index` attribute. This allows you to use `Hash` as the index access method, instead of the default `BTree` access method.
+The `type` argument is available for configuring the index type in PostgreSQL, with the `@@index` attribute (version `3.6.0` and later). This allows you to use `Hash` as the index access method, instead of the default `BTree` access method. In version `3.14.0` and later, the `Gist`, `Gin`, `SpGist` and `Brin` index types provide additional access methods.
+
+#### Hash
 
 The `Hash` type will store the index data in a format that is much faster to search and insert, and that will use less disk space. However, only the `=` and `<>` comparisons can use the index, so other comparison operators such as `<` and `>` will be much slower with `Hash` than when using the default `BTree` type.
 
@@ -163,11 +167,286 @@ This translates to the following SQL commands:
 ```sql
 CREATE TABLE "Example" (
   id INT PRIMARY KEY,
-  val INT NOT NULL
+  value INT NOT NULL
 );
 
-CREATE INDEX "Example_val_idx" ON "Example" USING HASH (val);
+CREATE INDEX "Example_value_idx" ON "Example" USING HASH (value);
 ```
+
+#### Generalized Inverted Index (GIN)
+
+The GIN index stores composite values, such as arrays or `JsonB` data. This is useful for speeding up querying whether one object is part of another object. It is commonly used for full-text searches.
+
+An indexed field can define the operator class, which defines the operators handled by the index.
+
+<Admonition type="warning">
+
+Indexes using a function (such as `to_tsvector`) to determine the indexed value are not yet supported by Prisma. Indexes defined in this way will not be visible with `prisma db pull`.
+
+</Admonition>
+
+As an example, the following model adds a `Gin` index to the `value` field, with `JsonbPathOps` as the class of operators allowed to use the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int  @id
+  value Json
+  //    ^ field type matching the operator class
+
+  @@index([value(ops: JsonbPathOps)], type: Gin)
+  //                  ^ operator class      ^ index type
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value JSONB NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING GIN (value jsonb_path_ops);
+```
+
+As part of the `JsonbPathOps` the `@>` operator is handled by the index, speeding up queries such as `value @> '{"foo": 2}'`.
+
+##### Supported Operator Classes for GIN
+
+Prisma generally supports operator classes provided by PostgreSQL in versions 10 and later. If the operator class requires the field type to be of a type Prisma does not yet support, using the `raw` function with a string input allows you to use these operator classes without validation.
+
+The default operator class (marked with ✅) can be omitted from the index definition.
+
+| Operator class | Allowed field type (native types) | Default | Other                         |
+| -------------- | --------------------------------- | ------- | ----------------------------- |
+| `ArrayOps`     | Any array                         | ✅      | Also available in CockroachDB |
+| `JsonbOps`     | `Json` (`@db.JsonB`)              | ✅      | Also available in CockroachDB |
+| `JsonbPathOps` | `Json` (`@db.JsonB`)              |         |                               |
+| `raw("other")` |                                   |         |                               |
+
+Read more about built-in operator classes in the [official PostgreSQL documentation](https://www.postgresql.org/docs/14/gin-builtin-opclasses.html).
+
+##### CockroachDB
+
+GIN and BTree are the only index types supported by CockroachDB. The operator classes marked to work with CockroachDB are the only ones allowed on that database and supported by Prisma. The operator class cannot be defined in the Prisma Schema Language: the `ops` argument is not necessary or allowed on CockroachDB.
+
+#### Generalized Search Tree (GiST)
+
+The GiST index type is used for implementing indexing schemes for user-defined types. By default there are not many direct uses for GiST indexes, but for example the B-Tree index type is built using a GiST index.
+
+As an example, the following model adds a `Gist` index to the `value` field with `InetOps` as the operators that will be using the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int    @id
+  value String @db.Inet
+  //           ^ native type matching the operator class
+
+  @@index([value(ops: InetOps)], type: Gist)
+  //                                   ^ index type
+  //                  ^ operator class
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value INET NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING GIST (value inet_ops);
+```
+
+Queries comparing IP addresses, such as `value > '10.0.0.2'`, will use the index.
+
+##### Supported Operator Classes for GiST
+
+Prisma generally supports operator classes provided by PostgreSQL in versions 10 and later. If the operator class requires the field type to be of a type Prisma does not yet support, using the `raw` function with a string input allows you to use these operator classes without validation.
+
+| Operator class | Allowed field type (allowed native types) |
+| -------------- | ----------------------------------------- |
+| `InetOps`      | `String` (`@db.Inet`)                     |
+| `raw("other")` |                                           |
+
+Read more about built-in operator classes in the [official PostgreSQL documentation](https://www.postgresql.org/docs/14/gist-builtin-opclasses.html).
+
+#### Space-Partitioned GiST (SP-GiST)
+
+The SP-GiST index is a good choice for many different non-balanced data structures. If the query matches the partitioning rule, it can be very fast.
+
+As with GiST, SP-GiST is important as a building block for user-defined types, allowing implementation of custom search operators directly with the database.
+
+As an example, the following model adds a `SpGist` index to the `value` field with `TextOps` as the operators using the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int    @id
+  value String
+  //    ^ field type matching the operator class
+
+  //                     ^ index type
+  //       ^ using the default ops: TextOps
+  @@index([value], type: SpGist)
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING SPGIST (value);
+```
+
+Queries such as `value LIKE 'something%'` will be sped up by the index.
+
+##### Supported Operator Classes for SP-GiST
+
+Prisma generally supports operator classes provided by PostgreSQL in versions 10 and later. If the operator class requires the field type to be of a type Prisma does not yet support, using the `raw` function with a string input allows you to use these operator classes without validation.
+
+The default operator class (marked with ✅) can be omitted from the index definition.
+
+| Operator class | Allowed field type (native types)    | Default | Supported PostgreSQL versions |
+| -------------- | ------------------------------------ | ------- | ----------------------------- |
+| `InetOps`      | `String` (`@db.Inet`)                | ✅      | 10+                           |
+| `TextOps`      | `String` (`@db.Text`, `@db.VarChar`) | ✅      |                               |
+| `raw("other")` |                                      |         |                               |
+
+Read more about built-in operator classes from [official PostgreSQL documentation](https://www.postgresql.org/docs/14/spgist-builtin-opclasses.html).
+
+#### Block Range Index (BRIN)
+
+The BRIN index type is useful if you have lots of data that does not change after it is inserted, such as date and time values. If your data is a good fit for the index, it can store large datasets in a minimal space.
+
+As an example, the following model adds a `Brin` index to the `value` field with `Int4BloomOps` as the operators that will be using the index:
+
+```prisma file=schema.prisma
+model Example {
+  id    Int @id
+  value Int
+  //    ^ field type macthing the operator class
+
+  @@index([value(ops: Int4BloomOps)], type: Brin)
+  //                  ^ operator class      ^ index type
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE "Example" (
+  id INT PRIMARY KEY,
+  value INT4 NOT NULL
+);
+
+CREATE INDEX "Example_value_idx" ON "Example" USING BRIN (value int4_bloom_ops);
+```
+
+Qureis like `value = 2` will now use the index, which uses a fraction of the space used by the `BTree` or `Hash` indexes.
+
+##### Supported Operator Classes for BRIN
+
+Prisma generally supports operator classes provided by PostgreSQL in versions 10 and later, and some supported operators are only available from PostgreSQL versions 14 and later. If the operator class requires the field type to be of a type Prisma does not yet support, using the `raw` function with a string input allows you to use these operator classes without validation.
+
+The default operator class (marked with ✅) can be omitted from the index definition.
+
+| Operator class              | Allowed field type (native types)    | Default | Supported PostgreSQL versions |
+| --------------------------- | ------------------------------------ | ------- | ----------------------------- |
+| `BitMinMaxOps`              | `String` (`@db.Bit`)                 | ✅      |                               |
+| `VarBitMinMaxOps`           | `String` (`@db.VarBit`)              | ✅      |                               |
+| `BpcharBloomOps`            | `String` (`@db.Char`)                |         | 14+                           |
+| `BpcharMinMaxOps`           | `String` (`@db.Char`)                | ✅      |                               |
+| `ByteaBloomOps`             | `Bytes` (`@db.Bytea`)                |         | 14+                           |
+| `ByteaMinMaxOps`            | `Bytes` (`@db.Bytea`)                | ✅      |                               |
+| `DateBloomOps`              | `DateTime` (`@db.Date`)              |         | 14+                           |
+| `DateMinMaxOps`             | `DateTime` (`@db.Date`)              | ✅      |                               |
+| `DateMinMaxMultiOps`        | `DateTime` (`@db.Date`)              |         | 14+                           |
+| `Float4BloomOps`            | `Float` (`@db.Real`)                 |         | 14+                           |
+| `Float4MinMaxOps`           | `Float` (`@db.Real`)                 | ✅      |                               |
+| `Float4MinMaxMultiOps`      | `Float` (`@db.Real`)                 |         | 14+                           |
+| `Float8BloomOps`            | `Float` (`@db.DoublePrecision`)      |         | 14+                           |
+| `Float8MinMaxOps`           | `Float` (`@db.DoublePrecision`)      | ✅      |                               |
+| `Float8MinMaxMultiOps`      | `Float` (`@db.DoublePrecision`)      |         | 14+                           |
+| `InetInclusionOps`          | `String` (`@db.Inet`)                | ✅      | 14+                           |
+| `InetBloomOps`              | `String` (`@db.Inet`)                |         | 14+                           |
+| `InetMinMaxOps`             | `String` (`@db.Inet`)                |         |                               |
+| `InetMinMaxMultiOps`        | `String` (`@db.Inet`)                |         | 14+                           |
+| `Int2BloomOps`              | `Int` (`@db.SmallInt`)               |         | 14+                           |
+| `Int2MinMaxOps`             | `Int` (`@db.SmallInt`)               | ✅      |                               |
+| `Int2MinMaxMultiOps`        | `Int` (`@db.SmallInt`)               |         | 14+                           |
+| `Int4BloomOps`              | `Int` (`@db.Integer`)                |         | 14+                           |
+| `Int4MinMaxOps`             | `Int` (`@db.Integer`)                | ✅      |                               |
+| `Int4MinMaxMultiOps`        | `Int` (`@db.Integer`)                |         | 14+                           |
+| `Int8BloomOps`              | `BigInt` (`@db.BigInt`)              |         | 14+                           |
+| `Int8MinMaxOps`             | `BigInt` (`@db.BigInt`)              | ✅      |                               |
+| `Int8MinMaxMultiOps`        | `BigInt` (`@db.BigInt`)              |         | 14+                           |
+| `NumericBloomOps`           | `Decimal` (`@db.Decimal`)            |         | 14+                           |
+| `NumericMinMaxOps`          | `Decimal` (`@db.Decimal`)            | ✅      |                               |
+| `NumericMinMaxMultiOps`     | `Decimal` (`@db.Decimal`)            |         | 14+                           |
+| `OidBloomOps`               | `Int` (`@db.Oid`)                    |         | 14+                           |
+| `OidMinMaxOps`              | `Int` (`@db.Oid`)                    | ✅      |                               |
+| `OidMinMaxMultiOps`         | `Int` (`@db.Oid`)                    |         | 14+                           |
+| `TextBloomOps`              | `String` (`@db.Text`, `@db.VarChar`) |         | 14+                           |
+| `TextMinMaxOps`             | `String` (`@db.Text`, `@db.VarChar`) | ✅      |                               |
+| `TextMinMaxMultiOps`        | `String` (`@db.Text`, `@db.VarChar`) |         | 14+                           |
+| `TimestampBloomOps`         | `DateTime` (`@db.Timestamp`)         |         | 14+                           |
+| `TimestampMinMaxOps`        | `DateTime` (`@db.Timestamp`)         | ✅      |                               |
+| `TimestampMinMaxMultiOps`   | `DateTime` (`@db.Timestamp`)         |         | 14+                           |
+| `TimestampTzBloomOps`       | `DateTime` (`@db.Timestamptz`)       |         | 14+                           |
+| `TimestampTzMinMaxOps`      | `DateTime` (`@db.Timestamptz`)       | ✅      |                               |
+| `TimestampTzMinMaxMultiOps` | `DateTime` (`@db.Timestamptz`)       |         | 14+                           |
+| `TimeBloomOps`              | `DateTime` (`@db.Time`)              |         | 14+                           |
+| `TimeMinMaxOps`             | `DateTime` (`@db.Time`)              | ✅      |                               |
+| `TimeMinMaxMultiOps`        | `DateTime` (`@db.Time`)              |         | 14+                           |
+| `TimeTzBloomOps`            | `DateTime` (`@db.Timetz`)            |         | 14+                           |
+| `TimeTzMinMaxOps`           | `DateTime` (`@db.Timetz`)            | ✅      |                               |
+| `TimeTzMinMaxMultiOps`      | `DateTime` (`@db.Timetz`)            |         | 14+                           |
+| `UuidBloomOps`              | `String` (`@db.Uuid`)                |         | 14+                           |
+| `UuidMinMaxOps`             | `String` (`@db.Uuid`)                | ✅      |                               |
+| `UuidMinMaxMultiOps`        | `String` (`@db.Uuid`)                |         | 14+                           |
+| `raw("other")`              |                                      |         |                               |
+
+Read more about built-in operator classes in the [official PostgreSQL documentation](https://www.postgresql.org/docs/14/brin-builtin-opclasses.html).
+
+### Configuring if indexes are clustered or non-clustered with `clustered` (SQL Server)
+
+The `clustered` argument is available to configure (non)clustered indexes in SQL Server in version `3.13.0` and later. It can be used on `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes.
+
+As an example, the following model configures the `@id` to be non-clustered (instead of the clustered default):
+
+```prisma file=schema.prisma
+model Example {
+  id    Int @id(clustered: false)
+  value Int
+}
+```
+
+This translates to the following SQL commands:
+
+```sql
+CREATE TABLE [Example] (
+  id INT NOT NULL,
+  value INT,
+  CONSTRAINT [Example_pkey] PRIMARY KEY NONCLUSTERED (id)
+)
+```
+
+The default value of `clustered` for each attribute is as follows:
+
+| Attribute  | Value   |
+| ---------- | ------- |
+| `@id`      | `true`  |
+| `@@id`     | `true`  |
+| `@unique`  | `false` |
+| `@@unique` | `false` |
+| `@@index`  | `false` |
+
+A table can have at most one clustered index.
 
 ### Upgrading from previous versions
 
@@ -182,8 +461,9 @@ A breaking change can occur in the following situations:
 - **Existing sort constraints and indexes:** earlier versions of Prisma will assume that the desired sort order is _ascending_ if no order is specified explicitly. This means that this is a breaking change if you have existing constraints or indexes that are using descending sort order and migrate your database without first specifying this in your data model.
 - **Existing length constraints and indexes:** in earlier versions of Prisma, indexes and constaints that were length constrained in MySQL could not be represented in the Prisma schema. Therefore `prisma db pull` was not fetching these and you could not manually specify them. When you ran `prisma db push` or `prisma migrate dev` they were ignored if already present in your database. Since you are now able to specify these, migrate commands will now drop them if they are missing from your data model but present in the database.
 - **Existing hash indexes (PostgreSQL):** earlier versions of Prisma did not support hash indexes in the schema. These need to be added before migrating your database.
+- **Existing (non-)clustered indexes (SQL Server):** earlier versions of Prisma did not support configuring an index as clustered or non-clustered. For indexes that do not use the default, these need to be added before migrating your database.
 
-In each of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve any existing constraints.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev`.
+In each of the cases above unwanted changes to your database can be prevented by properly specifying these properties in your data model where necessary. **The easiest way to do this is to use `prisma db pull` to retrieve any existing constraints or configuration.** Alternatively, you could also add these arguments manually. This should be done before using `prisma db push` or `prisma migrate dev` the first time after the upgrade.
 
 ## Full text indexes (MySQL and MongoDB)
 
