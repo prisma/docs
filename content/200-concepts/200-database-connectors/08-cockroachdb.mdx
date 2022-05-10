@@ -73,3 +73,62 @@ The following table lists any other current known limitations of CockroachDB com
 | Searching on `String` fields without a full text index not supported                             | Client        | Searching on `String` fields without a full text index (e.g. `where: { text: { search: "cat & dog", }, },`) is currently [not supported in CockroachDB](https://github.com/cockroachdb/cockroach/issues/7821)                                                    |
 | Integer division not supported                                                                   | Client        | Integer division (e.g. `data: { int: { divide: 10, }, }`) is currently [not supported in CockroachDB](https://github.com/cockroachdb/cockroach/issues/41448)                                                                                                     |
 | Limited filtering on `Json` fields                                                               | Client        | Currently CockroachDB [only supports](https://github.com/cockroachdb/cockroach/issues/49144) `equals` and `not` filtering on `Json` fields                                                                                                                       |
+
+## Type mapping between CockroachDB and the Prisma schema
+
+The CockroachDB connector maps the [scalar types](/concepts/components/prisma-schema/data-model#scalar-fields) from the Prisma [data model](/concepts/components/prisma-schema/data-model) as follows to native column types:
+
+> Alternatively, see the [Prisma schema reference](/reference/api-reference/prisma-schema-reference#model-field-scalar-types) for type mappings organized by Prisma type.
+
+### Mapping from Prisma to CockroachDB types on migration
+
+| Prisma     | CockroachDB      |
+| ---------- | ---------------- |
+| `String`   | `STRING`         |
+| `Boolean`  | `BOOL`           |
+| `Int`      | `INT4`           |
+| `BigInt`   | `INT8`           |
+| `Float`    | `FLOAT8`         |
+| `Decimal`  | `DECIMAL(65,30)` |
+| `DateTime` | `TIMESTAMP(3)`   |
+| `Json`     | `JSONB`          |
+| `Bytes`    | `BYTES`          |
+
+### Mapping from CockroachDB to Prisma types on Introspection
+
+When introspecting a CockroachDB database, the database types are mapped to Prisma according to the following table:
+
+| CockroachDB (Type \| Aliases)                | Prisma     | Supported | Native database type attribute       | Notes |
+| -------------------------------------------- | ---------- | :-------: | :----------------------------------- | :---- |
+| `INT` \| `BIGINT`, `INTEGER`                 | `BigInt`   |    ✔️     | `@db.Int8`                           |       |
+| `BOOL` \| `BOOLEAN`                          | `Bool`     |    ✔️     | `@db.Bool`\*                         |       |
+| `TIMESTAMP` \| `TIMESTAMP WITHOUT TIME ZONE` | `DateTime` |    ✔️     | `@db.Timestamp(x)`                   |       |
+| `TIMESTAMPTZ` \| `TIMESTAMP WITH TIME ZONE`  | `DateTime` |    ✔️     | `@db.Timestamptz(x)`                 |       |
+| `TIME` \| `TIME WITHOUT TIME ZONE`           | `DateTime` |    ✔️     | `@db.Time(x)`                        |       |
+| `TIMETZ` \| `TIME WITH TIME ZONE`            | `DateTime` |    ✔️     | `@db.Timetz(x)`                      |       |
+| `DECIMAL(p,s)` \| `NUMERIC(p,s)`, `DEC(p,s)` | `Decimal`  |    ✔️     | `@db.Decimal(x, y)`                  |       |
+| `REAL` \| `FLOAT4`, `FLOAT`                  | `Float`    |    ✔️     | `@db.Float4`                         |       |
+| `DOUBLE PRECISION` \| `FLOAT8`               | `Float`    |    ✔️     | `@db.Float8`                         |       |
+| `INT2` \| `SMALLINT`                         | `Int`      |    ✔️     | `@db.Int2`                           |       |
+| ``INT4`                                      | `Int`      |    ✔️     | `@db.Int4`                           |       |
+| `CHAR(n)` \| `CHARACTER(n)`                  | `String`   |    ✔️     | `@db.Char(x)`                        |       |
+| `"char"`                                     | `String`   |    ✔️     | `@db.CatalogSingleChar`              | Internal type for CockroachDB catalog tables, not meant for end users. |
+| `STRING` \| `TEXT`, `VARCHAR`                | `String`   |    ✔️     | `@db.String`                         |       |
+| `DATE`                                       | `DateTime` |    ✔️     | `@db.Date`                           |       |
+| `ENUM`                                       | `enum`     |    ✔️     | N/A                                  |       |
+| `INET`                                       | `String`   |    ✔️     | `@db.Inet`                           |       |
+| `BIT(n)`                                     | `String`   |    ✔️     | `@Bit(x)`                            |       |
+| `VARBIT(n)` \| `BIT VARYING(n)`              | `String`   |    ✔️     | `@VarBit`                            |       |
+| `OID`                                        | `Int`      |    ✔️     | `@db.Oid`                            |       |
+| `UUID`                                       | `String`   |    ✔️     | `@db.Uuid`                           |       |
+| `JSONB` \| `JSON`                            | `Json`     |    ✔️     | `@db.JsonB`                          |       |
+| Array types                                  | `[]`       |    ✔️     |                                      |       |
+
+[Introspection](/concepts/components/introspection) adds native database types that are **not yet supported** as [`Unsupported`](/reference/api-reference/prisma-schema-reference#unsupported) <span class="api"></span> fields:
+
+```prisma file=schema.prisma
+model Device {
+  id       Int                     @id @default(autoincrement())
+  interval Unsupported("INTERVAL")
+}
+```
