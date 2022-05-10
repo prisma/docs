@@ -1,7 +1,9 @@
 # Prisma Documentation
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [badge-all-contributors]: https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
 
@@ -12,6 +14,15 @@ This repository contains the [source code](./src) and the [content](./content) f
 ## Contributing to the docs
 
 Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
+
+## Prerequisites for Apple M1 chip (macOS BigSur and later)
+
+1. Install [`homebrew`](https://brew.sh/).
+2. Install [`libvips`](https://github.com/libvips/libvips) via homebrew.
+
+   ```
+   brew install libvips
+   ```
 
 ## Run locally
 
