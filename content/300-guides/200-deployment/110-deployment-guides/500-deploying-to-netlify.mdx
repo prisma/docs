@@ -15,7 +15,7 @@ The application has the following components:
 - **Backend**: Serverless Node.js REST API with resource endpoints that use Prisma Client to handle database operations against a PostgreSQL database (e.g. hosted on Heroku).
 - **Frontend**: Static HTML page to interact with the API.
 
-![architecture diagram](https://res.cloudinary.com/prismaio/image/upload/v1628765080/docs/ybRH5wH_bpimat.png)
+![architecture diagram](https://res.cloudinary.com/prismaio/image/upload/v1652365689/docs/Netlify_deployment_bstlns.png)
 
 The focus of this guide is to show how Prisma integrates with Netlify. The starting point is the [Prisma Netlify example](https://github.com/prisma/deployment-example-netlify) which has a couple of REST endpoints preconfigured as serverless functions and a static HTML page.
 
@@ -39,7 +39,7 @@ Prisma supports different workflows depending on whether you integrate with an e
 
 This guide starts with an empty database that you must have already created and looks as follows:
 
-1. Map the existing database schema to your existing database using `prisma migrate dev`.
+1. Migrate the existing Prisma schema to your existing database using `prisma db push`.
 2. Run `prisma generate` to generate the Prisma Client based on the Prisma schema.
 
 ## 1. Fork the `deployment-example-netlify` repository
@@ -80,9 +80,11 @@ prisma/
 public/
 ```
 
-## 3. Get the Heroku PostgreSQL connection string
+## 3. Get the database connection string
 
-You need the Heroku PostgreSQL connection string to define the necessary Prisma connection variable.
+You need the database connection string to define the `DATABASE_URL` environment variable.
+
+If you are using Heroku, follow the steps below.
 
 1. In Heroku, open your app and select the **Resources** tab.
 2. Click the **Heroku Postgres** database add-on.
@@ -96,11 +98,9 @@ You need the Heroku PostgreSQL connection string to define the necessary Prisma 
 postgres://__USER__:__PASSWORD__@__HOST__/__DATABASE__
 ```
 
-When you next set the `DATABASE_URL` environment variable, you need to change the beginning string from `postgres` to `postgresql`.
-
 ## 4. Set the DATABASE_URL environment variable locally
 
-Set the `DATABASE_URL` environment variable locally. The `prisma.schema` file uses this variable so that Prisma can access the database to introspect:
+Set the `DATABASE_URL` environment variable locally. The datasource url in the `prisma.schema` file is configured to use this environment variable.
 
 ```terminal
 export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
@@ -116,55 +116,15 @@ postgresql://janedoe:randompassword@yourpostgres.compute-1.amazonaws.com:5432/yo
 
 Or simply copy and paste the connection string you get from your cloud database provider.
 
-## 5. Create a shadow database in your cloud provider and get the connection string
+## 5. Migrate the Prisma schema to the database
 
-In the later stages of this guide, you will run the `prisma migrate dev --name init` command to map the data model (that is pre-defined for this project in the `schema.prisma` file) to the database. As you develop your app, you continuously need to run `prisma migrate dev` whenever you make a change to `schema.prisma` so that the changes are migrated to the database.
-
-This is part of the development cycle of your app and for all such operations Prisma requires the availability of a [shadow database](https://www.prisma.io/docs/concepts/components/prisma-migrate/shadow-database).
-
-Cloud database providers do not allow the automated creation of a shadow database. To enable a shadow database, you need to create a new database manually in your provider.
-
-After you create a new database, get its connection string.
-
-## 4. Set the SHADOW_DATABASE_URL environment variable locally
-
-Set the `SHADOW_DATABASE_URL` environment variable locally for the shadow database.
+The `prisma/schema.prisma` file contains a pre-defined model for the app. It defines the `Post`, `Profile`, and `User` models which the `prisma db push` command uses to create the database tables and relationships.
 
 ```terminal
-export SHADOW_DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
+npx prisma db push
 ```
 
-> **Note:** You need the `SHADOW_DATABASE_URL` environment variable for the subsequent steps. Set it in all terminal sessions related to this project.
-
-Again, replace the uppercase placeholders with your database credentials, like so:
-
-```terminal
-postgresql://janedoe:randompassword@yourpostgres.compute-1.amazonaws.com:5432/yourdbname
-```
-
-Or simply copy and paste the connection string you get from your cloud database provider.
-
-## 5. Add the `shadowDatabaseUrl` parameter to `schema.prisma`
-
-To enable the use of the shadow database, you must also add the `shadowDatabaseUrl` parameter to the `schema.prisma` file in the `database db` section.
-
-```prisma highlight=4;normal
-datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-}
-```
-
-## 6. Migrate the Prisma schema to the database
-
-The `prisma/schema.prisma` file contains a pre-defined model for the app. It defines the `Post`, `Profile`, and `User` models which the `prisma migrate` command uses to create the database tables and relationships.
-
-```terminal
-npx prisma migrate dev --name init
-```
-
-## 7. Netlify login
+## 6. Netlify login
 
 Make sure you're logged in to Netlify with the CLI:
 
@@ -187,7 +147,7 @@ Teams:
   ....
 ```
 
-## 8. Configure continuous deployment to Netlify
+## 7. Configure continuous deployment to Netlify
 
 From the repository's folder, run `netlify init` to configure a new Netlify site:
 
@@ -212,7 +172,7 @@ URL:       https://YOUR_SITE_NAME.netlify.app
 
 > **Note:** You can change the build configuration via the `netlify.toml` file and the site name from the Netlify admin UI.
 
-## 9. Expose the DATABASE_URL environment variable to functions
+## 8. Expose the DATABASE_URL environment variable to functions
 
 Since Prisma will connect to the database from your serverless functions, you need to expose the `DATABASE_URL` to the backend functions. This is typically done from the Netlify UI. To do, open the Netlify admin UI for the site. You can do so directly with the Netlify CLI as follows:
 
@@ -232,7 +192,7 @@ Create a variable with the key `DATABASE_URL` and set the value with your Postgr
 
 > **Note:** It's considered best practice to keep secrets out of your codebase. If you open up the `prisma/schema.prisma` file, you should see `env("DATABASE_URL")` in the _datasource_ block. By setting an environment variable you keep secrets out of the codebase.
 
-## 10. Deploy the app
+## 9. Deploy the app
 
 Your project is now ready for deployment
 
@@ -246,7 +206,7 @@ curl https://YOUR_SITE_NAME.netlify.app/.netlify/functions/status
 
 The call should return: `{"up":true}`
 
-## 11. Test your deployed application
+## 10. Test your deployed application
 
 Open the site from the command line:
 
