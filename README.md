@@ -24,9 +24,11 @@ Read through the [contributing guide](CONTRIBUTING.md) to learn how you can cont
    brew install libvips
    ```
 
-## Run locally
+## Run the docs site locally
 
-Clone this repository and get started by running the following commands:
+1. Clone this repository.
+2. On your computer, open a terminal window in the repository's directory.
+3. Run the following commands:
 
 ```
 npm install
