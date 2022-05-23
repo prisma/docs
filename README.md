@@ -88,6 +88,14 @@ All files/folders in the context are prefixed with a _position_ which indicates 
 
 ### Install
 
+First, install `wget`:
+
+```bash
+brew install wget
+```
+
+Then use `wget` to install `mdtool`:
+
 ```bash
 wget https://gist.githubusercontent.com/steebchen/bd085ebde1fcf4242e3fdd0df4d202a6/raw/c04e3d262eb6a302a9fab98f6428fec9329681e2/mdtool -qO /usr/local/bin/mdtool
 chmod +x /usr/local/bin/mdtool
