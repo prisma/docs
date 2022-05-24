@@ -1,0 +1,99 @@
+---
+title: 'Using Prisma with CockroachDB'
+metaTitle: 'Using Prisma with CockroachDB'
+metaDescription: 'Guide to using Prisma with CockroachDB'
+tocDepth: 2
+toc: true
+---
+
+<TopBlock>
+
+This guide discusses the concepts behind using Prisma and CockroachDB, explains the commonalities and differences between CockroachDB and other database providers, and leads you through the process for configuring your application to integrate with CockroachDB.
+
+</TopBlock>
+
+## What is CockroachDB?
+
+CockroachDB is a distributed database that is designed for scalability and high availability. Features include:
+
+- **Built-in scaling:** CockroachDB comes with automated replication, failover and repair capabilities to allow easy horizontal scaling of your application
+- **Consistent transactions:** CockroachDB is a relational database that supports consistent transactions that maintain data integrity
+- **Compatibility with PostgreSQL:** CockroachDB is compatible with PostgreSQL, allowing interoperability with a large ecosystem of existing products
+
+## Commonalities with other database providers
+
+CockroachDB is largely compatible with PostgreSQL, and can mostly be used with Prisma in the same way. You can still:
+
+- model your database with the [Prisma Schema Language](/concepts/components/prisma-schema)
+- connect to your database, using Prisma's [`cockroachdb` database connector](/concepts/database-connectors/cockroachdb)
+- use [Introspection](/concepts/components/introspection) for existing projects if you already have a CockroachDB database
+- use [Prisma Migrate](/concepts/components/prisma-migrate) to migrate your database schema to a new version
+- use [Prisma Client](/concepts/components/prisma-client) in your application to query your database in a type safe way based on your Prisma Schema
+
+## Differences to consider
+
+There are some CockroachDB-specific differences to be aware of when working with Prisma's `cockroachdb` connector:
+
+- **Cockroach-specific native types:** Prisma's `cockroachdb` database connector provides support for CockroachDB's native data types. To learn more, see [How to use CockroachDB's native types](#how-to-use-cockroachdbs-native-types).
+
+- **Creating database keys:** Prisma allows you to generate a unique identifier for each record using the [`autoincrement()`](/reference/api-reference/prisma-schema-reference#autoincrement) function. For more information, see [How to use database keys with CockroachDB](#how-to-use-database-keys-with-cockroachdb).
+
+## How to use Prisma with CockroachDB
+
+This section provides more details on how to use CockroachDB-specific features.
+
+### How to use CockroachDB's native types
+
+CockroachDB has its own set of native [data types](https://www.cockroachlabs.com/docs/stable/data-types.html) which are supported in Prisma. For example, CockroachDB uses the `STRING` data type instead of PostgreSQL's `VARCHAR`.
+
+As a demonstration of this, say you create a `User` table in your CockroachDB database using the following SQL command:
+
+```
+CREATE TABLE public."Post" (
+  "id" INT8 NOT NULL,
+  "title" VARCHAR(200) NOT NULL,
+  CONSTRAINT "Post_pkey" PRIMARY KEY ("id" ASC),
+  FAMILY "primary" ("id", "title")
+);
+```
+
+After introspecting your database with `npx prisma db pull`, you will have a new `Post` model in your `schema.prisma` file:
+
+```file=schema.prisma
+model Post {
+  id    BigInt @id
+  title String @db.String(200)
+}
+```
+
+Notice that the `title` field has been annotated with `@db.String(200)` — this differs from PostgreSQL where the annotation would be `@db.VarChar(200)`.
+
+For a full list of type mappings, see our [connector documentation](/concepts/database-connectors/cockroachdb#type-mapping-between-cockroachdb-and-the-prisma-schema).
+
+### How to use database keys with CockroachDB
+
+When generating unique identifiers for records in a distributed database like CockroachDB, it is best to avoid using sequential IDs – for more information on this, see CockroachDB's [blog post on choosing index keys](https://cockroachlabs.com/blog/how-to-choose-db-index-keys).
+
+Instead, Prisma provides the [`autoincrement()`](/reference/api-reference/prisma-schema-reference#autoincrement) attribute function, which uses CockroachDB's [`unique_rowid()` function](https://www.cockroachlabs.com/docs/stable/serial.html) for generating unique identifiers. For example, the following `User` model has an `id` primary key, generated using the `autoincrement()` function:
+
+```file=schema.prisma
+model User {
+ id   Int    @id @default(autoincrement())
+ name String
+}
+```
+
+For compatibility with existing databases, you may sometimes still need to generate a fixed sequence of integer key values. In these cases, you can use Prisma's inbuilt [`sequence()`](/reference/api-reference/prisma-schema-reference#sequence) function for CockroachDB. For a list of available options for the `sequence()` function, see our [reference documentation](/reference/api-reference/prisma-schema-reference#sequence).
+
+For more information on generating database keys, see CockroachDB's [Primary key best practices](https://www.cockroachlabs.com/docs/v21.2/schema-design-table#primary-key-best-practices) guide.
+
+## More on using CockroachDB with Prisma
+
+The fastest way to start using CockroachDB with Prisma is to refer to our Getting Started documentation:
+
+- [Start from scratch](https://www.prisma.io/docs/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb)
+- [Add to existing project](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb)
+
+These tutorials will take you through the process of connecting to CockroachDB, migrating your schema, and using the Prisma Client.
+
+Further reference information is available in the [CockroachDB connector documentation](/concepts/database-connectors/cockroachdb).
