@@ -14,7 +14,7 @@ type ArticleLayoutProps = ArticleQueryData & RouterProps & CreatePageContext
 
 const ArticleLayout = ({
   data,
-  pageContext: { seoTitle, seoDescription },
+  //pageContext: { seoTitle, seoDescription },
   ...props
 }: ArticleLayoutProps) => {
   if (!data) {
@@ -40,7 +40,7 @@ const ArticleLayout = ({
       tocDepth={tocDepth}
       slug={slug}
     >
-      <SEO title={seoTitle} description={seoDescription} />
+      <SEO title={title} description={title} />
       <section className="top-section">
         <TopSection
           location={props.location}
