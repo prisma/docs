@@ -144,11 +144,7 @@ let plugins = [
 ]
 
 if (process.env.INDEX_ALGOLIA === 'true') {
-  if (process.env.GATSBY_ALGOLIA_APP_ID) {
-    plugins = [...plugins, algoliaPlugin]
-  } else {
-    console.warn('INDEX_ALGOLIA === true, but GATSBY_ALGOLIA_APP_ID is undefined.')
-  }
+  plugins = [...plugins, algoliaPlugin]
 }
 
 module.exports = {
