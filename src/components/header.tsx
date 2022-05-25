@@ -288,6 +288,9 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
     const isCurrent = location && link && location.pathname.includes(link)
     const [showExpanded, setShowExpanded] = React.useState(isCurrent)
     const toggle = () => setShowExpanded(!showExpanded)
+    React.useEffect(() => {
+      console.log((showExpanded ? 'opening: ' : 'closing: ') + text)
+    }, [showExpanded])
     return type === 'bucket' ? (
       <>
         <SecondLevelMobileNavLink onClick={toggle}>
