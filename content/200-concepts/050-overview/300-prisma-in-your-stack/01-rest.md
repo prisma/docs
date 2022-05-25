@@ -36,7 +36,7 @@ Here's a non-exhaustive list of libraries and frameworks you can use with Prisma
 
 Assume you have a Prisma schema that looks similar to this:
 
-```prisma
+```prisma copy
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
@@ -67,7 +67,7 @@ You can now implement route controller (e.g. using Express) that use the generat
 
 #### `GET`
 
-```ts
+```ts copy
 app.get('/feed', async (req, res) => {
   const posts = await prisma.post.findMany({
     where: { published: true },
@@ -98,7 +98,7 @@ Note that the `feed` endpoint in this case returns a nested JSON response of `Po
 
 #### `POST`
 
-```ts
+```ts copy
 app.post(`/post`, async (req, res) => {
   const { title, content, authorEmail } = req.body
   const result = await prisma.post.create({
@@ -115,7 +115,7 @@ app.post(`/post`, async (req, res) => {
 
 #### `PUT`
 
-```ts
+```ts copy
 app.put('/publish/:id', async (req, res) => {
   const { id } = req.params
   const post = await prisma.post.update({
@@ -128,7 +128,7 @@ app.put('/publish/:id', async (req, res) => {
 
 #### `DELETE`
 
-```ts
+```ts copy
 app.delete(`/post/:id`, async (req, res) => {
   const { id } = req.params
   const post = await prisma.post.delete({
@@ -163,4 +163,4 @@ You can find several ready-to-run examples that show how to implement a REST API
 | [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-express) | Backend only | REST API using Express and Prisma Client                         |
 | [`rest-fastify`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-fastify) | Backend only | REST API using Fastify and Prisma Client                         |
 | [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nextjs)   | Fullstack    | Next.js app (React) with a REST API                              |
-| [`rest-nuxtjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nuxtjs)    | Fullstack    | App with NuxtJs using Vue (frontend), Express, and Prisma Client |
+| [`rest-nuxtjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nuxtjs)   | Fullstack    | App with NuxtJs using Vue (frontend), Express, and Prisma Client |

@@ -54,7 +54,7 @@ Dependent writes must succeed together in order to maintain data consistency and
 
 Prisma's solution to dependent writes is the **nested writes** feature, which is supported by `create` and `update`. The following nested write creates one user and two blog posts:
 
-```ts
+```ts copy
 const nestedWrite = await prisma.user.create({
   data: {
     email: 'imani@prisma.io',
@@ -92,7 +92,7 @@ Consider the Slack sign-up flow, which:
 
 This scenario can be represented by the following schema - note that users can belong to many teams, and teams can have many users (a many-to-many relationship):
 
-```prisma
+```prisma copy
 model Team {
   id      Int    @id @default(autoincrement())
   name    String
@@ -108,7 +108,7 @@ model User {
 
 The most straightforward approach is to create a team, then create and attach a user to that team:
 
-```ts
+```ts copy
 // Create a team
 const team = await prisma.team.create({
   data: {
@@ -139,7 +139,7 @@ Creating a team and adding a user should be one atomic operation that **succeeds
 
 To implement atomic writes in a low-level database clients, you must wrap your inserts in `BEGIN`, `COMMIT` and `ROLLBACK` statements. Prisma Client solves the problem with [nested writes](/concepts/components/prisma-client/relation-queries#nested-writes). The following query creates a team, creates a user, and connects the records in a single transaction:
 
-```ts
+```ts copy
 const team = await prisma.team.create({
   data: {
     name: 'Aurora Adventures',
@@ -160,7 +160,7 @@ Furthermore, if an error occurs at any point, Prisma Client rolls back the entir
 
 The `$transaction` API does not allow you to pass IDs between distinct operations. In the following example, `createUserOperation.id` is not available yet:
 
-```ts highlight=12;delete
+```ts highlight=12;delete copy
 const createUserOperation = prisma.user.create({
   data: {
     email: 'ebony@prisma.io',
@@ -196,7 +196,7 @@ In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it i
 
 It is correct to say that because you know the ID of the team, you can update the team and its team members independently within a `$transaction`. The following example performs both operations in a `$transaction`:
 
-```ts
+```ts copy
 const updateTeam = prisma.team.update({
   where: {
     id: 1,
@@ -227,7 +227,7 @@ await prisma.$transaction([updateUsers, updateTeam])
 
 However, you can achieve the same result with a nested write:
 
-```ts
+```ts copy
 const updateTeam = await prisma.team.update({
   where: {
     id: 1,
@@ -260,7 +260,7 @@ Yes, but this is a combination of scenarios and techniques:
 - Creating a team and assigning users is a dependent write - use nested writes
 - Creating all teams and users at the same time is an independent write because team/user combination #1 and team/user combination #2 are unrelated writes - use the `$transaction` API
 
-```ts
+```ts copy
 // Nested write
 const createOne = prisma.team.create({
   data: {
@@ -321,7 +321,7 @@ You are building a service like gmail.com, and your customer wants a **"Mark as 
 
 In the following schema, a `User` can have many received emails (a one-to-many relationship):
 
-```ts
+```ts copy
 model User {
   id    Int       @id @default(autoincrement())
   email           String @unique
@@ -340,7 +340,7 @@ model Email {
 
 Based on this schema, you can use `updateMany` to mark all unread emails as read:
 
-```ts
+```ts copy
 await prisma.email.updateMany({
   where: {
     user: {
@@ -358,7 +358,7 @@ await prisma.email.updateMany({
 
 No - neither `updateMany` nor `deleteMany` currently supports nested writes. For example, you cannot delete multiple teams and all of their members (a cascading delete):
 
-```ts highlight=8;delete
+```ts highlight=8;delete copy
 await prisma.team.deleteMany({
   where: {
     id: {
@@ -384,7 +384,7 @@ The `$transaction` API is generic solution to independent writes that allows you
 
 Its also worth noting that operations are executed according to the order they are placed in the transaction.
 
-```ts
+```ts copy
 await prisma.$transaction([iRunFirst, iRunSecond, iRunThird])
 ```
 
@@ -403,7 +403,7 @@ Consider the `$transaction` API if:
 
 GDPR and other privacy legislation give users the right to request that an organization deletes all of their personal data. In the following example schema, a `User` can have many posts and private messages:
 
-```prisma
+```prisma copy
 model User {
   id              Int              @id @default(autoincrement())
   posts           Post[]
@@ -428,7 +428,7 @@ model PrivateMessage {
 
 If a user invokes the right to be forgotten, we must delete three records: the user record, private messages, and posts. It is critical that _all_ delete operations succeed together or not at all, which makes this a use case for a transaction. However, using a single bulk operation like `deleteMany` is not possible in this scenario because we need to delete across three models. Instead, we can use the `$transaction` API to run three operations together - two `deleteMany` and one `delete`:
 
-```ts
+```ts copy
 const id = 9 // User to be deleted
 
 const deletePosts = prisma.post.deleteMany({
@@ -456,7 +456,7 @@ await prisma.$transaction([deletePosts, deleteMessages, deleteUser]) // Operatio
 
 Dependent writes are not supported by the `$transaction` API - if operation A relies on the ID generated by operation B, use [nested writes](#nested-writes). However, if you _pre-computed_ IDs (for example, by generating GUIDs), your writes become independent. Consider the sign-up flow from the nested writes example:
 
-```ts
+```ts copy
 await prisma.team.create({
   data: {
     name: 'Aurora Adventures',
@@ -471,7 +471,7 @@ await prisma.team.create({
 
 Instead of auto-generating IDs, change the `id` fields of `Team` and `User` to a `String` (if you do not provide a value, a UUID is generated automatically). This example uses UUIDs:
 
-```prisma highlight=2,9;delete|3,10;add
+```prisma highlight=2,9;delete|3,10;add copy
 model Team {
   id      Int    @id @default(autoincrement())
   id      String @id @default(uuid())
@@ -489,7 +489,7 @@ model User {
 
 Refactor the sign-up flow example to use the `$transaction` API instead of nested writes:
 
-```ts
+```ts copy
 import { v4 } from 'uuid'
 
 const teamID = v4()
@@ -516,7 +516,7 @@ await prisma.$transaction([
 
 Technically you can still use nested writes with pre-computed APIs if you prefer that syntax:
 
-```ts
+```ts copy
 import { v4 } from 'uuid'
 
 const teamID = v4()
@@ -571,7 +571,7 @@ Idempotency is something you can and should actively design into your applicatio
 
 You are creating an upgrade flow for Slack that allows teams to unlock paid features. Teams can choose between different plans and pay per user, per month. You use Stripe as your payment gateway, and extend your `Team` model to store a `stripeCustomerId`. Subscriptions are managed in Stripe.
 
-```prisma highlight=5;normal
+```prisma highlight=5;normal copy
 model Team {
   id               Int     @id @default(autoincrement())
   name             String
@@ -586,7 +586,7 @@ The upgrade flow looks like this:
 2. Create a subscription in Stripe that includes the number of users
 3. Associate the team with the Stripe customer ID to unlock paid features
 
-```ts
+```ts copy
 const teamId = 9
 const planId = 'plan_id'
 
@@ -634,7 +634,7 @@ You cannot re-run this code in case of an error and you cannot change to another
 
 The following refactor (highlighted) introduces a mechanism that checks if a subscription already exists, and either creates the description or updates the existing subscription (which will remain unchanged if the input is identical):
 
-```ts highlight=12-27;normal
+```ts highlight=12-27;normal copy
 // Calculate the number of users times the cost per user
 const numTeammates = await prisma.user.count({
   where: {
@@ -710,7 +710,7 @@ Avoiding locks in a application with a high number of concurrent requests makes 
 
 You are creating a booking system for a cinema. Each movie has a set number of seats. The following schema models movies and seats:
 
-```ts
+```ts copy
 model Seat {
   id        Int   @id @default(autoincrement())
   userId    Int?
@@ -728,7 +728,7 @@ model Movie {
 
 The following sample code finds the first available seat and assigns that seat to a user:
 
-```ts
+```ts copy
 const movieName = 'Hidden Figures'
 
 // Find first available seat
@@ -766,7 +766,7 @@ However, this code suffers from the "double-booking problem" - it is possible fo
 
 Even though Sorcha has successfully booked the seat, the system ultimately stores Ellen's claim. To solve this problem with optimistic concurrency control, add a `version` field to the seat:
 
-```prisma highlight=7;normal
+```prisma highlight=7;normal copy
 model Seat {
   id        Int   @id @default(autoincrement())
   userId    Int?
@@ -779,7 +779,7 @@ model Seat {
 
 Next, adjust the code to check the `version` field before updating:
 
-```ts highlight=18-37;normal
+```ts highlight=18-37;normal copy
 const userEmail = 'alice@prisma.io'
 const movieName = 'Hidden Figures'
 
@@ -833,7 +833,7 @@ If you have an existing application, it can be a significant undertaking to refa
 
 To support this use case and more, you can enable interactive transactions by adding `interactiveTransactions` in the generator of your Prisma Schema:
 
-```prisma
+```prisma copy
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["interactiveTransactions"]
@@ -846,7 +846,7 @@ In the example below, Alice and Bob each have $100 in their account. If they try
 
 The expected outcome would be for Alice to make 1 transfer for $100 and the other transfer would be rejected. This would result in Alice having $0 and Bob having $200.
 
-```ts
+```ts copy
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
