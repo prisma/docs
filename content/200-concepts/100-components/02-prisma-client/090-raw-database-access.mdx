@@ -43,7 +43,7 @@ const email = 'emelie@prisma.io'
 const result = await prisma.$queryRaw`SELECT * FROM User WHERE email = ${email}`
 ```
 
-You can also use the [`Prisma.sql`](#tagged-template-helpers) helper, in fact, the `$queryRaw` method will **only accept** a template string or the `Prisma.sql` helper.
+You can also use the [`Prisma.sql`](#tagged-template-helpers) helper, in fact, the `$queryRaw` method will **only accept** a template string or the `Prisma.sql` helper:
 
 ```ts no-lines copy
 const email = 'emelie@prisma.io'
@@ -51,6 +51,39 @@ const result = await prisma.$queryRaw(
   Prisma.sql`SELECT * FROM User WHERE email = ${email}`
 )
 ```
+
+Be aware that:
+
+- Template variables cannot be used inside strings. For example, the following query would **not** work:
+
+  ```ts no-lines
+  const name = 'Bob'
+  await prisma.$queryRaw`SELECT 'My name is ${name}';`
+  ```
+
+  Instead, you can either pass the whole string as a variable, or use string concatenation:
+
+  ```ts no-lines
+  const name = 'My name is Bob'
+  await prisma.$queryRaw`SELECT ${name};`
+  ```
+
+  ```ts no-lines
+  const name = 'Bob'
+  await prisma.$queryRaw`SELECT 'My name is ' || ${name};`
+  ```
+
+- Template variables can only be used for data values (such as `email` in the example above). Variables cannot be used for identifiers such as column names, table names or database names, or for SQL keywords. For example, the following two queries would **not** work:
+
+  ```ts no-lines
+  const myTable = 'user'
+  await prisma.$queryRaw`SELECT * FROM ${myTable};`
+  ```
+
+  ```ts no-lines
+  const ordering = 'desc'
+  await prisma.$queryRaw`SELECT * FROM Table ORDER BY ${desc};`
+  ```
 
 #### Return type
 
@@ -224,6 +257,36 @@ Be aware that:
 - `$executeRaw` does not support multiple queries in a single string (for example, `ALTER TABLE` and `CREATE TABLE` together).
 - Prisma Client submits prepared statements, and prepared statements only allow a subset of SQL statements. For example, `START TRANSACTION` is not permitted. You can learn more about [the syntax that MySQL allows in Prepared Statements here](https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html).
 - [`PREPARE` does not support `ALTER`](https://www.postgresql.org/docs/current/sql-prepare.html) - see the [workaround](#alter-limitation-postgresql).
+- Template variables cannot be used inside strings. For example, the following query would **not** work:
+
+  ```ts no-lines
+  const name = 'Bob'
+  await prisma.$queryRaw`UPDATE user SET greeting = 'My name is ${name}';`
+  ```
+
+  Instead, you can either pass the whole string as a variable, or use string concatenation:
+
+  ```ts no-lines
+  const name = 'My name is Bob'
+  await prisma.$queryRaw`UPDATE user SET greeting = ${name};`
+  ```
+
+  ```ts no-lines
+  const name = 'Bob'
+  await prisma.$queryRaw`UPDATE user SET greeting = 'My name is ' || ${name};`
+  ```
+
+- Template variables can only be used for data values (such as `email` in the example above). Variables cannot be used for identifiers such as column names, table names or database names, or for SQL keywords. For example, the following two queries would **not** work:
+
+  ```ts no-lines
+  const myTable = 'user'
+  await prisma.$queryRaw`UPDATE ${myTable} SET active = true;`
+  ```
+
+  ```ts no-lines
+  const ordering = 'desc'
+  await prisma.$queryRaw`UPDATE User SET active = true ORDER BY ${desc};`
+  ```
 
 #### Return type
 
@@ -339,6 +402,34 @@ You can use the following query, but be aware that this is potentially **unsafe*
 ```ts copy
 await prisma.$executeRawUnsafe('ALTER USER prisma WITH PASSWORD "$1"', password})
 ```
+
+### Unsupported types
+
+[`Unsupported` types](/reference/api-reference/prisma-schema-reference#unsupported) need to be cast to Prisma supported types before using them in `$queryRaw` or `$queryRawUnsafe`. For example, take the following model, which has a `location` field with an `Unsupported` type:
+
+```tsx
+model Country {
+  location  Unsupported("point")?
+}
+```
+
+The following query on the unsupported field will **not** work:
+
+```tsx
+await prisma.$queryRaw`SELECT location FROM Country;`
+```
+
+Instead, cast `Unsupported` fields to any supported Prisma type, **if your `Unsupported` column supports the cast**.
+
+The most common type you may want to cast your `Unsupported` column to is `String`. For example, on PostgreSQL, this would map to the `text` type:
+
+```tsx
+await prisma.$queryRaw`SELECT location::text FROM Country;`
+```
+
+The database will thus provide a `String` representation of your data which Prisma supports.
+
+For details of supported Prisma types, see the [Prisma data connector](/concepts/database-connectors) for the relevant database.
 
 ### SQL injection
 
