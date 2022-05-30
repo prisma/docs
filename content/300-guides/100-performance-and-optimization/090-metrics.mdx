@@ -1,49 +1,321 @@
 ---
-title: Metrics
-metaTitle: Metrics
-metaDescription: 'Use Metrics to diagnose application performance with insights into Prisma Client database activity'
-toc: true
-tocDepth: 2
+title: 'Metrics'
+metaTitle: 'Metrics'
+metaDescription: 'Diagnose application performance with insights into Prisma Client database activity'
+tocDepth: 3
 ---
 
 <TopBlock>
 
-Prisma metrics give you a deep insight into what the Prisma Client is doing when it interacts with your database. You can export metrics in JSON or Prometheus formats to integrate them into a current metric system or to view in a console log.
+Prisma metrics give you a detailed insight into how Prisma Client interacts with your database. You can use this insight to help diagnose performance issues with your application.
 
 </TopBlock>
 
-## Add <inlinecode>pgbouncer</inlinecode> to the connection URL
+## About metrics
 
-To use Prisma Client with PgBouncer from a serverless function, add the `?pgbouncer=true` flag to the PostgreSQL connection URL:
+Metrics provide information on the following aspects of Prisma Client:
 
+- Number of operations <!!! what do we mean by an "operation"?>
+- Query response times
+- Active transactions <!!!do we mean info on the number of transactions over time?!!!>
+- Connection pool information
+
+You can export metrics in JSON or Prometheus formats and integrate them into an external metrics system or view them in a console log.
+
+We provide the following metrics:
+
+- Counters (always increase):
+  - `query_total_queries`: The total number of database queries executed (!!! since when? - you initiate metrics?).
+  - `query_total_operations`: The total number of operations executed. This can be less than `query_total_queries`, because some operations create multiple queries.
+- Gauges (can increase or decrease):
+  - `pool_active_connections`: The number of active connections in use. (!!!currently, or over time?)
+  - `pool_idle_connections`: The number of connections that are not being used.
+  - `pool_wait_count`: The number of workers waiting for a connection.
+  - `query_active_transactions`: The number of active transactions.
+- Histograms (bucketed distributions of values): (!!!what do we mean by bucketed distributions)?
+  - `pool_wait_duration_ms`: The wait time for a worker to get a connection.
+  - `query_total_elapsed_time_ms`: The execution time for all database queries executed.
+  - `query_operation_total_elapsed_time_ms`: The execution time for all operations.
+
+## Return metrics in JSON format
+
+To get metrics in JSON format, add the following lines to your application code:
+
+```ts
+let metrics = await prisma.$metrics.json()
+console.log(metrics)
 ```
-postgresql://USER:PASSWORD@HOST:PORT/DATABASE?pgbouncer=true
+
+This returns metrics in the following format:
+
+```json
+{
+  "counters": [
+    {
+      "key": "query_total_operations",
+      "labels": {},
+      "value": 0,
+      "description": "The total number of operations executed"
+    },
+    {
+      "key": "query_total_queries",
+      "labels": {},
+      "value": 0,
+      "description": "The total number of queries executed"
+    }
+  ],
+  "gauges": [
+    {
+      "key": "pool_active_connections",
+      "labels": {},
+      "value": 0,
+      "description": "The number of active connections in use"
+    },
+    {
+      "key": "pool_idle_connections",
+      "labels": {},
+      "value": 21,
+      "description": "The number of connections that are not being used"
+    },
+    {
+      "key": "pool_wait_count",
+      "labels": {},
+      "value": 0,
+      "description": "The number of workers waiting for a connection"
+    },
+    {
+      "key": "query_active_transactions",
+      "labels": {},
+      "value": 0,
+      "description": "The number of active transactions"
+    }
+  ],
+  "histograms": [
+    {
+      "key": "pool_wait_duration_ms",
+      "labels": {},
+      "value": {
+        "buckets": [
+          [0, 0],
+          [1, 0],
+          [5, 0],
+          [10, 0],
+          [50, 0],
+          [100, 0],
+          [500, 0],
+          [1000, 0],
+          [5000, 0],
+          [50000, 0]
+        ],
+        "sum": 0,
+        "count": 0
+      },
+      "description": "The wait time for a worker to get a connection."
+    }
+  ]
+}
 ```
 
-## Set PgBouncer to transaction mode
+### Use Prisma metrics with Statsd
 
-Additionally, for Prisma Client to work reliably, PgBouncer must run in [**Transaction mode**](https://www.pgbouncer.org/features.html).
+You can send JSON-formatted metrics to StatsD. Note that we use Gauges for Counter and Gauge metrics from Prisma. This is because the Prisma Counter Metrics show the actual value and not the incremented or decremented value from a previous retrieval of the metrics.
 
-_Transaction mode_ offers a connection for every transaction – a requirement for the Prisma query engine to work with PgBouncer.
+In the following example, we send metrics to StatsD every 10 seconds. This is aligned with the default 10s flush rate of StatsD.
 
-<details>
-  <summary>How `pgbouncer` mode works in Prisma</summary>
+!!!code needed
 
-- Prisma cleans up already present prepared statements in the connection by running `DEALLOCATE ALL` before preparing and executing Prisma Client queries.
-- Prisma opens a transaction for every query case – even when just reading data, allowing Prisma to use prepared statements.
+## Return metrics in Prometheus format
 
-</details>
+When you get Prisma metrics in Prometheus format, you can use them by themselves, or combine them with the existing Prometheus metric system.
 
-## Prisma Migrate and PgBouncer workaround
+### Get metrics in Prometheus format.
 
-Prisma Migrate uses **database transactions** to check out the current state of the database and the migrations table. However, the Migration Engine is designed to use a **single connection to the database**, and does not support connection pooling with PgBouncer. If you attempt to run Prisma Migrate commands in any environment that uses PgBouncer for connection pooling, you might see the following error:
+To get Metrics in a Prometheus format, add the following lines to your application code:
 
-```bash
-Error: undefined: Database error
-Error querying the database: db error: ERROR: prepared statement "s0" already exists
+```ts
+let metrics = prisma.$metrics.prometheus()
+console.log(metrics)
 ```
 
-To work around this issue, you must connect directly to the database rather than going through PgBouncer. How to achieve this depends on your setup or provider:
+This returns metrics as follows:
 
-- [Connecting directly to a PostgreSQL database hosted on Digital Ocean](https://github.com/prisma/prisma/issues/6157)
-- [Connecting directly to a PostgreSQL database hosted on ScaleGrid](https://github.com/prisma/prisma/issues/6701#issuecomment-824387959)
+```c
+# HELP query_total_operations The total number of operations executed
+
+# TYPE query_total_operations counter
+
+query_total_operations 0
+
+# HELP query_total_queries The total number of queries executed
+
+# TYPE query_total_queries counter
+
+query_total_queries 0
+
+# HELP pool_active_connections The number of active connections in use
+
+# TYPE pool_active_connections gauge
+
+pool_active_connections 0
+
+# HELP pool_idle_connections The number of connections that are not being used
+
+# TYPE pool_idle_connections gauge
+
+pool_idle_connections 21
+
+# HELP pool_wait_count The number of workers waiting for a connection
+
+# TYPE pool_wait_count gauge
+
+pool_wait_count
+
+# HELP query_active_transactions The number of active transactions
+
+# TYPE query_active_transactions gauge
+
+query_active_transactions
+
+# HELP pool_wait_duration_ms The wait time for a worker to get a connection.
+
+# TYPE pool_wait_duration_ms histogram
+
+pool_wait_duration_ms_bucket{le="0"} 0
+pool_wait_duration_ms_bucket{le="1"} 1
+pool_wait_duration_ms_bucket{le="5"} 1
+pool_wait_duration_ms_bucket{le="10"} 1
+pool_wait_duration_ms_bucket{le="50"} 1
+pool_wait_duration_ms_bucket{le="100"} 1
+pool_wait_duration_ms_bucket{le="500"} 1
+pool_wait_duration_ms_bucket{le="1000"} 1
+pool_wait_duration_ms_bucket{le="5000"} 1
+pool_wait_duration_ms_bucket{le="50000"} 1
+pool_wait_duration_ms_bucket{le="+Inf"} 1
+pool_wait_duration_ms_sum 0.050875000000000004
+pool_wait_duration_ms_count 1
+```
+
+### Use Prisma metrics with the Prometheus metric system
+
+In the majority of cases, Prometheus must scrape an endpoint to get metrics.
+
+Example with `Express.js`:
+
+```javascript
+import { PrismaClient } from "@prisma/client";
+import express, { Request, Response } from "express";
+
+const app = express();
+const port = 4000;
+const prisma = new PrismaClient();
+
+app.get("/metrics", async (\_req, res: Response) => {
+let metrics = await prisma.$metrics.prometheus();
+res.end(metrics);
+});
+
+app.listen(port, () => {
+console.log(`Example app listening on port ${port}`);
+})
+
+Combining it with another Prometheus client library:
+import { PrismaClient } from "@prisma/client";
+import express, { Request, Response } from "express";
+import prom from "prom-client";
+
+let registry = new prom.Registry();
+const app = express();
+const port = 4000;
+const prisma = new PrismaClient();
+
+app.get("/metrics", async (\_req, res: Response) => {
+let prismaMetrics = await prisma.$metrics.prometheus();
+let appMetrics = await registry.metrics();
+res.end(prismaMetrics + appMetrics);
+});
+
+app.listen(port, () => {
+console.log(`Example app listening on port ${port}`);
+});
+```
+
+## Global labels
+
+You can add labels that apply to all Prisma metrics, for either JSON or Prometheus formats (!!!is this for JSON and Prometheus?). !!!why? what's the benefit of this? Also might want to mention this at top, and link to this section
+
+For example:
+
+```ts
+let metrics = prisma.metrics.json({ global: 'label', app: 'one' })
+console.log(metrics)
+```
+
+The above code returns information in the following format:
+
+```json
+{
+  "counters": [
+    {
+      "key": "query_total_operations",
+      "labels": { "global": "label", "app": "one" },
+      "value": 0,
+      "description": "The total number of operations executed"
+    },
+    {
+      "key": "query_total_queries",
+      "labels": { "global": "label", "app": "one" },
+      "value": 0,
+      "description": "The total number of queries executed"
+    }
+  ],
+  "gauges": [
+    {
+      "key": "pool_active_connections",
+      "labels": { "global": "label", "app": "one" },
+      "value": 0,
+      "description": "The number of active connections in use"
+    },
+    {
+      "key": "pool_idle_connections",
+      "labels": { "global": "label", "app": "one" },
+      "value": 21,
+      "description": "The number of connections that are not being used"
+    },
+    {
+      "key": "pool_wait_count",
+      "labels": { "global": "label", "app": "one" },
+      "value": 0,
+      "description": "The number of workers waiting for a connection"
+    },
+    {
+      "key": "query_active_transactions",
+      "labels": { "global": "label", "app": "one" },
+      "value": 0,
+      "description": "The number of active transactions"
+    }
+  ],
+  "histograms": [
+    {
+      "key": "pool_wait_duration_ms",
+      "labels": { "global": "label", "app": "one" },
+      "value": {
+        "buckets": [
+          [0, 0],
+          [1, 0],
+          [5, 0],
+          [10, 0],
+          [50, 0],
+          [100, 0],
+          [500, 0],
+          [1000, 0],
+          [5000, 0],
+          [50000, 0]
+        ],
+        "sum": 0,
+        "count": 0
+      },
+      "description": "The wait time for a worker to get a connection."
+    }
+  ]
+}
+```
