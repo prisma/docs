@@ -339,6 +339,109 @@ const result = prisma.$executeRawUnsafe(
 $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): PrismaPromise<number>;
 ```
 
+### Using <inlinecode>improvedQueryRaw</inlinecode> (Preview)
+
+In versions `3.14.0` and later, improvements to the raw query API are available:
+
+- Values returned from raw queries are mapped to the corresponding JavaScript type. For more information, see [Raw query type mapping](#raw-query-type-mapping)
+- Typecasting issues in PostgreSQL are fixed. For more information, see [PostgreSQL typecasting fixes](#postgresql-typecasting-fixes)
+
+This is a breaking change, so has to be enabled as a Preview feature. To enable this, add the `improvedQueryRaw` feature flag to the `generator` block of your `schema.prisma` file:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["improvedQueryRaw"]
+}
+```
+
+#### Raw query type mapping
+
+<Admonition type="warning">
+
+This feature is currently not available for SQLite.
+
+</Admonition>
+
+With the `improvedQueryRaw` Preview feature enabled, the returned database values from raw queries will be mapped to their corresponding [JavaScript type](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures). This matches the behaviour of regular Prisma query methods such as `findMany`.
+
+As an example, take a raw query that selects columns with `BigInt`, `Bytes`, `Decimal` and `Date` types from a table:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```ts
+const result =
+  await prisma.$queryRaw`SELECT bigint, bytes, decimal, date FROM "Table";`
+
+console.log(result)
+```
+
+</cmd>
+
+<cmdResult>
+
+```terminal
+{ bigint: BigInt("123"), bytes: Buffer.from([1, 2]), decimal: Decimal("12.34"), date: Date("<some_date>") }
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+In the `result` object, the database values have been mapped to the corresponding JavaScript types.
+
+The following table shows the conversion between types used in the database and the JavaScript type returned by the raw query:
+
+| Database type           | JavaScript type |
+| ----------------------- | --------------- |
+| Text                    | `String`        |
+| 32-bit integer          | `Number`        |
+| Floating point number   | `Number`        |
+| Double precision number | `Number`        |
+| 64-bit integer          | `BigInt`        |
+| Decimal / numeric       | `Decimal`       |
+| Bytes                   | `Buffer`        |
+| Json                    | `Object`        |
+| DateTime                | `Date`          |
+| Date                    | `Date`          |
+| Time                    | `Date`          |
+| Uuid                    | `String`        |
+| Xml                     | `String`        |
+
+Note that the exact name for each database type will vary between databases – for example, the boolean type is known as `boolean` in PostgreSQL and `STRING` in CockroachDB. See the [Scalar types reference](/reference/api-reference/prisma-schema-reference#model-field-scalar-types) for full details of type names for each database.
+
+#### PostgreSQL typecasting fixes
+
+The `improvedQueryRaw` preview feature fixes a number of issues with typecasting in PostgreSQL. For example, the following raw query now works correctly, returning an integer result:
+
+```ts
+await prisma.$queryRaw`SELECT ${1.5}::int as int`
+
+// Before: db error: ERROR: incorrect binary data format in bind parameter 1
+// After: [{ int: 2 }]
+```
+
+A consequence of this fix is that some subtle implicit casts are now handled more strictly, so some queries that previously were allowed will now fail with the `improvedQueryRaw` feature enabled. As an example, take the following query using PostgreSQL's `LENGTH` function, which only accepts the `text` type as an input:
+
+```ts
+await prisma.$queryRaw`SELECT LENGTH(${42});`
+```
+
+Without the `improvedQueryRaw` Preview feature enabled, Prisma silently coerces `42` to `text`. With the feature enabled, the query returns an error:
+
+```terminal
+// ERROR: function length(integer) does not exist
+// HINT: No function matches the given name and argument types. You might need to add explicit type casts.
+```
+
+The fix in this case is to explicitly cast `42` to the `text` type:
+
+```ts
+await prisma.$queryRaw`SELECT LENGTH(${42}::text);`
+```
+
 ### Transactions
 
 In 2.10.0 and later, you can use `.$executeRaw()` and `.$queryRaw()` inside a [transaction](transactions).
