@@ -7,32 +7,22 @@ tocDepth: 3
 
 <TopBlock>
 
-Prisma metrics give you a detailed insight into how Prisma Client interacts with your database. You can use this insight to help diagnose performance issues with your application. If you send the data to an external metrics system, then you can view the data over time. For example, you might visualize how your application's number of idle and active connections change.
+Prisma metrics give you a detailed insight into how Prisma Client interacts with your database. You can use this insight to help diagnose performance issues with your application.
 
 </TopBlock>
 
 ## About metrics
 
-Metrics provide information on the following aspects of Prisma Client:
-
-- The number of Prisma operations
-
-  A Prisma operation is a statement like `let user = prisma.user(include: {posts: true}})`, which Prisma Client translates into one or more SQL queries.
-
-- Query response times
-- Active transactions
-- Connection pool information
-
-You can export metrics in JSON or Prometheus formats and view them in a console log, or integrate them into an external metrics system, such as StatsD or Prometheus. If you integrate them into an external metrics system, then you can view the metrics data over time, for example to help diagnose changes in your application's performance.
+You can export metrics in JSON or Prometheus formats and view them in a console log, or integrate them into an external metrics system, such as StatsD or Prometheus. If you integrate them into an external metrics system, then you can view the metrics data over time. For example, you can use metrics to help diagnose how your application's number of idle and active connections changes.
 
 We provide the following metrics:
 
 - Counters (always increase):
 
   - `query_total_queries`: The total number of database queries executed.
-  - `query_total_operations`: The total number of operations executed.
-
-    This can be less than `query_total_queries`, because some operations create multiple queries.
+  - `query_total_operations`: The total number of Prisma operations executed.
+    - A Prisma operation is a statement like `let user = prisma.user(include: {posts: true}})`, which Prisma Client translates into one or more SQL queries.
+    - The value returned by `query_total_operations` can be less than `query_total_queries`, because some operations create multiple queries.
 
 - Gauges (can increase or decrease):
   - `pool_active_connections`: The number of active connections in use.
@@ -44,7 +34,34 @@ We provide the following metrics:
   - `query_total_elapsed_time_ms`: The execution time for all database queries executed.
   - `query_operation_total_elapsed_time_ms`: The execution time for all operations.
 
-You can group your metrics data with [global labels](#global-labels).
+You can [label your metrics data](#global-labels) to help you analyze them by category, for example to view separate sets of metrics for each database server that you operate.
+
+## Prerequisites
+
+To use metrics, you must do the following:
+
+1. Install the appropriate dependencies.
+1. Enable the `metrics` feature flag in your Prisma schema file.
+
+### Step 1. Install up-to-date Prisma dependencies
+
+Use version `3.15.0` or higher of the `prisma` and `@prisma/client` npm packages.
+
+```terminal
+npm install prisma@latest --save-dev
+npm install @prisma/client@latest --save
+```
+
+### Step 2: Enable the feature flag in the Prisma schema file
+
+In the `generator` block of your `schema.prisma` file, enable the feature flag:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["metrics"]
+}
+```
 
 ## Get metrics in JSON format
 
@@ -140,7 +157,64 @@ You can send JSON-formatted metrics to StatsD to visualize your metrics data ove
 
 In the following example, we send metrics to StatsD every 10 seconds. This is aligned with the default 10s flush rate of StatsD.
 
-**!!!code needed**
+```ts
+import StatsD from 'hot-shots'
+let statsd = new StatsD({
+  port: 8125,
+})
+
+let diffMetrics = (metrics: any) => {
+  return metrics.map((metric: any) => {
+    let prev = 0
+    let diffBuckets = metric.value.buckets.map((values: any) => {
+      let [bucket, value] = values
+      let diff = value - prev
+      prev = value
+      return [bucket, diff]
+    })
+    metric.value.buckets = diffBuckets
+    return metric
+  })
+}
+
+let previousHistograms: any = null
+let statsdSender = async () => {
+  let res = await prisma.$metrics.json()
+  let metrics = res.data
+
+  metrics.counters.forEach((counter: any) => {
+    statsd.gauge('prisma.' + counter.key, counter.value, (...res) => {})
+  })
+
+  metrics.gauges.forEach((counter: any) => {
+    statsd.gauge('prisma.' + counter.key, counter.value, (...res) => {})
+  })
+
+  if (previousHistograms === null) {
+    previousHistograms = diffMetrics(metrics.histograms)
+    return
+  }
+
+  let diffHistograms = diffMetrics(metrics.histograms)
+
+  diffHistograms.forEach((diffHistograms: any, histogramIndex: any) => {
+    diffHistograms.value.buckets.forEach((values: any, bucketIndex: any) => {
+      let [bucket, count] = values
+      let [_, prev] =
+        previousHistograms[histogramIndex].value.buckets[bucketIndex]
+      let change = count - prev
+
+      for (let sendTimes = 0; sendTimes < change; sendTimes++) {
+        statsd.timing('prisma.' + diffHistograms.key, bucket)
+      }
+    })
+  })
+
+  previousHistograms = diffHistograms
+}
+
+setInterval(async () => await statsdSender(), 10000)
+```
 
 ## Get metrics in Prometheus format
 
@@ -213,7 +287,7 @@ pool_wait_duration_ms_count 1
 
 ### Use Prisma metrics with the Prometheus metrics system
 
-In the majority of cases, Prometheus must scrape an endpoint to get metrics. Example with `Express.js`:
+In the majority of cases, Prometheus must scrape an endpoint to get metrics. The following example shows how to send data with `Express.js`:
 
 ```javascript
 import { PrismaClient } from "@prisma/client";
@@ -255,7 +329,7 @@ console.log(`Example app listening on port ${port}`);
 
 ## Global labels
 
-You can group your metrics data with global labels. For example, if you have multiple servers running Prisma Client, you can use labels like `{server: "us-server1", "app_version": "1"}` to view metrics at a server level. Global labels work with JSON and Prometheus-formatted metrics.
+You can [label your metrics data](#global-labels) to help you analyze them by category. For example, if you run Prisma Client on multiple servers, you can use labels like `{server: "us-server1", "app_version": "1"}` to view metrics at a server level. Global labels work with JSON and Prometheus-formatted metrics.
 
 For example:
 
