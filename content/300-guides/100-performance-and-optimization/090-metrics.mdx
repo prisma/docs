@@ -208,8 +208,8 @@ You can send JSON-formatted metrics to [StatsD](https://github.com/statsd/statsd
 
 <Admonition type="info">
 
-Note: You must provide counter metrics to StatsD as a series of values that are each incremented or decremented from the preceding value. However, Prisma counter
-metrics return absolute values. As a workaround, you can convert the counter metrics to a series of incremented and decremented values and send them to StatsD as gauge data. In the code example below, we convert counter metrics into incremented and decremented gauge data in `diffHistograms`.
+Note: You must provide counter metrics to StatsD as a series of values that are incremented or decremented from a previous retrieval of the metrics. However, Prisma counter
+metrics return absolute values. Therefore, you must convert your counter metrics to a series of incremented and decremented values and send them to StatsD as gauge data. In the code example below, we convert counter metrics into incremented and decremented gauge data in `diffHistograms`.
 
 </Admonition>
 
@@ -384,25 +384,28 @@ app.listen(port, () => {
 
 The following example shows how to combine Prisma metrics with other Prometheus client libraries, also served with an `Express.js` endpoint:
 
+<!-- prettier-ignore -->
 ```js
 import { PrismaClient } from "@prisma/client";
 import express, { Request, Response } from "express";
 import prom from "prom-client";
 
-let registry = new prom.Registry();
 const app = express();
 const port = 4000;
 const prisma = new PrismaClient();
 
-app.get("/metrics", async (\_req, res: Response) => {
-let prismaMetrics = await prisma.$metrics.prometheus();
-  let appMetrics = await registry.metrics();
+const register = new prom.Registry();
+prom.collectDefaultMetrics({ register });
+
+app.get('/metrics', async (_req, res: Response) => {
+  let prismaMetrics = await prisma.$metrics.prometheus();
+  let appMetrics = await register.metrics();
   res.end(prismaMetrics + appMetrics);
 });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
-});
+})
 ```
 
 ## Global labels
