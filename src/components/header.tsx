@@ -230,6 +230,51 @@ const SecondLevelNav = styled.div`
   }
 `
 
+interface MenuItemProps {
+  componentToShow?: any
+  type: string
+  text: string
+  link?: string
+  setCheckState?: (arg0: string) => void
+}
+
+const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
+  const isCurrent = location && link && location.pathname.includes(link)
+  const [showExpanded, setShowExpanded] = React.useState(isCurrent)
+  const toggle = () => setShowExpanded(!showExpanded)
+  return type === 'bucket' ? (
+    <>
+      <SecondLevelMobileNavLink onClick={toggle}>
+        {text}
+        {showExpanded ? <UpChevron /> : <RightChevron />}
+      </SecondLevelMobileNavLink>
+      {showExpanded && componentToShow}
+    </>
+  ) : (
+    <DarkNavLink to={link}>
+      <div className="menu-item">
+        {text}
+        <ExternalLink />
+      </div>
+    </DarkNavLink>
+  )
+}
+
+const SecondLevelMobileMenu = ({ headerProps }: HeaderViewProps) => (
+  <SecondLevelNav>
+    {headerProps.secondLevelHeaderMenuItems.map((item) => {
+      return (
+        <MenuItem
+          componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
+          type={item.type}
+          text={item.text}
+          link={item.to}
+        />
+      )
+    })}
+  </SecondLevelNav>
+)
+
 const HeaderSec = ({ headerProps }: HeaderViewProps) => {
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const [showMobileNav, setShowMobileNav] = React.useState(false)
@@ -277,50 +322,6 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
     )
   }
 
-  interface MenuItemProps {
-    componentToShow?: any
-    type: string
-    text: string
-    link?: string
-  }
-
-  const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
-    const isCurrent = location && link && location.pathname.includes(link)
-    const [showExpanded, setShowExpanded] = React.useState(isCurrent)
-    const toggle = () => setShowExpanded(!showExpanded)
-    return type === 'bucket' ? (
-      <>
-        <SecondLevelMobileNavLink onClick={toggle}>
-          {text}
-          {showExpanded ? <UpChevron /> : <RightChevron />}
-        </SecondLevelMobileNavLink>
-        {showExpanded && componentToShow}
-      </>
-    ) : (
-      <DarkNavLink to={link}>
-        <div className="menu-item">
-          {text}
-          <ExternalLink />
-        </div>
-      </DarkNavLink>
-    )
-  }
-
-  const SecondLevelMobileMenu = () => (
-    <SecondLevelNav>
-      {headerProps.secondLevelHeaderMenuItems.map((item) => {
-        return (
-          <MenuItem
-            componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
-            type={item.type}
-            text={item.text}
-            link={item.to}
-          />
-        )
-      })}
-    </SecondLevelNav>
-  )
-
   return (
     <>
       {/* Top level header */}
@@ -350,7 +351,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
 
       {showMobileNav && (
         <SecondLevelMobileOnlyNav>
-          <SecondLevelMobileMenu />
+          <SecondLevelMobileMenu headerProps={headerProps} />
         </SecondLevelMobileOnlyNav>
       )}
     </>
