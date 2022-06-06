@@ -26,7 +26,7 @@ Please note that the Prisma Data Proxy is an early-stage product and should not 
 <Admonition type="warning">
 
 **Not supported** <br />
-You cannot use the Prisma Data Proxy at the same time as you use [Interactive Transactions](/concepts/components/prisma-client/transactions#interactive-transactions-in-preview) (Preview Feature). To use Prisma Data Proxy, you must disable Interactive Transactions.
+You cannot use the Prisma Data Proxy at the same time as you use [Interactive Transactions](/concepts/components/prisma-client/transactions#interactive-transactions-in-preview) or [Metrics](/concepts/components/prisma-client/metrics#metrics-in-preview) preview features. To use Prisma Data Proxy, you must remove `interactiveTransactions` and `metrics` out of `previewFeatures` in your schema.
 
 </Admonition>
 
@@ -61,11 +61,7 @@ npm install @prisma/client@latest --save
 
 #### Step 3: Make sure that the datasource URL is read from environment
 
-**!!! introduction to go here: explain what we are doing - set up the connection locally in your project? **
-
-##### Node.js
-
-If you want to use Node.js, then we strongly recommend that you use environment variables to provide your database connection strings:
+For security reasons, we strongly recommend that you always use environment variables in order to provide your database connection strings instead of hardcoding them into your `schema.prisma`:
 
 ```prisma
 datasource db {
@@ -74,30 +70,40 @@ datasource db {
 }
 ```
 
-##### Cloudflare Workers
+The Data Proxy is able to work in Node.js as well as Edge runtimes such as Cloudflare Workers and Vercel Edge Functions (Middleware). Depending on where you're planning to deploy to, you may need to set the `DATASOURCE_URL` differently. 
 
-If you want to use CloudFlare Workers then
-**!!!! (use global variables) - explanation to go here!!!**
 
-##### Vercel Edge
+##### Node.js
 
-If you want to use Vercel Edge, then
-**!!! (inject the environment variables) - explanation to go here!!!**
+The environment variable is set and defined as usual. If you're not familiar with this, please give a read to our [Environment Variables](https://www.prisma.io/docs/guides/development-environment/environment-variables) guide.
+
+For guidance on how to configure environment variables on your deployment, please refer to your provider.
+
+- AWS: [Using AWS Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html)
+- Heroku: [Configuration and Config Vars](https://devcenter.heroku.com/articles/config-vars)
+
+##### Edge runtimes
+
+Because Edge runtimes (eg. Cloudflare Workers, Vercel Edge Functions) cannot access files from the file system, the automatic loading of `.env` files cannot be handled by the Prisma Client. Instead, you can use environment variables to pass the connection string to the Data Proxy. Depending on your provider, you may need to set the `DATASOURCE_URL` differently, see the following sections.
+
+###### Cloudflare Workers
+
+In [Cloudflare Workers](https://developers.cloudflare.com/workers/), you can define environment variables via `wrangler` or via the dashboard. If you are not familiar with this, please give a read to their [Environment Variables](https://developers.cloudflare.com/workers/platform/environment-variables/) guide.
+
+###### Vercel Edge Functions
+
+In [Vercel Edge Functions](https://vercel.com/docs/concepts/functions/edge-functions) (Middleware), you can define environment variables as in Next.js. If you are not familiar with this, please give a read to their [Environment Variables](https://nextjs.org/docs/basic-features/environment-variables) guide.
 
 #### Step 4: Generate the client
 
-To generate the client with the Data Proxy, call `prisma generate` with the option `--data=proxy`:
+To generate the Prisma Client with the Data Proxy, call `prisma generate` with the option `--data-proxy`:
 
 ```terminal
-prisma generate --data proxy
+prisma generate --data-proxy
 ```
 
-**!!! does the generate output confirm that we have a data proxy client, and not a normal one? If so, note this here**
-
-The Data Proxy does not need local engine files. When you use the above
-command, the generation process does not include the [query
-engine](/concepts/components/prisma-engines/query-engine) in the generated
-Prisma Client. This helps to keep Prisma Client lightweight.
+One of the advantages of generating with `--data-proxy` is that you will get a very lightweight Prisma Client. In other words, no [query
+engine](/concepts/components/prisma-engines/query-engine) will be included, and the Prisma Client runtime is only about `250kB`.
 
 #### Step 5: Import and instantiate Prisma Client in your code
 
@@ -105,9 +111,9 @@ Prisma Client. This helps to keep Prisma Client lightweight.
 
 If you want to use the Data Proxy with Node.js, then use `@prisma/client` as described in [Generating the client](/concepts/components/prisma-client/working-with-prismaclient/generating-prisma-client).
 
-##### CloudFlare Workers or Vercel Edge Functions
+##### Edge runtimes
 
-If you want to use the Data Proxy with CloudFlare Workers or the Vercel Edge Functions, you will need to import and instantiate Prisma Client in your code as follows.
+To use the Data Proxy with CloudFlare Workers or Vercel Edge Functions, you will need to import `@prisma/client/edge` instead of the usual `@prisma/client`.
 
  <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
 
@@ -133,20 +139,13 @@ const prisma = new PrismaClient()
 
 </TabbedContent>
 
+<Admonition type="warning">
+
+The `@prisma/client/edge` can only be used with the Data Proxy, make sure to use the `--data-proxy` flag when generating the client.
+
+</Admonition>
+
 #### Step 6: Start your app
-
-**!!! This seems to overlap with step 3 - can we disentangle?**
-
-If you are loading the connection string in your Prisma Schema using `env()`, there should be no further changes needed other than verifying that the environment variable changed to your Data Proxy connection string. For example:
-
-```terminal
-DATABASE_URL='prisma://aws-us-east-1.prisma-data.com/?api_key=...' npm start
-```
-
-For guidance on how to configure environment variables on your deployment, please refer to your provider.
-
-- AWS: [Using AWS Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html)
-- Heroku: [Configuration and Config Vars](https://devcenter.heroku.com/articles/config-vars)
 
 ### Error codes
 
@@ -177,7 +176,6 @@ Requested resource does not exist
 The feature is not yet implemented:
 
 - `beforeExit` event is not yet supported
-- Interactive transactions are not yet supported
 
 #### P5005
 
@@ -198,6 +196,10 @@ Usage exceeded, retry again later
 #### P5009
 
 Request timed out
+
+#### P5010
+
+Cannot fetch data from service
 
 ### Important Considerations about the Data Proxy
 
