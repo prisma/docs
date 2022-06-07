@@ -115,13 +115,9 @@ module.exports = {
   target: 'webworker',
   resolve: {
     extensions: ['.ts', '.tsx', '.js'],
-+   // Alias for resolving the Prisma Client properly
-+   alias: {
-+     '@prisma/client$': require.resolve('@prisma/client'),
-+   },
   },
   mode: 'development',
-  // Wrangler doesn't like eval which devtools use in development.
+  // wrangler doesn't like eval which devtools use in development
   devtool: 'none',
   module: {
     rules: [
@@ -154,14 +150,15 @@ Now you're ready to add Prisma to the project.
 npx prisma init
 ```
 
-This will create a Prisma Schema in `prisma/schema.prisma` and an `.env` file.
+This creates a Prisma Schema in `prisma/schema.prisma`.
+
+**Note:** This process also creates an `.env` file, but this file has no effect when you use Cloudflare Workers.
 
 Inside `prisma/schema.prisma`, add the following schema:
 
 ```prisma
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["dataProxy"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -205,7 +202,7 @@ You're ready to import your project into the Prisma Data Platform.
 
 ## 7. Importing your Project into the Prisma Data Platform
 
-With Cloudflare Workers, you can't directly access your database because there is no TCP support. Fortunately, Prisma has your back with the Prisma Data Proxy.
+With Cloudflare Workers, you can't directly access your database because there is no TCP support. Fortunately, Prisma has your back with the [Prisma Data Proxy](/concepts/data-platform/data-proxy).
 
 To get started, sign up for a free [Prisma Data Platform account](https://cloud.prisma.io/).
 
@@ -233,10 +230,15 @@ If all goes well, you'll be greeted with a new connection string that starts wit
 
 ![Data Proxy Page](./450-05-data-proxy.png)
 
-Then you can hop back into your code editor and paste the connection string into your `.env` file:
+Then you can hop back into your code editor and paste the connection string into your `wrangler.toml` file:
 
-```env
-DATABASE_URL="prisma://aws-us-east-1.prisma-data.com/?api_key=•••••••••••••••••"
+```diff
+  name = "prisma-mongodb-cloudflare"
+  type = "webpack"
+  webpack_config = "webpack.config.js"
+
++ [vars]
++ DATABASE_URL = "prisma://aws-us-east-1.prisma-data.com/?api_key=•••••••••••••••••"
 ```
 
 You're all setup and ready to generate a Prisma Client!
@@ -248,26 +250,20 @@ You're all setup and ready to generate a Prisma Client!
 
 ## 9. Generate a Prisma Client
 
-Next you'll generate a Prisma Client that connects through the Data Proxy over HTTP.
+Next you'll generate a Prisma Client that connects through the [Data Proxy](/concepts/data-platform/data-proxy) over HTTP.
 
 ```terminal
-PRISMA_CLIENT_ENGINE_TYPE=dataproxy npx prisma generate
+npx prisma generate --data-proxy
 ```
 
 This client is optimized for edge environments like Cloudflare Workers.
-
-<Admonition type="warning">
-
-Please be aware that the proxy-enabled Prisma Client is in Early Access and subject to change.
-
-</Admonition>
 
 ## 10. Develop the Cloudflare Worker function
 
 You're now ready to create a Cloudflare Worker. Create a `src/index.ts` file with the following code:
 
 ```ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client/edge'
 const prisma = new PrismaClient()
 
 addEventListener('fetch', (event) => {
@@ -289,6 +285,7 @@ async function handleEvent(event: FetchEvent): Promise<Response> {
       },
     })
   )
+
   return new Response(`request method: ${request.method}!`)
 }
 ```
@@ -305,7 +302,7 @@ Go ahead and open `http://127.0.0.1:8787`. If all goes well, you should see:
 request method: GET!
 ```
 
-Refresh the page a couple times to verify that it's working. Now if you click on the **Data Browser** tab on your Prisma Cloud project, you should see Info logs written to your database.
+Refresh the page a couple times to verify that it's working. Now if you click on the **Data Browser** tab on your Prisma Cloud project, you should see `Info` logs written to your database.
 
 ![Prisma Data Browser](./450-06-data-browser.png)
 

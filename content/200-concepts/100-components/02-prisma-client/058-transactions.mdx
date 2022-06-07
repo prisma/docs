@@ -78,7 +78,7 @@ The `$transaction` API can be used in two ways:
 - **Sequential operations**: Pass an array of Prisma Client queries to be executed sequentially inside of a transaction.
 
   `$transaction<R>(queries: PrismaPromise<R>[]): Promise<R[]>`
-  
+
 - **Interactive transactions (Preview)**: Pass a function that can contain user code including Prisma Client queries, non-Prisma code and other control flow to be executed in a transaction.
 
   `$transaction<R>(fn: (prisma: PrismaClient) => R): R`
@@ -114,22 +114,26 @@ const [userList, updateUser] = await prisma.$transaction([
 <tab>
 
 ```ts
-const [findRawData, aggregateRawData, commandRawData] = await prisma.$transaction([
-  prisma.user.findRaw({
-    filter: { age: { $gt: 25 } } 
-  }),
-  prisma.user.aggregateRaw({
-    pipeline: [
-      { $match: { status: "registered" } },
-      { $group: { _id: "$country", total: { $sum: 1 } } }
-    ]
-  }),
-  prisma.$runCommandRaw({
-    aggregate: 'User',
-    pipeline: [{ $match: { name: 'Bob' } }, { $project: { email: true, _id: false } }],
-    explain: false,
-  }),
-])
+const [findRawData, aggregateRawData, commandRawData] =
+  await prisma.$transaction([
+    prisma.user.findRaw({
+      filter: { age: { $gt: 25 } },
+    }),
+    prisma.user.aggregateRaw({
+      pipeline: [
+        { $match: { status: 'registered' } },
+        { $group: { _id: '$country', total: { $sum: 1 } } },
+      ],
+    }),
+    prisma.$runCommandRaw({
+      aggregate: 'User',
+      pipeline: [
+        { $match: { name: 'Bob' } },
+        { $project: { email: true, _id: false } },
+      ],
+      explain: false,
+    }),
+  ])
 ```
 
 </tab>
@@ -142,11 +146,13 @@ Instead of immediately awaiting the result of each operation when it's performed
 >
 > Refer to the 📖 [transactions guide](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api) for more examples.
 
-### Interactive Transactions (in Preview)
+### Interactive transactions (in Preview)
 
 Sometimes you need more control over what queries execute within a transaction. Interactive transactions are meant to provide you with an escape hatch.
 
-You can enable interactive transactions by adding `interactiveTransactions` in the generator of your Prisma Schema:
+**Note**: If you use interactive transactions, then you cannot use [Prisma Data Proxy](/concepts/data-platform/data-proxy#providing-the-connection-string-to-prisma-migrate) at the same time.
+
+To enable interactive transactions, add `interactiveTransactions` to the generator of your Prisma Schema:
 
 ```prisma
 generator client {
