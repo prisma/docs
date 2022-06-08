@@ -297,7 +297,10 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       <SecondLevelNav>
         <div>
           {bucketItems.map((item) => {
-            const isCurrent = location && item.to && location.pathname.includes(item.to)
+            const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
+            const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
+            const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
+
             return (
               <DarkNavLink
                 to={item.to}
