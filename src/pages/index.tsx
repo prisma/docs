@@ -138,6 +138,9 @@ const List = styled.ul<{ split?: boolean }>`
         color: ${(p) => p.theme.colors.gray600} !important;
       }
     }
+    @media (min-width: 0px) and (max-width: 992px) {
+      line-height: 150%;
+    }
   }
   .inline-code {
     font-weight: normal;
@@ -202,6 +205,9 @@ const GeneralLinks = styled.div`
   max-width: 1200px;
   padding: 48px 114px;
   width: 100%;
+  @media (min-width: 0px) and (max-width: 992px) {
+    gap: 35px;
+  }
   @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
     flex-direction: column;
     padding: 0;

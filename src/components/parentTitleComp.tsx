@@ -21,6 +21,12 @@ const BreadcrumbTitle = styled.div`
       cursor: pointer;
     }
   }
+
+  @media (min-width: 0) and (max-width: 425px) {
+    a {
+      line-height: 125%;
+    }
+  }
 `
 
 interface ParentTitleProps {
