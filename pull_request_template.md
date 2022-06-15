@@ -17,4 +17,4 @@ Fixes #1234  -->
 
 ## Any other relevant information
 
-<!-- Add any other information you deem to be relevant to the PR -->
+<!-- Add any other information you seem to be relevant to the PR -->

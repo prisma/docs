@@ -30,6 +30,18 @@ const FooterWrapper = styled.div`
       padding: ${(p) => p.theme.fontSizes[48]} 0.5rem;
     }
   }
+  @media (min-width: 0px) and (max-width: 992px) {
+    padding-inline: 16px;
+  }
+
+  @media (min-width: 0px) and (max-width: 768px) {
+    .column.one {
+      flex: 1.4;
+    }
+    > div {
+      gap: 10px;
+    }
+  }
 `
 
 const FooterSec = ({ footerProps }: FooterViewProps) => {
