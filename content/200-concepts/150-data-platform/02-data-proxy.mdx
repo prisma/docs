@@ -155,11 +155,41 @@ You are now ready to try the Data Proxy. Go ahead and start your app!
 
 The Prisma Data Proxy does not support the preview features [Interactive Transactions](/concepts/components/prisma-client/transactions#interactive-transactions-in-preview) or [Metrics](/concepts/components/prisma-client/metrics) yet. To use the Prisma Data Proxy, you must first remove `interactiveTransactions` and `metrics` from the `previewFeatures` section of your `prisma.schema` file. When you run `prisma generate --data-proxy`, you will receive an error if you have either of these preview features enabled.
 
-### Providing the connection string to Prisma Migrate
+### Providing the connection string to Prisma Migrate and Introspection
 
 Currently, the Data Proxy can only be used to _query_ your database with [Prisma Client](/concepts/components/prisma-client).
 
-Migrations can be only be run on a direct (non-proxied) database connection. Assuming that your schema uses `env("DATABASE_URL")`, you'll need to override the `DATABASE_URL` environment variable before running `prisma migrate`. You can declare another environment variable, for example `MIGRATE_DATABASE_URL`, and use that to override the connection:
+Migrations or Introspection can only be run on a direct (non-proxied) database connection for now. This affects the following CLI commands:
+
+- `db pull`
+- `migrate deploy`
+- `migrate dev`
+- `migrate diff` (some parameters only)
+- `migrate reset`
+- `migrate resolve`
+- `migrate status`
+- `db push`
+- `db drop`
+- `db execute`
+- `studio`
+
+Assuming that your Prisma schema uses `env("DATABASE_URL")` as the `url` of the `datasource` block, you'll need to temporarily override the `DATABASE_URL` environment variable before running any of these commands. You can store the direct database connection string in another environment variable, for example `NONDATAPROXY_DATABASE_URL`, and use that to override the connection before you execute one of the affectes commands:
+
+```js
+NONDATAPROXY_DATABASE_URL="postgresql://..."
+```
+
+and then
+
+```js
+DATABASE_URL="$NONDATAPROXY_DATABASE_URL" prisma migrate deploy
+
+// or
+
+DATABASE_URL="$NONDATAPROXY_DATABASE_URL" prisma db pull
+```
+
+You can also store the command in your npm scripts of `package.json` and then run them via `npm run migrate` or `npm run introspect`:
 
 ```js
 // package.json
@@ -167,7 +197,8 @@ Migrations can be only be run on a direct (non-proxied) database connection. Ass
   ...,
   "scripts": {
     "generate-client": "prisma generate --data-proxy",
-    "migrate": "DATABASE_URL=\"$MIGRATE_DATABASE_URL\" prisma migrate deploy",
+    "migrate": "DATABASE_URL=\"$NONDATAPROXY_DATABASE_URL\" prisma migrate deploy",
+    "introspect": "DATABASE_URL=\"$NONDATAPROXY_DATABASE_URL\" prisma db pull",
     ...
   }
 }
