@@ -1,0 +1,144 @@
+---
+title: 'Creating bug reports'
+metaTitle: 'Creating bug reports for Prisma'
+metaDescription: 'This page explains best practices for creating bug reports for Prisma, including sharing additional debugging output and other recommendations.'
+---
+
+## Overview
+
+You can help us improve Prisma by creating **bug reports**. When creating a bug report, it's important that you include as much information as possible about your issue. That way, it's easier to reproduce.
+
+Note that you can also create **feature requests** or ask a **question** via the issue templates on GitHub.
+
+## Where to open the bug report on GitHub?
+
+Prisma's tools are spread across different repositories in the [`prisma`](https://github.com/prisma/) organization on GitHub. You can open a new issue in the repo of the respective tool.
+
+If you're unsure where to open the GitHub issue, you can use the main [`prisma/prisma`](https://github.com/prisma/prisma) repo as a default. Our engineering team is regularly triaging new issues and will move the issue to another repo if necessary.
+
+## Ideal scenario: Share standalone repository with reproduction
+
+In an ideal scenario, you're able to reproduce the bug in an isolated environment and put it into a GitHub repository that you can share in your report. That way, we already have a reproduction and the problem can be tackled without further triaging.
+
+This [Stackoverflow guide](https://stackoverflow.com/help/minimal-reproducible-example) has a lot of helpful information for creating minimal, reproducible examples.
+
+## Best practices for writing a bug report
+
+If you don't have the time to create a full reproduction of the issue, please include as much information as possible about the problem. The [bug report template](https://github.com/prisma/prisma/issues/new?assignees=&labels=&template=bug_report.md&title=) helps you with that.
+
+### Include logging and debugging output
+
+Please make sure to include _any_ [logging](/concepts/components/prisma-client/working-with-prismaclient/logging) and [debugging](/concepts/components/prisma-client/debugging) output in the issue that may help to identify the problem.
+
+**Setting the `DEBUG` env var**
+
+To get additional output from Prisma, you can set `DEBUG` to `*`:
+
+```terminal
+export DEBUG="*"
+```
+
+**Print logs of Prisma Client**
+
+You can enable additional logs in Prisma Client by instantiating it with the `log` option:
+
+```ts
+const prisma = new PrismaClient({ log: ['query', 'info', 'warn'] })
+```
+
+### Include a bug description, reproduction and expected behavior
+
+When describing the bug, it's helpful to include the following information:
+
+- A clear and concise description of what the bug is
+- Steps to reproduce the bug
+- A clear and concise description of what you expected to happen
+- Screenshots (if applicable)
+
+<details><summary>Expand for an example for a hypothetical bug report</summary>
+
+**Example**
+
+**Describe the bug**
+
+`@unique` attribute on `email` field doesn't work on my model. I can create duplicate records with the same `email`.
+
+**To reproduce**:
+
+I have this Prisma schema (removed all unnecessary models and fields):
+
+```prisma
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+}
+```
+
+I then run `prisma generate` to generate Prisma Client.
+
+I then have a Node.js script that creates two `User` records with the same `email`:
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// A `main` function so that we can use async/await
+async function main() {
+  const user1 = await prisma.create({
+    data: { email: 'alice@prisma.io' },
+  })
+  const user2 = await prisma.create({
+    data: { email: 'alice@prisma.io' },
+  })
+  console.log(user1, user2)
+}
+
+main()
+  .catch((e) => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+**Expected behavior**
+
+I expected an exception when trying to create `user2` with the same `email` as `user1` because this violates the `@unique` constraint defined in the Prisma schema.
+
+</details>
+
+### Include environment and setup information
+
+Please include any information about your environment and setup. Specifically it's important to include:
+
+- Which **operating system** you use (e.g. macOS, Windows, Debian, CentOS, ...)
+- Which **database** you use with Prisma (PostgreSQL, MySQL, MariaDB, SQLite or Microsoft SQL Server)
+- Which **version of Prisma** you use (run `prisma -v` to see your Prisma version)
+- Which **version of Node.js** you use (run `node -v` to see your Node.js version)
+
+Here's an example of what this could look like in your bug report:
+
+- OS: macOS Catalina 10.15.7
+- Database: PostgreSQL v11
+- Node.js version: `v14.16.1`
+- Prisma version:
+
+```
+prisma               : 2.22.0
+@prisma/client       : Not found
+Current platform     : darwin
+Query Engine         : query-engine 60cc71d884972ab4e897f0277c4b84383dddaf6c (at ../../../../../.npm/_npx/31227/lib/node_modules/prisma/node_modules/@prisma/engines/query-engine-darwin)
+Migration Engine     : migration-engine-cli 60cc71d884972ab4e897f0277c4b84383dddaf6c (at ../../../../../.npm/_npx/31227/lib/node_modules/prisma/node_modules/@prisma/engines/migration-engine-darwin)
+Introspection Engine : introspection-core 60cc71d884972ab4e897f0277c4b84383dddaf6c (at ../../../../../.npm/_npx/31227/lib/node_modules/prisma/node_modules/@prisma/engines/introspection-engine-darwin)
+Format Binary        : prisma-fmt 60cc71d884972ab4e897f0277c4b84383dddaf6c (at ../../../../../.npm/_npx/31227/lib/node_modules/prisma/node_modules/@prisma/engines/prisma-fmt-darwin)
+Default Engines Hash : 60cc71d884972ab4e897f0277c4b84383dddaf6c
+Studio               : 0.379.0
+```
+
+### Include relevant Prisma info (e.g. the Prisma schema, Prisma Client queries, ...)
+
+To help us reproduce your problem, it is helpful to include your Prisma schema in the bug report. **Please remove any database credentials before sharing your Prisma schema in a bug report**. If you're sure about which parts of the schema is causing the issue, please strip out the irrelevant parts of it and only show the parts that are related to the problem. If you're not sure, please include your entire schema.
+
+If you have an issue with Prisma Client, please also include which Prisma Client query is causing the issue.
