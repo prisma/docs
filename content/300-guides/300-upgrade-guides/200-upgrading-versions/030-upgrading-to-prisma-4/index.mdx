@@ -49,7 +49,74 @@ This is a breaking change if you previously had defaults defined for scalar list
 
 ### Explicit `@unique` constraints on one-to-one relations
 
+When using one-to-one relations in Prisma 4, you will need to explicitly add the `@unique` attribute on the relation scalar field. For example, for this one-to-one relation between a `User` and a `Profile` model, you will need to add the `@unique` attribute to the `profileId` field:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  profile   Profile? @relation(fields: [profileId], references: [id])
+  profileId Int?     @unique // <-- include this explicitly
+}
+
+model Profile {
+  id   Int   @id @default(autoincrement())
+  user User?
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  profile   Profile? @relation(fields: [profileId], references: [id])
+  profileId String?  @unique @db.ObjectId // <-- include this explicitly
+}
+
+model Profile {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  user User?
+}
+```
+
+</tab>
+</TabbedContent>
+
 ### Removing `references` syntax for implicit many-to-many relations
+
+When using [implicit many-to-many relations](/concepts/components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations) in Prisma 4, you will no longer be able to use the `references` argument, which was previously optional. For example, the following relation would now trigger a validation error:
+
+```prisma file=schema.prisma
+model Post {
+  id         Int        @id @default(autoincrement())
+  categories Category[] @relation("my-relation", references: [id]) // <-- validation error
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  posts Post[] @relation("my-relation", references: [id]) // <-- validation error
+}
+```
+
+Instead, you can write:
+
+```prisma file=schema.prisma
+model Post {
+  id         Int        @id @default(autoincrement())
+  categories Category[] @relation("my-relation")
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  posts Post[] @relation("my-relation")
+}
+```
+
+This is because the only valid value for `references` was `id`, so removing this argument makes it clearer what can and cannot be changed.
 
 ## Specific upgrade paths
 
