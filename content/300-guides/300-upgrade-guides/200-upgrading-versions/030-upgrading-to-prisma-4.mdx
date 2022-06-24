@@ -226,6 +226,95 @@ After you upgrade to Prisma 4, any one-to-one relations without a `@unique` attr
 - upgrade to the new Prisma 4 packages following [these instructions](#upgrade-the-prisma-and-prismaclient-packages-to-prisma-4)
 - manually fix the validation errors in your Prisma schema. Alternatively, if you have an up-to-date live database, running `prisma db pull` will add the `@unique` attributes automatically.
 
+### Enforced use of <inlineCode>@unique</inlineCode> or <inlineCode>@id</inlineCode> attribute for one-to-one and one-to-many relations (MySQL and MongoDB)
+
+When you use one-to-one and one-to-many relations in Prisma 4, you will need to use a `@unique` attribute on the relation field to guarantee that the singular side(s) of the relation has only one record. This is now enforced for MySQL and MongoDB, bringing them into line with other connectors. Missing `@unique` attributes will now trigger a validation error.
+
+In the following example of a one-to-many relation between a `User` and `Post` model, the `@unique` attribute must be added to the `email` field:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique // <-- we enforce this attribute
+  posts Post[]
+}
+
+model Post {
+  id       Int  @id @default(autoincrement())
+  authorId Int
+  author   User @relation(fields: [authorId], references: [email])
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    Int    @id @default(auto()) @map("_id") @db.ObjectId
+  email String @unique // <-- we enforce this attribute
+  posts Post[]
+}
+
+model Post {
+  id       Int  @id @default(auto()) @map("_id") @db.ObjectId
+  authorId Int
+  author   User @relation(fields: [authorId], references: [email])
+}
+```
+
+</tab>
+</TabbedContent>
+
+In the following example of a one-to-one relation between a `User` and `Profile` model, the `@unique` attribute must be added to the `email` field:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id      Int     @id @default(autoincrement())
+  email   String  @unique // <- we enforce this unique attribute
+  profile Profile
+}
+
+model Profile {
+  id     Int   @id @default(autoincrement())
+  userId Int?  @unique
+  user   User? @relation(fields: [userId], references: [email])
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id      Int     @id @default(auto()) @map("_id") @db.ObjectId
+  email   String  @unique // <- we enforce this unique attribute
+  profile Profile
+}
+
+model Profile {
+  id     Int   @id @default(auto()) @map("_id") @db.ObjectId
+  userId Int?  @unique
+  user   User? @relation(fields: [userId], references: [email])
+}
+```
+
+</tab>
+</TabbedContent>
+
+#### Upgrade path
+
+After you upgrade to Prisma 4, any one-to-one or one-to-many relations without a `@unique` or `@id` attribute on the relation field will trigger a validation error. To upgrade, you will need to:
+
+- upgrade to the new Prisma 4 packages following [these instructions](#upgrade-the-prisma-and-prismaclient-packages-to-prisma-4)
+- manually fix the validation errors in your Prisma schema. Alternatively, if you have an up-to-date live database, running `prisma db pull` will add the `@unique` attributes automatically.
+
 ### Remove `references` syntax for implicit many-to-many relations
 
 When using [implicit many-to-many relations](/concepts/components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations) in Prisma 4, you will no longer be able to use the `references` argument, which was previously optional. For example, the following relation would now trigger a validation error:
