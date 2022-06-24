@@ -22,27 +22,63 @@ From v4.0.0, the minimum version of Node.js that we support is 14.x. If you use 
 
 See our [system requirements](/reference/system-requirements) for all minimum version requirements.
 
-### Raw query type mapping
+### Raw query type mapping: scalar values are now deserialized as their correct JavaScript types
 
-In v3.14.x and v.3.15.x, [raw query type mapping](/concepts/components/prisma-client/raw-database-access#raw-query-type-mapping) was available with the Preview feature `improvedQueryRaw`. In v4.0.0, we have made raw query type mapping Generally Available. You do not need to use `improvedQueryRaw` in v4.0.0 or later.
-​
-From v4.0.0, some data types returned by `queryRaw` or `queryRawUnsafe` are different, as follows:
-​
-| Data type | Before v4.0.0 | Version 4.0.0 and later |
-|-----------|---------------------|-------------------------|
-| `DateTime`| Returned as `String` | Returned as `DateTime` |
-| `Decimal` | Returned as `Float` | Returned as `Decimal` |
-| `Byte` | Returned as `String` | Returned as `Buffer `|
-| `BigInt` | Returned as `Integer` | Returned as `BigInt` |
+In v3.14.x and v.3.15.x, [raw query type mapping](/concepts/components/prisma-client/raw-database-access#raw-query-type-mapping) was available with the Preview feature `improvedQueryRaw`. In v4.0.0, we have made raw query type mapping Generally Available. You do not need to use `improvedQueryRaw` to get this functionality in v4.0.0 or later.
+
+Raw queries now deserialize scalar values to their corresponding JavaScript types.
+
+Note: Prisma infers types from the values themselves and not from the Prisma Schema types.
+
+Example query and response:
+
+```ts
+const res =
+  await prisma.$queryRaw`SELECT bigint, bytes, decimal, date FROM "Table";`
+console.log(res) // [{ bigint: BigInt("123"), bytes: Buffer.from([1, 2]), decimal: new Prisma.Decimal("12.34"), date: Date("<some_date>") }]
+```
 
 #### Upgrade path
 
-If you use `queryRaw` or `queryRawUnsafe` to return any of the above data types, you must change your code to handle the new types. For example, if you return `DateTime` data, you need to take into account the following in v4.0.0:
+From v4.0.0, some data types returned by `queryRaw` or `queryRawUnsafe` are different, as follows:
+
+| Data type  | Before v4.0.0         | From v4.0.0           |
+| ---------- | --------------------- | --------------------- |
+| `DateTime` | Returned as `String`  | Returned as `Date`    |
+| `Numeric`  | Returned as `Float`   | Returned as `Decimal` |
+| `Bytes`    | Returned as `String`  | Returned as `Buffer`  |
+| `Int64`    | Returned as `Integer` | Returned as `BigInt`  |
+
+If you use `queryRaw` or `queryRawUnsafe` to return any of the above data types, then you must change your code to handle the new types.
+
+For example, if you return `DateTime` data, then you need to take into account the following:
 
 - You no longer need to manually instantiate a `DateTime` object for the returned data.
 - If your code currently uses the returned `String` data, then you now need to convert the `DateTime` object to a `String`.
 
-You must make equivalent code changes for any of the above data types used by your code.
+You must make equivalent code changes for the other data types in the table above.
+
+#### Raw query mapping: PostgreSQL type-casts
+
+In v3.14.x and v.3.15.x, [raw query type mapping](/concepts/components/prisma-client/raw-database-access#raw-query-type-mapping) was available with the Preview feature `improvedQueryRaw`. In v4.0.0, we have made raw query type mapping Generally Available. You do not need to use `improvedQueryRaw` to get this functionality in v4.0.0 or later.
+
+If you use Postgres, as a result of tightened type coercion rules, you might need to update certain queries that worked in 3.x.
+
+#### Upgrade path
+
+We recommend you re-test your usage of `$queryRaw` and double-check that the types you pass into your raw queries match the types that PostgreSQL expects.
+
+For example, in v4.0.0, the following fails:
+
+```js
+await prisma.$queryRaw`select length(${42});
+```
+
+This is because PostgreSQL’s length(string) function expects a string. To fix this, explicitly coerce the incoming number into a string with the following:
+
+```js
+await prisma.$queryRaw`select length(${42}::text);`
+```
 
 ### <inlineCode>DbNull</inlineCode>, <inlineCode>JsonNull</inlineCode> and <inlineCode>AnyNull</inlineCode> are now objects
 
