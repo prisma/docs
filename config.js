@@ -58,7 +58,7 @@ const config = {
         bucketName: '/400-reference',
       },
       {
-        text: 'Prisma Data Platform',
+        text: 'Data Platform',
         to: '/data-platform',
         type: 'bucket',
         bucketName: '/800-data-platform',
