@@ -60,19 +60,21 @@ You must make equivalent code changes for the other data types in the table abov
 
 In v3.14.x and v.3.15.x, [raw query type mapping](/concepts/components/prisma-client/raw-database-access#raw-query-type-mapping) was available with the Preview feature `improvedQueryRaw`. In v4.0.0, we have made raw query type mapping Generally Available. You do not need to use `improvedQueryRaw` to get this functionality in v4.0.0 or later.
 
-If you use Postgres, as a result of tightened type coercion rules you might need to update certain queries that worked in 3.x.
+Before v4.0.0, many PostgreSQL type-casts did not work. We have tightened the type coercion rules so that all type-casts now work. As a result, some implicit casts now fail.
 
 #### Upgrade path
 
-We recommend that you re-test your usage of `$queryRaw` and double-check that the types you pass into your raw queries match the types that PostgreSQL expects.
+We recommend that you re-test your use of `$queryRaw` to ensure that the types you pass into your raw queries match the types that PostgreSQL expects.
 
 For example, in v4.0.0, the following query fails:
 
 ```js
 await prisma.$queryRaw`select length(${42});
+  // ERROR: function length(integer) does not exist
+  // HINT: No function matches the given name and argument types. You might need to add explicit type casts.
 ```
 
-This is because PostgreSQL’s `length(string)` function expects a string as the parameter. To fix this, explicitly coerce the incoming number into a string as follows:
+This is because PostgreSQL’s `length` function expects `text` as input. Prisma used to silently coerce `42` to `text`, but does not do this in v4.0.0. To fix this, explicitly cast `42`to `text` as follows:
 
 ```js
 await prisma.$queryRaw`select length(${42}::text);`
