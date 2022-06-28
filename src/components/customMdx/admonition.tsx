@@ -50,7 +50,6 @@ const ChildContainer = styled.div`
 const AdmonitionWrapper = styled.span<{ type?: string }>`
   font-family: Inter;
   font-style: normal;
-  font-weight: 600;
   font-size: 16px;
   line-height: 24px;
   color: ${theme.colors.gray600} !important;
