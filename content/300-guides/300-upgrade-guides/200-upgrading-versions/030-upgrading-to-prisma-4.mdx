@@ -14,15 +14,23 @@ Prisma 4 introduces a number of **breaking changes** when you upgrade from an ea
 
 ## Breaking changes
 
-This section gives an overview of breaking changes in Prisma 4.
+This section gives an overview of breaking changes in Prisma 4, grouped under [general changes](#general-changes) that affect both the Prisma Schema and the Prisma Client, [Client changes](#client-changes) and [Schema changes](#schema-changes).
 
-### Node.js minimum version change
+### General changes
+
+This section includes changes that affect both the Prisma Schema and the Prisma Client.
+
+#### Node.js minimum version change
 
 From Prisma version 4.0.0, the minimum version of Node.js that we support is 14.17.x. If you use an earlier version of Node.js, you will need to update it.
 
 See our [system requirements](/reference/system-requirements) for all minimum version requirements.
 
-### Raw query type mapping: scalar values are now deserialized as their correct JavaScript types
+### Client changes
+
+This section includes changes that affect the Prisma Client.
+
+#### Raw query type mapping: scalar values are now deserialized as their correct JavaScript types
 
 In versions 3.14.x and 3.15.x, [raw query type mapping](/concepts/components/prisma-client/raw-database-access#raw-query-type-mapping) was available with the Preview feature `improvedQueryRaw`. In version 4.0.0, we have made raw query type mapping Generally Available. You do not need to use `improvedQueryRaw` to get this functionality in versions 4.0.0 and later.
 
@@ -36,7 +44,7 @@ const res =
 console.log(res) // [{ bigint: BigInt("123"), bytes: Buffer.from([1, 2]), decimal: new Prisma.Decimal("12.34"), date: Date("<some_date>") }]
 ```
 
-#### Upgrade path
+##### Upgrade path
 
 From version 4.0.0, some data types returned by `queryRaw` or `queryRawUnsafe` are different, as follows:
 
@@ -56,13 +64,13 @@ For example, if you return `DateTime` data, then you need to take into account t
 
 You must make equivalent code changes for the other data types in the table above.
 
-### Raw query mapping: PostgreSQL type-casts
+#### Raw query mapping: PostgreSQL type-casts
 
 In versions 3.14.x and 3.15.x, [raw query type mapping](/concepts/components/prisma-client/raw-database-access#raw-query-type-mapping) was available with the Preview feature `improvedQueryRaw`. In version 4.0.0, we have made raw query type mapping Generally Available. You do not need to use `improvedQueryRaw` to get this functionality in versions 4.0.0 and later.
 
 Before version 4.0.0, many PostgreSQL type-casts did not work. We have tightened the type coercion rules so that all type-casts now work. As a result, some implicit casts now fail.
 
-#### Upgrade path
+##### Upgrade path
 
 We recommend that you re-test your use of `$queryRaw` to ensure that the types you pass into your raw queries match the types that PostgreSQL expects.
 
@@ -80,26 +88,26 @@ This is because PostgreSQL’s `length` function expects `text` as input. Prisma
 await prisma.$queryRaw`select length(${42}::text);`
 ```
 
-### Raw query mapping: PostgreSQL and JavaScript integers
+#### Raw query mapping: PostgreSQL and JavaScript integers
 
 In versions 3.14.x and 3.15.x, [raw query type mapping](/concepts/components/prisma-client/raw-database-access#raw-query-type-mapping) was available with the Preview feature `improvedQueryRaw`. In version 4.0.0, we have made raw query type mapping Generally Available. You do not need to use `improvedQueryRaw` to get this functionality in versions 4.0.0 and later.
 
 Prisma sends JavaScript integers to PostgreSQL as `INT8`. This might conflict with your user-defined functions that accept only `INT4` as input.
 
-#### Upgrade path
+##### Upgrade path
 
 If you use `$queryRaw` or parametrized `$queryRawUnsafe`queries with a PostgreSQL database, do one of the following:
 
 - Update the input types of any integers in your user-defined functions to `INT8`, or
 - Cast any integers in your query parameters to `INT4`.
 
-### <inlineCode>DbNull</inlineCode>, <inlineCode>JsonNull</inlineCode> and <inlineCode>AnyNull</inlineCode> are now objects
+#### <inlineCode>DbNull</inlineCode>, <inlineCode>JsonNull</inlineCode> and <inlineCode>AnyNull</inlineCode> are now objects
 
 JavaScript `null` is ambiguous for JSON columns, so Prisma uses `DbNull`, `JsonNull`, and `AnyNull` to distinguish between the database `NULL` value and the JSON `null` value. Before version 4.0.0, `DbNull`, `JsonNull`, and `AnyNull` were string constants. From version 4.0.0, they are objects.
 
 See [Filtering by null values](/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-by-null-values) for more information.
 
-#### Upgrade path
+##### Upgrade path
 
 1. If you use literal strings to address these values, then you must replace them with the following named constants:
 
@@ -113,7 +121,7 @@ See [Filtering by null values](/concepts/components/prisma-client/working-with-f
 1. You might now encounter a type error or runtime validation error when you use `Prisma.DbNull`, `Prisma.JsonNull`, or `Prisma.AnyNull` with MongoDB. This was never valid, but was silently accepted prior to Prisma 4. You need to review your data and change these fields to `null`.
 1. If you pass in dynamic JSON to a JSON column in Prisma Client (for example `prisma.findMany({where: { jsonColumn: someJson } })`), then you must check that `someJson`cannot be the string "DBNull", "JsonNull", or "AnyNull". If it is any of these values, then the query will return different results in version 4.0.0.
 
-### Default fields on composite types in MongoDB
+#### Default fields on composite types in MongoDB
 
 From version 4.0.0, if you carry out a database read on a composite type when all of the following conditions are true, then Prisma Client inserts the default value into the result.
 
@@ -127,11 +135,11 @@ This behavior is now consistent with the behavior for model fields.
 
 To learn more, see [Default values on required composite types](/concepts/components/prisma-client/composite-types#default-values-on-required-composite-types).
 
-#### Upgrade path
+##### Upgrade path
 
 If you currently rely on a return value of `null`, then you need to refactor your code to handle the default value that is now returned in Prisma 4.
 
-### Rounding errors on big numbers in SQLite
+#### Rounding errors on big numbers in SQLite
 
 SQLite is a loosely-typed database. If your schema has a field with type `Int`, then Prisma prevents you from inserting a value larger than an integer. However, nothing prevents the database from directly accepting a bigger number. These manually-inserted big numbers cause rounding errors when queried.
 
@@ -143,11 +151,11 @@ Value 9223372036854775807 does not fit in an INT column,
 try migrating the 'int' column type to BIGINT
 ```
 
-#### Upgrade path
+##### Upgrade path
 
 If you use Prisma in conjunction with SQLite, then you need to find any code that queries `Int` fields and ensure that it handles any P2023 errors that might be returned.
 
-### Prisma no longer exports `Prisma.dmmf.schema` into the generated Prisma Client
+#### Prisma no longer exports `Prisma.dmmf.schema` into the generated Prisma Client
 
 From version 4.0.0, Prisma no longer exports `Prisma.dmmf.schema` into the generated Prisma Client. This makes the generated Prisma Client much more efficient, and also avoids some memory leaks with Jest.
 
@@ -157,7 +165,11 @@ Note:
 - You can use `getDmmf()`from `@prisma/internals` to access the schema property.
 - We still export `Prisma.dmmf.datamodel` into the generated Prisma Client.
 
-### Index configuration
+### Schema changes
+
+This section includes changes that affect the Prisma Schema.
+
+#### Index configuration
 
 In Prisma 4, the `extendedIndexes` Preview feature will now become generally available. This includes the following index configuration options:
 
@@ -168,7 +180,7 @@ In Prisma 4, the `extendedIndexes` Preview feature will now become generally ava
 
 See our documentation on [Index configuration](/concepts/components/prisma-schema/indexes#index-configuration) for more details of these features.
 
-#### Upgrade path
+##### Upgrade path
 
 These can all be breaking changes if you were previously configuring these properties at the database level. In this case, you will need to:
 
@@ -177,7 +189,7 @@ These can all be breaking changes if you were previously configuring these prope
 
 For more details, see the [Upgrading from previous versions](/concepts/components/prisma-schema/indexes#upgrading-from-previous-versions) section of our index configuration documentation.
 
-### Scalar list defaults
+#### Scalar list defaults
 
 For database connectors that support scalar lists (PostgreSQL, CockroachDB and MongoDB), Prisma 4 introduces the ability to set a default value in your Prisma schema file with the `@default` attribute:
 
@@ -206,14 +218,14 @@ model User {
 </tab>
 </TabbedContent>
 
-#### Upgrade path
+##### Upgrade path
 
 This is a breaking change if you previously had defaults defined for scalar lists at the database level. In this case, you will need to:
 
 1. upgrade to the new Prisma 4 packages following [these instructions](#upgrade-the-prisma-and-prismaclient-packages-to-prisma-4)
 1. run `prisma db pull` afterwards to retrieve any existing configuration of indexes and constraints. This needs to be done before running any `prisma db push` or `prisma migrate dev` command, or you will lose any defaults that are defined in the database but not previously represented in the Prisma schema.
 
-### Explicit <inlineCode>@unique</inlineCode> constraints on one-to-one relations
+#### Explicit <inlineCode>@unique</inlineCode> constraints on one-to-one relations
 
 When using one-to-one relations in Prisma 4, you will need to explicitly add the `@unique` attribute to the relation scalar field. For example, for this one-to-one relation between a `User` and a `Profile` model, you will need to add the `@unique` attribute to the `profileId` field:
 
@@ -252,14 +264,14 @@ model Profile {
 </tab>
 </TabbedContent>
 
-#### Upgrade path
+##### Upgrade path
 
 After you upgrade to Prisma 4, any one-to-one relations without a `@unique` attribute on the relation scalar will trigger a validation error. To upgrade, you will need to:
 
 1. upgrade to the new Prisma 4 packages following [these instructions](#upgrade-the-prisma-and-prismaclient-packages-to-prisma-4)
 1. manually fix the validation errors in your Prisma schema. Alternatively, if you have an up-to-date live database, running `prisma db pull` will add the `@unique` attributes automatically.
 
-### Enforced use of <inlineCode>@unique</inlineCode> or <inlineCode>@id</inlineCode> attribute for one-to-one and one-to-many relations (MySQL and MongoDB)
+#### Enforced use of <inlineCode>@unique</inlineCode> or <inlineCode>@id</inlineCode> attribute for one-to-one and one-to-many relations (MySQL and MongoDB)
 
 When you use one-to-one and one-to-many relations in Prisma 4, you will need to use a `@unique` attribute on the relation field to guarantee that the singular side(s) of the relation has only one record. This is now enforced for MySQL and MongoDB, bringing them into line with other connectors. Missing `@unique` attributes will now trigger a validation error.
 
@@ -341,14 +353,14 @@ model Profile {
 </tab>
 </TabbedContent>
 
-#### Upgrade path
+##### Upgrade path
 
 After you upgrade to Prisma 4, any one-to-one or one-to-many relations without a `@unique` or `@id` attribute on the relation field will trigger a validation error. To upgrade, you will need to:
 
 1. upgrade to the new Prisma 4 packages following [these instructions](#upgrade-the-prisma-and-prismaclient-packages-to-prisma-4)
 1. manually fix the validation errors in your Prisma schema. Alternatively, if you have an up-to-date live database, running `prisma db pull` will add the `@unique` attributes automatically.
 
-### Disallow `references` syntax for implicit many-to-many relations
+#### Disallow `references` syntax for implicit many-to-many relations
 
 When using [implicit many-to-many relations](/concepts/components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations) in Prisma 4, you will no longer be able to use the `references` argument, which was previously optional. For example, the following relation would now trigger a validation error:
 
@@ -380,18 +392,18 @@ model Category {
 
 This is because the only valid value for `references` was `id`, so removing this argument makes it clearer what can and cannot be changed.
 
-#### Upgrade path
+##### Upgrade path
 
 After you upgrade to Prisma 4, any implicit many-to-many relations with a `references` argument will trigger a validation error. To upgrade, you will need to:
 
 1. upgrade to the new Prisma 4 packages following [these instructions](#upgrade-the-prisma-and-prismaclient-packages-to-prisma-4)
 1. manually fix the validation errors in your Prisma schema. Alternatively, if you have an up-to-date live database, running `prisma db pull` will remove the `references` arguments automatically.
 
-### Better grammar for string literals
+#### Better grammar for string literals
 
 String literals in your Prisma Schema now need to follow the same rules as strings in JSON. This mostly changes the escaping of some special characters. More details can be found in [the JSON specification](https://www.ietf.org/rfc/rfc4627.txt) or on the [JSON website](https://www.json.org/json-en.html).
 
-#### Upgrade path
+##### Upgrade path
 
 This is a breaking change for some existing schemas. After you upgrade to Prisma 4, incorrectly escaped characters will trigger a validation error. To upgrade, you will need to:
 
