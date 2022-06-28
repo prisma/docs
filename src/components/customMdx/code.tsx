@@ -72,6 +72,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
   const code = stringify(children)
 
   const hasCopy = props['copy'] || language === 'copy'
+  const noCopy = props['no-copy']
+
   let hasNoLine = true
   const isTerminal = props['terminal'] || language === 'terminal'
   const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol' || isTerminal
@@ -96,13 +98,13 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
             <Pre className={`${blockClassName} ${isTerminal ? 'is-terminal' : ''}`} style={style}>
-              {/* {(props['copy'] || language === 'copy') && ( */}
-              <AbsoluteCopyButton className="copy-button">
-                <CopyButton text={code}>
-                  <Copy />
-                </CopyButton>
-              </AbsoluteCopyButton>
-              {/* )} */}
+              {!noCopy && (
+                <AbsoluteCopyButton className="copy-button">
+                  <CopyButton text={code}>
+                    <Copy />
+                  </CopyButton>
+                </AbsoluteCopyButton>
+              )}
               <code>
                 {cleanTokens(tokens).map((line: any, i: number) => {
                   let lineClass = {
