@@ -374,6 +374,12 @@ const prisma = new PrismaClient({
 
 ### <inlinecode>rejectOnNotFound</inlinecode>
 
+<Admonition type="info">
+
+**Deprecated:** `rejectOnNotFound` is deprecated in v4.0.0. From v4.0.0, use the queries [`findUniqueOrThrow`](#finduniqueorthrow) or [`findFirstOrThrow`](#findfirstorthrow).
+
+</Admonition>
+
 Use the `rejectOnNotFound` parameter to configure `findUnique` and/or `findFirst` to throw an error if the record was not found. By default, both operations return `null` if the record is not found.
 
 ### Remarks
@@ -445,16 +451,17 @@ Use model queries to perform CRUD operations on your models. See also: [CRUD](/c
 
 #### Remarks
 
-- Prisma's dataloader [automatically batches `findUnique` queries](/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) with the same `select` and `where` parameters
+- Prisma's dataloader [automatically batches `findUnique` queries](/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) with the same `select` and `where` parameters.
+- If you want the query to throw an error if the record is not found, then consider using [`findUniqueOrThrow`](#finduniqueorthrow) instead.
 
 #### Options
 
-| Name               | Example type (`User`)    | Required | Description                                                                                                                       |
-| ------------------ | ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `where`            | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected.                                                  |
-| `select`           | `XOR<UserSelect, null>`  | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                 |
-| `include`          | `XOR<UserInclude, null>` | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object. |
-| `rejectOnNotFound` | `RejectOnNotFound`       | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound).   |
+| Name                            | Example type (`User`)    | Required | Description                                                                                                                                                                                                                                                       |
+| ------------------------------- | ------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `where`                         | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected.                                                                                                                                                                                  |
+| `select`                        | `XOR<UserSelect, null>`  | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                                                 |
+| `include`                       | `XOR<UserInclude, null>` | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                                                 |
+| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`       | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findUniqueOrThrow`](#finduniqueorthrow) instead. |
 
 #### Return type
 
@@ -552,23 +559,49 @@ const result = await prisma.user.findUnique({
 })
 ```
 
+### <inlinecode>findUniqueOrThrow</inlinecode>
+
+<Admonition type="info">
+
+We introduced `findUniqueOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`](#rejectonnotfound) option. `rejectOnNotFound` is deprecated in v4.0.0.
+
+</Admonition>
+
+`findUniqueOrThrow` retrieves a single data record in the same way as [`findUnique`](#findunique). However, if the query does not find a record, it returns `NotFoundError: No User found error`.
+
+`findUniqueOrThrow` differs from `findUnique` as follows:
+
+- Its return type is non-nullable. For example, `post.findUnique()` can return `post` or `null`, but `post.findUniqueOrThrow()` always returns `post`.
+- It is not compatible with sequential operations in the [`$transaction` API](/concepts/components/prisma-client/transactions#the-transaction-api). If the query returns `NotFoundError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
+
+  ```ts
+   $transaction(async (prisma) => {
+     await prisma.model.create({ data: { ... });
+     await prisma.model.findUniqueOrThrow();
+   })
+  ```
+
 ### <inlinecode>findFirst</inlinecode>
 
 `findFirst` returns the first record in a list that matches your criteria.
 
+#### Remarks
+
+- If you want the query to throw an error if the record is not found, then consider using [`findFirstOrThrow`](#findfirstorthrow) instead.
+
 #### Options
 
-| Name               | Example type (`User`)                                        | Required | Description                                                                                                                                                                                                                                |
-| ------------------ | ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `distinct`         | `Enumerable<UserDistinct`<br />`FieldEnum>`                  | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                  |
-| `where`            | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                       |
-| `cursor`           | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                       |
-| `orderBy`          | `XOR<Enumerable<User`<br />`OrderByInput>,UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                          |
-| `include`          | `XOR<UserInclude, null>`                                     | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                          |
-| `select`           | `XOR<UserSelect, null>`                                      | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                          |
-| `skip`             | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                  |
-| `take`             | `number`                                                     | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list. |
-| `rejectOnNotFound` | `RejectOnNotFound`                                           | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound).                                                                                                            |
+| Name                            | Example type (`User`)                                        | Required | Description                                                                                                                                                                                                                                                     |
+| ------------------------------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `distinct`                      | `Enumerable<UserDistinct`<br />`FieldEnum>`                  | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                                       |
+| `where`                         | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                                            |
+| `cursor`                        | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                                            |
+| `orderBy`                       | `XOR<Enumerable<User`<br />`OrderByInput>,UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                                               |
+| `include`                       | `XOR<UserInclude, null>`                                     | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                                               |
+| `select`                        | `XOR<UserSelect, null>`                                      | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                                               |
+| `skip`                          | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                                       |
+| `take`                          | `number`                                                     | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list.                      |
+| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`                                           | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findFirstOrThrow`](#findfirstorthrow) instead. |
 
 #### Return type
 
@@ -592,7 +625,6 @@ const result = await prisma.user.findUnique({
 export type UserFindFirstArgs = {
   select?: XOR<UserSelect, null>
   include?: XOR<UserInclude, null>
-  rejectOnNotFound?: RejectOnNotFound
   where?: UserWhereInput
   orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
   cursor?: UserWhereUniqueInput
@@ -649,6 +681,28 @@ async function main() {
 
 main()
 ```
+
+### <inlinecode>findFirstOrThrow</inlinecode>
+
+<Admonition type="info">
+
+We introduced `findFirstOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`](#rejectonnotfound) option. `rejectOnNotFound` is deprecated in v4.0.0.
+
+</Admonition>
+
+`findFirstOrThrow` retrieves the first record in a list in the same way as [`findFirst`](#findfirst). However, if the query does not find a record, it returns `NotFoundError: No User found error`.
+
+`findFirstOrThrow` differs from `findFirst` as follows:
+
+- Its return type is non-nullable. For example, `post.findFirst()` can return `post` or `null`, but `post.findFirstOrThrow` always returns `post`.
+- It is not compatible with sequential operations in the [`$transaction` API](/concepts/components/prisma-client/transactions#the-transaction-api). If the query returns `NotFoundError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
+
+  ```ts
+   $transaction(async (prisma) => {
+     await prisma.model.create({ data: { ... });
+     await prisma.model.findFirstOrThrow();
+   })
+  ```
 
 ### <inlinecode>findMany</inlinecode>
 
@@ -4761,8 +4815,6 @@ const updatePosts = await prisma.post.updateMany({
 ```
 
 ## <inlinecode>JSON</inlinecode> filters
-
-JSON filters are currently in **[Preview](/about/prisma/releases)**. To use JSON filters in your queries, you need to [enable](/guides/upgrade-guides/upgrading-to-use-preview-features#enabling-preview-features) the `filterJson` preview feature.
 
 For use cases and advanced examples, see: [Working with `Json` fields](/concepts/components/prisma-client/working-with-fields/working-with-json-fields) <span class="concepts"></span>
 

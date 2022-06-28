@@ -85,6 +85,8 @@ Be aware that:
   await prisma.$queryRaw`SELECT * FROM Table ORDER BY ${ordering};`
   ```
 
+- Prisma maps any database values returned by `$queryRaw` and `$queryRawUnsafe` to their corresponding JavaScript types. [Learn more](#raw-query-type-mapping).
+
 #### Return type
 
 `$queryRaw` returns an array. Each object corresponds to a database record:
@@ -124,7 +126,7 @@ If you are selecting **specific fields** of the model or want to include relatio
 
 #### Type caveats when using raw SQL
 
-When you type the results of `$queryRaw`, the raw data does not always match the suggested TypeScript type. For example, the following Prisma model includes a `Boolean` field named `published`:
+When you type the results of `$queryRaw`, the raw data might not always match the suggested TypeScript type. For example, the following Prisma model includes a `Boolean` field named `published`:
 
 ```prisma highlight=3;normal
 model Post {
@@ -135,7 +137,7 @@ model Post {
 }
 ```
 
-The following query returns all posts and prints out the value of `published` field of each `Post`:
+The following query returns all posts. It then prints out the value of the `published` field for each `Post`:
 
 ```ts
 const result = await prisma.$queryRaw<Post[]>`SELECT * FROM Post`
@@ -146,6 +148,8 @@ result.forEach((x) => {
 ```
 
 > **Note**: The Prisma Client query engine standardizes the return type for all databases. **Using the raw queries does not**. If the database provider is MySQL, the values are `1` or `0`. However, if the database provider is PostgreSQL, the values are `true`, `false`, or `NULL`.
+
+> **Note**: Prisma sends JavaScript integers to PostgreSQL as `INT8`. This might conflict with your user-defined functions that accept only `INT4` as input. If you use `$queryRaw` in conjunction with a PostgreSQL database, update the input types to `INT8`, or cast your query parameters to `INT4`.
 
 ### <inlinecode>$queryRawUnsafe</inlinecode>
 
@@ -176,6 +180,8 @@ prisma.$queryRawUnsafe(
   'emelie@prisma.io'
 )
 ```
+
+> **Note**: Prisma sends JavaScript integers to PostgreSQL as `INT8`. This might conflict with your user-defined functions that accept only `INT4` as input. If you use a parameterized `$queryRawUnsafe` query in conjunction with a PostgreSQL database, update the input types to `INT8`, or cast your query parameters to `INT4`.
 
 #### Signature
 
@@ -339,31 +345,18 @@ const result = prisma.$executeRawUnsafe(
 $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): PrismaPromise<number>;
 ```
 
-### Using <inlinecode>improvedQueryRaw</inlinecode> (Preview)
+### Raw query type mapping
 
-In versions `3.14.0` and later, improvements to the raw query API are available:
+Prisma maps any database values returned by `$queryRaw` and `$queryRawUnsafe`to their corresponding [JavaScript types](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures). This behavior is the same as for regular Prisma query methods like `findMany`.
 
-- Values returned from raw queries are mapped to the corresponding JavaScript type. For more information, see [Raw query type mapping](#raw-query-type-mapping)
-- Typecasting issues in PostgreSQL are fixed. For more information, see [PostgreSQL typecasting fixes](#postgresql-typecasting-fixes)
+<Admonition type="info">
 
-This is a breaking change, so has to be enabled as a Preview feature. To enable this, add the `improvedQueryRaw` feature flag to the `generator` block of your `schema.prisma` file:
+**Feature availability:**
 
-```prisma file=schema.prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["improvedQueryRaw"]
-}
-```
-
-#### Raw query type mapping
-
-<Admonition type="warning">
-
-This feature is currently not available for SQLite.
+- In v3.14.x and v3.15.x, raw query type mapping was available with the preview feature `improvedQueryRaw`. We made raw query type mapping [Generally Available](/about/prisma/releases#generally-available-ga) in version 4.0.0, so you do not need to use `improvedQueryRaw` in version 4.0.0 or later.
+- Before version 4.0.0, raw query type mapping was not available for SQLite.
 
 </Admonition>
-
-With the `improvedQueryRaw` Preview feature enabled, the returned database values from raw queries will be mapped to their corresponding [JavaScript type](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures). This matches the behaviour of regular Prisma query methods such as `findMany`.
 
 As an example, take a raw query that selects columns with `BigInt`, `Bytes`, `Decimal` and `Date` types from a table:
 
@@ -412,9 +405,17 @@ The following table shows the conversion between types used in the database and 
 
 Note that the exact name for each database type will vary between databases – for example, the boolean type is known as `boolean` in PostgreSQL and `STRING` in CockroachDB. See the [Scalar types reference](/reference/api-reference/prisma-schema-reference#model-field-scalar-types) for full details of type names for each database.
 
-#### PostgreSQL typecasting fixes
+### PostgreSQL typecasting fixes
 
-The `improvedQueryRaw` preview feature fixes a number of issues with typecasting in PostgreSQL. For example, the following raw query now works correctly, returning an integer result:
+Prisma resolves a number of issues with typecasting in PostgreSQL.
+
+<Admonition type="info">
+
+**Feature availability:** In v3.14.x and v3.15.x, these PostgreSQL fixes were available with the preview feature `improvedQueryRaw`. We made these fixes [Generally Available](/about/prisma/releases#generally-available-ga) in version 4.0.0, so you do not need to use `improvedQueryRaw` in version 4.0.0 or later.
+
+</Admonition>
+
+For example, the following raw query now works correctly, returning an integer result:
 
 ```ts
 await prisma.$queryRaw`SELECT ${1.5}::int as int`
@@ -423,13 +424,13 @@ await prisma.$queryRaw`SELECT ${1.5}::int as int`
 // After: [{ int: 2 }]
 ```
 
-A consequence of this fix is that some subtle implicit casts are now handled more strictly, so some queries that previously were allowed will now fail with the `improvedQueryRaw` feature enabled. As an example, take the following query using PostgreSQL's `LENGTH` function, which only accepts the `text` type as an input:
+A consequence of this fix is that some subtle implicit casts are now handled more strictly, so some queries that previously were allowed will now fail. As an example, take the following query using PostgreSQL's `LENGTH` function, which only accepts the `text` type as an input:
 
 ```ts
 await prisma.$queryRaw`SELECT LENGTH(${42});`
 ```
 
-Without the `improvedQueryRaw` Preview feature enabled, Prisma silently coerces `42` to `text`. With the feature enabled, the query returns an error:
+Before version 4.0.0, Prisma silently coerces `42` to `text`. From version 4.0.0, the query returns an error:
 
 ```terminal
 // ERROR: function length(integer) does not exist

@@ -7,12 +7,6 @@ tocDepth: 2
 
 <TopBlock>
 
-<Admonition type="info">
-
-Composite types are available in Preview in versions `3.10.0` and later.
-
-</Admonition>
-
 <Admonition type="warning">
 
 Composite types are only available with MongoDB.
@@ -20,6 +14,8 @@ Composite types are only available with MongoDB.
 </Admonition>
 
 [Composite types](/concepts/components/prisma-schema/data-model#defining-composite-types), known as [embedded documents](https://docs.mongodb.com/manual/core/data-model-design/#std-label-data-modeling-embedding) in MongoDB, allow you to embed records within other records.
+
+We made composite types [Generally Available](/about/prisma/releases#generally-available-ga) in v3.12.0. They were previously available in [Preview](/concepts/components/preview-features) from v3.10.0.
 
 This page explains how to:
 
@@ -38,7 +34,7 @@ We’ll use this schema for the examples that follow:
 model Product {
   id     String  @id @default(auto()) @map("_id") @db.ObjectId
   name   String  @unique
-  price  Decimal
+  price  Float
   colors Color[]
   sizes  Size[]
   photos Photo[]
@@ -89,6 +85,49 @@ There are currently some limitations when using composite types in the Prisma Cl
 
 - [`findUnique`](/reference/api-reference/prisma-client-reference#findunique) can't filter on composite types
 - [`aggregrate`](/concepts/components/prisma-client/aggregation-grouping-summarizing#aggregate), [`groupBy`](/concepts/components/prisma-client/aggregation-grouping-summarizing#group-by), [`count`](/concepts/components/prisma-client/aggregation-grouping-summarizing#count) don’t support composite operations
+
+## Default values for required fields on composite types
+
+From version 4.0.0, if you carry out a database read on a composite type when all of the following conditions are true, then Prisma Client inserts the default value into the result.
+
+Conditions:
+
+- A field on the composite type is [required](/concepts/components/prisma-schema/data-model#optional-and-mandatory-fields), and
+- this field has a [default value](/concepts/components/prisma-schema/data-model#defining-a-default-value), and
+- this field is not present in the returned document or documents.
+
+Note:
+
+- This is the same behavior as with [model fields](/reference/api-reference/prisma-schema-reference#model-field-scalar-types).
+- On read operations, Prisma Client inserts the default value into the result, but does not insert the default value into the database.
+
+In our example schema, suppose that you add a required field to `photo`. This field, `bitDepth`, has a default value:
+
+```prisma file=schema.prisma highlight=4;add
+...
+type Photo {
+  ...
+  bitDepth    Int    @default(8)
+}
+...
+```
+
+Suppose that you then run `npx prisma migrate deploy` to [deploy your database changes](/guides/deployment/deploy-database-changes-with-prisma-migrate) and regenerate your Prisma Client with `npx prisma generate`. Then, you run the following application code:
+
+```ts
+console.dir(await prisma.product.findMany({}), { depth: Infinity })
+```
+
+The `bitDepth` field has no content because you have only just added this field, so the query returns the default value of `8`.
+
+** Earlier versions **
+
+Before version 4.0.0, Prisma threw a P2032 error as follows:
+
+```
+Error converting field "bitDepth" of expected non-nullable
+type "int", found incompatible value of "null".
+```
 
 ## Finding records that contain composite types with <inlinecode>find</inlinecode> and <inlinecode>findMany</inlinecode>
 
