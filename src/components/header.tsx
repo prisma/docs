@@ -11,6 +11,7 @@ import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
 import { Navbar } from './navbar'
+import { WebsiteHeader } from '@prisma/lens/dist/web'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -32,7 +33,7 @@ const HeaderWrapper = styled.div`
   img {
     margin-bottom: 0;
   }
-  padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[16]};
+  //padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[16]};
   display: flex;
   justify-content: center;
 `
@@ -43,7 +44,12 @@ const Container = styled.div`
 
   > * {
     padding: 0;
-
+    a {
+      text-decoration: none;
+    }
+    .container {
+      padding: 0;
+    }
     .menu {
       background: transparent;
       border: 0;
@@ -297,7 +303,10 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       <SecondLevelNav>
         <div>
           {bucketItems.map((item) => {
-            const isCurrent = location && item.to && location.pathname.includes(item.to)
+            const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
+            const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
+            const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
+
             return (
               <DarkNavLink
                 to={item.to}
@@ -327,7 +336,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <Navbar />
+          <WebsiteHeader notFixed={true} lightFont={true} />
         </Container>
       </HeaderWrapper>
 
