@@ -100,6 +100,11 @@ exports.createPages = ({ graphql, actions }) => {
         }
       }
     `).then((result) => {
+      // For example, a `SyntaxError` might show up here.
+      if (result.errors) {
+        return reject(result.errors)
+      }
+
       result.data.allMdx.edges.forEach(({ node }) => {
         const { langSwitcher, dbSwitcher } = node.frontmatter
         if (langSwitcher && dbSwitcher) {
@@ -152,8 +157,11 @@ exports.createPages = ({ graphql, actions }) => {
           })
         }
       })
+
       resolve()
+
       const redirects = result.data.site.siteMetadata.redirects
+
       redirects
         .filter((redirect) => !redirect.from.includes('#'))
         .map((redirect) =>
