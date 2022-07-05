@@ -58,10 +58,10 @@ const config = {
         bucketName: '/400-reference',
       },
       {
-        text: 'Support',
-        to: '/support',
+        text: 'Data Platform',
+        to: '/data-platform',
         type: 'bucket',
-        bucketName: '/500-support',
+        bucketName: '/800-data-platform',
       },
       { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
       { text: 'Prisma 1 Docs', to: 'https://v1.prisma.io/docs/1.34', type: 'external-link' },

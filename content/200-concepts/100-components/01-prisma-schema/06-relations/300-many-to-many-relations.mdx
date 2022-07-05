@@ -281,7 +281,8 @@ const getPostsAndCategories = await prisma.post.findMany({
 Implicit m-n relations:
 
 - Use a specific [convention for relation tables](#conventions-for-relation-tables-in-implicit-m-n-relations)
-- Do **not** require the `@relation` attribute unless you need to [disambiguate relations](/concepts/components/prisma-schema/relations#disambiguating-relations) (this is not specific to implicit n-m relations).
+- Do **not** require the `@relation` attribute unless you need to [disambiguate relations](/concepts/components/prisma-schema/relations#disambiguating-relations) with a name, e.g. `@relation("MyRelation")` or `@relation(name: "MyRelation")`.
+- If you do use the `@relation` attribute, you cannot use the `references`, `fields`, `onUpdate` or `onDelete` arguments. This is because these take a fixed value for implicit m-n relations and cannot be changed.
 - Require both models to have a single `@id`. Be aware that:
 
   - You cannot use a [multi-field ID](/reference/api-reference/prisma-schema-reference#id-1)
@@ -293,17 +294,23 @@ Implicit m-n relations:
 
   </Admonition>
 
-#### Conventions for relation tables in implicit m-n-relations
+#### Conventions for relation tables in implicit m-n relations
 
 If you obtain your data model from [introspection](/concepts/components/introspection), you can still use implicit many-to-many relations by following Prisma's [conventions for relation tables](#conventions-for-relation-tables-in-implicit-m-n-relations).
 The following example assumes you want to create a relation table to get an implicit many-to-many relation for two models called `Post` and `Category`.
 
-##### Table name
+##### Table names
 
-The name of the relation table must be prefixed with an underscore:
+If you want a relation table to be picked up by introspection as an implicit many-to-many relation, the name must follow this exact structure:
 
-- **Valid**: `_CategoryToPost`, `_MyRelation`
-- **Invalid**: `CategoryToPost`, `MyRelation`
+- It must start with an underscore `_`
+- Then the name of the first table in alphabetical order (in this case `Category`)
+- Then `To`
+- Then the name of the second table in alphabetical order (in this case `Post`)
+
+In the example, the correct table name is `_CategoryToPost`.
+
+When creating an implicit many-to-many relation yourself in the Prisma schema file, you can [configure the relation](#configuring-the-name-of-the-relation-table-in-implicit-many-to-many-relations) to have a different name. This will change the name given to the relation table in the database. For example, for a relation named `"MyRelation"` the corresponding table will be called `_MyRelation`.
 
 ##### Columns
 
@@ -332,7 +339,7 @@ CREATE INDEX "_CategoryToPost_B_index" ON "_CategoryToPost"("B" int4_ops);
 
 ##### Example
 
-This is a sample SQL statement that would create the three tables including indexes (in PostgreSQL dialect):
+This is a sample SQL statement that would create the three tables including indexes (in PostgreSQL dialect) that are picked up as a implicit many-to-many relation by Prisma Introspection:
 
 ```sql
 CREATE TABLE "_CategoryToPost" (

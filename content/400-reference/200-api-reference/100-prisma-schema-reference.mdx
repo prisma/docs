@@ -1041,6 +1041,8 @@ Makes a field a list.
 
 #### Examples
 
+##### Define a scalar list
+
 <TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
 <tab>
 
@@ -1060,6 +1062,35 @@ model User {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   posts          Post[]
   favoriteColors String[]
+}
+```
+
+</tab>
+</TabbedContent>
+
+##### Define a scalar list with a default value
+
+Available in version 4.0.0 and later.
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma highlight=4;normal
+model User {
+  id             Int      @id @default(autoincrement())
+  posts          Post[]
+  favoriteColors String[] @default(["red", "blue", "green"])
+}
+```
+
+</tab>
+<tab>
+
+```prisma highlight=4;normal
+model User {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  posts          Post[]
+  favoriteColors String[] @default(["red", "blue", "green"])
 }
 ```
 
@@ -1160,19 +1191,19 @@ Defines a single-field ID on the model.
 #### Signature
 
 ```prisma no-lines
-@id(map: String?)
+@id(map: String?, length: number?, sort: String?, clustered: Boolean?)
 ```
 
-> **Note**: Until version 3.0.0, the signature was:
+> **Note**: Before version 4.0.0, or 3.5.0 with the `extendedIndexes` Preview feature enabled, the signature was:
+>
+> ```prisma no-lines
+> @id(map: String?)
+> ```
+
+> **Note**: Before version 3.0.0, the signature was:
 >
 > ```prisma no-lines
 > @id
-> ```
-
-> **Note**: In version 3.5.0 and later, with the `"extendedIndexes"` Preview feature enabled, the signature is:
->
-> ```prisma no-lines
-> @id(map: String?, length: number?, sort: String?)
 > ```
 
 #### Examples
@@ -1429,11 +1460,12 @@ Defines a multi-field ID (composite ID) on the model.
 
 #### Arguments
 
-| Name     | Required | Type               | Description                                                                                                                                           |
-| -------- | -------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fields` | **Yes**  | `FieldReference[]` | A list of field names - for example, `["firstname", "lastname"]`                                                                                      |
-| `name`   | **No**   | `String`           | The name that the Client API will expose for the argument covering all fields, e.g. `fullName` in `fullName: { firstName: "First", lastName: "Last"}` |
-| `map`    | **No**   | `String`           | The name of the underlying primary key constraint in the database                                                                                     |
+| Name        | Required | Type               | Description                                                                                                                                           |
+| ----------- | -------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fields`    | **Yes**  | `FieldReference[]` | A list of field names - for example, `["firstname", "lastname"]`                                                                                      |
+| `name`      | **No**   | `String`           | The name that the Client API will expose for the argument covering all fields, e.g. `fullName` in `fullName: { firstName: "First", lastName: "Last"}` |
+| `map`       | **No**   | `String`           | The name of the underlying primary key constraint in the database                                                                                     |
+| `clustered` | **No**   | `Boolean`          | **SQL Server only.** Defines whether the index is clustered or non-clustered. Defaults to `true`.                                                     |
 
 The name of the `fields` argument on the `@@id` attribute can be omitted:
 
@@ -1637,7 +1669,8 @@ Defines a [default value for a field](/concepts/components/prisma-schema/data-mo
   - [`now()`](#now)
 
 - Default values that cannot yet be represented in the Prisma schema are represented by the `dbgenerated()` function when you use [introspection](/concepts/components/introspection).
-- Default values are currently not allowed on relation fields in the Prisma schema. Note however that you can still define default values _manually_ in the underlying database using plain SQL. These will not be represented in the Prisma schema though, this is a temporary limitation which you can [track on GitHub](https://github.com/prisma/prisma/issues/1111).
+- Default values are not allowed on relation fields in the Prisma schema. Note however that you can still define default values on the fields backing a relation (the ones listed in the `fields` argument in the `@relation` attribute). A default value on the field backing a relation will mean that relation is populated automatically for you.
+- Default values can be used with [scalar lists](/concepts/components/prisma-client/working-with-fields/working-with-scalar-lists-arrays) in databases that natively support them.
 
 ##### MongoDB
 
@@ -1649,6 +1682,7 @@ Defines a [default value for a field](/concepts/components/prisma-schema/data-mo
   - [`now()`](#now)
 
 - Default values are currently not allowed on relation fields in the Prisma schema.
+- Default values can be used with [scalar lists](/concepts/components/prisma-client/working-with-fields/working-with-scalar-lists-arrays) in databases that natively support them.
 
 #### Arguments
 
@@ -1922,6 +1956,47 @@ model User {
 </tab>
 </TabbedContent>
 
+##### Default values for scalar lists
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma highlight=4;normal
+model User {
+  id             Int      @id @default(autoincrement())
+  posts          Post[]
+  favoriteColors String[] @default(["red", "yellow", "purple"])
+  roles          Role[]   @default([USER, DEVELOPER])
+}
+
+enum Role {
+  USER
+  DEVELOPER
+  ADMIN
+}
+```
+
+</tab>
+<tab>
+
+```prisma highlight=4;normal
+model User {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  posts          Post[]
+  favoriteColors String[] @default(["red", "yellow", "purple"])
+  roles          Role[]   @default([USER, DEVELOPER])
+}
+
+enum Role {
+  USER
+  DEVELOPER
+  ADMIN
+}
+```
+
+</tab>
+</TabbedContent>
+
 ### <inlinecode>@unique</inlinecode>
 
 Defines a unique constraint for this field.
@@ -1952,29 +2027,32 @@ Defines a unique constraint for this field.
 | ----- | -------- | -------- | ----------- |
 | `map` | **No**   | `String` |             |
 
-**Note:** In version 3.5.0 and later, new `length` and `sort` arguments are available as a Preview feature. See [Index configuration](../../../../concepts/components/prisma-schema/indexes) for more details.
+> **Note:** In versions `4.0.0` and later, and in versions `3.5.0` and later with the `extendedIndexes` Preview feature enabled, new `length` and `sort` arguments are available as a Preview feature. In versions `3.14.0` and later a new `ops` argument is available. See [Index configuration](../../../../concepts/components/prisma-schema/indexes) for more details.
 
-| Name     | Required | Type     | Description                                                                                                                                        |
-| -------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `length` | **No**   | `number` | **MySQL only.** Allows you to specify a maximum length for the subpart of the value to be indexed.                                                 |
-| `sort`   | **No**   | `String` | Allows you to specify in what order the entries of the index or constraint are stored in the database. The available options are `Asc` and `Desc`. |
+| Name     | Required | Type                         | Description                                                                                                                                        |
+| -------- | -------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `length` | **No**   | `number`                     | **MySQL only.** Allows you to specify a maximum length for the subpart of the value to be indexed.                                                 |
+| `sort`   | **No**   | `String`                     | Allows you to specify in what order the entries of the index or constraint are stored in the database. The available options are `Asc` and `Desc`. |
+| `ops`    | **No**¹  | `identifier` or a `function` | **PostgreSQL only.** Allows defining the index operators for certain index types.                                                                  |
+
+- ¹ Can be required by some of the index and field types.
 
 #### Signature
 
 ```prisma no-lines
-@unique(map: String?)
+@unique(map: String?, length: number?, sort: String?)
 ```
 
-> **Note**: Until version 3.0.0, the signature was:
+> **Note**: Before version 4.0.0, or 3.5.0 with the `extendedIndexes` Preview feature enabled, the signature was:
+>
+> ```prisma no-lines
+> @unique(map: String?)
+> ```
+
+> **Note**: Before version 3.0.0, the signature was:
 >
 > ```no-lines
 > @unique
-> ```
-
-> **Note**: In version 3.5.0 and later, the signature for the `"extendedIndexes"` Preview feature is:
->
-> ```prisma no-lines
-> @unique(map: String?, length: number?, sort: String?)
 > ```
 
 #### Examples
@@ -2144,11 +2222,12 @@ Defines a compound [unique constraint](/concepts/components/prisma-schema/data-m
 
 #### Arguments
 
-| Name     | Required | Type               | Description                                                                                               |
-| -------- | -------- | ------------------ | --------------------------------------------------------------------------------------------------------- |
-| `fields` | **Yes**  | `FieldReference[]` | A list of field names - for example, `["firstname", "lastname"]`. Fields must be mandatory - see remarks. |
-| `name`   | **No**   | `String`           | The name of the unique combination of fields - defaults to `fieldName1_fieldName2_fieldName3`             |
-| `map`    | **No**   | `String`           |                                                                                                           |
+| Name        | Required | Type               | Description                                                                                               |
+| ----------- | -------- | ------------------ | --------------------------------------------------------------------------------------------------------- |
+| `fields`    | **Yes**  | `FieldReference[]` | A list of field names - for example, `["firstname", "lastname"]`. Fields must be mandatory - see remarks. |
+| `name`      | **No**   | `String`           | The name of the unique combination of fields - defaults to `fieldName1_fieldName2_fieldName3`             |
+| `map`       | **No**   | `String`           |                                                                                                           |
+| `clustered` | **No**   | `Boolean`          | **SQL Server only.** Defines whether the index is clustered or non-clustered. Defaults to `false`.        |
 
 The name of the `fields` argument on the `@@unique` attribute can be omitted:
 
@@ -2174,20 +2253,20 @@ These arguments are added to the relevant field names:
 
 #### Signature
 
-```prisma no-lines
-@@unique(_ fields: FieldReference[], name: String?, map: String?)
-```
-
-> **Note**: Until version 3.0.0, the signature was:
->
 > ```prisma no-lines
-> @@unique(_ fields: FieldReference[], name: String?)
+> @@unique(_ fields: FieldReference[], name: String?, map: String?)
 > ```
 
-> **Note**: In version 3.5.0 and later, the signature for the `"extendedIndexes"` Preview feature is:
+> **Note**: Before version 4.0.0, or before version 3.5.0 with the `extendedIndexes` Preview feature enabled, the signature was:
 >
 > ```prisma no-lines
 > @@unique(_ fields: FieldReference[], name: String?, map: String?)
+> ```
+
+> **Note**: Before version 3.0.0, the signature was:
+>
+> ```prisma no-lines
+> @@unique(_ fields: FieldReference[], name: String?)
 > ```
 
 #### Examples
@@ -2375,14 +2454,11 @@ Defines an index in the database.
 ##### Relational databases
 
 - Corresponding database type: `INDEX`
-- It is currently not possible to provide more configuration options to the index:
+- There are some additional index configuration options that cannot be provided via the Prisma schema yet. These include:
   - PostgreSQL and CockroachDB:
     - Define index fields as expressions (e.g. `CREATE INDEX title ON public."Post"((lower(title)) text_ops);`)
-    - Specify index methods with `USING`; PostgreSQL supports these index methods: B-tree, hash, GiST, and GIN; Prisma uses B-Tree by default
     - Define partial indexes with `WHERE`
     - Create indexes concurrently with `CONCURRENTLY`
-  - MySQL:
-    - Specify index methods with `USING`; MySQL supports these index methods: B-tree, hash; Prisma uses B-Tree by default
 
 <Admonition type="info">
 
@@ -2396,11 +2472,13 @@ While you cannot configure these option in your Prisma schema, you can still con
 
 #### Arguments
 
-| Name     | Required | Type               | Description                                                                                                                                                                                                                                 |
-| -------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fields` | **Yes**  | `FieldReference[]` | A list of field names - for example, `["firstname", "lastname"]`                                                                                                                                                                            |
-| `name`   | **No**   | `String`           | The name that the Client API will expose for the argument covering all fields, e.g. `fullName` in `fullName: { firstName: "First", lastName: "Last"}`                                                                                       |
-| `map`    | **No**   | `map`              | The name of the index in the underlying database (Prisma generates an index name that respects identifier length limits if you do not specify a name. Prisma uses the following naming convention: `tablename.field1_field2_field3_unique`) |
+| Name        | Required | Type               | Description                                                                                                                                                                                                                                 |
+| ----------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fields`    | **Yes**  | `FieldReference[]` | A list of field names - for example, `["firstname", "lastname"]`                                                                                                                                                                            |
+| `name`      | **No**   | `String`           | The name that the Client API will expose for the argument covering all fields, e.g. `fullName` in `fullName: { firstName: "First", lastName: "Last"}`                                                                                       |
+| `map`       | **No**   | `map`              | The name of the index in the underlying database (Prisma generates an index name that respects identifier length limits if you do not specify a name. Prisma uses the following naming convention: `tablename.field1_field2_field3_unique`) |
+| `type`      | **No**   | `identifier`       | **PostrgreSQL and CockroachDB only.** The index access method. Defaults to `BTree`.                                                                                                                                                         |
+| `clustered` | **No**   | `Boolean`          | **SQL Server only.** Defines is the index clustered, or non-clustered. Defaults to `false`.                                                                                                                                                 |
 
 The _name_ of the `fields` argument on the `@@index` attribute can be omitted:
 
