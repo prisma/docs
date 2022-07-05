@@ -1,9 +1,7 @@
 # Prisma Documentation
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
-[badge-all-contributors]: https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square
-
+[badge-all-contributors]: https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
 
@@ -184,6 +182,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="http://tomhsiao1260.github.io"><img src="https://avatars.githubusercontent.com/u/31985811?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Yao Hsiao</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=TomHsiao1260" title="Documentation">📖</a></td>
     <td align="center"><a href="https://www.linkedin.com/in/danielweinmann"><img src="https://avatars.githubusercontent.com/u/204765?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Weinmann</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=danielweinmann" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/rowinbot"><img src="https://avatars.githubusercontent.com/u/18468260?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rowin Hernández</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=rowinbot" title="Documentation">📖</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/svyborov"><img src="https://avatars.githubusercontent.com/u/39708082?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sergey</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=svyborov" title="Documentation">📖</a></td>
   </tr>
 </table>
 
