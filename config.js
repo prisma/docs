@@ -34,7 +34,7 @@ const config = {
   header: {
     secondLevelHeaderMenuItems: [
       {
-        text: 'Getting Started',
+        text: 'Get Started',
         to: '/getting-started',
         type: 'bucket',
         bucketName: '/100-getting-started',
@@ -58,13 +58,12 @@ const config = {
         bucketName: '/400-reference',
       },
       {
-        text: 'Data Platform',
-        to: '/data-platform',
+        text: 'Prisma Data Platform',
+        to: '/prisma-data-platform',
         type: 'bucket',
-        bucketName: '/800-data-platform',
+        bucketName: '/800-prisma-data-platform',
       },
       { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
-      { text: 'Prisma 1 Docs', to: 'https://v1.prisma.io/docs/1.34', type: 'external-link' },
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
