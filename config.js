@@ -63,8 +63,7 @@ const config = {
         type: 'bucket',
         bucketName: '/800-data-platform',
       },
-      { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
-      { text: 'Prisma 1 Docs', to: 'https://v1.prisma.io/docs/1.34', type: 'external-link' },
+      { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' }
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
