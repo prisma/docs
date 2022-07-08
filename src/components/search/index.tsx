@@ -126,7 +126,7 @@ const Results = connectStateResults(
     ))
 )
 
-export default function Search({ hitsStatus, location }: any) {
+export default function Search({ hitsStatus }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
