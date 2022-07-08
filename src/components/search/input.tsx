@@ -227,6 +227,9 @@ const SearchBox = ({
     if (width > 640) {
       setPlaceholderText('Search Documentation...')
     }
+    if (value) {
+      onFocus()
+    }
   }, [])
 
   return (
