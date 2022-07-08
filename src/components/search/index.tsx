@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { InstantSearch, Index, connectStateResults, connectHits } from 'react-instantsearch-dom'
 import algoliasearch from 'algoliasearch/lite'
 import config from '../../../config'
@@ -6,6 +6,8 @@ import DocHit from './hitComps'
 import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
+import qs from 'qs'
+import { navigate } from 'gatsby'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -92,6 +94,7 @@ const HitsWrapper = styled.div`
 `
 
 const indexName = config.header.search.indexName
+const DEBOUNCE_TIME = 400
 const searchClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
@@ -126,7 +129,15 @@ const Results = connectStateResults(
     ))
 )
 
-export default function Search({ hitsStatus }: any) {
+const createURL = (state: any) => `?${qs.stringify(state)}`
+
+const searchStateToUrl = (location: any, searchState: any) =>
+  searchState ? `${location.pathname}${createURL(searchState)}` : ''
+
+const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
+
+export default function Search({ hitsStatus, location, history }: any) {
+  const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
@@ -134,9 +145,26 @@ export default function Search({ hitsStatus }: any) {
 
   const showSearch = () => setShowHits(true)
 
+  const debouncedSetStateRef = useRef(null)
+
+  const onSearchStateChange = (updatedSearchState: any) => {
+    setQuery(query)
+    clearTimeout(debouncedSetStateRef.current)
+
+    debouncedSetStateRef.current = setTimeout(() => {
+      navigate(searchStateToUrl(location, updatedSearchState))
+    }, DEBOUNCE_TIME)
+
+    setSearchState(updatedSearchState)
+  }
+
   React.useEffect(() => {
     hitsStatus(showHits)
   }, [showHits, query])
+
+  React.useEffect(() => {
+    setSearchState(urlToSearchState(location))
+  }, [location])
 
   const incrementIndex = () => {
     setSelectedIndex((prevCount: number) => {
@@ -162,7 +190,9 @@ export default function Search({ hitsStatus }: any) {
     <InstantSearch
       searchClient={searchClient}
       indexName={indexName}
-      onSearchStateChange={({ query }: any) => setQuery(query)}
+      onSearchStateChange={onSearchStateChange}
+      searchState={searchState}
+      createURL={createURL}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
       <CustomSearchBox

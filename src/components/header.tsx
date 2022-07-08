@@ -10,7 +10,6 @@ import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
-import { Navbar } from './navbar'
 import { WebsiteHeader } from '@prisma/lens/dist/web'
 
 type HeaderViewProps = {
@@ -343,7 +342,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Second level header */}
       <SecondLevelHeader>
         <Container style={{ display: 'flex' }}>
-          <SearchComponent hitsStatus={changeHitsStatus} />
+          <SearchComponent hitsStatus={changeHitsStatus} location={location} />
           {showDocsBtn && (
             <NonMobileMenu style={{ width: '100%' }}>
               <SecondLevelMenu />
