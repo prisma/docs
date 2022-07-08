@@ -342,7 +342,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Second level header */}
       <SecondLevelHeader>
         <Container style={{ display: 'flex' }}>
-          <SearchComponent hitsStatus={changeHitsStatus} location={location} />
+          <SearchComponent hitsStatus={changeHitsStatus} />
           {showDocsBtn && (
             <NonMobileMenu style={{ width: '100%' }}>
               <SecondLevelMenu />
