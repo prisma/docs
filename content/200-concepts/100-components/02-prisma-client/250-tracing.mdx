@@ -8,11 +8,11 @@ tocDepth: 3
 
 <TopBlock>
 
-Tracing provides a record of each query that Prisma Client generates. It is fully compliant with [OpenTelemetry](https://opentelemetry.io/), so you can use tracing as part of your end-to-end application diagnostics.
+Prisma tracing provides a record of each query that Prisma Client generates. It helps you analyze your application's performance and identify bottlenecks. Tracing is fully compliant with [OpenTelemetry](https://opentelemetry.io/), so you can use it as part of your end-to-end application tracing path.
 
 <Admonition type="info">
 
-Tracing provides a detailed, query-by-query insight into your Prisma project. If you want a higher-level analysis, see [Metrics](/concepts/components/prisma-client/metrics).
+Tracing gives you a detailed, query-level insight into your Prisma project. If you want higher-level, aggregated numerical reporting, such as query counts, connection counts, and total query execution times, see [Metrics](/concepts/components/prisma-client/metrics).
 
 </Admonition>
 
@@ -20,39 +20,28 @@ Tracing provides a detailed, query-by-query insight into your Prisma project. If
 
 ## About tracing
 
-You can send tracing information to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/).
+When you enable tracing, Prisma Client writes out details of all queries that it calls. Each tracing span represents a query, and includes the following:
+
+- the full query text
+- and the time that the query took to execute.
+
+You can send this output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/).
 
 TBW:
 
 - say here what it logs - basically every database query that Prisma calls
 - show screenshot in Jaeger with examples
 - what level of detail does it log? I think I'd like a screenshot of the output to the console - so I can see the form it takes. Maybe ask Daniel to copy/paste that so I can - include it as console output
+- Do we want to talk about [spans](https://www.jaegertracing.io/docs/1.35/architecture/#span) here? Is a span equivalent to a query?
+- A diagram - showing a trace in the a Prisma context? Going from App -> Prisma Client -> Database and back?
+- question: does it records the time for the query to execute and return data?
+- do we have child spans? what are the spans we offer?
 
----
+## Output
 
-Prisma Client provides the following metrics:
+Prisma tracing outputs the following information:
 
-- Counters (always increase):
-
-  - `query_total_queries`: The total number of database queries executed.
-  - `query_total_operations`: The total number of Prisma operations executed.
-    - A Prisma operation is a statement like `await prisma.user({ include: { posts: true }})`, which Prisma Client translates into one or more SQL queries.
-    - The value returned by `query_total_operations` can be less than `query_total_queries`, because some operations create multiple queries.
-
-- Gauges (can increase or decrease):
-
-  - `pool_active_connections`: The number of active connections in use.
-  - `pool_idle_connections`: The number of connections that are not being used.
-  - `pool_wait_count`: The number of workers waiting for a connection because all connections are in use.
-  - `query_active_transactions`: The number of active transactions.
-
-- Histograms (metrics data divided into a collection of values; we call each container in the collection a "bucket"):
-
-  - `pool_wait_duration_ms`: The wait time for a worker to get a connection.
-  - `query_total_elapsed_time_ms`: The execution time for all database queries executed.
-  - `query_operation_total_elapsed_time_ms`: The execution time for all operations. This includes the time taken to execute all database queries, and to carry out all database engine activities, such as joining data and transforming data to the correct format.
-
-You can [add global labels to your metrics data](#global-labels) to help you group and separate your metrics, for example by infrastructure region or server.
+**TBW**
 
 ## Prerequisites
 
@@ -63,12 +52,16 @@ To use tracing, you must do the following:
 
 ### Step 1. Install up-to-date Prisma dependencies
 
-Use version `4.1.0` or higher of the `prisma` and `@prisma/client` npm packages.
+Use version `4.1.0` or higher of the `prisma`, `@prisma/client`, and '@prisma/instrumentation' npm packages.
 
 ```terminal
 npm install prisma@latest --save-dev
 npm install @prisma/client@latest --save
+npm install @prisma/instrumentation --save
+npm install @opentelemetry/instrumentation --save
 ```
+
+**TBA: do we need to install @opentelemetry/instrumentation?**
 
 ### Step 2: Enable the feature flag in the Prisma schema file
 
@@ -81,6 +74,21 @@ generator client {
 }
 ```
 
+### Step 3:
+
+Add the following to your application code:
+
+```ts
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { PrismaInstrumentation } from '@prisma/instrumentation'
+
+export function otelSetup() {
+  registerInstrumentations({
+    instrumentations: [new PrismaInstrumentation()],
+  })
+}
+```
+
 ## Send tracing to the console
 
 To send metrics to the console, add the following to you application code:
@@ -88,6 +96,8 @@ To send metrics to the console, add the following to you application code:
 ## Send tracing to Jaeger
 
 To send metrics to Jaeger, add the following to you application code:
+
+Get the application code sample to do this
 
 How to generalize this to other tracing packages?
 
