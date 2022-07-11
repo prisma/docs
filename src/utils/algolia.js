@@ -122,7 +122,7 @@ const queries = [
             edges {
               node {
                 rawBody
-                id
+                objectID: id
                 fields {
                   slug
                   modSlug

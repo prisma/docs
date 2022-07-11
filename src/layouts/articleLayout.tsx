@@ -7,7 +7,7 @@ import PageBottom from '../components/pageBottom'
 import SEO from '../components/seo'
 import { graphql } from 'gatsby'
 import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
-import { useNavigate } from '@reach/router'
+import { navigate } from '@reach/router'
 import { CreatePageContext } from 'src/interfaces/Layout.interface'
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps & CreatePageContext
@@ -32,7 +32,7 @@ const ArticleLayout = ({
       siteMetadata: { docsLocation },
     },
   } = data
-  const navigate = useNavigate()
+  //const navigate = useNavigate()
   return (
     <Layout
       {...props}

@@ -28,10 +28,7 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
         edges {
           node {
             path
-            context {
-              seoTitle
-              id
-            }
+            pageContext
           }
         }
       }  
@@ -42,13 +39,13 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
   const pages = data.allSitePage.edges
     .map((edge, i) => {
       // Skip the 404 pages and pages without seoTitle
-      if (!edge.node.context || !edge.node.context.seoTitle) return null
+      if (!edge.node.pageContext || !edge.node.pageContext.seoTitle) return null
       console.log(edge.node.path)
       // Skip explicitly excluded paths
       if (excludedPaths.includes(edge.node.path)) return null
 
       return {
-        title: edge.node.context.seoTitle,
+        title: edge.node.pageContext.seoTitle,
         url: url.resolve(
           data.site.siteMetadata.siteUrl,
           path.join(data.site.siteMetadata.pathPrefix, edge.node.path)

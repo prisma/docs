@@ -77,8 +77,8 @@ let plugins = [
   {
     resolve: `gatsby-plugin-sitemap`,
     options: {
-      sitemapSize: 5000,
-      exclude: [
+      entryLimit: 5000,
+      excludes: [
         // Remove these from sitemap for SEO purposes as they're redirected
         `/getting-started/quickstart`,
         `/getting-started/setup-prisma/add-to-existing-project`,
