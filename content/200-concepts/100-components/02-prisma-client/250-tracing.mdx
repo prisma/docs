@@ -8,11 +8,14 @@ tocDepth: 3
 
 <TopBlock>
 
-Prisma tracing provides a record of each query that Prisma Client generates. It helps you analyze your application's performance and identify bottlenecks. Tracing is fully compliant with [OpenTelemetry](https://opentelemetry.io/), so you can use it as part of your end-to-end application tracing path.
+Prisma tracing logs
+Prisma tracing outputs
+
+Prisma tracing provides a detailed log of the activity that Prisma Client carries out, at a query level, including the time taken to execute each query. It helps you analyze your application's performance and identify bottlenecks. Tracing is fully compliant with [OpenTelemetry](https://opentelemetry.io/), so you can use it as part of your end-to-end application tracing path.
 
 <Admonition type="info">
 
-Tracing gives you a detailed, query-level insight into your Prisma project. If you want higher-level, aggregated numerical reporting, such as query counts, connection counts, and total query execution times, see [Metrics](/concepts/components/prisma-client/metrics).
+Tracing gives you a highly detailed, query-level insight into your Prisma project. If you want aggregated numerical reporting, such as query counts, connection counts, and total query execution times, see [Metrics](/concepts/components/prisma-client/metrics).
 
 </Admonition>
 
@@ -20,22 +23,21 @@ Tracing gives you a detailed, query-level insight into your Prisma project. If y
 
 ## About tracing
 
-When you enable tracing, Prisma Client writes out details of all queries that it calls. Each tracing span represents a query, and includes the following:
-
-- the SQL statement or command
-- the total query execution time
+When you enable tracing, Prisma Client writes out a trace for each request that it makes. **should we say operation here, rather than request**? Each trace includes one or more [spans](https://www.jaegertracing.io/docs/1.35/architecture/#span), each of which represents one stage in the request, such as a database statement or command, or serialization and deserialization. Each span includes the round trip connection time from Prisma Client to the database and back.
 
 You can send this output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/).
 
 TBW:
 
-- say here what it logs - basically every database query that Prisma calls
 - show screenshot in Jaeger with examples
-- what level of detail does it log? I think I'd like a screenshot of the output to the console - so I can see the form it takes. Maybe ask Daniel to copy/paste that so I can - include it as console output
-- Do we want to talk about [spans](https://www.jaegertracing.io/docs/1.35/architecture/#span) here? Is a span equivalent to a query?
-- A diagram - showing a trace in the a Prisma context? Going from App -> Prisma Client -> Database and back?
-- question: does it record the time for the query to execute and return data?
 - do we have child spans? what are the spans we offer?
+
+A trace contains X amount of ‘spans’, e.g. 7. This number is dependant on the particular request for example - findMany might only contain 3 spans. Each span represents a different stage in the Prisma request lifecycle. The screenshot is the ‘trace’ expanded showing all the spans.
+
+Each span has different names dependant on the stage in the request, those with the name prisma:db_query will contain the generated SQL statement, and those other traces such as prisma and prisma:connection are other stages in the request such as: serialisation and deserialisation. In the screenshot I have expanded the trace showing all spans
+
+Tracing output every SQL statement/command issues by Prisma Client.
+yes - In the prisma:db_query spans you will see the db.statement tag where it will contain the SQL query(s) for that request.
 
 ## Output
 
@@ -45,7 +47,24 @@ Prisma tracing outputs the following information:
 What's a unit of tracing?
 What's in it?
 
-## Prerequisites
+Here is a breakdown of each stage/span in the trace:
+
+- `prisma` - Trace to represent the whole Prisma request - from client to DB and back. This trace will contain information such as what model and method were called.
+- `prisma:query_builder` - Trace to represent how long the Prisma engines take to generate the DB queries ie SQL. This includes deserialization of the Prisma client request, validation, and transformation into SQL.
+- `prisma:connection` - Trace to represent how long it took to get a connection with the DB.
+- `prisma:db_query` - Trace to represent each SQL query that was executed against the DB, what the SQL looks like(in the tags), and how long it took
+- `prisma:itx_runner` which is the start of an interactive transactions
+- `prisma:transaction` is the high level transaction
+
+## Considerations and prerequisites
+
+**TBD**
+
+Do we want to say something about tracing's effect on performance? Something like "Note that tracing has a significant effect on performance in the following situations:" And maybe: "... we do not recommend that you use tracing in this situation in a production environment."
+
+- Using the simple exporter will cause a large performance reduction (should only be used in development)
+- Enabling sampling will make sure that not as many spans are set an make the performance very close to as if tracing was not exampled
+- Tracing setup with a lot of prisma queries will be slower with tracing enabled
 
 To use tracing, you must do the following:
 
@@ -94,6 +113,8 @@ export function otelSetup() {
 ## Send tracing to the console
 
 To send tracing to the console, add the following to you application code:
+
+Garren recommends we show how to configure otel to output to the console.
 
 ## Send tracing to Jaeger
 
