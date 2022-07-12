@@ -29,55 +29,34 @@ When you enable tracing, Prisma Client writes out a trace for each request that 
 
 - Trace (Prisma operation)
 
-  - Span (connection)
-  - Span (database statement or command)
-  - Span (deserialization)
+  - Span (such as a connection)
+  - Span (such as a database statement or command)
+  - Span (such as deserialization)
 
   You can send tracing output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/).
 
-TBW:
-
-- show screenshot in Jaeger with examples
-- do we have child spans? what are the spans we offer?
-
-Each span has different names dependant on the stage in the request, those with the name prisma:db_query will contain the generated SQL statement, and those other traces such as prisma and prisma:connection are other stages in the request such as: serialisation and deserialisation. In the screenshot I have expanded the trace showing all spans
-
-Tracing output every SQL statement/command issues by Prisma Client.
-yes - In the prisma:db_query spans you will see the db.statement tag where it will contain the SQL query(s) for that request.
+**TBA: maybe a screenshot in Jaeger with example**
 
 ## Output
 
-Prisma tracing outputs the following information:
+Depending on the Prisma operation (**request?**), Prisma Client might output any of the following spans:
 
-**TBW**
-What's a unit of tracing?
-What's in it?
-
-Here is a breakdown of each stage/span in the trace:
-
-- `prisma` - Trace to represent the whole Prisma request - from client to DB and back. This trace will contain information such as what model and method were called.
-- `prisma:query_builder` - Trace to represent how long the Prisma engines take to generate the DB queries ie SQL. This includes deserialization of the Prisma client request, validation, and transformation into SQL.
-- `prisma:connection` - Trace to represent how long it took to get a connection with the DB.
-- `prisma:db_query` - Trace to represent each SQL query that was executed against the DB, what the SQL looks like(in the tags), and how long it took
-- `prisma:itx_runner` which is the start of an interactive transactions
-- `prisma:transaction` is the high level transaction
+- `prisma`: Represents the entire Prisma request, from Prisma Client to the database and back. It contains details such as the model and method called by the Prisma Client.
+- `prisma:query_builder`: Represents how long the [Prisma engines](/concepts/components/prisma-engines) take to generate the SQL queries (**would it be more accurate to say "statement or command" instead of queries here? This is not running rhe command, is it? - it's building the query**). This includes deserialization of the Prisma Client request, validation, and transformation into SQL.
+- `prisma:connection`: Represents how long it took for Prisma Client to get a database connection.
+- `prisma:db_query`: Represents a SQL query that was executed against the database, the SQL statement or command (in the tags), and how long the query took to run.
+- `prisma:itx_runner`: The start of an interactive transaction.
+- `prisma:transaction`: The high-level transaction. **need more detail here - what do we mean by high-level?**
 
 ## Considerations and prerequisites
 
-**TBD**
-
-Do we want to say something about tracing's effect on performance? Something like "Note that tracing has a significant effect on performance in the following situations:" And maybe: "... we do not recommend that you use tracing in this situation in a production environment."
-
-**Garren to provide some notes on performance considerations**
-
-- Using the simple exporter will cause a large performance reduction (should only be used in development)
-- Enabling sampling will make sure that not as many spans are set an make the performance very close to as if tracing was not exampled
-- Tracing setup with a lot of prisma queries will be slower with tracing enabled
+**TBA: Garren to provide some notes on performance considerations. We'll say something like "Note that tracing has a significant effect on performance in the following situations:"**
 
 To use tracing, you must do the following:
 
 1. [Install the appropriate dependencies](#step-1-install-up-to-date-prisma-dependencies).
-1. [Enable the `tracing` feature flag in your Prisma schema file](#step-2-enable-the-feature-flag-in-the-prisma-schema-file).
+1. [Enable the `tracing` feature flag in your Prisma schema file](#step-2-enable-the-feature-flag-in-your-prisma-schema-file).
+1. [Configure OpenTelemetry](#step-3-configure-opentelemetry).
 
 ### Step 1. Install up-to-date Prisma dependencies
 
@@ -87,12 +66,9 @@ Use version `4.1.0` or higher of the `prisma`, `@prisma/client`, and '@prisma/in
 npm install prisma@latest --save-dev
 npm install @prisma/client@latest --save
 npm install @prisma/instrumentation --save
-npm install @opentelemetry/instrumentation --save
 ```
 
-**TBA: do we need to install @opentelemetry/instrumentation?**
-
-### Step 2: Enable the feature flag in the Prisma schema file
+### Step 2: Enable the feature flag in your Prisma schema file
 
 In the `generator` block of your `schema.prisma` file, enable the `tracing` feature flag:
 
@@ -103,9 +79,17 @@ generator client {
 }
 ```
 
-### Step 3:
+### Step 3: Configure OpenTelemetry
 
-Add the following to your application code:
+First, install the appropriate OpenTelemetry packages, as follows:
+
+```console
+
+$ npm install @opentelemetry/api @opentelemetry/context-async-hooks @opentelemetry/exporter-trace-otlp-http @opentelemetry/instrumentation @opentelemetry/resources @opentelemetry/sdk-trace-base @opentelemetry/semantic-conventions
+
+```
+
+Then, add the following to your application code:
 
 ```ts
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
@@ -122,12 +106,108 @@ export function otelSetup() {
 
 To send tracing to the console, add the following to you application code:
 
-Garren recommends we show how to configure otel to output to the console.
+```ts
+import { context } from '@opentelemetry/api'
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { Resource } from '@opentelemetry/resources'
+import {
+  BasicTracerProvider,
+  SimpleSpanProcessor,
+  ConsoleSpanExporter,
+} from '@opentelemetry/sdk-trace-base'
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { PrismaInstrumentation } from '@prisma/instrumentation'
+import { PrismaClient } from '@prisma/client'
+
+const contextManager = new AsyncHooksContextManager().enable()
+
+context.setGlobalContextManager(contextManager)
+
+const provider = new BasicTracerProvider({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'test-tracing-service',
+    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+  }),
+})
+
+// Console exporter
+const consoleExporter = new ConsoleSpanExporter()
+provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter))
+provider.register()
+
+// Register Prisma Instrumentation
+registerInstrumentations({
+  instrumentations: [new PrismaInstrumentation()],
+})
+
+async function main() {
+  const prisma = new PrismaClient()
+
+  const email = `user.${Date.now()}@prisma.io`
+
+  await prisma.user.create({
+    data: {
+      email: email,
+    },
+  })
+}
+
+main()
+...
+```
 
 ## Send tracing to Jaeger
 
 To send tracing to Jaeger, add the following to you application code:
 
-Get the application code sample to do this
+```ts
+import { context } from '@opentelemetry/api'
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { Resource } from '@opentelemetry/resources'
+import {
+  BasicTracerProvider,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base'
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { PrismaInstrumentation } from '@prisma/instrumentation'
+import { PrismaClient } from '@prisma/client'
 
-How to generalize this to other tracing packages?
+const contextManager = new AsyncHooksContextManager().enable()
+
+context.setGlobalContextManager(contextManager)
+
+const provider = new BasicTracerProvider({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'test-tracing-service',
+    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+  }),
+})
+
+// Jager exporter
+const otlpTraceExporter = new OTLPTraceExporter()
+provider.addSpanProcessor(new SimpleSpanProcessor(otlpTraceExporter))
+provider.register()
+
+// Register Prisma Instrumentation
+registerInstrumentations({
+  instrumentations: [new PrismaInstrumentation()],
+})
+
+async function main() {
+  const prisma = new PrismaClient()
+
+  const email = `user.${Date.now()}@prisma.io`
+
+  await prisma.user.create({
+    data: {
+      email: email,
+    },
+  })
+}
+
+main()
+...
+```
