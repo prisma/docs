@@ -132,7 +132,7 @@ const Results = connectStateResults(
 const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) =>
-  searchState ? `${location.pathname}${createURL(searchState)}` : ''
+  searchState ? `${location.pathname.replace('/docs', '')}${createURL(searchState)}` : ''
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
