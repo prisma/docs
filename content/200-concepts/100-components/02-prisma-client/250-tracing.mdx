@@ -50,7 +50,9 @@ Depending on the Prisma operation (**request?**), Prisma Client might output any
 
 ## Considerations and prerequisites
 
-**TBA: Garren to provide some notes on performance considerations. We'll say something like "Note that tracing has a significant effect on performance in the following situations". See notes here - https://github.com/prisma/prisma/issues/13503#event-6977115220**
+If your application sends a large number of spans that are sent to a [collector](https://opentelemetry.io/docs/collector/), this can have a performance impact. For recommended approaches to reduce this performance impact, see [Performance](#performance).
+
+**is it correct to say that the user's application sends the spans to the collector?**
 
 To use tracing, you must do the following:
 
@@ -210,4 +212,48 @@ async function main() {
 
 main()
 ...
+```
+
+## Performance
+
+If your application sends a large number of spans to a collector, this can have a performance impact. You can use the following approaches to reduce this impact.
+
+**is it correct to say that the user's application sends the spans to the collector?**
+
+### Use the BathSpanProcessor
+
+In a production environment, you can use the OpenTelemetry `BatchSpanProcessor` to send the spans to a collector in batches rather than one at a time. However, during development and testing, you might not want to send spans in batches. In this situation, you might prefer to use the `SimpleSpanProcessor`.
+
+You can configure your application to use the appropriate span processor, depending on the environment, as follows:
+
+```ts
+import {
+  SimpleSpanProcessor,
+  BatchSpanProcessor,
+} from '@opentelemetry/sdk-trace-base'
+
+if (process.env.NODE_ENV === 'production') {
+  provider.addSpanProcessor(new BatchSpanProcessor(otlpTraceExporter))
+} else {
+  provider.addSpanProcessor(new SimpleSpanProcessor(otlpTraceExporter))
+}
+```
+
+### Send only a sample of the spans
+
+Another way to avoid a performance penalty with tracing is to [use probability sampling](https://opentelemetry.io/docs/reference/specification/trace/tracestate-probability-sampling/) to send fewer spans to the collector. This reduces the collection cost of tracing but still gives a good representation of what is happening in your application.
+
+An example implementation looks like this:
+
+```ts
+import { TraceIdRatioBasedSampler } from '@opentelemetry/core'
+
+const provider = new BasicTracerProvider({
+  sampler: new TraceIdRatioBasedSampler(0.1),
+  resource: new Resource({
+    // we can define some metadata about the trace resource
+    [SemanticResourceAttributes.SERVICE_NAME]: 'test-tracing-service',
+    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+  }),
+})
 ```
