@@ -157,7 +157,9 @@ const TreeNode = ({
   codeStyle,
   parents,
 }: any) => {
-  const isCollapsed = collapsed[label]
+  let isCollapsed = collapsed[label]
+  const hasChildren = items.length !== 0
+
   const collapse = () => {
     Object.keys(collapsed).map((lbl) => {
       if ((lbl !== label && !parents) || (lbl !== label && parents && !parents.includes(lbl))) {
@@ -174,7 +176,6 @@ const TreeNode = ({
   }
 
   const location = useLocation()
-  const hasChildren = items.length !== 0
   const level = slug ? slug.split('/').indexOf(label) : ''
 
   const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
