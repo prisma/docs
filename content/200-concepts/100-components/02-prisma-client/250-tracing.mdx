@@ -23,35 +23,39 @@ Tracing gives you a highly detailed, operation-level insight into your Prisma pr
 
 ## About tracing
 
-When you enable tracing, Prisma Client writes out a trace for each request that it makes. **should we say operation here, rather than request**? Each trace includes one or more [spans](https://www.jaegertracing.io/docs/1.35/architecture/#span), each of which represents one stage in the request life-cycle (**check terminology here**), such as a database statement or command, or serialization and deserialization. Each span includes the round trip connection time from Prisma Client to the database and back.
+When you enable tracing, Prisma Client generates a trace for each operation that it makes. Each trace includes one or more [spans](https://www.opentelemetry.io/docs/reference/specification/trace/api/#span). Each span represents the length of time that one stage of the operation takes, such as a database statement or command, or serialization. Span durations are the round trip connection time from Prisma Client to the database and back.
 
 **Maybe a diagram here to show:**
+
+Base diagram on this:
+https://www.notion.so/prismaio/Consolidating-Tracing-9f801e655b154adf93d4fc0bc8f8337a#023638938c4f45348af7747ad5d0f336
 
 - Trace (Prisma operation)
 
   - Span (such as a connection)
   - Span (such as a database statement or command)
-  - Span (such as deserialization)
 
-  You can send tracing output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/).
+  You can send tracing output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/), [Honeycomb](https://www.honeycomb.io/trace/) and [Datadog](https://www.datadoghq.com/).
 
 **TBA: maybe a screenshot in Jaeger with example**
 
 ## Output
 
-Depending on the Prisma operation, Prisma Client might output any of the following spans:
+Prisma Client can output any of the following spans. The number and type of spans varies depending on the Prisma operation.
 
-- `prisma`: Represents the entire Prisma request, from Prisma Client to the database and back. It contains details such as the model and method called by the Prisma Client.
-- `prisma:query_builder`: Represents how long the [Prisma engines](/concepts/components/prisma-engines) take to generate the SQL queries (**would it be more accurate to say "statement or command" instead of queries here? This is not running rhe command, is it? - it's building the query**). This includes deserialization of the Prisma Client request, validation, and transformation into SQL.
+**add one or more screenshots here showing spans - particularly a regular transaction and an interactive one**
+
+- `prisma`: Represents the entire Prisma request, from Prisma Client to the database and back. It contains details such as the model and method called by Prisma Client.
+- `prisma:query_builder`: Represents how long the [Prisma engines](/concepts/components/prisma-engines) take to generate the SQL queries. This includes deserialization of the Prisma Client request, validation, and transformation into SQL.
 - `prisma:connection`: Represents how long it took for Prisma Client to get a database connection.
-- `prisma:db_query`: Represents a SQL query that was executed against the database, the SQL statement or command (in the tags), and how long the query took to run.
+- `prisma:db_query`: Represents a SQL query that was executed against the database. It includes the SQL statement or command (in the tags), and how long the query took to run.
 - `prisma:itx_runner`: The start of an interactive transaction.
 - `prisma:transaction`: The high-level transaction. **need more detail here - what do we mean by high-level?**
-- `prisma:middleware`: The amount of time the operation spends in your [middleware](/concepts/components/prisma-client/middleware).
+- `prisma:middleware`: Represents how long the operation spent in your [middleware](/concepts/components/prisma-client/middleware).
 
 ## Considerations and prerequisites
 
-If your application sends a large number of spans that are sent to a [collector](https://opentelemetry.io/docs/collector/), this can have a performance impact. For recommended approaches to reduce this performance impact, see [Performance](#performance).
+If your application sends a large number of spans that are sent to a [collector](https://opentelemetry.io/docs/collector/), this can have a performance impact. For recommended approaches to reduce this performance impact, see [Reduce performance impact](#reduce-performance-impact).
 
 **is it correct to say that the user's application sends the spans to the collector?**
 
@@ -95,14 +99,87 @@ $ npm install @opentelemetry/api @opentelemetry/context-async-hooks @opentelemet
 Then, add the following to your application code:
 
 ```ts
-import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { Resource } from '@opentelemetry/resources'
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import {
+  BasicTracerProvider,
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks'
+import * as api from '@opentelemetry/api'
 import { PrismaInstrumentation } from '@prisma/instrumentation'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { trace } from '@opentelemetry/api'
+import { PrismaClient } from '@prisma/client'
+
+/** SETUP */
 
 export function otelSetup() {
+  // a context manager is required to propagate the context
+  const contextManager = new AsyncHooksContextManager().enable()
+
+  // it's for node.js for span nesting and ctx propagation
+  api.context.setGlobalContextManager(contextManager)
+
+  // a simple exporter that logs the raw data to the console
+  const consoleExporter = new ConsoleSpanExporter()
+
+  // exporter that works with Jaeger and other OpenTelemetry compliant collector
+  const otlpTraceExporter = new OTLPTraceExporter()
+
+  // a standard provider that can run on the web and in node
+  const provider = new BasicTracerProvider({
+    // sampler: new TraceIdRatioBasedSampler(0.1),
+    resource: new Resource({
+      // we can define some metadata about the trace resource
+      [SemanticResourceAttributes.SERVICE_NAME]: 'sample-tracing-application',
+      [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+    }),
+  })
+
+  // send spans to the console
+  provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter))
+  // send spans to Jaeger or any OpenTelemetry compliant collector
+  provider.addSpanProcessor(new SimpleSpanProcessor(otlpTraceExporter))
+
+  provider.register()
+
+  // Enable tracing in Prisma
   registerInstrumentations({
     instrumentations: [new PrismaInstrumentation()],
   })
 }
+
+//set up tracing for this application
+otelSetup()
+
+// set things up for tracing our "app"
+const tracer = trace.getTracer('Example Application')
+
+async function main() {
+  const prisma = new PrismaClient()
+
+  let users = await tracer.startActiveSpan('create-user', async (span) => {
+    try {
+      const email = `user.${Date.now()}@sample-application.com`
+      await prisma.user.create({
+        data: {
+          email: email,
+        },
+      })
+      let users = await prisma.user.findMany()
+      return users
+    } finally {
+      span.end()
+    }
+  })
+
+  console.table(users)
+}
+
+main().then(() => console.log('example complete'))
 ```
 
 ## Send tracing to the console
@@ -159,6 +236,16 @@ async function main() {
 main()
 ```
 
+## Trace middleware
+
+If you want to include your [middleware](/concepts/components/prisma-client/middleware) in your tracing, then set `middleware` to `true` in your `registerInstrumentations` statement:
+
+```ts
+registerInstrumentations({
+  instrumentations: [new PrismaInstrumentation({ middleware: true })],
+})
+```
+
 ## Send tracing to Jaeger
 
 To send tracing to Jaeger, add the following to you application code:
@@ -213,7 +300,26 @@ async function main() {
 main()
 ```
 
-## Performance
+To run Jaeger locally, use the following docker command:
+
+```console
+docker run --rm --name jaeger \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 14269:14269 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.35
+```
+
+## Reduce performance impact
 
 If your application sends a large number of spans to a collector, this can have a performance impact. You can use the following approaches to reduce this impact.
 
