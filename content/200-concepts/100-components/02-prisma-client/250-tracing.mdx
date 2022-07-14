@@ -8,9 +8,6 @@ tocDepth: 3
 
 <TopBlock>
 
-Prisma tracing logs
-Prisma tracing outputs
-
 Prisma tracing provides a detailed log of the activity that Prisma Client carries out, at an operation level, including the time taken to execute each query. It helps you analyze your application's performance and identify bottlenecks. Tracing is fully compliant with [OpenTelemetry](https://opentelemetry.io/), so you can use it as part of your end-to-end application tracing setup.
 
 <Admonition type="info">
@@ -35,13 +32,23 @@ https://www.notion.so/prismaio/Consolidating-Tracing-9f801e655b154adf93d4fc0bc8f
   - Span (such as a connection)
   - Span (such as a database statement or command)
 
-  You can send tracing output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/), [Honeycomb](https://www.honeycomb.io/trace/) and [Datadog](https://www.datadoghq.com/).
+  You can send tracing output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/), [Honeycomb](https://www.honeycomb.io/trace/) and [Datadog](https://www.datadoghq.com/). On this page, we give an example of how to send tracing to Jaeger, which you can [run locally](#run-jaeger-locally).
 
 ## Output
 
-For each trace, Prisma Client outputs a series of spans. The number and type of these spans varies, depending on the Prisma operation.
+For each trace, Prisma Client outputs a series of spans. The number and type of these spans varies, depending on the Prisma operation. The possible span types are as follows:
 
-For example, if you perform the following operation...
+- `prisma:transaction`: The [root span](https://opentelemetry.io/docs/concepts/observability-primer/#distributed-traces). This represents one Prisma operation.
+  - `prisma`: Represents the entire Prisma request, from Prisma Client to the database and back. It contains details such as the model and method called by Prisma Client. Depending on the Prisme operation, it contains one or more of the following spans:
+    - `prisma:query_builder`: Represents how long the [Prisma engines](/concepts/components/prisma-engines) take to generate the SQL queries. This includes deserialization of the Prisma Client request, validation, and transformation into SQL.
+    - `prisma:connection`: Represents how long it took for Prisma Client to get a database connection.
+    - `prisma:db_query`: Represents a SQL query that was executed against the database. It includes the SQL statement or command (in the tags), and how long the query took to run.
+    - `prisma:itx_runner`: Represents the start of an interactive transaction.
+    - `prisma:middleware`: Represents how long the operation spent in your [middleware](/concepts/components/prisma-client/middleware). By default, tracing does not output spans for middleware. To switch this feature on, see [Trace middleware](#trace-your-middleware).
+
+### Output example
+
+Consider the following operation:
 
 ```ts
 await prisma.$transaction([
@@ -58,7 +65,7 @@ await prisma.$transaction([
 ])
 ```
 
-...then the trace is structured as follows:
+The trace is structured as follows:
 
 - `prisma:transaction`
   - `prisma`: metadata about `create`
@@ -69,16 +76,6 @@ await prisma.$transaction([
     - `prisma:db_query`: details of the first SQL query or command...
     - `prisma:db_query`: ...details of the next SQL query or command...
     - `prisma:db_query`: ...and so on, for each SQL query or command
-
-The possible spans that Prisma Client can output are as follows:
-
-- `prisma`: Represents the entire Prisma request, from Prisma Client to the database and back. It contains details such as the model and method called by Prisma Client.
-- `prisma:query_builder`: Represents how long the [Prisma engines](/concepts/components/prisma-engines) take to generate the SQL queries. This includes deserialization of the Prisma Client request, validation, and transformation into SQL.
-- `prisma:connection`: Represents how long it took for Prisma Client to get a database connection.
-- `prisma:db_query`: Represents a SQL query that was executed against the database. It includes the SQL statement or command (in the tags), and how long the query took to run.
-- `prisma:itx_runner`: The start of an interactive transaction.
-- `prisma:transaction`: The high-level transaction. **need more detail here - what do we mean by high-level?**
-- `prisma:middleware`: Represents how long the operation spent in your [middleware](/concepts/components/prisma-client/middleware). By default, tracing does not output spans for middleware. To switch this feature on, see [Trace middleware](#trace-your-middleware).
 
 ## Considerations and prerequisites
 
@@ -130,6 +127,8 @@ With the following code, you can write tracing to the console, or to an OpenTele
 You can run some tracing systems locally. For an example of how to do this with Jaeger, see [Run Jaeger locally](#run-jaeger-locally).
 
 </Admonition>
+
+**For this code example, rather than provide a complete app, I think we need to just give the user some snippets of what to add to their app to 1. configure tracing in general, 2. send tracing to the console, and 3. send tracing to Jaeger. These should probably be separate headings**
 
 ```ts
 import { Resource } from '@opentelemetry/resources'
@@ -248,6 +247,8 @@ docker run --rm --name jaeger \
 ## Reduce performance impact
 
 If your application sends a large number of spans to a collector, this can have a significant performance impact. You can use the following approaches to reduce this impact:
+
+**Can we have a brief explanation as to how you quantify the performance impact/how you find out?**
 
 - [Use the BatchSpanProcessor](#use-the-batchspanprocessor)
 - [Send fewer spans to the collector](#send-fewer-spans-to-the-collector)
