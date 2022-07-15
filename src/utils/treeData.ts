@@ -15,7 +15,6 @@ const getCollpaseState = (part: string, location: any) => {
     .split('/')
 
   const state = subpath.every((val) => mainpath.includes(val))
-
   return !state
 }
 
