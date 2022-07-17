@@ -1,7 +1,7 @@
 # Prisma Documentation
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[badge-all-contributors]: https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square
+[badge-all-contributors]: https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
 
@@ -185,6 +185,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   </tr>
   <tr>
     <td align="center"><a href="http://shishi.hatenablog.jp/"><img src="https://avatars.githubusercontent.com/u/341746?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Shigenobu Nishikawa</b></sub></a><br /><a href="#example-shishi" title="Examples">💡</a></td>
+    <td align="center"><a href="http://linkedin.com/in/austin-baldwin/"><img src="https://avatars.githubusercontent.com/u/11078749?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Austin Baldwin</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=baldyeagle" title="Documentation">📖</a></td>
   </tr>
 </table>
 
