@@ -54,9 +54,16 @@ const gatsbyRemarkPlugins = [
     },
   },
 ]
+
 const algoliaPlugin = {
-  resolve: `gatsby-plugin-algolia`,
-  options: require(`./src/utils/algolia`),
+  resolve: require.resolve('./plugins/gatsby-algolia-indexer'),
+  options: {
+    appId: process.env.GATSBY_ALGOLIA_APP_ID,
+    adminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
+    searchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
+    indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
+    types: [`Mdx`],
+  },
 }
 
 let plugins = [
