@@ -66,18 +66,23 @@ const handleRawBody = (node) => {
   }
 
   const data = mdxToSearchable(removeFrontmatter(rawBody))
-  const records = data.map((item, index) => ({
-    id: index,
-    objectID: rest.objectID,
-    title: rest.title,
-    slug: rest.modSlug,
-    apiReference: isApiTerm(item.text) ? getApiVal(item.text) : null,
-    heading: item.heading ? removeInlineCode(item.heading) : null, //correct heading
-    content: isApiTerm(item.text) ? data[index + 1].text : item.text,
-    path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
-      techParams ? '-' + techParams : ''
-    }${getTitlePath(item)}`,
-  }))
+
+  const records = data.map((item, index) => {
+    const record = {
+      id: index,
+      objectID: rest.objectID,
+      title: rest.title,
+      slug: rest.modSlug,
+      apiReference: isApiTerm(item.text) ? getApiVal(item.text) : null,
+      heading: item.heading ? removeInlineCode(item.heading) : null,
+      content: item.text.includes('\n') ? item.text.split(' ').slice(0, 20).join(' ') : item.text,
+      path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
+        techParams ? '-' + techParams : ''
+      }${getTitlePath(item)}`,
+    }
+    return record
+  })
+
   return records
 }
 
@@ -86,11 +91,10 @@ module.exports = (options) => {
   const queries = [
     {
       query: `{
-        allMdx {
+        allMdx{
           edges {
             node {
               rawBody
-              id
               fields {
                 slug
                 modSlug
