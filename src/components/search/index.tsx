@@ -141,7 +141,13 @@ export default function Search({ hitsStatus, location }: any) {
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
-  const hideSearch = () => setShowHits(false)
+  const hideSearch = () => {
+    setShowHits(false)
+    clearTimeout(debouncedSetStateRef.current)
+    debouncedSetStateRef.current = setTimeout(() => {
+      navigate(location.href.split('?')[0])
+    }, DEBOUNCE_TIME)
+  }
 
   const showSearch = () => setShowHits(true)
 
@@ -160,12 +166,6 @@ export default function Search({ hitsStatus, location }: any) {
 
   React.useEffect(() => {
     hitsStatus(showHits)
-    if (!showHits) {
-      clearTimeout(debouncedSetStateRef.current)
-      debouncedSetStateRef.current = setTimeout(() => {
-        navigate(location.href.split('?')[0])
-      }, DEBOUNCE_TIME)
-    }
   }, [showHits, query])
 
   React.useEffect(() => {
