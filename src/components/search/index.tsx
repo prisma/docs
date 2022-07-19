@@ -132,7 +132,7 @@ const Results = connectStateResults(
 const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) =>
-  searchState ? `${location.pathname.replace('/docs', '')}${createURL(searchState)}` : ''
+  searchState ? `${location.pathname.replace('/docs', '')}${createURL(searchState)}` : ``
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
@@ -148,7 +148,7 @@ export default function Search({ hitsStatus, location }: any) {
   const debouncedSetStateRef = useRef(null)
 
   const onSearchStateChange = (updatedSearchState: any) => {
-    setQuery(query)
+    setQuery(updatedSearchState.query)
     clearTimeout(debouncedSetStateRef.current)
 
     debouncedSetStateRef.current = setTimeout(() => {
@@ -160,6 +160,12 @@ export default function Search({ hitsStatus, location }: any) {
 
   React.useEffect(() => {
     hitsStatus(showHits)
+    if (!showHits) {
+      clearTimeout(debouncedSetStateRef.current)
+      debouncedSetStateRef.current = setTimeout(() => {
+        navigate(location.href.split('?')[0])
+      }, DEBOUNCE_TIME)
+    }
   }, [showHits, query])
 
   React.useEffect(() => {
