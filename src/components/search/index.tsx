@@ -143,10 +143,12 @@ export default function Search({ hitsStatus, location }: any) {
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
   const hideSearch = () => {
     setShowHits(false)
-    clearTimeout(debouncedSetStateRef.current)
-    debouncedSetStateRef.current = setTimeout(() => {
-      navigate(location.href.split('?')[0])
-    }, DEBOUNCE_TIME)
+    if (searchState.query === '') {
+      clearTimeout(debouncedSetStateRef.current)
+      debouncedSetStateRef.current = setTimeout(() => {
+        navigate(location.href.split('?')[0])
+      }, DEBOUNCE_TIME)
+    }
   }
 
   const showSearch = () => setShowHits(true)
