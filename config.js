@@ -1,6 +1,6 @@
 const config = {
   gatsby: {
-    pathPrefix: '/docs',
+    pathPrefix: '/docs-test',
     siteUrl: 'https://www.prisma.io',
     titlePrefix: '',
     titleSuffix: ' | Prisma Docs',
