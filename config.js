@@ -442,11 +442,15 @@ const config = {
   },
   feedback: {
     sentimentUrl:
-      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
+      process.env.IS_VERCEL === 'true'
+        ? '/api/sentiment'
+        : process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
         ? 'https://prisma2-docs.netlify.app/.netlify/functions/sentiment'
         : '/.netlify/functions/sentiment',
     feedbackUrl:
-      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
+      process.env.IS_VERCEL === 'true'
+        ? '/api/feedback'
+        : process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
         ? 'https://prisma2-docs.netlify.app/.netlify/functions/feedback'
         : '/.netlify/functions/feedback',
   },
