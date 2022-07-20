@@ -2,8 +2,8 @@ const { PrismaClient } = require('@prisma/client')
 
 const client = new PrismaClient()
 
-exports.handler = async function (event, context, callback) {
-  const body = JSON.parse(event.body)
+export default async function handle(req, res) {
+  const body = JSON.parse(req.body)
   if (!body.pageUrl) {
     throw new Error(`Please provide a pageUrl`)
   }
@@ -20,8 +20,8 @@ exports.handler = async function (event, context, callback) {
   const feedback = await client.feedback.create({
     data: {
       pageUrl,
-      ip: event.headers['x-forwarded-for'],
-      userAgent: event.headers['user-agent'],
+      ip: req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent'],
       sentiment: body.sentiment,
     },
   })
