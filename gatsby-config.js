@@ -54,9 +54,16 @@ const gatsbyRemarkPlugins = [
     },
   },
 ]
+
 const algoliaPlugin = {
-  resolve: `gatsby-plugin-algolia`,
-  options: require(`./src/utils/algolia`),
+  resolve: require.resolve('./plugins/gatsby-algolia-indexer'),
+  options: {
+    appId: process.env.GATSBY_ALGOLIA_APP_ID,
+    adminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
+    searchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
+    indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
+    types: [`Mdx`],
+  },
 }
 
 let plugins = [
@@ -154,7 +161,7 @@ if (process.env.INDEX_ALGOLIA === 'true') {
 module.exports = {
   // The line below has been disabled so that both PR previews and production use the same paths
   // pathPrefix: process.env.ADD_PREFIX === 'true' ? config.gatsby.pathPrefix : '/',
-  pathPrefix: config.gatsby.pathPrefix,
+  pathPrefix: process.env.IS_VERCEL === 'true' ? '/docs-test' : config.gatsby.pathPrefix,
   siteMetadata: {
     pathPrefix: config.gatsby.pathPrefix,
     title: config.siteMetadata.title,
