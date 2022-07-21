@@ -42,4 +42,4 @@ export default async function handle(req, res) {
 function stripTrailingSlash(url) {
   return url.replace(/\/$/, '')
 }
-Footer
+
