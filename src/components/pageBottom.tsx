@@ -83,7 +83,6 @@ const PageBottom = ({ editDocsPath }: any) => {
   let location = useLocation()
   const pageUrl = location ? location.pathname : '/'
   const closeForm = (e: any) => toast.dismiss()
-  console.log(process.env.IS_VERCEL)
   const fbSumitted = (state: boolean) => {
     setSubmittedFeedback(state)
     toast.dismiss()
@@ -101,14 +100,11 @@ const PageBottom = ({ editDocsPath }: any) => {
   // Send the initial sentiment
   const sendSentiment = useCallback(
     async (sentiment) => {
-      const createdSetiment = await fetch(
-        process.env.IS_VERCEL === 'true' ? '/api/feedback' : config.feedback.sentimentUrl,
-        {
-          method: 'POST',
-          mode: 'cors',
-          body: JSON.stringify({ pageUrl, sentiment }),
-        }
-      ).then((response) => response.json())
+      const createdSetiment = await fetch(config.feedback.sentimentUrl, {
+        method: 'POST',
+        mode: 'cors',
+        body: JSON.stringify({ pageUrl, sentiment }),
+      }).then((response) => response.json())
 
       toast(<ToastForm sentiment={sentiment} fbId={createdSetiment.id} fbSubmitted={fbSumitted} />)
 
