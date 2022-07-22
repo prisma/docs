@@ -134,6 +134,7 @@ let plugins = [
   'gatsby-plugin-remove-trailing-slashes',
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
+  'gatsby-plugin-remove-fingerprints',
   {
     resolve: 'gatsby-plugin-google-tagmanager',
     options: {
@@ -161,7 +162,12 @@ if (process.env.INDEX_ALGOLIA === 'true') {
 module.exports = {
   // The line below has been disabled so that both PR previews and production use the same paths
   // pathPrefix: process.env.ADD_PREFIX === 'true' ? config.gatsby.pathPrefix : '/',
-  pathPrefix: config.gatsby.pathPrefix,
+  pathPrefix:
+    process.env.ADD_PREFIX === 'true'
+      ? process.env.IS_VERCEL === 'true'
+        ? '/docs-test'
+        : config.gatsby.pathPrefix
+      : '/',
   siteMetadata: {
     pathPrefix: config.gatsby.pathPrefix,
     title: config.siteMetadata.title,
