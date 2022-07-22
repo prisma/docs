@@ -100,7 +100,7 @@ const PageBottom = ({ editDocsPath }: any) => {
   // Send the initial sentiment
   const sendSentiment = useCallback(
     async (sentiment) => {
-      const createdSetiment = await fetch('/api/sentiment', {
+      const createdSetiment = await fetch('/docs/api/sentiment', {
         method: 'POST',
         mode: 'cors',
         body: JSON.stringify({ pageUrl, sentiment }),
