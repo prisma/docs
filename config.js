@@ -441,8 +441,8 @@ const config = {
     },
   },
   feedback: {
-    sentimentUrl: '/api/sentiment',
-    feedbackUrl: '/api/feedback',
+    sentimentUrl: 'https://docs-prisma.vercel.app/docs/api/sentiment',
+    feedbackUrl: 'https://docs-prisma.vercel.app/docs/api/feedback',
   },
   sidebar: {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
