@@ -32,21 +32,47 @@ The number and type of spans in a trace varies depending on the type of operatio
 
 You can send tracing output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/), [Honeycomb](https://www.honeycomb.io/trace/) and [Datadog](https://www.datadoghq.com/). On this page, we give an example of how to send tracing output to Jaeger, which you can [run locally](#run-jaeger-locally).
 
-## Output
+## Prisma's Spans
 
-For each trace, Prisma Client outputs a series of spans. The number and type of these spans varies, depending on the Prisma operation. The possible span types are as follows:
+For each trace, Prisma Client outputs a series of spans. The number and type of these spans varies, depending on the Prisma operation. A typical Prisma trace has the following spans:
 
-- `prisma:transaction`: The [root span](https://opentelemetry.io/docs/concepts/observability-primer/#distributed-traces). This represents one Prisma operation.
-  - `prisma`: Represents the entire Prisma request, from Prisma Client to the database and back. It contains details such as the model and method called by Prisma Client. Depending on the Prisme operation, it contains one or more of the following spans:
-    - `prisma:query_builder`: Represents how long the [Prisma engines](/concepts/components/prisma-engines) take to generate the SQL queries. This includes deserialization of the Prisma Client request, validation, and transformation into SQL.
+- `prisma`: Represents the entire Prisma operation, from Prisma Client to the database and back. It contains details such as the model and method called by Prisma Client. Depending on the Prisme operation, it contains one or more of the following spans:
+  - `prisma:query_builder`: Represents how long a query takes in the [query engine](/concepts/components/prisma-engines/query-engine).
     - `prisma:connection`: Represents how long it took for Prisma Client to get a database connection.
     - `prisma:db_query`: Represents a SQL query that was executed against the database. It includes the SQL statement or command (in the tags), and how long the query took to run.
-    - `prisma:itx_runner`: Represents the start of an interactive transaction.
     - `prisma:middleware`: Represents how long the operation spent in your [middleware](/concepts/components/prisma-client/middleware). By default, tracing does not output spans for middleware. To switch this feature on, see [Trace middleware](#trace-your-middleware).
 
-### Output example
+For example, given the following Prisma code:
 
-Consider the following operation:
+```ts
+prisma.user.findMany({
+  where: {
+    email: email,
+  },
+  include: {
+    posts: true,
+  },
+})
+```
+
+The trace is structured as follows:
+
+- `prisma`
+  - `prisma:query_builder`
+    - `prisma:connection`
+    - `prisma:db_query`: details of the first SQL query or command...
+    - `prisma:db_query`: ...details of the next SQL query or command...
+    - `prisma:db_query`: ...and so on, for each SQL query or command
+
+### Interactive Transactions
+
+When you perform an interactive transaction, you'll see the spans above, but additionally:
+
+- `prisma:transaction`: A [root span](https://opentelemetry.io/docs/concepts/observability-primer/#distributed-traces) that wraps `prisma` spans.
+  - `prisma:itx_runner`: Represents how long an interactive transaction takes in the [query engine](/concepts/components/prisma-engines/query-engine).
+  - `prisma:itx_query_builder`: Represents the time it takes to build an interactive transaction. **TODO** is this true?
+
+For example, given the following code:
 
 ```ts
 await prisma.$transaction([
@@ -65,15 +91,17 @@ await prisma.$transaction([
 
 The trace is structured as follows:
 
+**TODO** verify and finish documenting
+
 - `prisma:transaction`
-  - `prisma`: metadata about `create`
-  - `prisma`:metadata about `findMany`
   - `prisma`
-    - `prisma:query_builder`
-    - `prisma:connection`
-    - `prisma:db_query`: details of the first SQL query or command...
-    - `prisma:db_query`: ...details of the next SQL query or command...
-    - `prisma:db_query`: ...and so on, for each SQL query or command
+    - `prisma:itx_runner`
+      - `prisma:connection`
+      - `prisma:itx_query_builder`
+        - `prisma:db_query`
+      - `prisma:itx_query_builder`
+        - `prisma:db_query`
+        - `prisma:db_query`
 
 ## Considerations and prerequisites
 
@@ -83,7 +111,7 @@ To use tracing, you must do the following:
 
 1. [Install the appropriate dependencies](#step-1-install-up-to-date-prisma-dependencies).
 1. [Enable the `tracing` feature flag in your Prisma schema file](#step-2-enable-the-feature-flag-in-your-prisma-schema-file).
-1. [Configure OpenTelemetry](#step-3-configure-opentelemetry).
+1. [Install OpenTelemetry packages](#step-3-install-opentelemetry-packages).
 
 ### Step 1. Install up-to-date Prisma dependencies
 
@@ -106,119 +134,54 @@ generator client {
 }
 ```
 
-### Step 3: Configure OpenTelemetry
+### Step 3: Install OpenTelemetry packages
 
-First, install the appropriate OpenTelemetry packages, as follows:
+Finally, install the appropriate OpenTelemetry packages, as follows:
 
 ```console
-
-$ npm install @opentelemetry/api @opentelemetry/context-async-hooks @opentelemetry/exporter-trace-otlp-http @opentelemetry/instrumentation @opentelemetry/resources @opentelemetry/sdk-trace-base @opentelemetry/semantic-conventions
-
+npm install @opentelemetry/semantic-conventions \
+  @opentelemetry/exporter-trace-otlp-http \
+  @opentelemetry/instrumentation \
+  @opentelemetry/sdk-trace-base \
+  @opentelemetry/sdk-trace-node \
+  @opentelemetry/resources
 ```
 
-## Output tracing to the console or an external tracing system
+## Registering Tracing in your application
 
-With the following code, you can write tracing to the console, or to an OpenTelemetry-compatible tracing system.
-
-<Admonition type="info">
-
-You can run some tracing systems locally. For an example of how to do this with Jaeger, see [Run Jaeger locally](#run-jaeger-locally).
-
-</Admonition>
-
-**For this code example, rather than provide a complete app, I think we need to just give the user some snippets of what to add to their app to 1. configure tracing in general, 2. send tracing to the console, and 3. send tracing output to Jaeger. These should probably be separate headings**
+The following code provides a minimal tracing configuration for your application. This configuration should be tweaked for your application.
 
 ```ts
-import { Resource } from '@opentelemetry/resources'
+// Imports
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import {
-  BasicTracerProvider,
-  ConsoleSpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks'
-import * as api from '@opentelemetry/api'
-import { PrismaInstrumentation } from '@prisma/instrumentation'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
-import { trace } from '@opentelemetry/api'
-import { PrismaClient } from '@prisma/client'
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
+import { PrismaInstrumentation } from '@prisma/instrumentation'
+import { Resource } from '@opentelemetry/resources'
 
-export function otelSetup() {
-  // a context manager is required to propagate the context
-  const contextManager = new AsyncHooksContextManager().enable()
-
-  // it's for Node.js for span nesting and ctx propagation
-  api.context.setGlobalContextManager(contextManager)
-
-  // a simple exporter that logs the raw data to the console
-  const consoleExporter = new ConsoleSpanExporter()
-
-  // exporter that works with Jaeger and other OpenTelemetry compliant collectors
-  const otlpTraceExporter = new OTLPTraceExporter()
-
-  // a standard provider that can run on the web and in Node.js
-  const provider = new BasicTracerProvider({
-    // sampler: new TraceIdRatioBasedSampler(0.1),
-    resource: new Resource({
-      // we can define some metadata about the trace resource
-      [SemanticResourceAttributes.SERVICE_NAME]: 'sample-tracing-application',
-      [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
-    }),
-  })
-
-  // send spans to the console
-  provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter))
-  // send spans to Jaeger or any OpenTelemetry compliant collector
-  provider.addSpanProcessor(new SimpleSpanProcessor(otlpTraceExporter))
-
-  provider.register()
-
-  // Enable tracing in Prisma
-  registerInstrumentations({
-    instrumentations: [new PrismaInstrumentation()],
-  })
-}
-
-//set up tracing for this application
-otelSetup()
-
-// set things up for tracing our application
-const tracer = trace.getTracer('Example Application')
-
-async function main() {
-  const prisma = new PrismaClient()
-
-  let users = await tracer.startActiveSpan('create-user', async (span) => {
-    try {
-      const email = `user.${Date.now()}@sample-application.com`
-      await prisma.user.create({
-        data: {
-          email: email,
-        },
-      })
-      let users = await prisma.user.findMany()
-      return users
-    } finally {
-      span.end()
-    }
-  })
-
-  console.table(users)
-}
-
-main().then(() => console.log('example complete'))
-```
-
-## Trace your middleware
-
-To include your [middleware](/concepts/components/prisma-client/middleware) in your traces, set `middleware` to `true` in your `registerInstrumentations` statement:
-
-```ts
-registerInstrumentations({
-  instrumentations: [new PrismaInstrumentation({ middleware: true })],
+// Configure the trace provider
+const provider = new NodeTracerProvider({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'example application',
+  }),
 })
+
+// Setup how spans are processed and exported
+provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()))
+
+// Register your auto-instrumentors
+registerInstrumentations({
+  tracerProvider: provider,
+  instrumentations: [new PrismaInstrumentation()],
+})
+
+// Register the provider globally
+provider.register()
 ```
+
+OpenTelemetry is highly-configurable. You can customize the resource attributes, what components gets instrumented, how spans are processed and where spans are sent.
 
 ## Run Jaeger locally
 
@@ -240,6 +203,57 @@ docker run --rm --name jaeger \
   -p 9411:9411 \
   jaegertracing/all-in-one:1.35
 ```
+
+Once the docker container is running you'll find the tracing dashboard available at http://localhost:16686/
+
+## Enabling Middleware Tracing in Prisma's Instrumentation
+
+To include your [middleware](/concepts/components/prisma-client/middleware) in your traces, set `middleware` to `true` in your `registerInstrumentations` statement:
+
+```ts
+registerInstrumentations({
+  instrumentations: [new PrismaInstrumentation({ middleware: true })],
+})
+```
+
+## Adding More Instrumentation
+
+A nice benefit of OpenTelemetry is the ability to add more instrumentation while making minimal changes to your application code.
+
+You can add HTTP and [ExpressJS](https://expressjs.com/) tracing by adding more instrumentations to your OpenTelemetry configuration:
+
+```js
+// Imports
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express'
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
+
+// Register your auto-instrumentors
+registerInstrumentations({
+  tracerProvider: provider,
+  instrumentations: [
+    new HttpInstrumentation(),
+    new ExpressInstrumentation(),
+    new PrismaInstrumentation(),
+  ],
+})
+```
+
+For a full list of available instrumentation, take a look at the [OpenTelemetry Registry](https://opentelemetry.io/registry/?language=js&component=instrumentation).
+
+## Customizing Resource Attributes
+
+You can adjust how traces are displayed by changing the resource attributes to be more specific to your application:
+
+```js
+const provider = new NodeTracerProvider({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'weblog',
+    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+  }),
+})
+```
+
+There is an ongoing effort to standardize common resource attributes. Whenever possible, it's a good idea to follow the [standard attribute names](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/README.md).
 
 ## Reduce performance impact
 
@@ -287,3 +301,31 @@ const provider = new BasicTracerProvider({
   }),
 })
 ```
+
+# Troubleshooting
+
+## My traces aren't showing up
+
+The order in which you setup tracing matters. You'll want to make sure you've registered tracing and setup instrumentation before importing instrumented dependencies. For example:
+
+```ts
+import { registerTracing } from './tracing'
+
+registerTracing({
+  name: 'tracing-example',
+  version: '0.0.1',
+})
+
+// Should come after you've setup tracing.
+import { PrismaClient } from '@prisma/client'
+import async from 'express-async-handler'
+import express from 'express'
+```
+
+## Child traces start before parent traces
+
+- **TODO**: It's a distributed sytem, Warning: clock skew(?).
+
+## Some traces show 0μs
+
+- **TODO**: figure out why this occurs. Too quick?
