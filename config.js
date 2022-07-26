@@ -441,14 +441,8 @@ const config = {
     },
   },
   feedback: {
-    sentimentUrl:
-      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
-        ? 'https://prisma2-docs.netlify.app/.netlify/functions/sentiment'
-        : '/.netlify/functions/sentiment',
-    feedbackUrl:
-      process.env.NODE_ENV === 'production' && process.env.DEPLOY_PREVIEW !== true
-        ? 'https://prisma2-docs.netlify.app/.netlify/functions/feedback'
-        : '/.netlify/functions/feedback',
+    sentimentUrl: 'https://docs-prisma.vercel.app/docs/api/sentiment',
+    feedbackUrl: 'https://docs-prisma.vercel.app/docs/api/feedback',
   },
   sidebar: {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
