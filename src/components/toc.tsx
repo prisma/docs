@@ -21,8 +21,8 @@ const HeadingList = styled.ul`
   margin: 0;
   li {
     font-size: ${(p) => p.theme.fontSizes[14]};
-    padding: ${(p) => p.theme.space[16]} 0 0;
-    line-height: 19px;
+    padding: ${(p) => p.theme.space[12]} 0 0;
+    line-height: 1rem;
     ul {
       margin-left: ${(p) => p.theme.space[12]};
     }
@@ -71,7 +71,7 @@ const Headings = ({ headings, activeId, depth = 2 }: any) => {
           {heading.items &&
             heading.items.length > 0 &&
             depth > 1 &&
-            isAnyChildActive(heading.items) &&
+            //isAnyChildActive(heading.items) &&
             navItems(heading.items, activeId, depth - 1)}
         </ListItem>
       ))}
@@ -144,7 +144,7 @@ const TOC = ({ headings, tocDepth }: any) => {
   useIntersectionObserver(setActiveId, idList)
   return (
     <nav aria-label="Table of contents">
-      <ChapterTitle>CONTENT</ChapterTitle>
+      <ChapterTitle>ON THIS PAGE</ChapterTitle>
       <Headings headings={headings} activeId={activeId} depth={tocDepth} />
     </nav>
   )

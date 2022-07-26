@@ -83,7 +83,6 @@ const PageBottom = ({ editDocsPath }: any) => {
   let location = useLocation()
   const pageUrl = location ? location.pathname : '/'
   const closeForm = (e: any) => toast.dismiss()
-
   const fbSumitted = (state: boolean) => {
     setSubmittedFeedback(state)
     toast.dismiss()
