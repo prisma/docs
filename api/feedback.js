@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client')
 const client = new PrismaClient()
 
 export default async function handle(req, res) {
-  const body = JSON.parse(req.body)
+  const body = req.body
   if (!body.feedback) {
     throw new Error(`Please provide feedback `)
   }
