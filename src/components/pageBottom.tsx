@@ -32,6 +32,7 @@ const ToastForm = ({ sentiment, fbId, fbSubmitted }: any) => {
     await fetch(config.feedback.feedbackUrl, {
       method: 'POST',
       mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: fbId, feedback }),
     })
     fbSubmitted(true)
@@ -103,6 +104,7 @@ const PageBottom = ({ editDocsPath }: any) => {
       const createdSetiment = await fetch(config.feedback.sentimentUrl, {
         method: 'POST',
         mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pageUrl, sentiment }),
       }).then((response) => response.json())
 
