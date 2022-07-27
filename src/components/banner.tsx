@@ -36,7 +36,7 @@ const Banner = () => (
   <BannerWrapper>
     <BannerText>
       <a href="/dataplatform">
-        Manage your application data in one place with the <strong>Prisma Data Platform</strong>.
+        Set up database connection pooling for serverless environments using the <strong>Prisma Data Proxy</strong>.
         Learn more -{'>'}
       </a>
     </BannerText>
