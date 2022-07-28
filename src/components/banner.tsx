@@ -35,7 +35,7 @@ const BannerText = styled.div`
 const Banner = () => (
   <BannerWrapper>
     <BannerText>
-      <a href="/dataplatform">
+      <a href="/docs/data-platform/data-proxy">
         Set up database connection pooling for serverless environments using the <strong>Prisma Data Proxy</strong>.
         Learn more -{'>'}
       </a>
