@@ -4,6 +4,7 @@ const client = new PrismaClient()
 
 export default async function handle(req, res) {
   const { pageUrl, sentiment } = JSON.parse(req.body)
+  console.log(sentiment, pageUrl)
   if (!pageUrl) {
     throw new Error(`Please provide a pageUrl`)
   }
@@ -25,18 +26,9 @@ export default async function handle(req, res) {
       sentiment: sentiment,
     },
   })
+  console.log(feedback)
 
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': '*',
-    },
-    body: JSON.stringify({
-      success: true,
-      id: feedback.id,
-    }),
-  }
+  res.json(feedback)
 }
 
 function stripTrailingSlash(url) {
