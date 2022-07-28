@@ -106,7 +106,9 @@ const PageBottom = ({ editDocsPath }: any) => {
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pageUrl, sentiment }),
-      }).then((response) => response.json())
+      })
+        .then((response) => response.text())
+        .then((data) => JSON.parse(data))
 
       toast(<ToastForm sentiment={sentiment} fbId={createdSetiment.id} fbSubmitted={fbSumitted} />)
 
