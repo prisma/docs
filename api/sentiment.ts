@@ -2,9 +2,8 @@ const { PrismaClient } = require('@prisma/client')
 
 const client = new PrismaClient()
 
-export default async function handle(req, res) {
-  const { pageUrl, sentiment } = JSON.parse(req.body)
-  console.log(sentiment, pageUrl)
+export default async function handle(req: any, res: any) {
+  const { pageUrl, sentiment } = req.body
   if (!pageUrl) {
     throw new Error(`Please provide a pageUrl`)
   }
@@ -18,7 +17,7 @@ export default async function handle(req, res) {
   }
   const pagePath = stripTrailingSlash(pageUrl)
 
-  const feedback = await client.feedback.create({
+  const sentimentResult = await client.feedback.create({
     data: {
       pageUrl: pagePath,
       ip: req.headers['x-forwarded-for'],
@@ -26,11 +25,11 @@ export default async function handle(req, res) {
       sentiment: sentiment,
     },
   })
-  console.log(feedback)
-
-  res.json(feedback)
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', '*')
+  return res.send(sentimentResult)
 }
 
-function stripTrailingSlash(url) {
+function stripTrailingSlash(url: any) {
   return url.replace(/\/$/, '')
 }
