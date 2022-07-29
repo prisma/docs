@@ -36,15 +36,5 @@ export default async function handle(req, res) {
     },
   })
 
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': '*',
-    },
-    body: JSON.stringify({
-      success: true,
-      id: feedback.id,
-    }),
-  }
+  res.json(feedback)
 }

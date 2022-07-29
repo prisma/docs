@@ -3,40 +3,32 @@ const { PrismaClient } = require('@prisma/client')
 const client = new PrismaClient()
 
 export default async function handle(req, res) {
-  const body = JSON.parse(req.body)
-  if (!body.pageUrl) {
+  const { pageUrl, sentiment } = JSON.parse(req.body)
+  console.log(sentiment, pageUrl)
+  if (!pageUrl) {
     throw new Error(`Please provide a pageUrl`)
   }
 
-  if (!body.sentiment) {
+  if (!sentiment) {
     throw new Error(`Please provide a sentiment`)
   }
 
-  if (!['Happy', 'Unhappy'].includes(body.sentiment)) {
+  if (!['Happy', 'Unhappy'].includes(sentiment)) {
     throw new Error(`Please provide "Happy" or "Unhappy" as the sentiment`)
   }
-  const pageUrl = stripTrailingSlash(body.pageUrl)
+  const pagePath = stripTrailingSlash(pageUrl)
 
   const feedback = await client.feedback.create({
     data: {
-      pageUrl,
+      pageUrl: pagePath,
       ip: req.headers['x-forwarded-for'],
       userAgent: req.headers['user-agent'],
-      sentiment: body.sentiment,
+      sentiment: sentiment,
     },
   })
+  console.log(feedback)
 
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': '*',
-    },
-    body: JSON.stringify({
-      success: true,
-      id: feedback.id,
-    }),
-  }
+  res.json(feedback)
 }
 
 function stripTrailingSlash(url) {
