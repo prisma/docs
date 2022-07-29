@@ -25,7 +25,6 @@ exports.onRouteUpdate = ({ location }) => {
       window.location.hash = toPathWithoutHash[1]
     } else {
       const newpath = location.href.replace(isRedirectablePath[0].from, isRedirectablePath[0].to)
-      console.log(newpath)
       window.location.replace(newpath)
     }
   }
