@@ -172,6 +172,7 @@ export default function Search({ hitsStatus, location }: any) {
 
   React.useEffect(() => {
     setSearchState(urlToSearchState(location))
+    setQuery(searchState.query)
   }, [location])
 
   const incrementIndex = () => {
