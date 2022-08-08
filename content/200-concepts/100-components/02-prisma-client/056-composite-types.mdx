@@ -31,6 +31,15 @@ This page explains how to:
 We’ll use this schema for the examples that follow:
 
 ```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
 model Product {
   id     String  @id @default(auto()) @map("_id") @db.ObjectId
   name   String  @unique
@@ -158,18 +167,6 @@ const orders = await prisma.order.findMany({
 })
 ```
 
-You can also use a shorthand notation for this query, where you leave out the `is` and specify just the fields that you want to filter for:
-
-```ts
-const orders = await prisma.order.findMany({
-  where: {
-    shippingAddress: {
-      street: '555 Candy Cane Lane',
-    },
-  },
-})
-```
-
 Use `equals` to filter for orders which match on all fields in the shipping address:
 
 ```ts
@@ -181,6 +178,20 @@ const orders = await prisma.order.findMany({
         city: 'Wonderland',
         zip: '52337',
       },
+    },
+  },
+})
+```
+
+You can also use a shorthand notation for this query, where you leave out the `equals`:
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      street: '555 Candy Cane Lane',
+      city: 'Wonderland',
+      zip: '52337',
     },
   },
 })
@@ -223,13 +234,24 @@ Use the `equals`, `isEmpty`, `every`, `some` and `none` operations to filter for
 - `none`: None of the items in the list can match the condition
 - `isSet` : Filter optional fields to include only results that have been set (either set to a value, or explicitly set to `null`). Setting this filter to `true` will exclude `undefined` results that are not set at all.
 
-For example, you can use `equals` to find products with photos that match specific URL paths:
+For example, you can use `equals` to find products with a specific list of photos (all `url`, `height` and `width` fields must match):
 
 ```ts
 const product = prisma.product.findMany({
   where: {
-    equals: {
-      photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
+    photos: {
+      equals: [
+        {
+          url: '1.jpg',
+          height: 200,
+          width: 100,
+        },
+        {
+          url: '2.jpg',
+          height: 200,
+          width: 100,
+        },
+      ],
     },
   },
 })
@@ -240,12 +262,23 @@ You can also use a shorthand notation for this query, where you leave out the `e
 ```ts
 const product = prisma.product.findMany({
   where: {
-    photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
+    photos: [
+      {
+        url: '1.jpg',
+        height: 200,
+        width: 100,
+      },
+      {
+        url: '2.jpg',
+        height: 200,
+        width: 100,
+      },
+    ],
   },
 })
 ```
 
-The following example uses `isEmpty` to filter for products with no photos:
+Use `isEmpty` to filter for products with no photos:
 
 ```ts
 const product = prisma.product.findMany({
@@ -264,9 +297,9 @@ const product = prisma.product.findFirst({
   where: {
     photos: {
       some: {
-        { url: "2.jpg" },
-      }
-    }
+        url: '2.jpg',
+      },
+    },
   },
 })
 ```
@@ -278,12 +311,11 @@ const product = prisma.product.findFirst({
   where: {
     photos: {
       none: {
-        { url: "2.jpg" },
-      }
-    }
+        url: '2.jpg',
+      },
+    },
   },
 })
-
 ```
 
 ## Creating records with composite types using <inlinecode>create</inlinecode> and <inlinecode>createMany</inlinecode>
@@ -333,6 +365,16 @@ For an optional type, like the `billingAddress`, you can also set the value to `
 ```ts
 const order = await prisma.order.create({
   data: {
+    // Normal relation
+    product: { connect: { id: 'some-object-id' } },
+    color: 'Red',
+    size: 'Large',
+    // Composite type
+    shippingAddress: {
+      street: '1084 Candycane Lane',
+      city: 'Silverlake',
+      zip: '84323',
+    },
     // Embedded optional type, set to null
     billingAddress: {
       set: null,
@@ -346,18 +388,18 @@ To model the case where an `product` contains a list of multiple `photos`, you c
 ```ts
 const product = await prisma.product.create({
   data: {
-    name: "Forest Runners",
+    name: 'Forest Runners',
     price: 59.99,
-    colors: ["Red", "Green"],
-    sizes: ["Small", "Medium", "Large"]
+    colors: ['Red', 'Green'],
+    sizes: ['Small', 'Medium', 'Large'],
     // New composite type
     photos: {
       set: [
-        { height: 100, width: 200, url: "1.jpg" },
-        { height: 100, width: 200, url: "2.jpg" }
-      ]
-    }
-  }
+        { height: 100, width: 200, url: '1.jpg' },
+        { height: 100, width: 200, url: '2.jpg' },
+      ],
+    },
+  },
 })
 ```
 
@@ -519,7 +561,7 @@ For example, use `push` to add a new photo to the `photos` list:
 ```ts
 const product = prisma.product.update({
   where: {
-    id: 10,
+    id: '62de6d328a65d8fffdae2c18',
   },
   data: {
     photos: {
@@ -535,7 +577,7 @@ Use `updateMany` to update photos with a `url` of `1.jpg` or `2.png`:
 ```ts
 const product = prisma.product.update({
   where: {
-    id: 10,
+    id: '62de6d328a65d8fffdae2c18',
   },
   data: {
     photos: {
@@ -557,7 +599,7 @@ The following example uses `deleteMany` to delete all photos with a `height` of 
 ```ts
 const product = prisma.product.update({
   where: {
-    id: 10,
+    id: '62de6d328a65d8fffdae2c18',
   },
   data: {
     photos: {
@@ -609,7 +651,9 @@ For example, use `deleteMany` to delete all products with a `size` of `"Small"`.
 ```ts
 const deleteProduct = await prisma.product.deleteMany({
   where: {
-    sizes: ['Small'],
+    sizes: {
+      equals: 'Small',
+    },
   },
 })
 ```
