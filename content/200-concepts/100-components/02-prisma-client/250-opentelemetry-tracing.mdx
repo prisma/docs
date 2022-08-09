@@ -196,22 +196,49 @@ When you perform an interactive transaction, you'll see the spans above, but add
   - `prisma:engine:itx_runner`: Represents how long an interactive transaction takes in the [query engine](/concepts/components/prisma-engines/query-engine).
   - `prisma:engine:itx_query_builder`: Represents the time it takes to build an interactive transaction.
 
-For example, given the following code:
+As an example, take the following Prisma schema:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["tracing", "interactiveTransactions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+}
+
+model audit {
+  id     Int    @id
+  table  String
+  action String
+}
+```
+
+Given the following interactive transaction:
 
 ```ts
-await prisma.$transaction(() => {
-  const user = prisma.user.create({
+await prisma.$transaction(async (tx) => {
+  const user = await tx.user.create({
     data: {
       email: email,
     },
   })
-  await prisma.audit.create({
+
+  await tx.audit.create({
     data: {
       table: 'user',
       action: 'create',
       id: user.id,
     },
   })
+
   return user
 })
 ```
@@ -219,16 +246,22 @@ await prisma.$transaction(() => {
 The trace is structured as follows:
 
 - `prisma:client:transaction`
-  - `prisma:engine:itx_runner`
-    - `prisma:engine:connection`
-    - `prisma:engine:itx_query_builder`
-      - `prisma:engine:db_query`
-      - `prisma:engine:serialize`
-    - `prisma:engine:itx_query_builder`
-      - `prisma:engine:db_query`
-      - `prisma:engine:serialize`
-  - `prisma:client:operation`
-  - `prisma:client:operation`
+- `prisma:client:connect`
+- `prisma:engine:itx_runner`
+  - `prisma:engine:connection`
+  - `prisma:engine:db_query`
+  - `prisma:engine:itx_query_builder`
+    - `prisma:engine:db_query`
+    - `prisma:engine:db_query`
+    - `prisma:engine:serialize`
+  - `prisma:engine:itx_query_builder`
+    - `prisma:engine:db_query`
+    - `prisma:engine:db_query`
+    - `prisma:engine:serialize`
+- `prisma:client:operation`
+  - `prisma:client:serialize`
+- `prisma:client:operation`
+  - `prisma:client:serialize`
 
 ### Add more instrumentation
 
