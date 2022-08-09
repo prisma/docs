@@ -73,17 +73,19 @@ Be aware that:
   await prisma.$queryRaw`SELECT 'My name is ' || ${name};`
   ```
 
+<a name="variables-identifiers"></a>{' '}
+
 - Template variables can only be used for data values (such as `email` in the example above). Variables cannot be used for identifiers such as column names, table names or database names, or for SQL keywords. For example, the following two queries would **not** work:
 
-  ```ts no-lines
-  const myTable = 'user'
-  await prisma.$queryRaw`SELECT * FROM ${myTable};`
-  ```
+```ts no-lines
+const myTable = 'user'
+await prisma.$queryRaw`SELECT * FROM ${myTable};`
+```
 
-  ```ts no-lines
-  const ordering = 'desc'
-  await prisma.$queryRaw`SELECT * FROM Table ORDER BY ${ordering};`
-  ```
+```ts no-lines
+const ordering = 'desc'
+await prisma.$queryRaw`SELECT * FROM Table ORDER BY ${ordering};`
+```
 
 - Prisma maps any database values returned by `$queryRaw` and `$queryRawUnsafe` to their corresponding JavaScript types. [Learn more](#raw-query-type-mapping).
 
@@ -153,31 +155,26 @@ result.forEach((x) => {
 
 > **Note**: Prisma sends JavaScript integers to PostgreSQL as `INT8`. This might conflict with your user-defined functions that accept only `INT4` as input. If you use `$queryRaw` in conjunction with a PostgreSQL database, update the input types to `INT8`, or cast your query parameters to `INT4`.
 
-#### Dynamic table names
+#### Dynamic table names in PostGres
 
-Doesn't work:
+[It is not possible to send a table name as a variable](#variables-identifiers). This means that you cannot use dynamic table names with `$queryRaw`. Instead, you will need to use `$queryRawUnsafe`, as follows:
 
-const values = await prisma.$queryRaw`SELECT type FROM ${collection};`;
+```ts
+let userTable = 'User'
+let result = await prisma.$queryRawUnsafe(`SELECT * FROM ${userTable}`)
+```
 
-Works:
-const values = await prisma.$queryRaw(`SELECT type FROM ${collection} WHERE id = $1;`, "my-id");
-
-Here, we call queryRaw as a function, instead of as a tagged template varioable.
-When you use the tagged template varibale version of this API, any variable you provide in the template literal body are cnvereted intop prepared statements like $1 or $2. SQL doesnt support naming tables as parepared variables to it throws the errors.
-So you need to use the function version here.
-
-!!! To be resolved:
-
-- Does this apply to PostGres only?
-- Does this also apply to queryRawUnsafe?
+Note that if you use `$queryRawUnsafe` in conjunction with user inputs, you risk SQL injection attacks. [Learn more](#raw-sql-injection).
 
 ### <inlinecode>$queryRawUnsafe</inlinecode>
 
 The `$queryRawUnsafe` method allows you to pass a raw string (or template string) to the database.
 
+<a name="raw-sql-injection"></a>{' '}
+
 <Admonition type="warning">
 
-By using this method with user inputs (i.e. `SELECT * FROM table WHERE columnx = ${userInput}`), you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data, be it confidential or otherwise sensitive, to being modified, or even destroyed.
+By using this method with user inputs (in other words, `SELECT * FROM table WHERE columnx = ${userInput}`), you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data, be it confidential or otherwise sensitive, to being modified, or even destroyed.
 
 We strongly advise that you use the `$queryRaw` query instead. For more information on SQL injection attacks, see the [OWASP SQL Injection guide](https://www.owasp.org/index.php/SQL_Injection).
 
@@ -283,6 +280,7 @@ Be aware that:
 - `$executeRaw` does not support multiple queries in a single string (for example, `ALTER TABLE` and `CREATE TABLE` together).
 - Prisma Client submits prepared statements, and prepared statements only allow a subset of SQL statements. For example, `START TRANSACTION` is not permitted. You can learn more about [the syntax that MySQL allows in Prepared Statements here](https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html).
 - [`PREPARE` does not support `ALTER`](https://www.postgresql.org/docs/current/sql-prepare.html) - see the [workaround](#alter-limitation-postgresql).
+
 - Template variables cannot be used inside strings. For example, the following query would **not** work:
 
   ```ts no-lines
@@ -332,7 +330,7 @@ The `$executeRawUnsafe` method allows you to pass a raw string (or template stri
 
 <Admonition type="warning">
 
-By using this method with user inputs (i.e. `SELECT * FROM table WHERE columnx = ${userInput}`), you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data, be it confidential or otherwise sensitive, to being modified, or even destroyed.
+By using this method with user inputs (in other words, `SELECT * FROM table WHERE columnx = ${userInput}`), you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data, be it confidential or otherwise sensitive, to being modified, or even destroyed.
 
 We strongly advise that you use the `$executeRaw` query instead. For more information on SQL injection attacks, see the [OWASP SQL Injection guide](https://www.owasp.org/index.php/SQL_Injection).
 
