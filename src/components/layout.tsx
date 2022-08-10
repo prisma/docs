@@ -9,7 +9,7 @@ import customMdx from '../components/customMdx'
 import './layout.css'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
-import { LensProvider, theme } from '@prisma/lens/dist/web'
+import { LensProvider, theme, WebsiteHeader } from '@prisma/lens/dist/web'
 import StickyBox from 'react-sticky-box'
 import Banner from './banner'
 
