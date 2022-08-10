@@ -31,7 +31,7 @@ module.exports = {
       host.includes('percy') ||
       host.includes('vercel')
     ) {
-      return // exclude netlify previews from analytics
+      return
     }
     ReactGA.pageview(page)
   },
