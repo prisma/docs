@@ -10,7 +10,6 @@ import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
-import { Navbar } from './navbar'
 import { WebsiteHeader } from '@prisma/lens/dist/web'
 
 type HeaderViewProps = {
