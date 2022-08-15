@@ -1,6 +1,5 @@
 const path = require('path')
 const config = require('./config')
-require('dotenv').config()
 
 const gatsbyRemarkPlugins = [
   'gatsby-remark-sectionize',
