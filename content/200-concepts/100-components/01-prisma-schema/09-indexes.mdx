@@ -3,7 +3,6 @@ title: 'Indexes'
 metaDescription: 'How to configure index functionality and add full text indexes'
 hidePage: false
 tocDepth: 2
-preview: true
 ---
 
 <TopBlock>
@@ -24,19 +23,32 @@ If you are upgrading from a version earlier than 4.0.0, these changes to index c
 
 You can configure indexes, unique constraints, and primary key constraints with the following attribute arguments:
 
-- The `length` argument is available **in MySQL only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes in version `3.5.0` and later. It allows Prisma to support indexes and constraints on `String` and `Bytes` types.
+- The [`length` argument](#configuring-the-length-of-indexes-with-length-mysql) allows you to specify a maximum length for the subpart of the value to be indexed on `String` and `Bytes` types
 
-- The `sort` argument is available for all databases on the `@unique`, `@@unique` and `@@index` attributes in version `3.5.0` and later. Additionally, SQL Server also allows it on `@id` and `@@id`.
+  - Available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes
+  - MySQL only
 
-- The `type` argument is available **in PostgreSQL only** on the `@@index` attribute in version `3.6.0` and later. This argument allows Prisma to support the `Hash` index access method as well as the default `BTree` access method. In version `3.14.0` and later the `Gist`, `Gin`, `SpGist` and `Brin` access methods are also available.
+- The [`sort` argument](#configuring-the-index-sort-order-with-sort) allows you to specify the order that the entries of the constraint or index are stored in the database
 
-- The `clustered` argument is available **in SQL Server only** on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attribute in version `3.13.0` and later. It allows Prisma to configure (non)clustered indexes.
+  - Available on the `@unique`, `@@unique` and `@@index` attributes in all databases, and on the `@id` and `@@id` attributes in SQL Server
+
+- The [`type` argument](#configuring-the-access-type-of-indexes-with-type-postgresql) allows you to support index access methods other than PostgreSQL's default `BTree` access method
+
+  - Available on the `@@index` attribute
+  - PostgreSQL only
+  - Supported index access methods: `Hash`, `Gist`, `Gin`, `SpGist` and `Brin`
+
+- The [`clustered` argument](#configuring-if-indexes-are-clustered-or-non-clustered-with-clustered-sql-server) allows you to configure whether a constraint or index is clustered or non-clustered
+  - Available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes
+  - SQL Server only
+
+See the linked sections for details of which version each feature was first introduced in.
 
 ### Configuring the length of indexes with <inlineCode>length</inlineCode> (MySQL)
 
 The `length` argument is specific to MySQL and allows you to define indexes and constraints on columns of `String` and `Byte` types. For these types, MySQL requires you to specify a maximum length for the subpart of the value to be indexed in cases where the full value would exceed MySQL's limits for index sizes. See [the MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/innodb-limits.html) for more details.
 
-The `length` argument is available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes.
+The `length` argument is available on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes. It is generally available in versions 4.0.0 and later, and available as part of the `extendedIndexes` preview feature in versions 3.5.0 and later.
 
 As an example, the following data model declares an `id` field with a maximum length of 3000 characters:
 
@@ -73,7 +85,7 @@ model CompoundId {
   id_1 String @db.VarChar(3000)
   id_2 String @db.VarChar(3000)
 
-  @@id([id_1(length: 100),id_2(length: 10)])
+  @@id([id_1(length: 100), id_2(length: 10)])
 }
 ```
 
@@ -83,7 +95,7 @@ A similar syntax can be used for the `@@unique` and `@@index` attributes.
 
 The `sort` argument is available for all databases supported by Prisma. It allows you to specify the order that the entries of the index or constraint are stored in the database. This can have an effect on whether the database is able to use an index for specific queries.
 
-The `sort` argument is available for all databases on `@unique`, `@@unique` and `@@index`. Additionally, SQL Server also allows it on `@id` and `@@id`.
+The `sort` argument is available for all databases on `@unique`, `@@unique` and `@@index`. Additionally, SQL Server also allows it on `@id` and `@@id`. It is generally available in versions 4.0.0 and later, and available as part of the `extendedIndexes` preview feature in versions 3.5.0 and later.
 
 As an example, the following table
 
@@ -132,7 +144,7 @@ model Post {
 
 ### Configuring the access type of indexes with <inlineCode>type</inlineCode> (PostgreSQL)
 
-The `type` argument is available for configuring the index type in PostgreSQL, with the `@@index` attribute (version `3.6.0` and later). This allows you to use `Hash` as the index access method, instead of the default `BTree` access method. In version `3.14.0` and later, the `Gist`, `Gin`, `SpGist` and `Brin` index types provide additional access methods.
+The `type` argument is available for configuring the index type in PostgreSQL with the `@@index` attribute. The index access methods available are `Hash`, `Gist`, `Gin`, `SpGist` and `Brin`, as well as the default `BTree` index access method. The `type` argument is generally available in versions 4.0.0 and later. The `Hash` index access method is available as part of the `extendedIndexes` preview feature in versions 3.6.0 and later, and the `Gist`, `Gin`, `SpGist` and `Brin` index access methods are available in preview in versions 3.14.0 and later.
 
 #### Hash
 
@@ -180,8 +192,8 @@ model Example {
   value Json
   //    ^ field type matching the operator class
 
-  @@index([value(ops: JsonbPathOps)], type: Gin)
   //                  ^ operator class      ^ index type
+  @@index([value(ops: JsonbPathOps)], type: Gin)
 }
 ```
 
@@ -229,9 +241,9 @@ model Example {
   value String @db.Inet
   //           ^ native type matching the operator class
 
-  @@index([value(ops: InetOps)], type: Gist)
   //                                   ^ index type
   //                  ^ operator class
+  @@index([value(ops: InetOps)], type: Gist)
 }
 ```
 
@@ -320,8 +332,8 @@ model Example {
   value Int
   //    ^ field type macthing the operator class
 
-  @@index([value(ops: Int4BloomOps)], type: Brin)
   //                  ^ operator class      ^ index type
+  @@index([value(ops: Int4BloomOps)], type: Brin)
 }
 ```
 
@@ -404,7 +416,7 @@ Read more about built-in operator classes in the [official PostgreSQL documentat
 
 ### Configuring if indexes are clustered or non-clustered with <inlineCode>clustered</inlineCode> (SQL Server)
 
-The `clustered` argument is available to configure (non)clustered indexes in SQL Server in version `3.13.0` and later. It can be used on `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes.
+The `clustered` argument is available to configure (non)clustered indexes in SQL Server. It can be used on the `@id`, `@@id`, `@unique`, `@@unique` and `@@index` attributes. It is generally available in versions 4.0.0 and later, and available as part of the `extendedIndexes` preview feature in versions 3.13.0 and later.
 
 As an example, the following model configures the `@id` to be non-clustered (instead of the clustered default):
 
