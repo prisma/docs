@@ -171,6 +171,7 @@ export default function Search({ hitsStatus, location }: any) {
   }, [showHits, query])
 
   React.useEffect(() => {
+    console.log(query)
     setSearchState(urlToSearchState(location))
     setQuery(searchState.query)
   }, [location])
@@ -211,7 +212,7 @@ export default function Search({ hitsStatus, location }: any) {
         upClicked={decrementIndex}
         downClicked={incrementIndex}
       />
-      {query !== '' && showHits && (
+      {query && query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
           <Index key={indexName} indexName={indexName}>
             <Results>
