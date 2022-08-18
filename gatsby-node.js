@@ -37,7 +37,7 @@ exports.createPages = ({ graphql, actions }) => {
       const titleEntry = frontmatter.techMetaTitles
         ? frontmatter.techMetaTitles.find((item) => item.name === queryParam)
         : null
-      pageSeoTitle = titleEntry ? titleEntry.value : pageSeoTitle
+      pageSeoTitle = titleEntry ? titleEntry.value : `${pageSeoTitle} | ${queryParam}`
     }
     return pageSeoTitle
   }
