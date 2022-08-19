@@ -100,6 +100,10 @@ let plugins = [
         {
           userAgent: '*',
           disallow: '/',
+          disallow: '/*?query=*',
+          disallow: '/*?page=*',
+          disallow: '/*&query=*',
+          disallow: '/*&page=*',
         },
       ],
     },
