@@ -70,6 +70,9 @@ const Container = styled.div`
       }
     }
   }
+  img {
+    height: 100%;
+  }
   @media (min-width: 0px) and (max-width: 1024px) {
     justify-content: space-between;
   }
@@ -335,7 +338,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <WebsiteHeader notFixed={true} lightFont={true} />
+          <WebsiteHeader lightTheme={false} clearBg={true} notFixed={true} />
         </Container>
       </HeaderWrapper>
 
