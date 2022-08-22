@@ -8,7 +8,7 @@ tocDepth: 3
 
 <TopBlock>
 
-Tracing provides a detailed log of the activity that Prisma Client carries out, at an operation level, including the time taken to execute each query. It helps you analyze your application's performance and identify bottlenecks. Tracing is fully compliant with [OpenTelemetry](https://opentelemetry.io/), so you can use it as part of your end-to-end application tracing setup.
+Tracing provides a detailed log of the activity that Prisma Client carries out, at an operation level, including the time taken to execute each query. It helps you analyze your application's performance and identify bottlenecks. Tracing is fully compliant with [OpenTelemetry](https://opentelemetry.io/), so you can use it as part of your end-to-end application tracing system.
 
 <Admonition type="info">
 
@@ -25,17 +25,17 @@ When you enable tracing, Prisma Client outputs the following:
 - One trace for each operation (e.g. findMany) that Prisma Client makes.
 - In each trace, one or more [spans](https://www.opentelemetry.io/docs/reference/specification/trace/api/#span). Each span represents the length of time that one stage of the operation takes, such as serialization, or a database query. Spans are represented in a tree structure, where child spans indicate that execution is happening within a larger parent span.
 
-The number and type of spans in a trace varies depending on the type of operation the trace covers, but an example is as follows:
+The number and type of spans in a trace depends on the type of operation the trace covers, but an example is as follows:
 
 <!-- https://www.figma.com/file/H7EMWAuCaRVHrdNoQpky7J/Tracing?node-id=2%3A37 -->
 
 ![image](trace-diagram.png)
 
-You can send tracing output to the console, or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/), [Honeycomb](https://www.honeycomb.io/trace/) and [Datadog](https://www.datadoghq.com/). On this page, we give an example of how to send tracing output to Jaeger, which you can [run locally](#visualize-traces-with-jaeger).
+You can [send tracing output to the console](#send-tracing-output-to-the-console), or analyze it in any OpenTelemetry-compatible tracing system, such as [Jaeger](https://www.jaegertracing.io/), [Honeycomb](https://www.honeycomb.io/trace/) and [Datadog](https://www.datadoghq.com/). On this page, we give an example of how to send tracing output to Jaeger, which you can [run locally](#visualize-traces-with-jaeger).
 
 ## Trace output
 
-For each trace, Prisma Client outputs a series of spans. The number and type of these spans varies, depending on the Prisma operation. A typical Prisma trace has the following spans:
+For each trace, Prisma Client outputs a series of spans. The number and type of these spans depends on the Prisma operation. A typical Prisma trace has the following spans:
 
 - `prisma:client:operation`: Represents the entire Prisma operation, from Prisma Client to the database and back. It contains details such as the model and method called by Prisma Client. Depending on the Prisma operation, it contains one or more of the following spans:
   - `prisma:client:connect`: Represents how long it takes for the Prisma Client to connect to the database.
@@ -113,7 +113,7 @@ npm install @opentelemetry/semantic-conventions @opentelemetry/exporter-trace-ot
 
 ### Register tracing in your application
 
-The following code provides a minimal tracing configuration for your application. This configuration should be tweaked for your application.
+The following code provides a minimal tracing configuration. You need to customize this configuration for your specific application.
 
 ```ts file=setup.ts
 // Imports
@@ -132,7 +132,7 @@ const provider = new NodeTracerProvider({
   }),
 })
 
-// Setup how spans are processed and exported. In this case we're sending spans
+// Configure how spans are processed and exported. In this case we're sending spans
 // as we receive them to an OTLP-compatible collector (e.g. Jaeger).
 provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()))
 
@@ -146,13 +146,61 @@ registerInstrumentations({
 provider.register()
 ```
 
-OpenTelemetry is highly configurable. You can customize the resource attributes, what components gets instrumented, how spans are processed and where spans are sent.
+OpenTelemetry is highly configurable. You can customize the resource attributes, what components gets instrumented, how spans are processed, and where spans are sent.
 
 You can find a complete example that includes metrics in [this sample application](https://github.com/garrensmith/prisma-metrics-sample).
 
-## Advanced tracing tasks
+## Tracing how-tos
 
-This section gives an introduction to more advanced tracing tasks that you may need to perform.
+### Send tracing output to the console
+
+The following example sends output tracing to the console with `ConsoleSpanExporter` from `@opentelemetry/sdk-trace-base`.
+
+```ts
+// Imports
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import {
+  BasicTracerProvider,
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base'
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks'
+import * as api from '@opentelemetry/api'
+import { PrismaInstrumentation } from '@prisma/instrumentation'
+import { Resource } from '@opentelemetry/resources'
+
+// Export the tracing
+export function otelSetup() {
+  const contextManager = new AsyncHooksContextManager().enable()
+
+  api.context.setGlobalContextManager(contextManager)
+
+  //Configure the console exporter
+  const consoleExporter = new ConsoleSpanExporter()
+
+  // Configure the trace provider
+  const provider = new BasicTracerProvider({
+    resource: new Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: 'test-tracing-service',
+      [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+    }),
+  })
+
+  // Configure how spans are processed and exported. In this case we're sending spans
+  // as we receive them to the console
+  provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter))
+
+  // Register your auto-instrumentors
+  registerInstrumentations({
+    tracerProvider: provider,
+    instrumentations: [new PrismaInstrumentation()],
+  })
+
+  // Register the provider
+  provider.register()
+}
+```
 
 ### Visualize traces with Jaeger
 
@@ -168,11 +216,11 @@ To run Jaeger locally, use the following [Docker](https://www.docker.com/) comma
 docker run --rm -d -p 13133:13133 -p 16686:16686 -p 4317:55680 jaegertracing/opentelemetry-all-in-one:latest
 ```
 
-Once the docker container is running you'll find the tracing dashboard available at http://localhost:16686/. After using your application with tracing enabled, you'll start seeing traces in this dashboard.
+You'll now find the tracing dashboard available at http://localhost:16686/. When you use your application with tracing enabled, you'll start to see traces in this dashboard.
 
 ### Trace Prisma Client middleware
 
-By default, tracing does not output spans for Prisma Client middleware. To include your [middleware](/concepts/components/prisma-client/middleware) in your traces, set `middleware` to `true` in your `registerInstrumentations` statement:
+By default, tracing does not output spans for [Prisma Client middleware](/concepts/components/prisma-client/middleware). To include your middleware in your traces, set `middleware` to `true` in your `registerInstrumentations` statement, as follows:
 
 ```ts
 registerInstrumentations({
@@ -180,13 +228,13 @@ registerInstrumentations({
 })
 ```
 
-This will add an additional type of span to your traces:
+This will add the following span type to your traces:
 
 - `prisma:client:middleware`: Represents how long the operation spent in your [middleware](/concepts/components/prisma-client/middleware).
 
 ### Trace interactive transactions
 
-When you perform an interactive transaction, you'll see the spans above, but additionally:
+When you perform an interactive transaction, you'll see the following spans in addition to the [standard spans](#trace-output):
 
 - `prisma:client:transaction`: A [root span](https://opentelemetry.io/docs/concepts/observability-primer/#distributed-traces) that wraps the `prisma` span.
   - `prisma:engine:itx_runner`: Represents how long an interactive transaction takes in the [query engine](/concepts/components/prisma-engines/query-engine).
@@ -261,9 +309,9 @@ The trace is structured as follows:
 
 ### Add more instrumentation
 
-A nice benefit of OpenTelemetry is the ability to add more instrumentation while making minimal changes to your application code.
+A nice benefit of OpenTelemetry is the ability to add more instrumentation with only minimal changes to your application code.
 
-You can add HTTP and [ExpressJS](https://expressjs.com/) tracing by adding more instrumentations to your OpenTelemetry configuration. This instrumentation will add spans for the full request-response lifecycle showing you how long your HTTP requests take.
+For example, to add HTTP and [ExpressJS](https://expressjs.com/) tracing, add the following instrumentations to your OpenTelemetry configuration. These instrumentations add spans for the full request-response lifecycle. These spans show you how long your HTTP requests take.
 
 ```js
 // Imports
@@ -303,7 +351,7 @@ There is an ongoing effort to standardize common resource attributes. Whenever p
 If your application sends a large number of spans to a collector, this can have a significant performance impact. You can use the following approaches to reduce this impact:
 
 - [Use the BatchSpanProcessor](#send-traces-in-batches-using-the-batchspanprocessor)
-- [Send fewer spans to the collector](#send-fewer-spans-to-the-collector-via-sampling)
+- [Send fewer spans to the collector](#send-fewer-spans-to-the-collector-with-sampling)
 
 #### Send traces in batches using the `BatchSpanProcessor`
 
@@ -324,7 +372,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 ```
 
-#### Send fewer spans to the collector via sampling
+#### Send fewer spans to the collector with sampling
 
 Another way to reduce the performance impact is to [use probability sampling](https://opentelemetry.io/docs/reference/specification/trace/tracestate-probability-sampling/) to send fewer spans to the collector. This reduces the collection cost of tracing but still gives a good representation of what is happening in your application.
 
@@ -346,13 +394,11 @@ const provider = new NodeTracerProvider({
 })
 ```
 
-## Troubleshooting
-
-This section outlines some issues you may encounter while setting up tracing, and suggests solutions.
+## Troubleshoot tracing
 
 ### My traces aren't showing up
 
-The order in which you setup tracing matters. You'll want to make sure you've registered tracing and setup instrumentation before importing instrumented dependencies. For example:
+The order in which you set up tracing matters. In your application, ensure that you register tracing and instrumentation before you import any instrumented dependencies. For example:
 
 ```ts
 import { registerTracing } from './tracing'
@@ -362,7 +408,7 @@ registerTracing({
   version: '0.0.1',
 })
 
-// Should come after you've setup tracing.
+// You must import any dependencies after you register tracing.
 import { PrismaClient } from '@prisma/client'
 import async from 'express-async-handler'
 import express from 'express'
@@ -374,4 +420,4 @@ We're still investigating [this issue](https://github.com/prisma/prisma/issues/1
 
 ### Some traces show a timing measurement of 0μs
 
-This is most likely a precision bug. Please see [this issue](https://github.com/prisma/prisma/issues/14614) for updates.
+This is most likely a precision bug. See [this issue](https://github.com/prisma/prisma/issues/14614) for updates.
