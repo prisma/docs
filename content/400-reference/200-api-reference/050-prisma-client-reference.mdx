@@ -5495,7 +5495,7 @@ generator client {
 }
 ```
 
-To compare columns the same table, use the `<model>.fields` field. In the following example, the query returns all records where the value in the `prisma.product.quantity` field is less than or equal to the value in the `prisma.product.warnQuantity` field.
+To compare columns the same table, use the `<model>.fields` property. In the following example, the query returns all records where the value in the `prisma.product.quantity` field is less than or equal to the value in the `prisma.product.warnQuantity` field.
 
 ```ts
 prisma.product.findMany({
@@ -5503,10 +5503,53 @@ prisma.product.findMany({
 })
 ```
 
-### Compile-time type safety
+<Admonition type="info">
 
-TBW
+`fields` is a special property of every model. It contains the list of fields for that model.
 
-### Reference scalar lists
+</Admonition>
 
-TBW
+### Considerations
+
+#### Fields must be of the same type
+
+You can only make comparisons on fields of the same type. For example, the following causes an error:
+
+```ts
+await prisma.order.findMany({
+  where: {
+    id: { equals: prisma.order.fields.due },
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Type error: id is a string, while amountDue is an integer
+  },
+})
+```
+
+#### Fields must be in the same model
+
+You can only make comparisons with the `fields` property on fields in the same model. The following example does not work:
+
+```ts
+await prisma.order.findMany({
+  where: {
+    id: { equals: prisma.user.fields.name },
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Type error: name is a field on the User model, not Order
+  },
+})
+```
+
+However, you can compare fields in separate models with [standard queries](#model-queries).
+
+#### Search for fields in scalar lists
+
+If your data source supports scalar lists (for example in PostgreSQL), then you can search for all records where a specific field is in a list of fields. To do so, reference the scalar list with the [`in`](#in) and [`notIn`](#notin) filters. For example:
+
+```ts
+await prisma.user.findMany({
+  where: {
+    // find all users where 'name' is in a list of tags
+    name: { in: prisma.user.fields.tags },
+  },
+})
+```
