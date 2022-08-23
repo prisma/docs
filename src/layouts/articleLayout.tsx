@@ -6,7 +6,8 @@ import TopSection from '../components/topSection'
 import PageBottom from '../components/pageBottom'
 import SEO from '../components/seo'
 import { graphql } from 'gatsby'
-import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
+import { MDXProvider } from '@mdx-js/react'
+import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { useNavigate } from '@reach/router'
 import { CreatePageContext } from 'src/interfaces/Layout.interface'
 
@@ -52,7 +53,9 @@ const ArticleLayout = ({
           codeStyle={codeStyle}
         />
       </section>
-      <MDXRenderer>{body}</MDXRenderer>
+      <MDXProvider>
+        <MDXRenderer>{body}</MDXRenderer>
+      </MDXProvider>
       <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug} />
     </Layout>
   )

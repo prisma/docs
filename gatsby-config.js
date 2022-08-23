@@ -67,6 +67,7 @@ const algoliaPlugin = {
 }
 
 let plugins = [
+  `gatsby-plugin-mdx`,
   'gatsby-plugin-react-helmet',
   'gatsby-transformer-sharp',
   'gatsby-plugin-sharp',
@@ -118,6 +119,13 @@ let plugins = [
       },
       extensions: ['.mdx', '.md'],
       gatsbyRemarkPlugins,
+    },
+  },
+  {
+    resolve: `gatsby-source-filesystem`,
+    options: {
+      name: `source`,
+      path: `${__dirname}/src`,
     },
   },
   {
