@@ -336,7 +336,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <WebsiteHeader />
+          <WebsiteHeader notFixed={true} lightFont={true} />
         </Container>
       </HeaderWrapper>
 
