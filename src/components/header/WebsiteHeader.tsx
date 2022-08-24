@@ -5,7 +5,6 @@ import { Label } from './ui/typography/Label'
 import * as DD from './ui/navigation/Dropdown'
 import * as NavBar from './ui/navigation/NavBar'
 import styled, { css } from 'styled-components'
-import { useEffect, useState } from 'react'
 import { defaultTheme, darkTheme } from './theme'
 
 interface HeaderProps {
@@ -14,26 +13,6 @@ interface HeaderProps {
   clearBg?: boolean
   notFixed?: boolean
 }
-
-const navPathnames = [
-  'product_client',
-  'product_migrate',
-  'product_data-platform',
-  'product_data-platform/proxy',
-  'developer_docs',
-  'developer_docs/getting-started',
-  'developer_dataguide',
-  'developer_stack',
-  'developer_support',
-  'developer_community',
-  'use-cases_showcase',
-  'use-cases_enterprise',
-  'company_about',
-  'company_blog',
-  'company_jobs',
-  'company_events',
-  'pricing',
-]
 
 const MobileHeader = styled.div<{ theme: any }>(
   ({ theme }) => css`
@@ -69,28 +48,7 @@ const HeaderWrapper = ({
   notFixed = false,
 }: HeaderProps) => {
   let themeToUse = lightTheme ? defaultTheme : darkTheme
-  const [topNav, setTopNav] = useState('/')
-  const [activeNav, setActiveNav] = useState('/')
   const headerAssets = 'https://prismalens.netlify.app/'
-
-  useEffect(() => {
-    const windowPath = navPathnames.filter((e) => {
-      let urlPath = window.location.pathname
-      if (urlPath.slice(-1) === '/') urlPath = urlPath.slice(1, -1)
-      else urlPath = urlPath.slice(1)
-      e.includes(urlPath)
-    })
-    if (windowPath.length > 0 && window.location.pathname !== '/') {
-      handleNavClick(windowPath[0].split('_')[0], windowPath[0].split('_')[1] ?? '')
-    } else {
-      handleNavClick('', '')
-    }
-  }, [])
-
-  const handleNavClick = (top: string, bottom: string) => {
-    setTopNav(top)
-    setActiveNav(bottom)
-  }
 
   return (
     <NavBar.NavBar lightTheme={lightTheme}>
@@ -121,14 +79,11 @@ const HeaderWrapper = ({
                     <NavBar.NavItem
                       lightTheme={lightTheme}
                       title={'Product'}
-                      active={topNav === 'product'}
                       dropdown={
                         <DD.Panel lightTheme={lightTheme}>
                           <DD.SectionHeader lightTheme={lightTheme}>Prisma ORM</DD.SectionHeader>
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'client'}
-                            onClick={() => handleNavClick('product', 'client')}
                             href={'https://prisma.io/client/'}
                             icon={
                               <img
@@ -144,8 +99,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'migrate'}
-                            onClick={() => handleNavClick('product', 'migrate')}
                             href={'https://prisma.io/migrate/'}
                             icon={
                               <img
@@ -165,8 +118,6 @@ const HeaderWrapper = ({
                           </DD.SectionHeader>
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'data-platform'}
-                            onClick={() => handleNavClick('product', 'data-platform')}
                             href={'https://prisma.io/data-platform/'}
                             icon={
                               <img
@@ -182,8 +133,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'data-platform/proxy'}
-                            onClick={() => handleNavClick('product', 'data-platform/proxy')}
                             href={'https://prisma.io/data-platform/proxy/'}
                             icon={
                               <img
@@ -205,20 +154,15 @@ const HeaderWrapper = ({
                       lightTheme={lightTheme}
                       href="https://prisma.io/pricing/"
                       title={'Pricing'}
-                      active={topNav === 'pricing'}
-                      onClick={() => handleNavClick('pricing', '')}
                     />
 
                     <NavBar.NavItem
                       lightTheme={lightTheme}
                       title={'Developer'}
-                      active={topNav === 'developer'}
                       dropdown={
                         <DD.Panel lightTheme={lightTheme} width={461}>
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'docs'}
-                            onClick={() => handleNavClick('developer', 'docs')}
                             href={'https://prisma.io/docs/'}
                             titleOnlyOnMobile
                             icon={
@@ -237,8 +181,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'docs/getting-started'}
-                            onClick={() => handleNavClick('developer', 'docs/getting-started')}
                             href={'https://prisma.io/docs/getting-started/'}
                             titleOnlyOnMobile
                             icon={
@@ -271,8 +213,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'dataguide'}
-                            onClick={() => handleNavClick('developer', 'dataguide')}
                             href={'https://prisma.io/dataguide/'}
                             titleOnlyOnMobile
                             icon={
@@ -289,8 +229,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'stack'}
-                            onClick={() => handleNavClick('developer', 'stack')}
                             href={'https://prisma.io/stack/'}
                             titleOnlyOnMobile
                             icon={
@@ -309,8 +247,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'support'}
-                            onClick={() => handleNavClick('developer', 'support')}
                             href={'https://prisma.io/support/'}
                             titleOnlyOnMobile
                             icon={
@@ -327,8 +263,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'community'}
-                            onClick={() => handleNavClick('developer', 'community')}
                             href={'https://prisma.io/community/'}
                             titleOnlyOnMobile
                             icon={
@@ -350,13 +284,10 @@ const HeaderWrapper = ({
                     <NavBar.NavItem
                       lightTheme={lightTheme}
                       title={'Use Cases'}
-                      active={topNav === 'use-cases'}
                       dropdown={
                         <DD.Panel lightTheme={lightTheme} width={441}>
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'showcase'}
-                            onClick={() => handleNavClick('use-cases', 'showcase')}
                             href={'https://prisma.io/showcase/'}
                             titleOnlyOnMobile
                             icon={
@@ -373,8 +304,6 @@ const HeaderWrapper = ({
                           />
                           <DD.IconLink
                             lightTheme={lightTheme}
-                            active={activeNav === 'enterprise'}
-                            onClick={() => handleNavClick('use-cases', 'enterprise')}
                             href={'https://prisma.io/enterprise/'}
                             titleOnlyOnMobile
                             icon={
@@ -396,48 +325,26 @@ const HeaderWrapper = ({
                     <NavBar.NavItem
                       lightTheme={lightTheme}
                       title={'Company'}
-                      active={topNav === 'company'}
                       dropdown={
                         <DD.Panel lightTheme={lightTheme} width={621}>
                           <div className="company-dropdown-container">
                             <div className="company-links">
-                              <DD.Link
-                                lightTheme={lightTheme}
-                                active={activeNav === 'about'}
-                                onClick={() => handleNavClick('company', 'about')}
-                                href={'https://prisma.io/about/'}
-                              >
+                              <DD.Link lightTheme={lightTheme} href={'https://prisma.io/about/'}>
                                 About
                               </DD.Link>
-                              <DD.Link
-                                lightTheme={lightTheme}
-                                active={activeNav === 'blog'}
-                                onClick={() => handleNavClick('company', 'blog')}
-                                href={'https://prisma.io/blog/'}
-                              >
+                              <DD.Link lightTheme={lightTheme} href={'https://prisma.io/blog/'}>
                                 Blog
                               </DD.Link>
-                              <DD.Link
-                                lightTheme={lightTheme}
-                                active={activeNav === 'jobs'}
-                                onClick={() => handleNavClick('company', 'jobs')}
-                                href={'https://prisma.io/jobs/'}
-                              >
+                              <DD.Link lightTheme={lightTheme} href={'https://prisma.io/jobs/'}>
                                 Careers{' '}
                                 <Label type={'secondary'} css={{ fontSize: 12 }}>
                                   We&apos;re Hiring
                                 </Label>
                               </DD.Link>
-                              <DD.Link
-                                lightTheme={lightTheme}
-                                active={activeNav === 'events'}
-                                onClick={() => handleNavClick('company', 'events')}
-                                href={'https://prisma.io/events/'}
-                              >
+                              <DD.Link lightTheme={lightTheme} href={'https://prisma.io/events/'}>
                                 Events
                               </DD.Link>
                               <DD.Link
-                                active={activeNav === 'causes'}
                                 lightTheme={lightTheme}
                                 href={'https://pris.ly/causes'}
                               >{`Causes ->`}</DD.Link>
