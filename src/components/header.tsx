@@ -11,7 +11,7 @@ import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
 //import { WebsiteHeader } from '@prisma/lens/dist/web'
-import WebsiteHeader from '../components/websiteHeader'
+import { WebsiteHeader } from '../components/header/WebsiteHeader'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -336,7 +336,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <WebsiteHeader notFixed={true} lightFont={true} />
+          <WebsiteHeader notFixed={true} lightTheme={false} clearBg={true} />
         </Container>
       </HeaderWrapper>
 
