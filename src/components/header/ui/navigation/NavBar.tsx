@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components'
 import { HTMLAttributes, useContext, useEffect, useReducer, useRef } from 'react'
 import * as React from 'react'
-import _ from 'lodash'
+import * as _ from 'lodash'
 import * as NT from './Typography'
 import * as t from '../theme/primitives'
 import { ChevronDown, Menu, X } from 'react-feather'
