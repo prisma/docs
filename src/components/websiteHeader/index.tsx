@@ -80,7 +80,7 @@ const WebsiteHeader = () => (
               <Container className="container">
                 <NavBarInner>
                   <MobileHeader>
-                    <a href="https://www.prisma.io/">
+                    <a href="https://www.prisma.io">
                       <img
                         src={t.headerDark.logoUrl}
                         width={90}
@@ -100,7 +100,7 @@ const WebsiteHeader = () => (
                         <Panel>
                           <SectionHeader>Prisma ORM</SectionHeader>
                           <IconLink
-                            href={'https://prisma.io/client/'}
+                            href={'https://prisma.io/client'}
                             icon={
                               <img
                                 src={headerAssets + `/header/icons/Icon-Client.svg`}
@@ -114,7 +114,7 @@ const WebsiteHeader = () => (
                             subtitle={'Write Queries the way you think'}
                           />
                           <IconLink
-                            href={'https://prisma.io/migrate/'}
+                            href={'https://prisma.io/migrate'}
                             icon={
                               <img
                                 src={headerAssets + `/header/icons/Icon-Migrate.svg`}
@@ -130,7 +130,7 @@ const WebsiteHeader = () => (
 
                           <SectionHeader>Prisma Data Platform</SectionHeader>
                           <IconLink
-                            href={'https://prisma.io/data-platform/'}
+                            href={'https://prisma.io/data-platform'}
                             icon={
                               <img
                                 src={headerAssets + `/header/icons/Icon-DataBrowser.svg`}
@@ -144,7 +144,7 @@ const WebsiteHeader = () => (
                             subtitle={'Explore and manipulate data in your projects'}
                           />
                           <IconLink
-                            href={'https://prisma.io/data-platform/proxy/'}
+                            href={'https://prisma.io/data-platform/proxy'}
                             icon={
                               <img
                                 src={headerAssets + `/header/icons/Icon-ServerlessDataProxy.svg`}
@@ -161,7 +161,7 @@ const WebsiteHeader = () => (
                       }
                     />
 
-                    <NavItem href="https://prisma.io/pricing/" title={'Pricing'} />
+                    <NavItem href="https://prisma.io/pricing" title={'Pricing'} />
 
                     <NavItem
                       title={'Developer'}
@@ -187,7 +187,7 @@ const WebsiteHeader = () => (
                             }
                           />
                           <IconLink
-                            href={'https://prisma.io/docs/getting-started/'}
+                            href={'https://prisma.io/docs/getting-started'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -232,7 +232,7 @@ const WebsiteHeader = () => (
                             subtitle={'Refer to expert articles on how databases work'}
                           />
                           <IconLink
-                            href={'https://prisma.io/stack/'}
+                            href={'https://prisma.io/stack'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -249,7 +249,7 @@ const WebsiteHeader = () => (
                             }
                           />
                           <IconLink
-                            href={'https://prisma.io/support/'}
+                            href={'https://prisma.io/support'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -264,7 +264,7 @@ const WebsiteHeader = () => (
                             subtitle={'Find resources and get help from our support team'}
                           />
                           <IconLink
-                            href={'https://prisma.io/community/'}
+                            href={'https://prisma.io/community'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -287,7 +287,7 @@ const WebsiteHeader = () => (
                       dropdown={
                         <Panel width={441}>
                           <IconLink
-                            href={'https://prisma.io/showcase/'}
+                            href={'https://prisma.io/showcase'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -302,7 +302,7 @@ const WebsiteHeader = () => (
                             subtitle={'Learn about applications built with Prisma'}
                           />
                           <IconLink
-                            href={'https://prisma.io/enterprise/'}
+                            href={'https://prisma.io/enterprise'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -326,12 +326,12 @@ const WebsiteHeader = () => (
                         <Panel width={621}>
                           <div className="company-dropdown-container">
                             <div className="company-links">
-                              <Link href={'https://prisma.io/about/'}>About</Link>
+                              <Link href={'https://prisma.io/about'}>About</Link>
                               <Link href={'https://prisma.io/blog/'}>Blog</Link>
-                              <Link href={'https://prisma.io/jobs/'}>
+                              <Link href={'https://prisma.io/jobs'}>
                                 Careers <Label>We&apos;re Hiring</Label>
                               </Link>
-                              <Link href={'https://prisma.io/events/'}>Events</Link>
+                              <Link href={'https://prisma.io/events'}>Events</Link>
                               <Link href={'https://pris.ly/causes'}>{`Causes ->`}</Link>
                             </div>
 
