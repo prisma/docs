@@ -130,7 +130,7 @@ const WebsiteHeader = () => (
 
                           <SectionHeader>Prisma Data Platform</SectionHeader>
                           <IconLink
-                            href={'https://prisma.io/data-platform/'}
+                            href={'https://prisma.io/data-platform'}
                             icon={
                               <img
                                 src={headerAssets + `/header/icons/Icon-DataBrowser.svg`}
@@ -144,7 +144,7 @@ const WebsiteHeader = () => (
                             subtitle={'Explore and manipulate data in your projects'}
                           />
                           <IconLink
-                            href={'https://prisma.io/data-platform/proxy/'}
+                            href={'https://prisma.io/data-platform/proxy'}
                             icon={
                               <img
                                 src={headerAssets + `/header/icons/Icon-ServerlessDataProxy.svg`}
@@ -161,7 +161,7 @@ const WebsiteHeader = () => (
                       }
                     />
 
-                    <NavItem href="https://prisma.io/pricing/" title={'Pricing'} />
+                    <NavItem href="https://prisma.io/pricing" title={'Pricing'} />
 
                     <NavItem
                       title={'Developer'}
@@ -187,7 +187,7 @@ const WebsiteHeader = () => (
                             }
                           />
                           <IconLink
-                            href={'https://prisma.io/docs/getting-started/'}
+                            href={'https://prisma.io/docs/getting-started'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -232,7 +232,7 @@ const WebsiteHeader = () => (
                             subtitle={'Refer to expert articles on how databases work'}
                           />
                           <IconLink
-                            href={'https://prisma.io/stack/'}
+                            href={'https://prisma.io/stack'}
                             titleOnlyOnMobile
                             icon={
                               <img
@@ -249,7 +249,7 @@ const WebsiteHeader = () => (
                             }
                           />
                           <IconLink
-                            href={'https://prisma.io/support/'}
+                            href={'https://prisma.io/support'}
                             titleOnlyOnMobile
                             icon={
                               <img
