@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import * as t from '../../theme/primitives'
+import * as t from '../theme/primitives'
 
 export const Heading = styled.span`
   color: ${t.colors.gray[600]};

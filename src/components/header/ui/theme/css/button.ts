@@ -1,15 +1,14 @@
-/** @jsxImportSource @emotion/react */
-import { css, jsx, Theme } from '@emotion/react'
+import { css } from 'styled-components'
 import * as t from '../primitives'
 
 type ColorType = 'indigo' | 'teal' | 'white'
-
+type BtnType = 'primary' | 'secondary' | 'link'
 export const buttonCss = (
-  type: keyof Theme['buttons'],
+  type: BtnType,
   color: ColorType,
   icon: undefined | 'left' | 'right',
   disabled: boolean,
-  theme: Theme
+  theme: any
 ) => {
   const btnType = theme.buttons[type]
   return css`
@@ -130,11 +129,11 @@ export const buttonCss = (
 }
 
 export const arrowIcon = (
-  type: keyof Theme['buttons'],
+  type: BtnType,
   color: ColorType,
   icon: undefined | 'left' | 'right',
   disabled: boolean,
-  theme: Theme
+  theme: any
 ) => {
   const btnType = theme.buttons[type]
   return css`

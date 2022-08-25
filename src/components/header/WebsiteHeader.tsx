@@ -5,7 +5,7 @@ import { Label } from './ui/typography/Label'
 import * as DD from './ui/navigation/Dropdown'
 import * as NavBar from './ui/navigation/NavBar'
 import styled, { css } from 'styled-components'
-import { defaultTheme, darkTheme } from './theme'
+import { defaultTheme, darkTheme } from './ui/theme'
 
 interface HeaderProps {
   className?: string
