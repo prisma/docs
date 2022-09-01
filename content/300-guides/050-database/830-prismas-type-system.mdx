@@ -1,0 +1,89 @@
+---
+title: How to use Prisma's type system
+metaDescription: How to use Prisma's type system
+tocDepth: 2
+---
+
+<TopBlock>
+
+This guide explains Prisma's type system and walks you through using it to introspect your database and migrate your schema.
+
+</TopBlock>
+
+## How does Prisma's type system work?
+
+Prisma uses types to define the kind of data that a field can hold. To make it easy to get started, Prisma provides a small number of core [scalar types](/reference/api-reference/prisma-schema-reference#model-field-scalar-types). For example, in the blog post model below, the `title` field uses the `String` scalar type, while the `createdAt` field uses the `DateTime` scalar type:
+
+```prisma file=schema.prisma
+model Post {
+  id        Int      @id
+  title     String
+  createdAt DateTime
+}
+```
+
+Databases also have their own _native types_ to define the type of value that a column can hold. Most databases provide a large number of data types to allow fine-grained control over exactly what a column can store. For example, a database might provide inbuilt support for multiple sizes of integers, or for XML data. The names of these types also vary between databases. In PostgreSQL a variable length text column has a type of `text`, whereas in MySQL the type is `varchar`.
+
+To allow you to get started with our core scalar types, Prisma provides _default type mappings_ that map each scalar type to a default type in the underlying database. For example, by default Prisma's `String` type gets mapped to PostgreSQL's `text` type and MySQL's `varchar` type. See our [database connector pages](/concepts/database-connectors) for the default type mappings for a given database. For example, [this table](/concepts/database-connectors/postgresql#prisma-migrate) gives the default type mappings for PostgreSQL. To see the default type mappings for a given database, see the [model field scalar types section]() of the Prisma schema reference. For example, [this table](/reference/api-reference/prisma-schema-reference#model-field-scalar-types) gives the default type mappings for the `String` scalar type.
+
+Sometimes you may need to use a more specific database type that is not one of the default type mappings for your Prisma type. For this purpose, Prisma provides [native type attributes](/concepts/components/prisma-schema/data-model#native-types-mapping) to refine the core scalar types. For example, in the `createdAt` field of your `Post` model above you may want to use a timestamp with a time zone in an underlying PostgreSQL database, by using the `timestamptz(3)`, instead of using the default type mapping of `timestamp(3)`. To do this, add a `@db.Timestamptz(3)` native type attribute to the `createdAt` field:
+
+```prisma file=schema.prisma
+model Post {
+  id        Int      @id
+  title     String
+  createdAt DateTime @db.Timestamptz(3)
+}
+```
+
+The following sections give more detail on how to introspect existing native types in your database, and how to use native type attributes with `migrate dev` or `db push`.
+
+## How to introspect native database types with <inlineCode>db pull</inlineCode>
+
+As an example, take a `User` table in a PostgreSQL database, with:
+
+- an `id` column with a data type of `serial`
+- a `name` column with a data type of `text`
+- an `isActive` column with a data type of `boolean`
+
+You can create this with the following SQL command:
+
+```sql
+CREATE TABLE "public"."User" (
+  id serial PRIMARY KEY NOT NULL,
+  name text NOT NULL,
+  "isActive" boolean NOT NULL
+);
+```
+
+When you introspect your database with `npx prisma db pull`, you will get the following Prisma schema:
+
+```prisma file=schema.prisma
+model User {
+  id       Int     @id @default(autoincrement())
+  name     String
+  isActive Boolean
+}
+```
+
+The `id`, `name` and `isActive` columns in the database are mapped respectively to the `Int`, `String` and `Boolean` Prisma types respectively. These are the default database types for these Prisma types, so Prisma does not add any native type attributes.
+
+Now add a `createdAt` column to your database with a data type of `timestamptz(3)` by running the following SQL command:
+
+```sql
+ALTER TABLE "public"."User"
+ADD COLUMN "createdAt" timestamptz(3) NOT NULL;
+```
+
+When you introspect your database again with `npx prisma db pull`, Prisma adds the new `createdAt` field with a Prisma type of `DateTime`. Prisma also adds the `db.Timestamptz(3)` native type attribute, because `timestamptz(3)` is not the default type for the `DateTime` type:
+
+```prisma file=schema.prisma highlight=5;add
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  isActive  Boolean
+  createdAt DateTime @db.Timestamptz(3)
+}
+```
+
+## How to migrate or push Prisma types to your database
