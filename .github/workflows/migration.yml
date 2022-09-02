@@ -1,0 +1,45 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'staging'
+  pull_request:
+    types:
+      - closed
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/checkout@v3
+        with:
+          path: old
+          ref: staging
+      - uses: actions/checkout@v3
+        with:
+          path: new
+          ref: release
+      - run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+      - run: |
+          wget https://raw.githubusercontent.com/prisma/docs-tools/main/script/migration/migration.py > ./migration.py
+          wget https://raw.githubusercontent.com/prisma/docs-tools/main/script/migration/const.py > ./const.py
+          wget https://raw.githubusercontent.com/prisma/docs-tools/main/script/migration/stitched.py > ./stitched.py
+          wget https://raw.githubusercontent.com/prisma/docs-tools/main/script/migration/api.py > ./api.py
+          wget https://raw.githubusercontent.com/prisma/docs-tools/main/script/migration/config.json > ./config.json
+          mv migration.py.1 ./migration.py
+          mv const.py.1 ./const.py
+          mv stitched.py.1 ./stitched.py
+          mv api.py.1 ./api.py
+          mv config.json.1 ./config.json
+      - run: |
+          pip install requests
+          python migration.py
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: release
+          directory: new
