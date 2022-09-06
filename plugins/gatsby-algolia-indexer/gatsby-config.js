@@ -103,6 +103,7 @@ module.exports = (options) => {
                 title
                 langSwitcher
                 dbSwitcher
+                search
               }
               tableOfContents
             }
@@ -111,15 +112,18 @@ module.exports = (options) => {
       }`,
       indexName,
       settings,
-      transformer: ({ data }) =>
-        data.allMdx.edges
+      transformer: ({ data }) => {
+        const noSearchFlag = Array.from(data.allMdx.edges).filter(
+          (e) => e.node.frontmatter.search !== false
+        )
+        return noSearchFlag
           .map((edge) => edge.node)
           .map(unnestFrontmatter)
           .map(handleRawBody)
-          .reduce((acc, cur) => [...acc, ...cur], []),
+          .reduce((acc, cur) => [...acc, ...cur], [])
+      },
     },
   ]
-
   return {
     plugins: [
       {

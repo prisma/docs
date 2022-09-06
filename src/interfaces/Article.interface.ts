@@ -9,6 +9,7 @@ export interface ArticleFrontmatter {
   metaTitle?: string
   metaDescription?: string
   langSwitcher?: string[]
+  search?: boolean
   dbSwitcher?: string[]
   staticLink?: boolean
   duration?: string
