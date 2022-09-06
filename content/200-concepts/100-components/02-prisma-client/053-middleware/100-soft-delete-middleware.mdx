@@ -1,18 +1,24 @@
 ---
-title: 'Soft delete middleware'
-metaTitle: 'Soft delete middleware (Reference)'
+title: 'Middleware sample: soft delete'
+metaTitle: 'Middleware sample: soft delete (Reference)'
 metaDescription: 'How to use middleware to intercept deletes and set a field value instead of deleting the record.'
 tocDepth: 3
 ---
 
 <TopBlock>
 
-The following example uses middleware to perform a **soft delete**, which means that a record is **marked as deleted** by changing a field like `deleted` to `true` rather than actually being removed from the database. Reasons to use a soft delete include:
+The following sample uses [middleware](/concepts/components/prisma-client/middleware/) to perform a **soft delete**. Soft delete means that a record is **marked as deleted** by changing a field like `deleted` to `true` rather than actually being removed from the database. Reasons to use a soft delete include:
 
 - Regulatory requirements that mean you have to keep data for a certain amount of time
 - 'Trash' / 'bin' functionality that allows users to restore content that was deleted
 
-This example uses the following schema - note the `deleted` field on the `Post` model:
+<Admonition type="warning">
+
+**Note:** This page demonstrates a sample use of middleware. We do not intend the sample to be a fully functional soft delete feature. There are several [limitations](#limitations).
+
+</Admonition>
+
+This sample uses the following schema - note the `deleted` field on the `Post` model:
 
 ```prisma highlight=28;normal
 datasource db {
@@ -86,7 +92,7 @@ Add a field named `deleted` to the `Post` model. You can choose between two fiel
 
 > **Note**: Using two separate fields (`isDeleted` and `deletedDate`) may result in these two fields becoming out of sync - for example, a record may be marked as deleted but have no associated date.)
 
-This example uses a `Boolean` field type for simplicity.
+This sample uses a `Boolean` field type for simplicity.
 
 ## Step 2: Soft delete middleware
 
@@ -96,7 +102,7 @@ Add a middleware that performs the following tasks:
 - Changes the `params.action` to `update` and `updateMany` respectively
 - Introduces a `data` argument and sets `{ deleted: true }`, preserving other filter arguments if they exist
 
-Run the following example to test the soft delete middleware:
+Run the following sample to test the soft delete middleware:
 
 ```ts
 import { PrismaClient } from '@prisma/client'
@@ -225,7 +231,7 @@ async function main() {
 main()
 ```
 
-The example outputs the following:
+The sample outputs the following:
 
 ```no-lines
 STARTING SOFT DELETE TEST
@@ -296,9 +302,9 @@ Option two uses Prisma middleware to prevent soft deleted records from being ret
 | `updateMany` | 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts                                                                                                                 | No change                        |
 
 - **Why are you making it possible to use `findMany` with a `{ where: { deleted: true } }` filter, but not `updateMany`?**<br />
-  This particular example was written to support the scenario where a user can _restore_ their deleted blog post (which requires a list of soft deleted posts) - but the user should not be able to edit a deleted post.
+  This particular sample was written to support the scenario where a user can _restore_ their deleted blog post (which requires a list of soft deleted posts) - but the user should not be able to edit a deleted post.
 - **Can I still `connect` or `connectOrCreate` a deleted post?**<br />
-  In this example - yes. The middleware does not prevent you from connecting an existing, soft deleted post to a user.
+  In this sample - yes. The middleware does not prevent you from connecting an existing, soft deleted post to a user.
 
 Run the following sample to see how middleware affects each query:
 
@@ -551,7 +557,7 @@ async function main() {
 main()
 ```
 
-The example outputs the following:
+The sample outputs the following:
 
 ```
 STARTING SOFT DELETE TEST
@@ -598,3 +604,15 @@ prisma.post.findMany({ where: { includeDeleted: true } })
 > **Note**: You would still need to write middleware.
 
 We **✘ do not** recommend this approach as it pollutes the schema with fields that do not represent real data.
+
+## Limitations
+
+The soft delete sample on this page is not a full implementation. In the options above, we explain some of the limitations. Other limitations include the following:
+
+- `findMany` with options such as `some` and `none` does not work
+- Most nested queries, such as `findMany({ where: {}, include: { }` and `update({data: { posts: { deleteMany: { } } } })` do not work
+- [Cascading deletes](/guides/database/advanced-database-tasks/cascading-deletes) do not work
+- You cannot update related tables with `updateMany`
+- You cannot enforce [referential actions](/concepts/components/prisma-schema/relations/referential-actions)
+- You cannot filter deleted relations
+- You cannot use the sample in conjunction with a conditional unique index
