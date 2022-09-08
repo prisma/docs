@@ -320,6 +320,12 @@ const product = prisma.product.findFirst({
 
 ## Creating records with composite types using <inlinecode>create</inlinecode> and <inlinecode>createMany</inlinecode>
 
+<Admonition type="info">
+
+When you create a record with a composite type that has a unique restraint, note that MongoDB does not enforce unique values inside a record. [Learn more](#duplicate-values-in-unique-fields-of-composite-types).
+
+</Admonition>
+
 Composite types can be created within a `create` or `createMany` method using the `set` operation. For example, you can use `set` within `create` to create an `Address` composite type inside an `Order`:
 
 ```ts
@@ -453,6 +459,12 @@ const product = await prisma.product.createMany({
 ```
 
 ## Changing composite types within <inlinecode>update</inlinecode> and <inlinecode>updateMany</inlinecode>
+
+<Admonition type="info">
+
+When you update a record with a composite type that has a unique restraint, note that MongoDB does not enforce unique values inside a record. [Learn more](#duplicate-values-in-unique-fields-of-composite-types).
+
+</Admonition>
 
 Composite types can be set, updated or removed within an `update` or `updateMany` method. The following section describes the operations available for updating a single type or multiple types at once, and gives examples of each.
 
@@ -615,6 +627,12 @@ const product = prisma.product.update({
 
 ## Upserting composite types with <inlinecode>upsert</inlinecode>
 
+<Admonition type="info">
+
+When you create or update the values in a composite type that has a unique restraint, note that MongoDB does not enforce unique values inside a record. [Learn more](#duplicate-values-in-unique-fields-of-composite-types).
+
+</Admonition>
+
 To create or update a composite type, use the `upsert` method. You can use the same composite operations as the `create` and `update` methods above.
 
 For example, use `upsert` to either create a new product or add a photo to an existing product:
@@ -687,3 +705,93 @@ const orders = await prisma.order.findMany({
   },
 })
 ```
+
+## Duplicate values in unique fields of composite types
+
+Be careful when you carry out any of the following operations on a record with a composite type that has a unique constraint. In this situation, MongoDB does not enforce unique values inside a record.
+
+- When you create the record
+- When you add data to the record
+- When you update data in the record
+
+If your schema has a composite type with a `@@unique` constraint, MongoDB prevents you from storing the same value for the constrained value in two or more of the records that contain this composite type. However, MongoDB does does not prevent you from storing multiple copies of the same field value in a single record.
+
+Note that you can [use Prisma relations to work around this issue](#use-prisma-relations-to-enforce-unique-values-in-a-record).
+
+For example, in the following schema, `MailBox` has a composite type, `addresses`, which has a `@@unique` constraint on the `email` field.
+
+```prisma
+type Address {
+  email String
+}
+
+model MailBox {
+  name       String
+  addresses  Address[]
+
+  @@unique([addresses.email])
+}
+```
+
+The following code creates a record with two identical values in `address`. MongoDB does not throw an error in this situation, and it stores `alice@prisma.io` in `addresses` twice.
+
+```ts
+await prisma.MailBox.createMany({
+  data: [
+    {
+      name: 'Alice',
+      addresses: {
+        set: [
+          {
+            address: 'alice@prisma.io', // Not unique 
+          },
+          {
+            address: 'alice@prisma.io', // Not unique
+          },
+        ],
+      },
+    },
+  ],
+})
+```
+
+Note: MongoDB throws an error if you try to store the same value in two separate records. In our example above, if you try to store the email address `alice@prisma.io` for the user Alice and for the user Bob, MongoDB does not store the data and throws an error.
+
+### Use Prisma relations to enforce unique values in a record
+
+In the example above, MongoDB did not enforce the unique constraint on a nested address name. However, you can model your data differently to enforce unique values in a record. To do so, use Prisma [relations](/concepts/components/prisma-schema/relations) to turn the composite type into a collection. Set a relationship to this collection and place a unique constraint on the field that you want to be unique.
+
+In the following example, MongoDB enforces unique values in a record. There is a relation between `Mailbox` and the `Address` model. Also, the `name` field in the `Address` model has a unique constraint.
+
+```prisma
+model Address {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  mailbox   Mailbox? @relation(fields: [mailboxId], references: [id])
+  mailboxId String?  @db.ObjectId
+
+  @@unique([name])
+}
+
+model Mailbox {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  addresses Address[] @relation
+}
+```
+
+```ts
+await prisma.MailBox.create({
+  data: {
+    name: 'Alice',
+    addresses: {
+      create: [
+          { name: 'alice@prisma.io' }, // Not unique
+          { name: 'alice@prisma.io' } // Not unique
+      ],
+    },
+  },
+})
+```
+
+If you run the above code, MongoDB enforces the unique constraint. It does not allow your application to add two addresses with the name `alice@prisma.io`.

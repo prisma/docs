@@ -2,7 +2,7 @@ import * as React from 'react'
 import styled from 'styled-components'
 import NewsLetter from '../components/newsletter'
 import { FooterProps } from '../interfaces/Layout.interface'
-import { WebsiteFooter } from './websiteFooter'
+import { WebsiteFooter } from '@prisma/lens/dist/web'
 
 type FooterViewProps = {
   footerProps: FooterProps
