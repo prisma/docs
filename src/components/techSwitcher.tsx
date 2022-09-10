@@ -10,6 +10,7 @@ import JS from '../icons/technologies/JS'
 import SQLServer from '../icons/technologies/MSSQL'
 import PlanetScale from '../icons/technologies/PlanetScale'
 import CockroachDB from '../icons/technologies/CockroachDB'
+import Atlas from '../icons/technologies/MongoDB Atlas'
 import { components } from 'react-select'
 import ArrowDown from '../icons/ArrowDown'
 
@@ -34,11 +35,12 @@ const icons = {
   sqlserver: <SQLServer />,
   planetscale: <PlanetScale />,
   cockroachdb: <CockroachDB />,
+  atlas: <Atlas />,
 }
 
 const technologyTypes = {
   languages: ['node', 'typescript'],
-  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'sqlserver', 'planetscale', 'cockroachdb'],
+  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'sqlserver', 'planetscale', 'cockroachdb', 'atlas'],
 }
 
 export const technologyNames = {
@@ -51,6 +53,7 @@ export const technologyNames = {
   sqlserver: 'SQL Server',
   planetscale: 'PlanetScale',
   cockroachdb: 'CockroachDB',
+  atlas: 'Atlas',
 }
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
