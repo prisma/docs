@@ -6,6 +6,10 @@ import * as valid from './valid'
 import sendToMailchimp from './mailChimp'
 
 const NewsLetterWrapper = styled.div`
+  width: 100%;
+  @media (min-width: 1024px) {
+    max-width: 500px;
+  }
   h4 {
     margin: 0;
     line-height: ${(p) => p.theme.space[48]};
@@ -17,6 +21,13 @@ const NewsLetterWrapper = styled.div`
     margin-top: ${(p) => p.theme.space[24]};
     display: flex;
     align-items: center;
+    margin-bottom: 48px;
+    @media (min-width: 768px) {
+      margin-bottom: 0;
+    }
+    @media (min-width: 1024px) {
+      margin-top: 0;
+    }
     label {
       display: none;
     }
