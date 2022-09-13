@@ -72,7 +72,6 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
       subs.sort(sortOnTitleNumbers)
     }
 
-    console.log(subs)
     return (
       <ul className="list">
         {subs.map((sec: any, index: number) => (
