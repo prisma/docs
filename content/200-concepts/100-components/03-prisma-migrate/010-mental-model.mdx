@@ -2,7 +2,7 @@
 title: 'Mental Model'
 metaTitle: 'Mental Model'
 metaDescription: 'Mental Model'
-tocDepth: 2
+tocDepth: 3
 ---
 
 ## What are database migrations
@@ -15,13 +15,13 @@ Migrations are important when working with databases because they provide a syst
 
 There are two main patterns in you can incrementally update your database schema:
 
-- **Database first** — involves defining the structure of your database and applying it to your database using SQL and then _introspecting_ the database to generate the code that describes the structure of your database to sync your application and database schema
+- **Database-first migration** — involves defining the structure of your database and applying it to your database using SQL and then _introspecting_ the database to generate the code that describes the structure of your database to sync your application and database schema
 
 ![Introspect your database with Prisma](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/f7itiYw.png)
 
-- **Code first** — involves defining the structure of the database schema using code and then using a migration tool to generate the SQL, for example, for syncing your application and database schema
+- **Model/Entity-first migration** — involves defining the structure of the database schema using code and then using a migration tool to generate the SQL, for example, for syncing your application and database schema
 
-![](https://user-images.githubusercontent.com/33921841/188153036-2095e6d3-a0a7-43f2-9c42-110dc0ccd8b1.jpg)
+![Evolve your database schema with Prisma Migrate](https://user-images.githubusercontent.com/33921841/189865730-f6f8b402-4f6e-4a4b-b168-ba615bf51ca2.png)
 
 Artifacts describing schema updates would ideally be stored together with your application code. It would also be tracked in version control and shared with the rest of the team working on the application.
 
@@ -40,7 +40,7 @@ The workflow when using Prisma Migrate in your project would be iterative and lo
 - Define your Prisma schema – the source of truth
 - Use one of the Prisma CLI commands to sync your Prisma schema with the database schema
 
-![image](https://user-images.githubusercontent.com/33921841/188853537-32f425c4-99e4-4254-9dd7-270eb1a082b8.png)
+![Prisma Migrate workflow](https://user-images.githubusercontent.com/33921841/189882708-8d9e4e51-9449-4216-baf7-ac0eda0410a2.png)
 
 Prisma Migrate uses the following pieces of state to track the state of your database schema:
 
@@ -49,7 +49,7 @@ Prisma Migrate uses the following pieces of state to track the state of your dat
 - **Migrations table**: table in the database that stores metadata of the already applied migrations (`_prisma_migrations`)
 - **Database schema**: the _state_ of the database
 
-![image](https://user-images.githubusercontent.com/33921841/188882900-be7d4c17-be9e-42db-b603-bb2f0d252213.png)
+![Prisma Migrate "state management"](https://user-images.githubusercontent.com/33921841/189885586-0e0d7852-8ac7-4842-a6cb-bd158c20d28e.png)
 
 ## Evolving your database schema with Prisma Migrate
 
@@ -73,19 +73,19 @@ Prisma Migrate provides `db push` that allows you to sync your Prisma schema and
 
 `db push` uses the **Prisma schema** and the **database schema** to track the database state.
 
-![](https://user-images.githubusercontent.com/33921841/188855684-5ebb5298-c650-4c38-ae9a-9a9742d5862f.png)
+![prisma db push development flow](https://user-images.githubusercontent.com/33921841/189866483-cec55d83-d1fe-4446-9c28-0a60329f975d.png)
 
 `db push` is useful for quickly prototyping and iterating on your database schema and prioritizing a desired-end state for your database schema.
 
 `db push` will prompt you to reset your database if it detects a schema drift. For example when you add a required field to a table with existing content without providing a default value.
 
-#### Tracking migration histories
+#### Tracking your migration history with `migrate dev`
 
 When you're interested in tracking the changes you're making to your database, Prisma Migrate provides `migrate dev`.
 
 `migrate dev` automatically generates SQL migration files (saved in `/prisma/migrations`) and applies them to the database. When a migration is applied to the database, the migrations table (`_prisma_migrations`) in your database is also updated.
 
-![](https://user-images.githubusercontent.com/33921841/188879394-00b42a00-982c-4bf6-badb-8c49d389121b.png)
+![Prisma Migrate dev flow](https://user-images.githubusercontent.com/33921841/189875756-5df6ba94-c7a9-4e9c-a8f7-ce4d5d09b204.png)
 
 Prisma `migrate dev` tracks the database' state using the:
 
@@ -96,23 +96,27 @@ Prisma `migrate dev` tracks the database' state using the:
 
 `migrate dev` also allows you to customize migrations before applying them to the database using the `--create-only` flag. You might want to edit a migration in situations where you would like to rename columns without incurring any data loss or loading database extensions (in PostgreSQL) and database views.
 
-**TODO**: illustration for this process
-
-To learn what `migrate dev` does under the hood, refer to **TODO: link to illustration/ page with illustration**.
+Under the hood, Prisma Migrate uses a [shadow database](concepts/components/prisma-migrate/shadow-database) to detect a [schema drift](/concepts/components/prisma-migrate/shadow-database#detecting-schema-drift) and generate new migrations.
 
 > **Note**: `migrate dev` is intended to be used only in development with a disposable database.
 
 If `migrate dev` detects a schema drift or a migration history conflict, you will be prompted to reset your database — drop and recreate your database — to sync the migration history and the database schema.
 
-**TODO**: image for process?
+<details>
+
+<summary> Expand to see the shadow database explained using a cartoon</summary>
+
+![A cartoon that shows how the shadow database works.](shadow-database.png)
+
+</details>
 
 #### Resolving schema drifts
 
 A schema drift might occur when the expected database schema is different from what is in the migration history. Example instances where this might occur is when you manually update the database schema.
 
-For such instances, `migrate diff` can help you compare your migration history and the database schema.
+For such instances, you can compare your migration history and database using `migrate diff` to revert changes made to your database schema.
 
-**TODO:** image showing what this looks like
+![Revert database schema with `migrate diff`](https://user-images.githubusercontent.com/33921841/189894555-b1dedf54-a8eb-4e29-9bf4-85a5615030b4.png)
 
 You can use `migrate diff` to generate the SQL that can either:
 
@@ -121,7 +125,7 @@ You can use `migrate diff` to generate the SQL that can either:
 
 You can then apply the changes to your database using `db execute`.
 
-### Production and preview (staging and testing) environments
+### Production and staging environments
 
 #### Syncing migration histories
 
@@ -133,7 +137,6 @@ Under the hood `migrate deploy`:
 - Apply pending migrations
 - Update `_prisma_migrations` table with the new migrations
 
-**todo**: fix path
 ![](../../../300-guides/050-database/100-developing-with-prisma-migrate/deploy-db.png)
 
 The command should be run in an automated CI/ CD environment, for example GitHub Actions. (link to example?)
