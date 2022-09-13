@@ -2904,6 +2904,10 @@ declare namespace Queries {
     | 'siteMetadata.description'
     | 'siteMetadata.docsLocation'
     | 'siteMetadata.footer.newsletter.text'
+    | 'siteMetadata.header.search.algoliaAdminKey'
+    | 'siteMetadata.header.search.algoliaAppId'
+    | 'siteMetadata.header.search.algoliaSearchKey'
+    | 'siteMetadata.header.search.indexName'
     | 'siteMetadata.header.secondLevelHeaderMenuItems'
     | 'siteMetadata.header.secondLevelHeaderMenuItems.bucketName'
     | 'siteMetadata.header.secondLevelHeaderMenuItems.text'
@@ -3757,13 +3761,29 @@ declare namespace Queries {
   }
 
   type SiteSiteMetadataHeader = {
+    readonly search: Maybe<SiteSiteMetadataHeaderSearch>
     readonly secondLevelHeaderMenuItems: Maybe<
       ReadonlyArray<Maybe<SiteSiteMetadataHeaderSecondLevelHeaderMenuItems>>
     >
   }
 
   type SiteSiteMetadataHeaderFilterInput = {
+    readonly search: InputMaybe<SiteSiteMetadataHeaderSearchFilterInput>
     readonly secondLevelHeaderMenuItems: InputMaybe<SiteSiteMetadataHeaderSecondLevelHeaderMenuItemsFilterListInput>
+  }
+
+  type SiteSiteMetadataHeaderSearch = {
+    readonly algoliaAdminKey: Maybe<Scalars['String']>
+    readonly algoliaAppId: Maybe<Scalars['String']>
+    readonly algoliaSearchKey: Maybe<Scalars['String']>
+    readonly indexName: Maybe<Scalars['String']>
+  }
+
+  type SiteSiteMetadataHeaderSearchFilterInput = {
+    readonly algoliaAdminKey: InputMaybe<StringQueryOperatorInput>
+    readonly algoliaAppId: InputMaybe<StringQueryOperatorInput>
+    readonly algoliaSearchKey: InputMaybe<StringQueryOperatorInput>
+    readonly indexName: InputMaybe<StringQueryOperatorInput>
   }
 
   type SiteSiteMetadataHeaderSecondLevelHeaderMenuItems = {
