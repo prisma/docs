@@ -1,8 +1,8 @@
 import * as React from 'react'
 import Layout from '../components/layout'
 import styled from 'styled-components'
-import background from 'images/home-bg.svg'
-import listDot from 'images/list-dot.png'
+import background from '../images/home-bg.svg'
+import listDot from '../images/list-dot.png'
 import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'
 import { graphql, useStaticQuery } from 'gatsby'
 

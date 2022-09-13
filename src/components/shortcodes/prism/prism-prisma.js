@@ -2,7 +2,7 @@ import Prism from 'prism-react-renderer/prism'
 ;(typeof global !== 'undefined' ? global : window).Prism = Prism
 Prism.languages.prisma = Prism.languages.extend('clike', {
   keyword: /\b(?:datasource|enum|generator|model|type)\b/,
-  'type-class-name': /(\b()\s+)[\w.\\]+/,
+  'type-class-name': /(\s+)[A-Z]\w+/, ///(\b)(\s+)[A-Z]\w+/
 })
 
 Prism.languages.javascript['class-name'][0].pattern =
@@ -18,6 +18,10 @@ Prism.languages.insertBefore('prisma', 'function', {
 
 Prism.languages.insertBefore('prisma', 'punctuation', {
   'type-args': /\b(?:references|fields|onDelete|onUpdate):/,
+})
+
+Prism.languages.insertBefore('prisma', 'type-class-name', {
+  'not-class': /\n(\s+)[A-Z]\w+/,
 })
 
 Prism.languages.json5 = Prism.languages.js
