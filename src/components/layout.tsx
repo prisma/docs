@@ -11,6 +11,7 @@ import Footer from './footer'
 import '../styles/layout.css'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
+import Banner from './banner'
 
 interface LayoutContentProps {
   toc: any
@@ -111,6 +112,7 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={shortcodes}>
+          <Banner />
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
