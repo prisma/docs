@@ -36,7 +36,7 @@ const Banner = () => (
   <BannerWrapper>
     <BannerText>
       <a href="/docs/data-platform/data-proxy">
-        Set up database connection pooling for serverless environments using the <strong>Prisma Data Proxy</strong>.
+        Set up database connection pooling for serverless environments with the <strong>Prisma Data Proxy</strong>.
         Learn more -{'>'}
       </a>
     </BannerText>
