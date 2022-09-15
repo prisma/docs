@@ -138,7 +138,6 @@ let plugins = [
   'gatsby-plugin-remove-trailing-slashes',
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
-  'gatsby-plugin-remove-fingerprints',
   {
     resolve: 'gatsby-plugin-google-tagmanager',
     options: {
