@@ -379,19 +379,6 @@ const Homepage = () => {
           ))}
         </Row>
         <Space height={80} />
-        <CapTitle withBorder={true}>More useful resources</CapTitle>
-        <Row style={{ marginTop: '0' }}>
-          <List split={true}>
-            {MoreUsefulLinks.map((uLink: any, index: number) => (
-              <li key={index}>
-                <Link to={uLink.url}>
-                  <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
-                </Link>
-              </li>
-            ))}
-          </List>
-        </Row>
-        <Space height={80} />
         <SubHeading>Reference</SubHeading>
         <NormalPara>{ReferenceText}</NormalPara>
         <Row>
@@ -416,6 +403,19 @@ const Homepage = () => {
               </List>
             </LinkCard>
           ))}
+        </Row>
+        <Space height={80} />
+        <CapTitle withBorder={true}>More useful resources</CapTitle>
+        <Row style={{ marginTop: '0' }}>
+          <List split={true}>
+            {MoreUsefulLinks.map((uLink: any, index: number) => (
+              <li key={index}>
+                <Link to={uLink.url}>
+                  <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
+                </Link>
+              </li>
+            ))}
+          </List>
         </Row>
       </QuickLinks>
     </Layout>
