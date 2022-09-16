@@ -8,7 +8,7 @@ const config = {
   redirects: [
     {
       from: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-file',
-      to: '/reference/tools-and-interfaces/prisma-schema',
+      to: '/concepts/components/prisma-schema',
     },
     {
       from: '/reference/tools-and-interfaces/prisma-schema',
@@ -20,7 +20,7 @@ const config = {
     },
     {
       from: '/reference/tools-and-interfaces/prisma-schema/models',
-      to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
+      to: '/concepts/components/prisma-schema/data-model#defining-models',
     },
     {
       from: '/concepts/components/prisma-data-platform#prisma-data-proxy',
