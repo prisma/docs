@@ -75,6 +75,7 @@ let plugins = [
   'gatsby-plugin-styled-components',
   'gatsby-plugin-smoothscroll',
   'gatsby-plugin-catch-links',
+  'gatsby-plugin-percy',
   // {
   //   resolve: `gatsby-plugin-layout`,
   //   options: {
@@ -145,10 +146,6 @@ let plugins = [
       includeInDevelopment: false,
       defaultDataLayer: { website: 'docs' },
     },
-  },
-  {
-    resolve: 'gatsby-plugin-percy',
-    option: {},
   },
 ]
 

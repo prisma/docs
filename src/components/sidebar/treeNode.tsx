@@ -192,7 +192,7 @@ const TreeNode = ({
     return 0
   })
 
-  const hasExpandButton = !staticLink && title && hasChildren && !topLevel
+  const hasExpandButton = title && hasChildren && !staticLink && !topLevel
   let hasBorder: boolean = false
   if (hasExpandButton) {
     items.map((item: any) => (item.lastLevel = true))
