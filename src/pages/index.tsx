@@ -113,20 +113,21 @@ const ListTitle = styled.h3`
 `
 
 const List = styled.ul`
+  column-count: 1;
   list-style: none;
   padding: 0;
-  margin-left: ${(p) => p.theme.space[16]};
+  margin-left: 1rem;
   list-style-image: url(${listDot});
   li {
-    padding-left: ${(p) => p.theme.space[8]};
+    padding-left: 0.5rem;
     line-height: 1rem;
     margin-top: 10px;
     a {
-      color: ${(p) => p.theme.colors.gray800} !important;
+      color: #2d3748 !important;
       cursor: pointer;
       text-decoration: none;
       &:hover {
-        color: ${(p) => p.theme.colors.gray600} !important;
+        color: #718096 !important;
       }
     }
   }
@@ -134,14 +135,14 @@ const List = styled.ul`
     font-weight: normal;
     line-height: 0;
   }
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    column-count: 1;
-  }
 `
 
 const MoreLinksList = styled(List)`
+  @media only screen and (max-width: 640px) {
+    column-count: 1;
+  }
   column-count: 4;
-  column-gap: ${(props) => props.theme.space(32)};
+  column-gap: 32px;
   li {
     line-height: 24px;
     margin-top: 0;
