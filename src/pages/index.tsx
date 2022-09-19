@@ -112,24 +112,15 @@ const ListTitle = styled.h3`
   }
 `
 
-const List = styled.ul<{ split?: boolean }>`
+const List = styled.ul`
   list-style: none;
   padding: 0;
   margin-left: ${(p) => p.theme.space[16]};
   list-style-image: url(${listDot});
-  ${(p) =>
-    p.split &&
-    ` -moz-column-count: 4;
-  -moz-column-gap: ${(p: any) => p.theme.space[32]};
-  -webkit-column-count: 4;
-  -webkit-column-gap: ${(p: any) => p.theme.space[32]};
-  column-count: 4;
-  column-gap: ${(p: any) => p.theme.space[32]};`}
   li {
     padding-left: ${(p) => p.theme.space[8]};
-    ${(p) =>
-      p.split ? 'line-height: 24px; margin-top: 0;' : 'line-height: 1rem; margin-top: 10px;'};
-
+    line-height: 1rem;
+    margin-top: 10px;
     a {
       color: ${(p) => p.theme.colors.gray800} !important;
       cursor: pointer;
@@ -145,6 +136,15 @@ const List = styled.ul<{ split?: boolean }>`
   }
   @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
     column-count: 1;
+  }
+`
+
+const MoreLinksList = styled(List)`
+  column-count: 4;
+  column-gap: ${(props) => props.theme.space(32)};
+  li {
+    line-height: 24px;
+    margin-top: 0;
   }
 `
 
@@ -407,7 +407,7 @@ const Homepage = () => {
         <Space height={80} />
         <CapTitle withBorder={true}>More useful resources</CapTitle>
         <Row style={{ marginTop: '0' }}>
-          <List split={true}>
+          <MoreLinksList>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
                 <Link to={uLink.url}>
@@ -415,7 +415,7 @@ const Homepage = () => {
                 </Link>
               </li>
             ))}
-          </List>
+          </MoreLinksList>
         </Row>
       </QuickLinks>
     </Layout>
