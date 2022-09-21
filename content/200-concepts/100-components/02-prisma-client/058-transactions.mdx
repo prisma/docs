@@ -162,7 +162,9 @@ generator client {
 }
 ```
 
-Then you can pass an async function into [`$transaction`](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
+Then you can pass an async function into [`$transaction`](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api). 
+
+The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma call invoked on this `tx` instance is encapsulated into the transaction. 
 
 Let's look at an example:
 
@@ -184,9 +186,9 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function transfer(from: string, to: string, amount: number) {
-  return await prisma.$transaction(async (prisma) => {
+  return await prisma.$transaction(async (tx) => {
     // 1. Decrement amount from the sender.
-    const sender = await prisma.account.update({
+    const sender = await tx.account.update({
       data: {
         balance: {
           decrement: amount,
@@ -196,12 +198,14 @@ async function transfer(from: string, to: string, amount: number) {
         email: from,
       },
     })
+
     // 2. Verify that the sender's balance didn't go below zero.
     if (sender.balance < 0) {
       throw new Error(`${from} doesn't have enough to send ${amount}`)
     }
+
     // 3. Increment the recipient's balance by amount
-    const recipient = prisma.account.update({
+    const recipient = await tx.account.update({
       data: {
         balance: {
           increment: amount,
@@ -211,6 +215,7 @@ async function transfer(from: string, to: string, amount: number) {
         email: to,
       },
     })
+
     return recipient
   })
 }
@@ -241,7 +246,7 @@ To catch the exception, you can wrap `$transaction` in a try-catch block:
 
 ```js
 try {
-  await prisma.$transaction(async (prisma) => {
+  await prisma.$transaction(async (tx) => {
     // Code running in a transaction...
   })
 } catch (err) {
@@ -259,7 +264,7 @@ For example:
 
 ```jsx
 await prisma.$transaction(
-  async (prisma) => {
+  async (tx) => {
     // Code running in a transaction...
   },
   {

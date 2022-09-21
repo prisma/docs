@@ -1,8 +1,8 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import { WebsiteFooter } from '@prisma/lens/dist/web'
 import NewsLetter from '../components/newsletter'
 import { FooterProps } from '../interfaces/Layout.interface'
+import { WebsiteFooter } from '@prisma/lens/dist/web'
 
 type FooterViewProps = {
   footerProps: FooterProps

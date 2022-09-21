@@ -13,11 +13,10 @@ const flattenNode = (node) => {
 module.exports = () => (tree, file) => {
   file.data = []
   let heading = null
-
   visit(
     tree,
     ({ type }) => {
-      return ['heading', 'paragraph', 'code'].includes(type)
+      return ['heading', 'paragraph', 'code', 'table'].includes(type)
     },
     (node) => {
       if (node.type === 'heading') return (heading = flattenNode(node))

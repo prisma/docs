@@ -210,6 +210,8 @@ The following tables list all supported operating systems with the name of platf
 | Ubuntu 18.04 (bionic) | `debian-openssl-1.1.x`   |  1.1.x  |
 | Ubuntu 19.04 (disco)  | `debian-openssl-1.1.x`   |  1.1.x  |
 | Ubuntu 20.04 (focal)  | `debian-openssl-1.1.x`   |  1.1.x  |
+| Ubuntu 21.04 (hirsute)  | `debian-openssl-1.1.x`   |  1.1.x  |
+| Ubuntu 22.04 (jammy)  | `debian-openssl-3.0.x`   |  3.0.x  |
 
 ##### Linux (CentOS)
 
@@ -225,6 +227,7 @@ The following tables list all supported operating systems with the name of platf
 | Fedora 28 | `rhel-openssl-1.1.x`     |  1.1.x  |
 | Fedora 29 | `rhel-openssl-1.1.x`     |  1.1.x  |
 | Fedora 30 | `rhel-openssl-1.1.x`     |  1.1.x  |
+| Fedora 36 | `rhel-openssl-3.0.x`     |  3.0.x  |
 
 ##### Linux (Linux Mint)
 
@@ -232,6 +235,7 @@ The following tables list all supported operating systems with the name of platf
 | :------------ | :----------------------- | :-----: |
 | Linux Mint 18 | `debian-openssl-1.0.x`   |  1.0.x  |
 | Linux Mint 19 | `debian-openssl-1.1.x`   |  1.1.x  |
+| Linux Mint 21 | `debian-openssl-3.0.x`   |  3.0.x  |
 
 ##### Linux (Arch Linux)
 
@@ -245,6 +249,7 @@ The following tables list all supported operating systems with the name of platf
 | :----------------------- | :-------------------------- | :-----: |
 | Linux ARM64-based distro | `linux-arm64-openssl-1.0.x` |  1.0.x  |
 | Linux ARM64-based distro | `linux-arm64-openssl-1.1.x` |  1.1.x  |
+| Linux ARM64-based distro | `linux-arm64-openssl-3.0.x` |  3.0.x  |
 
 ### Examples
 
@@ -1155,7 +1160,7 @@ Defines a single-field ID on the model.
 
 - Corresponding database type: [Any valid BSON type, except arrays](https://docs.mongodb.com/manual/core/document/#the-_id-field)
 - Every model must define an `@id` field
-- The [underlying ID field name is always `_id`](https://docs.mongodb.com/manual/core/document/#the-_id-field), and must be mapped with `@map(_id)`
+- The [underlying ID field name is always `_id`](https://docs.mongodb.com/manual/core/document/#the-_id-field), and must be mapped with `@map("_id")`
 - Can be defined on any scalar field (`String`, `Int`, `enum`) unless you want to use `ObjectId` in your database
 - To use an [`ObjectId`](https://docs.mongodb.com/manual/reference/method/ObjectId/) as your ID, you must:
 
@@ -2862,19 +2867,13 @@ In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Pri
 
 #### Examples
 
-In the following example, `tags` is ignored because it refers to an invalid model (no `@id` on `Product`):
+The following example demonstrates manually adding `@ignore` to exclude the `email` field from the Prisma Client:
 
-```prisma highlight=5,10;normal
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
-model Tag {
-  id String? @db.VarChar
-
-  @@ignore
-}
-
-model Product {
-  id   Int   @default(autoincrement())
-  tags Tag[] @ignore
+```prisma file=schema.prisma highlight=4;normal
+model User {
+  id    Int    @id
+  name  String
+  email String @ignore // this field will be excluded
 }
 ```
 
@@ -2891,14 +2890,35 @@ In [2.17.0](https://github.com/prisma/prisma/releases/tag/2.17.0) and later, Pri
 
 #### Examples
 
-In the following example, `Tag` is ignored because it does not have a valid unique identifier:
+In the following example, the `Post` model is invalid because it does not have a unique identifier. Use `@@ignore` to exclude it from the generated Prisma Client API:
 
-```prisma highlight=5;normal
+```prisma file=schema.prisma highlight=7;normal
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
-model Tag {
-  id String? @db.VarChar
+model Post {
+  id       Int  @default(autoincrement()) // no unique identifier
+  author   User @relation(fields: [authorId], references: [id])
+  authorId Int
 
   @@ignore
+}
+```
+
+In the following example, the `Post` model is invalid because it does not have a unique identifier, and the `posts` relation field on `User` is invalid because it refers to the invalid `Post` model. Use `@@ignore` on the `Post` model and `@ignore` on the `posts` relation field in `User` to exclude both the model and the relation field from the generated Prisma Client API:
+
+```prisma file=schema.prisma highlight=7,13;normal
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model Post {
+  id       Int  @default(autoincrement()) // no unique identifier
+  author   User @relation(fields: [authorId], references: [id])
+  authorId Int
+
+  @@ignore
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  posts Post[]  @ignore
 }
 ```
 
