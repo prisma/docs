@@ -21,10 +21,9 @@ const FooterWrapper = styled.div`
 `
 
 const FooterSec = ({ footerProps }: FooterViewProps) => {
-  const { newsletter } = footerProps
   return (
     <FooterWrapper>
-      <WebsiteFooter newsletterComponent={<NewsLetter newsletter={newsletter} />} />
+      <WebsiteFooter />
     </FooterWrapper>
   )
 }
