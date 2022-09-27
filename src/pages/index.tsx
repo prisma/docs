@@ -182,14 +182,15 @@ const CapTitle = styled.h4<{ withBorder?: boolean }>`
   text-transform: uppercase !important;
   font-weight: bold;
   letter-spacing: 0.02em;
-  font-size: ${(p) => p.theme.fontSizes[14]};
+  font-size: 14px;
   ${(p) =>
     p.withBorder &&
     `
-  border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
-  width: 100%;
-  max-width: 996px;
-  padding-bottom: ${(p: any) => p.theme.space[16]};`}
+        border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
+        width: 100%;
+        max-width: 996px;
+        padding-bottom: 1rem;
+    `}
 `
 
 const GeneralLinks = styled.div`
