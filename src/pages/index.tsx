@@ -178,19 +178,18 @@ const QuickLinks = styled.div`
   }
 `
 
-const CapTitle = styled.h4<{ withBorder?: boolean }>`
+const CapTitle = styled.h4`
   text-transform: uppercase !important;
   font-weight: bold;
   letter-spacing: 0.02em;
   font-size: 14px;
-  ${(p) =>
-    p.withBorder &&
-    `
-        border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
-        width: 100%;
-        max-width: 996px;
-        padding-bottom: 1rem;
-    `}
+`
+
+const BorderCapTitle = styled(CapTitle)`
+  border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
+  width: 100%;
+  max-width: 996px;
+  padding-bottom: 1rem;
 `
 
 const GeneralLinks = styled.div`
@@ -407,7 +406,7 @@ const Homepage = () => {
           ))}
         </Row>
         <Space height={80} />
-        <CapTitle withBorder={true}>More useful resources</CapTitle>
+        <BorderCapTitle>More useful resources</BorderCapTitle>
         <Row style={{ marginTop: '0' }}>
           <MoreLinksList>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
