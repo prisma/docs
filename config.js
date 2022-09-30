@@ -5,7 +5,12 @@ const config = {
     titlePrefix: '',
     titleSuffix: ' | Prisma Docs',
   },
-  redirects: [],
+  redirects: [
+    {
+      from: '/',
+      to: '/',
+    },
+  ],
   header: {
     secondLevelHeaderMenuItems: [
       {
