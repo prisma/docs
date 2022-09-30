@@ -5,32 +5,7 @@ const config = {
     titlePrefix: '',
     titleSuffix: ' | Prisma Docs',
   },
-  redirects: [
-    {
-      from: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-file',
-      to: '/reference/tools-and-interfaces/prisma-schema',
-    },
-    {
-      from: '/reference/tools-and-interfaces/prisma-schema',
-      to: '/concepts/components/prisma-schema',
-    },
-    {
-      from: '/reference/tools-and-interfaces/prisma-client/api',
-      to: '/concepts/components/prisma-client',
-    },
-    {
-      from: '/reference/tools-and-interfaces/prisma-schema/models',
-      to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
-    },
-    {
-      from: '/concepts/components/prisma-data-platform#prisma-data-proxy',
-      to: '/concepts/data-platform/data-proxy',
-    },
-    {
-      from: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-sometext',
-      to: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-prisma',
-    },
-  ],
+  redirects: [],
   header: {
     secondLevelHeaderMenuItems: [
       {
