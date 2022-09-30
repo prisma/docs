@@ -113,7 +113,6 @@ const ListTitle = styled.h3`
 `
 
 const List = styled.ul`
-  column-count: 1;
   list-style: none;
   padding: 0;
   margin-left: 1rem;
@@ -142,7 +141,6 @@ const MoreLinksList = styled(List)`
     column-count: 1;
   }
   column-count: 4;
-  column-gap: 32px;
   li {
     line-height: 24px;
     margin-top: 0;
@@ -186,10 +184,8 @@ const CapTitle = styled.h4`
 `
 
 const BorderCapTitle = styled(CapTitle)`
-  border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
   width: 100%;
   max-width: 996px;
-  padding-bottom: 1rem;
 `
 
 const GeneralLinks = styled.div`
