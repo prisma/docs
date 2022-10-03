@@ -1,0 +1,283 @@
+---
+title: 'DELETE'
+metaTitle: 'DELETE (Reference)'
+---
+
+## Delete
+
+### Delete a single record
+
+The following query uses [`delete`](/reference/api-reference/prisma-client-reference#delete) <span class="api"></span> to delete a single `User` record:
+
+```ts
+const deleteUser = await prisma.user.delete({
+  where: {
+    email: 'bert@prisma.io',
+  },
+})
+```
+
+Attempting to delete a user with one or more posts result in an error, as every `Post` requires an author - see [cascading deletes](#cascading-deletes-deleting-related-records).
+
+### Delete multiple records
+
+The following query uses `deleteMany` to delete all `User` records where `email` contains `prisma.io`:
+
+```ts
+const deleteUsers = await prisma.user.deleteMany({
+  where: {
+    email: {
+      contains: 'prisma.io',
+    },
+  },
+})
+```
+
+Attempting to delete a user with one or more posts result in an error, as every `Post` requires an author - see [cascading deletes](#cascading-deletes-deleting-related-records).
+
+### Delete all records
+
+The following query uses `deleteMany` to delete all `User` records:
+
+```ts
+const deleteUsers = await prisma.user.deleteMany({})
+```
+
+Be aware that this query will fail if the user has any related records (such as posts). In this case, you need to [delete the related records first](#cascading-deletes-deleting-related-records).
+
+### Cascading deletes (deleting related records)
+
+<Admonition type="warning">
+
+In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using the **preview feature** [referential actions](/concepts/components/prisma-schema/relations/referential-actions).
+
+</Admonition>
+
+The following query uses [`delete`](/reference/api-reference/prisma-client-reference#delete) <span class="api"></span> to delete a single `User` record:
+
+```ts
+const deleteUser = await prisma.user.delete({
+  where: {
+    email: 'bert@prisma.io',
+  },
+})
+```
+
+However, the example schema includes a **required relation** between `Post` and `User`, which means that you cannot delete a user with posts:
+
+```
+The change you are trying to make would violate the required relation 'PostToUser' between the `Post` and `User` models.
+```
+
+To resolve this error, you can:
+
+- Make the relation optional:
+
+  ```prisma highlight=3,4;add|5,6;delete
+  model Post {
+    id       Int   @id @default(autoincrement())
+    author   User? @relation(fields: [authorId], references: [id])
+    authorId Int?
+    author   User  @relation(fields: [authorId], references: [id])
+    authorId Int
+  }
+  ```
+
+- Change the author of the posts to another user before deleting the user.
+
+- Delete a user and all their posts with two separate queries in a transaction (all queries must succeed):
+
+  ```ts
+  const deletePosts = prisma.post.deleteMany({
+    where: {
+      authorId: 7,
+    },
+  })
+
+  const deleteUser = prisma.user.delete({
+    where: {
+      id: 7,
+    },
+  })
+
+  const transaction = await prisma.$transaction([deletePosts, deleteUser])
+  ```
+
+### Delete all records from all tables
+
+Sometimes you want to remove all data from all tables but keep the actual tables. This can be particularly useful in a development environment and whilst testing.
+
+The following shows how to delete all records from all tables with Prisma Client and with Prisma Migrate.
+
+#### Deleting all data with `deleteMany`
+
+When you know the order in which your tables should be deleted, you can use the [`deleteMany`](/reference/api-reference/prisma-client-reference#deletemany) function. This is executed synchronously in a [`$transaction`](/guides/performance-and-optimization/prisma-client-transactions-guide) and can be used with all types of databases.
+
+```ts
+const deletePosts = prisma.post.deleteMany()
+const deleteProfile = prisma.profile.deleteMany()
+const deleteUsers = prisma.user.deleteMany()
+
+// The transaction runs synchronously so deleteUsers must run last.
+await prisma.$transaction([deleteProfile, deletePosts, deleteUsers])
+```
+
+✅ **Pros**:
+
+- Works well when you know the structure of your schema ahead of time
+- Synchronously deletes each tables data
+
+❌ **Cons**:
+
+- When working with relational databases, this function doesn't scale as well as having a more generic solution which looks up and `TRUNCATE`s your tables regardless of their relational constraints. Note that this scaling issue does not apply when using the MongoDB connector.
+
+> **Note**: The `$transaction` performs a cascading delete on each models table so they have to be called in order.
+
+#### Deleting all data with raw SQL / `TRUNCATE`
+
+If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$executeRawUnsafe`](/concepts/components/prisma-client/raw-database-access#executerawunsafe).
+
+In the following examples, the first tab shows how to perform a `TRUNCATE` on a Postgres database by using a `$queryRaw` look up that maps over the table and `TRUNCATES` each table.
+
+The second tab shows performing the same function but with a MySQL database. In this instance the constraints must be removed before the `TRUNCATE` can be executed, before being reinstated once finished. The whole process is run as a `$transaction`
+
+<TabbedContent tabs={[<FileWithIcon text="PostgreSQL" icon="database"/>, <FileWithIcon text="MySQL" icon="database"/>]}>
+
+<tab>
+
+```ts
+const tablenames = await prisma.$queryRaw<
+  Array<{ tablename: string }>
+>`SELECT tablename FROM pg_tables WHERE schemaname='public'`
+
+for (const { tablename } of tablenames) {
+  if (tablename !== '_prisma_migrations') {
+    try {
+      await prisma.$executeRawUnsafe(
+        `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
+      )
+    } catch (error) {
+      console.log({ error })
+    }
+  }
+}
+```
+
+</tab>
+
+<tab>
+
+```ts
+const transactions: PrismaPromise<any>[] = []
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`)
+
+const tablenames = await prisma.$queryRaw<
+  Array<{ TABLE_NAME: string }>
+>`SELECT TABLE_NAME from information_schema.TABLES WHERE TABLE_SCHEMA = 'tests';`
+
+for (const { TABLE_NAME } of tablenames) {
+  if (TABLE_NAME !== '_prisma_migrations') {
+    try {
+      transactions.push(prisma.$executeRawUnsafe(`TRUNCATE ${TABLE_NAME};`))
+    } catch (error) {
+      console.log({ error })
+    }
+  }
+}
+
+transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`)
+
+try {
+  await prisma.$transaction(transactions)
+} catch (error) {
+  console.log({ error })
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+✅ **Pros**:
+
+- Scalable
+- Very fast
+
+❌ **Cons**:
+
+- Can't undo the operation
+- Using reserved SQL key words as tables names can cause issues when trying to run a raw query
+
+#### Deleting all records with Prisma Migrate
+
+If you use Prisma Migrate, you can use `migrate reset`, this will:
+
+1. Drop the database
+2. Create a new database
+3. Apply migrations
+4. Seed the database with data
+
+## Advanced query examples
+
+### Create a deeply nested tree of records
+
+- A single `User`
+- Two new, related `Post` records
+- Connect or create `Category` per post
+
+```ts
+const u = await prisma.user.create({
+  include: {
+    posts: {
+      include: {
+        categories: true,
+      },
+    },
+  },
+  data: {
+    email: 'emma@prisma.io',
+    posts: {
+      create: [
+        {
+          title: 'My first post',
+          categories: {
+            connectOrCreate: [
+              {
+                create: { name: 'Introductions' },
+                where: {
+                  name: 'Introductions',
+                },
+              },
+              {
+                create: { name: 'Social' },
+                where: {
+                  name: 'Social',
+                },
+              },
+            ],
+          },
+        },
+        {
+          title: 'How to make cookies',
+          categories: {
+            connectOrCreate: [
+              {
+                create: { name: 'Social' },
+                where: {
+                  name: 'Social',
+                },
+              },
+              {
+                create: { name: 'Cooking' },
+                where: {
+                  name: 'Cooking',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+})
+```
