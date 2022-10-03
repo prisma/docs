@@ -217,10 +217,15 @@ const TreeNode = ({
     if (lastLevel && isCurrent && hasExpandButton) collapse()
   }, [])
 
+  const specialCases =
+    slug && (urlGenerator(slug).includes('prisma-cli') || urlGenerator(slug).includes('deployment'))
+      ? '/'
+      : ''
+
   const isCurrent =
     location &&
     slug &&
-    (location.pathname + '/').includes(urlGenerator(slug).replace(/\/index$/, ''))
+    location.pathname.includes(urlGenerator(slug).replace(/\/index$/, '') + specialCases)
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
