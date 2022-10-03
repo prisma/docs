@@ -213,10 +213,14 @@ const TreeNode = ({
     }
   }, [isCollapsed])
 
+  React.useEffect(() => {
+    if (lastLevel && isCurrent && hasExpandButton) collapse()
+  }, [])
+
   const isCurrent =
     location &&
     slug &&
-    (location.pathname + '/').includes(urlGenerator(slug).replace(/\/index$/, '') + '/')
+    (location.pathname + '/').includes(urlGenerator(slug).replace(/\/index$/, ''))
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>
