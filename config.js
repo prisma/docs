@@ -7,8 +7,8 @@ const config = {
   },
   redirects: [
     {
-      from: '/',
-      to: '/',
+      from: '/foo',
+      to: '/bar',
     },
   ],
   header: {
