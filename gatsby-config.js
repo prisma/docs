@@ -75,13 +75,6 @@ let plugins = [
   'gatsby-plugin-styled-components',
   'gatsby-plugin-smoothscroll',
   'gatsby-plugin-catch-links',
-  'gatsby-plugin-percy',
-  // {
-  //   resolve: `gatsby-plugin-layout`,
-  //   options: {
-  //     component: require.resolve(`./src/layouts/articleLayout.tsx`),
-  //   },
-  // },
   {
     resolve: `gatsby-plugin-sitemap`,
     options: {
