@@ -112,30 +112,21 @@ const ListTitle = styled.h3`
   }
 `
 
-const List = styled.ul<{ split?: boolean }>`
+const List = styled.ul`
   list-style: none;
   padding: 0;
-  margin-left: ${(p) => p.theme.space[16]};
+  margin-left: 1rem;
   list-style-image: url(${listDot});
-  ${(p) =>
-    p.split &&
-    ` -moz-column-count: 4;
-  -moz-column-gap: ${(p: any) => p.theme.space[32]};
-  -webkit-column-count: 4;
-  -webkit-column-gap: ${(p: any) => p.theme.space[32]};
-  column-count: 4;
-  column-gap: ${(p: any) => p.theme.space[32]};`}
   li {
-    padding-left: ${(p) => p.theme.space[8]};
-    ${(p) =>
-      p.split ? 'line-height: 24px; margin-top: 0;' : 'line-height: 1rem; margin-top: 10px;'};
-
+    padding-left: 0.5rem;
+    line-height: 1rem;
+    margin-top: 10px;
     a {
-      color: ${(p) => p.theme.colors.gray800} !important;
+      color: #2d3748 !important;
       cursor: pointer;
       text-decoration: none;
       &:hover {
-        color: ${(p) => p.theme.colors.gray600} !important;
+        color: #718096 !important;
       }
     }
   }
@@ -143,8 +134,16 @@ const List = styled.ul<{ split?: boolean }>`
     font-weight: normal;
     line-height: 0;
   }
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+`
+
+const MoreLinksList = styled(List)`
+  @media only screen and (max-width: 640px) {
     column-count: 1;
+  }
+  column-count: 4;
+  li {
+    line-height: 24px;
+    margin-top: 0;
   }
 `
 
@@ -177,18 +176,16 @@ const QuickLinks = styled.div`
   }
 `
 
-const CapTitle = styled.h4<{ withBorder?: boolean }>`
+const CapTitle = styled.h4`
   text-transform: uppercase !important;
   font-weight: bold;
   letter-spacing: 0.02em;
-  font-size: ${(p) => p.theme.fontSizes[14]};
-  ${(p) =>
-    p.withBorder &&
-    `
-  border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
+  font-size: 14px;
+`
+
+const BorderCapTitle = styled(CapTitle)`
   width: 100%;
   max-width: 996px;
-  padding-bottom: ${(p: any) => p.theme.space[16]};`}
 `
 
 const GeneralLinks = styled.div`
@@ -405,9 +402,9 @@ const Homepage = () => {
           ))}
         </Row>
         <Space height={80} />
-        <CapTitle withBorder={true}>More useful resources</CapTitle>
+        <BorderCapTitle>More useful resources</BorderCapTitle>
         <Row style={{ marginTop: '0' }}>
-          <List split={true}>
+          <MoreLinksList>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
                 <Link to={uLink.url}>
@@ -415,7 +412,7 @@ const Homepage = () => {
                 </Link>
               </li>
             ))}
-          </List>
+          </MoreLinksList>
         </Row>
       </QuickLinks>
     </Layout>
