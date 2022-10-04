@@ -6,6 +6,8 @@ const config = {
     titleSuffix: ' | Prisma Docs',
   },
   redirects: [
+    // Added this object for redirect because gatsby filters through the redirects key in gatsby-browser.js.
+    // This object will create a "dummy" page in percy, creating a 404 page of `/foo/index`
     {
       from: '/foo',
       to: '/bar',
