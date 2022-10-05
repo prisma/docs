@@ -8,11 +8,11 @@ tocDepth: 2
 
 <TopBlock>
 
-This page introduces PostgreSQL extensions and describes how to represent them in your PostgreSQL schema, introspect and migrate them.
+This page introduces PostgreSQL extensions and describes how to represent extensions in your Prisma schema, how to introspect existing extensions in your database, and how to apply changes to your extensions to your database with Prisma Migrate.
 
 <Admonition type="warning">
 
-Support for declaring PostgreSQL extensions in your schema is available **for the PostgreSQL connector only** in Prisma versions 4.5.0 and later.
+Support for declaring PostgreSQL extensions in your schema is available in preview for the PostgreSQL connector only in Prisma versions 4.5.0 and later.
 
 </Admonition>
 
@@ -20,13 +20,15 @@ Support for declaring PostgreSQL extensions in your schema is available **for th
 
 ## What are PostgreSQL extensions?
 
-PostgreSQL allows you to extend your database functionality by adding packages known as _extensions_. For example, the `citext` extension adds a case-insensitive string data type.
+PostgreSQL allows you to extend your database functionality by installing packages known as _extensions_. For example, the `citext` extension adds a case-insensitive string data type.
 
-!!some text on how to install them and difference between 'available' and 'installed' etc.
+To install an extension, it must already be available on the local file system of the your database server. Installing it then runs a script file that adds the new functionality.
 
-## How to enable the <inlineCode>postgresExtensions</inlineCode> preview feature
+Prisma's `postgresExtensions` preview feature allows you to represent PostgreSQL extensions in your Prisma schema. Note that specific extensions may add functionality that is not currently supported by Prisma. For example, an extension may add a type or index that is not supported by Prisma. This functionality must be implemented on a case-by-case basis and is not provided by this preview feature.
 
-PostgreSQL extensions are currently a preview feature. To enable the `postgresExtensions` preview feature, you will need to add the `postgresExtensions` feature flag to the `previewFeatures` field of the `generator` block in your Prisma schema file:
+## How to enable the <inlinecode>postgresExtensions</inlinecode> preview feature
+
+Representing PostgreSQL extensions in your Prisma schema is currently a preview feature. To enable the `postgresExtensions` preview feature, you will need to add the `postgresExtensions` feature flag to the `previewFeatures` field of the `generator` block in your Prisma schema file:
 
 ```prisma file=schema.prisma highlight=3;add
 generator client {
@@ -60,7 +62,7 @@ Each extension name in the Prisma schema can take the following optional argumen
 
 In the example above, the `hstore` extension uses the `myHstoreSchema` schema, and the `postgis` extension is installed with version 2.1.
 
-The `map` argument is useful when the PostgreSQL extension you want to install has a name that is not a valid identifier in the Prisma Schema Language. For example, the `uuid-ossp` PostgreSQL extension name is an invalid identifier because it contains a hyphen. In the following example, the extension is mapped to the valid name `uuidOssp` in the Prisma schema:
+The `map` argument is useful when the PostgreSQL extension you want to install has a name that is not a valid identifier in the Prisma schema. For example, the `uuid-ossp` PostgreSQL extension name is an invalid identifier because it contains a hyphen. In the following example, the extension is mapped to the valid name `uuidOssp` in the Prisma schema:
 
 ```prisma file=schema.prisma
 datasource db {
@@ -72,12 +74,19 @@ datasource db {
 
 ## How to introspect PostgreSQL extensions
 
-To introspect PostgreSQL extensions currently installed in your database and add relevant extensions to your Prisma schema, run `npx prisma db pull`.
+To [introspect](/concepts/components/introspection) PostgreSQL extensions currently installed in your database and add relevant extensions to your Prisma schema, run `npx prisma db pull`.
 
-Many PostgreSQL extensions are irrelevant to the Prisma schema (for example, because they are intended for database administration tasks that do not change the schema). If all these extensions were included, the list of extensions would be very long. To avoid this, Prisma maintains an allowlist of known relevant extensions. Extensions are introspected as follows:
+Many PostgreSQL extensions are not relevant to the Prisma schema. For example, some extensions are intended for database administration tasks that do not change the schema. If all these extensions were included, the list of extensions would be very long. To avoid this, Prisma maintains an allowlist of known relevant extensions. The current allowlist is the following:
+
+- `citext`
+- `postgis`
+- `pg_crypto`
+- `uuid-ossp`
+
+Extensions are introspected as follows:
 
 - The first time you introspect, all database extensions that are on the allowlist are added to your Prisma schema
-- When you re-introspect:
+- When you re-introspect, the behaviour depends on whether the extension is on the allowlist or not.
   - Extensions on the allowlist:
     - are **added** if they are in the database but not in the Prisma schema
     - are **kept** if they are in the Prisma schema and in the database
@@ -90,11 +99,9 @@ The `version` argument will not be added to the Prisma schema when you introspec
 
 ## How to migrate PostgreSQL extensions
 
-You can update your schema with [Prisma Migrate](/concepts/components/prisma-migrate)
+You can update your list of PostgreSQL extensions in your Prisma schema and apply the changes to your database with [Prisma Migrate](/concepts/components/prisma-migrate).
 
-!!notes
+This works in a similar way to migration of other elements of your Prisma schema, such as models or fields. However, there are the following differences:
 
-The diffing of extensions is analogous to diffing of other schema elements (tables, enums, columns, etc.), but with the following important differences:
-
-- The migration engine will not issue `DROP EXTENSION` statements if an extension is installed but the corresponding declaration is missing.
-- It will use the `IF NOT EXISTS` option in order for the feature to be adopted smoothly, without breakage (the extension may already have been created manually by the user or database host).
+- If you remove an extension from your schema but it is still installed on your database, Prisma Migrate will not uninstall it from the database.
+- If you add a new extension to your schema, it will only be installed if it does not already exist in the database, because the extension may already have been created manually.
