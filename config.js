@@ -40,16 +40,16 @@ const config = {
         bucketName: '/100-getting-started',
       },
       {
-        text: 'Concepts',
-        to: '/concepts',
+        text: 'Fundamentals',
+        to: '/fundamentals/',
         type: 'bucket',
-        bucketName: '/200-concepts',
+        bucketName: '/200-fundamentals',
       },
       {
-        text: 'Guides',
-        to: '/guides',
+        text: 'Prisma ORM',
+        to: '/prisma-orm/',
         type: 'bucket',
-        bucketName: '/300-guides',
+        bucketName: '/300-prisma-orm',
       },
       {
         text: 'Reference',
