@@ -62,7 +62,7 @@ The workflow when using Prisma Migrate in your project would be iterative and lo
 
 Prisma Migrate uses the following pieces of state to track the state of your database schema:
 
-- **Prisma schema**: the main configuration file. This contains your data source, generators, and data models.
+- **Prisma schema**: your source of truth that defines the structure of the database schema.
 - **Migrations history**: SQL files in your `prisma/migrations` folder representing the history of changes made to your database schema.
 - **Migrations table**: `prisma_migrations` table in the database that stores metadata for migrations that have been applied to the database.
 - **Database schema**: the state of the database.
@@ -76,9 +76,9 @@ Prisma Migrate uses the following pieces of state to track the state of your dat
 - The database configuration used in different environments should be similar to ensure it is reproducible.
 - The Prisma schema serves as the source of truth — describing the shape of your [database schema](https://www.prisma.io/dataguide/intro/database-glossary#schema).
 
-- [Schema drift](/guides/database/developing-with-prisma-migrate/troubleshooting-development#schema-drift): occurs when your database schema is out of sync with your migrations history and migrations table.
-
 ## Evolve your database schema with Prisma Migrate
+
+This section describes how you can evolve your database schema in different environments: development, staging, and production, using Prisma Migrate.
 
 ### Prisma Migrate in a development environment (local)
 
@@ -91,9 +91,15 @@ The [`prisma db push`](/reference/api-reference/command-reference#db-push) comma
 
 ![prisma db push development flow](https://user-images.githubusercontent.com/33921841/189866483-cec55d83-d1fe-4446-9c28-0a60329f975d.png)
 
-The `db push` command is useful for quickly prototyping and iterating on your database schema and prioritizing a desired end state for your database schema.
+The `db push` command is useful when:
+
+- You want to **quickly prototype and iterate** on schema design locally without the need to deploy these changes to other environments such as other developers, or staging and production environments.
+- You are prioritizing reaching a **desired end-state** and not the changes or steps executed to reach that end-state (there is no way to preview changes made by `db push`)
+- You do not need to control how schema changes impact data. There is no way to orchestrate schema and data migrations - if `db push` anticipates that changes will result in data loss, you can either accept data loss with the `--accept-data-loss` option or stop the process - there is no way to customize the changes.
 
 If the `db push` command detects a [schema drift](/guides/database/developing-with-prisma-migrate/troubleshooting-development#schema-drift), it will prompt you to reset your database. For example, this will happen when you add a required field to a table with existing content without providing a default value.
+
+> A [schema drift](/guides/database/developing-with-prisma-migrate/troubleshooting-development#schema-drift) occurs when your database schema is out of sync with your migrations history and migrations table.
 
 #### Track your migration history with `migrate dev`
 
@@ -107,6 +113,8 @@ The `migrate dev` command tracks the state of the database using the following p
 - the migrations history
 - the migrations table
 - the database schema
+
+> **Note**: The pieces of state used to track the state of a migration are the same as the ones described in [how Prisma Migrate tracks the migration state](#how-prisma-migrate-tracks-the-migration-state) section.
 
 You can customize migrations before you apply them to the database using the `--create-only` flag. For example, you might want to edit a migration if you want to rename columns without incurring any data loss or load database extensions (in PostgreSQL) and database views.
 
@@ -154,3 +162,5 @@ Under the hood, the `migrate deploy` command:
 ![](../../../300-guides/050-database/100-developing-with-prisma-migrate/deploy-db.png)
 
 The command should be run in an automated CI/ CD environment, for example GitHub Actions. (link to example?)
+
+If you don't have a migration history (`/migrations`), i.e using `prisma db push`, you will have to continue using `prisma db push` in your staging and production environments. Beware of the changes being applied to the database schema as some of them might be destructive. For example, `prisma db push` can't tell when you're performing a column rename. It will prompt a database reset (drop and re-creation).
