@@ -6,29 +6,11 @@ const config = {
     titleSuffix: ' | Prisma Docs',
   },
   redirects: [
+    // Added this object for redirect because gatsby filters through the redirects key in gatsby-browser.js.
+    // This object will create a "dummy" page in percy, creating a 404 page of `/foo/index`
     {
-      from: '/reference/tools-and-interfaces/prisma-schema/prisma-schema-file',
-      to: '/reference/tools-and-interfaces/prisma-schema',
-    },
-    {
-      from: '/reference/tools-and-interfaces/prisma-schema',
-      to: '/concepts/components/prisma-schema',
-    },
-    {
-      from: '/reference/tools-and-interfaces/prisma-client/api',
-      to: '/concepts/components/prisma-client',
-    },
-    {
-      from: '/reference/tools-and-interfaces/prisma-schema/models',
-      to: '/reference/tools-and-interfaces/prisma-schema/data-model#defining-models',
-    },
-    {
-      from: '/concepts/components/prisma-data-platform#prisma-data-proxy',
-      to: '/concepts/data-platform/data-proxy',
-    },
-    {
-      from: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-sometext',
-      to: '/concepts/overview/what-is-prisma/data-modeling#data-modeling-without-prisma',
+      from: '/foo',
+      to: '/bar',
     },
   ],
   header: {

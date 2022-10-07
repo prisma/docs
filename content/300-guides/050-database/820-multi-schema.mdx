@@ -1,0 +1,107 @@
+---
+title: How to use Prisma with multiple database schemas
+metaDescription: How to use Prisma with multiple database schemas
+tocDepth: 2
+---
+
+<TopBlock>
+
+<Admonition type="warning">
+
+Multiple database schema support is currently a very early, experimental preview feature. Introspection and applying your Prisma schema to your database with Prisma Migrate and `db push` are currently not supported. If you rely on them, please do not try this preview feature in the main branch of your project or in production.
+
+</Admonition>
+
+<Admonition type="warning">
+
+Multiple database schema support is currently only available with the PostgreSQL and SQL Server connectors.
+
+</Admonition>
+
+This guide explains how to include multiple database schemas in your Prisma schema, and how to query across multiple database schemas with Prisma Client.
+
+</TopBlock>
+
+## What are database schemas?
+
+Many database providers allow you to organise database tables into named groups. This can be done to make the logical structure of the data model easier to understand, or to avoid naming collisions between tables.
+
+In PostgreSQL and SQL Server these groups are known as schemas. We will refer to them as _database schemas_ to distinguish them from Prisma's own schema file.
+
+## How to enable the <inlinecode>multiSchema</inlinecode> preview feature
+
+Multi-schema support is currently in an early, experimental preview. To enable the `multiSchema` preview feature, you will need to add the `multiSchema` feature flag to the `previewFeatures` field of the `generator` block in your Prisma schema file:
+
+```prisma file=schema.prisma highlight=3;add
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+## How to include multiple database schemas in your Prisma schema
+
+To use multiple database schemas in your Prisma schema file, add the names of your database schemas to an array in the `schemas` field, in the `datasource` block. The following example adds a `"base"` and a `"transactional"` schema:
+
+```prisma file=schema.prisma highlight=9;add
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["base", "transactional"]
+}
+```
+
+You do not need to change your connection string. The `schema` value of your connection string is the default database schema that the Prisma Client connects to and uses for raw queries. All other Prisma Client queries will use the schema of the model that you are querying.
+
+To designate a model as belonging to a specific database schema, add a `@@schema` attribute with the name of the database schema as a parameter. In the following example the `User` model is part of the `"base"` schema, and the `Order` model is part of the `"transactional"` schema:
+
+```prisma file=schema.prisma highlight=5,13;add
+model User {
+  id     Int     @id
+  orders Order[]
+
+  @@schema("base")
+}
+
+model Order {
+  id      Int  @id
+  user    User @relation(fields: [id], references: [id])
+  user_id Int
+
+  @@schema("transactional")
+}
+```
+
+<Admonition type="warning">
+
+Currently it is not allowed to have models with the same name in your Prisma schema that use the `@@schema` attribute to reference different database schemas. All models in your Prisma schema must have unique names. Otherwise, your Prisma schema will fail to validate.
+
+</Admonition>
+
+## How to query across multiple database schemas with Prisma Client
+
+You can query models in multiple database schemas without any change to your Prisma Client query syntax. For example, the following query finds all orders for a given user, using the Prisma schema above:
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    user: {
+      id: 1,
+    },
+  },
+})
+```
+
+## Learn more about the <inlinecode>multiSchema</inlinecode> preview feature
+
+To learn more about future plans for the `multiSchema` preview feature, or to give feedback, refer to [our Github issue](https://github.com/prisma/prisma/issues/1122).
