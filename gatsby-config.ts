@@ -120,12 +120,6 @@ let plugins: any = [
   },
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
-  {
-    resolve: `gatsby-plugin-percy`,
-    options: {
-      // see actual configuration in `percy` key in `package.json`
-    },
-  },
 ]
 
 const algoliaPlugin = {
