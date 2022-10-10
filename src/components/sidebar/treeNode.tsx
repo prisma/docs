@@ -219,9 +219,15 @@ const TreeNode = ({
 
   const specialCases =
     slug &&
-    (urlGenerator(slug).includes('prisma-cli') ||
-      urlGenerator(slug).includes('deployment') ||
-      urlGenerator(slug).includes('sql-views'))
+    (urlGenerator(slug)
+      .replace(/\/index$/, '')
+      .endsWith('prisma-cli') ||
+      urlGenerator(slug)
+        .replace(/\/index$/, '')
+        .endsWith('deployment') ||
+      urlGenerator(slug)
+        .replace(/\/index$/, '')
+        .endsWith('sql-views'))
       ? '/'
       : ''
 
