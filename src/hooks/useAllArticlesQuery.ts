@@ -15,7 +15,6 @@ export const useAllArticlesQuery = () => {
               preview
               earlyaccess
               langSwitcher
-              search
               dbSwitcher
               hidePage
               codeStyle
