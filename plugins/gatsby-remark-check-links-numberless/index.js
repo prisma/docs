@@ -137,6 +137,7 @@ module.exports = async function plugin(
         }
         return !pathKeysWithoutIndex.includes(urlToCheck)
       })
+
       const brokenLinkCount = brokenLinks.length
       totalBrokenLinks += brokenLinkCount
       if (brokenLinkCount && verbose) {

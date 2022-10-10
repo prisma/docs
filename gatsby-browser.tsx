@@ -1,15 +1,15 @@
-const { init, trackPage } = require('./src/utils/stats')
-const { goToNav } = require('./src/utils/goToNavItem')
-const { redirects } = require('./config')
+import { goToNav } from './src/utils/goToNavItem'
+import { trackPage, init } from './src/utils/stats'
+import docsConfig from './config'
 
-exports.onClientEntry = () => {
+export const onClientEntry = () => {
   init()
 }
 
-exports.onRouteUpdate = ({ location }) => {
+export const onRouteUpdate = ({ location }) => {
   trackPage(location.pathname)
   goToNav(location.pathname) // This may not work anymore due to the new scroll behavior of the sidebar
-  const isRedirectablePath = redirects.filter((redirect) => {
+  const isRedirectablePath = docsConfig.redirects.filter((redirect) => {
     const redirectFromSplit = redirect.from.split('#')
     if (redirectFromSplit.length > 1) {
       const isHashPath =

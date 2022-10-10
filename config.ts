@@ -1,4 +1,4 @@
-const config = {
+const siteConfig = {
   gatsby: {
     pathPrefix: '/docs',
     siteUrl: 'https://www.prisma.io',
@@ -436,4 +436,4 @@ const config = {
   },
 }
 
-module.exports = config
+export default siteConfig
