@@ -83,27 +83,27 @@ const siteConfig = {
         links: [
           {
             text: 'What is Prisma',
-            url: '/docs/concepts/overview/what-is-prisma',
+            url: '/concepts/overview/what-is-prisma',
             codeBlock: false,
           },
           {
             text: 'Why Prisma?',
-            url: '/docs/concepts/overview/why-prisma',
+            url: '/concepts/overview/why-prisma',
             codeBlock: false,
           },
           {
             text: 'Should you use Prisma?',
-            url: '/docs/concepts/overview/should-you-use-prisma',
+            url: '/concepts/overview/should-you-use-prisma',
             codeBlock: false,
           },
           {
             text: 'Prisma in your stack',
-            url: '/docs/concepts/overview/prisma-in-your-stack',
+            url: '/concepts/overview/prisma-in-your-stack',
             codeBlock: false,
           },
           {
             text: 'Under the hood',
-            url: '/docs/concepts/components/prisma-engines',
+            url: '/concepts/components/prisma-engines',
             codeBlock: false,
           },
         ],
@@ -114,37 +114,37 @@ const siteConfig = {
         links: [
           {
             text: 'Prisma schema',
-            url: '/docs/concepts/components/prisma-schema',
+            url: '/concepts/components/prisma-schema',
             codeBlock: false,
           },
           {
             text: 'Prisma Client',
-            url: '/docs/concepts/components/prisma-client',
+            url: '/concepts/components/prisma-client',
             codeBlock: false,
           },
           {
             text: 'Prisma Migrate',
-            url: '/docs/concepts/components/prisma-migrate',
+            url: '/concepts/components/prisma-migrate',
             codeBlock: false,
           },
           {
             text: 'Introspection',
-            url: '/docs/concepts/components/introspection',
+            url: '/concepts/components/introspection',
             codeBlock: false,
           },
           {
             text: 'Prisma CLI',
-            url: '/docs/concepts/components/prisma-cli',
+            url: '/concepts/components/prisma-cli',
             codeBlock: false,
           },
           {
             text: 'Prisma Studio',
-            url: '/docs/concepts/components/prisma-studio',
+            url: '/concepts/components/prisma-studio',
             codeBlock: false,
           },
           {
             text: 'Preview features',
-            url: '/docs/concepts/components/preview-features',
+            url: '/concepts/components/preview-features',
             codeBlock: false,
           },
         ],
@@ -155,32 +155,32 @@ const siteConfig = {
         links: [
           {
             text: 'PostgreSQL',
-            url: '/docs/concepts/database-connectors/postgresql',
+            url: '/concepts/database-connectors/postgresql',
             codeBlock: false,
           },
           {
             text: 'MySQL',
-            url: '/docs/concepts/database-connectors/mysql',
+            url: '/concepts/database-connectors/mysql',
             codeBlock: false,
           },
           {
             text: 'MongoDB',
-            url: '/docs/concepts/database-connectors/mongodb',
+            url: '/concepts/database-connectors/mongodb',
             codeBlock: false,
           },
           {
             text: 'SQL Server',
-            url: '/docs/concepts/database-connectors/sql-server',
+            url: '/concepts/database-connectors/sql-server',
             codeBlock: false,
           },
           {
             text: 'SQLite',
-            url: '/docs/concepts/database-connectors/sqlite',
+            url: '/concepts/database-connectors/sqlite',
             codeBlock: false,
           },
           {
             text: 'CockroachDB',
-            url: '/docs/concepts/database-connectors/cockroachdb',
+            url: '/concepts/database-connectors/cockroachdb',
             codeBlock: false,
           },
         ],
@@ -191,22 +191,22 @@ const siteConfig = {
         links: [
           {
             text: 'Editor setup',
-            url: '/docs/guides/development-environment/editor-setup',
+            url: '/guides/development-environment/editor-setup',
             codeBlock: false,
           },
           {
             text: 'Codemod',
-            url: '/docs/guides/upgrade-guides/upgrading-versions/codemods',
+            url: '/guides/upgrade-guides/upgrading-versions/codemods',
             codeBlock: false,
           },
           {
             text: 'Telemetry',
-            url: '/docs/concepts/more/telemetry',
+            url: '/concepts/more/telemetry',
             codeBlock: false,
           },
           {
             text: 'Comparing Prisma',
-            url: '/docs/concepts/more/comparisons',
+            url: '/concepts/more/comparisons',
             codeBlock: false,
           },
         ],
