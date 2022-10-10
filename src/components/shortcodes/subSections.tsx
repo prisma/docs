@@ -28,7 +28,7 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
       if (
         !(
           withPrefix(tree.url) ===
-            `${currentPath.substr(-1) === '/' ? currentPath.slice(0, -1) : currentPath}` &&
+            `${currentPath.substring(-1) === '/' ? currentPath.slice(0, -1) : currentPath}` &&
           tree.label !== 'index'
         )
       ) {
@@ -41,7 +41,7 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
   }
 
   getSubSecs(rootPath ? rootPath : location.pathname, treeData.items)
-
+  //console.log(getSubSecs(rootPath ? rootPath : location.pathname, treeData.items))
   const list = (subsecs: any, dep: number) => {
     const titleHasNumber = /\d./
 
@@ -71,6 +71,7 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
     if (subs && subs[0] && titleHasNumber.test(subs[0].title)) {
       subs.sort(sortOnTitleNumbers)
     }
+
     return (
       <ul className="list">
         {subs.map((sec: any, index: number) => (
