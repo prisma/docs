@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 import SwitchTech from './switchTech'
 import CodeBlock from './codeBlock'
 import TabbedContent from './tabbedContent'
@@ -17,7 +17,7 @@ import Quiz from './quiz'
 import Tip from './tip'
 import NavigationLinksContainer from './navigationLinksContainer'
 
-export default {
+const shortcodes = {
   h1: () => <h1 style={{ display: 'none' }} />,
   h2: ({ id, ...props }: any) => <h2 id={id.replace(/inlinecode/g, '')} {...props} />,
   h3: ({ id, ...props }: any) => <h3 id={id.replace(/inlinecode/g, '')} {...props} />,
@@ -35,9 +35,9 @@ export default {
   SwitchTech,
   FileWithIcon,
   inlineCode: (props: any) => <code className="inline-code" {...props} />,
-  code: Code,
-  details: CollapseBox,
-  table: Table,
+  code: (props: any) => <Code {...props} />,
+  details: (props: any) => <CollapseBox {...props} />,
+  table: (props: any) => <Table {...props} />,
   ButtonLink,
   Subsections,
   TopBlock,
@@ -55,3 +55,5 @@ export default {
     <NavigationLinksContainer {...props}>{props.children}</NavigationLinksContainer>
   ),
 }
+
+export default shortcodes
