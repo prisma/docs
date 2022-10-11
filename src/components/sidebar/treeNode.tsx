@@ -5,7 +5,8 @@ import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
 import { useLocation } from '@reach/router'
-import { withPrefix } from 'gatsby'
+import { graphql, useStaticQuery, withPrefix } from 'gatsby'
+import config from '../../../config'
 
 const List = styled.ul`
   list-style: none;
@@ -157,6 +158,8 @@ const TreeNode = ({
   codeStyle,
   parents,
 }: any) => {
+  const SpecialPaths = config.siteMetadata.SpecialPaths
+
   let isCollapsed = collapsed[label]
   const hasChildren = items.length !== 0
 
@@ -214,20 +217,17 @@ const TreeNode = ({
   }, [isCollapsed])
 
   React.useEffect(() => {
-    if (lastLevel && isCurrent && hasExpandButton) collapse()
+    console.log(SpecialPaths)
+    if (lastLevel && isCurrent && hasExpandButton && collapsed[label]) setCollapsed(label, true)
   }, [])
 
   const specialCases =
     slug &&
-    (urlGenerator(slug)
-      .replace(/\/index$/, '')
-      .endsWith('prisma-cli') ||
+    SpecialPaths.find((e: string) =>
       urlGenerator(slug)
         .replace(/\/index$/, '')
-        .endsWith('deployment') ||
-      urlGenerator(slug)
-        .replace(/\/index$/, '')
-        .endsWith('sql-views'))
+        .endsWith(e)
+    )
       ? '/'
       : ''
 
