@@ -223,13 +223,13 @@ const TreeNode = ({
 
   const specialCases =
     slug &&
-    SpecialPaths.find((e: string) =>
+    (SpecialPaths.find((e: string) =>
       urlGenerator(slug)
         .replace(/\/index$/, '')
         .endsWith(e)
     )
       ? '/'
-      : ''
+      : '')
 
   const isCurrent =
     location &&
