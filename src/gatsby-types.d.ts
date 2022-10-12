@@ -655,7 +655,6 @@ declare namespace Queries {
     | 'childMdx.frontmatter.hiddenPage'
     | 'childMdx.frontmatter.hidePage'
     | 'childMdx.frontmatter.langSwitcher'
-    | 'childMdx.frontmatter.metaDecription'
     | 'childMdx.frontmatter.metaDescription'
     | 'childMdx.frontmatter.metaDescriptions'
     | 'childMdx.frontmatter.metaTitle'
@@ -816,7 +815,6 @@ declare namespace Queries {
     | 'childrenMdx.frontmatter.hiddenPage'
     | 'childrenMdx.frontmatter.hidePage'
     | 'childrenMdx.frontmatter.langSwitcher'
-    | 'childrenMdx.frontmatter.metaDecription'
     | 'childrenMdx.frontmatter.metaDescription'
     | 'childrenMdx.frontmatter.metaDescriptions'
     | 'childrenMdx.frontmatter.metaTitle'
@@ -1948,7 +1946,6 @@ declare namespace Queries {
     | 'frontmatter.hiddenPage'
     | 'frontmatter.hidePage'
     | 'frontmatter.langSwitcher'
-    | 'frontmatter.metaDecription'
     | 'frontmatter.metaDescription'
     | 'frontmatter.metaDescriptions'
     | 'frontmatter.metaTitle'
@@ -2069,7 +2066,6 @@ declare namespace Queries {
     readonly hiddenPage: Maybe<Scalars['Boolean']>
     readonly hidePage: Maybe<Scalars['Boolean']>
     readonly langSwitcher: Maybe<ReadonlyArray<Maybe<Scalars['String']>>>
-    readonly metaDecription: Maybe<Scalars['String']>
     readonly metaDescription: Maybe<Scalars['String']>
     readonly metaDescriptions: Maybe<Scalars['String']>
     readonly metaTitle: Maybe<Scalars['String']>
@@ -2094,7 +2090,6 @@ declare namespace Queries {
     readonly hiddenPage: InputMaybe<BooleanQueryOperatorInput>
     readonly hidePage: InputMaybe<BooleanQueryOperatorInput>
     readonly langSwitcher: InputMaybe<StringQueryOperatorInput>
-    readonly metaDecription: InputMaybe<StringQueryOperatorInput>
     readonly metaDescription: InputMaybe<StringQueryOperatorInput>
     readonly metaDescriptions: InputMaybe<StringQueryOperatorInput>
     readonly metaTitle: InputMaybe<StringQueryOperatorInput>
