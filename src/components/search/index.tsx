@@ -171,7 +171,6 @@ export default function Search({ hitsStatus, location }: any) {
   }, [showHits, query])
 
   React.useEffect(() => {
-    console.log(query)
     setSearchState(urlToSearchState(location))
     setQuery(searchState.query)
   }, [location])

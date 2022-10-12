@@ -4,7 +4,7 @@ import Up from '../icons/Up'
 import Down from '../icons/Down'
 import Link from './link'
 import config from '../../config'
-import { ButtonWrapper } from './customMdx/button'
+import { ButtonWrapper } from './shortcodes/button'
 import Twitter from '../icons/Twitter'
 import { useLocation } from '@reach/router'
 import { X } from 'react-feather'
@@ -100,7 +100,7 @@ const PageBottom = ({ editDocsPath }: any) => {
 
   // Send the initial sentiment
   const sendSentiment = useCallback(
-    async (sentiment) => {
+    async (sentiment: any) => {
       const createdSetiment = await fetch(config.feedback.sentimentUrl, {
         method: 'POST',
         mode: 'cors',
