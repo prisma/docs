@@ -311,22 +311,25 @@ transaction functions. We recommend you get in and out as quick as possible!
 
 </Admonition>
 
-When two or more transactions run concurrently in certain isolation levels, timing issues can cause conflicts, such as the violation of unique constraints. For example, consider the following sequence of events where Transaction A and Tranasaction B both attempt to execute a `deleteMany` then a `createMany` operation:
+When two or more transactions run concurrently in certain isolation levels, timing issues can cause conflicts, such as the violation of unique constraints. For example, consider the following sequence of events where Transaction A and Tranasaction B both attempt to execute a `deleteMany` and a `createMany` operation:
 
 1. Transaction A: `deleteMany` removes all rows that would cause a conflict.
 1. Transaction B: `deleteMany` operation.
 1. Transaction B: `createMany` operation creates a new set of rows.
-1. Transaction B: Transaction B is committed.
-1. Transaction A: `createMany` operation. The newly-inserted rows conflict with the rows that Transaction B committed at step 4.
+1. Transaction B: The application commits transaction B.
+1. Transaction A: `createMany` operation. The newly-inserted rows conflict with the rows that transaction B added at step 4.
 
-In PostgreSQL and Microsoft SQL Server, the default [isolation level](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels) is `ReadCommited`. This isolation level does not guarantee repeatable reads. If your application commits another transaction between a `deleteMany` and a `createMany` call, then the current transaction might not observe the newly-created rows.
+This conflict can occur at the [isolation level](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels) `ReadCommited`, which is the default isolation level in PostgreSQL and Microsoft SQL Server. To avoid this problem, you can set a higher isolation level (`RepeatableRead` or `Serializable`).
 
-To avoid this problem, you can set higher isolation levels of either `RepeatableRead` or `Serializable`. From Prisma version 4.4.0, you do not need to set the isolation level in your database configuration. You can instead set a higher isolation level on the transactions.
+From Prisma version 4.4.0, you do not need to set the isolation level in your database configuration. You can instead set the isolation level on a transaction. This overrides the isolation level on your database server for that transaction. [Learn more about isolation levels in Prisma tranasctions](#transaction-isolation-level).
 
 To avoid transaction write conflicts and deadlocks:
 
-1. On your transaction, use the `isolationLevel` parameter to set the transaciton to `Prisma.TransactionIsolationLevel.Serializable`. This ensures that multiple concurrent or parallel transactions are committed as if they were run serially (or throws an error otherwise). This overrides the isolation level on your database server, so it does not matter what the default setting of your database server is.
-2. You can trap any P2034 errors thrown by concurrent transactions. In your application code, you can build a retry around your transaction with the `Serializable` isolation level. For example:
+1. On your transaction, use the `isolationLevel` parameter to set the transaciton to `Prisma.TransactionIsolationLevel.Serializable`.
+
+   This ensures that your application commits multiple concurrent or parallel transactions as if they were run serially. Where a transaction fails due to a write conflict or deadlock, Prisma returns a [P2034 error](/reference/api-reference/error-reference#p2034).
+
+2. In your application code, build a retry around your transaction to trap any P2034 errors, as shown in this example:
 
 ```ts
 import { Prisma, PrismaClient } from '@prisma/client'
@@ -366,8 +369,6 @@ async function main() {
   }
 }
 ```
-
-[Learn more about isolation levels in Prisma tranasctions](#transaction-isolation-level).
 
 ### Transaction isolation level
 
