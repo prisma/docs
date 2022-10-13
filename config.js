@@ -57,13 +57,6 @@ const config = {
         type: 'bucket',
         bucketName: '/400-reference',
       },
-      {
-        text: 'Prisma Data Platform',
-        to: '/data-platform',
-        type: 'bucket',
-        bucketName: '/800-data-platform',
-      },
-      { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
