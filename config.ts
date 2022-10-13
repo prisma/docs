@@ -249,7 +249,7 @@ const siteConfig = {
         color: '#ED64A6',
         small: true,
         content: 'Upgrade to Prisma from Prisma 1 or Graphcool.',
-        url: '/docs/guides/upgrade-guides',
+        url: 'guides/upgrade-guides',
       },
       {
         title: 'Deploying Prisma apps',
@@ -257,7 +257,7 @@ const siteConfig = {
         small: false,
         content:
           'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
-        url: '/guides/deployment',
+        url: 'guides/deployment',
       },
     ],
     ReferenceText:
@@ -333,11 +333,6 @@ const siteConfig = {
     ],
 
     MoreUsefulLinks: [
-      {
-        text: `What's new in Prisma docs`,
-        url: 'about/prisma-docs/whats-new-in-prisma-docs',
-        codeBlock: false,
-      },
       {
         text: 'About the docs ',
         url: 'about/prisma-docs/about-the-docs',
