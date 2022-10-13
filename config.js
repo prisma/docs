@@ -35,9 +35,9 @@ const config = {
     secondLevelHeaderMenuItems: [
       {
         text: 'Get Started',
-        to: '/getting-started',
+        to: '/get-started',
         type: 'bucket',
-        bucketName: '/100-getting-started',
+        bucketName: '/100-get-started',
       },
       {
         text: 'Fundamentals',
