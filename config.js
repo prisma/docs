@@ -52,10 +52,10 @@ const config = {
         bucketName: '/300-prisma-orm',
       },
       {
-        text: 'Reference',
-        to: '/reference',
+        text: 'Prisma Data Platform',
+        to: '/data-platform',
         type: 'bucket',
-        bucketName: '/400-reference',
+        bucketName: '/800-data-platform',
       },
     ],
     search: {
