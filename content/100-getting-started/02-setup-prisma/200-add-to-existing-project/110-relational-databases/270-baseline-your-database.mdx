@@ -1,0 +1,395 @@
+---
+title: 'Baseline your database'
+metaTitle: 'Baseline your database'
+metaDescription: 'Baseline your database using Prisma Migrate in your project'
+langSwitcher: ['typescript', 'node']
+dbSwitcher: ['postgres', 'mysql', 'sqlserver', 'cockroachdb']
+toc: false
+---
+
+## Create an initial migration
+
+To continue evolving your database schema using Prisma Migrate, you will need to [baseline your database](/guides/database/developing-with-prisma-migrate/add-prisma-migrate-to-a-project).
+
+Baselining refers to initializing your migration history for your database that might already contain data and **cannot be reset** — such as your production database. Baselining tells Prisma Migrate to assume that one or more migrations have already been applied to your database.
+
+To baseline your database, you're going to use [`prisma migrate diff`](/reference/api-reference/command-reference#migrate-diff) to compare your schema and database, and save the output into an SQL file.
+
+First, create a migrations directory and a folder with your preferred name to store the migration file.
+
+```terminal
+mkdir -p prisma/migrations/init
+```
+
+Next, generate the migration file using `prisma migrate diff` using the following arguments:
+
+- `--from-empty`: assumes the data model you're migrating from is empty
+- `--to-schema-datamodel`: the current database state using the URL in the `datasource` block
+- `--script`: output a SQL script
+
+```terminal
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/init/migration.sql
+```
+
+## Review the migration
+
+The command will generate a migration that should resemble the following script:
+
+<SwitchTech technologies={['*', 'postgres']}>
+
+```sql file=prisma/migrations/init/migration.sql
+CREATE TABLE "public"."User" (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name VARCHAR(255),
+  email VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE "public"."Post" (
+  id SERIAL PRIMARY KEY NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+  content TEXT,
+  published BOOLEAN NOT NULL DEFAULT false,
+  "authorId" INTEGER NOT NULL,
+  FOREIGN KEY ("authorId") REFERENCES "public"."User"(id)
+);
+
+CREATE TABLE "public"."Profile" (
+  id SERIAL PRIMARY KEY NOT NULL,
+  bio TEXT,
+  "userId" INTEGER UNIQUE NOT NULL,
+  FOREIGN KEY ("userId") REFERENCES "public"."User"(id)
+);
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+```sql file=prisma/migrations/init/migration.sql
+CREATE TABLE User (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
+  name VARCHAR(255),
+  email VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE Post (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  createdAt TIMESTAMP NOT NULL DEFAULT now(),
+  content TEXT,
+  published BOOLEAN NOT NULL DEFAULT false,
+  authorId INTEGER NOT NULL,
+  FOREIGN KEY (authorId) REFERENCES User(id)
+);
+
+CREATE TABLE Profile (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
+  bio TEXT,
+  userId INTEGER UNIQUE NOT NULL,
+  FOREIGN KEY (userId) REFERENCES User(id)
+);
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'sqlserver']}>
+
+```sql file=prisma/migrations/init/migration.sql
+CREATE TABLE [dbo].[Post] (
+    [id] INT NOT NULL IDENTITY(1,1),
+    [createdAt] DATETIME2 NOT NULL CONSTRAINT [Post_createdAt_df] DEFAULT CURRENT_TIMESTAMP,
+    [updatedAt] DATETIME2 NOT NULL,
+    [title] VARCHAR(255) NOT NULL,
+    [content] NVARCHAR(1000),
+    [published] BIT NOT NULL CONSTRAINT [Post_published_df] DEFAULT 0,
+    [authorId] INT NOT NULL,
+    CONSTRAINT [Post_pkey] PRIMARY KEY ([id])
+);
+
+CREATE TABLE [dbo].[Profile] (
+    [id] INT NOT NULL IDENTITY(1,1),
+    [bio] NVARCHAR(1000),
+    [userId] INT NOT NULL,
+    CONSTRAINT [Profile_pkey] PRIMARY KEY ([id]),
+    CONSTRAINT [Profile_userId_key] UNIQUE ([userId])
+);
+
+CREATE TABLE [dbo].[User] (
+    [id] INT NOT NULL IDENTITY(1,1),
+    [email] NVARCHAR(1000) NOT NULL,
+    [name] NVARCHAR(1000),
+    CONSTRAINT [User_pkey] PRIMARY KEY ([id]),
+    CONSTRAINT [User_email_key] UNIQUE ([email])
+);
+
+ALTER TABLE [dbo].[Post] ADD CONSTRAINT [Post_authorId_fkey] FOREIGN KEY ([authorId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+ALTER TABLE [dbo].[Profile] ADD CONSTRAINT [Profile_userId_fkey] FOREIGN KEY ([userId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+```
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'cockroachdb']}>
+
+```sql file=prisma/migrations/init/migration.sql
+CREATE TABLE "User" (
+  id INT8 PRIMARY KEY DEFAULT unique_rowid(),
+  name STRING(255),
+  email STRING(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE "Post" (
+  id INT8 PRIMARY KEY DEFAULT unique_rowid(),
+  title STRING(255) UNIQUE NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+  content STRING,
+  published BOOLEAN NOT NULL DEFAULT false,
+  "authorId" INT8 NOT NULL,
+  FOREIGN KEY ("authorId") REFERENCES "User"(id)
+);
+
+CREATE TABLE "Profile" (
+  id INT8 PRIMARY KEY DEFAULT unique_rowid(),
+  bio STRING,
+  "userId" INT8 UNIQUE NOT NULL,
+  FOREIGN KEY ("userId") REFERENCES "User"(id)
+);
+```
+
+</SwitchTech>
+
+Review the SQL migration file to ensure everything is correct.
+
+Next, mark the migration as applied using `prisma migrate resolve` with the `--applied` argument.
+
+```terminal
+npx prisma migrate resolve --applied init
+```
+
+The command will mark `init` as applied by adding it to the `_prisma_migrations` table.
+
+You can now make changes in your Prisma schema and use `prisma migrate dev` to evolve your database schema — generate and apply migrations to your database.
+
+<SwitchTech technologies={['node', 'postgresql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-postgres"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink color="dark" type="primary" href="./next-steps-node-postgres" arrow>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'mysql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-mysql"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink color="dark" type="primary" href="./next-steps-node-mysql" arrow>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'planetscale']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-planetscale"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-node-planetscale"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'sqlserver']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-sqlserver"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-node-sqlserver"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'cockroachdb']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-cockroachdb"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-node-cockroachdb"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'postgresql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-postgres"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-typescript-postgres"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'mysql']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-mysql"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-typescript-mysql"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'sqlserver']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-sqlserver"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-typescript-sqlserver"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'cockroachdb']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-cockroachdb"
+  arrowLeft
+>
+  Install Prisma Client
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./next-steps-typescript-cockroachdb"
+  arrow
+>
+  Next Steps
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
