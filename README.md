@@ -1,7 +1,9 @@
 # Prisma Documentation
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [badge-all-contributors]: https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
 
@@ -38,7 +40,7 @@ npm run dev
 Run a local build to run the functions using the following command:
 
 ```
-netlify dev
+vercel dev
 ```
 
 > Make sure you have the correct path to `POSTGRES_URL` in your local `.env` file to test the functions
