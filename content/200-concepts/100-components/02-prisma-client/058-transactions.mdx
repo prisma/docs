@@ -302,74 +302,6 @@ transaction functions. We recommend you get in and out as quick as possible!
 
 </Admonition>
 
-### Transaction timing issues
-
-<Admonition type = "note">
-
-- The solution in this section does not apply to MongoDB, because MongoDB does not support [isolation levels](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels).
-- The timing issues discussed in this section do not apply to CockroachDB and SQLite, because these databases only support the highest `Serializable` isolation level.
-
-</Admonition>
-
-When two or more transactions run concurrently in certain [isolation levels](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels), timing issues can cause conflicts, such as the violation of unique constraints. For example, consider the following sequence of events where Transaction A and Tranasaction B both attempt to execute a `deleteMany` and a `createMany` operation:
-
-1. Transaction A: `deleteMany` removes all rows that would cause a conflict.
-1. Transaction B: `deleteMany` operation.
-1. Transaction B: `createMany` operation creates a new set of rows.
-1. Transaction B: The application commits transaction B.
-1. Transaction A: `createMany` operation. The newly-inserted rows conflict with the rows that transaction B added at step 4.
-
-This conflict can occur at the isolation level `ReadCommited`, which is the default isolation level in PostgreSQL and Microsoft SQL Server. To avoid this problem, you can set a higher isolation level (`RepeatableRead` or `Serializable`).
-
-From Prisma version 4.4.0, you do not need to set the isolation level in your database configuration. You can instead set the isolation level on a transaction. This overrides the isolation level on your database server for that transaction. [Learn more about isolation levels in Prisma tranasctions](#transaction-isolation-level).
-
-To avoid transaction write conflicts and deadlocks:
-
-1. On your transaction, use the `isolationLevel` parameter to set the transaciton to `Prisma.TransactionIsolationLevel.Serializable`.
-
-   This ensures that your application commits multiple concurrent or parallel transactions as if they were run serially. Where a transaction fails due to a write conflict or deadlock, Prisma returns a [P2034 error](/reference/api-reference/error-reference#p2034).
-
-2. In your application code, build a retry around your transaction to trap any P2034 errors, as shown in this example:
-
-```ts
-import { Prisma, PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-async function main() {
-  const MAX_RETRIES = 5
-  let retries = 0
-
-  let result
-  while (retries < MAX_RETRIES) {
-    try {
-      result = await prisma.$transaction(
-        [
-          prisma.user.deleteMany({
-            where: {
-              /** args */
-            },
-          }),
-          prisma.post.createMany({
-            data: {
-              /** args */
-            },
-          }),
-        ],
-        {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        }
-      )
-    } catch (error) {
-      if (error.code === 'P2034') {
-        retries++
-        continue
-      }
-      throw error
-    }
-  }
-}
-```
-
 ### Transaction isolation level
 
 <Admonition type="info">
@@ -463,7 +395,6 @@ See the following resources:
 - [Transaction isolation levels in MySQL](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
 
 CockroachDB and SQLite only support the `Serializable` isolation level.
-<<<<<<< HEAD
 
 ### Transaction timing issues
 
@@ -532,7 +463,3 @@ async function main() {
   }
 }
 ```
-
-=======
-
-> > > > > > > parent of 1912b1f2 (Update 058-transactions.mdx)
