@@ -5586,7 +5586,7 @@ await prisma.user.findMany({
 
 From version 4.5.0, the generated type `UserWhereUniqueInput` on [`where`](#where) exposes all fields on the model, not just unique fields. To use this feature, [enable the `extendedWhereUnique` preview flag](#enable-the-ability-to-filter-on-non-unique-fields-with-userwhereuniqueinput).
 
-You must specify at least one unique field in your `where` statement, and you can specify any number of additional unique and non-unique fields. You can use this to add filters to any operation that returns a single record. For example, you can use this feature for the following:
+You must specify at least one unique field in your `where` statement [outside of boolean operators](#boolean-operators-with-userwhereuniqueinput), and you can specify any number of additional unique and non-unique fields. You can use this to add filters to any operation that returns a single record. For example, you can use this feature for the following:
 
 - [Optimistic concurrency control on updates](#optimistic-concurrency-control-on-updates)
 - [Permission checks](#permission-checks)
@@ -5609,13 +5609,7 @@ You can filter on non-unique fields to perform [optimistic concurrency control](
 
 To perform optimistic concurrency control, we recommend that you use a `version` field to check whether the data in the record has changed while your code executes. Before version 4.5.0, you could not evaluate the `version` field in an `update` operation, because this field is non-unique. This is possible from version 4.5.0.
 
-**TBA:**
-
-**1. explain the example - what happens in this sequence?**
-
-**2. consider updating the OCC doc**
-
-In the following example, **need to add details on what happens with the new feature - which of these updates gets applied?**:
+In the following example, `updateOne` and `updateTwo` first read the same record and then attempt to update it. The database only executes these updates if the value in `version` is the same as the value when it did the initial read. When the database executes the first of these updates (which might be `updateOne` or `updateTwo`, depending on timing), it increments the value in `version`. This means that the database does not execute the second update because the value in `version` has changed.
 
 ```prisma
 model User {
@@ -5648,7 +5642,9 @@ function main () {
 
 <Admonition type="info">
 
-Note: Although you can perform optimistic currency control on nested updates, you must fetch the nested model first to get its version. **TBA: this needs to be clarified, plus we could give a short example of this**
+In optimistic concurrency control, you must fetch the record, relation, or nested record before you update it.
+
+**Have I mangled this with my rewrite?**
 
 </Admonition>
 
@@ -5656,7 +5652,7 @@ Note: Although you can perform optimistic currency control on nested updates, yo
 
 You can filter on non-unique fields to check permissions during an update.
 
-In the following example, a user wants to update a post title. The `where` statement checks the field `authorId` to confirm that the user is the author of the post. The application only updates the post title if the user is the post author.
+In the following example, a user wants to update a post title. The `where` statement checks the value in `authorId` to confirm that the user is the author of the post. The application only updates the post title if the user is the post author.
 
 ```ts
 await prisma.post.update({
@@ -5675,22 +5671,107 @@ In the following example, we do not want to return a post if it is soft-deleted.
 prisma.Post.findUnique({ where: { id: postId, isDeleted: false } })
 ```
 
-### Considerations
+### <inlinecode>UserWhereUniqueInput</inlinecode> considerations
 
-#### Boolean operations
+#### Boolean operators with <inlinecode>UserWhereUniqueInput</inlinecode>
 
-With `UserWhereUniqueInput`, you cannot use boolean operations to test unique fields in conjunction with other unique fields or with non-unique fields.
+With `UserWhereUniqueInput`, you must specify at least one unique field outside of the boolean operators `AND`, `OR`, `NOT`. You can still use these boolean operators in conjunction with any other unique fields or non-unique fields in your filter.
 
-In the following example, we try to test `id`, a unique field, in conjunction with `email`. This is not possible. **TBA: state what happens - an error? nothing returned?**
+In the following example, we test `id`, a unique field, in conjunction with `email`. This is valid.
 
 ```ts
 await prisma.user.update({
   where: { id: 1, OR: [{ email: "bob@prisma.io" }, { email: "alice@prisma.io" }] },
-  // ^^^ You cannot test `id` (a unique field) in conjunction with another field
+        // ^^^ Valid: the expression specifies a unique field (`id`) outside of any boolean operators
+  data: { ... }
+})
+
+// SQL equivalent:
+// WHERE id = 1 AND (email = "bob@prisma.io" OR email = "alice@prisma.io")
+```
+
+The following example is not valid, because there is no unique field outside of any boolean operators:
+
+```ts
+await prisma.user.update({
+  where: { OR: [{ email: "bob@prisma.io" }, { email: "alice@prisma.io" }] },
+        // ^^^ Invalid: the expressions does not contain a unique field outside of boolean operators
   data: { ... }
 })
 ```
 
 #### One-to-one relations
 
-**TBW: need to add any caveats the user needs to know about 1-2-1 relations, depending on implementation**
+From version 4.5.0, you can filter on non-unique fields in the following operations on [one-to-one relations](/concepts/components/prisma-schema/relations/one-to-one-relations):
+
+- Nested update
+- Nested upsert
+- Nested disconnect
+- Nested delete
+
+Prisma Client automatically uses a unique filter to select the appropriate related record. As a result, you do not need to specify a unique filter in your `where` statement with a `WhereUniqueInput` [generated type](#generated-types-for-where). Instead, the `where` statement has a `WhereInput` generated type. You can use this to filter without the restrictions of `WhereUniqueInput`.
+
+##### Nested update example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      // Before Prisma version 4.5.0
+      update: { field: "updated" }
+      // From Prisma version 4.5.0, you can also do the following:
+      update: { where: { /*WhereInput*/ }, data: { field: "updated" } } }
+    }
+  }
+})
+```
+
+##### Nested upsert example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      upsert: {
+        where: { /* WhereInput */ } // new argument from Prisma 4.5.0
+        create: { /* CreateInput */ },
+        update: { /* CreateInput */ },
+      }
+    }
+  }
+})
+```
+
+##### Nested disconnect example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      // Before Prisma version 4.5.0
+      disconnect: true
+      // From Prisma version 4.5.0, you can also do the following:
+      disconnect: { /* WhereInput */ }
+    }
+  }
+})
+```
+
+##### Nested delete example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      // Before Prisma version 4.5.0
+      delete: true
+      // From Prisma version 4.5.0, you can also do the following:
+      delete: { /* WhereInput */ }
+    }
+  }
+})
+```
