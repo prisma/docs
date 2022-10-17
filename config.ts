@@ -334,11 +334,6 @@ const siteConfig = {
 
     MoreUsefulLinks: [
       {
-        text: `What's new in Prisma docs`,
-        url: 'about/prisma-docs/whats-new-in-prisma-docs',
-        codeBlock: false,
-      },
-      {
         text: 'About the docs ',
         url: 'about/prisma-docs/about-the-docs',
         codeBlock: false,
@@ -350,17 +345,17 @@ const siteConfig = {
       },
       {
         text: 'Ask a question on Github',
-        url: 'support#ask-a-question-about-prisma',
+        url: 'guides/database/troubleshooting-orm#need-help',
         codeBlock: false,
       },
       {
         text: 'Create a bug report',
-        url: 'support#create-a-bug-report-for-prisma',
+        url: 'guides/database/troubleshooting-orm',
         codeBlock: false,
       },
       {
         text: 'Submit a feature request',
-        url: 'support#submit-a-feature-request',
+        url: 'guides/database/troubleshooting-orm',
         codeBlock: false,
       },
       {
@@ -394,7 +389,7 @@ const siteConfig = {
       },
       {
         text: 'Platform Releases and maturity levels',
-        url: 'about/prisma/platform-releases',
+        url: 'data-platform/about/releases',
         codeBlock: false,
       },
     ],
