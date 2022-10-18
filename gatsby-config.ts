@@ -144,7 +144,6 @@ if (process.env.INDEX_ALGOLIA === 'true') {
 
 const config: GatsbyConfig = {
   pathPrefix: process.env.ADD_PREFIX === 'true' ? docsConfig.gatsby.pathPrefix : '/',
-  trailingSlash: 'never',
   siteMetadata: {
     pathPrefix: docsConfig.gatsby.pathPrefix,
     title: docsConfig.siteMetadata.title,
