@@ -73,7 +73,7 @@ let plugins: any = [
   {
     resolve: 'gatsby-plugin-google-tagmanager',
     options: {
-      id: 'SAMPLE', //'GTM-KCGZPWB',
+      id: 'GTM-KCGZPWB',
       includeInDevelopment: false,
       defaultDataLayer: { website: 'docs' },
     },
