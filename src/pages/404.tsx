@@ -1,7 +1,6 @@
 import * as React from 'react'
 import Layout from '../components/layout'
 import styled from 'styled-components'
-import SEO from '../components/seo'
 
 const NotFoundWrapper = styled.div`
   font-family: 'Inter';
