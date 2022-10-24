@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { stringify } from '../utils/stringify'
 import styled from 'styled-components'
-import { TableOfContents } from 'src/interfaces/Article.interface'
+import { TableOfContents } from '../interfaces/Article.interface'
 
 const ChapterTitle = styled.div`
   font-family: ${(p) => p.theme.fonts.text};
