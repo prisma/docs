@@ -73,7 +73,7 @@ let plugins: any = [
   {
     resolve: 'gatsby-plugin-google-tagmanager',
     options: {
-      id: 'SAMPLE', //'GTM-KCGZPWB',
+      id: 'GTM-KCGZPWB',
       includeInDevelopment: false,
       defaultDataLayer: { website: 'docs' },
     },
@@ -144,7 +144,7 @@ if (process.env.INDEX_ALGOLIA === 'true') {
 
 const config: GatsbyConfig = {
   pathPrefix: process.env.ADD_PREFIX === 'true' ? docsConfig.gatsby.pathPrefix : '/',
-  trailingSlash: 'never',
+  //trailingSlash: 'never',
   siteMetadata: {
     pathPrefix: docsConfig.gatsby.pathPrefix,
     title: docsConfig.siteMetadata.title,
