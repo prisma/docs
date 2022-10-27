@@ -303,7 +303,6 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
-      <SEO title={title} description={description} homepage />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
@@ -421,7 +420,7 @@ const Homepage = () => {
 
 export default Homepage
 
-const query = graphql`
+export const query = graphql`
   query Homepage {
     site {
       siteMetadata {
@@ -478,3 +477,11 @@ const query = graphql`
     }
   }
 `
+
+export const Head = () => {
+  const { site } = useStaticQuery(query)
+  const {
+    siteMetadata: { title, description },
+  } = site
+  return <SEO title={title} description={description} homepage />
+}
