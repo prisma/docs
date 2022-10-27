@@ -8,45 +8,50 @@ tocDepth: 3
 
 <TopBlock>
 
-You can use Prisma Client extensions to add functionality to Prisma Client.
+You can use Prisma Client extensions to add functionality to Prisma Client in the following ways:
 
-You can currently extend Prisma Client in the following ways:
+- Add custom results objects to Prisma Client
+- Add custom methods on your models
+- Customize Prisma Client **(can we be a bit more specific here?)**
 
-- `result`: add custom results objects to Prisma Client
-- `model`: add custom methods on your models
-- `client`: customize Prisma Client
-
-**Note: other docs to update:**
-
-- Client reference - Client methods section - brief mention, and link to this page
-- Any workarounds that overlap with examples on this page - link here
-- Add feature flag to preview features page (for version 4.7)
-- We will release this page as a draft
-
-For the docs to be complete, we will need how type utilities can be used in $extends for full type-safety.
-
-Checklist to go through:
-
-- Proposal: https://github.com/prisma/prisma/issues/15074#issuecomment-1282419200
-- https://www.notion.so/prismaio/Prisma-Client-Extensions-7dfe94ab8cfb4145ba4c11e96297af04#ae40517ff0344696bf136e4d31398e27
-- Product design: https://www.notion.so/prismaio/Product-Design-for-Client-Extensions-ac2f334ac0a7483e9bb65d1656023f5f - Done
-
-<Admonition type="info">
-
-Prisma Client extensions currently let you extend models. In future Prisma releases, we will add extensibility layers to let you extend results, queries, and Prisma Client itself. **FIND A BETTER WAY TO SUMMARIZE THE LAYERS**
-
-</Admonition>
+**Explain that you can share your extensions with other Prisma users - link to sharing and use shared extensions sections.**
 
 </TopBlock>
 
+## Docs notes
+
+- We will release this page as a draft doc for 4.6.
+
+Heading structure:
+
+- intro
+- considerations and prerequisites
+- model
+- result
+- client
+- example use cases
+- share client extensions
+- use a shared extension
+
+other docs to update:
+
+- Client reference - Client methods section - brief mention, and link to this page - DONE
+- Any workarounds that overlap with examples on this page - link here
+- Add feature flag to preview features page (for version 4.7)
+
+**For the docs to be complete, we will need how type utilities can be used in $extends for full type-safety.**
+
 ## Considerations and prerequisites
 
-Are there any dependencies you need to install?
+**Mention $extends**
 
-Mention:
-`$extends` returns a forked state of Prisma client. This allows the creation of isolated instances of Prisma client extended by different extensions.
+`$extends` returns a forked state of Prisma client. This means that you can create multiple extensions, each in is own isolated instance of Prisma Client. **why would you want this?**
 
-### Enable the feature flag in your Prisma schema file
+To use Prisma Client extensions, you must [enable the `clientExtensions` feature flag](#enable-the-clientextensions-feature-flag-in-your-prisma-schema-file).
+
+**Are there any dependencies you need to install?**
+
+### Enable the <inlinecode>clientExtensions</inlinecode> feature flag in your Prisma schema file
 
 In the generator block of your schema.prisma file, enable the `clientExtensions` feature flag:
 
@@ -59,9 +64,18 @@ generator client {
 
 ## Extend a model
 
-You can use Prisma Client extensions to add custom methods and fields a specific model or to all models. (is it fields, or just methods?)
+You can use Prisma Client extensions to add custom methods and fields to a specific model in your schema, or to all models in your schema. **(is it fields, or just methods?)** For example, you might add a new mthod to handle business logic.
 
-e.g. a new mthod to handle business logic:
+Example use cases for `$model`:
+
+- [Custom respositories](#custom-repositories)
+- [Soft deletes](#soft-deletes)
+- [Business logic](#business-logic)
+
+**!!!got here!!!**
+along existing Prisma Client operations (eg. findMany, create, etc…) to already existing models. These can be new operations, encapsulated business logic, repetitive operations, or even model-specific utilities. model blindly takes an object that contains methods and makes its known properties available on a model.
+
+When you extend a specific model, you can add methods or fields (**is that the right term?**) to a model.
 
 In the following example, we add `signUp` to the user model.
 
@@ -81,9 +95,7 @@ You can call `signUp` as follows:
 
 `const user = await xprisma.user.signUp('john@prisma.io')`
 
-along existing Prisma Client operations (eg. findMany, create, etc…) to already existing models. These can be new operations, encapsulated business logic, repetitive operations, or even model-specific utilities. model blindly takes an object that contains methods and makes its known properties available on a model.
-
-When you extend a specific model, you can add methods or fields (**is that the right term?**) to a model.
+The model User was augmented with a signUp method to wrap user creation and account logic. signUp can now be called from anywhere via your model and via the extension:
 
 To extend the client, call the [Prisma Client method](/reference/api-reference/prisma-client-reference#client-methods) `$extends`.
 
@@ -111,6 +123,8 @@ const xprisma = prisma.$extends({
  })
 ```
 
+Other example:
+
 ```ts
 const xprisma = new prisma.$extends({
   model: {
@@ -125,7 +139,7 @@ const xprisma = new prisma.$extends({
 })
 ```
 
-The getClass method is now accessible from all model:
+The `getClass` method is now accessible from all models. For example:
 
 ```ts
 class UserService extends xprisma.user.getClass() {
@@ -135,13 +149,82 @@ class UserService extends xprisma.user.getClass() {
 }
 ```
 
-### $result extensions
+### <inlinecode>$result</inlinecode> extensions
 
-also document this
+result is designed to “augment” results. This can be used to add fields to query results, computed at runtime and in a type safe way.
+
+Example use cases for `$result `:
+
+- [Virtual fields](#virtual-fields)
+- [Field augmentation](#field-augmentation)
+- [Excluded fields](#excluded-fields)
+- [Custom methods on operation results](#custom-methods-on-operation-results)
+
+Example:
+
+```ts
+const xprisma = prisma.$extends({
+  result: {
+    user: {
+      needs: {
+        fullName: { firstName: true, lastName: true },
+      },
+      fields: {
+        fullName(user) {
+          return `${user.firstName} ${user.lastName}`
+        },
+      },
+    },
+  },
+})
+```
+
+this extends the User model with a new, virtual field fullName. We declared the field's dependencies and the computation logic.
+
+```ts
+const user = await xprisma.user.findFirst()
+console.log(user.fullName) // "John Doe"
+Result extensions don't over-fetch. Fields are only computed if its dependencies are present:
+
+const user = await xprisma.user.findFirst({ select: { email: true }))
+console.log(user.fullName) // undefined
+```
+
+For performance reasons, results are only computed when accessed at runtime.
+
+Result extensions can be used to add methods to result objects:
+
+```ts
+const xprisma = prisma.$extends({
+  result: {
+    user: {
+      needs: {
+        getAccountBalance: {
+          account: true,
+        },
+      },
+      fields: {
+        getAccountBalance: (user) => (n: number) => {
+          return user.account.balance + n
+        },
+      },
+    },
+  },
+})
+const result = await xprisma.user.findFirst()
+console.log(result?.getAccountBalance(-500)) // 7245
+```
 
 ### Extend Prisma Client
 
-`$client` is designed to allow top-level customization of Prisma client. They work in the same way as `model` extensions, except that they are not bound to any specific model and you must always call them with a `$` prefix to prevent conflicts with model names.
+You can use `$client` to allow top-level customization of Prisma client. It works in the same way as `model` extensions, except that they are not bound to any specific model and you must always call them with a `$` prefix to prevent conflicts with model names.
+
+Example use cases for `$client`:
+
+- [Customized interactive transactions](#customized-interactive-transactions)
+
+** IS this the same as the example use case below? **
+** Maybe bring the use cases into their associated sections anyway **
 
 An example use case is to start an interactive transaction without callbacks, as follows:
 
@@ -158,15 +241,19 @@ xprisma.$method
 Now we can start an interactive transaction omitting the traditional callback:
 
 ```ts
+
 const tx = await xprisma.$begin()
 
 await tx.user.create(...)
 await tx.user.update(...)
 
 await tx.$commit()
+
 ```
 
-### Extend result
+### Add fields and methods to query results
+
+** Is it fields, too, or just methods? **
 
 - `result` — an optional field to add fields/methods to query results.
 
@@ -264,6 +351,8 @@ In this snippet, the input `user` is automatically typed according to the `needs
   In this example, this is the value and the type that will be available on the result. Regardless of the kind of result, the declared fields are always present given their `needs` have been satisfied. This means they will appear on the results of simple queries but also on more complex queries with relations that might also have virtual fields of their own.
 
 ## Example use cases
+
+** Link to these from the layer sections above - e.g. link to virtual fields from result section **
 
 ### Virtual fields
 
@@ -382,7 +471,7 @@ class UserService extends xprisma.user.getClass() {
 }
 ```
 
-### Custom methods
+### Custom methods on operation results
 
 **Uses result**
 
@@ -413,7 +502,7 @@ const result = await xprisma.user.findFirst()
 console.log(result?.getAccountBalance(-500)) // 7245
 ```
 
-### Customized iTX
+### Customized interactive transactions
 
 **Uses client**
 
@@ -470,8 +559,9 @@ const xprisma = prisma.$extends({
 
 **uses model**
 
-There is a need to organize business logic and creating higher level abstractions for data fetching logic.
+There is a need to organize business logic and creating higher level abstractions for data-fetching logic.
 
+```ts
 const xprisma = prisma.$extends(({ client }) => {
 return {
 model: {
@@ -485,9 +575,11 @@ return client.user.create(...)
 })
 
 const result = await xprisma.user.create({ email: 'abc@prisma.io' })
+```
 
 Or:
 
+```ts
 const xprisma = prisma.$extends({
 model: {
 user: {
@@ -498,7 +590,9 @@ return prisma.user.create(...)
 }
 })
 
+
 const result = await xprisma.user.signUp({ email: 'abc@prisma.io' })
+```
 
 ## Share extensions
 
@@ -578,9 +672,11 @@ const user = await xprisma.user.findOrCreate({ ... })
 
 #### Install a pacakaged extension
 
+** How do you discover the pacakaged extensions - how do you know what's available? **
+
 Once an extension has been published to `npm`, a user would install the extension in their project:
 
-```
+```ts
 npm install prisma-extension-model-to-class
 ```
 
