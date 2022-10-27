@@ -168,7 +168,7 @@ await tx.$commit()
 
 ### Extend result
 
-> `result` — an optional field to add fields/methods to query results.
+- `result` — an optional field to add fields/methods to query results.
 
 `result` extensions can be used to augment already existing fields or to come up with brand new virtual fields from existing ones in the database.
 
@@ -176,7 +176,7 @@ WHAT DO WE MEAN HERE - AT RUN TIME? ARE THEY STORED TEMPORARILY AS THE APP RUNS?
 
 What makes `result` extensions powerful is that, unlike the model fields, their fields are aware of the surrounding context and can return any kind of types, including ones that are ambient and application-specific. Fields as defined by the schema, by design, cannot re-use TypeScript types. TypeScript cannot flow into the schema, but the schema flows into TypeScript. It’s probably stating the obvious to highlight why a computed field is better being defined on the Client side rather than in the schema, that is a benefit in terms of types and values that can be returned. E.g. if you field is augmented to be a React component (<Photo/>), the schema can't represent that in a way that the types work when generated.
 
-```tsx
+```ts
 const xprisma = prisma.$extends({
   result: {
     user: {
@@ -202,7 +202,7 @@ console.log(result?.fullName) // "John Doe"
 
 - `needs` — a required object which describes the dependencies of a result field.
 
-  ```tsx
+  ```ts
   needs: {
   	fullName: {
   		firstName: true,
@@ -214,7 +214,7 @@ console.log(result?.fullName) // "John Doe"
   This is the declaration of such a dependency where, in this example, `fullName` depends on `firstName` and `lastName`. This is useful because we can have a declarative way of defining field dependencies, which TypeScript can understand and give useful intellisense.
   The other reason behind this is that because you can include or exclude fields and relations via `select` and `include` in your queries, we need to know ahead of time what the needs of a new field will be. In other words, virtual fields will not be computed if a declared dependency is missing. For the above example:
 
-  ```tsx
+  ```ts
   const result = await xprisma.user.findFirst({ select: { lastName: true } })
 
   console.log(result?.fullName) // undefined
@@ -222,13 +222,13 @@ console.log(result?.fullName) // "John Doe"
 
   This means that result extensions will never over-fetch, but only compute if the field is present in the results. And of course, this is going to work both in the runtime and on type level.
 
-  ```tsx
+  ```ts
   const result = await xprisma.user.findFirst({ select: { fullName: true } })
 
   console.log(result?.fullName) // "John Doe"
   ```
 
-  ```tsx
+  ```ts
   const result = await xprisma.user.findFirst()
 
   console.log(result?.fullName) // "John Doe"
@@ -236,28 +236,31 @@ console.log(result?.fullName) // "John Doe"
 
   {' '}
 
-  <aside>
-    💡 The current design only supports virtual fields that are based on scalar
-    fields. In future developments, we may want to allow `needs` to
-    select/include relations. In that case, because computed fields would depend
-    on a relation, the field would be treated as being a relation too. It must
-    be selected or included, but will not be included by default.
-  </aside>
+The current design only supports virtual fields that are based on scalar
+fields. In future developments, we may want to allow `needs` to
+select/include relations. In that case, because computed fields would depend
+on a relation, the field would be treated as being a relation too. It must
+be selected or included, but will not be included by default.
 
-- `fields` — a required object which describes the computation of a virtual field.
-  ```tsx
-  fields: {
-  	fullName(user) {
-  		return `${user.firstName} ${user.lastName}`
-  	}
-  }
-  ```
-  This is a mirror of the `needs` object, what is declared in `needs` must exist in `fields`. It contains methods that describe the how the virtual field will be computed once it is accessed (for performance reasons, virtual fields are computed on access instead of on retrieval).
-  In this snippet, the input `user` is automatically typed according to the `needs`. This means that in this scope, we are sure `firstName` and `lastName` will be of type `string` because they were specified in the `needs`. If they weren’t, their type would be `string | undefined`.
+`fields` — a required object which describes the computation of a virtual field.
+
+```ts
+fields: {
+	fullName(user) {
+		return `${user.firstName} ${user.lastName}`
+	}
+}
+```
+
+This is a mirror of the `needs` object, what is declared in `needs` must exist in `fields`. It contains methods that describe the how the virtual field will be computed once it is accessed (for performance reasons, virtual fields are computed on access instead of on retrieval).
+In this snippet, the input `user` is automatically typed according to the `needs`. This means that in this scope, we are sure `firstName` and `lastName` will be of type `string` because they were specified in the `needs`. If they weren’t, their type would be `string | undefined`.
+
 - `return` — the value of the field that has been computed, which can be anything.
-  ```tsx
+
+  ```ts
   return `${user.firstName} ${user.lastName}` // type string
   ```
+
   In this example, this is the value and the type that will be available on the result. Regardless of the kind of result, the declared fields are always present given their `needs` have been satisfied. This means they will appear on the results of simple queries but also on more complex queries with relations that might also have virtual fields of their own.
 
 ## Example use cases
@@ -270,66 +273,70 @@ Virtual fields allow one to augment the query results with fields that are compu
 
 Technically speaking, result extensions are virtual fields. So this use case is completely covered.
 
+```ts
 const xprisma = prisma.$extends({
-	result: {
-		user: {
-			needs: {
-				fullName: {
-					firstName: true,
-					lastName: true
-				},
-			},
-			fields: {
-				fullName(user) {
-					return `${user.firstName} ${user.lastName}`
-}
-}
-}
-}
+  result: {
+    user: {
+      needs: {
+        fullName: {
+          firstName: true,
+          lastName: true,
+        },
+      },
+      fields: {
+        fullName(user) {
+          return `${user.firstName} ${user.lastName}`
+        },
+      },
+    },
+  },
 })
 
 const result = await xprisma.user.findFirst()
 
 console.log(result?.fullName) // "John Doe"
+```
 
 ### Field augmentation
 
 **uses result**
 
-> Field augmentation is a way to take a field from the database and inflate it into a higher-order field. Concretely, if you have a model `User` that has a `Photo` whose contents are stored as a `String` (eg. in `Base64`), you could augment your result type so that instead of a `String`, you’d have a React `<Photo />` component ready. This concept is closely tied to virtual fields.
+Field augmentation is a way to take a field from the database and inflate it into a higher-order field. Concretely, if you have a model `User` that has a `Photo` whose contents are stored as a `String` (eg. in `Base64`), you could augment your result type so that instead of a `String`, you’d have a React `<Photo />` component ready. This concept is closely tied to virtual fields.
 
 Technically speaking, `result` extensions support overriding a field, which in turn can be translated to field augmentation. So this use case is completely covered.
 
+```ts
 const xprisma = prisma.$extends({
-result: {
-user: {
-needs: {
-photo: {
-content: true,
-},
-},
-fields: {
-photo(user) {
-return <Photo data={user.photo.content}/>
-}
-}
-}
-}
+  result: {
+    user: {
+      needs: {
+        photo: {
+          content: true,
+        },
+      },
+      fields: {
+        photo(user) {
+          return <Photo data={user.photo.content} />
+        },
+      },
+    },
+  },
 })
 
 const result = await xprisma.user.findFirst()
 
 console.log(result?.photo) // now <Photo/> instead of { content: string }
+```
 
 ### Excluded fields
 
 **uses result**
 
-> Excluded fields as described in this issue would allow to exclude fields per query. Currently, there is a way to select the fields you need, but there is not way to exclude the fields you don’t need. The workaround requires you to include all the fields, except the ones you don’t want. This issue is the home for more requests that are related. For instance, there is a clear ask for always excluding certain fields via the schema.
+Excluded fields as described in this issue would allow to exclude fields per query. Currently, there is a way to select the fields you need, but there is not way to exclude the fields you don’t need. The workaround requires you to include all the fields, except the ones you don’t want. This issue is the home for more requests that are related. For instance, there is a clear ask for always excluding certain fields via the schema.
 
 This use case is partially covered, it will be a solution for some users but not for all. Some users want the ability to be able to exclude per query, others to exclude via the schema. Extensions can provide an in-between solution. It does not really satisfy the ones that want to exclude it per query nor does it satisfy the ones that want to exclude it via the schema. However, it does provide a solution for achieving this:
 
-```tsx
+```ts
 const xprisma = prisma.$extends({
   result: {
     user: {
@@ -355,7 +362,7 @@ Use Entities to represent your database tables. Let you add methods that can enc
 
 This issue is fully covered by writing a `getClass` model method for a generic extension.
 
-```tsx
+```ts
 const xprisma = new prisma.$extends({
   model: {
     $allModels: {
@@ -383,7 +390,7 @@ Get results with methods attached to them.
 
 This issue is fully covered by `result`. Just like a virtual field, one can return a custom method.
 
-```tsx
+```ts
 const xprisma = prisma.$extends({
   result: {
     user: {
@@ -433,29 +440,31 @@ await tx.$commit()
 
 Note - this has not been confirmed
 
+```ts
 const xprisma = prisma.$extends({
-model: {
-$allModels: {
-async softDelete<T>(this: T, cascade = true) {
-modelName = this['name']
-// TODO - missing implementation here
-// 1. use the dmmf to look at the relations
-// 2. traverse th dmmf and collect relations
-// 3 .filter the relations that can be soft deleted
-// 4. create raw sql queries to set the `deleted = true`
-// 5. Send them as a batch via a sequential transaction
-}
-}
-},
-query: {
-$nestedOperations: {
-where({ model, action, args, path }) {
-// TODO - first check if the model has a `deleted` field
-args.where.deleted = false
-}
-}
-}
+  model: {
+    $allModels: {
+      async softDelete<T>(this: T, cascade = true) {
+        modelName = this['name']
+        // TODO - missing implementation here
+        // 1. use the dmmf to look at the relations
+        // 2. traverse th dmmf and collect relations
+        // 3 .filter the relations that can be soft deleted
+        // 4. create raw sql queries to set the `deleted = true`
+        // 5. Send them as a batch via a sequential transaction
+      },
+    },
+  },
+  query: {
+    $nestedOperations: {
+      where({ model, action, args, path }) {
+        // TODO - first check if the model has a `deleted` field
+        args.where.deleted = false
+      },
+    },
+  },
 })
+```
 
 ### Business logic
 
@@ -537,9 +546,9 @@ export default Prisma.createExtension(({ client }) => ({
 }))
 ```
 
-- `Prisma.createExtension` — a mirror of `prisma.$extends` but for declaring an extension.
-  The important bit here is `Prisma.createExtension` vs `prisma.$extends(...)`. In the examples, `prisma` is the client _instance_. The client instance can immediately hook an extension in. But since an extension author will not be able to access that, they need to package an extension before hand, so that it can later be consumed by `prisma.$extends`.
-  This is useful for two reasons. The first one is that this method will provide the exact same inference capabilities as `prisma.$extends`. This means that an extension author will benefit from types at development time, but it also means that types will be packaged correctly. It is a necessary step for making TypeScript inference work from one end to another. The second reason is that this can also be a way for us to inject metadata about the extension (one example that comes to mind is adding the client version is was packaged for).
+`Prisma.createExtension` — a mirror of `prisma.$extends` but for declaring an extension.
+The important bit here is `Prisma.createExtension` vs `prisma.$extends(...)`. In the examples, `prisma` is the client _instance_. The client instance can immediately hook an extension in. But since an extension author will not be able to access that, they need to package an extension before hand, so that it can later be consumed by `prisma.$extends`.
+This is useful for two reasons. The first one is that this method will provide the exact same inference capabilities as `prisma.$extends`. This means that an extension author will benefit from types at development time, but it also means that types will be packaged correctly. It is a necessary step for making TypeScript inference work from one end to another. The second reason is that this can also be a way for us to inject metadata about the extension (one example that comes to mind is adding the client version is was packaged for).
 
 Naming convention:
 `prisma-extension-<name>`
