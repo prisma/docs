@@ -954,6 +954,7 @@ const user = await prisma.user.update({
 #### Remarks
 
 - To perform arithmetic operations on update (add, subtract, multiply, divide), use [atomic updates](#atomic-number-operations) to prevent race conditions.
+- If two or more upsert operations happen at the same time, a race condition might happen. As a result, one or more of the upsert operations might throw a unique key constraint error. Your application code can trap this error and retry the operation. [Learn more](#unique-key-constraint-errors-on-upserts).
 
 #### Reference
 
@@ -980,6 +981,25 @@ const user = await prisma.user.upsert({
   create: { email: 'alice@prisma.io' },
 })
 ```
+
+#### Unique key constraint errors on upserts
+
+##### Problem
+
+If multiple upsert operations happen at the same time, then one or more of the operations might throw a [unique key constraint error](/reference/api-reference/error-reference#p2002).
+
+##### Cause
+
+When Prisma does an upsert, it first checks whether that record exists in the database. To make this check, Prisma performs a read operation with the `where` clause from the upsert operation. This has two possible outcomes, as follows:
+
+- If the record does not exist, then Prisma creates that record.
+- If the record exists, then Prisma updates it.
+
+When your application tries to perform two or more upsert operations at the same time, then there might be a race condition where more than operation does not find the record and therefore tries to create that record. In this situation, one of the operations creates the new record. The other operations then fail and return a unique key constraint error.
+
+##### Solution
+
+Trap the P2002 error in your application code. When it occurs, retry the upsert operation to update the row.
 
 ### <inlinecode>delete</inlinecode>
 
@@ -5622,27 +5642,25 @@ model User {
 
 ```ts
 function updateOne() {
+  const user = await prisma.user.findUnique({ id: 1 })
 
-   const user = await prisma.user.findUnique({ id: 1 });
-
-   await prisma.user.update({
-     where: { id: user.id, version: user.version },
-     data: { city: "Berlin", version: { increment: 1 } },
-  });
+  await prisma.user.update({
+    where: { id: user.id, version: user.version },
+    data: { city: 'Berlin', version: { increment: 1 } },
+  })
 }
 
 function updateTwo() {
+  const user = await prisma.user.findUnique({ id: 1 })
 
-   const user = await prisma.user.findUnique({ id: 1 });
-
-   await prisma.user.update({
-     where: { id: user.id, version: user.version },
-     data: { city: "New York", version: { increment: 1 } },
-  });
+  await prisma.user.update({
+    where: { id: user.id, version: user.version },
+    data: { city: 'New York', version: { increment: 1 } },
+  })
 }
 
-function main () {
-  await Promise.allSettled([updateOne(), updateTwo()]);
+function main() {
+  await Promise.allSettled([updateOne(), updateTwo()])
 }
 ```
 
