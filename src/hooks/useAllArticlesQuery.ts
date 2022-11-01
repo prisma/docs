@@ -13,7 +13,6 @@ export const useAllArticlesQuery = () => {
               staticLink
               experimental
               preview
-              earlyaccess
               langSwitcher
               dbSwitcher
               hidePage
