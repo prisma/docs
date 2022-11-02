@@ -1,0 +1,132 @@
+---
+title: "Enable Data Proxy"
+metaTitle: "Enable Data Proxy for your JavaScript/TypeScript application with Prisma ORM"
+metaDescription: "We assume you already have an account and a project on [the Prisma Data Platform](https://cloud.prisma.io). If you don't, sign up using your GitHub account before continuing."
+---
+
+<TopBlock>
+
+We assume you already have an account and a project on [the Prisma Data Platform](https://cloud.prisma.io). If you don't, sign up using your GitHub account before continuing.
+
+</TopBlock>
+
+### Step 1. Generate a Data Proxy connection string
+
+Navigate to the **Data Proxy** tab of your Prisma Data Platform project, select the desired proxy location, and click **Enable**.
+
+> The Data Proxy is currently available in the AWS&nbsp;Frankfurt (eu-central-1) and N.&nbsp;Virginia (us-east-1) regions. If you'd like support for other providers or regions, [we'd love to hear from you](https://pris.ly/proxy-new-region).
+
+Copy the connection string and store it securely, similarly to how you would treat a database credential. You may generate more connection strings in this section if you wish and of course, revoke them if you don't need them anymore.
+
+Connection strings always have the following format:
+
+```
+prisma://{DEPLOYMENT_LOCATION}.prisma-data.com/?api_key={DATA_PROXY_API_KEY}
+```
+
+**Note:** When you use the Data Proxy, your connection string must begin with `prisma://`, as described above. Do not use the direct connection string to your PostgreSQL, MySQL, or other database.
+
+### Step 2. Install up-to-date Prisma dependencies
+
+To use the Data Proxy, use version `3.15.2` or later of the `prisma` and `@prisma/client` npm packages.
+
+```terminal
+npm install prisma@latest --save-dev
+npm install @prisma/client@latest --save
+```
+
+### Step 3: Make sure that the datasource URL is read from environment
+
+For security reasons, we strongly recommend that you always use environment variables to provide your database connection strings, instead of hard-coding them into your `schema.prisma` file:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+You can use the Data Proxy with Node.js (deployed in any environment where you can also deploy a normal project using Prisma Client), or with Edge runtimes like Cloudflare Workers and Vercel Edge Functions (Middleware).
+
+#### Node.js
+
+To use the Data Proxy with Node.js, set and define the environment variable with your database connection string as usual. See [Environment Variables](/guides/development-environment/environment-variables).
+
+For guidance on how to configure environment variables in your deployment, please refer to your provider's documentation. For example:
+
+- AWS: [Using AWS Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html)
+- Heroku: [Configuration and config vars](https://devcenter.heroku.com/articles/config-vars)
+
+#### Edge runtimes
+
+Edge runtimes, such as [Cloudflare Workers](https://developers.cloudflare.com/workers/) and [Vercel Edge Functions](https://vercel.com/docs/concepts/functions/edge-functions), cannot access files in the file system. This prevents Prisma Client from automatically loading `.env` files. Instead, you must use environment variables to pass the connection string to the Data Proxy. Depending on your provider, you might need to set the `DATABASE_URL` differently.
+
+##### Cloudflare Workers
+
+In Cloudflare Workers, you can define environment variables with either `wrangler` or the dashboard. For more information, see [Environment Variables](https://developers.cloudflare.com/workers/platform/environment-variables/) in the Cloudflare documentation.
+
+##### Vercel Edge Functions
+
+In Vercel Edge Functions, you can define environment variables as you would for Vercel Serverless Functions, for example in any `Next.js` project. For more information, see [Environment Variables](https://vercel.com/docs/concepts/projects/environment-variables) in the Vercel documentation.
+
+### Step 4: Generate the client
+
+To generate Prisma Client with the Data Proxy, call `prisma generate` with the option `--data-proxy`:
+
+```terminal
+npx prisma generate --data-proxy
+```
+
+Alternatively, you can set the environment variable `PRISMA_GENERATE_DATAPROXY=true` to generate a Prisma Client with Data Proxy when a normal `prisma generate` command is executed.
+
+<Admonition type="warning">
+
+When deploying to [Vercel Serverless Functions](https://vercel.com/docs/concepts/functions/serverless-functions) you _need_ to define `PRISMA_GENERATE_DATAPROXY=true` [as an environment variable in your Vercel project settings](https://vercel.com/docs/concepts/projects/environment-variables) to generate the correct Prisma Client for the Data Proxy.
+
+</Admonition>
+
+When you use `--data-proxy` or `PRISMA_GENERATE_DATAPROXY=true`, you get a very lightweight Prisma Client runtime. This is because the Data Proxy does not need local engine files, so the generation process does not include the [query engine](/concepts/components/prisma-engines/query-engine).
+
+### Step 5: Import and instantiate Prisma Client in your code
+
+#### Node.js
+
+To use the Data Proxy with Node.js, use `@prisma/client` as described in [Generating the client](/concepts/components/prisma-client/working-with-prismaclient/generating-prisma-client).
+
+#### Edge runtimes
+
+To use the Data Proxy with Cloudflare Workers or Vercel Edge Functions, you need to import `@prisma/client/edge` instead of the usual `@prisma/client`, as follows:
+
+ <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
+
+ <tab>
+
+```ts
+import { PrismaClient } from '@prisma/client/edge'
+const prisma = new PrismaClient()
+// use `prisma` in your application to read and write data in your DB
+```
+
+  </tab>
+
+  <tab>
+
+```js
+const { PrismaClient } = require('@prisma/client/edge')
+const prisma = new PrismaClient()
+// use `prisma` in your application to read and write data in your DB
+```
+
+</tab>
+
+</TabbedContent>
+
+<Admonition type="warning">
+
+You can use `@prisma/client/edge` only with the Data Proxy. Make sure to use the `--data-proxy` flag or `PRISMA_GENERATE_DATAPROXY=true` environment variable when you [generate the client](#step-4-generate-the-client).
+
+</Admonition>
+
+### Step 6: Start your app
+
+You are now ready to try the Data Proxy. Go ahead and start your app!
