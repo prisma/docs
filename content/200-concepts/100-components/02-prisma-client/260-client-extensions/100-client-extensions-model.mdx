@@ -1,0 +1,219 @@
+---
+title: 'Add custom methods or fields to your models'
+metaTitle: 'Prisma Client extensions: model (Preview)'
+metaDescription: 'Extend the functionality of Prisma Client'
+navTitle: 'Model'
+preview: true
+tocDepth: 3
+---
+
+<TopBlock>
+
+<Admonition type="info">
+
+This page is in draft for Prisma version 4.6.0. We plan to publish this page for version 4.7.0.
+
+</Admonition>
+
+From version 4.7.0, you can use [Prisma client extensions](/concepts/components/prisma-client/client-extensions) to add custom methods or fields to your models. For example, you might add a new method to handle business logic.
+
+You can add methods and fields as follows:
+
+- Add custom methods or fields to a specific model in your schema
+- Add custom methods or fields to all models in your schema.
+
+</TopBlock>
+
+## Add custom methods to a model
+
+<Admonition type="info">
+
+Before you add a custom model, you must satisfy the [prerequisites for client extensions](/concepts/components/prisma-client/client-extensions#prerequisites).
+
+</Admonition>
+
+Example use cases for `$model`:
+
+- [Custom respositories](#custom-repositories)
+- [Soft deletes](#soft-deletes)
+- [Business logic](#business-logic)
+
+** TBW **
+
+along existing Prisma Client operations (eg. findMany, create, etc…) to already existing models. These can be new operations, encapsulated business logic, repetitive operations, or even model-specific utilities. model blindly takes an object that contains methods and makes its known properties available on a model.
+
+When you extend a specific model, you can add methods or fields to a model.
+
+In the following example, we add `signUp` to the user model.
+
+```ts
+const xprisma = prisma.$extends({
+  model: {
+    user: {
+      async signUp(email: string) {
+        await prisma.user.create(...)
+      },
+    },
+  }
+})
+```
+
+You can call `signUp` as follows:
+
+`const user = await xprisma.user.signUp('john@prisma.io')`
+
+The model `User` was augmented with a signUp method to wrap user creation and account logic. signUp can now be called from anywhere via your model and via the extension:
+
+To extend the client, call the [Prisma Client method](/reference/api-reference/prisma-client-reference#client-methods) `$extends`.
+
+To extend a specific model:
+
+```ts
+const xprisma = prisma.$extends({
+  name?: '<name>',
+  model?: {
+    user: { ... }
+  },
+});
+```
+
+`name` is an optional field. You can use it to give a name to the extension. This name will appear in error logs, tracing, ?metrics?).
+
+To extend all models:
+
+```ts
+const xprisma = prisma.$extends({
+  name?: '<name>',
+  model?: {
+   $allModels: { ... }
+   },
+ })
+```
+
+Other example:
+
+```ts
+const xprisma = new prisma.$extends({
+  model: {
+    $allModels: {
+      getClass<T extends object>(this: T): new () => T {
+        return class {
+          /** Generic Implementation */
+        } as any
+      },
+    },
+  },
+})
+```
+
+The `getClass` method is now accessible from all models. For example:
+
+```ts
+class UserService extends xprisma.user.getClass() {
+  method() {
+    const user = this.findFirst({}) // fully typesafe
+  }
+}
+```
+
+## Example use cases
+
+### Custom repositories
+
+**Uses model**
+
+Use Entities to represent your database tables. Let you add methods that can encapsulate business logic, while adding curom fields.
+
+This issue is fully covered by writing a `getClass` model method for a generic extension.
+
+```ts
+const xprisma = new prisma.$extends({
+  model: {
+    $allModels: {
+      getClass<T extends object>(this: T): new () => T {
+        return class {
+          /** Generic Implementation */
+        } as any
+      },
+    },
+  },
+})
+
+class UserService extends xprisma.user.getClass() {
+  method() {
+    const user = this.findFirst({}) // fully typesafe
+  }
+}
+```
+
+### Soft deletes
+
+**Uses model**
+** Also uses query **
+
+Note - this has not been confirmed
+
+```ts
+const xprisma = prisma.$extends({
+  model: {
+    $allModels: {
+      async softDelete<T>(this: T, cascade = true) {
+        modelName = this['name']
+        // TODO - missing implementation here
+        // 1. use the dmmf to look at the relations
+        // 2. traverse th dmmf and collect relations
+        // 3 .filter the relations that can be soft deleted
+        // 4. create raw sql queries to set the `deleted = true`
+        // 5. Send them as a batch via a sequential transaction
+      },
+    },
+  },
+  query: {
+    $nestedOperations: {
+      where({ model, action, args, path }) {
+        // TODO - first check if the model has a `deleted` field
+        args.where.deleted = false
+      },
+    },
+  },
+})
+```
+
+### Business logic
+
+**uses model**
+
+There is a need to organize business logic and creating higher level abstractions for data-fetching logic.
+
+```ts
+const xprisma = prisma.$extends(({ client }) => {
+return {
+model: {
+user: {
+async signUp(email: any) {
+return client.user.create(...)
+}
+}
+}
+}
+})
+
+const result = await xprisma.user.create({ email: 'abc@prisma.io' })
+```
+
+Or:
+
+```ts
+const xprisma = prisma.$extends({
+model: {
+user: {
+async signUp(email: any) {
+return prisma.user.create(...)
+}
+}
+}
+})
+
+
+const result = await xprisma.user.signUp({ email: 'abc@prisma.io' })
+```

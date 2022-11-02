@@ -1,0 +1,228 @@
+---
+title: 'Create custom Prisma Client queries'
+metaTitle: 'Prisma Client extensions (Preview)'
+metaDescription: 'Extend the functionality of Prisma Client'
+preview: true
+tocDepth: 3
+---
+
+<TopBlock>
+
+<Admonition type="info">
+
+This page is in draft for Prisma version 4.6.0. We plan to publish this page for version 4.7.0.
+
+</Admonition>
+
+You can use [Prisma client extensions](/concepts/components/prisma-client/client-extensions) to create custom Prisma Client queries.
+
+</TopBlock>
+
+## Create custom queries
+
+<Admonition type="info">
+
+Before you create custom queries, you must satisfy the [prerequsites for client extensions](/concepts/components/prisma-client/client-extensions#prerequisites).
+
+</Admonition>
+
+Example use cases for `$query`:
+** TBW **
+
+- [Custom respositories](#custom-repositories)
+- [Soft deletes](#soft-deletes)
+- [Business logic](#business-logic)
+
+query is designed to extend queries. To get a specific subset of User from the database, let's only get users older than 18 years:
+
+const xprisma = prisma.$extends({
+query: {
+user: {
+async findMany({ model, action, args, data }) {
+args.where.age = { gt: 18 }
+const myData = await data
+return data
+},
+},
+},
+})
+In contrast to middlewares, extended queries return type safe data.
+
+await xprisma.user.findMany() // only above 18 here
+Query extensions also support a way to handle nested operations. With $nestedOperations, it will be possible to recursively traverse a given operation’s arguments:
+
+const xprisma = prisma.$extends({
+query: {
+user: {
+$nestedOperations: {
+where({ model, operation, args, data, path }) {
+// path here could be `user.findFirst`
+
+          args.where.age = { gt: 18 }
+        }
+      }
+    }
+
+}
+})
+The $allModels wildcard will also be available for query extensions.
+
+💡 You asked us for a way to group extensions by models and in other files. While it is not reflected in this document, we have kept it in mind and will provide this in future iterations. We have some ideas for achieving this, one of them looks like the following. const xprisma = prisma.$extends.user({result: {}})
+
+---
+
+query — an optional field for changing the queries of a model.
+
+query extensions are very much like middlewares. But they are a fully type-safe, and declarative equivalent to middlewares. Also, while middlewares are global to the Client, query extensions are contained within their own extension. In essence, query extensions aim to fix known issues with middlewares and become a suitable, type-safe replacement for them.
+
+const xprisma = prisma.$extends({
+query: {
+user: {
+findFirst({ model, operation, args, data }) {
+args.where.age.gte = 18
+return data
+},
+findMany({ model, operation, args, data }) {
+args.where.age.gte = 18
+return data
+}
+}
+}
+})
+
+xprisma.user.findMany() // only above 18
+
+`query` is an object that contains functions that map to the names of the Prisma Client operations. `findUnique`, `findFirst`, `findMany`, `count`, `create`... are the kind of names that are expected. For this example, calling `xprisma.user.findFirst` would trigger `query.findFirst` on execution. Each callback will receive a type-safe `{ model, operation, args, data }` object describing a query:
+
+- `model` — a property name of the modeproduct design documentl whose query is being extended.
+  In this specific example, the `model` would be a string of type `"User"`.
+- `operation` — a property name of the operation being extended and executed.
+  In this specific example, the `o`peration would be a string of type `"findFirst"`/`"findMany"`.
+- `args` — a property that carries the specific query input information to be extended.
+  This is a type-safe object that is meant to be mutated before the query happens. All the properties within `args` can be mutated except for the ones that would break type-safety. In essence, you cannot modify `include` or `select` because that would change the expected output type in such a way that it breaks type safety.
+- `data` — a property that is a promise of the result of the query that is being executed.
+  This promise can be `await`ed and then mutated as its value is also type-safe, so TypeScript will catch any unsafe mutations on that object. Doing `await data` is equivalent to calling `next(...)` in a middleware. You are free to mutate `args` before `then` is triggered, which leads to a more natural way of writing such extensions. `args` is fully type-safe, meaning that some properties are `readonly`, (like `includes` or `select`) which you would immediately notice if you are using TypeScript.
+
+Additionally, because this is a declarative interface for hooking and extending queries, it will also be possible to handle nested queries. `query` will accept wildcard operations for handling any levels of nesting. The following hooks map to operation properties from Prisma Client operations to execute:
+
+- `connect` / `connectOrCreate`
+- `create` / `createMany`
+- `delete` / `deleteMany`
+- `select` / `include`
+- `disconnect`
+- `set`
+- `update` / `updateMany`
+- `upsert`
+- `where`
+
+These are not real operations, but are parts of a query that can be deeply nested or even applied via another model (eg. via a relation query).
+
+```ts
+const xprisma = prisma.$extends({
+  query: {
+    user: {
+      create({ model, operation, args, data, path }) {
+        // handle all prisma.user.create
+
+        return data
+      },
+      $nestedOperations: {
+        create({ model, operation, args, path }) {
+          // handle nested create for user
+        },
+      },
+    },
+  },
+})
+```
+
+- `$nestedOperations` — an optional property for handling deeply nested operations.
+- `path` — a property that describes the level of nesting of such an operation.
+
+Note: Recursive wildcards cannot return values but can just modify the query itself.
+
+Finally, query will also offer and support many wildcard properties as the other extension layers:
+
+```ts
+const xprisma = prisma.$extends({
+  query: {
+    $allModels: {
+      $allOperations({ model, operation, args, data }) {
+        // handle all operations
+
+        return data
+      },
+      $nestedOperations: {
+        create({ model, operation, args, data, path }) {
+          // handle nested operations
+
+          return data
+        },
+      },
+    },
+  },
+})
+```
+
+- `$allModels` — an optional property for handling all models within a single extension.
+- `$allOperations` — an optional property for handling all operations for a given model.
+- `$nestedOperations` — an optional property for handling specific nested operations.
+
+## Example use cases
+
+### Better middlewares
+
+This is issue is not very explicit about what it needs, it has a few upvotes nevertheless. What we can infer from this is that the current middleware interface has its limits in terms of DX when it comes to dealing with before and after actions. While that can be achieved with middlewares, there is an ask for having a more declarative, modular, and type-safe way of doing this.
+
+```ts
+const xprisma = prisma.$extends({
+  query: {
+    user: {
+      create({ model, action, args, data }) {
+        // do something before the query
+        await data
+        // do something after the query
+
+        return data
+      },
+    },
+  },
+})
+```
+
+### Scoped queries
+
+Scoped queries are a way to store parts of a query to be re-used. The example that was given in the extensions proposal is about restricting the queries to only apply to a subset of the data. That is useful not to repeat the same parts of a query multiple times across an application. This has been implemented in Sequelize (https://sequelize.org/docs/v6/other-topics/scopes/).
+
+```ts
+const xprisma = prisma.$extends({
+  query: {
+    user: {
+      findFirst({ model, action, args, data }) {
+        args.where.age.gte = 18
+
+        return data
+      },
+      findMany({ model, action, args, data }) {
+        args.where.age.gte = 18
+
+        return data
+      },
+    },
+  },
+})
+
+xprisma.user.findMany() // only above 18
+```
+
+### Soft deletes
+
+This uses query extension in conjunction with a model extension.
+
+Link to Soft deletes section of Model page
+
+### Recursive middlewares
+
+Middlewares make it easy to modify queries, however they make it quite hard to deal with nested operations. From a user perspective, a nested operation is considered a different operation, so it should appear as such in the middleware. Additionally, while this is made difficult with the current implementation of middlewares, it is also completely unsafe with regards to the types, thus making it even harder and confusing for users.
+
+This is shown in the example just above, where we use $nestedOperations to be applied recursively across any operation that supports it.
