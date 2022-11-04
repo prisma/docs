@@ -10,20 +10,28 @@ tocDepth: 3
 
 <Admonition type="info">
 
-This page is in draft for Prisma version 4.6.0. We plan to publish this page for version 4.7.0.
+This page is in draft for Prisma version 4.6.0.
 
 </Admonition>
 
-You can use Prisma Client extensions to add functionality to the models, results objects, queries, or Prisma Client itself, in the following ways.
+Use Prisma Client extensions to add functionality to the models in your schema, results objects, queries, or Prisma Client itself.
+
+There are four types of extension. You can use each type to customize a different aspect of Prisma Client.
+
+- `model` extensions: [add custom methods or fields to your models](/concepts/components/prisma-client/client-extensions/client-extensions-model)
+- `client` extensions: [add client-level methods to Prisma Client](/concepts/components/prisma-client/client-extensions/client-extensions-client)
+- `result` extensions (for future release): [add custom results objects to Prisma Client](/concepts/components/prisma-client/client-extensions/client-extensions-result)
+- `query` extensions (for future release): [create custom Prisma Client queries](/concepts/components/prisma-client/client-extensions/client-extensions-query)
 
 </TopBlock>
 
 ## About Prisma Client extensions
 
-To create Prisma Client extensions, use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods).
+To create Prisma Client extensions, use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods), and the appropriate extension type (`model`, `client`, `query` or `result`).
 
-- You can create [multiple independent extensions](#multiple-extensions), each in is own isolated instance of Prisma Client.
-- You can also [share your Prisma Client extensions](#share-extensions) with other Prisma users, and [import Prisma Client extensions developed by other users](#install-a-packaged-extension) into your Prisma project.
+You can use [multiple independent extensions at the same time](#multiple-extensions), each in is own isolated instance of Prisma Client.
+
+You can also [share your Prisma Client extensions](#share-extensions) with other Prisma users, and [import Prisma Client extensions developed by other users](#install-a-packaged-extension) into your Prisma project.
 
 ## Prerequisites
 
@@ -36,33 +44,55 @@ generator client {
 }
 ```
 
-## Extend Prisma Client
-
-There are four types of extension. To learn how to use these, visit the pages below:
-
-- `model` extensions: [add custom methods or fields to your models](/concepts/components/prisma-client/client-extensions/client-extensions-model)
-- `result` extensions: [add custom results objects to Prisma Client](/concepts/components/prisma-client/client-extensions/client-extensions-result)
-- `query` extensions: [create custom Prisma Client queries](/concepts/components/prisma-client/client-extensions/client-extensions-query)
-- `client` extensions: [add client-level methods to Prisma Client](/concepts/components/prisma-client/client-extensions/client-extensions-client)
-
 ## Multiple extensions
 
-Each extended client that you create operates independently, in an isolated instance, and cannot conflict with other extended clients. Therefore, you can use extensions to create multiple variations of Prisma Client for different purposes, and use them simultaneously. For example, you might have a `result` extension for one purpose and a `model` extension for another.
+Each time that you call `$extends`, you create an _extended client_. This extended client is a forked state of the standard Prisma Client. The original client does not change.
 
-Each extended client is a virtual forked state of the standard Prisma Client. This process does not change the state of the original client.
+Every extended client operates independently, in an isolated instance. It cannot conflict with other extended clients or the original client.
 
-In the following example, each call to `$extends` creates a completely separate extended client:
+You can also combine two or more extensions into one extension, if you want the functionality from both extensions to apply in the same client instance.
+
+Example uses of isolated client instances include the following:
+
+- Add a `user.current()` method for the `user` model to get the current logged-in user
+- Enable more verbose logging for requests if a debug cookie is set
+- Attach a unique request id to all logs so you can correlate them later
+- Remove a `delete` method from models unless the application calls the admin endpoint and the user has the necessary priviliges
+
+The following example declares two separate extensions and one combined extension:
 
 ```ts
-const xprisma = prisma
-.$extends({ ... }) // returns an extended client from the standard client
-.$extends({ ... }) // returns an extended client from the standard client
-.$extends({ ... }) // returns an extended client from the standard client
+// First of all, store your original prisma client in a variable as usual
+const prisma = new PrismaClient()
+
+// Declare extension A
+const extendsA = prisma.$extends(extensionA)
+
+// Declare extension B
+const extendsB = prisma.$extends(extensionB)
+
+// Declare an extension that is a combination of A and B
+const extendsAB = prisma.$extends(extensionA).$extends(extensionB)
 ```
+
+When you combine two or more extensions, then the last extension takes precedence in any conflict. In the example above, suppose there is a method called `getName` in `extendsA` and a method called `getName` in `extendsB`. When you call `extendsAB.getName`, then Prisma Clinet uses `getName` as defined in `extendsB`.
+
+### Extensions versus middlewares
+
+Extensions differ from [middlewares](/concepts/components/prisma-client/middleware#performance-and-appropriate-use-cases) in the following ways:
+
+- If you use two or more middlewares at the same time, then they all apply globally to the same client
+- Extensions are isolated: the functionality in each one is separate, unless you deliberately combine them
+  - For example, this is useful if you want to implement row-level security (RLS), where each http request can have its own client with its own RLS extension, customized with session data. This can keep each user entirely separate, each in a separate client. With middlewares, all users would be active in the same client.
+- All extended clients share the same connection pool, but their functionality is separate ** <-- is this different behavior from middlewares? **
+
+** Need to emphasize this: **
+When you do `const xprisma = prisma.$extends()`, `prisma` is not affected by your extension, but `xprisma` is.
+Some users might expect `prisma` to be affected as well. Users need to use the correct instance.
 
 ## Share Prisma Client extensions
 
-You can share Prisma Client extensions with other users, either as packages or as code snippets. To create an extension that is more likely to work for other users, use the `$all` prefix, for example `$allModels`. This lets you build an extension that applies generally, and not just to your specific schema.
+You can share Prisma Client extensions with other users, either as packages or as code snippets. To create an extension that is more likely to work for other users, use the `$all` prefix, for example [`$allModels`](/concepts/components/prisma-client/client-extensions/client-extensions-model#add-a-custom-method-to-all-models-in-your-schema). This extension applies generally, not just to your specific schema.
 
 For example, a generic extension might take the following form:
 
@@ -89,7 +119,6 @@ class UserService extends xprisma.user.getClass() {
 ### Package an extension
 
 To package an extension, use `Prisma.createExtension`. This is very similar to `prisma.$extends`, but it declares an extension.
-
 For example:
 
 ```ts
@@ -100,19 +129,17 @@ export default Prisma.createExtension({
   model: {
     $allModels: {
       // new method
-      findOrCreate(...) { }
+      findOrCreate(...) { } // code for the new method goes inside the brackets
     }
   }
 })
 ```
 
-**_TBD: what happens next? how does the user share it?_**
+You could then share the above code on `npm` or as a code snippet.
 
 ### Install a packaged extension
 
 In your project, you can install any Prisma Client extension that another user has published to `npm`. To do so, add the following line to your application code:
-
-**\*TBD: how does the user determine what extensions are available so they can install on?**
 
 ```ts
 npm install prisma-extension-<name>
@@ -124,7 +151,7 @@ For example, if an available extension is called `find-or-create`, you could ins
 npm install prisma-extension-find-or-create
 ```
 
-Import the extension and load it into your client instance as follows:
+To import the `find-or-create` extension from the example above, and load it into your client instance, you could use the following code:
 
 ```ts
 import findOrCreate from 'prisma-extension-find-or-create'
