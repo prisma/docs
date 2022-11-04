@@ -1,0 +1,119 @@
+---
+title: 'Add custom results objects to Prisma Client'
+metaTitle: 'Prisma Client extensions: results (Preview)'
+metaDescription: 'Extend the functionality of Prisma Client'
+tocDepth: 3
+---
+
+<TopBlock>
+
+<Admonition type="info">
+
+This page is in draft for Prisma version 4.6.0. We plan to publish this page for version 4.7.0.
+
+</Admonition>
+
+From version 4.7.0, you can use `result` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) to add custom results objects to Prisma Client.
+
+</TopBlock>
+
+## Add the <inlinecode>clientExtensions</inlinecode> feature flag to <inlinecode>schema.prisma</inlinecode>
+
+Before you create Prisma Client extensions, you must enable the `clientExtensions` feature flag in the generator block of your `schema.prisma` file, as follows:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+```
+
+## The `result` extension type
+
+To add a custom field or method to query results relating to the `user` model, use the following structure:
+
+```ts
+const xprisma = prisma.$extends({
+  result?: {
+    user: {
+      needs: {..}
+    fields: { .. }
+      return { .. }
+    },
+  },
+});
+```
+
+- `result`: an optional field to add fields and methods to query results
+- `needs`: a required object which describes the dependencies of a result field
+- `fields`: a required object that contains methods which describe how the virtual field will be computed when it is accessed. You must declare rquivelant objects in `fields` to the objects that you declare in `needs`.
+- `return` — the value of the field that has been computed
+
+## Add custom results objects to Prisma Client
+
+To create Prisma Client extensions, use the [`$extends`](/concepts/components/prisma-client/client-extensions#about-prisma-client-extensions) client-level method. To add custom results objects, use the `results` extension type.
+
+### Add a custom field to query results
+
+You can use the `result` extension type to add fields to query results. These fields are computed at runtime and are type-safe.
+
+The following example adds a new, virtual field `fullName` to the `user` model. It declares the field's dependencies and the computation logic.
+
+```ts
+const xprisma = prisma.$extends({
+  result: {
+    user: {
+      needs: {
+        fullName: { firstName: true, lastName: true },
+      },
+      fields: {
+        fullName(user) {
+          return `${user.firstName} ${user.lastName}` // the value and type that will be available on the result (in this case the type is string)
+        },
+      },
+    },
+  },
+})
+
+const user = await xprisma.user.findFirst()
+console.log(user.fullName) // returns the user's full name, such as "John Doe"
+```
+
+In the above example, the input `user` is automatically typed according to object defined in `needs`. We know that `firstName` and `lastName` are of type `string` because they were specified in `needs`. If they weren’t specified there, then their type would be `string | undefined`.
+
+### Considerations
+
+- For performance reasons, Prisma Client computes results when your application accesses them at runtime, not on retrieval.
+- You can only create fields that are based on scalar fields
+- `result` extensions don't over-fetch. Prisma Client only computes a field if its dependencies are present. In the following example, `undefined` is returned for `fullName` if the user's `email` is undefined.
+  ```ts
+  const user = await xprisma.user.findFirst({ select: { email: true }))
+  console.log(user.fullName) // undefined
+  ```
+
+### Add a custom method to query results
+
+Result extensions can be used to add methods to result objects.
+
+The following example adds a new method, `getAccountBalance`:
+
+```ts
+const xprisma = prisma.$extends({
+  result: {
+    user: {
+      needs: {
+        getAccountBalance: {
+          account: true,
+        },
+      },
+      fields: {
+        getAccountBalance: (user) => (n: number) => {
+          return user.account.balance + n
+        },
+      },
+    },
+  },
+})
+const result = await xprisma.user.findFirst()
+console.log(result?.getAccountBalance(-500)) // 7245
+```
