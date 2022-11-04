@@ -52,12 +52,17 @@ Every extended client operates independently, in an isolated instance. It cannot
 
 You can also combine two or more extensions into one extension, if you want the functionality from both extensions to apply in the same client instance.
 
+### Examples of isolated client instances
+
 Example uses of isolated client instances include the following:
 
+- Implement row-level security (RLS), where each http request has its own client with its own RLS extension, customized with session data. This can keep each user entirely separate, each in a separate client.
 - Add a `user.current()` method for the `user` model to get the current logged-in user
 - Enable more verbose logging for requests if a debug cookie is set
 - Attach a unique request id to all logs so you can correlate them later
 - Remove a `delete` method from models unless the application calls the admin endpoint and the user has the necessary priviliges
+
+### Declare multiple extensions
 
 The following example declares two separate extensions and one combined extension:
 
@@ -75,7 +80,7 @@ const extendsB = prisma.$extends(extensionB)
 const extendsAB = prisma.$extends(extensionA).$extends(extensionB)
 ```
 
-When you combine two or more extensions, then the last extension takes precedence in any conflict. In the example above, suppose there is a method called `getName` in `extendsA` and a method called `getName` in `extendsB`. When you call `extendsAB.getName`, then Prisma Clinet uses `getName` as defined in `extendsB`.
+When you combine two or more extensions, then the last extension declared takes precedence in any conflict. In the example above, suppose there is a method called `getName` in `extendsA` and a method called `getName` in `extendsB`. When you call `extendsAB.getName`, then client uses `getName` as defined in `extendsB`.
 
 ### Extensions versus middlewares
 
@@ -83,12 +88,8 @@ Extensions differ from [middlewares](/concepts/components/prisma-client/middlewa
 
 - If you use two or more middlewares at the same time, then they all apply globally to the same client
 - Extensions are isolated: the functionality in each one is separate, unless you deliberately combine them
-  - For example, this is useful if you want to implement row-level security (RLS), where each http request can have its own client with its own RLS extension, customized with session data. This can keep each user entirely separate, each in a separate client. With middlewares, all users would be active in the same client.
-- All extended clients share the same connection pool, but their functionality is separate ** <-- is this different behavior from middlewares? **
-
-** Need to emphasize this: **
-When you do `const xprisma = prisma.$extends()`, `prisma` is not affected by your extension, but `xprisma` is.
-Some users might expect `prisma` to be affected as well. Users need to use the correct instance.
+- All extended clients share the same connection pool, but their functionality is separate
+- In the RLS example given above, with extensions each user can be in an entirely separate client. With middlewares, all users are active in the same client.
 
 ## Share Prisma Client extensions
 
@@ -161,3 +162,9 @@ const user = await xprisma.user.findOrCreate({ ... })
 
 xprisma.user.findOrCreate()
 ```
+
+<Admonition type = "info">
+
+When you call a method in your extension, you must use the correct instance in your code. In the above example, `xprisma.user.findOrCreate` works, but `prisma.user.findOrCreate` does not.
+
+</Admonition>
