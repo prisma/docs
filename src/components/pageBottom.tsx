@@ -8,7 +8,7 @@ import { ButtonWrapper } from './shortcodes/button'
 import Twitter from '../icons/Twitter'
 import { useLocation } from '@reach/router'
 import { X } from 'react-feather'
-import { theme } from '@prisma/lens/dist/web'
+import { theme } from '../theme'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 

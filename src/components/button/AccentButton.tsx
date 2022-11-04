@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 import Button from './Button'
-import { theme } from '@prisma/lens/dist/web'
+import { theme } from '../../theme'
 
 export enum AccentColor {
   RED = 'RED',

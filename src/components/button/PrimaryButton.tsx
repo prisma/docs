@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 import Button from './Button'
-import { theme } from '@prisma/lens/dist/web'
+import { theme } from '../../theme'
 
 export const PrimaryButton = styled(Button)`
   background: ${theme.colors.gray700};
