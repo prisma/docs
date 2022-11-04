@@ -1,0 +1,174 @@
+---
+title: 'Relation mode'
+metaTitle: 'Relation mode'
+metaDescription: 'Relation mode'
+tocDepth: 2
+preview: true
+---
+
+<TopBlock>
+
+In relational databases, relations between data are usually implemented with foreign keys. A relation consists of a target row in a table, and a foreign key field that points to that row.
+
+Foreign keys:
+
+- ensure referential integrity (Can this foreign key field hold this value?)
+- allow you to set referential actions that define how changes to these fields are handled (What happens if the ID of this field is changed?).
+
+In Prisma, relations are defined using the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attribute, which then under the hood is translated to foreign keys and the SQL to define referential actions (which are defined with the `onUpdate` and `onUpdate` arguments of the attribute).
+
+!!explain example
+
+<!--
+Prisma allows you to define relations between records using the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attribute. The `onUpdate` and `onDelete` arguments of this attribute can be used to define which referential action take place on updating or deleting the related record.
+-->
+
+<!-- TODO Tab that shows SQL -->
+
+```prisma file=schema.prisma highlight=4;normal
+model Post {
+  id       Int    @id @default(autoincrement())
+  title    String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId Int
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  posts Post[]
+}
+```
+
+Some databases, such as MongoDB or [PlanetScale](/guides/database/using-prisma-with-planetscale#differences-to-consider)),
+do not support foreign keys. For this situation, Prisma offers an alternative _relation mode_ where most properties of relations in relational databases are emulated.
+
+When using Prisma Client the behavior of queries is identical or similar, but all referential actions and most referential integrity is actually handled by the Prisma engine under the hood.
+
+<Admonition type="warning">
+  There are significant performance implications to emulating referential
+  integrity in the Prisma client. In cases where the underlying database can
+  handle referential integrity with foreign keys, it is usually the preferred
+  choice.
+</Admonition>
+
+</TopBlock>
+
+## How to set the relation mode in your Prisma schema
+
+To set the relation mode, you need to enable the `referentialIntegrity` preview feature. Add the `referentialIntegrity` feature flag to the `previewFeatures` list in the [`generator`](/reference/api-reference/prisma-schema-reference#generator) block of your Prisma schema file, and add the `relationMode` field to the [`datasource`](/reference/api-reference/prisma-schema-reference#datasource) block:
+
+```prisma file=schema.prisma highlight=4,9;add
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator js {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
+}
+```
+
+To change the relation mode, update the `relationMode` field in the `datasource` block.
+
+<Admonition type="warning">
+
+The <inlinecode>relationMode</inlinecode> field was renamed in Prisma version 4.5.0,
+and was previously named <inlinecode>referentialIntegrity</inlinecode>.
+
+</Admonition>
+
+The available options are:
+
+- `foreignKeys`: this handles relations in the database using foreign keys. This is the default option when using all relational database connectors.
+- `prisma`: this emulates relations in the Prisma client. This is the default (and only available) option when using the MongoDB connector. You should also [enable this option](/guides/database/using-prisma-with-planetscale#how-to-enable-emulation-of-referential-integrity) when using the MySQL connector with a PlanetScale database.
+
+<Admonition type="warning">
+
+When using Prisma Migrate, setting the value to <inlinecode>prisma</inlinecode> will remove all previously created foreign keys in the next migration. Setting the value to <inlinecode>foreignKeys</inlinecode> (either directly or by removing the <inlinecode>relationMode</inlinecode> field and using the default option for relational databases) will create foreign keys for all relations in the next migration.
+
+</Admonition>
+
+## Handle relations in your relational database with the <inlineCode>foreignKeys</inlineCode> relation mode
+
+The `foreignKeys` relation mode handles relations in your relational database using foreign keys. This is the default option when you use a relational database connector (PostgreSQL, MySQL, SQLite, SQL Server, CockroachDB).
+
+The `foreignKeys` relation mode is not available when you use the MongoDB connector. Some relational databases, [such as PlanetScale](/guides/database/using-prisma-with-planetscale#how-to-emulate-referential-integrity-in-prisma-client), also forbid the use of foreign keys. In these cases, you should instead [emulate relations in Prisma with the `prisma` relation mode](#emulate-relations-in-prisma-with-the-prisma-relation-mode).
+
+### Referential integrity
+
+The `foreignKeys` relation mode enforces referential integrity checks at the database level. This means that when you _create_ or _update_ a record with a relation to another record, the related record needs to exist. If the record does not exist, the database will return an error message.
+
+### Referential actions
+
+When you use the `foreignKeys` relation mode, referential actions are triggered in the database after you _update_ or _delete_ a record with relations to other records. These referential actions maintain referential integrity in the related records by preventing changes that would break referential integrity, propagating changes through to related records or setting the value of fields that reference the updated or deleted record to a null or default value.
+
+For more information, see the [referential actions](/concepts/components/prisma-schema/relations/referential-actions) page.
+
+### Introspection
+
+- When using **Introspection**/`db pull`, on a relational database, `@relation` will be added in the Prisma schema where Foreign Keys exist.
+
+### Prisma Migrate
+
+- When using **Migration** a schema with `@relation`, we turn that into DDL that creates foreign keys
+
+## Emulate relations in Prisma with the <inlineCode>prisma</inlineCode> relation mode
+
+The `prisma` relation mode emulates some referential integrity checks and referential actions for each Prisma Client query, using some additional database queries and logic.
+
+The `prisma` relation mode is the default option for the MongoDB connector. It should also be set if you use a relational database that does not support foreign keys. For example, [if you use PlanetScale](https://www.prisma.io/docs/guides/database/using-prisma-with-planetscale#how-to-enable-emulation-of-referential-integrity) you should use the `prisma` relation mode.
+
+<Admonition type="warning">
+  There are significant performance implications to emulating referential
+  integrity in the Prisma client. In cases where the underlying database can
+  handle referential integrity with foreign keys, it is usually the preferred
+  choice.
+</Admonition>
+
+Emulation of relations is only available for Prisma Client queries and does not apply to raw queries.
+
+### Which referential integrity checks are emulated?
+
+When you _update_ a record, Prisma will emulate referential integrity checks. This means that when you update a record with a relation to another record, the related record needs to exist. If the record does not exist, Prisma Client will return an error message.
+
+However, when you _create_ a record, Prisma does not emulate any referential integrity checks.
+
+### Which referential actions are emulated?
+
+When you _update_ or _delete_ a record with related records, Prisma will emulate referential actions.
+
+<!-- TODO: list actions with brief description? -->
+
+The following table shows which emulated referential actions are available for each database connector:
+
+| Database    | Cascade | Restrict | NoAction | SetNull | SetDefault |
+| :---------- | :------ | :------- | :------- | :------ | :--------- |
+| PostgreSQL  | **✔️**  | **✔️**   | **✔️**‡  | **✔️**  | **❌**†    |
+| MySQL       | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**†    |
+| SQLite      | **✔️**  | **✔️**   | **✔️**‡  | **✔️**  | **❌**†    |
+| SQL Server  | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**†    |
+| CockroachDB | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**†    |
+| MongoDB     | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**†    |
+
+- † The `SetDefault` referential action is not supported.
+- ‡ The `NoAction` referential action is not supported for PostgreSQL and SQLite. Instead, use the `Restrict` action.
+
+Error messages returned by emulated referential actions in the `prisma` relation mode are generated by the Prisma Client and differ slightly from the error messages in the `foreignKeys` relation mode:
+
+```jsx
+Example:
+// foreignKeys:
+... Foreign key constraint failed on the field: `ProfileOneToOne_userId_fkey (index)`
+// prisma:
+... The change you are trying to make would violate the required relation 'ProfileOneToOneToUserOneToOne' between the `ProfileOneToOne` and `UserOneToOne` models.
+```
+
+### Introspection
+
+- When using **Introspection**/`db pull` to create a Prisma schema, `@relation`s will not be added in the Prisma schema, this needs to be done once **manually**. The next time the command is executed (Re-Introspection), it will keep the added `@relation`s.
+
+### Prisma Migrate
+
+- **Migrations** will not use Foreign Keys when generating SQL/DDL.
