@@ -2,7 +2,6 @@ import type { GatsbyConfig } from 'gatsby'
 import docsConfig from './config'
 
 let plugins: any = [
-  'gatsby-plugin-react-helmet',
   'gatsby-plugin-image',
   'gatsby-plugin-sharp',
   'gatsby-transformer-sharp',
@@ -13,9 +12,6 @@ let plugins: any = [
     resolve: `gatsby-plugin-mdx`,
     options: {
       extensions: ['.mdx', '.md'],
-      // defaultLayouts: {
-      //   default: require.resolve('./src/templates/docs.tsx'),
-      // },
       gatsbyRemarkPlugins: [
         'gatsby-remark-sectionize',
         'gatsby-remark-normalize-paths',
@@ -143,8 +139,8 @@ if (process.env.INDEX_ALGOLIA === 'true') {
 }
 
 const config: GatsbyConfig = {
-  pathPrefix: process.env.ADD_PREFIX === 'true' ? docsConfig.gatsby.pathPrefix : '/',
-  //trailingSlash: 'never',
+  pathPrefix: process.env.ADD_PREFIX === 'true' ? docsConfig.gatsby.pathPrefix : '',
+  trailingSlash: 'never',
   siteMetadata: {
     pathPrefix: docsConfig.gatsby.pathPrefix,
     title: docsConfig.siteMetadata.title,
