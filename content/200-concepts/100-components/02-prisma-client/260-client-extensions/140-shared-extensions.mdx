@@ -1,0 +1,92 @@
+---
+title: 'Shared Prisma Client extensions'
+metaTitle: 'Shared Prisma Client extensions (Preview)'
+metaDescription: 'Share extensions or import shared extensions into your Prisma project'
+tocDepth: 3
+---
+
+<TopBlock>
+
+<Admonition type="warning">
+
+This page is in draft.
+
+</Admonition>
+
+You can share your [Prisma Client extensions](/concepts/components/prisma-client/client-extensions/) with other users, either as packages or as code snippets, and import extensions that other users create into your Prisma projects.
+
+</TopBlock>
+
+## Share Prisma Client extensions
+
+To create an extension that is more likely to work for other users, use the `$all` prefix, for example [`$allModels`](/concepts/components/prisma-client/client-extensions/client-extensions-model#add-a-custom-method-to-all-models-in-your-schema). This extension applies generally, not just to your specific schema.
+
+For example, a generic extension might take the following form:
+
+```ts
+const xprisma = new prisma.$extends({
+  model: {
+    $allModels: {
+      getClass<T extends object>(this: T): new () => T {
+        return class {
+          /** Generic Implementation */
+        } as any
+      },
+    },
+  },
+})
+
+class UserService extends xprisma.user.getClass() {
+  method() {
+    const user = this.findFirst({}) // fully type-safe
+  }
+}
+```
+
+### Package an extension
+
+To package an extension, use `Prisma.createExtension`. This is very similar to `prisma.$extends`, but it declares an extension.
+For example:
+
+```ts
+
+import { Prisma } from '@prisma/client'
+
+export default Prisma.createExtension({
+  model: {
+    $allModels: {
+      // new method
+      findOrCreate(...) { } // code for the new method goes inside the brackets
+    }
+  }
+})
+```
+
+You could then share the above code on `npm` or as a code snippet.
+
+## Install a packaged extension
+
+In your project, you can install any Prisma Client extension that another user has published to `npm`. To do so, add the following line to your application code:
+
+```ts
+npm install prisma-extension-<name>
+```
+
+For example, if an available extension is called `find-or-create`, you could install it as follows:
+
+```ts
+npm install prisma-extension-find-or-create
+```
+
+To import the `find-or-create` extension from the example above, and load it into your client instance, you could use the following code:
+
+```ts
+import findOrCreate from 'prisma-extension-find-or-create'
+
+const xprisma = prisma.$extends(findOrCreate)
+const user = await xprisma.user.findOrCreate({ ... })
+
+xprisma.user.findOrCreate()
+```
+
+When you call a method in an extension, use the constant name from your`$extends`statement, not `prisma`. In the above example,`xprisma.user.findOrCreate` works, but `prisma.user.findOrCreate` does not.

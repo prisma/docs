@@ -31,7 +31,7 @@ To create Prisma Client extensions, use the `$extends` [client-level method](/re
 
 You can use [multiple independent extensions at the same time](#multiple-extensions), each in is own isolated instance of Prisma Client.
 
-You can also [share your Prisma Client extensions](#share-extensions) with other Prisma users, and [import Prisma Client extensions developed by other users](#install-a-packaged-extension) into your Prisma project.
+You can also [share your Prisma Client extensions](/concepts/components/prisma-client/client-extensions/shared-extensions) with other Prisma users, and [import Prisma Client extensions developed by other users](#install-a-packaged-extension) into your Prisma project.
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ Each time that you call `$extends`, you create an _extended client_. This extend
 
 Every extended client operates independently, in an isolated instance. It cannot conflict with other extended clients or the original client.
 
-You can also combine two or more extensions into one extension, if you want the functionality from both extensions to apply in the same client instance.
+You can also combine two or more extensions into one extension, if you want the functionality from both extensions to apply in the same client instance. Note that it is possible for [combined extensions to conflict](#conflicts-in-combined-extensions).
 
 ### Examples of isolated client instances
 
@@ -80,9 +80,11 @@ const extendsB = prisma.$extends(extensionB)
 const extendsAB = prisma.$extends(extensionA).$extends(extensionB)
 ```
 
-When you combine two or more extensions, then the last extension declared takes precedence in any conflict. In the example above, suppose there is a method called `getName` in `extendsA` and a method called `getName` in `extendsB`. When you call `extendsAB.getName`, then client uses `getName` as defined in `extendsB`.
+### Conflicts in combined extensions
 
-### Extensions versus middlewares
+When you combine two or more extensions, then the last extension that you declare takes precedence in any conflict. In the example above, suppose there is a method called `getName` in `extendsA` and a method called `getName` in `extendsB`. When you call `extendsAB.getName`, then the client uses `getName` as defined in `extendsB`.
+
+## Extensions versus middlewares
 
 Extensions differ from [middlewares](/concepts/components/prisma-client/middleware#performance-and-appropriate-use-cases) in the following ways:
 
@@ -90,81 +92,3 @@ Extensions differ from [middlewares](/concepts/components/prisma-client/middlewa
 - Extensions are isolated: the functionality in each one is separate, unless you deliberately combine them
 - All extended clients share the same connection pool, but their functionality is separate
 - In the RLS example given above, with extensions each user can be in an entirely separate client. With middlewares, all users are active in the same client.
-
-## Share Prisma Client extensions
-
-You can share Prisma Client extensions with other users, either as packages or as code snippets. To create an extension that is more likely to work for other users, use the `$all` prefix, for example [`$allModels`](/concepts/components/prisma-client/client-extensions/client-extensions-model#add-a-custom-method-to-all-models-in-your-schema). This extension applies generally, not just to your specific schema.
-
-For example, a generic extension might take the following form:
-
-```ts
-const xprisma = new prisma.$extends({
-  model: {
-    $allModels: {
-      getClass<T extends object>(this: T): new () => T {
-        return class {
-          /** Generic Implementation */
-        } as any
-      },
-    },
-  },
-})
-
-class UserService extends xprisma.user.getClass() {
-  method() {
-    const user = this.findFirst({}) // fully type-safe
-  }
-}
-```
-
-### Package an extension
-
-To package an extension, use `Prisma.createExtension`. This is very similar to `prisma.$extends`, but it declares an extension.
-For example:
-
-```ts
-
-import { Prisma } from '@prisma/client'
-
-export default Prisma.createExtension({
-  model: {
-    $allModels: {
-      // new method
-      findOrCreate(...) { } // code for the new method goes inside the brackets
-    }
-  }
-})
-```
-
-You could then share the above code on `npm` or as a code snippet.
-
-### Install a packaged extension
-
-In your project, you can install any Prisma Client extension that another user has published to `npm`. To do so, add the following line to your application code:
-
-```ts
-npm install prisma-extension-<name>
-```
-
-For example, if an available extension is called `find-or-create`, you could install it as follows:
-
-```ts
-npm install prisma-extension-find-or-create
-```
-
-To import the `find-or-create` extension from the example above, and load it into your client instance, you could use the following code:
-
-```ts
-import findOrCreate from 'prisma-extension-find-or-create'
-
-const xprisma = prisma.$extends(findOrCreate)
-const user = await xprisma.user.findOrCreate({ ... })
-
-xprisma.user.findOrCreate()
-```
-
-<Admonition type = "info">
-
-When you call a method in your extension, you must use the correct instance in your code. In the above example, `xprisma.user.findOrCreate` works, but `prisma.user.findOrCreate` does not.
-
-</Admonition>
