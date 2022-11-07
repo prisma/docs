@@ -85,6 +85,9 @@ let plugins: any = [
         `/getting-started/setup-prisma/start-from-scratch-prisma-migrate`,
         `/getting-started/setup-prisma/start-from-scratch-sql`,
       ],
+      resolvePagePath: (page: any) => {
+        return page.path.replace(/\/$/, '')
+      },
     },
   },
   {
