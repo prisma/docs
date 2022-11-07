@@ -8,28 +8,13 @@ preview: true
 
 <TopBlock>
 
-In relational databases, relations between data are usually implemented with foreign keys. A relation consists of a target row in a table, and a foreign key field that points to that row.
-
-Foreign keys:
-
-- ensure referential integrity via constraints (Can this foreign key field hold this value?) 
-- allow you to set referential actions that define how changes to these fields are handled (What happens if the ID of this field is changed?).
-
-In Prisma, relations are defined using the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attribute, which then under the hood is translated to foreign keys and the SQL to define referential actions (which are defined with the `onUpdate` and `onUpdate` arguments of the attribute).
-
-!!explain example
-
-<!--
-Prisma allows you to define relations between records using the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attribute. The `onUpdate` and `onDelete` arguments of this attribute can be used to define which referential action take place on updating or deleting the related record.
--->
-
-<!-- TODO Tab that shows SQL -->
+In Prisma, relations between records are defined using the [`@relation`](/reference/api-reference/prisma-schema-reference#relation) attribute. For example, in the following schema there is a one-to-many relation between the `User` and `Post` models:
 
 ```prisma file=schema.prisma highlight=4;normal
 model Post {
   id       Int    @id @default(autoincrement())
   title    String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId Int
 }
 
@@ -39,13 +24,47 @@ model User {
 }
 ```
 
-Some databases, such as MongoDB or [PlanetScale](/guides/database/using-prisma-with-planetscale#differences-to-consider)),
-do not support foreign keys. For this situation, Prisma offers an alternative _relation mode_ where most properties of relations in relational databases are emulated.
+Prisma has two _relation modes_ that specify how relations between records are enforced. If you use Prisma with a relational database, then by default Prisma will use the [`foreignKeys` relation mode](#handle-relations-in-your-relational-database-with-the-foreignkeys-relation-mode), which enforces relations between records at the database level with foreign keys. A foreign key is a column or group of columns in one table that take values based on the primary key in another table. Foreign keys allow you to:
 
-When using Prisma Client the behavior of queries is identical or similar, but all referential actions and most referential integrity is actually handled by the Prisma engine under the hood.
+- set constraints that prevent you from making changes that break references
+- set [referential actions](/concepts/components/prisma-schema/relations/referential-actions) that define how changes to records are handled
+
+Together these constraints and referential actions guarantee the _referential integrity_ of the data.
+
+For the example schema above, Prisma Migrate will generate the following SQL by default if you use the PostgreSQL connector:
+
+```sql highlight=19;normal
+
+-- CreateTable
+CREATE TABLE "Post" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "authorId" INTEGER NOT NULL,
+
+    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" SERIAL NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+```
+
+In this case, the foreign key constraint on the `authorId` column of the `Post` table references the `id` column of the `User` table, and guarantees that a post must have an author that exists. If you update or delete a user then the `ON DELETE` and `ON UPDATE` referential actions specify the `CASCADE` option, which will also delete or update all posts belonging to the user.
+
+Some databases, such as MongoDB or [PlanetScale](/guides/database/using-prisma-with-planetscale#differences-to-consider)),
+do not support foreign keys. Additionally, in some cases developers may prefer not to use foreign keys in their relational database. For these situations, Prisma offers [an alternative relation mode, `prisma`](#emulate-relations-in-prisma-with-the-prisma-relation-mode), which emulates most properties of relations in relational databases. When you use the Prisma Client with the `prisma` relation mode enabled, the behavior of queries is identical or similar, but referential actions and most constraints are handled by the Prisma engine rather than in the database.
 
 <Admonition type="warning">
-  There are performance implications to emulating referential integrity and referential actions in the Prisma client. In cases where the underlying database supports foreign keys, it is usually the preferred choice.
+  There are performance implications to emulating referential integrity and
+  referential actions in the Prisma Client. In cases where the underlying
+  database supports foreign keys, it is usually the preferred choice.
 </Admonition>
 
 </TopBlock>
