@@ -27,24 +27,30 @@ There are four types of extension. You can use each type to customize a differen
 
 ## About Prisma Client extensions
 
-Use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods) to create an _extended client_. An extended client is a forked variant of the standard Prisma Client with an extension applied. The standard client does not change. In your `$extends` structure, use the appropriate extension type or types (`model`, `client`, `result` or `query`).
+Use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods) to create an _extended client_. An extended client is a forked variant of the standard Prisma Client with an extension applied. When you create an extended client, the standard client does not change.
 
-For example, the following code uses the [`model` extension type](/concepts/components/prisma-client/client-extensions/model) to extend the `user` model.
-
-```ts
-const xprisma = prisma.$extends({
-  name: `signUp`,  // Optional name appears in error logs and tracing
-  model: {  // This is a `model` type extension
-    user: { ... } // The extension logic goes inside the curly braces
- },
-})
-```
-
-`name` is an optional field that you can use to name the extension. This name appears in error logs and tracing.
-
-You can use [multiple independent extensions at the same time](#multiple-extensions). Each of these instances runs in is own isolated instance of Prisma Client, unless you deliberately combine or stack them.
+You can use [multiple independent extensions at the same time](#multiple-extensions). Each of these instances runs in is own isolated instance of Prisma Client, unless you deliberately combine them.
 
 You can also [share your Prisma Client extensions](/concepts/components/prisma-client/client-extensions/shared-extensions) with other Prisma users, and [import Prisma Client extensions developed by other users](#install-a-packaged-extension) into your Prisma project.
+
+### Client instances
+
+Extended clients interact with each other, and with the standard client, as follows:
+
+- Each extended client operates independently in an isolated instance.
+- Extended clients cannot conflict with each other, or with the standard client.
+- All extended clients and the standard client communicate with the same [Prisma query engine](/concepts/components/prisma-engines/query-engine).
+- All extended clients and the standard client share the same connection pool.
+
+#### Examples of isolated client instances
+
+Example uses of isolated client instances include the following:
+
+- Implement row-level security (RLS), where each http request has its own client with its own RLS extension, customized with session data. This can keep each user entirely separate, each in a separate client.
+- Add a `user.current()` method for the `user` model to get the current logged-in user.
+- Enable more verbose logging for requests if a debug cookie is set.
+- Attach a unique request id to all logs so you can correlate them later.
+- Remove a `delete` method from models unless the application calls the admin endpoint and the user has the necessary privileges.
 
 ## Prerequisites
 
@@ -57,26 +63,31 @@ generator client {
 }
 ```
 
+## Create an extension
+
+In your `$extends` structure, use the appropriate extension type or types (`model`, `client`, `result` or `query`). For example, the following code uses the [`model` extension type](/concepts/components/prisma-client/client-extensions/model) to extend the `user` model.
+
+```ts
+const xprisma = prisma.$extends({
+  name: `signUp`,  // Optional name appears in error logs and tracing
+  model: {  // This is a `model` type extension
+    user: { ... } // The extension logic goes inside the curly braces
+ },
+})
+```
+
+`name` is an optional field that you can use to name the extension. This name appears in error logs and tracing.
+
 ## Multiple extensions
 
-When you use multiple extensions, the following statements apply to the associated extended clients:
+When you create multiple extensions, there are two ways to associate them with extended clients:
 
-- Every extended client operates independently in an isolated instance
-- Extended clients cannot conflict with each other, or with the original client
-- All extended clients communicate with the same [Prisma query engine](/concepts/components/prisma-engines/query-engine)
-- All extended clients share the same comnnection pool
+- Create each extension in a separate extended client.
+- Combine two or more extensions into one extended client. The functionality from these extensions applies in the same client instance.
 
-You can also combine two or more extensions into one extended client, if you want the functionality from all of these extensions to apply in the same client instance. Note that it is possible for [combined extensions to conflict](#conflicts-in-combined-extensions).
+  Note: [Combined extensions can conflict](#conflicts-in-combined-extensions).
 
-### Examples of isolated client instances
-
-Example uses of isolated client instances include the following:
-
-- Implement row-level security (RLS), where each http request has its own client with its own RLS extension, customized with session data. This can keep each user entirely separate, each in a separate client.
-- Add a `user.current()` method for the `user` model to get the current logged-in user
-- Enable more verbose logging for requests if a debug cookie is set
-- Attach a unique request id to all logs so you can correlate them later
-- Remove a `delete` method from models unless the application calls the admin endpoint and the user has the necessary priviliges
+[Learn more about how client instances interact](#client-instances)
 
 ### Apply multiple extensions to one or more extended clients
 
@@ -94,7 +105,7 @@ const prisma = new PrismaClient()
 With this option, you apply both extensions to a new client in one line of code.
 
 ```ts
-//Declare an extended client that has extensionsA and extensionB
+// Declare an extended client that has extensionsA and extensionB
 const clientAB = prisma.$extends(extensionA).$extends(extensionB)
 ```
 
@@ -111,7 +122,7 @@ const clientA = prisma.$extends(extensionA)
 // Declare an extended client that has extension B applied
 const clientB = prisma.$extends(extensionB)
 
-//Declare an extended client that is a combination of clientA and extensionB
+// Declare an extended client that is a combination of clientA and extensionB
 const clientAplusB = clientA.$extends(extensionB)
 ```
 
@@ -119,7 +130,7 @@ In your code, you can call any of these clients separately, for example `clientA
 
 ### Conflicts in combined extensions
 
-When you combine two or more extensions, then the _last_ extension that you declare takes precedence in any conflict. In the example above, suppose there is a method called `getName()` in `clientA` and a method called `getName()` in `clientB`. When you call `clientAB.getName()`, then the client uses `getName()` as defined in `clientB`.
+When you combine two or more extensions, then the _last_ extension that you declare takes precedence in any conflict. In the example in option 1 above, suppose there is a method called `getName()` in `clientA` and a method called `getName()` in `clientB`. When you call `clientAB.getName()`, then the client uses `getName()` as defined in `clientB`.
 
 ## Extensions versus middlewares
 
