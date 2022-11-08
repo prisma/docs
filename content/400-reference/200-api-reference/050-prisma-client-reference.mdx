@@ -932,7 +932,10 @@ const user = await prisma.user.update({
 
 ### <inlinecode>upsert</inlinecode>
 
-`upsert` updates an existing _or_ creates a new database record.
+`upsert` does the following:
+
+- If an existing database record satisfies the `where` condition, it updates that record
+- If no database record satisfies the `where` condition, it creates a new database record
 
 #### Options
 
@@ -955,6 +958,7 @@ const user = await prisma.user.update({
 
 - To perform arithmetic operations on update (add, subtract, multiply, divide), use [atomic updates](#atomic-number-operations) to prevent race conditions.
 - If two or more upsert operations happen at the same time and the record doesn't already exist, then a race condition might happen. As a result, one or more of the upsert operations might throw a unique key constraint error. Your application code can catch this error and retry the operation. [Learn more](#unique-key-constraint-errors-on-upserts).
+- From version 4.6.0, Prisma hands over upsert queries to the database where possible. [Learn more](#database-upserts).
 
 #### Reference
 
@@ -1000,6 +1004,119 @@ When your application tries to perform two or more concurrent upsert operations,
 ##### Solution
 
 Handle the P2002 error in your application code. When it occurs, retry the upsert operation to update the row.
+
+#### Database upserts
+
+Where possible, Prisma Client hands over an `upsert` query to the database. This is called a _database upsert_.
+
+Database upserts have the following advantages:
+
+- They are faster than upserts handled by Prisma
+- [Unique key constraint errors](#unique-key-constraint-errors-on-upserts) cannot happen
+
+Prisma Client uses a database upsert automatically when [specific criteria](#database-upsert-query-criteria) are met. When these criteria are not met, Prisma Client handles the `upsert`.
+
+To use a database upsert, Prisma Client sends the SQL construction [`INSERT ... ON CONFLICT SET .. WHERE`](https://www.prisma.io/dataguide/postgresql/inserting-and-modifying-data/insert-on-conflict) to the database.
+
+##### Database upsert prerequisites
+
+Prisma Client can use database upserts if your stack meets the following criteria:
+
+- You use Prisma version 4.6.0 or later
+- Your application uses a CockroachDB, PostgreSQL, or SQLite data source
+
+##### Database upsert query criteria
+
+Prisma Client uses a database upsert for an `upsert` query when the query meets the following criteria:
+
+- There are no nested queries in the `upsert`'s `create` and `update` [options](#options-7)
+- The query modifies only one model
+- There is only one unique field in the `upsert`'s `where` option
+- The unique field in the `where` option and the unique field in the `create` option have the same value
+
+If your query does not meet these criteria, then Prisma Client handles the upsert itself.
+
+##### Database upsert examples
+
+The following examples use this schema:
+
+```prisma
+model User {
+  id           Int    @id
+  profileViews Int
+  userName     String @unique
+  email        String
+
+  @@unique([id, profileViews])
+}
+```
+
+The following `upsert` query meets all of the criteria, so Prisma Client uses a database upsert.
+
+```ts
+prisma.user.upsert({
+  where: {
+    userName: 'Alice',
+  },
+  create: {
+    id: 1,
+    profileViews: 1,
+    userName: 'Alice',
+    email: 'alice@prisma.io',
+  },
+  update: {
+    email: 'updated@example.com',
+  },
+})
+```
+
+In this situation, Prisma uses the following SQL query:
+
+```sql
+INSERT INTO "public"."User" ("id","profileViews","userName","email") VALUES ($1,$2,$3,$4)
+ON CONFLICT ("userName") DO UPDATE
+SET "email" = $5 WHERE ("public"."User"."userName" = $6 AND 1=1) RETURNING "public"."User"."id", "public"."User"."profileViews", "public"."User"."userName", "public"."User"."email"
+```
+
+The following query has multiple unique values in the `where` clause, so Prisma Client does _not_ use a database upsert:
+
+```ts
+prisma.User.upsert({
+  where: {
+    userName: 'Alice',
+    profileViews: 1,
+    id: 1,
+  },
+  create: {
+    id: 1,
+    profileViews: 1,
+    userName: 'Alice',
+    email: 'alice@prisma.io',
+  },
+  update: {
+    email: 'updated@example.com',
+  },
+})
+```
+
+In the following query, the values for `userName` in the `where` and `create` options are different, so Prisma Client does _not_ use a database upsert.
+
+```ts
+prisma.User.upsert({
+  where: {
+    userName: 'Alice',
+  },
+  create: {
+    id: 1,
+    profileViews: 1,
+    userName: 'AliceS',
+    email: 'alice@prisma.io',
+  },
+  update: {
+    email: 'updated@example.com',
+  },
+})
+```
 
 ### <inlinecode>delete</inlinecode>
 
