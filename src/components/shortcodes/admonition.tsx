@@ -90,7 +90,7 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
   }
 
   code {
-    color: ${theme.colors.gray600} !important;
+    color: ${theme.colors.gray900} !important;
   }
 
   p {
