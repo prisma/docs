@@ -1,0 +1,74 @@
+---
+title: 'Considerations and limitations'
+metaTitle: 'Considerations'
+metaDescription: 'When you use Data Proxy for applications in serverless and edge runtimes, you should bear in mind a few considerations and learn about the current limitations.'
+tocDepth: 2
+---
+
+## Considerations
+
+### Connection to databases hosted with a provider different from AWS
+
+It is possible to connect to a database hosted on any provider, but it needs to be accessible from the public internet. For best results and response times, you should configure the proxy in a region that is the same or as close as possible to the database.
+
+We are looking to expand the number of providers and regions in the future. If a region or provider is not yet supported, you can [submit a request](https://pris.ly/proxy-new-region). This will help us prioritize providers and regions to add next.
+
+### Recommended concurrent connections
+
+We recommend that you use a database that supports at least 20 concurrent connections.
+Setting a concurrency limit on AWS Lambda should not be required, but you should be aware that, if necessary, requests will be queued until they can be processed.
+
+### Idle connections to the database
+
+Data Proxy keeps several connection pools running to maintain open database connections even when no queries run from your application. The connection pools and any remaining idle connections close after six minutes of inactivity (or when no incoming queries are sent the database).
+
+The number of idle connections to the database depends on the number of running connection pools at any point in time. 
+In each of the supported locations, the Data Proxy architecture includes multiple clusters that maintain idle connections to the database.
+
+## Limitations
+
+### Data Proxy concurrency limits
+
+Depending on your [project plan](/data-platform/billing/plans-and-quotas), the Prisma Data Proxy provides a different [limit of concurrent proxy instances](/data-platform/about/limits-and-status#concurrency-limits-of-the-data-proxy).
+
+The performance of a single proxy instance depends on a large number of variables:
+
+- the type of queries
+- latencies and deployment locations
+- the performance of your database
+- ...
+
+If you are seeing `429` HTTP errors in your logs, this probably means that you are hitting the concurrency limits.
+
+[Contact Support](/data-platform/contact-support) if you are hitting the concurrency limits and have trouble scaling your Prisma application.
+
+### Metrics and Tracing not supported
+
+
+The Data Proxy does not yet support the following preview features:
+
+
+- [Metrics](/concepts/components/prisma-client/metrics)
+- [OpenTelemetry tracing](/concepts/components/prisma-client/opentelemetry-tracing)
+
+To use the Data Proxy, you must first remove `metrics` and `tracing` from the `previewFeatures` section of your `schema.prisma` file.
+
+For example:
+
+```diff
+   generator client {
+     provider        = "prisma-client-js"
+-     previewFeatures = ["interactiveTransactions", "metrics", "tracing"]
++     previewFeatures = []
+   }
+```
+
+If you have one or more of the listed preview features enabled and you run `prisma generate --data-proxy`, the command shows an error.
+
+### <inlinecode>$connect</inlinecode> and <inlinecode>$disconnect</inlinecode> not supported
+
+While still available with the Data Proxy, the `PrismaClient` method `$connect` does not create a new connection pool and the `$disconnect` method does not close the connection pool.
+
+Both methods are valid code in Prisma Client with the Data Proxy, but they do not have any impact on the connections to the database. This is because the Data Proxy manages the connections.
+
+You can keep `$connect` and `$disconnect` as they are. Your application will continue to run as expected.
