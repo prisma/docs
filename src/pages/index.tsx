@@ -59,7 +59,7 @@ const Summary = styled.div`
 `
 
 const NormalPara = styled.p`
-  color: ${(p) => p.theme.colors.gray700};
+  color: ${(p) => p.theme.colors.gray[700]};
   line-height: ${(p) => p.theme.space[24]};
   margin: ${(p) => p.theme.space[32]} 0;
   text-align: center;
@@ -86,7 +86,7 @@ const SubHeading = styled.h2`
   font-family: ${(p) => p.theme.fonts.display};
   margin: 0;
   text-align: center;
-  color: ${(p) => p.theme.colors.gray900};
+  color: ${(p) => p.theme.colors.gray[900]};
 `
 
 const Space = styled.div<{ height: number }>`
@@ -97,12 +97,12 @@ const ListTitle = styled.h3`
   font-weight: bold;
   line-height: ${(p) => p.theme.space[16]};
   font-size: ${(p) => p.theme.fontSizes[16]};
-  color: ${(p) => p.theme.colors.gray900} !important;
+  color: ${(p) => p.theme.colors.gray[900]} !important;
   margin: 24px 0 0;
 
   a {
     text-decoration: none;
-    color: ${(p) => p.theme.colors.gray900} !important;
+    color: ${(p) => p.theme.colors.gray[900]} !important;
     align-items: center;
     display: flex;
   }
@@ -227,11 +227,11 @@ const Row = styled.div`
 `
 
 const LinkCard = styled(Link)`
-  background: ${(p) => p.theme.colors.gray200};
+  background: ${(p) => p.theme.colors.gray[200]};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
   width: 100%;
-  border-top: ${(p) => p.theme.space[8]} solid ${(p) => p.theme.colors.gray200};
+  border-top: ${(p) => p.theme.space[8]} solid ${(p) => p.theme.colors.gray[200]};
   position: relative;
   flex-grow: 1;
   margin-bottom: ${(p) => p.theme.space[40]};
@@ -249,7 +249,7 @@ const LinkCard = styled(Link)`
   }
 
   &:hover {
-    background: ${(p) => p.theme.colors.gray300};
+    background: ${(p) => p.theme.colors.gray[300]};
     h3 svg {
       transform: translateX(4px);
     }
@@ -270,7 +270,7 @@ const LinkCard = styled(Link)`
 `
 
 const IconHolder = styled.span`
-  background: ${(p) => p.theme.colors.white};
+  background: ${(p) => p.theme.colors.wh[ite]};
   box-shadow: 0px 2px 4px rgba(26, 32, 44, 0.1), 0px 3px 6px rgba(26, 32, 44, 0.05);
   border-radius: 50%;
   height: 56px;
