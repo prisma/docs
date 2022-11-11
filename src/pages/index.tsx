@@ -270,7 +270,7 @@ const LinkCard = styled(Link)`
 `
 
 const IconHolder = styled.span`
-  background: ${(p) => p.theme.colors.wh[ite]};
+  background: ${(p) => p.theme.colors.white};
   box-shadow: 0px 2px 4px rgba(26, 32, 44, 0.1), 0px 3px 6px rgba(26, 32, 44, 0.05);
   border-radius: 50%;
   height: 56px;
@@ -303,7 +303,6 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
-      <SEO title={title} description={description} homepage />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
@@ -421,7 +420,7 @@ const Homepage = () => {
 
 export default Homepage
 
-const query = graphql`
+export const query = graphql`
   query Homepage {
     site {
       siteMetadata {
@@ -478,3 +477,11 @@ const query = graphql`
     }
   }
 `
+
+export const Head = () => {
+  const { site } = useStaticQuery(query)
+  const {
+    siteMetadata: { title, description },
+  } = site
+  return <SEO title={title} description={description} homepage />
+}

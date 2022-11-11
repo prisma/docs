@@ -65,7 +65,7 @@ const Container = styled.div`
         text-decoration: none;
 
         &:hover {
-          color: ${(p) => p.theme.colors.wh[ite]} !important;
+          color: ${(p) => p.theme.colors.white} !important;
         }
       }
     }
@@ -82,7 +82,7 @@ const SearchComponent = styled(Search)`
 `
 
 const DocsMobileButton = styled.div`
-  background: ${(p) => p.theme.colors.wh[ite]};
+  background: ${(p) => p.theme.colors.white};
   border-radius: ${(p) => p.theme.radii.small};
   color: ${(p) => p.theme.colors.gray[700]};
   display: none;
