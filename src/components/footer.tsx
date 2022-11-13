@@ -14,7 +14,7 @@ const FooterWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  color: ${(p) => p.theme.colors.gray500};
+  color: ${(p) => p.theme.colors.gray[500]};
   margin-top: 5rem;
   > div {
     width: 100%;

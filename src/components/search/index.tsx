@@ -87,7 +87,7 @@ const HitsWrapper = styled.div`
     // left: 0;
     top: 88px;
     // max-width: 100%;
-    border-top: 1px solid ${(p) => p.theme.colors.gray300};
+    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
