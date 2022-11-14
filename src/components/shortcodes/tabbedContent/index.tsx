@@ -66,7 +66,7 @@ const Tabs = styled.div`
   .tabHeading {
     margin-right: 10px;
     font-weight: 600;
-    color: ${(p) => p.theme.colors.gray600};
+    color: ${(p) => p.theme.colors.gray[600]};
     cursor: pointer;
     font-size: ${(p) => p.theme.fontSizes[14]};
     display: flex;
@@ -78,11 +78,11 @@ const Tabs = styled.div`
   }
 
   .tabHeading.active {
-    color: ${(p) => p.theme.colors.gray900};
-    background: ${(p) => p.theme.colors.gray100};
+    color: ${(p) => p.theme.colors.gray[900]};
+    background: ${(p) => p.theme.colors.gray[100]};
     border-radius: ${(p) => p.theme.radii.small};
     svg path {
-      stroke: ${(p) => p.theme.colors.gray600};
+      stroke: ${(p) => p.theme.colors.gray[600]};
     }
   }
 `
