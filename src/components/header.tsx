@@ -24,11 +24,11 @@ const HeaderWrapper = styled.div`
     ),
     linear-gradient(
       180deg,
-      ${(p) => p.theme.colors.gray900} 0%,
-      ${(p) => p.theme.colors.gray800} 100%
+      ${(p) => p.theme.colors.gray[900]} 0%,
+      ${(p) => p.theme.colors.gray[800]} 100%
     ),
-    linear-gradient(180deg, ${(p) => p.theme.colors.gray900} 0%, rgba(27, 32, 43, 0) 100%),
-    ${(p) => p.theme.colors.gray800};
+    linear-gradient(180deg, ${(p) => p.theme.colors.gray[900]} 0%, rgba(27, 32, 43, 0) 100%),
+    ${(p) => p.theme.colors.gray[800]};
   img {
     margin-bottom: 0;
   }
@@ -84,7 +84,7 @@ const SearchComponent = styled(Search)`
 const DocsMobileButton = styled.div`
   background: ${(p) => p.theme.colors.white};
   border-radius: ${(p) => p.theme.radii.small};
-  color: ${(p) => p.theme.colors.gray700};
+  color: ${(p) => p.theme.colors.gray[700]};
   display: none;
   padding: 0 ${(p) => p.theme.space[14]};
   height: 40px;
@@ -112,7 +112,7 @@ const MobileOnlyNav = styled.div`
   padding: ${(p) => p.theme.space[16]};
   border-radius: ${(p) => p.theme.radii.small};
   text-align: left;
-  background: ${(p) => p.theme.colors.gray800};
+  background: ${(p) => p.theme.colors.gray[800]};
   right: 0;
   padding: ${(p) => p.theme.space[32]} ${(p) => p.theme.space[16]};
   @media (min-width: 0px) and (max-width: 1024px) {
@@ -121,15 +121,15 @@ const MobileOnlyNav = styled.div`
 `
 
 const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
-  background: ${(p) => p.theme.colors.gray200};
-  box-shadow: 0px 1px 0px ${(p) => p.theme.colors.gray300};
+  background: ${(p) => p.theme.colors.gray[200]};
+  box-shadow: 0px 1px 0px ${(p) => p.theme.colors.gray[300]};
   top: 0;
   padding: 0;
   z-index: 200;
 `
 
 const SecondLevelHeader = styled.div`
-  background: ${(p) => p.theme.colors.gray200};
+  background: ${(p) => p.theme.colors.gray[200]};
   padding: 20px 16px;
   display: flex;
   justify-content: center;
@@ -153,14 +153,14 @@ const NavLink = styled(Link)`
   transition: color 0.1s ease-in;
   padding: 0 0.5rem;
   margin: 0 0.5rem;
-  color: ${(p) => p.theme.colors.gray400} !important;
+  color: ${(p) => p.theme.colors.gray[400]} !important;
   @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     margin: 0;
     padding: 0;
   }
 `
 const DarkNavLink = styled(NavLink)`
-  color: ${(p) => p.theme.colors.gray700} !important;
+  color: ${(p) => p.theme.colors.gray[700]} !important;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -169,7 +169,7 @@ const DarkNavLink = styled(NavLink)`
     margin: 0;
     display: flex;
     align-items: center;
-    color: ${(p) => p.theme.colors.gray600} !important;
+    color: ${(p) => p.theme.colors.gray[600]} !important;
   }
 
   .menu-item {
@@ -177,28 +177,28 @@ const DarkNavLink = styled(NavLink)`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid ${(p) => p.theme.colors.gray300};
-    color: ${(p) => p.theme.colors.gray600};
+    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
+    color: ${(p) => p.theme.colors.gray[600]};
     font-weight: 600;
     &:hover {
-      color: ${(p) => p.theme.colors.gray900};
+      color: ${(p) => p.theme.colors.gray[900]};
     }
   }
 
   &:hover {
-    color: ${(p) => p.theme.colors.gray900} !important;
+    color: ${(p) => p.theme.colors.gray[900]} !important;
   }
   &.active-item {
     background: ${(p) => p.theme.colors.white};
     border-radius: ${(p) => p.theme.radii.small};
-    color: ${(p) => p.theme.colors.gray500} !important;
+    color: ${(p) => p.theme.colors.gray[500]} !important;
     padding: 0.25rem 0.5rem;
   }
 
   @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     &.active-item {
       background: transparent;
-      color: ${(p) => p.theme.colors.gray700} !important;
+      color: ${(p) => p.theme.colors.gray[700]} !important;
       padding: 0.25rem 0.5rem;
     }
     svg {
@@ -215,12 +215,12 @@ const SecondLevelMobileNavLink = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid ${(p) => p.theme.colors.gray300};
-  color: ${(p) => p.theme.colors.gray600};
+  border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
+  color: ${(p) => p.theme.colors.gray[600]};
   font-weight: 600;
   cursor: pointer;
   &:hover {
-    color: ${(p) => p.theme.colors.gray900};
+    color: ${(p) => p.theme.colors.gray[900]};
   }
 `
 

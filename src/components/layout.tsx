@@ -4,8 +4,7 @@ import { MDXProvider } from '@mdx-js/react'
 import StickyBox from 'react-sticky-box'
 import shortcodes from './shortcodes'
 import styled, { ThemeProvider } from 'styled-components'
-import { LensProvider } from '@prisma/lens/dist/web'
-import { theme } from '@prisma/lens/dist/web'
+import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
@@ -29,7 +28,7 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
   width: 100%;
   justify-content: center;
   ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (max-width: ${(p) => p.theme.breakpoints.tabletVertical}) {
     padding: 0;
   }
 `

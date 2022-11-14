@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import { theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import { AlertCircle } from 'react-feather'
 
 interface AdmonitionType {
@@ -10,9 +10,9 @@ interface AdmonitionType {
 type AdmonitionProps = React.ReactNode & AdmonitionType
 
 const colorMap: any = {
-  info: theme.colors.gray200,
-  warning: theme.colors.orange300,
-  alert: theme.colors.red600,
+  info: theme.colors.gray[200],
+  warning: theme.colors.orange[300],
+  alert: theme.colors.red[600],
 }
 
 const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
@@ -52,7 +52,7 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
   font-style: normal;
   font-size: 16px;
   line-height: 24px;
-  color: ${theme.colors.gray600} !important;
+  color: ${theme.colors.gray[600]} !important;
   padding-left: ${(p) => (p.type === 'alert' ? '3rem' : '1.5rem')};
   padding-bottom: 8px;
   padding-bottom: 8px;
@@ -90,7 +90,7 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
   }
 
   code {
-    color: ${theme.colors.gray600} !important;
+    color: ${theme.colors.gray[600]} !important;
   }
 
   p {
