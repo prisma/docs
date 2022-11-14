@@ -23,10 +23,12 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
           <AlertCircle color="white" />
         </span>
       )}
-      {Array.isArray(children) ? (
+      {children && Array.isArray(children) ? (
         <FlexContainer>
           {children.map((child: any, index: number) => (
-            <ChildContainer key={index}>{child.props.children}</ChildContainer>
+            <ChildContainer key={index}>
+              {child && child.props && child.props.children}
+            </ChildContainer>
           ))}
         </FlexContainer>
       ) : (
