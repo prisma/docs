@@ -28,7 +28,7 @@ const SEO = ({ title, description, homepage }: SEOProps) => {
     },
   } = site
 
-  let canonicalUrl = `${siteUrl}${location.pathname}`.replace(/\/$/, '')
+  let canonicalUrl = `${siteUrl}${location.pathname}`
 
   return (
     <>
