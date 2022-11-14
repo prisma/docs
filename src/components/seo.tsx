@@ -30,7 +30,6 @@ const SEO = ({ title, description, homepage }: SEOProps) => {
 
   let canonicalUrl = `${siteUrl}${location.pathname}`
 
-
   return (
     <>
       <meta name="viewport" content="width=device-width, initial-scale=1" />
