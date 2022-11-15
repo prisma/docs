@@ -9,7 +9,7 @@
 
 [![All Contributors][badge-all-contributors]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Vercel](https://vercelbadge.vercel.app/api/prisma/docs)](https://vercel.com/prisma/docs/deployments)
 
-This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
+This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs).
 
 ## Contributing to the docs
 
@@ -34,6 +34,16 @@ Read through the [contributing guide](CONTRIBUTING.md) to learn how you can cont
 npm install
 npm run dev
 ```
+
+## Run functions locally
+
+Run a local build to run the functions using the following command:
+
+```
+vercel dev
+```
+
+> Make sure you have the correct path to `POSTGRES_URL` in your local `.env` file to test the functions
 
 To prettify or format the code, run:
 

@@ -41,7 +41,7 @@ PlanetScale's branching model and design for scalability means that there are al
 - **Branching and deploy requests.** PlanetScale provides two types of database branches: _development branches_, which allow you to test out schema changes, and _production branches_, which are protected from direct schema changes. Instead, changes must be first created on a development branch and then deployed to production using a deploy request. Production branches are highly available and include automated daily backups. To learn more, see [How to use branches and deploy requests](#how-to-use-branches-and-deploy-requests).
 
 - **Referential actions and integrity.** To support scaling across multiple database servers, PlanetScale [does not allow the use of foreign key constraints](https://docs.planetscale.com/learn/operating-without-foreign-key-constraints), which are normally used in relational databases to enforce relationships between data in different tables, and asks users to handle this manually in their applications.  
-  With Prisma you can maintain these relationships in your data and allow the use of [referential actions](/concepts/components/prisma-schema/relations/referential-actions) by using Prisma's ability to [emulate referential integrity in Prisma Client](/concepts/components/prisma-schema/relations/referential-integrity#handling-the-referential-integrity-in-prisma). For more information, see [How to emulate referential integrity in Prisma Client](#how-to-emulate-referential-integrity-in-prisma-client).
+  With Prisma you can maintain these relationships in your data and allow the use of [referential actions](/concepts/components/prisma-schema/relations/referential-actions) by using Prisma's ability to [emulate referential integrity in Prisma Client](/concepts/components/prisma-schema/relations/relation-mode#handling-the-referential-integrity-in-prisma). For more information, see [How to emulate referential integrity in Prisma Client](#how-to-emulate-referential-integrity-in-prisma-client).
 
 - **Creating indexes on foreign keys.** When emulating referential integrity in Prisma, you will need to create indexes on foreign keys. In a standard MySQL database, if a table has a column with a foreign key constraint, an index is automatically created on that column. Because PlanetScale does not support foreign keys, these indexes are [currently](https://github.com/prisma/prisma/issues/10611) not created when emulating referential integrity, which can lead to issues with queries not being well optimised. To avoid this, you can create indexes in Prisma. For more information, see [How to create indexes on foreign keys](#how-to-create-indexes-on-foreign-keys).
 
@@ -69,13 +69,13 @@ If you try to push to a production branch, you will get the [error message](/ref
 
 PlanetScale does not allow foreign keys in its database schema. By default, Prisma uses foreign keys in the underlying database to enforce relations between fields in your Prisma schema. In Prisma versions 3.1.1 and later, you can emulate referential integrity in the Prisma Client, which avoids the need for foreign keys in the database.
 
-Referential integrity is currently a [preview feature](/concepts/components/preview-features). To enable this, add it to the `previewFeatures` list in the `generator` block of `schema.prisma`, and then set the `referentialIntegrity` field to `"prisma"` in the `datasource` block:
+Referential integrity is currently a [preview feature](/concepts/components/preview-features). To enable this, add it to the `previewFeatures` list in the `generator` block of `schema.prisma`, and then set the `relationMode` field to `"prisma"` in the `datasource` block:
 
 ```prisma file=schema.prisma
 datasource db {
-  provider             = "mysql"
-  url                  = env("DATABASE_URL")
-  referentialIntegrity = "prisma"
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 generator js {
@@ -84,7 +84,14 @@ generator js {
 }
 ```
 
-If you use relations in your Prisma schema with the default `"foreignKeys"` option for the `referentialIntegrity` field, PlanetScale will error when Prisma tries to create foreign keys. In versions 2.27.0 and later, Prisma will output the [P3021 error message](https://www.prisma.io/docs/reference/api-reference/error-reference#p3021).
+<Admonition type="warning">
+
+The `relationMode` field was renamed in Prisma version 4.5.0,
+and was previously named `referentialIntegrity`.
+
+</Admonition>
+
+If you use relations in your Prisma schema with the default `"foreignKeys"` option for the `referentialIntegrity` field, PlanetScale will error when Prisma tries to create foreign keys. In versions 2.27.0 and later, Prisma will output the [P3021 error message](/reference/api-reference/error-reference#p3021).
 
 ## How to create indexes on foreign keys
 
@@ -109,7 +116,7 @@ model Comment {
 
 The `postId` field in the `Comment` model refers to the corresponding `id` field in the `Post` model. However this is not implemented as a foreign key in PlanetScale, so the column doesn't have an automatic index. This means that some queries may not be well optimised. For example, if you query for all comments with a certain post `id`, PlanetScale may have to do a full table lookup. This could be slow, and also expensive because PlanetScale's billing model charges for the number of rows read.
 
-To avoid this, you can define an index on the `postId` field using [Prisma's `@@index` argument](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#index):
+To avoid this, you can define an index on the `postId` field using [Prisma's `@@index` argument](/reference/api-reference/prisma-schema-reference#index):
 
 ```prisma file=schema.prisma highlight=15;add
 model Post {
@@ -140,7 +147,7 @@ One issue to be aware of is that [implicit many-to-many relations](/concepts/com
 
 ## How to make schema changes with `db push`
 
-To use `db push` with PlanetScale, you will first need to [enable emulation of referential integrity in Prisma](#how-to-emulate-referential-integrity-in-prisma-client). Pushing to your branch without referential emulation enabled will give the [error message](http://localhost:8000/reference/api-reference/error-reference#p3021) `Foreign keys cannot be created on this database.`
+To use `db push` with PlanetScale, you will first need to [enable emulation of referential integrity in Prisma](#how-to-emulate-referential-integrity-in-prisma-client). Pushing to your branch without referential emulation enabled will give the [error message](/reference/api-reference/error-reference#p3021) `Foreign keys cannot be created on this database.`
 
 As an example, let's say you decide to decide to add a new `excerpt` field to the blog post schema above. You will first need to [create a new development branch and connect to it](#how-to-use-branches-and-deploy-requests).
 
@@ -226,8 +233,8 @@ For a more detailed example, see the [Getting Started guide for PlanetScale](/ge
 
 The fastest way to start using PlanetScale with Prisma is to refer to our Getting Started documentation:
 
-- [Start from scratch](https://www.prisma.io/docs/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale)
-- [Add to existing project](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale)
+- [Start from scratch](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale)
+- [Add to existing project](/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale)
 
 These tutorials will take you through the process of connecting to PlanetScale, pushing schema changes, and using the Prisma Client.
 
