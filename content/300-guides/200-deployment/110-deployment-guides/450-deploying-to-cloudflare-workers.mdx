@@ -8,7 +8,7 @@ metaDescription: 'Learn how to deploy a TypeScript application to Cloudflare Wor
 
 Today you'll be building and deploying a Cloudflare Worker that uses Prisma to save every request to a MongoDB database for inspection later.
 
-This guide will cover Prisma, TypeScript, MongoDB, Data Proxy and Cloudflare Workers from the ground up. Let's get started!
+This guide covers Prisma, TypeScript, MongoDB, Data Proxy, and Cloudflare Workers from the ground up. Let's get started!
 
 <Admonition type="warning">
 
@@ -19,17 +19,44 @@ We are continuously testing the Data Proxy with Cloudflare Workers. [Open an iss
 
 </TopBlock>
 
-
 ## Prerequisites
 
-- Free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) database with an accessible URL
-  - e.g. `mongodb+srv://<user>:<password>@cluster.mongodb.net`.
-- Free [Cloudflare Worker](https://workers.cloudflare.com/) account.
-- Free [GitHub](https://github.com/) account.
-- Node.js & NPM installed.
-- Git installed.
+- Free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account
+- Free [Cloudflare Workers](https://workers.cloudflare.com/) account
+- Free [GitHub](https://github.com/) account
+- Node.js & NPM installed
+- Git installed
 
-## 1. Set up your Application
+## 1. Get a MongoDB Atlas connection string
+
+After you create a MongoDB Atlas database cluster, you can get its connection string. By default, that connection string does not include a database name.
+
+When you import your project in the Prisma Data Platform at [step 6](#6-import-your-project-into-the-prisma-data-platform), you must provide a connection string that includes a database name.
+
+However, you do not need to manually create a database in MongoDB Atlas. The project creation workflow in the Prisma Data Platform will create a database with the name you define in the connection string.
+
+1. [Create a free shared cluster](https://www.mongodb.com/docs/atlas/tutorial/create-new-cluster/) in MongoDB Atlas.
+2. On the _Security Quickstart_ screen, complete the initial security configuration.
+   1. Add a new database user.
+   2. Click **Add My Current IP Address** so that you can connect to the MongoDB shared cluster from your current system.
+   3. Click **Finish and Close**.
+3. [Get the database cluster connection string](https://www.mongodb.com/docs/guides/atlas/connection-string/).
+4. Paste the connection string in a text editor and add the collection name `Log`.
+
+   The code sample below shows a connection string, that is originally provided by MongoDB Atlas, with the database name now added.
+
+   ```diff
+   # The first line is a default-style MongoDB Atlas connection string.
+   # The second line includes the inserted `Log` database name.
+   - mongodb+srv://<user>:<password>@cluster.mongodb.net/?retryWrites=true&w=majority
+   + mongodb+srv://<user>:<password>@cluster.mongodb.net/Log?retryWrites=true&w=majority
+   ```
+
+You now have a complete connection string. You will paste the connection string when you create your project in [6. Import your project into the Prisma Data Platform](#6-import-your-project-into-the-prisma-data-platform).
+
+For security reasons, do not keep the connection string in the text editor or save it in a text file.
+
+## 2. Set up your application
 
 Open your terminal and navigate to a location of your choice. Run the following commands to set up your application.
 
@@ -37,113 +64,54 @@ Open your terminal and navigate to a location of your choice. Run the following 
 mkdir prisma-mongodb-cloudflare
 cd prisma-mongodb-cloudflare
 npm init -y
-npm install -D prisma typescript @cloudflare/wrangler webpack
+npm install -D prisma typescript wrangler
 ```
 
-## 2. Set up Wrangler
+## 3. Set up Wrangler
 
-Wrangler is the official Cloudflare Worker CLI. You'll use it to develop and deploy Cloudflare Workers.
+Wrangler is the official Cloudflare Worker CLI. You will use it to develop and deploy to Cloudflare Workers. This guide uses [Wrangler v2](https://developers.cloudflare.com/workers/wrangler/).
+
+First, initialize Wrangler. To do this, run the following command in your terminal:
 
 ```terminal
 npx wrangler init
 ```
 
-This will create a `wrangler.toml` file with some initial configuration.
+This will ask you a few questions.
 
-Next, you'll want to authenticate the Wrangler CLI with your Cloudflare Worker account. To do this, run the following command in your terminal:
+```terminal
+Would you like to use git to manage this Worker? (y/n)
+```
+
+We want to use Git, so answer yes.
+
+```terminal
+Would you like to use TypeScript? (y/n)
+```
+
+We also want to use TypeScript, so answer yes.
+
+```terminal
+Would you like to create a Worker at src/index.ts?
+```
+
+Select the `Fetch Handler` option.
+
+Once you're done, this will create a `wrangler.toml` file with some initial configuration.
+
+Next, authenticate the Wrangler CLI with your Cloudflare Workers account. To do this, run the following command in your terminal:
 
 ```terminal
 npx wrangler login
-Allow Wrangler to open a page in your browser? [y/n] y
 ```
 
-You can verify that you're logged in by running `npx wrangler whoami`.
-
-## 3. Set up TypeScript
-
-The Cloudflare Worker environment natively supports Javascript, Rust, C, and C++. To get TypeScript working on Cloudflare Workers, you need to compile TypeScript to JavaScript before deploying to a Worker.
-
-To setup this up, create a `tsconfig.json` in your project root with the following content:
-
-```json
-{
-  "compilerOptions": {
-    "outDir": "./dist",
-    "module": "commonjs",
-    "target": "esnext",
-    "lib": ["esnext"],
-    "alwaysStrict": true,
-    "strict": true,
-    "preserveConstEnums": true,
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "types": ["@cloudflare/workers-types"]
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
-}
-```
-
-And then install `@cloudflare/workers-types` with npm:
+You can now verify that you're logged in by running `npx wrangler whoami`.
 
 ```terminal
-npm install -D @cloudflare/workers-types ts-loader@8.3.0
+npx wrangler whoami
 ```
 
-<Admonition type="info">
-
-You need to pin `ts-loader` for the Wrangler CLI to work properly. See [this issue](https://github.com/cloudflare/wrangler/issues/1927) for more details.
-
-</Admonition>
-
-## 4. Set up Webpack
-
-Wrangler has built-in webpack support that can be used to compile your code in development and before publishing on Cloudflare.
-
-To configure webpack support, first create a `webpack.config.js` in the project root with the following code:
-
-```js
-const path = require('path')
-
-module.exports = {
-  entry: './src/index.ts',
-  output: {
-    filename: 'worker.js',
-    path: path.join(__dirname, 'dist'),
-  },
-  // Cloudflare Worker environment is similar to a webworker
-  target: 'webworker',
-  resolve: {
-    extensions: ['.ts', '.tsx', '.js'],
-  },
-  mode: 'development',
-  // wrangler doesn't like eval which devtools use in development
-  devtool: 'none',
-  module: {
-    rules: [
-      {
-        // Compile Typescript code
-        test: /\.tsx?$/,
-        loader: 'ts-loader',
-        options: {
-          transpileOnly: true,
-        },
-      },
-    ],
-  },
-}
-```
-
-Next, add the following line to your `wrangler.toml` file to point Wrangler to use this webpack configuration:
-
-```diff
-  name = "prisma-mongodb-cloudflare"
-  type = "webpack"
-+ webpack_config = "webpack.config.js"
-```
-
-## 5. Set up Prisma
+## 4. Set up Prisma
 
 Now you're ready to add Prisma to the project.
 
@@ -151,9 +119,15 @@ Now you're ready to add Prisma to the project.
 npx prisma init
 ```
 
-This creates a Prisma Schema in `prisma/schema.prisma`.
+This creates a Prisma schema in `prisma/schema.prisma`.
 
-**Note:** This process also creates an `.env` file, but this file has no effect when you use Cloudflare Workers.
+<Admonition>
+
+**Note:**<br /><br />
+
+This process also creates an `.env` file, but this file has no effect when you use Cloudflare Workers.
+
+</Admonition>
 
 Inside `prisma/schema.prisma`, add the following schema:
 
@@ -183,7 +157,7 @@ enum Level {
 
 This data model will be used to store incoming requests from your Worker.
 
-## 6. Create Repository and Push to GitHub
+## 5. Create a repository and push to GitHub
 
 To prepare for the steps ahead, let's [create a private repository](https://github.com/new) on GitHub.
 
@@ -192,7 +166,6 @@ To prepare for the steps ahead, let's [create a private repository](https://gith
 Next, initialize your repository, then push your changes up to GitHub.
 
 ```terminal
-git init -b main
 git remote add origin https://github.com/<username>/prisma-mongodb-cloudflare
 git add .
 git commit -m "initial commit"
@@ -201,60 +174,83 @@ git push -u origin main
 
 You're ready to import your project into the Prisma Data Platform.
 
-## 7. Importing your Project into the Prisma Data Platform
+## 6. Import your Project into the Prisma Data Platform
 
 With Cloudflare Workers, you can't directly access your database because there is no TCP support. Fortunately, Prisma has your back with the [Data Proxy](/data-platform/data-proxy).
 
-To get started, sign up for a free [Prisma Data Platform account](https://cloud.prisma.io/).
+1. To get started, sign up for a free [Prisma Data Platform account](https://cloud.prisma.io/).
 
-![Signup for Prisma Data Platform](./450-02-signup-pdp.png)
+   <Admonition type="info">
 
-Once you're in, click **New Project**, then **Import a Project**. Fill in the repository and project details, and then click **Create Project**.
+   **Note**<br /><br />
+   A GitHub account is required to sign up for the Prisma Data Platform.
 
-![Import a Project](./450-03-import-project.png)
+   </Admonition>
 
-Next, you'll connect the Prisma Data Platform to MongoDB Atlas database and set up the Data Proxy:
+   ![Signup for Prisma Data Platform](./450-02-signup-pdp.png)
 
-![Connect your Database](./450-04-connect-db.png)
+2. Click **New Project** and then select **Import a Prisma repository**.
+3. Fill in the repository and project details, and click **Next**.
 
-Click **Create Project** to test the connection and set up the Data Proxy.
+   ![Import a Project](./450-03-import-project.png)
 
-<Admonition type="warning">
+4. Next, you connect the Prisma Data Platform to the MongoDB Atlas database and set up the Data Proxy.
 
-If you see, "The database needs to be empty to proceed", you can simply use a
-different database name. Using the screenshot above, that would be renaming
-`logs` to something else.
+   1. Paste the MongoDB Atlas connection string which also includes the database name as described in [1. Get a MongoDB Atlas connection string](#1-get-a-mongodb-atlas-connection-string).
+   2. Under **Location**, select a Data Proxy location that is geographically close to your MongoDB database location.
+   3. Enable **Static IPs** and copy and paste them in the _Network Access_ screen in MongoDB Atlas.
 
-</Admonition>
+      ![Connect your Database](./450-04-connect-db.png)
 
-If all goes well, you'll be greeted with a new connection string that starts with `prisma://`. Copy this connection string to your clipboard.
+   4. Click **Create Project** to test the connection and set up the Data Proxy.
 
-![Data Proxy Page](./450-05-data-proxy.png)
+      <Admonition type="warning">
 
-Then you can hop back into your code editor and paste the connection string into your `wrangler.toml` file:
+      If you see, "The database needs to be empty to proceed", you can simply use a different database name. Using the screenshot above, that would be renaming `Log` to something else.
 
-```diff
-  name = "prisma-mongodb-cloudflare"
-  type = "webpack"
-  webpack_config = "webpack.config.js"
+      </Admonition>
 
-+ [vars]
-+ DATABASE_URL = "prisma://aws-us-east-1.prisma-data.com/?api_key=•••••••••••••••••"
-```
+      If all goes well, you'll be greeted with a new connection string that starts with `prisma://`.
 
-You're all setup and ready to generate a Prisma Client!
+   5. Copy the `prisma://` connection string to your clipboard.
 
-## 9. Generate a Prisma Client
+      ![Data Proxy Page](./450-05-data-proxy.png)
 
-Next you'll generate a Prisma Client that connects through the [Data Proxy](/data-platform/data-proxy) over HTTP.
+## 7. Set the Data Proxy Connection string in your environment
+
+1. Add the Data Proxy connection string to your local environment `.env` file.
+
+   ```diff file=.env
+   - DATABASE_URL = "mongodb+srv://<user>:<password>@cluster.mongodb.net/Log?retryWrites=true&w=majority"
+   + DATABASE_URL = "prisma://aws-us-east-1.prisma-data.com/?api_key=•••••••••••••••••"
+   ```
+
+2. In your code editor, add the connection string in the `wrangler.toml` file.
+
+   ```diff file=wrangler.toml
+     name = "prisma-mongodb-cloudflare"
+     main = "src/main.ts"
+     compatibility_date = "2022-11-07"
+
+   + [vars]
+   + DATABASE_URL = "prisma://aws-us-east-1.prisma-data.com/?api_key=•••••••••••••••••"
+   ```
+
+You are now ready to generate a Prisma Client.
+
+## 8. Generate a Prisma Client
+
+Next, you'll generate a Prisma Client that connects through the [Data Proxy](/data-platform/data-proxy) over HTTP.
 
 ```terminal
 npx prisma generate --data-proxy
 ```
 
-This client is optimized for edge environments like Cloudflare Workers.
+The generated Client has a smaller bundle size and is optimized for edge environments like Cloudflare Workers.
 
-## 10. Develop the Cloudflare Worker function
+The smaller bundle size is due to the fact that the interfaces talking to the database (the [Prisma engines](/concepts/components/prisma-engines)) are no longer bundled with the Client as this logic is now handled by the Data Proxy.
+
+## 9. Develop the Cloudflare Worker function
 
 You're now ready to create a Cloudflare Worker. Create a `src/index.ts` file with the following code:
 
@@ -271,15 +267,17 @@ async function handleEvent(event: FetchEvent): Promise<Response> {
 
   // waitUntil method is used for sending logs, after response is sent
   event.waitUntil(
-    prisma.log.create({
-      data: {
-        level: 'Info',
-        message: `${request.method} ${request.url}`,
-        meta: {
-          headers: JSON.stringify(request.headers),
+    prisma.log
+      .create({
+        data: {
+          level: 'Info',
+          message: `${request.method} ${request.url}`,
+          meta: {
+            headers: JSON.stringify(request.headers),
+          },
         },
-      },
-    })
+      })
+      .then()
   )
 
   return new Response(`request method: ${request.method}!`)
@@ -304,7 +302,7 @@ Refresh the page a couple times to verify that it's working. Now if you click on
 
 It's working locally!
 
-## 11. Publishing to Cloudflare Workers
+## 10. Publish to Cloudflare Workers
 
 You're now ready to deploy to Cloudflare Workers. Run the following command:
 
