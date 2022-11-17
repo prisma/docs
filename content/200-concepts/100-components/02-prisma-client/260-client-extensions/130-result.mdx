@@ -46,13 +46,21 @@ const xprisma = prisma.$extends({
 });
 ```
 
+** do we need a compute statement here? Is compute always a component? if so mention it 1. above and 2. in the parameters below**
+
+The parameters are as follows:
+
 - `name`: an optional field that you can use to name the extension. This name appears in error logs.
 - `result`: an optional field that defines new fields and methods to the query results.
 - `needs`: a required object which describes the dependencies of the result field.
+
+** I think we remove fields **
+
 - `fields`: a required object that contains methods which defines how the virtual field is computed when it is accessed. You must declare equivelant objects in `fields` to the objects that you declare in `needs`.
+
 - `return`: the value of the computed field.
 
-### Add a custom field to the results object
+### Add a custom field to query results
 
 You can use the `result` extension type to add fields to query results. These fields are computed at runtime and are type-safe.
 
@@ -62,12 +70,10 @@ The following example adds a new, virtual field called `fullName` to the `user` 
 const xprisma = prisma.$extends({
   result: {
     user: {
-      needs: {
-        fullName: { firstName: true, lastName: true },
-      },
-      fields: {
-        fullName(user) {
-          return `${user.firstName} ${user.lastName}` // the value and type that will be available on the result (in this case, the type is string)
+      fullName: {
+        needs: { firstName: true, lastName: true },
+        compute(user) {
+          return `${user.firstName} ${user.lastName}`
         },
       },
     },
@@ -81,6 +87,38 @@ console.log(user.fullName) // returns the user's full name, such as "John Doe"
 In the above example, the input `user` is automatically typed according to object defined in `needs`. `firstName` and `lastName` are of type `string`, because they are specified in `needs`. If they are not specified in `needs`, then their type is `string | undefined`.
 
 When you call a method in an extension, use the constant name from your`$extends`statement, not `prisma`. Instead, use the constant name from your`$extends`statement. In the above example,`xprisma.user.findFirst` works, but `prisma.user.findFirst` does not.
+
+### Add a computed field to query results
+
+The following example computes a user's title and full name in a type safe way.
+
+```ts
+const xprisma = prisma
+  .$extends({
+    result: {
+      user: {
+        fullName: {
+          needs: { firstName: true, lastName: true },
+          compute(user) {
+            return `${user.firstName} ${user.lastName}`
+          },
+        },
+      },
+    },
+  })
+  .$extends({
+    result: {
+      user: {
+        titleFullName: {
+          needs: { title: true, fullName: true },
+          compute(user) {
+            return `${user.title} (${user.fullName})`
+          },
+        },
+      },
+    },
+  })
+```
 
 #### Considerations for fields
 
@@ -100,21 +138,20 @@ You can use the `result` extension type to add fields to query results. The foll
 const xprisma = prisma.$extends({
   result: {
     user: {
-      needs: {
-        getAccountBalance: {
-          account: true,
-        },
-      },
-      fields: {
-        getAccountBalance: (user) => (n: number) => {
+      getAccountBalance: {
+        needs: { account: true },
+        compute((user) => (n: number) =>) {
           return user.account.balance + n
         },
       },
     },
   },
 })
+
 const result = await xprisma.user.findFirst()
 console.log(result?.getAccountBalance(-500)) // 7245
 ```
+
+** TBD: check above code snippet **
 
 When you call a method in an extension, use the constant name from your`$extends`statement, not `prisma`. Instead, use the constant name from your`$extends`statement. In the above example,`xprisma.user.findFirst` works, but `prisma.user.findFirst` does not.
