@@ -31,6 +31,8 @@ module.exports = async function plugin(
   { markdownAST, markdownNode, files, getNode, cache, getCache, pathPrefix },
   { exceptions = [], ignore = [], verbose = true } = {}
 ) {
+  console.log("### Running gatsby-remark-check-links-numberless now ###")
+  
   const withPathPrefix = createPathPrefixer(pathPrefix)
   const pathSep = '/'
   if (!markdownNode.fields) {
@@ -175,5 +177,7 @@ module.exports = async function plugin(
     console.info('No internal broken links found')
   }
 
+  console.log("### Finished gatsby-remark-check-links-numberless ###")
+  
   return markdownAST
 }
