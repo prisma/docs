@@ -5,15 +5,14 @@ import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
 import { useLocation } from '@reach/router'
-import { graphql, useStaticQuery, withPrefix } from 'gatsby'
-import config from '../../../config'
+import { withPrefix } from 'gatsby'
 
 const List = styled.ul`
   list-style: none;
   padding: 0;
   margin: ${(p) => p.theme.space[12]} 0 ${(p) => p.theme.space[24]};
   &.has-border {
-    border-left: 2px solid ${(p) => p.theme.colors.gray[300]};
+    border-left: 2px solid ${(p) => p.theme.colors.gray300};
     margin-left: -${(p) => p.theme.space[12]};
   }
 `
@@ -25,21 +24,21 @@ const ListItem = styled.li`
   position: relative;
   a {
     transition: color 150ms ease 0s;
-    color: ${(p) => p.theme.colors.gray[600]} !important;
+    color: ${(p) => p.theme.colors.gray600} !important;
     text-decoration: none;
     vertical-align: middle;
     &:hover {
-      color: ${(p) => p.theme.colors.gray[900]} !important;
+      color: ${(p) => p.theme.colors.gray900} !important;
     }
 
     .tag {
       position: absolute;
       right: 0;
-      color: ${(p) => p.theme.colors.gray[500]};
+      color: ${(p) => p.theme.colors.gray500};
       font-size: ${(p) => p.theme.fontSizes[14]};
       font-style: normal;
       font-weight: 600;
-      background: ${(p) => p.theme.colors.gray[200]};
+      background: ${(p) => p.theme.colors.gray200};
       border-radius: ${(p) => p.theme.radii.small};
       padding: 2px 5px;
       text-transform: capitalize;
@@ -89,14 +88,14 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: ${(p) => p.theme.colors.blue[600]} !important;
+    color: ${(p) => p.theme.colors.blue600} !important;
     font-weight: 700;
   }
   &.top-level {
     margin-top: ${(p) => p.theme.space[32]};
     > a {
       font-size: 1.125rem;
-      color: ${(p) => p.theme.colors.gray[900]} !important;
+      color: ${(p) => p.theme.colors.gray900} !important;
       font-weight: 600;
       letter-spacing: -0.01em;
     }
@@ -111,14 +110,14 @@ const ListItem = styled.li`
     margin-top: ${(p) => p.theme.space[20]};
   }
   &.static-link > a {
-    color: ${(p) => p.theme.colors.gray[900]} !important;
+    color: ${(p) => p.theme.colors.gray900} !important;
     text-transform: uppercase;
     font-weight: bold;
     font-size: ${(p) => p.theme.fontSizes[12]};
     line-height: ${(p) => p.theme.space[14]};
     letter-spacing: 0.02em;
     &:hover {
-      color: ${(p) => p.theme.colors.gray[900]} !important;
+      color: ${(p) => p.theme.colors.gray900} !important;
     }
   }
   &.last-level {
@@ -158,8 +157,6 @@ const TreeNode = ({
   codeStyle,
   parents,
 }: any) => {
-  const SpecialPaths = config.siteMetadata.SpecialPaths
-
   let isCollapsed = collapsed[label]
   const hasChildren = items.length !== 0
 
@@ -216,25 +213,10 @@ const TreeNode = ({
     }
   }, [isCollapsed])
 
-  React.useEffect(() => {
-    console.log(SpecialPaths)
-    if (lastLevel && isCurrent && hasExpandButton && collapsed[label]) setCollapsed(label, true)
-  }, [])
-
-  const specialCases =
-    slug &&
-    (SpecialPaths.find((e: string) =>
-      urlGenerator(slug)
-        .replace(/\/index$/, '')
-        .endsWith(e)
-    )
-      ? '/'
-      : '')
-
   const isCurrent =
     location &&
     slug &&
-    location.pathname.includes(urlGenerator(slug).replace(/\/index$/, '') + specialCases)
+    (location.pathname + '/').includes(urlGenerator(slug).replace(/\/index$/, '') + '/')
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import styled from 'styled-components'
+import styledTS from 'styled-components-ts'
 
 interface Props {
   visible: boolean
@@ -18,7 +19,7 @@ const Overlay = ({ visible, hideSearch }: Props) => {
   return <StyledOverlay isVisible={visible} isTransitioning={transition} onClick={hideSearch} />
 }
 
-const StyledOverlay = styled.div<{ isVisible: boolean; isTransitioning: boolean }>`
+const StyledOverlay = styledTS<{ isVisible: boolean; isTransitioning: boolean }>(styled.div)`
   position: fixed;
   top: 0;
   left: 0;

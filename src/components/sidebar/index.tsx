@@ -18,7 +18,7 @@ const Sidebar = styled.div`
 
   /* .tablet-only {
     display: none;
-    background: ${(p) => p.theme.colors.gray[100]};
+    background: ${(p) => p.theme.colors.gray100};
     justify-content: space-between;
     padding: ${(p) => p.theme.space[48]} ${(p) => p.theme.space[64]};
 
@@ -38,7 +38,7 @@ const Sidebar = styled.div`
 
   .mobile-only {
     display: none;
-    background: ${(p) => p.theme.colors.gray[100]};
+    background: ${(p) => p.theme.colors.gray100};
     padding: ${(p) => p.theme.space[32]};
     @media only screen and (max-width: 1024px) {
       display: flex;
