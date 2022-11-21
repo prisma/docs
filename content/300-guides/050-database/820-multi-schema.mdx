@@ -1,5 +1,6 @@
 ---
 title: How to use Prisma with multiple database schemas
+metaTitle: How to use Prisma with multiple database schemas
 metaDescription: How to use Prisma with multiple database schemas
 tocDepth: 2
 ---
@@ -8,25 +9,17 @@ tocDepth: 2
 
 <Admonition type="warning">
 
-Multiple database schema support is currently a very early, experimental preview feature. Introspection and applying your Prisma schema to your database with Prisma Migrate and `db push` are currently not supported. If you rely on them, please do not try this preview feature in the main branch of your project or in production.
-
-</Admonition>
-
-<Admonition type="warning">
-
 Multiple database schema support is currently only available with the PostgreSQL and SQL Server connectors.
 
 </Admonition>
 
-This guide explains how to include multiple database schemas in your Prisma schema, and how to query across multiple database schemas with Prisma Client.
-
-</TopBlock>
-
-## What are database schemas?
-
 Many database providers allow you to organize database tables into named groups. This can be done to make the logical structure of the data model easier to understand, or to avoid naming collisions between tables.
 
-In PostgreSQL and SQL Server these groups are known as schemas. We will refer to them as _database schemas_ to distinguish them from Prisma's own schema file.
+In PostgreSQL and SQL Server, these groups are known as schemas. We will refer to them as _database schemas_ to distinguish them from Prisma's own schema file.
+
+This guide explains how to include multiple database schemas in your Prisma schema, how to apply your schema changes to your database with Prisma Migrate and `db push`, how to introspect an existing database with multiple database schemas, and how to query across multiple database schemas with Prisma Client.
+
+</TopBlock>
 
 ## How to enable the <inlinecode>multiSchema</inlinecode> preview feature
 
@@ -61,9 +54,9 @@ datasource db {
 }
 ```
 
-You do not need to change your connection string. The `schema` value of your connection string is the default database schema that the Prisma Client connects to and uses for raw queries. All other Prisma Client queries will use the schema of the model that you are querying.
+You do not need to change your connection string. The `schema` value of your connection string is the default database schema that the Prisma Client connects to and uses for raw queries. All other Prisma Client queries will use the schema of the model or enum that you are querying.
 
-To designate a model as belonging to a specific database schema, add a `@@schema` attribute with the name of the database schema as a parameter. In the following example the `User` model is part of the `"base"` schema, and the `Order` model is part of the `"transactional"` schema:
+To designate a model or enum as belonging to a specific database schema, add a `@@schema` attribute with the name of the database schema as a parameter. In the following example the `User` model is part of the `"base"` schema, and the `Order` model and `Size` enum are part of the `"transactional"` schema:
 
 ```prisma file=schema.prisma highlight=5,13;add
 model User {
@@ -77,6 +70,14 @@ model Order {
   id      Int  @id
   user    User @relation(fields: [id], references: [id])
   user_id Int
+
+  @@schema("transactional")
+}
+
+enum Size {
+  Small
+  Medium
+  Large
 
   @@schema("transactional")
 }
@@ -101,6 +102,73 @@ model UserConfig {
   @@schema("users")
 }
 ```
+
+## How to apply your schema changes with Prisma Migrate and <inlineCode>db push</inlineCode>
+
+<Admonition type="warning">
+
+Multi-schema support for Prisma Migrate and `db push` is currently only available with the PostgreSQL connector.
+
+</Admonition>
+
+You can use Prisma Migrate or `db push` to apply changes to a Prisma schema with multiple database schemas.
+
+As an example, add a `Profile` model in the `base` schema of the blog post model above:
+
+```prisma file=schema.prisma highlight=4,9-16;add
+model User {
+  id      Int      @id
+  orders  Order[]
+  profile Profile?
+
+  @@schema("base")
+}
+
+model Profile {
+  id     Int    @id @default(autoincrement())
+  bio    String
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int    @unique
+
+  @@schema("base")
+}
+
+model Order {
+  id      Int  @id
+  user    User @relation(fields: [id], references: [id])
+  user_id Int
+
+  @@schema("transactional")
+}
+
+enum Size {
+  Small
+  Medium
+  Large
+
+  @@schema("transactional")
+}
+```
+
+You can then apply this schema change to your database. For example, you can use `migrate dev` to create and apply your schema changes as a migration:
+
+```terminal
+npx prisma migrate dev --name add_profile
+```
+
+Note that if you move a model or enum from one schema to another, Prisma will delete the model or enum from the source schema and create a new one in the target schema.
+
+## How to introspect an existing database with multiple database schemas
+
+<!-- TODO: check if need admonition about SQL Server -->
+
+You can introspect an existing database that has multiple database schemas as usual, using `db pull`:
+
+```terminal
+npx prisma db pull
+```
+
+This will update your Prisma schema to match the current state of the database.
 
 ## How to query across multiple database schemas with Prisma Client
 
