@@ -7,9 +7,9 @@ tocDepth: 3
 
 <TopBlock>
 
-From version 4.7.0, you can use the `query` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component to create custom queries. You can use them to hook into the query life-cycle and modify an incoming query or its result.
+From version 4.7.0, you can use the `query` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component to hook into the query life-cycle and modify an incoming query or its result.
 
-You can use `query` extensions as an alternative to [middlewares](/concepts/components/prisma-client/middleware#performance-and-appropriate-use-cases). Unlike middlewares, `query` extensions give you [user isolation](/concepts/components/prisma-client/client-extensions#extended-clients) and end-to-end type safety. [Learn more](#query-extensions-versus-middlewares).
+You can use the `query` extension component as an alternative to [middlewares](/concepts/components/prisma-client/middleware#performance-and-appropriate-use-cases). Unlike middlewares, the `query` extension component gives you [user isolation](/concepts/components/prisma-client/client-extensions#extended-clients) and end-to-end type safety. [Learn more](#query-extensions-versus-middlewares).
 
 </TopBlock>
 
@@ -28,7 +28,14 @@ generator client {
 
 Use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods) to create an [extended client](/concepts/components/prisma-client/client-extensions#about-prisma-client-extensions). An extended client is a variant of the standard Prisma Client that is wrapped by one or more extensions.
 
-Use the `query` extension component to create custom queries to a specific model in your schema or to all models in your schema.
+Use the `query` extension component to create custom queries. You can add a custom query to the following:
+
+- [A specific operation in a specific model of your schema](#add-a-custom-query-to-a-specific-operation-in-a-specific-model)
+- [A specific operation in all models of your schema](#add-a-custom-query-to-a-specific-operation-in-=all-models-of-your-schema)
+- [All operations in a specific model of your schema](#add-a-custom-query-to-all-operations-in-a-specific-model)
+- [All operations in all models of your schema](#add-a-custom-query-to-all-operations-in-all-models-of-your-schema)
+
+You can add a query to a specific operation in a model, to a specific operation to all operations in a model, or to all operations in all models of your schema.
 
 To create a custom query, use the following structure:
 
@@ -43,10 +50,10 @@ const xprisma = prisma.$extends({
 
 The properties are as follows:
 
-- `name`: an optional property that you can use to name the extension. This name appears in error logs.
-- `query`: an optional property that defines a custom query.
+- `name`: (optional) specifies a name for the extension that appears in error logs.
+- `query`: (optional) defines a custom query.
 
-### Add a custom query to a specific model
+### Add a custom query to a specific operation in a specific model
 
 The `query` object contains functions that map to the names of the [Prisma Client operations](/docs/reference/api-reference/prisma-client-reference#model-queries), such as `findUnique`, `findFirst`, `findMany`, `count`, and `create`. The following example defines a custom query that finds users who are older than 18 years:
 
@@ -56,8 +63,8 @@ const xprisma = prisma.$extends({
     user: {
       async findMany({ model, action, args, data }) {
         // `where` can be `undefined`, so `args.where.age` might
-        // fail. Therefore, we assign an object and backfill
-        // the rest of the `where` clause:
+        // fail. To work around this, we assign an object and
+        // backfill the rest of the `where` clause:
         args.where = { age: { gt: 18 }, ...args.where }
         const users = await data
         return data
@@ -71,9 +78,9 @@ await xprisma.user.findMany() // returns users whose age is greater than 18
 
 ** TBW: I need to understand what is going on in the where clause there, and how this relates to args **
 
-In the above example, a call to `xprisma.user.findMany` triggers `query.user.findMany` on execution. Each callback receives a type-safe `{ model, operation, args, data }` object that describes the query. This object has the following properties:
+In the above example, a call to `xprisma.user.findMany` triggers `query.user.findMany`. Each callback receives a type-safe `{ model, operation, args, data }` object that describes the query. This object has the following properties:
 
-- `model`: the name of the model whose query is being extended.
+- `model`: the name of the containing model for the query that we want to extend.
 
   In the above example, the `model` is a string of type `"User"`.
 
@@ -85,15 +92,14 @@ In the above example, a call to `xprisma.user.findMany` triggers `query.user.fin
 
 - `args`: the specific query input information to be extended.
 
-  This is a type-safe object that you can mutate before the query happens. You can mutate any of the properties in `args`, except for `include` or `select`. You cannot mutate these properties because that would change the expected output type and break type safety.
+  This is a type-safe object that you can mutate before the query happens. You can mutate any of the properties in `args`. Exception: you cannot mutate `include` or `select` because that would change the expected output type and break type safety.
 
-- `data`: a result promise for the query that is being executed.
+- `data`: a promise for the result of the query.
 
-  ** TBD: wording of the above line**
+  - You can use `await` and then mutate this promise, because its value is type-safe. TypeScript catches any unsafe mutations on the object.
+  - `await data` is equivalent to calling `next(...)` in a middleware.
 
-  You can `await` and then mutate this promise, because its value is type-safe. TypeScript catches any unsafe mutations on the object. `await data` is equivalent to calling `next(...)` in a middleware. For a more natural way to write extensions, you can mutate `args` before `then` is triggered. `args` is fully type-safe, meaning that some properties are `readonly`, (for example `includes` and `select`).
-
-### Add a custom query to all models in your schema
+### Add a custom query to a specific operation in all models of your schema
 
 To extend all models in your schema, use `$allmodels` instead of a specific model name. For example:
 
@@ -101,8 +107,12 @@ To extend all models in your schema, use `$allmodels` instead of a specific mode
 const xprisma = prisma.$extends({
   query: {
     user: {
-      $allOperations({ model, operation, args, data }) {
-        // handle all operations
+      async findMany({ model, action, args, data }) {
+        // `where` can be `undefined`, so `args.where.age` might
+        // fail. To work around this, we assign an object and
+        // backfill the rest of the `where` clause:
+        args.where = { age: { gt: 18 }, ...args.where }
+        const users = await data
         return data
       },
     },
@@ -110,18 +120,13 @@ const xprisma = prisma.$extends({
 })
 ```
 
-Note: Recursive wildcards cannot return values but can just modify the query itself.
+Note: recursive wildcards just modify the query itself. They cannot return values.
 
-** TBD - I need to understand the above better **
+** TBD - can we have an example of this note? **
 
-### Add a custom query to all operations in a model, or all operations in all models
+### Add a custom query to all operations in a specific model
 
-You do not have to apply your custom query to a specific operation. You can apply it to the following:
-
-- All operations in a model
-- All operations in all models of your schema
-
-To do so, use `$allOperations` instead of a specific operation name.
+Use `$allOperations` to apply your custome query to all operations, instead of to a specific operation name.
 
 For example, the following code applies a custom query to all operations on the `user` model:
 
@@ -138,7 +143,13 @@ const xprisma = prisma.$extends({
 })
 ```
 
-To apply a custom query to all operations on all models:
+** TBD: are the parameters model, operation, args, data or model, action, args, data? **
+
+### Add a custom query to all operations in all models of your schema
+
+Use `$allOperations` to apply your custome query to all operations, instead of to a specific operation name.
+
+To apply a custom query to all operations on all models of your schema:
 
 ```ts
 const xprisma = prisma.$extends({
@@ -153,11 +164,13 @@ const xprisma = prisma.$extends({
 })
 ```
 
+** TBD: are the parameters model, operation, args, data or model, action, args, data? **
+
 ## Query extensions versus middlewares
 
 You can use query extensions or [middlewares](/concepts/components/prisma-client/middleware#performance-and-appropriate-use-cases) to hook into the query life-cycle and modify an incoming query or its result. Client extensions and middlewares differ in the following ways:
 
-- Middlewares always apply globally to the same client. Client extensions are isolated, unless you deliberately combine them.
+- Middlewares always apply globally to the same client. Client extensions are isolated, unless you deliberately combine them. Learn more about client extensions
   - For example, in a row-level security (RLS) scenario, you can keep each user in an entirely separate client. With middlewares, all users are active in the same client.
 - During application execution, with extensions you can choose from one or more extended clients, or the standard Prisma Client. With middlewares, you cannot choose which client to use, because there is only one global client.
 - Extensions benefit from end-to-end type safety and inference, but middlewares don't.
