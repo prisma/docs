@@ -87,7 +87,7 @@ const HitsWrapper = styled.div`
     // left: 0;
     top: 88px;
     // max-width: 100%;
-    border-top: 1px solid ${(p) => p.theme.colors.gray300};
+    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
@@ -132,7 +132,13 @@ const Results = connectStateResults(
 const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) =>
-  searchState ? `${location.pathname.replace('/docs', '')}${createURL(searchState)}` : ``
+  searchState
+    ? `${
+        location.pathname === '/docs'
+          ? location.pathname.replace('docs', '')
+          : location.pathname.replace('/docs', '')
+      }${createURL(searchState)}`
+    : ``
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
