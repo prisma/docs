@@ -1,5 +1,5 @@
 const path = require('path')
-// const docTemplate = path.resolve(`./src/templates/docs.tsx`);
+const docTemplate = path.resolve(`./src/templates/docs.tsx`)
 
 exports.onCreateNode = ({ node, getNode, actions }: any) => {
   const { createNodeField } = actions
@@ -129,7 +129,7 @@ exports.createPages = async ({ graphql, actions, reporter }: any) => {
         dbSwitcher.forEach((db: any) => {
           createPage({
             path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}-${db}`,
-            component: path.resolve('./src/templates/docs.tsx'),
+            component: `${docTemplate}?__contentFilePath=${node.internal.contentFilePath}`,
             context: {
               id: node.fields.id,
               seoTitle: getTitle(node.frontmatter, lang, db),
@@ -142,7 +142,7 @@ exports.createPages = async ({ graphql, actions, reporter }: any) => {
       langSwitcher.forEach((lang: any) =>
         createPage({
           path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${lang}`,
-          component: path.resolve('./src/templates/docs.tsx'),
+          component: `${docTemplate}?__contentFilePath=${node.internal.contentFilePath}`,
           context: {
             id: node.fields.id,
             seoTitle: getTitle(node.frontmatter, lang, null),
@@ -154,7 +154,7 @@ exports.createPages = async ({ graphql, actions, reporter }: any) => {
       node.frontmatter.dbSwitcher.forEach((db: any) =>
         createPage({
           path: `${node.fields.modSlug.replace(/\d{2,}-/g, '')}-${db}`,
-          component: path.resolve('./src/templates/docs.tsx'),
+          component: `${docTemplate}?__contentFilePath=${node.internal.contentFilePath}`,
           context: {
             id: node.fields.id,
             seoTitle: getTitle(node.frontmatter, null, db),
@@ -165,7 +165,7 @@ exports.createPages = async ({ graphql, actions, reporter }: any) => {
     } else if (!langSwitcher && !dbSwitcher) {
       createPage({
         path: node.fields.modSlug ? node.fields.modSlug.replace(/\d{2,}-/g, '') : '/',
-        component: path.resolve('./src/templates/docs.tsx'),
+        component: `${docTemplate}?__contentFilePath=${node.internal.contentFilePath}`,
         context: {
           id: node.fields.id,
           seoTitle: getTitle(node.frontmatter),

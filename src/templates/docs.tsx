@@ -6,13 +6,13 @@ import TopSection from '../components/topSection'
 import PageBottom from '../components/pageBottom'
 import SEO from '../components/seo'
 import { graphql, useStaticQuery } from 'gatsby'
-import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
+// import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
 import { navigate } from '@reach/router'
 import { CreatePageContext } from '../interfaces/Layout.interface'
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps & CreatePageContext
 
-const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
+const ArticleLayout = ({ data, ...props }: any) => {
   if (!data) {
     return null
   }
@@ -24,6 +24,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       parent,
       tableOfContents,
     },
+    children,
     site: {
       siteMetadata: { docsLocation },
     },
@@ -46,7 +47,8 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           codeStyle={codeStyle}
         />
       </section>
-      <MDXRenderer>{body}</MDXRenderer>
+      {/* <MDXRenderer>{body}</MDXRenderer> */}
+      {children}
       <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug} />
     </Layout>
   )
@@ -70,7 +72,6 @@ export const query = graphql`
         slug
         modSlug
       }
-      body
       parent {
         ... on File {
           relativePath
