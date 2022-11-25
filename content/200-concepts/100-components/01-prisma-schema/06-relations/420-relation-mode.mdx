@@ -216,16 +216,44 @@ In relational databases that use foreign key constraints, the database usually a
 
 The `prisma` relation mode does not use foreign keys, so no indexes are created when you use Prisma Migrate or `db push` to apply changes to your database. You instead need to manually add an index on your relation scalar fields with the [`@@index`](/reference/api-reference/prisma-schema-reference#index) attribute (or the [`@unique`](/reference/api-reference/prisma-schema-reference#unique), [`@@unique`](/reference/api-reference/prisma-schema-reference#unique-1) or [`@@id`](/reference/api-reference/prisma-schema-reference#id-1) attributes, if applicable).
 
-If you do not add the index manually, queries may require full table scans. This can be slow, and also expensive on database providers that bill per accessed row. To help avoid this, Prisma warns you when your schema contains fields that are used in a `@relation` that does not have an index defined:
+If you do not add the index manually, queries may require full table scans. This can be slow, and also expensive on database providers that bill per accessed row. To help avoid this, Prisma warns you when your schema contains fields that are used in a `@relation` that does not have an index defined. For example, take the following schema with a relation between the `User` and `Post` models:
 
+```prisma file=schema.prisma
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id    Int    @id
+  posts Post[]
+}
+
+model Post {
+  id     Int  @id
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
 ```
-TODO Good, clean example for a warning
+
+Prisma displays the following warning when you run `prisma format` or `prisma validate`:
+
+```terminal
+With `relationMode = \"prisma\"`, no foreign keys are used, so relation fields will not benefit from the index usually created by the relational database under the hood.
+This can lead to poor performance when querying these fields. We recommend adding an index manually.
 ```
 
-In the example above you could do so by adding the following index to your model:
+To fix this, add an index to your `Post` model:
 
-```prisma
-@@index([foo, bar, baz])
+```prisma file=schema.prisma highlight=6;add
+model Post {
+  id     Int  @id
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
 ```
 
 If you are using the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) (or our [language server in another editor](/guides/development-environment/editor-setup)) the warning will be augmented with a Quick Fix that will add the required index for you:
