@@ -4,11 +4,11 @@ import Up from '../icons/Up'
 import Down from '../icons/Down'
 import Link from './link'
 import config from '../../config'
-import { ButtonWrapper } from './shortcodes/button'
+import { ButtonWrapper } from './customMdx/button'
 import Twitter from '../icons/Twitter'
 import { useLocation } from '@reach/router'
 import { X } from 'react-feather'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { theme } from '@prisma/lens/dist/web'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -46,7 +46,7 @@ const ToastForm = ({ sentiment, fbId, fbSubmitted }: any) => {
             : `Thank you for letting us know! Was there anything you particularly enjoyed?`}
         </p>
         <a onClick={closeForm}>
-          <X color={theme.colors.blue[300]} />
+          <X color={theme.colors.blue300} />
         </a>
       </Title>
       <form>
@@ -92,7 +92,7 @@ const PageBottom = ({ editDocsPath }: any) => {
         <span>🎉 </span>
         <p>Message sent! Thank you for making Prisma better for the community.</p>
         <a onClick={closeForm}>
-          <X color={theme.colors.blue[300]} />
+          <X color={theme.colors.blue300} />
         </a>
       </SuccessToast>
     )
@@ -100,7 +100,7 @@ const PageBottom = ({ editDocsPath }: any) => {
 
   // Send the initial sentiment
   const sendSentiment = useCallback(
-    async (sentiment: any) => {
+    async (sentiment) => {
       const createdSetiment = await fetch(config.feedback.sentimentUrl, {
         method: 'POST',
         mode: 'cors',
@@ -205,7 +205,7 @@ const PageBottomWrapper = styled.div`
   }
   .edit-git,
   .message {
-    color: ${(p) => p.theme.colors.gray[600]} !important;
+    color: ${(p) => p.theme.colors.gray600} !important;
   }
 
   button {
@@ -227,18 +227,18 @@ const Feedback = styled.div`
     font-weight: bold;
     letter-spacing: 0.01em;
     text-transform: uppercase;
-    color: ${(p) => p.theme.colors.gray[500]} !important;
+    color: ${(p) => p.theme.colors.gray500} !important;
   }
   .sentiments {
     button {
       background: transparent;
       border: 0;
       &.active {
-        border-color: ${(p) => p.theme.colors.blue[500]};
+        border-color: ${(p) => p.theme.colors.blue500};
         svg {
           circle,
           path {
-            stroke: ${(p) => p.theme.colors.blue[500]};
+            stroke: ${(p) => p.theme.colors.blue500};
           }
         }
       }
@@ -294,35 +294,35 @@ const Content = styled.div`
       margin-bottom: 20px;
 
       &::placeholder {
-        color: ${(p) => p.theme.colors.gray[500]};
+        color: ${(p) => p.theme.colors.gray500};
       }
     }
     button {
-      background: ${(p) => p.theme.colors.green[500]};
+      background: ${(p) => p.theme.colors.green500};
       border-radius: 6px;
       padding: 8px;
       font-size: 1rem;
       font-weight: 600;
       border-color: transparent;
       &:hover {
-        background: ${(p) => p.theme.colors.green[600]};
+        background: ${(p) => p.theme.colors.green600};
       }
     }
   }
   .yay-toast {
-    background: ${(p) => p.theme.colors.blue[100]};
+    background: ${(p) => p.theme.colors.blue100};
     font-size: 14px;
-    color: ${(p) => p.theme.colors.blue[600]};
+    color: ${(p) => p.theme.colors.blue600};
     min-width: 360px;
   }
 `
 
 const Title = styled.div`
-  background: ${(p) => p.theme.colors.blue[100]};
+  background: ${(p) => p.theme.colors.blue100};
   display: flex;
   padding: 20px;
   p {
-    color: ${(p) => p.theme.colors.blue[600]};
+    color: ${(p) => p.theme.colors.blue600};
     font-size: ${(p) => p.theme.fontSizes[14]};
     margin: 0;
   }
@@ -342,10 +342,10 @@ const Button = styled(ButtonWrapper)`
     height: 1rem;
     width: 1rem;
     path {
-      stroke: ${(p) => p.theme.colors.blue[300]};
+      stroke: ${(p) => p.theme.colors.blue300};
     }
   }
-  background: ${(p) => p.theme.colors.blue[500]} !important;
+  background: ${(p) => p.theme.colors.blue500} !important;
   margin: 0;
   margin-left: 20px;
   @media (min-width: 0px) and (max-width: 767px) {
@@ -364,7 +364,7 @@ const ButtonRow = styled.div`
   .git-link {
     text-decoration: underline;
     margin-left: 20px;
-    color: ${(p) => p.theme.colors.gray[700]} !important;
+    color: ${(p) => p.theme.colors.gray700} !important;
     font-weight: 600;
     font-size: 14px;
   }

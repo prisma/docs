@@ -1,7 +1,7 @@
 import styled from 'styled-components'
 import { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from 'react'
 import * as React from 'react'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { theme } from '@prisma/lens/dist/web'
 
 const fontSizeForSize = (size?: ButtonSize) => {
   switch (size) {
@@ -45,12 +45,12 @@ const Base = styled.a<{ size?: ButtonSize }>`
   text-decoration: none;
   outline: none;
   color: ${theme.colors.text};
-  background: ${theme.colors.gray[300]};
+  background: ${theme.colors.gray300};
   transition: 0.2s ease-out;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   &:hover {
     transform: scale(0.99);
-    background: ${theme.colors.gray[200]};
+    background: ${theme.colors.gray200};
   }
   &:active {
     transform: scale(0.98);

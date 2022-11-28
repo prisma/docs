@@ -23,18 +23,18 @@ const SearchBoxDiv = styled.div`
     height: 77px;
     background: ${(p) => p.theme.colors.white};
     padding: ${(p) => p.theme.space[20]};
-    border-bottom: 1px solid ${(p) => p.theme.colors.gray[300]};
+    border-bottom: 1px solid ${(p) => p.theme.colors.gray300};
     border-radius: ${(p) => p.theme.radii.small};
 
     form {
       width: 100%;
       input {
-        color: ${(p) => p.theme.colors.gray[700]};
+        color: ${(p) => p.theme.colors.gray700};
       }
     }
 
     .clear {
-      background: ${(p) => p.theme.colors.gray[300]};
+      background: ${(p) => p.theme.colors.gray300};
       border-radius: 6px;
       height: 36px;
       width: 36px;
@@ -42,7 +42,7 @@ const SearchBoxDiv = styled.div`
       align-items: center;
       justify-content: center;
       svg path {
-        stroke: ${(p) => p.theme.colors.gray[700]};
+        stroke: ${(p) => p.theme.colors.gray700};
       }
     }
   }
@@ -84,7 +84,7 @@ const SearchBoxDiv = styled.div`
       border-width: 0;
       &::placeholder {
         content: 'Search Documentation...';
-        color: ${(p) => p.theme.colors.gray[500]};
+        color: ${(p) => p.theme.colors.gray500};
         opacity: 1; /* Firefox */
       }
     }
@@ -98,9 +98,9 @@ const SearchBoxDiv = styled.div`
   }
 
   .slash {
-    border: 1px solid ${(p) => p.theme.colors.gray[400]};
+    border: 1px solid ${(p) => p.theme.colors.gray400};
     border-radius: 4px;
-    color: ${(p) => p.theme.colors.gray[400]};
+    color: ${(p) => p.theme.colors.gray400};
     min-width: 18px;
     display: flex;
     justify-content: center;

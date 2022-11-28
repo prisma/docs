@@ -1,34 +1,24 @@
-import React from 'react'
 import { RouterProps } from '@reach/router'
-import { MDXProvider } from '@mdx-js/react'
-import StickyBox from 'react-sticky-box'
-import shortcodes from './shortcodes'
+import * as React from 'react'
 import styled, { ThemeProvider } from 'styled-components'
-import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
-import '../styles/layout.css'
+import { MDXProvider } from '@mdx-js/react'
+import customMdx from '../components/customMdx'
+import './layout.css'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
+import { LensProvider, theme } from '@prisma/lens/dist/web'
+import StickyBox from 'react-sticky-box'
 import Banner from './banner'
-
-interface LayoutContentProps {
-  toc: any
-  tocDepth?: number
-  slug?: string
-  homePage?: boolean
-  children: React.ReactNode
-}
-
-type LayoutProps = RouterProps & LayoutContentProps
 
 const Wrapper = styled.div<{ fullWidth?: boolean }>`
   display: flex;
   width: 100%;
   justify-content: center;
   ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
-  @media (max-width: ${(p) => p.theme.breakpoints.tabletVertical}) {
+  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     padding: 0;
   }
 `
@@ -105,13 +95,30 @@ const TOCWrapper = styled.div`
   }
 `
 
-export default function Layout({ children, toc, tocDepth, location, slug, homePage }: LayoutProps) {
+interface LayoutContentProps {
+  toc: any
+  tocDepth?: number
+  slug?: string
+  homePage?: boolean
+}
+
+type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
+
+const Layout: React.FunctionComponent<LayoutProps> = ({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+  homePage,
+}) => {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
+
   return (
     <ThemeProvider theme={theme}>
       <LensProvider>
-        <MDXProvider components={shortcodes}>
+        <MDXProvider components={customMdx}>
           <Banner />
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
@@ -141,3 +148,5 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
     </ThemeProvider>
   )
 }
+
+export default Layout

@@ -19,7 +19,7 @@ A database transaction refers to a sequence of read/write operations that are _g
 Prisma provides the following options for using transactions:
 
 - [Nested writes](#nested-writes): use the Prisma Client API to process multiple operations on one or more related records inside the same transaction.
-- [Batch / bulk transactions](#batchbulk-operations): process one or more operations in bulk with `updateMany`, `deleteMany`, and `createMany`.
+- [Batch / bulk transactions](#batchbulk-operations): process one or more operations in bulk via `updateMany`, `deleteMany`, and `createMany`.
 - The Prisma Client `$transaction` API:
   - [Sequential operations](#sequential-prisma-client-operations): pass an array of Prisma Client queries to be executed sequentially inside a transaction, using `$transaction<R>(queries: PrismaPromise<R>[]): Promise<R[]>`.
   - [Interactive transactions](#interactive-transactions-in-preview) (in Preview): pass a function that can contain user code including Prisma Client queries, non-Prisma code and other control flow to be executed in a transaction, using `$transaction<R>(fn: (prisma: PrismaClient) => R, options?: object): R`
@@ -84,7 +84,7 @@ The `$transaction` API can be used in two ways:
 
   `$transaction<R>(fn: (prisma: PrismaClient) => R): R`
 
-> **Note**: To use interactive transactions, you need to [enable it as a Preview feature](/guides/upgrade-guides/upgrading-to-use-preview-features#enabling-preview-features).
+> **Note**: to use interactive transactions you will need to [enable it as a Preview feature](/guides/upgrade-guides/upgrading-to-use-preview-features#enabling-preview-features).
 
 ### Sequential Prisma Client operations
 
@@ -141,35 +141,17 @@ const [findRawData, aggregateRawData, commandRawData] =
 
 </TabbedContent>
 
-Instead of immediately awaiting the result of each operation when it's performed, the operation itself is stored in a variable first which later is submitted to the database with a method called `$transaction`. Prisma Client will ensure that either all three `create` operations succeed or none of them succeed.
+Instead of immediately awaiting the result of each operation when it's performed, the operation itself is stored in a variable first which later is submitted to the database via a method called `$transaction`. Prisma Client will ensure that either all three `create`-operations succeed or none of them succeed.
 
 > **Note**: Operations are executed according to the order they are placed in the transaction. Using a query in a transaction does not influence the order of operations in the query itself.
 >
 > Refer to the 📖 [transactions guide](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api) for more examples.
 
-From version 4.4.0, the sequential operations transaction API has a second parameter. You can use the following optional configuration option in this parameter:
-
-- `isolationLevel`: Sets the [transaction isolation level](#transaction-isolation-level). By default this is set to the value currently configured in your database.
-
-For example:
-
-```ts
-await prisma.$transaction(
-  [
-    prisma.resource.deleteMany({ where: { name: 'name' } }),
-    prisma.resource.createMany({ data }),
-  ],
-  {
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // optional, default defined by database configuration
-  }
-)
-```
-
 ### Interactive transactions (in Preview)
 
 Sometimes you need more control over what queries execute within a transaction. Interactive transactions are meant to provide you with an escape hatch.
 
-**Note**: Interactive Transactions with the [Data Proxy](/data-platform/data-proxy#providing-the-connection-string-to-prisma-migrate) are in Preview in version 4.6.0.
+**Note**: If you use interactive transactions, then you cannot use the [Data Proxy](/data-platform/data-proxy#providing-the-connection-string-to-prisma-migrate) at the same time.
 
 To enable interactive transactions, add `interactiveTransactions` to the generator of your Prisma Schema:
 
@@ -181,8 +163,6 @@ generator client {
 ```
 
 Then you can pass an async function into [`$transaction`](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
-
-The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma call invoked on this `tx` instance is encapsulated into the transaction.
 
 Let's look at an example:
 
@@ -204,9 +184,9 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function transfer(from: string, to: string, amount: number) {
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (prisma) => {
     // 1. Decrement amount from the sender.
-    const sender = await tx.account.update({
+    const sender = await prisma.account.update({
       data: {
         balance: {
           decrement: amount,
@@ -216,14 +196,12 @@ async function transfer(from: string, to: string, amount: number) {
         email: from,
       },
     })
-
     // 2. Verify that the sender's balance didn't go below zero.
     if (sender.balance < 0) {
       throw new Error(`${from} doesn't have enough to send ${amount}`)
     }
-
     // 3. Increment the recipient's balance by amount
-    const recipient = await tx.account.update({
+    const recipient = await prisma.account.update({
       data: {
         balance: {
           increment: amount,
@@ -233,7 +211,6 @@ async function transfer(from: string, to: string, amount: number) {
         email: to,
       },
     })
-
     return recipient
   })
 }
@@ -264,7 +241,7 @@ To catch the exception, you can wrap `$transaction` in a try-catch block:
 
 ```js
 try {
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (prisma) => {
     // Code running in a transaction...
   })
 } catch (err) {
@@ -272,7 +249,7 @@ try {
 }
 ```
 
-The transaction API has a second parameter. For interactive transactions, you can use the following optional configuration options in this parameter:
+The interactive transaction API has a second parameter with the following optional configuration options:
 
 - `maxWait`: The maximum amount of time the Prisma Client will wait to acquire a transaction from the database. The default value is 2 seconds.
 - `timeout`: The maximum amount of time the interactive transaction can run before being canceled and rolled back. The default value is 5 seconds.
@@ -282,7 +259,7 @@ For example:
 
 ```jsx
 await prisma.$transaction(
-  async (tx) => {
+  async (prisma) => {
     // Code running in a transaction...
   },
   {
@@ -302,44 +279,33 @@ transaction functions. We recommend you get in and out as quick as possible!
 
 </Admonition>
 
-### Transaction isolation level
+#### Transaction isolation level
 
 <Admonition type="info">
 
-This feature is not available on MongoDB, because MongoDB does not support isolation levels.
+This feature is not available on MongoDB, as MongoDB does not support isolation levels.
 
 </Admonition>
 
-You can set the transaction [isolation level](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels) for transactions in the following Prisma versions:
-
-- For interactive transactions from version 4.2.0
-- For sequential operations from version 4.4.0
+From version 4.2.0, you can set the transaction [isolation level](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels).
 
 <Admonition type="info">
 
-**In earlier versions**<br /><br />
-In versions before 4.2.0 (for interactive transactions), or 4.4.0 (for sequential operations), you cannot configure the transaction isolation level at a Prisma level. The isolation level is not explicitly set by Prisma, so the [isolation level configured in your database](#database-specific-information-on-isolation-levels) is used.
+**Before version 4.2.0**<br /><br />
+In version 4.1.0 and earlier, you cannot configure the transaction isolation level at a Prisma level. The isolation level is not explicitly set by Prisma, so the isolation level configured in your database is used. For database-specific information on isolation levels, including database defaults, see the following resources:<br /><br />
+
+- [Default transaction isolation level in PostgreSQL](https://www.postgresql.org/docs/9.3/runtime-config-client.html#GUC-DEFAULT-TRANSACTION-ISOLATION)
+- [Default transaction isolation level in Microsoft SQL Server](https://docs.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql?view=sql-server-ver15)
+- [Default transaction isolation level in MySQL](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
+  <br />
+  <br />
+  CockroachDB and SQLite always use the <inlinecode>
+    Serializable
+  </inlinecode> isolation level.
 
 </Admonition>
 
-#### Set the isolation level
-
-To set the transaction isolation level, use the `isolationLevel` option in the second parameter of the API.
-
-For sequential operations:
-
-```ts
-await prisma.$transaction(
-  [
-    // Prisma Client operations running in a transaction...
-  ],
-  {
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // optional, default defined by database configuration
-  }
-)
-```
-
-For an interactive transaction:
+To set the transaction isolation level, use the `isolationLevel` option in the second parameter of the API. For example:
 
 ```jsx
 await prisma.$transaction(
@@ -354,8 +320,6 @@ await prisma.$transaction(
 )
 ```
 
-#### Supported isolation levels
-
 Prisma Client supports the following isolation levels if they are available in the underlying database:
 
 - `ReadUncommitted`
@@ -364,19 +328,21 @@ Prisma Client supports the following isolation levels if they are available in t
 - `Snapshot`
 - `Serializable`
 
+##### Isolation levels by database
+
 The isolation levels available for each database connector are as follows:
 
-| Database    | `ReadUncommitted` | `ReadCommitted` | `RepeatableRead` | `Snapshot` | `Serializable` |
-| ----------- | ----------------- | --------------- | ---------------- | ---------- | -------------- |
-| PostgreSQL  | ✔️                | ✔️              | ✔️               | No         | ✔️             |
-| MySQL       | ✔️                | ✔️              | ✔️               | No         | ✔️             |
-| SQL Server  | ✔️                | ✔️              | ✔️               | ✔️         | ✔️             |
-| CockroachDB | No                | No              | No               | No         | ✔️             |
-| SQLite      | No                | No              | No               | No         | ✔️             |
+| Database    | `ReadCommitted` | `ReadUncommitted` | `RepeatableRead` | `Serializable` | `Snapshot` |
+| ----------- | --------------- | ----------------- | ---------------- | -------------- | ---------- |
+| PostgreSQL  | ✔️              | ✔️                | ✔️               | ✔️             | No         |
+| MySQL       | ✔️              | ✔️                | ✔️               | ✔️             | No         |
+| SQL Server  | ✔️              | ✔️                | ✔️               | ✔️             | ✔️         |
+| CockroachDB | No              | No                | No               | ✔️             | No         |
+| SQLite      | No              | No                | No               | ✔️             | No         |
 
-By default, Prisma Client sets the isolation level to the value currently configured in your database.
+By default Prisma Client will set the isolation level to the value currently configured in your database.
 
-The isolation levels configured by default in each database are as follows:
+The isolation levels configured by default in each database are:
 
 | Database    | Default          |
 | ----------- | ---------------- |
@@ -386,9 +352,7 @@ The isolation levels configured by default in each database are as follows:
 | CockroachDB | `Serializable`   |
 | SQLite      | `Serializable`   |
 
-#### Database-specific information on isolation levels
-
-See the following resources:
+For more database-specific information on isolation levels, see the following resources:
 
 - [Transaction isolation levels in PostgreSQL](https://www.postgresql.org/docs/9.3/runtime-config-client.html#GUC-DEFAULT-TRANSACTION-ISOLATION)
 - [Transaction isolation levels in Microsoft SQL Server](https://docs.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql?view=sql-server-ver15)

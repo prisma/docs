@@ -2,14 +2,14 @@
 title: 'Prisma Migrate'
 metaTitle: 'Prisma Migrate | Database, Schema, SQL Migration Tool'
 metaDescription: 'Prisma Migrate is a database migration tool available via the Prisma CLI that integrates with Prisma schema for data modeling.'
-toc: false
+tocDepth: 3
 ---
 
 <TopBlock>
 
 <Admonition type="info">
 
-**Does not apply for MongoDB**<br/>Instead of `migrate dev` and related commands, use [`db push`](/concepts/components/prisma-migrate/db-push) for [MongoDB](/concepts/database-connectors/mongodb).
+**Does not apply for MongoDB**: Instead of `migrate dev` and related commands, [`db push`](/concepts/components/prisma-migrate/db-push) is used for [MongoDB](/concepts/database-connectors/mongodb).
 
 </Admonition>
 
@@ -18,7 +18,7 @@ Prisma Migrate is an **imperative database schema migration tool** that enables 
 - Keep your database schema in sync with your [Prisma schema](/concepts/components/prisma-schema) as it evolves _and_
 - Maintain existing data in your database
 
-Prisma Migrate generates [a history of `.sql` migration files](/concepts/components/prisma-migrate/migration-histories), and plays a role in both [development and deployment](/concepts/components/prisma-migrate/migrate-development-production).
+Prisma Migrate generates [a history of `.sql` migration files](#migration-history), and plays a role in both [development](#development-environments) and [deployment](#production-and-testing-environments).
 
 <Tip>
 
@@ -28,134 +28,128 @@ If you are prototyping, consider using the [`db push` command](db-push) - see [S
 
 </TopBlock>
 
-## In this section
+## Getting started with Prisma Migrate
 
 > See [Developing with Prisma Migrate](/guides/database/developing-with-prisma-migrate) <span class="guide"></span> for a more in-depth development workflow.
 
 To get started with Prisma Migrate in a development environment:
 
-1.  Create a Prisma schema:
+1. Create a Prisma schema:
 
-    ```prisma file=schema.prisma
-    datasource db {
-      provider = "postgresql"
-      url      = env("DATABASE_URL")
-    }
-    
-    model User {
-      id    Int    @id @default(autoincrement())
-      name  String
-      posts Post[]
-    }
-    
-    model Post {
-      id        Int     @id @default(autoincrement())
-      title     String
-      published Boolean @default(true)
-      authorId  Int
-      author    User    @relation(fields: [authorId], references: [id])
-    }
-    ```
+   ```prisma file=schema.prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   
+   model User {
+     id    Int    @id @default(autoincrement())
+     name  String
+     posts Post[]
+   }
+   
+   model Post {
+     id        Int     @id @default(autoincrement())
+     title     String
+     published Boolean @default(true)
+     authorId  Int
+     author    User    @relation(fields: [authorId], references: [id])
+   }
+   ```
 
-    <Tip>
+   <Tip>
 
-    You can use [native type mapping attributes](supported-types-and-db-features#mapping-fields-to-a-specific-native-type) in your schema to decide which exact database type to create (for example, `String` can map to `varchar(100)` or `text`).
+   You can use [native type mapping attributes](supported-types-and-db-features#mapping-fields-to-a-specific-native-type) in your schema to decide which exact database type to create (for example, `String` can map to `varchar(100)` or `text`).
 
-    </Tip>
+   </Tip>
 
-    <!-- prettier-ignore-start -->
+   <!-- prettier-ignore-start -->
 
-1.  Create the first migration:
+1. Create the first migration:
 
-          <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
+      <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
+<cmd>
 
-    <cmd>
+   ```terminal
+   prisma migrate dev --name init
+   ```
 
-    ```terminal
-    prisma migrate dev --name init
-    ```
+      </cmd>
+<cmdResult>
 
-          </cmd>
+   ```sql no-copy
+     -- CreateTable
+   CREATE TABLE "User" (
+       "id" SERIAL,
+       "name" TEXT NOT NULL,
 
-    <cmdResult>
+       PRIMARY KEY ("id")
+   );
+     -- CreateTable
+   CREATE TABLE "Post" (
+       "id" SERIAL,
+       "title" TEXT NOT NULL,
+       "published" BOOLEAN NOT NULL DEFAULT true,
+       "authorId" INTEGER NOT NULL,
 
-    ```sql no-copy
-      -- CreateTable
-    CREATE TABLE "User" (
-        "id" SERIAL,
-        "name" TEXT NOT NULL,
+       PRIMARY KEY ("id")
+   );
 
-        PRIMARY KEY ("id")
-    );
-      -- CreateTable
-    CREATE TABLE "Post" (
-        "id" SERIAL,
-        "title" TEXT NOT NULL,
-        "published" BOOLEAN NOT NULL DEFAULT true,
-        "authorId" INTEGER NOT NULL,
+     -- AddForeignKey
+   ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+   ```
 
-        PRIMARY KEY ("id")
-    );
+      </cmdResult>
+</CodeWithResult>
 
-      -- AddForeignKey
-    ALTER TABLE "Post" ADD FOREIGN KEY("authorId")REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-    ```
+   Your Prisma schema is now in sync with your database schema and you have initialized a migration history:
 
-          </cmdResult>
+   ```
+   migrations/
+     └─ 20210313140442_init/
+       └─ migration.sql
+   ```
 
-    </CodeWithResult>
+1. Evolve your schema by introducing additional fields:
 
-    Your Prisma schema is now in sync with your database schema and you have initialized a migration history:
+   ```prisma highlight=3;add
+   model User {
+     id       Int    @id @default(autoincrement())
+     jobTitle String
+     name     String
+     posts    Post[]
+   }
+   ```
 
-    ```
-    migrations/
-      └─ 20210313140442_init/
-        └─ migration.sql
-    ```
+1. Create the second migration:
 
-1.  Evolve your schema by introducing additional fields:
+      <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
+<cmd>
 
-    ```prisma highlight=3;add
-    model User {
-      id       Int    @id @default(autoincrement())
-      jobTitle String
-      name     String
-      posts    Post[]
-    }
-    ```
+   ```terminal
+   prisma migrate dev --name added_job_title
+   ```
 
-1.  Create the second migration:
+      </cmd>
+<cmdResult>
 
-          <CodeWithResult showText="Show migration SQL" hideText="Hide migration SQL">
+   ```sql no-copy
+     -- AlterTable
+   ALTER TABLE "User" ADD COLUMN     "jobTitle" TEXT NOT NULL;
+   ```
 
-    <cmd>
+      </cmdResult>
+</CodeWithResult>
 
-    ```terminal
-    prisma migrate dev --name added_job_title
-    ```
+   Your Prisma schema is once again in sync with your database schema, and your migration history contains two migrations:
 
-          </cmd>
-
-    <cmdResult>
-
-    ```sql no-copy
-      -- AlterTable
-    ALTER TABLE "User" ADD COLUMN     "jobTitle" TEXT NOT NULL;
-    ```
-
-          </cmdResult>
-
-    </CodeWithResult>
-
-    Your Prisma schema is once again in sync with your database schema, and your migration history contains two migrations:
-
-    ```
-    migrations/
-      └─ 20210313140442_init/
-        └─ migration.sql
-      └─ 20210313140442_added_job_title/
-        └─ migration.sql
-    ```
+   ```
+   migrations/
+     └─ 20210313140442_init/
+       └─ migration.sql
+     └─ 20210313140442_added_job_title/
+       └─ migration.sql
+   ```
 
 <!-- prettier-ignore-end -->
 

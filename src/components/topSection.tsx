@@ -32,7 +32,7 @@ const MainTitle = styled.h1`
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;
-  color: ${(p) => p.theme.colors.gray[900]};
+  color: ${(p) => p.theme.colors.gray900};
   margin: 0;
   margin-top: 4px;
   &.inline-code {

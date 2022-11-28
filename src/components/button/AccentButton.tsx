@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 import Button from './Button'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { theme } from '@prisma/lens/dist/web'
 
 export enum AccentColor {
   RED = 'RED',
@@ -19,21 +19,21 @@ export const AccentButton = styled(Button)<{ color: AccentColor }>`
 const colorForOption = (color?: AccentColor) => {
   switch (color) {
     case AccentColor.RED:
-      return theme.colors.red[600]
+      return theme.colors.red600
     case AccentColor.ORANGE:
-      return theme.colors.orange[600]
+      return theme.colors.orange600
     default:
-      return theme.colors.purple[600]
+      return theme.colors.purple600
   }
 }
 
 const hoverColorForOption = (color?: AccentColor) => {
   switch (color) {
     case AccentColor.RED:
-      return theme.colors.red[700]
+      return theme.colors.red700
     case AccentColor.ORANGE:
-      return theme.colors.orange[700]
+      return theme.colors.orange700
     default:
-      return theme.colors.purple[700]
+      return theme.colors.purple700
   }
 }

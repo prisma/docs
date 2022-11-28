@@ -11,13 +11,13 @@ const HitComp = styled.div`
   font-weight: normal;
   font-size: ${(p) => p.theme.fontSizes[16]};
   line-height: ${(p) => p.theme.space[24]};
-  border-bottom: 1px solid ${(p) => p.theme.colors.gray[300]};
+  border-bottom: 1px solid ${(p) => p.theme.colors.gray300};
   // max-height: 150px;
   &:last-item {
     border: 0;
   }
   a {
-    color: ${(p) => p.theme.colors.gray[900]} !important;
+    color: ${(p) => p.theme.colors.gray900} !important;
     display: block;
   }
   h4 {
@@ -31,17 +31,17 @@ const HitComp = styled.div`
   }
   &:hover,
   &:focus {
-    background: ${(p) => p.theme.colors.gray[100]};
+    background: ${(p) => p.theme.colors.gray100};
   }
   mark {
-    color: ${(p) => p.theme.colors.blue[600]} !important;
+    color: ${(p) => p.theme.colors.blue600} !important;
     background: #ebf8ff;
     padding: 2px;
     font-weight: bold;
   }
 
   .more {
-    color: ${(p) => p.theme.colors.blue[600]};
+    color: ${(p) => p.theme.colors.blue600};
     font-size: ${(p) => p.theme.fontSizes[14]};
     width: fit-content;
     margin: 10px 0 0;
