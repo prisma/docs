@@ -2,9 +2,9 @@ import type { GatsbyConfig } from 'gatsby'
 import docsConfig from './config'
 
 let plugins: any = [
-  'gatsby-plugin-image',
+  //'gatsby-plugin-image',
   'gatsby-plugin-sharp',
-  'gatsby-transformer-sharp',
+  //'gatsby-transformer-sharp',
   'gatsby-plugin-styled-components',
   'gatsby-plugin-smoothscroll',
   'gatsby-plugin-catch-links',
@@ -12,76 +12,69 @@ let plugins: any = [
     resolve: 'gatsby-source-filesystem',
     options: {
       name: 'images',
-      path: `${__dirname}/src/images/`,
+      path: `${__dirname}/src/images`,
     },
     __key: 'images',
   },
-  {
-    resolve: 'gatsby-source-filesystem',
-    options: {
-      name: `docs`,
-      path: `${__dirname}/content`,
-    },
-    __key: 'pages',
-  },
+
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
       extensions: ['.mdx', '.md'],
       gatsbyRemarkPlugins: [
-        // 'gatsby-remark-sectionize',
-        // 'gatsby-remark-normalize-paths',
-        // {
-        //   resolve: `gatsby-remark-autolink-headers`,
-        //   options: {
-        //     icon: `<svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-        //     <path d="M1.5 6.33337H15.5" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        //     <path d="M1.5 11.6666H15.5" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        //     <path d="M6.75 1L5 17" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        //     <path d="M12 1L10.25 17" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        //     </svg>`,
-        //     className: `title-link`,
-        //     enableCustomId: true,
-        //   },
-        // },
-        // {
-        //   resolve: `gatsby-remark-images`,
-        //   options: {
-        //     disableBgImageOnAlpha: true,
-        //   },
-        // },
-        // {
-        //   resolve: 'gatsby-remark-to-absoluteurl',
-        //   options: {
-        //     redirects: docsConfig.redirects,
-        //   },
-        // },
-        // {
-        //   resolve: 'gatsby-remark-check-links-numberless',
-        //   options: {
-        //     // Do not surface links to these pages as broken:
-        //     exceptions: [
-        //       '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgres',
-        //       '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgres',
-        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
-        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
-        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
-        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
-        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
-        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
-        //       '/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb',
-        //       '/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb',
-        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb',
-        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb',
-        //     ],
-        //   },
-        // },
-        // {
-        //   resolve: 'gatsby-remark-copy-linked-files',
-        //   options: {
-        //     destinationDir: 'static',
-        //   },
-        // },
+        'gatsby-remark-sectionize',
+        'gatsby-remark-normalize-paths',
+        {
+          resolve: `gatsby-remark-autolink-headers`,
+          options: {
+            icon: `<svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1.5 6.33337H15.5" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1.5 11.6666H15.5" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M6.75 1L5 17" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 1L10.25 17" stroke="#CBD5E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>`,
+            className: `title-link`,
+            enableCustomId: true,
+          },
+        },
+        {
+          resolve: `gatsby-remark-images`,
+          options: {
+            disableBgImageOnAlpha: true,
+          },
+        },
+        {
+          resolve: 'gatsby-remark-to-absoluteurl',
+          options: {
+            redirects: docsConfig.redirects,
+          },
+        },
+        {
+          resolve: 'gatsby-remark-check-links-numberless',
+          options: {
+            // Do not surface links to these pages as broken:
+            exceptions: [
+              '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgres',
+              '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgres',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
+              '/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb',
+              '/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb',
+            ],
+          },
+        },
+        {
+          resolve: 'gatsby-remark-copy-linked-files',
+          options: {
+            destinationDir: 'static',
+          },
+        },
       ],
     },
   },
@@ -129,11 +122,20 @@ let plugins: any = [
   //   },
   // },
   {
-    resolve: `gatsby-plugin-page-creator`,
+    resolve: 'gatsby-source-filesystem',
     options: {
+      name: `docs`,
       path: `${__dirname}/content`,
     },
+    __key: 'pages',
   },
+  // {
+  //   resolve: `gatsby-plugin-page-creator`,
+  //   options: {
+  //     path: `${__dirname}/content`,
+  //   },
+  // },
+
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
 ]
@@ -180,7 +182,7 @@ const config: GatsbyConfig = {
   // More easily incorporate content into your pages through automatic TypeScript type generation and better GraphQL IntelliSense.
   // If you use VSCode you can also use the GraphQL plugin
   // Learn more at: https://gatsby.dev/graphql-typegen
-  graphqlTypegen: true,
+  //graphqlTypegen: true,
   plugins,
 }
 

@@ -8,7 +8,7 @@ import { stringify } from '../../utils/stringify'
 import styled from 'styled-components'
 import './prism/index.css'
 import FileWithIcon from './fileWithIcon'
-require('./prism/prism-prisma')
+// require('./prism/prism-prisma')
 
 interface CodeProps {
   copy?: boolean

@@ -39,7 +39,7 @@ const shortcodes = {
   details: (props: any) => <CollapseBox {...props} />,
   table: (props: any) => <Table {...props} />,
   ButtonLink,
-  Subsections,
+  Subsections: (props: any) => <Subsections {...props} />,
   TopBlock,
   FootNote,
   Admonition,

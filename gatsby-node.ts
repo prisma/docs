@@ -55,7 +55,14 @@ const getDesc = (frontmatter: any, lang?: any, db?: any) => {
 
 exports.createPages = async ({ graphql, actions, reporter }: any) => {
   const { createPage, createRedirect } = actions
-
+  // techMetaTitles {
+  //   name
+  //   value
+  // }
+  // techMetaDescriptions {
+  //   name
+  //   value
+  // }
   const result = await graphql(`
     query {
       allMdx {
@@ -72,14 +79,6 @@ exports.createPages = async ({ graphql, actions, reporter }: any) => {
             metaDescription
             langSwitcher
             dbSwitcher
-            techMetaTitles {
-              name
-              value
-            }
-            techMetaDescriptions {
-              name
-              value
-            }
           }
           internal {
             contentFilePath
@@ -186,32 +185,32 @@ exports.createPages = async ({ graphql, actions, reporter }: any) => {
     )
 }
 
-exports.createSchemaCustomization = ({ actions }: any) => {
-  const { createTypes } = actions
-  const typeDefs = `
-    type MarkdownRemark implements Node {
-      frontmatter: Frontmatter
-    }
-    type Frontmatter {
-      title: String!
-      navTitle: String
-      metaTitle: String
-      metaDescription: String
-      langSwitcher: [String!]
-      dbSwitcher: [String!]
-      staticLink: Boolean
-      duration: String
-      experimental: Boolean
-      preview: Boolean
-      earlyaccess: Boolean
-      toc: Boolean
-      hidePage: Boolean
-      tocDepth: Int
-      codeStyle: Boolean
-    }
-  `
-  createTypes(typeDefs)
-}
+// exports.createSchemaCustomization = ({ actions }: any) => {
+//   const { createTypes } = actions
+//   const typeDefs = `
+//     type MarkdownRemark implements Node {
+//       frontmatter: Frontmatter
+//     }
+//     type Frontmatter {
+//       title: String!
+//       navTitle: String
+//       metaTitle: String
+//       metaDescription: String
+//       langSwitcher: [String!]
+//       dbSwitcher: [String!]
+//       staticLink: Boolean
+//       duration: String
+//       experimental: Boolean
+//       preview: Boolean
+//       earlyaccess: Boolean
+//       toc: Boolean
+//       hidePage: Boolean
+//       tocDepth: Int
+//       codeStyle: Boolean
+//     }
+//   `
+//   createTypes(typeDefs)
+// }
 
 exports.onCreateWebpackConfig = ({ actions }: any) => {
   actions.setWebpackConfig({

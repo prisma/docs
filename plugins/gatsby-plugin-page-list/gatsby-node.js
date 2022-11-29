@@ -16,6 +16,8 @@ const excludedPaths = [
 exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, pluginOptions) => {
   const outputFile = path.join(publicPath, '/pages.json')
 
+  console.log('plugd')
+
   const query = `
     {
       site {

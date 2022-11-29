@@ -12,7 +12,7 @@ import { CreatePageContext } from '../interfaces/Layout.interface'
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps & CreatePageContext
 
-const ArticleLayout = ({ data, ...props }: any) => {
+const ArticleLayout = ({ data, children, ...props }: any) => {
   if (!data) {
     return null
   }
@@ -20,15 +20,17 @@ const ArticleLayout = ({ data, ...props }: any) => {
     mdx: {
       fields: { slug, modSlug },
       frontmatter: { title, langSwitcher, dbSwitcher, toc, tocDepth, codeStyle },
-      body,
+      // body,
       parent,
       tableOfContents,
     },
-    children,
+    // children,
     site: {
       siteMetadata: { docsLocation },
     },
   } = data
+
+  //console.log('ch', children)
   return (
     <Layout
       {...props}
@@ -67,7 +69,7 @@ export const query = graphql`
         docsLocation
       }
     }
-    mdx(fields: { id: { eq: $id } }) {
+    mdx(id: { eq: $id }) {
       fields {
         slug
         modSlug
