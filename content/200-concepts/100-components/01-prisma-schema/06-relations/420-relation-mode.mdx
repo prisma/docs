@@ -192,6 +192,55 @@ When you introspect a database with the `db pull` command with the `prisma` rela
 
 When you apply changes to your Prisma schema with Prisma Migrate or `db push` with the `prisma` relation mode enabled, Prisma will not use foreign keys in your database.
 
+### Indexes
+
+In relational databases that use foreign key constraints, the database usually also implicitly creates an index for the foreign key columns. For example, [MySQL will create an index on all foreign key columns](https://dev.mysql.com/doc/refman/8.0/en/constraint-foreign-key.html#:~:text=MySQL%20requires%20that%20foreign%20key%20columns%20be%20indexed%3B%20if%20you%20create%20a%20table%20with%20a%20foreign%20key%20constraint%20but%20no%20index%20on%20a%20given%20column%2C%20an%20index%20is%20created.). This is to allow foreign key checks to run fast and not require a table scan.
+
+The `prisma` relation mode does not use foreign keys, so no indexes are created when you use Prisma Migrate or `db push` to apply changes to your database. You instead need to manually add an index on your relation scalar fields with the [`@@index`](/reference/api-reference/prisma-schema-reference#index) attribute (or the [`@unique`](/reference/api-reference/prisma-schema-reference#unique), [`@@unique`](/reference/api-reference/prisma-schema-reference#unique-1) or [`@@id`](/reference/api-reference/prisma-schema-reference#id-1) attributes, if applicable).
+
+If you do not add the index manually, queries might require full table scans. This can be slow, and also expensive on database providers that bill per accessed row. To help avoid this, Prisma warns you when your schema contains fields that are used in a `@relation` that does not have an index defined. For example, take the following schema with a relation between the `User` and `Post` models:
+
+```prisma file=schema.prisma
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id    Int    @id
+  posts Post[]
+}
+
+model Post {
+  id     Int  @id
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+```
+
+Prisma displays the following warning when you run `prisma format` or `prisma validate`:
+
+```terminal
+With `relationMode = "prisma"`, no foreign keys are used, so relation fields will not benefit from the index usually created by the relational database under the hood. This can lead to poor performance when querying these fields. We recommend adding an index manually.
+```
+
+To fix this, add an index to your `Post` model:
+
+```prisma file=schema.prisma highlight=6;add
+model Post {
+  id     Int  @id
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+```
+
+If you use the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) (or our [language server in another editor](/guides/development-environment/editor-setup)), the warning is augmented with a Quick Fix that adds the required index for you:
+
+![The Quick Fix pop-up for adding an index on a relation scalar field in VS Code](quick-fix-index.png)
+
 ## Switch between relation modes
 
 It is only possible to switch between relation modes when you use a relational database connector (PostgreSQL, MySQL, SQLite, SQL Server, CockroachDB).
