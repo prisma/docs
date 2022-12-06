@@ -14,7 +14,7 @@ module.exports = function plugin(
 ) {
   function visitor(node) {
     node.originalUrl = node.url
-    
+
     if (
       markdownNode.fields &&
       markdownNode.fields.slug &&
