@@ -1,0 +1,108 @@
+---
+title: 'Add custom methods to your models'
+metaTitle: 'Prisma Client extensions: model component (Preview)'
+metaDescription: 'Extend the functionality of Prisma Client, model component'
+tocDepth: 3
+---
+
+<TopBlock>
+
+You can use the `model` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component type to add custom methods to your models. We introduced this feature in version 4.7.0.
+
+Possible uses for the `model` component include the following:
+
+- New operations to operate alongside existing Prisma Client operations, such as `findMany`
+- Encapsulated business logic
+- Repetitive operations
+- Model-specific utilities
+
+</TopBlock>
+
+## Enable the preview feature
+
+Before you create Prisma Client extensions, you must enable the `clientExtensions` feature flag in the `generator` block of your `schema.prisma` file, as follows:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+```
+
+## Add a custom method
+
+Use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods) to create an _extended client_. An extended client is a variant of the standard Prisma Client that is wrapped by one or more extensions. Use the `model` extension component to add methods to models in your schema.
+
+### Add a custom method to a specific model
+
+To extend a specific model in your schema, use the following structure. This example adds a method to the `user` model.
+
+```ts
+const xprisma = prisma.$extends({
+  name?: '<name>',  // (optional) names the extension for error logs
+  model?: {
+    user: { ... }   // in this case, we extend the `user` model
+  },
+});
+```
+
+#### Example
+
+The following example adds a method called `signUp` to the `user` model. This method creates a new user with the specified email address.
+
+```ts
+const xprisma = prisma.$extends({
+  model: {
+    user: {
+      async signUp(email: string) {
+        await prisma.user.create({ data: { email } })
+      },
+    },
+  },
+})
+```
+
+You would call `signUp` in your application as follows:
+
+```ts
+const user = await xprisma.user.signUp('john@prisma.io')
+```
+
+When you call a method in an extension, use the constant name from your `$extends` statement, not `prisma`. In the above example, `xprisma.user.signUp` works, but `prisma.user.signUp` does not, because the original `prisma` is not modified.
+
+### Add a custom method to all models in your schema
+
+To extend _all_ models in your schema, use the following structure:
+
+```ts
+const xprisma = prisma.$extends({
+  name?: '<name>', // `name` is an optional field that you can use to name the extension for error logs
+  model?: {
+    $allModels: { ... }
+  },
+})
+```
+
+#### Example
+
+The following example adds a `validate` method to all models.
+
+```ts
+const xprisma = new prisma.$extends({
+  model: {
+    $allModels: {
+      validate(data: unknown) {
+        /* Generic validation logic */
+      },
+    },
+  },
+})
+```
+
+You would call `validate` in your application as follows:
+
+```ts
+// `validate` method available on all models
+xprisma.user.validate(someData)
+xprisma.post.validate(someData)
+```

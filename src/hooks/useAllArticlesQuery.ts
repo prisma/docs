@@ -10,6 +10,7 @@ export const useAllArticlesQuery = () => {
             frontmatter {
               title
               duration
+              navTitle
               staticLink
               experimental
               preview

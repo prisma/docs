@@ -1,13 +1,7 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import background from 'images/bg-serverless.png'
 
 const BannerWrapper = styled.div`
-  // background-color: #19202d;
-  // background-image: url(${background});
-  // background-size: cover;
-  // background-position: center center;
-  // color: #ffffff;
   background: linear-gradient(90deg, #dbf3ed 0%, #ebf4ff 100%);
   color: #4a5568;
   padding: 16px;
@@ -36,8 +30,8 @@ const Banner = () => (
   <BannerWrapper>
     <BannerText>
       <a href="/docs/data-platform/data-proxy">
-        Set up database connection pooling for serverless environments using the <strong>Prisma Data Proxy</strong>.
-        Learn more -{'>'}
+        Set up database connection pooling for serverless environments with the{' '}
+        <strong>Prisma Data Proxy</strong>. Learn more -{'>'}
       </a>
     </BannerText>
   </BannerWrapper>
