@@ -1,13 +1,7 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import background from 'images/bg-serverless.png'
 
 const BannerWrapper = styled.div`
-  // background-color: #19202d;
-  // background-image: url(${background});
-  // background-size: cover;
-  // background-position: center center;
-  // color: #ffffff;
   background: linear-gradient(90deg, #dbf3ed 0%, #ebf4ff 100%);
   color: #4a5568;
   padding: 16px;
@@ -35,9 +29,9 @@ const BannerText = styled.div`
 const Banner = () => (
   <BannerWrapper>
     <BannerText>
-      <a href="/dataplatform">
-        Manage your application data in one place with the <strong>Prisma Data Platform</strong>.
-        Learn more -{'>'}
+      <a href="/docs/data-platform/data-proxy">
+        Set up database connection pooling for serverless environments with the{' '}
+        <strong>Prisma Data Proxy</strong>. Learn more -{'>'}
       </a>
     </BannerText>
   </BannerWrapper>

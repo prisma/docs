@@ -7,12 +7,6 @@ tocDepth: 2
 
 <TopBlock>
 
-<Admonition type="info">
-
-Composite types are available in Preview in versions `3.10.0` and later.
-
-</Admonition>
-
 <Admonition type="warning">
 
 Composite types are only available with MongoDB.
@@ -20,6 +14,8 @@ Composite types are only available with MongoDB.
 </Admonition>
 
 [Composite types](/concepts/components/prisma-schema/data-model#defining-composite-types), known as [embedded documents](https://docs.mongodb.com/manual/core/data-model-design/#std-label-data-modeling-embedding) in MongoDB, allow you to embed records within other records.
+
+We made composite types [Generally Available](/about/prisma/releases#generally-available-ga) in v3.12.0. They were previously available in [Preview](/concepts/components/preview-features) from v3.10.0.
 
 This page explains how to:
 
@@ -35,10 +31,19 @@ This page explains how to:
 We’ll use this schema for the examples that follow:
 
 ```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
 model Product {
   id     String  @id @default(auto()) @map("_id") @db.ObjectId
   name   String  @unique
-  price  Decimal
+  price  Float
   colors Color[]
   sizes  Size[]
   photos Photo[]
@@ -90,6 +95,49 @@ There are currently some limitations when using composite types in the Prisma Cl
 - [`findUnique`](/reference/api-reference/prisma-client-reference#findunique) can't filter on composite types
 - [`aggregrate`](/concepts/components/prisma-client/aggregation-grouping-summarizing#aggregate), [`groupBy`](/concepts/components/prisma-client/aggregation-grouping-summarizing#group-by), [`count`](/concepts/components/prisma-client/aggregation-grouping-summarizing#count) don’t support composite operations
 
+## Default values for required fields on composite types
+
+From version 4.0.0, if you carry out a database read on a composite type when all of the following conditions are true, then Prisma Client inserts the default value into the result.
+
+Conditions:
+
+- A field on the composite type is [required](/concepts/components/prisma-schema/data-model#optional-and-mandatory-fields), and
+- this field has a [default value](/concepts/components/prisma-schema/data-model#defining-a-default-value), and
+- this field is not present in the returned document or documents.
+
+Note:
+
+- This is the same behavior as with [model fields](/reference/api-reference/prisma-schema-reference#model-field-scalar-types).
+- On read operations, Prisma Client inserts the default value into the result, but does not insert the default value into the database.
+
+In our example schema, suppose that you add a required field to `photo`. This field, `bitDepth`, has a default value:
+
+```prisma file=schema.prisma highlight=4;add
+...
+type Photo {
+  ...
+  bitDepth    Int    @default(8)
+}
+...
+```
+
+Suppose that you then run `npx prisma migrate deploy` to [deploy your database changes](/guides/deployment/deploy-database-changes-with-prisma-migrate) and regenerate your Prisma Client with `npx prisma generate`. Then, you run the following application code:
+
+```ts
+console.dir(await prisma.product.findMany({}), { depth: Infinity })
+```
+
+The `bitDepth` field has no content because you have only just added this field, so the query returns the default value of `8`.
+
+** Earlier versions **
+
+Before version 4.0.0, Prisma threw a P2032 error as follows:
+
+```
+Error converting field "bitDepth" of expected non-nullable
+type "int", found incompatible value of "null".
+```
+
 ## Finding records that contain composite types with <inlinecode>find</inlinecode> and <inlinecode>findMany</inlinecode>
 
 Records can be filtered by a composite type within the `where` operation.
@@ -119,18 +167,6 @@ const orders = await prisma.order.findMany({
 })
 ```
 
-You can also use a shorthand notation for this query, where you leave out the `is` and specify just the fields that you want to filter for:
-
-```ts
-const orders = await prisma.order.findMany({
-  where: {
-    shippingAddress: {
-      street: '555 Candy Cane Lane',
-    },
-  },
-})
-```
-
 Use `equals` to filter for orders which match on all fields in the shipping address:
 
 ```ts
@@ -142,6 +178,20 @@ const orders = await prisma.order.findMany({
         city: 'Wonderland',
         zip: '52337',
       },
+    },
+  },
+})
+```
+
+You can also use a shorthand notation for this query, where you leave out the `equals`:
+
+```ts
+const orders = await prisma.order.findMany({
+  where: {
+    shippingAddress: {
+      street: '555 Candy Cane Lane',
+      city: 'Wonderland',
+      zip: '52337',
     },
   },
 })
@@ -184,13 +234,24 @@ Use the `equals`, `isEmpty`, `every`, `some` and `none` operations to filter for
 - `none`: None of the items in the list can match the condition
 - `isSet` : Filter optional fields to include only results that have been set (either set to a value, or explicitly set to `null`). Setting this filter to `true` will exclude `undefined` results that are not set at all.
 
-For example, you can use `equals` to find products with photos that match specific URL paths:
+For example, you can use `equals` to find products with a specific list of photos (all `url`, `height` and `width` fields must match):
 
 ```ts
 const product = prisma.product.findMany({
   where: {
-    equals: {
-      photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
+    photos: {
+      equals: [
+        {
+          url: '1.jpg',
+          height: 200,
+          width: 100,
+        },
+        {
+          url: '2.jpg',
+          height: 200,
+          width: 100,
+        },
+      ],
     },
   },
 })
@@ -201,12 +262,23 @@ You can also use a shorthand notation for this query, where you leave out the `e
 ```ts
 const product = prisma.product.findMany({
   where: {
-    photos: [{ url: '1.jpg' }, { url: '2.jpg' }],
+    photos: [
+      {
+        url: '1.jpg',
+        height: 200,
+        width: 100,
+      },
+      {
+        url: '2.jpg',
+        height: 200,
+        width: 100,
+      },
+    ],
   },
 })
 ```
 
-The following example uses `isEmpty` to filter for products with no photos:
+Use `isEmpty` to filter for products with no photos:
 
 ```ts
 const product = prisma.product.findMany({
@@ -225,9 +297,9 @@ const product = prisma.product.findFirst({
   where: {
     photos: {
       some: {
-        { url: "2.jpg" },
-      }
-    }
+        url: '2.jpg',
+      },
+    },
   },
 })
 ```
@@ -239,15 +311,20 @@ const product = prisma.product.findFirst({
   where: {
     photos: {
       none: {
-        { url: "2.jpg" },
-      }
-    }
+        url: '2.jpg',
+      },
+    },
   },
 })
-
 ```
 
 ## Creating records with composite types using <inlinecode>create</inlinecode> and <inlinecode>createMany</inlinecode>
+
+<Admonition type="info">
+
+When you create a record with a composite type that has a unique restraint, note that MongoDB does not enforce unique values inside a record. [Learn more](#duplicate-values-in-unique-fields-of-composite-types).
+
+</Admonition>
 
 Composite types can be created within a `create` or `createMany` method using the `set` operation. For example, you can use `set` within `create` to create an `Address` composite type inside an `Order`:
 
@@ -294,6 +371,16 @@ For an optional type, like the `billingAddress`, you can also set the value to `
 ```ts
 const order = await prisma.order.create({
   data: {
+    // Normal relation
+    product: { connect: { id: 'some-object-id' } },
+    color: 'Red',
+    size: 'Large',
+    // Composite type
+    shippingAddress: {
+      street: '1084 Candycane Lane',
+      city: 'Silverlake',
+      zip: '84323',
+    },
     // Embedded optional type, set to null
     billingAddress: {
       set: null,
@@ -307,18 +394,18 @@ To model the case where an `product` contains a list of multiple `photos`, you c
 ```ts
 const product = await prisma.product.create({
   data: {
-    name: "Forest Runners",
+    name: 'Forest Runners',
     price: 59.99,
-    colors: ["Red", "Green"],
-    sizes: ["Small", "Medium", "Large"]
+    colors: ['Red', 'Green'],
+    sizes: ['Small', 'Medium', 'Large'],
     // New composite type
     photos: {
       set: [
-        { height: 100, width: 200, url: "1.jpg" },
-        { height: 100, width: 200, url: "2.jpg" }
-      ]
-    }
-  }
+        { height: 100, width: 200, url: '1.jpg' },
+        { height: 100, width: 200, url: '2.jpg' },
+      ],
+    },
+  },
 })
 ```
 
@@ -372,6 +459,12 @@ const product = await prisma.product.createMany({
 ```
 
 ## Changing composite types within <inlinecode>update</inlinecode> and <inlinecode>updateMany</inlinecode>
+
+<Admonition type="info">
+
+When you update a record with a composite type that has a unique restraint, note that MongoDB does not enforce unique values inside a record. [Learn more](#duplicate-values-in-unique-fields-of-composite-types).
+
+</Admonition>
 
 Composite types can be set, updated or removed within an `update` or `updateMany` method. The following section describes the operations available for updating a single type or multiple types at once, and gives examples of each.
 
@@ -480,7 +573,7 @@ For example, use `push` to add a new photo to the `photos` list:
 ```ts
 const product = prisma.product.update({
   where: {
-    id: 10,
+    id: '62de6d328a65d8fffdae2c18',
   },
   data: {
     photos: {
@@ -496,7 +589,7 @@ Use `updateMany` to update photos with a `url` of `1.jpg` or `2.png`:
 ```ts
 const product = prisma.product.update({
   where: {
-    id: 10,
+    id: '62de6d328a65d8fffdae2c18',
   },
   data: {
     photos: {
@@ -518,7 +611,7 @@ The following example uses `deleteMany` to delete all photos with a `height` of 
 ```ts
 const product = prisma.product.update({
   where: {
-    id: 10,
+    id: '62de6d328a65d8fffdae2c18',
   },
   data: {
     photos: {
@@ -533,6 +626,12 @@ const product = prisma.product.update({
 ```
 
 ## Upserting composite types with <inlinecode>upsert</inlinecode>
+
+<Admonition type="info">
+
+When you create or update the values in a composite type that has a unique restraint, note that MongoDB does not enforce unique values inside a record. [Learn more](#duplicate-values-in-unique-fields-of-composite-types).
+
+</Admonition>
 
 To create or update a composite type, use the `upsert` method. You can use the same composite operations as the `create` and `update` methods above.
 
@@ -570,7 +669,9 @@ For example, use `deleteMany` to delete all products with a `size` of `"Small"`.
 ```ts
 const deleteProduct = await prisma.product.deleteMany({
   where: {
-    sizes: ['Small'],
+    sizes: {
+      equals: 'Small',
+    },
   },
 })
 ```
@@ -604,3 +705,93 @@ const orders = await prisma.order.findMany({
   },
 })
 ```
+
+## Duplicate values in unique fields of composite types
+
+Be careful when you carry out any of the following operations on a record with a composite type that has a unique constraint. In this situation, MongoDB does not enforce unique values inside a record.
+
+- When you create the record
+- When you add data to the record
+- When you update data in the record
+
+If your schema has a composite type with a `@@unique` constraint, MongoDB prevents you from storing the same value for the constrained value in two or more of the records that contain this composite type. However, MongoDB does does not prevent you from storing multiple copies of the same field value in a single record.
+
+Note that you can [use Prisma relations to work around this issue](#use-prisma-relations-to-enforce-unique-values-in-a-record).
+
+For example, in the following schema, `MailBox` has a composite type, `addresses`, which has a `@@unique` constraint on the `email` field.
+
+```prisma
+type Address {
+  email String
+}
+
+model MailBox {
+  name       String
+  addresses  Address[]
+
+  @@unique([addresses.email])
+}
+```
+
+The following code creates a record with two identical values in `address`. MongoDB does not throw an error in this situation, and it stores `alice@prisma.io` in `addresses` twice.
+
+```ts
+await prisma.MailBox.createMany({
+  data: [
+    {
+      name: 'Alice',
+      addresses: {
+        set: [
+          {
+            address: 'alice@prisma.io', // Not unique
+          },
+          {
+            address: 'alice@prisma.io', // Not unique
+          },
+        ],
+      },
+    },
+  ],
+})
+```
+
+Note: MongoDB throws an error if you try to store the same value in two separate records. In our example above, if you try to store the email address `alice@prisma.io` for the user Alice and for the user Bob, MongoDB does not store the data and throws an error.
+
+### Use Prisma relations to enforce unique values in a record
+
+In the example above, MongoDB did not enforce the unique constraint on a nested address name. However, you can model your data differently to enforce unique values in a record. To do so, use Prisma [relations](/concepts/components/prisma-schema/relations) to turn the composite type into a collection. Set a relationship to this collection and place a unique constraint on the field that you want to be unique.
+
+In the following example, MongoDB enforces unique values in a record. There is a relation between `Mailbox` and the `Address` model. Also, the `name` field in the `Address` model has a unique constraint.
+
+```prisma
+model Address {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  mailbox   Mailbox? @relation(fields: [mailboxId], references: [id])
+  mailboxId String?  @db.ObjectId
+
+  @@unique([name])
+}
+
+model Mailbox {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  addresses Address[] @relation
+}
+```
+
+```ts
+await prisma.MailBox.create({
+  data: {
+    name: 'Alice',
+    addresses: {
+      create: [
+        { name: 'alice@prisma.io' }, // Not unique
+        { name: 'alice@prisma.io' }, // Not unique
+      ],
+    },
+  },
+})
+```
+
+If you run the above code, MongoDB enforces the unique constraint. It does not allow your application to add two addresses with the name `alice@prisma.io`.

@@ -1,6 +1,8 @@
 ---
-title: Customizing migrations
+title: Customize a migration file
+metaTitle: Customize a migration file
 metaDescription: How to edit a migration file before applying it to avoid data loss in production.
+tocDepth: 2
 ---
 
 <TopBlock>
@@ -12,9 +14,15 @@ Instead of `migrate dev`, [`db push`](/concepts/components/prisma-migrate/db-pus
 
 </Admonition>
 
-In some scenarios, you need to edit a migration before applying it. For example, to [change the direction of a 1-1 relation](#changing-the-direction-of-a-1-1-relation) (moving the foreign key from one side to another) without data loss, you need to move data as part of the migration - this SQL is not part of the default migration, and must be written by hand.
+In some scenarios, you need to edit a migration file before you apply it. For example, to [change the direction of a 1-1 relation](#example-change-the-direction-of-a-1-1-relation) (moving the foreign key from one side to another) without data loss, you need to move data as part of the migration - this SQL is not part of the default migration, and must be written by hand.
 
-To edit a migration file before applying it:
+This guide explains how to edit migration files and gives some examples of use cases where you may want to do this.
+
+</TopBlock>
+
+## How to edit a migration file
+
+To edit a migration file before applying it, the general procedure is the following:
 
 1. Make a schema change that requires custom SQL (for example, to preserve existing data)
 1. Create a draft migration using:
@@ -30,9 +38,7 @@ To edit a migration file before applying it:
    npx prisma migrate dev
    ```
 
-</TopBlock>
-
-## Renaming a field
+### Example: Rename a field
 
 By default, renaming a field in the schema results in a migration that will:
 
@@ -45,7 +51,7 @@ To actually **rename** a field and avoid data loss when you run the migration in
 model Profile {
   id       Int    @id @default(autoincrement())
   biograpy String
-  userId   Int
+  userId   Int    @unique
   user     User   @relation(fields: [userId], references: [id])
 }
 ```
@@ -59,7 +65,7 @@ To rename the `biograpy` field to `biography`:
      id        Int    @id @default(autoincrement())
      biograpy  String
      biography String
-     userId    Int
+     userId    Int    @unique
      user      User   @relation(fields: [userId], references: [id])
    }
    ```
@@ -102,7 +108,7 @@ To rename the `biograpy` field to `biography`:
 
 You can use the same technique to rename a `model` - edit the generated SQL to _rename_ the table rather than drop and re-create it.
 
-## Using the expand and contract pattern to evolve the schema without downtime
+### Example: Use the expand and contract pattern to evolve the schema without downtime
 
 Making schema changes to existing fields, e.g., renaming a field can lead to downtime. It happens in the time frame between applying a migration that modifies an existing field, and deploying a new version of the application code which uses the modified field.
 
@@ -119,7 +125,7 @@ With the _expand and contract_ pattern, renaming the field `bio` to `biography` 
      id        Int    @id @default(autoincrement())
      bio       String
      biography String
-     userId    Int
+     userId    Int    @unique
      user      User   @relation(fields: [userId], references: [id])
    }
    ```
@@ -145,7 +151,7 @@ With the _expand and contract_ pattern, renaming the field `bio` to `biography` 
      id        Int    @id @default(autoincrement())
      bio       String
      biography String
-     userId    Int
+     userId    Int    @unique
      user      User   @relation(fields: [userId], references: [id])
    }
    ```
@@ -160,7 +166,7 @@ Note that this pattern is applicable in any situation involving a change to a co
 
 To learn more, check out the Data Guide article on [the expand and contract pattern](https://www.prisma.io/dataguide/types/relational/expand-and-contract-pattern)
 
-## Changing the direction of a 1-1 relation
+### Example: Change the direction of a 1-1 relation
 
 To change the direction of a 1-1 relation:
 
@@ -172,7 +178,7 @@ To change the direction of a 1-1 relation:
      name      String
      posts     Post[]
      profile   Profile? @relation(fields: [profileId], references: [id])
-     profileId Int
+     profileId Int      @unique
    }
    
    model Profile {
@@ -196,7 +202,7 @@ To change the direction of a 1-1 relation:
 
    <cmdResult>
 
-   ```
+   ```code no-copy
    ⚠️  There will be data loss when applying the migration:
 
    • The migration will add a unique constraint covering the columns `[profileId]` on the table `User`. If there are existing duplicate values, the migration will fail.
@@ -213,6 +219,7 @@ To change the direction of a 1-1 relation:
   <tab>
 
     ```sql
+
     -- DropForeignKey
     ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
 
@@ -237,6 +244,7 @@ To change the direction of a 1-1 relation:
   <tab>
 
     ```sql
+
     -- DropForeignKey
     ALTER TABLE "Profile" DROP CONSTRAINT "Profile_userId_fkey";
 
