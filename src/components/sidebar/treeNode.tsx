@@ -217,7 +217,6 @@ const TreeNode = ({
   }, [isCollapsed])
 
   React.useEffect(() => {
-    console.log(SpecialPaths)
     if (lastLevel && isCurrent && hasExpandButton && collapsed[label]) setCollapsed(label, true)
   }, [])
 

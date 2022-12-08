@@ -163,4 +163,4 @@ You can find several ready-to-run examples that show how to implement a REST API
 | [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-express) | Backend only | REST API using Express and Prisma Client                         |
 | [`rest-fastify`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-fastify) | Backend only | REST API using Fastify and Prisma Client                         |
 | [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nextjs)   | Fullstack    | Next.js app (React) with a REST API                              |
-| [`rest-nuxtjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nuxtjs)    | Fullstack    | App with NuxtJs using Vue (frontend), Express, and Prisma Client |
+| [`rest-nuxtjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nuxtjs)   | Fullstack    | App with NuxtJs using Vue (frontend), Express, and Prisma Client |
