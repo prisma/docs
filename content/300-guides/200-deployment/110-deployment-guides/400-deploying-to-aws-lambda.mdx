@@ -8,36 +8,42 @@ metaDescription: 'Learn how to deploy Node.js and TypeScript applications based 
 
 This guide explains how to set up and deploy a serverless Node.js REST API to [AWS Lambda](https://aws.amazon.com/lambda/) with the Serverless Framework.
 
-AWS Lambda is part of the AWS cloud platform. It allows you to use the serverless paradigm to run your code without managing servers. To deploy a REST API to AWS Lambda, you must also use [S3](https://aws.amazon.com/s3/) to host the files and [API Gateway](https://aws.amazon.com/api-gateway/) to expose the API over HTTP.
+AWS Lambda is part of the AWS cloud platform. You can use it to run your code in a serverless environment. To deploy a REST API to AWS Lambda, you must also use [S3](https://aws.amazon.com/s3/) to host the files and [API Gateway](https://aws.amazon.com/api-gateway/) to expose the API over HTTP.
 
-The Serverless Framework simplifies the deployment to Lambda with a CLI that helps with workflow automation and AWS resource provisioning.
+The [Serverless Framework](https://www.serverless.com/) simplifies deployment to Lambda. It provides a CLI that helps with workflow automation and AWS resource provisioning.
 
-The REST API uses Prisma Client to fetch, create, and delete records from a database. Each function represents a REST resource endpoint and uses Prisma Client to handle database operations against a PostgreSQL database hosted on a platform such as Heroku.
+The REST API uses Prisma Client to fetch, create, and delete records from a database. Each function represents a REST resource endpoint and uses Prisma Client to handle database operations against a PostgreSQL database hosted on a platform such as Supabase.
 
-This guide shows how to deploy an API based on Prisma to AWS Lambda. The starting point is the [Prisma AWS example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/aws-lambda), which has a couple of REST endpoints preconfigured as serverless functions.
+**What REST API do we mean in the preceding paragraph? Do we mean the Serverless Framework or our own REST API? **
 
-</TopBlock>
+This guide shows how to deploy an API based on Prisma to AWS Lambda. The starting point is the [Prisma AWS example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/aws-lambda), which has example REST endpoints preconfigured as serverless functions.
 
-## If you deploy GraphQL servers to AWS Lambda
+<Admonition type="info">
 
-** TBD Change this to an admonition, and put this under a different heading **
+** If you deploy GraphQL servers to AWS Lambda **
 
-While this example uses REST, the same principles apply to a GraphQL server. The main difference is that you typically only need a single function to serve a GraphQL API.
+This example uses REST, but the same principles apply to a GraphQL server. The main difference is that you typically only need a single function to serve a GraphQL API.
 
-In that function, you must set the `context.callbackWaitsForEmptyEventLoop` of the [AWS Lambda Context Object](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html) to `false` as follows:
+In that function, set the `context.callbackWaitsForEmptyEventLoop` of the [AWS Lambda Context Object](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html) to `false` as follows:
 
 ```js
 exports.server = (event, context, cb) => {
-  // Set to false to send the response right away when the callback executes, instead of waiting for the Node.js event loop to be empty.
+  // Set to false to send the response right away
+  // when the callback executes. We don't wait
+  // for the Node.js event loop to be empty.
   context.callbackWaitsForEmptyEventLoop = false
 
   return lambda.graphqlHandler(event, context, cb)
 }
 ```
 
+</Admonition>
+
+</TopBlock>
+
 ## Prerequisites
 
-- a hosted PostgreSQL database and a URL from which your application can access it, such as `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` (you can use Heroku, which offers a [free plan](https://dev.to/prisma/how-to-setup-a-free-postgresql-database-on-heroku-1dc1)).
+- a hosted PostgreSQL database and a URL from which your application can access it, such as `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` (you can use Supabase, which offers a [free plan](https://dev.to/prisma/set-up-a-free-postgresql-database-on-supabase-to-use-with-prisma-3pk6)).
 - an [AWS](https://aws.amazon.com/) account and a corresponding [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) for programmatic access.
 - a [Serverless Framework CLI](https://www.serverless.com/framework/docs/getting-started/) installed.
 - PostgreSQL CLI `psql` installed.
@@ -45,21 +51,21 @@ exports.server = (event, context, cb) => {
 
 ## Prisma workflow
 
-The workflow depends on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, in other words the `schema.prisma` file.
+The workflow varies based on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema (your `schema.prisma` file).
 
 This guide starts with an empty database created with plain SQL and looks as follows:
 
-** TBW: I think this part is unclear - it isn't a set of prerequisite steps, and it doesn't mirror the structure of the page. **
+** TBW: I think this part is unclear - it isn't a set of prerequisite steps, and it doesn't mirror the structure of the page. Are we saying do these now, or that we'll do these below? **
 
 1. Define the database schema with SQL.
 1. Run `prisma db pull` locally, which introspects and populates the `schema.prisma` with models based on the database schema.
 1. Run `prisma generate` which generates Prisma Client based on the Prisma schema.
 
-## 1. Download the example
+## 1. Download the example project
 
 ### Steps
 
-Open your terminal window and navigate to a location of your choice. Create the directory that you want to hold the application code, then download the example code:
+Open a terminal window and navigate to a location of your choice. Use the following commands to create a directory for the project and download the example code:
 
 ```terminal
 mkdir prisma-aws-lambda
@@ -69,7 +75,7 @@ curl https://codeload.github.com/prisma/prisma-examples/tar.gz/latest | tar -xz 
 
 Now install the dependencies:
 
-```
+```terminal
 npm install
 ```
 
@@ -80,7 +86,6 @@ npm install
 Your directory contains the following files:
 
 ```terminal
-ls -1
 README.md
 aws-credentials
 handlers
@@ -91,6 +96,8 @@ prisma
 schema.sql
 serverless.yml
 ```
+
+**My setup is missing ---aws-credentials - let's see if we run into a problem due to that**
 
 ## 2. Set the DATABASE_URL environment variable locally
 
@@ -114,19 +121,15 @@ postgresql://janedoe:randompassword@yourpostgres.compute-1.amazonaws.com:5432/yo
 
 The Lambda functions need access to the `DATABASE_URL` environment variable so that they can access the database. You must define an `.env` file which the preconfigured `serverless-dotenv-plugin` uses to inject into the function runtime. The repository contains an `.env.example` example file to assist with this.
 
-Copy the following file:
-
-**TBW - copy it from/to where? **
+Enter the following command to copy `.env.example` to a new file, `.env`:
 
 ```
 cp .env.example .env
 ```
 
-Then open the .env file and set the `DATABASE_URL` with the database credentials from step 2.
+Open `.env` and set the `DATABASE_URL` to be the database credentials from step 2.
 
-> **Note:** When working with Git repositories, it's best practice to keep secrets, e.g. DATABASE_URL out of the repository. To do this, add your `.env` file to `.gitignore`. This guide only copies the source without creating a repository, so this is not necessary unless you initialize a repository.
-
-** TBD: I am not sure what the second sentence above means - need to clarify it **
+> **Note:** It's best practice to keep secrets, such as `DATABASE_URL`, out of your git repository. To do this, add your `.env` file to `.gitignore`. This guide copies the source and does not create a repository, so you only need to update `.gitignore` if you initialize a repository.
 
 ## 4. Create the database schema
 
