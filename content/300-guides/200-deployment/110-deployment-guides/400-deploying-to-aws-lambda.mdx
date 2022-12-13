@@ -84,9 +84,8 @@ npm install
 
 Your directory contains the following files:
 
-```terminal
+```terminal no-copy
 README.md
-aws-credentials
 handlers
 node_modules
 package-lock.json
@@ -95,8 +94,6 @@ prisma
 schema.sql
 serverless.yml
 ```
-
-**My setup is missing ---aws-credentials - let's see if we run into a problem due to that**
 
 ## 2. Set the DATABASE_URL environment variable locally
 
@@ -140,9 +137,15 @@ psql $DATABASE_URL -f schema.sql
 
 ### Result
 
-`psql $DATABASE_URL -c "\dt"` shows the following list of tables:
+Run the following command:
 
 ```terminal
+psql $DATABASE_URL -c "\dt"
+```
+
+It shows a list of tables similar to the following:
+
+```terminal no-copy
           List of relations
  Schema | Name    | Type  | Owner
  --------+---------+-------+-----------
@@ -167,36 +170,42 @@ Prisma introspects the database that is defined in the `datasource` block of the
 
 ### Result
 
-`prisma/schema.prisma` looks as follows (note: in the following example we reordered the models for better readability):
+The models in `prisma/schema.prisma` are as follows:
 
-```prisma file=schema.prisma
+```prisma file=schema.prisma no-copy
 model Post {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  title     String
+  title     String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
   content   String?
   published Boolean  @default(false)
-  User      User     @relation(fields: [authorId], references: [id]) // relation field
-  authorId  Int // relation scalar field
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Profile {
   id     Int     @id @default(autoincrement())
   bio    String?
-  userId Int     @unique // relation scalar field
-  User   User    @relation(fields: [userId], references: [id]) // relation field
+  userId Int     @unique
+  user   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model User {
   id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  Post    Post[] // relation field
-  Profile Profile? // relation field
+  name    String?  @db.VarChar(255)
+  email   String   @unique @db.VarChar(255)
+  posts   Post[]
+  profile Profile?
 }
 ```
 
-You can now run `prisma generate` to generate Prisma Client based on your new Prisma schema.
+### Generate Prisma Client
+
+Run `prisma generate` to generate Prisma Client based on your new Prisma schema:
+
+```terminal
+npx prisma generate
+```
 
 <Admonition type = "info">
 
@@ -206,16 +215,20 @@ When you make changes to your Prisma schema, invoke `prisma generate` to update 
 
 ### Rename the relation fields for easy access
 
-The generated `Post` and `Profile` fields in the `User` model are _virtual_. This means that they are _not backed by a foreign key in the database_). You can manually rename them in your Prisma schema, and this only affects the generated client. You typically do this to give your fields more meaningful names in the context of the relation.
+In the example schema, the generated `Post` and `Profile` fields in the `User` model are _virtual_. This means that they are _not backed by a foreign key in the database_). You can manually rename them in the schema to give them more meanginful names in the context of the relation. This only affects the generated client.
 
-In the resulting Prisma schema there are two types of relation fields:
+In the Prisma schema there are two types of relation fields:
 
-- Relation fields: identified by having a model name as the type, such as the `User` field in the `Post` model. You can rename a relation field to better fit its usage, such as `User` -> `author`.
+- Relation fields: these have a model name as the type, such as the `User` field in the `Post` model. You can rename a relation field to better fit its usage, such as `User` -> `author`.
 - [Relation scalar fields](/concepts/components/prisma-schema/relations): these store the foreign key, such as the `authorId` field in the `Post` model. You cannot rename a relation scalar field, because it must match the corresponding field in the database.
 
-Prisma Client uses the names of the relation fields to access the corresponding relations. For example, the following example uses a relation field to fetch a specific `Post` and its associated `User` object in the above schema:
+Prisma Client uses the names of the relation fields to access the corresponding relations.
 
-```js
+Note that there [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions-1) for model fields <span class="api"></span>:
+
+The following example uses a relation field to fetch a specific `Post` and its associated `User` object:
+
+```js no-copy
 const postAuthor = await prisma.post.findUnique({
   where: { id: 1 },
   include: { User: true },
@@ -224,14 +237,14 @@ const postAuthor = await prisma.post.findUnique({
 
 If you rename the `User` field in the `Post` model to `author`, you can access it as follows:
 
-```js
+```js no-copy
 const postAuthor = await prisma.post.findUnique({
   where: { id: 1 },
   include: { author: true },
 })
 ```
 
-Based on that logic, rename the relation fields to follow the [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions-1) <span class="api"></span>:
+Rename the relation fields as follows.
 
 ```prisma file=schema.prisma
 model Post {
@@ -507,7 +520,7 @@ package:
 
 When you've updated your `serverless.yml` file, redeploy your application. To do so, run `serverless deploy`. The deployment output shows you that the correct Prisma Engine is packaged and distributed, as follows:
 
-```
+```code no-copy
 Serverless: Copy prisma schema for app...
 Serverless: Generate prisma client for app...
 Serverless: Remove unused prisma engine:
@@ -543,4 +556,10 @@ Congratulations! You have successfully deployed the API to AWS Lambda.
 
 For more insight into Prisma Client's API, look at the function handlers in the `handlers/` folder.
 
-Generally, when you use a FaaS (function as a service) environment to interact with a database, it's beneficial to pool DB connections for performance reasons. This is because every function invocation can result in a new connection to the database (this is not a problem with a constantly running node.js server). For more information on some of the solutions, refer to the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
+<Admonition type="info">
+
+**A note on connection pooling**
+
+Generally, when you use a FaaS (function as a service) environment to interact with a database, every function invocation can result in a new connection to the database. This is not a problem with a constantly running node.js server. Therefore, it is beneficial to pool DB connections to get better performance. For some solutions to this issue, see the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
+
+</Admonition>
