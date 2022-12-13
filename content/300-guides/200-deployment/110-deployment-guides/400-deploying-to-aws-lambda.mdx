@@ -166,11 +166,19 @@ Introspect the database with the following Prisma CLI command:
 npx prisma db pull
 ```
 
+** Let's rewrite this to use npx prisma db push - to push the schema to the database**
+
+** Need to change connection string to use port Use port 5432, not the default 6543 - this is a supabase/prisma issue IF you use migrate - if we're using push, we probably don't need to **
+
+** Rewrite to use prisma migrate npx prisma migrate dev --name init. -> npx prisma migrate dev <- worked for me This creates a new SQL migration frile in the prisma/migrations irectory and runs the miration file against the database. Then it creates the database. We do this above - to create the database, then we can check for the tables**
+
 Prisma introspects the database that is defined in the `datasource` block of the Prisma schema. It populates the Prisma schema with models corresponding to the database tables.
 
 ### Result
 
 The models in `prisma/schema.prisma` are as follows:
+
+**TBD: In the example repo, the Post>User field is now author -> this breaks our example later where we change the name. Whose demo is it? Need to check with them - discussion with Niko - see notes later **
 
 ```prisma file=schema.prisma no-copy
 model Post {
@@ -180,7 +188,7 @@ model Post {
   content   String?
   published Boolean  @default(false)
   authorId  Int
-  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User      User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Profile {
@@ -215,16 +223,21 @@ When you make changes to your Prisma schema, invoke `prisma generate` to update 
 
 ### Rename the relation fields for easy access
 
+** This whole section can come out if we're using migration, not introspection **
+** OTOH, if we are using introspection, then the example project field names are already "fixed", so we will need to resolve that **
+
+**TBW: this is the explanation**
+
 In the example schema, the generated `Post` and `Profile` fields in the `User` model are _virtual_. This means that they are _not backed by a foreign key in the database_). You can manually rename them in the schema to give them more meanginful names in the context of the relation. This only affects the generated client.
 
 In the Prisma schema there are two types of relation fields:
 
-- Relation fields: these have a model name as the type, such as the `User` field in the `Post` model. You can rename a relation field to better fit its usage, such as `User` -> `author`.
+- Relation fields: these have a model name as the type, such as the `User` field in the `Post` model. You can rename a relation field to better fit its usage, such as `user` -> `author`.
 - [Relation scalar fields](/concepts/components/prisma-schema/relations): these store the foreign key, such as the `authorId` field in the `Post` model. You cannot rename a relation scalar field, because it must match the corresponding field in the database.
 
 Prisma Client uses the names of the relation fields to access the corresponding relations.
 
-Note that there [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions-1) for model fields <span class="api"></span>:
+Note that there [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions-1) for model fields.
 
 The following example uses a relation field to fetch a specific `Post` and its associated `User` object:
 
@@ -244,16 +257,28 @@ const postAuthor = await prisma.post.findUnique({
 })
 ```
 
+**TBW: this is the action - need to make this division clearer**
+
+\*\*Also - field issues in example project
+
+- Post: User -> author
+- Profile: User-->user
+- User:
+  - Post-->posts
+  - Profile-->profile
+
+\*\*
+
 Rename the relation fields as follows.
 
 ```prisma file=schema.prisma
 model Post {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  title     String
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  title     String   @db.VarChar(255)
   content   String?
   published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id]) // renamed from `User` -> `author`
+  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction) // renamed from `User` -> `author`
   authorId  Int // relation scalar field
 }
 
@@ -261,23 +286,29 @@ model Profile {
   id     Int     @id @default(autoincrement())
   bio    String?
   userId Int     @unique // relation scalar field
-  user   User    @relation(fields: [userId], references: [id]) // renamed from `User` -> `user`
+  user   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)) // renamed from `User` -> `user`
 }
 
 model User {
   id      Int      @id @default(autoincrement())
   email   String   @unique
-  name    String?
+  name    String?  @unique @db.VarChar(255)
   posts   Post[] // renamed from `Post` -> `posts`
   profile Profile? // renamed from `Profile` -> `profile`
 }
+```
+
+Run `prisma generate` again to regenerate Prisma Client based on the new state of the schema:
+
+```terminal
+npx prisma generate
 ```
 
 ## 6. Set the AWS Access key as an environment variable
 
 In order for the Serverless Framework to provision the AWS resources and deploy your application, you must configure the access key.
 
-There are different ways to get the access key, depending on whether you use your personal account or create a special IAM user for the Serverless Framework (this approach is recommended for security reasons because it allows you to set granular permissions). To get an access key for your account, follow the [AWS guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
+The method you use to get the access key depends on whether you use your personal account or create a special IAM user for the Serverless Framework. We recommend that you create a special IAm user because it allows you to set granular permissions. To get an access key for your account, follow the [AWS guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
 
 ** TBD: I am not sure if the above link applies to a personal account, an IAM user, or both - the above needs to be clarified **
 
@@ -286,8 +317,6 @@ When you have the _Access key ID_ and a _Secret access key_, set them with the f
 ```
 serverless config credentials --provider aws --key AWS_ACCESS_KEY_ID  --secret AWS_SECRET_ACCESS_KEY
 ```
-
-** TBD: change placeholders to be consistent - note the case disparity **
 
 ## 7. Deploy the app
 
@@ -299,9 +328,11 @@ To deploy your project, use the following command:
 serverless deploy
 ```
 
+**TBD: I installed serverless as part of my project with npm. therefore I run `npx serverless deploy` Need to decide whether to update the above command **
+
 Serverless creates the AWS resources and uploads your code, then outputs the service information. For example:
 
-```
+```code no-copy
 Service Information
 service: prisma-aws-lambda-example
 stage: dev
@@ -328,7 +359,7 @@ layers:
 
 ### Result
 
-Call the status endpoint as follows:
+Call the status endpoint as follows. Replace `UNIQUE_IDENTIFIER` with the corresponding part of the URL from the output you got from `serverless deploy`.
 
 ```terminal
 curl https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/
@@ -348,7 +379,7 @@ With the API base URL: `https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaw
 | `POST /users` | Create a single `users` in the database                                                                                  | `handlers/create-user.js` |
 | `GET /posts`  | Fetch all `posts` and their related `authors`                                                                            | `handlers/posts.js`       |
 
-To call the API, you can use curl:
+To call the API, you can use curl. Again, replace `UNIQUE_IDENTIFIER` with the corresponding part of the URL from the output you got from `serverless deploy`.
 
 ```
 curl -v https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/seed
