@@ -43,7 +43,7 @@ const NewsLetterWrapper = styled.div`
       font-weight: normal;
 
       &::placeholder {
-        color: ${(p) => p.theme.colors.gray500};
+        color: ${(p) => p.theme.colors.gray[500]};
       }
     }
     .email-icon {
@@ -61,7 +61,7 @@ const NewsLetterWrapper = styled.div`
       height: 32px;
       circle {
         transition: 0.2s fill ease;
-        fill: ${(p) => p.theme.colors.green500};
+        fill: ${(p) => p.theme.colors.green[500]};
       }
       path {
         transition: 0.2s stroke ease;
@@ -71,10 +71,10 @@ const NewsLetterWrapper = styled.div`
         cursor: default;
 
         circle {
-          fill: ${(p) => p.theme.colors.gray300};
+          fill: ${(p) => p.theme.colors.gray[300]};
         }
         path {
-          stroke: ${(p) => p.theme.colors.gray600};
+          stroke: ${(p) => p.theme.colors.gray[600]};
         }
       }
     }
