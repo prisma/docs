@@ -146,6 +146,11 @@ const siteConfig = {
             url: 'concepts/components/preview-features',
             codeBlock: false,
           },
+          {
+            text: 'Prisma Language Tools',
+            url: 'concepts/components/prisma-language-tools',
+            codeBlock: false,
+          },
         ],
       },
       {
