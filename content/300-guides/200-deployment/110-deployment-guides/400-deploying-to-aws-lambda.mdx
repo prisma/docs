@@ -134,39 +134,15 @@ Prisma populates the database with the models that are defined in `schema.prisma
 
 ### Result
 
-** TBW: this is not the result - instead, ask them to open prisma studio and inspect the database, or inspect it directly in Supabase. They should have three tbales - Post, Profile, and User **
-** so we can remove the schema list below . In Supabase, go to their table editor. They can run npx prisma studio to view the data npx prisma studio **
+Use Prisma Studio to inspect your database and confirm that the tables are set up according to the schema.
 
-The models in `prisma/schema.prisma` are as follows:
+Open Prisma Studio:
 
-**TBD: In the example repo, the Post>User field is now author -> this breaks our example later where we change the name. Whose demo is it? Need to check with them - discussion with Niko - see notes later **
-
-```prisma file=schema.prisma no-copy
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  content   String?
-  published Boolean  @default(false)
-  authorId  Int
-  User      User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  userId Int     @unique
-  user   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model User {
-  id      Int      @id @default(autoincrement())
-  name    String?  @db.VarChar(255)
-  email   String   @unique @db.VarChar(255)
-  posts   Post[]
-  profile Profile?
-}
+```terminal
+npx prisma studio
 ```
+
+Your database has three models: `Post`, `Profile`, and `User`.
 
 ### Generate Prisma Client
 
@@ -178,94 +154,9 @@ npx prisma generate
 
 <Admonition type = "info">
 
-When you make changes to your Prisma schema, invoke `prisma generate` to update your Prisma Client API.
+Whenever you make changes to your Prisma schema, invoke `prisma generate` to update your Prisma Client API.
 
 </Admonition>
-
-### Rename the relation fields for easy access
-
-** This whole section can come out if we're using migration, not introspection **
-** OTOH, if we are using introspection, then the example project field names are already "fixed", so we will need to resolve that **
-
-** So we can remove this section **
-
-**TBW: this is the explanation**
-
-In the example schema, the generated `Post` and `Profile` fields in the `User` model are _virtual_. This means that they are _not backed by a foreign key in the database_). You can manually rename them in the schema to give them more meanginful names in the context of the relation. This only affects the generated client.
-
-In the Prisma schema there are two types of relation fields:
-
-- Relation fields: these have a model name as the type, such as the `User` field in the `Post` model. You can rename a relation field to better fit its usage, such as `user` -> `author`.
-- [Relation scalar fields](/concepts/components/prisma-schema/relations): these store the foreign key, such as the `authorId` field in the `Post` model. You cannot rename a relation scalar field, because it must match the corresponding field in the database.
-
-Prisma Client uses the names of the relation fields to access the corresponding relations.
-
-Note that there [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions-1) for model fields.
-
-The following example uses a relation field to fetch a specific `Post` and its associated `User` object:
-
-```js no-copy
-const postAuthor = await prisma.post.findUnique({
-  where: { id: 1 },
-  include: { User: true },
-})
-```
-
-If you rename the `User` field in the `Post` model to `author`, you can access it as follows:
-
-```js no-copy
-const postAuthor = await prisma.post.findUnique({
-  where: { id: 1 },
-  include: { author: true },
-})
-```
-
-**TBW: this is the action - need to make this division clearer**
-
-\*\*Also - field issues in example project
-
-- Post: User -> author
-- Profile: User-->user
-- User:
-  - Post-->posts
-  - Profile-->profile
-
-\*\*
-
-Rename the relation fields as follows.
-
-```prisma file=schema.prisma
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  title     String   @db.VarChar(255)
-  content   String?
-  published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction) // renamed from `User` -> `author`
-  authorId  Int // relation scalar field
-}
-
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  userId Int     @unique // relation scalar field
-  user   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)) // renamed from `User` -> `user`
-}
-
-model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?  @unique @db.VarChar(255)
-  posts   Post[] // renamed from `Post` -> `posts`
-  profile Profile? // renamed from `Profile` -> `profile`
-}
-```
-
-Run `prisma generate` again to regenerate Prisma Client based on the new state of the schema:
-
-```terminal
-npx prisma generate
-```
 
 ## 5. Set the AWS Access key as an environment variable
 
