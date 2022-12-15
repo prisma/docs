@@ -336,7 +336,7 @@ MongoDB does not support composite IDs, which means you cannot identify a model 
 
 </Admonition>
 
-The following examples demonstrate how to retrieve records by a compound ID or unique identifier, defined by [`@@id`](/reference/api-reference/prisma-schema-reference#id-2) <span class="api"></span> or [`@@unique`](/reference/api-reference/prisma-schema-reference#unique-1) <span class="api"></span>.
+The following examples demonstrate how to retrieve records by a compound ID or unique identifier, defined by [`@@id`](/reference/api-reference/prisma-schema-reference#id-1) <span class="api"></span> or [`@@unique`](/reference/api-reference/prisma-schema-reference#unique-1) <span class="api"></span>.
 
 The following Prisma model defines a compound ID:
 
@@ -464,13 +464,13 @@ Prisma Client supports [filtering](filtering-and-sorting) on record fields and r
 The following query returns all `User` records with an email that ends in `"prisma.io"`:
 
 ```ts
-  const users = await prisma.user.findMany({
-    where: {
-      email: {
-        endsWith: "prisma.io"
-      }
+const users = await prisma.user.findMany({
+  where: {
+    email: {
+      endsWith: 'prisma.io',
     },
-  })
+  },
+})
 ```
 
 #### Filter by multiple field values
@@ -775,6 +775,12 @@ const upsertUser = await prisma.user.upsert({
 </cmdResult>
 </CodeWithResult>
 
+<Admonition type="info">
+
+From version 4.6.0, Prisma carries out upserts with database native SQL commands where possible. [Learn more](/reference/api-reference/prisma-client-reference#database-upserts).
+
+</Admonition>
+
 ### Update a number field
 
 Use [atomic number operations](/reference/api-reference/prisma-client-reference#atomic-number-operations) <span class="api"></span> to update a number field **based on its current value** - for example, increment or multiply. The following query increments the `views` and `likes` fields by `1`:
@@ -930,7 +936,7 @@ await prisma.$transaction([deleteProfile, deletePosts, deleteUsers])
 
 If you are comfortable working with raw SQL you can perform a `TRUNCATE` on a table by utilizing [`$executeRawUnsafe`](/concepts/components/prisma-client/raw-database-access#executerawunsafe).
 
-In the following examples, the first tab shows how to perform a `TRUNCATE` on a Postgres database by using a `$queryRaw` look up that maps over the table and `TRUNCATES` each table.
+In the following examples, the first tab shows how to perform a `TRUNCATE` on a Postgres database by using a `$queryRaw` look up that maps over the table and `TRUNCATES` all tables in a single query.
 
 The second tab shows performing the same function but with a MySQL database. In this instance the constraints must be removed before the `TRUNCATE` can be executed, before being reinstated once finished. The whole process is run as a `$transaction`
 
@@ -943,16 +949,16 @@ const tablenames = await prisma.$queryRaw<
   Array<{ tablename: string }>
 >`SELECT tablename FROM pg_tables WHERE schemaname='public'`
 
-for (const { tablename } of tablenames) {
-  if (tablename !== '_prisma_migrations') {
-    try {
-      await prisma.$executeRawUnsafe(
-        `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
-      )
-    } catch (error) {
-      console.log({ error })
-    }
-  }
+const tables = tablenames
+  .map(({ tablename }) => tablename)
+  .filter((name) => name !== '_prisma_migrations')
+  .map((name) => `"public"."${name}"`)
+  .join(', ')
+
+try {
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} CASCADE;`)
+} catch (error) {
+  console.log({ error })
 }
 ```
 

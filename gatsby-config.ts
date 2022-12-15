@@ -2,7 +2,6 @@ import type { GatsbyConfig } from 'gatsby'
 import docsConfig from './config'
 
 let plugins: any = [
-  'gatsby-plugin-react-helmet',
   'gatsby-plugin-image',
   'gatsby-plugin-sharp',
   'gatsby-transformer-sharp',
@@ -13,9 +12,6 @@ let plugins: any = [
     resolve: `gatsby-plugin-mdx`,
     options: {
       extensions: ['.mdx', '.md'],
-      // defaultLayouts: {
-      //   default: require.resolve('./src/templates/docs.tsx'),
-      // },
       gatsbyRemarkPlugins: [
         'gatsby-remark-sectionize',
         'gatsby-remark-normalize-paths',
@@ -49,15 +45,18 @@ let plugins: any = [
           options: {
             // Do not surface links to these pages as broken:
             exceptions: [
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
               '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgres',
               '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgres',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
+              '/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb',
               '/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb',
             ],
           },
         },
@@ -89,6 +88,9 @@ let plugins: any = [
         `/getting-started/setup-prisma/start-from-scratch-prisma-migrate`,
         `/getting-started/setup-prisma/start-from-scratch-sql`,
       ],
+      resolvePagePath: (page: any) => {
+        return page.path.replace(/\/$/, '')
+      },
     },
   },
   {
@@ -144,7 +146,7 @@ if (process.env.INDEX_ALGOLIA === 'true') {
 
 const config: GatsbyConfig = {
   pathPrefix: process.env.ADD_PREFIX === 'true' ? docsConfig.gatsby.pathPrefix : '/',
-  //trailingSlash: 'never',
+  // trailingSlash: 'never',
   siteMetadata: {
     pathPrefix: docsConfig.gatsby.pathPrefix,
     title: docsConfig.siteMetadata.title,
