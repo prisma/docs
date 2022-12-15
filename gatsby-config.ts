@@ -29,7 +29,7 @@ let plugins: any = [
           },
         },
         {
-          resolve: `gatsby-remark-images`,
+          resolve: `@bonobolabs/gatsby-remark-images-custom-widths`,
           options: {
             disableBgImageOnAlpha: true,
           },
