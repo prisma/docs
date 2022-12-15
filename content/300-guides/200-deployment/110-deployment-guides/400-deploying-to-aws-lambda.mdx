@@ -12,24 +12,20 @@ AWS Lambda is part of the AWS cloud platform. You can use it to run your code in
 
 The [Serverless Framework](https://www.serverless.com/) simplifies deployment to Lambda. It provides a CLI that helps with workflow automation and AWS resource provisioning.
 
-The REST API uses Prisma Client to fetch, create, and delete records from a database. Each function represents a REST resource endpoint and uses Prisma Client to handle database operations against a PostgreSQL database hosted on a platform such as Supabase.
-
-** say something like: This guide covers how to deploy a rest API that uses Prisma Client to... **
-
-This guide shows how to deploy an API based on Prisma to AWS Lambda. The starting point is the [Prisma AWS example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/aws-lambda), which has example REST endpoints preconfigured as serverless functions.
+This guide uses the [Prisma AWS example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/aws-lambda), which has example REST endpoints preconfigured as serverless functions. The Prisma AWS example uses Prisma Client to fetch, create, and delete records from a database. Each function represents a REST resource endpoint and uses Prisma Client to handle database operations against a PostgreSQL database hosted on a platform such as Supabase.
 
 <Admonition type="info">
 
 ** If you deploy GraphQL servers to AWS Lambda **
 
-This example uses REST, but the same principles apply to a GraphQL server. The main difference is that you typically only need a single function to serve a GraphQL API.
-
-In that function, set the `context.callbackWaitsForEmptyEventLoop` of the [AWS Lambda Context Object](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html) to `false` as follows:
+This example uses REST, but the same principles apply to a GraphQL server.<br /><br />The main difference is that you typically only need a single function to serve a
+GraphQL API. In that function, set the `context.callbackWaitsForEmptyEventLoop` of the [AWS Lambda Context Object](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html) to `false` as follows:
 
 ```js
 exports.server = (event, context, cb) => {
-  // Set to false to send the response right away when the callback executes.
-  // Don't wait for the Node.js event loop to be empty.
+  // Set to false to send the response right away when
+  // the callback executes. Don't wait for the Node.js
+  // event loop to be empty.
   context.callbackWaitsForEmptyEventLoop = false
 
   return lambda.graphqlHandler(event, context, cb)
@@ -50,23 +46,11 @@ exports.server = (event, context, cb) => {
 
 ## Prisma workflow
 
-The workflow varies based on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema (your `schema.prisma` file).
+In this guide, we create a new database from scratch. Prisma bases this on the Prisma schema (your `schema.prisma` file).
 
-This guide starts with an empty database created with plain SQL and looks as follows:
+You will run `prisma db push` locally to create the database based on the Prisma schema.
 
-** TBW: I think this part is unclear - it isn't a set of prerequisite steps, and it doesn't mirror the structure of the page. Are we saying do these now, or that we'll do these below? **
-** Ensure it's clear that we're saying what you will do in this guide - it's not steps to do right now **
-** Need to write this up to use prisma db push - and have a note about using migrate in future See discussion [here](https://prisma-company.slack.com/archives/C02JV0K2Q31/p1670942902655379)**
-
-So the new workflow will be:
-
-1. Run `prisma db push` locally, which creates the database based on the Prisma schema.
-
-** To be removed: **
-
-1. Define the database schema with SQL.
-1. Run `prisma db pull` locally, which introspects and populates the `schema.prisma` with models based on the database schema.
-1. Run `prisma generate` which generates Prisma Client based on the Prisma schema.
+** TBD: add a note about using migrate in future See discussion [here](https://prisma-company.slack.com/archives/C02JV0K2Q31/p1670942902655379)**
 
 ## 1. Download the example project
 
@@ -107,90 +91,45 @@ serverless.yml
 
 ### Steps
 
-Set the `DATABASE_URL` environment variable locally as follows. This lets you create the database schema and ensures that Prisma can access the database to introspect.
+Set the `DATABASE_URL` environment variable locally as follows. This lets you create the database schema and ensures that Prisma can access the database.
+
+> **Note:** If your connection URL contains any special characters, then you must [percentage encode them](/reference/database-reference/connection-urls#special-characters).
 
 ```terminal
-export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
+export DATABASE_URL="postgres://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
 ```
 
-** TBD: I used postgres:// as part of my string - if it worked, change the above **
+> **Note:** You need the `DATABASE_URL` environment variable for the subsequent steps in this guide. Set it in all terminal sessions related to this project.
 
-> **Note:** you need the `DATABASE_URL` environment variable for the subsequent steps in this guide. Set it in all terminal sessions related to this project.
-
-You need to replace the uppercase placeholders with your database credentials. For example:
+Replace the uppercase placeholders with your database credentials. For example:
 
 ```terminal
-postgresql://janedoe:randompassword@yourpostgres.compute-1.amazonaws.com:5432/yourdbname
+postgres://janedoe:randompassword@yourpostgres.supabase.co:6543/yourdbname
 ```
 
-## 3. Set the DATABASE_URL in `.env`
+## 3. Set the DATABASE_URL in <inlinecode>.env</inlinecode>
 
-The Lambda functions need access to the `DATABASE_URL` environment variable so that they can access the database. You must define an `.env` file which the preconfigured `serverless-dotenv-plugin` uses to inject into the function runtime. The repository contains an `.env.example` example file to assist with this.
+The Lambda functions need the `DATABASE_URL` environment variable to access the database. You must define an `.env` file. The preconfigured `serverless-dotenv-plugin` uses this file to inject into the function runtime.
 
-Enter the following command to copy `.env.example` to a new file, `.env`:
+The repository contains an `.env.example` example file to help with this. Enter the following command to copy `.env.example` to a new file, `.env`:
 
 ```terminal
 cp .env.example .env
 ```
 
-Open `.env` and set the `DATABASE_URL` to the database credentials from step 2.
+Open `.env` and set the `DATABASE_URL` to your database credentials from step 2.
 
 > **Note:** It's best practice to keep secret information, such as `DATABASE_URL`, out of your git repository. To do this, add your `.env` file to `.gitignore`. This guide copies the source and does not create a repository, so you only need to update `.gitignore` if you initialize a repository.
 
-** TBW: add a note here about conneciton URL formats (because you might need to do percentage encoding), and link to https://www.prisma.io/docs/reference/database-reference/connection-urls **
-
-## 4. Create the database schema
-
-** TBD: I'm not going to do this - if this works, we can remove this step - and renumber subsequent steps. We might want an explanation here though that the schema is already define in schema.prisma **
-
-To create your database schema, run `schema.sql` from the example code with the following command:
-
-```terminal
-psql $DATABASE_URL -f schema.sql
-```
-
-### Result
-
-Run the following command:
-
-```terminal
-psql $DATABASE_URL -c "\dt"
-```
-
-It shows a list of tables similar to the following:
-
-```terminal no-copy
-          List of relations
- Schema | Name    | Type  | Owner
- --------+---------+-------+-----------
- public | Post    | table | janedoe
- public | Profile | table | janedoe
- public | User    | table | janedoe
-```
-
-Congratulations, you have successfully created the database schema!
-
-## 5. Introspect the database
+## 4. Push the Prisma schema to the database
 
 ### Steps
-
-** TBW: change to use prisma db push **
 
 ```terminal
 npx prisma db push
 ```
 
-Introspect the database with the following Prisma CLI command:
-
-```terminal
-npx prisma db pull
-```
-
-** I got invalid port: let's check **
-
-** Let's rewrite this to use npx prisma db push - to push the schema to the database**
-
-** Need to change connection string to use port Use port 5432, not the default 6543 - this is a supabase/prisma issue IF you use migrate - if we're using push, we probably don't need to **
+** Need to change connection string to use port Use port 5432, not the default 6543 - this is a supabase/prisma issue IF you use migrate - if we're using push, we don't need to **
 
 ** Obsolete note: Rewrite to use prisma migrate npx prisma migrate dev --name init. -> npx prisma migrate dev <- worked for me This creates a new SQL migration frile in the prisma/migrations irectory and runs the miration file against the database. Then it creates the database. We do this above - to create the database, then we can check for the tables**
 
@@ -198,9 +137,14 @@ npx prisma db pull
 
 Prisma introspects the database that is defined in the `datasource` block of the Prisma schema. It populates the Prisma schema with models corresponding to the database tables.
 
-** Rewrite the above if we use prisma db push **
+** need to rewrite the above **
+
+** Have a note about push vs. migrate - and link to a doc that explains the difference: /concepts/components/prisma-migrate/db-push#choosing-db-push-or-prisma-migrate For this guide, we use db push. In a production situation, you would use migrate. **
 
 ### Result
+
+** TBW: this is not the result - instead, ask them to open prisma studio and inspect the database, or inspect it directly in Supabase. They should have three tbales - Post, Profile, and User **
+** so we can remove the schema list below . In Supabase, go to their table editor. They can run npx prisma studio to view the data npx prisma studio **
 
 The models in `prisma/schema.prisma` are as follows:
 
@@ -251,6 +195,8 @@ When you make changes to your Prisma schema, invoke `prisma generate` to update 
 
 ** This whole section can come out if we're using migration, not introspection **
 ** OTOH, if we are using introspection, then the example project field names are already "fixed", so we will need to resolve that **
+
+** So we can remove this section **
 
 **TBW: this is the explanation**
 
@@ -330,7 +276,7 @@ Run `prisma generate` again to regenerate Prisma Client based on the new state o
 npx prisma generate
 ```
 
-## 6. Set the AWS Access key as an environment variable
+## 5. Set the AWS Access key as an environment variable
 
 In order for the Serverless Framework to provision the AWS resources and deploy your application, you must configure the access key.
 
@@ -340,11 +286,11 @@ The method you use to get the access key depends on whether you use your persona
 
 When you have the _Access key ID_ and a _Secret access key_, set them with the following command:
 
-```
+```terminal
 serverless config credentials --provider aws --key AWS_ACCESS_KEY_ID  --secret AWS_SECRET_ACCESS_KEY
 ```
 
-## 7. Deploy the app
+## 6. Deploy the app
 
 ### Steps
 
@@ -393,7 +339,7 @@ curl https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/
 
 This returns `{"up":true}`
 
-## 8. Test your deployed REST API
+## 7. Test your deployed REST API
 
 With the API base URL: `https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/`, you can test the API's endpoints:
 
