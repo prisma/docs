@@ -114,19 +114,18 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
                   let isDiff = false
                   let diffSymbol = ''
-
                   if (
                     (line[0] &&
                       line[0].content.length &&
                       (line[0].content[0] === '+' ||
-                        line[0].content[0] === '-' ||
+                        (line[0].content[0] === '-' && line[0].content[1] !== '-') ||
                         line[0].content[0] === '|' ||
                         line[0].content[0] === '✎')) ||
                     (line[0] &&
                       line[0].content === '' &&
                       line[1] &&
                       (line[1].content === '+' ||
-                        line[1].content === '-' ||
+                        (line[1].content === '-' && line[2].content !== '-') ||
                         line[1].content === '|' ||
                         line[1].content === '✎'))
                   ) {
