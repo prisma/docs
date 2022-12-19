@@ -6,7 +6,7 @@ metaDescription: 'Learn how to deploy Node.js and TypeScript applications based 
 
 <TopBlock>
 
-This guide explains how to set up and deploy a serverless Node.js REST API to [AWS Lambda](https://aws.amazon.com/lambda/) with the [Serverless Framework](https://www.serverless.com/framework/).
+This guide explains how to set up and deploy a serverless Node.js REST API to [AWS Lambda](https://aws.amazon.com/lambda/) with the Serverless Framework.
 
 AWS Lambda is part of the AWS cloud platform. You can use it to run your code in a serverless environment. To deploy a REST API to AWS Lambda, you must also use [S3](https://aws.amazon.com/s3/) to host the files and [API Gateway](https://aws.amazon.com/api-gateway/) to expose the API over HTTP.
 
@@ -248,20 +248,186 @@ The `serverless.yml` configuration file contains the endpoint and function confi
 
 </Admonition >
 
-## Summary
+## Notes
 
-Congratulations! You have successfully deployed the API to AWS Lambda.
+### Binary targets in <inlinecode>schema.prisma</inlinecode>
 
-For more insight into Prisma Client's API, look at the function handlers in the `handlers/` folder.
+The Prisma schema contains the following in the generator block:
 
-<Admonition type="info">
+```prisma
+binaryTargets = ["native", "rhel-openssl-1.0.x"]
+```
 
-**A note on connection pooling**<br /><br />Generally, when you use a FaaS (function as a service) environment to interact
-with a database, every function invocation can result in a new connection to the
-database. This is not a problem with a constantly running node.js server.
-Therefore, it is beneficial to pool DB connections to get better performance.
-For some solutions to this issue, see the [connection management guide for
-serverless
-environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
+This is necessary because the local runtime is different from the Lambda runtime. Add the `binaryTarget` to make the compatible Prisma Engine binary available. [Learn more](/reference/api-reference/prisma-schema-reference#binarytargets-options).
 
-</Admonition>
+### Package Pattern in <inlinecode>serverless.yml</inlinecode>
+
+The Serverless configuration file includes a package pattern that excludes all Prisma Engine binaries except for the one relevant for the Lambda runtime. This means that when Serverless packages your app for upload, it includes only one binary. This ensures the packaged archive is as small as possible.
+
+```code file=serverless.yml no-copy
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
+```
+
+However, if you use `serverless-webpack`, then you cannot use this method. See [Deployment with serverless webpack](#deployment-with-serverless-webpack) for details.
+
+### Lambdas with arm64 architectures
+
+Lambda functions that use [arm64 architectures (AWS Graviton2 processor)](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html#foundation-arch-adv) must use an `arm64` precompiled binary.
+
+In the `generator` block of your `schema.prisma` file, add the following:
+
+```prisma file=schema.prisma
+binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
+```
+
+Update the Serverless configuration file to package the `arm64` binary, as follows:
+
+```code file=serverless.yml
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-linux-arm64-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
+```
+
+### Deployment with <inlinecode>serverless-webpack</inlinecode>
+
+If you use `serverless-webpack`, then you can use the [serverless-webpack-prisma](https://github.com/danieluhm2004/serverless-webpack-prisma) plugin without any additional configuration. `serverless-webpack-prisma` does the following:
+
+1. Copies your `schema.prisma` with the Webpack plugin.
+2. Runs the `prisma generate` command. This means that there is no need to add the command to the webpack options separately.
+3. Packages the correct Prisma engine used in the Lambda. This can save more than 40mb of capacity.
+
+<details><summary>If you do not use webpack yet</summary>
+
+Install the dependencies as follows:
+
+```sh
+npm install -D webpack serverless-webpack webpack-node-externals
+```
+
+If your project uses TypeScript, install `ts-loader`:
+
+```sh
+npm install -D ts-loader
+```
+
+Create a `webpack.config.js` file in the project root directory, and paste in the following configuration:
+
+```javascript file=webpack.config.js
+/* eslint-disable @typescript-eslint/no-var-requires */
+const path = require('path')
+const nodeExternals = require('webpack-node-externals')
+const slsw = require('serverless-webpack')
+const { isLocal } = slsw.lib.webpack
+
+module.exports = {
+  target: 'node',
+  stats: 'normal',
+  entry: slsw.lib.entries,
+  externals: [nodeExternals()],
+  mode: isLocal ? 'development' : 'production',
+  optimization: { concatenateModules: false },
+  resolve: { extensions: ['.js'] },
+  output: {
+    libraryTarget: 'commonjs',
+    filename: '[name].js',
+    path: path.resolve(__dirname, '.webpack'),
+  },
+}
+```
+
+If you use TypeScript, insert the following configuration inside `exports`:
+
+```javascript file=webpack.config.js
+// ...initial config
+module.exports = {
+  // ...initial config
+  resolve: { extensions: ['.js', '.ts'] },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  // ...initial config
+}
+```
+
+Refer to the [Serverless Webpack documentation](https://www.serverless.com/plugins/serverless-webpack) for additional configuration.
+
+</details>
+
+To install the dev dependency, use the following command:
+
+```sh
+npm install -D serverless-webpack-prisma serverless
+```
+
+In `serverless.yml`, add `serverless-webpack` to the plugins list, as follows:
+
+```yaml file=serverless.yml
+plugins:
+  - serverless-webpack
+  - serverless-webpack-prisma
+
+custom:
+  webpack:
+    includeModules: true
+```
+
+`serverless-webpack-prisma` automatically runs `prisma generate` so that you do not need to use the webpack script option separately as shown below.
+
+```yaml file=serverless.yml
+custom:
+  webpack:
+    packagerOptions:
+      scripts:
+        - prisma generate
+```
+
+`serverless-webpack-prisma` removes the unnecessary dependencies and packages the correct Prisma engine for your Lambda. Therefore, delete it in the `package.patterns` configuration in your `serverless.yml` file.
+
+```yaml file=serverless.yml
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
+```
+
+Now redeploy your application. To do so, run `serverless deploy`. The deployment output shows you that the correct Prisma Engine is packaged and distributed, as follows:
+
+```code no-copy
+Serverless: Copy prisma schema for app...
+Serverless: Generate prisma client for app...
+Serverless: Remove unused prisma engine:
+Serverless: - node_modules/.prisma/client/libquery_engine-darwin.dylib.node
+Serverless: - node_modules/@prisma/engines/introspection-engine-darwin
+Serverless: - node_modules/@prisma/engines/libquery_engine-darwin.dylib.node
+Serverless: - node_modules/@prisma/engines/migration-engine-darwin
+Serverless: - node_modules/@prisma/engines/prisma-fmt-darwin
+Serverless: Copying existing artifacts...
+```
+
+### Remove unneeded artifacts without the Serverless Framework
+
+If you do not use the Serverless Framework, you can use the following method to remove any unneeded artifacts.
+
+1. Create a zip script that only zips the files that your project needs. [Example script](https://github.com/prisma/ecosystem-tests/blob/dev/platforms-serverless/lambda/zip.sh).
+
+2. Upload the zip. For example, to do this with the [AWS CLI](https://aws.amazon.com/cli/), you might use a command similar to the following:
+
+   ```terminal
+   aws lambda update-function-code --function-name my-function --zip-file "fileb://lambda.zip"
+   ```
