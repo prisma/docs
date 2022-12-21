@@ -118,6 +118,7 @@ module.exports = async function plugin(
       const brokenLinks = linksForPath.filter((link) => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
+
         if (prefixedExceptions.includes(key)) {
           // do not test this link as it is on the list of exceptions
           return false
@@ -125,8 +126,8 @@ module.exports = async function plugin(
 
         const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
         const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
-        const headings = headingsMap[key]
-
+        const keyToLook = `${key}${key.endsWith('/') ? '' : '/'}`
+        const headings = headingsMap[keyToLook]
         if (headings) {
           if (hasHash) {
             const id = link.tranformedUrl.slice(hashIndex + 1)
