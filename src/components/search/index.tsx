@@ -7,7 +7,7 @@ import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
 import qs from 'qs'
-import { navigate } from 'gatsby'
+import { navigate } from '@reach/router'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -132,7 +132,6 @@ const Results = connectStateResults(
 const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) => {
-  console.log(location.pathname)
   const newUrl = searchState
     ? `${
         location.pathname === '/docs'
