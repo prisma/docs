@@ -186,12 +186,14 @@ export default function Search({ hitsStatus, location }: any) {
   }, [showHits, query])
 
   React.useEffect(() => {
+    console.log('here')
     console.log(location, getQueryParams())
     // if(location.pathname === prefix && getQueryParams().query !== '') {
 
     // }
     setSearchState(urlToSearchState(location))
     setQuery(searchState.query)
+    console.log(searchState)
   }, [location])
 
   const incrementIndex = () => {
