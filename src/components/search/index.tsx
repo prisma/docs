@@ -136,8 +136,8 @@ const searchStateToUrl = (location: any, searchState: any) => {
   const newUrl = searchState
     ? `${
         location.pathname === '/docs'
-          ? location.pathname.replace('docs', '')
-          : location.pathname.replace('/docs/', '')
+          ? location.pathname.replace('docs/', '')
+          : location.pathname.replace('/docs', '')
       }${createURL(searchState)}`
     : ``
   console.log(newUrl)
