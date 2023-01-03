@@ -134,10 +134,12 @@ const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) => {
   const newUrl = searchState
-    ? `${location.pathname.replace('/docs', '')}${createURL(searchState)}`
+    ? `${
+        location.pathname !== '/docs' ? location.pathname.replace('/docs', '') : location.pathname
+      }${createURL(searchState)}`
     : ``
   console.log(withPrefix(newUrl), location.pathname)
-  return withPrefix(newUrl)
+  return location.pathname === '/docs' ? newUrl : withPrefix(newUrl)
 }
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
