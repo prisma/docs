@@ -1,82 +1,84 @@
 ---
-title: 'Deploying to AWS Lambda'
-metaTitle: 'Deploying to AWS Lambda'
-metaDescription: 'Learn how to deploy Node.js and TypeScript applications that are using Prisma Client to AWS Lambda.'
+title: 'Deploy to AWS Lambda'
+metaTitle: 'Deploy to AWS Lambda'
+metaDescription: 'Learn how to deploy Node.js and TypeScript applications based on Prisma Client to AWS Lambda.'
 ---
 
 <TopBlock>
 
-In this guide, you will set up and deploy a serverless Node.js REST API to [AWS Lambda](https://aws.amazon.com/lambda/) using the Serverless Framework.
+This guide explains how to set up and deploy a serverless Node.js REST API to [AWS Lambda](https://aws.amazon.com/lambda/) with the [Serverless Framework](https://www.serverless.com/framework/).
 
-AWS Lambda is part of the AWS cloud platform and allows you to use the serverless paradigm to run your code without managing servers. To deploy a REST API to AWS Lambda, you need to make use of several additional AWS services, namely [S3](https://aws.amazon.com/s3/) to host the files and [API Gateway](https://aws.amazon.com/api-gateway/) to expose the API over HTTP.
+AWS Lambda is part of the AWS cloud platform. You can use it to run your code in a serverless environment. To deploy a REST API to AWS Lambda, you must also use [S3](https://aws.amazon.com/s3/) to host the files and [API Gateway](https://aws.amazon.com/api-gateway/) to expose the API over HTTP.
 
-The Serverless Framework simplifies the deployment to Lambda with a CLI that helps with workflow automation and AWS resource provisioning.
+The Serverless Framework simplifies deployment to Lambda. It provides a CLI that helps with workflow automation and AWS resource provisioning.
 
-The REST API will use Prisma Client to handle fetching, creating, and deleting records from a database. Specifically, each function will represent a REST resource endpoint and use Prisma Client to handle database operations against a PostgreSQL database (e.g. hosted on Heroku).
+This guide uses the [Prisma AWS example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/aws-lambda), which has example REST endpoints preconfigured as serverless functions. The Prisma AWS example uses Prisma Client to fetch, create, and delete records from a database. Each function represents a REST resource endpoint and uses Prisma Client to handle database operations against a PostgreSQL database. In this guide, we explain how to host your database on Supabase, but you can use a platform of your choice.
 
-The focus of this guide is showing how an API based on Prisma can be deployed to AWS Lambda. The starting point will be the [Prisma AWS example](https://github.com/prisma/prisma-examples/tree/latest/deployment-platforms/aws-lambda) which has a couple of REST endpoints preconfigured as serverless functions.
+<details><summary>If you deploy GraphQL servers to AWS Lambda</summary>
 
-> Throughout the guide you'll find various **checkpoints** that enable you to validate whether you performed the steps correctly.
-
-</TopBlock>
-
-## A note on deploying GraphQL servers to AWS Lambda
-
-While the example uses REST, the same principles apply to a GraphQL server, with the main difference being that you typically only need a single function to serve a GraphQL API.
-
-In that function, the `context.callbackWaitsForEmptyEventLoop` of the [AWS Lambda Context Object](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html) needs to be set to `false` as follows:
+This example uses REST, but the same principles apply to a GraphQL server.<br /><br />The main difference is that you typically only need a single function to serve a
+GraphQL API. In that function, set the `context.callbackWaitsForEmptyEventLoop` of the [AWS Lambda Context Object](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html) to `false` as follows:
 
 ```js
 exports.server = (event, context, cb) => {
-  // Set to false to send the response right away when the callback executes, instead of waiting for the Node.js event loop to be empty.
+  // Set to false to send the response right away when
+  // the callback executes. Don't wait for the Node.js
+  // event loop to be empty.
   context.callbackWaitsForEmptyEventLoop = false
 
   return lambda.graphqlHandler(event, context, cb)
 }
 ```
 
+</details>
+
+</TopBlock>
+
 ## Prerequisites
 
-- Hosted PostgreSQL database and a URL from which it can be accessed, e.g. `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` (you can use Heroku, which offers a [free plan](https://dev.to/prisma/how-to-setup-a-free-postgresql-database-on-heroku-1dc1)).
-- [AWS](https://aws.amazon.com/) account and a corresponding [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) for programmatic access.
-- [Serverless Framework CLI](https://www.serverless.com/framework/docs/getting-started/) installed.
-- Node.js installed.
+- A hosted PostgreSQL database and a URL from which your application can access it, such as `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` (you can use Supabase, which offers a [free plan](https://dev.to/prisma/set-up-a-free-postgresql-database-on-supabase-to-use-with-prisma-3pk6)).
+- An [AWS](https://aws.amazon.com/) account and a corresponding [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) for programmatic access.
+- A [Serverless Framework CLI](https://www.serverless.com/framework/docs/getting-started/) installed.
 - PostgreSQL CLI `psql` installed.
+- Node.js installed.
 
 ## Prisma workflow
 
-Prisma supports different workflows depending on whether you integrate with an existing database or create a new one from scratch. Regardless of the workflow, Prisma relies on the Prisma schema, i.e. `schema.prisma` file.
+In this guide, you do the following:
 
-This guide starts with an empty database created with plain SQL and looks as follows:
+- Use Prisma and a Prisma schema file (`schema.prisma`) to create a schema for the database
+- Use `prisma db push` to push this Prisma schema to the database
 
-1. Define the database schema using SQL.
-1. Run `prisma db pull` locally which will introspect and populate the `schema.prisma` with models based on the database schema.
-1. Run `prisma generate` which will generate Prisma Client based on the Prisma schema.
+In this guide, you use `prisma db push` to push the initial Prisma schema to the database. For a real project, you would typically start with a development database and use `prisma db push` as we suggest here. You can continue with `prisma migrate dev`, which generates a migration script for each change that you make to the Prisma schema. With multiple migration scripts, you build a migration history for your database and that makes it easy to later apply the changes to a production database with `prisma migrate deploy`. For more information, see [Prisma Migrate](/concepts/components/prisma-migrate). <br></br><br></br>If you use Supabase to host your database, when you use `prisma migrate` you must set up a shadow database. For details, see the [Supabase docs](https://supabase.com/docs/guides/integrations/prisma).
 
-## 1. Download the example
+## 1. Download the example project
 
-Open your terminal and navigate to a location of your choice. Create the directory that will hold the application code and download the example code:
+To start, download the example project. The project includes the configuration that you need to complete this guide.
 
-```terminal
-mkdir prisma-aws-lambda
-cd prisma-aws-lambda
-curl https://codeload.github.com/prisma/prisma-examples/tar.gz/latest | tar -xz --strip=3 prisma-examples-latest/deployment-platforms/aws-lambda/
-```
+### Steps
 
-After downloading the example code, install the dependencies:
+1. Open a terminal window and navigate to a location of your choice. Use the following commands to create a directory for the project and download the example code:
 
-```
-npm install
-```
+   ```terminal
+   mkdir prisma-aws-lambda
+   cd prisma-aws-lambda
+   curl https://codeload.github.com/prisma/prisma-examples/tar.gz/latest | tar -xz --strip=3 prisma-examples-latest/deployment-platforms/aws-lambda/
+   ```
+
+2. Install the dependencies:
+
+   ```terminal
+   npm install
+   ```
 
 <!-- tar strip folder is a concatenation of the REPOSITORY-BRANCH/REF, e.g. prisma-examples-latest -->
 
-**Checkpoint:** `ls -1` should show:
+### Result
 
-```terminal
-ls -1
+Your directory contains the following files:
+
+```terminal no-copy
 README.md
-aws-credentials
 handlers
 node_modules
 package-lock.json
@@ -86,181 +88,115 @@ schema.sql
 serverless.yml
 ```
 
-## 2. Set the DATABASE_URL environment variable locally
+## 2. Set the DATABASE_URL in <inlinecode>.env</inlinecode>
 
-Set the `DATABASE_URL` environment variable locally so you can create the database schema and Prisma can access the database to introspect:
+The Lambda functions need the `DATABASE_URL` environment variable to access the database. You must define an `.env` file. The preconfigured `serverless-dotenv-plugin` uses this file to inject into the function runtime.
 
-```terminal
-export DATABASE_URL="postgresql://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
-```
+The repository contains an `.env.example` example file to help with this.
 
-> **Note:** you will need the `DATABASE_URL` environment variable for the subsequent steps. Set it in all terminal sessions related to this project.
+### Steps
 
-You need to replace the uppercase placeholders with your database credentials, e.g.:
+1. Enter the following command to copy `.env.example` to a new file, `.env`:
 
-```terminal
-postgresql://janedoe:randompassword@yourpostgres.compute-1.amazonaws.com:5432/yourdbname
-```
+   ```terminal
+   cp .env.example .env
+   ```
 
-## 3. Set the DATABASE_URL in `.env`
+2. Open `.env` and set the `DATABASE_URL` to your database credentials. The format is as follows:
 
-For the Lambda functions to access the database, they need access to the `DATABASE_URL` environment variable.
+   ```file
+   DATABASE_URL="postgres://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
+   ```
 
-For this, you need to define a `.env` file which the preconfigured `serverless-dotenv-plugin` will use to inject into the function runtime.
+   Replace the uppercase placeholders with your database credentials. For example:
 
-The repository contains a `.env.example` example file to assist with this.
+   ```file
+   DATABASE_URL="postgres://janedoe:randompassword@yourpostgres.supabase.co:6543/yourdbname"
+   ```
 
-Copy the file:
+   > **Note:** If your connection URL contains any special characters, then you must [percentage encode them](/reference/database-reference/connection-urls#special-characters).
 
-```
-cp .env.example .env
-```
+> **Note:** It's best practice to keep secret information, such as `DATABASE_URL`, out of your git repository. To do this, add your `.env` file to `.gitignore`. This guide copies the source and does not create a repository, so you only need to update `.gitignore` if you initialize a repository.
 
-Then open the .env file and set the `DATABASE_URL` with the same value as in step 2.
+## 3. Push the Prisma schema to the database
 
-> **Note:** When working with Git repositories, it's best practice to keep secrets, e.g. DATABASE_URL out of the repository. This is typically done by adding a line to `.gitignore` to ignore the `.env` file. This guide only copies the source without creating a repository, so this is not necessary unless you initialize a repository.
+`prisma db push` takes the models and attributes that you define in `schema.prisma` and pushes them to the database.
 
-## 4. Create the database schema
-
-To create your database schema, run the `schema.sql` from the example code as follows:
+### Steps
 
 ```terminal
-psql $DATABASE_URL -f schema.sql
+npx prisma db push
 ```
 
-**Checkpoint:** `psql $DATABASE_URL -c "\dt"` should show the list of tables:
+This command also generates Prisma Client based on your Prisma schema.
+
+### Result
+
+Prisma applies the models that are defined in `schema.prisma` to the database.
+
+### What's next
+
+Use Prisma Studio to inspect your database and confirm that the tables are set up according to the schema.
+
+Open Prisma Studio:
 
 ```terminal
-          List of relations
- Schema | Name    | Type  | Owner
- --------+---------+-------+-----------
- public | Post    | table | janedoe
- public | Profile | table | janedoe
- public | User    | table | janedoe
+npx prisma studio
 ```
 
-Congratulations, you have successfully created the database schema.
+Your database has three models: `Post`, `Profile`, and `User`.
 
-## 5. Introspect the database
+## 4. Set your AWS Access key as an environment variable
 
-Introspect the database with the Prisma CLI:
+In order for the Serverless Framework to provision the AWS resources and deploy your application, you must configure your access key.
+
+The method you use to get the access key depends on whether you use your personal account or create a special IAM user for the Serverless Framework. We recommend that you create a special IAM user because it lets you set granular permissions. To get an access key for your account, follow the [AWS guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
+
+When you have the _Access key ID_ and a _Secret access key_, set them with the following command. In the following command, replace the placeholders with your _Access key ID_ and _Secret access key_.
+
+If you installed the Serverless Framework CLI globally, then use the following command:
 
 ```terminal
-npx prisma db pull
-```
-
-Prisma will introspect the database defined in the `datasource` block of the Prisma schema and populate the Prisma schema with models corresponding to the database tables.
-
-**Checkpoint:** `prisma/schema.prisma` should look as follows (note that the fields on the models have been reordered for better readability):
-
-```prisma file=schema.prisma
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  User      User     @relation(fields: [authorId], references: [id]) // relation field
-  authorId  Int // relation scalar field
-}
-
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  userId Int     @unique // relation scalar field
-  User   User    @relation(fields: [userId], references: [id]) // relation field
-}
-
-model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  Post    Post[] // relation field
-  Profile Profile? // relation field
-}
-```
-
-You can now run `prisma generate` to generate the Prisma Client based on your new Prisma schema. Whenever you make changes to your Prisma schema in the future, you manually need to invoke `prisma generate` in order to accommodate the changes in your Prisma Client API.
-
-### Rename the relation fields for easy access
-
-Because both the generated `Post` and `Profile` fields in the `User` model are _virtual_ (i.e. they're _not backed by a foreign key in the database_), you can manually rename them in your Prisma schema. This will only affect the generated client and is typically done so that they have a more meaningful name in the context of the relation.
-
-In the resulting Prisma schema there are two types of relation fields:
-
-- Relation fields: identified by having a Model name as the type, e.g. the `User` field in the `Post` model. Can be renamed to better fit its usage, e.g. `User` -> `author`.
-- [Relation scalar fields](/concepts/components/prisma-schema/relations): these are used to store the foreign key, e.g. the `authorId` field in the `Post` model. Cannot be rename as it must match the field in the database.
-
-The names of the relation fields are used in the client to access those relations for example, fetching a specific `Post` and its associated `User` object would as follows with the Prisma schema above:
-
-```js
-const postAuthor = await prisma.post.findUnique({
-  where: { id: 1 },
-  include: { User: true },
-})
-```
-
-If you rename the `User` field in the `Post` model to `author`, you'll be able to access it as follows:
-
-```js
-const postAuthor = await prisma.post.findUnique({
-  where: { id: 1 },
-  include: { author: true },
-})
-```
-
-Based on that logic, rename the relation fields to better adhere to the [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions-1) <span class="api"></span>:
-
-```prisma file=schema.prisma
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id]) // renamed from `User` -> `author`
-  authorId  Int // relation scalar field
-}
-
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  userId Int     @unique // relation scalar field
-  user   User    @relation(fields: [userId], references: [id]) // renamed from `User` -> `user`
-}
-
-model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  posts   Post[] // renamed from `Post` -> `posts`
-  profile Profile? // renamed from `Profile` -> `profile`
-}
-```
-
-## 6. Set the AWS Access key as an environment variable
-
-In order for the Serverless Framework to provision the AWS resources and deploy your application, you need to configure the access key.
-
-There are different ways to get the access key, depending on whether you create you use your personal account or create a special IAM user for the Serverless Framework (this approach is recommended for security reasons as it allows to set granular permissions). To get an access key for your account, follow the [AWS guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
-
-Once you have the _Access key ID_ and a _Secret access key_. Set them with the following command:
-
-```
 serverless config credentials --provider aws --key AWS_ACCESS_KEY_ID  --secret AWS_SECRET_ACCESS_KEY
 ```
 
-## 7. Deploy the app
+If you installed the Serverless Framework CLI in your project, then use the following command instead:
 
-Your project is now ready for deployment:
-
+```terminal
+npx serverless config credentials --provider aws --key AWS_ACCESS_KEY_ID  --secret AWS_SECRET_ACCESS_KEY
 ```
+
+### Result
+
+If the configuration is successful, you see the following result in the terminal.
+
+```terminal
+✔ Profile "default" has been configured
+```
+
+## 5. Deploy your project
+
+You have finished the configuration, so you can now deploy your project with `serverless deploy`.
+
+### Steps
+
+If you installed the Serverless Framework CLI globally, then use the following command:
+
+```terminal
 serverless deploy
 ```
 
-Serverless will create the AWS resources and upload your code, and output the service information:
+If you installed the Serverless Framework CLI in your project, then use the following command instead:
 
+```terminal
+npx serverless deploy
 ```
+
+### Result
+
+Serverless creates the AWS resources and uploads your code, then outputs the service information. For example:
+
+```code no-copy
 Service Information
 service: prisma-aws-lambda-example
 stage: dev
@@ -285,17 +221,23 @@ layers:
   None
 ```
 
-**Checkpoint:** Call the status endpoint
+### What's next
+
+You can now test the deployment with a call to the status endpoint. Use the following command and replace `UNIQUE_IDENTIFIER` with the corresponding part of the URL from the output you got from `serverless deploy`.
 
 ```terminal
 curl https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/
 ```
 
-The call should return: `{"up":true}`
+This returns the following:
 
-## 8. Test your deployed REST API
+```terminal no-copy
+{"up":true}
+```
 
-With the API base URL: `https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/`, you can test the API's endpoints:
+## 6. Test your deployed REST API
+
+With the API base URL `https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/`, you can test the API's endpoints:
 
 | Endpoint      | Description                                                                                                              | Implementation            |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
@@ -305,194 +247,55 @@ With the API base URL: `https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaw
 | `POST /users` | Create a single `users` in the database                                                                                  | `handlers/create-user.js` |
 | `GET /posts`  | Fetch all `posts` and their related `authors`                                                                            | `handlers/posts.js`       |
 
-To call the API, you can use curl:
+To call the API, you can use curl. For example, the following command calls the `seed` endpoint. Replace `UNIQUE_IDENTIFIER` with the corresponding part of the URL from the output of `serverless deploy` in step 6.
 
-```
+```terminal
 curl -v https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/seed
 ```
 
-## Notes
+<Admonition type = "info">
 
-### `serverless.yml`
+The `serverless.yml` configuration file contains the endpoint and function configuration. You can update this file to add or change endpoints. For more AWS specific configuration information, see the AWS provider configuration in the [Serverless Framework documentation](https://serverless.com/framework/docs/providers/aws/guide/functions/).
 
-The `serverless.yml` configuration file is where the endpoint and function configuration lives. You can update this file to add or change endpoints. For more AWS specific configuration, check out the AWS provider configuration in the [Serverless Framework Docs](https://serverless.com/framework/docs/providers/aws/guide/functions/).
+</Admonition >
 
-### Binary targets in `schema.prisma`
+## Deploy only the required files
 
-The Prisma schema contains the following in the generator block:
+To reduce your deployment footprint, you can change your deployment process so that you only upload the files that your application needs. The method for doing so depends on whether you use the Serverless Framework or not.
 
-```
-binaryTargets = ["native", "rhel-openssl-1.0.x"]
-```
+### If you use the Serverless Framework
 
-This is necessary as the local runtime is different to the Lambda runtime. Adding the `binaryTarget` will ensure that the compatible Prisma Engine binary is available.
+You can use the Serverless configuration file to [deploy only the binary that your project needs](/guides/deployment/deployment-guides/use-prisma-with-serverless-framework#reduce-the-package-footprint).
 
-### Package Pattern in `serverless.yml`
+### If you do not use the Serverless Framework
 
-The Serverless configuration file includes a package pattern that excludes all Prisma Engine binaries but the one relevant for the Lambda runtime, so only 1 binary will be included when Serverless packages your app for upload:
+If you do not use the Serverless Framework to deploy your project, you can use the following method to remove any unneeded files.
 
-```
-package:
-  patterns:
-    - '!node_modules/.prisma/client/libquery_engine-*'
-    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
-```
+1. Create a zip script that only zips the files that your project needs. [Example script](https://github.com/prisma/ecosystem-tests/blob/dev/platforms-serverless/lambda/zip.sh).
 
-This ensures the packaged archive is as small as possible.
+2. Upload the zip. For example, to do this with the [AWS CLI](https://aws.amazon.com/cli/), you might use a command similar to the following:
 
-But, if you are using `serverless-webpack`, you cannot use that method.
-
-### Lambdas with arm64 architectures
-
-Lambda functions that use [arm64 architectures (AWS Graviton2 processor)](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html#foundation-arch-adv) must use an `arm64` precompiled binary.
-
-In the `generator` block of your `schema.prisma` file, add the following:
-
-```
-binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
-```
-
-Update the Serverless configuration file to package the `arm64` binary:
-
-```
-package:
-  patterns:
-    - '!node_modules/.prisma/client/libquery_engine-*'
-    - 'node_modules/.prisma/client/libquery_engine-linux-arm64-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
-```
-
-### Deployment using `serverless-webpack`
-
-If you are using `serverless-webpack`, you can use the [serverless-webpack-prisma](https://github.com/danieluhm2004/serverless-webpack-prisma) plugin without any additional configuration. `serverless-webpack-prisma` does the following:
-
-1. Copies your `schema.prisma` via the Webpack plugin
-2. Runs the `prisma generate` command. This means there is no need to add the command to the webpack options separately
-3. Packages the correct Prisma engine used in the Lambda. This can save more than 40mb of capacity.
-
-<details><summary>If you are not using webpack yet</summary>
-
-Install dependencies.
-
-```sh
-npm install -D webpack serverless-webpack webpack-node-externals
-```
-
-Install`ts-loader` if your project uses TypeScript.
-
-```sh
-npm install -D ts-loader
-```
-
-Next, create a `webpack.config.js` file in the project root directory and copy and paste the following configuration.
-
-```javascript file=webpack.config.js
-/* eslint-disable @typescript-eslint/no-var-requires */
-const path = require('path')
-const nodeExternals = require('webpack-node-externals')
-const slsw = require('serverless-webpack')
-const { isLocal } = slsw.lib.webpack
-
-module.exports = {
-  target: 'node',
-  stats: 'normal',
-  entry: slsw.lib.entries,
-  externals: [nodeExternals()],
-  mode: isLocal ? 'development' : 'production',
-  optimization: { concatenateModules: false },
-  resolve: { extensions: ['.js'] },
-  output: {
-    libraryTarget: 'commonjs',
-    filename: '[name].js',
-    path: path.resolve(__dirname, '.webpack'),
-  },
-}
-```
-
-In the case of TypeScript, we also insert the following configuration inside `exports`:
-
-```javascript file=webpack.config.js
-// ...initial config
-module.exports = {
-  // ...initial config
-  resolve: { extensions: ['.js', '.ts'] },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        loader: 'ts-loader',
-        exclude: /node_modules/,
-      },
-    ],
-  },
-  // ...initial config
-}
-```
-
-Refer to the [Serverless Webpack documentation](https://www.serverless.com/plugins/serverless-webpack) for additional configuration.
-
-</details>
-
-Install the dev dependency by entering the following command:
-
-```sh
-npm install -D serverless-webpack-prisma serverless
-```
-
-Update your `serverless.yml` by adding the `serverless-webpack` to the plugins list.
-
-```yaml file=serverless.yml
-plugins:
-  - serverless-webpack
-  - serverless-webpack-prisma
-
-custom:
-  webpack:
-    includeModules: true
-```
-
-`serverless-webpack-prisma` automatically runs `prisma generate` so you don't need to use the webpack script option separately as shown below.
-
-```yaml file=serverless.yml
-custom:
-  webpack:
-    packagerOptions:
-      scripts:
-        - prisma generate
-```
-
-`serverless-webpack-prisma` removes the unnecessary dependencies and packages the right Prisma engine to be used in your Lambda. Therefore, delete it in the `package.patterns` configuration in your `serverless.yml` file.
-
-```yaml file=serverless.yml
-package:
-  patterns:
-    - '!node_modules/.prisma/client/libquery_engine-*'
-    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
-```
-
-Once you've updated your `serverless.yml` file, redeploy your application by running `serverless deploy`. The deployment output will show you the correct Prisma Engine is packaged and distributed.
-
-```
-Serverless: Copy prisma schema for app...
-Serverless: Generate prisma client for app...
-Serverless: Remove unused prisma engine:
-Serverless: - node_modules/.prisma/client/libquery_engine-darwin.dylib.node
-Serverless: - node_modules/@prisma/engines/introspection-engine-darwin
-Serverless: - node_modules/@prisma/engines/libquery_engine-darwin.dylib.node
-Serverless: - node_modules/@prisma/engines/migration-engine-darwin
-Serverless: - node_modules/@prisma/engines/prisma-fmt-darwin
-Serverless: Copying existing artifacts...
-```
+   ```terminal
+   aws lambda update-function-code --function-name my-function --zip-file "fileb://lambda.zip"
+   ```
 
 ## Summary
 
 Congratulations! You have successfully deployed the API to AWS Lambda.
 
-For more insight into Prisma Client's API, look at the function handlers in the `handlers/` folder.
+For more information about how to use the Serverless Framework with Prisma projects, see [use Prisma with the Serverless Framework](/guides/deployment/deployment-guides/use-prisma-with-serverless-framework).
 
-Generally, when using a FaaS (function as a service) environment to interact with a database, it's beneficial to pool DB connections for performance reasons. This is because every function invocation may result in a new connection to the database (this is not a problem with a constantly running node.js server). For more information on some of the solutions, refer to the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
+For more insight into the Prisma Client API, look at the function handlers in the `handlers/` folder.
+
+<Admonition type="info">
+
+**A note on connection pooling**<br /><br />Generally, when you use a FaaS (function as a service) environment to interact
+with a database, every function invocation can result in a new connection to the
+database. This is not a problem with a constantly running node.js server.
+Therefore, it is beneficial to pool DB connections to get better performance.
+You can use the [Data Proxy](/data-platform/data-proxy) as a solution to this issue.
+For other solutions, see the [connection management guide for
+serverless
+environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
+
+</Admonition>
