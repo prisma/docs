@@ -9,7 +9,7 @@ import CustomSearchBox from './input'
 import qs from 'qs'
 import { withPrefix } from 'gatsby'
 import { navigate } from '@reach/router'
-import { getQueryParams, setQueryParams } from 'react-use-query-param-string'
+import { getQueryParams, setQueryParams, useQueryParamString } from 'react-use-query-param-string'
 
 const prefix = '/docs'
 
@@ -149,9 +149,11 @@ const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
 export default function Search({ hitsStatus, location }: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
-  const [query, setQuery] = useState(``)
+  //const [query, query] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
+  const [query, setQuery, initialized] = useQueryParamString('query', '')
+
   const hideSearch = () => {
     setShowHits(false)
     if (searchState.query === '') {
@@ -174,7 +176,7 @@ export default function Search({ hitsStatus, location }: any) {
       if (location.pathname === prefix) {
         setQueryParams({ query: updatedSearchState.query, page: updatedSearchState.page })
       } else {
-        navigate(searchStateToUrl(location, updatedSearchState)) //?query=uuid&page=1
+        navigate(searchStateToUrl(location, updatedSearchState))
       }
     }, DEBOUNCE_TIME)
 
@@ -186,14 +188,10 @@ export default function Search({ hitsStatus, location }: any) {
   }, [showHits, query])
 
   React.useEffect(() => {
-    console.log('here')
-    console.log(location, getQueryParams())
-    // if(location.pathname === prefix && getQueryParams().query !== '') {
-
-    // }
-    setSearchState(urlToSearchState(location))
-    setQuery(searchState.query)
-    console.log(searchState)
+    if (query !== '') {
+      setSearchState(urlToSearchState(location))
+      setQuery(searchState.query)
+    }
   }, [location])
 
   const incrementIndex = () => {
