@@ -9,7 +9,7 @@ import CustomSearchBox from './input'
 import qs from 'qs'
 import { withPrefix } from 'gatsby'
 import { navigate } from '@reach/router'
-import { query } from '../../templates/docs'
+import { getQueryParams, setQueryParams } from 'react-use-query-param-string'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -169,7 +169,11 @@ export default function Search({ hitsStatus, location }: any) {
     clearTimeout(debouncedSetStateRef.current)
 
     debouncedSetStateRef.current = setTimeout(() => {
-      navigate(searchStateToUrl(location, updatedSearchState))
+      if (location.pathname === '/docs') {
+        setQueryParams({ query: updatedSearchState.query, page: updatedSearchState.page })
+      } else {
+        navigate(searchStateToUrl(location, updatedSearchState)) //?query=uuid&page=1
+      }
     }, DEBOUNCE_TIME)
 
     setSearchState(updatedSearchState)
