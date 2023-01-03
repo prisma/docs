@@ -139,7 +139,7 @@ const searchStateToUrl = (location: any, searchState: any) => {
         searchState
       )}`
     : ``
-  console.log(withPrefix(newUrl), location.pathname)
+  console.log(newUrl, location.pathname)
   return location.pathname === '/docs' ? newUrl : withPrefix(newUrl)
 }
 
