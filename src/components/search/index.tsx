@@ -8,6 +8,7 @@ import Overlay from './overlay'
 import CustomSearchBox from './input'
 import qs from 'qs'
 import { navigate } from '@reach/router'
+import { withPrefix } from 'gatsby'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -140,7 +141,7 @@ const searchStateToUrl = (location: any, searchState: any) => {
       }${createURL(searchState)}`
     : ``
   console.log(newUrl)
-  return newUrl
+  return withPrefix(newUrl)
 }
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
