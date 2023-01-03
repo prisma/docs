@@ -11,6 +11,8 @@ import { withPrefix } from 'gatsby'
 import { navigate } from '@reach/router'
 import { getQueryParams, setQueryParams } from 'react-use-query-param-string'
 
+const prefix = '/docs'
+
 const HitsWrapper = styled.div`
   display: none;
   &.show {
@@ -135,12 +137,12 @@ const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) => {
   const newUrl = searchState
-    ? `${location.pathname !== '/docs' ? location.pathname.replace('/docs', '') : ''}${createURL(
+    ? `${location.pathname !== prefix ? location.pathname.replace(prefix, '') : ''}${createURL(
         searchState
       )}`
     : ``
   console.log(newUrl, location.pathname)
-  return location.pathname === '/docs' ? newUrl : withPrefix(newUrl)
+  return location.pathname === prefix ? newUrl : withPrefix(newUrl)
 }
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
@@ -169,7 +171,7 @@ export default function Search({ hitsStatus, location }: any) {
     clearTimeout(debouncedSetStateRef.current)
 
     debouncedSetStateRef.current = setTimeout(() => {
-      if (location.pathname === '/docs') {
+      if (location.pathname === prefix) {
         setQueryParams({ query: updatedSearchState.query, page: updatedSearchState.page })
       } else {
         navigate(searchStateToUrl(location, updatedSearchState)) //?query=uuid&page=1
@@ -184,8 +186,14 @@ export default function Search({ hitsStatus, location }: any) {
   }, [showHits, query])
 
   React.useEffect(() => {
+    console.log('here')
+    console.log(location, getQueryParams())
+    // if(location.pathname === prefix && getQueryParams().query !== '') {
+
+    // }
     setSearchState(urlToSearchState(location))
     setQuery(searchState.query)
+    console.log(searchState)
   }, [location])
 
   const incrementIndex = () => {
