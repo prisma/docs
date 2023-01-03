@@ -10,6 +10,7 @@ export interface ArticleFrontmatter {
   metaDescription?: string
   langSwitcher?: string[]
   dbSwitcher?: string[]
+  search?: boolean
   staticLink?: boolean
   duration?: string
   experimental?: boolean
