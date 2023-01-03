@@ -9,6 +9,7 @@ import CustomSearchBox from './input'
 import qs from 'qs'
 import { withPrefix } from 'gatsby'
 import { navigate } from '@reach/router'
+import { query } from '../../templates/docs'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -134,9 +135,9 @@ const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) => {
   const newUrl = searchState
-    ? `${
-        location.pathname !== '/docs' ? location.pathname.replace('/docs', '') : location.pathname
-      }${createURL(searchState)}`
+    ? `${location.pathname !== '/docs' ? location.pathname.replace('/docs', '') : ''}${createURL(
+        searchState
+      )}`
     : ``
   console.log(withPrefix(newUrl), location.pathname)
   return location.pathname === '/docs' ? newUrl : withPrefix(newUrl)
