@@ -11,7 +11,7 @@ import { withPrefix } from 'gatsby'
 import { navigate } from '@reach/router'
 import { getQueryParams, setQueryParams } from 'react-use-query-param-string'
 
-const prefix = '/'
+const prefix = '/docs'
 
 const HitsWrapper = styled.div`
   display: none;
