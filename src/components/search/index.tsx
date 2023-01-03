@@ -7,11 +7,7 @@ import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
 import qs from 'qs'
-import { withPrefix } from 'gatsby'
-import { navigate } from '@reach/router'
-import { getQueryParams, setQueryParams, useQueryParamString } from 'react-use-query-param-string'
-
-const prefix = '/docs'
+import { navigate } from 'gatsby'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -135,25 +131,22 @@ const Results = connectStateResults(
 
 const createURL = (state: any) => `?${qs.stringify(state)}`
 
-const searchStateToUrl = (location: any, searchState: any) => {
-  const newUrl = searchState
-    ? `${location.pathname !== prefix ? location.pathname.replace(prefix, '') : ''}${createURL(
-        searchState
-      )}`
+const searchStateToUrl = (location: any, searchState: any) =>
+  searchState
+    ? `${
+        location.pathname === '/docs'
+          ? location.pathname.replace('docs', '')
+          : location.pathname.replace('/docs', '')
+      }${createURL(searchState)}`
     : ``
-  console.log(newUrl, location.pathname)
-  return location.pathname === prefix ? newUrl : withPrefix(newUrl)
-}
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
 export default function Search({ hitsStatus, location }: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
-  //const [query, query] = useState(``)
+  const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
-  const [query, setQuery, initialized] = useQueryParamString('query', '')
-
   const hideSearch = () => {
     setShowHits(false)
     if (searchState.query === '') {
@@ -173,11 +166,7 @@ export default function Search({ hitsStatus, location }: any) {
     clearTimeout(debouncedSetStateRef.current)
 
     debouncedSetStateRef.current = setTimeout(() => {
-      if (location.pathname === prefix) {
-        setQueryParams({ query: updatedSearchState.query, page: updatedSearchState.page })
-      } else {
-        navigate(searchStateToUrl(location, updatedSearchState))
-      }
+      navigate(searchStateToUrl(location, updatedSearchState))
     }, DEBOUNCE_TIME)
 
     setSearchState(updatedSearchState)
@@ -188,10 +177,8 @@ export default function Search({ hitsStatus, location }: any) {
   }, [showHits, query])
 
   React.useEffect(() => {
-    if (query !== '') {
-      setSearchState(urlToSearchState(location))
-      setQuery(searchState.query)
-    }
+    setSearchState(urlToSearchState(location))
+    setQuery(searchState.query)
   }, [location])
 
   const incrementIndex = () => {
