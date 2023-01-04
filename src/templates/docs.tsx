@@ -82,6 +82,7 @@ export const query = graphql`
         metaTitle
         metaDescription
         langSwitcher
+        search
         dbSwitcher
         toc
         tocDepth

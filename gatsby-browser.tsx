@@ -1,13 +1,16 @@
 import { goToNav } from './src/utils/goToNavItem'
 import { trackPage, init } from './src/utils/stats'
 import docsConfig from './config'
+import { getQueryParams, setQueryParams, useQueryParamString } from 'react-use-query-param-string'
 
 export const onClientEntry = () => {
   init()
 }
 
 export const onRouteUpdate = ({ location }) => {
+  console.log(location, getQueryParams())
   trackPage(location.pathname)
+
   goToNav(location.pathname) // This may not work anymore due to the new scroll behavior of the sidebar
   const isRedirectablePath = docsConfig.redirects.filter((redirect) => {
     const redirectFromSplit = redirect.from.split('#')
