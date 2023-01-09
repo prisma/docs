@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client')
 
 const client = new PrismaClient()
 
-export default async function handle(req: any, res: any) {
+export default async function handle(req, res) {
   const { pageUrl, sentiment } = req.body
   if (!pageUrl) {
     throw new Error(`Please provide a pageUrl`)
@@ -30,6 +30,6 @@ export default async function handle(req: any, res: any) {
   return res.send(sentimentResult)
 }
 
-function stripTrailingSlash(url: any) {
+function stripTrailingSlash(url) {
   return url.replace(/\/$/, '')
 }
