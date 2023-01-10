@@ -8,7 +8,7 @@ metaDescription: 'Learn how to deploy a TypeScript application to Deno Deploy.'
 
 With this guide, you can learn how to build a simple application and deploy it to [Deno Deploy](https://deno.com/deploy). The application uses Prisma to save a log of each request to a PostgreSQL database.
 
-This guide covers the use of Prisma CLI with Deno CLI, Prisma Client, Data Proxy, and Deno Deploy.
+This guide covers the use of Prisma CLI with Deno CLI, Deno Deploy, Prisma Client, and Data Proxy.
 
 <Admonition type="info">
 
@@ -42,7 +42,11 @@ To start, you create a directory for your project, and then use `deno run` to in
   deno run -A --unstable npm:prisma init
   ```
 
-3. In the generated `prisma/schema.prisma`, add the following schema:
+3. Edit the `prisma/schema.prisma` file to define the data model and enable the `deno` preview feature flag.
+
+  Later in the guide, you create an application that uses the `Log` model to store data for incoming requests from the application.
+
+  To use Deno, you need to add the preview feature flag `deno`. Also, Deno requires that Prisma Client is generated in a custom location and you enable that with the `output` parameter in the `generator client` block.
 
   ```prisma
   generator client {
@@ -70,10 +74,6 @@ To start, you create a directory for your project, and then use `deno run` to in
   }
   ```
 
-  This data model defines the `Log` model. Later in the guide, you create an application that uses the `Log` model to store data for incoming requests from the application.
-
-  Note that the `schema.prisma` file includes the preview feature flag `deno` to activate the current preview support for Deno in Prisma Client, and it also defines a custom `output` location for your Prisma Client. This is a requirement for Deno applications.
-
 4. In your `.env` file, replace the current placeholder connection string `postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public` with your PostgreSQL connection string.
 
 ## 2. Create the database schema
@@ -90,9 +90,9 @@ deno run -A --unstable npm:prisma db push
 
 With `prisma db push`, you apply the data model in `schema.prisma` to your database.
 
-At this point, this command has 2 additional side effects. The command also installs Prisma Client and creates `package.json` file for the project which includes the `@prisma/client` package as a dependency.
+At this point, the command has 2 additional side effects. The command installs Prisma Client and creates the `package.json` file for the project which includes the `@prisma/client` package as a dependency.
 
-## 3. Generate a Prisma Client for Data Proxy
+## 3. Generate Prisma Client for the Data Proxy
 
 Next, generate Prisma Client for the Data Proxy with the `--data-proxy` flag. Later, you use the [Data Proxy](/data-platform/data-proxy) to connect to your database over HTTP.
 
@@ -102,7 +102,7 @@ deno run -A --unstable npm:prisma generate --data-proxy
 
 ### Result
 
-You now have a database schema and a locally generate Prisma Client.
+You now have a database schema and a locally generated Prisma Client for the Data Proxy.
 
 
 ## 4. Create your application
@@ -166,13 +166,15 @@ Sign up for the Prisma Data Platform and add your application as a project so th
     1. Paste your PostgreSQL connection string.
     1. (Optional) If your database provider requires it, for **Static IPs** select **Enabled** to enable connections to your database from static IPs and add them to the database allowlist.
     1. Under **Choose a Data Proxy region**, select a Data Proxy location that is geographically close to your database.
-    1. Click **Create project** to test the connection string and to create your project in PDP.
+    1. Click **Create project** to test the connection string and create your project.
       <img
         src="../../../doc-images/create-01-paste-connection-string.png"
         alt="Prisma Data Platform - Create project - Paste database connection string, select Data Proxy region, enable static IPs"
       />
 
-      If the connection to the database is successful, Prisma Data Platform creates your project and redirects your browser to the **Get started** page.<br /> On the **Get started** page, you can [optionally link your GitHub repository](/data-platform/projects/create#optional-enable-schema-synchronization) and create a Data Proxy connection string.
+      If the connection to the database is successful, Prisma Data Platform creates your project and redirects your browser to the **Get started** page. On the **Get started** page, you can [optionally link your GitHub repository](/data-platform/projects/create#optional-enable-schema-synchronization) to keep your Prisma schema up-to-date.<br /><br />
+      For a project in Prisma Data Platform, you need a linked Prisma schema if you plan to use [Data Browser](/data-platform/data-browser) and [Query Console](/data-platform/query-console).<br /><br />
+      Deno Deploy requires a GitHub repository and you create that in [Create a repository and push to GitHub](#8-create-a-repository-and-push-to-github).
 
 1. Create a Data Proxy connection string.
     1. On the **Get started** screen, click **Create a new connection string**.
@@ -188,21 +190,35 @@ Sign up for the Prisma Data Platform and add your application as a project so th
 
 You can save the Data Proxy connection string in a password manager or another safe location. You can then use the connection string in your local `.env` file to configure your local environment to connect to your database through the Data Proxy.
 
-## 6. Configure the Data Proxy Connection string in your environment
+## 6. Configure the Data Proxy connection string in your environment
 
 With the Data Proxy connection string copied, you can replace the direct PostgreSQL connection string that you used to create the database schema in your `.env` file.
 
-The Data Proxy Client does not read `.env` files by default, so you must run the following command to install `dotenv-cli` locally.
+The Data Proxy Client does not read `.env` files by default, so you must also install `dotenv-cli` locally.
 
-```
-npm install dotenv-cli
-```
+### Steps
+1. Install `dotenv-cli`.
+  ```
+  npm install dotenv-cli
+  ```
+2. Add the Data Proxy connection string to the `.env` file. Also, comment out the direct connection string.
+
+  ```bash file=.env
+  # DATABASE_URL="postgres://...
+  DATABASE_URL="prisma://..."
+  ```
+
+### Result
+
+The configuration of your local environment is now ready to send Prisma queries to the database through the Data Proxy.
+
+### What's next
 
 You are now ready to test your script locally.
 
 ## 7. Test your application locally
 
-You can now start your application locally and test the creation of log entries. With your project in the Prisma Data Platform and with the Data Proxy connection string, your application uses the Data Proxy to to send queries to your database.
+You can now start your application locally and test the creation of log entries.
 
 ### Steps
 
@@ -222,7 +238,7 @@ You can now start your application locally and test the creation of log entries.
     }
   }
   ```
-2. Refresh the page a few times to verify that it's working. If you open the [**Data Browser**](/data-platform/data-browser) for your project in Prisma Data Platform, you can verify that the application writes `Info` logs to your database.
+2. Refresh the page a few times to verify that it's working. If you open the [Data Browser](/data-platform/data-browser) for your project in Prisma Data Platform, you can verify that the application writes `Info` logs to your database.
 
   ![Prisma Data Browser](./450-06-data-browser.png)
 
