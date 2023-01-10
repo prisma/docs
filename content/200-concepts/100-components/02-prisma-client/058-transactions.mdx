@@ -407,11 +407,9 @@ When two or more transactions run concurrently in certain [isolation levels](htt
 1. Transaction A: `createMany` operation.
 1. Transaction A: The application commits transaction A. The new rows conflict with the rows that transaction B added at step 2.
 
-This conflict can occur at the isolation level `ReadCommited`, which is the default isolation level in PostgreSQL and Microsoft SQL Server. To avoid this problem, you can set a higher isolation level (`RepeatableRead` or `Serializable`).
+This conflict can occur at the isolation level `ReadCommited`, which is the default isolation level in PostgreSQL and Microsoft SQL Server. To avoid this problem, you can set a higher isolation level (`RepeatableRead` or `Serializable`). You can set the isolation level on a transaction. This overrides your database isolation level for that transaction.
 
-From Prisma version 4.4.0, you do not need to set the isolation level in your database configuration. You can instead set the isolation level on a transaction. This overrides the isolation level on your database for that transaction. [Learn more about isolation levels in Prisma transactions](#transaction-isolation-level).
-
-To avoid transaction write conflicts and deadlocks:
+To avoid transaction write conflicts and deadlocks on a transaction:
 
 1. On your transaction, use the `isolationLevel` parameter to `Prisma.TransactionIsolationLevel.Serializable`.
 
@@ -419,41 +417,47 @@ To avoid transaction write conflicts and deadlocks:
 
 2. In your application code, add a retry around your transaction to handle any P2034 errors, as shown in this example:
 
-```ts
-import { Prisma, PrismaClient } from '@prisma/client'
+   ```ts
+   import { Prisma, PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
-async function main() {
-  const MAX_RETRIES = 5
-  let retries = 0
+   const prisma = new PrismaClient()
+   async function main() {
+     const MAX_RETRIES = 5
+     let retries = 0
 
-  let result
-  while (retries < MAX_RETRIES) {
-    try {
-      result = await prisma.$transaction(
-        [
-          prisma.user.deleteMany({
-            where: {
-              /** args */
-            },
-          }),
-          prisma.post.createMany({
-            data: {
-              /** args */
-            },
-          }),
-        ],
-        {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        }
-      )
-    } catch (error) {
-      if (error.code === 'P2034') {
-        retries++
-        continue
-      }
-      throw error
-    }
-  }
-}
-```
+     let result
+     while (retries < MAX_RETRIES) {
+       try {
+         result = await prisma.$transaction(
+           [
+             prisma.user.deleteMany({
+               where: {
+                 /** args */
+               },
+             }),
+             prisma.post.createMany({
+               data: {
+                 /** args */
+               },
+             }),
+           ],
+           {
+             isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+           }
+         )
+       } catch (error) {
+         if (error.code === 'P2034') {
+           retries++
+           continue
+         }
+         throw error
+       }
+     }
+   }
+   ```
+
+<Admonition type="info">
+
+Before Prisma version 4.4.0, you could not set isolation levels on transactions. The isolation level in your database configuration always applied.
+
+</Admonition>
