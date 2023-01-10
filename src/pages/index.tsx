@@ -4,7 +4,7 @@ import styled from 'styled-components'
 import background from '../images/home-bg.svg'
 import listDot from '../images/list-dot.png'
 import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'
-import { graphql, useStaticQuery } from 'gatsby'
+import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 
 import { PrimaryButton, SpecialButton } from '../components/button'
 import Schema from '../icons/home/Schema'
@@ -59,7 +59,7 @@ const Summary = styled.div`
 `
 
 const NormalPara = styled.p`
-  color: ${(p) => p.theme.colors.gray700};
+  color: ${(p) => p.theme.colors.gray[700]};
   line-height: ${(p) => p.theme.space[24]};
   margin: ${(p) => p.theme.space[32]} 0;
   text-align: center;
@@ -86,7 +86,7 @@ const SubHeading = styled.h2`
   font-family: ${(p) => p.theme.fonts.display};
   margin: 0;
   text-align: center;
-  color: ${(p) => p.theme.colors.gray900};
+  color: ${(p) => p.theme.colors.gray[900]};
 `
 
 const Space = styled.div<{ height: number }>`
@@ -97,12 +97,12 @@ const ListTitle = styled.h3`
   font-weight: bold;
   line-height: ${(p) => p.theme.space[16]};
   font-size: ${(p) => p.theme.fontSizes[16]};
-  color: ${(p) => p.theme.colors.gray900} !important;
+  color: ${(p) => p.theme.colors.gray[900]} !important;
   margin: 24px 0 0;
 
   a {
     text-decoration: none;
-    color: ${(p) => p.theme.colors.gray900} !important;
+    color: ${(p) => p.theme.colors.gray[900]} !important;
     align-items: center;
     display: flex;
   }
@@ -226,12 +226,12 @@ const Row = styled.div`
   }
 `
 
-const LinkCard = styled.a`
-  background: ${(p) => p.theme.colors.gray200};
+const LinkCard = styled(Link)`
+  background: ${(p) => p.theme.colors.gray[200]};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
   width: 100%;
-  border-top: ${(p) => p.theme.space[8]} solid ${(p) => p.theme.colors.gray200};
+  border-top: ${(p) => p.theme.space[8]} solid ${(p) => p.theme.colors.gray[200]};
   position: relative;
   flex-grow: 1;
   margin-bottom: ${(p) => p.theme.space[40]};
@@ -249,7 +249,7 @@ const LinkCard = styled.a`
   }
 
   &:hover {
-    background: ${(p) => p.theme.colors.gray300};
+    background: ${(p) => p.theme.colors.gray[300]};
     h3 svg {
       transform: translateX(4px);
     }
@@ -303,7 +303,6 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
-      <SEO title={title} description={description} homepage />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
@@ -316,7 +315,7 @@ const Homepage = () => {
         <SummaryLinks>
           {SummaryLinkData.buttons.map((slink: any, index: number) =>
             slink.special ? (
-              <SpecialButton href={slink.url} key={index} icon={icons[slink.icon]}>
+              <SpecialButton href={withPrefix(slink.url)} key={index} icon={icons[slink.icon]}>
                 &nbsp; {slink.text}
               </SpecialButton>
             ) : (
@@ -360,7 +359,7 @@ const Homepage = () => {
         <Row>
           {GuideLinkData.map((gLinkData: any, index: number) => (
             <LinkCard
-              href={gLinkData.url}
+              to={gLinkData.url}
               key={index}
               style={{
                 maxWidth: gLinkData.small ? '274px' : '384px',
@@ -384,7 +383,7 @@ const Homepage = () => {
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
               <ListTitle>
-                <Link href={rLinkData.mainUrl}>
+                <Link to={rLinkData.mainUrl}>
                   {rLinkData.categoryName} &nbsp;
                   <ArrowRight color="#A0AEC0" />{' '}
                 </Link>
@@ -421,7 +420,7 @@ const Homepage = () => {
 
 export default Homepage
 
-const query = graphql`
+export const query = graphql`
   query Homepage {
     site {
       siteMetadata {
@@ -478,3 +477,11 @@ const query = graphql`
     }
   }
 `
+
+export const Head = () => {
+  const { site } = useStaticQuery(query)
+  const {
+    siteMetadata: { title, description },
+  } = site
+  return <SEO title={title} description={description} homepage />
+}

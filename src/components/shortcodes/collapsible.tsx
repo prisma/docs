@@ -42,7 +42,7 @@ const Tab = styled.div`
     width: 8px;
     height: 100%;
     left: 0px;
-    background: ${(p) => p.theme.colors.gray100};
+    background: ${(p) => p.theme.colors.gray[100]};
     border-radius: ${(p) => p.theme.radii.small};
   }
   p {
@@ -63,7 +63,7 @@ const Label = styled.label`
 const TabContent = styled.div`
   max-height: 0;
   overflow: hidden;
-  color: ${(p) => p.theme.colors.gray800};
+  color: ${(p) => p.theme.colors.gray[800]};
   transition: max-height 0.35s, padding 0.35s;
   padding-left: 36px;
   padding-bottom: 0;

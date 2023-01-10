@@ -4,14 +4,13 @@ import { MDXProvider } from '@mdx-js/react'
 import StickyBox from 'react-sticky-box'
 import shortcodes from './shortcodes'
 import styled, { ThemeProvider } from 'styled-components'
-import { LensProvider, theme } from '@prisma/lens/dist/web'
+import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
 import '../styles/layout.css'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
-import Banner from './banner'
 
 interface LayoutContentProps {
   toc: any
@@ -28,7 +27,7 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
   width: 100%;
   justify-content: center;
   ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (max-width: ${(p) => p.theme.breakpoints.tabletVertical}) {
     padding: 0;
   }
 `
@@ -112,7 +111,7 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={shortcodes}>
-          <Banner />
+          {/* <Banner /> */}
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
