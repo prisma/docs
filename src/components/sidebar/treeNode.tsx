@@ -130,6 +130,7 @@ const ListItem = styled.li`
     // }
   }
   .collapse-title {
+    position: relative;
     cursor: pointer;
     svg {
       transition: transform 0.2s ease;
