@@ -17,7 +17,7 @@ module.exports = () => (tree, file) => {
   visit(
     tree,
     ({ type }) => {
-      return ['heading', 'paragraph', 'code'].includes(type)
+      return ['heading', 'paragraph', 'code', 'table'].includes(type)
     },
     (node) => {
       if (node.type === 'heading') return (heading = flattenNode(node))
