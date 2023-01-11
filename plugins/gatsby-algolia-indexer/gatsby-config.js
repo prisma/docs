@@ -4,7 +4,7 @@ const withDefaults = require('./options')
 const settings = {
   searchableAttributes: ['apiReference', 'title', 'heading', 'content'],
   attributesToHighlight: ['title', 'heading', 'content'],
-  attributesToSnippet: ['title:30', 'heading:30', 'content:30'],
+  attributesToSnippet: ['title:20', 'heading:20', 'content:25'],
   hitsPerPage: 20,
   attributeForDistinct: 'slug',
   distinct: 2,
@@ -91,7 +91,7 @@ module.exports = (options) => {
   const queries = [
     {
       query: `{
-        allMdx{
+        allMdx {
           edges {
             node {
               rawBody

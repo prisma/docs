@@ -13,6 +13,8 @@ const flattenNode = (node) => {
 module.exports = () => (tree, file) => {
   file.data = []
   let heading = null
+  let prev = ''
+  let prevType = ''
 
   visit(
     tree,
@@ -20,7 +22,20 @@ module.exports = () => (tree, file) => {
       return ['heading', 'paragraph', 'code', 'table'].includes(type)
     },
     (node) => {
-      if (node.type === 'heading') return (heading = flattenNode(node))
+      if (node.type === 'heading') {
+        if (prevType === 'heading') {
+          file.data.push({
+            heading: prev,
+            text: '',
+          })
+        }
+        prev = flattenNode(node)
+        prevType = node.type
+        return (heading = flattenNode(node))
+      }
+
+      prev = flattenNode(node)
+      prevType = node.type
 
       file.data.push({
         heading,
