@@ -4,7 +4,7 @@ const withDefaults = require('./options')
 const settings = {
   searchableAttributes: ['apiReference', 'title', 'heading', 'content'],
   attributesToHighlight: ['title', 'heading', 'content'],
-  attributesToSnippet: ['title:20', 'heading:20', 'content:25'],
+  attributesToSnippet: ['title:30', 'heading:30', 'content:30'],
   hitsPerPage: 20,
   attributeForDistinct: 'slug',
   distinct: 2,
@@ -91,7 +91,7 @@ module.exports = (options) => {
   const queries = [
     {
       query: `{
-        allMdx{
+        allMdx {
           edges {
             node {
               rawBody
@@ -103,6 +103,7 @@ module.exports = (options) => {
                 title
                 langSwitcher
                 dbSwitcher
+                search
               }
               tableOfContents
             }
@@ -111,12 +112,16 @@ module.exports = (options) => {
       }`,
       indexName,
       settings,
-      transformer: ({ data }) =>
-        data.allMdx.edges
+      transformer: ({ data }) => {
+        const noSearchFlag = Array.from(data.allMdx.edges).filter(
+          (e) => e.node.frontmatter.search !== false
+        )
+        return noSearchFlag
           .map((edge) => edge.node)
           .map(unnestFrontmatter)
           .map(handleRawBody)
-          .reduce((acc, cur) => [...acc, ...cur], []),
+          .reduce((acc, cur) => [...acc, ...cur], [])
+      },
     },
   ]
 
