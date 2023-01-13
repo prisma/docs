@@ -74,7 +74,7 @@ const handleRawBody = (node) => {
       title: rest.title,
       slug: rest.modSlug,
       apiReference: isApiTerm(item.text) ? getApiVal(item.text) : null,
-      heading: item.heading ? removeInlineCode(item.heading) : null,
+      heading: item.heading ? removeInlineCode(item.heading) : rest.title,
       content: item.text.includes('\n') ? item.text.split(' ').slice(0, 20).join(' ') : item.text,
       path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
         techParams ? '-' + techParams : ''
