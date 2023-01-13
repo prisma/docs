@@ -133,3 +133,81 @@ prisma.$extends({
 ```
 
 You cannot use `Prisma.getExtensionContext(this)` inside an [`$allModels`](#add-a-custom-method-to-all-models-in-your-schema) structure.
+
+## Access input and output types on any model
+
+<Admonition type = "info">
+
+This feature is available from Prisma version 4.9.0.
+
+</Admonition>
+
+If you want your `model` component to work with multiple models, not just a specific one, you can use the following arguments.
+
+**TBW**
+What we want to cover:
+
+Use getExtensionContext (name) to get the model name
+
+Use the following parameters (right term?):
+
+- Exact
+- Args
+- Result
+- Payload
+
+Code example (based on Pierre's example): TBD: add some annotations to this example
+
+```ts
+const prisma = new PrismaClient()
+
+const xprisma = prisma.$extends({
+  model: {
+    $allModels: {
+      findOrCreate<T, A>(
+        // on the following line, `this` and `T` refer to a generic model,
+        // which is a placeholder for the model in use
+        // (for example, `this` might return `prisma.user`)
+        this: T,
+        x: Prisma.Exact<
+          A,
+          Prisma.Args<T, 'findFirstOrThrow'> & { cache: boolean }
+        >
+      ): Prisma.Result<T, A, 'findFirstOrThrow'> {
+        const ctx = Prisma.getExtensionContext(this)
+
+        console.log(ctx.name)
+
+        return {} as any // TODO
+      },
+    },
+  },
+  query: {
+    $allModels: {
+      findUnique(operation) {
+        const { __internalParams, query, args } = operation as any as {
+          query: (...args: any[]) => Promise<any>
+          __internalParams: any
+          args: any
+        }
+
+        __internalParams.headers = {
+          ...__internalParams.headers,
+          'x-custom-header': 'hello',
+        }
+
+        return query(args, __internalParams)
+      },
+    },
+  },
+})
+
+async function main() {
+  const test0 = xprisma.link.findOrCreate({
+    cache: true,
+    select: {
+      id: true,
+    },
+  })
+}
+```
