@@ -129,10 +129,7 @@ module.exports = (options) => {
       settings,
       transformer: ({ data }) => {
         const noSearchFlag = Array.from(data.allMdx.edges).filter(
-          (e) =>
-            e.node.frontmatter.search !== false &&
-            e.node.fields.slug ===
-              '/100-getting-started/02-setup-prisma/100-start-from-scratch/110-relational-databases/100-connect-your-database'
+          (e) => e.node.frontmatter.search !== false
         )
         return noSearchFlag
           .map((edge) => edge.node)
