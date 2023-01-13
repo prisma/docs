@@ -134,7 +134,7 @@ prisma.$extends({
 
 You cannot use `Prisma.getExtensionContext(this)` inside an [`$allModels`](#add-a-custom-method-to-all-models-in-your-schema) structure.
 
-## Access input and output types on any model
+## Advanced type safety on models
 
 <Admonition type = "info">
 
@@ -142,21 +142,16 @@ This feature is available from version 4.9.0.
 
 </Admonition>
 
-You can use the following arguments to make your `model` component work with multiple models, instead of a single, specific model.
+**Rewrite this intro on Monday:** To help with type safety, Prisma provides code validation for the internal types in generic models. It is especially useful for published extensions, because other users can more easily benefit from autocompletion, no matter what models apply. **TBA:** link to "sharing extensions" section; also link here from that section, but make it clear in the link text that this is an advanced topic
 
-**TBW**
-What to cover:
+The following type utilities are available:
 
-Use getExtensionContext (name) to get the model name
+- `Exact`: Assists with strict type safety - narrows the input down. **TBA** - clarify what this specifically does - does it declare the objects/arguments that you want to apply this type safety to?
+- `Args`: Dynamically retrieves the input type of a given model and a given operation. When you change the model, autocomplete indicates whether the fields ezists on it.
+- `Result`: Takes the input types and provides the result for a given model and a given operation.
+- `Payload`: Retrieves the entire structure of the result, as scalars and relations objects.
 
-Use the following parameters (right term?):
-
-- Exact
-- Args
-- Result
-- Payload
-
-Code example (based on Pierre's example): TBD: add some annotations to this example
+- **TBA:** some more code comments to annotate the following example, especially in the $query section
 
 ```ts
 const prisma = new PrismaClient()
@@ -165,17 +160,22 @@ const xprisma = prisma.$extends({
   model: {
     $allModels: {
       findOrCreate<T, A>(
-        // on the following line, `this` and `T` refer to a generic model,
-        // which is a placeholder for the model in use
-        // (for example, `this` might return `prisma.user`)
+        // On the following line, `this` and `T` refer to a generic model,
+        // which is a placeholder for the model that is in use.
+        // For example, `this` might return `prisma.user`.
         this: T,
         x: Prisma.Exact<
           A,
           Prisma.Args<T, 'findFirstOrThrow'> & { cache: boolean }
         >
+        // For the arguments A and findFirstorThrow,
+        // on the model T, automcomplete gives you
+        // the correct results.
       ): Prisma.Result<T, A, 'findFirstOrThrow'> {
+        // ctx refers to the current model
         const ctx = Prisma.getExtensionContext(this)
 
+        // ctx.name returns the name of the current method
         console.log(ctx.name)
 
         return {} as any // TODO
@@ -211,3 +211,32 @@ async function main() {
   })
 }
 ```
+
+## Get the current method name at runtime
+
+<Admonition type = "info">
+
+This feature is available from version 4.9.0.
+
+</Admonition>
+
+You can get the name of the current model at runtime with `Prisma.getExtensionContext(this).name`. You can use this to write out the model name to a log, to send the name to another service, or even to branch your code based on the method. **TBD: ** I'm not sure we need to mention all of these
+
+For example:
+
+```ts
+// `ctx` refers to the current model
+const ctx = Prisma.getExtensionContext(this)
+
+// `ctx.name` returns the name of the current method
+console.log(ctx.name)
+```
+
+**TBA:**
+
+- short code example - e.g. showing `ctx.name` to give you the method name
+- crosslink between this and other `getExtensionContext` mention/s
+- **question for Pierre** - in our docs [here](https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions/model#call-a-custom-method-from-another-custom-method) we say that you cannot use `getExtension(this)` inside an `$AllModels` structure. Is that still true for `Prisma.getExtensionContext(this).methodName`?
+  - If not, we can remove the note.
+  - If so, we need to update the note to make it specifically about `methodName`.
+- I'm not sure that this section should go here - rethink on Monday, when my mind is less fried
