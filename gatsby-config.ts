@@ -32,9 +32,10 @@ let plugins: any = [
           },
         },
         {
-          resolve: `gatsby-remark-images`,
+          resolve: `gatsby-remark-image-custom`,
           options: {
             disableBgImageOnAlpha: true,
+            quality: 100,
           },
         },
         {

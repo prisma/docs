@@ -43,11 +43,6 @@ const shortcodes = {
   TopBlock,
   FootNote,
   Admonition,
-  img: (props: any) => (
-    <a href={props.src} target="_blank">
-      <img {...props} />
-    </a>
-  ),
   AlgoliaTerm: () => <span style={{ display: 'none' }} />,
   Quiz,
   Tip: (props: any) => <Tip>{props.children}</Tip>,
