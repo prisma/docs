@@ -115,6 +115,10 @@ const BannerWrapper = styled.div<{ light: boolean }>`
   transition: margin-top 50ms ease-in;
   top: 0;
   z-index: -1;
+  @media (max-width: 1000px) {
+    font-size: 14px;
+  }
+  font-size: 18px;
 `
 
 export default function Layout({ children, toc, tocDepth, location, slug, homePage }: LayoutProps) {
