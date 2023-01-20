@@ -1,0 +1,180 @@
+---
+title: 'Views'
+metaTitle: 'How to include views in your Prisma schema'
+metaDescription: 'How to include views in your Prisma schema'
+hidePage: false
+preview: true
+tocDepth: 2
+---
+
+<TopBlock>
+
+<Admonition type="warning">
+
+Support for views is currently a very early preview feature. You can add a view to your Prisma schema with the `view` keyword, but you cannot introspect your schema with `db pull` or apply your schema to your database with Prisma Migrate and `db push`.<br /><br />For updates on progress with this feature, follow [our GitHub issue](https://github.com/prisma/prisma/issues/17335).
+
+</Admonition>
+
+Database views allow you to name and store queries. In relational databases, views are [stored SQL queries](https://www.postgresql.org/docs/current/sql-createview.html) that might include columns in multiple tables, or calculated values such as aggregates. In MongoDB, views are queryable objects where the contents are defined by an [aggregation pipeline](https://www.mongodb.com/docs/manual/core/aggregation-pipeline) on other collections.
+
+This guide explains how to enable the `views` preview feature and add views to your Prisma schema.
+
+</TopBlock>
+
+## How to enable the <inlineCode>views</inlineCode> preview feature
+
+Support for views is currently in an early preview. To enable the `views` preview feature, add the `views` feature flag to the `previewFeatures` field of the `generator` block in your Prisma schema file:
+
+```prisma file=schema.prisma highlight=3;add
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+```
+
+## How to add views to your Prisma schema
+
+To add a view to your Prisma schema, use the `view` keyword. For example, take the following `User` model with a related `Profile` model:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  profile Profile?
+}
+
+model Profile {
+  id     Int    @id @default(autoincrement())
+  bio    String
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int    @unique
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String   @unique
+  name    String?
+  profile Profile?
+}
+
+model Profile {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  bio    String
+  User   User   @relation(fields: [userId], references: [id])
+  userId String @unique @db.ObjectId
+}
+```
+
+</tab>
+</TabbedContent>
+
+Next, take a `UserInfo` view in the underlying database that combines the `email` and `name` fields from the `User` model and the `bio` field from the `Profile` model.
+
+For a relational database, the SQL statement to create this view is:
+
+```sql
+CREATE VIEW "UserInfo" AS
+    SELECT u.id, email, name, bio
+    FROM "User" u
+    LEFT JOIN "Profile" p ON u.id = p."userId"
+```
+
+For MongoDB, you can [create a view](https://www.mongodb.com/docs/manual/core/views/join-collections-with-view/) with the following command:
+
+```ts
+db.createView('UserInfo', 'User', [
+  {
+    $lookup: {
+      from: 'Profile',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'ProfileData',
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      email: 1,
+      name: 1,
+      bio: '$ProfileData.bio',
+    },
+  },
+  { $unwind: '$bio' },
+])
+```
+
+You can represent the `UserInfo` view in your Prisma schema as follows:
+
+<!-- prettier-ignore-start -->
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+view UserInfo {
+  id    Int    @id
+  email String
+  name  String
+  bio   String
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+view UserInfo {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+  name  String
+  bio   String
+}
+```
+
+</tab>
+</TabbedContent>
+
+<!-- prettier-ignore-end -->
+
+### Limitations
+
+Currently, Prisma treats views in the same way as models. This means that a view needs to have a [unique identifier](/concepts/components/prisma-schema/data-model#defining-an-id-field). In relational databases, this can be an `@id` or `@unique` attribute on one field, or an `@@id` or `@@unique` attribute on multiple fields. In MongoDB, this must be an `@id` attribute that maps to the `_id` field in the underlying database with `@map("_id")`.
+
+In the example above, the `id` field has an `@id` attribute.
+
+Prisma does not currently support introspection of views with `db pull`. Instead, you must manually add views to your Prisma schema.
+
+<Admonition type="warning">
+
+Currently, if you introspect your database, Prisma removes any existing `view` blocks in your schema file. To reinstate the views, you must revert this change.
+
+</Admonition>
+
+## How to use views with Prisma Migrate and <inlineCode>db push</inlineCode>
+
+If you apply changes to your schema with Prisma Migrate or `db push`, Prisma does not create or run any SQL related to views.
+
+To include views in a migration, run `migrate dev --create-only` and then manually add the SQL for views. Alternatively, you can create views manually in the database.
+
+## How to query views in Prisma Client
+
+You can query views in Prisma Client in the same way that you query models. For example, the following query finds all users with a `name` of `'Alice'` in the `UserInfo` view defined above.
+
+```ts
+const userinfo = await prisma.userInfo.findMany({
+  where: {
+    name: 'Alice',
+  },
+})
+```
+
+Currently, Prisma Client allows you to update a view if the underlying database allows it, without any additional validation.
