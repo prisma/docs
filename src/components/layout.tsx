@@ -4,7 +4,7 @@ import { MDXProvider } from '@mdx-js/react'
 import StickyBox from 'react-sticky-box'
 import shortcodes from './shortcodes'
 import styled, { ThemeProvider } from 'styled-components'
-import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
+import { LensProvider, defaultTheme as theme, WebsiteBanner } from '@prisma/lens/dist/web'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
@@ -104,6 +104,23 @@ const TOCWrapper = styled.div`
   }
 `
 
+const BannerWrapper = styled.div<{ light: boolean }>`
+  a {
+    color: ${(props) => (props.light ? theme.colors.gray['800'] : theme.colors.gray['300'])};
+  }
+  b {
+    ${(props) => !props.light && `color: ${theme.colors.teal['400']};`}
+  }
+  width: 100%;
+  transition: margin-top 50ms ease-in;
+  top: 0;
+  z-index: -1;
+  @media (max-width: 1000px) {
+    font-size: 14px;
+  }
+  font-size: 18px;
+`
+
 export default function Layout({ children, toc, tocDepth, location, slug, homePage }: LayoutProps) {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
@@ -111,7 +128,16 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={shortcodes}>
-          {/* <Banner /> */}
+          <BannerWrapper light={true}>
+            <WebsiteBanner
+              text={
+                <a href="/accelerate" className="banner-url">
+                  Up to 1000x faster database queries with <b>Accelerate</b> {`->`}{' '}
+                  <u>Sign up for Early Access</u>
+                </a>
+              }
+            />
+          </BannerWrapper>
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
