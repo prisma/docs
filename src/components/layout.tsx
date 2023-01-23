@@ -131,7 +131,7 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
           <BannerWrapper light={true}>
             <WebsiteBanner
               text={
-                <a href="/accelerate" className="banner-url">
+                <a href="/data-platform/accelerate" className="banner-url">
                   Up to 1000x faster database queries with <b>Accelerate</b> {`->`}{' '}
                   <u>Sign up for Early Access</u>
                 </a>
