@@ -4,7 +4,7 @@ const withDefaults = require('./options')
 const settings = {
   searchableAttributes: ['apiReference', 'title', 'heading', 'content'],
   attributesToHighlight: ['title', 'heading', 'content'],
-  attributesToSnippet: ['title:20', 'heading:20', 'content:25'],
+  attributesToSnippet: ['title:30', 'heading:50', 'content:50'],
   hitsPerPage: 20,
   attributeForDistinct: 'slug',
   distinct: 2,
@@ -54,6 +54,21 @@ const handleRawBody = (node) => {
     rest.langSwitcher ? `${rest.langSwitcher[0]}${rest.dbSwitcher ? '-' : ''}` : ''
   }${rest.dbSwitcher ? `${rest.dbSwitcher[0]}` : ''}`
 
+  const getTechParams = (item) => {
+    const path = `${
+      rest.langSwitcher
+        ? `${item.langVal === '' || item.langVal === '*' ? rest.langSwitcher[0] : item.langVal}${
+            rest.dbSwitcher ? '-' : ''
+          }`
+        : ''
+    }${
+      rest.dbSwitcher
+        ? `${item.dbVal === '' || item.dbVal === '*' ? rest.dbSwitcher[0] : item.dbVal}`
+        : ''
+    }`
+    return path
+  }
+
   const getTitlePath = (item) => {
     const tocItem =
       rest.tableOfContents &&
@@ -74,10 +89,10 @@ const handleRawBody = (node) => {
       title: rest.title,
       slug: rest.modSlug,
       apiReference: isApiTerm(item.text) ? getApiVal(item.text) : null,
-      heading: item.heading ? removeInlineCode(item.heading) : null,
+      heading: item.heading ? removeInlineCode(item.heading) : rest.title,
       content: item.text.includes('\n') ? item.text.split(' ').slice(0, 20).join(' ') : item.text,
       path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
-        techParams ? '-' + techParams : ''
+        getTechParams(item) ? '-' + getTechParams(item) : ''
       }${getTitlePath(item)}`,
     }
     return record
@@ -91,7 +106,7 @@ module.exports = (options) => {
   const queries = [
     {
       query: `{
-        allMdx{
+        allMdx {
           edges {
             node {
               rawBody
