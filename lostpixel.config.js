@@ -26,12 +26,12 @@ module.exports = {
   commitRefName: process.env.GITHUB_REF_NAME,
   commitHash: process.env.COMMIT_HASH,
   compareEngine: 'odiff',
-  s3: {
-    endPoint: 'ams3.digitaloceanspaces.com',
-    bucketName: 'beta-seven-turtle-time-blue-narrow',
-    accessKey: process.env.S3_ACCESS_KEY,
-    secretKey: process.env.S3_SECRET_KEY,
-  },
+  //   s3: {
+  //     endPoint: 'ams3.digitaloceanspaces.com',
+  //     bucketName: 'beta-seven-turtle-time-blue-narrow',
+  //     accessKey: process.env.S3_ACCESS_KEY,
+  //     secretKey: process.env.S3_SECRET_KEY,
+  //   },
   compareConcurrency: 10,
   shotConcurrency: 1,
   beforeScreenshot: async (page) => {
