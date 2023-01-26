@@ -17,7 +17,7 @@ module.exports = {
     // pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
     baseUrl: 'http://172.17.0.1:9000',
   },
-  lostPixelProjectId: 'clb5felu61843101qqg5entz4x',
+  lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
   apiKey: process.env.LOST_PIXEL_API_KEY,
   ciBuildId: process.env.GITHUB_RUN_ID,
   ciBuildNumber: process.env.GITHUB_RUN_NUMBER,
