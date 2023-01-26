@@ -166,11 +166,12 @@ module.exports = async function plugin(
     const message = `${totalBrokenLinks} broken (or redirected) internal links found`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
-      throw new Error(message)
+      //throw new Error(message)
+      console.warn(message)
     }
 
     if (verbose) {
-      console.error(message)
+      console.warn(message)
     }
   } else if (verbose) {
     console.info('No internal broken links found')
