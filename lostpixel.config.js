@@ -1,37 +1,12 @@
 module.exports = {
   pageShots: {
-    // write your pages here
-    pages: [
-      {
-        path: '/reference/api-reference/prisma-schema-reference',
-        name: '-reference-api-reference-prisma-schema-reference',
-      },
-      {
-        path: '/reference/api-reference/prisma-client-reference',
-        name: '-reference-api-reference-prisma-client-reference',
-      },
-    ],
-    // you create your pages here & both are composed
-    // pagesJsonUrl: 'http://localhost:9000/lost-pixel.json',
-    // baseUrl: 'http://localhost:9000',
-    // pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
-    baseUrl: 'http://172.17.0.1:9000',
+    // write your pages here, it's an empty array, as we are generating the pages on the fly in gatsby-plugin
+    pages: [],
+    // you create your pages on the fly here & it is composed with `pages` array
+    pagesJsonUrl: 'http://localhost:9000/lost-pixel.json',
   },
   lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
   apiKey: process.env.LOST_PIXEL_API_KEY,
-  // ciBuildId: process.env.GITHUB_RUN_ID,
-  // ciBuildNumber: process.env.GITHUB_RUN_NUMBER,
-  // repository: process.env.REPOSITORY,
-  // commitRef: process.env.GITHUB_REF,
-  // commitRefName: process.env.GITHUB_REF_NAME,
-  // commitHash: process.env.COMMIT_HASH,
-  // compareEngine: 'odiff',
-  //   s3: {
-  //     endPoint: 'ams3.digitaloceanspaces.com',
-  //     bucketName: 'beta-seven-turtle-time-blue-narrow',
-  //     accessKey: process.env.S3_ACCESS_KEY,
-  //     secretKey: process.env.S3_SECRET_KEY,
-  //   },
   compareConcurrency: 10,
   shotConcurrency: 1,
   beforeScreenshot: async (page) => {
