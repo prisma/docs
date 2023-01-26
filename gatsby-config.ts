@@ -29,9 +29,10 @@ let plugins: any = [
           },
         },
         {
-          resolve: `@bonobolabs/gatsby-remark-images-custom-widths`,
+          resolve: `gatsby-remark-image-custom`,
           options: {
             disableBgImageOnAlpha: true,
+            quality: 100,
           },
         },
         {
