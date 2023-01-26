@@ -1,27 +1,45 @@
 name: CI
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+on: [push]
 
 jobs:
   gatsby-for-percy:
-    name: Percy screenshots via Gatsby build
+    name: Lost Pixel screenshots via Gatsby build
     runs-on: ubuntu-latest
-    env:
-      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-      FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           cache: 'npm'
           node-version: '14'
-      - run: |
-          npm config set '//npm.fontawesome.com/:_authToken' "${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}"
-          npm ci
-      - run: npx gatsby clean
-      - run: npx gatsby build --prefix-paths
-      - run: npx percy snapshot -t 10000 ./public
+      - run: npm ci
+      - name: Caching Gatsby
+        id: gatsby-cache-build
+        uses: actions/cache@v2
+        with:
+          path: |
+            public
+            .cache
+          key: ${{ runner.os }}-gatsby-build-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gatsby-build-
+
+      - name: Build Gatsby app
+        run: npx gatsby build --prefix-paths
+        env:
+          GATSBY_EXPERIMENTAL_PAGE_BUILD_ON_DATA_CHANGES: true
+          CI: true
+
+      - name: Run Gatsby app
+        run: npx gatsby serve --host 172.17.0.1 &
+
+      - name: Lost Pixel
+        uses: lost-pixel/lost-pixel@465da38bb5641745fbea0fb5f98377bd3367be21
+        env:
+          S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+          S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: lost-pixel-artefacts
+          path: .lostpixel
