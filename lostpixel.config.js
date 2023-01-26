@@ -1,20 +1,20 @@
 module.exports = {
   pageShots: {
     // write your pages here
-    // pages: [
-    //   {
-    //     path: '/reference/api-reference/prisma-schema-reference',
-    //     name: '-reference-api-reference-prisma-schema-reference',
-    //   },
-    //   {
-    //     path: '/reference/api-reference/prisma-client-reference',
-    //     name: '-reference-api-reference-prisma-client-reference',
-    //   },
-    // ],
+    pages: [
+      {
+        path: '/reference/api-reference/prisma-schema-reference',
+        name: '-reference-api-reference-prisma-schema-reference',
+      },
+      {
+        path: '/reference/api-reference/prisma-client-reference',
+        name: '-reference-api-reference-prisma-client-reference',
+      },
+    ],
     // you create your pages here & both are composed
     // pagesJsonUrl: 'http://localhost:9000/lost-pixel.json',
     // baseUrl: 'http://localhost:9000',
-    pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
+    // pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
     baseUrl: 'http://172.17.0.1:9000',
   },
   lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
