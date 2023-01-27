@@ -35,7 +35,7 @@ npm install
 npm run dev
 ```
 
-## Run functions locally
+## Run functions locally using vercel
 
 Run a local build to run the functions using the following command:
 
