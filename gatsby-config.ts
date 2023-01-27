@@ -123,7 +123,7 @@ let plugins: any = [
   },
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
-  'gatsby-plugin-lost-pixel',
+  //add here
 ]
 
 const algoliaPlugin = {
