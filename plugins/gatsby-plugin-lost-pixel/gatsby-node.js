@@ -40,13 +40,13 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
       if (excludedPaths.includes(edge.node.path) || longPages.includes(edge.node.path)) return null
       // Allow headless browser to render super long pages before screenshoting them
 
-
       return {
         path: edge.node.path,
         name: edge.node.path.split('/').join('-'),
       }
     })
     .filter((edge) => edge !== null)
+  console.log(pages.map((p) => typeof p.path !== 'string' && 'not string'))
 
   await fsPromises.writeFile(outputFile, JSON.stringify(pages))
 }
