@@ -1,9 +1,18 @@
 module.exports = {
   pageShots: {
     // write your pages here, it's an empty array, as we are generating the pages on the fly in gatsby-plugin
-    pages: [],
+    pages: [
+      {
+        path: '/data-platform/data-browser',
+        name: '-data-platform-data-browser',
+      },
+      {
+        path: '/data-platform/query-console',
+        name: '-data-platform-query-console',
+      },
+    ],
     // you create your pages on the fly here & it is composed with `pages` array
-    pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
+    //pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
   },
   lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
   apiKey: process.env.LOST_PIXEL_API_KEY,

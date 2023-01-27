@@ -33,7 +33,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
 
   // Construct the pages json by iterating over the mdx files.
 
-  console.log({ edges: data.allSitePage.edges })
   const pages = data.allSitePage.edges
     .map((edge, i) => {
       // Skip explicitly excluded paths
@@ -46,7 +45,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
       }
     })
     .filter((edge) => edge !== null)
-  console.log(pages.map((p) => typeof p.path !== 'string' && 'not string'))
 
   await fsPromises.writeFile(outputFile, JSON.stringify(pages))
 }
