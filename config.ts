@@ -418,8 +418,8 @@ const siteConfig = {
     SpecialPaths: ['prisma-cli', 'deployment', 'sql-views'],
   },
   feedback: {
-    sentimentUrl: 'https://docs-prisma.vercel.app/api/sentiment',
-    feedbackUrl: 'https://docs-prisma.vercel.app/api/feedback',
+    sentimentUrl: '/docs/api/sentiment',
+    feedbackUrl: '/docs/api/feedback',
   },
   sidebar: {
     tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
