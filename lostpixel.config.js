@@ -13,7 +13,7 @@ module.exports = {
   lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
   apiKey: process.env.LOST_PIXEL_API_KEY,
   compareConcurrency: 10,
-  shotConcurrency: 1,
+  shotConcurrency: 10,
   beforeScreenshot: async (page) => {
     await page.addStyleTag({
       content: `iframe {
