@@ -6,7 +6,7 @@ module.exports = {
       { path: '/concepts', name: '-concepts' },
     ],
     // you create your pages on the fly here & it is composed with `pages` array
-    pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
+    // pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
     baseUrl: 'http://172.17.0.1:9000',
   },
   //generateOnly: true,
