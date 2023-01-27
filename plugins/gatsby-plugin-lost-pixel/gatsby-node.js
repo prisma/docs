@@ -31,6 +31,8 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
   }`
   const { data } = await graphql(query)
 
+  console.log('Generating lost-pixel.json file for lostpixel plugin.')
+
   // Construct the pages json by iterating over the mdx files.
 
   const pages = data.allSitePage.edges
@@ -38,6 +40,11 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
       // Skip explicitly excluded paths
       if (excludedPaths.includes(edge.node.path) || longPages.includes(edge.node.path)) return null
       // Allow headless browser to render super long pages before screenshoting them
+
+      console.log('entry', {
+        path: edge.node.path,
+        name: edge.node.path.split('/').join('-'),
+      })
 
       return {
         path: edge.node.path,
