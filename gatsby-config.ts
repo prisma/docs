@@ -142,6 +142,8 @@ if (process.env.INDEX_ALGOLIA === 'true') {
     }
     
     plugins.push(algoliaPlugin)
+
+    console.log('INDEX_ALGOLIA is `true`, and GATSBY_ALGOLIA_APP_ID is set, so pushing algoliaPlugin to list of plugins to trigger search indexing.')
   } else {
     console.warn('INDEX_ALGOLIA === true, but GATSBY_ALGOLIA_APP_ID is undefined.')
   }
