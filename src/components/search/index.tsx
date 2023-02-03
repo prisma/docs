@@ -95,10 +95,33 @@ const HitsWrapper = styled.div`
 
 const indexName = config.header.search.indexName
 const DEBOUNCE_TIME = 400
-const searchClient = algoliasearch(
+const algoliaClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
 )
+
+const searchClient = {
+  ...algoliaClient,
+  search(requests: any) {
+    if (requests.every(({ params }: any) => !params.query)) {
+      return Promise.resolve({
+        results: requests.map(() => ({
+          hits: [],
+          nbHits: 0,
+          nbPages: 0,
+          page: 0,
+          processingTimeMS: 0,
+          hitsPerPage: 0,
+          exhaustiveNbHits: false,
+          query: '',
+          params: '',
+        })),
+      })
+    }
+
+    return algoliaClient.search(requests)
+  },
+}
 
 const getHits = (children: any, res: any) => {
   const allHits = res.hits
