@@ -11,7 +11,7 @@ tocDepth: 2
 
 <Admonition type="warning">
 
-Support for views is currently a very early [Preview](/about/prisma/releases#preview) feature. You can add a view to your Prisma schema with the `view` keyword or introspect the views in your schema with `db pull`.<br /><br />For updates on progress with this feature, follow [our GitHub issue](https://github.com/prisma/prisma/issues/17335).
+Support for views is currently a very early [Preview](/about/prisma/releases#preview) feature. You can add a view to your Prisma schema with the `view` keyword or introspect the views in your database schema with `db pull`. You cannot yet apply views in your schema to your database with Prisma Migrate and `db push` unless the changes are added manually to your migration file using the `--create-only` flag. <br /><br />For updates on progress with this feature, follow [our GitHub issue](https://github.com/prisma/prisma/issues/17335).
 
 </Admonition>
 
@@ -123,7 +123,7 @@ db.createView('UserInfo', 'User', [
 
 ## Use views with Prisma Migrate and <inlineCode>db push</inlineCode>
 
-Prisma does not create or run any SQL related to views.
+If you apply changes to your Prisma schema with Prisma Migrate or `db push`, Prisma does not create or run any SQL related to views.
 
 To include views in a migration, run `migrate dev --create-only` and then manually add the SQL for views to your migration file. Alternatively, you can create views manually in the database.
 
@@ -192,8 +192,6 @@ The properties of a view are called _fields_, which consist of:
 - A field name
 - A field type
 
-<!-- Would be good to link off to API reference material for valid attributes on these when available -->
-
 The fields of the `UserInfo` example view can be defined as follows:
 
 <TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
@@ -227,6 +225,10 @@ Each _field_ of a `view` block represents a column in the query results of the v
 
 ### Use introspection
 
+<Admonition type="warning">
+Currently only available for PostgreSQL.
+</Admonition>
+
 If you have an existing view or views defined in your database, [introspection](/concepts/components/introspection) will automatically generate `view` blocks in your Prisma schema that represent those views.
 
 Assuming the example `UserInfo` view exists in your underlying database, running the following command will generate a `view` block in your Prisma schema representing that view:
@@ -248,13 +250,13 @@ view UserInfo {
 }
 ```
 
-The `view` block is generated initially with a `@@ignore` attribute because [there is no unique identifier defined](#unique-identifier) (which is a currently a [limitation](#unique-identifier) of the views implementation in Prisma).
+The `view` block is generated initially with a `@@ignore` attribute because [there is no unique identifier defined](#unique-identifier) (which is currently a [limitation](#unique-identifier) of the views preview feature).
 
 In this view's case, the `id` column refers to a uniquely identifiable field in the underlying `User` table so that field will also be used as the uniquely identifiable field in the `view` block.
 
 In order to make this `view` block valid, add the `@unique` attribute to the `id` field and remove the `@@ignore` attribute:
 
-```prisma highlight=2;edit|7;delete
+```prisma highlight=2;edit|6,7;delete
 view UserInfo {
   id    Int    @unique
   email String?
@@ -279,12 +281,14 @@ Please note for now `db pull` will only introspect views in your schema when usi
 
 Currently, Prisma treats views in the same way as models. This means that a view needs to have at least one _unique identifier_, which can be represented by any of the following:
 
-- An [`@id`](/concepts/components/prisma-schema/data-model#defining-an-id-field) field
-- A composite identifier denoted with [`@@id`](/concepts/components/prisma-schema/data-model#composite-ids)
 - A unique constraint denoted with [`@unique`](/concepts/components/prisma-schema/data-model#defining-a-unique-field)
 - A composite unique constraint denoted with [`@@unique`](/concepts/components/prisma-schema/data-model#defining-a-unique-field)
+- An [`@id`](/concepts/components/prisma-schema/data-model#defining-an-id-field) field
+- A composite identifier denoted with [`@@id`](/concepts/components/prisma-schema/data-model#composite-ids)
 
-In relational databases, a view's unique identifier can be defined as a `@unique` attribute on one field, or a `@@unique` attribute on multiple fields. In MongoDB, the unique identifier must be an `@id` attribute that maps to the `_id` field in the underlying database with `@map("_id")`.
+In relational databases, a view's unique identifier can be defined as a `@unique` attribute on one field, or a `@@unique` attribute on multiple fields. When possible, it is preferable to use a `@unique` or `@@unique` constraint over an `@id` or `@@id` field. 
+
+In MongoDB, however, the unique identifier must be an `@id` attribute that maps to the `_id` field in the underlying database with `@map("_id")`.
 
 In the example above, the `id` field has a `@unique` attribute. If another column in the underlying `User` table had been defined as uniquely identifiable and made available in the view's query results, that column could have been used as the unique identifier instead.
 
