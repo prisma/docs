@@ -8,7 +8,7 @@ metaDescription: 'This page gives an overview of the most important things when 
 
 When building REST APIs, Prisma Client can be used inside your _route controllers_ to send databases queries.
 
-![REST APIs with Prisma Client](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/5NwAOMt.png)
+![REST APIs with Prisma Client](../prisma-rest-apis.png)
 
 </TopBlock>
 
@@ -30,7 +30,6 @@ Here's a non-exhaustive list of libraries and frameworks you can use with Prisma
 - [Polka](https://github.com/lukeed/polka)
 - [Micro](https://github.com/zeit/micro)
 - [Feathers](https://feathersjs.com/)
-- [Remix](https://remix.run/)
 
 ## REST API server example
 
