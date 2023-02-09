@@ -12,96 +12,196 @@ Prisma Client differentiates between `null` and `undefined`:
 - `null` is a **value**
 - `undefined` means **do nothing**
 
-> **Note**: This is particularly important to account for in [a **Prisma with GraphQL context**, where `null` and `undefined` are interchangeable](#use-case-null-and-undefined-in-a-graphql-resolver).
+<Admonition type="info">
 
-## <inlinecode>null</inlinecode> and <inlinecode>undefined</inlinecode> in <inlinecode>find*</inlinecode> queries
-  
-TODO Simple example with `findMany` and `findFirst` that shows how a query with `foo: undefined` (e.g. https://github.com/prisma/prisma/issues/17723) returns everything or any first entry as it is filtered out of the query
-  
-## <inlinecode>null</inlinecode> and <inlinecode>undefined</inlinecode> in <inlinecode>update*</inlinecode> queries
+This is particularly important to account for in [a **Prisma with GraphQL context**, where `null` and `undefined` are interchangeable](#use-case-null-and-undefined-in-a-graphql-resolver).
 
-In the following example, if `emailInput` is `null`, the query sets `email` (a **mandatory** field) to `undefined` - which means ✔ **do not include this in the update**:
+</Admonition>
 
-```ts
-const update = await prisma.user.update({
-  where: {
-    id: 1,
-  },
-  data: {
-    name: "Petunia",
-|    email: emailInput != null ? emailInput : undefined, // If null, don't include in update!
-  },
-});
+The data below represents a `User` table. This set of data will be used in all of the examples below:
 
-function getEmail() {
-  const random = Math.floor(Math.random() * 10);
-
-  if (random > 5) {
-    return "ariadne@prisma.io"; // Could be null!
-  }
-
-  return null;
-}
-```
-
-Setting a field value to `undefined` is the same as not including the `email` field in the `update` query **at all**:
-
-```ts
-const update = await prisma.user.update({
-  where: {
-    id: 1,
-  },
-  data: {
-    name: "Petunia",
-|    // No email update here...
-  },
-});
-
-function getEmail() {
-  const random = Math.floor(Math.random() * 10);
-
-  if (random > 5) {
-    return "ariadne@prisma.io"; // Could be null!
-  }
-
-  return null;
-}
-```
-
-By contrast, the following would ✘ **not work** as the mandatory `email` field cannot be `null`:
-
-```ts
-email: isValid(emailInput) ? emailInput : null, // email is a mandatory field!
-```
-
-> **Note**: TypeScript will give you an error in this scenario: `Type 'null' is not assignable to type 'string'. ts(2322)`
-
-<details><summary>Expand for sample schema</summary>
-
-```prisma
-model User {
-  email String  @unique
-  id    Int     @id @default(autoincrement())
-  name  String?
-  posts Post[]
-}
-
-model Post {
-  id       String @id @default(cuid())
-  title    String
-  authorId Int?
-  views    Int?
-  author   User?  @relation(fields: [authorId], references: [id])
-}
-```
-
-</details>
+| id  | name    | email             |
+| --- | ------- | ----------------- |
+| 1   | Nikolas | nikolas@gmail.com |
+| 2   | Martin  | martin@gmail.com  |
+| 3   | _empty_ | sabin@gmail.com   |
+| 4   | Tyler   | tyler@gmail.com   |
 
 </TopBlock>
 
-## Use case: <inlinecode>null</inlinecode> and <inlinecode>undefined</inlinecode> in a GraphQL resolver
+<!-- TODO Simple example with `findMany` and `findFirst` that shows how a query with `foo: undefined` (e.g. https://github.com/prisma/prisma/issues/17723) returns everything or any first entry as it is filtered out of the query -->
 
-In the following example mutation that updates a user, both `authorEmail` and `name` accept `null` - from a GraphQL perspective, this means that fields are **optional**:
+## <inlinecode>null</inlinecode> and <inlinecode>undefined</inlinecode> in queries that affect _many_ records
+
+This section will cover how `undefined` and `null` values in the filters of a query affect these functions:
+
+- `findMany`
+- `updateMany`
+- `deleteMany`
+- `count`
+- `aggregate`
+- `groupBy`
+
+Consider the following Prisma Client query which searches for any user whose `name` column's value matches the provided value:
+
+```ts
+const users = await prisma.user.findMany({
+  where: {
+    name: null,
+  },
+})
+```
+
+Because `null` was provided as the filter criteria for the `name` column, Prisma Client will generate a query that searches for any records in the `User` table whose `name` column is _empty_.
+
+The results of the query will be:
+
+```json
+[
+  {
+    "id": 3,
+    "name": null,
+    "email": "sabin@gmail.com"
+  }
+]
+```
+
+Now consider the scenario where you invoke the same query, except `undefined` is used as the filter criteria:
+
+```ts
+const users = await prisma.user.findMany({
+  where: {
+    name: undefined,
+  },
+})
+```
+
+When `undefined` is used in this way, you essentially tell Prisma Client you have decided _not to define a filter_ for that column. An equivalent way to write the above query would be:
+
+```ts
+const users = await prisma.user.findMany()
+```
+
+This query will select every row from the `User` table.
+
+The resulting dataset from the query using `undefined` as the filter criteria will contain the entire set of users:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Nikolas",
+    "email": "nikolas@gmail.com"
+  },
+  {
+    "id": 2,
+    "name": "Martin",
+    "email": "martin@gmail.com"
+  },
+  {
+    "id": 3,
+    "name": null,
+    "email": "sabin@gmail.com"
+  },
+  {
+    "id": 4,
+    "name": "Tyler",
+    "email": "tyler@gmail.com"
+  }
+]
+```
+
+Although this section's examples focused on the `findMany` function, the same concepts apply to any function that can affect multiple records, such as `updateMany` and `deleteMany`.
+
+## <inlinecode>null</inlinecode> and <inlinecode>undefined</inlinecode> in queries that affect _one_ record
+
+This section will cover how `undefined` and `null` values in the filter of a query affect these functions:
+
+- `findFirst`
+- `findFirstOrThrow`
+- `findUnique`
+- `findUniqueOrThrow`
+- `delete`
+- `update`
+- `upsert`
+
+<Admonition type="warning">
+
+`null` is not a valid filter value in a `findUnique` query.
+
+</Admonition>
+
+The query behavior when using `null` and `undefined` in the filter criteria of a query that affects a single record is very similar to the behaviors described in the previous section.
+
+Consider the following query:
+
+```ts
+const user = await prisma.user.findFirst({
+  where: {
+    name: null,
+  },
+})
+```
+
+Because `null` was used as the filter on the `name` column, Prisma Client will generate a query that searches for the first record in the `User` table whose `name` value is empty.
+
+The result of either of the query above will be as follows:
+
+```json
+[
+  {
+    "id": 3,
+    "name": null,
+    "email": "sabin@gmail.com"
+  }
+]
+```
+
+If `undefined` is instead used as the filter criteria on the `name` column, the query will act as if no filter criteria was passed to that column at all.
+
+Consider the query below:
+
+```ts
+const user = await prisma.user.findFirst({
+  where: {
+    name: undefined,
+  },
+})
+```
+
+Another way to represent the above query is:
+
+```ts
+const user = await prisma.user.findFirst()
+```
+
+In this scenario, the query will return the very first record in the database. The results will be:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Nikolas",
+    "email": "nikolas@gmail.com"
+  }
+]
+```
+
+Although this section's examples focused on the `findFirst` function, the same concepts apply to any function that affects a single record.
+
+## <inlinecode>null</inlinecode> and <inlinecode>undefined</inlinecode> in a GraphQL resolver
+
+For this example, consider a database based on the following Prisma schema:
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+```
+
+In the following GraphQL mutation that updates a user, both `authorEmail` and `name` accept `null`. From a GraphQL perspective, this means that fields are **optional**:
 
 ```ts
 type Mutation {
@@ -112,8 +212,8 @@ type Mutation {
 
 However, if you pass `null` values for `authorEmail` or `authorName` on to Prisma, the following will happen:
 
-- If `args.authorEmail` is `null`, the query will **fail** - `email` does not accept `null` ✘
-- If `args.authorName` is `null`, Prisma changes the value of `name` to `null` - this is probably not how you want an update to work ✘
+- If `args.authorEmail` is `null`, the query will **fail**. `email` does not accept `null`.
+- If `args.authorName` is `null`, Prisma changes the value of `name` to `null`. This is probably not how you want an update to work.
 
 ```ts
 updateUser: (parent, args, ctx: Context) => {
