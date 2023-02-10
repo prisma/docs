@@ -10,7 +10,7 @@ module.exports = {
     baseUrl: 'http://172.17.0.1:9000',
   },
   //generateOnly: true,
-  lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
+  lostPixelPlatform: 'https://api.staging.lost-pixel.com',
   apiKey: process.env.LOST_PIXEL_API_KEY,
   compareConcurrency: 10,
   shotConcurrency: 10,
