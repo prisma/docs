@@ -14,6 +14,7 @@ module.exports = {
   apiKey: process.env.LOST_PIXEL_API_KEY,
   compareConcurrency: 10,
   shotConcurrency: 10,
+  threshold: 10,
   beforeScreenshot: async (page) => {
     await page.addStyleTag({
       content: `iframe {
