@@ -10,11 +10,13 @@ export const useAllArticlesQuery = () => {
             frontmatter {
               title
               duration
+              navTitle
               staticLink
               experimental
               preview
               earlyaccess
               langSwitcher
+              search
               dbSwitcher
               hidePage
               codeStyle

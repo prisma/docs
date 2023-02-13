@@ -114,19 +114,18 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
                   let isDiff = false
                   let diffSymbol = ''
-
                   if (
                     (line[0] &&
                       line[0].content.length &&
                       (line[0].content[0] === '+' ||
-                        line[0].content[0] === '-' ||
+                        (line[0].content[0] === '-' && line[0].content[1] !== '-') ||
                         line[0].content[0] === '|' ||
                         line[0].content[0] === '✎')) ||
                     (line[0] &&
                       line[0].content === '' &&
                       line[1] &&
                       (line[1].content === '+' ||
-                        line[1].content === '-' ||
+                        (line[1].content === '-' && line[2].content !== '-') ||
                         line[1].content === '|' ||
                         line[1].content === '✎'))
                   ) {
@@ -212,7 +211,7 @@ const CodeWrapper = styled.div`
   margin-bottom: ${(p) => p.theme.space[24]};
   .file {
     font-weight: 600;
-    color: ${(p) => p.theme.colors.gray600};
+    color: ${(p) => p.theme.colors.gray[600]};
     font-size: ${(p) => p.theme.fontSizes[14]};
     font-family: ${(p) => p.theme.fonts.text};
     margin-bottom: 0.5rem;
@@ -247,7 +246,7 @@ const Line = styled.div`
 const LineNo = styled.span`
   font-weight: 500;
   line-height: ${(p) => p.theme.space[24]};
-  color: ${(p) => p.theme.colors.gray400};
+  color: ${(p) => p.theme.colors.gray[400]};
   display: inline-block;
   text-align: right;
   user-select: none;

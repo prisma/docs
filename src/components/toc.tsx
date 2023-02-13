@@ -11,7 +11,7 @@ const ChapterTitle = styled.div`
   line-height: 100%;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: ${(p) => p.theme.colors.gray900};
+  color: ${(p) => p.theme.colors.gray[900]};
   margin: ${(p) => p.theme.space[16]} 0 0;
 `
 
@@ -28,9 +28,9 @@ const HeadingList = styled.ul`
     }
     a {
       text-decoration: none;
-      color: ${(p) => p.theme.colors.gray600};
+      color: ${(p) => p.theme.colors.gray[600]};
       &:hover {
-        color: ${(p) => p.theme.colors.gray900};
+        color: ${(p) => p.theme.colors.gray[900]};
       }
     }
   }
