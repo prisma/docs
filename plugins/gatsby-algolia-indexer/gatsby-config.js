@@ -84,8 +84,8 @@ const handleRawBody = (node) => {
 
   const records = data.map((item, index) => {
     const record = {
-      id: index,
-      objectID: rest.objectID,
+      //id: index,
+      id: rest.id + index,
       title: rest.title,
       slug: rest.modSlug,
       apiReference: isApiTerm(item.text) ? getApiVal(item.text) : null,
@@ -94,6 +94,9 @@ const handleRawBody = (node) => {
       path: `${rest.modSlug.replace(/\d{2,}-/g, '')}${
         getTechParams(item) ? '-' + getTechParams(item) : ''
       }${getTitlePath(item)}`,
+      internal: {
+        contentDigest: rest.internal.contentDigest,
+      },
     }
     return record
   })
@@ -109,10 +112,14 @@ module.exports = (options) => {
         allMdx {
           edges {
             node {
+              id
               rawBody
               fields {
                 slug
                 modSlug
+              }
+              internal {
+                contentDigest
               }
               frontmatter {
                 title
