@@ -7,9 +7,7 @@ import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
 import qs from 'qs'
-import { withPrefix } from 'gatsby'
-import { navigate } from '@reach/router'
-import { getQueryParams, setQueryParams } from 'react-use-query-param-string'
+import { navigate } from 'gatsby'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -97,10 +95,33 @@ const HitsWrapper = styled.div`
 
 const indexName = config.header.search.indexName
 const DEBOUNCE_TIME = 400
-const searchClient = algoliasearch(
+const algoliaClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
 )
+
+const searchClient = {
+  ...algoliaClient,
+  search(requests: any) {
+    if (requests.every(({ params }: any) => !params.query)) {
+      return Promise.resolve({
+        results: requests.map(() => ({
+          hits: [],
+          nbHits: 0,
+          nbPages: 0,
+          page: 0,
+          processingTimeMS: 0,
+          hitsPerPage: 0,
+          exhaustiveNbHits: false,
+          query: '',
+          params: '',
+        })),
+      })
+    }
+
+    return algoliaClient.search(requests)
+  },
+}
 
 const getHits = (children: any, res: any) => {
   const allHits = res.hits
@@ -133,15 +154,14 @@ const Results = connectStateResults(
 
 const createURL = (state: any) => `?${qs.stringify(state)}`
 
-const searchStateToUrl = (location: any, searchState: any) => {
-  const newUrl = searchState
-    ? `${location.pathname !== '/docs' ? location.pathname.replace('/docs', '') : ''}${createURL(
-        searchState
-      )}`
+const searchStateToUrl = (location: any, searchState: any) =>
+  searchState
+    ? `${
+        location.pathname === '/docs'
+          ? location.pathname.replace('docs', '')
+          : location.pathname.replace('/docs', '')
+      }${createURL(searchState)}`
     : ``
-  console.log(newUrl, location.pathname)
-  return location.pathname === '/docs' ? newUrl : withPrefix(newUrl)
-}
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
@@ -169,11 +189,7 @@ export default function Search({ hitsStatus, location }: any) {
     clearTimeout(debouncedSetStateRef.current)
 
     debouncedSetStateRef.current = setTimeout(() => {
-      if (location.pathname === '/docs') {
-        setQueryParams({ query: updatedSearchState.query, page: updatedSearchState.page })
-      } else {
-        navigate(searchStateToUrl(location, updatedSearchState)) //?query=uuid&page=1
-      }
+      navigate(searchStateToUrl(location, updatedSearchState))
     }, DEBOUNCE_TIME)
 
     setSearchState(updatedSearchState)
