@@ -4,7 +4,7 @@ We welcome all contributions to the Prisma docs! If you come across some documen
 
 ## I am not sure my changes are valid
 
-If you are not sure your changes are valid, please open an issue and we will discuss it. Contributions from community members are welcome and will be considered for inclusion.
+If you are not sure your changes are valid, then please open an issue and we will discuss it. Contributions from community members are welcome and will be considered for inclusion.
 
 ## Creating an issue
 
