@@ -17,7 +17,7 @@ From version 2.26.0, you can define referential actions on the relation fields i
 
 - If you use version 3.0.1 or later, you can use referential actions as described on this page.
 - If you use a version between 2.26.0 and 3.0.0, you can use referential actions as described on this page, but you must [enable the preview feature flag](/concepts/components/preview-features/client-preview-features#enabling-a-prisma-client-preview-feature) `referentialActions`.
-- If you use version 2.25.0 or earlier, you can do cascading deletes [manually in the database](/guides/database/advanced-database-tasks/cascading-deletes).
+- If you use version 2.25.0 or earlier, you can configure cascading deletes manually in your database.
 
 </Admonition>
 
@@ -150,17 +150,42 @@ The following caveats apply:
 
 The following table shows which referential action each database supports.
 
-| Database   | Cascade | Restrict | NoAction | SetNull | SetDefault |
-| :--------- | :------ | :------- | :------- | :------ | :--------- |
-| PostgreSQL | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
-| MySQL      | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**†    |
-| SQLite     | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
-| SQL Server | **✔️**  | **❌**‡  | **✔️**   | **✔️**  | **✔️**     |
-| MongoDB††  | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**     |
+| Database    | Cascade | Restrict | NoAction | SetNull | SetDefault |
+| :---------- | :------ | :------- | :------- | :------ | :--------- |
+| PostgreSQL  | **✔️**  | **✔️**   | **✔️**   | **✔️**⌘ | **✔️**     |
+| MySQL       | **✔️**  | **✔️**   | **✔️**   | **✔️**  | ❌ (✔️†)   |
+| SQLite      | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
+| SQL Server  | **✔️**  | **❌**‡  | **✔️**   | **✔️**  | **✔️**     |
+| CockroachDB | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **✔️**     |
+| MongoDB††   | **✔️**  | **✔️**   | **✔️**   | **✔️**  | **❌**     |
 
-- † On [InnoDB](https://dev.mysql.com/doc/refman/5.6/en/innodb-introduction.html#:~:text=InnoDB%20is%20a%20general%2Dpurpose,clause%20creates%20an%20InnoDB%20table.), `SetDefault` is ignored and is silently replaced with `NoAction` instead.
-- ‡ [`NoAction`](#noaction) can be used in place of [`Restrict`](#restrict) when working with an SQL Server database.
-- †† Referential Actions for MongoDB are available from version 3.7.0 and later.
+- † See [special cases for MySQL](#mysql).
+- ⌘ See [special cases for PostgreSQL](#postgresql).
+- ‡ See [special cases for SQL Server](#sql-server).
+- †† Referential actions for MongoDB are available in Prisma versions 3.7.0 and later.
+
+### Special cases for referential actions
+
+Referential actions are part of the ANSI SQL standard. However, there are special cases where some relational databases diverge from the standard.
+
+#### MySQL
+
+MySQL, and the underlying InnoDB storage engine, does not support `SetDefault`. The exact behavior depends on the database version:
+
+- In MySQL versions 8 and later, and MariaDB versions 10.5 and later, `SetDefault` effectively acts as an alias for `NoAction`. You can define tables using the `SET DEFAULT` referential action, but a foreign key constraint error is triggered at runtime.
+- In MySQL versions 5.6 and later, and MariaDB versions before 10.5, attempting to create a table definition with the `SET DEFAULT` referential action fails with a syntax error.
+
+For this reason, when you set `mysql` as the database provider, Prisma warns users to replace `SetDefault` referential actions in the Prisma schema with another action.
+
+#### PostgreSQL
+
+PostgreSQL is the only database supported by Prisma that allows you to define a `SetNull` referential action that refers to a non-nullable field. However, this raises a foreign key constraint error when the action is triggered at runtime.
+
+For this reason, when you set `postgres` as the database provider in the (default) `foreignKeys` relation mode, Prisma warns users to mark as optional any fields that are included in a `@relation` attribute with a `SetNull` referential action. For all other database providers, Prisma rejects the schema with a validation error.
+
+#### SQL Server
+
+[`Restrict`](#restrict) is not available for SQL Server databases, but you can use [`NoAction`](#noaction) instead.
 
 ### <inlinecode>Cascade</inlinecode>
 
@@ -244,7 +269,7 @@ The `NoAction` action is similar to `Restrict`, the difference between the two i
 
 <Admonition type="warning">
 
-If you are [emulating referential integrity](/concepts/components/prisma-schema/relations/referential-integrity#handling-the-referential-integrity-in-prisma) in the Prisma client rather than using foreign keys in the database, you should be aware that currently Prisma only implements the referential actions. Foreign keys also create constraints, which make it impossible to manipulate data in a way that would violate these constraints: instead of executing the query, the database responds with an error. These constraints will not be created if you emulate referential integrity in the client, so if you set the referential action to `NoAction` there will be no checks to prevent you from breaking the referential integrity.
+If you are [managing relations in the Prisma Client](/concepts/components/prisma-schema/relations/relation-mode#emulate-relations-in-prisma-with-the-prisma-relation-mode) rather than using foreign keys in the database, you should be aware that currently Prisma only implements the referential actions. Foreign keys also create constraints, which make it impossible to manipulate data in a way that would violate these constraints: instead of executing the query, the database responds with an error. These constraints will not be created if you emulate referential integrity in the client, so if you set the referential action to `NoAction` there will be no checks to prevent you from breaking the referential integrity.
 
 </Admonition>
 
@@ -323,6 +348,10 @@ model User {
 When deleting a `User`, its existing posts' `authorUsername` field values will be set to 'anonymous'.
 
 When the `username` of a `User` changes, its existing posts' `authorUsername` field values will be set to 'anonymous'.
+
+### Database-specific requirements
+
+MongoDB and SQL Server have specific requirements for referential actions if you have [self-relations](/concepts/components/prisma-schema/relations/referential-actions/special-rules-for-referential-actions#self-relation-sql-server-and-mongodb) or [cyclic relations](/concepts/components/prisma-schema/relations/referential-actions/special-rules-for-referential-actions#cyclic-relation-between-three-tables-sql-server-and-mongodb) in your data model. SQL Server also has specific requirements if you have relations with [multiple cascade paths](/concepts/components/prisma-schema/relations/referential-actions/special-rules-for-referential-actions#multiple-cascade-paths-between-two-models-sql-server-only).
 
 ## Upgrade paths from versions 2.25.0 and earlier
 

@@ -87,7 +87,7 @@ const HitsWrapper = styled.div`
     // left: 0;
     top: 88px;
     // max-width: 100%;
-    border-top: 1px solid ${(p) => p.theme.colors.gray300};
+    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
@@ -95,10 +95,33 @@ const HitsWrapper = styled.div`
 
 const indexName = config.header.search.indexName
 const DEBOUNCE_TIME = 400
-const searchClient = algoliasearch(
+const algoliaClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
 )
+
+const searchClient = {
+  ...algoliaClient,
+  search(requests: any) {
+    if (requests.every(({ params }: any) => !params.query)) {
+      return Promise.resolve({
+        results: requests.map(() => ({
+          hits: [],
+          nbHits: 0,
+          nbPages: 0,
+          page: 0,
+          processingTimeMS: 0,
+          hitsPerPage: 0,
+          exhaustiveNbHits: false,
+          query: '',
+          params: '',
+        })),
+      })
+    }
+
+    return algoliaClient.search(requests)
+  },
+}
 
 const getHits = (children: any, res: any) => {
   const allHits = res.hits
@@ -132,7 +155,13 @@ const Results = connectStateResults(
 const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) =>
-  searchState ? `${location.pathname.replace('/docs', '')}${createURL(searchState)}` : ``
+  searchState
+    ? `${
+        location.pathname === '/docs'
+          ? location.pathname.replace('docs', '')
+          : location.pathname.replace('/docs', '')
+      }${createURL(searchState)}`
+    : ``
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 

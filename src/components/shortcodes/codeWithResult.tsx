@@ -82,7 +82,7 @@ const Wrapper = styled.div`
       }
 
       .token.punctuation {
-        color: ${(p) => p.theme.colors.gray500} !important;
+        color: ${(p) => p.theme.colors.gray[500]} !important;
       }
 
       border-radius: 0px 0px 8px 8px;
