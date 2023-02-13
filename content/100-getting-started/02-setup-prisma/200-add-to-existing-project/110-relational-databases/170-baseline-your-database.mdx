@@ -15,10 +15,10 @@ Baselining refers to initializing your migration history for a database that mig
 
 To baseline your database, use [`prisma migrate diff`](/reference/api-reference/command-reference#migrate-diff) to compare your schema and database, and save the output into a SQL file.
 
-First, create a `migrations` directory and add a directory inside with your preferred name for the migration. In this example, we will use `init` as the migration name:
+First, create a `migrations` directory and add a directory inside with your preferred name for the migration. In this example, we will use `0_init` as the migration name:
 
 ```terminal
-mkdir -p prisma/migrations/init
+mkdir -p prisma/migrations/0_init
 ```
 
 <Admonition type="info">
@@ -34,7 +34,7 @@ Next, generate the migration file with `prisma migrate diff`. Use the following 
 - `--script`: output a SQL script
 
 ```terminal
-npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/init/migration.sql
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
 ```
 
 ## Review the migration
@@ -43,36 +43,55 @@ The command will generate a migration that should resemble the following script:
 
 <SwitchTech technologies={['*', 'postgres']}>
 
-```sql file=prisma/migrations/init/migration.sql
-CREATE TABLE "public"."User" (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name VARCHAR(255),
-  email VARCHAR(255) UNIQUE NOT NULL
+```sql file=prisma/migrations/0_init/migration.sql
+-- CreateTable
+CREATE TABLE "Post" (
+    "id" SERIAL NOT NULL,
+    "title" VARCHAR(255) NOT NULL,
+    "createdAt" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "content" TEXT,
+    "published" BOOLEAN NOT NULL DEFAULT false,
+    "authorId" INTEGER NOT NULL,
+
+    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "public"."Post" (
-  id SERIAL PRIMARY KEY NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-  content TEXT,
-  published BOOLEAN NOT NULL DEFAULT false,
-  "authorId" INTEGER NOT NULL,
-  FOREIGN KEY ("authorId") REFERENCES "public"."User"(id)
+-- CreateTable
+CREATE TABLE "Profile" (
+    "id" SERIAL NOT NULL,
+    "bio" TEXT,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "public"."Profile" (
-  id SERIAL PRIMARY KEY NOT NULL,
-  bio TEXT,
-  "userId" INTEGER UNIQUE NOT NULL,
-  FOREIGN KEY ("userId") REFERENCES "public"."User"(id)
+-- CreateTable
+CREATE TABLE "User" (
+    "id" SERIAL NOT NULL,
+    "name" VARCHAR(255),
+    "email" VARCHAR(255) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Profile_userId_key" ON "Profile"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- AddForeignKey
+ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 ```
 
 </SwitchTech>
 
 <SwitchTech technologies={['*', 'mysql']}>
 
-```sql file=prisma/migrations/init/migration.sql
+```sql file=prisma/migrations/0_init/migration.sql
 CREATE TABLE User (
   id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
   name VARCHAR(255),
@@ -101,7 +120,7 @@ CREATE TABLE Profile (
 
 <SwitchTech technologies={['*', 'sqlserver']}>
 
-```sql file=prisma/migrations/init/migration.sql
+```sql file=prisma/migrations/0_init/migration.sql
 CREATE TABLE [dbo].[Post] (
     [id] INT NOT NULL IDENTITY(1,1),
     [createdAt] DATETIME2 NOT NULL CONSTRAINT [Post_createdAt_df] DEFAULT CURRENT_TIMESTAMP,
@@ -138,7 +157,7 @@ ALTER TABLE [dbo].[Profile] ADD CONSTRAINT [Profile_userId_fkey] FOREIGN KEY ([u
 
 <SwitchTech technologies={['*', 'cockroachdb']}>
 
-```sql file=prisma/migrations/init/migration.sql
+```sql file=prisma/migrations/0_init/migration.sql
 CREATE TABLE "User" (
   id INT8 PRIMARY KEY DEFAULT unique_rowid(),
   name STRING(255),
@@ -170,10 +189,10 @@ Review the SQL migration file to ensure everything is correct.
 Next, mark the migration as applied using `prisma migrate resolve` with the `--applied` argument.
 
 ```terminal
-npx prisma migrate resolve --applied init
+npx prisma migrate resolve --applied 0_init
 ```
 
-The command will mark `init` as applied by adding it to the `_prisma_migrations` table.
+The command will mark `0_init` as applied by adding it to the `_prisma_migrations` table.
 
 You now have a baseline for your current database schema. To make further changes to your database schema, you can update your Prisma schema and use `prisma migrate dev` to apply the changes to your database.
 
