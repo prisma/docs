@@ -1,0 +1,84 @@
+---
+title: 'Extension sample: exists function'
+metaTitle: 'Extension sample: `exists` function '
+metaDescription: 'How to use Prisma Client extensions to create an `exists` function.'
+---
+
+<TopBlock>
+
+Before you create Prisma Client extensions, you must enable the `clientExtensions` feature flag in the `generator` block of your `schema.prisma` file, as follows:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+```
+
+<Admonition type="info">
+
+The Preview feature is available from v4.7.0 and higher.
+
+</Admonition>
+
+The following example adds an `exists` function to all your models:
+
+```ts
+import { PrismaClient, Prisma } from '@prisma/client'
+
+const prisma = new PrismaClient().$extends({
+  model: {
+    $allModels: {
+      async exists<T>(
+        this: T,
+        where: Prisma.Args<T, 'findFirst'>['where']
+      ): Promise<boolean> {
+        const context = Prisma.getExtensionContext(this)
+        const result = await (context as any).findFirst({ where })
+        return result !== null
+      },
+    },
+  },
+})
+
+// Example queries
+await prisma.post.exists(1)
+
+await prisma.user.exists(1)
+```
+
+The example is based on the following sample schema:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+
+  user     User? @relation(fields: [authorId], references: [id])
+  authorId Int?
+
+  @@index([authorId], name: "authorId")
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  email String  @unique
+
+  posts Post[]
+}
+```
+
+</TopBlock>
