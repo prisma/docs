@@ -53,22 +53,34 @@ model CategoriesOnPosts {
 The underlying SQL looks like this:
 
 ```sql
-CREATE TABLE "Category" (
-    id SERIAL PRIMARY KEY
-);
 CREATE TABLE "Post" (
-    id SERIAL PRIMARY KEY
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+
+    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
--- Relation table + indexes -------------------------------------------------------
+
+CREATE TABLE "Category" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+
+-- Relation table + indexes --
+
 CREATE TABLE "CategoriesOnPosts" (
-    "categoryId" integer NOT NULL,
-    "postId" integer NOT NULL,
-    "assignedBy" text NOT NULL
-    "assignedAt" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY ("categoryId")  REFERENCES "Category"(id),
-    FOREIGN KEY ("postId") REFERENCES "Post"(id)
+    "postId" INTEGER NOT NULL,
+    "categoryId" INTEGER NOT NULL,
+    "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "assignedBy" TEXT NOT NULL,
+
+    CONSTRAINT "CategoriesOnPosts_pkey" PRIMARY KEY ("postId","categoryId")
 );
-CREATE UNIQUE INDEX "CategoriesOnPosts_category_post_unique" ON "CategoriesOnPosts"("categoryId" int4_ops,"postId" int4_ops);
+
+ALTER TABLE "CategoriesOnPosts" ADD CONSTRAINT "CategoriesOnPosts_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CategoriesOnPosts" ADD CONSTRAINT "CategoriesOnPosts_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ```
 
 #### Querying an explicit many-to-many
@@ -192,7 +204,7 @@ const getAssignments = await prisma.categoriesOnPosts.findMany({
 
 Implicit many-to-many relations define relation fields as lists on both sides of the relation. Although the relation table exists in the underlying database, **it is managed by Prisma and does not manifest in the Prisma schema**. Implicit relation tables follow a [specific convention](#conventions-for-relation-tables-in-implicit-m-n-relations).
 
-Implicit m-n relations makes the [Prisma Client API](/concepts/components/prisma-client/) for many-to-many relations a bit simpler (since you have one fewer level of nesting inside of [nested writes](/concepts/components/prisma-client/relation-queries#nested-writes)).
+Implicit m-n relations makes the [Prisma Client API](/concepts/components/prisma-client) for many-to-many relations a bit simpler (since you have one fewer level of nesting inside of [nested writes](/concepts/components/prisma-client/relation-queries#nested-writes)).
 
 In the example below, there's one _implicit_ m-n-relation between `Post` and `Category`:
 
@@ -202,11 +214,13 @@ In the example below, there's one _implicit_ m-n-relation between `Post` and `Ca
 ```prisma
 model Post {
   id         Int        @id @default(autoincrement())
+  title      String
   categories Category[]
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
+  name  String
   posts Post[]
 }
 ```
@@ -216,10 +230,12 @@ model Category {
 
 ```sql
 CREATE TABLE "Category" (
-    id SERIAL PRIMARY KEY
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
 );
 CREATE TABLE "Post" (
-    id SERIAL PRIMARY KEY
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL
 );
 -- Relation table + indexes -------------------------------------------------------
 CREATE TABLE "_CategoryToPost" (
@@ -281,7 +297,8 @@ const getPostsAndCategories = await prisma.post.findMany({
 Implicit m-n relations:
 
 - Use a specific [convention for relation tables](#conventions-for-relation-tables-in-implicit-m-n-relations)
-- Do **not** require the `@relation` attribute unless you need to [disambiguate relations](/concepts/components/prisma-schema/relations#disambiguating-relations) (this is not specific to implicit n-m relations).
+- Do **not** require the `@relation` attribute unless you need to [disambiguate relations](/concepts/components/prisma-schema/relations#disambiguating-relations) with a name, e.g. `@relation("MyRelation")` or `@relation(name: "MyRelation")`.
+- If you do use the `@relation` attribute, you cannot use the `references`, `fields`, `onUpdate` or `onDelete` arguments. This is because these take a fixed value for implicit m-n relations and cannot be changed.
 - Require both models to have a single `@id`. Be aware that:
 
   - You cannot use a [multi-field ID](/reference/api-reference/prisma-schema-reference#id-1)
@@ -293,17 +310,23 @@ Implicit m-n relations:
 
   </Admonition>
 
-#### Conventions for relation tables in implicit m-n-relations
+#### Conventions for relation tables in implicit m-n relations
 
 If you obtain your data model from [introspection](/concepts/components/introspection), you can still use implicit many-to-many relations by following Prisma's [conventions for relation tables](#conventions-for-relation-tables-in-implicit-m-n-relations).
 The following example assumes you want to create a relation table to get an implicit many-to-many relation for two models called `Post` and `Category`.
 
-##### Table name
+##### Table names
 
-The name of the relation table must be prefixed with an underscore:
+If you want a relation table to be picked up by introspection as an implicit many-to-many relation, the name must follow this exact structure:
 
-- **Valid**: `_CategoryToPost`, `_MyRelation`
-- **Invalid**: `CategoryToPost`, `MyRelation`
+- It must start with an underscore `_`
+- Then the name of the first table in alphabetical order (in this case `Category`)
+- Then `To`
+- Then the name of the second table in alphabetical order (in this case `Post`)
+
+In the example, the correct table name is `_CategoryToPost`.
+
+When creating an implicit many-to-many relation yourself in the Prisma schema file, you can [configure the relation](#configuring-the-name-of-the-relation-table-in-implicit-many-to-many-relations) to have a different name. This will change the name given to the relation table in the database. For example, for a relation named `"MyRelation"` the corresponding table will be called `_MyRelation`.
 
 ##### Columns
 
@@ -320,19 +343,19 @@ There further must be:
 
 - A unique index defined on both foreign key columns:
 
-```sql
-CREATE UNIQUE INDEX "_CategoryToPost_AB_unique" ON "_CategoryToPost"("A" int4_ops,"B" int4_ops);
-```
+  ```sql
+  CREATE UNIQUE INDEX "_CategoryToPost_AB_unique" ON "_CategoryToPost"("A" int4_ops,"B" int4_ops);
+  ```
 
 - A non-unique index defined on B:
 
-```sql
-CREATE INDEX "_CategoryToPost_B_index" ON "_CategoryToPost"("B" int4_ops);
-```
+  ```sql
+  CREATE INDEX "_CategoryToPost_B_index" ON "_CategoryToPost"("B" int4_ops);
+  ```
 
 ##### Example
 
-This is a sample SQL statement that would create the three tables including indexes (in PostgreSQL dialect):
+This is a sample SQL statement that would create the three tables including indexes (in PostgreSQL dialect) that are picked up as a implicit many-to-many relation by Prisma Introspection:
 
 ```sql
 CREATE TABLE "_CategoryToPost" (
@@ -353,17 +376,17 @@ CREATE TABLE "Post" (
 
 #### Configuring the name of the relation table in implicit many-to-many relations
 
-When using Prisma Migrate, you can configure the name of the relation table that's managed by Prisma using the `@relation` attribute. The only requirement is that it starts with an underscore. For example, if you want the relation table to be called `_MyRelationTable` instead of the default name `_CategoryToPost`, you can specify it as follows:
+When using Prisma Migrate, you can configure the name of the relation table that's managed by Prisma using the `@relation` attribute. For example, if you want the relation table to be called `_MyRelationTable` instead of the default name `_CategoryToPost`, you can specify it as follows:
 
 ```prisma
 model Post {
   id         Int        @id @default(autoincrement())
-  categories Category[] @relation("_MyRelationTable")
+  categories Category[] @relation("MyRelationTable")
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
-  posts Post[] @relation("_MyRelationTable")
+  posts Post[] @relation("MyRelationTable")
 }
 ```
 
@@ -396,16 +419,12 @@ model CategoriesOnPosts {
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId Int
   assignedAt DateTime @default(now())
-  assignedBy String
 
   @@id([postId, categoryId])
 }
 ```
 
-In this example, the `assignedAt` field stores additional information about the relation between `Post` and `Category`:
-
-- `assignedAt` stores _when_ the post was added to the category
-- `assignedBy` store _who_ added the post to the category
+In this example, the `assignedAt` field adds additional information about the relation between `Post` and `Category`: it specifies when the post was assigned to the category.
 
 Note that the same rules as for [1-n-relations](one-to-many-relations) apply (because `Post`↔ `CategoriesOnPosts` and `Category` ↔ `CategoriesOnPosts` are both in fact 1-n-relations), which means one side of the relation needs to be annotated with the `@relation` attribute.
 
@@ -413,28 +432,44 @@ When you don't need to attach additional information to the relation, you can mo
 
 ## MongoDB
 
-In MongoDB, m-n-relations are represented by:
+In MongoDB, many-to-many relations are represented by:
 
-- Relation fields on both sides, include a `@relation` attribute on _each side_
-- A scalar list of referenced IDs on each side, including the `@db.Array(X)` attribute, where `X` is the ID type (`ObjectId`, `String`)
+- relation fields on both sides, that each have a `@relation` attribute, with mandatory `fields` and `references` arguments
+- a scalar list of referenced IDs on each side, with a type that matches the ID field on the other side
 
-The following example demonstrate an m-n relation between posts and categories:
+The following example demonstrates a many-to-many relation between posts and categories:
 
 ```prisma
 model Post {
-  id          String     @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  categoryIDs String[]   @db.Array(ObjectId)
-  categories  Category[] @relation(fields: [categoryIDs])
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  categoryIDs String[]   @db.ObjectId
+  categories  Category[] @relation(fields: [categoryIDs], references: [id])
 }
 
 model Category {
-  id      String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-  postIDs String[] @db.Array(ObjectId)
-  posts   Post[]   @relation(fields: [postIDs])
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  postIDs String[] @db.ObjectId
+  posts   Post[]   @relation(fields: [postIDs], references: [id])
 }
 ```
 
-### Querying MongoDB m-n relations
+Prisma validates many-to-many relations in MongoDB with the following rules:
+
+- The fields on both sides of the relation must have a list type (in the example above, `categories` have a type of `Category[]` and `posts` have a type of `Post[]`)
+- The `@relation` attribute must define `fields` and `references` arguments on both sides
+- The `fields` argument must have only one scalar field defined, which must be of a list type
+- The `references` argument must have only one scalar field defined. This scalar field must exist on the referenced model and must be of the same type as the scalar field in the `fields` argument, but singular (no list)
+- The scalar field to which `references` points must have the `@id` attribute
+- No [referential actions](/concepts/components/prisma-schema/relations/referential-actions) are allowed in `@relation`
+
+The implicit many-to-many relations [used in relational databases](/concepts/components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations) are not supported on MongoDB.
+
+### Querying MongoDB many-to-many relations
+
+This section demonstrates how to query many-to-many relations in MongoDB, using the example schema above.
+
+The following query finds posts with specific matching category IDs:
 
 ```ts
 const newId1 = new ObjectId()
@@ -448,6 +483,8 @@ const posts = await prisma.post.findMany({
   },
 })
 ```
+
+The following query finds posts where the category name contains the string `'Servers'`:
 
 ```ts
 const posts = await prisma.post.findMany({

@@ -89,25 +89,18 @@ As a workaround, you can store `PrismaClient` as a global variable in developmen
 ```ts file=client.ts
 import { PrismaClient } from '@prisma/client'
 
-// add prisma to the NodeJS global type
-interface CustomNodeJsGlobal extends NodeJS.Global {
-  prisma: PrismaClient
-}
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-// Prevent multiple instances of Prisma Client in development
-declare const global: CustomNodeJsGlobal
+export const prisma =
+  globalForPrisma.prisma || new PrismaClient()
 
-const prisma = global.prisma || new PrismaClient()
-
-if (process.env.NODE_ENV === 'development') global.prisma = prisma
-
-export default prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
 
 The way that you import and use the client does not change:
 
 ```ts file=app.ts
-import prisma from './client'
+import { prisma } from './client'
 
 async function main() {
   const allUsers = await prisma.user.findMany()
@@ -184,7 +177,7 @@ If you are using an external connection pooler, use the default pool size (`num_
 
 #### Optimizing for parallel requests
 
-If you rarely or never exceed the database connection limit with the pool size set to 1, you can further optimize the connection pool size. Consider a function that is sends queries in parallel:
+If you rarely or never exceed the database connection limit with the pool size set to 1, you can further optimize the connection pool size. Consider a function that sends queries in parallel:
 
 ```ts
 Promise.all() {
@@ -298,15 +291,17 @@ datasource db {
 
 ## External connection poolers
 
-Connection poolers like [PgBouncer](https://www.pgbouncer.org/) prevent your application from exhausting the database's connection limit.
+Connection poolers like the Data Proxy and PgBouncer prevent your application from exhausting the database's connection limit.
+
+### Data Proxy
+
+The [Data Proxy](/data-platform/data-proxy) is a managed external connection pooler built by Prisma that is integrated in the [Prisma Data Platform](https://www.prisma.io/data-platform) and handles connection pooling for you.
 
 ### PgBouncer
 
 PostgreSQL only supports a certain amount of concurrent connections, and this limit can be reached quite fast when the service usage goes up – especially in [serverless environments](#serverless-environments-faas).
 
-PgBouncer holds a connection pool to the database and proxies incoming client connections by sitting between Prisma Client and the database. This reduces the number of processes a database has to handle at any given time. PgBouncer passes on a limited number of connections to the database and queues additional connections for delivery when connections becomes available.
-
-To use PgBouncer, see: [Configure Prisma Client with PgBouncer](configure-pg-bouncer)
+[PgBouncer](https://www.pgbouncer.org/) holds a connection pool to the database and proxies incoming client connections by sitting between Prisma Client and the database. This reduces the number of processes a database has to handle at any given time. PgBouncer passes on a limited number of connections to the database and queues additional connections for delivery when connections becomes available. To use PgBouncer, see [Configure Prisma Client with PgBouncer](configure-pg-bouncer).
 
 ### AWS RDS Proxy
 

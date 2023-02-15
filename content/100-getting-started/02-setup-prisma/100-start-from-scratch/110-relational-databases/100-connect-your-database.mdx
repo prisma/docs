@@ -3,7 +3,7 @@ title: 'Connect your database'
 metaTitle: 'Connect your database'
 metaDescription: 'Connect your database to your project'
 langSwitcher: ['typescript', 'node']
-dbSwitcher: ['postgres', 'mysql', 'sqlserver']
+dbSwitcher: ['postgres', 'mysql', 'sqlserver', 'planetscale', 'cockroachdb']
 toc: false
 ---
 
@@ -28,7 +28,7 @@ DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=pub
 
 You now need to adjust the connection URL to point to your own database.
 
-The format of the connection URL for your database depends on the database you use. For PostgreSQL, it looks as follows (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
+The [format of the connection URL](/reference/database-reference/connection-urls) for your database depends on the database you use. For PostgreSQL, it looks as follows (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
 
 ```no-lines
 postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
@@ -38,6 +38,7 @@ Here's a short explanation of each component:
 
 - `USER`: The name of your database user
 - `PASSWORD`: The password for your database user
+- `HOST`: The name of your host name (for the local environment, it is `localhost`)
 - `PORT`: The port where your database server is running (typically `5432` for PostgreSQL)
 - `DATABASE`: The name of the [database](https://www.postgresql.org/docs/12/manage-ag-overview.html)
 - `SCHEMA`: The name of the [schema](https://www.postgresql.org/docs/12/ddl-schemas.html) inside the database
@@ -50,7 +51,7 @@ As an example, for a PostgreSQL database hosted on Heroku, the [connection URL](
 DATABASE_URL="postgresql://opnmyfngbknppm:XXX@ec2-46-137-91-216.eu-west-1.compute.amazonaws.com:5432/d50rgmkqi2ipus?schema=hello-prisma"
 ```
 
-When running PostgreSQL locally on Mac OS, your user and password as well as the database name _typically_ correspond to the current _user_ of your OS, e.g. assuming the user is called `janedoe`:
+When running PostgreSQL locally on macOS, your user and password as well as the database name _typically_ correspond to the current _user_ of your OS, e.g. assuming the user is called `janedoe`:
 
 ```bash file=.env
 DATABASE_URL="postgresql://janedoe:janedoe@localhost:5432/janedoe?schema=hello-prisma"
@@ -84,7 +85,7 @@ DATABASE_URL="mysql://johndoe:randompassword@localhost:3306/mydb"
 
 You now need to adjust the connection URL to point to your own database.
 
-The format of the connection URL for your database typically depends on the database you use. For MySQL, it looks as follows (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
+The [format of the connection URL](/reference/database-reference/connection-urls) for your database typically depends on the database you use. For MySQL, it looks as follows (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
 
 ```no-lines
 mysql://USER:PASSWORD@HOST:PORT/DATABASE
@@ -111,6 +112,83 @@ DATABASE_URL="mysql://root:randompassword@localhost:3306/mydb"
 
 </SwitchTech>
 
+<SwitchTech technologies={['*', 'planetscale']}>
+
+```prisma file=prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+Note that the default schema created by `prisma init` uses PostgreSQL as the `provider`. For PlanetScale, you need to edit the `datasource` block to use the `mysql` provider instead:
+
+```prisma file=prisma/schema.prisma highlight=2;edit
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+```
+
+You will also need to [set the relation mode type to `prisma`](/concepts/components/prisma-schema/relations/relation-mode#emulate-relations-in-prisma-with-the-prisma-relation-mode) in the `datasource` block:
+
+```prisma file=schema.prisma highlight=4;add
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+```
+
+The `url` is [set via an environment variable](/concepts/components/prisma-schema#accessing-environment-variables-from-the-schema) which is defined in `.env`:
+
+```bash file=.env
+DATABASE_URL="mysql://janedoe:mypassword@server.us-east-2.psdb.cloud/mydb?sslaccept=strict"
+```
+
+You now need to adjust the connection URL to point to your own database.
+
+The [format of the connection URL](/reference/database-reference/connection-urls) for your database typically depends on the database you use. PlanetScale uses the MySQL connection URL format, which has the following structure (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
+
+```no-lines
+mysql://USER:PASSWORD@HOST:PORT/DATABASE
+```
+
+Here's a short explanation of each component:
+
+- `USER`: The name of your database user
+- `PASSWORD`: The password for your database user
+- `PORT`: The port where your database server is running (typically `3306` for MySQL)
+- `DATABASE`: The name of the [database](https://dev.mysql.com/doc/refman/8.0/en/creating-database.html)
+
+For a database hosted with PlanetScale, the [connection URL](/reference/database-reference/connection-urls) looks similar to this:
+
+```bash file=.env
+DATABASE_URL="mysql://myusername:mypassword@server.us-east-2.psdb.cloud/mydb?sslaccept=strict"
+```
+
+The connection URL for a given database branch can be found from your PlanetScale account by going to the overview page for the branch and selecting the 'Connect' dropdown. In the 'Passwords' section, generate a new password and select 'Prisma' to get the Prisma format for the connection URL.
+
+<details><summary>Alternative method: connecting using the PlanetScale CLI</summary>
+
+Alternatively, you can connect to your PlanetScale database server using the [PlanetScale CLI](https://docs.planetscale.com/reference/planetscale-environment-setup), and use a local connection URL. In this case the connection URL will look like this:
+
+```bash file=.env
+DATABASE_URL="mysql://root@localhost:PORT/mydb"
+```
+
+To connect to your branch, use the following command:
+
+```terminal
+pscale connect prisma-test branchname --port PORT
+```
+
+The `--port` flag can be omitted if you are using the default port `3306`.
+
+</details>
+
+</SwitchTech>
+
 <SwitchTech technologies={['*', 'sqlserver']}>
 
 ```prisma file=prisma/schema.prisma
@@ -131,6 +209,58 @@ The following example connection URL [uses SQL authentication](/concepts/databas
 Adjust the connection URL to match your setup - see [Microsoft SQL Server connection URL](/concepts/database-connectors/sql-server) for more information.
 
 > Make sure TCP/IP connections are enabled via [SQL Server Configuration Manager](https://docs.microsoft.com/en-us/sql/relational-databases/sql-server-configuration-manager) to avoid `No connection could be made because the target machine actively refused it. (os error 10061)`
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'cockroachdb']}>
+
+```prisma file=prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+Note that the default schema created by `prisma init` uses PostgreSQL as the `provider`. For CockroachDB, you need to edit the `datasource` block to use the `cockroachdb` provider instead:
+
+```prisma file=prisma/schema.prisma highlight=2;edit
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+```
+
+The `url` is [set via an environment variable](/guides/development-environment/environment-variables) which is defined in `.env`. You now need to adjust the connection URL to point to your own database.
+
+The [format of the connection URL](/reference/database-reference/connection-urls) for your database depends on the database you use. CockroachDB uses the PostgreSQL connection URL format, which has the following structure (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
+
+```no-lines
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE?PARAMETERS
+```
+
+Here's a short explanation of each component:
+
+- `USER`: The name of your database user
+- `PASSWORD`: The password for your database user
+- `PORT`: The port where your database server is running. The default for CockroachDB is `26257`.
+- `DATABASE`: The name of the database
+- `PARAMETERS`: Any additional connection parameters. See the CockroachDB documentation [here](https://www.cockroachlabs.com/docs/stable/connection-parameters.html#additional-connection-parameters).
+
+For a [CockroachDB Serverless](https://www.cockroachlabs.com/docs/cockroachcloud/quickstart.html) or [Cockroach Dedicated](https://www.cockroachlabs.com/docs/cockroachcloud/quickstart-trial-cluster) database hosted on [CockroachDB Cloud](https://www.cockroachlabs.com/get-started-cockroachdb/), the [connection URL](/reference/database-reference/connection-urls) looks similar to this:
+
+```bash file=.env
+DATABASE_URL="postgresql://<myusername>:<mypassword>@<short-id>.<region>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--<mycluster>"
+```
+
+To find your connection string on CockroachDB Cloud, click the 'Connect' button on the overview page for your database cluster, and select the 'Connection string' tab.
+
+For a [CockroachDB database hosted locally](https://www.cockroachlabs.com/docs/stable/secure-a-cluster.html), the [connection URL](/reference/database-reference/connection-urls) looks similar to this:
+
+```bash file=.env
+DATABASE_URL="postgresql://root@localhost:26257?sslmode=disable"
+```
+
+Your connection string is displayed as part of the welcome text when starting CockroachDB from the command line.
 
 </SwitchTech>
 
@@ -168,7 +298,7 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
   color="dark"
   type="primary"
   href="/getting-started/setup-prisma/start-from-scratch/relational-databases-node-mysql"
-  arrowRight
+  arrowLeft
 >
   Installation
 </ButtonLink>
@@ -186,6 +316,32 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
 
 </SwitchTech>
 
+<SwitchTech technologies={['node', 'planetscale']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="/getting-started/setup-prisma/start-from-scratch/relational-databases-node-planetscale"
+  arrowLeft
+>
+  Installation
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./using-prisma-migrate-node-planetscale"
+  arrow
+>
+  Creating the database schema
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
 <SwitchTech technologies={['node', 'sqlserver']}>
 
 <NavigationLinksContainer>
@@ -194,7 +350,7 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
   color="dark"
   type="primary"
   href="/getting-started/setup-prisma/start-from-scratch/relational-databases-node-sqlserver"
-  arrowRight
+  arrowLeft
 >
   Installation
 </ButtonLink>
@@ -203,6 +359,32 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
   color="dark"
   type="primary"
   href="./using-prisma-migrate-node-sqlserver"
+  arrow
+>
+  Using Prisma Migrate
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['node', 'cockroachdb']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="/getting-started/setup-prisma/start-from-scratch/relational-databases-node-cockroachdb"
+  arrowLeft
+>
+  Installation
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./using-prisma-migrate-node-cockroachdb"
   arrow
 >
   Using Prisma Migrate
@@ -245,8 +427,8 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
 <ButtonLink
   color="dark"
   type="primary"
-  href="/getting-started/setup-prisma/start-from-scratch-typescript-mysql"
-  arrowRight
+  href="/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-mysql"
+  arrowLeft
 >
   Installation
 </ButtonLink>
@@ -264,6 +446,32 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
 
 </SwitchTech>
 
+<SwitchTech technologies={['typescript', 'planetscale']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale"
+  arrowLeft
+>
+  Installation
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./using-prisma-migrate-typescript-planetscale"
+  arrow
+>
+  Creating the database schema
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
 <SwitchTech technologies={['typescript', 'sqlserver']}>
 
 <NavigationLinksContainer>
@@ -271,8 +479,8 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
 <ButtonLink
   color="dark"
   type="primary"
-  href="/getting-started/setup-prisma/start-from-scratch-typescript-sqlserver"
-  arrowRight
+  href="/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver"
+  arrowLeft
 >
   Installation
 </ButtonLink>
@@ -281,6 +489,32 @@ Adjust the connection URL to match your setup - see [Microsoft SQL Server connec
   color="dark"
   type="primary"
   href="./using-prisma-migrate-typescript-sqlserver"
+  arrow
+>
+  Using Prisma Migrate
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'cockroachdb']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb"
+  arrowLeft
+>
+  Installation
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./using-prisma-migrate-typescript-cockroachdb"
   arrow
 >
   Using Prisma Migrate

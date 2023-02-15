@@ -9,7 +9,7 @@ assignees: ''
 ## Release
 
 - [ ] Merge in new content
-- [ ] Update 'What's new' page with links to the relase notes and new docs (example: https://www.prisma.io/docs/about/whats-new-in-prisma-docs#april-04-2021)
+- [ ] Update 'What's new' page with links to the release notes and new docs (example: https://www.prisma.io/docs/about/whats-new-in-prisma-docs#april-04-2021)
 - [ ] Add links to release notes
 
 ## After release

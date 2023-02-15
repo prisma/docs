@@ -1,24 +1,33 @@
+import React from 'react'
 import { RouterProps } from '@reach/router'
-import * as React from 'react'
+import { MDXProvider } from '@mdx-js/react'
+import StickyBox from 'react-sticky-box'
+import shortcodes from './shortcodes'
 import styled, { ThemeProvider } from 'styled-components'
+import { LensProvider, defaultTheme as theme, WebsiteBanner } from '@prisma/lens/dist/web'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
-import { MDXProvider } from '@mdx-js/react'
-import customMdx from '../components/customMdx'
-import './layout.css'
+import '../styles/layout.css'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
-import { LensProvider, theme } from '@prisma/lens/dist/web'
-import StickyBox from 'react-sticky-box'
-import Banner from './banner'
+
+interface LayoutContentProps {
+  toc: any
+  tocDepth?: number
+  slug?: string
+  homePage?: boolean
+  children: React.ReactNode
+}
+
+type LayoutProps = RouterProps & LayoutContentProps
 
 const Wrapper = styled.div<{ fullWidth?: boolean }>`
   display: flex;
   width: 100%;
   justify-content: center;
   ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (max-width: ${(p) => p.theme.breakpoints.tabletVertical}) {
     padding: 0;
   }
 `
@@ -95,31 +104,40 @@ const TOCWrapper = styled.div`
   }
 `
 
-interface LayoutContentProps {
-  toc: any
-  tocDepth?: number
-  slug?: string
-  homePage?: boolean
-}
+const BannerWrapper = styled.div<{ light: boolean }>`
+  a {
+    color: ${(props) => (props.light ? theme.colors.gray['800'] : theme.colors.gray['300'])};
+  }
+  b {
+    ${(props) => !props.light && `color: ${theme.colors.teal['400']};`}
+  }
+  width: 100%;
+  transition: margin-top 50ms ease-in;
+  top: 0;
+  z-index: -1;
+  @media (max-width: 1000px) {
+    font-size: 14px;
+  }
+  font-size: 18px;
+`
 
-type LayoutProps = React.ReactNode & RouterProps & LayoutContentProps
-
-const Layout: React.FunctionComponent<LayoutProps> = ({
-  children,
-  toc,
-  tocDepth,
-  location,
-  slug,
-  homePage,
-}) => {
+export default function Layout({ children, toc, tocDepth, location, slug, homePage }: LayoutProps) {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
-
   return (
     <ThemeProvider theme={theme}>
       <LensProvider>
-        <MDXProvider components={customMdx}>
-          <Banner />
+        <MDXProvider components={shortcodes}>
+          <BannerWrapper light={true}>
+            <WebsiteBanner
+              text={
+                <a href="/data-platform/accelerate" className="banner-url">
+                  Up to 1000x faster database queries with <b>Accelerate</b> {`->`}{' '}
+                  <u>Sign up for Early Access</u>
+                </a>
+              }
+            />
+          </BannerWrapper>
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
@@ -148,5 +166,3 @@ const Layout: React.FunctionComponent<LayoutProps> = ({
     </ThemeProvider>
   )
 }
-
-export default Layout
