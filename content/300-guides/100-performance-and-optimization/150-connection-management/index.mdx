@@ -89,25 +89,18 @@ As a workaround, you can store `PrismaClient` as a global variable in developmen
 ```ts file=client.ts
 import { PrismaClient } from '@prisma/client'
 
-// add prisma to the NodeJS global type
-interface CustomNodeJsGlobal extends NodeJS.Global {
-  prisma: PrismaClient
-}
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-// Prevent multiple instances of Prisma Client in development
-declare const global: CustomNodeJsGlobal
+export const prisma =
+  globalForPrisma.prisma || new PrismaClient()
 
-const prisma = global.prisma || new PrismaClient()
-
-if (process.env.NODE_ENV === 'development') global.prisma = prisma
-
-export default prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
 
 The way that you import and use the client does not change:
 
 ```ts file=app.ts
-import prisma from './client'
+import { prisma } from './client'
 
 async function main() {
   const allUsers = await prisma.user.findMany()
@@ -184,7 +177,7 @@ If you are using an external connection pooler, use the default pool size (`num_
 
 #### Optimizing for parallel requests
 
-If you rarely or never exceed the database connection limit with the pool size set to 1, you can further optimize the connection pool size. Consider a function that is sends queries in parallel:
+If you rarely or never exceed the database connection limit with the pool size set to 1, you can further optimize the connection pool size. Consider a function that sends queries in parallel:
 
 ```ts
 Promise.all() {
@@ -298,11 +291,11 @@ datasource db {
 
 ## External connection poolers
 
-Connection poolers like the Prisma Data Proxy and PgBouncer prevent your application from exhausting the database's connection limit.
+Connection poolers like the Data Proxy and PgBouncer prevent your application from exhausting the database's connection limit.
 
-### The Prisma Data Proxy
+### Data Proxy
 
-The [Prisma Data Proxy](/data-platform/data-proxy) is a managed external connection pooler built by Prisma that is integrated in the [Prisma Data Platform](https://www.prisma.io/dataplatform) and handles connection pooling for you.
+The [Data Proxy](/data-platform/data-proxy) is a managed external connection pooler built by Prisma that is integrated in the [Prisma Data Platform](https://www.prisma.io/data-platform) and handles connection pooling for you.
 
 ### PgBouncer
 

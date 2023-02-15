@@ -2,14 +2,14 @@
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 
-[badge-all-contributors]: https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square
+[badge-all-contributors]: https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square
 
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
 
-[![All Contributors][badge-all-contributors]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
+[![All Contributors][badge-all-contributors]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Vercel](https://vercelbadge.vercel.app/api/prisma/docs)](https://vercel.com/prisma/docs/deployments)
 
-This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
+This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs).
 
 ## Contributing to the docs
 
@@ -40,7 +40,7 @@ npm run dev
 Run a local build to run the functions using the following command:
 
 ```
-netlify dev
+vercel dev
 ```
 
 > Make sure you have the correct path to `POSTGRES_URL` in your local `.env` file to test the functions
@@ -184,6 +184,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="http://tomhsiao1260.github.io"><img src="https://avatars.githubusercontent.com/u/31985811?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Yao Hsiao</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=TomHsiao1260" title="Documentation">📖</a></td>
     <td align="center"><a href="https://www.linkedin.com/in/danielweinmann"><img src="https://avatars.githubusercontent.com/u/204765?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Weinmann</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=danielweinmann" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/rowinbot"><img src="https://avatars.githubusercontent.com/u/18468260?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rowin Hernández</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=rowinbot" title="Documentation">📖</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="http://shishi.hatenablog.jp/"><img src="https://avatars.githubusercontent.com/u/341746?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Shigenobu Nishikawa</b></sub></a><br /><a href="#example-shishi" title="Examples">💡</a></td>
+    <td align="center"><a href="http://linkedin.com/in/austin-baldwin/"><img src="https://avatars.githubusercontent.com/u/11078749?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Austin Baldwin</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=baldyeagle" title="Documentation">📖</a></td>
   </tr>
 </table>
 
