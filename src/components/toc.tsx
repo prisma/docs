@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { stringify } from '../utils/stringify'
 import styled from 'styled-components'
-import { TableOfContents } from 'src/interfaces/Article.interface'
+import { TableOfContents } from '../interfaces/Article.interface'
 
 const ChapterTitle = styled.div`
   font-family: ${(p) => p.theme.fonts.text};
@@ -11,7 +11,7 @@ const ChapterTitle = styled.div`
   line-height: 100%;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: ${(p) => p.theme.colors.gray900};
+  color: ${(p) => p.theme.colors.gray[900]};
   margin: ${(p) => p.theme.space[16]} 0 0;
 `
 
@@ -21,16 +21,16 @@ const HeadingList = styled.ul`
   margin: 0;
   li {
     font-size: ${(p) => p.theme.fontSizes[14]};
-    padding: ${(p) => p.theme.space[16]} 0 0;
-    line-height: 19px;
+    padding: ${(p) => p.theme.space[12]} 0 0;
+    line-height: 1rem;
     ul {
       margin-left: ${(p) => p.theme.space[12]};
     }
     a {
       text-decoration: none;
-      color: ${(p) => p.theme.colors.gray600};
+      color: ${(p) => p.theme.colors.gray[600]};
       &:hover {
-        color: ${(p) => p.theme.colors.gray900};
+        color: ${(p) => p.theme.colors.gray[900]};
       }
     }
   }
@@ -71,7 +71,7 @@ const Headings = ({ headings, activeId, depth = 2 }: any) => {
           {heading.items &&
             heading.items.length > 0 &&
             depth > 1 &&
-            isAnyChildActive(heading.items) &&
+            //isAnyChildActive(heading.items) &&
             navItems(heading.items, activeId, depth - 1)}
         </ListItem>
       ))}
@@ -144,7 +144,7 @@ const TOC = ({ headings, tocDepth }: any) => {
   useIntersectionObserver(setActiveId, idList)
   return (
     <nav aria-label="Table of contents">
-      <ChapterTitle>CONTENT</ChapterTitle>
+      <ChapterTitle>ON THIS PAGE</ChapterTitle>
       <Headings headings={headings} activeId={activeId} depth={tocDepth} />
     </nav>
   )
