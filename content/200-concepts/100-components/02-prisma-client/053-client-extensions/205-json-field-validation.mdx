@@ -1,0 +1,178 @@
+---
+title: 'Extension sample: JSON field types'
+metaTitle: 'Extension sample: JSON field types'
+metaDescription: 'How to use Prisma Client extensions to add type safety for Json fields'
+---
+
+<TopBlock>
+
+Before you create Prisma Client extensions, you must enable the `clientExtensions` feature flag in the `generator` block of your `schema.prisma` file, as follows:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+```
+
+<Admonition type="info">
+
+The Preview feature is available from v4.7.0 and higher.
+
+</Admonition>
+
+The following extension shows how to provide static and runtime times for a `Json` field using [Zod](https://zod.dev/)
+
+<TabbedContent tabs={[<FileWithIcon text="Extension" icon="code"/>, <FileWithIcon text="Zod schemas" icon="code"/>]}>
+
+<tab>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+import { Profile } from './schemas'
+
+const prisma = new PrismaClient().$extends({
+  result: {
+    user: {
+      profile: {
+        needs: { profile: true },
+        compute({ profile }) {
+          return Profile.parse(profile)
+        },
+      },
+    },
+  },
+  query: {
+    user: {
+      create({ args, query }) {
+        args.data.profile = Profile.parse(args.data.profile)
+        return query(args)
+      },
+      createMany({ args, query }) {
+        const users = Array.isArray(args.data) ? args.data : [args.data]
+        for (const user of users) {
+          user.profile = Profile.parse(user.profile)
+        }
+        return query(args)
+      },
+      update({ args, query }) {
+        if (args.data.profile !== undefined) {
+          args.data.profile = Profile.parse(args.data.profile)
+        }
+        return query(args)
+      },
+      updateMany({ args, query }) {
+        if (args.data.profile !== undefined) {
+          args.data.profile = Profile.parse(args.data.profile)
+        }
+        return query(args)
+      },
+      upsert({ args, query }) {
+        args.create.profile = Profile.parse(args.create.profile)
+        if (args.update.profile !== undefined) {
+          args.update.profile = Profile.parse(args.update.profile)
+        }
+        return query(args)
+      },
+    },
+  },
+})
+
+// Example query
+const users = await prisma.user.findMany({ take: 10 })
+const userProfileAvatar = users[0].profile.avatar
+```
+
+</tab>
+
+<tab>
+
+```ts
+// ./schemas.ts
+import { z } from 'zod'
+
+export type Avatar = z.infer<typeof Avatar>
+export const Avatar = z.object({
+  url: z.string().url(),
+  crop: z.object({
+    top: z.number().min(0).max(1),
+    right: z.number().min(0).max(1),
+    bottom: z.number().min(0).max(1),
+    left: z.number().min(0).max(1),
+  }),
+})
+
+export type Address = z.infer<typeof Address>
+export const Address = z.object({
+  street: z.string(),
+  city: z.string(),
+  region: z.string(),
+  postalCode: z.string(),
+  country: z.string(),
+})
+
+export type ContactInfo = z.infer<typeof ContactInfo>
+export const ContactInfo = z
+  .object({
+    email: z.string().email(),
+    phone: z.string(),
+    address: Address,
+  })
+  .partial()
+
+export type SocialLinks = z.infer<typeof SocialLinks>
+export const SocialLinks = z
+  .object({
+    twitter: z.string().url(),
+    github: z.string().url(),
+    website: z.string().url(),
+    linkedin: z.string().url(),
+  })
+  .partial()
+
+export type Profile = z.infer<typeof Profile>
+export const Profile = z
+  .object({
+    firstName: z.string(),
+    lastName: z.string(),
+    avatar: Avatar,
+    contactInfo: ContactInfo,
+    socialLinks: SocialLinks,
+  })
+  .partial()
+```
+
+</tab>
+
+</TabbedContent>
+
+When you hover on the `userProfileAvatar` variable, the types for the avatar object are inferred for you and can access the properties safely.
+
+The example is based on the following sample schema:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+
+  profile Json
+}
+```
+
+</TopBlock>
+
+## Going further
+
+- Learn more about [Prisma Client extensions](/concepts/components/prisma-client/client-extensions).
+- Learn more sample use cases you could use Prisma Client extensions for in [this blog post](https://www.prisma.io/blog/client-extensions-preview-8t3w27xkrxxn).
