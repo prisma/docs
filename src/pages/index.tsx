@@ -34,11 +34,7 @@ const Summary = styled.div`
   align-items: center;
   background: url(${background}) center -150px no-repeat;
   h1 {
-    font-weight: bold;
-    font-family: ${(p) => p.theme.fonts.display};
-    font-size: ${(p) => p.theme.fontSizes[56]};
     margin: 0;
-    text-align: center;
   }
   p {
     max-width: 800px;
@@ -52,9 +48,6 @@ const Summary = styled.div`
     }
   }
   @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
-    h1 {
-      font-size: ${(p) => p.theme.fontSizes[32]};
-    }
     p {
       font-size: ${(p) => p.theme.fontSizes[16]};
     }

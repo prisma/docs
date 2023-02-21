@@ -4,7 +4,7 @@ import { MDXProvider } from '@mdx-js/react'
 import StickyBox from 'react-sticky-box'
 import shortcodes from './shortcodes'
 import styled, { ThemeProvider } from 'styled-components'
-import { LensProvider, defaultTheme as theme, WebsiteBanner } from '@prisma/lens/dist/web'
+import { LensProvider, defaultTheme as theme, WebsiteBanner, Headings } from '@prisma/lens/dist/web'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
@@ -126,6 +126,7 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
   const { header, footer } = site.siteMetadata
   return (
     <ThemeProvider theme={theme}>
+      <Headings />
       <LensProvider>
         <MDXProvider components={shortcodes}>
           <BannerWrapper light={true}>
