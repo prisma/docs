@@ -218,16 +218,16 @@ const GeneralLinks = styled.div`
     grid-template-rows: repeat(2, 50%);
     column-gap: 2rem;
   }
-  @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
+  @media (min-width: ${defaultTheme.breakpoints.desktopSmall}px) {
     padding: 32px 48px;
+  }
+  @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
     grid-template-columns: repeat(4, 25%);
+    padding: 48px 92px;
     grid-template-rows: unset;
     h4 {
       margin-top: revert;
     }
-  }
-  @media (min-width: ${defaultTheme.breakpoints.desktopLarge}px) {
-    padding: 48px 92px;
   }
 `
 
@@ -311,6 +311,7 @@ const ReferenceRow = styled.div`
   gap: 48px;
   margin-top: 32px;
   @media (min-width: ${defaultTheme.breakpoints.tabletVertical}px) {
+    max-width: 996px;
     grid-template-rows: unset;
     gap: 32px;
     grid-template-columns: repeat(3, 1fr);
