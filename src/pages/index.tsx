@@ -14,7 +14,13 @@ import Link from '../components/link'
 import SEO from '../components/seo'
 import { defaultTheme } from '@prisma/lens/dist/web'
 import { Icon } from '../components/Icon'
-import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
+import {
+  faArrowRight,
+  faBars,
+  faBookOpen,
+  faBox,
+  faDatabase,
+} from '@fortawesome/pro-regular-svg-icons'
 
 const icons: any = {
   DoubleArrow: <ChevronsRight opacity="0.5" />,
@@ -137,7 +143,10 @@ const MoreLinksList = styled(List)`
   @media (min-width: 400px) {
     column-count: 2;
   }
-  @media (min-width: ${defaultTheme.breakpoints.tabletVertical}px) {
+  @media (min-width: ${defaultTheme.breakpoints.desktopSmall}px) {
+    column-count: 3;
+  }
+  @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
     column-count: 4;
   }
   gap: 2rem;
@@ -462,6 +471,7 @@ const Homepage = () => {
               <li key={index}>
                 <Link to={uLink.url}>
                   <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
+                  <Icon icon={faArrowRight} height="12px" width="12px" btn />
                 </Link>
               </li>
             ))}
