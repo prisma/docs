@@ -12,7 +12,7 @@ import DbLink from '../icons/home/DbLink'
 import CLI from '../icons/home/CLI'
 import Link from '../components/link'
 import SEO from '../components/seo'
-import { defaultTheme } from '@prisma/lens/dist/web'
+import { defaultTheme, Headings } from '@prisma/lens/dist/web'
 import { Icon } from '../components/Icon'
 import {
   faArrowRight,
@@ -368,6 +368,7 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
+      <Headings />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
