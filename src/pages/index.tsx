@@ -472,7 +472,6 @@ const Homepage = () => {
               <li key={index}>
                 <Link to={uLink.url}>
                   <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
-                  <Icon icon={faArrowRight} height="12px" width="12px" btn />
                 </Link>
               </li>
             ))}
