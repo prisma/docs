@@ -12,15 +12,9 @@ import DbLink from '../icons/home/DbLink'
 import CLI from '../icons/home/CLI'
 import Link from '../components/link'
 import SEO from '../components/seo'
-import { defaultTheme, Headings } from '@prisma/lens/dist/web'
+import { defaultTheme } from '@prisma/lens/dist/web'
 import { Icon } from '../components/Icon'
-import {
-  faArrowRight,
-  faBars,
-  faBookOpen,
-  faBox,
-  faDatabase,
-} from '@fortawesome/pro-regular-svg-icons'
+import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
 
 const icons: any = {
   DoubleArrow: <ChevronsRight opacity="0.5" />,
@@ -41,6 +35,12 @@ const Summary = styled.div`
   background: url(${background}) center -150px no-repeat;
   h1 {
     margin: 0;
+    font-family: 'Barlow', sans-serif;
+    font-weight: bold;
+    font-size: 64px;
+    letter-spacing: -0.02em;
+    line-height: 110%;
+    text-align: center;
   }
   p {
     max-width: 800px;
@@ -49,6 +49,9 @@ const Summary = styled.div`
   }
   @media (min-width: 0) and (max-width: 1024px) {
     padding: ${(p) => p.theme.space[80]} ${(p) => p.theme.space[16]};
+    h1 {
+      font-size: 40px;
+    }
     p {
       max-width: 85%;
     }
@@ -169,8 +172,10 @@ const SummaryLinks = styled.div`
   }
   @media (min-width: 0) and (max-width: 420px) {
     flex-direction: column;
+    gap: 1rem;
     a {
-      margin-top: ${(p) => p.theme.space[16]};
+      width: max-content;
+      margin: 0 auto;
     }
   }
 `
@@ -368,7 +373,6 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
-      <Headings />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>

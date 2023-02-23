@@ -7,11 +7,13 @@ import useWindowDimensions from '../../hooks/useWindowDimensions'
 import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
-  width: 250px;
+  max-width: 250px;
+  width: 100%;
   display: flex;
 
   form {
-    width: 250px;
+    max-width: 250px;
+    width: 100%;
     position: relative;
   }
 
@@ -27,7 +29,7 @@ const SearchBoxDiv = styled.div`
     border-radius: ${(p) => p.theme.radii.small};
 
     form {
-      width: 100%;
+      max-width: 100%;
       input {
         color: ${(p) => p.theme.colors.gray[700]};
       }
