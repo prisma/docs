@@ -9,6 +9,13 @@ metaDescription: 'Using Prisma Client in a Next.js project in a monorepo setup'
 If you use Prisma Client in a [Next.js](https://nextjs.org/) application within a monorepo, you will likely run into an error such as the following:
 
 ```
+Error: Your schema.prisma could not be found, and we detected that you are using Next.js.
+Find out why and learn how to fix this: https://pris.ly/d/schema-not-found-nextjs
+```
+
+If you are using a Prisma version earlier than 4.11.0, the error message you will recieve will look similar to the message below:
+
+```
 Error: ENOENT: no such file or directory, open '/prisma-next-mono-reproduction/packages/service/.next/cache/webpack/client-development/schema.prisma'
 ```
 
@@ -16,10 +23,17 @@ Assume you have a monorepo with the following structure:
 
 ```
 .
-├── packages/
-│   ├── prisma/
-│   │   ├── client/ <-- Custom output location for the generated Prisma Client
-│   │   └── schema.prisma
+├── packages
+│   ├── db
+│   │   ├── index.ts
+│   │   ├── node_modules
+│   │   ├── package.json
+│   │   └── prisma
+│   │       ├── client // <-- Custom output location for the generated Prisma Client
+│   │       │   ├── index.js
+│   │       │   ├── libquery_engine-debian-openssl-1.1.x.so.node // engine to be copied
+│   │       │   └── schema.prisma // schema to be copied
+│   │       └── schema.prisma
 │   └── service/
 │       ├── pages/
 │       │   └── api/
@@ -31,9 +45,9 @@ Assume you have a monorepo with the following structure:
 └── vercel.json
 ```
 
-This error mentioned above occurs as a result of a bundling problem during Next.js's bundling process. The `schema.prisma` file is treated as an artifact that should be bundled along with the rest of the `/api/test` endpoint's bundle.
+The error mentioned above occurs as a result of a bundling problem during Next.js's bundling process. The `schema.prisma` and Query Engine files are expected to be found next to the generated Prisma Client. The bundling process, however, does not copy over those files to the output location of the bundle.
 
-This causes an issue as Prisma Client expects `schema.prisma` to be available at a specific location in relation to the bundled code.
+This causes an issue as Prisma Client expects `schema.prisma` and the Query Engine to still be available next to Prisma Client within the bundled output. The Prisma schema and Query Engine were not copied over so in the context of the bundled output location, `schema.prisma` is nowhere to be found.
 
 <Admonition type="info">
 
@@ -48,13 +62,13 @@ To solve this issue, you can use a custom Webpack plugin we created that correct
 To use this plugin, first install the package:
 
 ```shell copy
-npm install -D @prisma/webpack-plugin
+npm install -D @prisma/nextjs-monorepo-workaround-plugin
 ```
 
-You can then import the plugin into your `next.config.js` file and use it as shown below:
+You can then import the plugin into your `next.config.js` file and use it in `config.plugins`. For example:
 
 ```js copy
-const { PrismaPlugin } = require('@prisma/webpack-plugin')
+const { PrismaPlugin } = require('@prisma/nextjs-monorepo-workaround-plugin')
 
 module.exports = {
   webpack: (config, { isServer }) => {
