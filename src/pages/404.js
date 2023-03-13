@@ -15,7 +15,7 @@ const NotFoundWrapper = styled.div`
 `
 
 const NotFoundPage = () => (
-  <Layout toc={false}>
+  <Layout>
     <NotFoundWrapper>
       <h1>404 | NOT FOUND</h1>
       You just hit a route that doesn&#39;t exist!
