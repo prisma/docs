@@ -3,7 +3,7 @@ import Layout from '../components/layout'
 import styled from 'styled-components'
 import background from '../images/home-bg.svg'
 import listDot from '../images/list-dot.png'
-import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'
+import { ArrowRight, ChevronsRight } from 'react-feather'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 
 import { PrimaryButton, SpecialButton } from '../components/button'
@@ -12,13 +12,16 @@ import DbLink from '../icons/home/DbLink'
 import CLI from '../icons/home/CLI'
 import Link from '../components/link'
 import SEO from '../components/seo'
+import { defaultTheme } from '@prisma/lens/dist/web'
+import { Icon } from '../components/Icon'
+import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
 
 const icons: any = {
   DoubleArrow: <ChevronsRight opacity="0.5" />,
-  OverviewIcon: <BookOpen color="#48BB78" />,
-  ComponentsIcon: <Package color="#ED64A6" />,
-  DatabaseIcon: <Database color="#4299E1" />,
-  MoreIcon: <Menu color="#805AD5" />,
+  OverviewIcon: <Icon icon={faBookOpen} height="28px" color={defaultTheme.colors.indigo[600]} />,
+  ComponentsIcon: <Icon icon={faBox} height="28px" color={defaultTheme.colors.indigo[600]} />,
+  DatabaseIcon: <Icon icon={faDatabase} height="28px" color={defaultTheme.colors.indigo[600]} />,
+  MoreIcon: <Icon icon={faBars} height="28px" color={defaultTheme.colors.indigo[600]} />,
   Schema: <Schema />,
   DbLink: <DbLink />,
   CLI: <CLI />,
@@ -31,10 +34,12 @@ const Summary = styled.div`
   align-items: center;
   background: url(${background}) center -150px no-repeat;
   h1 {
-    font-weight: bold;
-    font-family: ${(p) => p.theme.fonts.display};
-    font-size: ${(p) => p.theme.fontSizes[56]};
     margin: 0;
+    font-family: 'Barlow', sans-serif;
+    font-weight: bold;
+    font-size: 64px;
+    letter-spacing: -0.02em;
+    line-height: 110%;
     text-align: center;
   }
   p {
@@ -44,14 +49,14 @@ const Summary = styled.div`
   }
   @media (min-width: 0) and (max-width: 1024px) {
     padding: ${(p) => p.theme.space[80]} ${(p) => p.theme.space[16]};
+    h1 {
+      font-size: 40px;
+    }
     p {
       max-width: 85%;
     }
   }
   @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
-    h1 {
-      font-size: ${(p) => p.theme.fontSizes[32]};
-    }
     p {
       font-size: ${(p) => p.theme.fontSizes[16]};
     }
@@ -137,10 +142,17 @@ const List = styled.ul`
 `
 
 const MoreLinksList = styled(List)`
-  @media only screen and (max-width: 640px) {
-    column-count: 1;
+  column-count: 1;
+  @media (min-width: 400px) {
+    column-count: 2;
   }
-  column-count: 4;
+  @media (min-width: ${defaultTheme.breakpoints.desktopSmall}px) {
+    column-count: 3;
+  }
+  @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
+    column-count: 4;
+  }
+  gap: 2rem;
   li {
     line-height: 24px;
     margin-top: 0;
@@ -160,8 +172,10 @@ const SummaryLinks = styled.div`
   }
   @media (min-width: 0) and (max-width: 420px) {
     flex-direction: column;
+    gap: 1rem;
     a {
-      margin-top: ${(p) => p.theme.space[16]};
+      width: max-content;
+      margin: 0 auto;
     }
   }
 `
@@ -194,14 +208,33 @@ const GeneralLinks = styled.div`
     0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066),
     0px 1.26806px 2.40026px rgba(0, 0, 0, 0.0115598);
   border-radius: 8px;
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  justify-content: space-between;
   max-width: 1200px;
-  padding: 48px 114px;
   width: 100%;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    flex-direction: column;
-    padding: 0;
+  row-gap: 2rem;
+  padding: 32px 48px;
+  h4 {
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+  @media (min-width: ${defaultTheme.breakpoints.tabletVertical}px) {
+    padding: 48px 92px;
+    flex-direction: row;
+    grid-template-columns: repeat(2, 50%);
+    grid-template-rows: repeat(2, 50%);
+    column-gap: 2rem;
+  }
+  @media (min-width: ${defaultTheme.breakpoints.desktopSmall}px) {
+    padding: 32px 48px;
+  }
+  @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
+    grid-template-columns: repeat(4, 25%);
+    padding: 48px 92px;
+    grid-template-rows: unset;
+    h4 {
+      margin-top: revert;
+    }
   }
 `
 
@@ -211,6 +244,14 @@ const GeneralLink = styled.div`
   @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
     flex-direction: row;
     margin-bottom: ${(p) => p.theme.space[32]};
+  }
+  > div {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
+      display: block;
+    }
   }
 `
 
@@ -226,7 +267,7 @@ const Row = styled.div`
   }
 `
 
-const LinkCard = styled(Link)`
+const LinkCard = styled(Link)<{ maxWidth?: string }>`
   background: ${(p) => p.theme.colors.gray[200]};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
@@ -236,6 +277,7 @@ const LinkCard = styled(Link)`
   flex-grow: 1;
   margin-bottom: ${(p) => p.theme.space[40]};
   text-decoration: none;
+  max-width: ${(props) => props.maxWidth};
 
   .icon {
     position: absolute;
@@ -261,26 +303,54 @@ const LinkCard = styled(Link)`
   }
 
   @media (min-width: ${(p) => p.theme.breakpoints.phone}) and (max-width: 1024px) {
-    max-width: 48% !important;
+    max-width: ${(props) => (props.maxWidth ? props.maxWidth : '48%')};
   }
 
   @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    max-width: 100% !important;
+    max-width: ${(props) => (props.maxWidth ? props.maxWidth : '100%')};
+  }
+`
+
+const ReferenceRow = styled.div`
+  display: grid;
+  grid-template-rows: repeat(3, auto);
+  width: 100%;
+  gap: 48px;
+  margin-top: 32px;
+  @media (min-width: ${defaultTheme.breakpoints.tabletVertical}px) {
+    max-width: 996px;
+    grid-template-rows: unset;
+    gap: 32px;
+    grid-template-columns: repeat(3, 1fr);
+    ${LinkCard} {
+      max-width: 316px;
+    }
+  }
+  ${LinkCard} {
+    max-width: 100%;
+    margin-bottom: 0;
+  }
+`
+
+const GuideLinkRow = styled(Row)`
+  justify-content: center;
+  gap: 2rem;
+  ${LinkCard} {
+    margin-bottom: 0;
+    @media (max-width: 620px) {
+      max-width: 100%;
+    }
   }
 `
 
 const IconHolder = styled.span`
-  background: ${(p) => p.theme.colors.white};
-  box-shadow: 0px 2px 4px rgba(26, 32, 44, 0.1), 0px 3px 6px rgba(26, 32, 44, 0.05);
-  border-radius: 50%;
-  height: 56px;
-  width: 56px;
+  background: ${defaultTheme.colors.indigo[100]};
+  border-radius: 8px;
+  height: 64px;
+  width: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    margin: ${(p) => p.theme.space[16]} ${(p) => p.theme.space[24]};
-  }
 `
 
 const Homepage = () => {
@@ -335,34 +405,32 @@ const Homepage = () => {
         <GeneralLinks>
           {GeneralLinkData.map((generalLink: any, index: number) => (
             <GeneralLink>
-              <IconHolder>{icons[generalLink.icon]}</IconHolder>
               <div>
+                <IconHolder>{icons[generalLink.icon]}</IconHolder>
                 <CapTitle>{generalLink.categoryName}</CapTitle>
-                <List>
-                  {generalLink.links.map((link: any) => (
-                    <li key={index}>
-                      <Link to={link.url}>
-                        <span className={`${link.codeBlock ? 'inline-code' : ''}`}>
-                          {link.text}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </List>
               </div>
+              <List>
+                {generalLink.links.map((link: any) => (
+                  <li key={index}>
+                    <Link to={link.url}>
+                      <span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span>
+                    </Link>
+                  </li>
+                ))}
+              </List>
             </GeneralLink>
           ))}
         </GeneralLinks>
         <Space height={80} />
         <SubHeading>Guides</SubHeading>
         <NormalPara>{GuideText}</NormalPara>
-        <Row>
+        <GuideLinkRow>
           {GuideLinkData.map((gLinkData: any, index: number) => (
             <LinkCard
               to={gLinkData.url}
               key={index}
+              maxWidth={gLinkData.small ? '274px' : '384px'}
               style={{
-                maxWidth: gLinkData.small ? '274px' : '384px',
                 borderColor: gLinkData.color,
               }}
             >
@@ -373,13 +441,13 @@ const Homepage = () => {
               <NormalPara>{gLinkData.content}</NormalPara>
             </LinkCard>
           ))}
-        </Row>
+        </GuideLinkRow>
         <Space height={80} />
         <SubHeading>Reference</SubHeading>
         <NormalPara>{ReferenceText}</NormalPara>
-        <Row>
+        <ReferenceRow>
           {ReferenceLinkData.map((rLinkData: any, index: number) => (
-            <LinkCard style={{ maxWidth: '316px' }} key={index}>
+            <LinkCard key={index}>
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
               <ListTitle>
@@ -399,7 +467,7 @@ const Homepage = () => {
               </List>
             </LinkCard>
           ))}
-        </Row>
+        </ReferenceRow>
         <Space height={80} />
         <BorderCapTitle>More useful resources</BorderCapTitle>
         <Row style={{ marginTop: '0' }}>

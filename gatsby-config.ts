@@ -123,6 +123,7 @@ let plugins: any = [
   },
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
+  'gatsby-plugin-lost-pixel',
 ]
 
 if (process.env.INDEX_ALGOLIA === 'true') {
