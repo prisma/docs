@@ -19,10 +19,20 @@ Database views allow you to name and store queries. In relational databases, vie
 
 The `views` preview feature allows you to represent views in your Prisma schema with the `view` keyword. To use views in Prisma, follow these steps:
 
-- [Enable the `views` preview feature](#enable-the-views-preview-feature)
-- [Create a view in the underlying database](#create-a-view-in-the-underlying-database), either directly or as a [manual addition to a Prisma Migrate migration file](#use-views-with-prisma-migrate-and-db-push), or use an existing view
-- [Represent the view in your Prisma schema](#add-views-to-your-prisma-schema)
-- [Query the view in Prisma Client](#query-views-in-prisma-client)
+- [Enable the views preview feature](#enable-the-views-preview-feature)
+- [Create a view in the underlying database](#create-a-view-in-the-underlying-database)
+- [Use views with Prisma Migrate and db push](#use-views-with-prisma-migrate-and-db-push)
+- [Add views to your Prisma schema](#add-views-to-your-prisma-schema)
+  - [Write by hand](#write-by-hand)
+    - [Define a `view` block](#define-a-view-block)
+    - [Define fields](#define-fields)
+  - [Use introspection](#use-introspection)
+    - [Adding a unique identifier to an introspected view](#adding-a-unique-identifier-to-an-introspected-view)
+    - [The `views` directory](#the-views-directory)
+  - [Limitations](#limitations)
+    - [Unique Identifier](#unique-identifier)
+    - [Introspection](#introspection)
+- [Query views in Prisma Client](#query-views-in-prisma-client)
 
 </TopBlock>
 
@@ -179,7 +189,7 @@ To define the `UserInfo` view from the example above, begin by using the `view` 
 
 ```prisma
 view UserInfo {
-  // Fields
+// Fields
 }
 ```
 
@@ -199,10 +209,10 @@ The fields of the `UserInfo` example view can be defined as follows:
 
 ```prisma highlight=2-5;normal
 view UserInfo {
-  id    Int    @unique
-  email String
-  name  String
-  bio   String
+id    Int    @unique
+email String
+name  String
+bio   String
 }
 ```
 
@@ -211,10 +221,10 @@ view UserInfo {
 
 ```prisma highlight=2-5;normal
 view UserInfo {
-  id    String  @id @default(auto()) @map("_id") @db.ObjectId
-  email String
-  name  String
-  bio   String
+id    String  @id @default(auto()) @map("_id") @db.ObjectId
+email String
+name  String
+bio   String
 }
 ```
 
@@ -226,7 +236,7 @@ Each _field_ of a `view` block represents a column in the query results of the v
 ### Use introspection
 
 <Admonition type="warning">
-Currently only available for PostgreSQL, MySQL, SQL Server and CockroachDB.
+  Currently only available for PostgreSQL, MySQL, SQL Server and CockroachDB.
 </Admonition>
 
 If you have an existing view or views defined in your database, [introspection](/concepts/components/introspection) will automatically generate `view` blocks in your Prisma schema that represent those views.
@@ -242,12 +252,11 @@ The resulting `view` block will be defined as follows:
 ```prisma
 /// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 view UserInfo {
-  id    Int?
-  email String?
-  name  String?
-  bio   String?
-
-  @@ignore
+id    Int?
+email String?
+name  String?
+bio   String?
+@@ignore
 }
 ```
 
@@ -275,17 +284,35 @@ In order to make this `view` block valid you will need to:
 ```prisma highlight=4;add|1,3,8,9;delete
 /// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 view UserInfo {
-  id    Int?
-  id    Int    @unique
-  email String?
-  name  String?
-  bio   String?
-
-  @@ignore
+id    Int?
+id    Int    @unique
+email String?
+name  String?
+bio   String?
+@@ignore
 }
 ```
 
 When re-introspecting your database, any custom changes to your view definitions will be preserved.
+
+#### The `views` directory
+
+Introspection of a database with one or more existing views will also create a new `views` folder within your `prisma` directory. This folder will contain a `.sql` file for each view that was introspected. Each file will be named after an individual view and will contain the query the related view defines.
+
+For example, after introspecting a database using the model used above you will find a `prisma/views/UserInfo.sql` file was created with the following contents:
+
+```sql
+SELECT
+  u.id,
+  u.email,
+  u.name,
+  p.bio
+FROM
+  (
+    "User" u
+    LEFT JOIN "Profile" p ON ((u.id = p."userId"))
+  );
+```
 
 ### Limitations
 
@@ -298,7 +325,7 @@ Currently, Prisma treats views in the same way as models. This means that a view
 - An [`@id`](/concepts/components/prisma-schema/data-model#defining-an-id-field) field
 - A composite identifier denoted with [`@@id`](/concepts/components/prisma-schema/data-model#composite-ids)
 
-In relational databases, a view's unique identifier can be defined as a `@unique` attribute on one field, or a `@@unique` attribute on multiple fields. When possible, it is preferable to use a `@unique` or `@@unique` constraint over an `@id` or `@@id` field. 
+In relational databases, a view's unique identifier can be defined as a `@unique` attribute on one field, or a `@@unique` attribute on multiple fields. When possible, it is preferable to use a `@unique` or `@@unique` constraint over an `@id` or `@@id` field.
 
 In MongoDB, however, the unique identifier must be an `@id` attribute that maps to the `_id` field in the underlying database with `@map("_id")`.
 
@@ -306,7 +333,7 @@ In the example above, the `id` field has a `@unique` attribute. If another colum
 
 #### Introspection
 
-Currently, introspection of views is only available for PostgreSQL, MySQL, SQL Server and CockroachDB. If you are using another database provider, your views must be added manually. 
+Currently, introspection of views is only available for PostgreSQL, MySQL, SQL Server and CockroachDB. If you are using another database provider, your views must be added manually.
 
 This is a temporary limitation and support for introspection will be extended soon to the other supported datasource providers.
 
