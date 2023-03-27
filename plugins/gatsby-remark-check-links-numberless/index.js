@@ -73,8 +73,6 @@ module.exports = async function plugin(
     setAt,
   })
 
-  // console.log('cache', cache)
-
   // wait to see if all of the Markdown and MDX has been visited
   const linksMap = {}
   const headingsMap = {}
@@ -82,17 +80,12 @@ module.exports = async function plugin(
     if (/^mdx?$/.test(file.extension) && file.relativePath !== 'docs/README.md') {
       const key = getCacheKey(file)
       let visited = await cache.get(key)
-      // console.log('visited', visited)
-      // console.log('viasited', visited)
-      // console.log('hh', getCache)
       if (!visited && getCache) {
         // the cache provided to `gatsby-mdx` has its own namespace, and it
         // doesn't have access to `getCache`, so we have to check to see if
         // those files have been visited here.
         const mdxCache = getCache('gatsby-plugin-mdx')
-        // console.log('mdxcache', mdxCache)
         visited = await mdxCache.get(key)
-        // console.log('visited2', visited)
       }
       if (visited && setAt >= visited.setAt) {
         linksMap[visited.path] = visited.links
@@ -119,11 +112,9 @@ module.exports = async function plugin(
       // don't check links on ignored pages
       continue
     }
-    // console.log('pathL', pathL)
 
     const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
-      // console.log('linksForPath', linksForPath)
       const brokenLinks = linksForPath.filter((link) => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
@@ -134,10 +125,6 @@ module.exports = async function plugin(
         }
         const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
         const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
-        //const keyToLook = `${key}${key.endsWith('/') ? '' : '/'}`
-        // if (key.endsWith('/') || key.includes('prisma.io/docs')) {
-        //   return true
-        // }
         const headings = headingsMap[key]
         if (headings) {
           if (hasHash) {
@@ -161,9 +148,6 @@ module.exports = async function plugin(
         const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
         const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
         const keyToLook = `${key}${key.endsWith('/') ? '' : '/'}`
-        // if (key.endsWith('/') || key.includes('prisma.io/docs')) {
-        //   return true
-        // }
         const headings = headingsMap[keyToLook]
         if (headings) {
           if (hasHash) {
@@ -175,13 +159,6 @@ module.exports = async function plugin(
         }
         return !pathKeysWithoutIndex.includes(urlToCheck)
       })
-
-      // const fullDomainLinks = linksForPath.filter((link) => {
-      //   const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
-      //   if (key.endsWith('/')) {
-      //     console.log(key)
-      //   }
-      // })
 
       const brokenLinkCount = brokenLinks.length
       const brokenAnchorCount = brokenAnchors.length
