@@ -61,7 +61,7 @@ module.exports = async function plugin(
 
   const parent = await getNode(markdownNode.parent)
   const setAt = Date.now()
-  cache.set(getCacheKey(parent), {
+  await cache.set(getCacheKey(parent), {
     path: withPathPrefix(
       markdownNode.fields.slug
         .replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '')
@@ -73,20 +73,26 @@ module.exports = async function plugin(
     setAt,
   })
 
+  // console.log('cache', cache)
+
   // wait to see if all of the Markdown and MDX has been visited
   const linksMap = {}
   const headingsMap = {}
   for (const file of files) {
     if (/^mdx?$/.test(file.extension) && file.relativePath !== 'docs/README.md') {
       const key = getCacheKey(file)
-
       let visited = await cache.get(key)
+      // console.log('visited', visited)
+      // console.log('viasited', visited)
+      // console.log('hh', getCache)
       if (!visited && getCache) {
         // the cache provided to `gatsby-mdx` has its own namespace, and it
         // doesn't have access to `getCache`, so we have to check to see if
         // those files have been visited here.
         const mdxCache = getCache('gatsby-plugin-mdx')
+        // console.log('mdxcache', mdxCache)
         visited = await mdxCache.get(key)
+        // console.log('visited2', visited)
       }
       if (visited && setAt >= visited.setAt) {
         linksMap[visited.path] = visited.links
@@ -100,6 +106,7 @@ module.exports = async function plugin(
   }
 
   let totalBrokenLinks = 0
+  let totalBrokenAnchors = 0
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
@@ -112,9 +119,11 @@ module.exports = async function plugin(
       // don't check links on ignored pages
       continue
     }
+    // console.log('pathL', pathL)
 
     const linksForPath = linksMap[pathL]
     if (linksForPath.length) {
+      // console.log('linksForPath', linksForPath)
       const brokenLinks = linksForPath.filter((link) => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
@@ -123,10 +132,38 @@ module.exports = async function plugin(
           // do not test this link as it is on the list of exceptions
           return false
         }
+        const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
+        const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
+        //const keyToLook = `${key}${key.endsWith('/') ? '' : '/'}`
+        // if (key.endsWith('/') || key.includes('prisma.io/docs')) {
+        //   return true
+        // }
+        const headings = headingsMap[key]
+        if (headings) {
+          if (hasHash) {
+            const id = link.tranformedUrl.slice(hashIndex + 1)
+            return !prefixedExceptions.includes(id) && !headings.includes(id)
+          }
 
+          return false
+        }
+        return !pathKeysWithoutIndex.includes(urlToCheck)
+      })
+
+      const brokenAnchors = linksForPath.filter((link) => {
+        // return true for broken links, false = pass
+        const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
+
+        if (prefixedExceptions.includes(key)) {
+          // do not test this link as it is on the list of exceptions
+          return false
+        }
         const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
         const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
         const keyToLook = `${key}${key.endsWith('/') ? '' : '/'}`
+        // if (key.endsWith('/') || key.includes('prisma.io/docs')) {
+        //   return true
+        // }
         const headings = headingsMap[keyToLook]
         if (headings) {
           if (hasHash) {
@@ -139,11 +176,39 @@ module.exports = async function plugin(
         return !pathKeysWithoutIndex.includes(urlToCheck)
       })
 
+      // const fullDomainLinks = linksForPath.filter((link) => {
+      //   const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
+      //   if (key.endsWith('/')) {
+      //     console.log(key)
+      //   }
+      // })
+
       const brokenLinkCount = brokenLinks.length
+      const brokenAnchorCount = brokenAnchors.length
       totalBrokenLinks += brokenLinkCount
+      totalBrokenAnchors += brokenAnchorCount
       if (brokenLinkCount && verbose) {
-        console.warn(`${brokenLinkCount} broken links found on ${pathL}`)
+        console.warn(`${brokenLinkCount} broken links found on ${pathL.replace(/\/$/, '')}`)
         for (const link of brokenLinks) {
+          let prefix = '-'
+          if (link.position) {
+            const { line, column } = link.position.start
+
+            // account for the offset that frontmatter adds
+            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+
+            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+              ':'
+            )
+          }
+          console.warn(`${prefix} ${link.originalUrl}`)
+        }
+        console.log('')
+      }
+
+      if (brokenAnchorCount && verbose) {
+        console.warn(`${brokenAnchorCount} broken anchors found on ${pathL.replace(/\/$/, '')}`)
+        for (const link of brokenAnchors) {
           let prefix = '-'
           if (link.position) {
             const { line, column } = link.position.start
@@ -162,8 +227,8 @@ module.exports = async function plugin(
     }
   }
 
-  if (totalBrokenLinks) {
-    const message = `${totalBrokenLinks} broken (or redirected) internal links found`
+  if (totalBrokenLinks || totalBrokenAnchors) {
+    const message = `${totalBrokenLinks} broken (or redirected) internal links and ${totalBrokenAnchors} broken anchors found`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
       //throw new Error(message)

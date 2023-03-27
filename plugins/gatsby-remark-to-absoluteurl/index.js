@@ -14,6 +14,28 @@ module.exports = function plugin(
 ) {
   function visitor(node) {
     node.originalUrl = node.url
+    var pattern = /^https?:\/\//i
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      (node.url.includes('prisma.io/docs') ||
+        node.url.includes('prisma.io/blog') ||
+        node.url.includes('prisma.io/dataguide'))
+    ) {
+      console.warn(
+        `${markdownNode.fields.slug} contains links with domain name prisma.io: ${node.url} - Please use relative urls instead.`
+      )
+    }
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      !pattern.test(node.url) &&
+      node.url.endsWith('/')
+    ) {
+      console.warn(
+        `${markdownNode.fields.slug} contains links with trailing slashes: ${node.url} - Please remove trailing slashes.`
+      )
+    }
 
     if (
       markdownNode.fields &&
