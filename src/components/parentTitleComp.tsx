@@ -39,7 +39,7 @@ const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
       {parentTitle.map((part: any, index: number) => (
         <span key={index}>
           {part.link && !nonLink ? (
-            <Link to={part.link}>
+            <Link href={part.link}>
               <span className={`${part.codeStyle ? 'inline-code' : ''}`}>{part.title}</span>
             </Link>
           ) : (

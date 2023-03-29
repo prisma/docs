@@ -3,26 +3,27 @@ import { Link as GatsbyLink } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
 
 interface LinkProps {
-  to: string | null
+  href: string | null
   activeClassName?: string
   partiallyActive?: string
   getProps?: any
 }
 
 const Link = ({
-  to,
+  href,
   activeClassName,
   partiallyActive,
   getProps,
   ...props
 }: LinkProps & React.ReactNode) =>
-  !to || isAbsoluteUrl(to) ? (
-    <a href={to} {...props} target="__blank" rel="noopener">
+  !href || isAbsoluteUrl(href) ? (
+    <a href={href} {...props} target="__blank" rel="noopener" style={{ display: 'inline-block' }}>
       {props.children}
-      {to && isAbsoluteUrl(to) && (
+      {href && isAbsoluteUrl(href) && (
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="12"
+          style={{ marginLeft: '4px' }}
           height="12"
           viewBox="0 0 12 12"
           fill="currentColor"
@@ -37,7 +38,7 @@ const Link = ({
     </a>
   ) : (
     <GatsbyLink
-      to={to}
+      to={href}
       activeClassName={activeClassName}
       partiallyActive={partiallyActive}
       getProps={getProps}
