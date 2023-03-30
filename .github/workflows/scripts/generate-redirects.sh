@@ -45,10 +45,10 @@ do
     fi
 
     redirect=$(cat <<-END
-  {
-    "source": "/docs$path1_cleaned",
-    "destination": "/docs$path2_cleaned"
-  },
+    {
+      "source": "/docs$path1_cleaned",
+      "destination": "/docs$path2_cleaned"
+    },
 
 END
 )
