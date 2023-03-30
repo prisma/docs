@@ -27,7 +27,7 @@ do
     # Delete msg for no edited pages and start code block
     if [ -n "$no_changed_pages" ]; then
         no_changed_pages=""
-        body="$body""\`\`\`"
+        body="$body""\`\`\`%0A"
     fi
 
     # name pieces
@@ -52,7 +52,8 @@ do
 
 END
 )
-    #echo $redirect
+    echo $redirect
+    echo ""
     body="$body$redirect"
 
     #echo "foo" 
