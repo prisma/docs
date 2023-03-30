@@ -142,7 +142,7 @@ module.exports = async function plugin(
       const brokenLinkCount = brokenLinks.length
       totalBrokenLinks += brokenLinkCount
       if (brokenLinkCount && verbose) {
-        console.warn(`${brokenLinkCount} broken links found on ${pathL}`)
+        console.warn(`\n${brokenLinkCount} broken links found on ${pathL}`)
         for (const link of brokenLinks) {
           let prefix = '-'
           if (link.position) {
