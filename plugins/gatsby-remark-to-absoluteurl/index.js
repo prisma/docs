@@ -17,11 +17,10 @@ module.exports = function plugin(
     var pattern = /^https?:\/\//i
 
     if (markdownNode.fields && markdownNode.fields.slug && node.url.includes('prisma.io/docs')) {
-      // domainLinks = true
-      // console.warn(
-      //   `${markdownNode.fields.slug} contains links with domain name prisma.io: ${node.url} - Remove the domain name prisma.io from the link.`
-      // )
-      node.isDomainUrl = true
+      console.warn(
+        `${markdownNode.fields.slug} contains links with domain name prisma.io: ${node.url} - Remove the domain name prisma.io from the link.`
+      )
+      //node.isDomainUrl = true
     }
     if (
       markdownNode.fields &&
@@ -30,12 +29,11 @@ module.exports = function plugin(
       node.url.endsWith('/') &&
       node.url !== './'
     ) {
-      // trailingSlashLinks = true
-      // console.warn(
-      //   `${markdownNode.fields.slug} contains links with trailing slashes: ${node.url} - Please remove trailing slashes.`
-      // )
+      console.warn(
+        `${markdownNode.fields.slug} contains links with trailing slashes: ${node.url} - Please remove trailing slashes.`
+      )
 
-      node.isTrailingSlashUrl = true
+      //node.isTrailingSlashUrl = true
     }
 
     if (
@@ -91,13 +89,6 @@ module.exports = function plugin(
   }
 
   visit(markdownAST, 'link', visitor)
-
-  // if(domainLinks) {
-  //   throw new Error('Links with domain name prisma.io found')
-  // }
-  // if(trailingSlashLinks) {
-  //   throw new Error('Links with trailing slashes found')
-  // }
 
   return markdownAST
 }

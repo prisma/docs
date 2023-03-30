@@ -100,7 +100,6 @@ module.exports = async function plugin(
 
   let totalBrokenLinks = 0
   let totalBrokenAnchors = 0
-  let totalDomainUrlLinks = 0
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
@@ -161,18 +160,10 @@ module.exports = async function plugin(
         return !pathKeysWithoutIndex.includes(urlToCheck)
       })
 
-      const domainUrlLinks = linksForPath.filter((link) => {
-        return link.isDomainUrl
-      })
-
-      console.log(brokenLinks, 'links')
-      console.log(domainUrlLinks, 'domains')
       const brokenLinkCount = brokenLinks.length
       const brokenAnchorCount = brokenAnchors.length
-      const domainUrlLinksCount = domainUrlLinks.length
       totalBrokenLinks += brokenLinkCount
       totalBrokenAnchors += brokenAnchorCount
-      totalDomainUrlLinks += domainUrlLinksCount
 
       if (brokenLinkCount && verbose) {
         console.warn(`${brokenLinkCount} broken links found on ${pathL.replace(/\/$/, '')}`)
@@ -208,25 +199,6 @@ module.exports = async function plugin(
             )
           }
           console.warn(`${prefix} ${link.originalUrl}`)
-        }
-        console.log('')
-      }
-
-      if (domainUrlLinks && verbose) {
-        console.warn(`${domainUrlLinks} domain urls found on ${pathL.replace(/\/$/, '')}`)
-        for (const link of domainUrlLinks) {
-          let prefix = '-'
-          if (link.position) {
-            const { line, column } = link.position.start
-
-            // account for the offset that frontmatter adds
-            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
-
-            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
-              ':'
-            )
-          }
-          console.warn(`${prefix} ${link.url}`)
         }
         console.log('')
       }
