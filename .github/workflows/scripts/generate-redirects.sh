@@ -1,0 +1,55 @@
+body="This PR probably requires the following redirects to be added to vercel.json:%0A%0A\`\`\`"
+no_changed_pages="%0A- This PR does not change any pages in a way that would require a redirect."
+
+status=$(git status -s)
+
+while IFS= read -r line 
+do
+    # Split line into parts
+    IFS=' '
+    read -ra values <<< "$line"
+    # for value in "${values[@]}"; do
+    #     echo "$value"
+    # done
+
+    # Skip if line does not indicate modification or rename
+    if [[ "${values[0]}" != "D" && "${values[0]}" != "R" ]]; then
+        continue
+    fi
+
+    # Delete msg for no edited pages
+    no_changed_pages=""
+
+    # name pieces
+    action=${values[0]}
+    path1=${values[1]}
+    path2=${values[3]}
+
+    # clean paths
+    path1_cleaned=$(echo "$path1" | sed -E 's:content/:/:g' | sed -E 's:/index.mdx::g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
+    path2_cleaned=$(echo "$path2" | sed -E 's:content/:/:g' | sed -E 's:/index.mdx::g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
+    
+    # special case for deletion
+    if [[ "${values[0]}" == "D" ]]; then
+        path2_cleaned="/##(Path of page that replaces deleted page)##"
+    fi
+
+    redirect=$(cat <<-END
+{
+"source": "/docs$path1_cleaned",
+"destination": "/docs$path2_cleaned"
+},
+
+END
+)
+    #echo $redirect
+    body="$body$redirect"
+
+    #echo "foo" 
+
+
+done < <(printf '%s\n' "$status")
+
+body="$body$no_changed_pages"
+
+echo "::set-output name=body::$body"
