@@ -5,7 +5,7 @@ no_changed_pages="%0A- This PR does not change any pages in a way that would req
 
 echo $GITHUB_BASE_REF
 git status -s
-git reset --soft $GITHUB_BASE_REF
+git reset --soft origin/$GITHUB_BASE_REF
 git status -s
 status=$(git status -s)
 
