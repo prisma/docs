@@ -4,7 +4,7 @@ body="This PR probably requires the following redirects to be added to vercel.js
 no_changed_pages="%0A- This PR does not change any pages in a way that would require a redirect."
 
 git status -s
-git reset --soft ${{ github.base_ref }}
+git reset --soft $GITHUB_BASE_REF
 git status -s
 status=$(git status -s)
 
