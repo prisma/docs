@@ -62,5 +62,8 @@ END
 done < <(printf '%s\n' "$status")
 
 body="$body$no_changed_pages"
+body=$(echo "$body" | sed ':a;N;$!ba;s/\n/%0A/g')
+echo $body
 
 echo "::set-output name=body::$body"
+
