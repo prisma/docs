@@ -1,6 +1,9 @@
-body="This PR probably requires the following redirects to be added to vercel.json:%0A%0A\`\`\`"
+#!/bin/bash
+
+body="This PR probably requires the following redirects to be added to vercel.json:%0A%0A"
 no_changed_pages="%0A- This PR does not change any pages in a way that would require a redirect."
 
+git reset --soft ${{ github.base_ref }}
 status=$(git status -s)
 
 while IFS= read -r line 
@@ -16,9 +19,12 @@ do
     if [[ "${values[0]}" != "D" && "${values[0]}" != "R" ]]; then
         continue
     fi
-
-    # Delete msg for no edited pages
-    no_changed_pages=""
+    
+    # Delete msg for no edited pages and start code block
+    if [ -n "$no_changed_pages" ]; then
+        no_changed_pages=""
+        body="$body""\`\`\`"
+    fi
 
     # name pieces
     action=${values[0]}
