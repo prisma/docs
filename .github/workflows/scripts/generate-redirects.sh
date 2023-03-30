@@ -45,16 +45,16 @@ do
     fi
 
     redirect=$(cat <<-END
-{
-"source": "/docs$path1_cleaned",
-"destination": "/docs$path2_cleaned"
-},
+  {
+    "source": "/docs$path1_cleaned",
+    "destination": "/docs$path2_cleaned"
+  },
 
 END
 )
     echo $redirect
     echo ""
-    body="$body$redirect"
+    body="$body$redirect%0A"
 
     #echo "foo" 
 
