@@ -33,6 +33,7 @@ module.exports = async function plugin(
 ) {
   const withPathPrefix = createPathPrefixer(pathPrefix)
   const pathSep = '/'
+  var pattern = /^https?:\/\//i
   if (!markdownNode.fields) {
     // let the file pass if it has no fields
     return markdownAST
@@ -100,6 +101,7 @@ module.exports = async function plugin(
 
   let totalBrokenLinks = 0
   let totalBrokenAnchors = 0
+  let totalDomainLinks = 0
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
@@ -160,10 +162,16 @@ module.exports = async function plugin(
         return !pathKeysWithoutIndex.includes(urlToCheck)
       })
 
+      const domainLinks = linksForPath.filter((link) => {
+        return link.originalUrl.includes('prisma.io/docs')
+      })
+
       const brokenLinkCount = brokenLinks.length
       const brokenAnchorCount = brokenAnchors.length
+      const domainLinksCount = domainLinks.length
       totalBrokenLinks += brokenLinkCount
       totalBrokenAnchors += brokenAnchorCount
+      totalDomainLinks += domainLinksCount
 
       if (brokenLinkCount && verbose) {
         console.warn(`${brokenLinkCount} broken links found on ${pathL.replace(/\/$/, '')}`)
@@ -202,10 +210,31 @@ module.exports = async function plugin(
         }
         console.log('')
       }
+
+      if (domainLinksCount && verbose) {
+        console.warn(`${domainLinksCount} domain urls found on ${pathL.replace(/\/$/, '')}`)
+        for (const link of domainLinks) {
+          let prefix = '-'
+          if (link.position) {
+            const { line, column } = link.position.start
+
+            // account for the offset that frontmatter adds
+            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+
+            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+              ':'
+            )
+          }
+          console.warn(`${prefix} ${link.originalUrl}`)
+        }
+        console.log('')
+      }
     }
   }
-  if (totalBrokenLinks || totalBrokenAnchors) {
-    const message = `${totalBrokenLinks} broken (or redirected) internal links and ${totalBrokenAnchors} broken anchors found`
+  if (totalBrokenLinks || totalBrokenAnchors || totalDomainLinks) {
+    const message = `Broken (or redirected) internal links: ${totalBrokenLinks}
+     Broken anchors: ${totalBrokenAnchors}
+     Domain name in links: ${totalDomainLinks}`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
       throw new Error(message)

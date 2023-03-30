@@ -128,7 +128,6 @@ let plugins: any = [
 
 if (process.env.INDEX_ALGOLIA === 'true') {
   if (process.env.GATSBY_ALGOLIA_APP_ID) {
-    
     // only set this up when we actually need it
     const algoliaPlugin = {
       resolve: 'gatsby-algolia-indexer',
@@ -141,10 +140,12 @@ if (process.env.INDEX_ALGOLIA === 'true') {
       },
       __key: 'search',
     }
-    
+
     plugins.push(algoliaPlugin)
 
-    console.log('INDEX_ALGOLIA is `true`, and GATSBY_ALGOLIA_APP_ID is set, so pushing algoliaPlugin to list of plugins to trigger search indexing.')
+    console.log(
+      'INDEX_ALGOLIA is `true`, and GATSBY_ALGOLIA_APP_ID is set, so pushing algoliaPlugin to list of plugins to trigger search indexing.'
+    )
   } else {
     console.warn('INDEX_ALGOLIA === true, but GATSBY_ALGOLIA_APP_ID is undefined.')
   }
@@ -176,6 +177,9 @@ const config: GatsbyConfig = {
   // Learn more at: https://gatsby.dev/graphql-typegen
   graphqlTypegen: true,
   plugins,
+  flags: {
+    PARALLEL_QUERY_RUNNING: true,
+  },
 }
 
 export default config
