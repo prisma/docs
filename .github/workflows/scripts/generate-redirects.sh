@@ -41,7 +41,7 @@ do
     
     # special case for deletion
     if [[ "${values[0]}" == "D" ]]; then
-        path2_cleaned="/##(Path of page that replaces deleted page)##"
+        path2_cleaned="/##( TODO: Path of page that replaces deleted page )##"
     fi
 
     redirect=$(cat <<-END
