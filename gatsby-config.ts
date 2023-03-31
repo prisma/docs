@@ -177,9 +177,6 @@ const config: GatsbyConfig = {
   // Learn more at: https://gatsby.dev/graphql-typegen
   graphqlTypegen: true,
   plugins,
-  flags: {
-    PARALLEL_QUERY_RUNNING: true,
-  },
 }
 
 export default config
