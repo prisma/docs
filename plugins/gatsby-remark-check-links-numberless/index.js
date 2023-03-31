@@ -163,7 +163,10 @@ module.exports = async function plugin(
       })
 
       const domainLinks = linksForPath.filter((link) => {
-        return link.originalUrl.includes('prisma.io/docs')
+        if (link.isDomainUrl) {
+          console.log(link)
+        }
+        return link.isDomainUrl
       })
 
       const brokenLinkCount = brokenLinks.length
