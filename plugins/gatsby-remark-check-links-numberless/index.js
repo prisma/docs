@@ -48,7 +48,18 @@ module.exports = async function plugin(
       return
     }
 
+    // if(node.isDomainUrl) { console.log(node) }
+
     if (!node.url.startsWith('mailto:') && !/^https?:\/\//.test(node.url)) {
+      let tranformedUrl = node.url
+      links.push({
+        ...node,
+        tranformedUrl,
+        frontmatter: markdownNode.frontmatter,
+      })
+    }
+
+    if (node.isDomainUrl) {
       let tranformedUrl = node.url
       links.push({
         ...node,
@@ -102,6 +113,8 @@ module.exports = async function plugin(
   let totalBrokenLinks = 0
   let totalBrokenAnchors = 0
   let totalDomainLinks = 0
+  let totalTrailingSlashLinks = 0
+
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
@@ -121,7 +134,7 @@ module.exports = async function plugin(
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
 
-        if (prefixedExceptions.includes(key)) {
+        if (prefixedExceptions.includes(key) || /^https?:\/\//.test(key)) {
           // do not test this link as it is on the list of exceptions
           return false
         }
@@ -143,7 +156,7 @@ module.exports = async function plugin(
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
 
-        if (prefixedExceptions.includes(key)) {
+        if (prefixedExceptions.includes(key) || /^https?:\/\//.test(key)) {
           // do not test this link as it is on the list of exceptions
           return false
         }
@@ -163,18 +176,21 @@ module.exports = async function plugin(
       })
 
       const domainLinks = linksForPath.filter((link) => {
-        if (link.isDomainUrl) {
-          console.log(link)
-        }
         return link.isDomainUrl
+      })
+
+      const trailingSlashLinks = linksForPath.filter((link) => {
+        return link.isTrailingSlashUrl
       })
 
       const brokenLinkCount = brokenLinks.length
       const brokenAnchorCount = brokenAnchors.length
       const domainLinksCount = domainLinks.length
+      const trailingSlashLinksCount = trailingSlashLinks.length
       totalBrokenLinks += brokenLinkCount
       totalBrokenAnchors += brokenAnchorCount
       totalDomainLinks += domainLinksCount
+      totalTrailingSlashLinks += trailingSlashLinksCount
 
       if (brokenLinkCount && verbose) {
         console.warn(`${brokenLinkCount} broken links found on ${pathL.replace(/\/$/, '')}`)
@@ -234,10 +250,11 @@ module.exports = async function plugin(
       }
     }
   }
-  if (totalBrokenLinks || totalBrokenAnchors || totalDomainLinks) {
-    const message = `Broken (or redirected) internal links: ${totalBrokenLinks}
-     Broken anchors: ${totalBrokenAnchors}
-     Domain name in links: ${totalDomainLinks}`
+  if (totalBrokenLinks || totalBrokenAnchors || totalDomainLinks || totalTrailingSlashLinks) {
+    const message = ` Broken (or redirected) internal links: ${totalBrokenLinks}
+                      Broken anchors: ${totalBrokenAnchors}
+                      Domain name in links: ${totalDomainLinks}
+                      Links with trailing slashes: ${totalTrailingSlashLinks}`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
       throw new Error(message)

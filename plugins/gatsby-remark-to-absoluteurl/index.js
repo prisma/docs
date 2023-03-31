@@ -7,7 +7,6 @@ function withPathPrefix(url, pathPrefix) {
 }
 
 const pathSep = '/'
-
 module.exports = function plugin(
   { markdownAST, markdownNode, pathPrefix, getNode },
   { redirects = [] } = {}
@@ -15,26 +14,7 @@ module.exports = function plugin(
   function visitor(node) {
     node.originalUrl = node.url
     var pattern = /^https?:\/\//i
-
-    if (markdownNode.fields && markdownNode.fields.slug && node.url.includes('prisma.io/docs')) {
-      // console.warn(
-      //   `${markdownNode.fields.slug} contains links with domain name prisma.io: ${node.url} - Remove the domain name prisma.io from the link.`
-      // )
-      node.isDomainUrl = true
-    }
-    if (
-      markdownNode.fields &&
-      markdownNode.fields.slug &&
-      !pattern.test(node.url) &&
-      node.url.endsWith('/') &&
-      node.url !== './'
-    ) {
-      // console.warn(
-      //   `${markdownNode.fields.slug} contains links with trailing slashes: ${node.url} - Please remove trailing slashes.`
-      // )
-
-      node.isTrailingSlashUrl = true
-    }
+    node.isDomainUrl = false
 
     if (
       markdownNode.fields &&
@@ -85,6 +65,19 @@ module.exports = function plugin(
           pathPrefix
         )
       }
+    }
+    if (markdownNode.fields && markdownNode.fields.slug && node.url.includes('prisma.io/docs')) {
+      node.isDomainUrl = true
+    }
+
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      !pattern.test(node.url) &&
+      node.url.endsWith('/') &&
+      node.url !== './'
+    ) {
+      node.isTrailingSlashUrl = true
     }
   }
 
