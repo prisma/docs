@@ -72,11 +72,11 @@ const ListItem = styled.li`
         display: block;
         opacity: 1;
         position: absolute;
-        margin-top: -2px;
+        margin-top: -3px;
       }
 
       .down.open {
-        margin-top: -1px;
+        margin-top: -2px;
       }
 
       &:hover,
