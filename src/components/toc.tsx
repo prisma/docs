@@ -59,6 +59,7 @@ const ListItem = styled.li<ItemProps>`
 const Headings = ({ headings, activeId, depth = 2 }: any) => {
   const isActive = (url: string) => url.replace(/inlinecode/g, '').slice(1) === activeId
   const isAnyChildActive = (children: any[]) => children.some((child: any) => isActive(child.url))
+  const finalDepth = depth ?? 2
   const navItems = (headings: any, activeId: any, depth: any) => (
     <HeadingList>
       {headings.map((heading: any) => (
@@ -77,7 +78,7 @@ const Headings = ({ headings, activeId, depth = 2 }: any) => {
       ))}
     </HeadingList>
   )
-  return navItems(headings, activeId, depth)
+  return navItems(headings, activeId, finalDepth)
 }
 
 const getIds = (headings: TableOfContents[], tocDepth: number) => {
@@ -120,7 +121,7 @@ const useIntersectionObserver = (setActiveId: any, idList: any[]) => {
         const sortedVisibleHeadings = visibleHeadings.sort(
           (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
         )
-
+        console.log(sortedVisibleHeadings)
         setActiveId(sortedVisibleHeadings[0].target.id)
       }
     }
