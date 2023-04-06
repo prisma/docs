@@ -72,7 +72,7 @@ const ListItem = styled.li`
         display: block;
         opacity: 1;
         position: absolute;
-        margin-top: -3px;
+        margin-top: -4px;
       }
 
       .down.open {
