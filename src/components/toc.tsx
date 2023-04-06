@@ -121,7 +121,6 @@ const useIntersectionObserver = (setActiveId: any, idList: any[]) => {
         const sortedVisibleHeadings = visibleHeadings.sort(
           (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
         )
-        console.log(sortedVisibleHeadings)
         setActiveId(sortedVisibleHeadings[0].target.id)
       }
     }
