@@ -57,7 +57,7 @@ const ListItem = styled.li<ItemProps>`
 `
 
 const Headings = ({ headings, activeId, depth = 2 }: any) => {
-  const isActive = (url: string) => url.replace(/inlinecode/g, '').slice(1) === activeId
+  const isActive = (url: string) => url?.replace(/inlinecode/g, '').slice(1) === activeId
   const isAnyChildActive = (children: any[]) => children.some((child: any) => isActive(child.url))
   const finalDepth = depth ?? 2
   const navItems = (headings: any, activeId: any, depth: any) => (
@@ -65,7 +65,7 @@ const Headings = ({ headings, activeId, depth = 2 }: any) => {
       {headings.map((heading: any) => (
         <ListItem key={heading.url} isActive={isActive(heading.url)}>
           <a
-            href={`${heading.url.replace(/inlinecode/g, '')}`}
+            href={`${heading.url?.replace(/inlinecode/g, '')}`}
             dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
           />
 
