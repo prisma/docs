@@ -1,23 +1,18 @@
 import React, { useState } from 'react'
 import TreeNode from './treeNode'
 import { AllEdges } from '../../interfaces/AllArticles.interface'
-import { createGlobalState } from 'react-hooks-global-state'
 import { useLocation } from '@reach/router'
 import { calculateTreeData } from '../../utils/treeData'
 
 let defaultCollapsed: any = {}
 
-const initialState = { collapsedState: defaultCollapsed }
-const { useGlobalState } = createGlobalState(initialState)
-
 const Tree = ({ edges }: AllEdges) => {
   const location = useLocation()
-
   let [treeData] = useState(() => {
     return calculateTreeData(edges, defaultCollapsed, location)
   })
 
-  const [collapsed, setCollapsed] = useGlobalState('collapsedState')
+  const [collapsed, setCollapsed] = useState(defaultCollapsed)
   const toggle = (label: string, toggleContent: boolean, parents?: string[]) => {
     setCollapsed({
       ...collapsed,
@@ -34,7 +29,7 @@ const Tree = ({ edges }: AllEdges) => {
       })
     }
   }
-  return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} location={location} />
+  return <TreeNode setCollapsed={toggle} collapsed={collapsed} {...treeData} />
 }
 
 export default Tree

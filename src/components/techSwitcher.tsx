@@ -7,6 +7,9 @@ import MySQL from '../icons/technologies/MySQL'
 import SQLite from '../icons/technologies/SQLite'
 import MongoDB from '../icons/technologies/MongoDB'
 import JS from '../icons/technologies/JS'
+import SQLServer from '../icons/technologies/MSSQL'
+import PlanetScale from '../icons/technologies/PlanetScale'
+import CockroachDB from '../icons/technologies/CockroachDB'
 import { components } from 'react-select'
 import ArrowDown from '../icons/ArrowDown'
 
@@ -28,11 +31,14 @@ const icons = {
   postgres: <PostgreSQL />,
   sqlite: <SQLite />,
   mongodb: <MongoDB />,
+  sqlserver: <SQLServer />,
+  planetscale: <PlanetScale />,
+  cockroachdb: <CockroachDB />,
 }
 
 const technologyTypes = {
   languages: ['node', 'typescript'],
-  databases: ['mysql', 'postgres', 'sqlite', 'mongodb'],
+  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'sqlserver', 'planetscale', 'cockroachdb'],
 }
 
 export const technologyNames = {
@@ -42,6 +48,9 @@ export const technologyNames = {
   postgres: 'PostgreSQL',
   sqlite: 'SQLite',
   mongodb: 'MongoDB',
+  sqlserver: 'SQL Server',
+  planetscale: 'PlanetScale',
+  cockroachdb: 'CockroachDB',
 }
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
@@ -116,7 +125,8 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: Tec
 
 const Container = styled.div`
   margin: 16px 1rem 0 0;
-  width: 170px;
+  width: 180px;
+  text-overflow: ellipsis;
 
   @media only screen and (max-width: 767px) {
     margin: 8px 0 0;
