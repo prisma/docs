@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { InstantSearch, Index, connectStateResults, connectHits } from 'react-instantsearch-dom'
 import algoliasearch from 'algoliasearch/lite'
 import config from '../../../config'
@@ -6,6 +6,8 @@ import DocHit from './hitComps'
 import styled from 'styled-components'
 import Overlay from './overlay'
 import CustomSearchBox from './input'
+import qs from 'qs'
+import { navigate } from 'gatsby'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -85,17 +87,41 @@ const HitsWrapper = styled.div`
     // left: 0;
     top: 88px;
     // max-width: 100%;
-    border-top: 1px solid ${(p) => p.theme.colors.gray300};
+    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
 `
 
 const indexName = config.header.search.indexName
-const searchClient = algoliasearch(
+const DEBOUNCE_TIME = 400
+const algoliaClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
 )
+
+const searchClient = {
+  ...algoliaClient,
+  search(requests: any) {
+    if (requests.every(({ params }: any) => !params.query)) {
+      return Promise.resolve({
+        results: requests.map(() => ({
+          hits: [],
+          nbHits: 0,
+          nbPages: 0,
+          page: 0,
+          processingTimeMS: 0,
+          hitsPerPage: 0,
+          exhaustiveNbHits: false,
+          query: '',
+          params: '',
+        })),
+      })
+    }
+
+    return algoliaClient.search(requests)
+  },
+}
 
 const getHits = (children: any, res: any) => {
   const allHits = res.hits
@@ -126,17 +152,57 @@ const Results = connectStateResults(
     ))
 )
 
-export default function Search({ hitsStatus }: any) {
+const createURL = (state: any) => `?${qs.stringify(state)}`
+
+const searchStateToUrl = (location: any, searchState: any) =>
+  searchState
+    ? `${
+        location.pathname === '/docs'
+          ? location.pathname.replace('docs', '')
+          : location.pathname.replace('/docs', '')
+      }${createURL(searchState)}`
+    : ``
+
+const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
+
+export default function Search({ hitsStatus, location }: any) {
+  const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
-  const hideSearch = () => setShowHits(false)
+  const hideSearch = () => {
+    setShowHits(false)
+    if (searchState.query === '') {
+      clearTimeout(debouncedSetStateRef.current)
+      debouncedSetStateRef.current = setTimeout(() => {
+        navigate(location.href.split('?')[0])
+      }, DEBOUNCE_TIME)
+    }
+  }
 
   const showSearch = () => setShowHits(true)
+
+  const debouncedSetStateRef = useRef(null)
+
+  const onSearchStateChange = (updatedSearchState: any) => {
+    setQuery(updatedSearchState.query)
+    clearTimeout(debouncedSetStateRef.current)
+
+    debouncedSetStateRef.current = setTimeout(() => {
+      navigate(searchStateToUrl(location, updatedSearchState))
+    }, DEBOUNCE_TIME)
+
+    setSearchState(updatedSearchState)
+  }
 
   React.useEffect(() => {
     hitsStatus(showHits)
   }, [showHits, query])
+
+  React.useEffect(() => {
+    setSearchState(urlToSearchState(location))
+    setQuery(searchState.query)
+  }, [location])
 
   const incrementIndex = () => {
     setSelectedIndex((prevCount: number) => {
@@ -162,7 +228,9 @@ export default function Search({ hitsStatus }: any) {
     <InstantSearch
       searchClient={searchClient}
       indexName={indexName}
-      onSearchStateChange={({ query }: any) => setQuery(query)}
+      onSearchStateChange={onSearchStateChange}
+      searchState={searchState}
+      createURL={createURL}
     >
       <Overlay visible={showHits} hideSearch={hideSearch} />
       <CustomSearchBox
@@ -172,7 +240,7 @@ export default function Search({ hitsStatus }: any) {
         upClicked={decrementIndex}
         downClicked={incrementIndex}
       />
-      {query !== '' && showHits && (
+      {query && query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
           <Index key={indexName} indexName={indexName}>
             <Results>
