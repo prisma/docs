@@ -42,12 +42,6 @@ module.exports = async function plugin(
   const headings = []
 
   function visitor(node, index, parent) {
-    /*To convert all uppercase links to lowercase (if used by mistake) except its search part (like: ?name='AbC'), 
-      to avoid use of extrnal link errors like one of youtube */
-    node.url = node.url
-      .replace(/(.+)\?|(.+)\??/, (url) => url.toLowerCase())
-      .replace(/#.+/, (url) => url.toLowerCase())
-
     if (parent.type === 'heading') {
       headings.push(parent.data.id.replace(/inlinecode/g, ''))
       return
@@ -70,7 +64,7 @@ module.exports = async function plugin(
   cache.set(getCacheKey(parent), {
     path: withPathPrefix(
       markdownNode.fields.slug
-        .replace(/\/index$/, '')
+        .replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '')
         .replace(/\d+-/g, '')
         .concat(pathSep)
     ),
@@ -110,12 +104,12 @@ module.exports = async function plugin(
   const prefixedExceptions = exceptions.map(withPathPrefix)
   const pathKeys = Object.keys(linksMap)
   const pathKeysWithoutIndex = pathKeys.map((p) =>
-    p.replace(`${pathSep}index`, '').replace(/\/$/, '')
+    p.replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '').replace(/\/$/, '')
   )
 
   for (const pathL in linksMap) {
     if (prefixedIgnore.includes(pathL)) {
-      // don't count broken links for ignored pages
+      // don't check links on ignored pages
       continue
     }
 
@@ -124,14 +118,16 @@ module.exports = async function plugin(
       const brokenLinks = linksForPath.filter((link) => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
+
         if (prefixedExceptions.includes(key)) {
+          // do not test this link as it is on the list of exceptions
           return false
         }
 
         const url = hasHash ? link.tranformedUrl.slice(0, hashIndex) : link.tranformedUrl
         const urlToCheck = url.slice(-1) === pathSep ? url.slice(0, -1) : url
-        const headings = headingsMap[key]
-
+        const keyToLook = `${key}${key.endsWith('/') ? '' : '/'}`
+        const headings = headingsMap[keyToLook]
         if (headings) {
           if (hasHash) {
             const id = link.tranformedUrl.slice(hashIndex + 1)
@@ -167,18 +163,18 @@ module.exports = async function plugin(
   }
 
   if (totalBrokenLinks) {
-    const message = `${totalBrokenLinks} broken links found`
+    const message = `${totalBrokenLinks} broken (or redirected) internal links found`
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
-      // throw new Error(message);
-      console.info('Broken links found. Please fix before deploy!')
+      //throw new Error(message)
+      console.warn(message)
     }
 
     if (verbose) {
-      console.error(message)
+      console.warn(message)
     }
   } else if (verbose) {
-    console.info('No broken links found')
+    console.info('No internal broken links found')
   }
 
   return markdownAST
