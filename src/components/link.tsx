@@ -17,9 +17,15 @@ const Link = ({
   ...props
 }: LinkProps & React.ReactNode) =>
   !href || isAbsoluteUrl(href) ? (
-    <a href={href} {...props} target="__blank" rel="noopener" style={{ display: 'inline-block' }}>
+    <a
+      href={href}
+      {...props}
+      target={!href?.includes('prisma.io') ? '_blank' : '_self'}
+      rel={!href?.includes('prisma.io') ? 'noopener' : ''}
+      style={{ display: 'inline-block' }}
+    >
       {props.children}
-      {href && isAbsoluteUrl(href) && (
+      {href && isAbsoluteUrl(href) && !href.includes('prisma.io') && (
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="12"
