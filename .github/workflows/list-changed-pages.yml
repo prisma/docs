@@ -1,4 +1,4 @@
-name: Comment with Vercel Deploy URLs of changed pages
+name: Comment based on changed pages (Vercel Deploy URLs + Redirect Suggestions)
 
 on:
   pull_request:
@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Get list of changed files
         id: files
         uses: Ana06/get-changed-files@v1.2 # it's a fork of jitterbit/get-changed-files@v1 which works better with pull requests
@@ -42,7 +45,7 @@ jobs:
           body="$body%0A%0A(Note that links will only be valid after Vercel preview deploy succeeded)"
           echo "::set-output name=body::$body"
 
-      - name: Find existing comment
+      - name: Find existing comment (links)
         uses: peter-evans/find-comment@v1
         id: fc
         with:
@@ -50,17 +53,47 @@ jobs:
           comment-author: 'github-actions[bot]'
           body-includes: following pages
 
-      - name: Create comment
+      - name: Create comment (links)
         if: steps.fc.outputs.comment-id == ''
         uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ steps.links.outputs.body }}
 
-      - name: Update comment
+      - name: Update comment (links)
         if: steps.fc.outputs.comment-id != ''
         uses: peter-evans/create-or-update-comment@v1
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           body: ${{ steps.links.outputs.body }}
+          edit-mode: replace
+
+      ### REDIRECTS ###
+
+      - name: Create suggested redirects
+        id: redirects
+        run: |
+          bash .github/workflows/scripts/generate-redirects.sh
+
+      - name: Find existing comment (redirects)
+        uses: peter-evans/find-comment@v1
+        id: fc2
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: following redirects
+
+      - name: Create comment (redirects)
+        if: steps.fc2.outputs.comment-id == ''
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.redirects.outputs.body }}
+
+      - name: Update comment (redirects)
+        if: steps.fc2.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc2.outputs.comment-id }}
+          body: ${{ steps.redirects.outputs.body }}
           edit-mode: replace
