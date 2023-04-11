@@ -56,10 +56,10 @@ const ListItem = styled.li<ItemProps>`
   }
 `
 
-const Headings = ({ headings, activeId, depth = 2 }: any) => {
+const Headings = ({ headings, activeId, depth = 1 }: any) => {
   const isActive = (url: string) => url?.replace(/inlinecode/g, '').slice(1) === activeId
   const isAnyChildActive = (children: any[]) => children.some((child: any) => isActive(child.url))
-  const finalDepth = depth ?? 2
+  const finalDepth = depth ?? 1
   const navItems = (headings: any, activeId: any, depth: any) => (
     <HeadingList>
       {headings.map((heading: any) => (
