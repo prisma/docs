@@ -105,7 +105,7 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
       }, headingElementsRef.current)
 
       // Get all headings that are currently visible on the page
-      const visibleHeadings: any[] = []
+      let visibleHeadings: any[] = []
       Object.keys(headingElementsRef.current).forEach((key) => {
         const headingElement = headingElementsRef.current[key]
         if (headingElement.isIntersecting) visibleHeadings.push(headingElement)
@@ -113,17 +113,13 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
 
       const getIndexFromId = (id: any) => idList.findIndex((heading) => heading.id === id)
       // If there is only one visible heading, this is our "active" heading
-      if (
-        visibleHeadings.length === 1 &&
-        parseInt(visibleHeadings[0].target.tagName.charAt(1)) <= depth
-      ) {
+      visibleHeadings = visibleHeadings.filter((e) => parseInt(e.target.tagName.charAt(1)) <= depth)
+
+      if (visibleHeadings.length === 1) {
         setActiveId(visibleHeadings[0].target.id)
         // If there is more than one visible heading,
         // choose the one that is closest to the top of the page
-      } else if (
-        visibleHeadings.length > 1 &&
-        parseInt(visibleHeadings[0].target.tagName.charAt(1)) <= depth
-      ) {
+      } else if (visibleHeadings.length > 1) {
         const sortedVisibleHeadings = visibleHeadings.sort(
           (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
         )
@@ -148,6 +144,9 @@ const TOC = ({ headings, tocDepth }: any) => {
   const [activeId, setActiveId] = React.useState()
   const idList = getIds(headings, tocDepth || 2)
   useIntersectionObserver(setActiveId, idList, tocDepth)
+  React.useEffect(() => {
+    console.log(activeId)
+  }, [activeId])
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>ON THIS PAGE</ChapterTitle>
