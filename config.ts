@@ -105,6 +105,11 @@ const siteConfig = {
             url: 'concepts/components/prisma-engines',
             codeBlock: false,
           },
+          {
+            text: 'CRUD',
+            url: 'concepts/components/prisma-client/crud',
+            codeBlock: false,
+          },
         ],
       },
       {
