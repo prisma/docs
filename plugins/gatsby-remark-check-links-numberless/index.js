@@ -1,6 +1,14 @@
 var visit = require('unist-util-visit')
 const path = require('path')
-
+const techStrings = [
+  'node',
+  'typescript',
+  'postgres',
+  'mysql',
+  'sqlserver',
+  'planetscale',
+  'cockroachdb',
+]
 function getCacheKey(node) {
   return `remark-check-links-${node.id}-${node.internal.contentDigest}`
 }
@@ -206,7 +214,14 @@ module.exports = async function plugin(
               ':'
             )
           }
-          console.warn(`${prefix} ${link.originalUrl}`)
+
+          if (techStrings.some((tech) => link.originalUrl.includes(tech))) {
+            console.warn(
+              `${prefix} ${link.originalUrl} contains tech switcher strings. Please add this to the exceptions list in gatsby-config.ts`
+            )
+          } else {
+            console.warn(`${prefix} ${link.originalUrl}`)
+          }
         }
         console.log('')
       }
@@ -233,6 +248,27 @@ module.exports = async function plugin(
       if (domainLinksCount && verbose) {
         console.warn(`${domainLinksCount} domain urls found on ${pathL.replace(/\/$/, '')}`)
         for (const link of domainLinks) {
+          let prefix = '-'
+          if (link.position) {
+            const { line, column } = link.position.start
+
+            // account for the offset that frontmatter adds
+            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+
+            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+              ':'
+            )
+          }
+          console.warn(`${prefix} ${link.originalUrl}`)
+        }
+        console.log('')
+      }
+
+      if (trailingSlashLinksCount && verbose) {
+        console.warn(
+          `${trailingSlashLinksCount} trailing slash urls found on ${pathL.replace(/\/$/, '')}`
+        )
+        for (const link of trailingSlashLinks) {
           let prefix = '-'
           if (link.position) {
             const { line, column } = link.position.start
