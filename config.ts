@@ -12,6 +12,10 @@ const siteConfig = {
       from: '/foo',
       to: '/bar',
     },
+    {
+      from: '/guides/database/prototyping-schema-db-push',
+      to: '/guides/migrate/prototyping-schema-db-push'
+    }
   ],
   header: {
     secondLevelHeaderMenuItems: [
