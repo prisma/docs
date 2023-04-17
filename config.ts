@@ -12,6 +12,10 @@ const siteConfig = {
       from: '/foo',
       to: '/bar',
     },
+    {
+      from: '/guides/database/prototyping-schema-db-push',
+      to: '/guides/migrate/prototyping-schema-db-push'
+    }
   ],
   header: {
     secondLevelHeaderMenuItems: [
@@ -103,6 +107,11 @@ const siteConfig = {
           {
             text: 'Under the hood',
             url: 'concepts/components/prisma-engines',
+            codeBlock: false,
+          },
+          {
+            text: 'CRUD',
+            url: 'concepts/components/prisma-client/crud',
             codeBlock: false,
           },
         ],
