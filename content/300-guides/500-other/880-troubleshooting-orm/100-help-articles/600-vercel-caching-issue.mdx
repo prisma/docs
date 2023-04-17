@@ -1,0 +1,57 @@
+---
+title: 'Vercel deployment caching workaround'
+metaTitle: 'Learn to configure your build process on Vercel to avoid caching-related problems'
+metaDescription: 'Learn to configure your build process on Vercel to avoid caching-related problems'
+---
+
+## Problem
+
+If you deploy an application using Prisma to [Vercel](https://vercel.com/), you may run into strange issues as you iterate on your Prisma schema and deploy updates to your app.
+
+These issues occur because of the fact that Vercel caches the dependencies of your project until one of those dependencies changes. It does this to allow faster builds, and while this is typically a good thing, it causes some problems for Prisma Client.
+
+Prisma uses a `postinstall` hook to generate Prisma Client when dependencies are installed. Because Vercel uses cached modules, this `postinstall` hook never gets run during a deployment after the initial deployment. This results in Prisma Client becoming out of sync with your database schema.
+
+## Solution
+
+This issue can be solved by explicitly generating Prisma Client on every deployment. Running `npx prisma generate` before each deployment will ensure Prisma Client is up-to-date.
+
+You can configure the deployment to run this command in a few different places:
+
+### The application's `build` script in `package.json`
+
+<Admonition type="info">
+
+This is the preferred method as it is a universal solution.
+
+</Admonition>
+
+Within the `scripts` section of your project's `package.json` file, if there is not already a script named `build`, add one and run `npx prisma generate` in that script:
+
+```json highlight=4;add
+{
+  ...
+  "scripts" {
+    "build": "npx prisma generate"
+  }
+  ...
+}
+```
+
+<Admonition type="info">
+
+If you already have a `build` script with existing commands, you can append the `prisma generate` by running `npx prisma generate && <your-existing-scripts>`.
+
+</Admonition>
+
+### Vercel UI's build script field
+
+Another way to configure `npx prisma generate` to be run on every deployment is to add the command to the build settings via Vercel's UI.
+
+Within your project's dashboard, go to the **Settings** tab and find the **General** section. In that section you will find a box labeled **Build & Development Settings** that contains an input field named **Build Command**:
+
+![Vercel project dashboard's Build Command setting](./vercel-ui-build-command.png)
+
+Within that field, append `npx prisma generate` to the existing script:
+
+![Vercel project dashboard's Build Command setting filled](./vercel-ui-build-command-filled.png)
