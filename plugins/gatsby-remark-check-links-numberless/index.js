@@ -210,7 +210,6 @@ module.exports = async function plugin(
               isSourcePartofUrl(link.originalUrl, r.source)
           )
         ) {
-          console.log(link.originalUrl)
           return true
         }
       })
@@ -226,90 +225,90 @@ module.exports = async function plugin(
       totalTrailingSlashLinks += trailingSlashLinksCount
       totalRedirectedLinks += redirectedLinksCount
 
-      if (brokenLinkCount && verbose) {
-        console.warn(`${brokenLinkCount} broken links found on ${pathL.replace(/\/$/, '')}`)
-        for (const link of brokenLinks) {
-          let prefix = '-'
-          if (link.position) {
-            const { line, column } = link.position.start
+      // if (brokenLinkCount && verbose) {
+      //   console.warn(`${brokenLinkCount} broken links found on ${pathL.replace(/\/$/, '')}`)
+      //   for (const link of brokenLinks) {
+      //     let prefix = '-'
+      //     if (link.position) {
+      //       const { line, column } = link.position.start
 
-            // account for the offset that frontmatter adds
-            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+      //       // account for the offset that frontmatter adds
+      //       const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
 
-            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
-              ':'
-            )
-          }
+      //       prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+      //         ':'
+      //       )
+      //     }
 
-          if (techStrings.some((tech) => link.originalUrl.includes(tech))) {
-            console.warn(
-              `${prefix} ${link.originalUrl} contains tech switcher strings. Please add this to the exceptions list in gatsby-config.ts`
-            )
-          } else {
-            console.warn(`${prefix} ${link.originalUrl}`)
-          }
-        }
-        console.log('')
-      }
+      //     if (techStrings.some((tech) => link.originalUrl.includes(tech))) {
+      //       console.warn(
+      //         `${prefix} ${link.originalUrl} contains tech switcher strings. Please add this to the exceptions list in gatsby-config.ts`
+      //       )
+      //     } else {
+      //       console.warn(`${prefix} ${link.originalUrl}`)
+      //     }
+      //   }
+      //   console.log('')
+      // }
 
-      if (brokenAnchorCount && verbose) {
-        console.warn(`${brokenAnchorCount} broken anchors found on ${pathL.replace(/\/$/, '')}`)
-        for (const link of brokenAnchors) {
-          let prefix = '-'
-          if (link.position) {
-            const { line, column } = link.position.start
+      // if (brokenAnchorCount && verbose) {
+      //   console.warn(`${brokenAnchorCount} broken anchors found on ${pathL.replace(/\/$/, '')}`)
+      //   for (const link of brokenAnchors) {
+      //     let prefix = '-'
+      //     if (link.position) {
+      //       const { line, column } = link.position.start
 
-            // account for the offset that frontmatter adds
-            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+      //       // account for the offset that frontmatter adds
+      //       const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
 
-            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
-              ':'
-            )
-          }
-          console.warn(`${prefix} ${link.originalUrl}`)
-        }
-        console.log('')
-      }
+      //       prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+      //         ':'
+      //       )
+      //     }
+      //     console.warn(`${prefix} ${link.originalUrl}`)
+      //   }
+      //   console.log('')
+      // }
 
-      if (domainLinksCount && verbose) {
-        console.warn(`${domainLinksCount} domain urls found on ${pathL.replace(/\/$/, '')}`)
-        for (const link of domainLinks) {
-          let prefix = '-'
-          if (link.position) {
-            const { line, column } = link.position.start
+      // if (domainLinksCount && verbose) {
+      //   console.warn(`${domainLinksCount} domain urls found on ${pathL.replace(/\/$/, '')}`)
+      //   for (const link of domainLinks) {
+      //     let prefix = '-'
+      //     if (link.position) {
+      //       const { line, column } = link.position.start
 
-            // account for the offset that frontmatter adds
-            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+      //       // account for the offset that frontmatter adds
+      //       const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
 
-            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
-              ':'
-            )
-          }
-          console.warn(`${prefix} ${link.originalUrl}`)
-        }
-        console.log('')
-      }
+      //       prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+      //         ':'
+      //       )
+      //     }
+      //     console.warn(`${prefix} ${link.originalUrl}`)
+      //   }
+      //   console.log('')
+      // }
 
-      if (trailingSlashLinksCount && verbose) {
-        console.warn(
-          `${trailingSlashLinksCount} trailing slash urls found on ${pathL.replace(/\/$/, '')}`
-        )
-        for (const link of trailingSlashLinks) {
-          let prefix = '-'
-          if (link.position) {
-            const { line, column } = link.position.start
+      // if (trailingSlashLinksCount && verbose) {
+      //   console.warn(
+      //     `${trailingSlashLinksCount} trailing slash urls found on ${pathL.replace(/\/$/, '')}`
+      //   )
+      //   for (const link of trailingSlashLinks) {
+      //     let prefix = '-'
+      //     if (link.position) {
+      //       const { line, column } = link.position.start
 
-            // account for the offset that frontmatter adds
-            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+      //       // account for the offset that frontmatter adds
+      //       const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
 
-            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
-              ':'
-            )
-          }
-          console.warn(`${prefix} ${link.originalUrl}`)
-        }
-        console.log('')
-      }
+      //       prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+      //         ':'
+      //       )
+      //     }
+      //     console.warn(`${prefix} ${link.originalUrl}`)
+      //   }
+      //   console.log('')
+      // }
 
       if (redirectedLinksCount && verbose) {
         console.warn(
@@ -340,10 +339,12 @@ module.exports = async function plugin(
     totalTrailingSlashLinks ||
     totalRedirectedLinks
   ) {
-    const message = ` Broken (or redirected) internal links: ${totalBrokenLinks}
-                      Broken anchors: ${totalBrokenAnchors}
-                      Domain name in links: ${totalDomainLinks}
-                      Links with trailing slashes: ${totalTrailingSlashLinks}`
+    let message = `
+        Broken (or redirected) internal links: ${totalBrokenLinks}
+        Broken anchors: ${totalBrokenAnchors}
+        Domain name in links: ${totalDomainLinks}
+        Links with trailing slashes: ${totalTrailingSlashLinks}
+      `
 
     if (totalRedirectedLinks) {
       message = `${message}
