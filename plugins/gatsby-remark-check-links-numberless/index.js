@@ -1,5 +1,7 @@
 var visit = require('unist-util-visit')
 const path = require('path')
+var vercelSettings = require('../../vercel.json')
+
 const techStrings = [
   'node',
   'typescript',
@@ -12,6 +14,11 @@ const techStrings = [
 function getCacheKey(node) {
   return `remark-check-links-${node.id}-${node.internal.contentDigest}`
 }
+
+const isDirectMatch = (url, source) =>
+  (url.includes('#') ? url.split('#')[0] : url) === source.replace('/docs', '')
+const isSourcePartofUrl = (url, source) =>
+  source.includes(':/any*') && ('/docs' + url).includes(source.replace('/:any*', ''))
 
 function getHeadingsMapKey(link, pathUrl) {
   let key = link
@@ -122,6 +129,7 @@ module.exports = async function plugin(
   let totalBrokenAnchors = 0
   let totalDomainLinks = 0
   let totalTrailingSlashLinks = 0
+  let totalRedirectedLinks = 0
 
   const prefixedIgnore = ignore.map(withPathPrefix)
   const prefixedExceptions = exceptions.map(withPathPrefix)
@@ -191,14 +199,32 @@ module.exports = async function plugin(
         return link.isTrailingSlashUrl
       })
 
+      const redirectedLinks = linksForPath.filter((link) => {
+        if (
+          link &&
+          vercelSettings &&
+          vercelSettings.redirects &&
+          vercelSettings.redirects.some(
+            (r) =>
+              isDirectMatch(link.originalUrl, r.source) ||
+              isSourcePartofUrl(link.originalUrl, r.source)
+          )
+        ) {
+          console.log(link.originalUrl)
+          return true
+        }
+      })
+
       const brokenLinkCount = brokenLinks.length
       const brokenAnchorCount = brokenAnchors.length
       const domainLinksCount = domainLinks.length
       const trailingSlashLinksCount = trailingSlashLinks.length
+      const redirectedLinksCount = redirectedLinks.length
       totalBrokenLinks += brokenLinkCount
       totalBrokenAnchors += brokenAnchorCount
       totalDomainLinks += domainLinksCount
       totalTrailingSlashLinks += trailingSlashLinksCount
+      totalRedirectedLinks += redirectedLinksCount
 
       if (brokenLinkCount && verbose) {
         console.warn(`${brokenLinkCount} broken links found on ${pathL.replace(/\/$/, '')}`)
@@ -284,13 +310,46 @@ module.exports = async function plugin(
         }
         console.log('')
       }
+
+      if (redirectedLinksCount && verbose) {
+        console.warn(
+          `${redirectedLinksCount} redirected links found on ${pathL.replace(/\/$/, '')}`
+        )
+        for (const link of redirectedLinks) {
+          let prefix = '-'
+          if (link.position) {
+            const { line, column } = link.position.start
+
+            // account for the offset that frontmatter adds
+            const offset = link.frontmatter ? Object.keys(link.frontmatter).length + 2 : 0
+
+            prefix = [String(line + offset).padStart(3, ' '), String(column).padEnd(4, ' ')].join(
+              ':'
+            )
+          }
+          console.warn(`${prefix} ${link.originalUrl}`)
+        }
+        console.log('')
+      }
     }
   }
-  if (totalBrokenLinks || totalBrokenAnchors || totalDomainLinks || totalTrailingSlashLinks) {
+  if (
+    totalBrokenLinks ||
+    totalBrokenAnchors ||
+    totalDomainLinks ||
+    totalTrailingSlashLinks ||
+    totalRedirectedLinks
+  ) {
     const message = ` Broken (or redirected) internal links: ${totalBrokenLinks}
                       Broken anchors: ${totalBrokenAnchors}
                       Domain name in links: ${totalDomainLinks}
                       Links with trailing slashes: ${totalTrailingSlashLinks}`
+
+    if (totalRedirectedLinks) {
+      message = `${message}
+        Redirected links found: ${totalRedirectedLinks}. Please run 'npm run redirect-transform' to replace these urls with correct paths
+      `
+    }
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
       throw new Error(message)
