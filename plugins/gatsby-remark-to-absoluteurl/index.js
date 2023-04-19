@@ -66,7 +66,12 @@ module.exports = function plugin(
         )
       }
     }
-    if (markdownNode.fields && markdownNode.fields.slug && node.url.includes('prisma.io/docs')) {
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      node.url.includes('prisma.io/docs') &&
+      !node.url.includes('https://v1.prisma.io/docs')
+    ) {
       node.isDomainUrl = true
     }
 
