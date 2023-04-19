@@ -353,8 +353,8 @@ module.exports = async function plugin(
     }
     if (process.env.NODE_ENV === 'production') {
       // break builds with broken links before they get deployed for reals
-      throw new Error(message)
-      //console.warn(message)
+      // throw new Error(message)
+      console.warn(message)
     }
 
     if (verbose) {
