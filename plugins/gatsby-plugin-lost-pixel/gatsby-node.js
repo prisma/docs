@@ -41,13 +41,18 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
   const pages = data.allSitePage.edges
     .map((edge, i) => {
       // Skip explicitly excluded paths
-      if (excludedPaths.includes(edge.node.path) || longPages.includes(edge.node.path) || errorPages.includes(edge.node.path)) return null
+      if (
+        excludedPaths.includes(edge.node.path) ||
+        longPages.includes(edge.node.path) ||
+        errorPages.includes(edge.node.path)
+      )
+        return null
       // Allow headless browser to render super long pages before screenshoting them
 
-      console.log('entry', {
-        path: edge.node.path,
-        name: edge.node.path.split('/').join('-'),
-      })
+      // console.log('entry', {
+      //   path: edge.node.path,
+      //   name: edge.node.path.split('/').join('-'),
+      // })
 
       return {
         path: edge.node.path,
