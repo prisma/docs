@@ -56,29 +56,28 @@ const ListItem = styled.li<ItemProps>`
   }
 `
 
-const Headings = ({ headings, activeId, depth = 1 }: any) => {
-  const isActive = (url: string) => url?.replace(/inlinecode/g, '').slice(1) === activeId
+const Headings = ({ headings, activeId, depth = 2 }: any) => {
+  const isActive = (url: string) => url.replace(/inlinecode/g, '').slice(1) === activeId
   const isAnyChildActive = (children: any[]) => children.some((child: any) => isActive(child.url))
-  const finalDepth = depth ?? 1
   const navItems = (headings: any, activeId: any, depth: any) => (
     <HeadingList>
       {headings.map((heading: any) => (
         <ListItem key={heading.url} isActive={isActive(heading.url)}>
           <a
-            href={`${heading.url?.replace(/inlinecode/g, '')}`}
+            href={`${heading.url.replace(/inlinecode/g, '')}`}
             dangerouslySetInnerHTML={{ __html: stringify(heading.title) }}
           />
 
           {heading.items &&
             heading.items.length > 0 &&
-            depth > 2 &&
+            depth > 1 &&
             //isAnyChildActive(heading.items) &&
             navItems(heading.items, activeId, depth - 1)}
         </ListItem>
       ))}
     </HeadingList>
   )
-  return navItems(headings, activeId, finalDepth)
+  return navItems(headings, activeId, depth)
 }
 
 const getIds = (headings: TableOfContents[], tocDepth: number) => {
@@ -94,9 +93,8 @@ const getIds = (headings: TableOfContents[], tocDepth: number) => {
   }, [])
 }
 
-const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: number) => {
+const useIntersectionObserver = (setActiveId: any, idList: any[]) => {
   const headingElementsRef: any = React.useRef({})
-  const depth = tocDepth ?? 2
   React.useEffect(() => {
     const callback = (headings: any) => {
       headingElementsRef.current = headings.reduce((map: any, headingElement: any) => {
@@ -105,16 +103,15 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
       }, headingElementsRef.current)
 
       // Get all headings that are currently visible on the page
-      let visibleHeadings: any[] = []
+      const visibleHeadings: any[] = []
       Object.keys(headingElementsRef.current).forEach((key) => {
         const headingElement = headingElementsRef.current[key]
         if (headingElement.isIntersecting) visibleHeadings.push(headingElement)
       })
 
       const getIndexFromId = (id: any) => idList.findIndex((heading) => heading.id === id)
-      // If there is only one visible heading, this is our "active" heading
-      visibleHeadings = visibleHeadings.filter((e) => parseInt(e.target.tagName.charAt(1)) <= depth)
 
+      // If there is only one visible heading, this is our "active" heading
       if (visibleHeadings.length === 1) {
         setActiveId(visibleHeadings[0].target.id)
         // If there is more than one visible heading,
@@ -123,6 +120,7 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
         const sortedVisibleHeadings = visibleHeadings.sort(
           (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
         )
+
         setActiveId(sortedVisibleHeadings[0].target.id)
       }
     }
@@ -143,10 +141,7 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
 const TOC = ({ headings, tocDepth }: any) => {
   const [activeId, setActiveId] = React.useState()
   const idList = getIds(headings, tocDepth || 2)
-  useIntersectionObserver(setActiveId, idList, tocDepth)
-  React.useEffect(() => {
-    console.log(activeId)
-  }, [activeId])
+  useIntersectionObserver(setActiveId, idList)
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>ON THIS PAGE</ChapterTitle>
