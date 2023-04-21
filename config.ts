@@ -224,7 +224,7 @@ const siteConfig = {
         color: '#48BB78',
         small: false,
         content: 'Get started with Prisma Migrate.',
-        url: 'guides/database/developing-with-prisma-migrate',
+        url: 'guides/migrate/developing-with-prisma-migrate',
       },
       {
         title: 'Performance and optimization',
