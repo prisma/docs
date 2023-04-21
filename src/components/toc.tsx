@@ -111,7 +111,7 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
         if (headingElement.isIntersecting) visibleHeadings.push(headingElement)
       })
 
-      const getIndexFromId = (id: any) => idList.findIndex((heading) => heading.id === id)
+      const getIndexFromId = (id: any) => idList.findIndex((heading) => heading === id)
       // If there is only one visible heading, this is our "active" heading
       visibleHeadings = visibleHeadings.filter((e) => parseInt(e.target.tagName.charAt(1)) <= depth)
 
