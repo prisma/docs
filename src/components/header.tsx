@@ -226,7 +226,6 @@ const SecondLevelMobileNavLink = styled.div`
 `
 
 const SecondLevelNav = styled.div`
-  //margin-left: 48px;
   padding: 0 2.5rem;
   width: 100%;
   display: flex;
@@ -234,6 +233,7 @@ const SecondLevelNav = styled.div`
   @media (min-width: 0px) and (max-width: 1024px) {
     margin: 0;
     flex-direction: column;
+    padding: 0;
   }
 `
 
