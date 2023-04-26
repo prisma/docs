@@ -34,7 +34,9 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
 
 const Content = styled.article<{ fullWidth?: boolean }>`
   margin: 0 0 ${(p) => p.theme.space[16]};
-  ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 748px')};
+  // ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 748px')};
+  max-width: 100%;
+  flex: 1;
   position: relative;
   z-index: 100;
   width: 100%;
@@ -78,7 +80,7 @@ const NotMobile = styled.section`
 `
 
 const Container = styled.div<{ fullWidth?: boolean }>`
-  ${(p) => (p.fullWidth ? 'max-width: 100%;' : 'max-width: 1200px')};
+  ${(p) => (p.fullWidth ? 'max-width: 100%;' : 'max-width: 1440px')};
   width: 100%;
   justify-content: center;
   display: flex;

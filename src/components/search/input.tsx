@@ -7,7 +7,7 @@ import useWindowDimensions from '../../hooks/useWindowDimensions'
 import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
-  max-width: 250px;
+  max-width: 272px;
   width: 100%;
   display: flex;
 
@@ -20,7 +20,7 @@ const SearchBoxDiv = styled.div`
   &.opened {
     position: relative;
     z-index: 100001;
-    max-width: 1200px;
+    max-width: 1440px;
     width: 100%;
     height: 77px;
     background: ${(p) => p.theme.colors.white};
