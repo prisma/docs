@@ -1,5 +1,8 @@
 import type { GatsbyConfig } from 'gatsby'
 import docsConfig from './config'
+require('dotenv').config({
+  path: `.env`,
+})
 
 let plugins: any = [
   'gatsby-plugin-image',
