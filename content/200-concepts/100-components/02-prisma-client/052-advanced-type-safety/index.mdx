@@ -127,3 +127,106 @@ userPosts.profile
 ```
 
 > See the [model query options](/reference/api-reference/prisma-client-reference#model-query-options) reference for more information about the different types available.
+
+### Generated <inlinecode>UncheckedInput</inlinecode> types
+
+The `UncheckedInput` types are a special set of generated types that allow you to perform some operations that Prisma Client considers "unsafe", like directly writing [relation scalar fields](/concepts/components/prisma-schema/relations). You can choose either the "safe" `Input` types or the "unsafe" `UncheckedInput` type when doing operations like `create`, `update`, or `upsert`.
+
+For example, this Prisma schema has a one-to-many relation between `User` and `Post`:
+
+```prisma
+model Post {
+  id       Int     @id @default(autoincrement())
+  title    String  @db.VarChar(255)
+  content  String?
+  author   User    @relation(fields: [authorId], references: [id])
+  authorId Int
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+```
+
+The first tab shows the `PostUncheckedCreateInput` generated type. It contains the `authorId` property, which is a relation scalar field. The second tab shows an example query that uses the `PostUncheckedCreateInput` type. This query will result in an error if a user with an `id` of `1` does not exist.
+
+<TabbedContent tabs={[ <FileWithIcon text="Generated type" icon="code"/>, <FileWithIcon text="Example query" icon="code"/>]}>
+
+<tab>
+
+```ts
+type PostUncheckedCreateInput = {
+  id?: number
+  title: string
+  content?: string | null
+  authorId: number
+}
+```
+
+</tab>
+<tab>
+
+```ts
+prisma.post.create({
+  data: {
+    title: 'First post',
+    content: 'Welcome to the first post in my blog...',
+    authorId: 1,
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+The same query can be rewritten using the "safer" `PostCreateInput` type. This type does not contain the `authorId` field but instead contains the `author` relation field.
+
+<TabbedContent tabs={[ <FileWithIcon text="Generated type" icon="code"/>, <FileWithIcon text="Example query" icon="code"/>]}>
+
+<tab>
+
+```ts
+type PostCreateInput = {
+  title: string
+  content?: string | null
+  author: UserCreateNestedOneWithoutPostsInput
+}
+
+type UserCreateNestedOneWithoutPostsInput = {
+  create?: XOR<
+    UserCreateWithoutPostsInput,
+    UserUncheckedCreateWithoutPostsInput
+  >
+  connectOrCreate?: UserCreateOrConnectWithoutPostsInput
+  connect?: UserWhereUniqueInput
+}
+```
+
+</tab>
+<tab>
+
+```ts
+prisma.post.create({
+  data: {
+    title: 'First post',
+    content: 'Welcome to the first post in my blog...',
+    author: {
+      connect: {
+        id: 1,
+      },
+    },
+  },
+})
+```
+
+</tab>
+
+</TabbedContent>
+
+This query will also result in an error if an author with an `id` of `1` does not exist. In this case, Prisma Client will give a more descriptive error message. You can also use the [`connectOrCreate`](../../../../reference/api-reference/prisma-client-reference#connectorcreate) API to safely create a new user if one does not already exist with the given `id`.
+
+We recommend using the "safe" `Input` types whenever possible.

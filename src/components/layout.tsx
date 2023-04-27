@@ -4,7 +4,7 @@ import { MDXProvider } from '@mdx-js/react'
 import StickyBox from 'react-sticky-box'
 import shortcodes from './shortcodes'
 import styled, { ThemeProvider } from 'styled-components'
-import { LensProvider, defaultTheme as theme, WebsiteBanner } from '@prisma/lens/dist/web'
+import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Header from './header'
 import Footer from './footer'
@@ -128,16 +128,6 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={shortcodes}>
-          <BannerWrapper light={true}>
-            <WebsiteBanner
-              text={
-                <a href="/data-platform/accelerate" className="banner-url">
-                  Up to 1000x faster database queries with <b>Accelerate</b> {`->`}{' '}
-                  <u>Sign up for Early Access</u>
-                </a>
-              }
-            />
-          </BannerWrapper>
           <Header headerProps={header} />
           <Wrapper fullWidth={homePage}>
             <Container fullWidth={homePage}>
