@@ -20,10 +20,10 @@ In relational databases, m-n-relations are typically modelled via [relation tabl
 
 In an explicit many-to-many relation, the **relation table is represented as a model in the Prisma schema** and can be used in queries. Explicit many-to-many relations define three models:
 
-- Two models that have a many-to-many relation, such as `Category` and `Post`
-- One model that represents the relation table, such as `CategoriesOnPosts` (also sometimes called _JOIN_, _link_ or _pivot_ table) in the underlying database
+- Two models with many-to-many relation, such as `Category` and `Post`.
+- One model that represents the relation table, such as `CategoriesOnPosts` (also sometimes called _JOIN_, _link_ or _pivot_ table) in the underlying database.
 
-In this example, the model representing the relation table **defines additional fields** that describe the `Post`/`Category` relationship - who assigned the category (`assignedBy`), and when the category was assigned (`assignedAt`):
+The relation table `CategoriesOnPosts` connects related `Post` and `Category` records. In this example, the model representing the relation table also **defines additional fields** that describe the `Post`/`Category` relationship - who assigned the category (`assignedBy`), and when the category was assigned (`assignedAt`):
 
 ```prisma
 model Post {
@@ -87,11 +87,11 @@ ALTER TABLE "CategoriesOnPosts" ADD CONSTRAINT "CategoriesOnPosts_categoryId_fke
 
 The following section demonstrates how to query an explicit many-to-many relation. You can query the relation model directly (`prisma.categoriesOnPosts(...)`), or use nested queries to go from `Post` -> `CategoriesOnPosts` -> `Category` or the other way.
 
-The following query:
+The following query does three things:
 
 1. Creates a `Post`
-2. Creates a category assigment, or `CategoriesOnPosts` (assigned by Bob, assigned today)
-3. Creates a new `Category`
+2. Creates a new record in the relation table `CategoriesOnPosts`
+3. Creates a new `Category` that is associated with the newly created `Post` record
 
 ```ts
 const createCategory = await prisma.post.create({
@@ -117,7 +117,7 @@ const createCategory = await prisma.post.create({
 The following query:
 
 - Creates a new `Post`
-- Creates a new category assignment, or `CategoriesOnPosts`
+- Creates a new record in the relation table `CategoriesOnPosts`
 - Connects the category assignment to existing categories (with IDs `9` and `22`)
 
 ```ts
@@ -141,6 +141,39 @@ const assignCategories = await prisma.post.create({
           category: {
             connect: {
               id: 22,
+            },
+          },
+        },
+      ],
+    },
+  },
+})
+```
+
+Sometimes you might not know if a `Category` record exists. If the `Category` record exists, you want to connect a new `Post` record to that category. If the `Category` record does not exist, you want to create the record first and then connect it to the new `Post` record. The following query:
+
+1. Creates a new `Post`
+2. Creates a new record in the relation table `CategoriesOnPosts`
+3. Connects the category assignment to an existing category (with ID `9`), or creates a new category first if it does not exist
+
+```ts
+const assignCategories = await prisma.post.create({
+  data: {
+    title: 'How to be Bob',
+    categories: {
+      create: [
+        {
+          assignedBy: 'Bob',
+          assignedAt: new Date(),
+          category: {
+            connectOrCreate: {
+              where: {
+                id: 9,
+              },
+              create: {
+                name: 'New Category',
+                id: 9,
+              },
             },
           },
         },
