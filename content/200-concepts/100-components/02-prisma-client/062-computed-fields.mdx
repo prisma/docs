@@ -10,6 +10,81 @@ Computed fields allow you to derive a new field based on existing data. A common
 
 </TopBlock>
 
+## Computed fields with Prisma Client extensions
+
+> Prisma Client extensions are currently in [Preview](/about/prisma/releases#preview).
+
+The following example illustrates how to create a [Prisma Client extension](/concepts/components/prisma-client/client-extensions) that adds a virtual/ computed field to a model in a Prisma schema. The example adds a `fullName` property that is computed at runtime.
+
+<TabbedContent tabs={[<FileWithIcon text="Prisma Client extension" icon="code"/>, <FileWithIcon text="Example query" icon="code"/>,<FileWithIcon text="Prisma schema" icon="file"/>]}>
+
+<tab>
+
+```tsx
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient().$extends({
+  result: {
+    user: {
+      fullName: {
+        needs: { firstName: true, lastName: true },
+        compute(user) {
+          return `${user.firstName} ${user.lastName}`
+        },
+      },
+    },
+  },
+})
+```
+
+</tab>
+
+<tab>
+
+```ts
+const user = await prisma.user.findMany({
+  take: 5,
+})
+```
+
+</tab>
+
+<tab>
+
+```prisma file="prisma/schema.prisma" copy
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  published Boolean @default(true)
+  content   String?
+
+  authorId Int?
+  author   User? @relation(fields: [authorId], references: [id])
+}
+```
+
+</tab>
+
+</TabbedContent>
+
 ## Deriving a Full Name from a First and Last Name
 
 Prisma Client does not yet natively support computed fields, but with a bit of TypeScript magic, you can define a function that accepts a generic as an input then extend that generic to ensure it conforms to a specific structure. Finally, you can return that generic with additional computed fields. Let's see how that might look:
@@ -74,7 +149,8 @@ A `WithFullName<User>` return type has also been defined, which takes whatever `
 
 With this function, any object that contains `firstName` and `lastName` keys can compute a `fullName`. Pretty neat, right?
 
-## Going Further
+## Going further
 
+- Learn how you can use [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) to add a computed field to your schema — [example](https://github.com/prisma/prisma-client-extensions/tree/main/computed-fields).
 - Learn how you can move the `computeFullName` function into [a custom model](/concepts/components/prisma-client/custom-models).
 - There's an [outstanding feature request](https://github.com/prisma/prisma/issues/3394) to add native support to Prisma Client. If you'd like to see that happen, make sure to upvote that issue and share your use case!

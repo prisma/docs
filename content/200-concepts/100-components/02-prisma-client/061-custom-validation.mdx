@@ -6,13 +6,120 @@ metaDescription: 'This page explains how to add custom validation to Prisma Clie
 
 <TopBlock>
 
-Prisma Client has type-safety and run-time type validation but does not include validation for user input.
+You can add runtime validation for your user input for Prisma Client queries in one of the following ways:
 
-This means you can use any validation library you'd like. The Node.js ecosystem offers a number of high-quality, easy-to-use validation libraries to choose from including: [joi](https://github.com/sideway/joi), [validator.js](https://github.com/validatorjs/validator.js), [Yup](https://github.com/jquense/yup), [Zod](https://github.com/colinhacks/zod) and [Superstruct](https://github.com/ianstormtaylor/superstruct).
+- [Prisma Client extensions](/concepts/components/prisma-client/client-extensions)
+- A custom function
+
+You can use any validation library you'd like. The Node.js ecosystem offers a number of high-quality, easy-to-use validation libraries to choose from including: [joi](https://github.com/sideway/joi), [validator.js](https://github.com/validatorjs/validator.js), [Yup](https://github.com/jquense/yup), [Zod](https://github.com/colinhacks/zod) and [Superstruct](https://github.com/ianstormtaylor/superstruct).
 
 </TopBlock>
 
-## Custom Signup Validation
+## Input validation with Prisma Client extensions
+
+> Prisma Client extensions are currently in [Preview](/about/prisma/releases#preview).
+
+This example adds runtime validation when creating and updating values using a Zod schema to check that the data passed to Prisma Client is valid.
+
+<Admonition>
+
+Query extensions do not currently work for nested operations. In this example, validations are only run on the top level data object passed to methods such as `prisma.product.create()`. Validations implemented this way do not automatically run for [nested writes](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#nested-writes).
+
+</Admonition>
+
+<TabbedContent tabs={[ <FileWithIcon text="Prisma Client extension" icon="file"/>,<FileWithIcon text="Example query" icon="file"/>, <FileWithIcon text="Prisma schema" icon="file"/>]}>
+
+<tab>
+
+```ts copy
+import { PrismaClient } from "@prisma/client";
+import { z } from 'zod'
+import { type Prisma } from '@prisma/client'
+
+const PostCreateInput = z.object({
+  title: z.string(),
+  published: z.boolean().default(false),
+  content: z.string().nullable(),
+  authorId: z.number().nullable(),
+}) satisfies z.Schema<Prisma.PostUncheckedCreateInput>
+
+const prisma = new PrismaClient().$extends({
+  query: {
+    post: {
+      create({ args, query }) {
+        args.data = PostCreateInput.parse(args.data)
+        return query(args)
+      },
+      update({ args, query }) {
+        args.data = PostCreateInput.partial().parse(args.data)
+        return query(args)
+      },
+      updateMany({ args, query }) {
+        args.data = PostCreateInput.partial().parse(args.data)
+        return query(args)
+      },
+      upsert({ args, query }) {
+        args.create = PostCreateInput.parse(args.create)
+        args.update = PostCreateInput.parse(args.update)
+        return query(args)
+      }
+    }
+  }
+})
+```
+
+</tab>
+
+<tab>
+
+```ts copy
+// A post with invalid input — missing the title field
+const post = await prisma.post.create({
+  data: {
+    content: 'Post content',
+  },
+})
+```
+
+</tab>
+
+<tab>
+
+```prisma copy
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  published Boolean @default(true)
+  content   String?
+
+  authorId Int?
+  author   User? @relation(fields: [authorId], references: [id])
+}
+```
+
+</tab>
+
+</TabbedContent>
+
+## Custom signup validation
 
 Here's an example using [Superstruct](https://github.com/ianstormtaylor/superstruct) to validate that the data needed to signup a new user is correct:
 
@@ -50,7 +157,8 @@ async function signup(input: Signup): Promise<User> {
 
 The example above shows how you can create a custom type-safe `signup` function that ensures the input is valid before creating a user.
 
-## Going Further
+## Going further
 
+- Learn how you can use [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) to add input validation for your queries — [example](https://github.com/prisma/prisma-client-extensions/tree/main/input-validation).
 - Learn how you can organize your code better by moving the `signup` function into [a custom model](/concepts/components/prisma-client/custom-models).
 - There's an [outstanding feature request](https://github.com/prisma/prisma/issues/3528) to bake user validation into Prisma Client. If you'd like to see that happen, make sure to upvote that issue and share your use case!
