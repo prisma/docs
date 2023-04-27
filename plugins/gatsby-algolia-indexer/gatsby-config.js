@@ -25,9 +25,7 @@ const flat = (array) => {
 }
 
 const removeInlineCode = (heading, path) =>
-  path
-    ? heading.replace(/inlinecode/g, '')
-    : heading.replace('<inlinecode>', '').replace('</inlinecode>', '')
+  path ? heading.replace(/inlinecode/g, '') : heading.replace('`', '').replace('`', '')
 
 const isApiTerm = (term) => term.includes('AlgoliaTerm') && term.split('"')[1] === 'apiReference'
 
