@@ -72,34 +72,35 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: a
   const techChanged = (item: any, type: string) => {
     const elements = document.querySelectorAll('[id^="techswitch"]')
     elements.forEach((element: any) => element.classList.remove('show'))
-    const elemToShow = [].slice.call(elements).filter((elm: any) => {
+    const elemToShow = [].slice.call(elements).filter((elem: any) => {
+      const elmId = elem.id.split('-no-')[0]
       if (type === 'lang') {
         if (dbSwitcher) {
-          if (elm.id.includes('-*-')) {
+          if (elmId.includes('-*-')) {
             // lang is any
-            return elm.id.includes(`-${dbSelected}`)
+            return elmId.includes(`-${dbSelected}`)
           } else {
             return (
-              elm.id.includes(`-${item.technology}`) &&
-              (elm.id.includes(`-${dbSelected}`) || elm.id.includes(`-*`))
+              elmId.includes(`-${item.technology}`) &&
+              (elmId.includes(`-${dbSelected}`) || elmId.includes(`-*`))
             )
           }
         } else {
-          return elm.id.includes(`-${item.technology}`)
+          return elmId.includes(`-${item.technology}`)
         }
       } else if (type === 'db') {
         if (langSwitcher) {
-          if (elm.id.slice(-1) === '*') {
+          if (elmId.slice(-1) === '*') {
             // db is any
-            return elm.id.includes(`-${langSelected}`)
+            return elmId.includes(`-${langSelected}`)
           } else {
             return (
-              elm.id.includes(`-${item.technology}`) &&
-              (elm.id.includes(`-${langSelected}`) || elm.id.includes(`-*`))
+              elmId.includes(`-${item.technology}`) &&
+              (elmId.includes(`-${langSelected}`) || elmId.includes(`-*`))
             )
           }
         } else {
-          return elm.id.includes(`-${item.technology}`)
+          return elmId.includes(`-${item.technology}`)
         }
       }
     })

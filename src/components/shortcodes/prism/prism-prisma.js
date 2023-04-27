@@ -1,7 +1,7 @@
 import Prism from 'prism-react-renderer/prism'
 ;(typeof global !== 'undefined' ? global : window).Prism = Prism
 Prism.languages.prisma = Prism.languages.extend('clike', {
-  keyword: /\b(?:datasource|enum|generator|model|type)\b/,
+  keyword: /\b(?:datasource|enum|generator|model|type|view)\b/,
   'type-class-name': /(\s+)[A-Z]\w+/, ///(\b)(\s+)[A-Z]\w+/
 })
 
