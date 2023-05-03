@@ -224,7 +224,7 @@ const siteConfig = {
         color: '#48BB78',
         small: false,
         content: 'Get started with Prisma Migrate.',
-        url: 'guides/database/developing-with-prisma-migrate',
+        url: 'guides/migrate/developing-with-prisma-migrate',
       },
       {
         title: 'Performance and optimization',
@@ -349,17 +349,17 @@ const siteConfig = {
       },
       {
         text: 'Ask a question on Github',
-        url: 'guides/database/troubleshooting-orm#need-help',
+        url: 'guides/other/troubleshooting-orm#need-help',
         codeBlock: false,
       },
       {
         text: 'Create a bug report',
-        url: 'guides/database/troubleshooting-orm',
+        url: 'guides/other/troubleshooting-orm',
         codeBlock: false,
       },
       {
         text: 'Submit a feature request',
-        url: 'guides/database/troubleshooting-orm',
+        url: 'guides/other/troubleshooting-orm',
         codeBlock: false,
       },
       {
