@@ -21,7 +21,7 @@ You can use any validation library you'd like. The Node.js ecosystem offers a nu
 
 This example adds runtime validation when creating and updating values using a Zod schema to check that the data passed to Prisma Client is valid.
 
-<Admonition>
+<Admonition type="warning">
 
 Query extensions do not currently work for nested operations. In this example, validations are only run on the top level data object passed to methods such as `prisma.product.create()`. Validations implemented this way do not automatically run for [nested writes](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#nested-writes).
 
@@ -32,63 +32,78 @@ Query extensions do not currently work for nested operations. In this example, v
 <tab>
 
 ```ts copy
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { z } from 'zod'
-import { type Prisma } from '@prisma/client'
 
-const PostCreateInput = z.object({
-  title: z.string(),
-  published: z.boolean().default(false),
-  content: z.string().nullable(),
-  authorId: z.number().nullable(),
-}) satisfies z.Schema<Prisma.PostUncheckedCreateInput>
+/**
+ * Zod schema
+ */
+export const ProductCreateInput = z.object({
+  slug: z
+    .string()
+    .max(100)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  name: z.string().max(100),
+  description: z.string().max(1000),
+  price: z
+    .instanceof(Prisma.Decimal)
+    .refine((price) => price.gte("0.01") && price.lt("1000000.00")),
+}) satisfies z.Schema<Prisma.ProductUncheckedCreateInput>;
 
 /**
  * Prisma Client Extension
  */
 const prisma = new PrismaClient().$extends({
   query: {
-    post: {
+    product: {
       create({ args, query }) {
-        args.data = PostCreateInput.parse(args.data)
-        return query(args)
+        args.data = ProductCreateInput.parse(args.data);
+        return query(args);
       },
       update({ args, query }) {
-        args.data = PostCreateInput.partial().parse(args.data)
-        return query(args)
+        args.data = ProductCreateInput.partial().parse(args.data);
+        return query(args);
       },
       updateMany({ args, query }) {
-        args.data = PostCreateInput.partial().parse(args.data)
-        return query(args)
+        args.data = ProductCreateInput.partial().parse(args.data);
+        return query(args);
       },
       upsert({ args, query }) {
-        args.create = PostCreateInput.parse(args.create)
-        args.update = PostCreateInput.parse(args.update)
-        return query(args)
-      }
-    }
-  }
-})
+        args.create = ProductCreateInput.parse(args.create);
+        args.update = ProductCreateInput.partial().parse(args.update);
+        return query(args);
+      },
+    },
+  },
+});
 
 async function main (){
   /**
    * Example usage
    */
-
-  // A post with invalid input — missing the title field
-  const invalidPost = await prisma.post.create({
+  // Valid product
+  const product = await prisma.product.create({
     data: {
-      content: 'Prisma Client: extended!',
+      slug: "example-product",
+      name: "Example Product",
+      description: "Lorem ipsum dolor sit amet",
+      price: new Prisma.Decimal("10.95"),
     },
-  })
+  });
 
-  // A post with valid input
-  const validPost = await prisma.post.create({
-    data: {
-      title: 'Prisma Client extensions',
-      content: 'Prisma Client: extended!',
-    },
-  })
+  // Invalid product
+  try {
+    await prisma.product.create({
+      data: {
+        slug: "invalid-product",
+        name: "Invalid Product",
+        description: "Lorem ipsum dolor sit amet",
+        price: new Prisma.Decimal("-1.00"),
+      },
+    });
+  } catch (err: any) {
+    console.log(err?.cause?.issues);
+  }
 }
 
 main()
@@ -109,28 +124,29 @@ generator client {
   previewFeatures = ["clientExtensions"]
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-
-  posts Post[]
+model Product {
+  id          String   @id @default(cuid())
+  slug        String
+  name        String
+  description String
+  price       Decimal
+  reviews     Review[]
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  published Boolean @default(true)
-  content   String?
-
-  authorId Int?
-  author   User? @relation(fields: [authorId], references: [id])
+model Review {
+  id        String  @id @default(cuid())
+  body      String
+  stars     Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
 }
 ```
 
 </tab>
 
 </TabbedContent>
+
+The above example uses a Zod schema to validate and parse data provided in a query at runtime before a record is written to the database.
 
 ## Input validation with a custom validation function
 
