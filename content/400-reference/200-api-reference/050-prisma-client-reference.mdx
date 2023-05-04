@@ -1240,7 +1240,7 @@ const deleteUser = await prisma.user.delete({
 | Name              | Type                              | Required | Description                                                                                                                                                                                                                                                                   |
 | ----------------- | --------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `data`            | `Enumerable<UserCreateManyInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. It also includes relation fields which lets you perform (transactional) nested inserts. Fields that are marked as optional or have default values in the datamodel are optional. |
-| `skipDuplicates?` | `boolean`                         | No       | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT).                                                           |
+| `skipDuplicates?` | `boolean`                         | No       | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT). This excludes MongoDB and SQLServer                       |
 
 #### Return type
 
@@ -1251,6 +1251,7 @@ const deleteUser = await prisma.user.delete({
 #### Remarks
 
 - `createMany` is not supported by SQLite.
+- The `skipDuplicates` option is not supported by MongoDB and SQLServer.
 - You **cannot** create or connect relations - you cannot nest `create`, `createMany`, `connect`, `connectOrCreate` inside a top-level `createMany`
 - You can nest a [`createMany`](#createmany-1) inside an `update` or `create` query - for example, add a `User` and two `Post` records at the same time.
 
@@ -1742,7 +1743,7 @@ const result = await prisma.user.findUnique({
 </cmdResult>
 </CodeWithResult>
 
-##### Select the `name` and `profileViews` fields of a multiple `User` records
+##### Select the `email` and `role` fields of a multiple `User` records
 
 <CodeWithResult>
 <cmd>
@@ -3204,7 +3205,7 @@ The following example:
 
 1. Creates a `Profile`
 2. Attempts to connect the profile to a `User` where the email address is `alice@prisma.io`
-3. Creates a new user if a user if a matching user does not exist
+3. Creates a new user if a matching user does not exist
 
 ```ts
 const user = await prisma.profile.create({
@@ -3531,7 +3532,7 @@ const result = await prisma.user.update({
 **Note:** The following examples show how to compare columns in separate tables.
 
 - From version 4.3.0, you can also use these operators to [compare columns in the same table, with the `<model>.fields` property](#compare-columns-in-the-same-table).
-- In versions before 4.3.0, you can [compare columns in the same table with raw queries](/guides/database/troubleshooting-orm/help-articles/comparing-columns-through-raw-queries).
+- In versions before 4.3.0, you can [compare columns in the same table with raw queries](/guides/other/troubleshooting-orm/help-articles/comparing-columns-through-raw-queries).
 
 </Admonition>
 
@@ -5304,7 +5305,7 @@ const getUsers = await prisma.user.findMany({
 
 <Admonition type="info">
 
-**Note**: In PostgresSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
+**Note**: In PostgreSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
 
 </Admonition>
 
@@ -5370,17 +5371,11 @@ const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: ['sanctuaries'],
-      array_starts_with: ['RSPCA'],
+      array_starts_with: 'RSPCA',
     },
   },
 })
 ```
-
-<Admonition type="info">
-
-**Note**: In PostgresSQL, the value of `array_starts_with` must be an array and not a string, even if the array only contains a single value.
-
-</Admonition>
 
 </tab>
 
@@ -5412,17 +5407,11 @@ const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: ['sanctuaries'],
-      array_ends_with: ['Alley Cat Allies'],
+      array_ends_with: 'Alley Cat Allies',
     },
   },
 })
 ```
-
-<Admonition type="info">
-
-**Note**: In PostgresSQL, the value of `array_ends_with` must be an array and not a string, even if the array only contains a single value.
-
-</Admonition>
 
 </tab>
 <tab>
@@ -5660,7 +5649,7 @@ From version 4.3.0, you can compare columns in the same table directly, for non-
 
 <Admonition type="info">
 
-In the following situations, you must [use raw queries to compare columns in the same table](/guides/database/troubleshooting-orm/help-articles/comparing-columns-through-raw-queries):
+In the following situations, you must [use raw queries to compare columns in the same table](/guides/other/troubleshooting-orm/help-articles/comparing-columns-through-raw-queries):
 
 - If you use a version earlier than 4.3.0
 - If you want to use a unique filter, such as [`findUnique`](#findunique) or [`findUniqueOrThrow`](#finduniqueorthrow)
@@ -5950,3 +5939,19 @@ await prisma.user.update({
   }
 })
 ```
+
+## <inlinecode>PrismaPromise</inlinecode> behavior
+
+All Prisma Client queries return an instance of `PrismaPromise`. This is a ["thenable"](https://masteringjs.io/tutorials/fundamentals/thenable), meaning a `PrismaPromise` only executes when you call `await` or `.then()` or `.catch()`. This behavior is different from a regular JavaScript [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), which starts executing immediately.
+
+For example:
+
+```ts
+const findPostOperation = prisma.post.findMany({}) // Query not yet executed
+
+findPostOperation.then() // Prisma Client now executes the query
+// or
+await findPostOperation // Prisma Client now executes the query
+```
+
+When using the [`$transaction` API](/concepts/components/prisma-client/transactions#the-transaction-api), this behavior makes it possible for the client to pass all the queries on to the query engine as a single transaction.
