@@ -226,7 +226,7 @@ const SecondLevelMobileNavLink = styled.div`
 `
 
 const SecondLevelNav = styled.div`
-  padding: 0 2.5rem;
+  padding: 0 2.5rem 0 0;
   width: 100%;
   display: flex;
   justify-content: space-between;
