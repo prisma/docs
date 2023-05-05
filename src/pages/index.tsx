@@ -13,15 +13,20 @@ import CLI from '../icons/home/CLI'
 import Link from '../components/link'
 import SEO from '../components/seo'
 import { defaultTheme } from '@prisma/lens/dist/web'
-import { Icon } from '../components/Icon'
-import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
+import { Icon } from '@prisma/lens/dist/web'
 
 const icons: any = {
   DoubleArrow: <ChevronsRight opacity="0.5" />,
-  OverviewIcon: <Icon icon={faBookOpen} height="28px" color={defaultTheme.colors.indigo[600]} />,
-  ComponentsIcon: <Icon icon={faBox} height="28px" color={defaultTheme.colors.indigo[600]} />,
-  DatabaseIcon: <Icon icon={faDatabase} height="28px" color={defaultTheme.colors.indigo[600]} />,
-  MoreIcon: <Icon icon={faBars} height="28px" color={defaultTheme.colors.indigo[600]} />,
+  OverviewIcon: (
+    <Icon icon={['far', 'book-open']} height="28px" color={defaultTheme.colors.indigo[600]} />
+  ),
+  ComponentsIcon: (
+    <Icon icon={['far', 'box']} height="28px" color={defaultTheme.colors.indigo[600]} />
+  ),
+  DatabaseIcon: (
+    <Icon icon={['far', 'database']} height="28px" color={defaultTheme.colors.indigo[600]} />
+  ),
+  MoreIcon: <Icon icon={['far', 'bars']} height="28px" color={defaultTheme.colors.indigo[600]} />,
   Schema: <Schema />,
   DbLink: <DbLink />,
   CLI: <CLI />,
