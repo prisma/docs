@@ -1,0 +1,261 @@
+---
+title: 'Deploying to Kinsta'
+metaTitle: 'Deploy a Prisma app to Kinsta Application Hosting'
+metaDescription: 'Learn how to deploy a Next.js app that uses Prisma to Kinsta Application Hosting.'
+---
+<TopBlock>
+This guide takes you through the steps to set up and deploy an application that uses Prisma to [Kinsta Application Hosting](https://kinsta.com/application-hosting). The application uses Next.js to provide a serverless REST API and Prisma Client to handle fetching, creating, and deleting records from a database.
+
+Kinsta is a developer-centric cloud host / PaaS. It's striving to make it easier for developers to share their web projects with their users. You can integrate a Kinsta project with a GitHub repository to deploy automatically on new commits.
+
+The Next.js app has the following components:
+
+- **Backend**: Next.js API routes that serve a REST API and use Prisma Client to handle database operations on a PostgreSQL database.
+- **Frontend**: Next.js page to interact with the API.
+
+This guide focuses on how to use Prisma with Next.js and Kinsta. The starting point is the [Prisma Starter](https://github.com/kinsta/hello-world-prisma), which has REST endpoints configured as [Next.js API Routes](https://nextjs.org/docs/api-routes/introduction) and a Next.js page that allows you to call the endpoints and display data.
+
+</TopBlock>
+
+## Prerequisites
+
+To follow this tutorial, make sure that you have the following prerequisites in place:
+
+- a [GitHub](https://github.com) account
+- a hosted PostgreSQL database and a connection string for it, e.g., `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` (you can use [Kinsta Database Hosting](https://kinsta.com/database-hosting/))
+- a [Kinsta](https://kinsta.com) account
+- Node.js installed
+
+## Prisma workflow
+
+At the core of Prisma is the [Prisma schema](/concepts/components/prisma-schema) – a file where you declaratively define your data model. The Prisma schema is a single source of truth for both Prisma Client and Prisma Migrate.
+
+In this guide, you will create the database schema with [Prisma Migrate](/concepts/components/prisma-migrate). Prisma Migrate takes your changes to the data model in your Prisma schema, generates a SQL migration file with the changes, and applies it to your database.
+
+There are two main workflows for Prisma Migrate:
+
+- You can create and apply migrations during _local_ development with `prisma migrate dev`
+- You can apply the migrations to _production_ with `prisma migrate deploy`
+
+For brevity, this guide does not cover how to create migrations with `prisma migrate dev`. Instead, it focuses on the production workflow with `prisma migrate deploy` and uses the Prisma schema and SQL migration included in the example code.
+
+Kinsta uses buildpacks, which means that every time it detects a Node.js application, it will run three commands:
+- `npm install` to install all the dependencies
+- `npm run build` to execute all the commands before starting the server.
+- `npm start` to start the server
+
+Those commands are defined in the `package.json` file.
+
+To learn more about creating migrations with Prisma Migrate, see our [Get Started guide](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres).
+
+## 1. Create the project and deploy it to Kinsta
+
+First, you will deploy the [`hello-world-prisma`](https://github.com/kinsta/hello-world-prisma) example repository to Kinsta. As part of the deployment steps, you will **use the template** to create a new GitHub repository and connect your application to your PostgreSQL database.
+
+### Steps
+1. Go to [`hello-world-prisma`](https://github.com/kinsta/hello-world-prisma) example repository and press the **Use this template** button and select **Create a new repository**.
+
+2. Create an account on Kinsta, or if you have one, go directly to [MyKinsta](https://my.kinsta.com).
+
+3. Create a new application based on the repository created from the `hello-world-prisma`. To do so, click the **Add service > Application** and follow the setup wizard.
+
+    ![Create a new application wizard](images/600-02-deploy-to-kinsta-app.png)
+
+    <Admonition type="info">
+    If this is your first time using Kinsta, you will be prompted to connect Kinsta with your Git account.
+    </Admonition>
+
+4. Now create a new Database by selecting **Add service > Database**. In our example, we use PostgreSQL, so remember to choose Database type to **PostgreSQL**.
+
+    ![Create a new database wizard](images/600-01-deploy-to-kinsta-database.png)
+
+5. Only thing left is to connect the Database with the application. To do so, go to Applications, select your Prisma Application, go to settings, and press the **Add Connection**. 
+
+    Select the database from the dropdown, and remember to select the **Add environment variables to access the application** checkbox. This will add the `DB_CONNECTION_URL` environmental variable to your app.
+
+    <Admonition type="info">
+    Kinsta Database can work both in internal and external modes. The only downside of using internal is that the build process doesn't have access to the internal database. 
+
+    We are moving the build process into the `npm start` phase as a workaround.
+    </Admonition>
+
+6. Click **Deploy now**. 
+    
+    Kinsta will now deploy your application and run the server based on the commands in the `package.json` file.
+
+### Result
+
+When the build completes, you should see the following:
+
+![Deployment succeeded](images/600-03-deploy-to-kinsta-success.png)
+
+You have successfully deployed the app to Kinsta. 
+
+To check that the API returns data successfully, click on the URL of the deployed application.
+
+When the page loads, click **Check API status**. If successful, you will see a result similar to the image below.
+
+```code no-copy
+{"up":true}
+```
+
+## 2. Test your deployed application
+
+You can now test your application. Open your application to interact with the API.
+
+### Steps
+
+1. Click **Load users with profiles**.
+
+   You do not yet have any data in the database, so the application returns an empty array:
+
+   ```code no-copy
+   []
+   ```
+
+   <Admonition type="info">
+
+   This API call uses Prisma to get all `users` in the database with their related `profiles`. The code is in the `pages/api/users.js` file in the project repository.
+
+   </Admonition>
+
+2. Click **Seed data**.
+
+   <Admonition type="info">
+
+   This API call uses Prisma to delete any existing database records and load the database with test `users`, `profiles`, and `posts`, then returns the created `users`. The code is in the `pages/api/seed.js` file.
+
+   </Admonition>
+
+3. Click **Load users with profiles** again.
+
+   This now returns the `users` and `profiles` that you added in the previous step:
+
+   ```code no-copy
+   [
+   {
+   "id": 5,
+   "email": "jane@prisma.io",
+   "name": "Jane",
+   "profiles": [
+     {
+       "id": 13,
+       "bio": "Technical Writer",
+       "userId": 5
+     },
+     {
+       "id": 14,
+       "bio": "Health Enthusiast",
+       "userId": 5
+     },
+     {
+       "id": 15,
+       "bio": "Self Quantifier",
+       "userId": 5
+     }
+   ]
+   },
+   {
+   "id": 6,
+   "email": "toru@prisma.io",
+   "name": "Toru Takemitsu",
+   "profiles": [
+     {
+       "id": 16,
+       "bio": "Composer",
+       "userId": 6
+     },
+     {
+       "id": 17,
+       "bio": "Musician",
+       "userId": 6
+     },
+     {
+       "id": 18,
+       "bio": "Writer",
+       "userId": 6
+     }
+   ]
+   }
+   ]
+   ```
+
+4. Click **Load posts**.
+
+   This returns the following output:
+
+   ```code no-copy
+   [
+   {
+   "id": 11,
+   "content": "https://www.prisma.io/blog/comparison-of-database-models-1iz9u29nwn37/",
+   "title": "Comparing Database Types: How Database Types Evolved to Meet Different Needs",
+   "authorId": 5,
+   "author": {
+     "id": 5,
+     "email": "jane@prisma.io",
+     "name": "Jane"
+   }
+   },
+   {
+   "id": 12,
+   "content": "https://quantifiedself.com/get-started/",
+   "title": "Analysing Sleep Patterns: The Quantified Self",
+   "authorId": 5,
+   "author": {
+     "id": 5,
+     "email": "jane@prisma.io",
+     "name": "Jane"
+   }
+   },
+   {
+   "id": 13,
+   "content": "",
+   "title": "Requiem for String Orchestra",
+   "authorId": 6,
+   "author": {
+     "id": 6,
+     "email": "toru@prisma.io",
+     "name": "Toru Takemitsu"
+   }
+   },
+   {
+   "id": 14,
+   "content": "",
+   "title": "Music of Tree",
+   "authorId": 6,
+   "author": {
+     "id": 6,
+     "email": "toru@prisma.io",
+     "name": "Toru Takemitsu"
+   }
+   },
+   {
+   "id": 15,
+   "content": "",
+   "title": "Waves for clarinet, horn, two trombones and bass drum ",
+   "authorId": 6,
+   "author": {
+     "id": 6,
+     "email": "toru@prisma.io",
+     "name": "Toru Takemitsu"
+   }
+   }
+   ]
+   ```
+
+   <Admonition type="info">
+
+   This API call uses Prisma to get all `posts` in the database with their related `authors`. The code is in the `pages/api/posts.js` file.
+
+   </Admonition>
+
+### Result
+
+You have now tested the API for your application and added data to your database.
+
+## Summary
+
+You have successfully deployed your application and database to Kinsta.
+
+For more insight into the Prisma Client API, look at the function handlers in the [`api/` directory](https://github.com/kinsta/hello-world-prisma/tree/main/pages/api) of the example repository.
