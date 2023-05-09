@@ -24,16 +24,13 @@ Nested reads allow you to read related data from multiple tables in your databas
 - Use [`include`](/reference/api-reference/prisma-client-reference#include) <span class="api"></span> to include related records, such as a user's posts or profile, in the query response.
 - Use a nested [`select`](/reference/api-reference/prisma-client-reference#select) <span class="api"></span> to include specific fields from a related record. You can also nest `select` inside an `include`.
 
-The following example returns a single user _and_ that user's posts:
+The following example returns a single user and that user's posts:
 
 <CodeWithResult>
 <cmd>
 
-```ts highlight=5-7;normal
-const getUser = await prisma.user.findUnique({
-  where: {
-    id: 19,
-  },
+```ts
+const getUser = await prisma.user.findFirst({
   include: {
     posts: true,
   },
@@ -79,21 +76,16 @@ const getUser = await prisma.user.findUnique({
 
 ### Include all fields for a specific relation
 
-The following example returns all posts with the word `cookies` in the `title` field and the author of each post. The result includes _all_ author fields.
+The following example returns a post and its author relation:
 
 <CodeWithResult>
 <cmd>
 
 ```ts
-const getPosts = await prisma.post.findMany({
-  where: {
-    title: {
-      contains: 'cookies',
-    },
+const getPosts = await prisma.post.findFirst({
+  include: {
+    author: true,
   },
-|  include: {
-|    author: true, // Return all fields
-|  },
 })
 ```
 
@@ -101,42 +93,23 @@ const getPosts = await prisma.post.findMany({
 <cmdResult>
 
 ```js no-copy
-;[
-  {
-    id: 17,
-    title: 'How to make cookies',
-    published: true,
-    authorId: 16,
-    comments: null,
-    views: 0,
-    likes: 0,
-    author: {
-      id: 16,
-      name: null,
-      email: 'orla@prisma.io',
-      profileViews: 0,
-      role: 'USER',
-      coinflips: [],
-    },
+{
+  id: 17,
+  title: 'How to make cookies',
+  published: true,
+  authorId: 16,
+  comments: null,
+  views: 0,
+  likes: 0,
+  author: {
+    id: 16,
+    name: null,
+    email: 'orla@prisma.io',
+    profileViews: 0,
+    role: 'USER',
+    coinflips: [],
   },
-  {
-    id: 21,
-    title: 'How to make cookies',
-    published: true,
-    authorId: 19,
-    comments: null,
-    views: 0,
-    likes: 0,
-    author: {
-      id: 19,
-      name: null,
-      email: 'emma@prisma.io',
-      profileViews: 0,
-      role: 'USER',
-      coinflips: [],
-    },
-  },
-]
+}
 ```
 
 </cmdResult>
@@ -149,8 +122,8 @@ You can nest `include` options to include relations of relations. The following 
 <CodeWithResult>
 <cmd>
 
-```ts highlight=2,4-6;normal
-const user = await prisma.user.findMany({
+```ts
+const user = await prisma.user.findFirst({
   include: {
     posts: {
       include: {
@@ -215,11 +188,8 @@ You can use a nested `select` to choose a subset of relation fields to return. F
 <CodeWithResult>
 <cmd>
 
-```ts highlight=5,8-10;normal
-const getUser = await prisma.user.findUnique({
-  where: {
-    id: 19,
-  },
+```ts
+const getUser = await prisma.user.findFirst({
   select: {
     name: true,
     posts: {
@@ -249,12 +219,8 @@ You can also nest a `select` inside an `include` - the following example returns
 <CodeWithResult>
 <cmd>
 
-```ts highlight=6,8-10;normal
-const getUser = await prisma.user.findUnique({
-  where: {
-    id: 1,
-  },
-  // select: { name: true } <-- Can't do this!
+```ts
+const getUser = await prisma.user.findFirst({
   include: {
     posts: {
       select: {
@@ -277,12 +243,8 @@ const getUser = await prisma.user.findUnique({
   "role": "USER",
   "coinflips": [],
   "posts": [
-    {
-      "title": "How to grow salad"
-    },
-    {
-      "title": "How to ride a horse"
-    }
+    { "title": "How to grow salad" },
+    { "title": "How to ride a horse" }
   ]
 }
 ```
@@ -295,12 +257,9 @@ Note that you **cannot** use `select` and `include` _on the same level_. This me
 <CodeWithResult>
 <cmd>
 
-```ts highlight=6,9-15;delete
+```ts highlight=3,6;delete
 // The following query returns an exception
-const getUser = await prisma.user.findUnique({
-  where: {
-    id: 19,
-  },
+const getUser = await prisma.user.findFirst({
   select: { // This won't work!
     email:  true
   }
@@ -347,11 +306,8 @@ Please either use `include` or `select`, but not both at the same time.
 
 Instead, use nested `select` options:
 
-```ts highlight=5,8-9;normal
-const getUser = await prisma.user.findUnique({
-  where: {
-    id: 19,
-  },
+```ts
+const user = await prisma.user.findFirst({
   select: {
     // This will work!
     email: true,
@@ -364,56 +320,36 @@ const getUser = await prisma.user.findUnique({
 })
 ```
 
-### Relation count
+## Relation count
 
 In [3.0.1](https://github.com/prisma/prisma/releases/3.0.1) and later, you can [`include` or `select` a count of relations](aggregation-grouping-summarizing#count-relations) alongside fields - for example, a user's post count.
 
-### Filter a list of relations
+<CodeWithResult>
+<cmd>
 
-When you use `select` to return a subset of data from related records (for example, a user's posts), you can **filter and sort that list of relations**. For example, you might want to query all users with a `prisma.io` email address and select the titles of their published posts.
-
-#### Return _all_ `User` records where `email` contains `prisma.io`, and select the `title` of all `Post` records that have not been published yet
-
-```js highlight=9-14;normal
-const result = await prisma.user.findMany({
-  where: {
-    email: {
-      contains: 'prisma.io',
-    },
-  },
-  select: {
-    posts: {
-      where: {
-        published: false,
-      },
-      orderBy: {
-        title: 'asc',
-      },
-      select: {
-        title: true,
-      },
+```ts
+const relationCount = await prisma.user.findMany({
+  include: {
+    _count: {
+      select: { posts: true },
     },
   },
 })
 ```
 
-You can use the `post` model property to write the same query:
+</cmd>
+<cmdResult>
 
-```js highlight=10-12;normal
-const result = await prisma.post.findMany({
-  where: {
-    published: false,
-    author: {
-      email: {
-        contains: 'prisma.io',
-      },
-    },
-  },
-  select: {
-    title: true,
-  },
-})
+```code no-copy
+{ id: 1, _count: { posts: 3 } },
+{ id: 2, _count: { posts: 2 } },
+{ id: 3, _count: { posts: 2 } },
+{ id: 4, _count: { posts: 0 } },
+{ id: 5, _count: { posts: 0 } }
 ```
+
+</cmdResult>
+</CodeWithResult>
 
 ## Nested writes
 
@@ -516,7 +452,7 @@ The example uses a nested `include` to include all posts and post categories.
 <CodeWithResult>
 <cmd>
 
-```ts highlight=5-18;normal
+```ts highlight=5-17;normal
 const user = await prisma.user.create({
   data: {
     email: 'yvette@prisma.io',
@@ -603,7 +539,7 @@ The example uses a nested `include` to include all posts.
 <CodeWithResult>
 <cmd>
 
-```ts highlight=6-11;normal
+```ts highlight=4-11;normal
 const user = await prisma.user.create({
   data: {
     email: 'saanvi@prisma.io',
@@ -697,7 +633,7 @@ The following query creates ([`create`](/reference/api-reference/prisma-client-r
 <CodeWithResult>
 <cmd>
 
-```ts highlight=6-7;normal
+```ts highlight=4-6;normal
 const user = await prisma.user.create({
   data: {
     email: 'vlad@prisma.io',
@@ -746,21 +682,21 @@ You can `connect` <span class="api"></span> an existing record to a new or exist
 1. Connects an existing post (`id: 11`) to an existing user (`id: 9`)
 2. Adds a new related post (`title: "My new post title"`)
 
-```ts
+```ts highlight=6-9,13;normal
 const getUser = await prisma.user.update({
   where: {
-    id: 9
+    id: 9,
   },
   data: {
-|    posts: {
-|      connect: {
-|        id: 11
-|      },
+    posts: {
+      connect: {
+        id: 11,
+      },
       create: {
-        title: "My new post title"
-      }
-|    }
-  }
+        title: 'My new post title',
+      },
+    },
+  },
 })
 ```
 
@@ -774,7 +710,7 @@ If a related record may or may not already exist, use `connectOrCreate` <span cl
 <CodeWithResult>
 <cmd>
 
-```ts highlight=4-15;normal
+```ts highlight=4-14;normal
 const createPost = await prisma.post.create({
   data: {
     title: 'How to make croissants',
@@ -909,19 +845,19 @@ To `disconnect` <span class="api"></span> _all_ related records in a one-to-many
 <CodeWithResult>
 <cmd>
 
-```ts
+```ts highlight=6-8;normal
 const updateUser = await prisma.user.update({
   where: {
-    id: 16
+    id: 16,
   },
   data: {
-|    posts: {
-|      set: []
-|    }
+    posts: {
+      set: [],
+    },
   },
   include: {
-    posts: true
-  }
+    posts: true,
+  },
 })
 ```
 
@@ -998,7 +934,7 @@ const update = await prisma.user.update({
 
 You can use a nested `updateMany` to update _all_ related records for a particular user. The following query unpublishes all posts for a specific user:
 
-```ts highlight=6-10;normal
+```ts highlight=6-15;normal
 const update = await prisma.user.update({
   where: {
     id: 6,
@@ -1020,7 +956,7 @@ const update = await prisma.user.update({
 
 ### Update a specific related record
 
-```ts highlight=6-10;normal
+```ts highlight=6-15;normal
 const update = await prisma.user.update({
   where: {
     id: 6,
@@ -1168,10 +1104,10 @@ const usersWithZeroPosts = await prisma.user.findMany({
 
 The following query returns all posts that don't have an author relation:
 
-```js
+```js highlight=3;normal
 const postsWithNoAuthor = await prisma.post.findMany({
   where: {
-    author: null, // or { }
+    author: null, // or author: { }
   },
 })
 ```
