@@ -31,6 +31,7 @@ Read through the [contributing guide](CONTRIBUTING.md) to learn how you can cont
 3. Run the following commands:
 
 ```
+cd docs
 npm install
 npm run dev
 ```
@@ -48,39 +49,51 @@ vercel dev
 To prettify or format the code, run:
 
 ```
-npm run prettify
+npm run format
 ```
 
-Visit `http://localhost:8000/` to view the app.
+Visit `http://localhost:8000` to view the app.
 
 ## Configure
 
 Write MDX files in `content` folder.
 
-Open `config.js` for available config options for `gatsby`, `header`, `footer` and `siteMetadata`.
+Open `config.ts` for available config options for `gatsby`, `header`, `footer` and `siteMetadata`.
 
 - `gatsby` config for global configuration like
 
   - `pathPrefix` - Gatsby Path Prefix
+  - `siteUrl` - The url of the deployed site
+  - `titlePrefix` - The prefix to title that is added to the SEO title of the page
+  - `titleSuffix` - The suffix to title that is added to the SEO title of the page
 
 - `header` config for site header configuration like
 
-  - `title` - The title that appears on the top left
-  - `links` - The links for header
-  - `logoLink` - The link to redirect on logo click
+  - `secondLevelHeaderMenuItems` - The text and links for the buckets on the second level of header
+  - `search` - The API keys for search functionality
 
 - `footer` config for site footer configuration like
 
-  - `title` - The title that appears on the top left
-  - `logoLink` - The link to redirect on logo click
-  - `products`, `community`, `company`, `resources` - The links for various footer
-  - `newsletter` - Newsletter config
-  - `findus` - Social links
+  - `newsletter` - Newsletter text
+
+- `homepage` config for various links and content in the homepage of https://www.prisma.io/docs
+
+  - `SummaryLinkData` - Links and text in the Summary section of homepage
+  - `GeneralLinkData` - Links and text in the General section of homepage
+  - `GuideLinkData` - Links and text in the Guide section of homepage
+  - `ReferenceLinkData` - Links and text in the Reference section of homepage
+  - `MoreUsefulLinks` - Links and text in the More Useful section of homepage
 
 - `siteMetadata` config for website related configuration
+
   - `title` - Title of the website in main page
   - `description` - Description of the website
   - `keywords` - Keywords of the website for SEO
+
+- `feedback` config for feedback urls
+
+  - `sentimentUrl` - api path for sentiment details on feedback functionality
+  - `feedbackUrl` - api path for feedback details on feedback functionality
 
 ## Inserting, moving and deleting files
 
