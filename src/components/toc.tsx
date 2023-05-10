@@ -120,10 +120,10 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
         // If there is more than one visible heading,
         // choose the one that is closest to the top of the page
       } else if (visibleHeadings.length > 1) {
-        const sortedVisibleHeadings = visibleHeadings.sort(
-          (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
-        )
-        setActiveId(sortedVisibleHeadings[0].target.id)
+        // const sortedVisibleHeadings = visibleHeadings.sort(
+        //   (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
+        // )
+        setActiveId(visibleHeadings[0].target.id)
       }
     }
 
@@ -144,9 +144,6 @@ const TOC = ({ headings, tocDepth }: any) => {
   const [activeId, setActiveId] = React.useState()
   const idList = getIds(headings, tocDepth || 2)
   useIntersectionObserver(setActiveId, idList, tocDepth)
-  React.useEffect(() => {
-    console.log(activeId)
-  }, [activeId])
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>ON THIS PAGE</ChapterTitle>
