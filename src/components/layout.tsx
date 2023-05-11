@@ -34,8 +34,7 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
 
 const Content = styled.article<{ fullWidth?: boolean }>`
   margin: 0 0 ${(p) => p.theme.space[16]};
-  // ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 748px')};
-  max-width: 100%;
+  ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 988px')};
   flex: 1;
   position: relative;
   z-index: 100;
