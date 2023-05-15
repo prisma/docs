@@ -36,7 +36,7 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, navigate, slug }: a
     langSwitcher ? getTechFromParam('lang', langSwitcher[0]) : 'typescript'
   )
   const [dbSelected, setDbSelected] = React.useState(
-    dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgres'
+    dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgresql'
   )
 
   const goToNewPath = () => {
