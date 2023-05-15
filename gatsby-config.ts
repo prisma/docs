@@ -1,5 +1,8 @@
 import type { GatsbyConfig } from 'gatsby'
 import docsConfig from './config'
+require('dotenv').config({
+  path: `.env`,
+})
 
 let plugins: any = [
   'gatsby-plugin-image',
@@ -46,10 +49,10 @@ let plugins: any = [
           options: {
             // Do not surface links to these pages as broken:
             exceptions: [
-              '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgres',
-              '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgres',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
+              '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql',
+              '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
               '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
