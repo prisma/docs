@@ -39,15 +39,23 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
   // Construct the pages json by iterating over the mdx files.
 
   const pages = data.allSitePage.edges
+    .filter(
+      (edge) => edge.node.path.includes('/concepts/') || edge.node.path.includes('/reference/')
+    )
     .map((edge, i) => {
       // Skip explicitly excluded paths
-      if (excludedPaths.includes(edge.node.path) || longPages.includes(edge.node.path) || errorPages.includes(edge.node.path)) return null
+      if (
+        excludedPaths.includes(edge.node.path) ||
+        longPages.includes(edge.node.path) ||
+        errorPages.includes(edge.node.path)
+      )
+        return null
       // Allow headless browser to render super long pages before screenshoting them
 
-      console.log('entry', {
-        path: edge.node.path,
-        name: edge.node.path.split('/').join('-'),
-      })
+      // console.log('entry', {
+      //   path: edge.node.path,
+      //   name: edge.node.path.split('/').join('-'),
+      // })
 
       return {
         path: edge.node.path,
@@ -55,6 +63,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
       }
     })
     .filter((edge) => edge !== null)
-
+  console.log(pages.length)
   await fsPromises.writeFile(outputFile, JSON.stringify(pages))
 }

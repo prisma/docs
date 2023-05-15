@@ -56,10 +56,10 @@ const ListItem = styled.li<ItemProps>`
   }
 `
 
-const Headings = ({ headings, activeId, depth = 1 }: any) => {
+const Headings = ({ headings, activeId, depth = 2 }: any) => {
   const isActive = (url: string) => url?.replace(/inlinecode/g, '').slice(1) === activeId
   const isAnyChildActive = (children: any[]) => children.some((child: any) => isActive(child.url))
-  const finalDepth = depth ?? 1
+  const finalDepth = depth ?? 2
   const navItems = (headings: any, activeId: any, depth: any) => (
     <HeadingList>
       {headings.map((heading: any) => (
@@ -111,7 +111,7 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
         if (headingElement.isIntersecting) visibleHeadings.push(headingElement)
       })
 
-      const getIndexFromId = (id: any) => idList.findIndex((heading) => heading.id === id)
+      const getIndexFromId = (id: any) => idList.findIndex((heading) => heading === id)
       // If there is only one visible heading, this is our "active" heading
       visibleHeadings = visibleHeadings.filter((e) => parseInt(e.target.tagName.charAt(1)) <= depth)
 
@@ -120,10 +120,10 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
         // If there is more than one visible heading,
         // choose the one that is closest to the top of the page
       } else if (visibleHeadings.length > 1) {
-        const sortedVisibleHeadings = visibleHeadings.sort(
-          (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
-        )
-        setActiveId(sortedVisibleHeadings[0].target.id)
+        // const sortedVisibleHeadings = visibleHeadings.sort(
+        //   (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
+        // )
+        setActiveId(visibleHeadings[0].target.id)
       }
     }
 
@@ -144,9 +144,6 @@ const TOC = ({ headings, tocDepth }: any) => {
   const [activeId, setActiveId] = React.useState()
   const idList = getIds(headings, tocDepth || 2)
   useIntersectionObserver(setActiveId, idList, tocDepth)
-  React.useEffect(() => {
-    console.log(activeId)
-  }, [activeId])
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>ON THIS PAGE</ChapterTitle>

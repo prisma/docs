@@ -28,7 +28,7 @@ const icons = {
   node: <JS />,
   typescript: <Typescript />,
   mysql: <MySQL />,
-  postgres: <PostgreSQL />,
+  postgresql: <PostgreSQL />,
   sqlite: <SQLite />,
   mongodb: <MongoDB />,
   sqlserver: <SQLServer />,
@@ -38,14 +38,22 @@ const icons = {
 
 const technologyTypes = {
   languages: ['node', 'typescript'],
-  databases: ['mysql', 'postgres', 'sqlite', 'mongodb', 'sqlserver', 'planetscale', 'cockroachdb'],
+  databases: [
+    'mysql',
+    'postgresql',
+    'sqlite',
+    'mongodb',
+    'sqlserver',
+    'planetscale',
+    'cockroachdb',
+  ],
 }
 
 export const technologyNames = {
   node: 'JavaScript',
   typescript: 'TypeScript',
   mysql: 'MySQL',
-  postgres: 'PostgreSQL',
+  postgresql: 'PostgreSQL',
   sqlite: 'SQLite',
   mongodb: 'MongoDB',
   sqlserver: 'SQL Server',
@@ -55,7 +63,7 @@ export const technologyNames = {
 
 const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech }: TechSwitchProps) => {
   const langDefault = { technology: defaultTech || 'typescript' }
-  const dbDefault = { technology: defaultTech || 'postgres' }
+  const dbDefault = { technology: defaultTech || 'postgresql' }
   const defaultItem = type === 'lang' ? langDefault : dbDefault
 
   const [selectedItem, setSelectedItem] = React.useState(defaultItem)
