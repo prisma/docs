@@ -53,8 +53,11 @@ function cleanTokens(tokens: any[]) {
 const propList = ['copy', 'bash-symbol', 'terminal', 'no-lines']
 
 const Code = ({ children, className, ...props }: PreCodeProps) => {
+  const codeEl = React.useRef<any>(null)
+  const preEl = React.useRef<any>(null)
   let language = className && className.replace(/language-/, '')
   let breakWords = false
+  const [debugState, setDebugState] = React.useState<string>('')
 
   let diffArray: any = []
 
@@ -87,6 +90,17 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
   const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
+  React.useEffect(() => {
+    if (codeEl.current !== null && preEl.current !== null) {
+      if (debugState.length === 0)
+        setDebugState(
+          `${codeEl.current.getBoundingClientRect().width},${
+            preEl.current.getBoundingClientRect().width - 44
+          }`
+        )
+    }
+  }, [])
+
   return (
     <CodeWrapper className="codeWrapperDiv">
       {fileName && (
@@ -97,7 +111,20 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
       <div className="gatsby-highlight pre-highlight">
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
-            <Pre className={`${blockClassName} ${isTerminal ? 'is-terminal' : ''}`} style={style}>
+            <Pre
+              ref={preEl}
+              className={`
+                ${blockClassName} 
+                ${isTerminal ? 'is-terminal' : ''} 
+                ${
+                  parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1])
+                    ? `not-scrollable`
+                    : ``
+                }
+
+              `}
+              style={style}
+            >
               {!noCopy && (
                 <AbsoluteCopyButton className="copy-button">
                   <CopyButton text={code}>
@@ -105,7 +132,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   </CopyButton>
                 </AbsoluteCopyButton>
               )}
-              <code>
+              <code ref={codeEl} style={{ width: 'max-content' }}>
                 {cleanTokens(tokens).map((line: any, i: number) => {
                   let lineClass = {
                     backgroundColor: '',
@@ -236,8 +263,31 @@ const Pre = styled.pre`
   text-align: left;
   margin: 0 0 16px 0;
   padding: 2rem 1rem 1rem 1rem;
-  overflow: auto;
   webkit-overflow-scrolling: touch;
+  overflow-x: visible;
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background-color: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #c5c6c8;
+  }
+  &::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: transparent;
+  }
+  &::-webkit-scrollbar-corner {
+    background-color: transparent;
+    border-color: transparent;
+  }
+  &.not-scrollable {
+    overflow-x: hidden;
+    code {
+      display: inline;
+    }
+  }
 `
 const Line = styled.div`
   display: block;
