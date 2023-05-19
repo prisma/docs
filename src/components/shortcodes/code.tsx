@@ -79,6 +79,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
   let hasNoLine = true
   const isTerminal = props['terminal'] || language === 'terminal'
+  const wrapContent = props['wrap']
   const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol' || isTerminal
   const fileName = props['file'] || language === 'file'
 
@@ -114,10 +115,12 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
             <Pre
               ref={preEl}
               className={`
+                ${wrapContent ? 'wrap-content' : ''}
                 ${blockClassName} 
                 ${isTerminal ? 'is-terminal' : ''} 
                 ${
-                  parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1])
+                  parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
+                  wrapContent
                     ? `not-scrollable`
                     : ``
                 }
@@ -132,7 +135,16 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   </CopyButton>
                 </AbsoluteCopyButton>
               )}
-              <code ref={codeEl} style={{ width: 'max-content' }}>
+              <code
+                ref={codeEl}
+                style={{
+                  width:
+                    parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
+                    wrapContent
+                      ? 'auto'
+                      : 'max-content',
+                }}
+              >
                 {cleanTokens(tokens).map((line: any, i: number) => {
                   let lineClass = {
                     backgroundColor: '',
@@ -265,27 +277,32 @@ const Pre = styled.pre`
   padding: 2rem 1rem 1rem 1rem;
   webkit-overflow-scrolling: touch;
   overflow-x: visible;
-  &::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-    background-color: transparent;
+  &.wrap-content {
+    overflow-x: auto;
   }
-  &::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    background-color: #c5c6c8;
-  }
-  &::-webkit-scrollbar-track {
-    border-radius: 10px;
-    background-color: transparent;
-  }
-  &::-webkit-scrollbar-corner {
-    background-color: transparent;
-    border-color: transparent;
-  }
-  &.not-scrollable {
-    overflow-x: hidden;
-    code {
-      display: inline;
+  &:not(.wrap-content) {
+    &::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+      background-color: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 10px;
+      background-color: #c5c6c8;
+    }
+    &::-webkit-scrollbar-track {
+      border-radius: 10px;
+      background-color: transparent;
+    }
+    &::-webkit-scrollbar-corner {
+      background-color: transparent;
+      border-color: transparent;
+    }
+    &.not-scrollable {
+      overflow-x: hidden;
+      code {
+        display: inline;
+      }
     }
   }
 `
