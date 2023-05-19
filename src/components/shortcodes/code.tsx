@@ -139,10 +139,11 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                 ref={codeEl}
                 style={{
                   width:
-                    parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
+                    parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) + 40 ||
                     wrapContent
                       ? 'auto'
                       : 'max-content',
+                  overflow: 'visible',
                 }}
               >
                 {cleanTokens(tokens).map((line: any, i: number) => {
