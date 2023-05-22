@@ -22,10 +22,7 @@ export default ParallelBlocks
 
 const Block = styled.div`
   flex: 1 1 0px;
-  margin-right: 0.5rem;
-  &:last-of-type {
-    margin: 0;
-  }
+  width: calc(50% - 0.25rem);
   .blockHeading {
     font-weight: 600;
     font-size: ${(p) => p.theme.fontSizes[14]};
@@ -59,5 +56,6 @@ const Block = styled.div`
 `
 const Wrapper = styled.div`
   display: flex;
+  gap: 0.5rem;
   margin-top: ${(p) => p.theme.space[32]};
 `
