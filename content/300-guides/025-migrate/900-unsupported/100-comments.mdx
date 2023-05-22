@@ -1,0 +1,139 @@
+---
+title: Comments
+metaDescription: Learn how to add Prisma Migrate to an existing project.
+dbSwitcher: ['postgresql', 'mysql', 'cockroachdb']
+tocDepth: 2
+---
+
+<TopBlock>
+
+COMMENTS are useful for providing meta data that describes your database schema, i.e., tables, fields, enums, etc. <br />
+They can currently be detected in the following providers: `PostgreSQL`, `CockroachDB`, and `MySQL`.
+
+Currently, COMMENTS cannot be expressed using the Prisma Schema Language. This means that COMMENTS will not be picked up when you introspect your database. COMMENTS will then also not be persisted in your migration history when updating your database schema.
+
+<Admonition type ="info">
+
+You can track implementation details for the full support of database-level comments in this [GitHub issue](https://github.com/prisma/prisma/issues/8703).
+
+</Admonition>
+
+Currently, Prisma Migrate can detect if your database schema contains comments. The following section describes how to work around this limitation:
+
+1. [How to handle existing Database Comments in your database](https://www.notion.so/Documentation-for-Stopgaps-a654b09ca7c14094a5b616d9ba2d062b)
+2. [How to create and update Database Comments in a new database](https://www.notion.so/Documentation-for-Stopgaps-a654b09ca7c14094a5b616d9ba2d062b)
+
+<Admonition type ="info">
+
+Note: this workaround does not work with prisma db push.
+
+</Admonition>
+
+</TopBlock>
+
+## Detecting comments during introspection
+
+<!-- #region postgresql -->
+
+<SwitchTech technologies={['*', 'postgresql']}>
+
+When prisma db pull detects a comment, it will output a warning and add a comment to your schema file to surface its presence. For example, with this SQL present in a `PostgreSQL` database:
+
+```sql
+CREATE TYPE Team AS ENUM('Marketing', 'Management');
+COMMENT ON TYPE Team IS 'Organisational Teams';
+
+CREATE TABLE IF NOT EXISTS Employee
+(
+  id bigserial unique primary key,
+  create_dt date
+  salary int
+  foo foo not null
+);
+
+COMMENT ON TABLE Employee IS 'The employee table';
+COMMENT ON COLUMN Employee.create_dt IS 'the date when employee was hired';
+COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
+```
+
+</SwitchTech>
+
+<!-- #endregion -->
+
+<!-- #region cockroachdb -->
+
+<SwitchTech technologies={['*', 'cockroachdb']}>
+
+When prisma db pull detects a comment, it will output a warning and add a comment to your schema file to surface its presence. For example, with this SQL present in a `CockroachDB` database:
+
+```sql
+CREATE TYPE Team AS ENUM('Marketing', 'Management');
+COMMENT ON TYPE Team IS 'Organisational Teams';
+
+CREATE TABLE IF NOT EXISTS Employee
+(
+  id bigserial unique primary key,
+  create_dt date not null
+  salary integer not null
+  foo foo not null
+);
+
+COMMENT ON TABLE Employee IS 'The employee table';
+COMMENT ON COLUMN Employee.create_dt IS 'the date when employee was hired';
+COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
+```
+
+</SwitchTech>
+
+<!-- #endregion -->
+
+<!-- #region mysql -->
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+When prisma db pull detects a comment, it will output a warning and add a comment to your schema file to surface its presence. For example, with this SQL present in a `MySQL` database:
+
+```sql
+create table Employee(
+    id int not null auto_increment,
+    create_dt date comment 'the date when employee was hired',
+    salary int comment 'salary in EUR',
+    primary key (id)
+) comment 'The employee table';
+```
+
+</SwitchTech>
+
+<!-- #endregion -->
+
+Running `prisma db pull` will then return the following warning on your terminal and comment in your Prisma schema:
+
+```
+// *** WARNING ***
+//
+// These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
+// - Type "enum", Name "Team"
+// - Type "model", Name "Employee"
+// - Type "field", Name "create_dt"
+// - Type "field", Name "salary"
+```
+
+```prisma
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model bar {
+  id        BigInt   @id @default(autoincrement())
+  create_dt DateTime
+  salary    Int
+  foo       foo
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum foo {
+  fiz
+  foz
+}
+```
+
+## How to persist database comments in your migration history
+
+## How to create and update database comments in a database
