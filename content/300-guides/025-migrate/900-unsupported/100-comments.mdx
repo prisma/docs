@@ -5,6 +5,8 @@ dbSwitcher: ['postgresql', 'mysql', 'cockroachdb']
 tocDepth: 2
 ---
 
+<!-- #region TopBlock -->
+
 <TopBlock>
 
 COMMENTS are useful for providing meta data that describes your database schema, i.e., tables, fields, enums, etc. <br />
@@ -31,9 +33,11 @@ Note: this workaround does not work with prisma db push.
 
 </TopBlock>
 
+<!-- #endregion -->
+
 ## Detecting comments during introspection
 
-<!-- #region postgresql -->
+<!-- #region postgresql SQL -->
 
 <SwitchTech technologies={['*', 'postgresql']}>
 
@@ -46,9 +50,9 @@ COMMENT ON TYPE Team IS 'Organisational Teams';
 CREATE TABLE IF NOT EXISTS Employee
 (
   id bigserial unique primary key,
-  create_dt date
-  salary int
-  foo foo not null
+  create_dt date not null,
+  salary int not null,
+  team Team not null
 );
 
 COMMENT ON TABLE Employee IS 'The employee table';
@@ -60,7 +64,7 @@ COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
 
 <!-- #endregion -->
 
-<!-- #region cockroachdb -->
+<!-- #region cockroachdb SQL -->
 
 <SwitchTech technologies={['*', 'cockroachdb']}>
 
@@ -73,9 +77,9 @@ COMMENT ON TYPE Team IS 'Organisational Teams';
 CREATE TABLE IF NOT EXISTS Employee
 (
   id bigserial unique primary key,
-  create_dt date not null
-  salary integer not null
-  foo foo not null
+  create_dt date not null,
+  salary int not null,
+  team Team not null
 );
 
 COMMENT ON TABLE Employee IS 'The employee table';
@@ -87,7 +91,7 @@ COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
 
 <!-- #endregion -->
 
-<!-- #region mysql -->
+<!-- #region mysql SQL -->
 
 <SwitchTech technologies={['*', 'mysql']}>
 
@@ -96,8 +100,9 @@ When prisma db pull detects a comment, it will output a warning and add a commen
 ```sql
 create table Employee(
     id int not null auto_increment,
-    create_dt date comment 'the date when employee was hired',
-    salary int comment 'salary in EUR',
+    create_dt date comment 'the date when employee was hired' not null,
+    salary int comment 'salary in EUR' not null,
+    team ENUM('Marketing', 'Management') not null,
     primary key (id)
 ) comment 'The employee table';
 ```
@@ -105,6 +110,10 @@ create table Employee(
 </SwitchTech>
 
 <!-- #endregion -->
+
+<!-- #region postgres + cockroach warnings -->
+
+<SwitchTech technologies={['*', 'postgresql', 'cockroachdb']}>
 
 Running `prisma db pull` will then return the following warning on your terminal and comment in your Prisma schema:
 
@@ -120,19 +129,57 @@ Running `prisma db pull` will then return the following warning on your terminal
 
 ```prisma
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model bar {
+model Employee {
   id        BigInt   @id @default(autoincrement())
   create_dt DateTime
   salary    Int
-  foo       foo
+  team      Team
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum foo {
-  fiz
-  foz
+enum Team {
+  Marketing
+  Management
 }
 ```
+
+</SwitchTech>
+
+<!-- #endregion -->
+
+<!-- #region mysql warnings -->
+
+<SwitchTech technologies={['*', 'mysql']}>
+
+Running `prisma db pull` will then return the following warning on your terminal and comment in your Prisma schema:
+
+```
+// *** WARNING ***
+//
+// These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
+// - Type "model", Name "Employee"
+// - Type "field", Name "create_dt"
+// - Type "field", Name "salary"
+```
+
+```prisma
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Employee {
+  id        Int           @id @default(autoincrement())
+  create_dt DateTime      @db.Date
+  salary    Int
+  team      Employee_team
+}
+
+enum Employee_team {
+  Marketing
+  Management
+}
+```
+
+</SwitchTech>
+
+<!-- #endregion -->
 
 ## How to persist database comments in your migration history
 
