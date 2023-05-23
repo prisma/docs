@@ -44,20 +44,28 @@ Note: this workaround does not work with prisma db push.
 When prisma db pull detects a comment, it will output a warning and add a comment to your schema file to surface its presence. For example, with this SQL present in a `PostgreSQL` database:
 
 ```sql
-CREATE TYPE Team AS ENUM('Marketing', 'Management');
-COMMENT ON TYPE Team IS 'Organisational Teams';
+CREATE TYPE "Team" AS ENUM('Marketing', 'Management');
+COMMENT ON TYPE "Team" IS 'Organisational Teams';
 
-CREATE TABLE IF NOT EXISTS Employee
+CREATE TABLE IF NOT EXISTS "Employee"
 (
-  id bigserial unique primary key,
-  create_dt date not null,
-  salary int not null,
-  team Team not null
+  "id" BIGSERIAL UNIQUE PRIMARY KEY,
+  "create_dt" DATE NOT NULL DEFAULT now(),
+  "salary" INT NOT NULL,
+  "team" "Team" NOT NULL
 );
 
-COMMENT ON TABLE Employee IS 'The employee table';
-COMMENT ON COLUMN Employee.create_dt IS 'the date when employee was hired';
-COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
+COMMENT ON TABLE "Employee" IS 'The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was hired';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in EUR';
+COMMENT ON COLUMN "Employee"."team" IS 'Team employee belongs to';
+
+CREATE VIEW "TeamSalary" as
+  SELECT "Employee"."team", SUM("Employee"."salary")
+  FROM "Employee"
+  GROUP BY "Employee"."team";
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by teams';
 ```
 
 </SwitchTech>
@@ -71,20 +79,28 @@ COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
 When prisma db pull detects a comment, it will output a warning and add a comment to your schema file to surface its presence. For example, with this SQL present in a `CockroachDB` database:
 
 ```sql
-CREATE TYPE Team AS ENUM('Marketing', 'Management');
-COMMENT ON TYPE Team IS 'Organisational Teams';
+CREATE TYPE "Team" AS ENUM('Marketing', 'Management');
+COMMENT ON TYPE "Team" IS 'Organisational Teams';
 
-CREATE TABLE IF NOT EXISTS Employee
+CREATE TABLE IF NOT EXISTS "Employee"
 (
-  id bigserial unique primary key,
-  create_dt date not null,
-  salary int not null,
-  team Team not null
+  "id" BIGSERIAL UNIQUE PRIMARY KEY,
+  "create_dt" DATE NOT NULL DEFAULT now(),
+  "salary" INT NOT NULL,
+  "team" "Team" NOT NULL
 );
 
-COMMENT ON TABLE Employee IS 'The employee table';
-COMMENT ON COLUMN Employee.create_dt IS 'the date when employee was hired';
-COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
+COMMENT ON TABLE "Employee" IS 'The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was hired';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in EUR';
+COMMENT ON COLUMN "Employee"."team" IS 'Team employee belongs to';
+
+CREATE VIEW "TeamSalary" as
+  SELECT "Employee"."team", SUM("Employee"."salary")
+  FROM "Employee"
+  GROUP BY "Employee"."team";
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by teams';
 ```
 
 </SwitchTech>
@@ -98,13 +114,13 @@ COMMENT ON COLUMN Employee.salary IS 'salary in EUR';
 When prisma db pull detects a comment, it will output a warning and add a comment to your schema file to surface its presence. For example, with this SQL present in a `MySQL` database:
 
 ```sql
-create table Employee(
-    id int not null auto_increment,
-    create_dt date comment 'the date when employee was hired' not null,
-    salary int comment 'salary in EUR' not null,
-    team ENUM('Marketing', 'Management') not null,
-    primary key (id)
-) comment 'The employee table';
+CREATE TABLE Employee(
+    id INT NOT NULL AUTO_INCREMENT,
+    create_dt DATE NOT NULL COMMENT 'the date when employee was hired',
+    salary INT NOT NULL COMMENT 'salary in EUR',
+    team ENUM('Marketing', 'Management') NOT NULL COMMENT 'team employee reports to',
+    PRIMARY KEY (id)
+) COMMENT 'The employee table';
 ```
 
 </SwitchTech>
@@ -121,19 +137,28 @@ Running `prisma db pull` will then return the following warning on your terminal
 // *** WARNING ***
 //
 // These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
-// - Type "enum", Name "Team"
-// - Type "model", Name "Employee"
-// - Type "field", Name "create_dt"
-// - Type "field", Name "salary"
+// - Type: "enum", name: "Team"
+// - Type: "model", name: "Employee"
+// - Type: "field", name: "Employee.create_dt"
+// - Type: "field", name: "Employee.salary"
+// - Type: "view", name: "TeamSalary"
 ```
 
 ```prisma
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model Employee {
   id        BigInt   @id @default(autoincrement())
-  create_dt DateTime
+  create_dt DateTime @default(now()) @db.Date
   salary    Int
   team      Team
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+/// This view or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+view TeamSalary {
+team Team?
+sum  BigInt?
+@@ignore
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -157,9 +182,10 @@ Running `prisma db pull` will then return the following warning on your terminal
 // *** WARNING ***
 //
 // These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
-// - Type "model", Name "Employee"
-// - Type "field", Name "create_dt"
-// - Type "field", Name "salary"
+// - Type: "model", name: "Employee"
+// - Type: "field", name: "Employee.create_dt"
+// - Type: "field", name: "Employee.salary"
+// - Type: "field", name: "Employee.team"
 ```
 
 ```prisma
