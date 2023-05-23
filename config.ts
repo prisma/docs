@@ -296,8 +296,8 @@ const siteConfig = {
         icon: 'CLI',
         links: [
           {
-            text: 'introspect',
-            url: 'reference/api-reference/command-reference#introspect',
+            text: 'db',
+            url: 'reference/api-reference/command-reference#db',
             codeBlock: true,
           },
           {
@@ -306,8 +306,8 @@ const siteConfig = {
             codeBlock: true,
           },
           {
-            text: 'db',
-            url: 'reference/api-reference/command-reference#db',
+            text: 'studio',
+            url: 'reference/api-reference/command-reference#studio',
             codeBlock: true,
           },
         ],
