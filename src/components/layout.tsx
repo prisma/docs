@@ -18,6 +18,7 @@ interface LayoutContentProps {
   slug?: string
   homePage?: boolean
   children: React.ReactNode
+  wide?: boolean
 }
 
 type LayoutProps = RouterProps & LayoutContentProps
@@ -32,9 +33,9 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
   }
 `
 
-const Content = styled.article<{ fullWidth?: boolean }>`
+const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
   margin: 0 0 ${(p) => p.theme.space[16]};
-  ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 988px')};
+  ${(p) => (p.fullWidth ? 'max-width: 100%' : p.wide ? 'max-width: 988px' : 'max-width: 748px')};
   flex: 1;
   position: relative;
   z-index: 100;
@@ -49,9 +50,9 @@ const Content = styled.article<{ fullWidth?: boolean }>`
   }
 `
 
-const MaxWidth = styled.div`
+const MaxWidth = styled.div<{ wide?: boolean }>`
   > section {
-    padding: 0 ${(p) => p.theme.space[40]} 0 0;
+    padding: 0 ${(p) => `${p.theme.space[40]}${p.wide ? ` 0 0` : ``}`};
     &.top-section {
       padding-top: 0;
     }
@@ -78,8 +79,8 @@ const NotMobile = styled.section`
   }
 `
 
-const Container = styled.div<{ fullWidth?: boolean }>`
-  ${(p) => (p.fullWidth ? 'max-width: 100%;' : 'max-width: 1440px')};
+const Container = styled.div<{ fullWidth?: boolean; wide?: boolean }>`
+  ${(p) => (p.fullWidth ? 'max-width: 100%;' : p.wide ? 'max-width: 1440px' : 'max-width: 1200px')};
   width: 100%;
   justify-content: center;
   display: flex;
@@ -90,12 +91,13 @@ const Container = styled.div<{ fullWidth?: boolean }>`
   }
 `
 
-const TOCWrapper = styled.div`
+const TOCWrapper = styled.div<{ wide?: boolean }>`
   width: 180px;
   height: 100vh;
   overflow-y: auto;
   position: sticky;
   top: 0;
+  ${(p) => p.wide && `margin-right: -100px;`}
 
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
@@ -122,16 +124,24 @@ const BannerWrapper = styled.div<{ light: boolean }>`
   font-size: 18px;
 `
 
-export default function Layout({ children, toc, tocDepth, location, slug, homePage }: LayoutProps) {
+export default function Layout({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+  homePage,
+  wide,
+}: LayoutProps) {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
   return (
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={shortcodes}>
-          <Header headerProps={header} />
+          <Header headerProps={header} wide={wide} />
           <Wrapper fullWidth={homePage}>
-            <Container fullWidth={homePage}>
+            <Container fullWidth={homePage} wide={wide}>
               {!homePage && (
                 <StickyBox offsetTop={20} offsetBottom={20}>
                   <NotMobile id="sidebar-holder">
@@ -139,7 +149,7 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
                   </NotMobile>
                 </StickyBox>
               )}
-              <Content fullWidth={homePage}>
+              <Content fullWidth={homePage} wide={wide}>
                 <MaxWidth>{children}</MaxWidth>
               </Content>
               {!homePage && (

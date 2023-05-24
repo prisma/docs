@@ -149,18 +149,20 @@ const NonMobileMenu = styled.div`
   }
 `
 
-const NavLink = styled(Link)`
+const NavLink = styled(Link)<{ wide?: boolean }>`
   transition: color 0.1s ease-in;
-  padding: 0.25rem 0.5rem;
-  // margin: 0 0.5rem;
-
+  ${(p) =>
+    p.wide
+      ? `padding: 0.25rem 0.5rem;`
+      : `padding: 0 0.5rem;
+  margin: 0 0.5rem;`}
   color: ${(p) => p.theme.colors.gray[400]} !important;
   @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
     margin: 0;
     padding: 0;
   }
 `
-const DarkNavLink = styled(NavLink)`
+const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
   color: ${(p) => p.theme.colors.gray[700]} !important;
   font-weight: 600;
   text-decoration: none;
@@ -225,15 +227,15 @@ const SecondLevelMobileNavLink = styled.div`
   }
 `
 
-const SecondLevelNav = styled.div`
-  padding: 0 2.5rem 0 0;
+const SecondLevelNav = styled.div<{ wide?: boolean }>`
+  ${(p) => (p.wide ? `padding: 0 2.5rem 0 0;` : `margin-left: 48px;`)}
   width: 100%;
   display: flex;
   justify-content: space-between;
   @media (min-width: 0px) and (max-width: 1024px) {
     margin: 0;
     flex-direction: column;
-    padding: 0;
+    ${(p) => p.wide && `padding: 0;`}
   }
 `
 
@@ -302,22 +304,24 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
     )
     return (
       <SecondLevelNav>
-        {bucketItems.map((item) => {
-          const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
-          const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
-          const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
+        <div>
+          {bucketItems.map((item) => {
+            const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
+            const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
+            const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
 
-          return (
-            <DarkNavLink
-              to={item.to}
-              state={{ bucketName: item.bucketName }}
-              activeClassName="active-item"
-              className={isCurrent ? 'active-item' : 'non-active'}
-            >
-              {item.text}
-            </DarkNavLink>
-          )
-        })}
+            return (
+              <DarkNavLink
+                to={item.to}
+                state={{ bucketName: item.bucketName }}
+                activeClassName="active-item"
+                className={isCurrent ? 'active-item' : 'non-active'}
+              >
+                {item.text}
+              </DarkNavLink>
+            )
+          })}
+        </div>
 
         {/* <div>
           {externalLinkItems.map((item) => (
@@ -342,10 +346,16 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
 
       {/* Second level header */}
       <SecondLevelHeader>
-        <Container style={{ display: 'flex', maxWidth: '1440px' }}>
+        <Container
+          style={headerProps.wide ? { display: 'flex', maxWidth: '1440px' } : { display: 'flex' }}
+        >
           <SearchComponent hitsStatus={changeHitsStatus} location={location} />
           {showDocsBtn && (
-            <NonMobileMenu style={{ width: '100%', paddingRight: '200px' }}>
+            <NonMobileMenu
+              style={
+                headerProps.wide ? { width: '100%', paddingRight: '200px' } : { width: '100%' }
+              }
+            >
               <SecondLevelMenu />
             </NonMobileMenu>
           )}
