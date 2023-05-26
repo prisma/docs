@@ -129,6 +129,7 @@ const useIntersectionObserver = (
       const filteredVisible = visibleHeadings.filter(
         (e) => parseInt(e.target.tagName.charAt(1)) <= depth
       )
+
       if (visibleHeadings.length) {
         const visibleId = `#${visibleHeadings[0].target.id}`
         const firstH = allHeadings.filter((e: any, idx: number) =>
@@ -174,7 +175,6 @@ const TOC = ({ headings, tocDepth }: any) => {
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>ON THIS PAGE</ChapterTitle>
-      {activeId}
       <Headings headings={headings} activeId={activeId} depth={tocDepth} />
     </nav>
   )
