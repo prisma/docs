@@ -94,9 +94,22 @@ const getIds = (headings: TableOfContents[], tocDepth: number) => {
   }, [])
 }
 
-const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: number) => {
+const useIntersectionObserver = (
+  setActiveId: any,
+  idList: any[],
+  tocDepth: number,
+  headings: any
+) => {
   const headingElementsRef: any = React.useRef({})
   const depth = tocDepth ?? 2
+  const allHeadings = headings
+
+  const getKeyByValue: any = (obj: any, value: string) =>
+    Object.keys(obj).find((key) => obj[key] === value)
+  const deepExists: any = (obj: any, query: string) =>
+    Object.values(obj).some((v: any) =>
+      typeof v === 'object' ? deepExists(v, query) : v === query
+    )
   React.useEffect(() => {
     const callback = (headings: any) => {
       headingElementsRef.current = headings.reduce((map: any, headingElement: any) => {
@@ -113,17 +126,31 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
 
       const getIndexFromId = (id: any) => idList.findIndex((heading) => heading === id)
       // If there is only one visible heading, this is our "active" heading
-      visibleHeadings = visibleHeadings.filter((e) => parseInt(e.target.tagName.charAt(1)) <= depth)
-
-      if (visibleHeadings.length === 1) {
-        setActiveId(visibleHeadings[0].target.id)
-        // If there is more than one visible heading,
-        // choose the one that is closest to the top of the page
-      } else if (visibleHeadings.length > 1) {
-        // const sortedVisibleHeadings = visibleHeadings.sort(
-        //   (a, b): any => getIndexFromId(a.target.id) > getIndexFromId(b.target.id)
-        // )
-        setActiveId(visibleHeadings[0].target.id)
+      const filteredVisible = visibleHeadings.filter(
+        (e) => parseInt(e.target.tagName.charAt(1)) <= depth
+      )
+      if (visibleHeadings.length) {
+        const visibleId = `#${visibleHeadings[0].target.id}`
+        const firstH = allHeadings.filter((e: any, idx: number) =>
+          deepExists(e, visibleId) ? e : false
+        )
+        let secondH
+        if (!filteredVisible.length) {
+          if (
+            visibleHeadings.length &&
+            firstH.length &&
+            firstH[0].url !== visibleId &&
+            depth >= 2 &&
+            deepExists(allHeadings, visibleId)
+          ) {
+            secondH = firstH[0].items.filter((e: any, idx: number) =>
+              deepExists(e, visibleId) ? e : false
+            )
+            setActiveId(secondH[0].url.slice(1).replaceAll('inlinecode', ''))
+          }
+        } else {
+          setActiveId(filteredVisible[0].target.id)
+        }
       }
     }
 
@@ -143,10 +170,11 @@ const useIntersectionObserver = (setActiveId: any, idList: any[], tocDepth: numb
 const TOC = ({ headings, tocDepth }: any) => {
   const [activeId, setActiveId] = React.useState()
   const idList = getIds(headings, tocDepth || 2)
-  useIntersectionObserver(setActiveId, idList, tocDepth)
+  useIntersectionObserver(setActiveId, idList, tocDepth, headings)
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>ON THIS PAGE</ChapterTitle>
+      {activeId}
       <Headings headings={headings} activeId={activeId} depth={tocDepth} />
     </nav>
   )
