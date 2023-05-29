@@ -35,7 +35,8 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
 
 const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
   margin: 0 0 ${(p) => p.theme.space[16]};
-  ${(p) => (p.fullWidth ? 'max-width: 100%' : p.wide ? 'max-width: 988px' : 'max-width: 748px')};
+  ${(p) =>
+    p.fullWidth ? 'max-width: 100%;' : p.wide ? 'max-width: 988px; flex: 1;' : 'max-width: 748px;'}
   flex: 1;
   position: relative;
   z-index: 100;
@@ -52,7 +53,7 @@ const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
 
 const MaxWidth = styled.div<{ wide?: boolean }>`
   > section {
-    padding: 0 ${(p) => `${p.theme.space[40]}${p.wide ? ` 0 0` : ``}`};
+    padding: 0 ${(p) => `0 ${p.theme.space[40]}${p.wide ? ` 0 0` : ``}`};
     &.top-section {
       padding-top: 0;
     }
