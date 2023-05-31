@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { stringify } from '../utils/stringify'
 import styled from 'styled-components'
+
 import { TableOfContents } from '../interfaces/Article.interface'
+import { stringify } from '../utils/stringify'
 
 const ChapterTitle = styled.div`
   font-family: ${(p) => p.theme.fonts.text};
@@ -132,6 +133,9 @@ const useIntersectionObserver = (
 
       if (visibleHeadings.length) {
         const visibleId = `#${visibleHeadings[0].target.id}`
+        const visibleHeadingN = document
+          .getElementById(visibleHeadings[0].target.id)
+          ?.tagName.charAt(1)
         const firstH = allHeadings.filter((e: any, idx: number) =>
           deepExists(e, visibleId) ? e : false
         )
@@ -141,13 +145,24 @@ const useIntersectionObserver = (
             visibleHeadings.length &&
             firstH.length &&
             firstH[0].url !== visibleId &&
-            depth >= 2 &&
+            depth > 2 &&
             deepExists(allHeadings, visibleId)
           ) {
             secondH = firstH[0].items.filter((e: any, idx: number) =>
               deepExists(e, visibleId) ? e : false
             )
             setActiveId(secondH[0].url.slice(1).replaceAll('inlinecode', ''))
+          } else if (
+            visibleHeadings.length &&
+            firstH.length &&
+            firstH[0].url !== visibleId &&
+            depth === 2 &&
+            deepExists(allHeadings, visibleId) &&
+            parseInt(visibleHeadingN ? visibleHeadingN : '0') > depth + 1
+          ) {
+            setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
+          } else {
+            setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
           }
         } else {
           setActiveId(filteredVisible[0].target.id)
