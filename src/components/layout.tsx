@@ -1,16 +1,18 @@
-import React from 'react'
-import { RouterProps } from '@reach/router'
 import { MDXProvider } from '@mdx-js/react'
-import StickyBox from 'react-sticky-box'
-import shortcodes from './shortcodes'
-import styled, { ThemeProvider } from 'styled-components'
 import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
+import { RouterProps } from '@reach/router'
+import React from 'react'
+import StickyBox from 'react-sticky-box'
+import styled, { ThemeProvider } from 'styled-components'
+
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
-import Header from './header'
 import Footer from './footer'
-import '../styles/layout.css'
+import Header from './header'
+import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
+
+import '../styles/layout.css'
 
 interface LayoutContentProps {
   toc: any
@@ -151,7 +153,7 @@ export default function Layout({
                 </StickyBox>
               )}
               <Content fullWidth={homePage} wide={wide}>
-                <MaxWidth>{children}</MaxWidth>
+                <MaxWidth wide={wide}>{children}</MaxWidth>
               </Content>
               {!homePage && (
                 <TOCWrapper id="toc-holder">

@@ -1,19 +1,21 @@
-import Link from '../components/link'
+import { WebsiteHeader } from '@prisma/lens/dist/web'
+import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
+
+import Link from '../components/link'
 import Search from '../components/search'
 import Sidebar from '../components/sidebar'
-import { HeaderProps } from '../interfaces/Layout.interface'
-import DownChevron from '../icons/DownChevron'
-import UpChevron from '../icons/UpChevron'
-import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
-import { useLocation } from '@reach/router'
+import DownChevron from '../icons/DownChevron'
 import ExternalLink from '../icons/ExternalLink'
-import { WebsiteHeader } from '@prisma/lens/dist/web'
+import RightChevron from '../icons/RightChevron'
+import UpChevron from '../icons/UpChevron'
+import { HeaderProps } from '../interfaces/Layout.interface'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
+  wide?: boolean
 }
 
 const HeaderWrapper = styled.div`
@@ -269,8 +271,8 @@ const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
   )
 }
 
-const SecondLevelMobileMenu = ({ headerProps }: HeaderViewProps) => (
-  <SecondLevelNav>
+const SecondLevelMobileMenu = ({ headerProps, wide }: HeaderViewProps) => (
+  <SecondLevelNav wide={wide}>
     {headerProps.secondLevelHeaderMenuItems.map((item) => {
       return (
         <MenuItem
@@ -284,7 +286,7 @@ const SecondLevelMobileMenu = ({ headerProps }: HeaderViewProps) => (
   </SecondLevelNav>
 )
 
-const HeaderSec = ({ headerProps }: HeaderViewProps) => {
+const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const [showMobileNav, setShowMobileNav] = React.useState(false)
 
@@ -303,7 +305,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       (item) => item.type === 'external-link'
     )
     return (
-      <SecondLevelNav>
+      <SecondLevelNav wide={wide}>
         <div>
           {bucketItems.map((item) => {
             const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
@@ -370,7 +372,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
 
       {showMobileNav && (
         <SecondLevelMobileOnlyNav>
-          <SecondLevelMobileMenu headerProps={headerProps} />
+          <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
         </SecondLevelMobileOnlyNav>
       )}
     </>
