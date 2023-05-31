@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { stringify } from '../utils/stringify'
 import styled from 'styled-components'
+
 import { TableOfContents } from '../interfaces/Article.interface'
+import { stringify } from '../utils/stringify'
 
 const ChapterTitle = styled.div`
   font-family: ${(p) => p.theme.fonts.text};
@@ -142,12 +143,15 @@ const useIntersectionObserver = (
             firstH.length &&
             firstH[0].url !== visibleId &&
             depth >= 2 &&
-            deepExists(allHeadings, visibleId)
+            deepExists(allHeadings, visibleId) &&
+            !allHeadings.includes(firstH[0])
           ) {
             secondH = firstH[0].items.filter((e: any, idx: number) =>
               deepExists(e, visibleId) ? e : false
             )
             setActiveId(secondH[0].url.slice(1).replaceAll('inlinecode', ''))
+          } else {
+            setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
           }
         } else {
           setActiveId(filteredVisible[0].target.id)
