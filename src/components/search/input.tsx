@@ -1,13 +1,14 @@
 import * as React from 'react'
 import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
-import SearchPic from '../../icons/Search'
-import Clear from '../../icons/Clear'
+
 import useWindowDimensions from '../../hooks/useWindowDimensions'
+import Clear from '../../icons/Clear'
+import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
-  max-width: 272px;
+  max-width: 250px;
   width: 100%;
   display: flex;
 
