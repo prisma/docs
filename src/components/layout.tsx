@@ -38,7 +38,11 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
 const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
   margin: 0 0 ${(p) => p.theme.space[16]};
   ${(p) =>
-    p.fullWidth ? 'max-width: 100%;' : p.wide ? 'max-width: 988px; flex: 1;' : 'max-width: 748px;'}
+    p.fullWidth
+      ? 'max-width: 100%;'
+      : p.wide
+      ? 'min-width: 0; max-width: 988px; flex-shrink: 1;'
+      : 'max-width: 748px;'}
   flex: 1;
   position: relative;
   z-index: 100;
@@ -97,6 +101,7 @@ const Container = styled.div<{ fullWidth?: boolean; wide?: boolean }>`
 const TOCWrapper = styled.div<{ wide?: boolean }>`
   width: 180px;
   height: 100vh;
+  flex-shrink: 0;
   overflow-y: auto;
   position: sticky;
   top: 0;
