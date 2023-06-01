@@ -1,4 +1,4 @@
-import { Header } from '@prisma/lens/dist/web'
+import { WebsiteHeader } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
@@ -336,7 +336,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <Header lightTheme={false} clearBg={true} notFixed={true} />
+          <WebsiteHeader lightTheme={false} clearBg={true} notFixed={true} />
         </Container>
       </HeaderWrapper>
 
