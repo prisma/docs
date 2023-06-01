@@ -1,17 +1,16 @@
-import { WebsiteHeader } from '@prisma/lens/dist/web'
-import { useLocation } from '@reach/router'
+import Link from '../components/link'
 import * as React from 'react'
 import styled from 'styled-components'
-
-import Link from '../components/link'
 import Search from '../components/search'
 import Sidebar from '../components/sidebar'
-import useWindowDimensions from '../hooks/useWindowDimensions'
-import DownChevron from '../icons/DownChevron'
-import ExternalLink from '../icons/ExternalLink'
-import RightChevron from '../icons/RightChevron'
-import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
+import DownChevron from '../icons/DownChevron'
+import UpChevron from '../icons/UpChevron'
+import RightChevron from '../icons/RightChevron'
+import useWindowDimensions from '../hooks/useWindowDimensions'
+import { useLocation } from '@reach/router'
+import ExternalLink from '../icons/ExternalLink'
+import { WebsiteHeader } from '@prisma/lens/dist/web'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
