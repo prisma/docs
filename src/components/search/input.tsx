@@ -1,9 +1,10 @@
 import * as React from 'react'
 import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
-import SearchPic from '../../icons/Search'
-import Clear from '../../icons/Clear'
+
 import useWindowDimensions from '../../hooks/useWindowDimensions'
+import Clear from '../../icons/Clear'
+import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
@@ -20,7 +21,7 @@ const SearchBoxDiv = styled.div`
   &.opened {
     position: relative;
     z-index: 100001;
-    max-width: 1200px;
+    max-width: 1440px;
     width: 100%;
     height: 77px;
     background: ${(p) => p.theme.colors.white};
