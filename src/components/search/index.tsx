@@ -24,7 +24,7 @@ const HitsWrapper = styled.div`
   top: 97px;
 
   transform: translate(-50%, -0%);
-  max-width: 1200px;
+  max-width: 1440px;
   width: 100%;
   background: ${(p) => p.theme.colors.white};
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
