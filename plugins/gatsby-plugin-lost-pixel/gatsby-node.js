@@ -39,7 +39,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
   // Construct the pages json by iterating over the mdx files.
 
   const pages = data.allSitePage.edges
-    .filter((edge) => edge.node.path.includes('/concepts/') || edge.node.path.includes('/reference/'))
     .map((edge, i) => {
       // Skip explicitly excluded paths
       if (

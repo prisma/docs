@@ -5,7 +5,7 @@ var vercelSettings = require('../../vercel.json')
 const techStrings = [
   'node',
   'typescript',
-  'postgres',
+  'postgresql',
   'mysql',
   'sqlserver',
   'planetscale',

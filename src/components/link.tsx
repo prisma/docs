@@ -7,6 +7,7 @@ interface LinkProps {
   activeClassName?: string
   partiallyActive?: string
   getProps?: any
+  wide?: boolean
 }
 
 const Link = ({
