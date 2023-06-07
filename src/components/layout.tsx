@@ -45,7 +45,7 @@ const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
       : 'max-width: 748px;'}
   flex: 1;
   position: relative;
-  z-index: 1001;
+  z-index: 100;
   width: 100%;
   @media (min-width: 0px) and (max-width: 1024px) {
     margin: 0;
@@ -132,6 +132,12 @@ const BannerWrapper = styled.div<{ light: boolean }>`
   font-size: 18px;
 `
 
+const FooterWrapper = styled.div`
+  button {
+    z-index: 10;
+  }
+`
+
 export default function Layout({
   children,
   toc,
@@ -169,7 +175,9 @@ export default function Layout({
               )}
             </Container>
           </Wrapper>
-          <Footer footerProps={footer} />
+          <FooterWrapper>
+            <Footer footerProps={footer} />
+          </FooterWrapper>
         </MDXProvider>
       </LensProvider>
     </ThemeProvider>
