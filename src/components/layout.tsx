@@ -45,7 +45,7 @@ const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
       : 'max-width: 748px;'}
   flex: 1;
   position: relative;
-  z-index: 1001;
+  z-index: 100;
   width: 100%;
   @media (min-width: 0px) and (max-width: 1024px) {
     margin: 0;
