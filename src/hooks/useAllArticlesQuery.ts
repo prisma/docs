@@ -14,6 +14,7 @@ export const useAllArticlesQuery = () => {
               staticLink
               experimental
               preview
+              deprecated
               earlyaccess
               langSwitcher
               search

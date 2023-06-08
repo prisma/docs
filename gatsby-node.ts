@@ -203,6 +203,7 @@ exports.createSchemaCustomization = ({ actions }: any) => {
       duration: String
       experimental: Boolean
       preview: Boolean
+      deprecated: Boolean
       earlyaccess: Boolean
       toc: Boolean
       hidePage: Boolean

@@ -15,6 +15,7 @@ export interface ArticleFrontmatter {
   staticLink?: boolean
   duration?: string
   experimental?: boolean
+  deprecated?: boolean
   preview?: boolean
   earlyaccess?: boolean
   toc?: boolean

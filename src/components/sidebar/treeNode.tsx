@@ -151,6 +151,7 @@ const TreeNode = ({
   duration,
   experimental,
   preview,
+  deprecated,
   earlyaccess,
   lastLevel,
   hidePage,
@@ -260,6 +261,7 @@ const TreeNode = ({
           {duration && <span className="tag">{duration}</span>}
           {experimental && <span className="tag small">Experimental</span>}
           {preview && <span className="tag small">Preview</span>}
+          {deprecated && <span className="tag small">Deprecated</span>}
           {earlyaccess && <span className="tag small">Early Access</span>}
         </Link>
       )}
