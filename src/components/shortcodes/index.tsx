@@ -16,7 +16,6 @@ import Admonition from './admonition'
 import Quiz from './quiz'
 import Tip from './tip'
 import NavigationLinksContainer from './navigationLinksContainer'
-import Link from '../link'
 
 const shortcodes = {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -24,7 +23,7 @@ const shortcodes = {
   h3: ({ id, ...props }: any) => <h3 id={id.replace(/inlinecode/g, '')} {...props} />,
   h4: ({ id, ...props }: any) => <h4 id={id.replace(/inlinecode/g, '')} {...props} />,
   a: ({ href, ...props }: any) => (
-    <Link href={href ? href.replace(/inlinecode/g, '') : ''} {...props} />
+    <a href={href ? href.replace(/inlinecode/g, '') : ''} {...props} />
   ),
   p: (props: any) => <p className="paragraph" {...props} />,
   ul: (props: any) => <ul className="list" {...props} />,
