@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link as GatsbyLink } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
+import config from '../../config'
 
 interface LinkProps {
   href: string | null
@@ -45,7 +46,7 @@ const Link = ({
     </a>
   ) : (
     <GatsbyLink
-      to={href}
+      to={href.replace(config.gatsby.pathPrefix, '')}
       activeClassName={activeClassName}
       partiallyActive={partiallyActive}
       getProps={getProps}
