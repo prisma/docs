@@ -474,7 +474,7 @@ const Homepage = () => {
           <MoreLinksList>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
-                <Link href={uLink.url}>
+                <Link to={uLink.url}>
                   <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
                 </Link>
               </li>
