@@ -76,7 +76,7 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
       <ul className="list">
         {subs.map((sec: any, index: number) => (
           <li key={index}>
-            <Link to={sec.url}>
+            <Link href={sec.url}>
               <span className={`${sec.codeStyle ? 'inline-code' : ''}`}>{sec.title}</span>
             </Link>
             {dep > 1 && sec.items.length > 0 && list(sec.items, dep - 1)}
