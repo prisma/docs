@@ -25,7 +25,7 @@ const shortcodes = {
   h3: ({ id, ...props }: any) => <h3 id={id.replace(/inlinecode/g, '')} {...props} />,
   h4: ({ id, ...props }: any) => <h4 id={id.replace(/inlinecode/g, '')} {...props} />,
   a: ({ href, ...props }: any) => {
-    const to = href.toString()
+    const to = href ? href.toString() : ''
     return isAbsoluteUrl(to) ? (
       <Link to={to ? to.replace(/inlinecode/g, '') : ''} {...props} />
     ) : (
