@@ -182,7 +182,7 @@ const PageBottom = ({ editDocsPath }: any) => {
         </Content>
       </Wrapper>
       {editDocsPath && (
-        <Link className="edit-git" href={`${editDocsPath}`}>
+        <Link className="edit-git" to={`${editDocsPath}`}>
           Edit this page on GitHub
         </Link>
       )}
