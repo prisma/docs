@@ -17,7 +17,7 @@ const SearchBoxDiv = styled.div`
     width: 100%;
     position: relative;
   }
-
+  //search input width
   &.opened {
     position: relative;
     z-index: 100001;
