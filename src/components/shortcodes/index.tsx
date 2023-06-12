@@ -16,6 +16,7 @@ import Admonition from './admonition'
 import Quiz from './quiz'
 import Tip from './tip'
 import NavigationLinksContainer from './navigationLinksContainer'
+import isAbsoluteUrl from 'is-absolute-url'
 import Link from '../link'
 
 const shortcodes = {
@@ -23,9 +24,14 @@ const shortcodes = {
   h2: ({ id, ...props }: any) => <h2 id={id.replace(/inlinecode/g, '')} {...props} />,
   h3: ({ id, ...props }: any) => <h3 id={id.replace(/inlinecode/g, '')} {...props} />,
   h4: ({ id, ...props }: any) => <h4 id={id.replace(/inlinecode/g, '')} {...props} />,
-  a: ({ href, ...props }: any) => (
-    <Link href={href ? href.replace(/inlinecode/g, '') : ''} {...props} />
-  ),
+  a: ({ href, ...props }: any) => {
+    const to = href ? href.toString() : ''
+    return isAbsoluteUrl(to) ? (
+      <Link to={to ? to.replace(/inlinecode/g, '') : ''} {...props} />
+    ) : (
+      <a href={to ? to.replace(/inlinecode/g, '') : ''} {...props} />
+    )
+  },
   p: (props: any) => <p className="paragraph" {...props} />,
   ul: (props: any) => <ul className="list" {...props} />,
   ol: (props: any) => <ol className="o-list" {...props} />,
