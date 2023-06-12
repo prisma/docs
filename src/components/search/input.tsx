@@ -17,11 +17,11 @@ const SearchBoxDiv = styled.div`
     width: 100%;
     position: relative;
   }
-
+  //search input width
   &.opened {
     position: relative;
     z-index: 100001;
-    max-width: 1440px;
+    max-width: 1200px;
     width: 100%;
     height: 77px;
     background: ${(p) => p.theme.colors.white};
