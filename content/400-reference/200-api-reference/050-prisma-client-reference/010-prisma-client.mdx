@@ -1,0 +1,389 @@
+## <inlinecode>PrismaClient</inlinecode>
+
+This section describes the `PrismaClient` constructor and its parameters.
+
+### Remarks
+
+- Parameters are validated at runtime.
+
+### <inlinecode>datasources</inlinecode>
+
+Programmatically overrides properties of the `datasource` block in the `schema.prisma` file - for example, as part of an integration test. See also: [Data sources](/concepts/components/prisma-schema/data-sources) <span class="concept"></span>
+
+#### Properties
+
+| Example property | Example value                 | Description                                                                   |
+| ---------------- | ----------------------------- | ----------------------------------------------------------------------------- |
+| `db`             | `{ url: 'file:./dev_qa.db' }` | The database [connection URL](/reference/database-reference/connection-urls). |
+
+#### Remarks
+
+- You must re-generate Prisma Client each time you add or rename a data source. Datasource names are included in the generated client.
+- If you named your `datasource` block something else in the schema, replace `db` with the name of your `datasource` block.
+
+#### Examples
+
+##### Programmatically override a datasource `url`
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: 'file:./dev_qa.db',
+    },
+  },
+})
+```
+
+Based on the following `datasource` block:
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+```
+
+### <inlinecode>log</inlinecode>
+
+Determines the type and level of logging. See also: [Logging](/concepts/components/prisma-client/working-with-prismaclient/logging) <span class="concept"></span>
+
+#### Options
+
+| Option                   | Example                                                                  | Description |
+| ------------------------ | ------------------------------------------------------------------------ | ----------- |
+| Array of log levels      | `[ "info", "query" ]`                                                    |             |
+| Array of log definitions | `[ { level: "info", emit: "event" }, { level: "warn", emit: "stdout" }]` |             |
+
+##### Log levels
+
+| Name    | Example                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query` | Logs all queries run by Prisma. <br /><br /> For relational databases this logs all SQL queries. Example: <br />`prisma:query SELECT "public"."User"."id", "public"."User"."email" FROM "public"."User" WHERE ("public"."User"."id") IN (SELECT "t0"."id" FROM "public"."User" AS "t0" INNER JOIN "public"."Post" AS "j0" ON ("j0"."authorId") = ("t0"."id") WHERE ("j0"."views" > $1 AND "t0"."id" IS NOT NULL)) OFFSET $2` <br /> For MongoDB this logs queries using the [`mongosh` shell](https://docs.mongodb.com/mongodb-shell/#mongodb-binary-bin.mongosh) format. Example: <br /> `prisma:query db.User.deleteMany({ _id: ( $in: [ “6221ce49f756b0721fc00542”, ], }, })` |
+| `info`  | Example: <br />`prisma:info Started http server on http://127.0.0.1:58471`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `warn`  | Warnings.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `error` | Errors.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+
+##### Emit formats
+
+| Name     | Description                                                   |
+| -------- | ------------------------------------------------------------- |
+| `stdout` | See: [stdout](https://en.wikipedia.org/wiki/Standard_streams) |
+| `event`  | Raises an event that you can subscribe to.                    |
+
+#### Reference
+
+```ts file=index.d.ts
+log?: Array<LogLevel | LogDefinition>
+```
+
+```ts file=index.d.ts
+export type LogLevel = 'info' | 'query' | 'warn' | 'error'
+export type LogDefinition = {
+  level: LogLevel
+  emit: 'stdout' | 'event'
+}
+```
+
+##### Event types
+
+The `query` event type:
+
+```ts file=index.d.ts
+export type QueryEvent = {
+  timestamp: Date
+  query: string // Query sent to the database
+  params: string // Query parameters
+  duration: number // Time elapsed (in milliseconds) between client issuing query and database responding - not only time taken to run query
+  target: string
+}
+```
+
+Note that for MongoDB, the `params` and `duration` fields will be undefined.
+
+All other log level event types:
+
+```ts file=index.d.ts
+export type LogEvent = {
+  timestamp: Date
+  message: string
+  target: string
+}
+```
+
+#### Examples
+
+##### Log `query` and `info` to `stdout`
+
+<CodeWithResult>
+
+<cmd>
+
+```ts highlight=3;normal;
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({ log: ['query', 'info'] })
+
+async function main() {
+  const countUsers = await prisma.user.count({})
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+</cmd>
+
+<cmdResult>
+
+```code no-copy
+prisma:info  Starting a postgresql pool with 13 connections.
+prisma:info  Started http server
+prisma:query SELECT COUNT(*) FROM (SELECT "public"."User"."id" FROM "public"."User" WHERE 1=1 ORDER BY "public"."User"."coinflips" ASC OFFSET $1) AS "sub"
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+##### Log a `query` event to console
+
+<CodeWithResult>
+<cmd>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({
+  log: [{ level: 'query', emit: 'event' }],
+})
+
+prisma.$on('query', (e) => {
+  console.log(e)
+})
+
+async function main() {
+  const countUsers = await prisma.user.count({})
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+</cmd>
+
+<cmdResult>
+
+```js no-copy
+{
+  timestamp: 2020-11-17T10:32:10.898Z,
+  query: 'SELECT COUNT(*) FROM (SELECT "public"."User"."id" FROM "public"."User" WHERE 1=1 OFFSET $1) AS "sub"',
+  params: '[0]',
+  duration: 5,
+  target: 'quaint::connector::metrics'
+}
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+##### Log `info`, `warn`, and `error` events to console
+
+<CodeWithResult>
+<cmd>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({
+  log: [
+    { level: 'warn', emit: 'event' },
+    { level: 'info', emit: 'event' },
+    { level: 'error', emit: 'event' },
+  ],
+})
+
+prisma.$on('warn', (e) => {
+  console.log(e)
+})
+
+prisma.$on('info', (e) => {
+  console.log(e)
+})
+
+prisma.$on('error', (e) => {
+  console.log(e)
+})
+
+async function main() {
+  const countUsers = await prisma.user.count({})
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+</cmd>
+<cmdResult>
+
+```js no-copy
+{
+  timestamp: 2020-11-17T10:33:24.592Z,
+  message: 'Starting a postgresql pool with 13 connections.',
+  target: 'quaint::pooled'
+}
+{
+  timestamp: 2020-11-17T10:33:24.637Z,
+  message: 'Started http server',
+  target: 'query_engine::server'
+}
+```
+
+</cmdResult>
+</CodeWithResult>
+
+### <inlinecode>errorFormat</inlinecode>
+
+Determines the level and formatting of errors returned by Prisma.
+
+#### Error formats
+
+| Name                  | Description                                    |
+| --------------------- | ---------------------------------------------- |
+| `undefined`           | If it's not defined, the default is colorless. |
+| `pretty`              | Enables pretty error formatting.               |
+| `colorless` (default) | Enables colorless error formatting.            |
+| `minimal`             | Enables minimal error formatting.              |
+
+#### Reference
+
+```ts file=index.d.ts
+errorFormat?: ErrorFormat
+```
+
+```ts file=index.d.ts
+export type ErrorFormat = 'pretty' | 'colorless' | 'minimal'
+```
+
+#### Examples
+
+##### No error formatting
+
+```ts
+const prisma = new PrismaClient({
+  // Defaults to colorless
+})
+```
+
+##### `pretty` error formatting
+
+```ts
+const prisma = new PrismaClient({
+  errorFormat: 'pretty',
+})
+```
+
+##### `colorless` error formatting
+
+```ts
+const prisma = new PrismaClient({
+  errorFormat: 'colorless',
+})
+```
+
+##### `minimal` error formatting
+
+```ts
+const prisma = new PrismaClient({
+  errorFormat: 'minimal',
+})
+```
+
+### <inlinecode>rejectOnNotFound</inlinecode>
+
+<Admonition type="info">
+
+**Deprecated:** `rejectOnNotFound` is deprecated in v4.0.0. From v4.0.0, use the queries [`findUniqueOrThrow`](#finduniqueorthrow) or [`findFirstOrThrow`](#findfirstorthrow).
+
+</Admonition>
+
+Use the `rejectOnNotFound` parameter to configure `findUnique` and/or `findFirst` to throw an error if the record was not found. By default, both operations return `null` if the record is not found.
+
+### Remarks
+
+- You can configure `rejectOnNotFound` on a per-request level for both [`findUnique`](#findunique) and [`findFirst`](#findfirst)
+
+#### Options
+
+| Option               | Description                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `RejectOnNotFound`   | Enable globally (`true` / `false`) _or_ throw a custom error.                               |
+| `RejectPerOperation` | Enable per operation (`true` / `false`) _or_ throw a custom error per operation, per model. |
+
+#### Reference
+
+```ts file=index.d.ts
+rejectOnNotFound?: RejectOnNotFound | RejectPerOperation
+```
+
+#### Examples
+
+##### Enable globally for `findUnique` and `findFirst`
+
+```ts
+const prisma = new PrismaClient({
+  rejectOnNotFound: true,
+})
+```
+
+##### Enable globally for a specific operation
+
+```ts
+const prisma = new PrismaClient({
+  rejectOnNotFound: {
+    findUnique: true,
+  },
+})
+```
+
+##### Throw a custom error per model and operation if record is not found
+
+```ts
+const prisma = new PrismaClient({
+  rejectOnNotFound: {
+    findFirst: {
+      User: (err) => new Error('User error'),
+      Post: (err) => new Error('Post error!'),
+    },
+    findUnique: {
+      User: (err) => new Error('User error'),
+      Post: (err) => new Error('Post error!'),
+    },
+  },
+})
+```
+

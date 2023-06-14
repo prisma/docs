@@ -1,0 +1,107 @@
+## Compare columns in the same table
+
+From version 4.3.0, you can compare columns in the same table directly, for non-unique filters.
+
+<Admonition type="info">
+
+In the following situations, you must [use raw queries to compare columns in the same table](/guides/other/troubleshooting-orm/help-articles/comparing-columns-through-raw-queries):
+
+- If you use a version earlier than 4.3.0
+- If you want to use a unique filter, such as [`findUnique`](#findunique) or [`findUniqueOrThrow`](#finduniqueorthrow)
+- If you want to compare a field with a [unique constraint](/concepts/components/prisma-schema/data-model#defining-a-unique-field)
+- If you want to use one of the following operators to compare a [JSON field](/concepts/components/prisma-client/working-with-fields/working-with-json-fields) in MySQL or MariaDB with another field: [`gt`](#gt), [`gte`](#gte), [`lt`](#lt), or [`lte`](#lte). Note that you can use these operators to compare the JSON field with a scalar value. This limitation applies only if you try to compare a JSON field with another field.
+
+</Admonition>
+
+To enable column comparisons in the same table, add the `fieldReference` feature flag to the `generator` block of your Prisma Schema as follows:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fieldReference"]
+}
+```
+
+To compare columns the same table, use the `<model>.fields` property. In the following example, the query returns all records where the value in the `prisma.product.quantity` field is less than or equal to the value in the `prisma.product.warnQuantity` field.
+
+```ts
+prisma.product.findMany({
+  where: { quantity: { lte: prisma.product.fields.warnQuantity } },
+})
+```
+
+<Admonition type="info">
+
+`fields` is a special property of every model. It contains the list of fields for that model.
+
+</Admonition>
+
+### Considerations
+
+#### Fields must be of the same type
+
+You can only make comparisons on fields of the same type. For example, the following causes an error:
+
+```ts
+await prisma.order.findMany({
+  where: {
+    id: { equals: prisma.order.fields.due },
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Type error: id is a string, while amountDue is an integer
+  },
+})
+```
+
+#### Fields must be in the same model
+
+You can only make comparisons with the `fields` property on fields in the same model. The following example does not work:
+
+```ts
+await prisma.order.findMany({
+  where: {
+    id: { equals: prisma.user.fields.name },
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Type error: name is a field on the User model, not Order
+  },
+})
+```
+
+However, you can compare fields in separate models with [standard queries](#model-queries).
+
+#### In <inlinecode>groupBy</inlinecode> model queries, put your referenced fields in the <inlinecode>by</inlinecode> argument
+
+If you use the [groupBy](#groupby) model query with the `having` option, then you must put your referenced fields in the `by` argument.
+
+The following example works:
+
+```ts
+prisma.user.groupBy({
+  by: ['id', 'name'],
+  having: { id: { equals: prisma.user.fields.name } },
+})
+```
+
+The following example does not work, because `name` is not in the `by` argument:
+
+```ts
+prisma.user.groupBy({
+  by: ['id'],
+  having: { id: { equals: prisma.user.fields.name } },
+  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  // name is not in the 'by' argument
+})
+```
+
+#### Search for fields in scalar lists
+
+If your data source supports scalar lists (for example in PostgreSQL), then you can search for all records where a specific field is in a list of fields. To do so, reference the scalar list with the [`in`](#in) and [`notIn`](#notin) filters. For example:
+
+```ts
+await prisma.user.findMany({
+  where: {
+    // find all users where 'name' is in a list of tags
+    name: { in: prisma.user.fields.tags },
+  },
+})
+```
+
