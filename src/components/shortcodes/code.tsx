@@ -287,6 +287,9 @@ const Pre = styled.pre`
       white-space: break-spaces;
       .token-line {
         display: inline-flex;
+        > span:last-child {
+          align-self: center;
+        }
       }
     }
   }
