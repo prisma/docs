@@ -1,13 +1,16 @@
-import * as React from 'react'
-import Highlight, { defaultProps } from 'prism-react-renderer'
 import rangeParser from 'parse-numeric-range'
+import Highlight, { defaultProps } from 'prism-react-renderer'
 import theme from 'prism-react-renderer/themes/github'
-import CopyButton from './copy'
+import * as React from 'react'
+import styled from 'styled-components'
+
 import Copy from '../../icons/Copy'
 import { stringify } from '../../utils/stringify'
-import styled from 'styled-components'
-import './prism/index.css'
+import CopyButton from './copy'
 import FileWithIcon from './fileWithIcon'
+
+import './prism/index.css'
+
 require('./prism/prism-prisma')
 
 interface CodeProps {
@@ -280,6 +283,12 @@ const Pre = styled.pre`
   overflow-x: visible;
   &.wrap-content {
     overflow-x: auto;
+    code {
+      white-space: break-spaces;
+      .token-line > span {
+        display: inline-block;
+      }
+    }
   }
   &:not(.wrap-content) {
     &::-webkit-scrollbar {
