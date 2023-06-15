@@ -7,47 +7,63 @@ tocDepth: 4
 
 <TopBlock>
 
-You can share your [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) with other users, either as packages or as code snippets, and import extensions that other users create into your Prisma projects.
+You can share your [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) with other users, either as packages or as modules, and import extensions that other users create into your project.
+
+If you would like to build a shareable extension, we also recommend using the [`prisma-client-extension-starter`](https://github.com/prisma/TODO) template.
 
 </TopBlock>
 
 ## Share Prisma Client extensions
 
-When you want to create extensions that will work for other users, and not just for your specific schema, use the `$all` prefix, such as [`$allModels`](/concepts/components/prisma-client/client-extensions/model#add-a-custom-method-to-all-models-in-your-schema). Extensions that use `$all` apply generally, not just to a named component of a specific schema.
+When you want to create extensions other users can use, and not tailored just for your schema, Prisma provides utilities to allow you to create shareable extensions.
+
+### Define an extension
+
+Use the `Prisma.defineExtension` method to make your extension shareable. You can use it to package the extension to either separate your extensions in multiple files or share it with other users as an npm package.
+
+The benefit of `Prisma.defineExtension` is that it provides strict type checks and auto completion when you define or use an extension.
+
+To define an extension, you can use the following code snippets:
+
+```ts
+import { Prisma } from '@prisma/client/extension'
+
+export default Prisma.defineExtension({
+  name: 'prisma-extension-<extension-name>',
+})
+```
+
+For versions earlier than 4.16.0, the `Prisma` import is available from a different path shown in the snippet below:
+
+```ts
+import { Prisma } from '@prisma/client/scripts/default-index'
+
+export default Prisma.defineExtension({
+  name: 'prisma-extension-<extension-name>',
+})
+```
+
+### Create a generic extension method
+
+To define an extension method that would work for other users, Prisma provides methods that begin with the `$all` prefix such as [`$allModels`](/concepts/components/prisma-client/client-extensions/model#add-a-custom-method-to-all-models-in-your-schema) and `$allOperations`.
+
+Extensions that use the `$all` method prefix apply generally and not to a named component of a specific schema.
 
 You do not need to use the `$all` prefix with the [`client`](/concepts/components/prisma-client/client-extensions/client) component, because the `client` component always applies generally.
 
 For example, a generic extension might take the following form:
 
 ```ts
-const xprisma = prisma.$extends({
-  model: {
-    $allModels: {
-      // new method
-      findOrCreate(...) { } // code for the new method goes inside the brackets
-    }
-  }
-})
-```
-
-### Package an extension
-
-Use `Prisma.defineExtension` to make your extensions shareable. You can use it to package a feature that you want to share with other users. When someone wants to use your extension in their project, they can apply the extension to a Prisma Client instance with `prisma.$extends`.
-
-You can also use `Prisma.defineExtension` to move an extension to another file in your project. When you do this, you benefit from auto-completion and type checks.
-
-To package an extension, you might use the following code:
-
-```ts
-import { Prisma } from '@prisma/client'
-
 export default Prisma.defineExtension({
+  name: 'prisma-extension-find-or-create',
   model: {
     $allModels: {
       // new method
-      findOrCreate(...) { } // code for the new method goes inside the brackets
-    }
-  }
+      findOrCreate(/** args */) {
+        /**  code for the new method */
+      },
+    },
+  },
 })
 ```
 
@@ -67,7 +83,9 @@ You can refer to this client instance as follows:
 ```ts
 Prisma.defineExtension((client) => {
   // The Prisma Client instance that the extension user applies the extension to
-  return client.$extends({})
+  return client.$extends({
+    name: 'prisma-extension-<extension-name>',
+  })
 })
 ```
 
@@ -76,6 +94,7 @@ For example:
 ```ts
 export default Prisma.defineExtension((client) => {
   return client.$extends({
+    name: 'prisma-extension-find-or-create',
     query: {
       $allModels: {
         async findOrCreate({ args, query, operation }) {
