@@ -6,6 +6,7 @@ const HTML = (props: any) => {
     <html {...props.htmlAttributes}>
       <head>
         <meta charSet="utf-8" />
+
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
         <script
           src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
@@ -16,6 +17,7 @@ const HTML = (props: any) => {
         ></script>
         <script type="text/javascript">function OptanonWrapper() {}</script>
         {/* OneTrust Cookies Consent Notice end for prisma.io */}
+
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
         {props.headComponents}
       </head>
