@@ -286,7 +286,7 @@ const Pre = styled.pre`
     code {
       white-space: break-spaces;
       .token-line > span {
-        display: inline-block;
+        display: inline-grid;
       }
     }
   }
