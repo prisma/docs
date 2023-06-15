@@ -180,33 +180,3 @@ $ mdtool remove 2
 #### Thanks Luca
 
 ![](https://res.cloudinary.com/prismaio/image/upload/v1628765536/docs/LJ0FGHk_u2jjxv.png)
-
-## Contributors ✨
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tr>
-    <td align="center"><a href="https://janpiotrowski.de"><img src="https://avatars.githubusercontent.com/u/183673?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jan Piotrowski</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=janpio" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://norman.life"><img src="https://avatars.githubusercontent.com/u/1992255?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Norman</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=2color" title="Documentation">📖</a> <a href="#example-2color" title="Examples">💡</a></td>
-    <td align="center"><a href="https://gerome.dev"><img src="https://avatars.githubusercontent.com/u/32737308?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gérôme Grignon</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=geromegrignon" title="Documentation">📖</a> <a href="#example-geromegrignon" title="Examples">💡</a></td>
-    <td align="center"><a href="https://github.com/amcjen"><img src="https://avatars.githubusercontent.com/u/175249?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Allison Clift-Jennings</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=amcjen" title="Documentation">📖</a> <a href="#example-amcjen" title="Examples">💡</a></td>
-    <td align="center"><a href="http://tomhsiao1260.github.io"><img src="https://avatars.githubusercontent.com/u/31985811?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Yao Hsiao</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=TomHsiao1260" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://www.linkedin.com/in/danielweinmann"><img src="https://avatars.githubusercontent.com/u/204765?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Weinmann</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=danielweinmann" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://github.com/rowinbot"><img src="https://avatars.githubusercontent.com/u/18468260?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rowin Hernández</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=rowinbot" title="Documentation">📖</a></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="http://shishi.hatenablog.jp/"><img src="https://avatars.githubusercontent.com/u/341746?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Shigenobu Nishikawa</b></sub></a><br /><a href="#example-shishi" title="Examples">💡</a></td>
-    <td align="center"><a href="http://linkedin.com/in/austin-baldwin/"><img src="https://avatars.githubusercontent.com/u/11078749?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Austin Baldwin</b></sub></a><br /><a href="https://github.com/prisma/docs/commits?author=baldyeagle" title="Documentation">📖</a></td>
-  </tr>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
