@@ -285,8 +285,8 @@ const Pre = styled.pre`
     overflow-x: auto;
     code {
       white-space: break-spaces;
-      .token-line > span {
-        display: inline-grid;
+      .token-line {
+        display: inline-flex;
       }
     }
   }
