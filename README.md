@@ -13,7 +13,7 @@ This repository contains the [source code](./src) and the [content](./content) f
 
 ## Contributing to the docs
 
-Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
+New contributors are welcome! Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
 
 ## Prerequisites for Apple M1 chip (macOS BigSur and later)
 
