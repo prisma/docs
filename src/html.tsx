@@ -7,7 +7,6 @@ const HTML = (props: any) => {
       <head>
         <meta charSet="utf-8" />
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
-
         <script
           src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
           data-document-language="true"
