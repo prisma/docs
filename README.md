@@ -1,14 +1,5 @@
 # Prisma Documentation
 
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
-[badge-all-contributors]: https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square
-
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-<!-- separate setup of badge as reusable component via https://github.com/all-contributors/all-contributors/issues/361#issuecomment-637166066 -->
-
-[![All Contributors][badge-all-contributors]](#contributors-) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Vercel](https://vercelbadge.vercel.app/api/prisma/docs)](https://vercel.com/prisma/docs/deployments)
-
 This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs).
 
 ## Contributing to the docs
