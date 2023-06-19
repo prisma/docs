@@ -227,6 +227,7 @@ const Feedback = styled.div`
     font-weight: bold;
     letter-spacing: 0.01em;
     text-transform: uppercase;
+    margin: revert;
     color: ${(p) => p.theme.colors.gray[500]} !important;
   }
   .sentiments {
