@@ -12,6 +12,14 @@ const siteConfig = {
       from: '/foo',
       to: '/bar',
     },
+    {
+      from: '/guides/deployment/deployment#aws-rds-proxy',
+      to: '/guides/deployment/deployment-guides/caveats-when-deploying-to-aws-platforms#aws-rds-proxy',
+    },
+    {
+      from: '/concepts/components/prisma-client/working-with-prismaclient/connection-management#connection-pool',
+      to: '/concepts/components/prisma-client/working-with-prismaclient/connection-pool',
+    },
   ],
   header: {
     secondLevelHeaderMenuItems: [
