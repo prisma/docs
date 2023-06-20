@@ -19,7 +19,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const {
     mdx: {
       fields: { slug, modSlug },
-      frontmatter: { title, langSwitcher, dbSwitcher, toc, tocDepth, codeStyle },
+      frontmatter: { title, langSwitcher, dbSwitcher, toc, tocDepth, codeStyle, wide },
       body,
       parent,
       tableOfContents,
@@ -33,6 +33,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
       {...props}
       toc={toc || toc == null ? tableOfContents : []}
       tocDepth={tocDepth}
+      wide={wide}
       slug={slug}
     >
       <section className="top-section">
@@ -83,6 +84,7 @@ export const query = graphql`
         metaDescription
         langSwitcher
         search
+        wide
         dbSwitcher
         toc
         tocDepth

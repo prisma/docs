@@ -1,5 +1,8 @@
 import type { GatsbyConfig } from 'gatsby'
 import docsConfig from './config'
+require('dotenv').config({
+  path: `.env`,
+})
 
 let plugins: any = [
   'gatsby-plugin-image',
@@ -46,10 +49,10 @@ let plugins: any = [
           options: {
             // Do not surface links to these pages as broken:
             exceptions: [
-              '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgres',
-              '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgres',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
+              '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql',
+              '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
               '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
@@ -128,7 +131,6 @@ let plugins: any = [
 
 if (process.env.INDEX_ALGOLIA === 'true') {
   if (process.env.GATSBY_ALGOLIA_APP_ID) {
-    
     // only set this up when we actually need it
     const algoliaPlugin = {
       resolve: 'gatsby-algolia-indexer',
@@ -141,10 +143,12 @@ if (process.env.INDEX_ALGOLIA === 'true') {
       },
       __key: 'search',
     }
-    
+
     plugins.push(algoliaPlugin)
 
-    console.log('INDEX_ALGOLIA is `true`, and GATSBY_ALGOLIA_APP_ID is set, so pushing algoliaPlugin to list of plugins to trigger search indexing.')
+    console.log(
+      'INDEX_ALGOLIA is `true`, and GATSBY_ALGOLIA_APP_ID is set, so pushing algoliaPlugin to list of plugins to trigger search indexing.'
+    )
   } else {
     console.warn('INDEX_ALGOLIA === true, but GATSBY_ALGOLIA_APP_ID is undefined.')
   }
