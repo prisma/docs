@@ -1,16 +1,18 @@
-import React from 'react'
-import { RouterProps } from '@reach/router'
 import { MDXProvider } from '@mdx-js/react'
+import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
+import { RouterProps } from '@reach/router'
+import React from 'react'
 import StickyBox from 'react-sticky-box'
-import shortcodes from './shortcodes'
 import styled, { ThemeProvider } from 'styled-components'
-import { LensProvider, defaultTheme as theme, WebsiteBanner } from '@prisma/lens/dist/web'
+
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
-import Header from './header'
 import Footer from './footer'
-import '../styles/layout.css'
+import Header from './header'
+import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
+
+import '../styles/layout.css'
 
 interface LayoutContentProps {
   toc: any
@@ -18,6 +20,7 @@ interface LayoutContentProps {
   slug?: string
   homePage?: boolean
   children: React.ReactNode
+  wide?: boolean
 }
 
 type LayoutProps = RouterProps & LayoutContentProps
@@ -32,9 +35,15 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
   }
 `
 
-const Content = styled.article<{ fullWidth?: boolean }>`
+const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
   margin: 0 0 ${(p) => p.theme.space[16]};
-  ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 748px')};
+  ${(p) =>
+    p.fullWidth
+      ? 'max-width: 100%;'
+      : p.wide
+      ? 'min-width: 0; max-width: 988px; flex-shrink: 1;'
+      : 'max-width: 748px;'}
+  flex: 1;
   position: relative;
   z-index: 100;
   width: 100%;
@@ -48,9 +57,9 @@ const Content = styled.article<{ fullWidth?: boolean }>`
   }
 `
 
-const MaxWidth = styled.div`
+const MaxWidth = styled.div<{ wide?: boolean }>`
   > section {
-    padding: 0 ${(p) => p.theme.space[40]};
+    padding: 0 ${(p) => `${p.theme.space[40]}${p.wide ? ` 0 0` : ``}`};
     &.top-section {
       padding-top: 0;
     }
@@ -77,8 +86,8 @@ const NotMobile = styled.section`
   }
 `
 
-const Container = styled.div<{ fullWidth?: boolean }>`
-  ${(p) => (p.fullWidth ? 'max-width: 100%;' : 'max-width: 1200px')};
+const Container = styled.div<{ fullWidth?: boolean; wide?: boolean }>`
+  ${(p) => (p.fullWidth ? 'max-width: 100%;' : p.wide ? 'max-width: 1440px' : 'max-width: 1200px')};
   width: 100%;
   justify-content: center;
   display: flex;
@@ -89,12 +98,14 @@ const Container = styled.div<{ fullWidth?: boolean }>`
   }
 `
 
-const TOCWrapper = styled.div`
+const TOCWrapper = styled.div<{ wide?: boolean }>`
   width: 180px;
   height: 100vh;
+  flex-shrink: 0;
   overflow-y: auto;
   position: sticky;
   top: 0;
+  ${(p) => p.wide && `margin-right: -100px;`}
 
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
@@ -121,26 +132,30 @@ const BannerWrapper = styled.div<{ light: boolean }>`
   font-size: 18px;
 `
 
-export default function Layout({ children, toc, tocDepth, location, slug, homePage }: LayoutProps) {
+const FooterWrapper = styled.div`
+  button {
+    z-index: 10;
+  }
+`
+
+export default function Layout({
+  children,
+  toc,
+  tocDepth,
+  location,
+  slug,
+  homePage,
+  wide,
+}: LayoutProps) {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
   return (
     <ThemeProvider theme={theme}>
       <LensProvider>
         <MDXProvider components={shortcodes}>
-          <BannerWrapper light={true}>
-            <WebsiteBanner
-              text={
-                <a href="/data-platform/accelerate" className="banner-url">
-                  Up to 1000x faster database queries with <b>Accelerate</b> {`->`}{' '}
-                  <u>Sign up for Early Access</u>
-                </a>
-              }
-            />
-          </BannerWrapper>
-          <Header headerProps={header} />
+          <Header headerProps={header} wide={wide} />
           <Wrapper fullWidth={homePage}>
-            <Container fullWidth={homePage}>
+            <Container fullWidth={homePage} wide={wide}>
               {!homePage && (
                 <StickyBox offsetTop={20} offsetBottom={20}>
                   <NotMobile id="sidebar-holder">
@@ -148,8 +163,8 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
                   </NotMobile>
                 </StickyBox>
               )}
-              <Content fullWidth={homePage}>
-                <MaxWidth>{children}</MaxWidth>
+              <Content fullWidth={homePage} wide={wide}>
+                <MaxWidth wide={wide}>{children}</MaxWidth>
               </Content>
               {!homePage && (
                 <TOCWrapper id="toc-holder">
@@ -160,7 +175,9 @@ export default function Layout({ children, toc, tocDepth, location, slug, homePa
               )}
             </Container>
           </Wrapper>
-          <Footer footerProps={footer} />
+          <FooterWrapper>
+            <Footer footerProps={footer} />
+          </FooterWrapper>
         </MDXProvider>
       </LensProvider>
     </ThemeProvider>

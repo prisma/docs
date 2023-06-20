@@ -1,20 +1,23 @@
 import * as React from 'react'
 import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
-import SearchPic from '../../icons/Search'
-import Clear from '../../icons/Clear'
+
 import useWindowDimensions from '../../hooks/useWindowDimensions'
+import Clear from '../../icons/Clear'
+import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
-  width: 250px;
+  max-width: 250px;
+  width: 100%;
   display: flex;
 
   form {
-    width: 250px;
+    max-width: 250px;
+    width: 100%;
     position: relative;
   }
-
+  //search input width
   &.opened {
     position: relative;
     z-index: 100001;
@@ -27,7 +30,7 @@ const SearchBoxDiv = styled.div`
     border-radius: ${(p) => p.theme.radii.small};
 
     form {
-      width: 100%;
+      max-width: 100%;
       input {
         color: ${(p) => p.theme.colors.gray[700]};
       }
