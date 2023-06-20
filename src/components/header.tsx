@@ -262,7 +262,7 @@ const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
       {showExpanded && componentToShow}
     </>
   ) : (
-    <DarkNavLink href={link}>
+    <DarkNavLink to={link}>
       <div className="menu-item">
         {text}
         <ExternalLink />
@@ -314,7 +314,7 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
 
             return (
               <DarkNavLink
-                href={item.to}
+                to={item.to}
                 state={{ bucketName: item.bucketName }}
                 activeClassName="active-item"
                 className={isCurrent ? 'active-item' : 'non-active'}
@@ -327,7 +327,7 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
 
         {/* <div>
           {externalLinkItems.map((item) => (
-            <DarkNavLink className="link" href={item.to}>
+            <DarkNavLink className="link" to={item.to}>
               {item.text} &nbsp;&nbsp;
               <ExternalLink />
             </DarkNavLink>

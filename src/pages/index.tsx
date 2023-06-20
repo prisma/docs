@@ -377,10 +377,10 @@ const Homepage = () => {
         <h1>Prisma Documentation</h1>
         <NormalPara>
           Choose one of our{' '}
-          <Link href={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore
-          the <Link href={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join
-          our thriving community on <Link href={SummaryLinkData.slack}>Slack</Link> and{' '}
-          <Link href={SummaryLinkData.git}>GitHub</Link> for help and ideas.
+          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore the{' '}
+          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join our
+          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
+          <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
         </NormalPara>
         <SummaryLinks>
           {SummaryLinkData.buttons.map((slink: any, index: number) =>
@@ -412,7 +412,7 @@ const Homepage = () => {
               <List>
                 {generalLink.links.map((link: any) => (
                   <li key={index}>
-                    <Link href={link.url}>
+                    <Link to={link.url}>
                       <span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span>
                     </Link>
                   </li>
@@ -427,7 +427,7 @@ const Homepage = () => {
         <GuideLinkRow>
           {GuideLinkData.map((gLinkData: any, index: number) => (
             <LinkCard
-              href={gLinkData.url}
+              to={gLinkData.url}
               key={index}
               maxWidth={gLinkData.small ? '274px' : '384px'}
               style={{
@@ -451,7 +451,7 @@ const Homepage = () => {
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
               <ListTitle>
-                <Link href={rLinkData.mainUrl}>
+                <Link to={rLinkData.mainUrl}>
                   {rLinkData.categoryName} &nbsp;
                   <ArrowRight color="#A0AEC0" />{' '}
                 </Link>
@@ -459,7 +459,7 @@ const Homepage = () => {
               <List>
                 {rLinkData.links.map((link: any, index: number) => (
                   <li key={index}>
-                    <Link href={link.url}>
+                    <Link to={link.url}>
                       <span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span>
                     </Link>
                   </li>
@@ -474,7 +474,7 @@ const Homepage = () => {
           <MoreLinksList>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
-                <Link href={uLink.url}>
+                <Link to={uLink.url}>
                   <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
                 </Link>
               </li>

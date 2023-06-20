@@ -1,10 +1,9 @@
-import React from 'react'
 import { Link as GatsbyLink } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
-import config from '../../config'
+import React from 'react'
 
 interface LinkProps {
-  href: string | null
+  to: string | null
   activeClassName?: string
   partiallyActive?: string
   getProps?: any
@@ -12,22 +11,22 @@ interface LinkProps {
 }
 
 const Link = ({
-  href,
+  to,
   activeClassName,
   partiallyActive,
   getProps,
   ...props
-}: LinkProps & React.ReactNode) =>
-  !href || isAbsoluteUrl(href) ? (
+}: LinkProps & React.ReactNode) => {
+  return !to || isAbsoluteUrl(to) ? (
     <a
-      href={href}
+      href={to}
       {...props}
-      target={!href?.includes('prisma.io') ? '_blank' : '_self'}
-      rel={!href?.includes('prisma.io') ? 'noopener' : ''}
+      target={!to?.includes('prisma.io') ? '_blank' : '_self'}
+      rel={!to?.includes('prisma.io') ? 'noopener' : ''}
       style={{ display: 'inline-block' }}
     >
       {props.children}
-      {href && isAbsoluteUrl(href) && !href.includes('prisma.io') && (
+      {to && isAbsoluteUrl(to) && !to.includes('prisma.io') && (
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="12"
@@ -46,12 +45,13 @@ const Link = ({
     </a>
   ) : (
     <GatsbyLink
-      to={href.replace(config.gatsby.pathPrefix, '')}
+      to={to}
       activeClassName={activeClassName}
       partiallyActive={partiallyActive}
       getProps={getProps}
       {...props}
     />
   )
+}
 
 export default Link

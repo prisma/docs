@@ -149,7 +149,6 @@ const TreeNode = ({
   topLevel,
   staticLink,
   duration,
-  experimental,
   preview,
   earlyaccess,
   lastLevel,
@@ -238,7 +237,7 @@ const TreeNode = ({
     <ListItem className={calculatedClassName}>
       {title && label !== 'index' && !hidePage && (
         <Link
-          href={staticLink || topLevel ? null : url}
+          to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'non-active'}
           id={withPrefix(url)}
@@ -258,7 +257,6 @@ const TreeNode = ({
             </span>
           )}
           {duration && <span className="tag">{duration}</span>}
-          {experimental && <span className="tag small">Experimental</span>}
           {preview && <span className="tag small">Preview</span>}
           {earlyaccess && <span className="tag small">Early Access</span>}
         </Link>
