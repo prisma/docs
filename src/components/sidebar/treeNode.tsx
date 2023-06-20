@@ -71,10 +71,12 @@ const ListItem = styled.li`
       .down.open {
         display: block;
         opacity: 1;
+        position: absolute;
+        margin-top: -4px;
       }
 
       .down.open {
-        margin-top: 2px;
+        margin-top: -2px;
       }
 
       &:hover,
@@ -147,7 +149,6 @@ const TreeNode = ({
   topLevel,
   staticLink,
   duration,
-  experimental,
   preview,
   earlyaccess,
   lastLevel,
@@ -256,7 +257,6 @@ const TreeNode = ({
             </span>
           )}
           {duration && <span className="tag">{duration}</span>}
-          {experimental && <span className="tag small">Experimental</span>}
           {preview && <span className="tag small">Preview</span>}
           {earlyaccess && <span className="tag small">Early Access</span>}
         </Link>

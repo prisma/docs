@@ -11,6 +11,12 @@ const excludedPaths = [
   '/getting-started/setup-prisma/start-from-scratch-sql ',
   '/getting-started/setup-prisma/start-from-scratch-prisma-migrate',
 ]
+
+const errorPages = [
+  '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-mysql',
+  '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-mysql',
+]
+
 const longPages = [
   '/reference/api-reference/prisma-client-reference',
   '/reference/api-reference/prisma-schema-reference',
@@ -38,13 +44,18 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
   const pages = data.allSitePage.edges
     .map((edge, i) => {
       // Skip explicitly excluded paths
-      if (excludedPaths.includes(edge.node.path) || longPages.includes(edge.node.path)) return null
+      if (
+        excludedPaths.includes(edge.node.path) ||
+        longPages.includes(edge.node.path) ||
+        errorPages.includes(edge.node.path)
+      )
+        return null
       // Allow headless browser to render super long pages before screenshoting them
 
-      console.log('entry', {
-        path: edge.node.path,
-        name: edge.node.path.split('/').join('-'),
-      })
+      // console.log('entry', {
+      //   path: edge.node.path,
+      //   name: edge.node.path.split('/').join('-'),
+      // })
 
       return {
         path: edge.node.path,
@@ -52,6 +63,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
       }
     })
     .filter((edge) => edge !== null)
-
+  console.log(pages.length)
   await fsPromises.writeFile(outputFile, JSON.stringify(pages))
 }
