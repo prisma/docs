@@ -18,20 +18,18 @@ In development, the command `next dev` clears Node.js cache on run. This in turn
 
 ## Solution
 
-The solution in this case is to instantiate a single instance `PrismaClient` and save it on the [`global`](https://nodejs.org/api/globals.html#globals_global) object. Then we keep a check to only instantiate `PrismaClient` if it's not on the `global` object otherwise use the same instance again if already present to prevent instantiating extra `PrismaClient` instances.
+The solution in this case is to instantiate a single instance `PrismaClient` and save it on the [`globalThis`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis) object. Then we keep a check to only instantiate `PrismaClient` if it's not on the `globalThis` object otherwise use the same instance again if already present to prevent instantiating extra `PrismaClient` instances.
 
 ```ts file=./db
 import { PrismaClient } from '@prisma/client'
 
-const globalForPrisma = global as unknown as {
+const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
 export const prisma =
   globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ['query'],
-  })
+  new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
@@ -42,14 +40,9 @@ After creating this file, you can now import this `PrismaClient` instance anywhe
 // e.g. in `pages/index.tsx`
 import { prisma } from './db'
 
-export const getServerSideProps = async ({ req }) => {
-  const token = req.headers.AUTHORIZATION
-  const userId = await getUserId(token)
-  const posts = await prisma.post.findMany({
-    where: {
-      author: { id: userId },
-    },
-  })
+export const getServerSideProps = async () => {
+  const posts = await prisma.post.findMany()
+
   return { props: { posts } }
 }
 ```

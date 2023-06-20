@@ -12,7 +12,10 @@ const excludedPaths = [
   '/getting-started/setup-prisma/start-from-scratch-prisma-migrate',
 ]
 
-const errorPages = ['/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-mysql']
+const errorPages = [
+  '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-mysql',
+  '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-mysql',
+]
 
 const longPages = [
   '/reference/api-reference/prisma-client-reference',
@@ -60,6 +63,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
       }
     })
     .filter((edge) => edge !== null)
-
+  console.log(pages.length)
   await fsPromises.writeFile(outputFile, JSON.stringify(pages))
 }
