@@ -132,6 +132,12 @@ const BannerWrapper = styled.div<{ light: boolean }>`
   font-size: 18px;
 `
 
+const FooterWrapper = styled.div`
+  button {
+    z-index: 10;
+  }
+`
+
 export default function Layout({
   children,
   toc,
@@ -169,7 +175,9 @@ export default function Layout({
               )}
             </Container>
           </Wrapper>
-          <Footer footerProps={footer} />
+          <FooterWrapper>
+            <Footer footerProps={footer} />
+          </FooterWrapper>
         </MDXProvider>
       </LensProvider>
     </ThemeProvider>
