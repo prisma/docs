@@ -2,7 +2,7 @@
 title: Connection management
 metaTitle: Connection management (Guide)
 metaDescription: 'How to approach connection management with Prisma Client in serverless environments and long-running applications.'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -32,6 +32,12 @@ Examples of long-running processes include Node.js applications hosted on a serv
 ### Recommended connection pool size
 
 The recommended connection pool size (`connection_limit`) to [start with](#optimizing-the-connection-pool) for long-running processes is the **default pool size** (`num_physical_cpus * 2 + 1`) ÷ **number of application instances**.
+
+<Admonition>
+
+`num_physical_cpus` refers to the the number of CPUs of the machine your application is running on.
+
+</Admonition>
 
 If you have **one** application instances:
 
@@ -86,10 +92,11 @@ Frameworks like [Next.js](https://nextjs.org/) support hot reloading of changed 
 
 As a workaround, you can store `PrismaClient` as a global variable in development environments only, as global variables are not reloaded:
 
+<!-- prettier-ignore -->
 ```ts file=client.ts
 import { PrismaClient } from '@prisma/client'
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
 export const prisma =
   globalForPrisma.prisma || new PrismaClient()
@@ -97,7 +104,7 @@ export const prisma =
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
 
-The way that you import and use the client does not change:
+The way that you import and use Prisma Client does not change:
 
 ```ts file=app.ts
 import { prisma } from './client'
@@ -292,6 +299,28 @@ datasource db {
 ## External connection poolers
 
 Connection poolers like the Data Proxy and PgBouncer prevent your application from exhausting the database's connection limit.
+
+If you would like to use the Prisma CLI in order to perform other actions on your database ,e.g. migrations and introspection, you will need to add an environment variable that provides a direct connection to your database in the `datasource.directUrl` property in your Prisma schema:
+
+```env file=.env highlight=4,5;add
+# Connection URL to your database using PgBouncer.
+DATABASE_URL="postgres://root:password@127.0.0.1:54321/postgres?pgBouncer=true"
+
+# Direct connection URL to the database used for migrations
+DIRECT_URL="postgres://root:password@127.0.0.1:5432/postgres"
+```
+
+You can then update your `schema.prisma` to use the new direct URL:
+
+```prisma file=schema.prisma highlight=4;add
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+```
+
+More information about the `directUrl` field can be found [here](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#fields:~:text=the%20shadow%20database.-,directUrl,-No).
 
 ### Data Proxy
 

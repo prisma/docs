@@ -105,6 +105,11 @@ const siteConfig = {
             url: 'concepts/components/prisma-engines',
             codeBlock: false,
           },
+          {
+            text: 'CRUD',
+            url: 'concepts/components/prisma-client/crud',
+            codeBlock: false,
+          },
         ],
       },
       {
@@ -219,7 +224,7 @@ const siteConfig = {
         color: '#48BB78',
         small: false,
         content: 'Get started with Prisma Migrate.',
-        url: 'guides/database/developing-with-prisma-migrate',
+        url: 'guides/migrate/developing-with-prisma-migrate',
       },
       {
         title: 'Performance and optimization',
@@ -291,8 +296,8 @@ const siteConfig = {
         icon: 'CLI',
         links: [
           {
-            text: 'introspect',
-            url: 'reference/api-reference/command-reference#introspect',
+            text: 'db',
+            url: 'reference/api-reference/command-reference#db',
             codeBlock: true,
           },
           {
@@ -301,8 +306,8 @@ const siteConfig = {
             codeBlock: true,
           },
           {
-            text: 'db',
-            url: 'reference/api-reference/command-reference#db',
+            text: 'studio',
+            url: 'reference/api-reference/command-reference#studio',
             codeBlock: true,
           },
         ],
@@ -344,17 +349,17 @@ const siteConfig = {
       },
       {
         text: 'Ask a question on Github',
-        url: 'guides/database/troubleshooting-orm#need-help',
+        url: 'guides/other/troubleshooting-orm#need-help',
         codeBlock: false,
       },
       {
         text: 'Create a bug report',
-        url: 'guides/database/troubleshooting-orm',
+        url: 'guides/other/troubleshooting-orm',
         codeBlock: false,
       },
       {
         text: 'Submit a feature request',
-        url: 'guides/database/troubleshooting-orm',
+        url: 'guides/other/troubleshooting-orm',
         codeBlock: false,
       },
       {
@@ -420,9 +425,6 @@ const siteConfig = {
   feedback: {
     sentimentUrl: '/docs/api/sentiment',
     feedbackUrl: '/docs/api/feedback',
-  },
-  sidebar: {
-    tablet_menu_split: ['04-guides', '05-more'], // Slugs for top level folders which should appear in right pane on tablet
   },
   footer: {
     newsletter: {
