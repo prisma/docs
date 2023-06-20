@@ -499,6 +499,7 @@ export const query = graphql`
             gettingStarted
             readyToRun
             slack
+            discord
             git
             buttons {
               text
