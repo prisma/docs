@@ -201,7 +201,6 @@ exports.createSchemaCustomization = ({ actions }: any) => {
       dbSwitcher: [String!]
       staticLink: Boolean
       duration: String
-      experimental: Boolean
       preview: Boolean
       earlyaccess: Boolean
       toc: Boolean
