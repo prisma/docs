@@ -1,0 +1,68 @@
+---
+title: 'Type utilities'
+metaTitle: 'Type utilities'
+metaDescription: 'Advanced type safety: improve type safety in your custom model methods'
+---
+
+<Admonition type = "info">
+
+This feature is available from version 4.9.0 upwards.
+
+</Admonition>
+
+To help you create highly type-safe extensions, Prisma Client provides a set of type utilities that tap into input and output types. They are fully dynamic, which means that they adapt to any given model and schema. You can use them to improve the auto-completion and developer experience of your custom model methods. This is especially useful in [shared extensions](/concepts/components/prisma-client/client-extensions/shared-extensions).
+
+The following type utilities are available in Prisma Client:
+
+- `Exact<Input, Shape>`: Enforces strict type safety on `Input`. `Exact` makes sure that a generic type `Input` strictly complies with the type that you specify in `Shape`. It [narrows](https://www.typescriptlang.org/docs/handbook/2/narrowing.html) `Input` down to the most precise types.
+- `Args<Type, Operation>`: Retrieves the input arguments for any given model and operation. This is particularly useful for extension authors who want to do the following:
+  - Re-use existing types to extend or modify them.
+  - Benefit from the same auto-completion experience as on existing operations.
+- `Result<Type, Arguments, Operation>`: Takes the input arguments and provides the result for a given model and operation. You would usually use this in conjunction with `Args`. As with `Args`, `Result` helps you to re-use existing types to extend or modify them.
+- `Payload<Type, Operation>`: Retrieves the entire structure of the result, as scalars and relations objects for a given model and operation. For example, you can use this to determine which keys are scalars or objects at a type level.
+
+The following example creates a new operation, `customCall`, based on `findFirst`. It has all of the arguments that `findFirst` has, with an additional property, `customProperty`.
+
+```ts
+const prisma = new PrismaClient()
+
+const xprisma = prisma.$extends({
+  model: {
+    $allModels: {
+      // Define a new operation `customCall`.
+      // T corresponds to the current model,
+      // A corresponds to the arguments for the operation.
+      customCall<T, A>(
+        // `this` is the current type (for example
+        // it might be `prisma.user` at runtime).
+        this: T,
+        x: Prisma.Exact<
+          A,
+          // For `customCall`, use the arguments from model `T` and the
+          // operation `findFirst`. Add `customProperty` to the operation.
+          Prisma.Args<T, 'findFirst'> & { customProperty: boolean }
+        >
+
+        // Get the correct result types for the model of type `T`,
+        // and the arguments of type `A` for `findFirst`.
+        // `Prisma.Result` computes the result for a given operation
+        // such as `select {id: true}` in function `main` below.
+        //
+      ): Prisma.Result<T, A, 'findFirst'> {
+        // Override type safety here, because we cannot
+        // predict the result types in advance.
+        return {} as any
+      },
+    },
+  },
+})
+
+async function main() {
+  const test0 = xprisma.link.customCall({
+    customProperty: true,
+    select: {
+      id: true,
+    },
+  })
+}
+```
