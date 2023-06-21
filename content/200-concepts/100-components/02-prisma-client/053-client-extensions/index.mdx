@@ -1,14 +1,19 @@
 ---
 title: 'Extensions'
-metaTitle: 'Prisma Client extensions (Preview)'
+metaTitle: 'Prisma Client extensions'
 metaDescription: 'Extend the functionality of Prisma Client'
-preview: true
 tocDepth: 4
 ---
 
 <TopBlock>
 
-From version 4.7.0, you can use Prisma Client extensions to add functionality to your models, result objects, and queries, or to add client-level methods.
+<Admonition type="info">
+
+Prisma Client extensions are Generally Available from versions 4.16.0 and later. They were introduced in Preview in version 4.7.0. Make sure you enable the `clientExtensions` Preview feature flag if you are running on a version earlier than 4.16.0.
+
+</Admonition>
+
+You can use Prisma Client extensions to add functionality to your models, result objects, and queries, or to add client-level methods.
 
 You can create an extension with one or more of the following component types:
 
@@ -47,19 +52,6 @@ Because extended clients operate in isolated instances, they can be a good way t
 - Enable more verbose logging for requests if a debug cookie is set.
 - Attach a unique request id to all logs so that you can correlate them later, for example to help you analyze the operations that Prisma Client carries out.
 - Remove a `delete` method from models unless the application calls the admin endpoint and the user has the necessary privileges.
-
-## Extensions prerequisites
-
-Prisma Client extensions are available in Preview from version [4.7.0](https://github.com/prisma/prisma/releases/tag/4.7.0).
-
-To use Prisma Client extensions, you must enable the `clientExtensions` preview feature flag in the `generator` block of your `schema.prisma` file, as follows:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["clientExtensions"]
-}
-```
 
 ## Create an extension
 
@@ -163,4 +155,44 @@ function getExtendedClient() {
 }
 
 type ExtendedPrismaClient = ReturnType<typeof getExtendedClient>
+```
+
+## Limitations
+
+### Usage of `$on` and `$use` with extended clients
+
+`$on` and `$use` are not available in extended clients. If you would like to continue using these [client-level methods](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#client-methods) with an extended client, you will need to hook them up before extending the client.
+
+```ts
+const prisma = new PrismaClient()
+
+prisma.$use(async (params, next) => {
+  console.log('This is middleware!')
+  return next(params)
+})
+
+const xPrisma = prisma.$extends({
+  name: 'myExtension',
+  model: {
+    user: {
+      async signUp(email: string) {
+        await prisma.user.create({ data: { email } })
+      },
+    },
+  },
+})
+```
+
+To learn more, see our documentation on [`$on`](/reference/api-reference/prisma-client-reference#on) <span class="api"></span> and [`$use`](/reference/api-reference/prisma-client-reference#use) <span class="api"></span>
+
+### Usage of client-level methods in extended clients
+
+[Client-level methods](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#client-methods) do not necessarily exist on extended clients. For these clients you will need to first check for existence before using.
+
+```ts
+const xPrisma = prisma.$extends(...);
+
+if (xPrisma.$connect) {
+  xPrisma.$connect()
+}
 ```
