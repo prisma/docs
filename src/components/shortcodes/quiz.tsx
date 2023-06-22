@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -21,10 +22,10 @@ const Wrapper = styled.section`
   flex-direction: column;
   justify-content: 'flex-start;
   padding: 1rem;
-  background-color: ${(p) => p.theme.colors.gray[100]};
+  background-color: ${theme.colors.gray[100]};
   border-radius: 8px;
   min-height: 100px;
-  border-left: 8px solid ${(p) => p.theme.colors.gray[500]};
+  border-left: 8px solid ${theme.colors.gray[500]};
   margin: 2rem 0;
 `
 
@@ -66,7 +67,7 @@ const RadioButtonLabel = styled.label`
   height: 20px;
   border-radius: 50%;
   background: white;
-  border: 2px solid ${(p) => p.theme.colors.gray[600]};
+  border: 2px solid ${theme.colors.gray[600]};
 `
 const RadioButton = styled.input<ChosenAnswerProps>`
   opacity: 0;
@@ -150,7 +151,7 @@ const Button = styled.button`
   font-weight: 600;
   padding: 0.5rem 0.75rem;
   display: inline-block;
-  background: ${(p) => p.theme.colors.gray[300]};
+  background: ${theme.colors.gray[300]};
   text-align: left;
   border-radius: 5px;
   line-height: 1.5;
@@ -158,18 +159,18 @@ const Button = styled.button`
   text-decoration: none;
   outline: none;
   border: none;
-  color: ${(p) => p.theme.colors.gray[700]};
+  color: ${theme.colors.gray[700]};
   transition: 0.2s ease-out;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   &:hover {
-    background: ${(p) => p.theme.colors.gray[400]};
+    background: ${theme.colors.gray[400]};
   }
   &:active {
     transform: scale(0.98);
   }
   &:disabled {
-    background: ${(p) => p.theme.colors.gray[400]};
-    color: ${(p) => p.theme.colors.gray[700]};
+    background: ${theme.colors.gray[400]};
+    color: ${theme.colors.gray[700]};
     cursor: default;
   }
 `
@@ -179,7 +180,7 @@ const NotificationContainer = styled.div<ChosenAnswerProps>`
   width: 250px;
   justify-content: flex-start;
   align-items: center;
-  background: ${(p) => p.theme.colors.gray[100]};
+  background: ${theme.colors.gray[100]};
   position: relative;
 
   ${(props) =>

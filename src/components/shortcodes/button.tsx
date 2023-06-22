@@ -1,11 +1,12 @@
-import * as React from 'react'
-import styled from 'styled-components'
-import ArrowRight from '../../icons/ArrowRight'
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
-
 import * as path from 'path-browserify'
+import * as React from 'react'
+import styled from 'styled-components'
+
+import ArrowRight from '../../icons/ArrowRight'
 
 export interface ButtonProps {
   href?: string
@@ -46,7 +47,7 @@ export const ButtonWrapper = styled.a<{ block?: boolean; disabled?: boolean; col
   border: none;
   text-decoration: none;
   height: 40px;
-  font-size: ${(p) => p.theme.fontSizes[16]};
+  font-size: ${theme.fontSizes[16]};
   box-sizing: border-box;
   outline: none;
   opacity: ${(p) => (p.disabled ? '0.2' : 1)};

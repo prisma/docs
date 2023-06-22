@@ -1,3 +1,4 @@
+import { defaultTheme } from '@prisma/lens/dist/web'
 import rangeParser from 'parse-numeric-range'
 import Highlight, { defaultProps } from 'prism-react-renderer'
 import theme from 'prism-react-renderer/themes/github'
@@ -250,13 +251,13 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 export default Code
 
 const CodeWrapper = styled.div`
-  margin-top: ${(p) => p.theme.space[24]};
-  margin-bottom: ${(p) => p.theme.space[24]};
+  margin-top: ${defaultTheme.space[24]};
+  margin-bottom: ${defaultTheme.space[24]};
   .file {
     font-weight: 600;
-    color: ${(p) => p.theme.colors.gray[600]};
-    font-size: ${(p) => p.theme.fontSizes[14]};
-    font-family: ${(p) => p.theme.fonts.text};
+    color: ${defaultTheme.colors.gray[600]};
+    font-size: ${defaultTheme.fontSizes[14]};
+    font-family: ${defaultTheme.fonts.text};
     margin-bottom: 0.5rem;
   }
 `
@@ -269,13 +270,13 @@ const AbsoluteCopyButton = styled.div`
   z-index: 2;
 
   > div {
-    right: -${(p) => p.theme.space[8]};
+    right: -${defaultTheme.space[8]};
     top: -6px;
   }
 `
 
 const Pre = styled.pre`
-  margin-top: ${(p) => p.theme.space[32]};
+  margin-top: ${defaultTheme.space[32]};
   text-align: left;
   margin: 0 0 16px 0;
   padding: 2rem 1rem 1rem 1rem;
@@ -325,8 +326,8 @@ const Line = styled.div`
 
 const LineNo = styled.span`
   font-weight: 500;
-  line-height: ${(p) => p.theme.space[24]};
-  color: ${(p) => p.theme.colors.gray[400]};
+  line-height: ${defaultTheme.space[24]};
+  color: ${defaultTheme.colors.gray[400]};
   display: inline-block;
   text-align: right;
   user-select: none;
@@ -334,7 +335,7 @@ const LineNo = styled.span`
 `
 
 const LineContent = styled.span`
-  padding: 0 ${(p) => p.theme.space[16]};
+  padding: 0 ${defaultTheme.space[16]};
   &.break-words {
     display: inline-table;
     white-space: break-spaces;
