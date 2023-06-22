@@ -7,22 +7,17 @@ tocDepth: 4
 
 <TopBlock>
 
-You can use the `query` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component type to hook into the query life-cycle and modify an incoming query or its result. We introduced this feature in version 4.7.0.
+<Admonition type="info">
+
+Prisma Client extensions are Generally Available from versions 4.16.0 and later. They were introduced in Preview in version 4.7.0. Make sure you enable the `clientExtensions` Preview feature flag if you are running on a version earlier than 4.16.0.
+
+</Admonition>
+
+You can use the `query` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component type to hook into the query life-cycle and modify an incoming query or its result.
 
 You can use Prisma Client extensions `query` component to create independent clients. This provides an alternative to [middlewares](/concepts/components/prisma-client/middleware). You can bind one client to a specific filter or user, and another client to another filter or user. For example, you might do this to get [user isolation](/concepts/components/prisma-client/client-extensions#extended-clients) in a row-level security (RLS) extension. In addition, unlike middlewares the `query` extension component gives you end-to-end type safety. [Learn more about `query` extensions versus middlewares](#query-extensions-versus-middlewares).
 
 </TopBlock>
-
-## Enable the preview feature
-
-Before you create Prisma Client extensions, you must enable the `clientExtensions` feature flag in the `generator` block of your `schema.prisma` file, as follows:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["clientExtensions"]
-}
-```
 
 ## Extend Prisma Client query operations
 
@@ -32,6 +27,7 @@ Use the `query` extension component to modify queries. You can modify a custom q
 
 - [A specific operation in a specific model](#modify-a-specific-operation-in-a-specific-model)
 - [A specific operation in all models of your schema](#modify-a-specific-operation-in-all-models-of-your-schema)
+- [All Prisma Client operations](#modify-all-prisma-client-operations)
 - [All operations in a specific model](#modify-all-operations-in-a-specific-model)
 - [All operations in all models of your schema](#modify-all-operations-in-all-models-of-your-schema)
 - [A specific top-level raw query operation](#modify-a-top-level-raw-query-operation)
@@ -121,9 +117,50 @@ const xprisma = prisma.$extends({
   query: {
     user: {
       $allOperations({ model, operation, args, query }) {
-        // handle all operations
+        /* your custom logic here */
         return query(args)
       },
+    },
+  },
+})
+```
+
+### Modify all Prisma Client operations
+
+Use the `$allOperations` method to modify all query methods present in Prisma Client. The `$allOperations` can be used on both model operations and raw queries.
+
+You can modify all methods as follows:
+
+```ts
+const xprisma = prisma.$extends({
+  query: {
+    $allOperations({ model, operation, args, query }) {
+      /* your custom logic for modifying all Prisma Client operations here */
+      return query(args)
+    },
+  },
+})
+```
+
+In the event a [raw query](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) is invoked, the `model` argument passed to the callback will be `undefined`.
+
+For example, you can use the `$allOperations` method to log queries as follows:
+
+```ts
+const xprisma = prisma.$extends({
+  query: {
+    async $allOperations({ operation, model, args, query }) {
+      const start = performance.now()
+      const result = await query(args)
+      const end = performance.now()
+      const time = end - start
+      console.log(
+        util.inspect(
+          { model, operation, args, time },
+          { showHidden: false, depth: null, colors: true }
+        )
+      )
+      return result
     },
   },
 })
@@ -140,7 +177,7 @@ const xprisma = prisma.$extends({
   query: {
     $allModels: {
       $allOperations({ model, operation, args, query }) {
-        // handle all operations
+        /* your custom logic for modirying all operations on all models here */
         return query(args)
       },
     },

@@ -11,6 +11,8 @@ const NotFoundWrapper = styled.div`
   align-items: center;
   h1 {
     font-weight: bold;
+    font-size: revert;
+    margin: revert;
   }
 `
 

@@ -195,6 +195,7 @@ const CapTitle = styled.h4`
   font-weight: bold;
   letter-spacing: 0.02em;
   font-size: 14px;
+  margin: revert;
 `
 
 const BorderCapTitle = styled(CapTitle)`
@@ -377,9 +378,9 @@ const Homepage = () => {
         <h1>Prisma Documentation</h1>
         <NormalPara>
           Choose one of our{' '}
-          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore the{' '}
-          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join our
-          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
+          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore our{' '}
+          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples</Link>. Join our
+          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link>, <Link to={SummaryLinkData.discord}>Discord</Link> and{' '}
           <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
         </NormalPara>
         <SummaryLinks>
@@ -499,6 +500,7 @@ export const query = graphql`
             gettingStarted
             readyToRun
             slack
+            discord
             git
             buttons {
               text
