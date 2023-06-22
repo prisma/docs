@@ -74,6 +74,7 @@ const RadioButton = styled.input<ChosenAnswerProps>`
   border-radius: 50%;
   width: 20px;
   height: 20px;
+  margin-left: 0.3125rem;
   margin-right: 0.25rem;
   cursor: pointer;
   position: relative;

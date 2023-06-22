@@ -195,6 +195,7 @@ const CapTitle = styled.h4`
   font-weight: bold;
   letter-spacing: 0.02em;
   font-size: 14px;
+  margin: revert;
 `
 
 const BorderCapTitle = styled(CapTitle)`
