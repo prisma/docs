@@ -1,4 +1,4 @@
-import { WebsiteHeader } from '@prisma/lens/dist/web'
+import { defaultTheme as theme, WebsiteHeader } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
@@ -24,17 +24,13 @@ const HeaderWrapper = styled.div`
       rgba(113, 128, 150, 0.25) 0%,
       rgba(113, 128, 150, 0) 100%
     ),
-    linear-gradient(
-      180deg,
-      ${(p) => p.theme.colors.gray[900]} 0%,
-      ${(p) => p.theme.colors.gray[800]} 100%
-    ),
-    linear-gradient(180deg, ${(p) => p.theme.colors.gray[900]} 0%, rgba(27, 32, 43, 0) 100%),
-    ${(p) => p.theme.colors.gray[800]};
+    linear-gradient(180deg, ${theme.colors.gray[900]} 0%, ${theme.colors.gray[800]} 100%),
+    linear-gradient(180deg, ${theme.colors.gray[900]} 0%, rgba(27, 32, 43, 0) 100%),
+    ${theme.colors.gray[800]};
   img {
     margin-bottom: 0;
   }
-  //padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[16]};
+  //padding: ${theme.space[24]} ${theme.space[16]};
   display: flex;
   justify-content: center;
 `
@@ -67,7 +63,7 @@ const Container = styled.div`
         text-decoration: none;
 
         &:hover {
-          color: ${(p) => p.theme.colors.white} !important;
+          color: ${theme.colors.white} !important;
         }
       }
     }
@@ -84,20 +80,20 @@ const SearchComponent = styled(Search)`
 `
 
 const DocsMobileButton = styled.div`
-  background: ${(p) => p.theme.colors.white};
-  border-radius: ${(p) => p.theme.radii.small};
-  color: ${(p) => p.theme.colors.gray[700]};
+  background: ${theme.colors.white};
+  border-radius: ${theme.radii.small};
+  color: ${theme.colors.gray[700]};
   display: none;
-  padding: 0 ${(p) => p.theme.space[14]};
+  padding: 0 ${theme.space[14]};
   height: 40px;
-  margin-left: ${(p) => p.theme.space[8]};
+  margin-left: ${theme.space[8]};
   font-weight: 600;
   position: relative;
   z-index: 300;
   justify-content: space-between;
   cursor: pointer;
   svg {
-    margin-left: ${(p) => p.theme.space[8]};
+    margin-left: ${theme.space[8]};
   }
   @media (min-width: 0px) and (max-width: 1024px) {
     display: flex;
@@ -111,33 +107,33 @@ const MobileOnlyNav = styled.div`
   z-index: 210;
   top: 70px;
   transition: top 0.35s;
-  padding: ${(p) => p.theme.space[16]};
-  border-radius: ${(p) => p.theme.radii.small};
+  padding: ${theme.space[16]};
+  border-radius: ${theme.radii.small};
   text-align: left;
-  background: ${(p) => p.theme.colors.gray[800]};
+  background: ${theme.colors.gray[800]};
   right: 0;
-  padding: ${(p) => p.theme.space[32]} ${(p) => p.theme.space[16]};
+  padding: ${theme.space[32]} ${theme.space[16]};
   @media (min-width: 0px) and (max-width: 1024px) {
     display: block;
   }
 `
 
 const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
-  background: ${(p) => p.theme.colors.gray[200]};
-  box-shadow: 0px 1px 0px ${(p) => p.theme.colors.gray[300]};
+  background: ${theme.colors.gray[200]};
+  box-shadow: 0px 1px 0px ${theme.colors.gray[300]};
   top: 0;
   padding: 0;
   z-index: 200;
 `
 
 const SecondLevelHeader = styled.div`
-  background: ${(p) => p.theme.colors.gray[200]};
+  background: ${theme.colors.gray[200]};
   padding: 20px 16px;
   display: flex;
   justify-content: center;
   position: relative;
   z-index: 105;
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 12px 16px;
   }
 `
@@ -145,7 +141,7 @@ const SecondLevelHeader = styled.div`
 const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
-  font-size: ${(p) => p.theme.fontSizes[16]};
+  font-size: ${theme.fontSizes[16]};
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
   }
@@ -158,14 +154,14 @@ const NavLink = styled(Link)<{ wide?: boolean }>`
       ? `padding: 0.25rem 0.5rem;`
       : `padding: 0 0.5rem;
   margin: 0 0.5rem;`}
-  color: ${(p) => p.theme.colors.gray[400]} !important;
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  color: ${theme.colors.gray[400]} !important;
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     margin: 0;
     padding: 0;
   }
 `
 const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
-  color: ${(p) => p.theme.colors.gray[700]} !important;
+  color: ${theme.colors.gray[700]} !important;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -174,7 +170,7 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
     margin: 0;
     display: flex;
     align-items: center;
-    color: ${(p) => p.theme.colors.gray[600]} !important;
+    color: ${theme.colors.gray[600]} !important;
   }
 
   .menu-item {
@@ -182,50 +178,50 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
-    color: ${(p) => p.theme.colors.gray[600]};
+    border-top: 1px solid ${theme.colors.gray[300]};
+    color: ${theme.colors.gray[600]};
     font-weight: 600;
     &:hover {
-      color: ${(p) => p.theme.colors.gray[900]};
+      color: ${theme.colors.gray[900]};
     }
   }
 
   &:hover {
-    color: ${(p) => p.theme.colors.gray[900]} !important;
+    color: ${theme.colors.gray[900]} !important;
   }
   &.active-item {
-    background: ${(p) => p.theme.colors.white};
-    border-radius: ${(p) => p.theme.radii.small};
-    color: ${(p) => p.theme.colors.gray[500]} !important;
+    background: ${theme.colors.white};
+    border-radius: ${theme.radii.small};
+    color: ${theme.colors.gray[500]} !important;
     padding: 0.25rem 0.5rem;
   }
 
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     &.active-item {
       background: transparent;
-      color: ${(p) => p.theme.colors.gray[700]} !important;
+      color: ${theme.colors.gray[700]} !important;
       padding: 0.25rem 0.5rem;
     }
     svg {
       display: block;
     }
   }
-  @media (min-width: ${(p) => p.theme.breakpoints.tablet}) and (max-width: 1024px) {
+  @media (min-width: ${theme.breakpoints.tabletVertical}) and (max-width: 1024px) {
     font-size: 14px;
   }
 `
 
 const SecondLevelMobileNavLink = styled.div`
-  padding: ${(p) => p.theme.space[24]};
+  padding: ${theme.space[24]};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
-  color: ${(p) => p.theme.colors.gray[600]};
+  border-top: 1px solid ${theme.colors.gray[300]};
+  color: ${theme.colors.gray[600]};
   font-weight: 600;
   cursor: pointer;
   &:hover {
-    color: ${(p) => p.theme.colors.gray[900]};
+    color: ${theme.colors.gray[900]};
   }
 `
 

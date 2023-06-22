@@ -1,9 +1,10 @@
+import { WebsiteFooter } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
+
 import { FooterProps } from '../interfaces/Layout.interface'
-import { WebsiteFooter } from '@prisma/lens/dist/web'
 import { FooterNewsletterForm } from './footer/FooterNewsletterForm'
-import { defaultTheme } from './footer/theme'
+import { defaultTheme as theme } from './footer/theme'
 
 type FooterViewProps = {
   footerProps: FooterProps
@@ -14,7 +15,7 @@ const FooterWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  color: ${(p) => p.theme.colors.gray[500]};
+  color: ${theme.colors.gray[500]};
   margin-top: 5rem;
   > div {
     width: 100%;
@@ -24,7 +25,7 @@ const FooterWrapper = styled.div`
 const FooterSec = ({ footerProps }: FooterViewProps) => {
   return (
     <FooterWrapper>
-      <WebsiteFooter newsletterComponent={<FooterNewsletterForm theme={defaultTheme} />} />
+      <WebsiteFooter newsletterComponent={<FooterNewsletterForm theme={theme} />} />
     </FooterWrapper>
   )
 }
