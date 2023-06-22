@@ -1,14 +1,16 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
-import Tree from './tree'
 import styled from 'styled-components'
+
+import config from '../../../config'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
-import config from '../../../config'
+import Tree from './tree'
 
 const SidebarContainer = styled.aside`
   width: 272px;
   height: 100%;
-  margin: 0px ${(p) => p.theme.space[16]} 0 -${(p) => p.theme.space[16]};
+  margin: 0px ${theme.space[16]} 0 -${theme.space[16]};
 `
 
 const Sidebar = styled.div`
@@ -18,16 +20,16 @@ const Sidebar = styled.div`
 
   /* .tablet-only {
     display: none;
-    background: ${(p) => p.theme.colors.gray[100]};
+    background: ${theme.colors.gray[100]};
     justify-content: space-between;
-    padding: ${(p) => p.theme.space[48]} ${(p) => p.theme.space[64]};
+    padding: ${theme.space[48]} ${theme.space[64]};
 
     > ul {
       width: 50%;
       margin-right: 50px;
 
       &:last-of-type {
-        padding-left: ${(p) => p.theme.space[40]};
+        padding-left: ${theme.space[40]};
       }
     }
 
@@ -38,8 +40,8 @@ const Sidebar = styled.div`
 
   .mobile-only {
     display: none;
-    background: ${(p) => p.theme.colors.gray[100]};
-    padding: ${(p) => p.theme.space[32]};
+    background: ${theme.colors.gray[100]};
+    padding: ${theme.space[32]};
     @media only screen and (max-width: 1024px) {
       display: flex;
       > ul {
@@ -51,8 +53,8 @@ const Sidebar = styled.div`
 
 const List = styled.ul`
   list-style: none;
-  padding: 0 7px 0 ${(p) => p.theme.space[16]};
-  margin: -${(p) => p.theme.space[20]} 0 0;
+  padding: 0 7px 0 ${theme.space[16]};
+  margin: -${theme.space[20]} 0 0;
 `
 
 const SidebarLayout = ({ isMobile, location, slug }: any) => {

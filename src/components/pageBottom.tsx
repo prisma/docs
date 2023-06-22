@@ -196,10 +196,10 @@ export default PageBottom
 
 const PageBottomWrapper = styled.div`
   display: flex;
-  font-size: ${(p) => p.theme.fontSizes[14]};
+  font-size: ${theme.fontSizes[14]};
   flex-direction: row;
   justify-content: space-between;
-  padding: ${(p) => p.theme.space[16]} ${(p) => p.theme.space[40]};
+  padding: ${theme.space[16]} ${theme.space[40]};
   align-items: center;
   button svg {
     cursor: pointer;
@@ -207,14 +207,14 @@ const PageBottomWrapper = styled.div`
   }
   .edit-git,
   .message {
-    color: ${(p) => p.theme.colors.gray[600]} !important;
+    color: ${theme.colors.gray[600]} !important;
   }
 
   button {
-    color: ${(p) => p.theme.colors.white} !important;
+    color: ${theme.colors.white} !important;
   }
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
-    padding: ${(p) => p.theme.space[16]};
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
+    padding: ${theme.space[16]};
     flex-direction: column;
     align-items: flex-start;
     .edit-git {
@@ -230,18 +230,18 @@ const Feedback = styled.div`
     letter-spacing: 0.01em;
     text-transform: uppercase;
     margin: revert;
-    color: ${(p) => p.theme.colors.gray[500]} !important;
+    color: ${theme.colors.gray[500]} !important;
   }
   .sentiments {
     button {
       background: transparent;
       border: 0;
       &.active {
-        border-color: ${(p) => p.theme.colors.blue[500]};
+        border-color: ${theme.colors.blue[500]};
         svg {
           circle,
           path {
-            stroke: ${(p) => p.theme.colors.blue[500]};
+            stroke: ${theme.colors.blue[500]};
           }
         }
       }
@@ -286,47 +286,47 @@ const Content = styled.div`
       padding: 0;
     }
 
-    margin-top: ${(p) => p.theme.space[24]};
+    margin-top: ${theme.space[24]};
     align-items: center;
     input {
       width: 100%;
       border: 0;
-      padding: ${(p) => p.theme.space[12]} 20px;
+      padding: ${theme.space[12]} 20px;
       font-size: 100%;
       font-weight: normal;
       margin-bottom: 20px;
 
       &::placeholder {
-        color: ${(p) => p.theme.colors.gray[500]};
+        color: ${theme.colors.gray[500]};
       }
     }
     button {
-      background: ${(p) => p.theme.colors.green[500]};
+      background: ${theme.colors.green[500]};
       border-radius: 6px;
       padding: 8px;
       font-size: 1rem;
       font-weight: 600;
       border-color: transparent;
       &:hover {
-        background: ${(p) => p.theme.colors.green[600]};
+        background: ${theme.colors.green[600]};
       }
     }
   }
   .yay-toast {
-    background: ${(p) => p.theme.colors.blue[100]};
+    background: ${theme.colors.blue[100]};
     font-size: 14px;
-    color: ${(p) => p.theme.colors.blue[600]};
+    color: ${theme.colors.blue[600]};
     min-width: 360px;
   }
 `
 
 const Title = styled.div`
-  background: ${(p) => p.theme.colors.blue[100]};
+  background: ${theme.colors.blue[100]};
   display: flex;
   padding: 20px;
   p {
-    color: ${(p) => p.theme.colors.blue[600]};
-    font-size: ${(p) => p.theme.fontSizes[14]};
+    color: ${theme.colors.blue[600]};
+    font-size: ${theme.fontSizes[14]};
     margin: 0;
   }
 
@@ -345,14 +345,14 @@ const Button = styled(ButtonWrapper)`
     height: 1rem;
     width: 1rem;
     path {
-      stroke: ${(p) => p.theme.colors.blue[300]};
+      stroke: ${theme.colors.blue[300]};
     }
   }
-  background: ${(p) => p.theme.colors.blue[500]} !important;
+  background: ${theme.colors.blue[500]} !important;
   margin: 0;
   margin-left: 20px;
   @media (min-width: 0px) and (max-width: 767px) {
-    font-size: ${(p) => p.theme.fontSizes[12]};
+    font-size: ${theme.fontSizes[12]};
     text-transform: none;
     svg {
       width: 14px;
@@ -367,7 +367,7 @@ const ButtonRow = styled.div`
   .git-link {
     text-decoration: underline;
     margin-left: 20px;
-    color: ${(p) => p.theme.colors.gray[700]} !important;
+    color: ${theme.colors.gray[700]} !important;
     font-weight: 600;
     font-size: 14px;
   }
