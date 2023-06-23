@@ -3,7 +3,7 @@ title: 'Using Prisma Migrate'
 metaTitle: 'Using Prisma Migrate'
 metaDescription: 'Create database tables with Prisma Migrate'
 langSwitcher: ['typescript', 'node']
-dbSwitcher: ['postgresql', 'mysql', 'sqlserver', 'planetscale', 'cockroachdb']
+dbSwitcher: ['postgresql', 'mysql', 'sqlserver', 'planetscale', 'cockroachdb', 'sqlite']
 toc: false
 ---
 
@@ -165,6 +165,55 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   title     String   @db.VarChar(255)
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  user   User    @relation(fields: [userId], references: [id])
+  userId Int     @unique
+}
+
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  posts   Post[]
+  profile Profile?
+}
+```
+
+To map your data model to the database schema, you need to use the `prisma migrate` CLI commands:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+This command does two things:
+
+1. It creates a new SQL migration file for this migration
+1. It runs the SQL migration file against the database
+
+> **Note**: `generate` is called under the hood by default, after running `prisma migrate dev`. If the `prisma-client-js` generator is defined in your schema, this will check if `@prisma/client` is installed and install it if it's missing.
+
+Great, you now created three tables in your database with Prisma Migrate 🚀
+
+</SwitchTech>
+
+<SwitchTech technologies={['*', 'sqlite']}>
+
+In this guide, you'll use [Prisma Migrate](/concepts/components/prisma-migrate) to create the tables in your database. Add the following Prisma data model to your [Prisma schema](/concepts/components/prisma-schema) in `prisma/schema.prisma`:
+
+```prisma file=prisma/schema.prisma copy
+model Post {
+  id        Int      @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String
   content   String?
   published Boolean  @default(false)
   author    User     @relation(fields: [authorId], references: [id])
@@ -580,6 +629,79 @@ Great, you now created three tables in your database with Prisma Migrate 🚀
 
 </SwitchTech>
 
+<SwitchTech technologies={['*', 'sqlite']}>
+
+<TabbedContent tabs={[<FileWithIcon text="SQL" icon="code"/>, <FileWithIcon text="Tables" icon="database"/>]}>
+
+<tab>
+
+```sql
+CREATE TABLE "Post" (
+  "id" INTEGER NOT NULL PRIMARY KEY,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL,
+  "title" TEXT NOT NULL,
+  "content" TEXT,
+  "published" BOOLEAN NOT NULL DEFAULT false,
+  "authorId" INTEGER NOT NULL,
+  CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE "Profile" (
+  "id" INTEGER NOT NULL PRIMARY KEY,
+  "bio" TEXT,
+  "userId" INTEGER NOT NULL,
+  CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE "User" (
+  "id" INTEGER NOT NULL PRIMARY KEY,
+  "email" TEXT NOT NULL,
+  "name" TEXT
+);
+
+CREATE UNIQUE INDEX "Profile_userId_key" ON "Profile"("userId")
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email")
+```
+
+</tab>
+
+<tab>
+
+**User**
+
+| Column name | Type      | Primary key | Foreign key | Required | Default            |
+| :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER` | **✔️**       | No          | **✔️**    | _                  |
+| `name`      | `TEXT`    | No          | No          | No       | -                  |
+| `email`     | `TEXT`    | No          | No          | **✔️**    | -                  |
+
+**Post**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER`      | **✔️**      | No          | **✔️**   | _                    |
+| `createdAt` | `TIMESTAMP`    | No          | No          | **✔️**   | `now()`             |
+| `updatedAt` | `TIMESTAMP`    | No          | No          | **✔️**   |                     |
+| `title`     | `TEXT`         | No          | No          | **✔️**   | -                   |
+| `content`   | `TEXT`         | No          | No          | No       | -                  |
+| `published` | `BOOLEAN`      | No          | No          | **✔️**   | `false`             |
+| `authorId`  | `INTEGER`      | No          | **✔️**       | **✔️**   | -                   |
+
+**Profile**
+
+| Column name | Type      | Primary key | Foreign key | Required | Default            |
+| :---------- | :-------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `INTEGER` | **✔️**      | No          | **✔️**     | _                  |
+| `bio`       | `TEXT`    | No          | No          | No       | -                  |
+| `userId`    | `INTEGER` | No          | **✔️**      | **✔️**     | -                  |
+
+</tab>
+
+</TabbedContent>
+
+</SwitchTech>
+
 <SwitchTech technologies={['node', 'postgresql']}>
 
 <NavigationLinksContainer>
@@ -710,6 +832,32 @@ Great, you now created three tables in your database with Prisma Migrate 🚀
 
 </SwitchTech>
 
+<SwitchTech technologies={['node', 'sqlite']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-node-sqlite"
+  arrowLeft
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-node-sqlite"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
 <SwitchTech technologies={['typescript', 'postgresql']}>
 
 <NavigationLinksContainer>
@@ -831,6 +979,32 @@ Great, you now created three tables in your database with Prisma Migrate 🚀
   color="dark"
   type="primary"
   href="./install-prisma-client-typescript-cockroachdb"
+  arrow
+>
+  Install Prisma Client
+</ButtonLink>
+
+</NavigationLinksContainer>
+
+</SwitchTech>
+
+<SwitchTech technologies={['typescript', 'sqlite']}>
+
+<NavigationLinksContainer>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./connect-your-database-typescript-sqlite"
+  arrowLeft
+>
+  Connect your database
+</ButtonLink>
+
+<ButtonLink
+  color="dark"
+  type="primary"
+  href="./install-prisma-client-typescript-sqlite"
   arrow
 >
   Install Prisma Client
