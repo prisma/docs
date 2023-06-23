@@ -20,7 +20,7 @@ When you create your project, you do not need to also create a Data Proxy connec
 
 </Admonition>
 
-You can then configure the connection string in your development or deployment environment and [generate Prisma Client for the Data Proxy](#generate-prisma-client-for-the-data-proxy).
+You can then configure the connection string in your development or deployment environment and [configure Prisma project to use Data Proxy](#configure-prisma-project-to-use-data-proxy).
 
 </TopBlock>
 
@@ -93,7 +93,7 @@ Your application starts to use the proxy only after you configure a generated Da
         width="650px"
       />
 
-## Generate Prisma Client for the Data Proxy
+## Configure Prisma project to use Data Proxy
 
 After you create your project in the platform and enable the Data Proxy, you can generate Prisma Client for the Data Proxy and use it with the `prisma://` connection string you obtained.
 
@@ -119,10 +119,32 @@ You can generate and use Prisma Client for the Data Proxy in the following envir
    <Admonition>
 
    **Note**<br /><br />
-   For security reasons, we strongly recommend that you always use environment variables for your database connection strings and Data Proxy strings. Do not hard-code them into your `schema.prisma` file.<br /><br />
-   For more information, see [Using `.env` files](/guides/development-environment/environment-variables#using-env-files).
+   For security reasons, use environment variables for database connection strings and Data Proxy strings. Do not hard-code them into `schema.prisma`. For more information, see [Using `.env` files](/guides/development-environment/environment-variables#using-env-files).
 
    </Admonition>
+
+1. To introspect your database or perform migrations using the Prisma CLI, a direct database connection is required. If you are using Prisma version 4.1.0 or later, include the `directUrl` property in the [`datasource`](/reference/api-reference/prisma-schema-reference#datasource) block of your Prisma schema.
+
+   ```prisma file=schema.prisma highlight=8;add
+   generator client {
+     provider = "prisma-client-js"
+   }
+   
+   datasource db {
+     provider  = "postgresql"
+     url       = env("DATABASE_URL")
+     directUrl = env("DIRECT_URL")
+   }
+   ```
+
+   Then, add the direct database connection string in the `.env` file.
+
+   ```bash file=.env highlight=2;add
+   DATABASE_URL="prisma://****:****@****"
+   + DIRECT_URL="postgresql://****:****@****"
+   ```
+
+   However, in older versions, you need to overwrite the `DATABASE_URL` environment variable with the direct database connection string when running migrations. Refer to the [Prisma CLI commands with the Data Proxy](https://www.prisma.io/docs/data-platform/data-proxy/prisma-cli-with-data-proxy) documentation for more information.
 
 1. Install `prisma` and `@prisma/client`.<br /><br />
    Make sure to use version 3.15.2 or later.<br />
@@ -144,9 +166,9 @@ You can generate and use Prisma Client for the Data Proxy in the following envir
 
    - To use the Data Proxy with Node.js, instantiate `@prisma/client`. [Learn more](/concepts/components/prisma-client/working-with-prismaclient/generating-prisma-client).
 
-       <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
+     <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
 
-       <tab>
+     <tab>
 
      ```ts
      import { PrismaClient } from '@prisma/client'
@@ -164,23 +186,23 @@ You can generate and use Prisma Client for the Data Proxy in the following envir
      // use `prisma` in your application to read and write data in your DB
      ```
 
-       </tab>
+     </tab>
 
-       </TabbedContent>
+     </TabbedContent>
 
    - To use the Data Proxy in Edge runtimes, such as Cloudflare Workers or Vercel Edge Functions, instantiate `@prisma/client/edge`.
 
-       <Admonition>
+     <Admonition>
 
      **Note**<br /><br />
 
      You can use `@prisma/client/edge` only with the Data Proxy. In such cases, make sure to use the `--data-proxy` flag or the `PRISMA_GENERATE_DATAPROXY=true` environment variable when you [generate Prisma Client](/concepts/components/prisma-client/working-with-prismaclient/generating-prisma-client).
 
-       </Admonition>
+     </Admonition>
 
-       <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
+     <TabbedContent tabs={[<FileWithIcon text="TypeScript" icon="code"/>, <FileWithIcon text="JavaScript" icon="code"/>]}>
 
-       <tab>
+     <tab>
 
      ```ts
      import { PrismaClient } from '@prisma/client/edge'
@@ -188,9 +210,9 @@ You can generate and use Prisma Client for the Data Proxy in the following envir
      // use `prisma` in your application to read and write data in your DB
      ```
 
-       </tab>
+     </tab>
 
-       <tab>
+     <tab>
 
      ```js
      const { PrismaClient } = require('@prisma/client/edge')
@@ -198,9 +220,9 @@ You can generate and use Prisma Client for the Data Proxy in the following envir
      // use `prisma` in your application to read and write data in your DB
      ```
 
-       </tab>
+     </tab>
 
-       </TabbedContent>
+     </TabbedContent>
 
 ### Result
 
@@ -210,10 +232,18 @@ The generated Prisma Client has a reduced bundle size because the entire query e
 
 ## Manage the number of database connections
 
-You can adjust the maximum number of database connections of each Data Proxy connection pool.
+You can set the maximum number of database connections per Data Proxy instance via the `connection_limit` argument in the database connection connection string that's provided to the PDP project via the PDP web UI.
 
-To do so, in the Prisma Data Platform add the `connection_limit` parameter to the database connection string of the environment in your project.
+The _default_ value for the `connection_limit` in each Data Proxy instance is `5`. This default value is determined using the calculation `num_physical_cpus * 2 + 1`. The machines Data Proxy is running on have two CPUs, so: `2 * 2 + 1 = 5`.
+
+Here is a sample connection string for the Data Proxy connection that uses the `connection_limit` argument:
 
 ```
-postgresql://user:password@host:5432/mydb?connection_limit=60
+postgresql://USER:PASSWORD@HOST:PORT/DB?connection_limit=10
 ```
+
+In the example connection string, the connection limit of `10` is used as a sample value. To ensure that your database's connections are not exhausted, it is recommended to set an appropriate value for the connection limit. This will help manage the surge in traffic effectively and prevent any connection-related issues.
+
+It's important to understand that this connection limit applies to each individual QE instance. For example, if the `connection_limit` is set to `10` and `5` Query Engine (QE) instances are created, a total of `50` connections would be established with the database (`connection_limit * QE instances`). It is important to ensure that the database has sufficient capacity to handle this load of `50` connections.
+
+For more detailed information regarding the limits of the Data Proxy and its concurrency limits, we recommend referring to the [Concurrency Limits](https://www.prisma.io/docs/data-platform/about/limits-and-status#concurrency-limits-of-the-data-proxy) documentation.

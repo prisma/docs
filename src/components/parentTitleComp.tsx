@@ -1,22 +1,24 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
+
 import { useAllArticlesQuery } from '../hooks/useAllArticlesQuery'
-import { getParentTitle } from '../utils/parentTitle'
 import { AllArticles } from '../interfaces/AllArticles.interface'
+import { getParentTitle } from '../utils/parentTitle'
 import Link from './link'
 
 const BreadcrumbTitle = styled.div`
-  color: ${(p) => p.theme.colors.gray[600]} !important;
+  color: ${theme.colors.gray[600]} !important;
   line-height: 1rem;
   font-weight: normal;
   margin: 0;
   a {
-    color: ${(p) => p.theme.colors.gray[600]} !important;
+    color: ${theme.colors.gray[600]} !important;
     text-decoration: none;
 
     &:hover,
     &:focus {
-      color: ${(p) => p.theme.colors.gray[700]} !important;
+      color: ${theme.colors.gray[700]} !important;
       text-decoration: underline;
       cursor: pointer;
     }
