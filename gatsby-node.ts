@@ -212,8 +212,9 @@ exports.createSchemaCustomization = ({ actions }: any) => {
   createTypes(typeDefs)
 }
 
-exports.onCreateWebpackConfig = ({ actions }: any) => {
+exports.onCreateWebpackConfig = ({ stage, actions }: any) => {
   actions.setWebpackConfig({
+    devtool: stage === `build-javascript` ? false : true,
     resolve: {
       modules: [path.resolve(__dirname, 'src'), 'node_modules'],
       alias: {
