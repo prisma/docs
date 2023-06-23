@@ -214,7 +214,7 @@ exports.createSchemaCustomization = ({ actions }: any) => {
 
 exports.onCreateWebpackConfig = ({ stage, actions }: any) => {
   actions.setWebpackConfig({
-    devtool: stage === `build-javascript` ? false : true,
+    devtool: stage === `build-javascript` ? false : 'source-map',
     resolve: {
       modules: [path.resolve(__dirname, 'src'), 'node_modules'],
       alias: {
