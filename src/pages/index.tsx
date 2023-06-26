@@ -1,3 +1,4 @@
+import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
 import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 import * as React from 'react'
