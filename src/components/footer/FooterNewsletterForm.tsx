@@ -1,7 +1,7 @@
-import styled from 'styled-components'
+import { WebsiteButton } from '@prisma/lens/dist/web'
 import { useEffect, useRef, useState } from 'react'
-import { Button } from './Button'
 import React from 'react'
+import styled from 'styled-components'
 
 namespace S {
   export const Container = styled.div<{ error?: boolean }>`
@@ -87,6 +87,7 @@ namespace S {
         background-color: transparent;
         background-image: none;
         color: inherit;
+        cursor: pointer;
         font-weight: inherit;
         line-height: inherit;
         font-size: 100%;
@@ -97,6 +98,7 @@ namespace S {
     }
   `
 }
+
 const icon = (name: string) => (
   <svg
     fill="none"
@@ -110,12 +112,14 @@ const icon = (name: string) => (
     <use xlinkHref={`/feather-icons.svg#${name}`} />
   </svg>
 )
+type ColorType = 'indigo' | 'teal' | 'white' | undefined
 
 type FooterNewsletterFormProps = {
   theme?: any
+  color?: ColorType
 }
 
-export const FooterNewsletterForm = ({ theme }: FooterNewsletterFormProps) => {
+export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewsletterFormProps) => {
   const [email, setEmail] = useState<string>('')
   const [name, setName] = useState<string>('')
   const [submitted, setSubmitted] = useState<boolean>(false)
@@ -145,6 +149,8 @@ export const FooterNewsletterForm = ({ theme }: FooterNewsletterFormProps) => {
         <input type="hidden" name="u" value="dbacf466dc6e90901d8936391" />
         <input type="hidden" name="id" value="83e066a034" />
         <input type="hidden" name="c" value="?" />
+        <input type="hidden" name="f_id" value="00b0c2e1f0" />
+
         <label className="input-name" htmlFor="MERGE1">
           <div className="leading-icon">{icon('user')}</div>
           <input
@@ -171,7 +177,7 @@ export const FooterNewsletterForm = ({ theme }: FooterNewsletterFormProps) => {
             autoCorrect="off"
           />
         </label>
-        <Button type="primary">
+        <WebsiteButton type="primary" color={color === 'white' ? 'indigo' : color}>
           <input
             type="submit"
             value={submitted ? 'Thank you!' : 'Subscribe for updates'}
@@ -179,7 +185,7 @@ export const FooterNewsletterForm = ({ theme }: FooterNewsletterFormProps) => {
             id="mc-embedded-subscribe"
             className="button"
           />
-        </Button>
+        </WebsiteButton>
       </form>
       <iframe name="hiddenFrame" src="about:blank" style={{ display: 'none' }}></iframe>
     </S.Container>
