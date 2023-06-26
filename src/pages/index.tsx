@@ -1,4 +1,3 @@
-import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
 import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 import * as React from 'react'
@@ -35,6 +34,7 @@ const Summary = styled.div`
   background: url(${background}) center -150px no-repeat;
   h1 {
     margin: 0;
+    font-family: 'Barlow', sans-serif;
     font-weight: bold;
     font-size: 64px;
     letter-spacing: -0.02em;
@@ -86,6 +86,7 @@ const NormalPara = styled.p`
 const SubHeading = styled.h2`
   font-weight: 600;
   font-size: ${theme.fontSizes[36]};
+  font-family: ${theme.fonts.display};
   margin: 0;
   text-align: center;
   color: ${theme.colors.gray[900]};
