@@ -11,6 +11,7 @@ let plugins: any = [
   'gatsby-plugin-styled-components',
   'gatsby-plugin-smoothscroll',
   'gatsby-plugin-catch-links',
+  //'gatsby-plugin-webpack-bundle-analyser-v2',
   {
     resolve: `gatsby-plugin-mdx`,
     options: {
