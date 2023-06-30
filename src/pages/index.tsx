@@ -1,4 +1,4 @@
-import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
+// import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
 import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 import * as React from 'react'
@@ -18,10 +18,10 @@ import listDot from '../images/list-dot.png'
 
 const icons: any = {
   DoubleArrow: <ChevronsRight opacity="0.5" />,
-  OverviewIcon: <Icon icon={faBookOpen} height="28px" color={theme.colors.indigo[600]} />,
-  ComponentsIcon: <Icon icon={faBox} height="28px" color={theme.colors.indigo[600]} />,
-  DatabaseIcon: <Icon icon={faDatabase} height="28px" color={theme.colors.indigo[600]} />,
-  MoreIcon: <Icon icon={faBars} height="28px" color={theme.colors.indigo[600]} />,
+  OverviewIcon: <Schema />,
+  ComponentsIcon: <Schema />,
+  DatabaseIcon: <Schema />,
+  MoreIcon: <Schema />,
   Schema: <Schema />,
   DbLink: <DbLink />,
   CLI: <CLI />,
