@@ -1,10 +1,10 @@
-import {
-  faDiscord,
-  faGithub,
-  faSlack,
-  faTwitter,
-  faYoutube,
-} from '@fortawesome/free-brands-svg-icons'
+// import {
+//   faDiscord,
+//   faGithub,
+//   faSlack,
+//   faTwitter,
+//   faYoutube,
+// } from '@fortawesome/free-brands-svg-icons'
 import { defaultTheme, Icon } from '@prisma/lens/dist/web'
 import React, { AnchorHTMLAttributes } from 'react'
 import styled, { css } from 'styled-components'
@@ -468,7 +468,7 @@ const Footer = ({
               &copy; {new Date().getFullYear()} Prisma Data, Inc.
             </S.PrismaDataText>
           </S.PrismaLogo>
-          <S.SocialLinksContainer theme={defaultTheme} color={color}>
+          {/* <S.SocialLinksContainer theme={defaultTheme} color={color}>
             <a href="https://discord.gg/KQyTW2H5ca" target="_blank" rel="noopener">
               <Icon icon={faDiscord} />
             </a>
@@ -484,7 +484,7 @@ const Footer = ({
             <a href="https://github.com/prisma" target="_blank" rel="noopener">
               <Icon icon={faGithub} color={defaultTheme.colors[lightTheme ? 'black' : 'white']} />
             </a>
-          </S.SocialLinksContainer>
+          </S.SocialLinksContainer> */}
         </S.SocialLinksWrapper>
       </Container>
     </S.Container>

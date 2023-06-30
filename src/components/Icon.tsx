@@ -1,10 +1,10 @@
-import { IconProp } from '@fortawesome/fontawesome-svg-core'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+// import { IconProp } from '@fortawesome/fontawesome-svg-core'
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
 import styled from 'styled-components'
 
 interface IconProps {
-  icon: IconProp
+  icon: any
   color?: string
   className?: string
   width?: string
@@ -12,7 +12,7 @@ interface IconProps {
   btn?: boolean
 }
 
-const FontAwesomeIconHolder = styled(FontAwesomeIcon)<{
+const FontAwesomeIconHolder = styled.img<{
   width: string
   height: string
   btn: boolean
@@ -27,7 +27,7 @@ const FontAwesomeIconHolder = styled(FontAwesomeIcon)<{
 export const Icon = ({ icon, color, className, width, height, btn }: IconProps) => (
   <FontAwesomeIconHolder
     className={className}
-    icon={icon}
+    //icon={icon}
     color={color ? color : 'currentColor'}
     width={width ? width : 'unset'}
     height={height ? height : 'unset'}
