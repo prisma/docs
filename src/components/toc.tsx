@@ -168,6 +168,8 @@ const useIntersectionObserver = (
         } else {
           setActiveId(filteredVisible[0].target.id)
         }
+      } else {
+        setActiveId('')
       }
     }
 

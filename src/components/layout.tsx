@@ -1,13 +1,15 @@
+import { faChevronUp } from '@fortawesome/pro-regular-svg-icons'
 import { MDXProvider } from '@mdx-js/react'
 import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import StickyBox from 'react-sticky-box'
 import styled from 'styled-components'
 
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Footer from './footer'
 import Header from './header'
+import { Icon } from './Icon'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
@@ -138,6 +140,45 @@ const FooterWrapper = styled.div`
   }
 `
 
+const BackToTop = styled.div`
+  width: 60px;
+  height: 60px;
+  position: fixed;
+  z-index: 10000;
+  background: ${theme.colors.gray[300]};
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  bottom: 30px;
+  right: 40px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  padding: 12px;
+  transition: all 100ms ease-in-out;
+  @media (min-width: ${theme.breakpoints.tabletHorizontal}px) {
+    right: 23%;
+    width: 50px;
+    height: 50px;
+  }
+  > svg {
+    width: 100%;
+    height: 100%;
+    transition: color 100ms ease-in-out;
+  }
+  &.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  &:hover {
+    background: ${theme.colors.gray[400]};
+    > svg {
+      color: ${theme.colors.gray[600]};
+    }
+  }
+`
+
 export default function Layout({
   children,
   toc,
@@ -149,6 +190,21 @@ export default function Layout({
 }: LayoutProps) {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
+
+  const [toTop, showBackToTop] = useState<boolean>(false)
+
+  const checkForPosition = (e: Event): void => {
+    showBackToTop(window.scrollY > 300)
+  }
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  useEffect(() => {
+    document.addEventListener('scroll', checkForPosition)
+
+    return () => document.removeEventListener('scroll', checkForPosition)
+  }, [])
   return (
     <LensProvider>
       <MDXProvider components={shortcodes}>
@@ -164,6 +220,9 @@ export default function Layout({
             )}
             <Content fullWidth={homePage} wide={wide}>
               <MaxWidth wide={wide}>{children}</MaxWidth>
+              <BackToTop className={toTop ? 'visible' : ''} onClick={() => scrollToTop()}>
+                <Icon icon={faChevronUp} color={theme.colors.gray[500]} />
+              </BackToTop>
             </Content>
             {!homePage && (
               <TOCWrapper id="toc-holder">
