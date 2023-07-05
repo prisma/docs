@@ -4,7 +4,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
   setHeadComponents([
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/Inter-Regular.woff2"
+      href="/fonts/Inter-Regular.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -12,7 +12,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/Inter-Medium.woff2"
+      href="/fonts/Inter-Medium.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -20,7 +20,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/Inter-Italic.woff2"
+      href="/fonts/Inter-Italic.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -28,7 +28,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/Inter-Bold.woff2"
+      href="/fonts/Inter-Bold.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -36,7 +36,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/Inter-SemiBold.woff2"
+      href="/fonts/Inter-SemiBold.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -44,7 +44,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/Inter-SemiBoldItalic.woff2"
+      href="/fonts/Inter-SemiBoldItalic.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -52,7 +52,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/Barlow-Bold.woff2"
+      href="/fonts/Barlow-Bold.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -60,7 +60,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="https://prismalens.vercel.app/fonts/JetBrainsMono-Regular.woff2"
+      href="/fonts/JetBrainsMono-Regular.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
