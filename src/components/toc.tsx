@@ -100,11 +100,12 @@ const useIntersectionObserver = (
   setActiveId: any,
   idList: any[],
   tocDepth: number,
-  headings: any
+  headings: any,
+  activeId: string
 ) => {
   const headingElementsRef: any = React.useRef({})
   const depth = tocDepth ?? 2
-  const allHeadings = headings
+  const allHeadings = React.useRef(headings)
 
   const getKeyByValue: any = (obj: any, value: string) =>
     Object.keys(obj).find((key) => obj[key] === value)
@@ -137,7 +138,7 @@ const useIntersectionObserver = (
         const visibleHeadingN = document
           .getElementById(visibleHeadings[0].target.id)
           ?.tagName.charAt(1)
-        const firstH = allHeadings.filter((e: any, idx: number) =>
+        const firstH = allHeadings.current.filter((e: any, idx: number) =>
           deepExists(e, visibleId) ? e : false
         )
         let secondH
@@ -147,7 +148,7 @@ const useIntersectionObserver = (
             firstH.length &&
             firstH[0].url !== visibleId &&
             depth > 2 &&
-            deepExists(allHeadings, visibleId)
+            deepExists(allHeadings.current, visibleId)
           ) {
             secondH = firstH[0].items.filter((e: any, idx: number) =>
               deepExists(e, visibleId) ? e : false
@@ -158,7 +159,7 @@ const useIntersectionObserver = (
             firstH.length &&
             firstH[0].url !== visibleId &&
             depth === 2 &&
-            deepExists(allHeadings, visibleId) &&
+            deepExists(allHeadings.current, visibleId) &&
             parseInt(visibleHeadingN ? visibleHeadingN : '0') > depth + 1
           ) {
             setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
@@ -169,7 +170,8 @@ const useIntersectionObserver = (
           setActiveId(filteredVisible[0].target.id)
         }
       } else {
-        setActiveId('')
+        if (allHeadings.current.length && allHeadings.current[0].url.includes(activeId))
+          setActiveId('')
       }
     }
 
@@ -187,9 +189,9 @@ const useIntersectionObserver = (
 }
 
 const TOC = ({ headings, tocDepth }: any) => {
-  const [activeId, setActiveId] = React.useState()
+  const [activeId, setActiveId] = React.useState('')
   const idList = getIds(headings, tocDepth || 2)
-  useIntersectionObserver(setActiveId, idList, tocDepth, headings)
+  useIntersectionObserver(setActiveId, idList, tocDepth, headings, activeId)
   return (
     <nav aria-label="Table of contents">
       <ChapterTitle>ON THIS PAGE</ChapterTitle>
