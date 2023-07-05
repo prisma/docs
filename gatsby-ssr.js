@@ -4,7 +4,7 @@ export const onRenderBody = ({ setHeadComponents }) => {
   setHeadComponents([
     <link
       rel="preload"
-      href="/fonts/Inter-Regular.woff2"
+      href="https://prismalens.vercel.app/fonts/Inter-Regular.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
@@ -12,7 +12,47 @@ export const onRenderBody = ({ setHeadComponents }) => {
     />,
     <link
       rel="preload"
-      href="/fonts/Inter-Bold.woff2"
+      href="https://prismalens.vercel.app/fonts/Inter-Medium.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="https://prismalens.vercel.app/fonts/Inter-Italic.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="https://prismalens.vercel.app/fonts/Inter-Bold.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="https://prismalens.vercel.app/fonts/Inter-SemiBold.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="https://prismalens.vercel.app/fonts/Inter-SemiBoldItalic.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="https://prismalens.vercel.app/fonts/Barlow-Bold.woff2"
       as="font"
       type="font/woff2"
       crossOrigin="anonymous"
