@@ -8,15 +8,15 @@ toc: true
 
 <TopBlock>
 
-Prisma 5.0.0 introduces a number of **breaking changes**. This guide explains how upgrading might affect your application and gives instructions on how to handle any breaking changes.
+Prisma 5.0.0 introduces a number of changes, including the usage of our new JSON Protocol, [which make Prisma faster by default](https://www.prisma.io/blog/prisma-and-serverless-73hbgKnZ6t#improved-startup-performance-by-9x! A list of these changes can be found [in our release notes](https://github.com/prisma/prisma/releases/tag/5.0.0).
+
+This guide explains how upgrading might affect your application and gives instructions on how to handle breaking changes within Prisma 5.
 
 </TopBlock>
 
-## Major changes
+## Major breaking changes
 
 This section gives an overview of major breaking changes in Prisma 5.
-
-We recommend that you first address any Prisma schema validation errors, then pull your database to reflect new Prisma schema capabilities, and finally fix any type errors in Prisma Client and validate by running your test suite.
 
 ### Node.js minimum version change
 
@@ -26,7 +26,7 @@ See our [system requirements](/reference/system-requirements) for all minimum ve
 
 <Admonition type="info">
 
-Node.js v16.x is reaching [end-of-life on 11 September 2023](https://nodejs.org/en/blog/announcements/nodejs16-eol) in order to coincide with the end-of-life of OpenSSL 1.1.1. For that reason, we recommend upgrading to the current LTS Node.js, v18.x. Please note that Prisma 5 will be the last major version of Prisma to support Node.js v16.
+Node.js v16.x is reaching [end-of-life on 11 September 2023](https://nodejs.org/en/blog/announcements/nodejs16-eol) in order to coincide with the end-of-life of OpenSSL 1.1.1. For that reason, we recommend upgrading to the current Node.js LTS, v18.x. Please note that Prisma 5 will be the last major version of Prisma to support Node.js v16.
 
 </Admonition>
 
@@ -34,18 +34,15 @@ Node.js v16.x is reaching [end-of-life on 11 September 2023](https://nodejs.org/
 
 From Prisma version 5.0.0, the minimum version of PostgreSQL supported is version 9.6. If your project uses an earlier version of PostgreSQL, you will need to update it.
 
-
-### Prisma Client embedded SQLite version updated
-
-With Prisma version 5.0.0, we have upgraded the embedded version of SQLite from `3.35.4` to `3.41.2`. We did not see any breaking changes and don't anticipate any changes needed in user projects, but if you are using SQLite, make sure to check [the SQLite changelog](https://www.sqlite.org/changes.html)
-
 ### Removal of array shortcuts
 
-Prisma version 5.0.0 drops support for array shortcuts, which were a way to omit a wrapping array for single values.
+Prisma version 5.0.0 drops support for a number of array shortcuts. These shortcuts were a way to add a single element as a value to an array-based operator instead of an array of one element. In an effort to make our typings more consistent, we now require array values for these operators.
 
-#### `OR` operators
+In most cases, the fix will be as simple as wrapping the existing value in an array. Below are some specific examples of needed changes in Prisma 5.
 
-The following code in Prisma 4:
+#### <inlinecode>OR</inlinecode> operators
+
+The following code in Prisma 4 and lower:
 
 ```js
 prisma.user.findMany({
@@ -57,19 +54,17 @@ Will need to be changed to the following in Prisma 5:
 
 ```js highlight=2-4;normal
 prisma.user.findMany({
-  OR: [
-    { email: 'foo@example.com' }
-  ],
+  OR: [{ email: 'foo@example.com' }],
 })
 ```
 
 `OR` operators will only accept array values.
 
-#### `in` and `notIn` operators
+#### <inlinecode>in</inlinecode> and <inlinecode>notIn</inlinecode> operators
 
 Similar to `OR`, `in` and `notIn` require array values.
 
-Prisma 4:
+Prisma 4 and lower:
 
 ```js
 prisma.user.findMany({
@@ -93,7 +88,7 @@ prisma.user.findMany({
 })
 ```
 
-If your `in` and `notIn` values are only one element, you can also update your code to not use these clauses:
+If your `in` and `notIn` values are only one element, you can also update your code to not use these operators:
 
 ```js highlight=2,6;normal
 prisma.user.findMany({
@@ -105,11 +100,11 @@ prisma.user.findMany({
 })
 ```
 
-#### `path` argument for filtering on JSON fields in Postgres
+#### <inlinecode>path</inlinecode> argument for filtering on JSON fields in Postgres
 
 [When filtering on JSON fields in a Postgres table](https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filter-on-a-json-field) the `path` argument now only accepts an array.
 
-Prisma 4:
+When using the following schema:
 
 ```prisma
 datasource db {
@@ -121,6 +116,8 @@ model User {
   settings Json
 }
 ```
+
+Prisma 4 and lower:
 
 ```js
 prisma.user.findMany({
@@ -133,18 +130,7 @@ prisma.user.findMany({
 })
 ```
 
-Prisma 5
-
-```prisma
-datasource db {
-  provider = "postgresql"
-}
-
-model User {
-  id       String @id
-  settings Json
-}
-```
+Prisma 5:
 
 ```js highlight=4;normal
 prisma.user.findMany({
@@ -165,7 +151,7 @@ Note: This change only affects PostgreSQL databases. MySQL databases are not aff
 
 #### Composite and Scalar lists
 
-Inputs for operations on Composite and Scalar lists now only accept array values. The following examples all use the following schema:
+Inputs for operations on lists of [Composite](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#defining-composite-types) and [Scalar](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#scalar-fields) types now only accept array values. The following examples all use the following schema:
 
 ```prisma
 model Post {
@@ -183,7 +169,7 @@ type Comment {
 
 [When filtering records based on a composite list field](https://www.prisma.io/docs/concepts/components/prisma-client/composite-types#finding-records-that-contain-composite-types-with-find-and-findmany) you will only be able to supply array values.
 
-Prisma 4:
+Prisma 4 and lower:
 
 ```js
 prisma.post.findMany({
@@ -203,7 +189,7 @@ prisma.post.findMany({
 
 If you exclude `equals`, you still must supply an array value for composite list fields.
 
-Prisma 4:
+Prisma 4 and lower:
 
 ```js
 prisma.post.findMany({
@@ -223,7 +209,7 @@ prisma.post.findMany({
 
 Scalar list values must be arrays in all operations.
 
-Prisma 4:
+Prisma 4 and lower:
 
 ```js
 prisma.post.create({
@@ -247,16 +233,20 @@ prisma.post.findMany({
 })
 ```
 
-### Removal of `jsonProtocol` preview feature
+### Prisma Client embedded SQLite version updated
 
-The `jsonProtocol` preview feature is now generally available, [speeding up Prisma significantly by default](https://www.prisma.io/blog/prisma-and-serverless-73hbgKnZ6t#improved-startup-performance-by-9x)! When upgrading to Prisma 5, make sure to remove `jsonProtocol` from your preview features, if added.
+With Prisma version 5.0.0, we have upgraded the embedded version of SQLite from `3.35.4` to `3.41.2`. We did not see any breaking changes and don't anticipate any changes needed in user projects, but if you are using SQLite, make sure to check [the SQLite changelog](https://www.sqlite.org/changes.html)
 
-Prisma 4:
+### Removal of <inlinecode>jsonProtocol</inlinecode> preview feature
+
+The `jsonProtocol` preview feature is now generally available! When upgrading to Prisma 5, make sure to remove `jsonProtocol` from your preview features, if added.
+
+Prisma 4 and lower:
 
 ```prisma
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["jsonProtocol"]
+  previewFeatures = ["jsonProtocol", "tracing"]
 }
 ```
 
@@ -269,21 +259,123 @@ generator client {
 }
 ```
 
-### Removal of deprecated `rejectOnNotFound` parameter
+In addition, several error messages have been improved. The following error message in Prisma 4 and below
 
-### Removal of `runtime/index.js` from generated client
+```text
+Argument bool: Got invalid value 'true' on prisma.createOneD. Provided String, expected Boolean.
+Argument byteA: Got invalid value 'hello prisma ⚡️🚀' on prisma.createOneD. Provided String, expected Bytes.
+Argument xml: Got invalid value 123 on prisma.createOneD. Provided Int, expected String.
+```
 
-### `cockroachdb` provider is now required when connecting to a CockroachDB database
+becomes the following in Prisma 5:
 
-## Minor changes
+```text
+Argument `bool`: Invalid value provided. Expected Boolean, provided String.
+```
+
+### <inlinecode>cockroachdb</inlinecode> provider is now required when connecting to a CockroachDB database
+
+### Removal of <inlinecode>runtime/index.js</inlinecode> from generated client
+
+#### Using public APIs from <inlinecode>runtime/index.js</inlinecode>
+
+Importing from `@prisma/client/runtime` is no longer available in Prisma 5. If you are using public APIs available in this namespace you can instead import `Prisma` and access them. For example:
+
+```js
+import { Decimal } from '@prisma/client/runtime'
+```
+
+will need to be changed to
+
+```js
+import { Prisma } from '@prisma/client'
+Prisma.Decimal
+```
+
+#### Using private APIs for a specific runtime
+
+Instead of importing private APIs from the top-level `@prisma/client/runtime` you will need to import from the runtime specific to your database engine. For example:
+
+```text
+@prisma/client/runtime/data-proxy
+```
+
+## Minor breaking changes
 
 The following breaking changes also may cause an application to initially throw an error message after upgrading to Prisma 5. Fortunately, they are easy to solve, as the underlying functionality has been removed for a while or the change is a simple string replace.```
 
 ### Removal of deprecated Prisma CLI flags
 
-### Removal of deprecated `prisma2` executable
+Several deprecated CLI flags have been removed.
 
-### Rename `migration-engine` to `schema-engine`
+- `--preview-feature` used in `db execute`, `db seed`, and `db diff`
+- `--experimental` and `--early-access-feature` used in `migrate`
+- `--force`/`-f` used in `db push`
+- `--experimental-reintrospection` and `--clean` used in `db pull`
+
+The use of `db push --force` can be replaced with the newer implementation `db push --accept-data-loss`.
+
+All other flags are from previous APIs and are no longer needed.
+
+### Removal of the <inlinecode>beforeExit</inlinecode> hook from the library engine
+
+Instead of the existing `beforeExit` hook we recommend using built-in Node.js exit events.
+
+The following code with Prisma 4:
+
+```js
+prisma.$on('beforeExit', () => {
+  // code
+})
+```
+
+Could become:
+
+```js
+process.on('exit', () => {
+  // code
+})
+```
+
+### Removal of deprecated <inlinecode>prisma2</inlinecode> executable
+
+When Prisma 2 was released a new executable, `prisma2` was added to the CLI in addition to the existing `prisma` executable. Today we are removing the extra executable.
+
+If your scripts use `prisma2` with the Prisma CLI, please update `prisma2` to simply `prisma`.
+
+### Removal of deprecated <inlinecode>experimentalFeatures</inlinecode> property
+
+`previewFeatures` in a generator used to be called `experimentalFeatures`. We are finally removing that deprecated property.
+
+Update references of `experimentalFeatures` to `previewFeatures` manually or use the new code action in the Prisma VSCode extension.
+
+### Rename <inlinecode>migration-engine</inlinecode> to <inlinecode>schema-engine</inlinecode>
+
+The engine responsible for commands like `prisma migrate` and `prisma db` has been renamed from `migration-engine` to `schema-engine` to better describe its use. For many users, no changes will be required. However, if you need to explicitly include the engine file for any reason, you will need to update your code references.
+
+One example we have seen is projects using the Serverless Framework. In these instances, you may have rules such as:
+
+```yaml
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/prisma/migration-engine-*'
+```
+
+The rule `'!node_modules/prisma/migration-engine-*'` rule will need to be updated to match the new naming.
+
+The [recommended rule from our documentation](https://www.prisma.io/docs/guides/deployment/deployment-guides/use-prisma-with-serverless-framework#lambda-functions-with-arm64-architectures) is not affected by this change.
+
+```yaml highlight=6;normal
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
+```
 
 ## Upgrade the <inlinecode>prisma</inlinecode> and <inlinecode>@prisma/client</inlinecode> packages to Prisma 5
 
