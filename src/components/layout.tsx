@@ -13,7 +13,6 @@ import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
 
 import '../styles/layout.css'
-import '../styles/all.css'
 
 interface LayoutContentProps {
   toc: any
