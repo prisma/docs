@@ -64,15 +64,147 @@ Node.js v16.x is reaching [end-of-life on 11 September 2023](https://nodejs.org/
 
 ### PostgreSQL minimum version change
 
-From Prisma version 5.0.0, the minimum version of PostgreSQL supported is version 9.6. If your project uses an earlier version of PostgreSQL, you will need to upgrade it.
+From Prisma version 5.0.0, the minimum version of PostgreSQL supported is 9.6. If your project uses an earlier version of PostgreSQL, you will need to upgrade it.
 
 ### TypeScript minimum version change
 
+From Prisma version 5.0.0, the minimum version of TypeScript supported is 4.7. If your project uses an earlier version of TypeScript, you will need to upgrade it.
+
 ### Removal of <inlinecode>rejectOnNotFound</inlinecode> parameter
 
-Used globally or per query
+From Prisma version 5.0.0, the deprecated parameter `rejectOnNotFound` has been removed. Depending on if your project used `rejectOnNotFound` globally or per query, there will be be different ways of updating your code.
 
-true/false vs custom error handler
+#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the client level.
+
+For cases like these below:
+
+```js
+// Example 1
+const prisma = new PrismaClient({
+  rejectOnNotFound: true,
+})
+
+// Example 2
+const prisma = new PrismaClient({
+  rejectOnNotFound: {
+    findUnique: true,
+  },
+})
+```
+
+You will need to update your codebase to use `findUniqueOrThrow` and `findFirstOrThrow` instead of `findUnique` and `findFirst`, depending on which calls you would like to throw.
+
+If instead you use a custom error handler with the `rejectOnNotFound` property, like these examples:
+
+```js
+// Example 3
+const prisma = new PrismaClient({
+  rejectOnNotFound: (err) => new Error('something'),
+})
+
+// Example 4
+const prisma = new PrismaClient({
+  rejectOnNotFound: {
+    findUnique: (err) => new Error('something'),
+  },
+})
+
+// Example 5
+const prisma = new PrismaClient({
+  rejectOnNotFound: {
+    findFirst: {
+      User: (err) => new Error('User error'),
+      Post: (err) => new Error('Post error'),
+    },
+    findUnique: {
+      User: (err) => new Error('User error'),
+      Post: (err) => new Error('Post error'),
+    },
+  },
+})
+```
+
+You will need to update your method usage to `...OrThrow` and then use a [client extension](/concepts/components/prisma-client/client-extensions) in order to get the same behavior. As an example, the following extension would give the same behavior in Prisma 5 that `Example 5` gave in Prisma 4 and lower.
+
+```js
+const customErrorFunc = async (model, data) => {
+  try {
+    const result = await data
+    return result
+  } catch (error) {
+    if (error instanceof Prisma.NotFoundError) {
+      throw new Error(`${model} error`)
+    }
+    throw error
+  }
+}
+
+prisma.$extends({
+  query: {
+    user: {
+      findFirstOrThrow({ model, data }) {
+        return await customErrorFunc(model, data)
+      },
+      findUniqueOrThrow({ model, data }) {
+        return await customErrorFunc(model, data)
+      },
+    },
+    post: {
+      findFirstOrThrow({ model, data }) {
+        return await customErrorFunc(model, data)
+      },
+      findUniqueOrThrow({ model, data }) {
+        return await customErrorFunc(model, data)
+      },
+    },
+  },
+})
+```
+
+#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the query level.
+
+If you enable `rejectOnNotFound` on a per-query basis, you will need to replace your usage at the query level.
+
+The following example:
+
+```js
+prisma.user.findFirst({
+  where: { name: 'Alice' },
+  rejectOnNotFound: true,
+})
+```
+
+Is easily converted to:
+
+```js
+prisma.user.findFirstOrThrow({
+  where: { name: 'Alice' },
+})
+```
+
+If you use a custom error handler like the following:
+
+```js
+prisma.user.findFirst({
+  where: { name: 'Alice' },
+  rejectOnNotFound: () => new UserNotFoundError(),
+})
+```
+
+You will need to modify your code to adapt your error handler to the errors returned by `...OrThrow` methods.
+
+```js
+const adaptError = (customThrowFn) => (error) => {
+  if (error.code === 'P2025') {
+    throw customThrowFn()
+  }
+  throw error
+}
+
+const user = await prisma.user.findFirstOrThrow({
+  where: { name: 'Alice' },
+}).catch(adaptError(() => new MyCustomError())
+```
 
 ### Removal of array shortcuts
 
