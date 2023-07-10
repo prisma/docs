@@ -72,7 +72,67 @@ From Prisma version 5.0.0, the minimum version of TypeScript supported is 4.7. I
 
 ### Removal of <inlinecode>rejectOnNotFound</inlinecode> parameter
 
-From Prisma version 5.0.0, the deprecated parameter `rejectOnNotFound` has been removed. Depending on if your project used `rejectOnNotFound` globally or per query, there will be be different ways of updating your code.
+From Prisma version 5.0.0, the deprecated parameter `rejectOnNotFound` has been removed. Depending on if your project used `rejectOnNotFound` per query or globally, there will be be different ways of updating your code.
+
+#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the query level.
+
+If you enable `rejectOnNotFound` on a per-query basis, you will need to replace your usage at the query level.
+
+The following example:
+
+```js
+prisma.user.findFirst({
+  where: { name: 'Alice' },
+  rejectOnNotFound: true,
+})
+```
+
+Is converted to:
+
+```js
+prisma.user.findFirstOrThrow({
+  where: { name: 'Alice' },
+})
+```
+
+If you use a custom error handler like the following:
+
+```js
+prisma.user.findFirst({
+  where: { name: 'Alice' },
+  rejectOnNotFound: () => new UserNotFoundError(),
+})
+```
+
+You will need to modify your code to handle the errors thrown by `...OrThrow` methods.
+
+```js
+try {
+  prisma.user.findFirstOrThrow({
+    where: { name: 'Alice' },
+  })
+} catch (err) {
+  if (err.code === 'P2025') {
+    throw new UserNotFoundError()
+  }
+  throw err
+}
+```
+
+You could also create a reusable error adapter which can be used in a `catch` in your code.
+
+```js
+const adaptError = (customThrowFn) => (error) => {
+  if (error.code === 'P2025') {
+    throw customThrowFn()
+  }
+  throw error
+}
+
+const user = await prisma.user.findFirstOrThrow({
+  where: { name: 'Alice' },
+}).catch(adaptError(() => new MyCustomError())
+```
 
 #### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the client level.
 
@@ -159,51 +219,6 @@ prisma.$extends({
     },
   },
 })
-```
-
-#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the query level.
-
-If you enable `rejectOnNotFound` on a per-query basis, you will need to replace your usage at the query level.
-
-The following example:
-
-```js
-prisma.user.findFirst({
-  where: { name: 'Alice' },
-  rejectOnNotFound: true,
-})
-```
-
-Is easily converted to:
-
-```js
-prisma.user.findFirstOrThrow({
-  where: { name: 'Alice' },
-})
-```
-
-If you use a custom error handler like the following:
-
-```js
-prisma.user.findFirst({
-  where: { name: 'Alice' },
-  rejectOnNotFound: () => new UserNotFoundError(),
-})
-```
-
-You will need to modify your code to adapt your error handler to the errors returned by `...OrThrow` methods.
-
-```js
-const adaptError = (customThrowFn) => (error) => {
-  if (error.code === 'P2025') {
-    throw customThrowFn()
-  }
-  throw error
-}
-
-const user = await prisma.user.findFirstOrThrow({
-  where: { name: 'Alice' },
-}).catch(adaptError(() => new MyCustomError())
 ```
 
 ### Removal of array shortcuts
