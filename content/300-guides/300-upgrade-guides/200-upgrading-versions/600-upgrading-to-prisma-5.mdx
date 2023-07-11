@@ -29,8 +29,8 @@ Before you upgrade, check each **breaking change** below to see how the upgrade 
 <tab>
 
 ```terminal
-npm install @prisma/client@latest
-npm install -D prisma
+npm update @prisma/client@latest
+npm update -D prisma@latest
 ```
 
 </tab>
@@ -63,7 +63,7 @@ From Prisma version 5.0.0, the minimum version of Node.js supported is 16.13.0. 
 
 See our [system requirements](/reference/system-requirements) for all minimum version requirements.
 
-<Admonition type="info">
+<Admonition type="warning">
 
 Node.js v16.x is reaching [end-of-life on 11 September 2023](https://nodejs.org/en/blog/announcements/nodejs16-eol) in order to coincide with the end-of-life of OpenSSL 1.1.1. For that reason, we recommend upgrading to the current Node.js LTS, v18.x. Please note that Prisma 5 will be the last major version of Prisma to support Node.js v16.
 
@@ -88,6 +88,10 @@ This section gives an overview of the main breaking changes in Prisma 5.
 ### Removal of <inlinecode>rejectOnNotFound</inlinecode> parameter
 
 From Prisma version 5.0.0, the deprecated parameter `rejectOnNotFound` has been removed. Depending on if your project used `rejectOnNotFound` per query or globally, there will be be different ways of updating your code.
+
+If you are using the `rejectOnNotFound` parameter on a per-query basis, then follow our steps for [updating your code at the query level](#replacing-rejectonnotfound-enabled-at-the-query-level)
+
+If instead you have set up the `rejectOnNotFound` parameter at the client level, you will need to follow [the steps for updating your code at the client level](#replacing-rejectonnotfound-enabled-at-the-client-level)
 
 #### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the query level.
 
@@ -207,7 +211,7 @@ const customErrorFunc = async (model, data) => {
     const result = await data
     return result
   } catch (error) {
-    if (error instanceof Prisma.NotFoundError) {
+    if (error.code === 'P2025') {
       throw new Error(`${model} error`)
     }
     throw error
@@ -275,7 +279,15 @@ Argument `id` must not be null.
 
 This version drops support for a number of "array shortcuts". These shortcuts were a way to add a single element as a value to an array-based operator instead of wrapping that one element in an array. To make our typings more consistent and logical, we now require array values for these operators.
 
-In most cases, the fix will be as simple as wrapping the existing value in an array. Below are some specific examples of needed changes in Prisma 5.
+In most cases, the fix will be as simple as wrapping the existing value in an array. The shortcuts removed in Prisma 5 are:
+
+- [`OR` shortcuts](#or-operators)
+- [`in` and `notIn` shortcuts](#in-and-notin-operators)
+- [PostgreSQL JSON `path` field shortcuts](#path-argument-for-filtering-on-json-fields-in-postgresql)
+- [Scalar list shortcuts](#scalar-lists)
+- [MongoDB Composite list shortcuts](#composite-lists)
+
+While `OR`, `in`, and `notIn` operators are affected, `AND` and `NOT` are not affected by this change.
 
 #### <inlinecode>OR</inlinecode> operators
 
@@ -341,6 +353,8 @@ prisma.user.findMany({
 })
 ```
 
+<details><summary>Suggestion for single elements</summary>
+
 If your `in` and `notIn` values are only one element, you can also update your code to not use these operators at all:
 
 ```js highlight=3,9;normal
@@ -356,6 +370,8 @@ prisma.user.findMany({
   },
 })
 ```
+
+</details>
 
 #### <inlinecode>path</inlinecode> argument for filtering on JSON fields in PostgreSQL
 
@@ -402,25 +418,73 @@ Note: This `path` argument change only affects PostgreSQL databases. MySQL datab
 
 </Admonition>
 
-#### Composite and Scalar lists
+#### Scalar lists
 
-Operations on lists of [Composite](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#defining-composite-types) and [Scalar](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#scalar-fields) types now only accept array values. The following examples all use the following schema:
+[Scalar list](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#scalar-fields) values must be arrays in all operations.
+
+With the following schema:
+
+```prisma
+model Post {
+  id   String   @id @default(uuid())
+  tags String[]
+}
+```
+
+Prisma 4 and lower:
+
+```js
+prisma.post.create({
+  data: {
+    tags: 'databases',
+  },
+})
+
+prisma.post.findMany({
+  where: {
+    tags: 'databases',
+  },
+})
+```
+
+Prisma 5:
+
+```js highlight=3,9;normal
+prisma.post.create({
+  data: {
+    tags: ['databases'],
+  },
+})
+
+prisma.post.findMany({
+  where: {
+    tags: ['databases'],
+  },
+})
+```
+
+#### Composite lists
+
+Operations on lists of [Composite](/concepts/components/prisma-schema/data-model#defining-composite-types) types now only accept array values.
+
+<Admonition type="info">
+
+Composite lists are only available in the [MongoDB provider](/concepts/database-connectors/mongodb)
+
+</Admonition>
+
+With the following schema:
 
 ```prisma
 model Post {
   id           String    @id @default(uuid())
   commentsList Comment[]
-  tags         String[]
 }
 
 type Comment {
   text String
 }
 ```
-
-##### <inlinecode>equals</inlinecode> filter for composite lists
-
-[When using the `equals` filter with a composite list](https://www.prisma.io/docs/concepts/components/prisma-client/composite-types#finding-records-that-contain-composite-types-with-find-and-findmany) you will only be able to supply array values.
 
 Prisma 4 and lower:
 
@@ -445,6 +509,8 @@ prisma.post.findMany({
   },
 })
 ```
+
+<details><summary>Shorthand notation usage</summary>
 
 If you use the shorthand notation and exclude `equals`, you still must supply an array value for composite list fields.
 
@@ -478,41 +544,7 @@ prisma.post.findMany({
 })
 ```
 
-##### Scalar lists
-
-Scalar list values must be arrays in all operations.
-
-Prisma 4 and lower:
-
-```js
-prisma.post.create({
-  data: {
-    tags: 'databases',
-  },
-})
-
-prisma.post.findMany({
-  where: {
-    tags: 'databases',
-  },
-})
-```
-
-Prisma 5:
-
-```js highlight=3,9;normal
-prisma.post.create({
-  data: {
-    tags: ['databases'],
-  },
-})
-
-prisma.post.findMany({
-  where: {
-    tags: ['databases'],
-  },
-})
-```
+</details>
 
 ### <inlinecode>cockroachdb</inlinecode> provider is now required when connecting to a CockroachDB database
 
