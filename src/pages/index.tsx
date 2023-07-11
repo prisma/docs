@@ -1,12 +1,10 @@
-import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 import * as React from 'react'
 import { ArrowRight, ChevronsRight } from 'react-feather'
 import styled from 'styled-components'
 
 import { PrimaryButton, SpecialButton } from '../components/button'
-import { Icon } from '../components/Icon'
 import Layout from '../components/layout'
 import Link from '../components/link'
 import SEO from '../components/seo'
@@ -18,10 +16,14 @@ import listDot from '../images/list-dot.png'
 
 const icons: any = {
   DoubleArrow: <ChevronsRight opacity="0.5" />,
-  OverviewIcon: <Icon icon={faBookOpen} height="28px" color={theme.colors.indigo[600]} />,
-  ComponentsIcon: <Icon icon={faBox} height="28px" color={theme.colors.indigo[600]} />,
-  DatabaseIcon: <Icon icon={faDatabase} height="28px" color={theme.colors.indigo[600]} />,
-  MoreIcon: <Icon icon={faBars} height="28px" color={theme.colors.indigo[600]} />,
+  OverviewIcon: (
+    <Icon icon={'fa-regular fa-book-open'} size="28px" color={theme.colors.indigo[600]} />
+  ),
+  ComponentsIcon: <Icon icon={'fa-regular fa-box'} size="28px" color={theme.colors.indigo[600]} />,
+  DatabaseIcon: (
+    <Icon icon={'fa-regular fa-database'} size="28px" color={theme.colors.indigo[600]} />
+  ),
+  MoreIcon: <Icon icon={'fa-regular fa-bars'} size="28px" color={theme.colors.indigo[600]} />,
   Schema: <Schema />,
   DbLink: <DbLink />,
   CLI: <CLI />,
