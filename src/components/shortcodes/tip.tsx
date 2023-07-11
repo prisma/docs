@@ -1,9 +1,10 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
 const Wrapper = styled.section`
   padding: 1rem;
-  background-color: ${(p) => p.theme.colors.gray[100]};
+  background-color: ${theme.colors.gray[100]};
   border-radius: 8px;
   min-height: 100px;
   margin: 2rem 0;

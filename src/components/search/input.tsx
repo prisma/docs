@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
@@ -24,20 +25,20 @@ const SearchBoxDiv = styled.div`
     max-width: 1200px;
     width: 100%;
     height: 77px;
-    background: ${(p) => p.theme.colors.white};
-    padding: ${(p) => p.theme.space[20]};
-    border-bottom: 1px solid ${(p) => p.theme.colors.gray[300]};
-    border-radius: ${(p) => p.theme.radii.small};
+    background: ${theme.colors.white};
+    padding: ${theme.space[20]};
+    border-bottom: 1px solid ${theme.colors.gray[300]};
+    border-radius: ${theme.radii.small};
 
     form {
       max-width: 100%;
       input {
-        color: ${(p) => p.theme.colors.gray[700]};
+        color: ${theme.colors.gray[700]};
       }
     }
 
     .clear {
-      background: ${(p) => p.theme.colors.gray[300]};
+      background: ${theme.colors.gray[300]};
       border-radius: 6px;
       height: 36px;
       width: 36px;
@@ -45,11 +46,11 @@ const SearchBoxDiv = styled.div`
       align-items: center;
       justify-content: center;
       svg path {
-        stroke: ${(p) => p.theme.colors.gray[700]};
+        stroke: ${theme.colors.gray[700]};
       }
     }
   }
-  @media (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (max-width: ${theme.breakpoints.mobile}) {
     width: auto;
     flex: 1;
     form {
@@ -78,16 +79,16 @@ const SearchBoxDiv = styled.div`
       width: 100%;
       background: transparent;
       outline: none;
-      padding: 0rem ${(p) => p.theme.space[32]};
-      font-family: ${(p) => p.theme.fonts.text};
+      padding: 0rem ${theme.space[32]};
+      font-family: ${theme.fonts.text};
       font-style: normal;
       font-weight: normal;
-      font-size: ${(p) => p.theme.fontSizes[16]};
+      font-size: ${theme.fontSizes[16]};
       line-height: 100%;
       border-width: 0;
       &::placeholder {
         content: 'Search Documentation...';
-        color: ${(p) => p.theme.colors.gray[500]};
+        color: ${theme.colors.gray[500]};
         opacity: 1; /* Firefox */
       }
     }
@@ -101,15 +102,15 @@ const SearchBoxDiv = styled.div`
   }
 
   .slash {
-    border: 1px solid ${(p) => p.theme.colors.gray[400]};
+    border: 1px solid ${theme.colors.gray[400]};
     border-radius: 4px;
-    color: ${(p) => p.theme.colors.gray[400]};
+    color: ${theme.colors.gray[400]};
     min-width: 18px;
     display: flex;
     justify-content: center;
   }
 
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     .slash {
       display: none;
     }

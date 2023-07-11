@@ -1,9 +1,11 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
-import Email from '../../icons/Email'
+
 import ArrowEmail from '../../icons/ArrowEmail'
-import * as valid from './valid'
+import Email from '../../icons/Email'
 import sendToMailchimp from './mailChimp'
+import * as valid from './valid'
 
 const NewsLetterWrapper = styled.div`
   width: 100%;
@@ -12,13 +14,13 @@ const NewsLetterWrapper = styled.div`
   }
   h4 {
     margin: 0;
-    line-height: ${(p) => p.theme.space[48]};
+    line-height: ${theme.space[48]};
     font-weight: bold;
     letter-spacing: 0.1em;
   }
   .email {
     position: relative;
-    margin-top: ${(p) => p.theme.space[24]};
+    margin-top: ${theme.space[24]};
     display: flex;
     align-items: center;
     margin-bottom: 48px;
@@ -32,18 +34,18 @@ const NewsLetterWrapper = styled.div`
       display: none;
     }
     input {
-      background: ${(p) => p.theme.colors.white};
+      background: ${theme.colors.white};
       box-shadow: 0px 4px 8px rgba(60, 45, 111, 0.1), 0px 1px 3px rgba(60, 45, 111, 0.15);
-      border-radius: ${(p) => p.theme.radii.small};
+      border-radius: ${theme.radii.small};
       width: 100%;
       border: 0;
-      padding: ${(p) => p.theme.space[24]} 60px;
+      padding: ${theme.space[24]} 60px;
       font-size: 100%;
       font-family: Inter;
       font-weight: normal;
 
       &::placeholder {
-        color: ${(p) => p.theme.colors.gray[500]};
+        color: ${theme.colors.gray[500]};
       }
     }
     .email-icon {
@@ -61,20 +63,20 @@ const NewsLetterWrapper = styled.div`
       height: 32px;
       circle {
         transition: 0.2s fill ease;
-        fill: ${(p) => p.theme.colors.green[500]};
+        fill: ${theme.colors.green[500]};
       }
       path {
         transition: 0.2s stroke ease;
-        stroke: ${(p) => p.theme.colors.white};
+        stroke: ${theme.colors.white};
       }
       &[disabled] {
         cursor: default;
 
         circle {
-          fill: ${(p) => p.theme.colors.gray[300]};
+          fill: ${theme.colors.gray[300]};
         }
         path {
-          stroke: ${(p) => p.theme.colors.gray[600]};
+          stroke: ${theme.colors.gray[600]};
         }
       }
     }

@@ -34,14 +34,34 @@ _Transaction mode_ offers a connection for every transaction – a requirement f
 
 ## Prisma Migrate and PgBouncer workaround
 
-Prisma Migrate uses **database transactions** to check out the current state of the database and the migrations table. However, the Migration Engine is designed to use a **single connection to the database**, and does not support connection pooling with PgBouncer. If you attempt to run Prisma Migrate commands in any environment that uses PgBouncer for connection pooling, you might see the following error:
+Prisma Migrate uses **database transactions** to check out the current state of the database and the migrations table. However, the Schema Engine is designed to use a **single connection to the database**, and does not support connection pooling with PgBouncer. If you attempt to run Prisma Migrate commands in any environment that uses PgBouncer for connection pooling, you might see the following error:
 
 ```bash
 Error: undefined: Database error
 Error querying the database: db error: ERROR: prepared statement "s0" already exists
 ```
 
-To work around this issue, you must connect directly to the database rather than going through PgBouncer. How to achieve this depends on your setup or provider:
+To work around this issue, you must connect directly to the database rather than going through PgBouncer. To achieve this, you can use the [`directUrl`](/reference/api-reference/prisma-schema-reference#datasource:~:text=the%20shadow%20database.-,directUrl,-No) field in your [`datasource`](/reference/api-reference/prisma-schema-reference#datasource) <span class="api"></span> block.
+
+For example, consider the following `datasource` block:
+
+```prisma
+datasource db {
+  provider  = "postgresql"
+  url       = "postgres://USER:PASSWORD@HOST:PORT/DATABASE?pgbouncer=true"
+  directUrl = "postgres://USER:PASSWORD@HOST:PORT/DATABASE"
+}
+```
+
+The block above uses a PgBouncer connection string as the primary URL using `url`, allowing Prisma Client to take advantage of the PgBouncer connection pooler.
+
+It also provides a connection string directly to the database, without PgBouncer, using the `directUrl` field. This connection string will be used when [commands that require a single connection](/data-platform/data-proxy/prisma-cli-with-data-proxy#prisma-cli-commands-that-require-a-direct-database-connection) to the database, such as `prisma migrate dev` or `prisma db push`, are invoked.
+
+## PgBouncer with different database providers
+
+There are sometimes minor differences in how to connect directly to a Postgres database that depend on the provider hosting the database.
+
+Below are links to information on how to set up these connections with providers who have setup steps not covered here in our documentation:
 
 - [Connecting directly to a PostgreSQL database hosted on Digital Ocean](https://github.com/prisma/prisma/issues/6157)
 - [Connecting directly to a PostgreSQL database hosted on ScaleGrid](https://github.com/prisma/prisma/issues/6701#issuecomment-824387959)

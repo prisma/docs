@@ -1,5 +1,7 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
+
 import ParentTitle from './parentTitleComp'
 import SwitcherBlock from './switcherBlock'
 
@@ -10,7 +12,7 @@ const TopSectionWrapper = styled.div`
     position: relative;
   }
 
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.mobile}) {
     .tech-switch-block {
       width: 100%;
     }
@@ -20,28 +22,28 @@ const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.mobile}) {
     flex-direction: column;
     align-items: baseline;
   }
 `
 
 const MainTitle = styled.h1`
-  font-family: ${(p) => p.theme.fonts.display};
-  font-size: ${(p) => p.theme.fontSizes[40]} !important;
+  font-family: ${theme.fonts.display};
+  font-size: ${theme.fontSizes[40]} !important;
   font-style: normal;
   font-weight: bold;
   letter-spacing: -0.02em;
-  color: ${(p) => p.theme.colors.gray[900]};
+  color: ${theme.colors.gray[900]};
   margin: 0;
   margin-top: 4px;
   &.inline-code {
-    font-size: ${(p) => p.theme.fontSizes[32]};
+    font-size: ${theme.fontSizes[32]};
     padding: 0px 0.2em;
     line-height: 3rem;
   }
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
-    font-size: ${(p) => p.theme.fontSizes[24]};
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
+    font-size: ${theme.fontSizes[24]};
   }
 `
 

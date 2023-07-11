@@ -3,7 +3,7 @@ import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
 import React from 'react'
 import StickyBox from 'react-sticky-box'
-import styled, { ThemeProvider } from 'styled-components'
+import styled from 'styled-components'
 
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Footer from './footer'
@@ -30,13 +30,13 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
   width: 100%;
   justify-content: center;
   ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
-  @media (max-width: ${(p) => p.theme.breakpoints.tabletVertical}) {
+  @media (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 0;
   }
 `
 
 const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
-  margin: 0 0 ${(p) => p.theme.space[16]};
+  margin: 0 0 ${theme.space[16]};
   ${(p) =>
     p.fullWidth
       ? 'max-width: 100%;'
@@ -59,17 +59,17 @@ const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
 
 const MaxWidth = styled.div<{ wide?: boolean }>`
   > section {
-    padding: 0 ${(p) => `${p.theme.space[40]}${p.wide ? ` 0 0` : ``}`};
+    padding: 0 ${(p) => `${theme.space[40]}${p.wide ? ` 0 0` : ``}`};
     &.top-section {
       padding-top: 0;
     }
     @media (min-width: 0px) and (max-width: 1024px) {
-      margin-top: ${(p) => p.theme.space[8]};
+      margin-top: ${theme.space[8]};
     }
     @media (min-width: 0px) and (max-width: 1024px) {
-      padding: 0 ${(p) => p.theme.space[24]};
+      padding: 0 ${theme.space[24]};
       &.top-section {
-        padding-top: ${(p) => p.theme.space[24]};
+        padding-top: ${theme.space[24]};
       }
     }
   }
@@ -92,9 +92,9 @@ const Container = styled.div<{ fullWidth?: boolean; wide?: boolean }>`
   justify-content: center;
   display: flex;
   align-items: flex-start;
-  ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[40]};`)}
+  ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${theme.space[40]};`)}
   @media (max-width: 1024px) {
-    ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[8]};`)}
+    ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${theme.space[8]};`)}
   }
 `
 
@@ -132,6 +132,12 @@ const BannerWrapper = styled.div<{ light: boolean }>`
   font-size: 18px;
 `
 
+const FooterWrapper = styled.div`
+  button {
+    z-index: 10;
+  }
+`
+
 export default function Layout({
   children,
   toc,
@@ -144,34 +150,34 @@ export default function Layout({
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
   return (
-    <ThemeProvider theme={theme}>
-      <LensProvider>
-        <MDXProvider components={shortcodes}>
-          <Header headerProps={header} wide={wide} />
-          <Wrapper fullWidth={homePage}>
-            <Container fullWidth={homePage} wide={wide}>
-              {!homePage && (
-                <StickyBox offsetTop={20} offsetBottom={20}>
-                  <NotMobile id="sidebar-holder">
-                    <SidebarLayout isMobile={false} location={location} slug={slug} />
-                  </NotMobile>
-                </StickyBox>
-              )}
-              <Content fullWidth={homePage} wide={wide}>
-                <MaxWidth wide={wide}>{children}</MaxWidth>
-              </Content>
-              {!homePage && (
-                <TOCWrapper id="toc-holder">
-                  {toc && toc.items && toc.items.length > 0 && (
-                    <TableOfContents headings={toc.items} tocDepth={tocDepth} />
-                  )}
-                </TOCWrapper>
-              )}
-            </Container>
-          </Wrapper>
+    <LensProvider>
+      <MDXProvider components={shortcodes}>
+        <Header headerProps={header} wide={wide} />
+        <Wrapper fullWidth={homePage}>
+          <Container fullWidth={homePage} wide={wide}>
+            {!homePage && (
+              <StickyBox offsetTop={20} offsetBottom={20}>
+                <NotMobile id="sidebar-holder">
+                  <SidebarLayout isMobile={false} location={location} slug={slug} />
+                </NotMobile>
+              </StickyBox>
+            )}
+            <Content fullWidth={homePage} wide={wide}>
+              <MaxWidth wide={wide}>{children}</MaxWidth>
+            </Content>
+            {!homePage && (
+              <TOCWrapper id="toc-holder">
+                {toc && toc.items && toc.items.length > 0 && (
+                  <TableOfContents headings={toc.items} tocDepth={tocDepth} />
+                )}
+              </TOCWrapper>
+            )}
+          </Container>
+        </Wrapper>
+        <FooterWrapper>
           <Footer footerProps={footer} />
-        </MDXProvider>
-      </LensProvider>
-    </ThemeProvider>
+        </FooterWrapper>
+      </MDXProvider>
+    </LensProvider>
   )
 }

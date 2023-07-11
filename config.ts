@@ -59,6 +59,7 @@ const siteConfig = {
       gettingStarted: 'getting-started',
       readyToRun: 'https://github.com/prisma/prisma-examples',
       slack: 'https://slack.prisma.io/',
+      discord: 'https://discord.gg/KQyTW2H5ca',
       git: 'https://github.com/prisma',
       buttons: [
         {
