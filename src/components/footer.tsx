@@ -1,9 +1,8 @@
+import { Footer } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
-import { Footer } from '../components/footer/Footer'
 import { FooterProps } from '../interfaces/Layout.interface'
-import { FooterNewsletterForm } from './footer/FooterNewsletterForm'
 import { defaultTheme as theme } from './footer/theme'
 
 type FooterViewProps = {
@@ -25,7 +24,7 @@ const FooterWrapper = styled.div`
 const FooterSec = ({ footerProps }: FooterViewProps) => {
   return (
     <FooterWrapper>
-      <Footer newsletterComponent={<FooterNewsletterForm theme={theme} />} />
+      <Footer />
     </FooterWrapper>
   )
 }
