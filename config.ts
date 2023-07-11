@@ -59,6 +59,7 @@ const siteConfig = {
       gettingStarted: 'getting-started',
       readyToRun: 'https://github.com/prisma/prisma-examples',
       slack: 'https://slack.prisma.io/',
+      discord: 'https://discord.gg/KQyTW2H5ca',
       git: 'https://github.com/prisma',
       buttons: [
         {
@@ -296,8 +297,8 @@ const siteConfig = {
         icon: 'CLI',
         links: [
           {
-            text: 'introspect',
-            url: 'reference/api-reference/command-reference#introspect',
+            text: 'db',
+            url: 'reference/api-reference/command-reference#db',
             codeBlock: true,
           },
           {
@@ -306,8 +307,8 @@ const siteConfig = {
             codeBlock: true,
           },
           {
-            text: 'db',
-            url: 'reference/api-reference/command-reference#db',
+            text: 'studio',
+            url: 'reference/api-reference/command-reference#studio',
             codeBlock: true,
           },
         ],

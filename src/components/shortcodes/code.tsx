@@ -1,13 +1,17 @@
-import * as React from 'react'
-import Highlight, { defaultProps } from 'prism-react-renderer'
+import { defaultTheme } from '@prisma/lens/dist/web'
 import rangeParser from 'parse-numeric-range'
+import Highlight, { defaultProps } from 'prism-react-renderer'
 import theme from 'prism-react-renderer/themes/github'
-import CopyButton from './copy'
+import * as React from 'react'
+import styled from 'styled-components'
+
 import Copy from '../../icons/Copy'
 import { stringify } from '../../utils/stringify'
-import styled from 'styled-components'
-import './prism/index.css'
+import CopyButton from './copy'
 import FileWithIcon from './fileWithIcon'
+
+import './prism/index.css'
+
 require('./prism/prism-prisma')
 
 interface CodeProps {
@@ -53,8 +57,11 @@ function cleanTokens(tokens: any[]) {
 const propList = ['copy', 'bash-symbol', 'terminal', 'no-lines']
 
 const Code = ({ children, className, ...props }: PreCodeProps) => {
+  const codeEl = React.useRef<any>(null)
+  const preEl = React.useRef<any>(null)
   let language = className && className.replace(/language-/, '')
   let breakWords = false
+  const [debugState, setDebugState] = React.useState<string>('')
 
   let diffArray: any = []
 
@@ -76,6 +83,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
   let hasNoLine = true
   const isTerminal = props['terminal'] || language === 'terminal'
+  const wrapContent = props['wrap']
   const hasTerminalSymbol = props['bash-symbol'] || language === 'bash-symbol' || isTerminal
   const fileName = props['file'] || language === 'file'
 
@@ -87,6 +95,17 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 
   const tokenCopyClass = `${hasCopy ? 'has-copy-button' : ''} ${breakWords ? 'break-words' : ''}`
 
+  React.useEffect(() => {
+    if (codeEl.current !== null && preEl.current !== null) {
+      if (debugState.length === 0)
+        setDebugState(
+          `${codeEl.current.getBoundingClientRect().width},${
+            preEl.current.getBoundingClientRect().width - 44
+          }`
+        )
+    }
+  }, [])
+
   return (
     <CodeWrapper className="codeWrapperDiv">
       {fileName && (
@@ -97,7 +116,22 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
       <div className="gatsby-highlight pre-highlight">
         <Highlight {...defaultProps} code={code} language={language} theme={theme}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
-            <Pre className={`${blockClassName} ${isTerminal ? 'is-terminal' : ''}`} style={style}>
+            <Pre
+              ref={preEl}
+              className={`
+                ${wrapContent ? 'wrap-content' : ''}
+                ${blockClassName} 
+                ${isTerminal ? 'is-terminal' : ''} 
+                ${
+                  parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
+                  wrapContent
+                    ? `not-scrollable`
+                    : ``
+                }
+
+              `}
+              style={style}
+            >
               {!noCopy && (
                 <AbsoluteCopyButton className="copy-button">
                   <CopyButton text={code}>
@@ -105,7 +139,17 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   </CopyButton>
                 </AbsoluteCopyButton>
               )}
-              <code>
+              <code
+                ref={codeEl}
+                style={{
+                  width:
+                    parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) + 40 ||
+                    wrapContent
+                      ? 'auto'
+                      : 'max-content',
+                  overflow: 'visible',
+                }}
+              >
                 {cleanTokens(tokens).map((line: any, i: number) => {
                   let lineClass = {
                     backgroundColor: '',
@@ -207,13 +251,13 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
 export default Code
 
 const CodeWrapper = styled.div`
-  margin-top: ${(p) => p.theme.space[24]};
-  margin-bottom: ${(p) => p.theme.space[24]};
+  margin-top: ${defaultTheme.space[24]};
+  margin-bottom: ${defaultTheme.space[24]};
   .file {
     font-weight: 600;
-    color: ${(p) => p.theme.colors.gray[600]};
-    font-size: ${(p) => p.theme.fontSizes[14]};
-    font-family: ${(p) => p.theme.fonts.text};
+    color: ${defaultTheme.colors.gray[600]};
+    font-size: ${defaultTheme.fontSizes[14]};
+    font-family: ${defaultTheme.fonts.text};
     margin-bottom: 0.5rem;
   }
 `
@@ -226,18 +270,55 @@ const AbsoluteCopyButton = styled.div`
   z-index: 2;
 
   > div {
-    right: -${(p) => p.theme.space[8]};
+    right: -${defaultTheme.space[8]};
     top: -6px;
   }
 `
 
 const Pre = styled.pre`
-  margin-top: ${(p) => p.theme.space[32]};
+  margin-top: ${defaultTheme.space[32]};
   text-align: left;
   margin: 0 0 16px 0;
   padding: 2rem 1rem 1rem 1rem;
-  overflow: auto;
   webkit-overflow-scrolling: touch;
+  overflow-x: visible;
+  &.wrap-content {
+    overflow-x: auto;
+    code {
+      white-space: break-spaces;
+      .token-line {
+        display: inline-flex;
+        > span:last-child {
+          align-self: center;
+        }
+      }
+    }
+  }
+  &:not(.wrap-content) {
+    &::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+      background-color: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 10px;
+      background-color: #c5c6c8;
+    }
+    &::-webkit-scrollbar-track {
+      border-radius: 10px;
+      background-color: transparent;
+    }
+    &::-webkit-scrollbar-corner {
+      background-color: transparent;
+      border-color: transparent;
+    }
+    &.not-scrollable {
+      overflow-x: hidden;
+      code {
+        display: inline;
+      }
+    }
+  }
 `
 const Line = styled.div`
   display: block;
@@ -245,8 +326,8 @@ const Line = styled.div`
 
 const LineNo = styled.span`
   font-weight: 500;
-  line-height: ${(p) => p.theme.space[24]};
-  color: ${(p) => p.theme.colors.gray[400]};
+  line-height: ${defaultTheme.space[24]};
+  color: ${defaultTheme.colors.gray[400]};
   display: inline-block;
   text-align: right;
   user-select: none;
@@ -254,7 +335,7 @@ const LineNo = styled.span`
 `
 
 const LineContent = styled.span`
-  padding: 0 ${(p) => p.theme.space[16]};
+  padding: 0 ${defaultTheme.space[16]};
   &.break-words {
     display: inline-table;
     white-space: break-spaces;

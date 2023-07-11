@@ -1,6 +1,7 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
-import styled from 'styled-components'
 import * as CopyToClipboard from 'react-copy-to-clipboard'
+import styled from 'styled-components'
 
 interface CopyProps {
   text: string
@@ -34,7 +35,7 @@ const CopyButton = ({ text, children }: CopyButtonProps) => {
 export default CopyButton
 
 const CopyComponent = styled.div`
-  font-family: ${(p) => p.theme.fonts.text};
+  font-family: ${theme.fonts.text};
   & {
     position: relative;
     cursor: pointer;
