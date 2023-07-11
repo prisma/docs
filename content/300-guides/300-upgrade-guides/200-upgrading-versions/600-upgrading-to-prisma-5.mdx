@@ -56,12 +56,11 @@ pnpm up prisma@latest @prisma/client@latest
 ## Version changes
 
 Prisma 5 includes some minimum version changes for Node.js, TypeScript, PostgreSQL, and SQLite. To use Prisma version 5.0.0 and up, you will need to have at least the minimum versions below:
+See our [system requirements](/reference/system-requirements) for all minimum version requirements.
 
 ### Node.js minimum version change
 
 From Prisma version 5.0.0, the minimum version of Node.js supported is 16.13.0. If your project uses an earlier version of Node.js, you will need to upgrade it.
-
-See our [system requirements](/reference/system-requirements) for all minimum version requirements.
 
 <Admonition type="warning">
 
@@ -93,9 +92,11 @@ If you are using the `rejectOnNotFound` parameter on a per-query basis, then fol
 
 If instead you have set up the `rejectOnNotFound` parameter at the client level, you will need to follow [the steps for updating your code at the client level](#replacing-rejectonnotfound-enabled-at-the-client-level)
 
-#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the query level.
+#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the query level
 
-If you enable `rejectOnNotFound` on a per-query basis, you will need to replace your usage at the query level.
+If you previously enabled `rejectOnNotFound` on a per-query basis, you will need to replace your usage at the _query level_. You can use our `*OrThrow` query variants, `findFirstOrThrow` or `findUniqueOrThrow` instead of supplying the parameter to `findFirst` and `findUnique`.
+
+##### Simple `rejectOnNotFound` usage
 
 The following example:
 
@@ -106,13 +107,15 @@ prisma.user.findFirst({
 })
 ```
 
-Is converted to:
+needs to be converted to:
 
 ```js
 prisma.user.findFirstOrThrow({
   where: { name: 'Alice' },
 })
 ```
+
+##### `rejectOnNotFound` usage with custom error handler
 
 If you use a custom error handler like the following:
 
@@ -153,9 +156,11 @@ const user = await prisma.user.findFirstOrThrow({
 }).catch(adaptError(() => new MyCustomError())
 ```
 
-#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the client level.
+#### Replacing <inlinecode>rejectOnNotFound</inlinecode> enabled at the Client level
 
-For cases like these below:
+##### `rejectOnNotFound` via Prisma Client Constructor
+
+If you previously enabled `rejectOnNotFound` globally via configuration in the Prisma Client constructor, like in these examples:
 
 ```js
 // Example 1
@@ -172,6 +177,8 @@ const prisma = new PrismaClient({
 ```
 
 You will need to update your codebase to use `findUniqueOrThrow` and `findFirstOrThrow` instead of `findUnique` and `findFirst`, depending on which calls you would like to throw.
+
+##### `rejectOnNotFound` via Prisma Client Constructor with custom error handler
 
 If instead you use a custom error handler with the `rejectOnNotFound` property, like these examples:
 
@@ -203,7 +210,9 @@ const prisma = new PrismaClient({
 })
 ```
 
-You will need to update your method usage to `...OrThrow` and then use a [client extension](/concepts/components/prisma-client/client-extensions) in order to get the same behavior. As an example, the following extension would give the same behavior in Prisma 5 that `Example 5` gave in Prisma 4 and lower.
+You will need to update your method usage to `...OrThrow` and then use a [Client Extension](/concepts/components/prisma-client/client-extensions) in order to get the same behavior. 
+
+As an example, the following extension would give the same behavior in Prisma 5 that `Example 5` gave in Prisma 4 and lower.
 
 ```js
 import { PrismaClient } from '@prisma/client';
@@ -376,7 +385,7 @@ prisma.user.findMany({
 
 #### <inlinecode>path</inlinecode> argument for filtering on JSON fields in PostgreSQL
 
-[When filtering on JSON fields in a PostgreSQL table](https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filter-on-a-json-field) the `path` argument now only accepts an array.
+[When filtering on JSON fields in a PostgreSQL model](/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filter-on-a-json-field) the `path` argument now only accepts an array.
 
 When using the following schema:
 
@@ -421,7 +430,7 @@ Note: This `path` argument change only affects PostgreSQL databases. MySQL datab
 
 #### Scalar lists
 
-[Scalar list](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#scalar-fields) values must be arrays in all operations.
+[Scalar list](/concepts/components/prisma-schema/data-model#scalar-fields) values must be arrays in all operations.
 
 With the following schema:
 
@@ -466,13 +475,7 @@ prisma.post.findMany({
 
 #### Composite lists
 
-Operations on lists of [Composite](/concepts/components/prisma-schema/data-model#defining-composite-types) types now only accept array values.
-
-<Admonition type="info">
-
-Composite lists are only available in the [MongoDB provider](/concepts/database-connectors/mongodb)
-
-</Admonition>
+Operations on lists of [Composite types](/concepts/components/prisma-schema/data-model#defining-composite-types) (for [MongoDB](/concepts/database-connectors/mongodb)) now only accept array values.
 
 With the following schema:
 
@@ -521,6 +524,7 @@ Prisma 4 and lower:
 prisma.post.create({
   data: {
     commentsList: { text: 'hello' },
+  },
 })
 
 prisma.post.findMany({
@@ -536,6 +540,7 @@ Prisma 5:
 prisma.post.create({
   data: {
     commentsList: [{ text: 'hello' }],
+  },
 })
 
 prisma.post.findMany({
@@ -549,20 +554,20 @@ prisma.post.findMany({
 
 ### <inlinecode>cockroachdb</inlinecode> provider is now required when connecting to a CockroachDB database
 
-With Prisma version 5.0.0, we are requiring the CockroachDB instances be connected to with a `cockroachdb` provider. Previously, we had accepted `postgresql` as well, but we are removing that option.
+With Prisma version 5.0.0, we require the `cockroachdb` provider to be used when connecting to CockroachDB databases. Previously, we had accepted `postgresql` as well, but we are removing that option.
 
 If you were using [native database types](/reference/api-reference/prisma-schema-reference#postgresql) and also the `postgresql` provider, you will most likely need to `diff` your database to see if anything has changed:
 
 1. Update your provider from `postgresql` to `cockroachdb`
 2. Backup your existing `prisma.schema` file
-3. Use `npx prisma db pull --force` in order to overwrite your existing schema (including native types) to those that are on your CockroachDB instance.
-4. Review changes between your schema backup and the new schema generated by `db pull`. You can either use the new schema as is, or update it to include your preferred spacing, comments, etc.
-5. delete your existing migrations. We will be [performing a baseline](/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-cockroachdb) in order to make your local setup agree with your existing CockroachDB instance.
+3. Use `npx prisma db pull --force` in order to overwrite your existing Prisma schema file (including native types) to those that are on your CockroachDB instance.
+4. Review changes between your Prisma schema backup and the new Prisma schema generated by `db pull`. You can either use the new schema as is, or update it to include your preferred spacing, comments, etc.
+5. Delete your existing migrations. We will be [performing a baseline](/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-cockroachdb) in order to make your local setup agree with your existing CockroachDB instance.
 6. Perform the [baselining steps](/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-cockroachdb). After these steps, you'll have migrated successfully from the `postgresql` provider to the `cockroachdb` provider!
 
 ### Removal of <inlinecode>runtime/index.js</inlinecode> from generated client
 
-The `runtime/index.js` file has been removed from the Prisma Client.
+The `runtime/index.js` file has been removed from Prisma Client.
 
 #### Using public APIs from <inlinecode>runtime/index.js</inlinecode>
 
@@ -582,7 +587,7 @@ const num = new Prisma.Decimal(24.454545)
 
 #### Using private APIs for a specific runtime
 
-We highly discourage the use of internal private APIs as they can change without warning and are not guaranteed to be supported. If your usage requires a private API that was previous available [please reach out to us on GitHub.](https://github.com/prisma/prisma/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=)
+We highly discourage the use of internal private APIs as they can change without warning and are not guaranteed to be supported. If your usage requires a private API that was previous available [please reach out to us on GitHub.](https://github.com/prisma/prisma/discussions/new?category=q-a)
 
 ## Other changes
 
@@ -637,13 +642,13 @@ Needless to say, the `prisma2` executable has been deprecated for some time and 
 
 ### Removal of deprecated <inlinecode>experimentalFeatures</inlinecode> property
 
-The `previewFeatures` field of the [generator block](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#fields-1) used to be called `experimentalFeatures`. We are finally removing that deprecated property.
+The `previewFeatures` field of the [generator block](/reference/api-reference/prisma-schema-reference#fields-1) used to be called `experimentalFeatures`. We are finally removing that deprecated property.
 
 In Prisma 5, you will need to update references of `experimentalFeatures` to `previewFeatures` manually or use the new code action in the Prisma VSCode extension.
 
 ### <inlinecode>migration-engine</inlinecode> renamed to <inlinecode>schema-engine</inlinecode>
 
-The engine responsible for commands like `prisma migrate` and `prisma db` has been renamed from `migration-engine` to `schema-engine` to better describe its use. For many users, no changes will be required. However, if you need to explicitly include or exclude this engine file for any reason, you will need to update your code references.
+The engine responsible for commands like `prisma migrate` and `prisma db` has been renamed from `migration-engine` to `schema-engine` to better describe its use. For many users, no changes will be required. However, if you need to explicitly include or exclude this engine file, or refer to the engine name for any other reason, you will need to update your code references.
 
 #### Example with the Serverless Framework
 
@@ -661,7 +666,7 @@ package:
 
 <details><summary>Serverless Framework pattern suggestion</summary>
 
-The [recommended rule from our documentation](https://www.prisma.io/docs/guides/deployment/deployment-guides/use-prisma-with-serverless-framework#lambda-functions-with-arm64-architectures) is not affected by this change as it excludes all non desired engine files.
+The [recommended rule from our documentation](/guides/deployment/deployment-guides/use-prisma-with-serverless-framework#lambda-functions-with-arm64-architectures) is not affected by this change as it excludes all non desired engine files.
 
 ```yaml highlight=6;normal
 package:
