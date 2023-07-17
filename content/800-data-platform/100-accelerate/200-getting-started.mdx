@@ -1,7 +1,7 @@
 ---
 title: 'Getting started'
 metaTitle: 'Getting started with Accelerate'
-metaDescription: ''
+metaDescription: 'Learn how to get up and running with Accelerate.'
 tocDepth: 3
 toc: true
 ---
@@ -9,3 +9,128 @@ toc: true
 <TopBlock>
 
 </TopBlock>
+
+## Prerequisites
+
+To be able to participate in Accelerate’s Early Access program, you need the following prerequisites:
+
+- A GitHub account
+- A project that uses [Prisma Client](/docs/concepts/components/prisma-client) `4.10.0` or higher.
+- A hosted PostgreSQL, MySQL, PlanetScale, CockroachDB, or MongoDB database
+- An invite to Accelerate’s Early Access program
+
+<Admonition type="info">
+
+During early access, we can allow only a certain number of participants to join. To get access to Accelerate please join the [waitlist](https://prisma-data.typeform.com/to/WwPDKEQ5?typeform-source=prisma103696.typeform.com).
+
+</Admonition>
+
+## Enable Accelerate in a Cloud Project
+
+Follow the steps described [here](/data-platform/cloud-projects/platform/projects#configure-accelerate) to configure Accelerate in a Cloud Project.
+
+<Admonition type="info">
+
+You need a Prisma Cloud Project to use Accelerate.
+
+</Admonition>
+
+## Use Accelerate in your application
+
+To get started using Accelerate, ensure you’re using Prisma Client `4.10.0` or higher.
+
+### Update your database connection string
+
+After enabling Accelerate in your Cloud Project and creating a new API key, you should be given an Accelerate connection string.
+
+Update your database connection string in your `.env` file to use that Accelerate connection string:
+
+<!-- Is it true that Accelerate generates and assigns an API key automatically? -->
+
+```shell
+# .env
+# __API_KEY__ is a unique API key that Accelerate generates and automatically assigns to a project.
+DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
+
+# Previous connection string
+# DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
+```
+
+### Install the Accelerate Prisma Client extension
+
+Run the following command to install the Accelerate extension for Prisma Client:
+
+```shell
+npm install @prisma/extension-accelerate
+```
+
+If your Prisma version is below `4.16.0`, enable the Prisma Client extension feature:
+
+```prisma
+/// prisma/schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+```
+
+### Generate Prisma Client for Data Proxy
+
+Run the following command to generate Prisma Client for the Prisma's data proxy:
+
+```shell
+npx prisma generate --data-proxy
+```
+
+### Extend your Prisma Client instance to add the Accelerate extension
+
+To use Accelerate, you must extend Prisma Client with the Accelerate extension.
+Extend your Prisma Client instance to add the Accelerate extension:
+
+```ts
+import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+const prismaWithAccelerate = new PrismaClient().$extends(withAccelerate())
+```
+
+If VS Code does not recognize the `$extends` method, refer to [this section](/data-platform/accelerate/faq#vs-code-does-not-recognize-the-extends-method) on how to resolve the issue.
+
+<Admonition type="info">
+
+If you are using [Prisma Middleware](/docs/concepts/components/prisma-client/middleware) in your application, make sure they are added before any Prisma Client extensions (like Accelerate). For example:
+
+```ts
+const prismaWithAccelerate = new PrismaClient()
+  .$use(middleware)
+  .$extends(withAccelerate())
+```
+
+</Admonition>
+
+### Define your first cache strategy
+
+Update a query with the new `cacheStrategy` property which allows you to define a cache strategy for that specific query:
+
+```ts
+const user = await prisma.user.findMany({
+  where: {
+    email: {
+      contains: 'alice@prisma.io',
+    },
+  },
+  cacheStrategy: { swr: 60, ttl: 60 },
+})
+```
+
+In the example above, `swr: 60` and `ttl: 60` means Accelerate will serve cached data for 60 seconds and then another 60 seconds while Accelerate fetches fresh data in the background.
+
+You should now see improved performance for your cached queries.
+
+<Admonition type="info">
+
+For information about which strategy best serves your application, see [Select a cache strategy](https://www.notion.so/36960c5683cd4ff598b4fb64f7b5a64c#565c30792ea5487683961a6b27780a59).
+
+</Admonition>
+
+<!-- Left out info about `withAccelerateInfo()` as it is not needed to "get started" and is described in the API reference documentation -->
