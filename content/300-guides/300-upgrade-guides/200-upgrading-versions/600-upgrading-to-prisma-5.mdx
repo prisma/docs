@@ -8,7 +8,7 @@ toc: true
 
 <TopBlock>
 
-Prisma 5.0.0 introduces a number of changes, including the usage of our new JSON Protocol, [which make Prisma faster by default](https://www.prisma.io/blog/prisma-and-serverless-73hbgKnZ6t#improved-startup-performance-by-9x). A full list of these changes can be found [in our release notes](https://github.com/prisma/prisma/releases/tag/5.0.0).
+Prisma 5.0.0 introduces a number of changes, including the usage of our new JSON Protocol, [which make Prisma faster by default](https://www.prisma.io/blog/prisma-5-f66prwkjx72s). A full list of these changes can be found [in our release notes](https://github.com/prisma/prisma/releases/tag/5.0.0).
 
 This guide explains how upgrading might affect your application and gives instructions on how to handle breaking changes within Prisma 5.
 
@@ -23,8 +23,8 @@ To upgrade to Prisma 5 from an earlier version, you need to update both the `pri
 <tab>
 
 ```terminal
-npm update @prisma/client@5
-npm update -D prisma@5
+npm install @prisma/client@5
+npm install -D prisma@5
 ```
 
 </tab>
@@ -75,6 +75,12 @@ From Prisma version 5.0.0, the minimum version of TypeScript supported is 4.7. I
 ### PostgreSQL minimum version change
 
 From Prisma version 5.0.0, the minimum version of PostgreSQL supported is 9.6. If your project uses an earlier version of PostgreSQL, you will need to upgrade it.
+
+<Admonition type="warning">
+
+While Prisma supports PostgreSQL versions 9.6 and above, we **strongly** recommend updating to a version that is currently supported and still receiving updates. Please check [PostgreSQL's versioning policy](https://www.postgresql.org/support/versioning/) to determine which versions are currently supported.
+
+</Admonition>
 
 ### Prisma Client embedded SQLite version updated
 
@@ -130,7 +136,7 @@ You will need to modify your code to handle the errors thrown by `...OrThrow` me
 
 ```js
 try {
-  prisma.user.findFirstOrThrow({
+  await prisma.user.findFirstOrThrow({
     where: { name: 'Alice' },
   })
 } catch (err) {
@@ -252,7 +258,7 @@ const prisma = (new PrismaClient()).$extends({
 
 ### <inlinecode>jsonProtocol</inlinecode> out of Preview!
 
-The `jsonProtocol` preview feature is now Generally Available. This new protocol leads to [significantly improved startup times](https://www.prisma.io/blog/prisma-and-serverless-73hbgKnZ6t#improved-startup-performance-by-9x) when compared to our previous GraphQL-based protocol. When upgrading to Prisma 5, make sure to remove `jsonProtocol` from your preview features, if added.
+The `jsonProtocol` preview feature is now Generally Available. This new protocol leads to [significantly improved startup times](https://www.prisma.io/blog/prisma-5-f66prwkjx72s#improved-startup-performance-in-prisma-client) when compared to our previous GraphQL-based protocol. When upgrading to Prisma 5, make sure to remove `jsonProtocol` from your preview features, if added.
 
 Prisma 4 and lower:
 
@@ -653,6 +659,30 @@ process.on('beforeExit', exitHandler)
 process.on('SIGINT', exitHandler)
 process.on('SIGTERM', exitHandler)
 process.on('SIGUSR2', exitHandler)
+```
+
+If you're using the `beforeExit` hook in NestJS, you can upgrade to Prisma 5 by removing the custom `enableShutdownHooks` method in your service:
+
+```diff file="prisma.service.ts"
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit {
+  async onModuleInit() {
+    await this.$connect()
+  }
+
+-  async enableShutdownHooks(app: INestApplication) {
+-    this.$on('beforeExit', async () => {
+-      await app.close()
+-    })
+-  }
+}
+```
+
+Instead, use the built-in `enableShutdownHooks` method in NestJS if you need to handle lifecycle events:
+
+```diff file="main.ts"
+- prismaService.enableShutdownHooks(app)
++ app.enableShutdownHooks()
 ```
 
 ### Removal of deprecated <inlinecode>prisma2</inlinecode> executable
