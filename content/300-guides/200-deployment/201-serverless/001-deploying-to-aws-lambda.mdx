@@ -1,129 +1,22 @@
 ---
-title: 'Deploy to AWS Lambda'
-metaTitle: 'Deploy to AWS Lambda'
-metaDescription: 'Learn how to deploy Node.js and TypeScript applications based on Prisma Client to AWS Lambda.'
+title: 'Deploying your Serverless Framework project'
+metaTitle: 'Deploying your Serverless Framework project'
+metaDescription: 'Learn how to avoid potential pitfalls when deploying your Serverless Framework project using Prisma'
 ---
 
 <TopBlock>
 
-This guide explains how to integrate Prisma in your existing project using [AWS Lambda](https://aws.amazon.com/lambda/) with the [Serverless Framework](https://www.serverless.com/framework/). For a guide on how to get started with Serverless Framework, we recommend [Setting Up Serverless Framework With AWS](https://www.serverless.com/framework/docs/getting-started).
-
-AWS Lambda is part of the AWS cloud platform. You can use it to run your code in a serverless environment. To deploy a REST API to AWS Lambda, you must also use [S3](https://aws.amazon.com/s3/) to host the files and [API Gateway](https://aws.amazon.com/api-gateway/) to expose the API over HTTP.
-
-The Serverless Framework simplifies deployment to Lambda. It provides a CLI that helps with workflow automation and AWS resource provisioning.
+This guide explains how to avoid common issues when deploying a [Serverless Framework](https://www.serverless.com/framework/) project with Prisma. For a guide on how to get started with Serverless Framework, we recommend [Setting Up Serverless Framework With AWS](https://www.serverless.com/framework/docs/getting-started).
 
 </TopBlock>
 
 ## Prerequisites
 
-- Node.js
-- A database and a URI from which your application can access it, such as `postgresql://username:password@your_postgres_db.cloud.com/db_identifier` You can use Supabase, which offers a [free plan](https://dev.to/prisma/set-up-a-free-postgresql-database-on-supabase-to-use-with-prisma-3pk6) but any Prisma compatible database will work. See the list of supported databases [here](https://www.prisma.io/docs/reference/database-reference/supported-databases).
-- An [AWS](https://aws.amazon.com/) account and a corresponding [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html).
-- An existing Serverless Framework project with [Serverless Framework CLI](https://www.serverless.com/framework/docs/getting-started/) installed.
-
-## Quick Start
-
-In this guide, you do the following:
-
-- Install Prisma
-- Connect to your database with Prisma
-- Create a Prisma schema file (`schema.prisma`) from your existing database and generate a client
-- Use `prisma migrate` to mark your schema as applied
-
-## 1. Install Prisma
-
-```terminal
-npm install -D prisma && npm install @prisma/client
-```
-
-## 2. Set the DATABASE_URL in a <inlinecode>.env</inlinecode> file
-
-The Lambda functions need the `DATABASE_URL` environment variable to access the database. You must define an `.env` file. You can then use [`serverless-dotenv-plugin`](https://www.serverless.com/plugins/serverless-dotenv-plugin) to inject environment variables into the function runtime.
-
-Open or create `.env` and set the `DATABASE_URL` to your database credentials. The format is as follows:
-
-```file
-DATABASE_URL="postgres://__USER__:__PASSWORD__@__HOST__/__DATABASE__"
-```
-
-Replace the uppercase placeholders with your database credentials. For example:
-
-```file
-DATABASE_URL="postgres://janedoe:randompassword@yourpostgres.supabase.co:6543/yourdbname"
-```
-
-> **Note:** If your connection URL contains any special characters, then you must [escape them](/reference/database-reference/connection-urls#special-characters).
-
-<Admonition type="warning">
-
-It's best practice to keep secret information, such as `DATABASE_URL`, out of your git repository. To do this, add your `.env` file to `.gitignore`.
-
-</Admonition>
-
-## 3. Create a Prisma schema from your database
-
-`prisma db pull` takes the tables and relations that you define in your database and pulls them into a `schema.prisma` file. In the root of your project, run:
-
-```terminal
-npx prisma db pull
-```
-
-This command also generates Prisma Client based on your Prisma schema. After your `schema.prisma` file has been created, be sure to [add the correct `binaryTarget` to your schema.](#binary-targets-in-schema.prisma)
-
-## 4. Baseline your database
-
-After your schema has been created, be sure to [baseline your database](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-postgresql) in order to let Prisma know that it should not try to migrate anything (yet!)
-
-From your project root (or the directory that contains your `prisma/` directory) run
-
-```terminal
-mkdir -p prisma/migrations/0_init
-npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
-```
-
-These commands will create an initial, empty migration file and then populate it with the current structure of your database. After you've confirm that the `0_init` file looks good, mark it as applied with the command:
-
-```terminal
-npx prisma migrate resolve --applied 0_init
-```
-
-### Result
-
-You should now have a `schema.prisma` and Prisma Client that match your existing database schema. Prisma and your database will also be in sync.
-
-## 4. Set your AWS Access key as an environment variable
-
-In order for the Serverless Framework to provision the AWS resources and deploy your application, you must configure your access key.
-
-The method you use to get the access key depends on whether you use your personal account or create a special IAM user for the Serverless Framework. We recommend that you create a special IAM user because it lets you set granular permissions. To get an access key for your account, follow the [AWS guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
-
-When you have the _Access key ID_ and a _Secret access key_, set them with the following command. In the following command, replace the placeholders with your _Access key ID_ and _Secret access key_.
-
-Use the following command:
-
-```terminal wrap
-serverless config credentials --provider aws --key AWS_ACCESS_KEY_ID  --secret AWS_SECRET_ACCESS_KEY
-```
-
-### Result
-
-If the configuration is successful, you see the following result in the terminal.
-
-```terminal
-✔ Profile "default" has been configured
-```
-
-## 5. Deploy and test your project
-
-You have finished Prisma's configuration, so you can now deploy your application as normal.
-
-```terminal
-serverless deploy
-```
+- An existing Serverless Framework project with Prisma.
 
 ## Things to know
 
-This section covers common "gotchas" or specific
+While Prisma works well with the Serverless Framework "out of the box", there are a few improvements that can be made within your project to ensure a smooth deployment and performance.
 
 ### Deploy only the required files
 
@@ -148,7 +41,7 @@ If you use `serverless-webpack`, then you can use the [serverless-webpack-prisma
 2. Runs the `prisma generate` command. This means that there is no need to add the command to the webpack options separately.
 3. Packages the correct Prisma engine binary. This can save more than 40mb of capacity.
 
-<details><summary>If you do not use webpack yet</summary>
+<details><summary>If you would like to start using webpack...</summary>
 
 Install the dependencies as follows:
 
