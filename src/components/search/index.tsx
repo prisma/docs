@@ -167,7 +167,7 @@ const searchStateToUrl = (location: any, searchState: any) =>
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
-export default function Search({ hitsStatus, location }: any) {
+export default function Search({ hitsStatus, location, path }: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
@@ -234,7 +234,7 @@ export default function Search({ hitsStatus, location }: any) {
       searchState={searchState}
       createURL={createURL}
     >
-      <Overlay visible={showHits} hideSearch={hideSearch} />
+      <Overlay visible={showHits} hideSearch={hideSearch} path={path} />
       <CustomSearchBox
         onFocus={showSearch}
         isOpened={showHits}
