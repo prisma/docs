@@ -211,12 +211,19 @@ const SecondLevelMobileNavLink = styled.div`
   }
 `
 
-const SearchComponent = styled.div`
+const SearchComponentDesktop = styled.div<{ open?: boolean }>`
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  display: block;
+  transform: translateX(-50%);
   padding: 24px 10px;
-  background-color: ${theme.colors.gray[100]};
-  z-index: 101;
-  position: fixed;
   width: 100%;
+  background-color: ${theme.colors.gray[100]};
+  z-index: ${(p) => (p.open ? 101 : 200)};
+  @media (min-width: 768px) {
+    z-index: ${(p) => (p.open ? 105 : 101)};
+  }
 `
 const SecondLevelNav = styled.div<{ wide?: boolean }>`
   ${(p) => (p.wide ? `padding: 0 2.5rem 0 0;` : `margin-left: 48px;`)}
@@ -386,15 +393,18 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
         </Container>
         {showMobileNav && (
           <SecondLevelMobileOnlyNav>
-            <SearchComponent>
+            {/* <SearchComponent>
               <Search hitsStatus={changeHitsStatus} location={location} />
-            </SearchComponent>
+            </SearchComponent> */}
             <OverflowContainer>
               <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
             </OverflowContainer>
           </SecondLevelMobileOnlyNav>
         )}
       </SecondLevelHeader>
+      <SearchComponentDesktop open={!showDocsBtn}>
+        <Search hitsStatus={changeHitsStatus} location={location} path="home" />
+      </SearchComponentDesktop>
     </>
   )
 }

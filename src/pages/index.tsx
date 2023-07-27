@@ -18,13 +18,6 @@ import PlanetScale from '../icons/technologies/PlanetScale'
 import PostgresSQLSimple from '../icons/technologies/PostgresSQLSimple'
 import SQLite from '../icons/technologies/SQLite'
 
-const SearchComponent = styled(Search)`
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  margin: 24px 0 40px;
-`
-
 const H4 = styled.h4`
   font-family: 'Barlow';
   margin: 0;
@@ -36,7 +29,7 @@ const H4 = styled.h4`
 `
 
 const TopSection = styled.div`
-  padding: 40px 12px 64px;
+  padding: 109px 12px 64px;
   background: #f7fafc;
   display: flex;
   flex-wrap: wrap;
@@ -431,7 +424,7 @@ const Homepage = () => {
     <Layout homePage={true}>
       <TopSection>
         <ProductCardsWrapper>
-          <SearchComponent hitsStatus={changeHitsStatus} location={location} />
+          {/* <SearchComponent hitsStatus={changeHitsStatus} location={location} /> */}
           <ProductCard color="indigo">
             <H3>
               <IconWrapper>
