@@ -1,4 +1,5 @@
 import { Body, H3, Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
+import { useLocation } from '@reach/router'
 import { graphql, useStaticQuery } from 'gatsby'
 import * as React from 'react'
 import styled from 'styled-components'
@@ -424,6 +425,7 @@ const Homepage = () => {
       },
     },
   } = site
+  const location = useLocation()
 
   return (
     <Layout homePage={true}>

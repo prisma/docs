@@ -20,7 +20,7 @@ type HeaderViewProps = {
   wide?: boolean
 }
 
-const Container = styled.div<{ wide: boolean }>`
+const Container = styled.div<{ wide?: boolean }>`
   max-width: ${(props) => (props.wide ? '1440' : '1200')}px;
   width: 100%;
   display: flex;
