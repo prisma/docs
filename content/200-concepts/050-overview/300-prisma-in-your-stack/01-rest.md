@@ -18,6 +18,7 @@ As Prisma Client is "only" responsible for sending queries to your database, it 
 
 Here's a non-exhaustive list of libraries and frameworks you can use with Prisma:
 
+- [Remix](https://remix.run/)
 - [Express](https://expressjs.com/)
 - [koa](https://koajs.com/)
 - [hapi](https://hapi.dev/)
