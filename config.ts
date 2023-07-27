@@ -78,143 +78,70 @@ const siteConfig = {
     },
     GeneralLinkData: [
       {
-        categoryName: 'Overview',
-        icon: 'OverviewIcon',
-        links: [
-          {
-            text: 'What is Prisma',
-            url: 'concepts/overview/what-is-prisma',
-            codeBlock: false,
-          },
-          {
-            text: 'Why Prisma?',
-            url: 'concepts/overview/why-prisma',
-            codeBlock: false,
-          },
-          {
-            text: 'Should you use Prisma?',
-            url: 'concepts/overview/should-you-use-prisma',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma in your stack',
-            url: 'concepts/overview/prisma-in-your-stack',
-            codeBlock: false,
-          },
-          {
-            text: 'Under the hood',
-            url: 'concepts/components/prisma-engines',
-            codeBlock: false,
-          },
-          {
-            text: 'CRUD',
-            url: 'concepts/components/prisma-client/crud',
-            codeBlock: false,
-          },
-        ],
+        title: `What is prisma`,
+        description: 'An overview of what Prisma ORM is and how it works.',
+        url: 'concepts/overview/what-is-prisma',
+        icon: 'fa-regular fa-question',
       },
       {
-        categoryName: 'Components',
-        icon: 'ComponentsIcon',
-        links: [
-          {
-            text: 'Prisma schema',
-            url: 'concepts/components/prisma-schema',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma Client',
-            url: 'concepts/components/prisma-client',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma Migrate',
-            url: 'concepts/components/prisma-migrate',
-            codeBlock: false,
-          },
-          {
-            text: 'Introspection',
-            url: 'concepts/components/introspection',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma CLI',
-            url: 'concepts/components/prisma-cli',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma Studio',
-            url: 'concepts/components/prisma-studio',
-            codeBlock: false,
-          },
-          {
-            text: 'Preview features',
-            url: 'concepts/components/preview-features',
-            codeBlock: false,
-          },
-        ],
+        title: `CRUD`,
+        description: 'How to perform CRUD operations with your generated Prisma Client API. ',
+        url: 'concepts/components/prisma-client/crud',
+        icon: 'fa-solid fa-arrow-right-arrow-left',
       },
       {
-        categoryName: 'Database Connectors',
-        icon: 'DatabaseIcon',
-        links: [
-          {
-            text: 'PostgreSQL',
-            url: 'concepts/database-connectors/postgresql',
-            codeBlock: false,
-          },
-          {
-            text: 'MySQL',
-            url: 'concepts/database-connectors/mysql',
-            codeBlock: false,
-          },
-          {
-            text: 'MongoDB',
-            url: 'concepts/database-connectors/mongodb',
-            codeBlock: false,
-          },
-          {
-            text: 'SQL Server',
-            url: 'concepts/database-connectors/sql-server',
-            codeBlock: false,
-          },
-          {
-            text: 'SQLite',
-            url: 'concepts/database-connectors/sqlite',
-            codeBlock: false,
-          },
-          {
-            text: 'CockroachDB',
-            url: 'concepts/database-connectors/cockroachdb',
-            codeBlock: false,
-          },
-        ],
+        title: `Prisma in your stack`,
+        description:
+          'Use Prisma to build a GraphQL or REST API, or as part of a fullstack application.',
+        url: 'concepts/overview/prisma-in-your-stack',
+        icon: 'fa-solid fa-server',
       },
       {
-        categoryName: 'More',
-        icon: 'MoreIcon',
-        links: [
-          {
-            text: 'Editor setup',
-            url: 'guides/development-environment/editor-setup',
-            codeBlock: false,
-          },
-          {
-            text: 'Codemod',
-            url: 'guides/upgrade-guides/upgrading-versions/codemods',
-            codeBlock: false,
-          },
-          {
-            text: 'Telemetry',
-            url: 'concepts/more/telemetry',
-            codeBlock: false,
-          },
-          {
-            text: 'Comparing Prisma',
-            url: 'concepts/more/comparisons',
-            codeBlock: false,
-          },
-        ],
+        title: `Preview features`,
+        description: 'Available preview features and how to enable them.',
+        url: '',
+        icon: 'fa-solid fa-eye',
+      },
+      {
+        title: `Adopting Prisma`,
+        description: 'Migrate to Prisma from other ORMs.',
+        url: '',
+        icon: 'fa-solid fa-download',
+      },
+      {
+        title: `Deployment guides`,
+        description:
+          'Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.',
+        url: '',
+        icon: 'fa-solid fa-book',
+      },
+    ],
+    CommunityLinksData: [
+      {
+        id: 'slack',
+        title: 'Slack',
+        description: 'Engage with a vibrant community of developers and companies adopting Prisma',
+        icon: 'fa-brands fa-slack',
+        link: 'https://slack.prisma.io/',
+        linkText: 'Join our channel',
+      },
+      {
+        id: 'github',
+        title: 'GitHub',
+        description:
+          'Browse the Prisma source code, send feedback, or join the discussion on GitHub.',
+        icon: 'fa-brands fa-github',
+        link: 'https://github.com/prisma',
+        linkText: 'Contribute in GitHub',
+      },
+      {
+        id: 'discord',
+        title: 'Discord',
+        description:
+          'Chat in real-time, hang out, and share ideas with community members and our team.',
+        icon: 'fa-brands fa-discord',
+        link: 'https://pris.ly/discord',
+        linkText: 'Join our server',
       },
     ],
     GuideText: 'Guides for building and deploying applications with Prisma.',

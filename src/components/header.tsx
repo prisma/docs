@@ -1,43 +1,32 @@
-import { defaultTheme as theme, WebsiteHeader } from '@prisma/lens/dist/web'
+import { Icon, defaultTheme as theme, WebsiteHeader } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import Link from '../components/link'
-import Search from '../components/search'
 import Sidebar from '../components/sidebar'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import DownChevron from '../icons/DownChevron'
 import ExternalLink from '../icons/ExternalLink'
+import Github from '../icons/Github'
+import Logo from '../icons/Logo'
 import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
+import Search from './search'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
   wide?: boolean
 }
 
-const HeaderWrapper = styled.div`
-  background: radial-gradient(
-      37.86% 77.79% at 50% 100%,
-      rgba(113, 128, 150, 0.25) 0%,
-      rgba(113, 128, 150, 0) 100%
-    ),
-    linear-gradient(180deg, ${theme.colors.gray[900]} 0%, ${theme.colors.gray[800]} 100%),
-    linear-gradient(180deg, ${theme.colors.gray[900]} 0%, rgba(27, 32, 43, 0) 100%),
-    ${theme.colors.gray[800]};
-  img {
-    margin-bottom: 0;
-  }
-  //padding: ${theme.space[24]} ${theme.space[16]};
-  display: flex;
-  justify-content: center;
-`
-
-const Container = styled.div`
-  max-width: 1200px;
+const Container = styled.div<{ wide: boolean }>`
+  max-width: ${(props) => (props.wide ? '1440' : '1200')}px;
   width: 100%;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
 
   > * {
     padding: 0;
@@ -73,12 +62,6 @@ const Container = styled.div`
   }
 `
 
-const SearchComponent = styled(Search)`
-  position: absolute;
-  top: 12px;
-  left: 12px;
-`
-
 const DocsMobileButton = styled.div`
   background: ${theme.colors.white};
   border-radius: ${theme.radii.small};
@@ -89,7 +72,7 @@ const DocsMobileButton = styled.div`
   margin-left: ${theme.space[8]};
   font-weight: 600;
   position: relative;
-  z-index: 300;
+  z-index: 3;
   justify-content: space-between;
   cursor: pointer;
   svg {
@@ -103,7 +86,8 @@ const DocsMobileButton = styled.div`
 
 const MobileOnlyNav = styled.div`
   display: none;
-  position: relative;
+  position: fixed;
+  width: 100%;
   z-index: 210;
   top: 70px;
   transition: top 0.35s;
@@ -119,20 +103,23 @@ const MobileOnlyNav = styled.div`
 `
 
 const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
-  background: ${theme.colors.gray[200]};
+  background: ${theme.colors.gray[100]};
   box-shadow: 0px 1px 0px ${theme.colors.gray[300]};
-  top: 0;
+  top: 80px;
   padding: 0;
+  height: calc(100% - 80px);
   z-index: 200;
 `
 
 const SecondLevelHeader = styled.div`
-  background: ${theme.colors.gray[200]};
+  background: #fff;
   padding: 20px 16px;
   display: flex;
   justify-content: center;
   position: relative;
+  position: fixed;
   z-index: 105;
+  width: 100%;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 12px 16px;
   }
@@ -149,11 +136,6 @@ const NonMobileMenu = styled.div`
 
 const NavLink = styled(Link)<{ wide?: boolean }>`
   transition: color 0.1s ease-in;
-  ${(p) =>
-    p.wide
-      ? `padding: 0.25rem 0.5rem;`
-      : `padding: 0 0.5rem;
-  margin: 0 0.5rem;`}
   color: ${theme.colors.gray[400]} !important;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     margin: 0;
@@ -161,7 +143,11 @@ const NavLink = styled(Link)<{ wide?: boolean }>`
   }
 `
 const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
-  color: ${theme.colors.gray[700]} !important;
+  color: ${theme.colors.gray[800]} !important;
+  font-family: Inter;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 100%;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -225,15 +211,29 @@ const SecondLevelMobileNavLink = styled.div`
   }
 `
 
+const SearchComponent = styled.div`
+  padding: 24px 10px;
+  background-color: ${theme.colors.gray[100]};
+  z-index: 101;
+  position: fixed;
+  width: 100%;
+`
 const SecondLevelNav = styled.div<{ wide?: boolean }>`
   ${(p) => (p.wide ? `padding: 0 2.5rem 0 0;` : `margin-left: 48px;`)}
+  width: fit-content;
   width: 100%;
   display: flex;
   justify-content: space-between;
   @media (min-width: 0px) and (max-width: 1024px) {
-    margin: 0;
+    margin: 94px 0 0 0;
     flex-direction: column;
     ${(p) => p.wide && `padding: 0;`}
+  }
+  > div {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-top: 2px;
   }
 `
 
@@ -282,12 +282,49 @@ const SecondLevelMobileMenu = ({ headerProps, wide }: HeaderViewProps) => (
   </SecondLevelNav>
 )
 
+const HomeIcons = styled.div`
+  display: flex;
+  align-items: center;
+  a {
+    transition: transform 0.18s ease-out;
+    &:hover {
+      transform: translateY(-2px);
+    }
+    &:first-of-type {
+      svg {
+        height: 36px;
+      }
+    }
+    &:last-of-type {
+      color: #2d3748;
+      font-family: 'Inter';
+      font-size: 22px;
+      font-style: normal;
+      font-weight: 500;
+      padding-left: 22px;
+      position: relative;
+      line-height: 100%;
+      &:before {
+        position: absolute;
+        content: '/';
+        left: 6px;
+        color: #a0aec0;
+      }
+    }
+  }
+`
+
+const OverflowContainer = styled.div`
+  height: 100%;
+  overflow: scroll;
+`
+
 const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
-  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const [showMobileNav, setShowMobileNav] = React.useState(false)
+  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
+  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
   const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
-  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
   const { width } = useWindowDimensions()
 
@@ -320,57 +357,44 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
             )
           })}
         </div>
-
-        {/* <div>
-          {externalLinkItems.map((item) => (
-            <DarkNavLink className="link" to={item.to}>
-              {item.text} &nbsp;&nbsp;
-              <ExternalLink />
-            </DarkNavLink>
-          ))}
-        </div> */}
       </SecondLevelNav>
     )
   }
 
   return (
     <>
-      {/* Top level header */}
-      <HeaderWrapper>
-        <Container>
-          <WebsiteHeader lightTheme={false} clearBg={true} notFixed={true} />
-        </Container>
-      </HeaderWrapper>
-
       {/* Second level header */}
       <SecondLevelHeader>
-        <Container
-          style={headerProps.wide ? { display: 'flex', maxWidth: '1440px' } : { display: 'flex' }}
-        >
-          <SearchComponent hitsStatus={changeHitsStatus} location={location} />
-          {showDocsBtn && (
-            <NonMobileMenu
-              style={
-                headerProps.wide ? { width: '100%', paddingRight: '200px' } : { width: '100%' }
-              }
-            >
-              <SecondLevelMenu />
-            </NonMobileMenu>
-          )}
-          {showDocsBtn && (
-            <DocsMobileButton onClick={toggleMobileNav}>
-              {width > 640 ? 'Documentation' : 'Docs'}
-              {showMobileNav ? <UpChevron /> : <DownChevron />}
-            </DocsMobileButton>
-          )}
+        <Container wide={wide}>
+          <HomeIcons>
+            <a href="https://www.prisma.io">
+              <Logo />
+            </a>
+            <a href="https://prisma.io/docs">Docs</a>
+          </HomeIcons>
+          <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
+            <SecondLevelMenu />
+          </NonMobileMenu>
+          <DocsMobileButton onClick={toggleMobileNav}>
+            {showMobileNav ? (
+              <Icon icon="fa-regular fa-xmark" size="28px" />
+            ) : (
+              <Icon icon="fa-regular fa-bars" size="28px" />
+            )}
+          </DocsMobileButton>
+          {width > 1024 && <Github width={24} height={24} />}
         </Container>
+        {showMobileNav && (
+          <SecondLevelMobileOnlyNav>
+            <SearchComponent>
+              <Search hitsStatus={changeHitsStatus} location={location} />
+            </SearchComponent>
+            <OverflowContainer>
+              <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
+            </OverflowContainer>
+          </SecondLevelMobileOnlyNav>
+        )}
       </SecondLevelHeader>
-
-      {showMobileNav && (
-        <SecondLevelMobileOnlyNav>
-          <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
-        </SecondLevelMobileOnlyNav>
-      )}
     </>
   )
 }

@@ -9,12 +9,17 @@ import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
 const SearchBoxDiv = styled.div`
-  max-width: 250px;
   width: 100%;
   display: flex;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e0;
+  background: #fff;
 
   form {
-    max-width: 250px;
     width: 100%;
     position: relative;
   }
@@ -256,7 +261,7 @@ const SearchBox = ({
             <ClearIcon onClick={clearInput} />
           </span>
         )}
-        {!isOpened && <SearchSlashIcon />}
+        {!isOpened && width > 768 && <SearchSlashIcon />}
       </form>
     </SearchBoxDiv>
   )
