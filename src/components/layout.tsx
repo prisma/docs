@@ -36,7 +36,6 @@ const Wrapper = styled.div<{ fullWidth?: boolean }>`
 `
 
 const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
-  margin: 0 0 ${theme.space[16]};
   ${(p) =>
     p.fullWidth
       ? 'max-width: 100%;'
@@ -153,7 +152,7 @@ export default function Layout({
     <LensProvider>
       <MDXProvider components={shortcodes}>
         <Header headerProps={header} wide={wide} />
-        <Wrapper fullWidth={homePage}>
+        <Wrapper fullWidth={homePage} style={{ paddingTop: '80px' }}>
           <Container fullWidth={homePage} wide={wide}>
             {!homePage && (
               <StickyBox offsetTop={20} offsetBottom={20}>

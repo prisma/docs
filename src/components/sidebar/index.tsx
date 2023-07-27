@@ -40,6 +40,7 @@ const Sidebar = styled.div`
 
   .mobile-only {
     display: none;
+    width: 100%;
     background: ${theme.colors.gray[100]};
     padding: ${theme.space[32]};
     @media only screen and (max-width: 1024px) {
