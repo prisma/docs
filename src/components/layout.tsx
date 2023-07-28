@@ -1,7 +1,7 @@
 import { MDXProvider } from '@mdx-js/react'
 import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
-import React from 'react'
+import React, { useState } from 'react'
 import StickyBox from 'react-sticky-box'
 import styled from 'styled-components'
 
@@ -148,34 +148,38 @@ export default function Layout({
 }: LayoutProps) {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
+  const [mobileNavOpen, setMobileNav] = useState(false)
+
   return (
     <LensProvider>
       <MDXProvider components={shortcodes}>
-        <Header headerProps={header} wide={wide} />
-        <Wrapper fullWidth={homePage} style={{ paddingTop: '80px' }}>
-          <Container fullWidth={homePage} wide={wide}>
-            {!homePage && (
-              <StickyBox offsetTop={20} offsetBottom={20}>
-                <NotMobile id="sidebar-holder">
-                  <SidebarLayout isMobile={false} location={location} slug={slug} />
-                </NotMobile>
-              </StickyBox>
-            )}
-            <Content fullWidth={homePage} wide={wide}>
-              <MaxWidth wide={wide}>{children}</MaxWidth>
-            </Content>
-            {!homePage && (
-              <TOCWrapper id="toc-holder">
-                {toc && toc.items && toc.items.length > 0 && (
-                  <TableOfContents headings={toc.items} tocDepth={tocDepth} />
-                )}
-              </TOCWrapper>
-            )}
-          </Container>
-        </Wrapper>
-        <FooterWrapper>
-          <Footer footerProps={footer} />
-        </FooterWrapper>
+        <div style={mobileNavOpen ? { position: 'fixed' } : {}}>
+          <Header headerProps={header} wide={wide} mobileNavOpen={setMobileNav} />
+          <Wrapper fullWidth={homePage} style={{ paddingTop: '80px' }}>
+            <Container fullWidth={homePage} wide={wide}>
+              {!homePage && (
+                <StickyBox offsetTop={20} offsetBottom={20}>
+                  <NotMobile id="sidebar-holder">
+                    <SidebarLayout isMobile={false} location={location} slug={slug} />
+                  </NotMobile>
+                </StickyBox>
+              )}
+              <Content fullWidth={homePage} wide={wide}>
+                <MaxWidth wide={wide}>{children}</MaxWidth>
+              </Content>
+              {!homePage && (
+                <TOCWrapper id="toc-holder">
+                  {toc && toc.items && toc.items.length > 0 && (
+                    <TableOfContents headings={toc.items} tocDepth={tocDepth} />
+                  )}
+                </TOCWrapper>
+              )}
+            </Container>
+          </Wrapper>
+          <FooterWrapper>
+            <Footer footerProps={footer} />
+          </FooterWrapper>
+        </div>
       </MDXProvider>
     </LensProvider>
   )

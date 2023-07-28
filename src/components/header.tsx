@@ -18,6 +18,7 @@ import Search from './search'
 type HeaderViewProps = {
   headerProps: HeaderProps
   wide?: boolean
+  mobileNavOpen?: any
 }
 
 const Container = styled.div<{ wide?: boolean }>`
@@ -116,6 +117,7 @@ const SecondLevelHeader = styled.div`
   padding: 20px 16px;
   display: flex;
   justify-content: center;
+  border-bottom: 1px solid #e2e8f0;
   position: relative;
   position: fixed;
   z-index: 105;
@@ -135,14 +137,14 @@ const NonMobileMenu = styled.div`
 `
 
 const NavLink = styled(Link)<{ wide?: boolean }>`
-  transition: color 0.1s ease-in;
+  transition: all 0.1s ease-in;
   color: ${theme.colors.gray[400]} !important;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     margin: 0;
     padding: 0;
   }
 `
-const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
+const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
   color: ${theme.colors.gray[800]} !important;
   font-family: Inter;
   font-size: 16px;
@@ -150,7 +152,10 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
   line-height: 100%;
   font-weight: 600;
   text-decoration: none;
+  padding: 8px;
+  white-space: nowrap;
   cursor: pointer;
+  border-radius: 8px;
   &.link {
     padding: 0;
     margin: 0;
@@ -173,13 +178,12 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
   }
 
   &:hover {
-    color: ${theme.colors.gray[900]} !important;
+    color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
+    background: ${theme.colors.gray[200]};
   }
   &.active-item {
-    background: ${theme.colors.white};
-    border-radius: ${theme.radii.small};
-    color: ${theme.colors.gray[500]} !important;
-    padding: 0.25rem 0.5rem;
+    background: ${theme.colors.gray[200]};
+    color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
   }
 
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
@@ -238,7 +242,7 @@ const SecondLevelNav = styled.div<{ wide?: boolean }>`
   }
   > div {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     align-items: center;
     margin-top: 2px;
   }
@@ -326,7 +330,7 @@ const OverflowContainer = styled.div`
   overflow: scroll;
 `
 
-const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
+const HeaderSec = ({ headerProps, wide, mobileNavOpen }: HeaderViewProps) => {
   const [showMobileNav, setShowMobileNav] = React.useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
@@ -338,8 +342,8 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
   const location = useLocation()
 
   React.useEffect(() => {
-    console.log(location.pathname)
-  }, [])
+    mobileNavOpen(showMobileNav)
+  }, [showMobileNav])
 
   const SecondLevelMenu = () => {
     const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
@@ -355,12 +359,13 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
             const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
             const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
             const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
-
+            console.log(item)
             return (
               <DarkNavLink
                 to={item.to}
                 state={{ bucketName: item.bucketName }}
                 activeClassName="active-item"
+                dataPlatform={item.to.includes('data-platform')}
                 className={isCurrent ? 'active-item' : 'non-active'}
               >
                 {item.text}
