@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -38,6 +38,10 @@ const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
   }
   return (
     <BreadcrumbTitle>
+      <a href="/docs">
+        <Icon icon="fa-solid fa-house" size="16px"></Icon>
+      </a>
+      <span> {`/`} </span>
       {parentTitle.map((part: any, index: number) => (
         <span key={index}>
           {part.link && !nonLink ? (

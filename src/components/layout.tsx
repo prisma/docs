@@ -155,10 +155,10 @@ export default function Layout({
       <MDXProvider components={shortcodes}>
         <div style={mobileNavOpen ? { position: 'fixed' } : {}}>
           <Header headerProps={header} wide={wide} mobileNavOpen={setMobileNav} />
-          <Wrapper fullWidth={homePage} style={{ paddingTop: '80px' }}>
+          <Wrapper fullWidth={homePage} style={{ padding: '80px 0' }}>
             <Container fullWidth={homePage} wide={wide}>
               {!homePage && (
-                <StickyBox offsetTop={20} offsetBottom={20}>
+                <StickyBox offsetTop={120} offsetBottom={20}>
                   <NotMobile id="sidebar-holder">
                     <SidebarLayout isMobile={false} location={location} slug={slug} />
                   </NotMobile>
