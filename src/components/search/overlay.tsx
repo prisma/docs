@@ -37,7 +37,7 @@ const StyledOverlay = styled.div<{ isVisible: boolean; isTransitioning: boolean;
   pointer-events: none;
   z-index: 10000;
 
-  ${(p) => p.path && p.path === 'home' && `margin-top: -104px; width: 100vw; height: 100vh;`}
+  ${(p) => p.path && p.path === 'home' && `margin-top: -80px; width: 100vw; height: 100vh;`}
   ${(p) => p.isTransitioning && 'transition: opacity 0.25s ease-in-out;'}
   ${(p) => (p.isVisible ? 'opacity: 1; pointer-events: all;' : 'opacity: 0; pointer-events: none;')}
 `

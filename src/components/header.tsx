@@ -220,7 +220,7 @@ const SearchComponentDesktop = styled.div<{ open?: boolean }>`
   padding: 24px 10px;
   width: 100%;
   background-color: ${theme.colors.gray[100]};
-  z-index: ${(p) => (p.open ? 101 : 200)};
+  z-index: ${(p) => (p.open ? 200 : 101)};
   @media (min-width: 768px) {
     z-index: ${(p) => (p.open ? 105 : 101)};
   }
@@ -393,16 +393,13 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
         </Container>
         {showMobileNav && (
           <SecondLevelMobileOnlyNav>
-            {/* <SearchComponent>
-              <Search hitsStatus={changeHitsStatus} location={location} />
-            </SearchComponent> */}
             <OverflowContainer>
               <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
             </OverflowContainer>
           </SecondLevelMobileOnlyNav>
         )}
       </SecondLevelHeader>
-      <SearchComponentDesktop open={!showDocsBtn}>
+      <SearchComponentDesktop open={showMobileNav}>
         <Search hitsStatus={changeHitsStatus} location={location} path="home" />
       </SearchComponentDesktop>
     </>
