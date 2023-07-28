@@ -155,7 +155,10 @@ export default function Layout({
       <MDXProvider components={shortcodes}>
         <div style={mobileNavOpen ? { position: 'fixed' } : {}}>
           <Header headerProps={header} wide={wide} mobileNavOpen={setMobileNav} />
-          <Wrapper fullWidth={homePage} style={{ padding: '80px 0' }}>
+          <Wrapper
+            fullWidth={homePage}
+            style={homePage ? { paddingTop: '80px' } : { padding: '80px 0' }}
+          >
             <Container fullWidth={homePage} wide={wide}>
               {!homePage && (
                 <StickyBox offsetTop={120} offsetBottom={20}>
