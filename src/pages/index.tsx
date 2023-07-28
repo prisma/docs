@@ -103,6 +103,9 @@ const LinkGrid = styled.div`
     letter-spacing: -0.32px;
     text-decoration: none;
   }
+  svg {
+    display: none;
+  }
 `
 
 const PrismaORMSection = styled.div`
@@ -115,8 +118,8 @@ const PrismaORMSection = styled.div`
   }
 `
 
-const ORMLinkWrapper = styled.a`
-  display: flex;
+const ORMLinkWrapper = styled(Link)`
+  display: flex !important;
   gap: 24px;
   text-decoration: none;
   h5 {
@@ -280,34 +283,42 @@ const DatabaseData = [
   {
     title: 'PostgreSQL',
     icon: <PostgresSQLSimple />,
+    url: 'concepts/database-connectors/postgresql',
   },
   {
     title: 'MySQL',
     icon: <MySQLSimple />,
+    url: 'concepts/database-connectors/mysql',
   },
   {
     title: 'SQL Server',
     icon: <SQLServer />,
+    url: 'concepts/database-connectors/sql-server',
   },
   {
     title: 'SQLite',
     icon: <SQLite />,
+    url: 'concepts/database-connectors/sqlite',
   },
   {
     title: 'MongoDB',
     icon: <MongoDBSimple />,
+    url: 'concepts/database-connectors/mongodb',
   },
   {
     title: 'CockroachDB',
     icon: <CockroachDB />,
+    url: 'concepts/database-connectors/cockroachdb',
   },
   {
     title: 'Planetscale',
     icon: <PlanetScale />,
+    url: 'https://www.prisma.io/planetscale',
   },
   {
     title: 'MariaDB',
     icon: <MariaDB />,
+    url: 'concepts/database-connectors/mysql',
   },
 ]
 
@@ -403,19 +414,7 @@ const Homepage = () => {
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const {
     siteMetadata: {
-      title,
-      description,
-      homepage: {
-        SummaryLinkData,
-        PrismaORMLinks,
-        GeneralLinkData,
-        CommunityLinksData,
-        GuideText,
-        GuideLinkData,
-        ReferenceText,
-        ReferenceLinkData,
-        MoreUsefulLinks,
-      },
+      homepage: { GeneralLinkData, CommunityLinksData, CardLinks, ORMPlatformLinkData },
     },
   } = site
   const location = useLocation()
@@ -424,60 +423,29 @@ const Homepage = () => {
     <Layout homePage={true}>
       <TopSection>
         <ProductCardsWrapper>
-          {/* <SearchComponent hitsStatus={changeHitsStatus} location={location} /> */}
-          <ProductCard color="indigo">
-            <H3>
-              <IconWrapper>
-                <Icon icon="fa-solid fa-database" size="22px" color="white" />
-              </IconWrapper>
-              Prisma ORM
-            </H3>
-            <Body>
-              Open source Node.js and TypeScript ORM with an intuitive data model, automated
-              migrations, type-safety, and auto-completion.
-            </Body>
-            <LinkGrid>
-              <a href="/" type="link">
-                Get started &#8594;
-              </a>
-              <a href="/" type="link">
-                Example projects &#8594;
-              </a>
-            </LinkGrid>
-          </ProductCard>
-          <ProductCard color="teal">
-            <H3>
-              <IconWrapper>
-                <Icon icon="fa-solid fa-triangle" size="22px" color="white" />
-              </IconWrapper>
-              Prisma Data Platform
-            </H3>
-            <Body>
-              An ecosystem of tools to empower teams to easily create and launch data-heavy,
-              global-first software.
-            </Body>
-            <LinkGrid>
-              <a href="/" type="link" color="teal">
-                Accelerate &#8594;
-              </a>
-              <a href="/" type="link" color="teal">
-                Cloud Projects &#8594;
-              </a>
-              <a href="/" type="link" color="teal">
-                Pulse &#8594;
-              </a>
-              <a href="/" type="link" color="teal">
-                Classic Projects &#8594;
-              </a>
-            </LinkGrid>
-          </ProductCard>
+          {Object.keys(ORMPlatformLinkData).map((e: string) => (
+            <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
+              <H3>
+                <IconWrapper>
+                  <Icon icon="fa-solid fa-database" size="22px" color="white" />
+                </IconWrapper>
+                {ORMPlatformLinkData[e].title}
+              </H3>
+              <Body>{ORMPlatformLinkData[e].description}</Body>
+              <LinkGrid>
+                {ORMPlatformLinkData[e].links.map((e: any) => (
+                  <Link to={e.url}>{e.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </ProductCard>
+          ))}
         </ProductCardsWrapper>
       </TopSection>
       <PrismaORMSection>
         <H4>Prisma ORM</H4>
         <ORMLinkContainer>
           {GeneralLinkData.map((generalLink: any, index: number) => (
-            <ORMLinkWrapper key={index} href={generalLink.url}>
+            <ORMLinkWrapper key={index} to={generalLink.url}>
               <IconWrapper>
                 <Icon icon={generalLink.icon} color="#5A67D8" size="22px" />
               </IconWrapper>
@@ -500,11 +468,9 @@ const Homepage = () => {
               migrations, type-safety, and auto-completion.
             </p>
             <LinkGrid>
-              <a href="">Prisma schema &#8594;</a>
-              <a href="">Prisma CLI &#8594;</a>
-              <a href="">Prisma Client &#8594;</a>
-              <a href="">Prisma Studio &#8594;</a>
-              <a href="">Prisma Migrate &#8594;</a>
+              {CardLinks.components.map((card: any) => (
+                <Link to={card.url}>{card.title} &#8594;</Link>
+              ))}
             </LinkGrid>
           </ORMProductCard>
 
@@ -515,10 +481,9 @@ const Homepage = () => {
               migrations, type-safety, and auto-completion.
             </p>
             <LinkGrid>
-              <a href="">Prisma Client API reference &#8594;</a>
-              <a href="">Prisma schema reference &#8594;</a>
-              <a href="">Error message reference &#8594;</a>
-              <a href="">Prisma CLI reference &#8594;</a>
+              {CardLinks.reference.map((card: any) => (
+                <Link to={card.url}>{card.title} &#8594;</Link>
+              ))}
             </LinkGrid>
           </ORMProductCard>
         </ORMCardsWrapper>
@@ -532,12 +497,12 @@ const Homepage = () => {
         </Body>
         <DatabaseGrid>
           {DatabaseData.map((e: any) => (
-            <a href="/docs/concepts/database-connectors/postgresql">
+            <Link to={e.url}>
               <div className="entry">
                 {e.icon}
                 <span>{e.title}</span>
               </div>
-            </a>
+            </Link>
           ))}
         </DatabaseGrid>
       </DatabasesSection>
@@ -586,27 +551,22 @@ export const query = graphql`
   query Homepage {
     site {
       siteMetadata {
-        title
-        description
         homepage {
-          SummaryLinkData {
-            gettingStarted
-            readyToRun
-            slack
-            discord
-            git
-            buttons {
-              text
-              url
-              special
-              icon
-            }
-          }
           GeneralLinkData {
             title
             description
             url
             icon
+          }
+          CardLinks {
+            components {
+              url
+              title
+            }
+            reference {
+              url
+              title
+            }
           }
           CommunityLinksData {
             id
@@ -616,29 +576,23 @@ export const query = graphql`
             link
             linkText
           }
-          GuideText
-          GuideLinkData {
-            title
-            color
-            small
-            content
-            url
-          }
-          ReferenceText
-          ReferenceLinkData {
-            categoryName
-            mainUrl
-            icon
-            links {
-              url
-              text
-              codeBlock
+          ORMPlatformLinkData {
+            porm {
+              title
+              description
+              links {
+                url
+                title
+              }
             }
-          }
-          MoreUsefulLinks {
-            text
-            url
-            codeBlock
+            pdp {
+              title
+              description
+              links {
+                url
+                title
+              }
+            }
           }
         }
       }
