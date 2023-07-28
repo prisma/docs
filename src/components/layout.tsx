@@ -8,6 +8,7 @@ import styled from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Footer from './footer'
 import Header from './header'
+import Search from './search'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
@@ -137,6 +138,12 @@ const FooterWrapper = styled.div`
   }
 `
 
+const SearchComponentDesktop = styled.div<{ open?: boolean }>`
+  top: 80px;
+  display: block;
+  padding: 22px 0px;
+`
+
 export default function Layout({
   children,
   toc,
@@ -149,6 +156,8 @@ export default function Layout({
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
   const [mobileNavOpen, setMobileNav] = useState(false)
+  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
+  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
   return (
     <LensProvider>
@@ -161,11 +170,16 @@ export default function Layout({
           >
             <Container fullWidth={homePage} wide={wide}>
               {!homePage && (
-                <StickyBox offsetTop={120} offsetBottom={20}>
-                  <NotMobile id="sidebar-holder">
-                    <SidebarLayout isMobile={false} location={location} slug={slug} />
-                  </NotMobile>
-                </StickyBox>
+                <>
+                  <StickyBox offsetTop={120} offsetBottom={20}>
+                    <SearchComponentDesktop>
+                      <Search hitsStatus={changeHitsStatus} location={location} path="home" />
+                    </SearchComponentDesktop>
+                    <NotMobile id="sidebar-holder">
+                      <SidebarLayout isMobile={false} location={location} slug={slug} />
+                    </NotMobile>
+                  </StickyBox>
+                </>
               )}
               <Content fullWidth={homePage} wide={wide}>
                 <MaxWidth wide={wide}>{children}</MaxWidth>
