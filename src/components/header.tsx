@@ -337,6 +337,10 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
 
   const location = useLocation()
 
+  React.useEffect(() => {
+    console.log(location.pathname)
+  }, [])
+
   const SecondLevelMenu = () => {
     const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
       (item) => item.type === 'bucket'
@@ -399,9 +403,11 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
           </SecondLevelMobileOnlyNav>
         )}
       </SecondLevelHeader>
-      <SearchComponentDesktop open={showMobileNav}>
-        <Search hitsStatus={changeHitsStatus} location={location} path="home" />
-      </SearchComponentDesktop>
+      {location.pathname === '/' && (
+        <SearchComponentDesktop open={showMobileNav}>
+          <Search hitsStatus={changeHitsStatus} location={location} path="home" />
+        </SearchComponentDesktop>
+      )}
     </>
   )
 }
