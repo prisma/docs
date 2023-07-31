@@ -23,6 +23,7 @@ type HeaderViewProps = {
   sidenavSearchOpened?: boolean
   homePage?: boolean
   closeSidenavSearch?: any
+  setInputText?: any
 }
 
 const BucketHeader = styled.div<{ wide?: boolean }>`
@@ -351,8 +352,8 @@ const Header = ({
   homePage,
   sidenavSearchOpened,
   closeSidenavSearch,
+  setInputText,
 }: HeaderViewProps) => {
-  //sidenavSearchOpened
   const [showMobileNav, setShowMobileNav] = React.useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
@@ -366,10 +367,6 @@ const Header = ({
   React.useEffect(() => {
     mobileNavOpen(showMobileNav)
   }, [showMobileNav])
-
-  const closeSidenavSearchOp = () => {
-    closeSidenavSearch()
-  }
 
   const SecondLevelMenu = () => {
     const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
@@ -421,7 +418,11 @@ const Header = ({
             <Icon icon="fa-regular fa-bars" size="28px" />
           )}
         </DocsMobileButton>
-        {width > 1024 && <Github width={24} height={24} />}
+        {width > 1024 && (
+          <a href="https://github.com/prisma">
+            <Github width={24} height={24} />
+          </a>
+        )}
         {showMobileNav && (
           <SecondLevelMobileOnlyNav>
             <OverflowContainer>
@@ -442,6 +443,7 @@ const Header = ({
             sidenavSearchOpened={sidenavSearchOpened}
             closeSidenavSearch={closeSidenavSearch}
             path="home"
+            setInputText={setInputText}
           />
         </SearchComponentDesktop>
       )}
