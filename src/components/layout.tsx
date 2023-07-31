@@ -102,11 +102,11 @@ const Container = styled.div<{ homePage?: boolean; wide?: boolean }>`
 
 const TOCWrapper = styled.div<{ wide?: boolean }>`
   width: 180px;
-  height: 100vh;
+  height: 85vh;
   flex-shrink: 0;
   overflow-y: auto;
   position: sticky;
-  top: 96px;
+  top: 90px;
   ${(p) => p.wide && `margin-right: -100px;`}
 
   @media (min-width: 0px) and (max-width: 1024px) {
