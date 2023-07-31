@@ -90,6 +90,7 @@ const siteConfig = {
           {
             url: 'https://github.com/prisma/prisma-examples',
             title: 'Example projects',
+            external: true,
           },
         ],
       },
@@ -108,11 +109,11 @@ const siteConfig = {
             title: 'Pulse',
           },
           {
-            url: 'https://www.prisma.io/Cloud Projects',
+            url: 'https://www.prisma.io/cloud',
             title: 'Cloud Projects',
           },
           {
-            url: 'https://www.prisma.io/Cloud Projects',
+            url: 'https://www.prisma.io/cloud',
             title: 'Classic Projects',
           },
         ],
