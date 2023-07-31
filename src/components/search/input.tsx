@@ -27,14 +27,14 @@ const SearchBoxDiv = styled.div`
   &.opened {
     position: relative;
     z-index: 100001;
-    max-width: 1200px;
+    max-width: 1240px;
     width: 100%;
     height: 77px;
     background: ${theme.colors.white};
     padding: ${theme.space[20]};
     border-bottom: 1px solid ${theme.colors.gray[300]};
     border-radius: ${theme.radii.small};
-
+    border-color: ${theme.colors.white};
     form {
       max-width: 100%;
       input {
@@ -125,13 +125,13 @@ const SearchBoxDiv = styled.div`
 const SearchIcon = styled(SearchPic)`
   min-width: 1em;
   pointer-events: none;
-  z-index: 100001;
+  //z-index: 100001;
   position: absolute;
 `
 
 const SearchSlashIcon = styled(SearchSlash)`
   pointer-events: none;
-  z-index: 100001;
+  //z-index: 100001;
   position: absolute;
   right: 0;
 `
@@ -153,10 +153,14 @@ const SearchBox = ({
   upClicked,
   downClicked,
   selectedInd,
+  path,
   ...rest
 }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
-
+  // console.log(path)
+  // if (path === 'inner') {
+  //   onFocus()
+  // }
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
   const { width } = useWindowDimensions()

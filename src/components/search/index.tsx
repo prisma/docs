@@ -15,8 +15,9 @@ const HitsWrapper = styled.div`
   display: none;
   &.show {
     display: grid;
+    margin-bottom: 100px;
   }
-  max-height: 85vh;
+  max-height: 75vh;
   overflow-y: scroll;
   overflow-x: hidden;
   z-index: 100002;
@@ -26,7 +27,7 @@ const HitsWrapper = styled.div`
   top: 97px;
 
   transform: translate(-50%, -0%);
-  max-width: 1200px;
+  max-width: 1240px;
   width: 100%;
   background: ${theme.colors.white};
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
@@ -167,7 +168,7 @@ const searchStateToUrl = (location: any, searchState: any) =>
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
-export default function Search({ hitsStatus, location, path }: any) {
+export default function Search({ hitsStatus, location, path, sidenavSearchOpened }: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
@@ -234,13 +235,14 @@ export default function Search({ hitsStatus, location, path }: any) {
       searchState={searchState}
       createURL={createURL}
     >
-      <Overlay visible={showHits} hideSearch={hideSearch} path={path} />
+      <Overlay visible={showHits || sidenavSearchOpened} hideSearch={hideSearch} path={path} />
       <CustomSearchBox
         onFocus={showSearch}
-        isOpened={showHits}
+        isOpened={showHits || sidenavSearchOpened}
         closeSearch={hideSearch}
         upClicked={decrementIndex}
         downClicked={incrementIndex}
+        path={path}
       />
       {query && query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
