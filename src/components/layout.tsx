@@ -8,7 +8,6 @@ import styled from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Footer from './footer'
 import Header from './header'
-import Search from './search'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
@@ -155,10 +154,6 @@ export default function Layout({
   const { header, footer } = site.siteMetadata
   const [mobileNavOpen, setMobileNav] = useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
-  const changeHitsStatus = (status: boolean) => {
-    console.log(status)
-    setShowDocsBtn(!status)
-  }
 
   const [value, setValue] = useState('')
 
@@ -182,14 +177,9 @@ export default function Layout({
           />
           <Wrapper homePage={homePage}>
             <Container homePage={homePage} wide={wide}>
-              {!homePage && location && (
+              {!homePage && (
                 <StickyBox offsetTop={120} offsetBottom={20}>
                   <SearchComponentDesktop open={!showDocsBtn}>
-                    {/* <Search
-                      hitsStatus={changeHitsStatus}
-                      location={location}
-                      closeSidenavSearch={closeSidenavSearch}
-                    /> */}
                     <SearchBox showHeaderSearch={showHeaderSearch} value={value} />
                   </SearchComponentDesktop>
                   <NotMobile id="sidebar-holder">

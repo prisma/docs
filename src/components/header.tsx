@@ -403,7 +403,7 @@ const Header = ({
     <HeaderWrapper>
       <BucketHeader wide={wide}>
         <HomeIcons>
-          <a href="/">
+          <a href="https://www.prisma.io">
             <Logo />
           </a>
           <a href="/docs">Docs</a>

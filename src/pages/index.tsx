@@ -277,7 +277,6 @@ const DatabaseGrid = styled.div`
     }
     span {
       color: #2d3748;
-      letter-spacing: 0.02em;
       text-transform: capitalize;
       font-family: 'Inter';
       font-weight: 600;
@@ -422,6 +421,8 @@ const Homepage = () => {
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const {
     siteMetadata: {
+      title,
+      description,
       homepage: { GeneralLinkData, CommunityLinksData, CardLinks, ORMPlatformLinkData },
     },
   } = site
@@ -446,7 +447,9 @@ const Homepage = () => {
               <Body>{ORMPlatformLinkData[e].description}</Body>
               <LinkGrid>
                 {ORMPlatformLinkData[e].links.map((e: any) => (
-                  <Link to={e.url}>{e.title} &#8594;</Link>
+                  <Link to={e.url}>
+                    {e.title} {e.external ? <>&#8599;</> : <>&#8594;</>}
+                  </Link>
                 ))}
               </LinkGrid>
             </ProductCard>
@@ -563,6 +566,8 @@ export const query = graphql`
   query Homepage {
     site {
       siteMetadata {
+        title
+        description
         homepage {
           GeneralLinkData {
             title
@@ -596,6 +601,7 @@ export const query = graphql`
               links {
                 url
                 title
+                external
               }
             }
             pdp {
