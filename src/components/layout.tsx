@@ -14,6 +14,7 @@ import TableOfContents from './toc'
 
 import '../styles/layout.css'
 import SearchBox from './search/minimalInput'
+import { Script } from 'gatsby'
 
 interface LayoutContentProps {
   toc: any
@@ -164,6 +165,7 @@ export default function Layout({
   const setInputText = (input: any) => setValue(input)
   return (
     <LensProvider>
+      <Script src="https://kit.fontawesome.com/f46012ac73.js" crossOrigin="anonymous" />
       <MDXProvider components={shortcodes}>
         <LayoutWrapper>
           <Header
