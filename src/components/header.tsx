@@ -27,7 +27,7 @@ type HeaderViewProps = {
 }
 
 const BucketHeader = styled.div<{ wide?: boolean }>`
-  max-width: ${(props) => (props.wide ? '1440' : '1240')}px;
+  max-width: ${(props) => (!props.wide ? '1240' : '1440')}px;
   width: 100%;
   display: flex;
   gap: 16px;
@@ -345,6 +345,12 @@ const OverflowContainer = styled.div`
   overflow: scroll;
 `
 
+const GithubLink = styled.a`
+  @media (min-width: 0px) and (max-width: 1024px) {
+    display: none;
+  }
+`
+
 const Header = ({
   headerProps,
   wide,
@@ -359,8 +365,6 @@ const Header = ({
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
   const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
-
-  const { width } = useWindowDimensions()
 
   const location = useLocation()
 
@@ -418,11 +422,11 @@ const Header = ({
             <Icon icon="fa-regular fa-bars" size="28px" />
           )}
         </DocsMobileButton>
-        {width > 1024 && (
-          <a href="https://github.com/prisma">
-            <Github width={24} height={24} />
-          </a>
-        )}
+
+        <GithubLink href="https://github.com/prisma">
+          <Github width={24} height={24} />
+        </GithubLink>
+
         {showMobileNav && (
           <SecondLevelMobileOnlyNav>
             <OverflowContainer>
@@ -448,7 +452,7 @@ const Header = ({
         </SearchComponentDesktop>
       )}
     </HeaderWrapper>
-  ) //
+  )
 }
 
 export default Header

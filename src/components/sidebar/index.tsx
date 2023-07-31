@@ -66,7 +66,7 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
   const bucketName =
     location && location.state && location.state.bucketName ? location.state.bucketName : '/'
   let bucketEdges = allMdx.edges?.filter((edge) => edge.node.fields.slug.includes(bucketName))
-
+  let bucketEdgesMobile = bucketEdges
   const bucketNames = config.header.secondLevelHeaderMenuItems.map((item: any) => item.bucketName)
 
   if (slug) {
@@ -74,11 +74,12 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
     const selectedBucket = bucketNames.filter((bn: any) => bn === slugBucketPart)[0]
     if (selectedBucket) {
       bucketEdges = allMdx.edges?.filter((edge) => {
-        return (
-          edge.node.fields.slug.includes(selectedBucket) &&
-          edge.node.fields.slug !== `${selectedBucket}/index`
-        )
+        return edge.node.fields.slug.includes(selectedBucket)
       })
+
+      bucketEdgesMobile = bucketEdges?.filter(
+        (edge) => edge.node.fields.slug !== `${selectedBucket}/index`
+      )
     }
   }
 
@@ -97,7 +98,7 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
     <Sidebar>
       <div className="mobile-only">
         <List>
-          <Tree edges={bucketEdges} />
+          <Tree edges={bucketEdgesMobile} />
         </List>
       </div>
     </Sidebar>
