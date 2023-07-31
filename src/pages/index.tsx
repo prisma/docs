@@ -52,8 +52,10 @@ const ProductCard = styled.div<{ color?: string }>`
   padding: 32px;
   width: 100%;
   border-radius: 8px;
-  background-color: lightgray 393.862px -90.295px / 169.197% 486.49% no-repeat,
-    linear-gradient(142deg, #fff 0.79%, #f4f5ff 100%);
+  background: ${(p) =>
+    p.color === 'teal'
+      ? 'linear-gradient(102.41deg, #FFFFFF 6.22%, #E8FFFD 87.23%)'
+      : 'linear-gradient(102.41deg, #FFFFFF 6.22%, #F4F5FF 87.23%)'};
   box-shadow: 0px 18px 42px 0px rgba(23, 43, 77, 0.08), 0px 4px 26px 0px rgba(23, 43, 77, 0.05),
     0px 0px 46px 0px rgba(23, 43, 77, 0.01);
   a {
@@ -180,6 +182,7 @@ const ORMCardsWrapper = styled.div`
 
 const ORMProductCard = styled(ProductCard)`
   padding: 40px;
+  background: #ffffff;
   grid-template-rows: auto auto 1fr;
   ${H4} {
     margin-bottom: 8px;
@@ -224,10 +227,15 @@ const DatabaseGrid = styled.div`
   flex-direction: column;
   flex-wrap: wrap;
   gap: 24px;
-  @media only screen and (min-width: 940px) {
+  @media only screen and (min-width: 1024px) {
     display: grid;
     column-gap: 44px;
     grid-template-columns: repeat(4, 1fr);
+  }
+  @media (min-width: 940px) and (max-width: 1024px) {
+    display: grid;
+    column-gap: 44px;
+    grid-template-columns: repeat(3, 1fr);
   }
   a {
     text-decoration: none;
@@ -427,7 +435,11 @@ const Homepage = () => {
             <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
               <H3>
                 <IconWrapper>
-                  <Icon icon="fa-solid fa-database" size="22px" color="white" />
+                  <Icon
+                    icon={`fa-solid fa-${ORMPlatformLinkData[e].icon}`}
+                    size="22px"
+                    color="white"
+                  />
                 </IconWrapper>
                 {ORMPlatformLinkData[e].title}
               </H3>
@@ -580,6 +592,7 @@ export const query = graphql`
             porm {
               title
               description
+              icon
               links {
                 url
                 title
@@ -587,6 +600,7 @@ export const query = graphql`
             }
             pdp {
               title
+              icon
               description
               links {
                 url

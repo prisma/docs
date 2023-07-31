@@ -14,6 +14,8 @@ import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
 
 import '../styles/layout.css'
+import CustomSearchBox from './search/input'
+import { SearchBox } from 'react-instantsearch-dom'
 
 interface LayoutContentProps {
   toc: any
@@ -26,23 +28,23 @@ interface LayoutContentProps {
 
 type LayoutProps = RouterProps & LayoutContentProps
 
-const Wrapper = styled.div<{ fullWidth?: boolean }>`
+const Wrapper = styled.div<{ homePage?: boolean }>`
   display: flex;
   width: 100%;
   justify-content: center;
-  ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
+  ${(p) => (p.homePage ? 'padding: 80px 0 0 0' : 'padding: 80px 0')};
   @media (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 0;
   }
 `
 
-const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
+const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
   ${(p) =>
-    p.fullWidth
+    p.homePage
       ? 'max-width: 100%;'
       : p.wide
       ? 'min-width: 0; max-width: 988px; flex-shrink: 1;'
-      : 'max-width: 748px;'}
+      : 'max-width: 748px; margin: 0 20px;'}
   flex: 1;
   position: relative;
   z-index: 100;
@@ -51,9 +53,9 @@ const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
     margin: 0;
     max-width: 100%;
   }
-  @media (min-width: 1024px) and (max-width: 1200px) {
+  @media (min-width: 1024px) and (max-width: 1240px) {
     margin: 0;
-    ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 570px')};
+    ${(p) => (p.homePage ? 'max-width: 100%' : 'max-width: 570px')};
   }
 `
 
@@ -86,15 +88,17 @@ const NotMobile = styled.section`
   }
 `
 
-const Container = styled.div<{ fullWidth?: boolean; wide?: boolean }>`
-  ${(p) => (p.fullWidth ? 'max-width: 100%;' : p.wide ? 'max-width: 1440px' : 'max-width: 1200px')};
+const Container = styled.div<{ homePage?: boolean; wide?: boolean }>`
+  ${(p) => (p.homePage ? 'max-width: 100%;' : p.wide ? 'max-width: 1440px' : 'max-width: 1240px')};
   width: 100%;
   justify-content: center;
   display: flex;
   align-items: flex-start;
-  ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${theme.space[40]};`)}
+  position: relative;
+
+  ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: ${theme.space[40]};`)}
   @media (max-width: 1024px) {
-    ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${theme.space[8]};`)}
+    ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: ${theme.space[80]};`)}
   }
 `
 
@@ -104,7 +108,7 @@ const TOCWrapper = styled.div<{ wide?: boolean }>`
   flex-shrink: 0;
   overflow-y: auto;
   position: sticky;
-  top: 0;
+  top: 96px;
   ${(p) => p.wide && `margin-right: -100px;`}
 
   @media (min-width: 0px) and (max-width: 1024px) {
@@ -115,23 +119,6 @@ const TOCWrapper = styled.div<{ wide?: boolean }>`
   }
 `
 
-const BannerWrapper = styled.div<{ light: boolean }>`
-  a {
-    color: ${(props) => (props.light ? theme.colors.gray['800'] : theme.colors.gray['300'])};
-  }
-  b {
-    ${(props) => !props.light && `color: ${theme.colors.teal['400']};`}
-  }
-  width: 100%;
-  transition: margin-top 50ms ease-in;
-  top: 0;
-  z-index: -1;
-  @media (max-width: 1000px) {
-    font-size: 14px;
-  }
-  font-size: 18px;
-`
-
 const FooterWrapper = styled.div`
   button {
     z-index: 10;
@@ -139,12 +126,21 @@ const FooterWrapper = styled.div`
 `
 
 const SearchComponentDesktop = styled.div<{ open?: boolean }>`
-  top: 80px;
   display: ${(p) => (p.open ? 'none' : 'block')};
+  ${(p) =>
+    p.open &&
+    `
+    position: absolute;
+    width: max-available;
+  `}
   padding: 0 0 22px 0;
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
   }
+`
+
+const LayoutWrapper = styled.div<{ mobileNavOpen?: boolean }>`
+  ${(p) => p.mobileNavOpen && 'position: fixed;'}
 `
 
 export default function Layout({
@@ -161,39 +157,42 @@ export default function Layout({
   const [mobileNavOpen, setMobileNav] = useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const changeHitsStatus = (status: boolean) => {
+    console.log(status)
     setShowDocsBtn(!status)
   }
-  const openheadersearch = () => setShowDocsBtn(false)
+
+  const closeSidenavSearch = () => setShowDocsBtn(true)
+
+  const showHeaderSearch = () => setShowDocsBtn(false)
   return (
     <LensProvider>
       <MDXProvider components={shortcodes}>
-        <div style={mobileNavOpen ? { position: 'fixed' } : {}}>
-          {/* <Header headerProps={header} wide={wide} mobileNavOpen={setMobileNav}/> */}
+        <LayoutWrapper>
           <Header
             headerProps={header}
             wide={wide}
             mobileNavOpen={setMobileNav}
+            homePage={homePage}
             sidenavSearchOpened={!showDocsBtn}
+            closeSidenavSearch={closeSidenavSearch}
           />
-          <Wrapper
-            fullWidth={homePage}
-            style={homePage ? { paddingTop: '80px' } : { padding: '80px 0' }}
-          >
-            <Container fullWidth={homePage} wide={wide}>
+          <Wrapper homePage={homePage}>
+            <Container homePage={homePage} wide={wide}>
               {!homePage && location && (
-                <>
-                  <StickyBox offsetTop={120} offsetBottom={20}>
-                    <SearchComponentDesktop open={!showDocsBtn}>
-                      <Search hitsStatus={changeHitsStatus} location={location} path="inner" />
-                      {/* <input type='search' onClick={openheadersearch} onFocus={openheadersearch} placeholder='Search docs'/> */}
-                    </SearchComponentDesktop>
-                    <NotMobile id="sidebar-holder">
-                      <SidebarLayout isMobile={false} location={location} slug={slug} />
-                    </NotMobile>
-                  </StickyBox>
-                </>
+                <StickyBox offsetTop={120} offsetBottom={20}>
+                  <SearchComponentDesktop open={!showDocsBtn}>
+                    <Search
+                      hitsStatus={changeHitsStatus}
+                      location={location}
+                      closeSidenavSearch={closeSidenavSearch}
+                    />
+                  </SearchComponentDesktop>
+                  <NotMobile id="sidebar-holder">
+                    <SidebarLayout isMobile={false} location={location} slug={slug} />
+                  </NotMobile>
+                </StickyBox>
               )}
-              <Content fullWidth={homePage} wide={wide}>
+              <Content homePage={homePage} wide={wide}>
                 <MaxWidth wide={wide}>{children}</MaxWidth>
               </Content>
               {!homePage && (
@@ -205,11 +204,11 @@ export default function Layout({
               )}
             </Container>
           </Wrapper>
-          <FooterWrapper>
-            <Footer footerProps={footer} />
-          </FooterWrapper>
-        </div>
+        </LayoutWrapper>
       </MDXProvider>
+      <FooterWrapper>
+        <Footer footerProps={footer} />
+      </FooterWrapper>
     </LensProvider>
   )
 }

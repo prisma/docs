@@ -154,6 +154,8 @@ const SearchBox = ({
   downClicked,
   selectedInd,
   path,
+  sidenavSearchOpened,
+  disconnectedForm,
   ...rest
 }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
@@ -244,6 +246,19 @@ const SearchBox = ({
       onFocus()
     }
   }, [])
+
+  if (sidenavSearchOpened) {
+    inputEl.current.focus()
+    onFocus()
+  }
+
+  // const setFocus = (e: any) => {
+  //   //if(path === 'home') {
+  //     onFocus()
+  //     e.stopPropagation()
+  //   e.preventDefault()
+  //   //}
+  // }
 
   return (
     <SearchBoxDiv className={isOpened ? 'opened' : ''}>

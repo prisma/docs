@@ -168,7 +168,13 @@ const searchStateToUrl = (location: any, searchState: any) =>
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
-export default function Search({ hitsStatus, location, path, sidenavSearchOpened }: any) {
+export default function Search({
+  hitsStatus,
+  location,
+  path,
+  sidenavSearchOpened,
+  closeSidenavSearch,
+}: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
@@ -181,7 +187,13 @@ export default function Search({ hitsStatus, location, path, sidenavSearchOpened
         navigate(location.href.split('?')[0])
       }, DEBOUNCE_TIME)
     }
+    closeSidenavSearch()
   }
+
+  // if(sidenavSearchOpened) {
+  //   console.log(path)
+  //   setQuery('')
+  // }
 
   const showSearch = () => setShowHits(true)
 
@@ -235,14 +247,15 @@ export default function Search({ hitsStatus, location, path, sidenavSearchOpened
       searchState={searchState}
       createURL={createURL}
     >
-      <Overlay visible={showHits || sidenavSearchOpened} hideSearch={hideSearch} path={path} />
+      <Overlay visible={showHits} hideSearch={hideSearch} path={path} />
       <CustomSearchBox
         onFocus={showSearch}
-        isOpened={showHits || sidenavSearchOpened}
+        isOpened={showHits}
         closeSearch={hideSearch}
         upClicked={decrementIndex}
         downClicked={incrementIndex}
         path={path}
+        sidenavSearchOpened={sidenavSearchOpened}
       />
       {query && query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
