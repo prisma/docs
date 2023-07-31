@@ -140,8 +140,11 @@ const FooterWrapper = styled.div`
 
 const SearchComponentDesktop = styled.div<{ open?: boolean }>`
   top: 80px;
-  display: block;
-  padding: 22px 0px;
+  display: ${(p) => (p.open ? 'none' : 'block')};
+  padding: 0 0 22px 0;
+  @media (min-width: 0px) and (max-width: 1024px) {
+    display: none;
+  }
 `
 
 export default function Layout({
@@ -157,23 +160,32 @@ export default function Layout({
   const { header, footer } = site.siteMetadata
   const [mobileNavOpen, setMobileNav] = useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
-  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
-
+  const changeHitsStatus = (status: boolean) => {
+    setShowDocsBtn(!status)
+  }
+  const openheadersearch = () => setShowDocsBtn(false)
   return (
     <LensProvider>
       <MDXProvider components={shortcodes}>
         <div style={mobileNavOpen ? { position: 'fixed' } : {}}>
-          <Header headerProps={header} wide={wide} mobileNavOpen={setMobileNav} />
+          {/* <Header headerProps={header} wide={wide} mobileNavOpen={setMobileNav}/> */}
+          <Header
+            headerProps={header}
+            wide={wide}
+            mobileNavOpen={setMobileNav}
+            sidenavSearchOpened={!showDocsBtn}
+          />
           <Wrapper
             fullWidth={homePage}
             style={homePage ? { paddingTop: '80px' } : { padding: '80px 0' }}
           >
             <Container fullWidth={homePage} wide={wide}>
-              {!homePage && (
+              {!homePage && location && (
                 <>
                   <StickyBox offsetTop={120} offsetBottom={20}>
-                    <SearchComponentDesktop>
-                      <Search hitsStatus={changeHitsStatus} location={location} path="home" />
+                    <SearchComponentDesktop open={!showDocsBtn}>
+                      <Search hitsStatus={changeHitsStatus} location={location} path="inner" />
+                      {/* <input type='search' onClick={openheadersearch} onFocus={openheadersearch} placeholder='Search docs'/> */}
                     </SearchComponentDesktop>
                     <NotMobile id="sidebar-holder">
                       <SidebarLayout isMobile={false} location={location} slug={slug} />

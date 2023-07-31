@@ -28,9 +28,10 @@ const BreadcrumbTitle = styled.div`
 interface ParentTitleProps {
   slug: string
   nonLink?: boolean
+  isSearchItem?: boolean
 }
 
-const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
+const ParentTitle = ({ slug, nonLink, isSearchItem }: ParentTitleProps) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
   const parentTitle = getParentTitle(slug, allMdx)
   if (parentTitle.length === 0) {
@@ -38,10 +39,12 @@ const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
   }
   return (
     <BreadcrumbTitle>
-      <a href="/docs">
-        <Icon icon="fa-solid fa-house" size="16px"></Icon>
-      </a>
-      <span> {`/`} </span>
+      {!isSearchItem && (
+        <a href="/docs">
+          <Icon icon="fa-solid fa-house" size="16px"></Icon>
+        </a>
+      )}
+      {!isSearchItem && <span> {`/`} </span>}
       {parentTitle.map((part: any, index: number) => (
         <span key={index}>
           {part.link && !nonLink ? (

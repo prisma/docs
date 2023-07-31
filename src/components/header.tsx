@@ -13,12 +13,13 @@ import Logo from '../icons/Logo'
 import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
-import Search from './search'
+import Search from '../components/search'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
   wide?: boolean
   mobileNavOpen?: any
+  sidenavSearchOpened?: boolean
 }
 
 const Container = styled.div<{ wide?: boolean }>`
@@ -225,9 +226,9 @@ const SearchComponentDesktop = styled.div<{ open?: boolean }>`
   width: 100%;
   background-color: ${theme.colors.gray[100]};
   z-index: ${(p) => (p.open ? 200 : 101)};
-  @media (min-width: 768px) {
-    z-index: ${(p) => (p.open ? 105 : 101)};
-  }
+  // @media (min-width: 768px) {
+  //   z-index: ${(p) => (p.open ? 105 : 101)};
+  // }
 `
 const SecondLevelNav = styled.div<{ wide?: boolean }>`
   ${(p) => (p.wide ? `padding: 0 2.5rem 0 0;` : `margin-left: 48px;`)}
@@ -330,7 +331,8 @@ const OverflowContainer = styled.div`
   overflow: scroll;
 `
 
-const HeaderSec = ({ headerProps, wide, mobileNavOpen }: HeaderViewProps) => {
+const HeaderSec = ({ headerProps, wide, mobileNavOpen, sidenavSearchOpened }: HeaderViewProps) => {
+  //sidenavSearchOpened
   const [showMobileNav, setShowMobileNav] = React.useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
@@ -359,7 +361,6 @@ const HeaderSec = ({ headerProps, wide, mobileNavOpen }: HeaderViewProps) => {
             const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
             const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
             const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
-            console.log(item)
             return (
               <DarkNavLink
                 to={item.to}
@@ -407,12 +408,18 @@ const HeaderSec = ({ headerProps, wide, mobileNavOpen }: HeaderViewProps) => {
             </OverflowContainer>
           </SecondLevelMobileOnlyNav>
         )}
+        {(location.pathname === '/' || sidenavSearchOpened) && ( //|| sidenavSearchOpened
+          <SearchComponentDesktop open={showMobileNav}>
+            {/* <Search hitsStatus={changeHitsStatus} location={location} path='home'/> */}
+            <Search
+              hitsStatus={changeHitsStatus}
+              location={location}
+              path={!sidenavSearchOpened ? 'home' : ''}
+              sidenavSearchOpened={sidenavSearchOpened}
+            />
+          </SearchComponentDesktop>
+        )}
       </SecondLevelHeader>
-      {location.pathname === '/' && (
-        <SearchComponentDesktop open={showMobileNav}>
-          <Search hitsStatus={changeHitsStatus} location={location} path="home" />
-        </SearchComponentDesktop>
-      )}
     </>
   )
 }
