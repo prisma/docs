@@ -174,6 +174,7 @@ export default function Search({
   path,
   sidenavSearchOpened,
   closeSidenavSearch,
+  setInputText,
 }: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
@@ -187,13 +188,9 @@ export default function Search({
         navigate(location.href.split('?')[0])
       }, DEBOUNCE_TIME)
     }
+    setInputText(query)
     closeSidenavSearch()
   }
-
-  // if(sidenavSearchOpened) {
-  //   console.log(path)
-  //   setQuery('')
-  // }
 
   const showSearch = () => setShowHits(true)
 

@@ -14,8 +14,7 @@ import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
 
 import '../styles/layout.css'
-import CustomSearchBox from './search/input'
-import { SearchBox } from 'react-instantsearch-dom'
+import SearchBox from './search/minimalInput'
 
 interface LayoutContentProps {
   toc: any
@@ -161,9 +160,13 @@ export default function Layout({
     setShowDocsBtn(!status)
   }
 
+  const [value, setValue] = useState('')
+
   const closeSidenavSearch = () => setShowDocsBtn(true)
 
   const showHeaderSearch = () => setShowDocsBtn(false)
+
+  const setInputText = (input: any) => setValue(input)
   return (
     <LensProvider>
       <MDXProvider components={shortcodes}>
@@ -175,17 +178,19 @@ export default function Layout({
             homePage={homePage}
             sidenavSearchOpened={!showDocsBtn}
             closeSidenavSearch={closeSidenavSearch}
+            setInputText={setInputText}
           />
           <Wrapper homePage={homePage}>
             <Container homePage={homePage} wide={wide}>
               {!homePage && location && (
                 <StickyBox offsetTop={120} offsetBottom={20}>
                   <SearchComponentDesktop open={!showDocsBtn}>
-                    <Search
+                    {/* <Search
                       hitsStatus={changeHitsStatus}
                       location={location}
                       closeSidenavSearch={closeSidenavSearch}
-                    />
+                    /> */}
+                    <SearchBox showHeaderSearch={showHeaderSearch} value={value} />
                   </SearchComponentDesktop>
                   <NotMobile id="sidebar-holder">
                     <SidebarLayout isMobile={false} location={location} slug={slug} />
