@@ -14,16 +14,19 @@ import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
 import Search from '../components/search'
+import { close } from 'inspector'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
   wide?: boolean
   mobileNavOpen?: any
   sidenavSearchOpened?: boolean
+  homePage?: boolean
+  closeSidenavSearch?: any
 }
 
-const Container = styled.div<{ wide?: boolean }>`
-  max-width: ${(props) => (props.wide ? '1440' : '1200')}px;
+const BucketHeader = styled.div<{ wide?: boolean }>`
+  max-width: ${(props) => (props.wide ? '1440' : '1240')}px;
   width: 100%;
   display: flex;
   gap: 16px;
@@ -113,7 +116,7 @@ const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
   z-index: 200;
 `
 
-const SecondLevelHeader = styled.div`
+const HeaderWrapper = styled.div`
   background: #fff;
   padding: 20px 16px;
   display: flex;
@@ -216,7 +219,11 @@ const SecondLevelMobileNavLink = styled.div`
   }
 `
 
-const SearchComponentDesktop = styled.div<{ open?: boolean }>`
+const SearchComponentDesktop = styled.div<{
+  open?: boolean
+  homePage?: boolean
+  sidenavSearchOpened?: boolean
+}>`
   position: absolute;
   top: 80px;
   left: 50%;
@@ -229,6 +236,12 @@ const SearchComponentDesktop = styled.div<{ open?: boolean }>`
   // @media (min-width: 768px) {
   //   z-index: ${(p) => (p.open ? 105 : 101)};
   // }
+  background-color: ${(p) =>
+    p.open || p.sidenavSearchOpened ? 'transparent' : theme.colors.gray[100]};
+
+  @media (min-width: 1024px) {
+    ${(p) => !p.homePage && !p.sidenavSearchOpened && 'display: none;'}
+  }
 `
 const SecondLevelNav = styled.div<{ wide?: boolean }>`
   ${(p) => (p.wide ? `padding: 0 2.5rem 0 0;` : `margin-left: 48px;`)}
@@ -331,7 +344,14 @@ const OverflowContainer = styled.div`
   overflow: scroll;
 `
 
-const HeaderSec = ({ headerProps, wide, mobileNavOpen, sidenavSearchOpened }: HeaderViewProps) => {
+const Header = ({
+  headerProps,
+  wide,
+  mobileNavOpen,
+  homePage,
+  sidenavSearchOpened,
+  closeSidenavSearch,
+}: HeaderViewProps) => {
   //sidenavSearchOpened
   const [showMobileNav, setShowMobileNav] = React.useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
@@ -346,6 +366,10 @@ const HeaderSec = ({ headerProps, wide, mobileNavOpen, sidenavSearchOpened }: He
   React.useEffect(() => {
     mobileNavOpen(showMobileNav)
   }, [showMobileNav])
+
+  const closeSidenavSearchOp = () => {
+    closeSidenavSearch()
+  }
 
   const SecondLevelMenu = () => {
     const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
@@ -379,28 +403,25 @@ const HeaderSec = ({ headerProps, wide, mobileNavOpen, sidenavSearchOpened }: He
   }
 
   return (
-    <>
-      {/* Second level header */}
-      <SecondLevelHeader>
-        <Container wide={wide}>
-          <HomeIcons>
-            <a href="https://www.prisma.io">
-              <Logo />
-            </a>
-            <a href="https://prisma.io/docs">Docs</a>
-          </HomeIcons>
-          <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
-            <SecondLevelMenu />
-          </NonMobileMenu>
-          <DocsMobileButton onClick={toggleMobileNav}>
-            {showMobileNav ? (
-              <Icon icon="fa-regular fa-xmark" size="28px" />
-            ) : (
-              <Icon icon="fa-regular fa-bars" size="28px" />
-            )}
-          </DocsMobileButton>
-          {width > 1024 && <Github width={24} height={24} />}
-        </Container>
+    <HeaderWrapper>
+      <BucketHeader wide={wide}>
+        <HomeIcons>
+          <a href="/">
+            <Logo />
+          </a>
+          <a href="/docs">Docs</a>
+        </HomeIcons>
+        <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
+          <SecondLevelMenu />
+        </NonMobileMenu>
+        <DocsMobileButton onClick={toggleMobileNav}>
+          {showMobileNav ? (
+            <Icon icon="fa-regular fa-xmark" size="28px" />
+          ) : (
+            <Icon icon="fa-regular fa-bars" size="28px" />
+          )}
+        </DocsMobileButton>
+        {width > 1024 && <Github width={24} height={24} />}
         {showMobileNav && (
           <SecondLevelMobileOnlyNav>
             <OverflowContainer>
@@ -408,20 +429,24 @@ const HeaderSec = ({ headerProps, wide, mobileNavOpen, sidenavSearchOpened }: He
             </OverflowContainer>
           </SecondLevelMobileOnlyNav>
         )}
-        {(location.pathname === '/' || sidenavSearchOpened) && ( //|| sidenavSearchOpened
-          <SearchComponentDesktop open={showMobileNav}>
-            {/* <Search hitsStatus={changeHitsStatus} location={location} path='home'/> */}
-            <Search
-              hitsStatus={changeHitsStatus}
-              location={location}
-              path={!sidenavSearchOpened ? 'home' : ''}
-              sidenavSearchOpened={sidenavSearchOpened}
-            />
-          </SearchComponentDesktop>
-        )}
-      </SecondLevelHeader>
-    </>
-  )
+      </BucketHeader>
+      {(location || sidenavSearchOpened) && (
+        <SearchComponentDesktop
+          open={showMobileNav}
+          homePage={homePage}
+          sidenavSearchOpened={sidenavSearchOpened}
+        >
+          <Search
+            hitsStatus={changeHitsStatus}
+            location={location}
+            sidenavSearchOpened={sidenavSearchOpened}
+            closeSidenavSearch={closeSidenavSearch}
+            path="home"
+          />
+        </SearchComponentDesktop>
+      )}
+    </HeaderWrapper>
+  ) //
 }
 
-export default HeaderSec
+export default Header
