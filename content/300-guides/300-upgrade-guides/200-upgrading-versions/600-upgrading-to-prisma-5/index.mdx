@@ -256,7 +256,7 @@ const prisma = (new PrismaClient()).$extends({
 })
 ```
 
-### <inlinecode>jsonProtocol</inlinecode> out of Preview!
+### <inlinecode>jsonProtocol</inlinecode> out of Preview
 
 The `jsonProtocol` preview feature is now Generally Available. This new protocol leads to [significantly improved startup times](https://www.prisma.io/blog/prisma-5-f66prwkjx72s#improved-startup-performance-in-prisma-client) when compared to our previous GraphQL-based protocol. When upgrading to Prisma 5, make sure to remove `jsonProtocol` from your preview features, if added.
 
@@ -277,305 +277,21 @@ generator client {
 }
 ```
 
-#### Improved error messages
-
-Due to the switch to the new protocol, several error messages have been improved. For example, the following error message in Prisma 4 and below:
-
-```terminal
-Failed to validate the query: `Unable to match input value to any allowed input type for the field. Parse errors: [Query parsing/validation error at `Mutation.createOneUser.data.UserCreateInput.person.PersonCreateNestedOneWithoutUserInput.create`: Unable to match input value to any allowed input type for the field. Parse errors: [Query parsing/validation error at `Mutation.createOneUser.data.UserCreateInput.person.PersonCreateNestedOneWithoutUserInput.create.PersonCreateWithoutUserInput.hubspot_id`: A value is required but not set., Query parsing/validation error at `Mutation.createOneUser.data.UserCreateInput.person.PersonCreateNestedOneWithoutUserInput.create.PersonUncheckedCreateWithoutUserInput.hubspot_id`: A value is required but not set.], Query parsing/validation error at `Mutation.createOneUser.data.UserUncheckedCreateInput.person`: Field does not exist on enclosing type.]` at `Mutation.createOneUser.data`
-```
-
-becomes the following in Prisma 5:
-
-```terminal
-Invalid `prisma.user.create()` invocation in
-/Users/prismo/projects/prisma/reproductions/workbench/index.ts:21:36
-
-  18 const prisma = new PrismaClient()
-  19
-  20 for (const u of userData) {
-→ 21   const user = await prisma.user.create({
-         data: {
-           email: "eugene.albright@gallaudet.edu",
-           person: {
-             create: {
-               first_name: "William",
-               last_name: "Albright",
-       +       hubspot_id: String
-             }
-           }
-         }
-       })
-
-Argument `hubspot_id` must not be null.
-```
+For further information on what changes need to be made, please review our [jsonProtocol changes guide](./jsonprotocol-changes).
 
 ### Removal of array shortcuts
 
-This version drops support for a number of "array shortcuts". These shortcuts were a way to add a single element as a value to an array-based operator instead of wrapping that one element in an array. To make our typings more consistent and logical, we now require array values for these operators.
+Prisma 5 drops support for a number of "array shortcuts". These shortcuts were a way to add a single element as a value to an array-based operator instead of wrapping that one element in an array. To make our typings more consistent and logical and to conform to the new JSON Protocol, we now require array values for these operators.
 
 In most cases, the fix will be as simple as wrapping the existing value in an array. The shortcuts removed in Prisma 5 are:
 
-- [`OR` shortcuts](#or-operators)
-- [`in` and `notIn` shortcuts](#in-and-notin-operators)
-- [PostgreSQL JSON `path` field shortcuts](#path-argument-for-filtering-on-json-fields-in-postgresql)
-- [Scalar list shortcuts](#scalar-lists)
-- [MongoDB Composite list shortcuts](#composite-lists)
+- [`OR` shortcuts](./jsonprotocol-changes#or-operators)
+- [`in` and `notIn` shortcuts](./jsonprotocol-changes#in-and-notin-operators)
+- [PostgreSQL JSON `path` field shortcuts](./jsonprotocol-changes#path-argument-for-filtering-on-json-fields-in-postgresql)
+- [Scalar list shortcuts](./jsonprotocol-changes#scalar-lists)
+- [MongoDB Composite list shortcuts](./jsonprotocol-changes#composite-lists)
 
 While `OR`, `in`, and `notIn` operators are affected, `AND` and `NOT` are not affected by this change.
-
-#### <inlinecode>OR</inlinecode> operators
-
-The following code in Prisma 4 and lower:
-
-```js
-prisma.user.findMany({
-  where: {
-    OR: { email: 'foo@example.com' },
-  },
-})
-```
-
-Will need to be changed to the following in Prisma 5:
-
-```js highlight=3;normal
-prisma.user.findMany({
-  where: {
-    OR: [{ email: 'foo@example.com' }],
-  },
-})
-```
-
-`OR` operators will only accept array values.
-
-#### <inlinecode>in</inlinecode> and <inlinecode>notIn</inlinecode> operators
-
-Similar to `OR`, `in` and `notIn` require array values.
-
-Prisma 4 and lower:
-
-```js
-prisma.user.findMany({
-  where: {
-    id: { in: 123 },
-  },
-})
-
-prisma.user.findMany({
-  where: {
-    id: { notIn: 123 },
-  },
-})
-```
-
-Prisma 5:
-
-```js highlight=4,12;normal
-prisma.user.findMany({
-  where: {
-    id: {
-      in: [123],
-    },
-  },
-})
-
-prisma.user.findMany({
-  where: {
-    id: {
-      notIn: [123],
-    },
-  },
-})
-```
-
-<details><summary>Suggestion for single elements</summary>
-
-If your `in` and `notIn` values are only one element, you can also update your code to not use these operators at all:
-
-```js highlight=3,9;normal
-prisma.user.findMany({
-  where: {
-    id: 123,
-  },
-})
-
-prisma.user.findMany({
-  where: {
-    id: { not: 123 },
-  },
-})
-```
-
-</details>
-
-#### <inlinecode>path</inlinecode> argument for filtering on JSON fields in PostgreSQL
-
-[When filtering on JSON fields in a PostgreSQL model](/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filter-on-a-json-field) the `path` argument now only accepts an array.
-
-When using the following schema:
-
-```prisma
-model User {
-  id       String @id
-  settings Json
-}
-```
-
-Prisma 4 and lower:
-
-```js
-prisma.user.findMany({
-  where: {
-    settings: {
-      path: 'someSetting',
-      equals: someValue,
-    },
-  },
-})
-```
-
-Prisma 5:
-
-```js highlight=4;normal
-prisma.user.findMany({
-  where: {
-    settings: {
-      path: ['someSetting'],
-      equals: someValue,
-    },
-  },
-})
-```
-
-<Admonition type="info">
-
-Note: This `path` argument change only affects PostgreSQL databases. MySQL databases are not affected as they use a different syntax.
-
-</Admonition>
-
-#### Scalar lists
-
-[Scalar list](/concepts/components/prisma-schema/data-model#scalar-fields) values must be arrays in all operations.
-
-With the following schema:
-
-```prisma
-model Post {
-  id   String   @id @default(uuid())
-  tags String[]
-}
-```
-
-Prisma 4 and lower:
-
-```js
-prisma.post.create({
-  data: {
-    tags: 'databases',
-  },
-})
-
-prisma.post.findMany({
-  where: {
-    tags: 'databases',
-  },
-})
-```
-
-Prisma 5:
-
-```js highlight=3,9;normal
-prisma.post.create({
-  data: {
-    tags: ['databases'],
-  },
-})
-
-prisma.post.findMany({
-  where: {
-    tags: ['databases'],
-  },
-})
-```
-
-#### Composite lists
-
-Operations on lists of [Composite types](/concepts/components/prisma-schema/data-model#defining-composite-types) (for [MongoDB](/concepts/database-connectors/mongodb)) now only accept array values.
-
-With the following schema:
-
-```prisma
-model Post {
-  id           String    @id @default(uuid())
-  commentsList Comment[]
-}
-
-type Comment {
-  text String
-}
-```
-
-Prisma 4 and lower:
-
-```js
-prisma.post.findMany({
-  where: {
-    commentsList: {
-      equals: { text: 'hello' },
-    },
-  },
-})
-```
-
-Prisma 5:
-
-```js highlight=4;normal
-prisma.post.findMany({
-  where: {
-    commentsList: {
-      equals: [{ text: 'hello' }],
-    },
-  },
-})
-```
-
-<details><summary>Shorthand notation usage</summary>
-
-If you use the shorthand notation and exclude `equals`, you still must supply an array value for composite list fields.
-
-Prisma 4 and lower:
-
-```js
-prisma.post.create({
-  data: {
-    commentsList: { text: 'hello' },
-  },
-})
-
-prisma.post.findMany({
-  where: {
-    commentsList: { text: 'hello' },
-  },
-})
-```
-
-Prisma 5:
-
-```js highlight=3,8;normal
-prisma.post.create({
-  data: {
-    commentsList: [{ text: 'hello' }],
-  },
-})
-
-prisma.post.findMany({
-  where: {
-    commentsList: [{ text: 'hello' }],
-  },
-})
-```
-
-</details>
 
 ### <inlinecode>cockroachdb</inlinecode> provider is now required when connecting to a CockroachDB database
 
@@ -615,6 +331,73 @@ const notFound = new Prisma.NotFoundError()
 #### Using private APIs for a specific runtime
 
 We highly discourage the use of internal private APIs as they can change without warning and are not guaranteed to be supported. If your usage requires a private API that was previous available [please reach out to us on GitHub.](https://github.com/prisma/prisma/discussions/new?category=q-a)
+
+### Generated type changes
+
+#### Changes to <inlinecode>RelationFilterInput</inlinecode> to account for nullability
+
+Prior to Prisma 5, there was a long-standing bug that caused nullable reverse relations to not be marked as nullable in our generated types. For example, take the following schema:
+
+```prisma
+model User {
+  id Int @id
+
+  addressId Int     @unique
+  address   Address @relation(fields: [addressId], references: [id])
+
+  post Post[]
+}
+
+model Address {
+  id Int @id
+
+  user User?
+}
+
+model Post {
+  id Int @id
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+```
+
+In the generated types, `Address.user` and `Post.user` would use the same type, `UserRelationFilter`. This is obviously unintended as `Address.user` is nullable while `Post.user` is not. In Prisma 5, the type of `Address.user` would be `UserNullableRelationFilter`, resolving this issue.
+
+If you import generated types in your code, you will need to update instances like this to utilize the new `Nullable` types.
+
+#### Changes to <inlinecode>UncheckedUpdateManyInput</inlinecode> to avoid name collisions
+
+In certain instances it was possible for name collisions to occur when one model had two foreign keys to two other models that had the same property name for the reverse relation. As an example, the following schema:
+
+```prisma
+model Invoice {
+  InvoiceId Int @id @default(autoincrement())
+
+  invoice_items InvoiceItem[]
+}
+
+model InvoiceItem {
+  InvoiceLineId Int @id @default(autoincrement())
+
+  InvoiceItemInvoiceId Int     @map("InvoiceId")
+  invoices             Invoice @relation(fields: [InvoiceItemInvoiceId], references: [InvoiceId])
+
+  TrackId Int
+  tracks  Track @relation(fields: [TrackId], references: [TrackId])
+}
+
+model Track {
+  TrackId Int    @id @default(autoincrement())
+  Name    String
+
+  invoice_items InvoiceItem[]
+}
+```
+
+Would lead to conflicting names between the two relations on `InvoiceItem`. The reverse relations, that is `Invoice.invoice_items` and `Track.invoice_items` would both get the type `InvoiceItemUncheckedUpdateManyWithoutInvoice_itemsInput`. In Prisma 5, this is resolved and Prisma will generate `InvoiceItemUncheckedUpdateManyWithoutInvoicesInput` and `InvoiceItemUncheckedUpdateManyWithoutTracksInput` respectively.
+
+If you import generated types in your code, you will need to update instances like this to the corrected types.
 
 ## Other changes
 
@@ -693,7 +476,7 @@ Needless to say, the `prisma2` executable has been deprecated for some time and 
 
 ### Removal of deprecated <inlinecode>experimentalFeatures</inlinecode> property
 
-The `previewFeatures` field of the [generator block](/reference/api-reference/prisma-schema-reference#fields-1) used to be called `experimentalFeatures`. We are finally removing that deprecated property.
+The `previewFeatures` field of the [generator block](/reference/api-reference/prisma-schema-reference#fields-1) used to be called `experimentalFeatures`. We are removing that deprecated property.
 
 In Prisma 5, you will need to update references of `experimentalFeatures` to `previewFeatures` manually or use the new code action in the Prisma VSCode extension.
 
@@ -715,7 +498,8 @@ package:
     -- '!node_modules/prisma/schema-engine-*'
 ```
 
-<details><summary>Serverless Framework pattern suggestion</summary>
+<details>
+<summary>Serverless Framework pattern suggestion</summary>
 
 The [recommended rule from our documentation](/guides/deployment/deployment-guides/use-prisma-with-serverless-framework#lambda-functions-with-arm64-architectures) is not affected by this change as it excludes all non desired engine files.
 
