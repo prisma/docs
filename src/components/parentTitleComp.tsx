@@ -40,7 +40,7 @@ const ParentTitle = ({ slug, nonLink, isSearchItem }: ParentTitleProps) => {
   return (
     <BreadcrumbTitle>
       {!isSearchItem && (
-        <a href="/docs">
+        <a href="/">
           <Icon icon="fa-solid fa-house" size="16px"></Icon>
         </a>
       )}
