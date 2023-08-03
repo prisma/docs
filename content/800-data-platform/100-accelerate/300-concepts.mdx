@@ -17,43 +17,124 @@ For all read queries in Prisma Client, you can define the `cacheStrategy` parame
 
 ## Time-to-live (TTL)
 
-Time-to-live (TTL) specifies the time for which the data in the cache is considered _fresh_.
-
-Accelerate returns previously cached data if the age of the cached data is not greater than the TTL specified. In this case, no query is executed against the database. If cached data for the request is unavailable, Accelerate queries the database and stores the results in the cache for future requests.
-
-TTL is useful for reducing database load and latency for data that does not require frequent updates.
+Time-to-Live (TTL) determines how long cached data is considered fresh. By specifying the `ttl` in seconds, you can control the duration for which data in the cache remains valid. When a read query is executed, if the cached response is within the `ttl` limit, Prisma Client retrieves the data from the cache without querying the database. If the cached data is not available or has expired, Prisma Client queries the database and stores the results in the cache for future requests.
 
 Use `ttl` in `cacheStrategy` and specify the TTL of the query in seconds.
 
+```javascript
+await prisma.user.findMany({
+  cacheStrategy: {
++    ttl: 60,
+  },
+});
+```
+
+<figure>
+  <img
+    style="margin:auto;"
+    src="./images/ttl.png"
+    alt="time-to-live (ttl) in Accelerate"
+  />
+  <figcaption style="opacity: 0.8;">
+    With a specified TTL of 60 seconds, the majority of requests will result in
+    a cache hit throughout the TTL duration.
+  </figcaption>
+</figure>
+
+<Admonition type="info">
+
+TTL is useful for reducing database load and latency for data that does not require frequent updates.
+
+</Admonition>
+
 ## Stale-While-Revalidate (SWR)
 
-Stale-While-Revalidate (SWR) specifies the number of seconds that Accelerate may serve _stale_ cache data while requesting _fresh_ data from the database.
+Stale-While-Revalidate (SWR) allows you to control how long Accelerate can serve stale cache data while fetching fresh data in the background. When a read query is executed, Accelerate checks the age of the cached response against the `swr` duration. If the cache data is within the `swr` limit, Accelerate serves the stale data while simultaneously refreshing the cache by fetching the latest data from the database.
 
-Accelerate returns previously cached data if the age of the cached data is not greater than the SWR specified. But, in the background, Accelerate refreshes the cache by fetching the data from the database.
+Use `swr` in `cacheStrategy` and specify the SWR of the query in seconds.
 
-SWR is useful for reducing the latency of accessing the data while maintaining a more up-to-date value in the Accelerate cache.
+```javascript
+await prisma.user.findMany({
+  cacheStrategy: {
++    swr: 60,
+  },
+});
+```
 
-Use the `swr` parameter in `cacheStrategy` and specify the SWR of the query in seconds.
+<figure>
+  <img
+    style="margin:auto; opacity: 0.2;"
+    src="./images/swr.png"
+    alt="time-to-live (ttl) in Accelerate"
+  />
+  <figcaption style="opacity: 0.7;">
+    When specifying a SWR of 60 seconds, the cache serves stale data until the
+    cache refreshes itself in the background after each request.
+  </figcaption>
+</figure>
+
+<Admonition type="info">
+
+After the cache is refreshed in the background, the `swr` timer resets and the data is once again available in the cache for the duration of the `swr` period. As a result, most results will be fetched from the cache because the `swr` duration resets after each request, and a roundtrip to the database is avoided.
+
+</Admonition>
 
 ## Time-to-live and Stale-While-Revalidate combination
 
 You can use both TTL and SWR and stack them for the same query. SWR applies _after_ TTL has expired.
 
-Accelerate returns previously cached data up to the age specified in TTL without revalidating. After TTL expires, Accelerate serves the cached data as stale up to the age specified in SWR and revalidates it in the background. The total number of seconds that data will remain in the cache is `ttl + swr`.
+Accelerate returns previously cached data up to the age specified in TTL without revalidating. After TTL expires, Accelerate serves the cached data as stale up to the age specified in SWR and revalidates it in the background.
 
 It is useful to combine TTL and SWR to maintain low latency while Accelerate refreshes cached data in the background.
 
-<img
-  src="../../doc-images/data-platform/platform/accelerate/accelerate-response.png"
-  alt="A diagram of a response from Accelerate."
-/>
+Use `ttl` and `swr` in `cacheStrategy` and specify the TTL and SWR of the query in seconds.
 
-_Example timeline with cache strategy `{ ttl: 60, swr: 30 }`_
+```javascript
+await prisma.user.findMany({
+  cacheStrategy: {
++    ttl: 60,
++    swr: 30,
+  },
+});
+```
+
+<figure>
+  <img
+    style="width: 100%; margin: auto auto;"
+    src="./images/ttl_and_swr.png"
+    alt="time-to-live (ttl) in Accelerate"
+  />
+  <figcaption style="opacity: 0.7; text-align: left;">
+    When specifying a TTL of 30 seconds and SWR of 60 seconds, the cache serves
+    fresh data for the initial 30 seconds. Subsequently, it serves stale data
+    until the cache refreshes itself in the background after each request.
+  </figcaption>
+</figure>
 
 ## Selecting a cache strategy
 
 Caching helps you improve query response times and reduce database load. However, it also means you might serve stale data to the client. Whether or not serving stale data is acceptable and to what extent depends on your use case. `ttl` and `swr` are parameters you can use the tweak the cache behavior.
 
-- **TTL :** Use TTL to reduce database load when stale cached data is acceptable.
-- **SWR :** Use SWR to respond quickly to requests with minimal stale data. While it does not reduce database load, it can improve response times significantly.
-- **TTL** + **SWR:** For very fast response times and reduced database load, use both TTL and SWR. You can use this strategy to fine-tune your application’s tolerance for stale data.
+### Cache strategy using TTL
+
+Use TTL to reduce database load when stale cached data is acceptable.
+
+#### Use case: Product catalog in e-commerce applications
+
+Consider an e-commerce application with a product catalog that doesn't frequently change. By setting a `ttl` of, let's say, 1 hour, Prisma Client can serve cached product data for subsequent user requests within that hour without hitting the database. This significantly reduces the database load and improves the response time for product listing pages.
+
+### Cache strategy using SWR
+
+Use SWR to respond quickly to requests with minimal stale data. While it does not reduce database load, it can improve response times significantly.
+
+#### Use case: User profile in social media platforms
+
+Imagine a social media platform where user profiles are frequently accessed. By leveraging `swr` with a duration of, let's say, 5 minutes, Accelerate can serve the cached user profile information quickly, reducing the latency for profile pages. Meanwhile, in the background, it refreshes the cache after every request, ensuring that any updates made to the profile are eventually reflected for subsequent requests.
+
+### Cache strategy using TTL + SWR
+
+For very fast response times and reduced database load, use both TTL and SWR. You can use this strategy to fine-tune your application’s tolerance for stale data.
+
+#### Use case: News articles
+
+Consider a news application where articles are frequently accessed but don't require real-time updates. By setting a `ttl` of 2 hours and an `swr` duration of 5 minutes, Prisma Client can serve cached articles quickly, reducing latency for readers. As long as the articles are within the `ttl`, users get fast responses. After the `ttl` expires, Prisma Client serves the stale articles for an additional 5 minutes while fetching the latest news from the database, maintaining a balance between performance and freshness.
