@@ -9,14 +9,11 @@ module.exports = {
   compareConcurrency: 10,
   shotConcurrency: 10,
   threshold: 10,
+  waitBeforeScreenshot: 2500,
   beforeScreenshot: async (page) => {
     await page.addStyleTag({
       content: `iframe {
           visibility: hidden;
-        }
-
-        body {
-          font-family: system-ui !important;
         }
 
         /* do not show underline animation */
