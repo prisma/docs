@@ -15,6 +15,10 @@ module.exports = {
           visibility: hidden;
         }
 
+        body {
+          font-family: system-ui !important;
+        }
+
         /* do not show underline animation */
         #toc-holder  a {
           background-size: 0 !important;
