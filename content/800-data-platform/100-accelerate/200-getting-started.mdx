@@ -30,7 +30,18 @@ To get started using Accelerate, ensure you’re using Prisma Client `4.10.0` or
 
 After enabling Accelerate in your Cloud Project and creating a new API key, you should be given an Accelerate connection string.
 
-Update your database connection string in your `.env` file to use that Accelerate connection string:
+To use this connection string, update the `datasource` block's `url` field in your Prisma schema:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+Most likely, as shown above, your database connection string in defined in a `.env` file rather than hard-coded into the schema file.
+
+Update that variable to use the new Accelerate connection string:
 
 ```shell
 # .env
@@ -40,6 +51,26 @@ DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
 # Previous connection string
 # DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
 ```
+
+Prisma Migrate and Prisma Studio do not work with a `prisma://` connection string. In order to continue using these features add a new variable to the `.env` file named `DIRECT_DATABASE_URL` whose value is the direct database connection string:
+
+```shell highlight=3;add
+# .env
+DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
+DIRECT_DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
+```
+
+Then in your Prisma schema's `datasource` block add a field named `directUrl` with the following:
+
+```prisma highlight=4;add
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+```
+
+Prisma Migrate and Prisma Studio will use the `directUrl` connection string rather than the one defined in `url` when this configuration is provided.
 
 ### Install the Accelerate Prisma Client extension
 
@@ -103,7 +134,20 @@ const prismaWithAccelerate = new PrismaClient()
 
 </Admonition>
 
-### Define your first cache strategy
+### Use Accelerate in your database queries
+
+The `withAccelerate` extension does two primary things:
+
+1. Gives you access to the `cacheStrategy` field within each applicable model method that allows you to define a cache strategy per-query.
+2. Routes all of your queries through a connection pooler.
+
+#### No cache strategy to only use connection pool
+
+If you simply want to take advantage of Accelerate's connection pooling feature without applying a cache strategy, you may run your query the same way you would have without Accelerate.
+
+By enabling Accelerate and supplying the Accelerate connection string, your queries now use the connection pooler by default.
+
+#### Define a cache strategy
 
 Update a query with the new `cacheStrategy` property which allows you to define a cache strategy for that specific query:
 
@@ -127,5 +171,3 @@ You should now see improved performance for your cached queries.
 For information about which strategy best serves your application, see [Select a cache strategy](https://www.notion.so/36960c5683cd4ff598b4fb64f7b5a64c#565c30792ea5487683961a6b27780a59).
 
 </Admonition>
-
-<!-- Left out info about `withAccelerateInfo()` as it is not needed to "get started" and is described in the API reference documentation -->
