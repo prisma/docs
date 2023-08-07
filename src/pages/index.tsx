@@ -323,7 +323,7 @@ const DatabaseData = [
   {
     title: 'Planetscale',
     icon: <PlanetScale />,
-    url: 'https://www.prisma.io/planetscale',
+    url: 'guides/database/planetscale',
   },
   {
     title: 'MariaDB',
