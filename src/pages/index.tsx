@@ -104,6 +104,9 @@ const LinkGrid = styled.div`
     line-height: 100%; /* 16px */
     letter-spacing: -0.32px;
     text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
   }
   svg {
     display: none;
@@ -385,14 +388,6 @@ const CommunitySection = styled.div`
         font-style: normal;
         font-weight: 600;
         line-height: 88%; /* 15.84px */
-        > span {
-          &:first-of-type {
-            text-decoration: underline;
-          }
-          &:last-of-type {
-            text-decoration: none;
-          }
-        }
       }
     }
   }

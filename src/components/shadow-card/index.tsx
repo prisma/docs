@@ -23,6 +23,10 @@ const CardLibWrapper = styled.div`
     a {
       text-decoration: none;
     }
+
+    &:hover .link > span:first-of-type {
+      text-decoration: underline;
+    }
   }
 `
 
