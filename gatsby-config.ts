@@ -119,6 +119,14 @@ let plugins: any = [
   {
     resolve: 'gatsby-source-filesystem',
     options: {
+      name: 'fonts',
+      path: `${__dirname}/src/fonts/`,
+    },
+    __key: 'fonts',
+  },
+  {
+    resolve: 'gatsby-source-filesystem',
+    options: {
       name: `docs`,
       path: `${__dirname}/content`,
     },
