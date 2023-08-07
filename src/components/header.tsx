@@ -404,37 +404,39 @@ const Header = ({
   }
 
   return (
-    <HeaderWrapper>
-      <BucketHeader wide={wide}>
-        <HomeIcons>
-          <a href="https://www.prisma.io">
-            <Logo />
-          </a>
-          <a href="/">Docs</a>
-        </HomeIcons>
-        <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
-          <SecondLevelMenu />
-        </NonMobileMenu>
-        <DocsMobileButton onClick={toggleMobileNav}>
-          {showMobileNav ? (
-            <Icon icon="fa-regular fa-xmark" size="28px" />
-          ) : (
-            <Icon icon="fa-regular fa-bars" size="28px" />
+    <>
+      <HeaderWrapper>
+        <BucketHeader wide={wide}>
+          <HomeIcons>
+            <a href="https://www.prisma.io">
+              <Logo />
+            </a>
+            <a href="/">Docs</a>
+          </HomeIcons>
+          <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
+            <SecondLevelMenu />
+          </NonMobileMenu>
+          <DocsMobileButton onClick={toggleMobileNav}>
+            {showMobileNav ? (
+              <Icon icon="fa-regular fa-xmark" size="28px" />
+            ) : (
+              <Icon icon="fa-regular fa-bars" size="28px" />
+            )}
+          </DocsMobileButton>
+
+          <GithubLink href="https://github.com/prisma">
+            <Github width={24} height={24} />
+          </GithubLink>
+
+          {showMobileNav && (
+            <SecondLevelMobileOnlyNav>
+              <OverflowContainer>
+                <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
+              </OverflowContainer>
+            </SecondLevelMobileOnlyNav>
           )}
-        </DocsMobileButton>
-
-        <GithubLink href="https://github.com/prisma">
-          <Github width={24} height={24} />
-        </GithubLink>
-
-        {showMobileNav && (
-          <SecondLevelMobileOnlyNav>
-            <OverflowContainer>
-              <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
-            </OverflowContainer>
-          </SecondLevelMobileOnlyNav>
-        )}
-      </BucketHeader>
+        </BucketHeader>
+      </HeaderWrapper>
       {(location || sidenavSearchOpened) && (
         <SearchComponentDesktop
           open={showMobileNav}
@@ -451,7 +453,7 @@ const Header = ({
           />
         </SearchComponentDesktop>
       )}
-    </HeaderWrapper>
+    </>
   )
 }
 
