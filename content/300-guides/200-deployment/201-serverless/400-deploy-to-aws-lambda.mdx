@@ -2,23 +2,53 @@
 title: 'Deploy to AWS Lambda with Serverless Framework'
 metaTitle: 'Deploy your Serverless Framework project with Prisma'
 metaDescription: 'Learn how to avoid potential pitfalls when deploying your Serverless Framework project using Prisma'
+tocDepth: 3
 ---
 
 <TopBlock>
 
-This guide explains how to avoid common issues when deploying a project using Prisma with [Serverless Framework](https://www.serverless.com/framework/). For a guide on how to get started with Serverless Framework, we recommend [Setting Up Serverless Framework With AWS](https://www.serverless.com/framework/docs/getting-started).
-
-</TopBlock>
-
-## Prerequisites
-
-- An existing Serverless Framework project with Prisma.
-
-## Things to know
+This guide explains how to avoid common issues when deploying a project using Prisma with [Serverless Framework](https://www.serverless.com/framework/). This guide assumes you have an existing project using both Serverless Framework and Prisma. For a guide on how to get started with Serverless Framework, we recommend [Setting Up Serverless Framework With AWS](https://www.serverless.com/framework/docs/getting-started).
 
 While Prisma works well with the Serverless Framework "out of the box", there are a few improvements that can be made within your project to ensure a smooth deployment and performance.
 
-### Deploy only the required files
+</TopBlock>
+
+## Binary targets in <inlinecode>schema.prisma</inlinecode>
+
+The Prisma schema should contain the following in the `generator` block:
+
+```prisma
+binaryTargets = ["native", "rhel-openssl-1.0.x"]
+```
+
+This is necessary because the local runtime is different from the Lambda runtime. Add the [`binaryTarget`](/reference/api-reference/prisma-schema-reference#binarytargets-options) to make the compatible Prisma engine file available.
+
+### Lambda functions with arm64 architectures
+
+Lambda functions that use [arm64 architectures (AWS Graviton2 processor)](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html#foundation-arch-adv) must use an `arm64` precompiled engine file.
+
+In the `generator` block of your `schema.prisma` file, add the following:
+
+```prisma file=schema.prisma
+binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
+```
+
+Update the Serverless configuration file to package the `arm64` engine file, as follows:
+
+```code file=serverless.yml
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-linux-arm64-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
+```
+
+## Connection pooling
+
+Generally, when you use a FaaS (Function as a Service) environment to interact with a database, every function invocation can result in a new connection to the database. This is not a problem with a constantly running node.js server. Therefore, it is beneficial to pool DB connections to get better performance. You can use the [Data Proxy](/data-platform/data-proxy) as a solution to this issue. For other solutions, see the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
+
+## Deploy only the required files
 
 To reduce your deployment footprint, you can change your deployment process so that you only upload the files that your application needs. The Serverless configuration file `serverless.yml` below show a `package` pattern that includes only the Prisma engine file relevant to the Lambda runtime, and excludes the others. This means that when Serverless Framework packages your app for upload, it includes only one engine file. This ensures the packaged archive is as small as possible.
 
@@ -33,7 +63,7 @@ package:
 
 However, if you use `serverless-webpack`, then you cannot use this method. See [Deployment with serverless webpack](#deployment-with-serverless-webpack) for details.
 
-### Deployment with <inlinecode>serverless-webpack</inlinecode>
+## Deployment with <inlinecode>serverless-webpack</inlinecode>
 
 If you use `serverless-webpack`, then you can use the [serverless-webpack-prisma](https://github.com/danieluhm2004/serverless-webpack-prisma) plugin without any additional configuration. `serverless-webpack-prisma` does the following:
 
@@ -157,43 +187,8 @@ Serverless: - node_modules/@prisma/engines/prisma-fmt-darwin
 Serverless: Copying existing artifacts...
 ```
 
-### Binary targets in <inlinecode>schema.prisma</inlinecode>
-
-The Prisma schema should contain the following in the `generator` block:
-
-```prisma
-binaryTargets = ["native", "rhel-openssl-1.0.x"]
-```
-
-This is necessary because the local runtime is different from the Lambda runtime. Add the [`binaryTarget`](/reference/api-reference/prisma-schema-reference#binarytargets-options) to make the compatible Prisma engine file available.
-
-#### Lambda functions with arm64 architectures
-
-Lambda functions that use [arm64 architectures (AWS Graviton2 processor)](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html#foundation-arch-adv) must use an `arm64` precompiled engine file.
-
-In the `generator` block of your `schema.prisma` file, add the following:
-
-```prisma file=schema.prisma
-binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
-```
-
-Update the Serverless configuration file to package the `arm64` engine file, as follows:
-
-```code file=serverless.yml
-package:
-  patterns:
-    - '!node_modules/.prisma/client/libquery_engine-*'
-    - 'node_modules/.prisma/client/libquery_engine-linux-arm64-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
-```
-
-### Connection pooling
-
-Generally, when you use a FaaS (Function as a Service) environment to interact with a database, every function invocation can result in a new connection to the database. This is not a problem with a constantly running node.js server. Therefore, it is beneficial to pool DB connections to get better performance. You can use the [Data Proxy](/data-platform/data-proxy) as a solution to this issue. For other solutions, see the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
-
 ## Summary
 
 Congratulations! You have successfully deployed your Serverless Framework application with Prisma!
 
-For more insight into the Prisma Client API, [check out our API reference](/reference/api-reference/prisma-client-reference) or connect with us on [GitHub](https://github.com/prisma/prisma), [Slack](https://slack.prisma.io), or [Discord](https://pris.ly/discord)
+For more insight into the Prisma Client API, [check out our API reference](/reference/api-reference/prisma-client-reference) or connect with us on [GitHub](https://github.com/prisma/prisma), [Slack](https://slack.prisma.io), or [Discord](https://pris.ly/discord).
