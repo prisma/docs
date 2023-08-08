@@ -119,7 +119,7 @@ const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
 
 const HeaderWrapper = styled.div`
   background: #fff;
-  padding: 20px 16px;
+  padding: 0 16px;
   display: flex;
   justify-content: center;
   border-bottom: 1px solid #e2e8f0;
@@ -132,6 +132,7 @@ const HeaderWrapper = styled.div`
   }
   @media (min-width: 0px) and (max-width: 1024px) {
     z-index: 105;
+    padding: 20px 16px;
   }
 `
 
@@ -139,6 +140,13 @@ const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
   font-size: ${theme.fontSizes[16]};
+  a {
+    padding: 30px 8px;
+    border-bottom: 2px solid transparent;
+    &:hover {
+      border-bottom: 2px solid black;
+    }
+  }
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
   }
@@ -160,10 +168,12 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
   line-height: 100%;
   font-weight: 600;
   text-decoration: none;
-  padding: 8px;
   white-space: nowrap;
   cursor: pointer;
-  border-radius: 8px;
+  span {
+    padding: 8px;
+    border-radius: 8px;
+  }
   &.link {
     padding: 0;
     margin: 0;
@@ -186,10 +196,12 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
   }
 
   &:hover {
-    color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
-    background: ${theme.colors.gray[200]};
+    //color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
+    border-color: ${(props) =>
+      theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
+    //background: ${theme.colors.gray[200]};
   }
-  &.active-item {
+  &.active-item span {
     background: ${theme.colors.gray[200]};
     color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
   }
@@ -235,13 +247,9 @@ const SearchComponentDesktop = styled.div<{
   transform: translateX(-50%);
   padding: 24px 10px;
   width: 100%;
-  background-color: ${theme.colors.gray[100]};
   z-index: ${(p) => (p.open ? 200 : 101)};
-  // @media (min-width: 768px) {
-  //   z-index: ${(p) => (p.open ? 105 : 101)};
-  // }
-  background-color: ${theme.colors.gray[100]};
-
+  background: ${(p) =>
+    p.homePage || p.sidenavSearchOpened ? 'transparent' : theme.colors.gray[100]};
   @media (min-width: 1024px) {
     position: absolute;
     ${(p) => !p.homePage && !p.sidenavSearchOpened && 'display: none;'}
@@ -397,7 +405,7 @@ const Header = ({
                 dataPlatform={item.to.includes('data-platform')}
                 className={isCurrent ? 'active-item' : 'non-active'}
               >
-                {item.text}
+                <span>{item.text}</span>
               </DarkNavLink>
             )
           })}
