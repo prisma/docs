@@ -253,6 +253,7 @@ const SearchComponentDesktop = styled.div<{
   @media (min-width: 1024px) {
     position: absolute;
     ${(p) => !p.homePage && !p.sidenavSearchOpened && 'display: none;'}
+    ${(p) => !p.homePage && p.sidenavSearchOpened && 'margin-top: 1rem;'}
   }
 `
 const SecondLevelNav = styled.div<{ wide?: boolean }>`
