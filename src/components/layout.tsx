@@ -125,12 +125,11 @@ const FooterWrapper = styled.div`
 `
 
 const SearchComponentDesktop = styled.div<{ open?: boolean }>`
-  display: ${(p) => (p.open ? 'none' : 'block')};
+  //display: ${(p) => (p.open ? 'none' : 'block')};
   ${(p) =>
     p.open &&
     `
-    position: absolute;
-    width: max-available;
+    // margin-top: 1rem;
   `}
   padding: 0 0 22px 0;
   @media (min-width: 0px) and (max-width: 1024px) {

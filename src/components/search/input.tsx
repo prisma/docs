@@ -45,10 +45,10 @@ const SearchBoxDiv = styled.div`
     }
 
     .clear {
-      background: ${theme.colors.gray[300]};
+      //background: ${theme.colors.gray[300]};
       border-radius: 6px;
-      height: 36px;
-      width: 36px;
+      // height: 36px;
+      // width: 36px;
       display: flex;
       align-items: center;
       justify-content: center;

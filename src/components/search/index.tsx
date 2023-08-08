@@ -24,7 +24,7 @@ const HitsWrapper = styled.div`
   -webkit-overflow-scrolling: touch;
   position: absolute;
   left: 50%;
-  top: 90px;
+  top: 72px;
 
   transform: translate(-50%, -0%);
   max-width: 1240px;
@@ -88,7 +88,7 @@ const HitsWrapper = styled.div`
   }
   @media (min-width: 0px) and (max-width: 1024px) {
     // left: 0;
-    top: 88px;
+    // top: 88px;
     // max-width: 100%;
     border-top: 1px solid ${theme.colors.gray[300]};
     border-top-right-radius: 0;
