@@ -9,7 +9,7 @@ import Link from './link'
 
 const BreadcrumbTitle = styled.div`
   color: ${theme.colors.gray[600]} !important;
-  line-height: 1rem;
+  line-height: 1.6rem;
   font-weight: normal;
   margin: 0;
   a {

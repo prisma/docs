@@ -24,16 +24,16 @@ const HitsWrapper = styled.div`
   -webkit-overflow-scrolling: touch;
   position: absolute;
   left: 50%;
-  top: 97px;
+  top: 90px;
 
   transform: translate(-50%, -0%);
   max-width: 1240px;
   width: 100%;
   background: ${theme.colors.white};
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
-  border-radius: ${theme.radii.small};
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  border-radius: 8px;
+  // border-top-left-radius: 0;
+  // border-top-right-radius: 0;
   * {
     margin-top: 0;
     padding: 0;

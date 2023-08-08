@@ -127,6 +127,7 @@ const ORMLinkWrapper = styled(Link)`
   display: flex !important;
   gap: 24px;
   text-decoration: none;
+
   h5 {
     display: inline-block;
     color: #2d3748;
@@ -156,6 +157,9 @@ const ORMLinkWrapper = styled(Link)`
     font-style: normal;
     font-weight: 400;
     line-height: 140%; /* 22.4px */
+  }
+  &:hover h5 {
+    text-decoration: underline;
   }
 `
 
