@@ -423,7 +423,7 @@ const Header = ({
             <a href="https://www.prisma.io">
               <Logo />
             </a>
-            <a href="/">Docs</a>
+            <a href="/docs">Docs</a>
           </HomeIcons>
           <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
             <SecondLevelMenu />
