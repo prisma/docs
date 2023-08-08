@@ -125,10 +125,13 @@ const HeaderWrapper = styled.div`
   border-bottom: 1px solid #e2e8f0;
   position: relative;
   position: fixed;
-  z-index: 105;
+  z-index: 202;
   width: 100%;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 12px 16px;
+  }
+  @media (min-width: 0px) and (max-width: 1024px) {
+    z-index: 105;
   }
 `
 
@@ -225,7 +228,7 @@ const SearchComponentDesktop = styled.div<{
   homePage?: boolean
   sidenavSearchOpened?: boolean
 }>`
-  position: absolute;
+  position: ${(p) => (p.open ? 'fixed' : 'absolute')};
   top: 80px;
   left: 50%;
   display: block;
@@ -237,10 +240,10 @@ const SearchComponentDesktop = styled.div<{
   // @media (min-width: 768px) {
   //   z-index: ${(p) => (p.open ? 105 : 101)};
   // }
-  background-color: ${(p) =>
-    p.open || p.sidenavSearchOpened ? 'transparent' : theme.colors.gray[100]};
+  background-color: ${theme.colors.gray[100]};
 
   @media (min-width: 1024px) {
+    position: absolute;
     ${(p) => !p.homePage && !p.sidenavSearchOpened && 'display: none;'}
   }
 `
