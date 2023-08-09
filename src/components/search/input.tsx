@@ -18,7 +18,7 @@ const SearchBoxDiv = styled.div`
   border-radius: 8px;
   border: 1px solid #cbd5e0;
   background: #fff;
-  transition: all 50ms ease-out;
+  transition: transform 50ms ease-out;
 
   form {
     width: 100%;
@@ -31,8 +31,7 @@ const SearchBoxDiv = styled.div`
     position: relative;
     z-index: 100001;
     max-width: 1240px;
-    margin-top: -5px;
-    transform: translateX(-1px);
+    transform: translate(-1px, -5px);
     width: 100%;
     background: ${theme.colors.white};
     box-shadow: 0px 25px 50px -12px #00000040;
