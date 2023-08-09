@@ -239,6 +239,7 @@ const SearchComponentDesktop = styled.div<{
   open?: boolean
   homePage?: boolean
   sidenavSearchOpened?: boolean
+  openSearch?: boolean
 }>`
   position: ${(p) => (p.open ? 'fixed' : 'absolute')};
   top: 80px;
@@ -454,6 +455,7 @@ const Header = ({
         <SearchComponentDesktop
           open={showMobileNav}
           homePage={homePage}
+          openSearch={!showDocsBtn}
           sidenavSearchOpened={sidenavSearchOpened}
         >
           <Search

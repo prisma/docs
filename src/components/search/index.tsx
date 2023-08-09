@@ -237,7 +237,7 @@ export default function Search({
     })
   }
 
-  const scrollListener = (e: Event) => {
+  const scrollListener = () => {
     if (showHits) {
       hideSearch()
     }
