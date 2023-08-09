@@ -257,7 +257,7 @@ export default function Search({
     >
       <Overlay visible={showHits} hideSearch={hideSearch} path={path} />
       <CustomSearchBox
-        onFocus={showSearch}
+        onFocus={() => setShowHits(true)}
         isOpened={showHits}
         closeSearch={hideSearch}
         upClicked={decrementIndex}

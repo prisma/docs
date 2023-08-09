@@ -97,7 +97,7 @@ const Container = styled.div<{ homePage?: boolean; wide?: boolean }>`
 
   ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: ${theme.space[40]};`)}
   @media (max-width: 1024px) {
-    ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: ${theme.space[80]};`)}
+    ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: 118px;`)}
   }
 `
 
