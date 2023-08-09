@@ -245,20 +245,15 @@ const SearchBox = ({
     if (value) {
       onFocus()
     }
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+    }
   }, [])
 
   if (sidenavSearchOpened) {
     inputEl.current.focus()
     onFocus()
   }
-
-  // const setFocus = (e: any) => {
-  //   //if(path === 'home') {
-  //     onFocus()
-  //     e.stopPropagation()
-  //   e.preventDefault()
-  //   //}
-  // }
 
   return (
     <SearchBoxDiv className={isOpened ? 'opened' : ''}>

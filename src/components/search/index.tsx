@@ -2,7 +2,7 @@ import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import algoliasearch from 'algoliasearch/lite'
 import { navigate } from 'gatsby'
 import qs from 'qs'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { connectHits, connectStateResults, Index, InstantSearch } from 'react-instantsearch-dom'
 import styled from 'styled-components'
 
@@ -236,6 +236,17 @@ export default function Search({
       }
     })
   }
+
+  const scrollListener = (e: Event) => {
+    if (showHits) {
+      hideSearch()
+    }
+  }
+
+  useEffect(() => {
+    document.addEventListener('scroll', scrollListener)
+    return () => document.removeEventListener('scroll', scrollListener)
+  }, [])
   return (
     <InstantSearch
       searchClient={searchClient}

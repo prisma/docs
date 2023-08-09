@@ -241,7 +241,7 @@ const SearchComponentDesktop = styled.div<{
   sidenavSearchOpened?: boolean
 }>`
   position: ${(p) => (p.open ? 'fixed' : 'absolute')};
-  top: ${(p) => (p.open ? `92px` : `80px`)};
+  top: 80px;
   left: 50%;
   display: block;
   transform: translateX(-50%);
