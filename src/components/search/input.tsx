@@ -19,24 +19,26 @@ const SearchBoxDiv = styled.div`
   border: 1px solid #cbd5e0;
   background: #fff;
   transition: transform 50ms ease-out;
+  transform-origin: center left;
 
   form {
     width: 100%;
     position: relative;
     height: 36px;
-    transition: all 50ms ease-out;
+    transition: transform 50ms ease-out;
   }
   //search input width
   &.opened {
     position: relative;
     z-index: 100001;
     max-width: 1240px;
-    transform: translate(-1px, -5px);
     width: 100%;
     background: ${theme.colors.white};
     box-shadow: 0px 25px 50px -12px #00000040;
     border: 2px solid #667eea;
     border-radius: 8px;
+    transform-origin: center;
+    transform: scaleY(1.1) translateX(-1px);
 
     .clear {
       //background: ${theme.colors.gray[300]};
@@ -51,7 +53,7 @@ const SearchBoxDiv = styled.div`
       }
     }
     form {
-      height: 42px;
+      transform: scaleY(0.9);
     }
   }
   @media (max-width: ${theme.breakpoints.mobile}) {
