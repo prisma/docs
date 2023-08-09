@@ -11,7 +11,7 @@ const SearchBoxDiv = styled.div`
   max-width: 1240px;
   width: 100%;
   margin: 0 auto;
-  padding: 12px 16px;
+  padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid #cbd5e0;
   background: #fff;
@@ -19,6 +19,7 @@ const SearchBoxDiv = styled.div`
   form {
     width: 100%;
     position: relative;
+    height: 36px;
   }
   //search input width
   &.opened {

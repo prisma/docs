@@ -1,6 +1,7 @@
 import { MDXProvider } from '@mdx-js/react'
 import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
+import { Script } from 'gatsby'
 import React, { useState } from 'react'
 import StickyBox from 'react-sticky-box'
 import styled from 'styled-components'
@@ -8,13 +9,12 @@ import styled from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Footer from './footer'
 import Header from './header'
+import SearchBox from './search/minimalInput'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
 
 import '../styles/layout.css'
-import SearchBox from './search/minimalInput'
-import { Script } from 'gatsby'
 
 interface LayoutContentProps {
   toc: any

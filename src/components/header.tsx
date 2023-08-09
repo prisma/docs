@@ -1,9 +1,11 @@
 import { Icon, defaultTheme as theme, WebsiteHeader } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
+import { close } from 'inspector'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import Link from '../components/link'
+import Search from '../components/search'
 import Sidebar from '../components/sidebar'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import DownChevron from '../icons/DownChevron'
@@ -13,8 +15,6 @@ import Logo from '../icons/Logo'
 import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
-import Search from '../components/search'
-import { close } from 'inspector'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -241,10 +241,11 @@ const SearchComponentDesktop = styled.div<{
   sidenavSearchOpened?: boolean
 }>`
   position: ${(p) => (p.open ? 'fixed' : 'absolute')};
-  top: 80px;
+  top: ${(p) => (p.open ? `92px` : `80px`)};
   left: 50%;
   display: block;
   transform: translateX(-50%);
+  transition: all 50ms ease-out;
   padding: 24px 10px;
   width: 100%;
   z-index: ${(p) => (p.open ? 200 : 101)};
