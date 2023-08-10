@@ -1,0 +1,177 @@
+---
+title: 'Getting started'
+metaTitle: 'Getting started with Accelerate'
+metaDescription: 'Learn how to get up and running with Accelerate.'
+tocDepth: 3
+toc: true
+---
+
+<TopBlock>
+
+</TopBlock>
+
+## Prerequisites
+
+To be able to participate in Accelerate’s Early Access program, you need the following prerequisites:
+
+- A GitHub account.
+- A project that uses [Prisma Client](/docs/concepts/components/prisma-client) `4.16.1` or higher. (If your project is using interactive transactions, you need to use `5.1.1` or higher.)
+- A hosted PostgreSQL, MySQL, PlanetScale, CockroachDB, or MongoDB database.
+
+## 1. Enable Accelerate in a Cloud Project
+
+In order to enable Accelerate, you can [log in to Prisma Data Platform and create a new Cloud Project](https://pris.ly/pdp). Follow the instructions in the UI to add Accelerate.
+
+For further information on each individual step, you can find additional documentation [here](/data-platform/cloud-projects/platform/projects#configure-accelerate).
+
+At the end of the setup process, you'll obtain a connection string that connects to Accelerate. This connection string also contains an API key that you need to use when configuring Prisma Client to use Accelerate.
+
+## 2. Use Accelerate in your application
+
+To get started using Accelerate, ensure you’re using Prisma Client `4.16.1` or higher.
+
+### 2.1. Update your database connection string
+
+After enabling Accelerate in your Cloud Project and creating a new API key, you should be given an Accelerate connection string.
+
+To use this connection string, update the `datasource` block's `url` field in your Prisma schema:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+Most likely, as shown above, your database connection string in defined in a `.env` file rather than hard-coded into the schema file.
+
+Update that variable to use the new Accelerate connection string:
+
+```shell
+# .env
+# __API_KEY__ is a unique API key that Accelerate generates and automatically assigns to a project.
+DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
+
+# Previous connection string
+# DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
+```
+
+Prisma Migrate and Prisma Studio do not work with a `prisma://` connection string. In order to continue using these features add a new variable to the `.env` file named `DIRECT_DATABASE_URL` whose value is the direct database connection string:
+
+```shell highlight=3;add
+# .env
+DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
+DIRECT_DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
+```
+
+Then in your Prisma schema's `datasource` block add a field named `directUrl` with the following:
+
+```prisma highlight=4;add
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+```
+
+Prisma Migrate and Prisma Studio will use the `directUrl` connection string rather than the one defined in `url` when this configuration is provided.
+
+### 2.2. Install the Accelerate Prisma Client extension
+
+Run the following command to install the Accelerate extension for Prisma Client:
+
+```shell
+npm install @prisma/extension-accelerate
+```
+
+If your Prisma version is below `4.16.1`, enable the Prisma Client extension feature:
+
+```prisma
+/// prisma/schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+```
+
+### 2.3. Generate Prisma Client for Accelerate
+
+Run the following command to generate Prisma Client for Accelerate:
+
+```shell
+npx prisma generate --accelerate
+```
+
+<Admonition type="warning">
+
+If your Prisma version is below `5.0.0`, generate Prisma Client with the `--data-proxy` option:
+
+```shell
+npx prisma generate --data-proxy
+```
+
+</Admonition>
+
+### 2.4. Extend your Prisma Client instance to add the Accelerate extension
+
+To use Accelerate, you must extend Prisma Client with the Accelerate extension.
+Extend your Prisma Client instance to add the Accelerate extension:
+
+```ts
+import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+const prisma = new PrismaClient().$extends(withAccelerate())
+```
+
+If VS Code does not recognize the `$extends` method, refer to [this section](/data-platform/accelerate/faq#vs-code-does-not-recognize-the-extends-method) on how to resolve the issue.
+
+<Admonition type="info">
+
+If you are using [Prisma Middleware](/docs/concepts/components/prisma-client/middleware) in your application, make sure they are added before any Prisma Client extensions (like Accelerate). For example:
+
+```ts
+const prisma = new PrismaClient()
+  .$use(middleware)
+  .$extends(withAccelerate())
+```
+
+</Admonition>
+
+### 2.5. Use Accelerate in your database queries
+
+The `withAccelerate` extension primarily does two things:
+
+- Gives you access to the `cacheStrategy` field within each applicable model method that allows you to define a cache strategy per-query.
+- Routes all of your queries through a connection pooler.
+
+#### No cache strategy to only use connection pool
+
+If you simply want to take advantage of Accelerate's connection pooling feature without applying a cache strategy, you may run your query the same way you would have without Accelerate.
+
+By enabling Accelerate and supplying the Accelerate connection string, your queries now use the connection pooler by default.
+
+#### Define a cache strategy
+
+Update a query with the new `cacheStrategy` property which allows you to define a cache strategy for that specific query:
+
+```ts
+const user = await prisma.user.findMany({
+  where: {
+    email: {
+      contains: 'alice@prisma.io',
+    },
+  },
+  cacheStrategy: { swr: 60, ttl: 60 },
+})
+```
+
+In the example above, `swr: 60` and `ttl: 60` means Accelerate will serve cached data for 60 seconds and then another 60 seconds while Accelerate fetches fresh data in the background.
+
+You should now see improved performance for your cached queries.
+
+<Admonition type="info">
+
+For information about which strategy best serves your application, see [Select a cache strategy](/data-platform/accelerate/concepts#selecting-a-cache-strategy).
+
+</Admonition>
