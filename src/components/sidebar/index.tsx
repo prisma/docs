@@ -10,7 +10,6 @@ import Tree from './tree'
 const SidebarContainer = styled.aside`
   width: 272px;
   height: 100%;
-  margin: 0px ${theme.space[16]} 0 -${theme.space[16]};
 `
 
 const Sidebar = styled.div`

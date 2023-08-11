@@ -125,16 +125,16 @@ const FooterWrapper = styled.div`
 `
 
 const SearchComponentDesktop = styled.div<{ open?: boolean }>`
-  //display: ${(p) => (p.open ? 'none' : 'block')};
-  ${(p) =>
-    p.open &&
-    `
-    // margin-top: 1rem;
-  `}
+  width: calc(100% - ${theme.space[16]});
   padding: 0 0 22px 0;
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
   }
+`
+
+const CustomSticky = styled(StickyBox)`
+  width: 272px;
+  margin: 0px -${theme.space[16]} 0 ${theme.space[16]};
 `
 
 const LayoutWrapper = styled.div<{ mobileNavOpen?: boolean }>`
@@ -179,14 +179,14 @@ export default function Layout({
           <Wrapper homePage={homePage}>
             <Container homePage={homePage} wide={wide}>
               {!homePage && (
-                <StickyBox offsetTop={120} offsetBottom={20}>
+                <CustomSticky offsetTop={120} offsetBottom={20}>
                   <SearchComponentDesktop open={!showDocsBtn}>
                     <SearchBox showHeaderSearch={showHeaderSearch} value={value} path={location} />
                   </SearchComponentDesktop>
                   <NotMobile id="sidebar-holder">
                     <SidebarLayout isMobile={false} location={location} slug={slug} />
                   </NotMobile>
-                </StickyBox>
+                </CustomSticky>
               )}
               <Content homePage={homePage} wide={wide}>
                 <MaxWidth wide={wide}>{children}</MaxWidth>
