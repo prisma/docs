@@ -25,7 +25,7 @@ The Prisma schema should contain the following in the `generator` block:
 binaryTargets = ["native", "rhel-openssl-1.0.x"]
 ```
 
-This is necessary because the local runtime is different from the Lambda runtime. Add the [`binaryTarget`](/reference/api-reference/prisma-schema-reference#binarytargets-options) to make the compatible Prisma engine file available.
+This is necessary because the runtime used in the development and when your application is deployed differ. Add the [`binaryTarget`](/reference/api-reference/prisma-schema-reference#binarytargets-options) to make the compatible Prisma engine file available.
 
 ### Lambda functions with arm64 architectures
 
@@ -81,11 +81,11 @@ Packaging deployment-example-sls for stage dev (us-east-1)
 
 ## Connection pooling
 
-Generally, when you use a FaaS (Function as a Service) environment to interact with a database, every function invocation can result in a new connection to the database. This is not a problem with a constantly running node.js server. Therefore, it is beneficial to pool DB connections to get better performance. You can use the [Data Proxy](/data-platform/data-proxy) as a solution to this issue. For other solutions, see the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
+Generally, when you use a FaaS (Function as a Service) environment to interact with a database, every function invocation can result in a new connection to the database. This is not a problem with a constantly running Node.js server. Therefore, it is beneficial to pool DB connections to get better performance. To solve this issue, you can use the [Data Proxy](/data-platform/data-proxy). For other solutions, see the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
 
 ## Deploy only the required files
 
-To reduce your deployment footprint, you can change your deployment process so that you only upload the files that your application needs. The Serverless configuration file `serverless.yml` below show a `package` pattern that includes only the Prisma engine file relevant to the Lambda runtime, and excludes the others. This means that when Serverless Framework packages your app for upload, it includes only one engine file. This ensures the packaged archive is as small as possible.
+To reduce your deployment footprint, you can update your deployment process to only upload the files your application needs. The Serverless configuration file `serverless.yml` below shows a `package` pattern that includes only the Prisma engine file relevant to the Lambda runtime and excludes the others. This means that when Serverless Framework packages your app for upload, it includes only one engine file. This ensures the packaged archive is as small as possible.
 
 ```code file=serverless.yml no-copy
 package:
@@ -96,31 +96,30 @@ package:
     - '!node_modules/@prisma/engines/**'
 ```
 
-However, if you use `serverless-webpack`, then you cannot use this method. See [Deployment with serverless webpack](#deployment-with-serverless-webpack) below.
+If you use `serverless-webpack`, see [Deployment with serverless webpack](#deployment-with-serverless-webpack) below.
 
 ## Deployment with <inlinecode>serverless-webpack</inlinecode>
 
 If you use `serverless-webpack`, then you will need additional configuration so that your `schema.prisma` is properly bundled. You will need to:
 
 1. Copy your `schema.prisma` with [`copy-webpack-plugin`](https://www.npmjs.com/package/copy-webpack-plugin).
-2. Run `prisma generate` via `custom > webpack > packagerOptions > scripts` in your `serverless.yml`
-3. Only package the correct Prisma engine file. This can save more than 40mb of capacity.
+2. Run `prisma generate` via `custom > webpack > packagerOptions > scripts` in your `serverless.yml`.
+3. Only package the correct Prisma engine file to save more than 40mb of capacity.
 
-Let's get started!
 
 ### Install webpack specific dependencies
 
-First, make sure all required webpack dependencies are installed:
+First, ensure the following webpack dependencies are installed:
 
 ```sh
-npm install -D webpack webpack-node-externals copy-webpack-plugin serverless-webpack
+npm install --save-dev webpack webpack-node-externals copy-webpack-plugin serverless-webpack
 ```
 
 ### Update <inlinecode>webpack.config.js</inlinecode>
 
 In your `webpack.config.js` make sure that you set `externals` to node externals like the following:
 
-```javascript file=webpack.config.js
+```javascript file=webpack.config.js highlight=1,5;normal;
 const nodeExternals = require('webpack-node-externals')
 
 module.exports = {
@@ -130,11 +129,10 @@ module.exports = {
 }
 ```
 
-Your `webpack.config.js` will also need a `plugins` property. This will allow `copy-webpack-plugin` to copy your `schema.prisma` file into your bundled code.
+Update the `plugins` property in your `webpack.config.js` file to include the `copy-webpack-plugin`. This plugin will allow you to copy your `schema.prisma` file into your bundled code.
 
-Building on our example above, we get:
 
-```javascript file=webpack.config.js
+```javascript file=webpack.config.js highlight=2,7-11;normal;
 const nodeExternals = require('webpack-node-externals')
 const CopyPlugin = require('copy-webpack-plugin')
 
@@ -172,7 +170,7 @@ custom:
         - prisma generate
 ```
 
-Lastly, you will want to exclude [Prisma query engines](https://www.prisma.io/docs/concepts/components/prisma-engines/query-engine) that do not match the AWS Lambda runtime. Taking our `serverless.yml` example above, you can add the following to make sure that all query engines are removed except for the `rhel-openssl-1.0.x` one.
+Lastly, you will want to exclude [Prisma query engines](https://www.prisma.io/docs/concepts/components/prisma-engines/query-engine) that do not match the AWS Lambda runtime. Update your `serverless.yml` by adding the following script that makes sure only the required query engine, `rhel-openssl-1.0.x`, is included in the final packaged archive.
 
 ```yaml file=serverless.yml highlight=6;add
 custom:
@@ -183,7 +181,7 @@ custom:
         - find . -name "libquery_engine-*" -not -name "libquery_engine-rhel-openssl-*" | xargs rm
 ```
 
-If instead you are deploying to [Lambda functions with ARM64 architecture](#lambda-functions-with-arm64-architectures) you should update the find command to the following:
+If you are deploying to [Lambda functions with ARM64 architecture](#lambda-functions-with-arm64-architectures) you should update the find command to the following:
 
 ```sh
 find . -name "libquery_engine-*" -not -name "libquery_engine-arm64-openssl-*" | xargs rm
