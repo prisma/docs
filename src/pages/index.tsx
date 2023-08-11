@@ -189,7 +189,7 @@ const ORMCardsWrapper = styled.div`
 const ORMProductCard = styled(ProductCard)`
   padding: 40px;
   background: #ffffff;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr;
   ${H4} {
     margin-bottom: 8px;
   }
@@ -480,11 +480,13 @@ const Homepage = () => {
               Open source Node.js and TypeScript ORM with an intuitive data model, automated
               migrations, type-safety, and auto-completion.
             </p>
-            <LinkGrid>
-              {CardLinks.components.map((card: any) => (
-                <Link to={card.url}>{card.title} &#8594;</Link>
-              ))}
-            </LinkGrid>
+            <div>
+              <LinkGrid>
+                {CardLinks.components.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </div>
           </ORMProductCard>
 
           <ORMProductCard color="indigo" style={{ padding: '40px' }}>
@@ -493,11 +495,13 @@ const Homepage = () => {
               Open source Node.js and TypeScript ORM with an intuitive data model, automated
               migrations, type-safety, and auto-completion.
             </p>
-            <LinkGrid>
-              {CardLinks.reference.map((card: any) => (
-                <Link to={card.url}>{card.title} &#8594;</Link>
-              ))}
-            </LinkGrid>
+            <div>
+              <LinkGrid>
+                {CardLinks.reference.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </div>
           </ORMProductCard>
         </ORMCardsWrapper>
       </ORMCardsSection>
