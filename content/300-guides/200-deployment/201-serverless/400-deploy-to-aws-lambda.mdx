@@ -1,17 +1,21 @@
 ---
 title: 'Deploy to AWS Lambda with Serverless Framework'
 metaTitle: 'Deploy your Serverless Framework project with Prisma'
-metaDescription: 'Learn how to avoid potential pitfalls when deploying your Serverless Framework project using Prisma'
+metaDescription: 'Learn how to deploy your Prisma-backed applications to AWS Lambda with Serverless Framework'
 tocDepth: 3
 ---
 
 <TopBlock>
 
-This guide explains how to avoid common issues when deploying a project using Prisma with [Serverless Framework](https://www.serverless.com/framework/). This guide assumes you have an existing project using both Serverless Framework and Prisma. For a guide on how to get started with Serverless Framework, we recommend [Setting Up Serverless Framework With AWS](https://www.serverless.com/framework/docs/getting-started).
+This guide explains how to avoid common issues when deploying a project using Prisma with [Serverless Framework](https://www.serverless.com/framework/).
 
-While Prisma works well with the Serverless Framework "out of the box", there are a few improvements that can be made within your project to ensure a smooth deployment and performance.
+While Prisma works well with the Serverless Framework "out of the box", there are a few improvements that can be made within your project to ensure a smooth deployment and performance. There is also additional configuration that is needed if you are using the [`serverless-webpack`](https://www.npmjs.com/package/serverless-webpack) or [`serverless-bundle`](https://www.npmjs.com/package/serverless-bundle) libraries.
 
 </TopBlock>
+
+## Prerequisites
+
+This guide assumes you have an existing project using both Serverless Framework and Prisma. For a guide on how to get started with Serverless Framework, we recommend [Setting Up Serverless Framework With AWS](https://www.serverless.com/framework/docs/getting-started).
 
 ## Binary targets in <inlinecode>schema.prisma</inlinecode>
 
@@ -44,6 +48,37 @@ package:
     - '!node_modules/@prisma/engines/**'
 ```
 
+## Loading environment variables via a <inlinecode>.env</inlinecode> file
+
+Your functions will need the `DATABASE_URL` environment variable to access the database. The `serverless-dotenv-plugin` will allow you to use your `.env` file in your deployments.
+
+First, make sure that the plugin is installed
+
+```sh
+npm install -D serverless-dotenv-plugin
+```
+
+Then, add `serverless-dotenv-plugin` to your list of plugins in `serverless.yml`
+
+```code file=serverless.yml no-copy
+plugins:
+  - serverless-dotenv-plugin
+```
+
+No further configuration needed! Your environment variables defined in your `.env` file will now be loaded on package or deployment.
+
+```sh no-copy highlight=3-4;normal
+❯ serverless package
+Running "serverless" from node_modules
+DOTENV: Loading environment variables from .env:
+         - DATABASE_URL
+
+Packaging deployment-example-sls for stage dev (us-east-1)
+.
+.
+.
+```
+
 ## Connection pooling
 
 Generally, when you use a FaaS (Function as a Service) environment to interact with a database, every function invocation can result in a new connection to the database. This is not a problem with a constantly running node.js server. Therefore, it is beneficial to pool DB connections to get better performance. You can use the [Data Proxy](/data-platform/data-proxy) as a solution to this issue. For other solutions, see the [connection management guide for serverless environments](/guides/performance-and-optimization/connection-management#serverless-environments-faas).
@@ -61,99 +96,73 @@ package:
     - '!node_modules/@prisma/engines/**'
 ```
 
-However, if you use `serverless-webpack`, then you cannot use this method. See [Deployment with serverless webpack](#deployment-with-serverless-webpack) for details.
+However, if you use `serverless-webpack`, then you cannot use this method. See [Deployment with serverless webpack](#deployment-with-serverless-webpack) below.
 
 ## Deployment with <inlinecode>serverless-webpack</inlinecode>
 
-If you use `serverless-webpack`, then you can use the [serverless-webpack-prisma](https://github.com/danieluhm2004/serverless-webpack-prisma) plugin without any additional configuration. `serverless-webpack-prisma` does the following:
+If you use `serverless-webpack`, then you will need additional configuration so that your `schema.prisma` is properly bundled. You will need to:
 
-1. Copies your `schema.prisma` with the Webpack plugin.
-2. Runs the `prisma generate` command. This means that there is no need to add the command to the webpack options separately.
-3. Packages the correct Prisma engine file. This can save more than 40mb of capacity.
+1. Copy your `schema.prisma` with [`copy-webpack-plugin`](https://www.npmjs.com/package/copy-webpack-plugin).
+2. Run `prisma generate` via `custom > webpack > packagerOptions > scripts` in your `serverless.yml`
+3. Only package the correct Prisma engine file. This can save more than 40mb of capacity.
 
-<details>
-<summary>If you would like to start using webpack...</summary>
+Let's get started!
 
-Install the dependencies as follows:
+### Install webpack specific dependencies
 
-```sh
-npm install -D webpack serverless-webpack webpack-node-externals
-```
-
-If your project uses TypeScript, install `ts-loader`:
+First, make sure all required webpack dependencies are installed:
 
 ```sh
-npm install -D ts-loader
+npm install -D webpack webpack-node-externals copy-webpack-plugin serverless-webpack
 ```
 
-Create a `webpack.config.js` file in the project root directory, and paste in the following configuration:
+### Update <inlinecode>webpack.config.js</inlinecode>
+
+In your `webpack.config.js` make sure that you set `externals` to node externals like the following:
 
 ```javascript file=webpack.config.js
-/* eslint-disable @typescript-eslint/no-var-requires */
-const path = require('path')
 const nodeExternals = require('webpack-node-externals')
-const slsw = require('serverless-webpack')
-const { isLocal } = slsw.lib.webpack
 
 module.exports = {
-  target: 'node',
-  stats: 'normal',
-  entry: slsw.lib.entries,
+  // ... other configuration
   externals: [nodeExternals()],
-  mode: isLocal ? 'development' : 'production',
-  optimization: { concatenateModules: false },
-  resolve: { extensions: ['.js'] },
-  output: {
-    libraryTarget: 'commonjs',
-    filename: '[name].js',
-    path: path.resolve(__dirname, '.webpack'),
-  },
+  // ... other configuration
 }
 ```
 
-If you use TypeScript, insert the following configuration inside `exports`:
+Your `webpack.config.js` will also need a `plugins` property. This will allow `copy-webpack-plugin` to copy your `schema.prisma` file into your bundled code.
+
+Building on our example above, we get:
 
 ```javascript file=webpack.config.js
-// ...initial config
+const nodeExternals = require('webpack-node-externals')
+const CopyPlugin = require('copy-webpack-plugin')
+
 module.exports = {
-  // ...initial config
-  resolve: { extensions: ['.js', '.ts'] },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        loader: 'ts-loader',
-        exclude: /node_modules/,
-      },
-    ],
-  },
-  // ...initial config
+  // ... other configuration
+  externals: [nodeExternals()],
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: './node_modules/.prisma/client/schema.prisma', to: './' }, // you may need to change `to` here.
+      ],
+    }),
+  ],
+  // ... other configuration
 }
 ```
+
+<Admonition>
+
+Depending on how your application is bundled, you may need to copy the schema file to a location other than `./`. Use the `serverless package` command to package your code locally so you can review where your schema should be put.
+
+</Admonition>
 
 Refer to the [Serverless Webpack documentation](https://www.serverless.com/plugins/serverless-webpack) for additional configuration.
 
-</details>
+### Update <inlinecode>serverless.yml</inlinecode>
 
-To install the dev dependency, use the following command:
-
-```sh
-npm install -D serverless-webpack-prisma serverless
-```
-
-In `serverless.yml`, add `serverless-webpack-prisma` to the plugins list, as follows:
-
-```yaml file=serverless.yml
-plugins:
-  - serverless-webpack
-  - serverless-webpack-prisma
-
-custom:
-  webpack:
-    includeModules: true
-```
-
-`serverless-webpack-prisma` automatically runs `prisma generate` so that you do not need to use the webpack script option separately as shown below.
+In `serverless.yml` make sure that the `custom > webpack` block has `prisma generate` under `packagerOptions > scripts` as follows:
 
 ```yaml file=serverless.yml
 custom:
@@ -163,104 +172,46 @@ custom:
         - prisma generate
 ```
 
-`serverless-webpack-prisma` removes the unnecessary dependencies and packages the correct Prisma engine binary. Therefore, delete it in the `package.patterns` configuration in your `serverless.yml` file.
+Lastly, you will want to exclude [Prisma query engines](https://www.prisma.io/docs/concepts/components/prisma-engines/query-engine) that do not match the AWS Lambda runtime. Taking our `serverless.yml` example above, you can add the following to make sure that all query engines are removed except for the `rhel-openssl-1.0.x` one.
 
-```yaml file=serverless.yml
-package:
-  patterns:
-    - '!node_modules/.prisma/client/libquery_engine-*'
-    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
+```yaml file=serverless.yml highlight=6;add
+custom:
+  webpack:
+    packagerOptions:
+      scripts:
+        - prisma generate
+        - find . -name "libquery_engine-*" -not -name "libquery_engine-rhel-openssl-*" | xargs rm
 ```
 
-Now redeploy your application. To do so, run `serverless deploy`. The deployment output shows you that the correct Prisma engine file is packaged and distributed, as follows:
+If instead you are deploying to [Lambda functions with ARM64 architecture](#lambda-functions-with-arm64-architectures) you should update the find command to the following:
 
-```code no-copy
-Service Information
-service: prisma-aws-lambda-example
-stage: dev
-region: us-east-1
-stack: prisma-aws-lambda-example-dev
-resources: 39
-api keys:
-  None
-endpoints:
-  GET - https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/
-  GET - https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/seed
-  GET - https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/users
-  POST - https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/users
-  GET - https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/posts
-functions:
-  status: prisma-aws-lambda-example-dev-status
-  seed: prisma-aws-lambda-example-dev-seed
-  getUsers: prisma-aws-lambda-example-dev-getUsers
-  createUser: prisma-aws-lambda-example-dev-createUser
-  getPosts: prisma-aws-lambda-example-dev-getPosts
-layers:
-  None
+```sh
+find . -name "libquery_engine-*" -not -name "libquery_engine-arm64-openssl-*" | xargs rm
 ```
 
-### What's next
+## Wrapping up
 
-You can now test the deployment with a call to the status endpoint. Use the following command and replace `UNIQUE_IDENTIFIER` with the corresponding part of the URL from the output you got from `serverless deploy`.
+You can now re-package and re-deploy your application. To do so, run `serverless deploy`. Webpack output will show the schema file being moved with `copy-webpack-plugin`
 
-```terminal
-curl https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/
+```sh no-copy highlight=9;normal
+❯ serverless package
+Running "serverless" from node_modules
+DOTENV: Loading environment variables from .env:
+         - DATABASE_URL
+
+Packaging deployment-example-sls for stage dev (us-east-1)
+
+asset handlers/posts.js 713 bytes [emitted] [minimized] (name: handlers/posts)
+  asset schema.prisma 293 bytes [emitted] [from: node_modules/.prisma/client/schema.prisma] [copied]
+  ./handlers/posts.ts 745 bytes [built] [code generated]
+  external "@prisma/client" 42 bytes [built] [code generated]
+  webpack 5.88.2 compiled successfully in 685 ms
+Package lock found - Using locked versions
+Packing external modules: @prisma/client@^5.1.1
+
+✔ Service packaged (5s)
 ```
-
-This returns the following:
-
-```terminal no-copy
-{"up":true}
-```
-
-## 6. Test your deployed REST API
-
-With the API base URL `https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/`, you can test the API's endpoints:
-
-| Endpoint      | Description                                                                                                              | Implementation            |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
-| `GET /`       | Status                                                                                                                   | `handlers/status.js`      |
-| `GET /seed`   | Delete all database records and seed the database with test `users`, `profiles`, and `posts`. Returns the created users. | `handlers/seed.js`        |
-| `GET /users`  | Fetch all `users` in the database with their related `profiles`                                                          | `handlers/users.js`       |
-| `POST /users` | Create a single `users` in the database                                                                                  | `handlers/create-user.js` |
-| `GET /posts`  | Fetch all `posts` and their related `authors`                                                                            | `handlers/posts.js`       |
-
-To call the API, you can use curl. For example, the following command calls the `seed` endpoint. Replace `UNIQUE_IDENTIFIER` with the corresponding part of the URL from the output of `serverless deploy` in step 6.
-
-```terminal
-curl -v https://UNIQUE_IDENTIFIER.execute-api.us-east-1.amazonaws.com/dev/seed
-```
-
-<Admonition type = "info">
-
-The `serverless.yml` configuration file contains the endpoint and function configuration. You can update this file to add or change endpoints. For more AWS specific configuration information, see the AWS provider configuration in the [Serverless Framework documentation](https://serverless.com/framework/docs/providers/aws/guide/functions/).
-
-</Admonition >
-
-## Deploy only the required files
-
-To reduce your deployment footprint, you can change your deployment process so that you only upload the files that your application needs. The method for doing so depends on whether you use the Serverless Framework or not.
-
-### If you use the Serverless Framework
-
-You can use the Serverless configuration file to [deploy only the binary that your project needs](/guides/deployment/use-prisma-with-serverless-framework#reduce-the-package-footprint).
-
-### If you do not use the Serverless Framework
-
-If you do not use the Serverless Framework to deploy your project, you can use the following method to remove any unneeded files.
-
-1. Create a zip script that only zips the files that your project needs. [Example script](https://github.com/prisma/ecosystem-tests/blob/dev/platforms-serverless/lambda/zip.sh).
-
-2. Upload the zip. For example, to do this with the [AWS CLI](https://aws.amazon.com/cli/), you might use a command similar to the following:
-
-   ```terminal wrap
-   aws lambda update-function-code --function-name my-function --zip-file "fileb://lambda.zip"
-   ```
 
 ## Summary
 
-Congratulations! You have successfully deployed your Serverless Framework application with Prisma!
-
-For more insight into the Prisma Client API, [check out our API reference](/reference/api-reference/prisma-client-reference) or connect with us on [GitHub](https://github.com/prisma/prisma), [Slack](https://slack.prisma.io), or [Discord](https://pris.ly/discord).
+You have successfully deployed a Prisma-backed Serverless Framework application. Congratulations!
