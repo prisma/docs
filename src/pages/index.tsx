@@ -189,7 +189,7 @@ const ORMCardsWrapper = styled.div`
 const ORMProductCard = styled(ProductCard)`
   padding: 40px;
   background: #ffffff;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto 1fr auto;
   ${H4} {
     margin-bottom: 8px;
   }
@@ -203,7 +203,7 @@ const ORMProductCard = styled(ProductCard)`
     line-height: 140%; /* 22.4px */
   }
   ${LinkGrid} {
-    gap: 8px;
+    gap: 12px;
     a {
       min-width: calc(50% - 8px);
       width: fit-content;
