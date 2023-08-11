@@ -382,6 +382,8 @@ const prisma = new PrismaClient({
 
 <Admonition type="info">
 
+**Note**: `rejectOnNotFound` was removed in v5.0.0.
+
 **Deprecated:** `rejectOnNotFound` is deprecated in v4.0.0. From v4.0.0, use the queries [`findUniqueOrThrow`](#finduniqueorthrow) or [`findFirstOrThrow`](#findfirstorthrow).
 
 </Admonition>
@@ -459,6 +461,7 @@ Use model queries to perform CRUD operations on your models. See also: [CRUD](/c
 
 - Prisma's dataloader [automatically batches `findUnique` queries](/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) with the same `select` and `where` parameters.
 - If you want the query to throw an error if the record is not found, then consider using [`findUniqueOrThrow`](#finduniqueorthrow) instead.
+- You cannot use [filter conditions](#filter-conditions-and-operators) (e.g. `equals`, `contains`, `not`) to filter fields of the [JSON](/reference/api-reference/prisma-schema-reference#json) data type. Using filter conditions will likely result in a `null` response for that field.
 
 #### Options
 
@@ -598,7 +601,7 @@ We introduced `findUniqueOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`
 #### Options
 
 | Name                            | Example type (`User`)                                        | Required | Description                                                                                                                                                                                                                                                     |
-| ------------------------------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ------------------------------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `distinct`                      | `Enumerable<UserDistinct`<br />`FieldEnum>`                  | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                                       |
 | `where`                         | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                                            |
 | `cursor`                        | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                                            |
@@ -607,7 +610,7 @@ We introduced `findUniqueOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`
 | `select`                        | `XOR<UserSelect, null>`                                      | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                                               |
 | `skip`                          | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                                       |
 | `take`                          | `number`                                                     | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list.                      |
-| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`                                           | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findFirstOrThrow`](#findfirstorthrow) instead. |
+| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`                                           | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findFirstOrThrow`](#findfirstorthrow) instead. |     |
 
 #### Return type
 
@@ -703,12 +706,12 @@ We introduced `findFirstOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`]
 - Its return type is non-nullable. For example, `post.findFirst()` can return `post` or `null`, but `post.findFirstOrThrow` always returns `post`.
 - It is not compatible with sequential operations in the [`$transaction` API](/concepts/components/prisma-client/transactions#the-transaction-api). If the query returns `NotFoundError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
 
-```ts
-prisma.$transaction(async (tx) => {
-  await tx.model.create({ data: { ... });
-  await tx.model.findFirstOrThrow();
-})
-```
+  ```ts
+  prisma.$transaction(async (tx) => {
+    await tx.model.create({ data: { ... });
+    await tx.model.findFirstOrThrow();
+  })
+  ```
 
 ### <inlinecode>findMany</inlinecode>
 
@@ -1593,10 +1596,10 @@ See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-c
 #### Options
 
 | Name      | Type                                                         | Required | Description                                                                                                                                                                                               |
-| --------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `where`   | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                      |
 | `orderBy` | `XOR<Enumerable<UserOrderByInput>,`<br />`UserOrderByInput>` | No       | Lets you order the returned list by any property that is also present in `by`.                                                                                                                            |
-| `by`      | `Array<UserScalarFieldEnum>`                                 | No       | Specifies the field or combination of fields to group records by.                                                                                                                                         |
+| `by`      | `Array<UserScalarFieldEnum>`                                 | `string` | No                                                                                                                                                                                                        | Specifies the field or combination of fields to group records by. |
 | `having`  | `UserScalarWhereWithAggregatesInput`                         | No       | Allows you to filter groups by an aggregate value - for example, only return groups _having_ an average age less than 50.                                                                                 |
 | `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 | `take`    | `number`                                                     | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
@@ -2322,7 +2325,7 @@ const posts = await prisma.post.findMany({
 
 <Admonition type="warning">
 
-This feature is available from version 3.5.0 onwards in PostgreSQL only. You'll need to use the `fullTextSearch` preview flag to enable this feature.
+This feature is available from version 3.5.0 onwards in PostgreSQL and MySQL only. You'll need to use the `fullTextSearch` preview flag to enable this feature.
 
 </Admonition>
 
@@ -4133,15 +4136,12 @@ export type PostFilter = {
 
 #### Examples
 
-##### Get all `User` records where _all_ posts are published and at least one related `Post` mentions `Prisma`
+##### Get all `User` records where _some_ posts mention `Prisma`
 
 ```ts
 const result = await prisma.user.findMany({
   where: {
     post: {
-      every: {
-        published: true
-      },
       some: {
         content: {
           contains: "Prisma"
@@ -4168,7 +4168,7 @@ export type PostFilter = {
 
 #### Examples
 
-##### Get all `User` records where _all_ posts are published and a least one related `Post` mentions `Prisma`
+##### Get all `User` records where _all_ posts are published
 
 ```ts
 const result = await prisma.user.findMany({
@@ -4177,11 +4177,6 @@ const result = await prisma.user.findMany({
       every: {
         published: true
       },
-      some: {
-        content: {
-          contains: "Prisma"
-        }
-      }
     }
   }
 }
@@ -5433,12 +5428,13 @@ const getUsers = await prisma.user.findMany({
 
 ### Remarks
 
-- `$on` and `$use` client methods do not exist on extended client instances which are extended using [`$extends`](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#extends)<span class="api"></span>
+- `$on` and `$use` client methods do not exist on extended client instances which are extended using [`$extends`](#extends)<span class="api"></span>
 
 <Admonition type="warning">
-  In [extended clients](https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions), Client methods do not necessarily exist. If you are extending your client, make sure to check for existence before using Client methods like `$transaction` or `$connect`.
 
-  In addition, if you are using `$on` or `$use`, you will need to use these client methods before extending your client as these methods do not exist on extended clients. For `$use` specifically we recommend transitioning [to use query extensions](https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions/query).
+In [extended clients](/concepts/components/prisma-client/client-extensions), Client methods do not necessarily exist. If you are extending your client, make sure to check for existence before using Client methods like `$transaction` or `$connect`.
+
+In addition, if you are using `$on` or `$use`, you will need to use these client methods before extending your client as these methods do not exist on extended clients. For `$use` specifically we recommend transitioning [to use query extensions](/concepts/components/prisma-client/client-extensions/query).
 
 </Admonition>
 
@@ -5473,7 +5469,9 @@ $connect(): Promise<void>
 ### <inlinecode>$on()</inlinecode>
 
 <Admonition type="warning">
-  `$on` is not available in [extended clients](https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions). Please either migrate to client extensions or use the `$on` method prior to extending your client.
+
+`$on` is not available in [extended clients](/concepts/components/prisma-client/client-extensions). Please either migrate to client extensions or use the `$on` method prior to extending your client.
+
 </Admonition>
 
 The `$on()` method allows you to subscribe to [logging events](#log) or the [exit hook](/concepts/components/prisma-client/working-with-prismaclient/connection-management#exit-hooks).
@@ -5481,7 +5479,9 @@ The `$on()` method allows you to subscribe to [logging events](#log) or the [exi
 ### <inlinecode>$use()</inlinecode>
 
 <Admonition type="warning">
-  `$use` is not available in [extended clients](https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions). Please [either migrate to query extensions](https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions/query) or use the `$use` method prior to extending your client.
+
+`$use` is not available in [extended clients](/concepts/components/prisma-client/client-extensions). Please [either migrate to query extensions](/concepts/components/prisma-client/client-extensions/query) or use the `$use` method prior to extending your client.
+
 </Admonition>
 
 The `$use()` method adds [middleware](/concepts/components/prisma-client/middleware) <span class="concept"></span>:
@@ -5552,7 +5552,7 @@ export declare type ModelName = (typeof ModelName)[keyof typeof ModelName]
 
 #### Examples
 
-See [middleware examples](/concepts/components/prisma-client/middleware#examples) <span class="concept"></span>.
+See [middleware examples](/concepts/components/prisma-client/middleware#samples) <span class="concept"></span>.
 
 ### <inlinecode>$executeRaw()</inlinecode>
 
@@ -5651,7 +5651,9 @@ const createUserAndPost = (
 
 ## Compare columns in the same table
 
-From version 4.3.0, you can compare columns in the same table directly, for non-unique filters.
+From version 5.0.0, you can compare columns in the same table directly, for non-unique filters.
+
+This feature was also available via the `fieldReference` Preview feature from Prisma versions 4.3.0 to 4.16.2
 
 <Admonition type="info">
 
@@ -5664,16 +5666,7 @@ In the following situations, you must [use raw queries to compare columns in the
 
 </Admonition>
 
-To enable column comparisons in the same table, add the `fieldReference` feature flag to the `generator` block of your Prisma Schema as follows:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fieldReference"]
-}
-```
-
-To compare columns the same table, use the `<model>.fields` property. In the following example, the query returns all records where the value in the `prisma.product.quantity` field is less than or equal to the value in the `prisma.product.warnQuantity` field.
+To compare columns in the same table, use the `<model>.fields` property. In the following example, the query returns all records where the value in the `prisma.product.quantity` field is less than or equal to the value in the `prisma.product.warnQuantity` field.
 
 ```ts
 prisma.product.findMany({
@@ -5758,24 +5751,14 @@ await prisma.user.findMany({
 
 ## Filter on non-unique fields with <inlinecode>UserWhereUniqueInput</inlinecode>
 
-From version 4.5.0, the generated type `UserWhereUniqueInput` on [`where`](#where) exposes all fields on the model, not just unique fields. To use this feature, [enable the `extendedWhereUnique` preview flag](#enable-the-ability-to-filter-on-non-unique-fields-with-userwhereuniqueinput).
+From version 5.0.0, the generated type `UserWhereUniqueInput` on [`where`](#where) exposes all fields on the model, not just unique fields.
+This was available under the [`extendedWhereUnique` Preview flag](/concepts/components/preview-features/client-preview-features#preview-features-promoted-to-general-availability) between versions 4.5.0 to 4.16.2
 
 You must specify at least one unique field in your `where` statement [outside of boolean operators](#boolean-operators-with-userwhereuniqueinput), and you can specify any number of additional unique and non-unique fields. You can use this to add filters to any operation that returns a single record. For example, you can use this feature for the following:
 
 - [Optimistic concurrency control on updates](#optimistic-concurrency-control-on-updates)
 - [Permission checks](#permission-checks)
 - [Soft deletes](#soft-deletes)
-
-### Enable the ability to filter on non-unique fields with <inlinecode>UserWhereUniqueInput</inlinecode>
-
-Enable the `extendedWhereUnique` preview flag in your `schema.prisma` file's `generator` block, as follows:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["extendedWhereUnique"]
-}
-```
 
 ### Optimistic concurrency control on updates
 

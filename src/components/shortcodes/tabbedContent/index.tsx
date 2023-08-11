@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -66,30 +67,30 @@ const Tabs = styled.div`
   .tabHeading {
     margin-right: 10px;
     font-weight: 600;
-    color: ${(p) => p.theme.colors.gray[600]};
+    color: ${theme.colors.gray[600]};
     cursor: pointer;
-    font-size: ${(p) => p.theme.fontSizes[14]};
+    font-size: ${theme.fontSizes[14]};
     display: flex;
     align-items: center;
     padding: 3px 5px;
     svg {
-      margin-right: ${(p) => p.theme.space[8]};
+      margin-right: ${theme.space[8]};
     }
   }
 
   .tabHeading.active {
-    color: ${(p) => p.theme.colors.gray[900]};
-    background: ${(p) => p.theme.colors.gray[100]};
-    border-radius: ${(p) => p.theme.radii.small};
+    color: ${theme.colors.gray[900]};
+    background: ${theme.colors.gray[100]};
+    border-radius: ${theme.radii.small};
     svg path {
-      stroke: ${(p) => p.theme.colors.gray[600]};
+      stroke: ${theme.colors.gray[600]};
     }
   }
 `
 const Wrapper = styled.div`
-  margin-top: ${(p) => p.theme.space[24]};
+  margin-top: ${theme.space[24]};
   position: relative;
-  font-size: ${(p) => p.theme.fontSizes[14]};
+  font-size: ${theme.fontSizes[14]};
 
   tab pre > * {
     margin-top: 0.5em;

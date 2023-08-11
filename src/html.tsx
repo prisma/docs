@@ -1,5 +1,5 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 
 const HTML = (props: any) => {
   return (
@@ -8,6 +8,7 @@ const HTML = (props: any) => {
         <meta charSet="utf-8" />
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
 
+        <script src="https://kit.fontawesome.com/f46012ac73.js" crossOrigin="anonymous"></script>
         <script
           src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
           data-document-language="true"

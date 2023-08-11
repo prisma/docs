@@ -1,34 +1,36 @@
-import * as React from 'react'
-import Layout from '../components/layout'
-import styled from 'styled-components'
-import background from '../images/home-bg.svg'
-import listDot from '../images/list-dot.png'
-import { ArrowRight, ChevronsRight } from 'react-feather'
+import { Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
+import * as React from 'react'
+import { ArrowRight, ChevronsRight } from 'react-feather'
+import styled from 'styled-components'
 
 import { PrimaryButton, SpecialButton } from '../components/button'
-import Schema from '../icons/home/Schema'
-import DbLink from '../icons/home/DbLink'
-import CLI from '../icons/home/CLI'
+import Layout from '../components/layout'
 import Link from '../components/link'
 import SEO from '../components/seo'
-import { defaultTheme } from '@prisma/lens/dist/web'
-import { Icon } from '../components/Icon'
-import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
+import CLI from '../icons/home/CLI'
+import DbLink from '../icons/home/DbLink'
+import Schema from '../icons/home/Schema'
+import background from '../images/home-bg.svg'
+import listDot from '../images/list-dot.png'
 
 const icons: any = {
   DoubleArrow: <ChevronsRight opacity="0.5" />,
-  OverviewIcon: <Icon icon={faBookOpen} height="28px" color={defaultTheme.colors.indigo[600]} />,
-  ComponentsIcon: <Icon icon={faBox} height="28px" color={defaultTheme.colors.indigo[600]} />,
-  DatabaseIcon: <Icon icon={faDatabase} height="28px" color={defaultTheme.colors.indigo[600]} />,
-  MoreIcon: <Icon icon={faBars} height="28px" color={defaultTheme.colors.indigo[600]} />,
+  OverviewIcon: (
+    <Icon icon={'fa-regular fa-book-open'} size="28px" color={theme.colors.indigo[600]} />
+  ),
+  ComponentsIcon: <Icon icon={'fa-regular fa-box'} size="28px" color={theme.colors.indigo[600]} />,
+  DatabaseIcon: (
+    <Icon icon={'fa-regular fa-database'} size="28px" color={theme.colors.indigo[600]} />
+  ),
+  MoreIcon: <Icon icon={'fa-regular fa-bars'} size="28px" color={theme.colors.indigo[600]} />,
   Schema: <Schema />,
   DbLink: <DbLink />,
   CLI: <CLI />,
 }
 
 const Summary = styled.div`
-  padding: ${(p) => p.theme.space[80]} 0;
+  padding: ${theme.space[80]} 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -44,11 +46,11 @@ const Summary = styled.div`
   }
   p {
     max-width: 800px;
-    font-size: ${(p) => p.theme.fontSizes[20]};
+    font-size: ${theme.fontSizes[20]};
     line-height: 1.5;
   }
   @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${(p) => p.theme.space[80]} ${(p) => p.theme.space[16]};
+    padding: ${theme.space[80]} ${theme.space[16]};
     h1 {
       font-size: 40px;
     }
@@ -56,17 +58,17 @@ const Summary = styled.div`
       max-width: 85%;
     }
   }
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (max-width: ${theme.breakpoints.tabletVertical}) {
     p {
-      font-size: ${(p) => p.theme.fontSizes[16]};
+      font-size: ${theme.fontSizes[16]};
     }
   }
 `
 
 const NormalPara = styled.p`
-  color: ${(p) => p.theme.colors.gray[700]};
-  line-height: ${(p) => p.theme.space[24]};
-  margin: ${(p) => p.theme.space[32]} 0;
+  color: ${theme.colors.gray[700]};
+  line-height: ${theme.space[24]};
+  margin: ${theme.space[32]} 0;
   text-align: center;
   max-width: 650px;
   width: 100%;
@@ -77,7 +79,7 @@ const NormalPara = styled.p`
     cursor: pointer;
   }
 
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (max-width: ${theme.breakpoints.tabletVertical}) {
     .hide-mobile {
       display: none;
     }
@@ -86,12 +88,11 @@ const NormalPara = styled.p`
 
 const SubHeading = styled.h2`
   font-weight: 600;
-  font-size: ${(p) => p.theme.fontSizes[36]};
-  line-height: ${(p) => p.theme.space[36]};
-  font-family: ${(p) => p.theme.fonts.display};
+  font-size: ${theme.fontSizes[36]};
+  font-family: ${theme.fonts.display};
   margin: 0;
   text-align: center;
-  color: ${(p) => p.theme.colors.gray[900]};
+  color: ${theme.colors.gray[900]};
 `
 
 const Space = styled.div<{ height: number }>`
@@ -100,14 +101,14 @@ const Space = styled.div<{ height: number }>`
 
 const ListTitle = styled.h3`
   font-weight: bold;
-  line-height: ${(p) => p.theme.space[16]};
-  font-size: ${(p) => p.theme.fontSizes[16]};
-  color: ${(p) => p.theme.colors.gray[900]} !important;
+  line-height: ${theme.space[16]};
+  font-size: ${theme.fontSizes[16]};
+  color: ${theme.colors.gray[900]} !important;
   margin: 24px 0 0;
 
   a {
     text-decoration: none;
-    color: ${(p) => p.theme.colors.gray[900]} !important;
+    color: ${theme.colors.gray[900]} !important;
     align-items: center;
     display: flex;
   }
@@ -146,10 +147,10 @@ const MoreLinksList = styled(List)`
   @media (min-width: 400px) {
     column-count: 2;
   }
-  @media (min-width: ${defaultTheme.breakpoints.desktopSmall}px) {
+  @media (min-width: ${theme.breakpoints.desktopSmall}px) {
     column-count: 3;
   }
-  @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
+  @media (min-width: ${theme.breakpoints.tabletHorizontal}px) {
     column-count: 4;
   }
   gap: 2rem;
@@ -165,7 +166,7 @@ const SummaryLinks = styled.div`
   display: flex;
   justify-content: space-around;
   a {
-    color: ${(p) => p.theme.colors.white} !important;
+    color: ${theme.colors.white} !important;
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -186,7 +187,7 @@ const QuickLinks = styled.div`
   align-items: center;
 
   @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${(p) => p.theme.space[48]} ${(p) => p.theme.space[16]};
+    padding: ${theme.space[48]} ${theme.space[16]};
   }
 `
 
@@ -195,6 +196,7 @@ const CapTitle = styled.h4`
   font-weight: bold;
   letter-spacing: 0.02em;
   font-size: 14px;
+  margin: revert;
 `
 
 const BorderCapTitle = styled(CapTitle)`
@@ -218,17 +220,17 @@ const GeneralLinks = styled.div`
     margin-bottom: 0;
     margin-top: 0;
   }
-  @media (min-width: ${defaultTheme.breakpoints.tabletVertical}px) {
+  @media (min-width: ${theme.breakpoints.tabletVertical}px) {
     padding: 48px 92px;
     flex-direction: row;
     grid-template-columns: repeat(2, 50%);
     grid-template-rows: repeat(2, 50%);
     column-gap: 2rem;
   }
-  @media (min-width: ${defaultTheme.breakpoints.desktopSmall}px) {
+  @media (min-width: ${theme.breakpoints.desktopSmall}px) {
     padding: 32px 48px;
   }
-  @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
+  @media (min-width: ${theme.breakpoints.tabletHorizontal}px) {
     grid-template-columns: repeat(4, 25%);
     padding: 48px 92px;
     grid-template-rows: unset;
@@ -241,15 +243,15 @@ const GeneralLinks = styled.div`
 const GeneralLink = styled.div`
   display: flex;
   flex-direction: column;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (min-width: 0) and (max-width: ${theme.breakpoints.mobile}) {
     flex-direction: row;
-    margin-bottom: ${(p) => p.theme.space[32]};
+    margin-bottom: ${theme.space[32]};
   }
   > div {
     display: flex;
     gap: 1rem;
     align-items: center;
-    @media (min-width: ${defaultTheme.breakpoints.tabletHorizontal}px) {
+    @media (min-width: ${theme.breakpoints.tabletHorizontal}px) {
       display: block;
     }
   }
@@ -261,21 +263,21 @@ const Row = styled.div`
   width: 100%;
   justify-content: space-between;
   flex-wrap: wrap;
-  margin-top: ${(p) => p.theme.space[32]};
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  margin-top: ${theme.space[32]};
+  @media (min-width: 0) and (max-width: ${theme.breakpoints.mobile}) {
     flex-direction: column;
   }
 `
 
 const LinkCard = styled(Link)<{ maxWidth?: string }>`
-  background: ${(p) => p.theme.colors.gray[200]};
-  border-radius: ${(p) => p.theme.radii.medium};
-  padding: 0 ${(p) => p.theme.space[24]};
+  background: ${theme.colors.gray[200]};
+  border-radius: ${theme.radii.medium};
+  padding: 0 ${theme.space[24]};
   width: 100%;
-  border-top: ${(p) => p.theme.space[8]} solid ${(p) => p.theme.colors.gray[200]};
+  border-top: ${theme.space[8]} solid ${theme.colors.gray[200]};
   position: relative;
   flex-grow: 1;
-  margin-bottom: ${(p) => p.theme.space[40]};
+  margin-bottom: ${theme.space[40]};
   text-decoration: none;
   max-width: ${(props) => props.maxWidth};
 
@@ -291,7 +293,7 @@ const LinkCard = styled(Link)<{ maxWidth?: string }>`
   }
 
   &:hover {
-    background: ${(p) => p.theme.colors.gray[300]};
+    background: ${theme.colors.gray[300]};
     h3 svg {
       transform: translateX(4px);
     }
@@ -299,14 +301,14 @@ const LinkCard = styled(Link)<{ maxWidth?: string }>`
 
   p {
     text-align: left;
-    margin: ${(p) => p.theme.space[16]} 0;
+    margin: ${theme.space[16]} 0;
   }
 
-  @media (min-width: ${(p) => p.theme.breakpoints.phone}) and (max-width: 1024px) {
+  @media (min-width: ${theme.breakpoints.mobile}) and (max-width: 1024px) {
     max-width: ${(props) => (props.maxWidth ? props.maxWidth : '48%')};
   }
 
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (min-width: 0) and (max-width: ${theme.breakpoints.mobile}) {
     max-width: ${(props) => (props.maxWidth ? props.maxWidth : '100%')};
   }
 `
@@ -317,7 +319,7 @@ const ReferenceRow = styled.div`
   width: 100%;
   gap: 48px;
   margin-top: 32px;
-  @media (min-width: ${defaultTheme.breakpoints.tabletVertical}px) {
+  @media (min-width: ${theme.breakpoints.tabletVertical}px) {
     max-width: 996px;
     grid-template-rows: unset;
     gap: 32px;
@@ -344,7 +346,7 @@ const GuideLinkRow = styled(Row)`
 `
 
 const IconHolder = styled.span`
-  background: ${defaultTheme.colors.indigo[100]};
+  background: ${theme.colors.indigo[100]};
   border-radius: 8px;
   height: 64px;
   width: 64px;
@@ -377,9 +379,10 @@ const Homepage = () => {
         <h1>Prisma Documentation</h1>
         <NormalPara>
           Choose one of our{' '}
-          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore the{' '}
-          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join our
-          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
+          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore our{' '}
+          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples</Link>. Join our thriving
+          community on <Link to={SummaryLinkData.slack}>Slack</Link>,{' '}
+          <Link to={SummaryLinkData.discord}>Discord</Link> and{' '}
           <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
         </NormalPara>
         <SummaryLinks>
@@ -499,6 +502,7 @@ export const query = graphql`
             gettingStarted
             readyToRun
             slack
+            discord
             git
             buttons {
               text

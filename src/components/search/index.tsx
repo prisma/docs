@@ -1,13 +1,15 @@
-import React, { useState, useRef } from 'react'
-import { InstantSearch, Index, connectStateResults, connectHits } from 'react-instantsearch-dom'
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import algoliasearch from 'algoliasearch/lite'
+import { navigate } from 'gatsby'
+import qs from 'qs'
+import React, { useRef, useState } from 'react'
+import { connectHits, connectStateResults, Index, InstantSearch } from 'react-instantsearch-dom'
+import styled from 'styled-components'
+
 import config from '../../../config'
 import DocHit from './hitComps'
-import styled from 'styled-components'
-import Overlay from './overlay'
 import CustomSearchBox from './input'
-import qs from 'qs'
-import { navigate } from 'gatsby'
+import Overlay from './overlay'
 
 const HitsWrapper = styled.div`
   display: none;
@@ -26,9 +28,9 @@ const HitsWrapper = styled.div`
   transform: translate(-50%, -0%);
   max-width: 1200px;
   width: 100%;
-  background: ${(p) => p.theme.colors.white};
+  background: ${theme.colors.white};
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
-  border-radius: ${(p) => p.theme.radii.small};
+  border-radius: ${theme.radii.small};
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   * {
@@ -87,7 +89,7 @@ const HitsWrapper = styled.div`
     // left: 0;
     top: 88px;
     // max-width: 100%;
-    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
+    border-top: 1px solid ${theme.colors.gray[300]};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
