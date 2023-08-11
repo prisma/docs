@@ -6,7 +6,6 @@ import styled from 'styled-components'
 
 import Layout from '../components/layout'
 import Link from '../components/link'
-import Search from '../components/search'
 import SEO from '../components/seo'
 import ShadowCard from '../components/shadow-card'
 import SQLServer from '../icons/SQLServer'

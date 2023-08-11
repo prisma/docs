@@ -181,7 +181,7 @@ export default function Layout({
               {!homePage && (
                 <StickyBox offsetTop={120} offsetBottom={20}>
                   <SearchComponentDesktop open={!showDocsBtn}>
-                    <SearchBox showHeaderSearch={showHeaderSearch} value={value} />
+                    <SearchBox showHeaderSearch={showHeaderSearch} value={value} path={location} />
                   </SearchComponentDesktop>
                   <NotMobile id="sidebar-holder">
                     <SidebarLayout isMobile={false} location={location} slug={slug} />

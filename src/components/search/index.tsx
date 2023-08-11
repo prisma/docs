@@ -238,9 +238,7 @@ export default function Search({
   }
 
   const scrollListener = () => {
-    if (showHits) {
-      hideSearch()
-    }
+    hideSearch()
   }
 
   useEffect(() => {
@@ -262,7 +260,7 @@ export default function Search({
         closeSearch={hideSearch}
         upClicked={decrementIndex}
         downClicked={incrementIndex}
-        path={path}
+        path={location.pathname}
         sidenavSearchOpened={sidenavSearchOpened}
       />
       {query && query !== '' && showHits && (

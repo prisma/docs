@@ -8,7 +8,7 @@ import Clear from '../../icons/Clear'
 import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
-const SearchBoxDiv = styled.div`
+const SearchBoxDiv = styled.div<{ minimal?: boolean }>`
   width: 100%;
   display: flex;
   max-width: 1240px;
@@ -38,7 +38,8 @@ const SearchBoxDiv = styled.div`
     border: 2px solid #667eea;
     border-radius: 8px;
     transform-origin: center;
-    transform: scaleY(1.1) translateX(-1px);
+    transform: scaleY(1.1)
+      ${(props) => (props.minimal ? `translateX(-1px)` : `translate(-1px, -5px)`)};
 
     .clear {
       //background: ${theme.colors.gray[300]};
@@ -160,10 +161,6 @@ const SearchBox = ({
   ...rest
 }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
-  // console.log(path)
-  // if (path === 'inner') {
-  //   onFocus()
-  // }
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
   const { width } = useWindowDimensions()
@@ -257,7 +254,7 @@ const SearchBox = ({
   }
 
   return (
-    <SearchBoxDiv className={isOpened ? 'opened' : ''}>
+    <SearchBoxDiv className={isOpened ? 'opened' : ''} minimal={path === '/'}>
       <form onSubmit={onSubmit}>
         <SearchIcon />
         <input
