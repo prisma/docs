@@ -60,7 +60,7 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
   padding-bottom: 8px;
   margin: 2rem 0px;
   position: relative;
-  display: flex;
+  display: block;
   max-width: 100%;
   pre {
     font-weight: normal;
