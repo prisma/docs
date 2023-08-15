@@ -54,7 +54,7 @@ function cleanTokens(tokens: any[]) {
   return tokens
 }
 
-const propList = ['copy', 'bash-symbol', 'no-lines']
+const propList = ['copy', 'bash-symbol', 'terminal', 'no-lines']
 
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   const codeEl = React.useRef<any>(null)
@@ -72,7 +72,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
     })
   }
 
-  if (propList.includes(language)) {
+  if (propList.includes(language) && !props['no-break-terminal']) {
     breakWords = true
   }
 
