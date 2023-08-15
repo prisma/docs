@@ -72,7 +72,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
     })
   }
 
-  if (propList.includes(language)) {
+  if (propList.includes(language) && !props['no-break-terminal']) {
     breakWords = true
   }
 
