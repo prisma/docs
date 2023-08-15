@@ -107,7 +107,7 @@ const siteConfig = {
           },
           {
             url: 'data-platform/pulse',
-            title: 'Pulse',
+            title: 'Prisma Pulse',
           },
         ],
       },
