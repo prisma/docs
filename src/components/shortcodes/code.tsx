@@ -54,7 +54,7 @@ function cleanTokens(tokens: any[]) {
   return tokens
 }
 
-const propList = ['copy', 'bash-symbol', 'terminal', 'no-lines']
+const propList = ['copy', 'bash-symbol', 'no-lines']
 
 const Code = ({ children, className, ...props }: PreCodeProps) => {
   const codeEl = React.useRef<any>(null)
