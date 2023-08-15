@@ -435,7 +435,7 @@ const Header = ({
             )}
           </DocsMobileButton>
 
-          <GithubLink href="https://github.com/prisma">
+          <GithubLink href="https://github.com/prisma" target="_blank">
             <Github width={24} height={24} />
           </GithubLink>
 
