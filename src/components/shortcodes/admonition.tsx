@@ -57,7 +57,6 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
   color: ${theme.colors.gray[600]} !important;
   padding-left: ${(p) => (p.type === 'alert' ? '3rem' : '1.5rem')};
   padding-bottom: 8px;
-  padding-bottom: 8px;
   margin: 2rem 0px;
   position: relative;
   display: block;
