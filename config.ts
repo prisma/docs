@@ -103,7 +103,7 @@ const siteConfig = {
         links: [
           {
             url: 'data-platform/accelerate',
-            title: 'Accelerate',
+            title: 'Prisma Accelerate',
           },
           {
             url: 'data-platform/pulse',
