@@ -59,7 +59,7 @@ const siteConfig = {
       gettingStarted: 'getting-started',
       readyToRun: 'https://github.com/prisma/prisma-examples',
       slack: 'https://slack.prisma.io/',
-      discord: 'https://discord.gg/KQyTW2H5ca',
+      discord: 'https://pris.ly/discord',
       git: 'https://github.com/prisma',
       buttons: [
         {
@@ -101,27 +101,19 @@ const siteConfig = {
           'An ecosystem of tools to empower teams to easily create and launch data-heavy, global-first software.',
         links: [
           {
-            url: 'https://www.prisma.io/accelerate',
+            url: 'data-platform/accelerate',
             title: 'Accelerate',
           },
           {
-            url: 'https://www.prisma.io/pulse',
+            url: 'data-platform/pulse',
             title: 'Pulse',
-          },
-          {
-            url: 'https://www.prisma.io/cloud',
-            title: 'Cloud Projects',
-          },
-          {
-            url: 'https://www.prisma.io/cloud',
-            title: 'Classic Projects',
           },
         ],
       },
     },
     GeneralLinkData: [
       {
-        title: `What is prisma`,
+        title: `What is Prisma`,
         description: 'An overview of what Prisma ORM is and how it works.',
         url: 'concepts/overview/what-is-prisma',
         icon: 'fa-regular fa-question',

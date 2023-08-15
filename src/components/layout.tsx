@@ -1,6 +1,7 @@
 import { MDXProvider } from '@mdx-js/react'
 import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
+import { Script } from 'gatsby'
 import React, { useState } from 'react'
 import StickyBox from 'react-sticky-box'
 import styled from 'styled-components'
@@ -8,13 +9,12 @@ import styled from 'styled-components'
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
 import Footer from './footer'
 import Header from './header'
+import SearchBox from './search/minimalInput'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
 
 import '../styles/layout.css'
-import SearchBox from './search/minimalInput'
-import { Script } from 'gatsby'
 
 interface LayoutContentProps {
   toc: any
@@ -31,7 +31,7 @@ const Wrapper = styled.div<{ homePage?: boolean }>`
   display: flex;
   width: 100%;
   justify-content: center;
-  ${(p) => (p.homePage ? 'padding: 80px 0 0 0' : 'padding: 80px 0')};
+  //${(p) => (p.homePage ? 'padding: 80px 0 0 0' : 'padding: 80px 0')};
   @media (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 0;
   }
@@ -42,7 +42,7 @@ const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
     p.homePage
       ? 'max-width: 100%;'
       : p.wide
-      ? 'min-width: 0; max-width: 988px; flex-shrink: 1;'
+      ? 'min-width: 0; max-width: 988px; flex-shrink: 1; padding: 0 1rem;'
       : 'max-width: 748px; margin: 0 20px;'}
   flex: 1;
   position: relative;
@@ -52,7 +52,7 @@ const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
     margin: 0;
     max-width: 100%;
   }
-  @media (min-width: 1024px) and (max-width: 1240px) {
+  @media (min-width: 1025px) and (max-width: 1240px) {
     margin: 0;
     ${(p) => (p.homePage ? 'max-width: 100%' : 'max-width: 570px')};
   }
@@ -97,7 +97,7 @@ const Container = styled.div<{ homePage?: boolean; wide?: boolean }>`
 
   ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: ${theme.space[40]};`)}
   @media (max-width: 1024px) {
-    ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: ${theme.space[80]};`)}
+    ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: 118px;`)}
   }
 `
 
@@ -107,7 +107,7 @@ const TOCWrapper = styled.div<{ wide?: boolean }>`
   flex-shrink: 0;
   overflow-y: auto;
   position: sticky;
-  top: 90px;
+  top: 20px;
   ${(p) => p.wide && `margin-right: -100px;`}
 
   @media (min-width: 0px) and (max-width: 1024px) {
@@ -125,15 +125,18 @@ const FooterWrapper = styled.div`
 `
 
 const SearchComponentDesktop = styled.div<{ open?: boolean }>`
-  //display: ${(p) => (p.open ? 'none' : 'block')};
-  ${(p) =>
-    p.open &&
-    `
-    // margin-top: 1rem;
-  `}
+  width: calc(100% - ${theme.space[16]});
   padding: 0 0 22px 0;
   @media (min-width: 0px) and (max-width: 1024px) {
     display: none;
+  }
+`
+
+const CustomSticky = styled(StickyBox)`
+  width: 272px;
+  margin: 0px -${theme.space[16]} 0 ${theme.space[16]};
+  @media (min-width: 0px) and (max-width: 1024px) {
+    width: auto;
   }
 `
 
@@ -175,18 +178,19 @@ export default function Layout({
             sidenavSearchOpened={!showDocsBtn}
             closeSidenavSearch={closeSidenavSearch}
             setInputText={setInputText}
+            wide={wide}
           />
           <Wrapper homePage={homePage}>
             <Container homePage={homePage} wide={wide}>
               {!homePage && (
-                <StickyBox offsetTop={120} offsetBottom={20}>
+                <CustomSticky offsetTop={20} offsetBottom={20}>
                   <SearchComponentDesktop open={!showDocsBtn}>
-                    <SearchBox showHeaderSearch={showHeaderSearch} value={value} />
+                    <SearchBox showHeaderSearch={showHeaderSearch} value={value} path={location} />
                   </SearchComponentDesktop>
                   <NotMobile id="sidebar-holder">
                     <SidebarLayout isMobile={false} location={location} slug={slug} />
                   </NotMobile>
-                </StickyBox>
+                </CustomSticky>
               )}
               <Content homePage={homePage} wide={wide}>
                 <MaxWidth wide={wide}>{children}</MaxWidth>

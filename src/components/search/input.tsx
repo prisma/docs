@@ -8,7 +8,7 @@ import Clear from '../../icons/Clear'
 import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
-const SearchBoxDiv = styled.div`
+const SearchBoxDiv = styled.div<{ minimal?: boolean; wide?: boolean }>`
   width: 100%;
   display: flex;
   max-width: 1240px;
@@ -18,31 +18,28 @@ const SearchBoxDiv = styled.div`
   border-radius: 8px;
   border: 1px solid #cbd5e0;
   background: #fff;
+  transition: transform 50ms ease-out;
+  transform-origin: center left;
 
   form {
     width: 100%;
     position: relative;
+    height: 36px;
+    transition: transform 50ms ease-out;
   }
   //search input width
   &.opened {
     position: relative;
     z-index: 100001;
-    max-width: 1240px;
+    max-width: ${(p) => (p.wide ? '1440px' : '1240px')};
     width: 100%;
-    //height: 77px;
     background: ${theme.colors.white};
     box-shadow: 0px 25px 50px -12px #00000040;
     border: 2px solid #667eea;
-    // border-bottom: 1px solid ${theme.colors.gray[300]};
     border-radius: 8px;
-    // border-color: ${theme.colors.white};
-    border: 2px solid #667eea form {
-      max-width: 100%;
-      padding: ${theme.space[12]} ${theme.space[16]};
-      input {
-        color: ${theme.colors.gray[700]};
-      }
-    }
+    transform-origin: center;
+    transform: scaleY(1.1)
+      ${(props) => (props.minimal ? `translateX(-1px)` : `translate(-1px, -5px)`)};
 
     .clear {
       //background: ${theme.colors.gray[300]};
@@ -55,6 +52,9 @@ const SearchBoxDiv = styled.div`
       svg path {
         stroke: ${theme.colors.gray[700]};
       }
+    }
+    form {
+      transform: scaleY(0.9);
     }
   }
   @media (max-width: ${theme.breakpoints.mobile}) {
@@ -158,13 +158,10 @@ const SearchBox = ({
   path,
   sidenavSearchOpened,
   disconnectedForm,
+  wide,
   ...rest
 }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
-  // console.log(path)
-  // if (path === 'inner') {
-  //   onFocus()
-  // }
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
   const { width } = useWindowDimensions()
@@ -247,6 +244,9 @@ const SearchBox = ({
     if (value) {
       onFocus()
     }
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+    }
   }, [])
 
   if (sidenavSearchOpened) {
@@ -254,16 +254,8 @@ const SearchBox = ({
     onFocus()
   }
 
-  // const setFocus = (e: any) => {
-  //   //if(path === 'home') {
-  //     onFocus()
-  //     e.stopPropagation()
-  //   e.preventDefault()
-  //   //}
-  // }
-
   return (
-    <SearchBoxDiv className={isOpened ? 'opened' : ''}>
+    <SearchBoxDiv className={isOpened ? 'opened' : ''} minimal={path === 'home'} wide={wide}>
       <form onSubmit={onSubmit}>
         <SearchIcon />
         <input

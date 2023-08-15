@@ -6,7 +6,6 @@ import styled from 'styled-components'
 
 import Layout from '../components/layout'
 import Link from '../components/link'
-import Search from '../components/search'
 import SEO from '../components/seo'
 import ShadowCard from '../components/shadow-card'
 import SQLServer from '../icons/SQLServer'
@@ -204,7 +203,7 @@ const ORMProductCard = styled(ProductCard)`
     line-height: 140%; /* 22.4px */
   }
   ${LinkGrid} {
-    gap: 8px;
+    gap: 12px;
     a {
       min-width: calc(50% - 8px);
       width: fit-content;
@@ -481,11 +480,13 @@ const Homepage = () => {
               Open source Node.js and TypeScript ORM with an intuitive data model, automated
               migrations, type-safety, and auto-completion.
             </p>
-            <LinkGrid>
-              {CardLinks.components.map((card: any) => (
-                <Link to={card.url}>{card.title} &#8594;</Link>
-              ))}
-            </LinkGrid>
+            <div>
+              <LinkGrid>
+                {CardLinks.components.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </div>
           </ORMProductCard>
 
           <ORMProductCard color="indigo" style={{ padding: '40px' }}>
@@ -494,11 +495,13 @@ const Homepage = () => {
               Open source Node.js and TypeScript ORM with an intuitive data model, automated
               migrations, type-safety, and auto-completion.
             </p>
-            <LinkGrid>
-              {CardLinks.reference.map((card: any) => (
-                <Link to={card.url}>{card.title} &#8594;</Link>
-              ))}
-            </LinkGrid>
+            <div>
+              <LinkGrid>
+                {CardLinks.reference.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </div>
           </ORMProductCard>
         </ORMCardsWrapper>
       </ORMCardsSection>

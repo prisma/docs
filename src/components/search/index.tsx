@@ -2,7 +2,7 @@ import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import algoliasearch from 'algoliasearch/lite'
 import { navigate } from 'gatsby'
 import qs from 'qs'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { connectHits, connectStateResults, Index, InstantSearch } from 'react-instantsearch-dom'
 import styled from 'styled-components'
 
@@ -24,7 +24,7 @@ const HitsWrapper = styled.div`
   -webkit-overflow-scrolling: touch;
   position: absolute;
   left: 50%;
-  top: 72px;
+  top: 86px;
 
   transform: translate(-50%, -0%);
   max-width: 1240px;
@@ -175,6 +175,7 @@ export default function Search({
   sidenavSearchOpened,
   closeSidenavSearch,
   setInputText,
+  wide,
 }: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
@@ -236,6 +237,15 @@ export default function Search({
       }
     })
   }
+
+  const scrollListener = () => {
+    hideSearch()
+  }
+
+  useEffect(() => {
+    document.addEventListener('scroll', scrollListener)
+    return () => document.removeEventListener('scroll', scrollListener)
+  }, [])
   return (
     <InstantSearch
       searchClient={searchClient}
@@ -246,13 +256,14 @@ export default function Search({
     >
       <Overlay visible={showHits} hideSearch={hideSearch} path={path} />
       <CustomSearchBox
-        onFocus={showSearch}
+        onFocus={() => setShowHits(true)}
         isOpened={showHits}
         closeSearch={hideSearch}
         upClicked={decrementIndex}
         downClicked={incrementIndex}
-        path={path}
+        path={location.pathname}
         sidenavSearchOpened={sidenavSearchOpened}
+        wide={wide}
       />
       {query && query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>

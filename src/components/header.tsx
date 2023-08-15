@@ -1,12 +1,10 @@
-import { Icon, defaultTheme as theme, WebsiteHeader } from '@prisma/lens/dist/web'
+import { Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import Link from '../components/link'
 import Sidebar from '../components/sidebar'
-import useWindowDimensions from '../hooks/useWindowDimensions'
-import DownChevron from '../icons/DownChevron'
 import ExternalLink from '../icons/ExternalLink'
 import Github from '../icons/Github'
 import Logo from '../icons/Logo'
@@ -14,7 +12,6 @@ import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
 import Search from '../components/search'
-import { close } from 'inspector'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -117,14 +114,14 @@ const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
   z-index: 200;
 `
 
-const HeaderWrapper = styled.div`
+const HeaderWrapper = styled.div<{ open: boolean }>`
   background: #fff;
   padding: 0 16px;
   display: flex;
   justify-content: center;
   border-bottom: 1px solid #e2e8f0;
   position: relative;
-  position: fixed;
+  //position: fixed;
   z-index: 202;
   width: 100%;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
@@ -133,6 +130,7 @@ const HeaderWrapper = styled.div`
   @media (min-width: 0px) and (max-width: 1024px) {
     z-index: 105;
     padding: 20px 16px;
+    ${(p) => p.open && `position: fixed;`}
   }
 `
 
@@ -239,18 +237,19 @@ const SearchComponentDesktop = styled.div<{
   open?: boolean
   homePage?: boolean
   sidenavSearchOpened?: boolean
+  openSearch?: boolean
 }>`
   position: ${(p) => (p.open ? 'fixed' : 'absolute')};
   top: 80px;
   left: 50%;
   display: block;
   transform: translateX(-50%);
+  transition: all 50ms ease-out;
   padding: 24px 10px;
   width: 100%;
   z-index: ${(p) => (p.open ? 200 : 101)};
-  background: ${(p) =>
-    p.homePage || p.sidenavSearchOpened ? 'transparent' : theme.colors.gray[100]};
-  @media (min-width: 1024px) {
+  background: ${(p) => (p.sidenavSearchOpened ? 'transparent' : theme.colors.gray[100])};
+  @media (min-width: 1025px) {
     position: absolute;
     ${(p) => !p.homePage && !p.sidenavSearchOpened && 'display: none;'}
     ${(p) => !p.homePage && p.sidenavSearchOpened && 'margin-top: 1rem;'}
@@ -417,7 +416,7 @@ const Header = ({
 
   return (
     <>
-      <HeaderWrapper>
+      <HeaderWrapper open={showMobileNav}>
         <BucketHeader wide={wide}>
           <HomeIcons>
             <a href="https://www.prisma.io">
@@ -453,6 +452,7 @@ const Header = ({
         <SearchComponentDesktop
           open={showMobileNav}
           homePage={homePage}
+          openSearch={!showDocsBtn}
           sidenavSearchOpened={sidenavSearchOpened}
         >
           <Search
@@ -462,6 +462,7 @@ const Header = ({
             closeSidenavSearch={closeSidenavSearch}
             path="home"
             setInputText={setInputText}
+            wide={wide}
           />
         </SearchComponentDesktop>
       )}
