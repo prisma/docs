@@ -17,6 +17,12 @@ const HTML = (props: any) => {
         />
         <script type="text/javascript">function OptanonWrapper() {}</script>
         {/* OneTrust Cookies Consent Notice end for prisma.io */}
+        <script src="https://cdn.jsdelivr.net/npm/darkreader@4.9.58/darkreader.min.js" />
+        <script
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: 'DarkReader.auto({brightness: 100,contrast: 90,sepia: 10});',
+          }}
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
         {props.headComponents}
       </head>
