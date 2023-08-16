@@ -80,26 +80,35 @@ const prisma = new PrismaClient().$extends({
 
 #### Example
 
-The following example adds a `validate` method to all models.
+The following example adds an `exists` method to all models.
 
 ```ts
 const prisma = new PrismaClient().$extends({
   model: {
     $allModels: {
-      validate(data: unknown) {
-        /* Generic validation logic */
+      async exists<T>(
+        this: T,
+        where: Prisma.Args<T, 'findFirst'>['where']
+      ): Promise<boolean> {
+        // Get the current model at runtime
+        const context = Prisma.getExtensionContext(this)
+
+        const result = await (context as any).findFirst({ where })
+        return result !== null
       },
     },
   },
 })
 ```
 
-You would call `validate` in your application as follows:
+You would call `exists` in your application as follows:
 
 ```ts
-// `validate` method available on all models
-prisma.user.validate(someData)
-prisma.post.validate(someData)
+// `exists` method available on all models
+prisma.user.exists({ name: 'Alice' })
+prisma.post.exists({
+  OR: [{ title: { contains: 'Prisma' } }, { content: { contains: 'Prisma' } }],
+})
 ```
 
 ## Call a custom method from another custom method
@@ -138,12 +147,17 @@ You can get the name of the current model at runtime with `Prisma.getExtensionCo
 For example:
 
 ```ts
-// `ctx` refers to the current model
-const ctx = Prisma.getExtensionContext(this)
+// `context` refers to the current model
+const context = Prisma.getExtensionContext(this)
 
-// `ctx.name` returns the name of the current model
-console.log(ctx.name)
+// `context.name` returns the name of the current model
+console.log(context.name)
+
+// Usage
+await(context as any).findFirst({ args })
 ```
+
+Refer to [Add a custom method to all models in your schema](#example-1) for a concrete example for retrieving the current model name at runtime.
 
 ## Advanced type safety: type utilities for defining generic extensions
 
