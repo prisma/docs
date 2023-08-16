@@ -98,7 +98,7 @@ const siteConfig = {
         title: 'Prisma Data Platform',
         icon: 'triangle',
         description:
-          'An ecosystem of tools empowering teams to build data-heavy, global-first applications',
+          'An ecosystem of tools empowering teams to build data-heavy, global-first applications.',
         links: [
           {
             url: 'data-platform/accelerate',
