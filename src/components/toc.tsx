@@ -14,7 +14,7 @@ const ChapterTitle = styled.div`
   letter-spacing: 0.01em;
   text-transform: uppercase;
   color: ${theme.colors.gray[900]};
-  margin: ${theme.space[16]} 0 0;
+  margin: 0 0;
 `
 
 const HeadingList = styled.ul`
