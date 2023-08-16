@@ -21,7 +21,7 @@ const TopSectionWrapper = styled.div`
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: start;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.mobile}) {
     flex-direction: column;
     align-items: baseline;
@@ -58,9 +58,9 @@ const TopSection = ({
 }: any) => {
   return (
     <TopSectionWrapper>
+      <ParentTitle slug={slug} />
       <Header>
         <div className="title">
-          <ParentTitle slug={slug} />
           <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
         </div>
         <div className="tech-switch-block">
