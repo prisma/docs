@@ -59,7 +59,7 @@ const DocHit = ({ hit, selected }: any) =>
   hit._distinctSeqID == 0 ? (
     <HitComp style={{ background: selected ? '#F7FAFC' : 'white' }}>
       <Link style={{ boxShadow: `none`, textDecoration: 'none' }} to={hit.path}>
-        <ParentTitle slug={hit.slug} nonLink={true} />
+        <ParentTitle slug={hit.slug} nonLink={true} isSearchItem={true} />
         <h3>
           <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}
           <span style={{ color: 'var(--code-inner-color)' }}>

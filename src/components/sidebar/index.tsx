@@ -10,7 +10,6 @@ import Tree from './tree'
 const SidebarContainer = styled.aside`
   width: 272px;
   height: 100%;
-  margin: 0px ${theme.space[16]} 0 -${theme.space[16]};
 `
 
 const Sidebar = styled.div`
@@ -40,8 +39,9 @@ const Sidebar = styled.div`
 
   .mobile-only {
     display: none;
+    width: 100%;
     background: ${theme.colors.gray[100]};
-    padding: ${theme.space[32]};
+    padding: ${theme.space[8]} ${theme.space[16]};
     @media only screen and (max-width: 1024px) {
       display: flex;
       > ul {
@@ -55,6 +55,9 @@ const List = styled.ul`
   list-style: none;
   padding: 0 7px 0 ${theme.space[16]};
   margin: -${theme.space[20]} 0 0;
+  @media only screen and (min-width: 1024px) {
+    padding-top: 16px;
+  }
 `
 
 const SidebarLayout = ({ isMobile, location, slug }: any) => {
@@ -62,14 +65,20 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
   const bucketName =
     location && location.state && location.state.bucketName ? location.state.bucketName : '/'
   let bucketEdges = allMdx.edges?.filter((edge) => edge.node.fields.slug.includes(bucketName))
-
+  let bucketEdgesMobile = bucketEdges
   const bucketNames = config.header.secondLevelHeaderMenuItems.map((item: any) => item.bucketName)
 
   if (slug) {
     const slugBucketPart = `/${slug.split('/')[1]}`
     const selectedBucket = bucketNames.filter((bn: any) => bn === slugBucketPart)[0]
     if (selectedBucket) {
-      bucketEdges = allMdx.edges?.filter((edge) => edge.node.fields.slug.includes(selectedBucket))
+      bucketEdges = allMdx.edges?.filter((edge) => {
+        return edge.node.fields.slug.includes(selectedBucket)
+      })
+
+      bucketEdgesMobile = bucketEdges?.filter(
+        (edge) => edge.node.fields.slug !== `${selectedBucket}/index`
+      )
     }
   }
 
@@ -88,7 +97,7 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
     <Sidebar>
       <div className="mobile-only">
         <List>
-          <Tree edges={bucketEdges} />
+          <Tree edges={bucketEdgesMobile} />
         </List>
       </div>
     </Sidebar>
