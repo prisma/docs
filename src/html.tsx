@@ -23,6 +23,7 @@ const HTML = (props: any) => {
           dangerouslySetInnerHTML={{
             __html: 'DarkReader.auto({brightness: 100,contrast: 90,sepia: 10});',
           }}
+        ></script>
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
         {props.headComponents}
       </head>
