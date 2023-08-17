@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -82,7 +83,7 @@ const Wrapper = styled.div`
       }
 
       .token.punctuation {
-        color: ${(p) => p.theme.colors.gray[500]} !important;
+        color: ${theme.colors.gray[500]} !important;
       }
 
       border-radius: 0px 0px 8px 8px;
