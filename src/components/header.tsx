@@ -23,6 +23,8 @@ type HeaderViewProps = {
   setInputText?: any
 }
 
+const darkReaderOptions = { brightness: 100, contrast: 96, sepia: 0 }
+
 const BucketHeader = styled.div<{ wide?: boolean }>`
   max-width: ${(props) => (!props.wide ? '1240' : '1440')}px;
   width: 100%;
@@ -371,6 +373,12 @@ const Header = ({
   closeSidenavSearch,
   setInputText,
 }: HeaderViewProps) => {
+  const [darkMode, setDarkMode] = React.useState(
+    localStorage.getItem('selectedDarkMode') || 'false'
+  )
+  // if (typeof localStorage != "undefined") {
+  //   setDarkMode(localStorage.getItem('selectedDarkMode') || 'false')
+  // }
   const [showMobileNav, setShowMobileNav] = React.useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
@@ -414,6 +422,38 @@ const Header = ({
     )
   }
 
+  async function toggleDarkMode() {
+    if (typeof window != 'undefined') {
+      const { isEnabled, enable, disable, setFetchMethod } = await import('darkreader')
+      setFetchMethod(window.fetch)
+      const isOn = isEnabled()
+
+      isOn
+        ? localStorage.setItem('selectedDarkMode', 'false')
+        : localStorage.setItem('selectedDarkMode', 'true')
+      isOn ? setDarkMode('false') : setDarkMode('true')
+      isOn ? disable() : enable(darkReaderOptions)
+    }
+  }
+
+  async function enableDarkMode() {
+    if (typeof window != 'undefined') {
+      const { enable, setFetchMethod } = await import('darkreader')
+      setFetchMethod(window.fetch)
+      enable(darkReaderOptions)
+    }
+  }
+
+  async function disableDarkMode() {
+    if (typeof window != 'undefined') {
+      const { disable, setFetchMethod } = await import('darkreader')
+      setFetchMethod(window.fetch)
+      disable()
+    }
+  }
+
+  darkMode === 'true' ? enableDarkMode() : disableDarkMode()
+
   return (
     <>
       <HeaderWrapper open={showMobileNav}>
@@ -438,7 +478,7 @@ const Header = ({
           <GithubLink href="https://github.com/prisma" target="_blank">
             <Github width={24} height={24} />
           </GithubLink>
-
+          <button onClick={toggleDarkMode}>☾/☼</button>
           {showMobileNav && (
             <SecondLevelMobileOnlyNav>
               <OverflowContainer>
