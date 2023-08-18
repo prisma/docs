@@ -374,7 +374,7 @@ const Header = ({
   setInputText,
 }: HeaderViewProps) => {
   const [darkMode, setDarkMode] = React.useState(
-    localStorage.getItem('selectedDarkMode') || 'false'
+    typeof localStorage != 'undefined' ? localStorage.getItem('selectedDarkMode') : 'false'
   )
   // if (typeof localStorage != "undefined") {
   //   setDarkMode(localStorage.getItem('selectedDarkMode') || 'false')
@@ -423,7 +423,7 @@ const Header = ({
   }
 
   async function toggleDarkMode() {
-    if (typeof window != 'undefined') {
+    if (typeof window != 'undefined' && typeof localStorage != 'undefined') {
       const { isEnabled, enable, disable, setFetchMethod } = await import('darkreader')
       setFetchMethod(window.fetch)
       const isOn = isEnabled()
@@ -437,7 +437,7 @@ const Header = ({
   }
 
   async function enableDarkMode() {
-    if (typeof window != 'undefined') {
+    if (typeof window != 'undefined' && typeof localStorage != 'undefined') {
       const { enable, setFetchMethod } = await import('darkreader')
       setFetchMethod(window.fetch)
       enable(darkReaderOptions)
@@ -445,7 +445,7 @@ const Header = ({
   }
 
   async function disableDarkMode() {
-    if (typeof window != 'undefined') {
+    if (typeof window != 'undefined' && typeof localStorage != 'undefined') {
       const { disable, setFetchMethod } = await import('darkreader')
       setFetchMethod(window.fetch)
       disable()
