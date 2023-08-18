@@ -426,15 +426,6 @@ const Homepage = () => {
   } = site
   const location = useLocation()
 
-  //   async function toggleDarkMode() {
-  //     if (typeof window != "undefined") {
-  //        const { isEnabled, enable, disable, setFetchMethod } = await import("darkreader");
-  //        setFetchMethod(window.fetch);
-  //        const isOn = isEnabled();
-  //        isOn ? disable() : enable(darkReaderOptions);
-  //     }
-  //  }
-
   return (
     <Layout homePage={true}>
       <TopSection>
