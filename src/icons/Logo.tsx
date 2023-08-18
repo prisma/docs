@@ -14,5 +14,5 @@ export default (props: any) => (
 
 const Logo = styled.svg`
   height: 26px;
-  fill: #ffffff;
+  fill: #2d3748;
 `
