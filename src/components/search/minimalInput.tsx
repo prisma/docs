@@ -1,60 +1,56 @@
 import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
-import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
 
-import useWindowDimensions from '../../hooks/useWindowDimensions'
-import Clear from '../../icons/Clear'
 import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
-const SearchBoxDiv = styled.div<{ minimal?: boolean; wide?: boolean }>`
+const SearchBoxDiv = styled.div`
   width: 100%;
   display: flex;
   max-width: 1240px;
   width: 100%;
   margin: 0 auto;
-  padding: 12px 16px;
+  padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid #cbd5e0;
   background: #fff;
-  transition: transform 50ms ease-out;
-  transform-origin: center left;
 
   form {
     width: 100%;
     position: relative;
     height: 36px;
-    transition: transform 50ms ease-out;
   }
   //search input width
   &.opened {
     position: relative;
     z-index: 100001;
-    max-width: ${(p) => (p.wide ? '1440px' : '1240px')};
+    max-width: 1240px;
     width: 100%;
+    height: 77px;
     background: ${theme.colors.white};
-    box-shadow: 0px 25px 50px -12px #00000040;
-    border: 2px solid #667eea;
-    border-radius: 8px;
-    transform-origin: center;
-    transform: scaleY(1.1)
-      ${(props) => (props.minimal ? `translateX(-1px)` : `translate(-1px, -5px)`)};
+    padding: ${theme.space[20]};
+    border-bottom: 1px solid ${theme.colors.gray[300]};
+    border-radius: ${theme.radii.small};
+    border-color: ${theme.colors.white};
+    form {
+      max-width: 100%;
+      input {
+        color: ${theme.colors.gray[700]};
+      }
+    }
 
     .clear {
-      //background: ${theme.colors.gray[300]};
+      background: ${theme.colors.gray[300]};
       border-radius: 6px;
-      // height: 36px;
-      // width: 36px;
+      height: 36px;
+      width: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       svg path {
         stroke: ${theme.colors.gray[700]};
       }
-    }
-    form {
-      transform: scaleY(0.9);
     }
   }
   @media (max-width: ${theme.breakpoints.mobile}) {
@@ -138,69 +134,11 @@ const SearchSlashIcon = styled(SearchSlash)`
   right: 0;
 `
 
-const ClearIcon = styled(Clear)`
-  cursor: pointer;
-`
-
-const DEBOUNCE_DELAY = 500
-const ESCAPE_KEY = 27
 const focusShortcuts = ['s', 191]
 
-const SearchBox = ({
-  refine,
-  onFocus,
-  currentRefinement,
-  isOpened,
-  closeSearch,
-  upClicked,
-  downClicked,
-  selectedInd,
-  path,
-  sidenavSearchOpened,
-  disconnectedForm,
-  wide,
-  ...rest
-}: any) => {
-  const [value, setValue] = React.useState(currentRefinement)
-  const timeoutId = React.useRef(null)
+const SearchBox = ({ showHeaderSearch, value }: any) => {
   const inputEl = React.useRef(null)
-  const { width } = useWindowDimensions()
-  const [placeholderText, setPlaceholderText] = React.useState('Search Documentation...')
-
-  const onChange = (e: any) => {
-    const { value: newValue } = e.target
-
-    // After the user manually cleared the input, call `refine` without waiting so that the search
-    // closes instantly.
-    if (newValue === '') {
-      return clearInput()
-    }
-
-    // Otherwise, debounce the search to avoid triggering many queries at once, which could also
-    // make the UI freeze.
-    window.clearTimeout(timeoutId.current)
-    timeoutId.current = window.setTimeout(() => refine(newValue), DEBOUNCE_DELAY)
-    setValue(newValue)
-    inputEl.current.blur()
-    inputEl.current.focus()
-  }
-
-  const clearInput = () => {
-    window.clearTimeout(timeoutId.current)
-    setValue('')
-    refine('')
-  }
-
-  // Focus shortcuts on keydown
   const onKeyDown = (e: any) => {
-    if (e && e.keyCode == ESCAPE_KEY) {
-      closeSearch()
-    } else if (e && e.keyCode === 40) {
-      downClicked()
-    } else if (e && e.keyCode === 38) {
-      upClicked()
-    }
-
     const shortcuts = focusShortcuts.map((key) =>
       typeof key === 'string' ? key.toUpperCase().charCodeAt(0) : key
     )
@@ -228,57 +166,30 @@ const SearchBox = ({
     e.preventDefault()
   }
 
-  const onSubmit = (e: any) => {
-    e.preventDefault()
-    e.stopPropagation()
-    inputEl.current.blur()
-
-    return false
-  }
-
   React.useEffect(() => {
     document.addEventListener('keydown', onKeyDown)
-    if (width > 640) {
-      setPlaceholderText('Search Documentation...')
-    }
-    if (value) {
-      onFocus()
-    }
     return () => {
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [])
 
-  if (sidenavSearchOpened) {
-    inputEl.current.focus()
-    onFocus()
-  }
-
   return (
-    <SearchBoxDiv className={isOpened ? 'opened' : ''} minimal={path === 'home'} wide={wide}>
-      <form onSubmit={onSubmit}>
+    <SearchBoxDiv>
+      <form>
         <SearchIcon />
         <input
           ref={inputEl}
           type="text"
-          placeholder={placeholderText}
+          placeholder={'Search Docs...'}
           aria-label="Search Documentation..."
-          onChange={onChange}
-          onFocus={onFocus}
+          onClick={showHeaderSearch}
+          onFocus={showHeaderSearch}
           value={value}
-          {...rest}
         />
-
-        {value !== '' && isOpened && (
-          <span className="clear">
-            <ClearIcon onClick={clearInput} />
-          </span>
-        )}
-        {!isOpened && width > 768 && <SearchSlashIcon />}
+        <SearchSlashIcon />
       </form>
     </SearchBoxDiv>
   )
 }
 
-const CustomSearchBox = connectSearchBox(SearchBox)
-export default CustomSearchBox
+export default SearchBox
