@@ -15,7 +15,6 @@ const FooterWrapper = styled.div`
   display: flex;
   justify-content: center;
   color: ${theme.colors.gray[500]};
-  margin-top: 5rem;
   > div {
     width: 100%;
   }
@@ -24,7 +23,7 @@ const FooterWrapper = styled.div`
 const FooterSec = ({ footerProps }: FooterViewProps) => {
   return (
     <FooterWrapper>
-      <Footer />
+      <Footer lightTheme={false} />
     </FooterWrapper>
   )
 }
