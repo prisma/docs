@@ -50,6 +50,7 @@ const shortcodes = {
   TopBlock,
   FootNote,
   Admonition,
+  versioninfo: (props: any) => <p {...props}/>,
   img: (props: any) =>
     /^https?:\/\//i.test(props.src) ? (
       <a href={props.src} target="_blank">
