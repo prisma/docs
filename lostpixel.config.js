@@ -28,7 +28,13 @@ module.exports = {
         /* hide cookie banner */
         #onetrust-consent-sdk {
           display: none;
-        }`,
+        }
+        
+        /* reset menu item alignment */
+        #sidebar-holder li a {
+          vertical-align: baseline;
+        }
+        `,
     })
   },
 }
