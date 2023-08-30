@@ -23,16 +23,45 @@ The solution in this case is to instantiate a single instance `PrismaClient` and
 ```ts file=./db
 import { PrismaClient } from '@prisma/client'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+const prismaClientSingleton = () => {
+  return new PrismaClient()
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClientSingleton | undefined
+}
+
+const prisma = prisma = globalForPrisma.prisma ?? prismaClientSingleton()
+
+export default prisma
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
 
-After creating this file, you can now import this `PrismaClient` instance anywhere in your Next.js `pages` as follows:
+You can extend Prisma Client using a Prisma Client extension by appending the `$extends` client method when instantiating Prisma Client as follows:
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prismaClientSingleton = () => {
+  return new PrismaClient().$extends({
+    result: {
+      user: {
+        fullName: {
+          needs: { firstName: true, lastName: true },
+          compute(user) {
+            return `${user.firstName} ${user.lastName}`
+          },
+        },
+      },
+    },
+  })
+}
+```
+
+After creating this file, you can now import the extended `PrismaClient` instance anywhere in your Next.js `pages` as follows:
 
 ```ts
 // e.g. in `pages/index.tsx`
