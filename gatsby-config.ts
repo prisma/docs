@@ -61,6 +61,7 @@ let plugins: any = [
               '/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb',
               '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-cockroachdb',
             ],
           },
         },
