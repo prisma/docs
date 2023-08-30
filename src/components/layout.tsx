@@ -168,7 +168,7 @@ export default function Layout({
   const setInputText = (input: any) => setValue(input)
   return (
     <WebProvider>
-      <Script src="https://kit.fontawesome.com/f46012ac73.js" crossOrigin="anonymous" />
+      <Script src="https://kit.fontawesome.com/1772ab679c.js" crossOrigin="anonymous" />
       <MDXProvider components={shortcodes}>
         <LayoutWrapper className="dark">
           <Header
