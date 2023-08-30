@@ -1,488 +1,563 @@
-import { faBars, faBookOpen, faBox, faDatabase } from '@fortawesome/pro-regular-svg-icons'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
-import { graphql, useStaticQuery, withPrefix } from 'gatsby'
+import { Body, H3, Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
+import { useLocation } from '@reach/router'
+import { graphql, useStaticQuery } from 'gatsby'
 import * as React from 'react'
-import { ArrowRight, ChevronsRight } from 'react-feather'
 import styled from 'styled-components'
 
-import { PrimaryButton, SpecialButton } from '../components/button'
-import { Icon } from '../components/Icon'
 import Layout from '../components/layout'
 import Link from '../components/link'
 import SEO from '../components/seo'
-import CLI from '../icons/home/CLI'
-import DbLink from '../icons/home/DbLink'
-import Schema from '../icons/home/Schema'
-import background from '../images/home-bg.svg'
-import listDot from '../images/list-dot.png'
+import ShadowCard from '../components/shadow-card'
+import SQLServer from '../icons/SQLServer'
+import CockroachDB from '../icons/technologies/CockroachDB'
+import MariaDB from '../icons/technologies/MariaDB'
+import MongoDBSimple from '../icons/technologies/MongoDBSimple'
+import MySQLSimple from '../icons/technologies/MySQLSimple'
+import PlanetScale from '../icons/technologies/PlanetScale'
+import PostgresSQLSimple from '../icons/technologies/PostgresSQLSimple'
+import SQLite from '../icons/technologies/SQLite'
 
-const icons: any = {
-  DoubleArrow: <ChevronsRight opacity="0.5" />,
-  OverviewIcon: <Icon icon={faBookOpen} height="28px" color={theme.colors.indigo[600]} />,
-  ComponentsIcon: <Icon icon={faBox} height="28px" color={theme.colors.indigo[600]} />,
-  DatabaseIcon: <Icon icon={faDatabase} height="28px" color={theme.colors.indigo[600]} />,
-  MoreIcon: <Icon icon={faBars} height="28px" color={theme.colors.indigo[600]} />,
-  Schema: <Schema />,
-  DbLink: <DbLink />,
-  CLI: <CLI />,
-}
+const H4 = styled.h4`
+  font-family: 'Barlow';
+  margin: 0;
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 110%; /* 26.4px */
+  letter-spacing: -0.48px;
+`
 
-const Summary = styled.div`
-  padding: ${theme.space[80]} 0;
+const TopSection = styled.div`
+  padding: 109px 12px 64px;
+  background: #f7fafc;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 40px;
+`
+
+const IconWrapper = styled.div`
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
-  background: url(${background}) center -150px no-repeat;
-  h1 {
-    margin: 0;
-    font-family: 'Barlow', sans-serif;
-    font-weight: bold;
-    font-size: 64px;
-    letter-spacing: -0.02em;
-    line-height: 110%;
-    text-align: center;
+  justify-content: center;
+`
+
+const ProductCard = styled.div<{ color?: string }>`
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 32px;
+  width: 100%;
+  border-radius: 8px;
+  background: ${(p) =>
+    p.color === 'teal'
+      ? 'linear-gradient(102.41deg, #FFFFFF 6.22%, #E8FFFD 87.23%)'
+      : 'linear-gradient(102.41deg, #FFFFFF 6.22%, #F4F5FF 87.23%)'};
+  box-shadow: 0px 18px 42px 0px rgba(23, 43, 77, 0.08), 0px 4px 26px 0px rgba(23, 43, 77, 0.05),
+    0px 0px 46px 0px rgba(23, 43, 77, 0.01);
+  a {
+    color: ${(props) => (props.color === 'teal' ? '#16A394' : '#5A67D8')};
+  }
+  @media (min-width: 768px) {
+    width: calc(50% - 20px);
+  }
+  ${H3} {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 24px 0;
+  }
+  ${Body} {
+    margin-bottom: 16px;
+  }
+  ${IconWrapper} {
+    background: ${(props) => (props.color === 'teal' ? '#16A394' : '#5A67D8')};
+  }
+`
+
+const ProductCardsWrapper = styled.div`
+  max-width: 1240px;
+  width: 100%;
+  gap: 40px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+`
+
+const LinkGrid = styled.div`
+  display: flex;
+  max-width: 338px;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  a {
+    min-width: calc(50% - 8px);
+    white-space: nowrap;
+    font-family: 'Inter';
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 100%; /* 16px */
+    letter-spacing: -0.32px;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  svg {
+    display: none;
+  }
+`
+
+const PrismaORMSection = styled.div`
+  max-width: 1272px;
+  margin: 0 auto;
+  padding: 60px 16px 24px;
+  h4 {
+    color: #2d3748;
+    margin-bottom: 40px;
+  }
+`
+
+const ORMLinkWrapper = styled(Link)`
+  display: flex !important;
+  gap: 24px;
+  text-decoration: none;
+
+  h5 {
+    display: inline-block;
+    color: #2d3748;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 100%; /* 18px */
+    margin: 0 0 10px 0;
+    letter-spacing: -0.36px;
+    font-family: 'Barlow';
+    > span {
+      font-family: 'Inter';
+    }
+  }
+  > div:last-of-type {
+    display: inline-block;
+  }
+  ${IconWrapper} {
+    background: #ebf4ff;
   }
   p {
-    max-width: 800px;
-    font-size: ${theme.fontSizes[20]};
-    line-height: 1.5;
+    color: #4a5568;
+    text-overflow: ellipsis;
+    font-family: 'Inter';
+    margin: 0;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 140%; /* 22.4px */
   }
-  @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${theme.space[80]} ${theme.space[16]};
-    h1 {
-      font-size: 40px;
-    }
-    p {
-      max-width: 85%;
-    }
-  }
-  @media (max-width: ${theme.breakpoints.tabletVertical}) {
-    p {
-      font-size: ${theme.fontSizes[16]};
-    }
-  }
-`
-
-const NormalPara = styled.p`
-  color: ${theme.colors.gray[700]};
-  line-height: ${theme.space[24]};
-  margin: ${theme.space[32]} 0;
-  text-align: center;
-  max-width: 650px;
-  width: 100%;
-
-  a {
-    color: inherit !important;
+  &:hover h5 {
     text-decoration: underline;
-    cursor: pointer;
   }
+`
 
-  @media (max-width: ${theme.breakpoints.tabletVertical}) {
-    .hide-mobile {
-      display: none;
+const ORMLinkContainer = styled.div`
+  display: grid;
+  gap: 40px;
+  grid-template-columns: 100%;
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+`
+
+const ORMCardsSection = styled.div`
+  max-width: 1262px;
+  margin: 0 auto;
+  padding: 40px 11px;
+`
+
+const ORMCardsWrapper = styled.div`
+  gap: 40px;
+  display: flex;
+  flex-direction: column;
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+`
+
+const ORMProductCard = styled(ProductCard)`
+  padding: 40px;
+  background: #ffffff;
+  grid-template-rows: auto auto 1fr;
+  ${H4} {
+    margin-bottom: 8px;
+  }
+  > p {
+    color: #4a5568;
+    margin: 0 0 24px 0;
+    font-family: 'Inter';
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 140%; /* 22.4px */
+  }
+  ${LinkGrid} {
+    gap: 12px;
+    a {
+      min-width: calc(50% - 8px);
+      width: fit-content;
+      white-space: nowrap;
     }
   }
 `
 
-const SubHeading = styled.h2`
-  font-weight: 600;
-  font-size: ${theme.fontSizes[36]};
-  font-family: ${theme.fonts.display};
-  margin: 0;
-  text-align: center;
-  color: ${theme.colors.gray[900]};
+const DatabasesSection = styled.div`
+  max-width: 1272px;
+  margin: 0 auto;
+  padding: 40px 16px;
+  @media (min-width: 768px) {
+    padding: 24px 16px 108px;
+  }
+  ${H4} {
+    margin-bottom: 24px;
+  }
+  ${Body} {
+    color: #4a5568;
+    margin-bottom: 40px;
+  }
 `
 
-const Space = styled.div<{ height: number }>`
-  ${(p) => `height: ${p.height}px;`};
-`
-
-const ListTitle = styled.h3`
-  font-weight: bold;
-  line-height: ${theme.space[16]};
-  font-size: ${theme.fontSizes[16]};
-  color: ${theme.colors.gray[900]} !important;
-  margin: 24px 0 0;
-
+const DatabaseGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 24px;
+  @media only screen and (min-width: 1024px) {
+    display: grid;
+    column-gap: 44px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media (min-width: 940px) and (max-width: 1024px) {
+    display: grid;
+    column-gap: 44px;
+    grid-template-columns: repeat(3, 1fr);
+  }
   a {
     text-decoration: none;
-    color: ${theme.colors.gray[900]} !important;
-    align-items: center;
-    display: flex;
+    color: unset;
   }
+  .entry {
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 16px;
+    flex-basis: 21%;
+    border-radius: 8px;
+    padding: 25px 24px;
+    background-color: white;
+    position: relative;
+    cursor: pointer;
+    &::after {
+      content: '';
+      position: absolute;
+      border-radius: 8px;
+      inset: 0;
+      border: 1px solid #cbd5e0;
+      background-color: transparent;
+      cursor: pointer;
+    }
 
-  svg {
-    transition: transform 0.3s ease-out 0s;
+    &:hover {
+      background-color: #f7fafc;
+      &::after {
+        border: 2px solid #5a67d8;
+      }
+    }
+    @media only screen and (min-width: 940px) {
+      padding: 0 24px;
+    }
+    img {
+      max-height: 36px;
+    }
+    span {
+      color: #2d3748;
+      text-transform: capitalize;
+      font-family: 'Inter';
+      font-weight: 600;
+      font-size: 24px;
+      line-height: 1;
+    }
   }
 `
 
-const List = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin-left: 1rem;
-  list-style-image: url(${listDot});
-  li {
-    padding-left: 0.5rem;
-    line-height: 1rem;
-    margin-top: 10px;
+const DatabaseData = [
+  {
+    title: 'PostgreSQL',
+    icon: <PostgresSQLSimple />,
+    url: 'concepts/database-connectors/postgresql',
+  },
+  {
+    title: 'MySQL',
+    icon: <MySQLSimple />,
+    url: 'concepts/database-connectors/mysql',
+  },
+  {
+    title: 'SQL Server',
+    icon: <SQLServer />,
+    url: 'concepts/database-connectors/sql-server',
+  },
+  {
+    title: 'SQLite',
+    icon: <SQLite />,
+    url: 'concepts/database-connectors/sqlite',
+  },
+  {
+    title: 'MongoDB',
+    icon: <MongoDBSimple />,
+    url: 'concepts/database-connectors/mongodb',
+  },
+  {
+    title: 'CockroachDB',
+    icon: <CockroachDB />,
+    url: 'concepts/database-connectors/cockroachdb',
+  },
+  {
+    title: 'Planetscale',
+    icon: <PlanetScale />,
+    url: 'guides/database/planetscale',
+  },
+  {
+    title: 'MariaDB',
+    icon: <MariaDB />,
+    url: 'concepts/database-connectors/mysql',
+  },
+]
+
+const CommunitySection = styled.div`
+  background: #f7fafc;
+  > div {
+    padding: 80px 16px;
+    margin: 0 auto;
+    max-width: 1272px;
+    text-align: left;
     a {
-      color: #2d3748 !important;
-      cursor: pointer;
       text-decoration: none;
-      &:hover {
-        color: #718096 !important;
+    }
+    .section-hero {
+      ${H3} {
+        margin-top: 0;
+        margin-bottom: 24px;
+        color: #2d3748;
+      }
+      p {
+        color: #4a5568;
+        margin-bottom: 60px;
+        margin-top: 0;
+      }
+    }
+
+    .community-link-wrapper {
+      display: grid;
+      gap: 16px;
+      text-align: left;
+      grid-template-columns: 24px 1fr;
+      height: 100%;
+      text-decoration: none;
+      > div {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      h4 {
+        margin-bottom: 6px;
+        margin-top: 0;
+        line-height: 110%;
+        font-size: 24px;
+        font-weight: 700;
+        font-family: 'Barlow';
+        color: #1a202c;
+      }
+      ${Body} {
+        color: #4a5568;
+        margin: 0;
+      }
+      .link {
+        color: #5a67d8;
+        font-family: 'Inter';
+        font-size: 18px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 88%; /* 15.84px */
       }
     }
   }
-  .inline-code {
-    font-weight: normal;
-    line-height: 0;
-  }
 `
 
-const MoreLinksList = styled(List)`
-  column-count: 1;
-  @media (min-width: 400px) {
-    column-count: 2;
-  }
-  @media (min-width: ${theme.breakpoints.desktopSmall}px) {
-    column-count: 3;
-  }
-  @media (min-width: ${theme.breakpoints.tabletHorizontal}px) {
-    column-count: 4;
-  }
-  gap: 2rem;
-  li {
-    line-height: 24px;
-    margin-top: 0;
-  }
-`
-
-const SummaryLinks = styled.div`
-  max-width: 435px;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  a {
-    color: ${theme.colors.white} !important;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-  }
-  @media (min-width: 0) and (max-width: 420px) {
-    flex-direction: column;
-    gap: 1rem;
-    a {
-      width: max-content;
-      margin: 0 auto;
-    }
-  }
-`
-
-const QuickLinks = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${theme.space[48]} ${theme.space[16]};
-  }
-`
-
-const CapTitle = styled.h4`
-  text-transform: uppercase !important;
-  font-weight: bold;
-  letter-spacing: 0.02em;
-  font-size: 14px;
-  margin: revert;
-`
-
-const BorderCapTitle = styled(CapTitle)`
-  width: 100%;
-  max-width: 996px;
-`
-
-const GeneralLinks = styled.div`
-  background: #ffffff;
-  box-shadow: 0px 28px 53px rgba(0, 0, 0, 0.07), 0px 8.44118px 15.9779px rgba(0, 0, 0, 0.0393306),
-    0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066),
-    0px 1.26806px 2.40026px rgba(0, 0, 0, 0.0115598);
-  border-radius: 8px;
+const CommunityLinksRow = styled.div`
   display: grid;
-  justify-content: space-between;
-  max-width: 1200px;
-  width: 100%;
-  row-gap: 2rem;
-  padding: 32px 48px;
-  h4 {
-    margin-bottom: 0;
-    margin-top: 0;
+  gap: 24px;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  @media only screen and (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
   }
-  @media (min-width: ${theme.breakpoints.tabletVertical}px) {
-    padding: 48px 92px;
-    flex-direction: row;
-    grid-template-columns: repeat(2, 50%);
-    grid-template-rows: repeat(2, 50%);
-    column-gap: 2rem;
+  @media only screen and (min-width: 940px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: none;
   }
-  @media (min-width: ${theme.breakpoints.desktopSmall}px) {
-    padding: 32px 48px;
+  i {
+    margin-top: 4px;
   }
-  @media (min-width: ${theme.breakpoints.tabletHorizontal}px) {
-    grid-template-columns: repeat(4, 25%);
-    padding: 48px 92px;
-    grid-template-rows: unset;
-    h4 {
-      margin-top: revert;
-    }
-  }
-`
-
-const GeneralLink = styled.div`
-  display: flex;
-  flex-direction: column;
-  @media (min-width: 0) and (max-width: ${theme.breakpoints.mobile}) {
-    flex-direction: row;
-    margin-bottom: ${theme.space[32]};
-  }
-  > div {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    @media (min-width: ${theme.breakpoints.tabletHorizontal}px) {
-      display: block;
-    }
-  }
-`
-
-const Row = styled.div`
-  display: flex;
-  max-width: 996px;
-  width: 100%;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  margin-top: ${theme.space[32]};
-  @media (min-width: 0) and (max-width: ${theme.breakpoints.mobile}) {
-    flex-direction: column;
-  }
-`
-
-const LinkCard = styled(Link)<{ maxWidth?: string }>`
-  background: ${theme.colors.gray[200]};
-  border-radius: ${theme.radii.medium};
-  padding: 0 ${theme.space[24]};
-  width: 100%;
-  border-top: ${theme.space[8]} solid ${theme.colors.gray[200]};
-  position: relative;
-  flex-grow: 1;
-  margin-bottom: ${theme.space[40]};
-  text-decoration: none;
-  max-width: ${(props) => props.maxWidth};
-
-  .icon {
-    position: absolute;
-    top: -30px;
-  }
-
-  h3 {
-    margin-bottom: 0;
-    display: flex;
-    align-items: center;
-  }
-
-  &:hover {
-    background: ${theme.colors.gray[300]};
-    h3 svg {
-      transform: translateX(4px);
-    }
-  }
-
-  p {
-    text-align: left;
-    margin: ${theme.space[16]} 0;
-  }
-
-  @media (min-width: ${theme.breakpoints.mobile}) and (max-width: 1024px) {
-    max-width: ${(props) => (props.maxWidth ? props.maxWidth : '48%')};
-  }
-
-  @media (min-width: 0) and (max-width: ${theme.breakpoints.mobile}) {
-    max-width: ${(props) => (props.maxWidth ? props.maxWidth : '100%')};
-  }
-`
-
-const ReferenceRow = styled.div`
-  display: grid;
-  grid-template-rows: repeat(3, auto);
-  width: 100%;
-  gap: 48px;
-  margin-top: 32px;
-  @media (min-width: ${theme.breakpoints.tabletVertical}px) {
-    max-width: 996px;
-    grid-template-rows: unset;
-    gap: 32px;
-    grid-template-columns: repeat(3, 1fr);
-    ${LinkCard} {
-      max-width: 316px;
-    }
-  }
-  ${LinkCard} {
-    max-width: 100%;
-    margin-bottom: 0;
-  }
-`
-
-const GuideLinkRow = styled(Row)`
-  justify-content: center;
-  gap: 2rem;
-  ${LinkCard} {
-    margin-bottom: 0;
-    @media (max-width: 620px) {
-      max-width: 100%;
-    }
-  }
-`
-
-const IconHolder = styled.span`
-  background: ${theme.colors.indigo[100]};
-  border-radius: 8px;
-  height: 64px;
-  width: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `
 
 const Homepage = () => {
   const { site } = useStaticQuery(query)
+  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
+  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const {
     siteMetadata: {
       title,
       description,
-      homepage: {
-        SummaryLinkData,
-        GeneralLinkData,
-        GuideText,
-        GuideLinkData,
-        ReferenceText,
-        ReferenceLinkData,
-        MoreUsefulLinks,
-      },
+      homepage: { GeneralLinkData, CommunityLinksData, CardLinks, ORMPlatformLinkData },
     },
   } = site
+  const location = useLocation()
 
   return (
     <Layout homePage={true}>
-      <Summary>
-        <h1>Prisma Documentation</h1>
-        <NormalPara>
-          Choose one of our{' '}
-          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore our{' '}
-          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples</Link>. Join our thriving
-          community on <Link to={SummaryLinkData.slack}>Slack</Link>,{' '}
-          <Link to={SummaryLinkData.discord}>Discord</Link> and{' '}
-          <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
-        </NormalPara>
-        <SummaryLinks>
-          {SummaryLinkData.buttons.map((slink: any, index: number) =>
-            slink.special ? (
-              <SpecialButton href={withPrefix(slink.url)} key={index} icon={icons[slink.icon]}>
-                &nbsp; {slink.text}
-              </SpecialButton>
-            ) : (
-              <PrimaryButton
-                href={slink.url}
-                target="_blank"
-                style={{ background: '#2D3748' }}
-                key={index}
-              >
-                {slink.text}
-              </PrimaryButton>
-            )
-          )}
-        </SummaryLinks>
-      </Summary>
-      <QuickLinks>
-        <GeneralLinks>
+      <TopSection>
+        <ProductCardsWrapper>
+          {Object.keys(ORMPlatformLinkData).map((e: string) => (
+            <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
+              <H3>
+                <IconWrapper>
+                  <Icon
+                    icon={`fa-solid fa-${ORMPlatformLinkData[e].icon}`}
+                    size="22px"
+                    color="white"
+                  />
+                </IconWrapper>
+                {ORMPlatformLinkData[e].title}
+              </H3>
+              <Body>{ORMPlatformLinkData[e].description}</Body>
+              <LinkGrid>
+                {ORMPlatformLinkData[e].links.map((e: any) => (
+                  <Link to={e.url}>
+                    {e.title} {e.external ? <>&#8599;</> : <>&#8594;</>}
+                  </Link>
+                ))}
+              </LinkGrid>
+            </ProductCard>
+          ))}
+        </ProductCardsWrapper>
+      </TopSection>
+      <PrismaORMSection>
+        <H4>Prisma ORM</H4>
+        <ORMLinkContainer>
           {GeneralLinkData.map((generalLink: any, index: number) => (
-            <GeneralLink>
+            <ORMLinkWrapper key={index} to={generalLink.url}>
+              <IconWrapper>
+                <Icon icon={generalLink.icon} color="#5A67D8" size="22px" />
+              </IconWrapper>
               <div>
-                <IconHolder>{icons[generalLink.icon]}</IconHolder>
-                <CapTitle>{generalLink.categoryName}</CapTitle>
+                <h5>
+                  {generalLink.title} <span>&#8594;</span>
+                </h5>
+                <p>{generalLink.description}</p>
               </div>
-              <List>
-                {generalLink.links.map((link: any) => (
-                  <li key={index}>
-                    <Link to={link.url}>
-                      <span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span>
-                    </Link>
-                  </li>
+            </ORMLinkWrapper>
+          ))}
+        </ORMLinkContainer>
+      </PrismaORMSection>
+      <ORMCardsSection>
+        <ORMCardsWrapper>
+          <ORMProductCard color="indigo" style={{ padding: '40px' }}>
+            <H4>Components</H4>
+            <p>
+              Open source Node.js and TypeScript ORM with an intuitive data model, automated
+              migrations, type-safety, and auto-completion.
+            </p>
+            <div>
+              <LinkGrid>
+                {CardLinks.components.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
                 ))}
-              </List>
-            </GeneralLink>
-          ))}
-        </GeneralLinks>
-        <Space height={80} />
-        <SubHeading>Guides</SubHeading>
-        <NormalPara>{GuideText}</NormalPara>
-        <GuideLinkRow>
-          {GuideLinkData.map((gLinkData: any, index: number) => (
-            <LinkCard
-              to={gLinkData.url}
-              key={index}
-              maxWidth={gLinkData.small ? '274px' : '384px'}
-              style={{
-                borderColor: gLinkData.color,
-              }}
-            >
-              <ListTitle>
-                {gLinkData.title} &nbsp;
-                <ArrowRight color="#A0AEC0" />{' '}
-              </ListTitle>
-              <NormalPara>{gLinkData.content}</NormalPara>
-            </LinkCard>
-          ))}
-        </GuideLinkRow>
-        <Space height={80} />
-        <SubHeading>Reference</SubHeading>
-        <NormalPara>{ReferenceText}</NormalPara>
-        <ReferenceRow>
-          {ReferenceLinkData.map((rLinkData: any, index: number) => (
-            <LinkCard key={index}>
-              <span className="icon">{icons[rLinkData.icon]}</span>
-              <Space height={16} />
-              <ListTitle>
-                <Link to={rLinkData.mainUrl}>
-                  {rLinkData.categoryName} &nbsp;
-                  <ArrowRight color="#A0AEC0" />{' '}
-                </Link>
-              </ListTitle>
-              <List>
-                {rLinkData.links.map((link: any, index: number) => (
-                  <li key={index}>
-                    <Link to={link.url}>
-                      <span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span>
-                    </Link>
-                  </li>
+              </LinkGrid>
+            </div>
+          </ORMProductCard>
+
+          <ORMProductCard color="indigo" style={{ padding: '40px' }}>
+            <H4>Reference</H4>
+            <p>
+              Open source Node.js and TypeScript ORM with an intuitive data model, automated
+              migrations, type-safety, and auto-completion.
+            </p>
+            <div>
+              <LinkGrid>
+                {CardLinks.reference.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
                 ))}
-              </List>
-            </LinkCard>
+              </LinkGrid>
+            </div>
+          </ORMProductCard>
+        </ORMCardsWrapper>
+      </ORMCardsSection>
+      <DatabasesSection>
+        <H4>Databases</H4>
+        <Body>
+          Prisma works seamlessly across most popular databases and service providers. <br /> Refer
+          to our Database features matrix for information about supported features and types for
+          each database.
+        </Body>
+        <DatabaseGrid>
+          {DatabaseData.map((e: any) => (
+            <Link to={e.url}>
+              <div className="entry">
+                {e.icon}
+                <span>{e.title}</span>
+              </div>
+            </Link>
           ))}
-        </ReferenceRow>
-        <Space height={80} />
-        <BorderCapTitle>More useful resources</BorderCapTitle>
-        <Row style={{ marginTop: '0' }}>
-          <MoreLinksList>
-            {MoreUsefulLinks.map((uLink: any, index: number) => (
-              <li key={index}>
-                <Link to={uLink.url}>
-                  <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
-                </Link>
-              </li>
+        </DatabaseGrid>
+      </DatabasesSection>
+      <CommunitySection>
+        <div>
+          <div className="section-hero">
+            <H3>Join our Community</H3>
+            <p>
+              We have multiple channels where you can get help from members of our community as well
+              as the Prisma team.
+            </p>
+          </div>
+          <CommunityLinksRow>
+            {CommunityLinksData.map((comm: any) => (
+              <ShadowCard key={comm.id}>
+                <a
+                  className="community-link-wrapper content"
+                  href={comm.link}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <Icon icon={comm.icon} color={theme.colors.indigo[600]} size="22px" />
+                  <div>
+                    <div>
+                      <h4>{comm.title}</h4>
+                      <Body>{comm.description}</Body>
+                    </div>
+                    <div className="link">
+                      <span>{comm.linkText}</span>
+                      <span> &#8599;</span>
+                    </div>
+                  </div>
+                </a>
+              </ShadowCard>
             ))}
-          </MoreLinksList>
-        </Row>
-      </QuickLinks>
+          </CommunityLinksRow>
+        </div>
+      </CommunitySection>
     </Layout>
   )
 }
@@ -496,51 +571,50 @@ export const query = graphql`
         title
         description
         homepage {
-          SummaryLinkData {
-            gettingStarted
-            readyToRun
-            slack
-            discord
-            git
-            buttons {
-              text
-              url
-              special
-              icon
-            }
-          }
           GeneralLinkData {
-            categoryName
-            icon
-            links {
-              url
-              text
-              codeBlock
-            }
-          }
-          GuideText
-          GuideLinkData {
             title
-            color
-            small
-            content
+            description
             url
-          }
-          ReferenceText
-          ReferenceLinkData {
-            categoryName
-            mainUrl
             icon
-            links {
+          }
+          CardLinks {
+            components {
               url
-              text
-              codeBlock
+              title
+            }
+            reference {
+              url
+              title
             }
           }
-          MoreUsefulLinks {
-            text
-            url
-            codeBlock
+          CommunityLinksData {
+            id
+            title
+            description
+            icon
+            link
+            linkText
+          }
+          ORMPlatformLinkData {
+            porm {
+              title
+              description
+              icon
+              links {
+                url
+                title
+                external
+              }
+            }
+            pdp {
+              title
+              icon
+              description
+              links {
+                url
+                title
+              }
+            }
           }
         }
       }
