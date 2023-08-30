@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -10,7 +11,7 @@ const ButtonContainer = styled.section<Props>`
   justify-content: ${(props) => (props.isFirstLink ? 'flex-end' : 'space-between')};
   align-items: center;
   padding: 1rem 0 1rem 0;
-  border-top: solid 2px ${(p) => p.theme.colors.gray[100]};
+  border-top: solid 2px ${theme.colors.gray[100]};
   padding-top: 2rem;
   margin: 2rem 0;
 

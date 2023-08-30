@@ -1,0 +1,150 @@
+---
+title: 'Add custom methods to your models'
+metaTitle: 'Prisma Client extensions: model component'
+metaDescription: 'Extend the functionality of Prisma Client, model component'
+tocDepth: 4
+---
+
+<TopBlock>
+
+<Admonition type="info">
+
+Prisma Client extensions are Generally Available from versions 4.16.0 and later. They were introduced in Preview in version 4.7.0. Make sure you enable the `clientExtensions` Preview feature flag if you are running on a version earlier than 4.16.0.
+
+</Admonition>
+
+You can use the `model` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component type to add custom methods to your models.
+
+Possible uses for the `model` component include the following:
+
+- New operations to operate alongside existing Prisma Client operations, such as `findMany`
+- Encapsulated business logic
+- Repetitive operations
+- Model-specific utilities
+
+</TopBlock>
+
+## Add a custom method
+
+Use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods) to create an _extended client_. An extended client is a variant of the standard Prisma Client that is wrapped by one or more extensions. Use the `model` extension component to add methods to models in your schema.
+
+### Add a custom method to a specific model
+
+To extend a specific model in your schema, use the following structure. This example adds a method to the `user` model.
+
+```ts
+const xprisma = prisma.$extends({
+  name?: '<name>',  // (optional) names the extension for error logs
+  model?: {
+    user: { ... }   // in this case, we extend the `user` model
+  },
+});
+```
+
+#### Example
+
+The following example adds a method called `signUp` to the `user` model. This method creates a new user with the specified email address.
+
+```ts
+const xprisma = prisma.$extends({
+  model: {
+    user: {
+      async signUp(email: string) {
+        await prisma.user.create({ data: { email } })
+      },
+    },
+  },
+})
+```
+
+You would call `signUp` in your application as follows:
+
+```ts
+const user = await xprisma.user.signUp('john@prisma.io')
+```
+
+When you call a method in an extension, use the constant name from your `$extends` statement, not `prisma`. In the above example, `xprisma.user.signUp` works, but `prisma.user.signUp` does not, because the original `prisma` is not modified.
+
+### Add a custom method to all models in your schema
+
+To extend _all_ models in your schema, use the following structure:
+
+```ts
+const xprisma = prisma.$extends({
+  name?: '<name>', // `name` is an optional field that you can use to name the extension for error logs
+  model?: {
+    $allModels: { ... }
+  },
+})
+```
+
+#### Example
+
+The following example adds a `validate` method to all models.
+
+```ts
+const xprisma = new prisma.$extends({
+  model: {
+    $allModels: {
+      validate(data: unknown) {
+        /* Generic validation logic */
+      },
+    },
+  },
+})
+```
+
+You would call `validate` in your application as follows:
+
+```ts
+// `validate` method available on all models
+xprisma.user.validate(someData)
+xprisma.post.validate(someData)
+```
+
+## Call a custom method from another custom method
+
+You can call a custom method from another custom method, if the two methods are declared on the same model. For example, you can call a custom method on the `user` model from another custom method on the `user` model. It does not matter if the two methods are declared in the same extension or in different extensions.
+
+To do so, use `Prisma.getExtensionContext(this).methodName`. Note that you cannot use `prisma.user.methodName`. This is because `prisma` is not extended yet, and therefore does not contain the new method.
+
+For example:
+
+```ts
+prisma.$extends({
+  model: {
+    user: {
+      firstMethod() {
+        ...
+      },
+      secondMethod() {
+          Prisma.getExtensionContext(this).firstMethod()
+      }
+    }
+  }
+})
+```
+
+## Get the current model name at runtime
+
+<Admonition type = "info">
+
+This feature is available from version 4.9.0.
+
+</Admonition>
+
+You can get the name of the current model at runtime with `Prisma.getExtensionContext(this).name`. You might use this to write out the model name to a log, to send the name to another service, or to branch your code based on the model.
+
+For example:
+
+```ts
+// `ctx` refers to the current model
+const ctx = Prisma.getExtensionContext(this)
+
+// `ctx.name` returns the name of the current model
+console.log(ctx.name)
+```
+
+## Advanced type safety: type utilities for defining generic extensions
+
+You can improve the type-safety of `model` components in your shared extensions with [type utilities](/concepts/components/prisma-client/client-extensions/type-utilities).
