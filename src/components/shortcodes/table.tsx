@@ -89,4 +89,32 @@ const TableWrapper = styled.div`
       color: ${theme.colors.gray[100]};
     }
   }
+  code.inline-code,
+  .inline-code,
+  inlinecode {
+    font-size: 13px;
+  }
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background-color: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #c5c6c8;
+  }
+  &::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: transparent;
+  }
+  &::-webkit-scrollbar-corner {
+    background-color: transparent;
+    border-color: transparent;
+  }
+  &.not-scrollable {
+    overflow-x: hidden;
+    code {
+      display: inline;
+    }
+  }
 `
