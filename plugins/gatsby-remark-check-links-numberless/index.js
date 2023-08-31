@@ -5,7 +5,7 @@ var vercelSettings = require('../../vercel.json')
 const techStrings = [
   'node',
   'typescript',
-  'postgres',
+  'postgresql',
   'mysql',
   'sqlserver',
   'planetscale',
@@ -149,6 +149,10 @@ module.exports = async function plugin(
       const brokenLinks = linksForPath.filter((link) => {
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
+
+        if (link.originalUrl === '') {
+          return true
+        }
 
         if (prefixedExceptions.includes(key) || /^https?:\/\//.test(key)) {
           // do not test this link as it is on the list of exceptions
