@@ -7,6 +7,13 @@ const HTML = (props: any) => {
       <head>
         <meta charSet="utf-8" />
         {/* Kapa.ai script */}
+        <script defer
+          src="https://widget.kapa.ai/kapa-widget.bundle.js"
+          data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
+          data-project-name="Prisma"
+          data-project-color="#2C3142"
+          data-project-logo="https://avatars.githubusercontent.com/u/18339788?s=280&v=4"
+        ></script>
         
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
         <script
