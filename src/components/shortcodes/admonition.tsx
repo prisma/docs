@@ -1,7 +1,7 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import React from 'react'
-import styled from 'styled-components'
-import { defaultTheme as theme } from '../../theme'
 import { AlertCircle } from 'react-feather'
+import styled from 'styled-components'
 
 interface AdmonitionType {
   type?: string
@@ -47,6 +47,16 @@ const FlexContainer = styled.div`
 
 const ChildContainer = styled.div`
   margin: 0;
+
+  li {
+    margin-left: 24px;
+    &:first-of-type {
+      margin-top: 16px;
+    }
+    &:last-of-type {
+      margin-bottom: 16px;
+    }
+  }
 `
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`
