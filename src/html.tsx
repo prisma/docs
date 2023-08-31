@@ -6,8 +6,9 @@ const HTML = (props: any) => {
     <html {...props.htmlAttributes}>
       <head>
         <meta charSet="utf-8" />
+        {/* Kapa.ai script */}
+        
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
-
         <script
           src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
           data-document-language="true"
