@@ -11,8 +11,8 @@ const HTML = (props: any) => {
           src="https://widget.kapa.ai/kapa-widget.bundle.js"
           data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
           data-project-name="Prisma"
-          data-project-color="#0B3349"
-          data-project-logo="https://res.cloudinary.com/practicaldev/image/fetch/s--6LfYwHeK--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://dev-to-uploads.s3.amazonaws.com/uploads/organization/profile_image/1608/0f93b179-76bf-4ee7-a838-e8222fbef062.png"
+          data-project-color="#2D3748"
+          data-project-logo="https://www.prisma.io/docs/ai_logo.png"
           data-button-text="Help"
         ></script>
         
