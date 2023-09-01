@@ -118,6 +118,26 @@ const SearchBoxDiv = styled.div`
       display: none;
     }
   }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[800]};
+    border-color: ${theme.colors.gray[700]};
+
+    form {
+      input {
+        color: ${theme.colors.gray[100]};
+        &::placeholder {
+          color: ${theme.colors.gray[400]};
+        }
+      }
+      svg path {
+        stroke: ${theme.colors.gray[400]};
+      }
+    }
+    &.opened {
+      background: ${theme.colors.gray[800]};
+    }
+  }
 `
 
 const SearchIcon = styled(SearchPic)`
@@ -132,6 +152,11 @@ const SearchSlashIcon = styled(SearchSlash)`
   //z-index: 100001;
   position: absolute;
   right: 0;
+  @media (prefers-color-scheme: dark) {
+    path {
+      stroke: ${theme.colors.gray[700]};
+    }
+  }
 `
 
 const focusShortcuts = ['s', 191]

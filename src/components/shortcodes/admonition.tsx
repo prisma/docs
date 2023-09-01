@@ -99,4 +99,8 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
   p {
     margin: 0;
   }
+
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[500]} !important;
+  }
 `

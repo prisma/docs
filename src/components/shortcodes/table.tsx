@@ -27,4 +27,13 @@ const TableWrapper = styled.div`
       border-radius: 0 !important;
     }
   }
+  @media (prefers-color-scheme: dark) {
+    table,
+    th,
+    td,
+    tr {
+      border-color: ${theme.colors.gray[800]};
+      color: ${theme.colors.gray[100]};
+    }
+  }
 `

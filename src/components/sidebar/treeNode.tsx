@@ -136,6 +136,31 @@ const ListItem = styled.li`
       transition: transform 0.2s ease;
     }
   }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${theme.colors.gray[500]} !important;
+      &:hover {
+        color: ${theme.colors.gray[400]} !important;
+      }
+      .tag {
+        color: ${theme.colors.gray[100]} !important;
+        background: ${theme.colors.gray[800]} !important;
+      }
+    }
+    .active-item {
+      color: ${theme.colors.indigo[400]} !important;
+    }
+    &.top-level,
+    &.static-link {
+      > a {
+        color: ${theme.colors.gray[100]} !important;
+        &:hover {
+          color: ${theme.colors.gray[100]} !important;
+        }
+      }
+    }
+  }
 `
 
 const TreeNode = ({
