@@ -8,11 +8,11 @@ const HTML = (props: any) => {
         <meta charSet="utf-8" />
         {/* Kapa.ai script */}
         <script defer
-          src="https://widget.kapa.ai/kapa-widget.bundle.js"
+          src="kapa-widget-v1.1.0.bundle.js"
           data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
           data-project-name="Prisma"
-          data-project-color="#2C3142"
-          data-project-logo="https://avatars.githubusercontent.com/u/18339788?s=280&v=4"
+          data-project-color="#0B3349"
+          data-project-logo="https://res.cloudinary.com/practicaldev/image/fetch/s--6LfYwHeK--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://dev-to-uploads.s3.amazonaws.com/uploads/organization/profile_image/1608/0f93b179-76bf-4ee7-a838-e8222fbef062.png"
         ></script>
         
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
