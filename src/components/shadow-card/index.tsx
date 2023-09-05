@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import React from 'react'
 import styled from 'styled-components'
 

@@ -10,38 +10,20 @@ import SEO from '../components/seo'
 import ShadowCard from '../components/shadow-card'
 import CockroachDB from '../icons/technologies/CockroachDB'
 import CockroachDBDark from '../icons/technologies/CockroachDBDark'
+import CockroachDBDark from '../icons/technologies/CockroachDBDark'
 import MariaDB from '../icons/technologies/MariaDB'
+import MariaDBDark from '../icons/technologies/MariaDBDark'
 import MariaDBDark from '../icons/technologies/MariaDBDark'
 import MongoDBSimple from '../icons/technologies/MongoDBSimple'
 import MySQLSimple from '../icons/technologies/MySQLSimple'
 import PlanetScale from '../icons/technologies/PlanetScale'
 import PlanetscaleDark from '../icons/technologies/PlanetscaleDark'
+import PlanetscaleDark from '../icons/technologies/PlanetscaleDark'
+import PostgresSQLDark from '../icons/technologies/PostgresSQLDark'
 import PostgresSQLDark from '../icons/technologies/PostgresSQLDark'
 import PostgresSQLSimple from '../icons/technologies/PostgresSQLSimple'
 import SQLite from '../icons/technologies/SQLite'
 import SQLServer from '../icons/technologies/SQLServer'
-import { defaultTheme as theme } from '../theme'
-
-export const Body = styled.div`
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
-  font-weight: normal;
-  font-size: 18px;
-  letter-spacing: 0em;
-  line-height: 140%;
-`
-
-export const H3 = styled.h3`
-  font-family: 'Barlow', sans-serif;
-  font-weight: bold;
-  font-size: 28px;
-  letter-spacing: -0.02em;
-  line-height: 110%;
-  @media (min-width: 940px) {
-    font-size: 36px;
-  }
-`
 
 const H4 = styled.h4`
   font-family: 'Barlow';
@@ -426,7 +408,7 @@ const DatabaseData = [
   {
     title: 'SQL Server',
     icon: <SQLServer />,
-    darkIcon: <img src="/docs/tech/sqlserver.svg" />,
+    darkIcon: <img src="/tech/sqlserver.svg" />,
     url: 'concepts/database-connectors/sql-server',
   },
   {
