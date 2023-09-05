@@ -60,6 +60,9 @@ const Label = styled.label`
   line-height: 1.5;
   padding-left: ${theme.space[32]};
   cursor: pointer;
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[100]};
+  }
 `
 
 const TabContent = styled.div`
@@ -69,6 +72,9 @@ const TabContent = styled.div`
   transition: max-height 0.35s, padding 0.35s;
   padding-left: 36px;
   padding-bottom: 0;
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[100]};
+  }
 `
 
 const Input = styled.input`

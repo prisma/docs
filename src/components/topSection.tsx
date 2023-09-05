@@ -45,6 +45,10 @@ const MainTitle = styled.h1`
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     font-size: ${theme.fontSizes[24]};
   }
+
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[100]};
+  }
 `
 
 const TopSection = ({

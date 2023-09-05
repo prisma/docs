@@ -29,6 +29,10 @@ const Wrapper = styled.section`
   & > div {
     margin-left: 1.5rem;
   }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: ${theme.colors.gray[800]};
+  }
 `
 
 const Tip = ({ children }: any) => {

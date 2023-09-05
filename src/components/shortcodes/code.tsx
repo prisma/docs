@@ -135,7 +135,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
               {!noCopy && (
                 <AbsoluteCopyButton className="copy-button">
                   <CopyButton text={code}>
-                    <Copy />
+                    <Copy className="light" />
+                    <Copy fill="#1A202C" className="dark" />
                   </CopyButton>
                 </AbsoluteCopyButton>
               )}
@@ -154,6 +155,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   let lineClass = {
                     backgroundColor: '',
                     symbColor: '',
+                    className: '',
                   }
 
                   let isDiff = false
@@ -178,6 +180,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                     lineClass = {
                       backgroundColor: diffBgColorMap[diffSymbol],
                       symbColor: symColorMap[diffSymbol],
+                      className: '',
                     }
                     isDiff = true
                   }
@@ -189,8 +192,10 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                         lineClass = {
                           backgroundColor: diffBgColorMap[diffSymbol],
                           symbColor: symColorMap[diffSymbol],
+                          className: '',
                         }
                         isDiff = true
+                        lineClass.className = 'highlighted-line'
                       }
                     })
                   }
@@ -198,6 +203,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   const lineProps = getLineProps({ line, key: i })
 
                   lineProps.style = { ...lineClass }
+                  lineProps.className = lineProps.className + ' ' + lineClass.className
 
                   return (
                     <Line key={line + i} {...lineProps}>
@@ -273,6 +279,24 @@ const AbsoluteCopyButton = styled.div`
     right: -${defaultTheme.space[8]};
     top: -6px;
   }
+
+  .dark {
+    display: none;
+  }
+
+  .light {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .dark {
+      display: block;
+    }
+
+    .light {
+      display: none;
+    }
+  }
 `
 
 const Pre = styled.pre`
@@ -322,6 +346,13 @@ const Pre = styled.pre`
 `
 const Line = styled.div`
   display: block;
+  @media (prefers-color-scheme: dark) {
+    &.highlighted-line {
+      .token.plain {
+        color: ${defaultTheme.colors.gray[900]};
+      }
+    }
+  }
 `
 
 const LineNo = styled.span`

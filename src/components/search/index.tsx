@@ -94,6 +94,10 @@ const HitsWrapper = styled.div`
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[700]};
+  }
 `
 
 const indexName = config.header.search.indexName
