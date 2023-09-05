@@ -114,4 +114,16 @@ const Wrapper = styled.div`
       margin-left: 0;
     }
   }
+
+  @media (prefers-color-scheme: dark) {
+    .result {
+      background-color: #2d3748 !important;
+      color: #e2e8f0 !important;
+      pre,
+      pre .token.plain {
+        background-color: #2d3748 !important;
+        color: #e2e8f0 !important;
+      }
+    }
+  }
 `

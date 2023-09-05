@@ -8,7 +8,7 @@ import Layout from '../components/layout'
 import Link from '../components/link'
 import SEO from '../components/seo'
 import ShadowCard from '../components/shadow-card'
-import SQLServer from '../icons/SQLServer'
+import SQLServer from '../icons/technologies/SQLServer'
 import CockroachDB from '../icons/technologies/CockroachDB'
 import MariaDB from '../icons/technologies/MariaDB'
 import MongoDBSimple from '../icons/technologies/MongoDBSimple'
@@ -16,6 +16,10 @@ import MySQLSimple from '../icons/technologies/MySQLSimple'
 import PlanetScale from '../icons/technologies/PlanetScale'
 import PostgresSQLSimple from '../icons/technologies/PostgresSQLSimple'
 import SQLite from '../icons/technologies/SQLite'
+import PostgresSQLDark from '../icons/technologies/PostgresSQLDark'
+import CockroachDBDark from '../icons/technologies/CockroachDBDark'
+import PlanetscaleDark from '../icons/technologies/PlanetscaleDark'
+import MariaDBDark from '../icons/technologies/MariaDBDark'
 
 const H4 = styled.h4`
   font-family: 'Barlow';
@@ -33,6 +37,10 @@ const TopSection = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 40px;
+
+  @media (prefers-color-scheme: dark) {
+    background: #242c3a;
+  }
 `
 
 const IconWrapper = styled.div`
@@ -43,6 +51,22 @@ const IconWrapper = styled.div`
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  .dark {
+    display: none;
+  }
+
+  .light {
+    display: block;
+  }
+  @media (prefers-color-scheme: dark) {
+    .dark {
+      display: block;
+    }
+
+    .light {
+      display: none;
+    }
+  }
 `
 
 const ProductCard = styled.div<{ color?: string }>`
@@ -74,6 +98,17 @@ const ProductCard = styled.div<{ color?: string }>`
   }
   ${IconWrapper} {
     background: ${(props) => (props.color === 'teal' ? '#16A394' : '#5A67D8')};
+  }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${(props) =>
+        props.color === 'teal' ? `${theme.colors.teal[400]}` : `${theme.colors.indigo[400]}`};
+    }
+    background: ${(p) =>
+      p.color === 'teal'
+        ? `linear-gradient(287.43deg, rgba(4, 200, 187, 0.17) -34.29%, rgba(4, 200, 187, 0) 98.22%),linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`
+        : `linear-gradient(283.66deg, rgba(102, 126, 234, 0.2418) -32.46%, rgba(102, 126, 234, 0) 96.55%), linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`};
   }
 `
 
@@ -120,6 +155,11 @@ const PrismaORMSection = styled.div`
     color: #2d3748;
     margin-bottom: 40px;
   }
+  @media (prefers-color-scheme: dark) {
+    h4 {
+      color: ${theme.colors.gray[100]};
+    }
+  }
 `
 
 const ORMLinkWrapper = styled(Link)`
@@ -159,6 +199,17 @@ const ORMLinkWrapper = styled(Link)`
   }
   &:hover h5 {
     text-decoration: underline;
+  }
+  @media (prefers-color-scheme: dark) {
+    h5 {
+      color: ${theme.colors.gray[100]};
+    }
+    p {
+      color: ${theme.colors.gray[400]};
+    }
+    ${IconWrapper} {
+      background: ${theme.colors.indigo[600]};
+    }
   }
 `
 
@@ -210,6 +261,13 @@ const ORMProductCard = styled(ProductCard)`
       white-space: nowrap;
     }
   }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[800]};
+    > p {
+      color: ${theme.colors.gray[400]};
+    }
+  }
 `
 
 const DatabasesSection = styled.div`
@@ -225,6 +283,11 @@ const DatabasesSection = styled.div`
   ${Body} {
     color: #4a5568;
     margin-bottom: 40px;
+  }
+  @media (prefers-color-scheme: dark) {
+    ${Body} {
+      color: ${theme.colors.gray[400]};
+    }
   }
 `
 
@@ -290,47 +353,88 @@ const DatabaseGrid = styled.div`
       line-height: 1;
     }
   }
+
+  .dark {
+    display: none;
+  }
+
+  .light {
+    display: flex;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .dark {
+      display: flex;
+    }
+
+    .light {
+      display: none;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .entry {
+      background: transparent;
+      &::after {
+        border-color: ${theme.colors.gray[700]};
+      }
+      &:hover {
+        background-color: transparent;
+      }
+      span {
+        color: ${theme.colors.gray[300]};
+      }
+    }
+  }
 `
 
 const DatabaseData = [
   {
     title: 'PostgreSQL',
     icon: <PostgresSQLSimple />,
+    darkIcon: <PostgresSQLDark />,
     url: 'concepts/database-connectors/postgresql',
   },
   {
     title: 'MySQL',
     icon: <MySQLSimple />,
+    darkIcon: <MySQLSimple />,
     url: 'concepts/database-connectors/mysql',
   },
   {
     title: 'SQL Server',
     icon: <SQLServer />,
+    darkIcon: <img src="/tech/sqlserver.svg" />,
     url: 'concepts/database-connectors/sql-server',
   },
   {
     title: 'SQLite',
     icon: <SQLite />,
+    darkIcon: <SQLite />,
     url: 'concepts/database-connectors/sqlite',
   },
   {
     title: 'MongoDB',
     icon: <MongoDBSimple />,
+    darkIcon: <MongoDBSimple />,
     url: 'concepts/database-connectors/mongodb',
   },
   {
     title: 'CockroachDB',
     icon: <CockroachDB />,
+    darkIcon: <CockroachDBDark />,
     url: 'concepts/database-connectors/cockroachdb',
   },
   {
     title: 'Planetscale',
     icon: <PlanetScale />,
+    darkIcon: <PlanetscaleDark />,
     url: 'guides/database/planetscale',
   },
   {
     title: 'MariaDB',
     icon: <MariaDB />,
+    darkIcon: <MariaDBDark />,
     url: 'concepts/database-connectors/mysql',
   },
 ]
@@ -391,6 +495,31 @@ const CommunitySection = styled.div`
         font-style: normal;
         font-weight: 600;
         line-height: 88%; /* 15.84px */
+      }
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[800]};
+    > div {
+      .community-link-wrapper {
+        h4 {
+          color: ${theme.colors.gray[100]};
+        }
+        ${Body} {
+          color: ${theme.colors.gray[400]};
+        }
+        .link {
+          color: ${theme.colors.indigo[400]};
+        }
+      }
+      .section-hero {
+        ${H3} {
+          color: ${theme.colors.gray[100]};
+        }
+        p {
+          color: ${theme.colors.gray[400]};
+        }
       }
     }
   }
@@ -460,7 +589,13 @@ const Homepage = () => {
           {GeneralLinkData.map((generalLink: any, index: number) => (
             <ORMLinkWrapper key={index} to={generalLink.url}>
               <IconWrapper>
-                <Icon icon={generalLink.icon} color="#5A67D8" size="22px" />
+                <Icon icon={generalLink.icon} color="#5A67D8" size="22px" className="light" />
+                <Icon
+                  icon={generalLink.icon}
+                  color={theme.colors.gray[100]}
+                  size="22px"
+                  className="dark"
+                />
               </IconWrapper>
               <div>
                 <h5>
@@ -515,8 +650,12 @@ const Homepage = () => {
         <DatabaseGrid>
           {DatabaseData.map((e: any) => (
             <Link to={e.url}>
-              <div className="entry">
+              <div className="entry light">
                 {e.icon}
+                <span>{e.title}</span>
+              </div>
+              <div className="entry dark">
+                {e.darkIcon}
                 <span>{e.title}</span>
               </div>
             </Link>
