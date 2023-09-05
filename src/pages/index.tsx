@@ -404,7 +404,7 @@ const DatabaseData = [
   {
     title: 'SQL Server',
     icon: <SQLServer />,
-    darkIcon: <SQLServer />,
+    darkIcon: <img src="/tech/sqlserver.svg" />,
     url: 'concepts/database-connectors/sql-server',
   },
   {
