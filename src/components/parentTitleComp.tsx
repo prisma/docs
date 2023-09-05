@@ -23,6 +23,16 @@ const BreadcrumbTitle = styled.div`
       cursor: pointer;
     }
   }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${theme.colors.gray[500]} !important;
+      &:hover,
+      &:focus {
+        color: ${theme.colors.gray[600]} !important;
+      }
+    }
+  }
 `
 
 interface ParentTitleProps {

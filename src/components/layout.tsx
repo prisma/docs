@@ -169,7 +169,7 @@ export default function Layout({
     <LensProvider>
       <Script src="https://kit.fontawesome.com/f46012ac73.js" crossOrigin="anonymous" />
       <MDXProvider components={shortcodes}>
-        <LayoutWrapper>
+        <LayoutWrapper className="dark">
           <Header
             headerProps={header}
             wide={wide}

@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import React from 'react'
 import styled from 'styled-components'
 
@@ -27,6 +28,10 @@ const CardLibWrapper = styled.div`
     &:hover .link > span:first-of-type {
       text-decoration: underline;
     }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[900]};
   }
 `
 

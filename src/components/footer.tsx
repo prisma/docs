@@ -18,6 +18,21 @@ const FooterWrapper = styled.div`
   > div {
     width: 100%;
   }
+  @media (prefers-color-scheme: dark) {
+    form {
+      i {
+        color: ${theme.colors.gray[300]} !important;
+      }
+      .input-el {
+        background: ${theme.colors.gray[800]} !important;
+        border-color: ${theme.colors.gray[700]} !important;
+        color: ${theme.colors.gray[100]} !important;
+        &::placeholder {
+          color: ${theme.colors.gray[300]};
+        }
+      }
+    }
+  }
 `
 
 const FooterSec = ({ footerProps }: FooterViewProps) => {
