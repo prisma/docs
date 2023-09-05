@@ -1,6 +1,6 @@
+import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import Select, { components } from 'react-select'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
 
 interface SelectProps {
   items: any[]
