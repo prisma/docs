@@ -203,7 +203,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                   const lineProps = getLineProps({ line, key: i })
 
                   lineProps.style = { ...lineClass }
-                  lineProps.className = lineClass.className
+                  lineProps.className = lineProps.className + ' ' + lineClass.className
 
                   return (
                     <Line key={line + i} {...lineProps}>
