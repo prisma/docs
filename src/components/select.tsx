@@ -1,7 +1,8 @@
 import * as React from 'react'
-import styled from 'styled-components'
 import Select, { components } from 'react-select'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import styled from 'styled-components'
+
+import { defaultTheme as theme } from '../theme'
 
 interface SelectProps {
   items: any[]

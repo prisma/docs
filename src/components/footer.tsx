@@ -1,7 +1,8 @@
 import * as React from 'react'
+import { AnchorHTMLAttributes } from 'react'
 import styled, { css } from 'styled-components'
 
-import { darkTheme, defaultTheme } from '../theme'
+import { darkTheme, defaultTheme as theme } from '../theme'
 import { Icon } from './Icon'
 import { FooterNewsletterForm } from './newsletter/FooterNewsletterForm'
 
@@ -10,7 +11,7 @@ const FooterWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  color: ${defaultTheme.colors.gray[500]};
+  color: ${theme.colors.gray[500]};
   > div {
     width: 100%;
   }
@@ -192,7 +193,7 @@ namespace S {
         align-items: center;
         .label {
           margin-left: 8px;
-          background: ${defaultTheme.colors[color]['600']};
+          background: ${theme.colors[color]['600']};
           border-radius: 99px;
           padding: 6px 8px;
           font-family: 'Barlow';
@@ -253,7 +254,7 @@ const FooterSec = ({
   newsletterComponent,
   color = 'indigo',
 }: FooterProps) => {
-  const themeToUse = lightTheme ? defaultTheme : darkTheme
+  const themeToUse = lightTheme ? theme : darkTheme
   const newsletter = newsletterComponent ? (
     newsletterComponent
   ) : (
