@@ -1,10 +1,11 @@
-import { Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import { useAllArticlesQuery } from '../hooks/useAllArticlesQuery'
 import { AllArticles } from '../interfaces/AllArticles.interface'
+import { defaultTheme as theme } from '../theme'
 import { getParentTitle } from '../utils/parentTitle'
+import { Icon } from './Icon'
 import Link from './link'
 
 const BreadcrumbTitle = styled.div`
@@ -21,6 +22,16 @@ const BreadcrumbTitle = styled.div`
       color: ${theme.colors.gray[700]} !important;
       text-decoration: underline;
       cursor: pointer;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${theme.colors.gray[500]} !important;
+      &:hover,
+      &:focus {
+        color: ${theme.colors.gray[600]} !important;
+      }
     }
   }
 `

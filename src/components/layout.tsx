@@ -1,5 +1,4 @@
 import { MDXProvider } from '@mdx-js/react'
-import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
 import { Script } from 'gatsby'
 import React, { useState } from 'react'
@@ -7,12 +6,14 @@ import StickyBox from 'react-sticky-box'
 import styled from 'styled-components'
 
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
+import { defaultTheme as theme } from '../theme'
 import Footer from './footer'
 import Header from './header'
 import SearchBox from './search/minimalInput'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
+import { WebProvider } from './WebProvider'
 
 import '../styles/layout.css'
 
@@ -166,10 +167,10 @@ export default function Layout({
 
   const setInputText = (input: any) => setValue(input)
   return (
-    <LensProvider>
-      <Script src="https://kit.fontawesome.com/f46012ac73.js" crossOrigin="anonymous" />
+    <WebProvider>
+      <Script src="https://kit.fontawesome.com/1772ab679c.js" crossOrigin="anonymous" />
       <MDXProvider components={shortcodes}>
-        <LayoutWrapper>
+        <LayoutWrapper className="dark">
           <Header
             headerProps={header}
             wide={wide}
@@ -178,7 +179,6 @@ export default function Layout({
             sidenavSearchOpened={!showDocsBtn}
             closeSidenavSearch={closeSidenavSearch}
             setInputText={setInputText}
-            wide={wide}
           />
           <Wrapper homePage={homePage}>
             <Container homePage={homePage} wide={wide}>
@@ -209,6 +209,6 @@ export default function Layout({
       <FooterWrapper>
         <Footer footerProps={footer} />
       </FooterWrapper>
-    </LensProvider>
+    </WebProvider>
   )
 }
