@@ -1,4 +1,3 @@
-import { defaultTheme } from '@prisma/lens/dist/web'
 import rangeParser from 'parse-numeric-range'
 import Highlight, { defaultProps } from 'prism-react-renderer'
 import theme from 'prism-react-renderer/themes/github'
@@ -6,6 +5,7 @@ import * as React from 'react'
 import styled from 'styled-components'
 
 import Copy from '../../icons/Copy'
+import { defaultTheme } from '../../theme'
 import { stringify } from '../../utils/stringify'
 import CopyButton from './copy'
 import FileWithIcon from './fileWithIcon'

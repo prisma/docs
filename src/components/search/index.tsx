@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import algoliasearch from 'algoliasearch/lite'
 import { navigate } from 'gatsby'
 import qs from 'qs'

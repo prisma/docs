@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import { AlertCircle } from 'react-feather'
 
 interface AdmonitionType {
