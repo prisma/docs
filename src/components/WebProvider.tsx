@@ -1,5 +1,6 @@
 import React from 'react'
 
+import '../styles/fontawesome.min.css'
 import '../styles/all.css'
 import 'normalize.css'
 
