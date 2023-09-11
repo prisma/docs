@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -15,6 +15,9 @@ const ChapterTitle = styled.div`
   text-transform: uppercase;
   color: ${theme.colors.gray[900]};
   margin: 0 0;
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[300]};
+  }
 `
 
 const HeadingList = styled.ul`
@@ -36,6 +39,14 @@ const HeadingList = styled.ul`
       }
     }
   }
+  @media (prefers-color-scheme: dark) {
+    li a {
+      color: ${theme.colors.gray[500]};
+      &:hover {
+        color: ${theme.colors.gray[600]};
+      }
+    }
+  }
 `
 
 interface ItemProps {
@@ -53,7 +64,13 @@ const ListItem = styled.li<ItemProps>`
     ${(props) => (props.isActive ? 'background-size: 100% 2px;' : null)}
     & > inlinecode {
       background: ${(props) => (props.isActive ? `var(--dark-color)` : '')};
-      color: ${(props) => (props.isActive ? 'var( --main-bgd-color)' : '#000')};
+      color: ${(props) => (props.isActive ? 'var(--main-bgd-color)' : '#000')};
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    > a > inlinecode {
+      color: var(--main-font-color);
     }
   }
 `

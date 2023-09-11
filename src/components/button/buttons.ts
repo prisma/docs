@@ -1,4 +1,4 @@
-import * as t from '../primitives'
+import * as t from '../../theme/primitives'
 
 const buttonDefault = {
   transition: 'background-color .1s ease, color .2s ease',
@@ -20,6 +20,7 @@ export const buttonsDefault = {
     hover: {
       border: `1px solid ${t.indigo[700]}`,
       backgroundColor: t.indigo[700],
+      borderColor: t.indigo[700],
       color: 'white',
     },
     active: {
@@ -33,6 +34,7 @@ export const buttonsDefault = {
       border: `1px solid ${t.indigo[600]}`,
       hover: {
         border: `1px solid ${t.indigo[700]}`,
+        borderColor: t.indigo[700],
         backgroundColor: t.indigo[700],
         color: 'white',
       },
@@ -49,6 +51,7 @@ export const buttonsDefault = {
       hover: {
         border: `1px solid ${t.teal[700]}`,
         backgroundColor: t.teal[700],
+        borderColor: t.teal[700],
         color: 'white',
       },
       active: {
@@ -64,6 +67,7 @@ export const buttonsDefault = {
       hover: {
         border: `1px solid white`,
         backgroundColor: 'white',
+        borderColor: t.indigo[700],
         color: t.indigo[700],
       },
       active: {
@@ -81,6 +85,7 @@ export const buttonsDefault = {
     hover: {
       backgroundColor: 'white',
       color: t.indigo[700],
+      borderColor: t.indigo[700],
       border: `1px solid ${t.indigo[700]}`,
     },
     active: {
@@ -95,6 +100,7 @@ export const buttonsDefault = {
       hover: {
         backgroundColor: 'white',
         border: `1px solid ${t.indigo[700]}`,
+        borderColor: t.indigo[700],
         color: t.indigo[700],
       },
       active: {
@@ -110,6 +116,7 @@ export const buttonsDefault = {
       hover: {
         border: `1px solid ${t.teal[700]}`,
         backgroundColor: 'white',
+        borderColor: t.teal[700],
         color: t.teal[700],
       },
       active: {
@@ -125,6 +132,7 @@ export const buttonsDefault = {
       hover: {
         backgroundColor: 'white',
         border: `1px solid ${t.indigo[700]}`,
+        borderColor: t.indigo[700],
         color: t.indigo[700],
       },
       active: {
@@ -143,6 +151,7 @@ export const buttonsDefault = {
     hover: {
       backgroundColor: 'transparent',
       color: t.indigo[800],
+      borderColor: t.indigo[800],
       border: 'none',
     },
     active: {
@@ -157,6 +166,7 @@ export const buttonsDefault = {
       hover: {
         backgroundColor: 'transparent',
         color: t.indigo[800],
+        borderColor: t.indigo[800],
         border: 'none',
       },
       active: {
@@ -172,6 +182,7 @@ export const buttonsDefault = {
       hover: {
         backgroundColor: 'transparent',
         color: t.teal[800],
+        borderColor: t.teal[800],
         border: 'none',
       },
       active: {

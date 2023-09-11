@@ -6,8 +6,18 @@ const HTML = (props: any) => {
     <html {...props.htmlAttributes}>
       <head>
         <meta charSet="utf-8" />
-        {/* OneTrust Cookies Consent Notice start for prisma.io  */}
+        {/* Kapa.ai script */}
+        <script
+          defer
+          src="https://widget.kapa.ai/kapa-widget-v1.1.0.bundle.js"
+          data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
+          data-project-name="Prisma"
+          data-project-color="#2D3748"
+          data-project-logo="https://www.prisma.io/docs/ai_logo.png"
+          data-button-text="Help"
+        ></script>
 
+        {/* OneTrust Cookies Consent Notice start for prisma.io  */}
         <script
           src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
           data-document-language="true"
@@ -20,7 +30,7 @@ const HTML = (props: any) => {
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
         {props.headComponents}
       </head>
-      <body {...props.bodyAttributes}>
+      <body className="dark" {...props.bodyAttributes}>
         {props.preBodyComponents}
         <div key={`body`} id="___gatsby" dangerouslySetInnerHTML={{ __html: props.body }} />
         {props.postBodyComponents}
