@@ -12,7 +12,6 @@ export const useAllArticlesQuery = () => {
               duration
               navTitle
               staticLink
-              experimental
               preview
               deprecated
               earlyaccess

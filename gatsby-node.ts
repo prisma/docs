@@ -201,7 +201,6 @@ exports.createSchemaCustomization = ({ actions }: any) => {
       dbSwitcher: [String!]
       staticLink: Boolean
       duration: String
-      experimental: Boolean
       preview: Boolean
       deprecated: Boolean
       earlyaccess: Boolean
@@ -214,8 +213,9 @@ exports.createSchemaCustomization = ({ actions }: any) => {
   createTypes(typeDefs)
 }
 
-exports.onCreateWebpackConfig = ({ actions }: any) => {
+exports.onCreateWebpackConfig = ({ stage, actions }: any) => {
   actions.setWebpackConfig({
+    devtool: false,
     resolve: {
       modules: [path.resolve(__dirname, 'src'), 'node_modules'],
       alias: {

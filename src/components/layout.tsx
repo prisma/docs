@@ -1,16 +1,19 @@
 import { MDXProvider } from '@mdx-js/react'
-import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
-import React from 'react'
+import { Script } from 'gatsby'
+import React, { useState } from 'react'
 import StickyBox from 'react-sticky-box'
-import styled, { ThemeProvider } from 'styled-components'
+import styled from 'styled-components'
 
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
+import { defaultTheme as theme } from '../theme'
 import Footer from './footer'
 import Header from './header'
+import SearchBox from './search/minimalInput'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
+import { WebProvider } from './WebProvider'
 
 import '../styles/layout.css'
 
@@ -25,24 +28,23 @@ interface LayoutContentProps {
 
 type LayoutProps = RouterProps & LayoutContentProps
 
-const Wrapper = styled.div<{ fullWidth?: boolean }>`
+const Wrapper = styled.div<{ homePage?: boolean }>`
   display: flex;
   width: 100%;
   justify-content: center;
-  ${(p) => (p.fullWidth ? 'padding: 0' : 'padding: 0 24px')};
-  @media (max-width: ${(p) => p.theme.breakpoints.tabletVertical}) {
+  //${(p) => (p.homePage ? 'padding: 80px 0 0 0' : 'padding: 80px 0')};
+  @media (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 0;
   }
 `
 
-const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
-  margin: 0 0 ${(p) => p.theme.space[16]};
+const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
   ${(p) =>
-    p.fullWidth
+    p.homePage
       ? 'max-width: 100%;'
       : p.wide
-      ? 'min-width: 0; max-width: 988px; flex-shrink: 1;'
-      : 'max-width: 748px;'}
+      ? 'min-width: 0; max-width: 988px; flex-shrink: 1; padding: 0 1rem;'
+      : 'max-width: 748px; margin: 0 20px;'}
   flex: 1;
   position: relative;
   z-index: 100;
@@ -51,25 +53,25 @@ const Content = styled.article<{ fullWidth?: boolean; wide?: boolean }>`
     margin: 0;
     max-width: 100%;
   }
-  @media (min-width: 1024px) and (max-width: 1200px) {
+  @media (min-width: 1025px) and (max-width: 1240px) {
     margin: 0;
-    ${(p) => (p.fullWidth ? 'max-width: 100%' : 'max-width: 570px')};
+    ${(p) => (p.homePage ? 'max-width: 100%' : 'max-width: 570px')};
   }
 `
 
 const MaxWidth = styled.div<{ wide?: boolean }>`
   > section {
-    padding: 0 ${(p) => `${p.theme.space[40]}${p.wide ? ` 0 0` : ``}`};
+    padding: 0 ${(p) => `${theme.space[40]}${p.wide ? ` 0 0` : ``}`};
     &.top-section {
       padding-top: 0;
     }
     @media (min-width: 0px) and (max-width: 1024px) {
-      margin-top: ${(p) => p.theme.space[8]};
+      margin-top: ${theme.space[8]};
     }
     @media (min-width: 0px) and (max-width: 1024px) {
-      padding: 0 ${(p) => p.theme.space[24]};
+      padding: 0 ${theme.space[24]};
       &.top-section {
-        padding-top: ${(p) => p.theme.space[24]};
+        padding-top: ${theme.space[24]};
       }
     }
   }
@@ -86,25 +88,27 @@ const NotMobile = styled.section`
   }
 `
 
-const Container = styled.div<{ fullWidth?: boolean; wide?: boolean }>`
-  ${(p) => (p.fullWidth ? 'max-width: 100%;' : p.wide ? 'max-width: 1440px' : 'max-width: 1200px')};
+const Container = styled.div<{ homePage?: boolean; wide?: boolean }>`
+  ${(p) => (p.homePage ? 'max-width: 100%;' : p.wide ? 'max-width: 1440px' : 'max-width: 1240px')};
   width: 100%;
   justify-content: center;
   display: flex;
   align-items: flex-start;
-  ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[40]};`)}
+  position: relative;
+
+  ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: ${theme.space[40]};`)}
   @media (max-width: 1024px) {
-    ${(p) => (p.fullWidth ? `margin-top: 0` : `margin-top: ${p.theme.space[8]};`)}
+    ${(p) => (p.homePage ? `margin-top: 0` : `margin-top: 118px;`)}
   }
 `
 
 const TOCWrapper = styled.div<{ wide?: boolean }>`
   width: 180px;
-  height: 100vh;
+  height: 85vh;
   flex-shrink: 0;
   overflow-y: auto;
   position: sticky;
-  top: 0;
+  top: 20px;
   ${(p) => p.wide && `margin-right: -100px;`}
 
   @media (min-width: 0px) and (max-width: 1024px) {
@@ -115,21 +119,30 @@ const TOCWrapper = styled.div<{ wide?: boolean }>`
   }
 `
 
-const BannerWrapper = styled.div<{ light: boolean }>`
-  a {
-    color: ${(props) => (props.light ? theme.colors.gray['800'] : theme.colors.gray['300'])};
+const FooterWrapper = styled.div`
+  button {
+    z-index: 10;
   }
-  b {
-    ${(props) => !props.light && `color: ${theme.colors.teal['400']};`}
+`
+
+const SearchComponentDesktop = styled.div<{ open?: boolean }>`
+  width: calc(100% - ${theme.space[16]});
+  padding: 0 0 22px 0;
+  @media (min-width: 0px) and (max-width: 1024px) {
+    display: none;
   }
-  width: 100%;
-  transition: margin-top 50ms ease-in;
-  top: 0;
-  z-index: -1;
-  @media (max-width: 1000px) {
-    font-size: 14px;
+`
+
+const CustomSticky = styled(StickyBox)`
+  width: 272px;
+  margin: 0px -${theme.space[16]} 0 ${theme.space[16]};
+  @media (min-width: 0px) and (max-width: 1024px) {
+    width: auto;
   }
-  font-size: 18px;
+`
+
+const LayoutWrapper = styled.div<{ mobileNavOpen?: boolean }>`
+  ${(p) => p.mobileNavOpen && 'position: fixed;'}
 `
 
 export default function Layout({
@@ -143,21 +156,43 @@ export default function Layout({
 }: LayoutProps) {
   const { site } = useLayoutQuery()
   const { header, footer } = site.siteMetadata
+  const [mobileNavOpen, setMobileNav] = useState(false)
+  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
+
+  const [value, setValue] = useState('')
+
+  const closeSidenavSearch = () => setShowDocsBtn(true)
+
+  const showHeaderSearch = () => setShowDocsBtn(false)
+
+  const setInputText = (input: any) => setValue(input)
   return (
-    <ThemeProvider theme={theme}>
-      <LensProvider>
-        <MDXProvider components={shortcodes}>
-          <Header headerProps={header} wide={wide} />
-          <Wrapper fullWidth={homePage}>
-            <Container fullWidth={homePage} wide={wide}>
+    <WebProvider>
+      <Script src="https://kit.fontawesome.com/1772ab679c.js" crossOrigin="anonymous" />
+      <MDXProvider components={shortcodes}>
+        <LayoutWrapper className="dark">
+          <Header
+            headerProps={header}
+            wide={wide}
+            mobileNavOpen={setMobileNav}
+            homePage={homePage}
+            sidenavSearchOpened={!showDocsBtn}
+            closeSidenavSearch={closeSidenavSearch}
+            setInputText={setInputText}
+          />
+          <Wrapper homePage={homePage}>
+            <Container homePage={homePage} wide={wide}>
               {!homePage && (
-                <StickyBox offsetTop={20} offsetBottom={20}>
+                <CustomSticky offsetTop={20} offsetBottom={20}>
+                  <SearchComponentDesktop open={!showDocsBtn}>
+                    <SearchBox showHeaderSearch={showHeaderSearch} value={value} path={location} />
+                  </SearchComponentDesktop>
                   <NotMobile id="sidebar-holder">
                     <SidebarLayout isMobile={false} location={location} slug={slug} />
                   </NotMobile>
-                </StickyBox>
+                </CustomSticky>
               )}
-              <Content fullWidth={homePage} wide={wide}>
+              <Content homePage={homePage} wide={wide}>
                 <MaxWidth wide={wide}>{children}</MaxWidth>
               </Content>
               {!homePage && (
@@ -169,9 +204,11 @@ export default function Layout({
               )}
             </Container>
           </Wrapper>
-          <Footer footerProps={footer} />
-        </MDXProvider>
-      </LensProvider>
-    </ThemeProvider>
+        </LayoutWrapper>
+      </MDXProvider>
+      <FooterWrapper>
+        <Footer footerProps={footer} />
+      </FooterWrapper>
+    </WebProvider>
   )
 }
