@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import { AlertCircle } from 'react-feather'
 
 interface AdmonitionType {
@@ -57,10 +57,9 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
   color: ${theme.colors.gray[600]} !important;
   padding-left: ${(p) => (p.type === 'alert' ? '3rem' : '1.5rem')};
   padding-bottom: 8px;
-  padding-bottom: 8px;
   margin: 2rem 0px;
   position: relative;
-  display: flex;
+  display: block;
   max-width: 100%;
   pre {
     font-weight: normal;
@@ -98,5 +97,9 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
 
   p {
     margin: 0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[500]} !important;
   }
 `

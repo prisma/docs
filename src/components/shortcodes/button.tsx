@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'

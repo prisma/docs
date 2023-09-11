@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import { useLocation } from '@reach/router'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 import * as React from 'react'
@@ -134,6 +134,31 @@ const ListItem = styled.li`
     cursor: pointer;
     svg {
       transition: transform 0.2s ease;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${theme.colors.gray[500]} !important;
+      &:hover {
+        color: ${theme.colors.gray[400]} !important;
+      }
+      .tag {
+        color: ${theme.colors.gray[100]} !important;
+        background: ${theme.colors.gray[800]} !important;
+      }
+    }
+    .active-item {
+      color: ${theme.colors.indigo[400]} !important;
+    }
+    &.top-level,
+    &.static-link {
+      > a {
+        color: ${theme.colors.gray[100]} !important;
+        &:hover {
+          color: ${theme.colors.gray[100]} !important;
+        }
+      }
     }
   }
 `
