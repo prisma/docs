@@ -162,6 +162,7 @@ const SearchSlashIcon = styled(SearchSlash)`
 const focusShortcuts = ['s', 191]
 
 const SearchBox = ({ showHeaderSearch, value }: any) => {
+  console.log('value:', value)
   const inputEl = React.useRef(null)
   const onKeyDown = (e: any) => {
     const shortcuts = focusShortcuts.map((key) =>
@@ -197,6 +198,12 @@ const SearchBox = ({ showHeaderSearch, value }: any) => {
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [])
+
+  React.useEffect(() => {
+    if (value) {
+      inputEl.current.focus()
+    }
+  }, [value])
 
   return (
     <SearchBoxDiv>

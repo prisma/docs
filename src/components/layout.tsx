@@ -158,8 +158,10 @@ export default function Layout({
   const { header, footer } = site.siteMetadata
   const [mobileNavOpen, setMobileNav] = useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
+  const queryString = new URLSearchParams(location?.search).get('query')
 
-  const [value, setValue] = useState('')
+  console.log(queryString)
+  const [value, setValue] = useState(queryString || '')
 
   const closeSidenavSearch = () => setShowDocsBtn(true)
 
