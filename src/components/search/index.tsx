@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import algoliasearch from 'algoliasearch/lite'
 import { navigate } from 'gatsby'
 import qs from 'qs'
@@ -93,6 +93,10 @@ const HitsWrapper = styled.div`
     border-top: 1px solid ${theme.colors.gray[300]};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[700]};
   }
 `
 
