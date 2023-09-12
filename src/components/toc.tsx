@@ -123,6 +123,8 @@ const useIntersectionObserver = (
   const depth = tocDepth ?? 2
   const allHeadings = headings
 
+  const intersectionActive = React.useRef<string | undefined>(undefined)
+
   const getKeyByValue: any = (obj: any, value: string) =>
     Object.keys(obj).find((key) => obj[key] === value)
   const deepExists: any = (obj: any, query: string) =>
@@ -170,6 +172,7 @@ const useIntersectionObserver = (
               deepExists(e, visibleId) ? e : false
             )
             setActiveId(secondH[0].url.slice(1).replaceAll('inlinecode', ''))
+            intersectionActive.current = secondH[0].url.slice(1).replaceAll('inlinecode', '')
           } else if (
             visibleHeadings.length &&
             firstH.length &&
@@ -179,11 +182,18 @@ const useIntersectionObserver = (
             parseInt(visibleHeadingN ? visibleHeadingN : '0') > depth + 1
           ) {
             setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
+            intersectionActive.current = firstH[0].url.slice(1).replaceAll('inlinecode', '')
           } else {
             setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
+            intersectionActive.current = firstH[0].url.slice(1).replaceAll('inlinecode', '')
           }
         } else {
           setActiveId(filteredVisible[0].target.id)
+          intersectionActive.current = filteredVisible[0].target.id
+        }
+      } else {
+        if (intersectionActive.current === Object.keys(headingElementsRef.current)[0]) {
+          setActiveId('')
         }
       }
     }
