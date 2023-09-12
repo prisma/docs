@@ -25,11 +25,13 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
       )}
       {children && Array.isArray(children) ? (
         <FlexContainer>
-          {children.map((child: any, index: number) => (
-            <ChildContainer key={index}>
-              {child && child.props && child.props.children}
-            </ChildContainer>
-          ))}
+          {children.map((child: any, index: number) =>
+            child.props.originalType === 'ul' ? (
+              <ul key={index}>{child && child.props && child.props.children}</ul>
+            ) : (
+              <ChildDiv key={index}>{child && child.props && child.props.children}</ChildDiv>
+            )
+          )}
         </FlexContainer>
       ) : (
         children
@@ -45,19 +47,8 @@ const FlexContainer = styled.div`
   flex-direction: column;
 `
 
-const ChildContainer = styled.div`
+const ChildDiv = styled.div`
   margin: 0;
-
-  li {
-    margin-left: 24px;
-    margin-top: 10px;
-    &:first-of-type {
-      margin-top: 16px;
-    }
-    &:last-of-type {
-      margin-bottom: 16px;
-    }
-  }
 `
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`
