@@ -50,6 +50,7 @@ const ChildContainer = styled.div`
 
   li {
     margin-left: 24px;
+    margin-top: 10px;
     &:first-of-type {
       margin-top: 16px;
     }
