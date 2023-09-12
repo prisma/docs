@@ -28,7 +28,7 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
         <FlexContainer>
           {children.map((child: any, index: number) =>
             child.props.originalType === 'ul' ? (
-              <ul key={index}>{child && child.props && child.props.children}</ul>
+              <ChildList key={index}>{child && child.props && child.props.children}</ChildList>
             ) : (
               <ChildDiv key={index}>{child && child.props && child.props.children}</ChildDiv>
             )
@@ -50,6 +50,10 @@ const FlexContainer = styled.div`
 
 const ChildDiv = styled.div`
   margin: 0;
+`
+
+const ChildList = styled.ul`
+  padding-left: 16px;
 `
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`
