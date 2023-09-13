@@ -202,6 +202,7 @@ exports.createSchemaCustomization = ({ actions }: any) => {
       staticLink: Boolean
       duration: String
       preview: Boolean
+      deprecated: Boolean
       earlyaccess: Boolean
       toc: Boolean
       hidePage: Boolean
