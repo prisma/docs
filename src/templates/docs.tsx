@@ -1,13 +1,12 @@
-import { RouterProps } from '@reach/router'
+import { RouterProps, navigate } from '@reach/router'
+import { graphql } from 'gatsby'
+import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
 import * as React from 'react'
-import { ArticleQueryData } from '../interfaces/Article.interface'
 import Layout from '../components/layout'
-import TopSection from '../components/topSection'
 import PageBottom from '../components/pageBottom'
 import SEO from '../components/seo'
-import { graphql, useStaticQuery } from 'gatsby'
-import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
-import { navigate } from '@reach/router'
+import TopSection from '../components/topSection'
+import { ArticleQueryData } from '../interfaces/Article.interface'
 import { CreatePageContext } from '../interfaces/Layout.interface'
 
 type ArticleLayoutProps = ArticleQueryData & RouterProps & CreatePageContext
