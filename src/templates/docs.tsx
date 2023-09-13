@@ -55,7 +55,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
 export default ArticleLayout
 
 export const Head = ({ pageContext: { seoTitle, seoDescription } }: ArticleLayoutProps) => {
-  return <SEO title={seoTitle} description={seoDescription} homepage />
+  return <SEO title={seoTitle} homepage={false} description={seoDescription} />
 }
 
 export const query = graphql`
