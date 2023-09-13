@@ -57,6 +57,18 @@ const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
     margin: 0;
     ${(p) => (p.homePage ? 'max-width: 100%' : 'max-width: 570px')};
   }
+  section {
+    > h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      &:has(> inlinecode) {
+        line-height: 1.5;
+      }
+    }
+  }
 `
 
 const MaxWidth = styled.div<{ wide?: boolean }>`
@@ -158,8 +170,8 @@ export default function Layout({
   const { header, footer } = site.siteMetadata
   const [mobileNavOpen, setMobileNav] = useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
-
-  const [value, setValue] = useState('')
+  const queryString = new URLSearchParams(location?.search).get('query')
+  const [value, setValue] = useState(queryString || '')
 
   const closeSidenavSearch = () => setShowDocsBtn(true)
 
