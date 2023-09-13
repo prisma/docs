@@ -57,6 +57,18 @@ const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
     margin: 0;
     ${(p) => (p.homePage ? 'max-width: 100%' : 'max-width: 570px')};
   }
+  section {
+    > h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      &:has(> inlinecode) {
+        line-height: 1.5;
+      }
+    }
+  }
 `
 
 const MaxWidth = styled.div<{ wide?: boolean }>`
