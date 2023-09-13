@@ -198,6 +198,12 @@ const SearchBox = ({ showHeaderSearch, value }: any) => {
     }
   }, [])
 
+  React.useEffect(() => {
+    if (value) {
+      inputEl.current.focus()
+    }
+  }, [value])
+
   return (
     <SearchBoxDiv>
       <form>
