@@ -65,7 +65,7 @@ const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
     h5,
     h6 {
       &:has(> inlinecode) {
-        line-height: 1.3;
+        line-height: 1.5;
       }
     }
   }
