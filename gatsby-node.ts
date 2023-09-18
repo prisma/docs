@@ -35,7 +35,7 @@ const getTitle = (frontmatter: any, lang?: any, db?: any) => {
     const titleEntry = frontmatter.techMetaTitles
       ? frontmatter.techMetaTitles.find((item: any) => item.name === queryParam)
       : null
-    pageSeoTitle = titleEntry ? titleEntry.value : `${pageSeoTitle} | ${queryParam}`
+    pageSeoTitle = titleEntry ? titleEntry.value : `${pageSeoTitle} : ${queryParam}`
   }
   return pageSeoTitle
 }
