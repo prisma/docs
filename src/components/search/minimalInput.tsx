@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -197,6 +197,12 @@ const SearchBox = ({ showHeaderSearch, value }: any) => {
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [])
+
+  React.useEffect(() => {
+    if (value) {
+      inputEl.current.focus()
+    }
+  }, [value])
 
   return (
     <SearchBoxDiv>

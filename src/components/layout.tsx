@@ -1,5 +1,4 @@
 import { MDXProvider } from '@mdx-js/react'
-import { LensProvider, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { RouterProps } from '@reach/router'
 import { Script } from 'gatsby'
 import React, { useState } from 'react'
@@ -7,12 +6,14 @@ import StickyBox from 'react-sticky-box'
 import styled from 'styled-components'
 
 import { useLayoutQuery } from '../hooks/useLayoutQuery'
+import { defaultTheme as theme } from '../theme'
 import Footer from './footer'
 import Header from './header'
 import SearchBox from './search/minimalInput'
 import shortcodes from './shortcodes'
 import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
+import { WebProvider } from './WebProvider'
 
 import '../styles/layout.css'
 
@@ -55,6 +56,18 @@ const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
   @media (min-width: 1025px) and (max-width: 1240px) {
     margin: 0;
     ${(p) => (p.homePage ? 'max-width: 100%' : 'max-width: 570px')};
+  }
+  section {
+    > h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      &:has(> inlinecode) {
+        line-height: 1.5;
+      }
+    }
   }
 `
 
@@ -157,8 +170,8 @@ export default function Layout({
   const { header, footer } = site.siteMetadata
   const [mobileNavOpen, setMobileNav] = useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
-
-  const [value, setValue] = useState('')
+  const queryString = new URLSearchParams(location?.search).get('query')
+  const [value, setValue] = useState(queryString || '')
 
   const closeSidenavSearch = () => setShowDocsBtn(true)
 
@@ -166,8 +179,8 @@ export default function Layout({
 
   const setInputText = (input: any) => setValue(input)
   return (
-    <LensProvider>
-      <Script src="https://kit.fontawesome.com/f46012ac73.js" crossOrigin="anonymous" />
+    <WebProvider>
+      <Script src="https://kit.fontawesome.com/1772ab679c.js" crossOrigin="anonymous" />
       <MDXProvider components={shortcodes}>
         <LayoutWrapper className="dark">
           <Header
@@ -178,7 +191,6 @@ export default function Layout({
             sidenavSearchOpened={!showDocsBtn}
             closeSidenavSearch={closeSidenavSearch}
             setInputText={setInputText}
-            wide={wide}
           />
           <Wrapper homePage={homePage}>
             <Container homePage={homePage} wide={wide}>
@@ -209,6 +221,6 @@ export default function Layout({
       <FooterWrapper>
         <Footer footerProps={footer} />
       </FooterWrapper>
-    </LensProvider>
+    </WebProvider>
   )
 }

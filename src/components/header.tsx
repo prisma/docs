@@ -1,9 +1,9 @@
-import { Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import Link from '../components/link'
+import Search from '../components/search'
 import Sidebar from '../components/sidebar'
 import ExternalLink from '../icons/ExternalLink'
 import Github from '../icons/Github'
@@ -11,7 +11,8 @@ import Logo from '../icons/Logo'
 import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
-import Search from '../components/search'
+import { defaultTheme as theme } from '../theme'
+import { Icon } from './Icon'
 
 type HeaderViewProps = {
   headerProps: HeaderProps

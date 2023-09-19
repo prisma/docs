@@ -1,7 +1,8 @@
 import React from 'react'
-import styled from 'styled-components'
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import { AlertCircle } from 'react-feather'
+import styled from 'styled-components'
+
+import { defaultTheme as theme } from '../../theme'
 
 interface AdmonitionType {
   type?: string
@@ -25,11 +26,13 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
       )}
       {children && Array.isArray(children) ? (
         <FlexContainer>
-          {children.map((child: any, index: number) => (
-            <ChildContainer key={index}>
-              {child && child.props && child.props.children}
-            </ChildContainer>
-          ))}
+          {children.map((child: any, index: number) =>
+            child.props.originalType === 'ul' ? (
+              <ChildList key={index}>{child && child.props && child.props.children}</ChildList>
+            ) : (
+              <ChildDiv key={index}>{child && child.props && child.props.children}</ChildDiv>
+            )
+          )}
         </FlexContainer>
       ) : (
         children
@@ -45,8 +48,12 @@ const FlexContainer = styled.div`
   flex-direction: column;
 `
 
-const ChildContainer = styled.div`
+const ChildDiv = styled.div`
   margin: 0;
+`
+
+const ChildList = styled.ul`
+  padding-left: 16px;
 `
 
 const AdmonitionWrapper = styled.span<{ type?: string }>`

@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import { useLocation } from '@reach/router'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 import * as React from 'react'
@@ -177,6 +177,7 @@ const TreeNode = ({
   staticLink,
   duration,
   preview,
+  deprecated,
   earlyaccess,
   lastLevel,
   hidePage,
@@ -285,6 +286,7 @@ const TreeNode = ({
           )}
           {duration && <span className="tag">{duration}</span>}
           {preview && <span className="tag small">Preview</span>}
+          {deprecated && <span className="tag small">Deprecated</span>}
           {earlyaccess && <span className="tag small">Early Access</span>}
         </Link>
       )}
