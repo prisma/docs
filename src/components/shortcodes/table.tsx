@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -25,6 +25,15 @@ const TableWrapper = styled.div`
       border-left: 0;
       border-right: 0;
       border-radius: 0 !important;
+    }
+  }
+  @media (prefers-color-scheme: dark) {
+    table,
+    th,
+    td,
+    tr {
+      border-color: ${theme.colors.gray[800]};
+      color: ${theme.colors.gray[100]};
     }
   }
 `
