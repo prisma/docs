@@ -12,7 +12,7 @@ export default (props: any) => (
   </Logo>
 )
 
-const Logo = styled.svg`
+const Logo = styled.svg<{ fill?: string }>`
   height: 26px;
-  fill: #2d3748;
+  ${(p) => (p.fill ? `fill: ${p.fill}` : `fill: #2d3748`)};
 `
