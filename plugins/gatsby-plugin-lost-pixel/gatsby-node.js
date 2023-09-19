@@ -54,12 +54,12 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
 
       // console.log('entry', {
       //   path: edge.node.path,
-      //   name: edge.node.path.split('/').join('-'),
+      //   name: edge.node.path
       // })
 
       return {
         path: edge.node.path,
-        name: edge.node.path.split('/').join('-'),
+        name: edge.node.path
       }
     })
     .filter((edge) => edge !== null)
