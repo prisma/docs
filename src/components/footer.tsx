@@ -303,7 +303,6 @@ const FooterSec = ({
                 >
                   <div className="link-title-label">
                     Accelerate
-                    <span className="label">Preview</span>
                   </div>
                 </S.Link>
                 <S.Link
