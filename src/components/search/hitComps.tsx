@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import { Snippet } from 'react-instantsearch-dom'
 import styled from 'styled-components'

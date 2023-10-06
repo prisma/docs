@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -112,6 +112,18 @@ const Wrapper = styled.div`
     .pre-highlight {
       margin-right: 0;
       margin-left: 0;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .result {
+      background-color: #2d3748 !important;
+      color: #e2e8f0 !important;
+      pre,
+      pre .token.plain {
+        background-color: #2d3748 !important;
+        color: #e2e8f0 !important;
+      }
     }
   }
 `
