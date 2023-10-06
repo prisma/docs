@@ -51,6 +51,12 @@ const Tabs = styled.div`
     font-weight: 600;
     color: ${theme.colors.gray[900]};
   }
+
+  @media (prefers-color-scheme: dark) {
+    .tab.active {
+      color: ${theme.colors.gray[500]};
+    }
+  }
 `
 const Wrapper = styled.div`
   margin-top: 2rem;

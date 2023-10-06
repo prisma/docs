@@ -14,7 +14,7 @@ const HTML = (props: any) => {
           data-project-name="Prisma"
           data-project-color="#2D3748"
           data-project-logo="https://www.prisma.io/docs/ai_logo.png"
-          data-button-text="Help"
+          data-button-text="Ask AI"
         ></script>
 
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
