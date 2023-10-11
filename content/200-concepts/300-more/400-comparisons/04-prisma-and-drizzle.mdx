@@ -1,0 +1,326 @@
+---
+title: 'Drizzle'
+metaTitle: 'Prisma vs Drizzle'
+metaDescription: 'Learn how Prisma compares to Drizzle.'
+---
+
+<TopBlock>
+
+This page compares Prisma and Drizzle.
+
+</TopBlock>
+
+## Drizzle vs Prisma
+
+While Prisma and Drizzle solve similar problems, they work in very different ways and have individual pros and cons. Which one to choose will depend on the need of your project and the exact tradeoffs that are important for it.
+
+**Drizzle** is a traditional SQL query builder which lets you compose SQL queries with JavaScript/TypeScript functions. It can be used to query a database or run migrations.
+
+**Prisma** is a different kind of ORM that mitigates many problems of traditional ORMs, such as bloated model instances, mixing business with storage logic, lack of type-safety or unpredictable queries caused e.g. by lazy loading.
+
+It uses the [Prisma schema](https://www.prisma.io/docs/concepts/components/prisma-schema) to define application models in a declarative way. Prisma Migrate then allows to generate SQL migrations from the Prisma schema and executes them against the database. CRUD queries are provided by Prisma Client, a lightweight and entirely type-safe database client for Node.js and TypeScript.
+
+## API design & Level of abstraction
+
+Drizzle and Prisma operate on different levels of abstraction. Drizzle's philosophy is "If you know SQL, you know Drizzle ORM". It mirrors SQL in its API while Prisma Client provides a higher-level abstraction that was carefully designed with the common tasks of application developers in mind. Prisma's API design heavily leans on the idea of [making the right thing easy](https://www.jason.af/right-thing-easy-thing/).
+
+While Prisma Client operates on a higher-level of abstraction, it strives to expose the full power of the underlying database and lets you drop down to [raw SQL](https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access) at any time if your use case requires it. However, full use of Prisma ORM and development of your application does not require SQL knowledge. Prisma’s query syntax is familiar to any JavaScript or TypeScript developer and Prisma’s robust type checking makes constructing queries easy and intuitive. In general, Prisma’s goal is to construct a query syntax focused on developer experience and productivity. You can learn more about this here: [Why Prisma](https://www.prisma.io/docs/concepts/overview/why-prisma#application-developers-should-care-about-data--not-sql).
+
+The following sections examine a few examples for how Prisma's and Drizzle's APIs differ in certain scenarios and what the rationale of Prisma's API design is in these cases.
+
+### Filtering
+
+Drizzle exposes the underlying filter and conditional operators for a given SQL dialect. Prisma on the other hand, provides a more [generic set of operators](https://www.prisma.io/docs/concepts/components/prisma-client/filtering-and-sorting#filter-conditions-and-operators) that are intuitive to use.
+
+A good example of how the filtering APIs of both Drizzle and Prisma differ is by looking at `string` filters. While Drizzle provides filters for `like` and `ilike`, Prisma provides more specific operators that developers can use, e.g.: `contains`, `startsWith` and `endsWith`.
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    title: 'Hello World',
+  },
+})
+```
+
+</block>
+
+<block content="Drizzle">
+
+```ts
+const posts = await db
+  .select()
+  .from(posts)
+  .where(ilike(posts.title, 'Hello World'))
+```
+
+</block>
+
+</ParallelBlocks>
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    title: { contains: 'Hello World' },
+  },
+})
+```
+
+</block>
+
+<block content="Drizzle">
+
+```ts
+const posts = await db
+  .select()
+  .from(posts)
+  .where(ilike(posts.title, '%Hello World%'))
+```
+
+</block>
+
+</ParallelBlocks>
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    title: { startsWith: 'Hello World' },
+  },
+})
+```
+
+</block>
+
+<block content="Drizzle">
+
+```ts
+const posts = await db
+  .select()
+  .from(posts)
+  .where(ilike(posts.title, 'Hello World%'))
+```
+
+</block>
+
+</ParallelBlocks>
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    title: { endsWith: 'Hello World' },
+  },
+})
+```
+
+</block>
+
+<block content="Drizzle">
+
+```ts
+const posts = await db
+  .select()
+  .from(posts)
+  .where(ilike(posts.title, '%Hello World'))
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Pagination
+
+Drizzle only offers limit-offset pagination while Prisma conveniently provides dedicated APIs for both limit-offset but also cursor-based. You can learn more about both approaches in the [Pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination) section of the docs.
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+// limit-offset pagination
+const postPage = await prisma.post.findMany({
+  where: {
+    title: 'Hello World',
+  },
+  skip: 6,
+  take: 3,
+})
+// cursor-based pagination
+const postPage = await prisma.post.findMany({
+  where: {
+    title: 'Hello World',
+  },
+  cursor: { id: 7 },
+  take: 3,
+})
+```
+
+</block>
+
+<block content="Drizzle">
+
+```ts
+// limit-offset pagination (cursor-based not currently possible)
+const postPage = await db
+  .select()
+  .from(users)
+  .where(ilike(posts.title, 'Hello World%'))
+  .limit(3)
+  .offset(6)
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Relations
+
+Working with records that are connected via foreign keys can become very complex in SQL. Prisma's concept of [virtual relation field](https://www.prisma.io/docs/concepts/components/prisma-schema/relations#relation-fields) enables an intuitive and convenient way for application developers to work with related data. Some benefits of Prisma's approach are:
+
+- traversing relationships via the fluent API ([docs](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#fluent-api))
+- nested writes that enable updating/creating connected records ([docs](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#nested-writes))
+- applying filters on related records ([docs](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#relation-filters))
+- easy and type-safe querying of nested data without worrying about underlying SQL ([docs](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#nested-reads))
+- creating nested TypeScript typings based on models and their relations ([docs](https://www.prisma.io/docs/concepts/components/prisma-client/advanced-type-safety))
+- intuitive modeling of relations in the data model via relation fields ([docs](https://www.prisma.io/docs/concepts/components/prisma-schema/relations))
+- implicit handling of relation tables (also sometimes called JOIN, link, pivot or junction tables) ([docs](https://www.prisma.io/docs/concepts/components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations))
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```ts
+const postsWithAuthors = await prisma.post.findMany({
+  include: {
+    author: true,
+  },
+})
+```
+
+</block>
+
+<block content="Drizzle">
+
+```ts
+const postsWithAuthors = await db
+  .select()
+  .from(posts)
+  .leftJoin(users, eq(posts.authorId, users.id))
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Data modeling and migrations
+
+Prisma models are defined in the [Prisma schema](https://www.prisma.io/docs/concepts/components/prisma-schema) while Drizzle uses TypeScript functions for table definitions. These functions are then exported and used in queries.
+
+Prisma generates a lightweight database client that exposes a tailored and fully type-safe API to read and write data for the models that are defined in the Prisma schema, following the DataMapper ORM pattern.
+
+Prisma's DSL for data modeling is lean, simple and intuitive to use. When modeling data in VS Code, you can further take advantage of Prisma's powerful [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) with features like autocompletion, quick fixes, jump to definition and other benefits that increase developer productivity. On the other hand, Drizzle’s use of TypeScript means that you can lean on the power of the TypeScript ecosystem in order to level up your development.
+
+<ParallelBlocks>
+
+<block content="Prisma">
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  email String  @unique
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  Int?
+  author    User?   @relation(fields: [authorId], references: [id])
+}
+```
+
+</block>
+
+<block content="Drizzle">
+
+```ts
+import {
+  boolean,
+  integer,
+  pgTable,
+  serial,
+  text,
+  uniqueIndex,
+  varchar,
+} from 'drizzle-orm/pg-core'
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 256 }),
+  email: varchar('email', { length: 256 }).unique(),
+})
+
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 256 }).notNull(),
+  content: text('content'),
+  published: boolean('published'),
+  authorId: integer('author_id').references(() => users.id),
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+Migrations work similarly between Drizzle and Prisma. Both tools follow the approach of generating SQL files based on the provided model definitions and provide a CLI to execute them against the database. The SQL files can be modified before the migrations are executed so that any custom database operation can be performed with either migration system.
+
+## Additional products
+
+Both Drizzle and Prisma offer products alongside an ORM. Drizzle Studio and Prisma Studio offer a way for users to interact with their databases via a GUI. Both also allow for self hosting in order to provide a way for non-technical users and other team members to access a database.
+
+In addition to Prisma Studio, Prisma offers commercial products via the Prisma Data Platform:
+
+- [Prisma Accelerate](https://prisma.io/accelerate): A connection pooler and globally distributed cache integrated into Prisma ORM. Users can take advantage of connection pooling immediately and can control caching at an individual query level.
+- [Prisma Pulse](https://prisma.io/pulse): A change data capture (CDC) service where Prisma Client can subscribed to database changes and receive them in real-time with little to no setup.
+
+These products work hand-in-hand with Prisma ORM to offer comprehensive data tooling that makes building with data easy.
+
+## Ecosystem
+
+Prisma has many features built into the client that help teams get a better understanding of their data usage. [Metrics](https://www.prisma.io/docs/concepts/components/prisma-client/metrics) and [tracing](https://www.prisma.io/docs/concepts/components/prisma-client/opentelemetry-tracing) are two features that can be enabled at any time and give you per query information. This information can be integrated with external tools so that you can track performance over time.
+
+Both Drizzle and Prisma have cases where users want to do something not directly supported by the library. Drizzle relies on the expressiveness of SQL to avoid these cases, while Prisma has built [Prisma Client extensions](https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions) to allow any user to add additional behaviors to their instance of Prisma Client. These extensions are also sharable, meaning teams can develop them for use across their projects or even for use by other teams.
+
+While Drizzle is a relatively new product, Prisma is well established in the JavaScript/TypeScript space and has fostered a large community across GitHub, Slack, and Discord. It has proven value, [many companies trust Prisma in production](http://prisma.io/showcase), and is even included as the data layer tool of choice in many meta-frameworks and development platforms like [Amplication](https://amplication.com/), [Wasp](https://wasp-lang.dev/), [RedwoodJS](https://redwoodjs.com/), [KeystoneJS](https://keystonejs.com/) and [Remix](https://remix.run/).
+
+## Database support
+
+Both Drizzle and Prisma support multiple different kinds of databases. Drizzle achieves this support through adapters which integrate with popular JavaScript database drivers. Prisma has begun [adding support for database drivers](https://www.prisma.io/blog/serverless-database-drivers-KML1ehXORxZV), but primarily uses [built-in drivers](https://www.prisma.io/docs/concepts/components/prisma-engines/query-engine#the-query-engine-at-runtime) to communicate with an underlying database. Prisma also defaults connections to TLS, which improves security.
+
+Additionally, Prisma supports CockroachDB, MSSQL, and MongoDB, which Drizzle does not currently support. Drizzle currently supports Cloudflare D1, which Prisma does not.
+
+## Conclusion
+
+Both Drizzle ORM and Prisma ORM are tools for data access that work well. Drizzle is focused on being a thin wrapper around a SQL-like syntax while Prisma is focused on a convenient and expressive API. Other important differences include Prisma’s support of MSSQL and MongoDB, support for additional features via Prisma Client extensions, additional cloud-ready products, and a robust ecosystem.
+
+For teams that use SQL daily, Drizzle offers a thin wrapper that will feel familiar and is type safe. Prisma’s `queryRaw` feature, while available, does not provide the same level of type safety.
+
+On the other hand, for teams that are a mix of developers (front-end, back-end, and full-stack) that have varying levels of experience with databases, Prisma offers a comprehensive and easy to learn approach for data access.
