@@ -303,7 +303,6 @@ const FooterSec = ({
                 >
                   <div className="link-title-label">
                     Accelerate
-                    <span className="label">Preview</span>
                   </div>
                 </S.Link>
                 <S.Link
@@ -484,7 +483,7 @@ const FooterSec = ({
                 <Icon color="currentColor" size="inherit" icon={'fa-brands fa-discord'} />
               </a>
               <a href="https://twitter.com/prisma" target="_blank" rel="noopener">
-                <Icon color="currentColor" size="inherit" icon={'fa-brands fa-twitter'} />
+                <Icon color="currentColor" size="inherit" icon={'fa-brands fa-x-twitter'} />
               </a>
               <a href="https://www.youtube.com/c/PrismaData" target="_blank" rel="noopener">
                 <Icon color="currentColor" size="inherit" icon={'fa-brands fa-youtube'} />
