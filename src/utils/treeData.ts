@@ -32,6 +32,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             staticLink,
             duration,
             preview,
+            deprecated,
             earlyaccess,
             dbSwitcher,
             langSwitcher,
@@ -60,6 +61,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             items: [],
             topLevel,
             preview,
+            deprecated,
             earlyaccess,
             staticLink,
           }
@@ -73,6 +75,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.staticLink = staticLink
           tmp.duration = duration
           tmp.preview = preview
+          tmp.deprecated = deprecated
           tmp.earlyaccess = earlyaccess
           tmp.topLevel = topLevel
           tmp.hidePage = hidePage
@@ -101,6 +104,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           staticLink,
           duration,
           preview,
+          deprecated,
           earlyaccess,
           topLevel,
           hidePage,

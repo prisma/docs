@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -50,6 +50,12 @@ const Tabs = styled.div`
   .tab.active {
     font-weight: 600;
     color: ${theme.colors.gray[900]};
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .tab.active {
+      color: ${theme.colors.gray[500]};
+    }
   }
 `
 const Wrapper = styled.div`

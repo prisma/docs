@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import * as CopyToClipboard from 'react-copy-to-clipboard'
 import styled from 'styled-components'
