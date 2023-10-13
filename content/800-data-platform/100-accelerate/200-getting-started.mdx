@@ -15,12 +15,12 @@ toc: true
 To get started with Accelerate, you will need the following:
 
 - A GitHub account.
-- A project that uses [Prisma Client](/concepts/components/prisma-client) `4.16.1` or higher. (If your project is using interactive transactions, you need to use `5.1.1` or higher.)
+- A project that uses [Prisma Client](/concepts/components/prisma-client) `4.16.1` or higher. If your project is using interactive transactions, you need to use `5.1.1` or higher. (We always recommend using the latest version of Prisma.)
 - A hosted PostgreSQL, MySQL, PlanetScale, CockroachDB, or MongoDB database.
 
 ## 1. Enable Accelerate in a Cloud Project
 
-In order to enable Accelerate, you can [log in to Prisma Data Platform and create a new Cloud Project](https://pris.ly/pdp). Follow the instructions in the UI to add Accelerate.
+In order to enable Accelerate, you can log in to [Prisma Data Platform](https://pris.ly/pdp) and create a new Cloud Project. Follow the instructions in the UI to add Accelerate.
 
 For further information on each individual step, you can find additional documentation [here](/data-platform/cloud-projects/platform/projects#configure-accelerate).
 
@@ -28,7 +28,7 @@ At the end of the setup process, you'll obtain a connection string that connects
 
 ## 2. Use Accelerate in your application
 
-To get started using Accelerate, ensure you’re using Prisma Client `4.16.1` or higher.
+To get started using Accelerate, we recommend using the [latest version of Prisma ORM](https://github.com/prisma/prisma/releases/).
 
 ### 2.1. Update your database connection string
 
@@ -47,8 +47,7 @@ Most likely, as shown above, your database connection string in defined in a `.e
 
 Update that variable to use the new Accelerate connection string:
 
-```shell
-# .env
+```env file=.env
 # __API_KEY__ is a unique API key that Accelerate generates and automatically assigns to a project.
 DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
 
@@ -56,10 +55,15 @@ DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
 # DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
 ```
 
-Prisma Migrate and Prisma Studio do not work with a `prisma://` connection string. In order to continue using these features add a new variable to the `.env` file named `DIRECT_DATABASE_URL` whose value is the direct database connection string:
+Prisma Migrate and Introspection do not work with a `prisma://` connection string. In order to continue using these features add a new variable to the `.env` file named `DIRECT_DATABASE_URL` whose value is the direct database connection string:
 
-```shell highlight=3;add
-# .env
+<Admonition>
+
+As of Prisma version `5.2.0` you can use Prisma Studio with the Accelerate connection string.
+
+</Admonition>
+
+```env file=.env highlight=3;add
 DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
 DIRECT_DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
 ```
@@ -74,39 +78,51 @@ datasource db {
 }
 ```
 
-Prisma Migrate and Prisma Studio will use the `directUrl` connection string rather than the one defined in `url` when this configuration is provided.
+Migrations and introspections will use the `directUrl` connection string rather than the one defined in `url` when this configuration is provided.
+
+> `directUrl` is useful for you to carry out migrations and introspections. However, you don't need `directUrl` to use Accelerate in your application.
 
 ### 2.2. Install the Accelerate Prisma Client extension
 
 Run the following command to install the Accelerate extension for Prisma Client:
 
-```shell
+```terminal
 npm install @prisma/extension-accelerate
-```
-
-If your Prisma version is below `4.16.1`, enable the Prisma Client extension feature:
-
-```prisma
-/// prisma/schema.prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["clientExtensions"]
-}
 ```
 
 ### 2.3. Generate Prisma Client for Accelerate
 
-Run the following command to generate Prisma Client for Accelerate:
+If you're using Prisma version `5.2.0` or greater, Prisma Client will automatically determine how it should connect to the database depending on the protocol in the database connection string. If the connection string in the `DATABASE_URL` starts with `prisma://`, Prisma Client will try to connect to your database using Prisma Accelerate.
 
-```shell
-npx prisma generate --accelerate
+When using Prisma Accelerate in long-running application servers, such as a server deployed on AWS EC2, you can generate the Prisma Client by executing the following command:
+
+```terminal
+npx prisma generate
 ```
+
+When using Prisma Accelerate in a Serverless or an Edge application, we recommend you to run the following command to generate Prisma Client:
+
+```terminal
+npx prisma generate --no-engine
+```
+
+<Admonition type="info">
+
+The `--no-engine` flag prevents a Query Engine file from being included in the generated Prisma Client, this ensures the bundle size of your application remains small.
+
+</Admonition>
 
 <Admonition type="warning">
 
+If your Prisma version is below `5.2.0`, generate Prisma Client with the `--accelerate` option:
+
+```terminal
+npx prisma generate --accelerate
+```
+
 If your Prisma version is below `5.0.0`, generate Prisma Client with the `--data-proxy` option:
 
-```shell
+```terminal
 npx prisma generate --data-proxy
 ```
 
@@ -182,3 +198,11 @@ You should now see improved performance for your cached queries.
 For information about which strategy best serves your application, see [Select a cache strategy](/data-platform/accelerate/concepts#selecting-a-cache-strategy).
 
 </Admonition>
+
+## Migrating from Data Proxy
+
+Similar to Data Proxy, Accelerate can be used as a _stand-alone connection pooler_ for your application (Accelerate's caching feature is opt-in, so unless you explicitly specify a caching strategy for your Prisma Client queries, Accelerate will only serve as a connection pool for your application).
+
+To migrate from Data Proxy to Accelerate, make sure that you fulfil the [prerequisites](/data-platform/accelerate/getting-started#prerequisites) to use Accelerate in your application.
+
+After you have successfully [enabled](/data-platform/accelerate/getting-started#1-enable-accelerate-in-a-cloud-project) Accelerate and generated an Accelerate connection string, follow the steps outlined [here](/data-platform/accelerate/getting-started#21-update-your-database-connection-string) to use Accelerate in your application.
