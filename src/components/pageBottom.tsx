@@ -1,4 +1,3 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import React, { MouseEvent, useCallback, useState } from 'react'
 import { X } from 'react-feather'
@@ -9,6 +8,7 @@ import config from '../../config'
 import Down from '../icons/Down'
 import Twitter from '../icons/Twitter'
 import Up from '../icons/Up'
+import { defaultTheme as theme } from '../theme'
 import Link from './link'
 import { ButtonWrapper } from './shortcodes/button'
 

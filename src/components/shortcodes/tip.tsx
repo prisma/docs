@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -28,6 +28,10 @@ const Wrapper = styled.section`
 
   & > div {
     margin-left: 1.5rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: ${theme.colors.gray[800]};
   }
 `
 

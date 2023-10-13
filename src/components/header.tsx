@@ -1,9 +1,9 @@
-import { Icon, defaultTheme as theme } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import Link from '../components/link'
+import Search from '../components/search'
 import Sidebar from '../components/sidebar'
 import ExternalLink from '../icons/ExternalLink'
 import Github from '../icons/Github'
@@ -11,7 +11,8 @@ import Logo from '../icons/Logo'
 import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
-import Search from '../components/search'
+import { defaultTheme as theme } from '../theme'
+import { Icon } from './Icon'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -115,7 +116,7 @@ const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
 `
 
 const HeaderWrapper = styled.div<{ open: boolean }>`
-  background: #fff;
+  background: var(--header-bg-color);
   padding: 0 16px;
   display: flex;
   justify-content: center;
@@ -131,6 +132,26 @@ const HeaderWrapper = styled.div<{ open: boolean }>`
     z-index: 105;
     padding: 20px 16px;
     ${(p) => p.open && `position: fixed;`}
+  }
+
+  .dark {
+    display: none;
+  }
+
+  .light {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    border-color: #242c3a;
+
+    .dark {
+      display: block;
+    }
+
+    .light {
+      display: none;
+    }
   }
 `
 
@@ -217,6 +238,14 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
   @media (min-width: ${theme.breakpoints.tabletVertical}) and (max-width: 1024px) {
     font-size: 14px;
   }
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--main-font-color) !important;
+    &.active-item span {
+      background: ${theme.colors.gray[800]};
+      color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][400]} !important;
+    }
+  }
 `
 
 const SecondLevelMobileNavLink = styled.div`
@@ -253,6 +282,9 @@ const SearchComponentDesktop = styled.div<{
     position: absolute;
     ${(p) => !p.homePage && !p.sidenavSearchOpened && 'display: none;'}
     ${(p) => !p.homePage && p.sidenavSearchOpened && 'margin-top: 1rem;'}
+  }
+  @media (prefers-color-scheme: dark) {
+    background: #242c3a;
   }
 `
 const SecondLevelNav = styled.div<{ wide?: boolean }>`
@@ -323,6 +355,7 @@ const HomeIcons = styled.div`
   display: flex;
   align-items: center;
   a {
+    color: var(--main-font-color);
     transition: transform 0.18s ease-out;
     &:hover {
       transform: translateY(-2px);
@@ -333,7 +366,7 @@ const HomeIcons = styled.div`
       }
     }
     &:last-of-type {
-      color: #2d3748;
+      //color: #2d3748;
       font-family: 'Inter';
       font-size: 22px;
       font-style: normal;
@@ -420,7 +453,8 @@ const Header = ({
         <BucketHeader wide={wide}>
           <HomeIcons>
             <a href="https://www.prisma.io">
-              <Logo />
+              <Logo className="light" fill={'#2d3748'} />
+              <Logo className="dark" fill={'#ffffff'} />
             </a>
             <a href="/docs">Docs</a>
           </HomeIcons>
@@ -436,7 +470,8 @@ const Header = ({
           </DocsMobileButton>
 
           <GithubLink href="https://github.com/prisma" target="_blank">
-            <Github width={24} height={24} />
+            <Github className="light" fill={'#2d3748'} width={24} height={24} />
+            <Github className="dark" fill={'#ffffff'} width={24} height={24} />
           </GithubLink>
 
           {showMobileNav && (
