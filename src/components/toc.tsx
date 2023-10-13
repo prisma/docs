@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -14,7 +14,10 @@ const ChapterTitle = styled.div`
   letter-spacing: 0.01em;
   text-transform: uppercase;
   color: ${theme.colors.gray[900]};
-  margin: ${theme.space[16]} 0 0;
+  margin: 0 0;
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[300]};
+  }
 `
 
 const HeadingList = styled.ul`
@@ -36,6 +39,14 @@ const HeadingList = styled.ul`
       }
     }
   }
+  @media (prefers-color-scheme: dark) {
+    li a {
+      color: ${theme.colors.gray[500]};
+      &:hover {
+        color: ${theme.colors.gray[600]};
+      }
+    }
+  }
 `
 
 interface ItemProps {
@@ -53,7 +64,13 @@ const ListItem = styled.li<ItemProps>`
     ${(props) => (props.isActive ? 'background-size: 100% 2px;' : null)}
     & > inlinecode {
       background: ${(props) => (props.isActive ? `var(--dark-color)` : '')};
-      color: ${(props) => (props.isActive ? 'var( --main-bgd-color)' : '#000')};
+      color: ${(props) => (props.isActive ? 'var(--main-bgd-color)' : '#000')};
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    > a > inlinecode {
+      color: var(--main-font-color);
     }
   }
 `
@@ -106,6 +123,8 @@ const useIntersectionObserver = (
   const depth = tocDepth ?? 2
   const allHeadings = headings
 
+  const intersectionActive = React.useRef<string | undefined>(undefined)
+
   const getKeyByValue: any = (obj: any, value: string) =>
     Object.keys(obj).find((key) => obj[key] === value)
   const deepExists: any = (obj: any, query: string) =>
@@ -153,6 +172,7 @@ const useIntersectionObserver = (
               deepExists(e, visibleId) ? e : false
             )
             setActiveId(secondH[0].url.slice(1).replaceAll('inlinecode', ''))
+            intersectionActive.current = secondH[0].url.slice(1).replaceAll('inlinecode', '')
           } else if (
             visibleHeadings.length &&
             firstH.length &&
@@ -162,11 +182,18 @@ const useIntersectionObserver = (
             parseInt(visibleHeadingN ? visibleHeadingN : '0') > depth + 1
           ) {
             setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
+            intersectionActive.current = firstH[0].url.slice(1).replaceAll('inlinecode', '')
           } else {
             setActiveId(firstH[0].url.slice(1).replaceAll('inlinecode', ''))
+            intersectionActive.current = firstH[0].url.slice(1).replaceAll('inlinecode', '')
           }
         } else {
           setActiveId(filteredVisible[0].target.id)
+          intersectionActive.current = filteredVisible[0].target.id
+        }
+      } else {
+        if (intersectionActive.current === Object.keys(headingElementsRef.current)[0]) {
+          setActiveId('')
         }
       }
     }

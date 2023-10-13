@@ -20,6 +20,7 @@ export interface ArticleFrontmatter {
   hidePage?: boolean
   tocDepth?: number
   codeStyle?: boolean
+  deprecated?: boolean
 }
 
 export interface ArticleData {
