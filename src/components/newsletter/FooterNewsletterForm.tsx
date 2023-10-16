@@ -115,6 +115,8 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
   const mailchimpForm = useRef(null)
 
   useEffect(() => {
+    if (name.trim().length === 0 || email.trim().length === 0) return
+
     if (mailchimpForm.current) {
       // @ts-ignore
       mailchimpForm.current.addEventListener('submit', () => {
