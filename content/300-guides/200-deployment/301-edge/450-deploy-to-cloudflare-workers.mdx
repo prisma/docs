@@ -6,7 +6,7 @@ metaDescription: 'Learn how to deploy a TypeScript application to Cloudflare Wor
 
 <TopBlock>
 
-Today you'll be deploying a Cloudflare Worker that uses Prisma to save every request to a PostgreSQL database for inspection later.
+Today you'll be deploying a Cloudflare Worker that uses Prisma to save every request to a PostgreSQL database and fetches the 20 of the most recent logs.
 
 This guide covers Prisma, TypeScript, PostgreSQL, Prisma Accelerate, and Cloudflare Workers. Let's get started!
 
@@ -132,7 +132,7 @@ To prepare for the steps ahead, let's [create a private repository](https://gith
 Next, initialize your repository, then push your changes up to GitHub.
 
 ```terminal
-git remote add origin https://github.com/<username>/prisma-postgresql-cloudflare
+git remote add origin https://github.com/<username>/prisma-cloudflare-accelerate
 git add .
 git commit -m "initial commit"
 git push -u origin main
@@ -158,7 +158,7 @@ To get started, sign up for a free [Prisma Data Platform account](https://consol
 2. In your code editor, add the connection string in the `wrangler.toml` file.
 
    ```diff file=wrangler.toml
-     name = "prisma-postgresql-cloudflare"
+     name = "prisma-cloudflare-accelerate"
      main = "src/main.ts"
      compatibility_date = "2022-11-07"
 
@@ -218,9 +218,22 @@ export default {
       datasourceUrl: env.DATABASE_URL,
     }).$extends(withAccelerate())
 
+    await prisma.log.create({
+      data: {
+        level: 'Info',
+        message: `${request.method} ${request.url}`,
+        meta: {
+          headers: JSON.stringify(request.headers),
+        },
+      },
+    })
+
     const { data, info } = await prisma.logs
       .findMany({
         take: 20,
+        orderBy: {
+          id: 'desc',
+        },
       })
       .withAccelerateInfo()
 
@@ -259,7 +272,7 @@ This will pack your application with webpack and upload to Cloudflare. With a bi
 ```
 ✨  Built successfully, built project size is 94 KiB.
 ✨  Successfully published your script to
-https://prisma-postgresql-cloudflare.ankman.workers.dev
+https://prisma-cloudflare-accelerate.ankman.workers.dev
 ```
 
 Visit your deployment URL and you'll again see:
