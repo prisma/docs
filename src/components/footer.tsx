@@ -285,20 +285,6 @@ const FooterSec = ({
                 <S.Link
                   color={color}
                   theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/data-platform`}
-                >
-                  Data Browser
-                </S.Link>
-                <S.Link
-                  color={color}
-                  theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/data-platform/proxy`}
-                >
-                  Data Proxy
-                </S.Link>
-                <S.Link
-                  color={color}
-                  theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/data-platform/accelerate`}
                 >
                   <div className="link-title-label">
