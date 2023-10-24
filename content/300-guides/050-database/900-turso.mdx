@@ -23,19 +23,14 @@ Many aspects of using Prisma with Turso are just like using Prisma with any othe
 - use Prisma's existing [`sqlite` database connector](/concepts/database-connectors/sqlite) in your schema
 - use [Prisma Client](/concepts/components/prisma-client) in your application to talk to the database server at Neon
 
-## Specific considerations
+## Differences to consider
 
-### Managing schema changes
+There are a number of differences between Turso and SQLite to consider. You should be aware of the following when deciding to use Turso and Prisma:
 
-```sh
-npx prisma migrate diff
-```
+- **Remote and embedded SQLite databases**. libSQL uses HTTP to connect to the database and uses a remote file over a local file. libSQL also supports remote database replicas and embedded replicas. Embedded replicas enable you to replicate your primary database inside your application.
+- **Making schema changes**. Since libSQL uses HTTP to connect to the remote database, this makes it incompatible with Prisma Migrate. However, you can use [`prisma migrate diff`](/reference/api-reference/command-reference#migrate-diff) <span class="api"></span> to create a schema migration and then apply the changes to your database using [Turso's CLI](https://docs.turso.tech/reference/turso-cli).
 
-```sh
-turso db shell project_name < path/to/migration-file.sql
-```
-
-### Connect and query a remote Turso database
+### Connect and query your primary database
 
 1. Create an authentication token that will allow you to connect to the database:
 
@@ -100,7 +95,9 @@ const prisma = new PrismaClient({ adapter })
 
 You can use Prisma Client as you normally would with full type-safety as you normally would in your project.
 
-### Connect and query an embedded database replica
+<!-- TODO: how to connect to a remote database replica -->
+
+### How to connect and query from an embedded replica
 
 Turso supports [embedded replicas](https://blog.turso.tech/introducing-embedded-replicas-deploy-turso-anywhere-2085aa0dc242). Turso's embedded replicas enable you to have a copy of your primary, remote database _inside_ your application. This is similar to having an embedded or SQLite database.
 
@@ -147,4 +144,20 @@ const prismaClientSingleton = () => {
   sync()
   return new PrismaClient({ adapter })
 }
+```
+
+### How to manage schema changes
+
+Generate a SQL migration file using the `prisma migrate diff` command:
+
+<!-- TODO: figure out how this would work with subsequent migrations -->
+
+```sh
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > baseline.sql
+```
+
+Apply the generated migration file to your database:
+
+```sh
+turso db shell project_name < path/to/migration-file.sql
 ```
