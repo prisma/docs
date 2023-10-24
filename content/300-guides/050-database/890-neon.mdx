@@ -1,0 +1,101 @@
+---
+title: 'Using Prisma with Neon'
+metaTitle: 'Using Prisma with Neon'
+metaDescription: 'Guide to using Prisma with Neon'
+tocDepth: 2
+toc: true
+---
+
+<TopBlock>
+
+This guide explains how to connect Prisma to Neon, establish connections when using Prisma Client in serverless functions, and resolve [connection timeout](#connection-timeouts) issues.
+
+To configure Prisma Migrate with Neon, see [Use Prisma Migrate with Neon](../guides/prisma-migrate).
+
+</TopBlock>
+
+## What is Neon?
+
+[Neon](https://neon.tech/) Neon is a fully managed serverless PostgreSQL with a generous free tier. Neon separates storage and compute and offers modern developer features such as serverless, branching, bottomless storage, and more. Neon is open source and written in Rust.
+
+Learn more about Neon [here](https://neon.tech/docs).
+
+## Commonalities with other database providers
+
+Many aspects of using Prisma with Neon are just like using Prisma with any other relational database. You can still:
+
+- model your database with the [Prisma Schema Language](/concepts/components/prisma-schema)
+- use Prisma's existing [`postgresql` database connector](/concepts/database-connectors/postgresql) in your schema, along with the [connection string Neon provides you](https://neon.tech/docs/connect/connect-from-any-app)
+- use [Introspection](/concepts/components/introspection) for existing projects if you already have a database schema on Neon
+- use [`prisma migrate dev`](/concepts/components/prisma-migrate/migrate-development-productoin) to track schema migrations in your Neon database
+- use [`prisma db push`](/concepts/components/prisma-migrate/db-push) to push changes in your schema to Neon
+- use [Prisma Client](/concepts/components/prisma-client) in your application to talk to the database server at Neon
+
+## How to use Neon's connection pooling
+
+If you'd like to use the [connection pooling](https://neon.tech/blog/prisma-dx-improvements#providing-pooled-and-direct-connections-to-the-database) available in Neon, you will
+need to add `pgbouncer=true` to the end of the `DATABASE_URL` environment variable used in the `datasource.url` property:
+
+```env file=.env
+# Connect to Neon with PgBouncer.
+DATABASE_URL=postgres://daniel:<password>@ep-mute-rain-952417-pooler.us-east-2.aws.neon.tech:5432/neondb?pgbouncer=true`
+```
+
+If you would like to use the Prisma CLI in order to perform other actions on your database (e.g. migrations) you will need to add a `DIRECT_URL` environment variable to use in the `datasource.directUrl` property so that the CLI can bypass PgBouncer:
+
+```env file=.env highlight=4-5;add
+# Connect to Neon with PgBouncer.
+DATABASE_URL=postgres://daniel:<password>@ep-mute-rain-952417-pooler.us-east-2.aws.neon.tech:5432/neondb?pgbouncer=true`
+
+# Direct connection to the database. Used for migrations.
+DATABASE_URL="postgres://daniel:<password>@ep-mute-rain-952417.us-east-2.aws.neon.tech/neondb"
+```
+
+You can then update your `schema.prisma` to use the new direct URL:
+
+```prisma file=schema.prisma highlight=4;add
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+```
+
+More information about the `directUrl` field can be found [here](/reference/api-reference/prisma-schema-reference#fields).
+
+<Admonition type="info">
+
+We strongly recommend using `pgbouncer` in addition to `DIRECT_URL`. You will gain the great developer experience of the Prisma CLI while also allowing for connections to be pooled regardless of deployment strategy. While this is not strictly necessary for every app, serverless solutions will inevitably require connection pooling.
+
+</Admonition>
+
+## Resolving connection timeouts on Neon
+
+A connection timeout that occurs when connecting from Prisma to Neon causes an error similar to the following:
+
+```text
+Error: P1001: Can't reach database server at `ep-white-thunder-826300.us-east-2.aws.neon.tech`:`5432`
+Please make sure your database server is running at `ep-white-thunder-826300.us-east-2.aws.neon.tech`:`5432`.
+```
+
+This error most likely means that the Prisma query engine timed out before the Neon compute was activated.
+
+A Neon compute has two main states: _Active_ and _Idle_. Active means that the compute is currently running. If there is no query activity for 5 minutes, Neon places a compute into an idle state by default.
+
+When you connect to an idle compute from Prisma, Neon automatically activates it. Activation typically happens within a few seconds but added latency can result in a connection timeout. To address this issue, your can adjust your Neon connection string by adding a `connect_timeout` parameter. This parameter defines the maximum number of seconds to wait for a new connection to be opened. The default value is 5 seconds. A higher setting should provide the time required to avoid connection timeout issues. For example:
+
+```text
+DATABASE_URL=postgres://daniel:<password>@ep-mute-rain-952417.us-east-2.aws.neon.tech/neondb?connect_timeout=10`
+```
+
+<Admonition type="note">
+
+A `connect_timeout` setting of 0 means no timeout.
+
+</Admonition>
+
+Another possible cause of connection timeouts is [Prisma's connection pool](https://www.prisma.io/docs/concepts/components/prisma-client/working-with-prismaclient/), which has a default timeout of 10 seconds. This is typically enough time for Neon, but if you are still experiencing connection timeouts, you can try increasing this limit (in addition to the `connect_timeout` setting described above) by setting the `pool_timeout` parameter to a higher value. For example:
+
+```text
+DATABASE_URL=postgres://daniel:<password>@ep-mute-rain-952417.us-east-2.aws.neon.tech/neondb?connect_timeout=15&pool_timeout=15`
+```
