@@ -1,13 +1,15 @@
 ---
 title: 'Using Prisma with Turso'
-metaTitle: 'Using Prisma with Turso'
+metaTitle: 'Using Prisma with Turso (Early Access)'
 metaDescription: 'Guide to using Prisma with Turso'
 tocDepth: 3
 ---
 
 <TopBlock>
 
-This guide discusses the concepts behind using Prisma and Turso, explains the commonalities and differences between Turso and other database providers, and leads you through the process for configuring your application to integrate with Turso
+This guide discusses the concepts behind using Prisma and Turso, explains the commonalities and differences between Turso and other database providers, and leads you through the process for configuring your application to integrate with Turso.
+
+Prisma support for Turso is currently in [Early Access](/about/prisma/releases#early-access). We would appreciate your feedback in this [GitHub discussion](https://github.com/prisma/prisma/discussions/21345).
 
 </TopBlock>
 
@@ -27,75 +29,99 @@ Many aspects of using Prisma with Turso are just like using Prisma with any othe
 
 There are a number of differences between Turso and SQLite to consider. You should be aware of the following when deciding to use Turso and Prisma:
 
-- **Remote and embedded SQLite databases**. libSQL uses HTTP to connect to the database and uses a remote database over a local database. libSQL also supports remote database replicas and embedded replicas. Embedded replicas enable you to replicate your primary database inside your application.
+- **Remote and embedded SQLite databases**. libSQL uses HTTP to connect to the remote SQLite database. libSQL also supports remote database replicas and embedded replicas. Embedded replicas enable you to replicate your primary database inside your application.
 - **Making schema changes**. Since libSQL uses HTTP to connect to the remote database, this makes it incompatible with Prisma Migrate. However, you can use [`prisma migrate diff`](/reference/api-reference/command-reference#migrate-diff) <span class="api"></span> to create a schema migration and then apply the changes to your database using [Turso's CLI](https://docs.turso.tech/reference/turso-cli).
 
 ## Connect and query your primary database
 
-1. Create an authentication token that will allow you to connect to the database:
+1. Create a database on Turso if you don't have one already:
 
-```sh
-turso db tokens create turso-prisma-db
-```
+   ```sh
+   turso db create turso-prisma-db
+   ```
 
-1. Retrieve your database's connection string:
+2. Retrieve the database's connection string:
 
-```sh
-turso db show turso-prisma-db
-```
+   ```sh
+   turso db show turso-prisma-db
+   ```
 
-1. Update your `.env` file with the authentication token and connection string:
+3. Create an authentication token that will allow you to connect to the database:
 
-```text
-TURSO_AUTH_TOKEN="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9..."
-TURSO_DATABASE_URL="libsql://turso-prisma-db-user.turso.io"
-```
+   ```sh
+   turso db tokens create turso-prisma-db
+   ```
 
-1. Enable the `driverAdapters` Preview feature flag:
+4. Update your `.env` file with the authentication token and connection string:
 
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
-}
+   ```text
+   TURSO_AUTH_TOKEN="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9..."
+   TURSO_DATABASE_URL="libsql://turso-prisma-db-user.turso.io"
+   ```
 
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-```
+5. Enable the `driverAdapters` Preview feature flag:
 
-1. Generate Prisma Client:
+   ```prisma highlight=3;add
+   generator client {
+     provider        = "prisma-client-js"
+     previewFeatures = ["driverAdapters"]
+   }
+   
+   datasource db {
+     provider = "sqlite"
+     url      = "file:./dev.db"
+   }
+   ```
 
-```sh
-npx prisma generate
-```
+6. Generate Prisma Client:
 
-Install the libSQL database client and Prisma adapter for libSQL packages:
+   ```sh
+   npx prisma generate
+   ```
 
-```sh
-npm install @libsql/client @prisma/adapter-libsql
-```
+7. Install the libSQL database client and Prisma driver adapter for libSQL packages:
 
-Update your Prisma Client instance with the following snippet:
+   ```sh
+   npm install @libsql/client @prisma/adapter-libsql
+   ```
 
-```ts
-import { PrismaClient } from '@prisma/client'
-import { PrismaLibSQL } from '@prisma/adapter-libsql'
-import { createClient } from '@libsql/client'
+8. Update your Prisma Client instance with the following snippet:
 
-const libsql = createClient({
-  url: `${process.env.TURSO_DATABASE_URL}`,
-  authToken: `${process.env.TURSO_AUTH_TOKEN}`,
-})
+   ```ts
+   import { PrismaClient } from '@prisma/client'
+   import { PrismaLibSQL } from '@prisma/adapter-libsql'
+   import { createClient } from '@libsql/client'
 
-const adapter = new PrismaLibSQL(libsql)
-const prisma = new PrismaClient({ adapter })
-```
+   const libsql = createClient({
+     url: `${process.env.TURSO_DATABASE_URL}`,
+     authToken: `${process.env.TURSO_AUTH_TOKEN}`,
+   })
+
+   const adapter = new PrismaLibSQL(libsql)
+   const prisma = new PrismaClient({ adapter })
+   ```
 
 You can use Prisma Client as you normally would with full type-safety in your project.
 
-<!-- TODO: how to connect to a remote database replica -->
+## How to manage schema changes
+
+Prisma Migrate and Introspection workflows are currently not supported when working with Turso. This is because Turso uses HTTP to connect to your database, which Prisma Migrate doesn't support.
+
+To update your database schema:
+
+1. Generate a migration file using `prisma migrate dev` against a local SQLite database:
+
+```sh
+npx prisma migrate dev --name init # Migration name
+```
+
+2. Apply the migration using Turso's CLI:
+
+```sh
+turso db shell turso-prisma-db < ./prisma/migrations/20230922132717_init/migration.sql # Replace `20230922132717_init` with the existing migration
+```
+
+This workflow does not support tracking the history of applied migrations.
 
 ## How to connect and query from an embedded replica
 
@@ -125,7 +151,7 @@ Like a read replica setup you may be familiar with, write operations are forward
 
 To get started using embedded replicas with Prisma, update your Prisma Client instance with the following changes:
 
-```ts highlight=6,7,11,15;add
+```ts highlight=6,7,11,16;add
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
@@ -144,20 +170,4 @@ const prismaClientSingleton = () => {
   await sync()
   return new PrismaClient({ adapter })
 }
-```
-
-## How to manage schema changes
-
-Generate a SQL migration file using the `prisma migrate diff` command:
-
-<!-- TODO: figure out how this would work with subsequent migrations -->
-
-```sh
-npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > baseline.sql
-```
-
-Apply the generated migration file to your database:
-
-```sh
-turso db shell project_name < path/to/migration-file.sql
 ```
