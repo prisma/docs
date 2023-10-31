@@ -14,12 +14,6 @@ This guide explains how to connect Prisma using Neon's connection pooling featur
 
 ## What is Neon?
 
-<img
-  src="https://avatars.githubusercontent.com/u/77690634?s=200&v=4"
-  style="margin:auto; width: 20%; padding-left: 20px; float:right; "
-  alt="Neon's logo"
-/>
-
 [Neon](https://neon.tech/) is a fully managed serverless PostgreSQL with a generous free tier. Neon separates storage and compute, and offers modern developer features such as serverless, branching, bottomless storage, and more. Neon is open source and written in Rust.
 
 Learn more about Neon [here](https://neon.tech/docs).
@@ -113,4 +107,53 @@ DATABASE_URL=postgres://daniel:<password>@ep-mute-rain-952417.us-east-2.aws.neon
 
 ## How to use Neon's serverless driver with Prisma (Preview)
 
-To learn more on how you can use Neon's serverless driver with Prisma, refer to [this page](/concepts/components/drivers#neon-serverless-driver).
+The [Neon serverless driver](https://github.com/neondatabase/serverless) is a low-latency Postgres driver for JavaScript and TypeScript that allows you to query data from serverless and edge environments over HTTP or WebSockets in place of TCP. Prisma by default uses TCP.
+
+You can use Prisma along with the Neon serverless driver using a [driver adapter](/concepts/components/drivers) <span class="concept"></span>. A driver adapter allows you to use a different database driver, from the default Prisma provides, to communicate with your database.
+
+<Admonition>
+
+This feature is available in Preview from Prisma versions 5.4.2 and later.
+
+</Admonition>
+
+To get started, enable the `driverAdapters` Preview feature flag:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+```
+
+Generate Prisma Client:
+
+```sh
+npx prisma generate
+```
+
+Install the Prisma adapter for Neon, Neon serverless driver and `ws` packages:
+
+```sh
+npm install @prisma/adapter-neon @neondatabase/serverless ws
+```
+
+Update your Prisma Client instance:
+
+```ts
+import { Pool, neonConfig } from '@neondatabase/serverless'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { PrismaClient } from '@prisma/client'
+import dotenv from 'dotenv'
+import ws from 'ws'
+
+dotenv.config()
+neonConfig.webSocketConstructor = ws
+const connectionString = `${process.env.DATABASE_URL}`
+
+const pool = new Pool({ connectionString })
+const adapter = new PrismaNeon(pool)
+const prisma = new PrismaClient({ adapter })
+```
+
+You can then use Prisma Client as you normally would with full-type-safety.
