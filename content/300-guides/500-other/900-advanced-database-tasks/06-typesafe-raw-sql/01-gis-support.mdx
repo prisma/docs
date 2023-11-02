@@ -1,0 +1,112 @@
+---
+title: 'Using SafeQL for unsupported features'
+metaTitle: 'Using SafeQL for unsupported features (Guide)'
+metaDescription: 'Learn how to use SafeQL and Prisma Client extensions to add support for different queries.'
+---
+
+## Overview
+
+This page explains how to use Prisma Client extensions and SafeSQL in order to add support for features not natively supported by Prisma.
+
+Our example will be using [PostGIS](https://postgis.net/) but is applicable to other features and database engines.
+
+## Prerequisites
+
+To follow this guide, we recommend:
+
+- an existing [PostgreSQL](https://www.postgresql.org/) database
+- an existing Prisma project
+
+## 1. Set up Prisma for use with PostGIS
+
+If you haven't already, update your Prisma schema to add the `postgis` PostgreSQL extension
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+```
+
+Then, create a migration using `npx prisma migrate dev` in order to enable the extension. The migration file should look like the following:
+
+```sql
+
+-- CreateExtension
+CREATE EXTENSION IF NOT EXISTS "postgis";
+
+```
+
+Make sure that the migration is applied!
+
+## 2. Create a new model that uses a GIS column
+
+After the migration is applied, you can now add a new model that has a GIS column. For our example we'll be using the following `PointOfInterest` model.
+
+```prisma
+model PointOfInterest {
+  id       Int                                   @id @default(autoincrement())
+  name     String
+  location Unsupported("geography(Point, 4326)")
+}
+```
+
+You'll notice that `location` is marked as Unsupported. This means that we lose a lot of the benefits of Prisma when working with `PointOfInterest`. We'll be using [SafeQL](https://safeql.dev/) to fix this.
+
+Create a new migration with `npx prisma migrate dev` and apply it to add the `PointOfInterest` table to our database.
+
+## 3. Integrate SafeQL
+
+SafeQL is easily integrated with Prisma. Follow [SafeQL's integration guide](https://safeql.dev/compatibility/prisma.html) in order to lint `$queryRaw` and `$executeRaw` Prisma calls.
+
+## 4. Creating a GIS extension
+
+Now that we have a model that uses GIS, let's make a Prisma Client extension in order to query this table. We will be making an extension that finds the closest points of interest to a given longitude and latitude.
+
+```ts file=lib/db.ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient().$extends((client) => {
+  return client.$extends({
+    model: {
+      pointOfInterest: {
+        async findClosestPoints(
+          latitude: Number,
+          longitude: Number,
+          limit: Number
+        ) {
+          return client.$queryRaw<
+            { id: number; name: string; location: string }[]
+          >`SELECT * FROM "PointOfInterest" ORDER BY ST_DistanceSphere(location::geometry, ST_MakePoint(${longitude}, ${latitude})) LIMIT ${limit}`
+        },
+      },
+    },
+  })
+})
+
+export { prisma }
+```
+
+Now we can use our Prisma client as normal in order to find close points of interest to a given longitude and latitude!
+
+```ts file=app.ts
+const closestPointOfInterest = await prisma.pointOfInterest.findClosestPoints(
+  myLatitude,
+  myLongitude,
+  1
+)
+```
+
+We also have the benefit of SafeQL to add extra type safety to our raw queries. For example, if we removed the cast to `geometry` for `location`, we would get the linting error:
+
+```terminal
+error  Invalid Query: function st_distancesphere(geography, geometry) does not exist  @ts-safeql/check-sql
+```
+
+Which would let us know to check our function signature again.
