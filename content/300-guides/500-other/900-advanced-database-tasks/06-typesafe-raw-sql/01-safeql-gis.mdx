@@ -44,6 +44,29 @@ datasource db {
 }
 ```
 
+<Admonition type="warning">
+
+If you are not using a cloud provider, you will most likely need to install the `postgis` extension as well. [PostGIS's website](http://postgis.net/documentation/getting_started/#installing-postgis) has instructions for this, or, you can use the following Docker Compose example:
+
+```yaml
+version: '3.6'
+services:
+  pgDB:
+    image: postgis/postgis:13-3.1-alpine
+    restart: always
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: geoexample
+volumes:
+  db_data:
+```
+
+</Admonition>
+
 Then, create a migration using `npx prisma migrate dev` in order to enable the extension. The migration file should look like the following:
 
 ```sql
@@ -77,7 +100,39 @@ SafeQL is easily integrated with Prisma. Follow [SafeQL's integration guide](htt
 
 <Admonition>
 
-Note that for SafeQL to run it will need to have access to your database. We recommend passing the same environment variable or connection string that is used by Prisma.
+Note that for SafeQL to run it will need to have access to your database. We recommend passing the same environment variable or connection string that is used by Prisma. The following `eslintrc.js` uses `dotenv` in order to keep your database URL out of version control.
+
+```js file=.eslintrc.js
+require('dotenv').config()
+
+/** @type {import('eslint').Linter.Config} */
+module.exports = {
+  plugins: ['@ts-safeql/eslint-plugin'],
+  // exclude `parserOptions` if you are not using TypeScript
+  parserOptions: {
+    project: './tsconfig.json',
+  },
+  rules: {
+    '@ts-safeql/check-sql': [
+      'error',
+      {
+        connections: [
+          {
+            connectionUrl: process.env.DATABASE_URL,
+            // The migrations path:
+            migrationsDir: './prisma/migrations',
+            targets: [
+              // what you would like SafeQL to lint. This makes `prisma.$queryRaw` and `prisma.$executeRaw`
+              // commands linted
+              { tag: 'prisma.+($queryRaw|$executeRaw)', transform: '{type}[]' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+}
+```
 
 </Admonition>
 
