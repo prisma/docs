@@ -1,30 +1,27 @@
 ---
 title: 'Using SafeQL with unsupported GIS features'
 metaTitle: 'Using SafeQL with unsupported GIS features (Guide)'
-metaDescription: 'Learn how to use SafeQL and Prisma Client extensions to work around features not natively supported by Prisma.'
+metaDescription: 'Learn how to use SafeQL and Prisma Client extensions to work around features not natively supported by Prisma, such as PostGIS.'
 ---
 
 ## Overview
 
-This page explains how to use Prisma Client extensions and [SafeQL](https://safeql.dev) to create:
--  Custom type-safe Prisma Client queries 
-- Type-safe raw SQL queries when working with geographical data
-
-Our example will be using [PostGIS](https://postgis.net/) and PostgreSQL, but is applicable to other features and database engines.
-
-## Prerequisites
-
-To follow along, you will be expected to have:
--  A [PostgreSQL](https://www.postgresql.org/) database with PostGIS installed.
--  A project using Prisma
+This page explains how to use Prisma Client extensions and [SafeQL](https://safeql.dev) to create custom, type-safe Prisma Client queries and type-safe raw SQL queries when working with geographical data. Our example will be using [PostGIS](https://postgis.net/) and PostgreSQL, but is applicable to other features and database engines.
 
 ## What is SafeQL?
 
 [SafeQL](https://safeql.dev/) is an ESLint plugin that allows for advanced linting and type safety within raw SQL queries. After setup, SafeQL works with Prisma `$queryRaw` and `$executeRaw` to provide type safety when raw queries are required.
 
+## Prerequisites
+
+To follow along, you will be expected to have:
+
+- A [PostgreSQL](https://www.postgresql.org/) database with PostGIS installed.
+- A project using Prisma
+
 ## Geographic data support in Prisma
 
-At the time of writing, Prisma does not support working with geographic data, specifically using PostGIS. 
+At the time of writing, Prisma does not support working with geographic data, specifically using PostGIS.
 
 A model that has geographic data columns will be stored using the [`Unsupported`](/reference/api-reference/prisma-schema-reference#unsupported) data type. Fields with `Unsupported` types are present in the generated Prisma Client. A model with a required `Unsupported` type does not expose write operations such as `create`, and `update`.
 
@@ -49,7 +46,7 @@ datasource db {
 
 <Admonition type="warning">
 
-If you are not using a hosted database provider, you will likely need to install the `postgis` extension. Refer to [PostGIS's docs](http://postgis.net/documentation/getting_started/#installing-postgis) to learn more about how to get started with PostGIS. 
+If you are not using a hosted database provider, you will likely need to install the `postgis` extension. Refer to [PostGIS's docs](http://postgis.net/documentation/getting_started/#installing-postgis) to learn more about how to get started with PostGIS.
 
 If you're using Docker Compose, you can use the following snippet to set up a PostgreSQL database that has PostGIS installed:
 
@@ -101,13 +98,63 @@ Run the `prisma migrate dev` command to create a migration and the table `PointO
 
 ## 3. Integrate SafeQL
 
-SafeQL is easily integrated with Prisma. Follow [SafeQL's integration guide](https://safeql.dev/compatibility/prisma.html) in order to lint `$queryRaw` and `$executeRaw` Prisma calls.
+SafeQL is easily integrated with Prisma in order to lint `$queryRaw` and `$executeRaw` Prisma calls. You can reference [SafeQL's integration guide](https://safeql.dev/compatibility/prisma.html) or follow the steps below.
 
-<Admonition>
+### Install the <inlinecode>@ts-safeql/eslint-plugin</inlinecode> npm package
 
-Note that for SafeQL to run it will need to have access to your database. We recommend passing the same environment variable or connection string that is used by Prisma. The following `eslintrc.js` uses `dotenv` in order to keep your database URL out of version control.
+```terminal
+npm install -D @ts-safeql/eslint-plugin
+```
 
-```js file=.eslintrc.js
+This ESLint plugin is what will allow for queries to be linted.
+
+### Add <inlinecode>@ts-safeql/eslint-plugin</inlinecode> to your ESLint plugins
+
+You should now add `@ts-safeql/eslint-plugin` to your list of ESLint plugins. In our example we are using an `.eslintrc.js` file, but this can be applied to [any way that you configure ESLint](https://eslint.org/docs/latest/use/configure/)
+
+```js file=.eslintrc.js highlight=3
+/** @type {import('eslint').Linter.Config} */
+module.exports = {
+  "plugins": [..., "@ts-safeql/eslint-plugin"],
+  ...
+}
+```
+
+### Add <inline-code>@ts-safeql/check-sql</inlinecode> rules
+
+Now setup rules so that SafeQL will mark invalid SQL queries as ESLint errors
+
+```js file=.eslintrc.js highlight=4-20;add
+/** @type {import('eslint').Linter.Config} */
+module.exports = {
+  plugins: [..., '@ts-safeql/eslint-plugin'],
+  rules: {
+    '@ts-safeql/check-sql': [
+      'error',
+      {
+        connections: [
+          {
+            // The migrations path:
+            migrationsDir: './prisma/migrations',
+            targets: [
+              // This makes `prisma.$queryRaw` and `prisma.$executeRaw` commands linted
+              { tag: 'prisma.+($queryRaw|$executeRaw)', transform: '{type}[]' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+}
+```
+
+### Connect to your database
+
+Finally, set up a `connectionUrl` for SafeQL so that it can read the state of your database, including columns for each table.
+
+Our example relies on `dotenv` to get the same connection string that is used by Prisma. We recommend this in order to keep your database URL out of version control.
+
+```js file=.eslintrc.js highlight=1,6-9,16;add
 require('dotenv').config()
 
 /** @type {import('eslint').Linter.Config} */
@@ -139,27 +186,20 @@ module.exports = {
 }
 ```
 
-</Admonition>
-
 ## 4. Creating an extension for geographic data
 
 Now let's make a Prisma Client extension in order to query this model. We will be making an extension that finds the closest points of interest to a given longitude and latitude.
 
 ```ts file=lib/prisma.ts
+<!-- prettier-ignore-start -->
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient().$extends((client) => {
   return client.$extends({
     model: {
       pointOfInterest: {
-        async findClosestPoints(
-          latitude: Number,
-          longitude: Number,
-          limit: Number
-        ) {
-          return client.$queryRaw<
-            { id: number; name: string; location: string }[]
-          >`SELECT * FROM "PointOfInterest" ORDER BY ST_DistanceSphere(location::geometry, ST_MakePoint(${longitude}, ${latitude})) LIMIT ${limit}`
+        async findClosestPoints(latitude: Number, longitude: Number, limit: Number) {
+          return client.$queryRaw<{ id: number; name: string; location: string }[]>`SELECT * FROM "PointOfInterest" ORDER BY ST_DistanceSphere(location::geometry, ST_MakePoint(${longitude}, ${latitude})) LIMIT ${limit}`
         },
       },
     },
@@ -167,16 +207,15 @@ const prisma = new PrismaClient().$extends((client) => {
 })
 
 export { prisma }
+<!-- prettier-ignore-end -->
 ```
 
 Now, you can use our Prisma Client as normal to find close points of interest to a given longitude and latitude using the custom method created on the `PointOfInterest` model.
 
 ```ts file=app.ts
-const closestPointOfInterest = await prisma.pointOfInterest.findClosestPoints(
-  myLatitude,
-  myLongitude,
-  1
-)
+<!-- prettier-ignore-start -->
+const closestPointOfInterest = await prisma.pointOfInterest.findClosestPoints(33.942791, -118.410042, 1)
+<!-- prettier-ignore-end -->
 ```
 
 We also have the benefit of SafeQL to add extra type safety to our raw queries. For example, if we removed the cast to `geometry` for `location`, we would get the linting error:
@@ -186,3 +225,7 @@ error  Invalid Query: function st_distancesphere(geography, geometry) does not e
 ```
 
 Which would let us know to check our function signature again.
+
+## Conclusion
+
+While Prisma does not natively support geographic data like PostGIS, SafeQL and Prisma Client extensions give back some type-safety to applications that use these data types. This could be implemented further, by taking the above ideas and applying them to allow for mutations against underlying data, all while having typed guarantees thanks the the SafeQL ESLint plugin.
