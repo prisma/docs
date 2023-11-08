@@ -10,14 +10,15 @@ This page explains how to use Prisma Client extensions and [SafeQL](https://safe
 
 ## What is SafeQL?
 
-[SafeQL](https://safeql.dev/) is an ESLint plugin that allows for advanced linting and type safety within raw SQL queries. After setup, SafeQL works with Prisma `$queryRaw` and `$executeRaw` to provide type safety when raw queries are required.
+[SafeQL](https://safeql.dev/) allows for advanced linting and type safety within raw SQL queries. After setup, SafeQL works with Prisma `$queryRaw` and `$executeRaw` to provide type safety when raw queries are required. Please note that SafeQL runs as an ESLint plugin and is configured using ESLint rules. This guide doesn't cover setting up ESLint and we will assume that you already having it running in your project.
 
 ## Prerequisites
 
 To follow along, you will be expected to have:
 
 - A [PostgreSQL](https://www.postgresql.org/) database with PostGIS installed.
-- A project using Prisma
+- Prisma set up in your project
+- ESLint set up in your project
 
 ## Geographic data support in Prisma
 
@@ -124,7 +125,7 @@ module.exports = {
 
 Now setup rules so that SafeQL will mark invalid SQL queries as ESLint errors
 
-```js file=.eslintrc.js highlight=4-20;add
+```js file=.eslintrc.js highlight=4-22;add
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   plugins: [..., '@ts-safeql/eslint-plugin'],
@@ -139,6 +140,8 @@ module.exports = {
             targets: [
               // This makes `prisma.$queryRaw` and `prisma.$executeRaw` commands linted
               { tag: 'prisma.+($queryRaw|$executeRaw)', transform: '{type}[]' },
+              // This makes `client.$queryRaw` and `client.$executeRaw` commands linted
+              { tag: 'client.+($queryRaw|$executeRaw)', transform: '{type}[]' },
             ],
           },
         ],
@@ -198,7 +201,7 @@ const prisma = new PrismaClient().$extends((client) => {
   return client.$extends({
     model: {
       pointOfInterest: {
-        async findClosestPoints(latitude: Number, longitude: Number, limit: Number) {
+        async findClosestPoints(latitude: number, longitude: number, limit: number) {
           return client.$queryRaw<{ id: number; name: string; location: string }[]>`SELECT * FROM "PointOfInterest" ORDER BY ST_DistanceSphere(location::geometry, ST_MakePoint(${longitude}, ${latitude})) LIMIT ${limit}`
         },
       },
