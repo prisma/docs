@@ -14,13 +14,13 @@ export interface ArticleFrontmatter {
   wide?: boolean
   staticLink?: boolean
   duration?: string
-  experimental?: boolean
   preview?: boolean
   earlyaccess?: boolean
   toc?: boolean
   hidePage?: boolean
   tocDepth?: number
   codeStyle?: boolean
+  deprecated?: boolean
 }
 
 export interface ArticleData {
