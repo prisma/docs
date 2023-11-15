@@ -294,13 +294,15 @@ In this option:
 
 Option two uses Prisma middleware to prevent soft deleted records from being returned. The following table describes how the middleware affects each query:
 
-| **Query**    | **Middleware logic**                                                                                                                                                                                                                                                                                                                                                                                                               | **Changes to return type**       |
-| :----------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------- | --- |
-| `findUnique` | 🔧 Change query to `findFirst` (because you cannot apply `deleted: false` filters to `findUnique`) <br /> 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts <br />🔧 From version 4.5.0, you can use `findUnique` to apply `delete: false` filters with the [`extendedWhereUnique` preview feature](/reference/api-reference/prisma-client-reference#filter-on-non-unique-fields-with-userwhereuniqueinput). | No change                        |     |
-| `findMany`   | 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts by default <br />🔧 Allow developers to **explicitly request** soft deleted posts by specifying `deleted: true`                                                                                                                                                                                                                                            | No change                        |
-| `update`     | 🔧 Change query to `updateMany` (because you cannot apply `deleted: false` filters to `update`) <br /> 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts                                                                                                                                                                                                                                                     | `{ count: n }` instead of `Post` |
-| `updateMany` | 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts                                                                                                                                                                                                                                                                                                                                                            | No change                        |
+| **Query**    | **Middleware logic**                                                                                                                                                                                                                                                                                                                                                                                                    | **Changes to return type**       |
+| :----------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------- | --- |
+| `findUnique` | 🔧 Change query to `findFirst` (because you cannot apply `deleted: false` filters to `findUnique`) <br /> 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts <br />🔧 From version 5.0.0, you can use `findUnique` to apply `delete: false` filters since [non unique fields are exposed](/reference/api-reference/prisma-client-reference#filter-on-non-unique-fields-with-userwhereuniqueinput). | No change                        |     |
+| `findMany`   | 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts by default <br />🔧 Allow developers to **explicitly request** soft deleted posts by specifying `deleted: true`                                                                                                                                                                                                                                 | No change                        |
+| `update`     | 🔧 Change query to `updateMany` (because you cannot apply `deleted: false` filters to `update`) <br /> 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts                                                                                                                                                                                                                                          | `{ count: n }` instead of `Post` |
+| `updateMany` | 🔧 Add `where: { deleted: false }` filter to exclude soft deleted posts                                                                                                                                                                                                                                                                                                                                                 | No change                        |
 
+- **Is it not possible to utilize soft delete with `findFirstOrThrow` or `findUniqueOrThrow`?**<br />
+  From version [5.1.0](https://github.com/prisma/prisma/releases/5.1.0), you can apply soft delete `findFirstOrThrow` or `findUniqueOrThrow` by using middleware.
 - **Why are you making it possible to use `findMany` with a `{ where: { deleted: true } }` filter, but not `updateMany`?**<br />
   This particular sample was written to support the scenario where a user can _restore_ their deleted blog post (which requires a list of soft deleted posts) - but the user should not be able to edit a deleted post.
 - **Can I still `connect` or `connectOrCreate` a deleted post?**<br />
@@ -309,7 +311,7 @@ Option two uses Prisma middleware to prevent soft deleted records from being ret
 Run the following sample to see how middleware affects each query:
 
 ```ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient({})
 
@@ -328,11 +330,23 @@ async function main() {
         // ID filter maintained
         params.args.where['deleted'] = false
       }
+      if (
+        params.action === 'findFirstOrThrow' ||
+        params.action === 'findUniqueOrThrow'
+      ) {
+        if (params.args.where) {
+          if (params.args.where.deleted == undefined) {
+            // Exclude deleted records if they have not been explicitly requested
+            params.args.where['deleted'] = false
+          }
+        } else {
+          params.args['where'] = { deleted: false }
+        }
+      }
       if (params.action === 'findMany') {
         // Find many queries
         if (params.args.where) {
           if (params.args.where.deleted == undefined) {
-            // Exclude deleted records if they have not been explicitly requested
             params.args.where['deleted'] = false
           }
         } else {
@@ -441,6 +455,20 @@ async function main() {
     },
   })
 
+  const getOneUniquePostOrThrow = async () =>
+    await prisma.post.findUniqueOrThrow({
+      where: {
+        id: postsCreated[0].id,
+      },
+    })
+
+  const getOneFirstPostOrThrow = async () =>
+    await prisma.post.findFirstOrThrow({
+      where: {
+        id: postsCreated[0].id,
+      },
+    })
+
   const getPosts = await prisma.post.findMany({
     where: {
       id: {
@@ -505,6 +533,41 @@ async function main() {
           ')' +
           '\u001b[0m')
   )
+  try {
+    console.log('findUniqueOrThrow: ')
+    await getOneUniquePostOrThrow()
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code == 'P2025'
+    )
+      console.log(
+        '\u001b[1;31m' +
+          'PrismaClientKnownRequestError is catched' +
+          '(Error name: ' +
+          error.name +
+          ')' +
+          '\u001b[0m'
+      )
+  }
+  try {
+    console.log('findFirstOrThrow: ')
+    await getOneFirstPostOrThrow()
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code == 'P2025'
+    )
+      console.log(
+        '\u001b[1;31m' +
+          'PrismaClientKnownRequestError is catched' +
+          '(Error name: ' +
+          error.name +
+          ')' +
+          '\u001b[0m'
+      )
+  }
+  console.log()
   console.log(
     'findMany: ' +
       (getPosts.length == 3
