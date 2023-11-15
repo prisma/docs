@@ -1,7 +1,7 @@
 ---
 title: Transactions
 metaDescription: 'Explore techniques for handling transactions with Prisma Client.'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -17,7 +17,7 @@ Developers take advantage of the safety guarantees provided by the database by w
 - **Isolated**: Ensures that concurrently running transactions have the same effect as if they were running in serial.
 - **Durability**: Ensures that after the transaction succeeded, any writes are being stored persistently.
 
-While there's a lot of of ambiguity and nuance to each of these properties (for example, consistency could actually be considered an _application-level responsibility_ rather than a database property or isolation is typically guaranteed in terms of stronger and weaker _isolation levels_), overall they serve as a good high-level guideline for expectations developers have when thinking about database transactions.
+While there's a lot of ambiguity and nuance to each of these properties (for example, consistency could actually be considered an _application-level responsibility_ rather than a database property or isolation is typically guaranteed in terms of stronger and weaker _isolation levels_), overall they serve as a good high-level guideline for expectations developers have when thinking about database transactions.
 
 > "Transactions are an abstraction layer that allows an application to pretend that certain concurrency problems and certain kinds of hardware and software faults don’t exist. A large class of errors is reduced down to a simple transaction abort, and the application just needs to try again." **[Designing Data-Intensive Applications](https://dataintensive.net/), [Martin Kleppmann](https://twitter.com/martinkl)**
 
@@ -181,17 +181,6 @@ const createTeamOperation = prisma.team.create({
 await prisma.$transaction([createUserOperation, createTeamOperation])
 ```
 
-##### Are cascading deletes supported by the Prisma Client nested writes?
-
-<Admonition type="warning">
-
-In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using [referential actions](/concepts/components/prisma-schema/relations/referential-actions).
-
-</Admonition>
-
-- Use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can [perform both operations within a `$transaction`](#scenario-privacy-legislation).
-- [Configure cascading deletes at the database level](/guides/database/advanced-database-tasks/cascading-deletes).
-
 ##### Nested writes support nested updates, but updates are not dependent writes - should I use the `$transaction` API?
 
 It is correct to say that because you know the ID of the team, you can update the team and its team members independently within a `$transaction`. The following example performs both operations in a `$transaction`:
@@ -296,7 +285,7 @@ Writes are considered **independent** if they do not rely on the result of a pre
 - Updating the status field of a list of orders to "Dispatched"
 - Marking a list of emails as "Read"
 
-> **Note**: Independent writes may have to occur in a specific order if constraints are present - for example, you must delete blog posts before the blog author if the post have a mandatory `authorId` field. However, they are still still considered independent writes because no operations depend on the _result_ of a previous operation, such as the database returning a generated ID.
+> **Note**: Independent writes may have to occur in a specific order if constraints are present - for example, you must delete blog posts before the blog author if the post have a mandatory `authorId` field. However, they are still considered independent writes because no operations depend on the _result_ of a previous operation, such as the database returning a generated ID.
 
 Depending on your requirements, Prisma Client has four options for handling independent writes that should succeed or fail together.
 
@@ -306,8 +295,7 @@ Bulk writes allow you to write multiple records of the same type in a single tra
 
 - `updateMany`
 - `deleteMany`
-
-The ability to [create and upsert in bulk](https://github.com/prisma/prisma-client-js/issues/332) is being considered: feel free to chime in with your use case and upvote if you're interested.
+- `createMany`
 
 #### When to use bulk operations
 
@@ -371,13 +359,10 @@ await prisma.team.deleteMany({
 })
 ```
 
-You an use the [`$transaction` API to perform a cascading delete](#are-cascading-deletes-supported-by-the-prisma-client-nested-writes).
-
 #### Can I use bulk operations with the `$transaction` API?
 
 Yes - for example, you can include multiple `deleteMany` operations inside a `$transaction`.
 
-<!-- prettier-ignore -->
 ### <inlinecode>$transaction</inlinecode> API
 
 The `$transaction` API is generic solution to independent writes that allows you to run multiple operations as a single, atomic operation - if any operation fails, Prisma rolls back the entire transaction.
@@ -390,7 +375,7 @@ await prisma.$transaction([iRunFirst, iRunSecond, iRunThird])
 
 > **Note**: Using a query in a transaction does not influence the order of operations in the query itself.
 
-As the Prisma Client evolves, use cases for the `$transaction` API will increasingly be replaced by more specialized bulk operations (such as `createMany`) and nested writes.
+As Prisma Client evolves, use cases for the `$transaction` API will increasingly be replaced by more specialized bulk operations (such as `createMany`) and nested writes.
 
 #### When to use the `$transaction` API
 
@@ -690,6 +675,14 @@ If a ❌ conflict occurs (someone else has changed the record since you read it)
 
 This section describes how to build your own optimistic concurrency control. See also: Plans for [application-level optimistic concurrency control on GitHub](https://github.com/prisma/prisma/issues/4988)
 
+<Admonition type="info">
+
+- If you use version 4.4.0 or earlier, you cannot use optimistic concurrency control on `update` operations, because you cannot filter on non-unique fields. The `version` field you need to use with optimistic concurrency control is a non-unique field.
+
+- Since version 5.0.0 you are able to [filter on non-unique fields in `update` operations](/reference/api-reference/prisma-client-reference#filter-on-non-unique-fields-with-userwhereuniqueinput) so that optimistic concurrency control is being used. The feature was also available via the Preview flag `extendedWhereUnique` from versions 4.5.0 to 4.16.2.
+
+</Admonition>
+
 #### When to use optimistic concurrency control
 
 - ✔ You anticipate a high number of concurrent requests (multiple people booking cinema seats)
@@ -821,20 +814,11 @@ It is now impossible for two people to book the same seat:
 3. Seat 3A claimed by Sorcha (`version` is incremented to 1, booking succeeds)
 4. Seat 3A claimed by Ellen (in-memory `version` (0) does not match database `version` (1) - booking does not succeed)
 
-### Interactive Transactions (in Preview)
+### Interactive transactions
 
 If you have an existing application, it can be a significant undertaking to refactor your application to use optimistic concurrency control. Interactive Transactions offers a useful escape hatch for cases like this.
 
-To support this use case and more, you can enable interactive transactions by adding `interactiveTransactions` in the generator of your Prisma Schema:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["interactiveTransactions"]
-}
-```
-
-Then you can pass an async function into [$transaction](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
+To create an interactive transaction, pass an async function into [$transaction](#transaction-api).
 
 The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma call invoked on this `tx` instance is encapsulated into the transaction.
 
@@ -889,21 +873,13 @@ async function main() {
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
 ```
 
 In the example above, both `update` queries run within a database transaction. When the application reaches the end of the function, the transaction is **committed** to the database.
 
 If the application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction.
 
-You can learn more about interactive transactions in our [Transactions and Batch Queries documentation](/concepts/components/prisma-client/transactions#interactive-transactions-in-preview).
+You can learn more about interactive transactions in our [Transactions and Batch Queries documentation](/concepts/components/prisma-client/transactions#interactive-transactions).
 
 <Admonition type="warning">
 

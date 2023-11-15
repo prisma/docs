@@ -13,17 +13,54 @@ const flattenNode = (node) => {
 module.exports = () => (tree, file) => {
   file.data = []
   let heading = null
+  let prev = ''
+  let prevType = ''
+  let langVal = ''
+  let dbVal = ''
+
   visit(
     tree,
     ({ type }) => {
-      return ['heading', 'paragraph', 'code', 'table'].includes(type)
+      return ['heading', 'paragraph', 'code', 'table', 'jsx', 'tableCell', 'tableRow'].includes(
+        type
+      )
     },
     (node) => {
-      if (node.type === 'heading') return (heading = flattenNode(node))
+      if (node.type === 'jsx' && node.value.includes('<SwitchTech')) {
+        const val = node.value
+          .replace('<SwitchTech technologies={[', '')
+          .replace(']}>', '')
+          .replace(/\'/g, '')
+        langVal = val.split(', ')[0]
+        dbVal = val.split(', ')[1]
+      }
+
+      if (node.type === 'jsx' && node.value.includes('</SwitchTech>')) {
+        langVal = ''
+        dbVal = ''
+      }
+      if (node.type === 'heading') {
+        if (prevType === 'heading') {
+          file.data.push({
+            heading: prev,
+            text: '',
+            langVal,
+            dbVal,
+          })
+        }
+        prev = flattenNode(node)
+        prevType = node.type
+        return (heading = flattenNode(node))
+      }
+
+      prev = flattenNode(node)
+      prevType = node.type
 
       file.data.push({
         heading,
         text: flattenNode(node),
+        langVal,
+        dbVal,
       })
     }
   )

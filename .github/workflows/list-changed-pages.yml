@@ -1,4 +1,4 @@
-name: Comment with Vercel Deploy URLs of changed pages
+name: Comment based on changed pages (Vercel Deploy URLs + Redirect Suggestions)
 
 on:
   pull_request:
@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Get list of changed files
         id: files
         uses: Ana06/get-changed-files@v1.2 # it's a fork of jitterbit/get-changed-files@v1 which works better with pull requests
@@ -26,13 +29,14 @@ jobs:
               no_changed_pages=""
 
               cleaned_file=$(echo "$changed_file" | sed -E 's:content/:/:g' | sed -E 's:/index.mdx::g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
+              branch_name=$(echo "${{github.event.pull_request.head.ref}}" |  sed -e 's/\//-/g')
               # TODO special case for images and similar non .mdx files
 
               # Output inside the action
-              echo "- https://docs-git-${{github.event.pull_request.head.ref}}-prisma.vercel.app$cleaned_file"
+              echo "- https://docs-git-${branch_name}-prisma.vercel.app$cleaned_file"
 
               # Also collect into string
-              linksVercel="%0A- [/docs$cleaned_file](https://docs-git-${{github.event.pull_request.head.ref}}-prisma.vercel.app$cleaned_file) ([currently](https://prisma.io/docs$cleaned_file))"
+              linksVercel="%0A- [/docs$cleaned_file](https://docs-git-${branch_name}-prisma.vercel.app$cleaned_file) ([currently](https://prisma.io/docs$cleaned_file))"
               body="$body$linksVercel"
             fi
           done
@@ -41,7 +45,7 @@ jobs:
           body="$body%0A%0A(Note that links will only be valid after Vercel preview deploy succeeded)"
           echo "::set-output name=body::$body"
 
-      - name: Find existing comment
+      - name: Find existing comment (links)
         uses: peter-evans/find-comment@v1
         id: fc
         with:
@@ -49,17 +53,47 @@ jobs:
           comment-author: 'github-actions[bot]'
           body-includes: following pages
 
-      - name: Create comment
+      - name: Create comment (links)
         if: steps.fc.outputs.comment-id == ''
         uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ steps.links.outputs.body }}
 
-      - name: Update comment
+      - name: Update comment (links)
         if: steps.fc.outputs.comment-id != ''
         uses: peter-evans/create-or-update-comment@v1
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           body: ${{ steps.links.outputs.body }}
+          edit-mode: replace
+
+      ### REDIRECTS ###
+
+      - name: Create suggested redirects
+        id: redirects
+        run: |
+          bash .github/workflows/scripts/generate-redirects.sh
+
+      - name: Find existing comment (redirects)
+        uses: peter-evans/find-comment@v1
+        id: fc2
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: following redirects
+
+      - name: Create comment (redirects)
+        if: steps.fc2.outputs.comment-id == ''
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.redirects.outputs.body }}
+
+      - name: Update comment (redirects)
+        if: steps.fc2.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc2.outputs.comment-id }}
+          body: ${{ steps.redirects.outputs.body }}
           edit-mode: replace

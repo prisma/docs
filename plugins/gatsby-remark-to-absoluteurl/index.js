@@ -7,14 +7,15 @@ function withPathPrefix(url, pathPrefix) {
 }
 
 const pathSep = '/'
-
 module.exports = function plugin(
   { markdownAST, markdownNode, pathPrefix, getNode },
   { redirects = [] } = {}
 ) {
   function visitor(node) {
     node.originalUrl = node.url
-    
+    var pattern = /^https?:\/\//i
+    node.isDomainUrl = false
+
     if (
       markdownNode.fields &&
       markdownNode.fields.slug &&
@@ -64,6 +65,24 @@ module.exports = function plugin(
           pathPrefix
         )
       }
+    }
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      node.url.includes('prisma.io/docs') &&
+      !node.url.includes('https://v1.prisma.io/docs')
+    ) {
+      node.isDomainUrl = true
+    }
+
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      !pattern.test(node.url) &&
+      node.url.endsWith('/') &&
+      node.url !== './'
+    ) {
+      node.isTrailingSlashUrl = true
     }
   }
 

@@ -1,23 +1,25 @@
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import { Snippet } from 'react-instantsearch-dom'
-import Link from '../link'
 import styled from 'styled-components'
+
+import Link from '../link'
 import ParentTitle from '../parentTitleComp'
 
 const HitComp = styled.div`
-  padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[40]} !important;
-  font-family: ${(p) => p.theme.fonts.text};
+  padding: ${theme.space[24]} ${theme.space[40]} !important;
+  font-family: ${theme.fonts.text};
   font-style: normal;
   font-weight: normal;
-  font-size: ${(p) => p.theme.fontSizes[16]};
-  line-height: ${(p) => p.theme.space[24]};
-  border-bottom: 1px solid ${(p) => p.theme.colors.gray300};
+  font-size: ${theme.fontSizes[16]};
+  line-height: ${theme.space[24]};
+  border-bottom: 1px solid ${theme.colors.gray[300]};
   // max-height: 150px;
   &:last-item {
     border: 0;
   }
   a {
-    color: ${(p) => p.theme.colors.gray900} !important;
+    color: ${theme.colors.gray[900]} !important;
     display: block;
   }
   h4 {
@@ -31,25 +33,25 @@ const HitComp = styled.div`
   }
   &:hover,
   &:focus {
-    background: ${(p) => p.theme.colors.gray100};
+    background: ${theme.colors.gray[100]};
   }
   mark {
-    color: ${(p) => p.theme.colors.blue600} !important;
+    color: ${theme.colors.blue[600]} !important;
     background: #ebf8ff;
     padding: 2px;
     font-weight: bold;
   }
 
   .more {
-    color: ${(p) => p.theme.colors.blue600};
-    font-size: ${(p) => p.theme.fontSizes[14]};
+    color: ${theme.colors.blue[600]};
+    font-size: ${theme.fontSizes[14]};
     width: fit-content;
     margin: 10px 0 0;
   }
 
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     max-height: fit-content;
-    padding: ${(p) => p.theme.space[24]} !important;
+    padding: ${theme.space[24]} !important;
   }
 `
 
@@ -57,7 +59,7 @@ const DocHit = ({ hit, selected }: any) =>
   hit._distinctSeqID == 0 ? (
     <HitComp style={{ background: selected ? '#F7FAFC' : 'white' }}>
       <Link style={{ boxShadow: `none`, textDecoration: 'none' }} to={hit.path}>
-        <ParentTitle slug={hit.slug} nonLink={true} />
+        <ParentTitle slug={hit.slug} nonLink={true} isSearchItem={true} />
         <h3>
           <Snippet hit={hit} attribute="title" tagName="mark" /> /{' '}
           <span style={{ color: 'var(--code-inner-color)' }}>
