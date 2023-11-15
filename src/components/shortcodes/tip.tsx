@@ -1,9 +1,10 @@
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
 const Wrapper = styled.section`
   padding: 1rem;
-  background-color: ${(p) => p.theme.colors.gray[100]};
+  background-color: ${theme.colors.gray[100]};
   border-radius: 8px;
   min-height: 100px;
   margin: 2rem 0;
@@ -27,6 +28,10 @@ const Wrapper = styled.section`
 
   & > div {
     margin-left: 1.5rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: ${theme.colors.gray[800]};
   }
 `
 
