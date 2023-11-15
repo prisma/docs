@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
@@ -122,6 +122,32 @@ const SearchBoxDiv = styled.div<{ minimal?: boolean; wide?: boolean }>`
       display: none;
     }
   }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[800]};
+    border-color: ${theme.colors.gray[700]};
+
+    form {
+      input {
+        color: ${theme.colors.gray[100]};
+        &::placeholder {
+          color: ${theme.colors.gray[400]};
+        }
+      }
+
+      svg path {
+        stroke: ${theme.colors.gray[400]};
+      }
+    }
+    &.opened {
+      background: ${theme.colors.gray[800]};
+      .clear {
+        svg path {
+          stroke: ${theme.colors.gray[100]};
+        }
+      }
+    }
+  }
 `
 
 const SearchIcon = styled(SearchPic)`
@@ -136,6 +162,11 @@ const SearchSlashIcon = styled(SearchSlash)`
   //z-index: 100001;
   position: absolute;
   right: 0;
+  @media (prefers-color-scheme: dark) {
+    path {
+      stroke: ${theme.colors.gray[700]};
+    }
+  }
 `
 
 const ClearIcon = styled(Clear)`

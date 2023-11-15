@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -44,6 +44,10 @@ const MainTitle = styled.h1`
   }
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     font-size: ${theme.fontSizes[24]};
+  }
+
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[100]};
   }
 `
 
