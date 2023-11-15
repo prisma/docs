@@ -6,16 +6,22 @@ metaDescription: 'Learn how to configure Prisma Client to log the raw SQL querie
 
 <TopBlock>
 
-Use the `PrismaClient` [`log`](../../../../../reference/api-reference/prisma-client-reference#log) <span class="api"></span> parameter to configure [log levels](../../../../../reference/api-reference/prisma-client-reference#log-levels) <span class="api"></span>, including warnings, errors, and information about the queries sent to the database.
+Use the `PrismaClient` [`log`](/reference/api-reference/prisma-client-reference#log) <span class="api"></span> parameter to configure [log levels](/reference/api-reference/prisma-client-reference#log-levels) <span class="api"></span>, including warnings, errors, and information about the queries sent to the database.
 
 Prisma supports two types of logging:
 
 - Logging to [stdout](https://en.wikipedia.org/wiki/Standard_streams) (default)
-- Event-based logging (use [`$on()`](../../../../../reference/api-reference/prisma-client-reference#on) <span class="api"></span> method to [subscribe to events](#event-based-logging))
+- Event-based logging (use [`$on()`](/reference/api-reference/prisma-client-reference#on) <span class="api"></span> method to [subscribe to events](#event-based-logging))
 
 <Admonition type="info">
 
-You can also use the `DEBUG` environment variable to enable debugging output in the Prisma Client. See [Debugging](../debugging) for more information.
+You can also use the `DEBUG` environment variable to enable debugging output in Prisma Client. See [Debugging](/concepts/components/prisma-client/debugging) for more information.
+
+</Admonition>
+
+<Admonition type="info">
+
+If you want a detailed insight into your Prisma Client's performance at the level of individual operations, see [Tracing](/concepts/components/prisma-client/opentelemetry-tracing).
 
 </Admonition>
 
@@ -65,10 +71,14 @@ To use event-based logging:
 
 The following example subscribes to all `query` events and write the `duration` and `query` to console:
 
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+
+<tab>
+
 <CodeWithResult expanded="{true}">
 <cmd>
 
-```ts highlight=4,5,22-24;normal
+```ts highlight=4,5,22-26;normal
 const prisma = new PrismaClient({
   log: [
     {
@@ -92,6 +102,7 @@ const prisma = new PrismaClient({
 
 prisma.$on('query', (e) => {
   console.log('Query: ' + e.query)
+  console.log('Params: ' + e.params)
   console.log('Duration: ' + e.duration + 'ms')
 })
 ```
@@ -99,14 +110,65 @@ prisma.$on('query', (e) => {
 </cmd>
 <cmdResult>
 
-```sql
+```sql no-copy
 Query: SELECT "public"."User"."id", "public"."User"."email", "public"."User"."name" FROM "public"."User" WHERE 1=1 OFFSET $1
+Params: [0]
 Duration: 3ms
 Query: SELECT "public"."Post"."id", "public"."Post"."title", "public"."Post"."authorId" FROM "public"."Post" WHERE "public"."Post"."authorId" IN ($1,$2,$3,$4) OFFSET $5
+Params: [2, 7, 18, 29]
 Duration: 2ms
 ```
 
 </cmdResult>
 </CodeWithResult>
+
+</tab>
+
+<tab>
+
+<CodeWithResult expanded="{true}">
+<cmd>
+
+```ts highlight=4,5,22-25;normal
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+    {
+      emit: 'stdout',
+      level: 'error',
+    },
+    {
+      emit: 'stdout',
+      level: 'info',
+    },
+    {
+      emit: 'stdout',
+      level: 'warn',
+    },
+  ],
+})
+
+prisma.$on('query', (e) => {
+  console.log('Query: ' + e.query)
+})
+```
+
+</cmd>
+<cmdResult>
+
+```terminal no-copy
+Query: db.User.aggregate([ { $project: { _id: 1, email: 1, name: 1, }, }, ])
+Query: db.Post.aggregate([ { $match: { userId: { $in: [ "622f0bbbdf635a42016ee325", ], }, }, }, { $project: { _id: 1, slug: 1, title: 1, body: 1, userId: 1, }, }, ])
+```
+
+</cmdResult>
+</CodeWithResult>
+
+</tab>
+
+</TabbedContent>
 
 The exact [event (`e`) type and the properties available](/reference/api-reference/prisma-client-reference#event-types) <span class="api"></span> depends on the log level.

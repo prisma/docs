@@ -25,8 +25,13 @@ module.exports = {
   trackPage(page) {
     const { host } = window.location
 
-    if (host.includes('netlify') || host.includes('localhost')) {
-      return // exclude netlify previews from analytics
+    if (
+      host.includes('netlify') ||
+      host.includes('localhost') ||
+      host.includes('percy') ||
+      host.includes('vercel')
+    ) {
+      return
     }
     ReactGA.pageview(page)
   },

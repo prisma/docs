@@ -7,19 +7,15 @@ function withPathPrefix(url, pathPrefix) {
 }
 
 const pathSep = '/'
-
 module.exports = function plugin(
   { markdownAST, markdownNode, pathPrefix, getNode },
   { redirects = [] } = {}
 ) {
   function visitor(node) {
-    /*To convert all uppercase links to lowercase (if used by mistake) except its search part (like: ?name='AbC'), 
-      to avoid use of extrnal link errors like one of youtube */
-    node.url = node.url
-      .replace(/(.+)\?|(.+)\??/, (url) => url.toLowerCase())
-      .replace(/#.+/, (url) => url.toLowerCase())
-
     node.originalUrl = node.url
+    var pattern = /^https?:\/\//i
+    node.isDomainUrl = false
+
     if (
       markdownNode.fields &&
       markdownNode.fields.slug &&
@@ -32,7 +28,7 @@ module.exports = function plugin(
       const newUrl = path
         .resolve(
           markdownNode.fields.slug
-            .replace(`${pathSep}index`, '')
+            .replace(new RegExp('\\b' + `${pathSep}index` + '\\b'), '')
             .replace(/\d{2,}-/g, '')
             .replace(/\/$/, '')
             .split(pathSep)
@@ -40,7 +36,8 @@ module.exports = function plugin(
             .join(pathSep) || '/',
           node.url
         )
-        .replace(/\/?(\?|#|$)/, '/$1')
+        .replace(/\/?(\?|$)/, '/$1')
+        .replace(/\/$/, '')
 
       if (/^..\\/.test(newUrl)) {
         //Code specifically for local run, to fix broken links on
@@ -53,6 +50,7 @@ module.exports = function plugin(
           .replace(/\\/g, '/')
           .slice(2)
           .replace(/(^.*)#.*/, '$1')
+
         const isRedirectPath = redirects.find((url) => newUrl2.includes(url.from))
         if (isRedirectPath) newUrl2 = isRedirectPath.to
 
@@ -67,6 +65,24 @@ module.exports = function plugin(
           pathPrefix
         )
       }
+    }
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      node.url.includes('prisma.io/docs') &&
+      !node.url.includes('https://v1.prisma.io/docs')
+    ) {
+      node.isDomainUrl = true
+    }
+
+    if (
+      markdownNode.fields &&
+      markdownNode.fields.slug &&
+      !pattern.test(node.url) &&
+      node.url.endsWith('/') &&
+      node.url !== './'
+    ) {
+      node.isTrailingSlashUrl = true
     }
   }
 

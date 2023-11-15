@@ -2,7 +2,7 @@
 title: Connection management
 metaTitle: Connection management (Guide)
 metaDescription: 'How to approach connection management with Prisma Client in serverless environments and long-running applications.'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -26,12 +26,18 @@ This guide focuses on **relational databases** and how to configure and tune the
 
 Examples of long-running processes include Node.js applications hosted on a service like Heroku or a virtual machine. Use the following checklist as a guide to connection management in long-running environments:
 
-- ☐ Start with the [recommended pool size (`connection_limit`)](#recommended-connection-pool-size) and [tune it](#optimizing-the-connection-pool)
-- ☐ Make sure you have [**one** global instance of `PrismaClient`](#prismaclient-in-long-running-applications)
+- Start with the [recommended pool size (`connection_limit`)](#recommended-connection-pool-size) and [tune it](#optimizing-the-connection-pool)
+- Make sure you have [**one** global instance of `PrismaClient`](#prismaclient-in-long-running-applications)
 
 ### Recommended connection pool size
 
 The recommended connection pool size (`connection_limit`) to [start with](#optimizing-the-connection-pool) for long-running processes is the **default pool size** (`num_physical_cpus * 2 + 1`) ÷ **number of application instances**.
+
+<Admonition>
+
+`num_physical_cpus` refers to the the number of CPUs of the machine your application is running on.
+
+</Admonition>
 
 If you have **one** application instances:
 
@@ -40,7 +46,7 @@ If you have **one** application instances:
 
 If you have **multiple** application instances:
 
-- You must **manually** [set the `connection_limit` parameter](../../../concepts/components/prisma-client/working-with-prismaclient/connection-pool#setting-the-connection-pool-size) <span class="concept"></span>. For example, if your calculated pool size is _10_ and you have _2_ instances of your app, the `connection_limit` parameter should be **no more than _5_**.
+- You must **manually** [set the `connection_limit` parameter](/concepts/components/prisma-client/working-with-prismaclient/connection-pool#setting-the-connection-pool-size) <span class="concept"></span>. For example, if your calculated pool size is _10_ and you have _2_ instances of your app, the `connection_limit` parameter should be **no more than _5_**.
 - You can optionally [tune the pool size](#optimizing-the-connection-pool).
 
 ### <inlinecode>PrismaClient</inlinecode> in long-running applications
@@ -78,7 +84,7 @@ You do not have to replicate the example above exactly - the goal is to make sur
 
 #### Do not explicitly `$disconnect()`
 
-You [do not need to explicitly `$disconnect()`](../../../concepts/components/prisma-client/working-with-prismaclient/connection-management#calling-disconnect-explicitly) <span class="concept"></span> in the context of a long-running application that is continuously serving requests. Opening a new connection takes time and can slow down your application if you disconnect after each query.
+You [do not need to explicitly `$disconnect()`](/concepts/components/prisma-client/working-with-prismaclient/connection-management#calling-disconnect-explicitly) <span class="concept"></span> in the context of a long-running application that is continuously serving requests. Opening a new connection takes time and can slow down your application if you disconnect after each query.
 
 #### Prevent hot reloading from creating new instances of `PrismaClient`
 
@@ -86,28 +92,22 @@ Frameworks like [Next.js](https://nextjs.org/) support hot reloading of changed 
 
 As a workaround, you can store `PrismaClient` as a global variable in development environments only, as global variables are not reloaded:
 
+<!-- prettier-ignore -->
 ```ts file=client.ts
 import { PrismaClient } from '@prisma/client'
 
-// add prisma to the NodeJS global type
-interface CustomNodeJsGlobal extends NodeJS.Global {
-  prisma: PrismaClient
-}
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
-// Prevent multiple instances of Prisma Client in development
-declare const global: CustomNodeJsGlobal
+export const prisma =
+  globalForPrisma.prisma || new PrismaClient()
 
-const prisma = global.prisma || new PrismaClient()
-
-if (process.env.NODE_ENV === 'development') global.prisma = prisma
-
-export default prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
 
-The way that you import and use the client does not change:
+The way that you import and use Prisma Client does not change:
 
 ```ts file=app.ts
-import prisma from './client'
+import { prisma } from './client'
 
 async function main() {
   const allUsers = await prisma.user.findMany()
@@ -120,10 +120,10 @@ main()
 
 Examples of serverless environments include Node.js functions hosted on AWS Lambda, Vercel or Netlify Functions. Use the following checklist as a guide to connection management in serverless environments:
 
-- ☐ Familiarize yourself with the [serverless connection management challenge](#the-serverless-challenge)
-- ☐ [Set pool size (`connection_limit`)](#recommended-connection-pool-size-1) based on whether you have an external connection pooler, and optionally [tune the pool size](#optimizing-the-connection-pool)
-- ☐ [Instantiate `PrismaClient` outside the handler](#instantiate-prismaclient-outside-the-handler) and do not explicitly `$disconnect()`
-- ☐ Configure [function concurrency](#concurrency-limits) and handle [idle connections](#zombie-connections)
+- Familiarize yourself with the [serverless connection management challenge](#the-serverless-challenge)
+- [Set pool size (`connection_limit`)](#recommended-connection-pool-size-1) based on whether you have an external connection pooler, and optionally [tune the pool size](#optimizing-the-connection-pool)
+- [Instantiate `PrismaClient` outside the handler](#instantiate-prismaclient-outside-the-handler) and do not explicitly `$disconnect()`
+- Configure [function concurrency](#concurrency-limits) and handle [idle connections](#zombie-connections)
 
 ### The serverless challenge
 
@@ -184,7 +184,7 @@ If you are using an external connection pooler, use the default pool size (`num_
 
 #### Optimizing for parallel requests
 
-If you rarely or never exceed the database connection limit with the pool size set to 1, you can further optimize the connection pool size. Consider a function that is sends queries in parallel:
+If you rarely or never exceed the database connection limit with the pool size set to 1, you can further optimize the connection pool size. Consider a function that sends queries in parallel:
 
 ```ts
 Promise.all() {
@@ -208,7 +208,7 @@ If the `connection_limit` is 1, this function is forced to send queries **serial
 Instantiate `PrismaClient` [outside the scope of the function handler](https://github.com/prisma/e2e-tests/blob/5d1041d3f19245d3d237d959eca94d1d796e3a52/platforms/serverless-lambda/index.ts#L3) to increase the chances of reuse. As long as the handler remains 'warm' (in use), the connection is potentially reusable:
 
 ```ts highlight=3;normal
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 const client = new PrismaClient()
 
@@ -219,13 +219,13 @@ export async function handler() {
 
 #### Do not explicitly <inlinecode>$disconnect()</inlinecode>
 
-You [do not need to explicitly `$disconnect()`](../../../concepts/components/prisma-client/working-with-prismaclient/connection-management#calling-disconnect-explicitly) <span class="concept"></span> at the end of a function, as there is a possibility that the container might be reused. Opening a new connection takes time and slows down your function's ability to process requests.
+You [do not need to explicitly `$disconnect()`](/concepts/components/prisma-client/working-with-prismaclient/connection-management#calling-disconnect-explicitly) <span class="concept"></span> at the end of a function, as there is a possibility that the container might be reused. Opening a new connection takes time and slows down your function's ability to process requests.
 
 ### Other serverless considerations
 
 #### Container reuse
 
-There is no guarnatee that subsequent nearby invocations of a function will hit the same container - for example, AWS can choose to create a new container at any time.
+There is no guarantee that subsequent nearby invocations of a function will hit the same container - for example, AWS can choose to create a new container at any time.
 
 Code should assume the container to be stateless and create a connection only if it does not exist - Prisma Client JS already implements this logic.
 
@@ -241,7 +241,7 @@ Depending on your serverless concurrency limit (the number of serverless functio
 
 ## Optimizing the connection pool
 
-If the query engine cannot [process a query in the queue before the time limit](../../../concepts/components/prisma-client/working-with-prismaclient/connection-pool#how-the-connection-pool-works) <span class="concept"></span>, you will see connection pool timeout exceptions in your log. A connection pool timeout can occur if:
+If the query engine cannot [process a query in the queue before the time limit](/concepts/components/prisma-client/working-with-prismaclient/connection-pool#how-the-connection-pool-works) <span class="concept"></span>, you will see connection pool timeout exceptions in your log. A connection pool timeout can occur if:
 
 - Many users are accessing your app simultaneously
 - You send a large number of queries in parallel (for example, using `await Promise.all()`)
@@ -298,16 +298,40 @@ datasource db {
 
 ## External connection poolers
 
-Connection poolers like [PgBouncer](https://www.pgbouncer.org/) prevent your application from exhausting the database's connection limit.
+Connection poolers like the Data Proxy and PgBouncer prevent your application from exhausting the database's connection limit.
+
+If you would like to use the Prisma CLI in order to perform other actions on your database ,e.g. migrations and introspection, you will need to add an environment variable that provides a direct connection to your database in the `datasource.directUrl` property in your Prisma schema:
+
+```env file=.env highlight=4,5;add
+# Connection URL to your database using PgBouncer.
+DATABASE_URL="postgres://root:password@127.0.0.1:54321/postgres?pgbouncer=true"
+
+# Direct connection URL to the database used for migrations
+DIRECT_URL="postgres://root:password@127.0.0.1:5432/postgres"
+```
+
+You can then update your `schema.prisma` to use the new direct URL:
+
+```prisma file=schema.prisma highlight=4;add
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+```
+
+More information about the `directUrl` field can be found [here](/reference/api-reference/prisma-schema-reference#fields).
+
+### Data Proxy
+
+The [Data Proxy](/data-platform/classic-projects/data-proxy) is a managed external connection pooler built by Prisma that is integrated in the [Prisma Data Platform](/data-platform) and handles connection pooling for you.
 
 ### PgBouncer
 
 PostgreSQL only supports a certain amount of concurrent connections, and this limit can be reached quite fast when the service usage goes up – especially in [serverless environments](#serverless-environments-faas).
 
-PgBouncer holds a connection pool to the database and proxies incoming client connections by sitting between Prisma Client and the database. This reduces the number of processes a database has to handle at any given time. PgBouncer passes on a limited number of connections to the database and queues additional connections for delivery when connections becomes available.
-
-To use PgBouncer, see: [Configure Prisma Client with PgBouncer](configure-pg-bouncer)
+[PgBouncer](https://www.pgbouncer.org/) holds a connection pool to the database and proxies incoming client connections by sitting between Prisma Client and the database. This reduces the number of processes a database has to handle at any given time. PgBouncer passes on a limited number of connections to the database and queues additional connections for delivery when connections becomes available. To use PgBouncer, see [Configure Prisma Client with PgBouncer](configure-pg-bouncer).
 
 ### AWS RDS Proxy
 
-Due to the way AWS RDS Proxy pins connections, [it does not provide any connection pooling benefits](../../deployment/deployment-guides/caveats-when-deploying-to-aws-platforms#aws-rds-proxy) when used together with Prisma Client.
+Due to the way AWS RDS Proxy pins connections, [it does not provide any connection pooling benefits](/guides/deployment/caveats-when-deploying-to-aws-platforms#aws-rds-proxy) when used together with Prisma Client.

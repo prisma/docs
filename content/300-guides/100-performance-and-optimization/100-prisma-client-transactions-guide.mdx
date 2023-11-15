@@ -1,7 +1,7 @@
 ---
 title: Transactions
 metaDescription: 'Explore techniques for handling transactions with Prisma Client.'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -17,7 +17,7 @@ Developers take advantage of the safety guarantees provided by the database by w
 - **Isolated**: Ensures that concurrently running transactions have the same effect as if they were running in serial.
 - **Durability**: Ensures that after the transaction succeeded, any writes are being stored persistently.
 
-While there's a lot of of ambiguity and nuance to each of these properties (for example, consistency could actually be considered an _application-level responsibility_ rather than a database property or isolation is typically guaranteed in terms of stronger and weaker _isolation levels_), overall they serve as a good high-level guideline for expectations developers have when thinking about database transactions.
+While there's a lot of ambiguity and nuance to each of these properties (for example, consistency could actually be considered an _application-level responsibility_ rather than a database property or isolation is typically guaranteed in terms of stronger and weaker _isolation levels_), overall they serve as a good high-level guideline for expectations developers have when thinking about database transactions.
 
 > "Transactions are an abstraction layer that allows an application to pretend that certain concurrency problems and certain kinds of hardware and software faults don’t exist. A large class of errors is reduced down to a simple transaction abort, and the application just needs to try again." **[Designing Data-Intensive Applications](https://dataintensive.net/), [Martin Kleppmann](https://twitter.com/martinkl)**
 
@@ -137,7 +137,7 @@ However, this code has a problem - consider the following scenario:
 
 Creating a team and adding a user should be one atomic operation that **succeeds or fails as a whole**.
 
-To implement atomic writes in a low-level database clients, you must wrap your inserts in `BEGIN`, `COMMIT` and `ROLLBACK` statements. Prisma Client solves the problem with [nested writes](../../concepts/components/prisma-client/relation-queries#nested-writes). The following query creates a team, creates a user, and connects the records in a single transaction:
+To implement atomic writes in a low-level database clients, you must wrap your inserts in `BEGIN`, `COMMIT` and `ROLLBACK` statements. Prisma Client solves the problem with [nested writes](/concepts/components/prisma-client/relation-queries#nested-writes). The following query creates a team, creates a user, and connects the records in a single transaction:
 
 ```ts
 const team = await prisma.team.create({
@@ -181,19 +181,6 @@ const createTeamOperation = prisma.team.create({
 await prisma.$transaction([createUserOperation, createTeamOperation])
 ```
 
-##### Are cascading deletes supported by the Prisma Client nested writes?
-
-<Admonition type="warning">
-
-In [2.26.0](https://github.com/prisma/prisma/releases/tag/2.26.0) and later it is possible to do cascading deletes using the **preview feature** [referential actions](../../concepts/components/prisma-schema/relations/referential-actions).
-
-</Admonition>
-
-- Use the `$transaction` API to perform a cascading delete. Deleting a team and deleting the team's members are not dependent writes - if you know the ID of the team, you can [perform both operations within a `$transaction`](#scenario-privacy-legislation).
-- [Configure cascading deletes at the database level](../database/advanced-database-tasks/cascading-deletes).
-
-> **Note**: We are a looking into [cascading deletes support at a schema level](https://github.com/prisma/prisma/issues/2810).
-
 ##### Nested writes support nested updates, but updates are not dependent writes - should I use the `$transaction` API?
 
 It is correct to say that because you know the ID of the team, you can update the team and its team members independently within a `$transaction`. The following example performs both operations in a `$transaction`:
@@ -224,7 +211,7 @@ const updateUsers = prisma.user.updateMany({
   },
 })
 
-await prisma.$transaction([deleteUsers, updateTeam])
+await prisma.$transaction([updateUsers, updateTeam])
 ```
 
 However, you can achieve the same result with a nested write:
@@ -298,7 +285,7 @@ Writes are considered **independent** if they do not rely on the result of a pre
 - Updating the status field of a list of orders to "Dispatched"
 - Marking a list of emails as "Read"
 
-> **Note**: Independent writes may have to occur in a specific order if constraints are present - for example, you must delete blog posts before the blog author if the post have a mandatory `authorId` field. However, they are still still considered independent writes because no operations depend on the _result_ of a previous operation, such as the database returning a generated ID.
+> **Note**: Independent writes may have to occur in a specific order if constraints are present - for example, you must delete blog posts before the blog author if the post have a mandatory `authorId` field. However, they are still considered independent writes because no operations depend on the _result_ of a previous operation, such as the database returning a generated ID.
 
 Depending on your requirements, Prisma Client has four options for handling independent writes that should succeed or fail together.
 
@@ -308,8 +295,7 @@ Bulk writes allow you to write multiple records of the same type in a single tra
 
 - `updateMany`
 - `deleteMany`
-
-The ability to [create and upsert in bulk](https://github.com/prisma/prisma-client-js/issues/332) is being considered: feel free to chime in with your use case and upvote if you're interested.
+- `createMany`
 
 #### When to use bulk operations
 
@@ -347,8 +333,8 @@ await prisma.email.updateMany({
   where: {
     user: {
       id: 10,
-      unread: true,
     },
+    unread: true,
   },
   data: {
     unread: false,
@@ -373,13 +359,10 @@ await prisma.team.deleteMany({
 })
 ```
 
-You an use the [`$transaction` API to perform a cascading delete](#are-cascading-deletes-supported-by-the-prisma-client-nested-writes).
-
 #### Can I use bulk operations with the `$transaction` API?
 
 Yes - for example, you can include multiple `deleteMany` operations inside a `$transaction`.
 
-<!-- prettier-ignore -->
 ### <inlinecode>$transaction</inlinecode> API
 
 The `$transaction` API is generic solution to independent writes that allows you to run multiple operations as a single, atomic operation - if any operation fails, Prisma rolls back the entire transaction.
@@ -392,7 +375,7 @@ await prisma.$transaction([iRunFirst, iRunSecond, iRunThird])
 
 > **Note**: Using a query in a transaction does not influence the order of operations in the query itself.
 
-As the Prisma Client evolves, use cases for the `$transaction` API will increasingly be replaced by more specialized bulk operations (such as `createMany`) and nested writes.
+As Prisma Client evolves, use cases for the `$transaction` API will increasingly be replaced by more specialized bulk operations (such as `createMany`) and nested writes.
 
 #### When to use the `$transaction` API
 
@@ -692,6 +675,14 @@ If a ❌ conflict occurs (someone else has changed the record since you read it)
 
 This section describes how to build your own optimistic concurrency control. See also: Plans for [application-level optimistic concurrency control on GitHub](https://github.com/prisma/prisma/issues/4988)
 
+<Admonition type="info">
+
+- If you use version 4.4.0 or earlier, you cannot use optimistic concurrency control on `update` operations, because you cannot filter on non-unique fields. The `version` field you need to use with optimistic concurrency control is a non-unique field.
+
+- Since version 5.0.0 you are able to [filter on non-unique fields in `update` operations](/reference/api-reference/prisma-client-reference#filter-on-non-unique-fields-with-userwhereuniqueinput) so that optimistic concurrency control is being used. The feature was also available via the Preview flag `extendedWhereUnique` from versions 4.5.0 to 4.16.2.
+
+</Admonition>
+
 #### When to use optimistic concurrency control
 
 - ✔ You anticipate a high number of concurrent requests (multiple people booking cinema seats)
@@ -775,7 +766,7 @@ model Seat {
 
 Next, adjust the code to check the `version` field before updating:
 
-```ts highlight=18-37;normal
+```ts highlight=19-38;normal
 const userEmail = 'alice@prisma.io'
 const movieName = 'Hidden Figures'
 
@@ -823,62 +814,72 @@ It is now impossible for two people to book the same seat:
 3. Seat 3A claimed by Sorcha (`version` is incremented to 1, booking succeeds)
 4. Seat 3A claimed by Ellen (in-memory `version` (0) does not match database `version` (1) - booking does not succeed)
 
-### Interactive Transactions (in Preview)
+### Interactive transactions
 
 If you have an existing application, it can be a significant undertaking to refactor your application to use optimistic concurrency control. Interactive Transactions offers a useful escape hatch for cases like this.
 
-To support this use case and more, you can enable interactive transactions by adding `interactiveTransactions` in the generator of your Prisma Schema:
+To create an interactive transaction, pass an async function into [$transaction](#transaction-api).
 
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["interactiveTransactions"]
-}
-```
+The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma call invoked on this `tx` instance is encapsulated into the transaction.
 
-Then you can pass an async function into [$transaction](https://www.prisma.io/docs/guides/performance-and-optimization/prisma-client-transactions-guide/#transaction-api).
+In the example below, Alice and Bob each have $100 in their account. If they try to send more money than they have, the transfer is rejected.
 
-The following is an example of purchasing a movie ticket online. This is a good use case for an interactive transactions because you don't want to sell the same ticket twice.
+The expected outcome would be for Alice to make 1 transfer for $100 and the other transfer would be rejected. This would result in Alice having $0 and Bob having $200.
 
-```ts highlight=6,8,25;normal
-import { Seat } from 'prisma'
-const userEmail = 'alice@prisma.io'
-const movieName = 'HiddenFigures'
+```ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
 
-// Start a transaction
-const seat: Seat = await prisma.$transaction(async (prisma) => {
-  // Find an available seat
-  const availableSeat = await prisma.seat.findFirst({
-    where: {
-      claimedBy: null,
-      movie: {
-        name: movieName,
+async function transfer(from: string, to: string, amount: number) {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Decrement amount from the sender.
+    const sender = await tx.account.update({
+      data: {
+        balance: {
+          decrement: amount,
+        },
       },
-    },
-  })
+      where: {
+        email: from,
+      },
+    })
 
-  // Throw an error if no seats are available
-  if (!availableSeat) {
-    // This will rollback the transaction
-    throw new Error(`Oh no! ${movieName} is all booked.`)
-  }
+    // 2. Verify that the sender's balance didn't go below zero.
+    if (sender.balance < 0) {
+      throw new Error(`${from} doesn't have enough to send ${amount}`)
+    }
 
-  // Claim the seat, commit the transaction, and return
-  // the result
-  return prisma.seat.update({
-    data: {
-      claimedBy: userEmail,
-    },
-    where: {
-      id: availableSeat.id,
-    },
+    // 3. Increment the recipient's balance by amount
+    const recipient = tx.account.update({
+      data: {
+        balance: {
+          increment: amount,
+        },
+      },
+      where: {
+        email: to,
+      },
+    })
+
+    return recipient
   })
-})
+}
+
+async function main() {
+  // This transfer is successful
+  await transfer('alice@prisma.io', 'bob@prisma.io', 100)
+  // This transfer fails because Alice doesn't have enough funds in her account
+  await transfer('alice@prisma.io', 'bob@prisma.io', 100)
+}
+
+main()
 ```
 
-In the example above, both the `findFirst` and `update` queries run within a database transaction. When your application reaches the end of the function, the transaction is **committed** to the database.
+In the example above, both `update` queries run within a database transaction. When the application reaches the end of the function, the transaction is **committed** to the database.
 
-If your application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction. To catch the exception, you can wrap `$transaction` in a try-catch block.
+If the application encounters an error along the way, the async function will throw an exception and automatically **rollback** the transaction.
+
+You can learn more about interactive transactions in our [Transactions and Batch Queries documentation](/concepts/components/prisma-client/transactions#interactive-transactions).
 
 <Admonition type="warning">
 

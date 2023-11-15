@@ -1,12 +1,18 @@
 ---
 title: One-to-many relations
 metaDescription: How to define and work with one-to-many relations in Prisma.
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
 
-One-to-many (1-n) relations refer to relations where one record on one side of the relation can be connected to zero or more records on the other side. In the following example, there is one 1-n-relation between `User` and `Post`:
+This page introduces one-to-many relations and explains how to use them in your Prisma schema.
+
+</TopBlock>
+
+## Overview
+
+One-to-many (1-n) relations refer to relations where one record on one side of the relation can be connected to zero or more records on the other side. In the following example, there is one one-to-many relation between the `User` and `Post` models:
 
 <TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
 <tab>
@@ -29,12 +35,12 @@ model Post {
 
 ```prisma
 model User {
-  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
   posts Post[]
 }
 
 model Post {
-  id       String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
   author   User   @relation(fields: [authorId], references: [id])
   authorId String @db.ObjectId
 }
@@ -43,18 +49,61 @@ model Post {
 </tab>
 </TabbedContent>
 
-> **Note** The `posts` field does not "manifest" in the underlying database schema. On the other side of the relation, the [annotated relation field](../relations#annotated-relation-fields-and-relation-scalar-fields) `author` and its relation scalar `authorId` represent the side of the relation that stores the foreign key in the underlying database.
+> **Note** The `posts` field does not "manifest" in the underlying database schema. On the other side of the relation, the [annotated relation field](/concepts/components/prisma-schema/relations#relation-fields) `author` and its relation scalar `authorId` represent the side of the relation that stores the foreign key in the underlying database.
 
-This 1-n-relation expresses the following:
+This one-to-many relation expresses the following:
 
 - "a user can have zero or more posts"
 - "a post must always have an author"
 
-</TopBlock>
+In the previous example, the `author` relation field of the `Post` model references the `id` field of the `User` model. You can also reference a different field. In this case, you need to mark the field with the `@unique` attribute, to guarantee that there is only a single `User` connected to each `Post`. In the following example, the `author` field references an `email` field in the `User` model, which is marked with the `@unique` attribute:
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique // <-- add unique attribute
+  posts Post[]
+}
+
+model Post {
+  id          Int    @id @default(autoincrement())
+  authorEmail String
+  author      User   @relation(fields: [authorEmail], references: [email])
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String @unique // <-- add unique attribute
+  posts Post[]
+}
+
+model Post {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  authorEmail String
+  author      User   @relation(fields: [authorEmail], references: [email])
+}
+```
+
+</tab>
+</TabbedContent>
+
+<Admonition type="warning">
+
+In MySQL, you can create a foreign key with only an index on the referenced side, and not a unique constraint. In Prisma versions 4.0.0 and later, if you introspect a relation of this type it will trigger a validation error. To fix this, you will need to add a `@unique` constraint to the referenced field.
+
+</Admonition>
 
 ## Multi-field relations in relational databases
 
-In **relational databases only**, you can also define this relation using [multi-field IDs](../../../../reference/api-reference/prisma-schema-reference#id-1):
+In **relational databases only**, you can also define this relation using [multi-field IDs](/reference/api-reference/prisma-schema-reference#id-1):
 
 <TabbedContent tabs={[<FileWithIcon text="Relational databases only" icon="database"/>]}>
 <tab>
@@ -149,14 +198,14 @@ The following list of `Post` MongoDB documents each have a `userId` field which 
 
 #### Comparing one-to-one and one-to-many relations
 
-In MongoDB, the only difference between a 1-1 and a 1-n is the number of documents referencing another doucment in the database - there are no constraints.
+In MongoDB, the only difference between a 1-1 and a 1-n is the number of documents referencing another document in the database - there are no constraints.
 
 ## Required and optional relation fields in one-to-many relations
 
 A 1-n-relation always has two relation fields:
 
-- a [list](../data-model#type-modifiers) relation field which is _not_ annotated with `@relation`
-- the [annotated relation field](../relations#annotated-relation-fields-and-relation-scalar-fields) (including its relation scalar)
+- a [list](/concepts/components/prisma-schema/data-model#type-modifiers) relation field which is _not_ annotated with `@relation`
+- the [annotated relation field](/concepts/components/prisma-schema/relations#relation-fields) (including its relation scalar)
 
 The list side of a 1-n relation is **always mandatory**. On the other side of the relation, the annotated relation field and relation scalar can either _both_ be optional, or _both_ be mandatory.
 
@@ -183,13 +232,15 @@ model Post {
 
 ```prisma
 model User {
-  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
   posts Post[]
 }
+
 model Post {
-id        String  @id @default(dbgenerated()) @db.ObjectId @map("_id")
-author    User?   @relation(fields: [authorId], references: [id])
-authorId  String?  @db.ObjectId
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  author   User?   @relation(fields: [authorId], references: [id])
+  authorId String? @db.ObjectId
+}
 ```
 
 </tab>
@@ -218,12 +269,12 @@ model Post {
 
 ```prisma
 model User {
-  id    String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
   posts Post[]
 }
 
 model Post {
-  id       String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
   author   User   @relation(fields: [authorId], references: [id])
   authorId String @db.ObjectId
 }

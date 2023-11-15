@@ -1,14 +1,30 @@
 # Prisma Documentation
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/ac8f6d5a-9b11-4b0a-8df1-b3b2f927c064/deploy-status)](https://app.netlify.com/sites/prisma2-docs/deploys)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Vercel](https://vercelbadge.vercel.app/api/prisma/docs)](https://vercel.com/prisma/docs/deployments)
 
-This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs/).
+This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs).
 
-## Run locally
+## Contributing to the docs
 
-Clone this repository and get started by running the following commands:
+New contributors are welcome! Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
+
+## Prerequisites for Apple M1 chip (macOS BigSur and later)
+
+1. Install [`homebrew`](https://brew.sh/).
+2. Install [`libvips`](https://github.com/libvips/libvips) via homebrew.
+
+   ```
+   brew install libvips
+   ```
+
+## Run the docs site locally
+
+1. Clone this repository.
+2. On your computer, open a terminal window in the repository's directory.
+3. Run the following commands:
 
 ```
+cd docs
 npm install
 npm run dev
 ```
@@ -18,7 +34,7 @@ npm run dev
 Run a local build to run the functions using the following command:
 
 ```
-netlify dev
+vercel dev
 ```
 
 > Make sure you have the correct path to `POSTGRES_URL` in your local `.env` file to test the functions
@@ -26,45 +42,65 @@ netlify dev
 To prettify or format the code, run:
 
 ```
-npm run prettify
+npm run format
 ```
 
-Visit `http://localhost:8000/` to view the app.
+Visit `http://localhost:8000` to view the app.
 
 ## Configure
 
 Write MDX files in `content` folder.
 
-Open `config.js` for available config options for `gatsby`, `header`, `footer` and `siteMetadata`.
+Open `config.ts` for available config options for `gatsby`, `header`, `footer` and `siteMetadata`.
 
 - `gatsby` config for global configuration like
 
   - `pathPrefix` - Gatsby Path Prefix
+  - `siteUrl` - The url of the deployed site
+  - `titlePrefix` - The prefix to title that is added to the SEO title of the page
+  - `titleSuffix` - The suffix to title that is added to the SEO title of the page
 
 - `header` config for site header configuration like
 
-  - `title` - The title that appears on the top left
-  - `links` - The links for header
-  - `logoLink` - The link to redirect on logo click
+  - `secondLevelHeaderMenuItems` - The text and links for the buckets on the second level of header
+  - `search` - The API keys for search functionality
 
 - `footer` config for site footer configuration like
 
-  - `title` - The title that appears on the top left
-  - `logoLink` - The link to redirect on logo click
-  - `products`, `community`, `company`, `resources` - The links for various footer
-  - `newsletter` - Newsletter config
-  - `findus` - Social links
+  - `newsletter` - Newsletter text
+
+- `homepage` config for various links and content in the homepage of https://www.prisma.io/docs
+
+  - `SummaryLinkData` - Links and text in the Summary section of homepage
+  - `GeneralLinkData` - Links and text in the General section of homepage
+  - `GuideLinkData` - Links and text in the Guide section of homepage
+  - `ReferenceLinkData` - Links and text in the Reference section of homepage
+  - `MoreUsefulLinks` - Links and text in the More Useful section of homepage
 
 - `siteMetadata` config for website related configuration
+
   - `title` - Title of the website in main page
   - `description` - Description of the website
   - `keywords` - Keywords of the website for SEO
+
+- `feedback` config for feedback urls
+
+  - `sentimentUrl` - api path for sentiment details on feedback functionality
+  - `feedbackUrl` - api path for feedback details on feedback functionality
 
 ## Inserting, moving and deleting files
 
 All files/folders in the context are prefixed with a _position_ which indicates the order in which they appear in the sidenav on the docs website. This makes it cumbersome to insert, move and delete files because the positions of a number of other files (if not all) in the same folder might need to be adjusted. Thanks to [Luca Steeb](https://github.com/steebchen/), you can perform these operations with a dedicated CLI called [`mdtool`](https://gist.githubusercontent.com/steebchen/bd085ebde1fcf4242e3fdd0df4d202a6/raw/c04e3d262eb6a302a9fab98f6428fec9329681e2/mdtool).
 
 ### Install
+
+First, install `wget`:
+
+```bash
+brew install wget
+```
+
+Then use `wget` to install `mdtool`:
 
 ```bash
 wget https://gist.githubusercontent.com/steebchen/bd085ebde1fcf4242e3fdd0df4d202a6/raw/c04e3d262eb6a302a9fab98f6428fec9329681e2/mdtool -qO /usr/local/bin/mdtool
