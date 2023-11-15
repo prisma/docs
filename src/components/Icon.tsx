@@ -1,36 +1,48 @@
-import { IconProp } from '@fortawesome/fontawesome-svg-core'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React from 'react'
-import styled from 'styled-components'
+import React, { useEffect, useRef, useState } from 'react'
 
 interface IconProps {
-  icon: IconProp
+  icon: string
   color?: string
   className?: string
-  width?: string
-  height?: string
-  btn?: boolean
+  size?: string
+  btn?: 'left' | 'right'
+  fit?: 'width' | 'height'
 }
 
-const FontAwesomeIconHolder = styled(FontAwesomeIcon)<{
-  width: string
-  height: string
-  btn: boolean
-}>`
-  ${(props) => (props.width !== '100%' ? `max-width: ${props.width}` : ``)};
-  ${(props) => (props.height !== '100%' ? `max-height: ${props.height}` : ``)};
-  ${(props) => (props.btn ? `margin-left: 8px;` : '')}
-  height: 100%;
-  width: 100%;
-`
+export const Icon = ({ icon, color, className, size, btn, fit }: IconProps) => {
+  const iconRef = useRef<any>(null)
+  const [font, setFontSize] = useState<number>(0)
+  const [measure, setMeasure] = useState<string>('vw')
+  useEffect(() => {
+    if (iconRef && iconRef.current) {
+      setFont()
+    }
+  }, [iconRef.current])
 
-export const Icon = ({ icon, color, className, width, height, btn }: IconProps) => (
-  <FontAwesomeIconHolder
-    className={className}
-    icon={icon}
-    color={color ? color : 'currentColor'}
-    width={width ? width : 'unset'}
-    height={height ? height : 'unset'}
-    btn={btn ? btn : false}
-  />
-)
+  const setFont = () => {
+    const parentElement = iconRef.current.parentElement.getBoundingClientRect()
+    setFontSize(
+      (100 * parentElement[parentElement.width > parentElement.height ? 'height' : 'width']) /
+        window[parentElement.width > parentElement.height ? 'innerHeight' : 'innerWidth'] -
+        0.6
+    )
+    setMeasure(parentElement.width > parentElement.height ? 'vh' : 'vw')
+  }
+
+  useEffect(() => {
+    window.addEventListener('resize', setFont)
+    return () => window.removeEventListener('resize', setFont)
+  }, [])
+  return (
+    <i
+      ref={iconRef}
+      className={`${icon} ${className}`}
+      style={{
+        textAlign: 'center',
+        fontSize: size ? size : `${font}${measure}`,
+        color: color ? color : 'currentcolor',
+        margin: btn?.length ? (btn === 'right' ? '0 0 0 8px' : '0 8px 0 0') : '',
+      }}
+    ></i>
+  )
+}
