@@ -1,5 +1,6 @@
 export interface HeaderProps {
   secondLevelHeaderMenuItems: { text: string; type: string; to: string; bucketName: string }[]
+  wide?: boolean
 }
 
 export interface FooterProps {
