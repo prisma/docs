@@ -3,22 +3,22 @@ title: 'Baseline your database'
 metaTitle: 'Baseline your database'
 metaDescription: 'Baseline your database using Prisma Migrate in your project'
 langSwitcher: ['typescript', 'node']
-dbSwitcher: ['postgres', 'mysql', 'sqlserver', 'cockroachdb']
+dbSwitcher: ['postgresql', 'mysql', 'sqlserver', 'cockroachdb']
 toc: false
 ---
 
 ## Create an initial migration
 
-To use Prisma Migrate with the database you introspected in the last section, you will need to [baseline your database](/guides/database/developing-with-prisma-migrate/add-prisma-migrate-to-a-project).
+To use Prisma Migrate with the database you introspected in the last section, you will need to [baseline your database](/guides/migrate/developing-with-prisma-migrate/add-prisma-migrate-to-a-project).
 
 Baselining refers to initializing your migration history for a database that might already contain data and **cannot be reset**, such as your production database. Baselining tells Prisma Migrate to assume that one or more migrations have already been applied to your database.
 
 To baseline your database, use [`prisma migrate diff`](/reference/api-reference/command-reference#migrate-diff) to compare your schema and database, and save the output into a SQL file.
 
-First, create a `migrations` directory and add a directory inside with your preferred name for the migration. In this example, we will use `init` as the migration name:
+First, create a `migrations` directory and add a directory inside with your preferred name for the migration. In this example, we will use `0_init` as the migration name:
 
 ```terminal
-mkdir -p prisma/migrations/init
+mkdir -p prisma/migrations/0_init
 ```
 
 <Admonition type="info">
@@ -33,75 +33,110 @@ Next, generate the migration file with `prisma migrate diff`. Use the following 
 - `--to-schema-datamodel`: the current database state using the URL in the `datasource` block
 - `--script`: output a SQL script
 
-```terminal
-npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/init/migration.sql
+```terminal wrap
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
 ```
 
 ## Review the migration
 
 The command will generate a migration that should resemble the following script:
 
-<SwitchTech technologies={['*', 'postgres']}>
+<SwitchTech technologies={['*', 'postgresql']}>
 
-```sql file=prisma/migrations/init/migration.sql
-CREATE TABLE "public"."User" (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name VARCHAR(255),
-  email VARCHAR(255) UNIQUE NOT NULL
+```sql file=prisma/migrations/0_init/migration.sql
+-- CreateTable
+CREATE TABLE "Post" (
+    "id" SERIAL NOT NULL,
+    "title" VARCHAR(255) NOT NULL,
+    "createdAt" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "content" TEXT,
+    "published" BOOLEAN NOT NULL DEFAULT false,
+    "authorId" INTEGER NOT NULL,
+
+    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "public"."Post" (
-  id SERIAL PRIMARY KEY NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-  content TEXT,
-  published BOOLEAN NOT NULL DEFAULT false,
-  "authorId" INTEGER NOT NULL,
-  FOREIGN KEY ("authorId") REFERENCES "public"."User"(id)
+-- CreateTable
+CREATE TABLE "Profile" (
+    "id" SERIAL NOT NULL,
+    "bio" TEXT,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "public"."Profile" (
-  id SERIAL PRIMARY KEY NOT NULL,
-  bio TEXT,
-  "userId" INTEGER UNIQUE NOT NULL,
-  FOREIGN KEY ("userId") REFERENCES "public"."User"(id)
+-- CreateTable
+CREATE TABLE "User" (
+    "id" SERIAL NOT NULL,
+    "name" VARCHAR(255),
+    "email" VARCHAR(255) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Profile_userId_key" ON "Profile"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- AddForeignKey
+ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 ```
 
 </SwitchTech>
 
 <SwitchTech technologies={['*', 'mysql']}>
 
-```sql file=prisma/migrations/init/migration.sql
-CREATE TABLE User (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
-  name VARCHAR(255),
-  email VARCHAR(255) UNIQUE NOT NULL
-);
+```sql file=prisma/migrations/0_init/migration.sql
+-- CreateTable
+CREATE TABLE `Post` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `title` VARCHAR(255) NOT NULL,
+    `createdAt` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `content` TEXT NULL,
+    `published` BOOLEAN NOT NULL DEFAULT false,
+    `authorId` INTEGER NOT NULL,
 
-CREATE TABLE Post (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  createdAt TIMESTAMP NOT NULL DEFAULT now(),
-  content TEXT,
-  published BOOLEAN NOT NULL DEFAULT false,
-  authorId INTEGER NOT NULL,
-  FOREIGN KEY (authorId) REFERENCES User(id)
-);
+    INDEX `authorId`(`authorId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE Profile (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
-  bio TEXT,
-  userId INTEGER UNIQUE NOT NULL,
-  FOREIGN KEY (userId) REFERENCES User(id)
-);
+-- CreateTable
+CREATE TABLE `Profile` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `bio` TEXT NULL,
+    `userId` INTEGER NOT NULL,
+
+    UNIQUE INDEX `userId`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `User` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NULL,
+    `email` VARCHAR(255) NOT NULL,
+
+    UNIQUE INDEX `email`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `Post` ADD CONSTRAINT `Post_ibfk_1` FOREIGN KEY (`authorId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `Profile` ADD CONSTRAINT `Profile_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 ```
 
 </SwitchTech>
 
 <SwitchTech technologies={['*', 'sqlserver']}>
 
-```sql file=prisma/migrations/init/migration.sql
+```sql file=prisma/migrations/0_init/migration.sql
 CREATE TABLE [dbo].[Post] (
     [id] INT NOT NULL IDENTITY(1,1),
     [createdAt] DATETIME2 NOT NULL CONSTRAINT [Post_createdAt_df] DEFAULT CURRENT_TIMESTAMP,
@@ -138,7 +173,7 @@ ALTER TABLE [dbo].[Profile] ADD CONSTRAINT [Profile_userId_fkey] FOREIGN KEY ([u
 
 <SwitchTech technologies={['*', 'cockroachdb']}>
 
-```sql file=prisma/migrations/init/migration.sql
+```sql file=prisma/migrations/0_init/migration.sql
 CREATE TABLE "User" (
   id INT8 PRIMARY KEY DEFAULT unique_rowid(),
   name STRING(255),
@@ -170,10 +205,10 @@ Review the SQL migration file to ensure everything is correct.
 Next, mark the migration as applied using `prisma migrate resolve` with the `--applied` argument.
 
 ```terminal
-npx prisma migrate resolve --applied init
+npx prisma migrate resolve --applied 0_init
 ```
 
-The command will mark `init` as applied by adding it to the `_prisma_migrations` table.
+The command will mark `0_init` as applied by adding it to the `_prisma_migrations` table.
 
 You now have a baseline for your current database schema. To make further changes to your database schema, you can update your Prisma schema and use `prisma migrate dev` to apply the changes to your database.
 
@@ -184,7 +219,7 @@ You now have a baseline for your current database schema. To make further change
 <ButtonLink
   color="dark"
   type="primary"
-  href="./introspection-node-postgres"
+  href="./introspection-node-postgresql"
   arrowLeft
 >
   Introspection
@@ -193,7 +228,7 @@ You now have a baseline for your current database schema. To make further change
 <ButtonLink
   color="dark"
   type="primary"
-  href="./install-prisma-client-node-postgres"
+  href="./install-prisma-client-node-postgresql"
   arrow
 >
   Install Prisma Client
@@ -288,7 +323,7 @@ You now have a baseline for your current database schema. To make further change
 <ButtonLink
   color="dark"
   type="primary"
-  href="./introspection-typescript-postgres"
+  href="./introspection-typescript-postgresql"
   arrowLeft
 >
   Introspection
@@ -297,7 +332,7 @@ You now have a baseline for your current database schema. To make further change
 <ButtonLink
   color="dark"
   type="primary"
-  href="./install-prisma-client-typescript-postgres"
+  href="./install-prisma-client-typescript-postgresql"
   arrow
 >
   Install Prisma Client

@@ -1,5 +1,8 @@
 import type { GatsbyConfig } from 'gatsby'
 import docsConfig from './config'
+require('dotenv').config({
+  path: `.env`,
+})
 
 let plugins: any = [
   'gatsby-plugin-image',
@@ -29,9 +32,10 @@ let plugins: any = [
           },
         },
         {
-          resolve: `gatsby-remark-images`,
+          resolve: `gatsby-remark-image-custom`,
           options: {
             disableBgImageOnAlpha: true,
+            quality: 100,
           },
         },
         {
@@ -45,10 +49,10 @@ let plugins: any = [
           options: {
             // Do not surface links to these pages as broken:
             exceptions: [
-              '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgres',
-              '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgres',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgres',
+              '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql',
+              '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql',
+              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
               '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
@@ -57,6 +61,7 @@ let plugins: any = [
               '/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb',
               '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb',
               '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb',
+              '/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-cockroachdb',
             ],
           },
         },
@@ -122,26 +127,34 @@ let plugins: any = [
   },
   'gatsby-plugin-meta-redirect',
   'gatsby-plugin-page-list',
+  'gatsby-plugin-lost-pixel',
 ]
-
-const algoliaPlugin = {
-  resolve: 'gatsby-algolia-indexer',
-  options: {
-    appId: process.env.GATSBY_ALGOLIA_APP_ID,
-    adminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
-    searchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
-    indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
-    types: [`Mdx`],
-  },
-  __key: 'search',
-}
 
 if (process.env.INDEX_ALGOLIA === 'true') {
   if (process.env.GATSBY_ALGOLIA_APP_ID) {
+    // only set this up when we actually need it
+    const algoliaPlugin = {
+      resolve: 'gatsby-algolia-indexer',
+      options: {
+        appId: process.env.GATSBY_ALGOLIA_APP_ID,
+        adminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
+        searchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
+        indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
+        types: [`Mdx`],
+      },
+      __key: 'search',
+    }
+
     plugins.push(algoliaPlugin)
+
+    console.log(
+      'INDEX_ALGOLIA is `true`, and GATSBY_ALGOLIA_APP_ID is set, so pushing algoliaPlugin to list of plugins to trigger search indexing.'
+    )
   } else {
     console.warn('INDEX_ALGOLIA === true, but GATSBY_ALGOLIA_APP_ID is undefined.')
   }
+} else {
+  console.log('INDEX_ALGOLIA not `true`, not pushing algoliaPlugin to skip any search indexing.')
 }
 
 const config: GatsbyConfig = {

@@ -3,7 +3,7 @@ title: 'Introspection'
 metaTitle: 'Introspection'
 metaDescription: 'Introspection your database with Prisma'
 langSwitcher: ['typescript', 'node']
-dbSwitcher: ['postgres', 'mysql', 'sqlserver', 'planetscale', 'cockroachdb']
+dbSwitcher: ['postgresql', 'mysql', 'sqlserver', 'planetscale', 'cockroachdb']
 toc: false
 ---
 
@@ -353,7 +353,7 @@ This commands reads the `DATABASE_URL` environment variable that's defined in `.
 
 After the introspection is complete, your Prisma schema file was updated:
 
-![Introspect your database with Prisma](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/f7itiYw.png)
+![Introspect your database with Prisma](../../../../doc-images/prisma-db-pull-generate-schema.png)
 
 The data model now looks similar to this (note that the fields on the models have been reordered for better readability):
 
@@ -365,14 +365,14 @@ model Post {
   content   String?
   published Boolean  @default(false)
   authorId  Int
-  User      User     @relation(fields: [authorId], references: [id])
+  User      User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Profile {
   id     Int     @id @default(autoincrement())
   bio    String?
   userId Int     @unique
-  User   User    @relation(fields: [userId], references: [id])
+  User   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model User {
@@ -396,34 +396,37 @@ These changes are relevant for the generated Prisma Client API where using lower
 
 Because [relation fields](/concepts/components/prisma-schema/relations#relation-fields) are _virtual_ (i.e. they _do not directly manifest in the database_), you can manually rename them in your Prisma schema without touching the database:
 
-```prisma file=prisma/schema.prisma highlight=7,14,22,23;edit
+```prisma file=prisma/schema.prisma highlight=8,15,22,23;edit
 model Post {
   id        Int      @id @default(autoincrement())
   title     String   @db.VarChar(255)
   createdAt DateTime @default(now()) @db.Timestamp(6)
   content   String?
   published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
   authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Profile {
   id     Int     @id @default(autoincrement())
   bio    String?
-  user   User    @relation(fields: [userId], references: [id])
   userId Int     @unique
+  user   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model User {
   id      Int      @id @default(autoincrement())
-  email   String   @unique @db.VarChar(255)
   name    String?  @db.VarChar(255)
+  email   String   @unique @db.VarChar(255)
   posts   Post[]
   profile Profile?
 }
 ```
 
 In this example, the database schema did follow the [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> for Prisma models (only the virtual relation fields that were generated from introspection did not adhere to them and needed adjustment). This optimizes the ergonomics of the generated Prisma Client API.
+
+<details>
+<summary> Using custom model and field names </summary>
 
 Sometimes though, you may want to make additional changes to the names of the columns and tables that are exposed in the Prisma Client API. A common example is to translate _snake_case_ notation which is often used in database schemas into _PascalCase_ and _camelCase_ notations which feel more natural for JavaScript/TypeScript developers.
 
@@ -473,6 +476,8 @@ const user = await prisma.myUser.create({
 
 Learn more about this on the [Configuring your Prisma Client API](/concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) page.
 
+</details>
+
 </SwitchTech>
 
 <SwitchTech technologies={['*', 'mysql']}>
@@ -489,7 +494,7 @@ This commands reads the `DATABASE_URL` environment variable that's defined in `.
 
 After the introspection is complete, your Prisma schema file was updated:
 
-![Introspect your database with Prisma](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/f7itiYw.png)
+![Introspect your database with Prisma](../../../../doc-images/prisma-db-pull-generate-schema.png)
 
 The data model now looks similar to this (note that the fields on the models have been reordered for better readability):
 
@@ -497,28 +502,36 @@ The data model now looks similar to this (note that the fields on the models hav
 model Post {
   id        Int      @id @default(autoincrement())
   title     String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  content   String?
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  content   String?  @db.Text
   published Boolean  @default(false)
   authorId  Int
-  User      User     @relation(fields: [authorId], references: [id])
+  User      User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Post_ibfk_1")
+
+  @@index([authorId], map: "authorId")
 }
 
 model Profile {
   id     Int     @id @default(autoincrement())
-  bio    String?
-  userId Int     @unique
-  User   User    @relation(fields: [userId], references: [id])
+  bio    String? @db.Text
+  userId Int     @unique(map: "userId")
+  User   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Profile_ibfk_1")
 }
 
 model User {
   id      Int      @id @default(autoincrement())
   name    String?  @db.VarChar(255)
-  email   String   @unique @db.VarChar(255)
+  email   String   @unique(map: "email") @db.VarChar(255)
   Post    Post[]
   Profile Profile?
 }
 ```
+
+<Admonition>
+
+Refer to the [Prisma schema reference](/reference/api-reference/prisma-schema-reference) <span class="api"></span> for detailed information about the schema definition.
+
+</Admonition>
 
 Prisma's data model is a declarative representation of your database schema and serves as the foundation for the generated Prisma Client library. Your Prisma Client instance will expose queries that are _tailored_ to these models.
 
@@ -532,28 +545,30 @@ These changes are relevant for the generated Prisma Client API where using lower
 
 Because [relation fields](/concepts/components/prisma-schema/relations#relation-fields) are _virtual_ (i.e. they _do not directly manifest in the database_), you can manually rename them in your Prisma schema without touching the database:
 
-```prisma file=prisma/schema.prisma highlight=7,14,22,23;edit
+```prisma file=prisma/schema.prisma highlight=8,17,24,25;edit
 model Post {
   id        Int      @id @default(autoincrement())
   title     String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  content   String?
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  content   String?  @db.Text
   published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
   authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Post_ibfk_1")
+
+  @@index([authorId], map: "authorId")
 }
 
 model Profile {
   id     Int     @id @default(autoincrement())
-  bio    String?
-  user   User    @relation(fields: [userId], references: [id])
-  userId Int     @unique
+  bio    String? @db.Text
+  userId Int     @unique(map: "userId")
+  user   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Profile_ibfk_1")
 }
 
 model User {
   id      Int      @id @default(autoincrement())
-  email   String   @unique @db.VarChar(255)
   name    String?  @db.VarChar(255)
+  email   String   @unique(map: "email") @db.VarChar(255)
   posts   Post[]
   profile Profile?
 }
@@ -625,7 +640,7 @@ This commands reads the `DATABASE_URL` environment variable that's defined in `.
 
 After the introspection is complete, your Prisma schema file was updated:
 
-![Introspect your database with Prisma](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/f7itiYw.png)
+![Introspect your database with Prisma](../../../../doc-images/prisma-db-pull-generate-schema.png)
 
 The data model now looks similar to this (note that the fields on the models have been reordered for better readability):
 
@@ -697,6 +712,9 @@ model User {
 
 In this example, the database schema did follow the [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> for Prisma models (only the virtual relation fields that were generated from introspection did not adhere to them and needed adjustment). This optimizes the ergonomics of the generated Prisma Client API.
 
+<details>
+<summary> Using custom model and field names </summary>
+
 Sometimes though, you may want to make additional changes to the names of the columns and tables that are exposed in the Prisma Client API. A common example is to translate _snake_case_ notation which is often used in database schemas into _PascalCase_ and _camelCase_ notations which feel more natural for JavaScript/TypeScript developers.
 
 Assume you obtained the following model from introspection that's based on _snake_case_ notation:
@@ -745,6 +763,8 @@ const user = await prisma.myUser.create({
 
 Learn more about this on the [Configuring your Prisma Client API](/concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) page.
 
+</details>
+
 </SwitchTech>
 
 <SwitchTech technologies={['*', 'planetscale']}>
@@ -761,7 +781,7 @@ This commands reads the `DATABASE_URL` environment variable that's defined in `.
 
 After the introspection is complete, your Prisma schema file was updated:
 
-![Introspect your database with Prisma](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/f7itiYw.png)
+![Introspect your database with Prisma](../../../../doc-images/prisma-db-pull-generate-schema.png)
 
 The data model now looks similar to this:
 
@@ -792,6 +812,12 @@ model User {
   name  String?
 }
 ```
+
+<Admonition>
+
+Refer to the [Prisma schema reference](/reference/api-reference/prisma-schema-reference) <span class="api"></span> for detailed information about the schema definition.
+
+</Admonition>
 
 Prisma's data model is a declarative representation of your database schema and serves as the foundation for the generated Prisma Client library. Your Prisma Client instance will expose queries that are _tailored_ to these models.
 
@@ -841,6 +867,9 @@ Because relation fields are _virtual_ (i.e. they _do not directly manifest in th
 
 In this example, the database schema follows the [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> for Prisma models. This optimizes the ergonomics of the generated Prisma Client API.
 
+<details>
+<summary> Using custom model and field names </summary>
+
 Sometimes though, you may want to make additional changes to the names of the columns and tables that are exposed in the Prisma Client API. A common example is to translate _snake_case_ notation which is often used in database schemas into _PascalCase_ and _camelCase_ notations which feel more natural for JavaScript/TypeScript developers.
 
 Assume you obtained the following model from introspection that's based on _snake_case_ notation:
@@ -889,6 +918,8 @@ const user = await prisma.myUser.create({
 
 Learn more about this on the [Configuring your Prisma Client API](/concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) page.
 
+</details>
+
 </SwitchTech>
 
 <SwitchTech technologies={['*', 'cockroachdb']}>
@@ -905,20 +936,11 @@ This commands reads the environment variable used to define the `url` in your `s
 
 After the introspection is complete, your Prisma schema file was updated:
 
-![Introspect your database with Prisma](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/f7itiYw.png)
+![Introspect your database with Prisma](../../../../doc-images/prisma-db-pull-generate-schema.png)
 
 The data model now looks similar to this:
 
 ```prisma file=prisma/schema.prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "cockroachdb"
-  url      = "env(TEST_DATABASE_URL)"
-}
-
 model Post {
   id        BigInt   @id @default(autoincrement())
   title     String   @unique @db.String(255)
@@ -986,13 +1008,16 @@ model User {
 
 In this example, the database schema did follow the [naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions) <span class="api"></span> for Prisma models (only the virtual relation fields that were generated from introspection did not adhere to them and needed adjustment). This optimizes the ergonomics of the generated Prisma Client API.
 
+<details>
+<summary> Using custom model and field names </summary>
+
 Sometimes though, you may want to make additional changes to the names of the columns and tables that are exposed in the Prisma Client API. A common example is to translate _snake_case_ notation which is often used in database schemas into _PascalCase_ and _camelCase_ notations which feel more natural for JavaScript/TypeScript developers.
 
 Assume you obtained the following model from introspection that's based on _snake_case_ notation:
 
 ```prisma no-lines
 model my_user {
-  user_id    Int     @id @default(autoincrement())
+  user_id    Int     @id @default(sequence())
   first_name String?
   last_name  String  @unique
 }
@@ -1013,7 +1038,7 @@ If you don't want to use the table and column names from your database in your P
 
 ```prisma no-lines
 model MyUser {
-  userId    Int     @id @default(autoincrement()) @map("user_id")
+  userId    Int     @id @default(sequence()) @map("user_id")
   firstName String? @map("first_name")
   lastName  String  @unique @map("last_name")
 
@@ -1034,6 +1059,8 @@ const user = await prisma.myUser.create({
 
 Learn more about this on the [Configuring your Prisma Client API](/concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) page.
 
+</details>
+
 </SwitchTech>
 
 <SwitchTech technologies={['node', 'postgresql']}>
@@ -1043,7 +1070,7 @@ Learn more about this on the [Configuring your Prisma Client API](/concepts/comp
 <ButtonLink
   color="dark"
   type="primary"
-  href="./connect-your-database-node-postgres"
+  href="./connect-your-database-node-postgresql"
   arrowLeft
 >
   Connect your database
@@ -1052,7 +1079,7 @@ Learn more about this on the [Configuring your Prisma Client API](/concepts/comp
 <ButtonLink
   color="dark"
   type="primary"
-  href="./baseline-your-database-node-postgres"
+  href="./baseline-your-database-node-postgresql"
   arrow
 >
   Baseline your database
@@ -1173,7 +1200,7 @@ Learn more about this on the [Configuring your Prisma Client API](/concepts/comp
 <ButtonLink
   color="dark"
   type="primary"
-  href="./connect-your-database-typescript-postgres"
+  href="./connect-your-database-typescript-postgresql"
   arrowLeft
 >
   Connect your database
@@ -1182,7 +1209,7 @@ Learn more about this on the [Configuring your Prisma Client API](/concepts/comp
 <ButtonLink
   color="dark"
   type="primary"
-  href="./baseline-your-database-typescript-postgres"
+  href="./baseline-your-database-typescript-postgresql"
   arrow
 >
   Baseline your database

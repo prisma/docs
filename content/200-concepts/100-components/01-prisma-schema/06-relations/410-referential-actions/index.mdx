@@ -2,7 +2,7 @@
 title: 'Referential actions'
 metaTitle: 'Referential actions'
 metaDescription: 'Referential actions let you define the update and delete behavior of related models on the database level'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -56,7 +56,7 @@ Referential actions are policies that define how a referenced record is handled 
 
 Referential actions are features of foreign key constraints that exist to preserve referential integrity in your database.
 
-When you define relationships between data models in your Prisma schema, you use [relation fields](/concepts/components/prisma-schema#relation-fields), **which do not exist on the database**, and [scalar fields](/concepts/components/prisma-schema/data-model#scalar-fields), **which do exist on the database**. These foreign keys connect the models on the database level.
+When you define relationships between data models in your Prisma schema, you use [relation fields](/concepts/components/prisma-schema/relations#relation-fields), **which do not exist on the database**, and [scalar fields](/concepts/components/prisma-schema/data-model#scalar-fields), **which do exist on the database**. These foreign keys connect the models on the database level.
 
 Referential integrity states that these foreign keys must reference an existing primary key value in the related database table. In your Prisma schema, this is generally represented by the `id` field on the related model.
 
@@ -152,16 +152,40 @@ The following table shows which referential action each database supports.
 
 | Database    | Cascade | Restrict | NoAction | SetNull | SetDefault |
 | :---------- | :------ | :------- | :------- | :------ | :--------- |
-| PostgreSQL  | ✔️      | ✔️      | ✔️       | ✔️     | ✔️        |
-| MySQL       | ✔️      | ✔️      | ✔️       | ✔️     | ✔️†       |
+| PostgreSQL  | ✔️      | ✔️      | ✔️       | ✔️⌘   | ✔️        |
+| MySQL       | ✔️      | ✔️      | ✔️       | ✔️     | ❌ (✔️†)  
 | SQLite      | ✔️      | ✔️      | ✔️       | ✔️     | ✔️        |
 | SQL Server  | ✔️      | ❌‡     | ✔️       | ✔️     | ✔️        |
 | CockroachDB | ✔️      | ✔️      | ✔️       | ✔️     | ✔️        |
 | MongoDB††   | ✔️      | ✔️      | ✔️       | ✔️     | ❌        |
 
-- † On MySQL, `SetDefault` is ignored and is silently replaced with `NoAction` instead.
-- ‡ [`NoAction`](#noaction) can be used in place of [`Restrict`](#restrict) when working with an SQL Server database.
-- †† Referential Actions for MongoDB are available from version 3.7.0 and later.
+- † See [special cases for MySQL](#mysql).
+- ⌘ See [special cases for PostgreSQL](#postgresql).
+- ‡ See [special cases for SQL Server](#sql-server).
+- †† Referential actions for MongoDB are available in Prisma versions 3.7.0 and later.
+
+### Special cases for referential actions
+
+Referential actions are part of the ANSI SQL standard. However, there are special cases where some relational databases diverge from the standard.
+
+#### MySQL
+
+MySQL, and the underlying InnoDB storage engine, does not support `SetDefault`. The exact behavior depends on the database version:
+
+- In MySQL versions 8 and later, and MariaDB versions 10.5 and later, `SetDefault` effectively acts as an alias for `NoAction`. You can define tables using the `SET DEFAULT` referential action, but a foreign key constraint error is triggered at runtime.
+- In MySQL versions 5.6 and later, and MariaDB versions before 10.5, attempting to create a table definition with the `SET DEFAULT` referential action fails with a syntax error.
+
+For this reason, when you set `mysql` as the database provider, Prisma warns users to replace `SetDefault` referential actions in the Prisma schema with another action.
+
+#### PostgreSQL
+
+PostgreSQL is the only database supported by Prisma that allows you to define a `SetNull` referential action that refers to a non-nullable field. However, this raises a foreign key constraint error when the action is triggered at runtime.
+
+For this reason, when you set `postgres` as the database provider in the (default) `foreignKeys` relation mode, Prisma warns users to mark as optional any fields that are included in a `@relation` attribute with a `SetNull` referential action. For all other database providers, Prisma rejects the schema with a validation error.
+
+#### SQL Server
+
+[`Restrict`](#restrict) is not available for SQL Server databases, but you can use [`NoAction`](#noaction) instead.
 
 ### <inlinecode>Cascade</inlinecode>
 
@@ -245,7 +269,7 @@ The `NoAction` action is similar to `Restrict`, the difference between the two i
 
 <Admonition type="warning">
 
-If you are [managing relations in the Prisma Client](/concepts/components/prisma-schema/relations/relation-mode#emulate-relations-in-prisma-with-the-prisma-relation-mode) rather than using foreign keys in the database, you should be aware that currently Prisma only implements the referential actions. Foreign keys also create constraints, which make it impossible to manipulate data in a way that would violate these constraints: instead of executing the query, the database responds with an error. These constraints will not be created if you emulate referential integrity in the client, so if you set the referential action to `NoAction` there will be no checks to prevent you from breaking the referential integrity.
+If you are [managing relations in Prisma Client](/concepts/components/prisma-schema/relations/relation-mode#emulate-relations-in-prisma-with-the-prisma-relation-mode) rather than using foreign keys in the database, you should be aware that currently Prisma only implements the referential actions. Foreign keys also create constraints, which make it impossible to manipulate data in a way that would violate these constraints: instead of executing the query, the database responds with an error. These constraints will not be created if you emulate referential integrity in Prisma Client, so if you set the referential action to `NoAction` there will be no checks to prevent you from breaking the referential integrity.
 
 </Admonition>
 
@@ -325,13 +349,17 @@ When deleting a `User`, its existing posts' `authorUsername` field values will b
 
 When the `username` of a `User` changes, its existing posts' `authorUsername` field values will be set to 'anonymous'.
 
+### Database-specific requirements
+
+MongoDB and SQL Server have specific requirements for referential actions if you have [self-relations](/concepts/components/prisma-schema/relations/referential-actions/special-rules-for-referential-actions#self-relation-sql-server-and-mongodb) or [cyclic relations](/concepts/components/prisma-schema/relations/referential-actions/special-rules-for-referential-actions#cyclic-relation-between-three-tables-sql-server-and-mongodb) in your data model. SQL Server also has specific requirements if you have relations with [multiple cascade paths](/concepts/components/prisma-schema/relations/referential-actions/special-rules-for-referential-actions#multiple-cascade-paths-between-two-models-sql-server-only).
+
 ## Upgrade paths from versions 2.25.0 and earlier
 
 There are a couple of paths you can take when upgrading which will give different results depending on the desired outcome.
 
 If you currently use the migration workflow, you can run an introspection to check how the defaults are reflected in your schema. You can then manually update your database if you need to.
 
-You can also decide to skip checking the the defaults and run a migration to update your database with the [new default values](#referential-action-defaults).
+You can also decide to skip checking the defaults and run a migration to update your database with the [new default values](#referential-action-defaults).
 
 The following assumes you have upgraded to 2.26.0 or newer and enabled the preview feature flag, or upgraded to 3.0.0 or newer:
 
@@ -392,11 +420,11 @@ Note that referential actions can be added on a case by case basis. This means t
 
 ### Checking for errors
 
-**Before** upgrading to 2.26.0 and enabling the referential actions **preview feature**, Prisma prevented the deletion of records while using `delete()` or `deleteMany()` to preserve referential integrity. A custom runtime error would be thrown by the Prisma Client with the error code `P2014`.
+**Before** upgrading to 2.26.0 and enabling the referential actions **preview feature**, Prisma prevented the deletion of records while using `delete()` or `deleteMany()` to preserve referential integrity. A custom runtime error would be thrown by Prisma Client with the error code `P2014`.
 
 **After** upgrading and enabling the referential actions **preview feature**, Prisma no longer performs runtime checks. You can instead specify a custom referential action to preserve the referential integrity between relations.
 
-When you use [`NoAction`](#noaction) or [`Restrict`](#restrict) to prevent the deletion of records, the error messages will be different post 2.26.0 compared to pre 2.26.0. This is because they are now triggered by the database and **not** the Prisma Client. The new error code that can be expected is `P2003`.
+When you use [`NoAction`](#noaction) or [`Restrict`](#restrict) to prevent the deletion of records, the error messages will be different post 2.26.0 compared to pre 2.26.0. This is because they are now triggered by the database and **not** Prisma Client. The new error code that can be expected is `P2003`.
 
 To make sure you catch these new errors you can adjust your code accordingly.
 
@@ -446,12 +474,6 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    throw e
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
 ```
 
 To make sure you are checking for the correct errors in your code, modify your check to look for `P2003`, which will deliver the message:
@@ -481,12 +503,6 @@ async function main() {
 }
 
 main()
-  .catch(e => {
-    throw e
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
 ```
 
 ## Behavior without using <inlinecode>referentialActions</inlinecode>
@@ -495,7 +511,7 @@ main()
 
 The following behavior applies in 2.25.0 and earlier, and since 2.26.0 until 3.0.0 _without_ the `referentialActions` preview flag. That is, if the referential actions feature is **not** implemented.
 
-When invoking the [`delete()`](../../../prisma-client/crud#delete-a-single-record) or [`deleteMany()`](../../../prisma-client/crud#delete-all-records) methods using the Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
+When invoking the [`delete()`](../../../prisma-client/crud#delete-a-single-record) or [`deleteMany()`](../../../prisma-client/crud#delete-all-records) methods using Prisma Client on required relations, a runtime check is performed and the deletion of records prevented if they are referencing related objects. **This prevents cascade behavior**.
 
 The current behavior, without upgrading and enabling the feature flag, does not allow setting referential actions at all.
 
@@ -506,4 +522,4 @@ The current behavior, without upgrading and enabling the feature flag, does not 
 | `onDelete` | `SetNull`          | `Cascade`           |
 | `onUpdate` | `Cascade`          | `Cascade`           |
 
-If you need to actually use the cascade behavior configured in the database, you _can_ use [`$raw`](../../../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../../../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful. This is because the Prisma Client will **not** perform runtime checks on raw queries.
+If you need to actually use the cascade behavior configured in the database, you _can_ use [`$raw`](../../../prisma-client/raw-database-access) SQL queries to [delete multiple referenced records](../../../prisma-client/crud#deleting-all-data-with-raw-sql--truncate) (such as users blog posts) and the deletion will be successful. This is because Prisma Client will **not** perform runtime checks on raw queries.

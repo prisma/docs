@@ -1,46 +1,48 @@
-import * as React from 'react'
-import styled from 'styled-components'
-import ArrowRight from '../../icons/ArrowRight'
-import ArrowDown from '../../icons/ArrowDown'
-import Link from '../link'
-import { urlGenerator } from '../../utils/urlGenerator'
+import { defaultTheme as theme } from '../../theme'
 import { useLocation } from '@reach/router'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
+import * as React from 'react'
+import styled from 'styled-components'
+
 import config from '../../../config'
+import ArrowDown from '../../icons/ArrowDown'
+import ArrowRight from '../../icons/ArrowRight'
+import { urlGenerator } from '../../utils/urlGenerator'
+import Link from '../link'
 
 const List = styled.ul`
   list-style: none;
   padding: 0;
-  margin: ${(p) => p.theme.space[12]} 0 ${(p) => p.theme.space[24]};
+  margin: ${theme.space[12]} 0 ${theme.space[24]};
   &.has-border {
-    border-left: 2px solid ${(p) => p.theme.colors.gray[300]};
-    margin-left: -${(p) => p.theme.space[12]};
+    border-left: 2px solid ${theme.colors.gray[300]};
+    margin-left: -${theme.space[12]};
   }
 `
 
 const ListItem = styled.li`
-  font-size: ${(p) => p.theme.fontSizes[14]};
+  font-size: ${theme.fontSizes[14]};
   line-height: 1.25;
-  margin-bottom: ${(p) => p.theme.space[12]};
+  margin-bottom: ${theme.space[12]};
   position: relative;
   a {
     transition: color 150ms ease 0s;
-    color: ${(p) => p.theme.colors.gray[600]} !important;
+    color: ${theme.colors.gray[600]} !important;
     text-decoration: none;
     vertical-align: middle;
     &:hover {
-      color: ${(p) => p.theme.colors.gray[900]} !important;
+      color: ${theme.colors.gray[900]} !important;
     }
 
     .tag {
       position: absolute;
       right: 0;
-      color: ${(p) => p.theme.colors.gray[500]};
-      font-size: ${(p) => p.theme.fontSizes[14]};
+      color: ${theme.colors.gray[500]};
+      font-size: ${theme.fontSizes[14]};
       font-style: normal;
       font-weight: 600;
-      background: ${(p) => p.theme.colors.gray[200]};
-      border-radius: ${(p) => p.theme.radii.small};
+      background: ${theme.colors.gray[200]};
+      border-radius: ${theme.radii.small};
       padding: 2px 5px;
       text-transform: capitalize;
       &.small {
@@ -55,10 +57,6 @@ const ListItem = styled.li`
       top: 7px;
       padding: 0;
       border: 0;
-
-      &.more-left {
-        left: 10px;
-      }
 
       .right,
       .down {
@@ -75,10 +73,12 @@ const ListItem = styled.li`
       .down.open {
         display: block;
         opacity: 1;
+        position: absolute;
+        margin-top: -4px;
       }
 
       .down.open {
-        margin-top: 2px;
+        margin-top: -2px;
       }
 
       &:hover,
@@ -89,50 +89,76 @@ const ListItem = styled.li`
     }
   }
   .active-item {
-    color: ${(p) => p.theme.colors.blue[600]} !important;
+    color: ${theme.colors.blue[600]} !important;
     font-weight: 700;
   }
   &.top-level {
-    margin-top: ${(p) => p.theme.space[32]};
+    margin-top: ${theme.space[32]};
     > a {
       font-size: 1.125rem;
-      color: ${(p) => p.theme.colors.gray[900]} !important;
+      color: ${theme.colors.gray[900]} !important;
       font-weight: 600;
       letter-spacing: -0.01em;
     }
     > ul {
-      margin-top: ${(p) => p.theme.space[12]};
+      margin-top: ${theme.space[12]};
     }
   }
   &.bottom-level {
-    margin-left: ${(p) => p.theme.space[20]};
+    margin-left: ${theme.space[20]};
   }
   &.static-link {
-    margin-top: ${(p) => p.theme.space[20]};
+    margin-top: ${theme.space[20]};
   }
   &.static-link > a {
-    color: ${(p) => p.theme.colors.gray[900]} !important;
+    color: ${theme.colors.gray[900]} !important;
     text-transform: uppercase;
     font-weight: bold;
-    font-size: ${(p) => p.theme.fontSizes[12]};
-    line-height: ${(p) => p.theme.space[14]};
+    font-size: ${theme.fontSizes[12]};
+    line-height: ${theme.space[14]};
     letter-spacing: 0.02em;
     &:hover {
-      color: ${(p) => p.theme.colors.gray[900]} !important;
+      color: ${theme.colors.gray[900]} !important;
     }
   }
   &.last-level {
-    padding-left: ${(p) => p.theme.space[24]};
+    padding-left: ${theme.space[24]};
 
     // .last-level {
     //   /*this one is last for real*/
-    //   padding-left: ${(p) => p.theme.space[16]};
+    //   padding-left: ${theme.space[16]};
     // }
   }
   .collapse-title {
+    position: relative;
     cursor: pointer;
     svg {
       transition: transform 0.2s ease;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${theme.colors.gray[500]} !important;
+      &:hover {
+        color: ${theme.colors.gray[400]} !important;
+      }
+      .tag {
+        color: ${theme.colors.gray[100]} !important;
+        background: ${theme.colors.gray[800]} !important;
+      }
+    }
+    .active-item {
+      color: ${theme.colors.indigo[400]} !important;
+    }
+    &.top-level,
+    &.static-link {
+      > a {
+        color: ${theme.colors.gray[100]} !important;
+        &:hover {
+          color: ${theme.colors.gray[100]} !important;
+        }
+      }
     }
   }
 `
@@ -150,8 +176,8 @@ const TreeNode = ({
   topLevel,
   staticLink,
   duration,
-  experimental,
   preview,
+  deprecated,
   earlyaccess,
   lastLevel,
   hidePage,
@@ -217,7 +243,6 @@ const TreeNode = ({
   }, [isCollapsed])
 
   React.useEffect(() => {
-    console.log(SpecialPaths)
     if (lastLevel && isCurrent && hasExpandButton && collapsed[label]) setCollapsed(label, true)
   }, [])
 
@@ -247,11 +272,7 @@ const TreeNode = ({
         >
           {hasExpandButton ? (
             <span className="collapse-title" onClick={collapse}>
-              <button
-                aria-label="collapse"
-                className={`item-collapser ${level > 3 ? 'more-left' : ''}`}
-                onClick={justExpand}
-              >
+              <button aria-label="collapse" className={`item-collapser`} onClick={justExpand}>
                 {/* Fix for issue https://github.com/prisma/prisma2-docs/issues/161 */}
                 <ArrowRight className={`right ${isOpen}`} />
                 <ArrowDown className={`down ${isOpen}`} />
@@ -264,8 +285,8 @@ const TreeNode = ({
             </span>
           )}
           {duration && <span className="tag">{duration}</span>}
-          {experimental && <span className="tag small">Experimental</span>}
           {preview && <span className="tag small">Preview</span>}
+          {deprecated && <span className="tag small">Deprecated</span>}
           {earlyaccess && <span className="tag small">Early Access</span>}
         </Link>
       )}

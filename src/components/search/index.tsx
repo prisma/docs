@@ -1,36 +1,39 @@
-import React, { useState, useRef } from 'react'
-import { InstantSearch, Index, connectStateResults, connectHits } from 'react-instantsearch-dom'
+import { defaultTheme as theme } from '../../theme'
 import algoliasearch from 'algoliasearch/lite'
+import { navigate } from 'gatsby'
+import qs from 'qs'
+import React, { useEffect, useRef, useState } from 'react'
+import { connectHits, connectStateResults, Index, InstantSearch } from 'react-instantsearch-dom'
+import styled from 'styled-components'
+
 import config from '../../../config'
 import DocHit from './hitComps'
-import styled from 'styled-components'
-import Overlay from './overlay'
 import CustomSearchBox from './input'
-import qs from 'qs'
-import { navigate } from 'gatsby'
+import Overlay from './overlay'
 
 const HitsWrapper = styled.div`
   display: none;
   &.show {
     display: grid;
+    margin-bottom: 100px;
   }
-  max-height: 85vh;
+  max-height: 75vh;
   overflow-y: scroll;
   overflow-x: hidden;
   z-index: 100002;
   -webkit-overflow-scrolling: touch;
   position: absolute;
   left: 50%;
-  top: 97px;
+  top: 86px;
 
   transform: translate(-50%, -0%);
-  max-width: 1200px;
+  max-width: 1240px;
   width: 100%;
-  background: ${(p) => p.theme.colors.white};
+  background: ${theme.colors.white};
   box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
-  border-radius: ${(p) => p.theme.radii.small};
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  border-radius: 8px;
+  // border-top-left-radius: 0;
+  // border-top-right-radius: 0;
   * {
     margin-top: 0;
     padding: 0;
@@ -85,20 +88,47 @@ const HitsWrapper = styled.div`
   }
   @media (min-width: 0px) and (max-width: 1024px) {
     // left: 0;
-    top: 88px;
+    // top: 88px;
     // max-width: 100%;
-    border-top: 1px solid ${(p) => p.theme.colors.gray[300]};
+    border-top: 1px solid ${theme.colors.gray[300]};
     border-top-right-radius: 0;
     border-top-left-radius: 0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[700]};
   }
 `
 
 const indexName = config.header.search.indexName
 const DEBOUNCE_TIME = 400
-const searchClient = algoliasearch(
+const algoliaClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
 )
+
+const searchClient = {
+  ...algoliaClient,
+  search(requests: any) {
+    if (requests.every(({ params }: any) => !params.query)) {
+      return Promise.resolve({
+        results: requests.map(() => ({
+          hits: [],
+          nbHits: 0,
+          nbPages: 0,
+          page: 0,
+          processingTimeMS: 0,
+          hitsPerPage: 0,
+          exhaustiveNbHits: false,
+          query: '',
+          params: '',
+        })),
+      })
+    }
+
+    return algoliaClient.search(requests)
+  },
+}
 
 const getHits = (children: any, res: any) => {
   const allHits = res.hits
@@ -142,7 +172,15 @@ const searchStateToUrl = (location: any, searchState: any) =>
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))
 
-export default function Search({ hitsStatus, location }: any) {
+export default function Search({
+  hitsStatus,
+  location,
+  path,
+  sidenavSearchOpened,
+  closeSidenavSearch,
+  setInputText,
+  wide,
+}: any) {
   const [searchState, setSearchState] = useState(urlToSearchState(location))
   const [query, setQuery] = useState(``)
   const [showHits, setShowHits] = React.useState(false)
@@ -155,6 +193,8 @@ export default function Search({ hitsStatus, location }: any) {
         navigate(location.href.split('?')[0])
       }, DEBOUNCE_TIME)
     }
+    setInputText(query)
+    closeSidenavSearch()
   }
 
   const showSearch = () => setShowHits(true)
@@ -201,6 +241,15 @@ export default function Search({ hitsStatus, location }: any) {
       }
     })
   }
+
+  const scrollListener = () => {
+    hideSearch()
+  }
+
+  useEffect(() => {
+    document.addEventListener('scroll', scrollListener)
+    return () => document.removeEventListener('scroll', scrollListener)
+  }, [])
   return (
     <InstantSearch
       searchClient={searchClient}
@@ -209,13 +258,16 @@ export default function Search({ hitsStatus, location }: any) {
       searchState={searchState}
       createURL={createURL}
     >
-      <Overlay visible={showHits} hideSearch={hideSearch} />
+      <Overlay visible={showHits} hideSearch={hideSearch} path={path} />
       <CustomSearchBox
-        onFocus={showSearch}
+        onFocus={() => setShowHits(true)}
         isOpened={showHits}
         closeSearch={hideSearch}
         upClicked={decrementIndex}
         downClicked={incrementIndex}
+        path={location.pathname}
+        sidenavSearchOpened={sidenavSearchOpened}
+        wide={wide}
       />
       {query && query !== '' && showHits && (
         <HitsWrapper className={`${showHits ? 'show' : ''}`} onClick={hideSearch}>
