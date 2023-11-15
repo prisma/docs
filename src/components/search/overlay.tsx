@@ -1,13 +1,13 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import styledTS from 'styled-components-ts'
 
 interface Props {
   visible: boolean
   hideSearch: () => void
+  path?: string
 }
 
-const Overlay = ({ visible, hideSearch }: Props) => {
+const Overlay = ({ visible, hideSearch, path }: Props) => {
   const [transition, setTransition] = React.useState(false)
 
   React.useEffect(() => {
@@ -16,10 +16,17 @@ const Overlay = ({ visible, hideSearch }: Props) => {
     }, 1000)
   })
 
-  return <StyledOverlay isVisible={visible} isTransitioning={transition} onClick={hideSearch} />
+  return (
+    <StyledOverlay
+      isVisible={visible}
+      isTransitioning={transition}
+      onClick={hideSearch}
+      path={path}
+    />
+  )
 }
 
-const StyledOverlay = styledTS<{ isVisible: boolean; isTransitioning: boolean }>(styled.div)`
+const StyledOverlay = styled.div<{ isVisible: boolean; isTransitioning: boolean; path?: string }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -29,7 +36,10 @@ const StyledOverlay = styledTS<{ isVisible: boolean; isTransitioning: boolean }>
   opacity: 0;
   pointer-events: none;
   z-index: 10000;
+  margin-top: -80px;
+  height: 100vh;
 
+  // ${(p) => p.path && p.path === 'home' && `margin-top: -80px; width: 100vw; height: 100vh;`}
   ${(p) => p.isTransitioning && 'transition: opacity 0.25s ease-in-out;'}
   ${(p) => (p.isVisible ? 'opacity: 1; pointer-events: all;' : 'opacity: 0; pointer-events: none;')}
 `

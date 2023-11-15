@@ -2,7 +2,7 @@
 title: 'Working with Json fields'
 metaTitle: 'Working with Json fields (Concepts)'
 metaDescription: 'How to read, write, and filter by Json fields.'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -70,11 +70,15 @@ const user = await prisma.user.findFirst({
   },
 })
 
-// Example extendedProfile data:
+// Example extendedPetsData data:
 // [{ name: 'Bob the dog' }, { name: 'Claudine the cat' }]
 
-if (user?.pets && typeof user?.pets === 'object' && Array.isArray(user?.pets)) {
-  const petsObject = user?.pets as Prisma.JsonArray
+if (
+  user?.extendedPetsData &&
+  typeof user?.extendedPetsData === 'object' &&
+  Array.isArray(user?.extendedPetsData)
+) {
+  const petsObject = user?.extendedPetsData as Prisma.JsonArray
 
   const firstPet = petsObject[0]
 }
@@ -104,34 +108,21 @@ const createUser = await prisma.user.create({
 
 See also: [Advanced example: Update a nested JSON key value](#advanced-example-update-a-nested-json-key-value)
 
-## Filtering on a <inlinecode>Json</inlinecode> field
+## Filter on a <inlinecode>Json</inlinecode> field
 
-Advanced `Json` filtering is available from [2.23.0 and later](https://github.com/prisma/prisma/releases/tag/2.23.0). In earlier versions, you can [filter on the exact `Json` field value](#filter-on-exact-field-value).
+From v2.23.0, you can filter rows by the data inside a `Json` type. We call this **advanced `Json` filtering**.
+
+The availability of advanced `Json` filtering depends on your Prisma version:
+
+- V4.0.0 or later: advanced `Json` filtering is [generally available](/about/prisma/releases#generally-available-ga).
+- From v2.23.0, but before v4.0.0: advanced `Json` filtering is a [preview feature](/concepts/components/preview-features/client-preview-features). Add `previewFeatures = ["filterJson"]` to your schema. [Learn more](/concepts/components/preview-features/client-preview-features#enabling-a-prisma-client-preview-feature).
+- Before v2.23.0: you can [filter on the exact `Json` field value](#filter-on-exact-field-value), but you cannot use the other features described in this section.
 
 <Admonition type="warning">
 
 Advanced `Json` filtering is supported by [PostgreSQL](/concepts/database-connectors/postgresql) and [MySQL](/concepts/database-connectors/mysql) only with different syntaxes for the `path` option. PostgreSQL does not support [filtering on object key values in arrays](#filtering-on-object-key-value-inside-array).
 
 </Admonition>
-
-### Enable advanced filtering
-
-You can enable advanced filtering by editing the `previewFeatures` field in the `generator` block in your schema, then re-generating the Prisma Client:
-
-1. Update the `previewFeatures` block in your schema:
-
-   ```prisma
-   generator client {
-     provider        = "prisma-client-js"
-     previewFeatures = ["filterJson"]
-   }
-   ```
-
-2. Generate the Prisma Client:
-
-   ```terminal copy
-   npx prisma generate
-   ```
 
 ### Database connector implementation differences
 
@@ -404,7 +395,7 @@ const getUsers = await prisma.user.findMany({
 
 <Admonition type="info">
 
-**Note**: In PostgresSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
+**Note**: In PostgreSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
 
 </Admonition>
 
@@ -462,7 +453,7 @@ const getUsers = await prisma.user.findMany({
 
 <Admonition type="info">
 
-**Note**: In PostgresSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
+**Note**: In PostgreSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
 
 </Admonition>
 
@@ -609,7 +600,7 @@ const getUsers = await prisma.user.findMany({
 const getUsers = await prisma.user.findMany({
   where: {
     comments: {
-      path: '$.owned[1],
+      path: '$.owned[1]',
       string_contains: 'Bob',
     },
   },
@@ -638,8 +629,8 @@ In the following example, the value of `extendedPetsData` is an array of objects
     "petName": "Claudine",
     "petType": "House cat",
     "insurances": [
-      { "insuranceID": 92, "status": expired },
-      { "insuranceID": 12, "status": active }
+      { "insuranceID": 92, "status": "expired" },
+      { "insuranceID": 12, "status": "active" }
     ]
   },
   {
@@ -812,16 +803,16 @@ getUsers.forEach((user) => {
   ) {
     const petsObject = user.extendedPetsData as Prisma.JsonObject
 
-    const i = petsObject['insurances']
+    const insuranceList = petsObject['insurances'] // is a Prisma.JsonArray
 
-    if (i && typeof i === 'object' && Array.isArray(i)) {
-      const insurancesArray = i as Prisma.JsonArray
-
-      insurancesArray.forEach((i) => {
-        if (i && typeof i === 'object' && !Array.isArray(i)) {
-          const insuranceObject = i as Prisma.JsonObject
-
-          insuranceObject['status'] = 'expired'
+    if (Array.isArray(insuranceList)) {
+      insuranceList.forEach((insuranceItem) => {
+        if (
+          insuranceItem &&
+          typeof insuranceItem === 'object' &&
+          !Array.isArray(insuranceItem)
+        ) {
+          insuranceItem['status'] = 'expired' // is a  Prisma.JsonObject
         }
       })
 
@@ -865,18 +856,24 @@ console.log(checkJson.length)
 </tab>
 </TabbedContent>
 
-## Filtering by Null Values
+## Using <inlinecode>null</inlinecode> Values
 
-There are two types of null values possible for a Json field in an SQL database.
+There are two types of `null` values possible for a `JSON` field in an SQL database.
 
-- Database NULL: The value in the database is a NULL.
-- JSON null: The value in the database contains a JSON value that is null.
+- Database `NULL`: The value in the database is a `NULL`.
+- JSON `null`: The value in the database contains a JSON value that is `null`.
 
-To differentiate between these possibilities, we've introduced three null enums you can use to filter on:
+To differentiate between these possibilities, we've introduced three _null enums_ you can use:
 
-- `JsonNull`: Selects the null value in JSON.
-- `DbNull`: Selects the NULL value in the database.
-- `AnyNull`: Selects both null JSON values and NULL database values.
+- `JsonNull`: Represents the `null` value in JSON.
+- `DbNull`: Represents the `NULL` value in the database.
+- `AnyNull`: Represents both `null` JSON values and `NULL` database values. (Only when filtering)
+
+<Admonition type="info">
+
+From v4.0.0, `JsonNull`, `DbNull`, and `AnyNull` are objects. Before v4.0.0, they were strings.
+
+</Admonition>
 
 For example:
 
@@ -887,20 +884,9 @@ model Log {
 }
 ```
 
-```ts highlight=6;normal
-import { Prisma } from '@prisma/client'
+### Inserting <inlinecode>null</inlinecode> Values
 
-prisma.log.findMany({
-  where: {
-    data: {
-      meta: Prisma.AnyNull,
-    },
-  },
-})
-```
-
-This also applies to `create`, `update` and `upsert`. To insert a `null` value
-into a `Json` field, you would write:
+To insert a `null` value into a `Json` field, you would write:
 
 ```ts highlight=5;normal
 import { Prisma } from '@prisma/client'
@@ -924,11 +910,25 @@ prisma.log.create({
 })
 ```
 
+### Filtering by <inlinecode>null</inlinecode> Values
+
+To filter by a JsonNull or a DbNull, you would write:
+
+```ts highlight=6;normal
+import { Prisma } from '@prisma/client'
+
+prisma.log.findMany({
+  where: {
+    meta: {
+      equals: Prisma.AnyNull,
+    },
+  },
+})
+```
+
 <Admonition type="info">
 
-These null enums do not apply to MongoDB because there is not a difference between a JSON null and a database NULL.
-
-They also do not apply to the `array_contains` operator becuase there can only be a JSON null within an JSON array. Since there cannot be a database NULL within a JSON array, `{ array_contains: null }` is not ambiguous.
+These _null enums_ do not apply to MongoDB because MongoDB does not differentiate between a JSON `null` and a database `NULL`. They also do not apply to the `array_contains` operator in all databases because there can only be a JSON `null` within a JSON array. Since there cannot be a database `NULL` within a JSON array, `{ array_contains: null }` is not ambiguous.
 
 </Admonition>
 
