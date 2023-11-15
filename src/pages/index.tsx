@@ -1,419 +1,724 @@
+import { useLocation } from '@reach/router'
+import { graphql, useStaticQuery } from 'gatsby'
 import * as React from 'react'
-import Layout from '../components/layout'
 import styled from 'styled-components'
-import background from '../images/home-bg.svg'
-import listDot from '../images/list-dot.png'
-import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'
-import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 
-import { PrimaryButton, SpecialButton } from '../components/button'
-import Schema from '../icons/home/Schema'
-import DbLink from '../icons/home/DbLink'
-import CLI from '../icons/home/CLI'
+import { Icon } from '../components/Icon'
+import Layout from '../components/layout'
 import Link from '../components/link'
 import SEO from '../components/seo'
+import ShadowCard from '../components/shadow-card'
+import CockroachDB from '../icons/technologies/CockroachDB'
+import CockroachDBDark from '../icons/technologies/CockroachDBDark'
+import MariaDB from '../icons/technologies/MariaDB'
+import MariaDBDark from '../icons/technologies/MariaDBDark'
+import MongoDBSimple from '../icons/technologies/MongoDBSimple'
+import MySQLSimple from '../icons/technologies/MySQLSimple'
+import PlanetScale from '../icons/technologies/PlanetScale'
+import PlanetscaleDark from '../icons/technologies/PlanetscaleDark'
+import PostgresSQLDark from '../icons/technologies/PostgresSQLDark'
+import PostgresSQLSimple from '../icons/technologies/PostgresSQLSimple'
+import SQLite from '../icons/technologies/SQLite'
+import SQLServer from '../icons/technologies/SQLServer'
+import { defaultTheme as theme } from '../theme'
 
-const icons: any = {
-  DoubleArrow: <ChevronsRight opacity="0.5" />,
-  OverviewIcon: <BookOpen color="#48BB78" />,
-  ComponentsIcon: <Package color="#ED64A6" />,
-  DatabaseIcon: <Database color="#4299E1" />,
-  MoreIcon: <Menu color="#805AD5" />,
-  Schema: <Schema />,
-  DbLink: <DbLink />,
-  CLI: <CLI />,
-}
+export const Body = styled.div`
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  font-weight: normal;
+  font-size: 18px;
+  letter-spacing: 0em;
+  line-height: 140%;
+`
 
-const Summary = styled.div`
-  padding: ${(p) => p.theme.space[80]} 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: url(${background}) center -150px no-repeat;
-  h1 {
-    font-weight: bold;
-    font-family: ${(p) => p.theme.fonts.display};
-    font-size: ${(p) => p.theme.fontSizes[56]};
-    margin: 0;
-    text-align: center;
-  }
-  p {
-    max-width: 800px;
-    font-size: ${(p) => p.theme.fontSizes[20]};
-    line-height: 1.5;
-  }
-  @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${(p) => p.theme.space[80]} ${(p) => p.theme.space[16]};
-    p {
-      max-width: 85%;
-    }
-  }
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
-    h1 {
-      font-size: ${(p) => p.theme.fontSizes[32]};
-    }
-    p {
-      font-size: ${(p) => p.theme.fontSizes[16]};
-    }
+export const H3 = styled.h3`
+  font-family: 'Barlow', sans-serif;
+  font-weight: bold;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  line-height: 110%;
+  @media (min-width: 940px) {
+    font-size: 36px;
   }
 `
 
-const NormalPara = styled.p`
-  color: ${(p) => p.theme.colors.gray[700]};
-  line-height: ${(p) => p.theme.space[24]};
-  margin: ${(p) => p.theme.space[32]} 0;
-  text-align: center;
-  max-width: 650px;
-  width: 100%;
+const H4 = styled.h4`
+  font-family: 'Barlow';
+  margin: 0;
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 110%; /* 26.4px */
+  letter-spacing: -0.48px;
+`
 
-  a {
-    color: inherit !important;
-    text-decoration: underline;
-    cursor: pointer;
+const TopSection = styled.div`
+  padding: 109px 12px 64px;
+  background: #f7fafc;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+
+  @media (prefers-color-scheme: dark) {
+    background: #242c3a;
+  }
+`
+
+const IconWrapper = styled.div`
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  .dark {
+    display: none;
   }
 
-  @media (max-width: ${(p) => p.theme.breakpoints.tablet}) {
-    .hide-mobile {
+  .light {
+    display: block;
+  }
+  @media (prefers-color-scheme: dark) {
+    .dark {
+      display: block;
+    }
+
+    .light {
       display: none;
     }
   }
 `
 
-const SubHeading = styled.h2`
-  font-weight: 600;
-  font-size: ${(p) => p.theme.fontSizes[36]};
-  line-height: ${(p) => p.theme.space[36]};
-  font-family: ${(p) => p.theme.fonts.display};
-  margin: 0;
-  text-align: center;
-  color: ${(p) => p.theme.colors.gray[900]};
+const ProductCard = styled.div<{ color?: string }>`
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 32px;
+  width: 100%;
+  border-radius: 8px;
+  background: ${(p) =>
+    p.color === 'teal'
+      ? 'linear-gradient(102.41deg, #FFFFFF 6.22%, #E8FFFD 87.23%)'
+      : 'linear-gradient(102.41deg, #FFFFFF 6.22%, #F4F5FF 87.23%)'};
+  box-shadow: 0px 18px 42px 0px rgba(23, 43, 77, 0.08), 0px 4px 26px 0px rgba(23, 43, 77, 0.05),
+    0px 0px 46px 0px rgba(23, 43, 77, 0.01);
+  a {
+    color: ${(props) => (props.color === 'teal' ? '#16A394' : '#5A67D8')};
+  }
+  @media (min-width: 768px) {
+    width: calc(50% - 20px);
+  }
+  ${H3} {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 24px 0;
+  }
+  ${Body} {
+    margin-bottom: 16px;
+  }
+  ${IconWrapper} {
+    background: ${(props) => (props.color === 'teal' ? '#16A394' : '#5A67D8')};
+  }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${(props) =>
+        props.color === 'teal' ? `${theme.colors.teal[400]}` : `${theme.colors.indigo[400]}`};
+    }
+    background: ${(p) =>
+      p.color === 'teal'
+        ? `linear-gradient(287.43deg, rgba(4, 200, 187, 0.17) -34.29%, rgba(4, 200, 187, 0) 98.22%),linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`
+        : `linear-gradient(283.66deg, rgba(102, 126, 234, 0.2418) -32.46%, rgba(102, 126, 234, 0) 96.55%), linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`};
+  }
 `
 
-const Space = styled.div<{ height: number }>`
-  ${(p) => `height: ${p.height}px;`};
+const ProductCardsWrapper = styled.div`
+  max-width: 1240px;
+  width: 100%;
+  gap: 40px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
 `
 
-const ListTitle = styled.h3`
-  font-weight: bold;
-  line-height: ${(p) => p.theme.space[16]};
-  font-size: ${(p) => p.theme.fontSizes[16]};
-  color: ${(p) => p.theme.colors.gray[900]} !important;
-  margin: 24px 0 0;
+const LinkGrid = styled.div`
+  display: flex;
+  max-width: 338px;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  a {
+    min-width: calc(50% - 8px);
+    white-space: nowrap;
+    font-family: 'Inter';
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 100%; /* 16px */
+    letter-spacing: -0.32px;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  svg {
+    display: none;
+  }
+`
 
+const PrismaORMSection = styled.div`
+  max-width: 1272px;
+  margin: 0 auto;
+  padding: 60px 16px 24px;
+  h4 {
+    color: #2d3748;
+    margin-bottom: 40px;
+  }
+  @media (prefers-color-scheme: dark) {
+    h4 {
+      color: ${theme.colors.gray[100]};
+    }
+  }
+`
+
+const ORMLinkWrapper = styled(Link)`
+  display: flex !important;
+  gap: 24px;
+  text-decoration: none;
+
+  h5 {
+    display: inline-block;
+    color: #2d3748;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 100%; /* 18px */
+    margin: 0 0 10px 0;
+    letter-spacing: -0.36px;
+    font-family: 'Barlow';
+    > span {
+      font-family: 'Inter';
+    }
+  }
+  > div:last-of-type {
+    display: inline-block;
+  }
+  ${IconWrapper} {
+    background: #ebf4ff;
+  }
+  p {
+    color: #4a5568;
+    text-overflow: ellipsis;
+    font-family: 'Inter';
+    margin: 0;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 140%; /* 22.4px */
+  }
+  &:hover h5 {
+    text-decoration: underline;
+  }
+  @media (prefers-color-scheme: dark) {
+    h5 {
+      color: ${theme.colors.gray[100]};
+    }
+    p {
+      color: ${theme.colors.gray[400]};
+    }
+    ${IconWrapper} {
+      background: ${theme.colors.indigo[600]};
+    }
+  }
+`
+
+const ORMLinkContainer = styled.div`
+  display: grid;
+  gap: 40px;
+  grid-template-columns: 100%;
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+`
+
+const ORMCardsSection = styled.div`
+  max-width: 1262px;
+  margin: 0 auto;
+  padding: 40px 11px;
+`
+
+const ORMCardsWrapper = styled.div`
+  gap: 40px;
+  display: flex;
+  flex-direction: column;
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+`
+
+const ORMProductCard = styled(ProductCard)`
+  padding: 40px;
+  background: #ffffff;
+  grid-template-rows: auto auto 1fr;
+  ${H4} {
+    margin-bottom: 8px;
+  }
+  > p {
+    color: #4a5568;
+    margin: 0 0 24px 0;
+    font-family: 'Inter';
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 140%; /* 22.4px */
+  }
+  ${LinkGrid} {
+    gap: 12px;
+    a {
+      min-width: calc(50% - 8px);
+      width: fit-content;
+      white-space: nowrap;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[800]};
+    > p {
+      color: ${theme.colors.gray[400]};
+    }
+  }
+`
+
+const DatabasesSection = styled.div`
+  max-width: 1272px;
+  margin: 0 auto;
+  padding: 40px 16px;
+  @media (min-width: 768px) {
+    padding: 24px 16px 108px;
+  }
+  ${H4} {
+    margin-bottom: 24px;
+  }
+  ${Body} {
+    color: #4a5568;
+    margin-bottom: 40px;
+  }
+  @media (prefers-color-scheme: dark) {
+    ${Body} {
+      color: ${theme.colors.gray[400]};
+    }
+  }
+`
+
+const DatabaseGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 24px;
+  @media only screen and (min-width: 1024px) {
+    display: grid;
+    column-gap: 44px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media (min-width: 940px) and (max-width: 1024px) {
+    display: grid;
+    column-gap: 44px;
+    grid-template-columns: repeat(3, 1fr);
+  }
   a {
     text-decoration: none;
-    color: ${(p) => p.theme.colors.gray[900]} !important;
+    color: unset;
+  }
+  .entry {
+    height: 84px;
+    display: flex;
     align-items: center;
+    justify-content: start;
+    gap: 16px;
+    flex-basis: 21%;
+    border-radius: 8px;
+    padding: 25px 24px;
+    background-color: white;
+    position: relative;
+    cursor: pointer;
+    &::after {
+      content: '';
+      position: absolute;
+      border-radius: 8px;
+      inset: 0;
+      border: 1px solid #cbd5e0;
+      background-color: transparent;
+      cursor: pointer;
+    }
+
+    &:hover {
+      background-color: #f7fafc;
+      &::after {
+        border: 2px solid #5a67d8;
+      }
+    }
+    @media only screen and (min-width: 940px) {
+      padding: 0 24px;
+    }
+    img {
+      max-height: 36px;
+    }
+    span {
+      color: #2d3748;
+      text-transform: capitalize;
+      font-family: 'Inter';
+      font-weight: 600;
+      font-size: 24px;
+      line-height: 1;
+    }
+  }
+
+  .dark {
+    display: none;
+  }
+
+  .light {
     display: flex;
   }
 
-  svg {
-    transition: transform 0.3s ease-out 0s;
-  }
-`
+  @media (prefers-color-scheme: dark) {
+    .dark {
+      display: flex;
+    }
 
-const List = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin-left: 1rem;
-  list-style-image: url(${listDot});
-  li {
-    padding-left: 0.5rem;
-    line-height: 1rem;
-    margin-top: 10px;
-    a {
-      color: #2d3748 !important;
-      cursor: pointer;
-      text-decoration: none;
+    .light {
+      display: none;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .entry {
+      background: transparent;
+      &::after {
+        border-color: ${theme.colors.gray[700]};
+      }
       &:hover {
-        color: #718096 !important;
+        background-color: transparent;
+      }
+      span {
+        color: ${theme.colors.gray[300]};
       }
     }
   }
-  .inline-code {
-    font-weight: normal;
-    line-height: 0;
-  }
 `
 
-const MoreLinksList = styled(List)`
-  @media only screen and (max-width: 640px) {
-    column-count: 1;
-  }
-  column-count: 4;
-  li {
-    line-height: 24px;
-    margin-top: 0;
-  }
-`
+const DatabaseData = [
+  {
+    title: 'PostgreSQL',
+    icon: <PostgresSQLSimple />,
+    darkIcon: <PostgresSQLDark />,
+    url: 'concepts/database-connectors/postgresql',
+  },
+  {
+    title: 'MySQL',
+    icon: <MySQLSimple />,
+    darkIcon: <MySQLSimple />,
+    url: 'concepts/database-connectors/mysql',
+  },
+  {
+    title: 'SQL Server',
+    icon: <SQLServer />,
+    darkIcon: <img src="/docs/tech/sqlserver.svg" />,
+    url: 'concepts/database-connectors/sql-server',
+  },
+  {
+    title: 'SQLite',
+    icon: <SQLite />,
+    darkIcon: <SQLite />,
+    url: 'concepts/database-connectors/sqlite',
+  },
+  {
+    title: 'MongoDB',
+    icon: <MongoDBSimple />,
+    darkIcon: <MongoDBSimple />,
+    url: 'concepts/database-connectors/mongodb',
+  },
+  {
+    title: 'CockroachDB',
+    icon: <CockroachDB />,
+    darkIcon: <CockroachDBDark />,
+    url: 'concepts/database-connectors/cockroachdb',
+  },
+  {
+    title: 'Planetscale',
+    icon: <PlanetScale />,
+    darkIcon: <PlanetscaleDark />,
+    url: 'guides/database/planetscale',
+  },
+  {
+    title: 'MariaDB',
+    icon: <MariaDB />,
+    darkIcon: <MariaDBDark />,
+    url: 'concepts/database-connectors/mysql',
+  },
+]
 
-const SummaryLinks = styled.div`
-  max-width: 435px;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  a {
-    color: ${(p) => p.theme.colors.white} !important;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-  }
-  @media (min-width: 0) and (max-width: 420px) {
-    flex-direction: column;
-    a {
-      margin-top: ${(p) => p.theme.space[16]};
-    }
-  }
-`
-
-const QuickLinks = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  @media (min-width: 0) and (max-width: 1024px) {
-    padding: ${(p) => p.theme.space[48]} ${(p) => p.theme.space[16]};
-  }
-`
-
-const CapTitle = styled.h4`
-  text-transform: uppercase !important;
-  font-weight: bold;
-  letter-spacing: 0.02em;
-  font-size: 14px;
-`
-
-const BorderCapTitle = styled(CapTitle)`
-  width: 100%;
-  max-width: 996px;
-`
-
-const GeneralLinks = styled.div`
-  background: #ffffff;
-  box-shadow: 0px 28px 53px rgba(0, 0, 0, 0.07), 0px 8.44118px 15.9779px rgba(0, 0, 0, 0.0393306),
-    0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066),
-    0px 1.26806px 2.40026px rgba(0, 0, 0, 0.0115598);
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-around;
-  max-width: 1200px;
-  padding: 48px 114px;
-  width: 100%;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    flex-direction: column;
-    padding: 0;
-  }
-`
-
-const GeneralLink = styled.div`
-  display: flex;
-  flex-direction: column;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    flex-direction: row;
-    margin-bottom: ${(p) => p.theme.space[32]};
-  }
-`
-
-const Row = styled.div`
-  display: flex;
-  max-width: 996px;
-  width: 100%;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  margin-top: ${(p) => p.theme.space[32]};
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    flex-direction: column;
-  }
-`
-
-const LinkCard = styled(Link)`
-  background: ${(p) => p.theme.colors.gray[200]};
-  border-radius: ${(p) => p.theme.radii.medium};
-  padding: 0 ${(p) => p.theme.space[24]};
-  width: 100%;
-  border-top: ${(p) => p.theme.space[8]} solid ${(p) => p.theme.colors.gray[200]};
-  position: relative;
-  flex-grow: 1;
-  margin-bottom: ${(p) => p.theme.space[40]};
-  text-decoration: none;
-
-  .icon {
-    position: absolute;
-    top: -30px;
-  }
-
-  h3 {
-    margin-bottom: 0;
-    display: flex;
-    align-items: center;
-  }
-
-  &:hover {
-    background: ${(p) => p.theme.colors.gray[300]};
-    h3 svg {
-      transform: translateX(4px);
-    }
-  }
-
-  p {
+const CommunitySection = styled.div`
+  background: #f7fafc;
+  > div {
+    padding: 80px 16px;
+    margin: 0 auto;
+    max-width: 1272px;
     text-align: left;
-    margin: ${(p) => p.theme.space[16]} 0;
+    a {
+      text-decoration: none;
+    }
+    .section-hero {
+      ${H3} {
+        margin-top: 0;
+        margin-bottom: 24px;
+        color: #2d3748;
+      }
+      p {
+        color: #4a5568;
+        margin-bottom: 60px;
+        margin-top: 0;
+      }
+    }
+
+    .community-link-wrapper {
+      display: grid;
+      gap: 16px;
+      text-align: left;
+      grid-template-columns: 24px 1fr;
+      height: 100%;
+      text-decoration: none;
+      > div {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      h4 {
+        margin-bottom: 6px;
+        margin-top: 0;
+        line-height: 110%;
+        font-size: 24px;
+        font-weight: 700;
+        font-family: 'Barlow';
+        color: #1a202c;
+      }
+      ${Body} {
+        color: #4a5568;
+        margin: 0;
+      }
+      .link {
+        color: #5a67d8;
+        font-family: 'Inter';
+        font-size: 18px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 88%; /* 15.84px */
+      }
+    }
   }
 
-  @media (min-width: ${(p) => p.theme.breakpoints.phone}) and (max-width: 1024px) {
-    max-width: 48% !important;
-  }
-
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    max-width: 100% !important;
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[800]};
+    > div {
+      .community-link-wrapper {
+        h4 {
+          color: ${theme.colors.gray[100]};
+        }
+        ${Body} {
+          color: ${theme.colors.gray[400]};
+        }
+        .link {
+          color: ${theme.colors.indigo[400]};
+        }
+      }
+      .section-hero {
+        ${H3} {
+          color: ${theme.colors.gray[100]};
+        }
+        p {
+          color: ${theme.colors.gray[400]};
+        }
+      }
+    }
   }
 `
 
-const IconHolder = styled.span`
-  background: ${(p) => p.theme.colors.white};
-  box-shadow: 0px 2px 4px rgba(26, 32, 44, 0.1), 0px 3px 6px rgba(26, 32, 44, 0.05);
-  border-radius: 50%;
-  height: 56px;
-  width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
-    margin: ${(p) => p.theme.space[16]} ${(p) => p.theme.space[24]};
+const CommunityLinksRow = styled.div`
+  display: grid;
+  gap: 24px;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  @media only screen and (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+  }
+  @media only screen and (min-width: 940px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: none;
+  }
+  i {
+    margin-top: 4px;
   }
 `
 
 const Homepage = () => {
   const { site } = useStaticQuery(query)
+  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
+  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const {
     siteMetadata: {
       title,
       description,
-      homepage: {
-        SummaryLinkData,
-        GeneralLinkData,
-        GuideText,
-        GuideLinkData,
-        ReferenceText,
-        ReferenceLinkData,
-        MoreUsefulLinks,
-      },
+      homepage: { GeneralLinkData, CommunityLinksData, CardLinks, ORMPlatformLinkData },
     },
   } = site
+  const location = useLocation()
 
   return (
     <Layout homePage={true}>
-      <Summary>
-        <h1>Prisma Documentation</h1>
-        <NormalPara>
-          Choose one of our{' '}
-          <Link to={SummaryLinkData.gettingStarted}>getting started tutorials</Link> or explore the{' '}
-          <Link to={SummaryLinkData.readyToRun}>ready-to-run examples on GitHub</Link>. Join our
-          thriving community on <Link to={SummaryLinkData.slack}>Slack</Link> and{' '}
-          <Link to={SummaryLinkData.git}>GitHub</Link> for help and ideas.
-        </NormalPara>
-        <SummaryLinks>
-          {SummaryLinkData.buttons.map((slink: any, index: number) =>
-            slink.special ? (
-              <SpecialButton href={withPrefix(slink.url)} key={index} icon={icons[slink.icon]}>
-                &nbsp; {slink.text}
-              </SpecialButton>
-            ) : (
-              <PrimaryButton
-                href={slink.url}
-                target="_blank"
-                style={{ background: '#2D3748' }}
-                key={index}
-              >
-                {slink.text}
-              </PrimaryButton>
-            )
-          )}
-        </SummaryLinks>
-      </Summary>
-      <QuickLinks>
-        <GeneralLinks>
-          {GeneralLinkData.map((generalLink: any, index: number) => (
-            <GeneralLink>
-              <IconHolder>{icons[generalLink.icon]}</IconHolder>
-              <div>
-                <CapTitle>{generalLink.categoryName}</CapTitle>
-                <List>
-                  {generalLink.links.map((link: any) => (
-                    <li key={index}>
-                      <Link to={link.url}>
-                        <span className={`${link.codeBlock ? 'inline-code' : ''}`}>
-                          {link.text}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </List>
-              </div>
-            </GeneralLink>
-          ))}
-        </GeneralLinks>
-        <Space height={80} />
-        <SubHeading>Guides</SubHeading>
-        <NormalPara>{GuideText}</NormalPara>
-        <Row>
-          {GuideLinkData.map((gLinkData: any, index: number) => (
-            <LinkCard
-              to={gLinkData.url}
-              key={index}
-              style={{
-                maxWidth: gLinkData.small ? '274px' : '384px',
-                borderColor: gLinkData.color,
-              }}
-            >
-              <ListTitle>
-                {gLinkData.title} &nbsp;
-                <ArrowRight color="#A0AEC0" />{' '}
-              </ListTitle>
-              <NormalPara>{gLinkData.content}</NormalPara>
-            </LinkCard>
-          ))}
-        </Row>
-        <Space height={80} />
-        <SubHeading>Reference</SubHeading>
-        <NormalPara>{ReferenceText}</NormalPara>
-        <Row>
-          {ReferenceLinkData.map((rLinkData: any, index: number) => (
-            <LinkCard style={{ maxWidth: '316px' }} key={index}>
-              <span className="icon">{icons[rLinkData.icon]}</span>
-              <Space height={16} />
-              <ListTitle>
-                <Link to={rLinkData.mainUrl}>
-                  {rLinkData.categoryName} &nbsp;
-                  <ArrowRight color="#A0AEC0" />{' '}
-                </Link>
-              </ListTitle>
-              <List>
-                {rLinkData.links.map((link: any, index: number) => (
-                  <li key={index}>
-                    <Link to={link.url}>
-                      <span className={`${link.codeBlock ? 'inline-code' : ''}`}>{link.text}</span>
-                    </Link>
-                  </li>
+      <TopSection>
+        <ProductCardsWrapper>
+          {Object.keys(ORMPlatformLinkData).map((e: string) => (
+            <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
+              <H3>
+                <IconWrapper>
+                  <Icon
+                    icon={`fa-solid fa-${ORMPlatformLinkData[e].icon}`}
+                    size="22px"
+                    color="white"
+                  />
+                </IconWrapper>
+                {ORMPlatformLinkData[e].title}
+              </H3>
+              <Body>{ORMPlatformLinkData[e].description}</Body>
+              <LinkGrid>
+                {ORMPlatformLinkData[e].links.map((e: any) => (
+                  <Link to={e.url}>
+                    {e.title} {e.external ? <>&#8599;</> : <>&#8594;</>}
+                  </Link>
                 ))}
-              </List>
-            </LinkCard>
+              </LinkGrid>
+            </ProductCard>
           ))}
-        </Row>
-        <Space height={80} />
-        <BorderCapTitle>More useful resources</BorderCapTitle>
-        <Row style={{ marginTop: '0' }}>
-          <MoreLinksList>
-            {MoreUsefulLinks.map((uLink: any, index: number) => (
-              <li key={index}>
-                <Link to={uLink.url}>
-                  <span className={`${uLink.codeBlock ? 'inline-code' : ''}`}>{uLink.text}</span>
-                </Link>
-              </li>
+        </ProductCardsWrapper>
+      </TopSection>
+      <PrismaORMSection>
+        <H4>Prisma ORM</H4>
+        <ORMLinkContainer>
+          {GeneralLinkData.map((generalLink: any, index: number) => (
+            <ORMLinkWrapper key={index} to={generalLink.url}>
+              <IconWrapper>
+                <Icon icon={generalLink.icon} color="#5A67D8" size="22px" className="light" />
+                <Icon
+                  icon={generalLink.icon}
+                  color={theme.colors.gray[100]}
+                  size="22px"
+                  className="dark"
+                />
+              </IconWrapper>
+              <div>
+                <h5>
+                  {generalLink.title} <span>&#8594;</span>
+                </h5>
+                <p>{generalLink.description}</p>
+              </div>
+            </ORMLinkWrapper>
+          ))}
+        </ORMLinkContainer>
+      </PrismaORMSection>
+      <ORMCardsSection>
+        <ORMCardsWrapper>
+          <ORMProductCard color="indigo" style={{ padding: '40px' }}>
+            <H4>Components</H4>
+            <p>
+              Open source Node.js and TypeScript ORM with an intuitive data model, automated
+              migrations, type-safety, and auto-completion.
+            </p>
+            <div>
+              <LinkGrid>
+                {CardLinks.components.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </div>
+          </ORMProductCard>
+
+          <ORMProductCard color="indigo" style={{ padding: '40px' }}>
+            <H4>Reference</H4>
+            <p>
+              Open source Node.js and TypeScript ORM with an intuitive data model, automated
+              migrations, type-safety, and auto-completion.
+            </p>
+            <div>
+              <LinkGrid>
+                {CardLinks.reference.map((card: any) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </div>
+          </ORMProductCard>
+        </ORMCardsWrapper>
+      </ORMCardsSection>
+      <DatabasesSection>
+        <H4>Databases</H4>
+        <Body>
+          Prisma works seamlessly across most popular databases and service providers. <br /> Refer
+          to our Database features matrix for information about supported features and types for
+          each database.
+        </Body>
+        <DatabaseGrid>
+          {DatabaseData.map((e: any) => (
+            <Link to={e.url}>
+              <div className="entry light">
+                {e.icon}
+                <span>{e.title}</span>
+              </div>
+              <div className="entry dark">
+                {e.darkIcon}
+                <span>{e.title}</span>
+              </div>
+            </Link>
+          ))}
+        </DatabaseGrid>
+      </DatabasesSection>
+      <CommunitySection>
+        <div>
+          <div className="section-hero">
+            <H3>Join our Community</H3>
+            <p>
+              We have multiple channels where you can get help from members of our community as well
+              as the Prisma team.
+            </p>
+          </div>
+          <CommunityLinksRow>
+            {CommunityLinksData.map((comm: any) => (
+              <ShadowCard key={comm.id}>
+                <a
+                  className="community-link-wrapper content"
+                  href={comm.link}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <Icon icon={comm.icon} color={theme.colors.indigo[600]} size="22px" />
+                  <div>
+                    <div>
+                      <h4>{comm.title}</h4>
+                      <Body>{comm.description}</Body>
+                    </div>
+                    <div className="link">
+                      <span>{comm.linkText}</span>
+                      <span> &#8599;</span>
+                    </div>
+                  </div>
+                </a>
+              </ShadowCard>
             ))}
-          </MoreLinksList>
-        </Row>
-      </QuickLinks>
+          </CommunityLinksRow>
+        </div>
+      </CommunitySection>
     </Layout>
   )
 }
@@ -427,50 +732,50 @@ export const query = graphql`
         title
         description
         homepage {
-          SummaryLinkData {
-            gettingStarted
-            readyToRun
-            slack
-            git
-            buttons {
-              text
-              url
-              special
-              icon
-            }
-          }
           GeneralLinkData {
-            categoryName
-            icon
-            links {
-              url
-              text
-              codeBlock
-            }
-          }
-          GuideText
-          GuideLinkData {
             title
-            color
-            small
-            content
+            description
             url
-          }
-          ReferenceText
-          ReferenceLinkData {
-            categoryName
-            mainUrl
             icon
-            links {
+          }
+          CardLinks {
+            components {
               url
-              text
-              codeBlock
+              title
+            }
+            reference {
+              url
+              title
             }
           }
-          MoreUsefulLinks {
-            text
-            url
-            codeBlock
+          CommunityLinksData {
+            id
+            title
+            description
+            icon
+            link
+            linkText
+          }
+          ORMPlatformLinkData {
+            porm {
+              title
+              description
+              icon
+              links {
+                url
+                title
+                external
+              }
+            }
+            pdp {
+              title
+              icon
+              description
+              links {
+                url
+                title
+              }
+            }
           }
         }
       }
