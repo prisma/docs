@@ -1,28 +1,23 @@
 ---
 title: 'Create custom Prisma Client queries'
-metaTitle: 'Prisma Client extensions: query component (Preview)'
+metaTitle: 'Prisma Client extensions: query component'
 metaDescription: 'Extend the functionality of Prisma Client, query component'
 tocDepth: 4
 ---
 
 <TopBlock>
 
-You can use the `query` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component type to hook into the query life-cycle and modify an incoming query or its result. We introduced this feature in version 4.7.0.
+<Admonition type="info">
+
+Prisma Client extensions are Generally Available from versions 4.16.0 and later. They were introduced in Preview in version 4.7.0. Make sure you enable the `clientExtensions` Preview feature flag if you are running on a version earlier than 4.16.0.
+
+</Admonition>
+
+You can use the `query` [Prisma Client extensions](/concepts/components/prisma-client/client-extensions) component type to hook into the query life-cycle and modify an incoming query or its result.
 
 You can use Prisma Client extensions `query` component to create independent clients. This provides an alternative to [middlewares](/concepts/components/prisma-client/middleware). You can bind one client to a specific filter or user, and another client to another filter or user. For example, you might do this to get [user isolation](/concepts/components/prisma-client/client-extensions#extended-clients) in a row-level security (RLS) extension. In addition, unlike middlewares the `query` extension component gives you end-to-end type safety. [Learn more about `query` extensions versus middlewares](#query-extensions-versus-middlewares).
 
 </TopBlock>
-
-## Enable the preview feature
-
-Before you create Prisma Client extensions, you must enable the `clientExtensions` feature flag in the `generator` block of your `schema.prisma` file, as follows:
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["clientExtensions"]
-}
-```
 
 ## Extend Prisma Client query operations
 
@@ -32,6 +27,7 @@ Use the `query` extension component to modify queries. You can modify a custom q
 
 - [A specific operation in a specific model](#modify-a-specific-operation-in-a-specific-model)
 - [A specific operation in all models of your schema](#modify-a-specific-operation-in-all-models-of-your-schema)
+- [All Prisma Client operations](#modify-all-prisma-client-operations)
 - [All operations in a specific model](#modify-all-operations-in-a-specific-model)
 - [All operations in all models of your schema](#modify-all-operations-in-all-models-of-your-schema)
 - [A specific top-level raw query operation](#modify-a-top-level-raw-query-operation)
@@ -39,7 +35,7 @@ Use the `query` extension component to modify queries. You can modify a custom q
 To create a custom query, use the following structure:
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   name?: 'name',
   query?: {
     user: { ... } // in this case, we add a query to the `user` model
@@ -57,12 +53,12 @@ The properties are as follows:
 The `query` object can contain functions that map to the names of the [Prisma Client operations](/reference/api-reference/prisma-client-reference#model-queries), such as `findUnique`, `findFirst`, `findMany`, `count`, and `create`. The following example modifies `user.findMany` to a use a customized query that finds only users who are older than 18 years:
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     user: {
       async findMany({ model, operation, args, query }) {
-        // set `age` and fill with the rest of `where`
-        args.where = { age: { gt: 18 }, ...args.where }
+        // take incoming `where` and set `age`
+        args.where = { ...args.where, age: { gt: 18 } }
 
         return query(args)
       },
@@ -70,10 +66,10 @@ const xprisma = prisma.$extends({
   },
 })
 
-await xprisma.user.findMany() // returns users whose age is greater than 18
+await prisma.user.findMany() // returns users whose age is greater than 18
 ```
 
-In the above example, a call to `xprisma.user.findMany` triggers `query.user.findMany`. Each callback receives a type-safe `{ model, operation, args, query }` object that describes the query. This object has the following properties:
+In the above example, a call to `prisma.user.findMany` triggers `query.user.findMany`. Each callback receives a type-safe `{ model, operation, args, query }` object that describes the query. This object has the following properties:
 
 - `model`: the name of the containing model for the query that we want to extend.
 
@@ -96,7 +92,7 @@ In the above example, a call to `xprisma.user.findMany` triggers `query.user.fin
 To extend the queries in all the models of your schema, use `$allModels` instead of a specific model name. For example:
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     $allModels: {
       async findMany({ model, operation, args, query }) {
@@ -117,13 +113,54 @@ Use `$allOperations` to extend all operations in a specific model.
 For example, the following code applies a custom query to all operations on the `user` model:
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     user: {
       $allOperations({ model, operation, args, query }) {
-        // handle all operations
+        /* your custom logic here */
         return query(args)
       },
+    },
+  },
+})
+```
+
+### Modify all Prisma Client operations
+
+Use the `$allOperations` method to modify all query methods present in Prisma Client. The `$allOperations` can be used on both model operations and raw queries.
+
+You can modify all methods as follows:
+
+```ts
+const prisma = new PrismaClient().$extends({
+  query: {
+    $allOperations({ model, operation, args, query }) {
+      /* your custom logic for modifying all Prisma Client operations here */
+      return query(args)
+    },
+  },
+})
+```
+
+In the event a [raw query](/concepts/components/prisma-client/raw-database-access) is invoked, the `model` argument passed to the callback will be `undefined`.
+
+For example, you can use the `$allOperations` method to log queries as follows:
+
+```ts
+const prisma = new PrismaClient().$extends({
+  query: {
+    async $allOperations({ operation, model, args, query }) {
+      const start = performance.now()
+      const result = await query(args)
+      const end = performance.now()
+      const time = end - start
+      console.log(
+        util.inspect(
+          { model, operation, args, time },
+          { showHidden: false, depth: null, colors: true }
+        )
+      )
+      return result
     },
   },
 })
@@ -136,11 +173,11 @@ Use `$allModels` and `$allOperations` to extend all operations in all models of 
 To apply a custom query to all operations on all models of your schema:
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     $allModels: {
       $allOperations({ model, operation, args, query }) {
-        // handle all operations
+        /* your custom logic for modifying all operations on all models here */
         return query(args)
       },
     },
@@ -156,7 +193,7 @@ To apply custom behavior to a specific top-level raw query operation, use the na
 <tab>
 
 ```ts copy
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     $queryRaw({ args, query, operation }) {
       // handle $queryRaw operation
@@ -182,7 +219,7 @@ const xprisma = prisma.$extends({
 <tab>
 
 ```ts copy
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     $runCommandRaw({ args, query, operation }) {
       // handle $runCommandRaw operation
@@ -200,7 +237,7 @@ const xprisma = prisma.$extends({
 You can use `await` and then mutate the result of the `query` promise.
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     user: {
       async findFirst({ model, operation, args, query }) {
@@ -230,7 +267,7 @@ You can wrap your extended queries into a [batch transaction](/guides/performanc
 The following example extends `findFirst` so that it runs in a batch transaction.
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   query: {
     user: {
       // Get the input `args` and a callback to `query`

@@ -35,7 +35,7 @@ const getTitle = (frontmatter: any, lang?: any, db?: any) => {
     const titleEntry = frontmatter.techMetaTitles
       ? frontmatter.techMetaTitles.find((item: any) => item.name === queryParam)
       : null
-    pageSeoTitle = titleEntry ? titleEntry.value : `${pageSeoTitle} | ${queryParam}`
+    pageSeoTitle = titleEntry ? titleEntry.value : `${pageSeoTitle} : ${queryParam}`
   }
   return pageSeoTitle
 }
@@ -202,6 +202,7 @@ exports.createSchemaCustomization = ({ actions }: any) => {
       staticLink: Boolean
       duration: String
       preview: Boolean
+      deprecated: Boolean
       earlyaccess: Boolean
       toc: Boolean
       hidePage: Boolean
@@ -212,8 +213,9 @@ exports.createSchemaCustomization = ({ actions }: any) => {
   createTypes(typeDefs)
 }
 
-exports.onCreateWebpackConfig = ({ actions }: any) => {
+exports.onCreateWebpackConfig = ({ stage, actions }: any) => {
   actions.setWebpackConfig({
+    devtool: false,
     resolve: {
       modules: [path.resolve(__dirname, 'src'), 'node_modules'],
       alias: {

@@ -1,24 +1,37 @@
 import * as React from 'react'
 import styled from 'styled-components'
+
 import { useAllArticlesQuery } from '../hooks/useAllArticlesQuery'
-import { getParentTitle } from '../utils/parentTitle'
 import { AllArticles } from '../interfaces/AllArticles.interface'
+import { defaultTheme as theme } from '../theme'
+import { getParentTitle } from '../utils/parentTitle'
+import { Icon } from './Icon'
 import Link from './link'
 
 const BreadcrumbTitle = styled.div`
-  color: ${(p) => p.theme.colors.gray[600]} !important;
-  line-height: 1rem;
+  color: ${theme.colors.gray[600]} !important;
+  line-height: 1.6rem;
   font-weight: normal;
   margin: 0;
   a {
-    color: ${(p) => p.theme.colors.gray[600]} !important;
+    color: ${theme.colors.gray[600]} !important;
     text-decoration: none;
 
     &:hover,
     &:focus {
-      color: ${(p) => p.theme.colors.gray[700]} !important;
+      color: ${theme.colors.gray[700]} !important;
       text-decoration: underline;
       cursor: pointer;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${theme.colors.gray[500]} !important;
+      &:hover,
+      &:focus {
+        color: ${theme.colors.gray[600]} !important;
+      }
     }
   }
 `
@@ -26,9 +39,10 @@ const BreadcrumbTitle = styled.div`
 interface ParentTitleProps {
   slug: string
   nonLink?: boolean
+  isSearchItem?: boolean
 }
 
-const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
+const ParentTitle = ({ slug, nonLink, isSearchItem }: ParentTitleProps) => {
   const { allMdx }: AllArticles = useAllArticlesQuery()
   const parentTitle = getParentTitle(slug, allMdx)
   if (parentTitle.length === 0) {
@@ -36,6 +50,12 @@ const ParentTitle = ({ slug, nonLink }: ParentTitleProps) => {
   }
   return (
     <BreadcrumbTitle>
+      {!isSearchItem && (
+        <a href="/docs">
+          <Icon icon="fa-solid fa-house" size="16px"></Icon>
+        </a>
+      )}
+      {!isSearchItem && <span> {`/`} </span>}
       {parentTitle.map((part: any, index: number) => (
         <span key={index}>
           {part.link && !nonLink ? (
