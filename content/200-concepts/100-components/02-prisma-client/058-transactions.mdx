@@ -2,7 +2,7 @@
 title: 'Transactions and batch queries'
 metaTitle: 'Transactions and batch queries (Reference)'
 metaDescription: 'This page explains the transactions API of Prisma Client.'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -20,7 +20,7 @@ Prisma provides the following options for using transactions:
 
 - [Nested writes](#nested-writes): use the Prisma Client API to process multiple operations on one or more related records inside the same transaction.
 - [Batch / bulk transactions](#batchbulk-operations): process one or more operations in bulk with `updateMany`, `deleteMany`, and `createMany`.
-- The Prisma Client `$transaction` API:
+- The `$transaction` API in Prisma Client:
   - [Sequential operations](#sequential-prisma-client-operations): pass an array of Prisma Client queries to be executed sequentially inside a transaction, using `$transaction<R>(queries: PrismaPromise<R>[]): Promise<R[]>`.
   - [Interactive transactions](#interactive-transactions): pass a function that can contain user code including Prisma Client queries, non-Prisma code and other control flow to be executed in a transaction, using `$transaction<R>(fn: (prisma: PrismaClient) => R, options?: object): R`
 
@@ -167,13 +167,17 @@ await prisma.$transaction(
 
 Sometimes you need more control over what queries execute within a transaction. Interactive transactions are meant to provide you with an escape hatch.
 
+<Admonition type="info">
+
 Interactive transactions are available in the following versions of Prisma:
 
 - Interactive transactions are generally available from version 4.7.0.
 - In version 4.6, Data Proxy support for interactive transactions was available in preview.
-- From version 2.29.0 to version 4.5, interactive transactions were available in preview, but did not support the [Data Proxy](/data-platform/data-proxy).
+- From version 2.29.0 to version 4.5, interactive transactions were available in preview, but did not support the [Data Proxy](/data-platform/classic-projects/data-proxy).
 
 If you use interactive transactions in preview from version 2.29.0 to 4.6.1 (included), you need to add the `interactiveTransactions` preview feature to the generator block of your Prisma schema.
+
+</Admonition>
 
 To use interactive transactions, you can pass an async function into [`$transaction`](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
 
@@ -241,14 +245,6 @@ async function main() {
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
 ```
 
 In the example above, both `update` queries run within a database transaction. When the application reaches the end of the function, the transaction is **committed** to the database.
@@ -269,7 +265,7 @@ try {
 
 The transaction API has a second parameter. For interactive transactions, you can use the following optional configuration options in this parameter:
 
-- `maxWait`: The maximum amount of time the Prisma Client will wait to acquire a transaction from the database. The default value is 2 seconds.
+- `maxWait`: The maximum amount of time Prisma Client will wait to acquire a transaction from the database. The default value is 2 seconds.
 - `timeout`: The maximum amount of time the interactive transaction can run before being canceled and rolled back. The default value is 5 seconds.
 - `isolationLevel`: Sets the [transaction isolation level](#transaction-isolation-level). By default this is set to the value currently configured in your database.
 
@@ -305,15 +301,13 @@ This feature is not available on MongoDB, because MongoDB does not support isola
 
 </Admonition>
 
-You can set the transaction [isolation level](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels) for transactions in the following Prisma versions:
-
-- For interactive transactions from version 4.2.0
-- For sequential operations from version 4.4.0
+You can set the transaction [isolation level](https://www.prisma.io/dataguide/intro/database-glossary#isolation-levels) for transactions.
 
 <Admonition type="info">
 
-**In earlier versions**<br /><br />
-In versions before 4.2.0 (for interactive transactions), or 4.4.0 (for sequential operations), you cannot configure the transaction isolation level at a Prisma level. The isolation level is not explicitly set by Prisma, so the [isolation level configured in your database](#database-specific-information-on-isolation-levels) is used.
+This is available in the following Prisma versions for interactive transactions from version 4.2.0, for sequential operations from version 4.4.0.
+
+In versions before 4.2.0 (for interactive transactions), or 4.4.0 (for sequential operations), you cannot configure the transaction isolation level at a Prisma level. Prisma does not explicitly set the isolation level, so the [isolation level configured in your database](#database-specific-information-on-isolation-levels) is used.
 
 </Admonition>
 
@@ -445,6 +439,7 @@ To avoid transaction write conflicts and deadlocks on a transaction:
              isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
            }
          )
+         break
        } catch (error) {
          if (error.code === 'P2034') {
            retries++
