@@ -2,6 +2,7 @@ module.exports = {
   pageShots: {
     pagesJsonUrl: 'http://172.17.0.1:9000/lost-pixel.json',
     baseUrl: 'http://172.17.0.1:9000',
+    mask: [{ selector: 'span.gatsby-resp-image-background-image' }],
   },
   lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
   apiKey: process.env.LOST_PIXEL_API_KEY,
@@ -27,7 +28,13 @@ module.exports = {
         /* hide cookie banner */
         #onetrust-consent-sdk {
           display: none;
-        }`,
+        }
+        
+        /* reset menu item alignment */
+        #sidebar-holder li a {
+          vertical-align: baseline;
+        }
+        `,
     })
   },
 }
