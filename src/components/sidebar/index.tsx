@@ -1,14 +1,15 @@
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
-import Tree from './tree'
 import styled from 'styled-components'
+
+import config from '../../../config'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
-import config from '../../../config'
+import Tree from './tree'
 
 const SidebarContainer = styled.aside`
   width: 272px;
   height: 100%;
-  margin: 0px ${(p) => p.theme.space[16]} 0 -${(p) => p.theme.space[16]};
 `
 
 const Sidebar = styled.div`
@@ -18,16 +19,16 @@ const Sidebar = styled.div`
 
   /* .tablet-only {
     display: none;
-    background: ${(p) => p.theme.colors.gray100};
+    background: ${theme.colors.gray[100]};
     justify-content: space-between;
-    padding: ${(p) => p.theme.space[48]} ${(p) => p.theme.space[64]};
+    padding: ${theme.space[48]} ${theme.space[64]};
 
     > ul {
       width: 50%;
       margin-right: 50px;
 
       &:last-of-type {
-        padding-left: ${(p) => p.theme.space[40]};
+        padding-left: ${theme.space[40]};
       }
     }
 
@@ -38,8 +39,9 @@ const Sidebar = styled.div`
 
   .mobile-only {
     display: none;
-    background: ${(p) => p.theme.colors.gray100};
-    padding: ${(p) => p.theme.space[32]};
+    width: 100%;
+    background: ${theme.colors.gray[100]};
+    padding: ${theme.space[8]} ${theme.space[16]};
     @media only screen and (max-width: 1024px) {
       display: flex;
       > ul {
@@ -51,8 +53,11 @@ const Sidebar = styled.div`
 
 const List = styled.ul`
   list-style: none;
-  padding: 0 7px 0 ${(p) => p.theme.space[16]};
-  margin: -${(p) => p.theme.space[20]} 0 0;
+  padding: 0 7px 0 ${theme.space[16]};
+  margin: -${theme.space[20]} 0 0;
+  @media only screen and (min-width: 1024px) {
+    padding-top: 16px;
+  }
 `
 
 const SidebarLayout = ({ isMobile, location, slug }: any) => {
@@ -60,14 +65,20 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
   const bucketName =
     location && location.state && location.state.bucketName ? location.state.bucketName : '/'
   let bucketEdges = allMdx.edges?.filter((edge) => edge.node.fields.slug.includes(bucketName))
-
+  let bucketEdgesMobile = bucketEdges
   const bucketNames = config.header.secondLevelHeaderMenuItems.map((item: any) => item.bucketName)
 
   if (slug) {
     const slugBucketPart = `/${slug.split('/')[1]}`
     const selectedBucket = bucketNames.filter((bn: any) => bn === slugBucketPart)[0]
     if (selectedBucket) {
-      bucketEdges = allMdx.edges?.filter((edge) => edge.node.fields.slug.includes(selectedBucket))
+      bucketEdges = allMdx.edges?.filter((edge) => {
+        return edge.node.fields.slug.includes(selectedBucket)
+      })
+
+      bucketEdgesMobile = bucketEdges?.filter(
+        (edge) => edge.node.fields.slug !== `${selectedBucket}/index`
+      )
     }
   }
 
@@ -86,7 +97,7 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
     <Sidebar>
       <div className="mobile-only">
         <List>
-          <Tree edges={bucketEdges} />
+          <Tree edges={bucketEdgesMobile} />
         </List>
       </div>
     </Sidebar>

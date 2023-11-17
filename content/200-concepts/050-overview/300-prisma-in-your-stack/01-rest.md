@@ -8,7 +8,7 @@ metaDescription: 'This page gives an overview of the most important things when 
 
 When building REST APIs, Prisma Client can be used inside your _route controllers_ to send databases queries.
 
-![REST APIs with Prisma Client](https://res.cloudinary.com/prismaio/image/upload/v1628761155/docs/5NwAOMt.png)
+![REST APIs with Prisma Client](../prisma-rest-apis.png)
 
 </TopBlock>
 
@@ -31,7 +31,7 @@ Here's a non-exhaustive list of libraries and frameworks you can use with Prisma
 - [Micro](https://github.com/zeit/micro)
 - [Feathers](https://feathersjs.com/)
 - [Remix](https://remix.run/)
-
+  
 ## REST API server example
 
 Assume you have a Prisma schema that looks similar to this:
@@ -163,4 +163,4 @@ You can find several ready-to-run examples that show how to implement a REST API
 | [`rest-express`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-express) | Backend only | REST API using Express and Prisma Client                         |
 | [`rest-fastify`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-fastify) | Backend only | REST API using Fastify and Prisma Client                         |
 | [`rest-nextjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nextjs)   | Fullstack    | Next.js app (React) with a REST API                              |
-| [`rest-nuxtjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nuxtjs)    | Fullstack    | App with NuxtJs using Vue (frontend), Express, and Prisma Client |
+| [`rest-nuxtjs`](https://github.com/prisma/prisma-examples/tree/latest/javascript/rest-nuxtjs)   | Fullstack    | App with NuxtJs using Vue (frontend), Express, and Prisma Client |
