@@ -30,14 +30,19 @@ do
         body="$body""\`\`\`%0A"
     fi
 
-    # name pieces
+    # name pieces (and replace `/index` from files (to get to a filename that would be equivalent))
     action=${values[0]}
-    path1=${values[1]}
-    path2=${values[3]}
+    path1=$(echo "${values[1]}" | sed -e 's#/index##g' )
+    path2=$(echo "${values[3]}" | sed -e 's#/index##g' )
+
+    # Skip if file names are identical (probably via `/index` replacement above)
+    if [[ "$path1" == "$path2" ]]; then
+        continue
+    fi
 
     # clean paths
-    path1_cleaned=$(echo "$path1" | sed -E 's:content/:/:g' | sed -E 's:/index.mdx::g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
-    path2_cleaned=$(echo "$path2" | sed -E 's:content/:/:g' | sed -E 's:/index.mdx::g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
+    path1_cleaned=$(echo "$path1" | sed -E 's:content/:/:g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
+    path2_cleaned=$(echo "$path2" | sed -E 's:content/:/:g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
     
     # special case for deletion
     if [[ "${values[0]}" == "D" ]]; then
