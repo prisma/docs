@@ -68,21 +68,12 @@ Make the following updates to your Prisma schema:
 - Mark the `published` field as optional
 
 ```prisma file=prisma/schema.prisma highlight=12,13,18-24;edit
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
-}
-
 model Post {
   id        Int      @id @default(autoincrement())
   title     String
   content   String?
   published Boolean? @default(false)
   status    Status
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
 }
 
 enum Status {
@@ -125,21 +116,12 @@ Then run prisma migrate dev to apply it and verify it works.
 Exit from the migration step and update the schema by adding a default value for the `status` field by adding the `@default()` attribute function.
 
 ```prisma file=prisma/schema.prisma highlight=13;edit
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
-}
-
 model Post {
   id        Int      @id @default(autoincrement())
   title     String
   content   String?
   published Boolean? @default(false)
   status    Status   @default(Unknown)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
 }
 
 enum Status {
@@ -169,22 +151,25 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  const posts = await prisma.post.findMany()
-
-  await prisma.$transaction(
-    posts.map((post) =>
-      prisma.post.update({
-        where: {
-          id: post.id,
-        },
+  await prisma.$transaction(async (tx) => {
+    const posts = await tx.post.findMany()
+    for (const post of posts) {
+      await tx.post.update({
+        where: { id: post.id },
         data: {
           status: post.published ? 'Published' : 'Unknown',
-        },
+        }
       })
-    )
-  )
-  console.log('Data migrated successfully')
+    }
+  })
 }
+
+main()
+  .catch(async (e) => {
+    console.error(e)
+    process.exit(1)
+  }).finally(async () => await prisma.$disconnect()
+  )
 ```
 
 The data migration is wrapped in a transaction to ensure that the query is rolled back, allowing you to iterate on your data migration file
@@ -235,21 +220,12 @@ git checkout -b drop-published-column
 Delete the `published` field from your schema and generate a new migration:
 
 ```prisma highlight=12;delete
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
-}
-
 model Post {
   id        Int      @id @default(autoincrement())
   title     String
   content   String?
   published Boolean? @default(false)
   status    Status   @default(Unknown)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
 }
 
 enum Status {
