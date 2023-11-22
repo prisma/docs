@@ -340,12 +340,14 @@ const SecondLevelMobileMenu = ({ headerProps, wide }: HeaderViewProps) => (
   <SecondLevelNav wide={wide}>
     {headerProps.secondLevelHeaderMenuItems.map((item) => {
       return (
-        <MenuItem
-          componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
-          type={item.type}
-          text={item.text}
-          link={item.to}
-        />
+        !item.hidden && (
+          <MenuItem
+            componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
+            type={item.type}
+            text={item.text}
+            link={item.to}
+          />
+        )
       )
     })}
   </SecondLevelNav>
@@ -418,11 +420,13 @@ const Header = ({
 
   const SecondLevelMenu = () => {
     const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
-      (item) => item.type === 'bucket'
+      (item) => item.type === 'bucket' && !item.hidden
     )
     const externalLinkItems = headerProps.secondLevelHeaderMenuItems.filter(
-      (item) => item.type === 'external-link'
+      (item) => item.type === 'external-link' && !item.hidden
     )
+
+    console.log(headerProps.secondLevelHeaderMenuItems)
     return (
       <SecondLevelNav wide={wide}>
         <div>
