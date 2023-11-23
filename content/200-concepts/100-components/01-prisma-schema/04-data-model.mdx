@@ -2,7 +2,7 @@
 title: 'Data model'
 metaTitle: 'Data model (Reference)'
 metaDescription: 'Learn about the concepts for building your data model with Prisma: Models, scalar types, enums, attributes, functions, IDs, default values and more.'
-tocDepth: 2
+tocDepth: 3
 ---
 
 <TopBlock>
@@ -19,7 +19,7 @@ The following schema describes a blogging platform - the data model definition i
 <TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
 <tab>
 
-```prisma highlight=10-45;normal
+```prisma highlight=10-46;normal
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -48,6 +48,7 @@ model Profile {
 model Post {
   id         Int        @id @default(autoincrement())
   createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
   title      String
   published  Boolean    @default(false)
   author     User       @relation(fields: [authorId], references: [id])
@@ -103,15 +104,16 @@ model Post {
   published  Boolean    @default(false)
   author     User       @relation(fields: [authorId], references: [id])
   authorId   String     @db.ObjectId
-  categories Category[] @relation(references: [id])
+  categoryIDs String[]   @db.ObjectId
+  categories  Category[] @relation(fields: [categoryIDs], references: [id])
 }
 
 model Category {
   id    String @id @default(auto()) @map("_id") @db.ObjectId
   name  String
-  posts Post[] @relation(references: [id])
+  postIDs String[] @db.ObjectId
+  posts   Post[]   @relation(fields: [postIDs], references: [id])
 }
-
 enum Role {
   USER
   ADMIN
@@ -140,7 +142,7 @@ The corresponding database looks like this:
 
 </details>
 
-The following query uses the Prisma Client generated from this data model to create:
+The following query uses Prisma Client that's generated from this data model to create:
 
 - A `User` record
 - Two nested `Post` records
@@ -232,14 +234,6 @@ async function main() {
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
 ```
 
 </tab>
@@ -298,9 +292,22 @@ model Comment {
 
 With this model definition, Prisma automatically maps the `Comment` model to the `comments` table in the underlying database.
 
-> **Note**: You can also [`@map`](/reference/api-reference/prisma-schema-reference#map) <span class="api"></span> a column name or enum value, and `@@map` an enum.
+> **Note**: You can also [`@map`](/reference/api-reference/prisma-schema-reference#map) <span class="api"></span> a column name or enum value, and `@@map` an enum name.
 
 `@map` and `@@map` allow you to [tune the shape of your Prisma Client API](/concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names#using-map-and-map-to-rename-fields-and-models-in-the-prisma-client-api) by decoupling model and field names from table and column names in the underlying database.
+
+<div class="videoWrapper">
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/oaZkHJiRFWw"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
+
+</div>
 
 ## Defining fields
 
@@ -530,15 +537,15 @@ When **not** annotating a field with the `?` type modifier, the field will be _r
 
 ### Unsupported types
 
-When you introspect a relational database, unsupported types are added as [`Unsupported`](/reference/api-reference/prisma-schema-reference#unsupported) <span class="api"></span>:
+When you introspect a relational database, unsupported data types are added as [`Unsupported`](/reference/api-reference/prisma-schema-reference#unsupported) <span class="api"></span>:
 
 ```prisma
-location    Unsupported("polygon")?
+location    Unsupported("POLYGON")?
 ```
 
-The `Unsupported` attribute allows you to define fields in the Prisma schema for database types that are not yet supported by Prisma. For example, MySQL's `POLYGON` type is not currently supported by Prisma, but can now be added to the Prisma schema using the `Unsupported("polygon")` type.
+The `Unsupported` type allows you to define fields in the Prisma schema for database types that are not yet supported by Prisma. For example, MySQL's `POLYGON` type is not currently supported by Prisma, but can now be added to the Prisma schema using the `Unsupported("POLYGON")` type.
 
-`Unsupported` fields are not available in the generated Prisma Client API, but you can still use Prisma's [raw database access](/concepts/components/prisma-client/raw-database-access) feature to query these fields.
+Fields of type `Unsupported` are not available in the generated Prisma Client API, but you can still use Prisma's [raw database access](/concepts/components/prisma-client/raw-database-access) feature to query these fields.
 
 > **Note**: If a model has **mandatory `Unsupported` fields**, the generated client will not include `create` or `update` methods for that model.
 
@@ -843,7 +850,6 @@ model User {
 This notation can be chained if there is more than one nested composite type:
 
 ```prisma file=schema.prisma
-
 type City {
   name String
 }
@@ -878,7 +884,7 @@ model Post {
 <Admonition type="info">
 
 **Index names in relational databases** <br />
-You can optionally define a [custom index name](/concepts/components/prisma-schema/names-in-underlying-database#constraint-and-index-names-preview) in the underlying database.
+You can optionally define a [custom index name](/concepts/components/prisma-schema/names-in-underlying-database#constraint-and-index-names) in the underlying database.
 
 </Admonition>
 
@@ -906,7 +912,6 @@ model User {
 This notation can be chained if there is more than one nested composite type:
 
 ```prisma file=schema.prisma
-
 type City {
   name String
 }
