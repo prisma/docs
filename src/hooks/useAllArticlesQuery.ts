@@ -12,11 +12,12 @@ export const useAllArticlesQuery = () => {
               duration
               navTitle
               staticLink
-              experimental
               preview
+              deprecated
               earlyaccess
               langSwitcher
               search
+              wide
               dbSwitcher
               hidePage
               codeStyle

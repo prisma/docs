@@ -1,52 +1,63 @@
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import { connectSearchBox } from 'react-instantsearch-dom'
 import styled from 'styled-components'
-import SearchPic from '../../icons/Search'
-import Clear from '../../icons/Clear'
+
 import useWindowDimensions from '../../hooks/useWindowDimensions'
+import Clear from '../../icons/Clear'
+import SearchPic from '../../icons/Search'
 import SearchSlash from '../../icons/SearchSlash'
 
-const SearchBoxDiv = styled.div`
-  width: 250px;
+const SearchBoxDiv = styled.div<{ minimal?: boolean; wide?: boolean }>`
+  width: 100%;
   display: flex;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e0;
+  background: #fff;
+  transition: transform 50ms ease-out;
+  transform-origin: center left;
 
   form {
-    width: 250px;
+    width: 100%;
     position: relative;
+    height: 36px;
+    transition: transform 50ms ease-out;
   }
-
+  //search input width
   &.opened {
     position: relative;
     z-index: 100001;
-    max-width: 1200px;
+    max-width: ${(p) => (p.wide ? '1440px' : '1240px')};
     width: 100%;
-    height: 77px;
-    background: ${(p) => p.theme.colors.white};
-    padding: ${(p) => p.theme.space[20]};
-    border-bottom: 1px solid ${(p) => p.theme.colors.gray[300]};
-    border-radius: ${(p) => p.theme.radii.small};
-
-    form {
-      width: 100%;
-      input {
-        color: ${(p) => p.theme.colors.gray[700]};
-      }
-    }
+    background: ${theme.colors.white};
+    box-shadow: 0px 25px 50px -12px #00000040;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    transform-origin: center;
+    transform: scaleY(1.1)
+      ${(props) => (props.minimal ? `translateX(-1px)` : `translate(-1px, -5px)`)};
 
     .clear {
-      background: ${(p) => p.theme.colors.gray[300]};
+      //background: ${theme.colors.gray[300]};
       border-radius: 6px;
-      height: 36px;
-      width: 36px;
+      // height: 36px;
+      // width: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       svg path {
-        stroke: ${(p) => p.theme.colors.gray[700]};
+        stroke: ${theme.colors.gray[700]};
       }
     }
+    form {
+      transform: scaleY(0.9);
+    }
   }
-  @media (max-width: ${(p) => p.theme.breakpoints.phone}) {
+  @media (max-width: ${theme.breakpoints.mobile}) {
     width: auto;
     flex: 1;
     form {
@@ -75,16 +86,16 @@ const SearchBoxDiv = styled.div`
       width: 100%;
       background: transparent;
       outline: none;
-      padding: 0rem ${(p) => p.theme.space[32]};
-      font-family: ${(p) => p.theme.fonts.text};
+      padding: 0rem ${theme.space[32]};
+      font-family: ${theme.fonts.text};
       font-style: normal;
       font-weight: normal;
-      font-size: ${(p) => p.theme.fontSizes[16]};
+      font-size: ${theme.fontSizes[16]};
       line-height: 100%;
       border-width: 0;
       &::placeholder {
         content: 'Search Documentation...';
-        color: ${(p) => p.theme.colors.gray[500]};
+        color: ${theme.colors.gray[500]};
         opacity: 1; /* Firefox */
       }
     }
@@ -98,17 +109,43 @@ const SearchBoxDiv = styled.div`
   }
 
   .slash {
-    border: 1px solid ${(p) => p.theme.colors.gray[400]};
+    border: 1px solid ${theme.colors.gray[400]};
     border-radius: 4px;
-    color: ${(p) => p.theme.colors.gray[400]};
+    color: ${theme.colors.gray[400]};
     min-width: 18px;
     display: flex;
     justify-content: center;
   }
 
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     .slash {
       display: none;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: ${theme.colors.gray[800]};
+    border-color: ${theme.colors.gray[700]};
+
+    form {
+      input {
+        color: ${theme.colors.gray[100]};
+        &::placeholder {
+          color: ${theme.colors.gray[400]};
+        }
+      }
+
+      svg path {
+        stroke: ${theme.colors.gray[400]};
+      }
+    }
+    &.opened {
+      background: ${theme.colors.gray[800]};
+      .clear {
+        svg path {
+          stroke: ${theme.colors.gray[100]};
+        }
+      }
     }
   }
 `
@@ -116,15 +153,20 @@ const SearchBoxDiv = styled.div`
 const SearchIcon = styled(SearchPic)`
   min-width: 1em;
   pointer-events: none;
-  z-index: 100001;
+  //z-index: 100001;
   position: absolute;
 `
 
 const SearchSlashIcon = styled(SearchSlash)`
   pointer-events: none;
-  z-index: 100001;
+  //z-index: 100001;
   position: absolute;
   right: 0;
+  @media (prefers-color-scheme: dark) {
+    path {
+      stroke: ${theme.colors.gray[700]};
+    }
+  }
 `
 
 const ClearIcon = styled(Clear)`
@@ -144,10 +186,13 @@ const SearchBox = ({
   upClicked,
   downClicked,
   selectedInd,
+  path,
+  sidenavSearchOpened,
+  disconnectedForm,
+  wide,
   ...rest
 }: any) => {
   const [value, setValue] = React.useState(currentRefinement)
-
   const timeoutId = React.useRef(null)
   const inputEl = React.useRef(null)
   const { width } = useWindowDimensions()
@@ -230,10 +275,18 @@ const SearchBox = ({
     if (value) {
       onFocus()
     }
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+    }
   }, [])
 
+  if (sidenavSearchOpened) {
+    inputEl.current.focus()
+    onFocus()
+  }
+
   return (
-    <SearchBoxDiv className={isOpened ? 'opened' : ''}>
+    <SearchBoxDiv className={isOpened ? 'opened' : ''} minimal={path === 'home'} wide={wide}>
       <form onSubmit={onSubmit}>
         <SearchIcon />
         <input
@@ -252,7 +305,7 @@ const SearchBox = ({
             <ClearIcon onClick={clearInput} />
           </span>
         )}
-        {!isOpened && <SearchSlashIcon />}
+        {!isOpened && width > 768 && <SearchSlashIcon />}
       </form>
     </SearchBoxDiv>
   )
