@@ -356,7 +356,7 @@ If you want a relation table to be picked up by introspection as an implicit m-n
 
 - It must start with an underscore `_`
 - Then the name of the first model in alphabetical order (in this case `Category`)
-- Then `To`
+- Then the relationship (in this case `To`)
 - Then the name of the second model in alphabetical order (in this case `Post`)
 
 In the example, the correct table name is `_CategoryToPost`.
@@ -411,6 +411,50 @@ CREATE TABLE "Category" (
 CREATE TABLE "Post" (
     id integer SERIAL PRIMARY KEY
 );
+```
+
+And you can define multiple many-to-many relations between two tables by using the different relationship name. This example shows how the Prisma Introspection works under such case:
+
+```sql
+CREATE TABLE IF NOT EXISTS "User" (
+    "id" integer SERIAL PRIMARY KEY
+);
+CREATE TABLE sqlite_sequence(name,seq);
+CREATE TABLE IF NOT EXISTS "Video" (
+    "id" integer SERIAL PRIMARY KEY
+);
+CREATE TABLE IF NOT EXISTS "_UserLikedVideos" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+    CONSTRAINT "_UserLikedVideos_A_fkey" FOREIGN KEY ("A") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_UserLikedVideos_B_fkey" FOREIGN KEY ("B") REFERENCES "Video" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "_UserDislikedVideos" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+    CONSTRAINT "_UserDislikedVideos_A_fkey" FOREIGN KEY ("A") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_UserDislikedVideos_B_fkey" FOREIGN KEY ("B") REFERENCES "Video" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX "_UserLikedVideos_AB_unique" ON "_UserLikedVideos"("A", "B");
+CREATE INDEX "_UserLikedVideos_B_index" ON "_UserLikedVideos"("B");
+CREATE UNIQUE INDEX "_UserDislikedVideos_AB_unique" ON "_UserDislikedVideos"("A", "B");
+CREATE INDEX "_UserDislikedVideos_B_index" ON "_UserDislikedVideos"("B");
+```
+
+If you run `prisma db pull` on this database, the Prisma will introspect the schema:
+
+```prisma
+model User {
+  id                       Int     @id @default(autoincrement())
+  Video_UserDislikedVideos Video[] @relation("UserDislikedVideos")
+  Video_UserLikedVideos    Video[] @relation("UserLikedVideos")
+}
+
+model Video {
+  id                      Int    @id @default(autoincrement())
+  User_UserDislikedVideos User[] @relation("UserDislikedVideos")
+  User_UserLikedVideos    User[] @relation("UserLikedVideos")
+}
 ```
 
 #### Configuring the name of the relation table in implicit many-to-many relations
