@@ -2,7 +2,7 @@
 title: 'Prisma Client API reference'
 metaTitle: 'Prisma Client API (Reference)'
 metaDescription: 'API reference documentation for Prisma Client.'
-tocDepth: 2
+tocDepth: 3
 toc: true
 ---
 
@@ -65,6 +65,8 @@ This section describes the `PrismaClient` constructor and its parameters.
 
 Programmatically overrides properties of the `datasource` block in the `schema.prisma` file - for example, as part of an integration test. See also: [Data sources](/concepts/components/prisma-schema/data-sources) <span class="concept"></span>
 
+From version 5.2.0 and upwards, you can also use the [`datasourceUrl`](#datasourceUrl) property to programmatically override the database connection string.
+
 #### Properties
 
 | Example property | Example value                 | Description                                                                   |
@@ -73,7 +75,7 @@ Programmatically overrides properties of the `datasource` block in the `schema.p
 
 #### Remarks
 
-- You must re-generate the Prisma Client each time you add or rename a data source. Datasource names are included in the generated client.
+- You must re-generate Prisma Client each time you add or rename a data source. Datasource names are included in the generated client.
 - If you named your `datasource` block something else in the schema, replace `db` with the name of your `datasource` block.
 
 #### Examples
@@ -99,6 +101,26 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+```
+
+### <inlinecode>datasourceUrl</inlinecode>
+
+Programmatically overrides the [`datasource`](#datasources) block in the `schema.prisma` file.
+
+#### Property
+
+| Option                     | Example value        | Description                                                                   |
+| -------------------------- | -------------------- | ----------------------------------------------------------------------------- |
+| Database connection string | `'file:./dev_qa.db'` | The database [connection URL](/reference/database-reference/connection-urls). |
+
+#### Examples
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({
+  datasourceUrl: 'postgresql://johndoe:randompassword@localhost:5432/mydb',
+})
 ```
 
 ### <inlinecode>log</inlinecode>
@@ -127,20 +149,6 @@ Determines the type and level of logging. See also: [Logging](/concepts/componen
 | -------- | ------------------------------------------------------------- |
 | `stdout` | See: [stdout](https://en.wikipedia.org/wiki/Standard_streams) |
 | `event`  | Raises an event that you can subscribe to.                    |
-
-#### Reference
-
-```ts file=index.d.ts
-log?: Array<LogLevel | LogDefinition>
-```
-
-```ts file=index.d.ts
-export type LogLevel = 'info' | 'query' | 'warn' | 'error'
-export type LogDefinition = {
-  level: LogLevel
-  emit: 'stdout' | 'event'
-}
-```
 
 ##### Event types
 
@@ -334,16 +342,6 @@ Determines the level and formatting of errors returned by Prisma.
 | `colorless` (default) | Enables colorless error formatting.            |
 | `minimal`             | Enables minimal error formatting.              |
 
-#### Reference
-
-```ts file=index.d.ts
-errorFormat?: ErrorFormat
-```
-
-```ts file=index.d.ts
-export type ErrorFormat = 'pretty' | 'colorless' | 'minimal'
-```
-
 #### Examples
 
 ##### No error formatting
@@ -378,9 +376,41 @@ const prisma = new PrismaClient({
 })
 ```
 
+### <inlinecode>adapter</inlinecode>
+
+Defines an instance of a [driver adapter](/concepts/components/database-drivers#driver-adapters). See also [Database drivers](/concepts/components/database-drivers) <span class="concept"></span>.
+
+<Admonition>
+
+This is available from version 5.4.0 and newer behind the `driverAdapters` feature flag.
+
+</Admonition>
+
+#### Example
+
+The example below uses the [Neon driver adapter](/guides/database/neon#how-to-use-the-neon-serverless-driver-with-prisma-preview)
+
+```ts
+import { Pool, neonConfig } from '@neondatabase/serverless'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { PrismaClient } from '@prisma/client'
+import dotenv from 'dotenv'
+import ws from 'ws'
+
+dotenv.config()
+neonConfig.webSocketConstructor = ws
+const connectionString = `${process.env.DATABASE_URL}`
+
+const pool = new Pool({ connectionString })
+const adapter = new PrismaNeon(pool)
+const prisma = new PrismaClient({ adapter })
+```
+
 ### <inlinecode>rejectOnNotFound</inlinecode>
 
 <Admonition type="info">
+
+**Note**: `rejectOnNotFound` was removed in v5.0.0.
 
 **Deprecated:** `rejectOnNotFound` is deprecated in v4.0.0. From v4.0.0, use the queries [`findUniqueOrThrow`](#finduniqueorthrow) or [`findFirstOrThrow`](#findfirstorthrow).
 
@@ -388,7 +418,7 @@ const prisma = new PrismaClient({
 
 Use the `rejectOnNotFound` parameter to configure `findUnique` and/or `findFirst` to throw an error if the record was not found. By default, both operations return `null` if the record is not found.
 
-### Remarks
+#### Remarks
 
 - You can configure `rejectOnNotFound` on a per-request level for both [`findUnique`](#findunique) and [`findFirst`](#findfirst)
 
@@ -398,12 +428,6 @@ Use the `rejectOnNotFound` parameter to configure `findUnique` and/or `findFirst
 | -------------------- | ------------------------------------------------------------------------------------------- |
 | `RejectOnNotFound`   | Enable globally (`true` / `false`) _or_ throw a custom error.                               |
 | `RejectPerOperation` | Enable per operation (`true` / `false`) _or_ throw a custom error per operation, per model. |
-
-#### Reference
-
-```ts file=index.d.ts
-rejectOnNotFound?: RejectOnNotFound | RejectPerOperation
-```
 
 #### Examples
 
@@ -446,7 +470,7 @@ const prisma = new PrismaClient({
 
 Use model queries to perform CRUD operations on your models. See also: [CRUD](/concepts/components/prisma-client/crud) <span class="concept"></span>
 
-### <inlinecode>findUnique</inlinecode>
+### <inlinecode>findUnique()</inlinecode>
 
 `findUnique` query lets you retrieve a single database record:
 
@@ -459,12 +483,13 @@ Use model queries to perform CRUD operations on your models. See also: [CRUD](/c
 
 - Prisma's dataloader [automatically batches `findUnique` queries](/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) with the same `select` and `where` parameters.
 - If you want the query to throw an error if the record is not found, then consider using [`findUniqueOrThrow`](#finduniqueorthrow) instead.
+- You cannot use [filter conditions](#filter-conditions-and-operators) (e.g. `equals`, `contains`, `not`) to filter fields of the [JSON](/reference/api-reference/prisma-schema-reference#json) data type. Using filter conditions will likely result in a `null` response for that field.
 
 #### Options
 
 | Name                            | Example type (`User`)    | Required | Description                                                                                                                                                                                                                                                       |
 | ------------------------------- | ------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `where`                         | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected.                                                                                                                                                                                  |
+| `where`                         | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected. <br></br>From version 4.5.0, this type wraps all fields of a model. [Learn more](#filter-on-non-unique-fields-with-userwhereuniqueinput)                                         |
 | `select`                        | `XOR<UserSelect, null>`  | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                                                 |
 | `include`                       | `XOR<UserInclude, null>` | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                                                 |
 | `rejectOnNotFound` (deprecated) | `RejectOnNotFound`       | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findUniqueOrThrow`](#finduniqueorthrow) instead. |
@@ -477,18 +502,6 @@ Use model queries to perform CRUD operations on your models. See also: [CRUD](/c
 | JavaScript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return.                                                                                                   |
 | `null`                    | `null`                     | Record not found                                                                                                                                                  |
 | Error                     |                            | If `rejectOnNotFound` is true, `findUnique` throws an error (`NotFoundError` by default, [customizable globally](#rejectonnotfound)) instead of returning `null`. |
-
-#### Reference
-
-`findUnique` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserFindUniqueArgs = {
-  where: UserWhereUniqueInput
-  select?: UserSelect | null
-  include?: UserInclude | null
-}
-```
 
 #### Examples
 
@@ -565,7 +578,7 @@ const result = await prisma.user.findUnique({
 })
 ```
 
-### <inlinecode>findUniqueOrThrow</inlinecode>
+### <inlinecode>findUniqueOrThrow()</inlinecode>
 
 <Admonition type="info">
 
@@ -587,7 +600,7 @@ We introduced `findUniqueOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`
    })
   ```
 
-### <inlinecode>findFirst</inlinecode>
+### <inlinecode>findFirst()</inlinecode>
 
 `findFirst` returns the first record in a list that matches your criteria.
 
@@ -598,16 +611,16 @@ We introduced `findUniqueOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`
 #### Options
 
 | Name                            | Example type (`User`)                                        | Required | Description                                                                                                                                                                                                                                                     |
-| ------------------------------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `distinct`                      | `Enumerable<UserDistinct`<br />`FieldEnum>`                  | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                                       |
-| `where`                         | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                                            |
-| `cursor`                        | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                                            |
-| `orderBy`                       | `XOR<Enumerable<User`<br />`OrderByInput>,UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                                               |
-| `include`                       | `XOR<UserInclude, null>`                                     | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `select`                        | `XOR<UserSelect, null>`                                      | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                                               |
-| `skip`                          | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                                       |
+| `include`                       | `XOR<UserInclude, null>`                                     | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                                               |
+| `where`                         | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                                            |
+| `orderBy`                       | `XOR<Enumerable<User`<br />`OrderByInput>,UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                                               |
+| `cursor`                        | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                                            |
 | `take`                          | `number`                                                     | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list.                      |
-| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`                                           | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findFirstOrThrow`](#findfirstorthrow) instead. |
+| `skip`                          | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                                       |
+| `distinct`                      | `Enumerable<UserDistinct`<br />`FieldEnum>`                  | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                                       |
+| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`                                           | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findFirstOrThrow`](#findfirstorthrow) instead. |     |
 
 #### Return type
 
@@ -622,23 +635,6 @@ We introduced `findUniqueOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`
 
 - `findFirst` calls `findMany` behind the scenes and accepts the same query options.
 - Passing in a negative `take` value when you use a `findFirst` query reverses the order of the list.
-
-#### Reference
-
-`findFirst` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserFindFirstArgs = {
-  select?: XOR<UserSelect, null>
-  include?: XOR<UserInclude, null>
-  where?: UserWhereInput
-  orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
-  cursor?: UserWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Enumerable<UserDistinctFieldEnum>
-}
-```
 
 #### Examples
 
@@ -688,7 +684,9 @@ async function main() {
 main()
 ```
 
-### <inlinecode>findFirstOrThrow</inlinecode>
+### <inlinecode>findFirstOrThrow()</inlinecode>
+
+<AlgoliaTerm name="apiReference" value="findFirstOrThrow" />
 
 <Admonition type="info">
 
@@ -704,13 +702,13 @@ We introduced `findFirstOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`]
 - It is not compatible with sequential operations in the [`$transaction` API](/concepts/components/prisma-client/transactions#the-transaction-api). If the query returns `NotFoundError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
 
   ```ts
-   $transaction(async (prisma) => {
-     await prisma.model.create({ data: { ... });
-     await prisma.model.findFirstOrThrow();
-   })
+  prisma.$transaction(async (tx) => {
+    await tx.model.create({ data: { ... });
+    await tx.model.findFirstOrThrow();
+  })
   ```
 
-### <inlinecode>findMany</inlinecode>
+### <inlinecode>findMany()</inlinecode>
 
 <AlgoliaTerm name="apiReference" value="findMany" />
 
@@ -720,13 +718,13 @@ We introduced `findFirstOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`]
 
 | Name       | Type                                                          | Required | Description                                                                                                                                                                                               |
 | ---------- | ------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `where`    | `UserWhereInput`                                              | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                      |
-| `orderBy`  | `XOR<Enumerable<PostOrder`<br />`ByInput>, PostOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                         |
-| `skip`     | `number`                                                      | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
-| `cursor`   | `UserWhereUniqueInput`                                        | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                      |
-| `take`     | `number`                                                      | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
 | `select`   | `XOR<PostSelect, null>`                                       | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                         |
 | `include`  | `XOR<PostInclude, null>`                                      | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                         |
+| `where`    | `UserWhereInput`                                              | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                      |
+| `orderBy`  | `XOR<Enumerable<PostOrder`<br />`ByInput>, PostOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                         |
+| `cursor`   | `UserWhereUniqueInput`                                        | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                      |
+| `take`     | `number`                                                      | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
+| `skip`     | `number`                                                      | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 | `distinct` | `Enumerable<UserDistinctFieldEnum>`                           | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                 |
 
 #### Return type
@@ -736,23 +734,6 @@ We introduced `findFirstOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`]
 | JavaScript array object (typed) | `User[]`                     |                                                                 |
 | JavaScript array object (plain) | `[{ title: "Hello world" }]` | Use `select` and `include` to determine which fields to return. |
 | Empty array                     | `[]`                         | No matching records found.                                      |
-
-#### Reference
-
-`findMany` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserFindManyArgs = {
-  select?: XOR<UserSelect, null>
-  include?: XOR<UserInclude, null>
-  where?: UserWhereInput
-  orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
-  cursor?: UserWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Enumerable<UserDistinctFieldEnum>
-}
-```
 
 #### Examples
 
@@ -766,7 +747,7 @@ const user = await prisma.user.findMany({
 })
 ```
 
-### <inlinecode>create</inlinecode>
+### <inlinecode>create()</inlinecode>
 
 `create` creates a new database record.
 
@@ -789,18 +770,6 @@ const user = await prisma.user.findMany({
 
 - You can also perform a nested [`create`](#create-1) - for example, add a `User` and two `Post` records at the same time.
 
-#### Reference
-
-`create` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserCreateArgs = {
-  select?: XOR<UserSelect, null>
-  include?: XOR<UserInclude, null>
-  data: XOR<UserCreateInput, UserUncheckedCreateInput>
-}
-```
-
 #### Examples
 
 ##### Create a single new record with the only required field `email`
@@ -813,7 +782,7 @@ const user = await prisma.user.create({
 
 ##### Create multiple new records
 
-Prisma Client does not yet support batch inserts at a database level. Follow [issue #332 on GitHub](https://github.com/prisma/prisma-client-js/issues/332) for updates.
+In most cases, you can carry out batch inserts with the [`createMany`](#createmany) query. However, [there are scenarios where `create` is the best option to insert multiple records](#remarks-10).
 
 The following example results in **two** `INSERT` statements:
 
@@ -882,18 +851,18 @@ prisma:query COMMIT
 
 </CodeWithResult>
 
-### <inlinecode>update</inlinecode>
+### <inlinecode>update()</inlinecode>
 
 `update` updates an existing database record.
 
 #### Options
 
-| Name                  | Type                                                   | Required | Description                                                                                                                                                                               |
-| --------------------- | ------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data`                | `XOR<UserUpdateInput`<br />`UserUncheckedUpdateInput>` | **Yes**  | Wraps all the fields of the model so that they can be provided when updating an existing record. Fields that are marked as optional or have default values in the datamodel are optional. |
-| `where`               | `UserWhereUniqueInput`                                 | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected.                                                                                                          |
-| [`select`](#select)   | `XOR<UserSelect, null>`                                | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                         |
-| [`include`](#include) | `XOR<UserInclude, null>`                               | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                         |
+| Name                  | Type                                                   | Required | Description                                                                                                                                                                                                               |
+| --------------------- | ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`                | `XOR<UserUpdateInput`<br />`UserUncheckedUpdateInput>` | **Yes**  | Wraps all the fields of the model so that they can be provided when updating an existing record. Fields that are marked as optional or have default values in the datamodel are optional.                                 |
+| `where`               | `UserWhereUniqueInput`                                 | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected. <br></br>From version 4.5.0, this type wraps all fields of a model. [Learn more](#filter-on-non-unique-fields-with-userwhereuniqueinput) |
+| [`select`](#select)   | `XOR<UserSelect, null>`                                | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                         |
+| [`include`](#include) | `XOR<UserInclude, null>`                               | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                         |
 
 #### Return type
 
@@ -908,17 +877,6 @@ prisma:query COMMIT
 - To perform arithmetic operations on update (add, subtract, multiply, divide), use [atomic updates](#atomic-number-operations) to prevent race conditions.
 - You can also perform a nested [`update`](#update-1) - for example, update a user and that user's posts at the same time.
 
-#### Reference
-
-```ts file=index.d.ts
-export type UserUpdateArgs = {
-  select?: XOR<UserSelect, null>
-  include?: XOR<UserInclude, null>
-  data: XOR<UserUpdateInput, UserUncheckedUpdateInput>
-  where: UserWhereUniqueInput
-}
-```
-
 #### Examples
 
 ##### Update the `email` of the `User` record with `id` of `1` to `alice@prisma.io`
@@ -930,9 +888,12 @@ const user = await prisma.user.update({
 })
 ```
 
-### <inlinecode>upsert</inlinecode>
+### <inlinecode>upsert()</inlinecode>
 
-`upsert` updates an existing _or_ creates a new database record.
+`upsert` does the following:
+
+- If an existing database record satisfies the `where` condition, it updates that record
+- If no database record satisfies the `where` condition, it creates a new database record
 
 #### Options
 
@@ -940,7 +901,7 @@ const user = await prisma.user.update({
 | --------------------- | ------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `create`              | `XOR<UserCreateInput,`<br />`UserUncheckedCreateInput>` | **Yes**  | Wraps all the fields of the model so that they can be provided when creating new records. It also includes relation fields which lets you perform (transactional) nested inserts. Fields that are marked as optional or have default values in the datamodel are optional. |
 | `update`              | `XOR<UserUpdateInput,`<br />`UserUncheckedUpdateInput>` | **Yes**  | Wraps all the fields of the model so that they can be provided when updating an existing record. Fields that are marked as optional or have default values in the datamodel are optional.                                                                                  |
-| `where`               | `UserWhereUniqueInput`                                  | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected.                                                                                                                                                                                           |
+| `where`               | `UserWhereUniqueInput`                                  | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected. <br></br>From version 4.5.0, this type wraps all fields of a model. [Learn more](#filter-on-non-unique-fields-with-userwhereuniqueinput)                                                  |
 | [`select`](#select)   | `XOR<UserSelect, null>`                                 | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                                                                          |
 | [`include`](#include) | `XOR<UserInclude, null>`                                | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                                                                          |
 
@@ -954,20 +915,8 @@ const user = await prisma.user.update({
 #### Remarks
 
 - To perform arithmetic operations on update (add, subtract, multiply, divide), use [atomic updates](#atomic-number-operations) to prevent race conditions.
-
-#### Reference
-
-`upsert` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserUpsertArgs = {
-  select?: XOR<UserSelect, null>
-  include?: XOR<UserInclude, null>
-  where: UserWhereUniqueInput
-  create: XOR<UserCreateInput, UserUncheckedCreateInput>
-  update: XOR<UserUpdateInput, UserUncheckedUpdateInput>
-}
-```
+- If two or more upsert operations happen at the same time and the record doesn't already exist, then a race condition might happen. As a result, one or more of the upsert operations might throw a unique key constraint error. Your application code can catch this error and retry the operation. [Learn more](#unique-key-constraint-errors-on-upserts).
+- From version 4.6.0, Prisma hands over upsert queries to the database where possible. [Learn more](#database-upserts).
 
 #### Examples
 
@@ -981,7 +930,169 @@ const user = await prisma.user.upsert({
 })
 ```
 
-### <inlinecode>delete</inlinecode>
+#### Unique key constraint errors on upserts
+
+##### Problem
+
+If multiple upsert operations happen at the same time and the record doesn't already exist, then one or more of the operations might return a [unique key constraint error](/reference/api-reference/error-reference#p2002).
+
+##### Cause
+
+When Prisma does an upsert, it first checks whether that record already exists in the database. To make this check, Prisma performs a read operation with the `where` clause from the upsert operation. This has two possible outcomes, as follows:
+
+- If the record does not exist, then Prisma creates that record.
+- If the record exists, then Prisma updates it.
+
+When your application tries to perform two or more concurrent upsert operations, then a race condition might happen where two or more operations do not find the record and therefore try to create that record. In this situation, one of the operations successfully creates the new record but the other operations fail and return a unique key constraint error.
+
+##### Solution
+
+Handle the P2002 error in your application code. When it occurs, retry the upsert operation to update the row.
+
+#### Database upserts
+
+Where possible, Prisma Client hands over an `upsert` query to the database. This is called a _database upsert_.
+
+Database upserts have the following advantages:
+
+- They are faster than upserts handled by Prisma
+- [Unique key constraint errors](#unique-key-constraint-errors-on-upserts) cannot happen
+
+Prisma Client uses a database upsert automatically when [specific criteria](#database-upsert-query-criteria) are met. When these criteria are not met, Prisma Client handles the `upsert`.
+
+To use a database upsert, Prisma Client sends the SQL construction [`INSERT ... ON CONFLICT SET .. WHERE`](https://www.prisma.io/dataguide/postgresql/inserting-and-modifying-data/insert-on-conflict) to the database.
+
+##### Database upsert prerequisites
+
+Prisma Client can use database upserts if your stack meets the following criteria:
+
+- You use Prisma version 4.6.0 or later
+- Your application uses a CockroachDB, PostgreSQL, or SQLite data source
+
+##### Database upsert query criteria
+
+Prisma Client uses a database upsert for an `upsert` query when the query meets the following criteria:
+
+- There are no nested queries in the `upsert`'s `create` and `update` [options](#options-7)
+- The query does _not_ include a selection that uses a [nested read](/concepts/components/prisma-client/relation-queries#nested-reads)
+- The query modifies only one model
+- There is only one unique field in the `upsert`'s `where` option
+- The unique field in the `where` option and the unique field in the `create` option have the same value
+
+If your query does not meet these criteria, then Prisma Client handles the upsert itself.
+
+##### Database upsert examples
+
+The following examples use this schema:
+
+```prisma
+model User {
+  id           Int    @id
+  profileViews Int
+  userName     String @unique
+  email        String
+
+  @@unique([id, profileViews])
+}
+```
+
+The following `upsert` query meets all of the criteria, so Prisma Client uses a database upsert.
+
+```ts
+prisma.user.upsert({
+  where: {
+    userName: 'Alice',
+  },
+  create: {
+    id: 1,
+    profileViews: 1,
+    userName: 'Alice',
+    email: 'alice@prisma.io',
+  },
+  update: {
+    email: 'updated@example.com',
+  },
+})
+```
+
+In this situation, Prisma uses the following SQL query:
+
+```sql
+INSERT INTO "public"."User" ("id","profileViews","userName","email") VALUES ($1,$2,$3,$4)
+ON CONFLICT ("userName") DO UPDATE
+SET "email" = $5 WHERE ("public"."User"."userName" = $6 AND 1=1) RETURNING "public"."User"."id", "public"."User"."profileViews", "public"."User"."userName", "public"."User"."email"
+```
+
+The following query has multiple unique values in the `where` clause, so Prisma Client does _not_ use a database upsert:
+
+```ts
+prisma.User.upsert({
+  where: {
+    userName: 'Alice',
+    profileViews: 1,
+    id: 1,
+  },
+  create: {
+    id: 1,
+    profileViews: 1,
+    userName: 'Alice',
+    email: 'alice@prisma.io',
+  },
+  update: {
+    email: 'updated@example.com',
+  },
+})
+```
+
+In the following query, the values for `userName` in the `where` and `create` options are different, so Prisma Client does _not_ use a database upsert.
+
+```ts
+prisma.User.upsert({
+  where: {
+    userName: 'Alice',
+  },
+  create: {
+    id: 1,
+    profileViews: 1,
+    userName: 'AliceS',
+    email: 'alice@prisma.io',
+  },
+  update: {
+    email: 'updated@example.com',
+  },
+})
+```
+
+In the following query, the selection on the `title` field in `posts` is a nested read, so Prisma Client does _not_ use a database upsert.
+
+```ts
+prisma.user.upsert({
+  select: {
+    email: true,
+    id: true,
+    posts: {
+      select: {
+        title: true,
+      },
+    },
+  },
+  where: {
+    userName: 'Alice',
+  },
+
+  create: {
+    id: 1,
+    profileViews: 1,
+    userName: 'Alice',
+    email: 'alice@prisma.io',
+  },
+  update: {
+    email: 'updated@example.com',
+  },
+})
+```
+
+### <inlinecode>delete()</inlinecode>
 
 `delete` deletes an existing database record. You can delete a record:
 
@@ -992,11 +1103,11 @@ To delete records that match a certain criteria, use [`deleteMany`](#deletemany)
 
 #### Options
 
-| Name                  | Type                     | Required | Description                                                                                                                       |
-| --------------------- | ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `where`               | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected.                                                  |
-| [`select`](#select)   | `XOR<UserSelect, null>`  | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                 |
-| [`include`](#include) | `XOR<UserInclude, null>` | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object. |
+| Name                  | Type                     | Required | Description                                                                                                                                                                                                               |
+| --------------------- | ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `where`               | `UserWhereUniqueInput`   | **Yes**  | Wraps all _unique_ fields of a model so that individual records can be selected. <br></br>From version 4.5.0, this type wraps all fields of a model. [Learn more](#filter-on-non-unique-fields-with-userwhereuniqueinput) |
+| [`select`](#select)   | `XOR<UserSelect, null>`  | No       | [Specifies which properties to include](/concepts/components/prisma-client/select-fields) on the returned object.                                                                                                         |
+| [`include`](#include) | `XOR<UserInclude, null>` | No       | [Specifies which relations should be eagerly loaded](/concepts/components/prisma-client/relation-queries) on the returned object.                                                                                         |
 
 #### Return type
 
@@ -1009,18 +1120,6 @@ To delete records that match a certain criteria, use [`deleteMany`](#deletemany)
 #### Remarks
 
 - To delete multiple records based on some criteria (for example, all `User` records with a `prisma.io` email address, use `deleteMany`)
-
-#### Reference
-
-`delete` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserDeleteArgs = {
-  select?: XOR<UserSelect, null>
-  include?: XOR<UserInclude, null>
-  where: UserWhereUniqueInput
-}
-```
 
 #### Examples
 
@@ -1064,16 +1163,16 @@ const deleteUser = await prisma.user.delete({
 
 </CodeWithResult>
 
-### <inlinecode>createMany</inlinecode>
+### <inlinecode>createMany()</inlinecode>
 
 `createMany` creates multiple records in a transaction.
 
 #### Options
 
-| Name              | Type                              | Required | Description                                                                                                                                                                                                                                                                   |
-| ----------------- | --------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data`            | `Enumerable<UserCreateManyInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. It also includes relation fields which lets you perform (transactional) nested inserts. Fields that are marked as optional or have default values in the datamodel are optional. |
-| `skipDuplicates?` | `boolean`                         | No       | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT).                                                           |
+| Name              | Type                              | Required | Description                                                                                                                                                                                                                                             |
+| ----------------- | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`            | `Enumerable<UserCreateManyInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. Fields that are marked as optional or have default values in the datamodel are optional.                                                                   |
+| `skipDuplicates?` | `boolean`                         | No       | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT). This excludes MongoDB and SQLServer |
 
 #### Return type
 
@@ -1084,19 +1183,9 @@ const deleteUser = await prisma.user.delete({
 #### Remarks
 
 - `createMany` is not supported by SQLite.
+- The `skipDuplicates` option is not supported by MongoDB and SQLServer.
 - You **cannot** create or connect relations - you cannot nest `create`, `createMany`, `connect`, `connectOrCreate` inside a top-level `createMany`
 - You can nest a [`createMany`](#createmany-1) inside an `update` or `create` query - for example, add a `User` and two `Post` records at the same time.
-
-#### Reference
-
-`createMany` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserCreateManyArgs = {
-  data: Enumerable<UserCreateManyInput>
-  skipDuplicates?: boolean
-}
-```
 
 #### Examples
 
@@ -1111,7 +1200,7 @@ const users = await prisma.user.createMany({
 })
 ```
 
-### <inlinecode>updateMany</inlinecode>
+### <inlinecode>updateMany()</inlinecode>
 
 `updateMany` updates a batch of existing database records in bulk and returns the number of updated records.
 
@@ -1131,17 +1220,6 @@ const users = await prisma.user.createMany({
 ```ts
 export type BatchPayload = {
   count: number
-}
-```
-
-#### Reference
-
-`updateMany` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserUpdateManyArgs = {
-  data: XOR<UserUpdateManyMutationInput, UserUncheckedUpdateManyInput>
-  where?: UserWhereInput
 }
 ```
 
@@ -1178,7 +1256,7 @@ const deleteUser = await prisma.user.updateMany({
 })
 ```
 
-### <inlinecode>deleteMany</inlinecode>
+### <inlinecode>deleteMany()</inlinecode>
 
 `deleteMany` deletes multiple records in a transaction.
 
@@ -1192,21 +1270,11 @@ const deleteUser = await prisma.user.updateMany({
 
 | Return type    | Example        | Description                   |
 | -------------- | -------------- | ----------------------------- |
-| `BatchPayload` | `{ count: 4 }` | The count of updated records. |
+| `BatchPayload` | `{ count: 4 }` | The count of deleted records. |
 
 ```ts
 export type BatchPayload = {
   count: number
-}
-```
-
-#### Reference
-
-`deleteMany` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserDeleteManyArgs = {
-  where?: UserWhereInput
 }
 ```
 
@@ -1228,18 +1296,17 @@ const deletedUserCount = await prisma.user.deleteMany({
 
 See [Filter conditions and operators](#filter-conditions-and-operators) for examples of how to filter the records to delete.
 
-### <inlinecode>count</inlinecode>
+### <inlinecode>count()</inlinecode>
 
 #### Options
 
 | Name      | Type                                                          | Required | Description                                                                                                                                                                                               |
 | --------- | ------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `where`   | `UserWhereInput`                                              | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                      |
-| `cursor`  | `UserWhereUniqueInput`                                        | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                      |
-| `skip`    | `number`                                                      | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
-| `take`    | `number`                                                      | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
 | `orderBy` | `XOR<Enumerable<PostOrder`<br />`ByInput>, PostOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                         |
-| `select`  | `UserCountAggregateInputType`                                 | No       | Select which fields to count (non-`null` values) - you can also count `_all`.                                                                                                                             |
+| `cursor`  | `UserWhereUniqueInput`                                        | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                      |
+| `take`    | `number`                                                      | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
+| `skip`    | `number`                                                      | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 
 #### Return type
 
@@ -1247,35 +1314,6 @@ See [Filter conditions and operators](#filter-conditions-and-operators) for exam
 | ------------------------------ | ------------------------ | ----------------------------- |
 | `number`                       | `29`                     | The count of records.         |
 | `UserCountAggregateOutputType` | `{ _all: 27, name: 10 }` | Returned if `select` is used. |
-
-#### Reference
-
-`count` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserFindManyArgs = {
-  // select and include are excluded
-  where?: UserWhereInput
-  orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
-  cursor?: UserWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Enumerable<UserDistinctFieldEnum>
-}
-
-export type UserCountAggregateOutputType = {
-  id: number
-  name: number | null
-  email: number | null
-  profileViews: number
-  role: number | null
-  coinflips: number | null
-  testing: number | null
-  city: number | null
-  country: number | null
-  _all: number
-}
-```
 
 #### Examples
 
@@ -1317,7 +1355,7 @@ const c = await prisma.user.count({
 })
 ```
 
-### <inlinecode>aggregate</inlinecode>
+### <inlinecode>aggregate()</inlinecode>
 
 See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-client/aggregation-grouping-summarizing#aggregate) <span class="concept"></span>
 
@@ -1328,33 +1366,13 @@ See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-c
 | `where`   | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                      |
 | `orderBy` | `XOR<Enumerable<UserOrderByInput>,`<br />`UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                         |
 | `cursor`  | `UserWhereUniqueInput`                                       | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                      |
-| `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 | `take`    | `number`                                                     | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
+| `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 | `_count`  | `true`                                                       | No       | Returns a count of matching records or non-`null` fields.                                                                                                                                                 |
 | `_avg`    | `UserAvgAggregateInputType`                                  | No       | Returns an average of all values of the specified field.                                                                                                                                                  |
-| `_sum`    | `UserSumAggregateInputType`                                  | No       | Returns the sume of all values of the specified field.                                                                                                                                                    |
+| `_sum`    | `UserSumAggregateInputType`                                  | No       | Returns the sum of all values of the specified field.                                                                                                                                                     |
 | `_min`    | `UserMinAggregateInputType`                                  | No       | Returns the smallest available value of the specified field.                                                                                                                                              |
 | `_max`    | `UserMaxAggregateInputType`                                  | No       | Returns the largest available value of the specified field.                                                                                                                                               |
-
-#### Reference
-
-`aggregate` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserAggregateArgs = {
-  where?: UserWhereInput
-  orderBy?: XOR<Enumerable<UserOrderByInput>, UserOrderByInput>
-  cursor?: UserWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Enumerable<UserDistinctFieldEnum>
-  _count?: true | UserCountAggregateInputType
-  _avg?: UserAvgAggregateInputType
-  _sum?: UserSumAggregateInputType
-  _min?: UserMinAggregateInputType
-  _max?: UserMaxAggregateInputType
-}
-```
 
 #### Examples
 
@@ -1418,7 +1436,7 @@ const setValue = await prisma.user.aggregate({
 </cmdResult>
 </CodeWithResult>
 
-### <inlinecode>groupBy</inlinecode>
+### <inlinecode>groupBy()</inlinecode>
 
 See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-client/aggregation-grouping-summarizing#group-by) <span class="concept"></span>
 
@@ -1428,35 +1446,15 @@ See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-c
 | --------- | ------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `where`   | `UserWhereInput`                                             | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                      |
 | `orderBy` | `XOR<Enumerable<UserOrderByInput>,`<br />`UserOrderByInput>` | No       | Lets you order the returned list by any property that is also present in `by`.                                                                                                                            |
-| `by`      | `Array<UserScalarFieldEnum>`                                 | No       | Specifies the field or combination of fields to group records by.                                                                                                                                         |
+| `by`      | `Array<UserScalarFieldEnum>` \| `string`                     | No       | Specifies the field or combination of fields to group records by.                                                                                                                                         |
 | `having`  | `UserScalarWhereWithAggregatesInput`                         | No       | Allows you to filter groups by an aggregate value - for example, only return groups _having_ an average age less than 50.                                                                                 |
-| `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 | `take`    | `number`                                                     | No       | Specifies how many objects should be returned in the list (as seen from the _beginning_ (positive value) or _end_ (negative value) **either** of the list **or** from the `cursor` position if mentioned) |
+| `skip`    | `number`                                                     | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                 |
 | `_count`  | `true` \| `UserCountAggregateInputType`                      | No       | Returns a count of matching records or non-`null` fields.                                                                                                                                                 |
 | `_avg`    | `UserAvgAggregateInputType`                                  | No       | Returns an average of all values of the specified field.                                                                                                                                                  |
-| `_sum`    | `UserSumAggregateInputType`                                  | No       | Returns the sume of all values of the specified field.                                                                                                                                                    |
+| `_sum`    | `UserSumAggregateInputType`                                  | No       | Returns the sum of all values of the specified field.                                                                                                                                                     |
 | `_min`    | `UserMinAggregateInputType`                                  | No       | Returns the smallest available value of the specified field.                                                                                                                                              |
 | `_max`    | `UserMaxAggregateInputType`                                  | No       | Returns the largest available value of the specified field.                                                                                                                                               |
-
-#### Reference
-
-`groupBy` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserGroupByArgs = {
-  where?: UserWhereInput
-  orderBy?: Enumerable<UserOrderByInput>
-  by: Array<UserScalarFieldEnum>
-  having?: UserScalarWhereWithAggregatesInput
-  take?: number
-  skip?: number
-  _count?: true | UserCountAggregateInputType
-  _avg?: UserAvgAggregateInputType
-  _sum?: UserSumAggregateInputType
-  _min?: UserMinAggregateInputType
-  _max?: UserMaxAggregateInputType
-}
-```
 
 #### Examples
 
@@ -1528,22 +1526,7 @@ const groupUsers = await prisma.user.groupBy({
 #### Remarks
 
 - You cannot combine `select` and `include` on the same level.
-- In [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later, you can [select a `_count` of relations](#select-a-_count-of-relations).
-
-#### Reference
-
-```ts file=index.d.ts
-export type UserSelect = {
-  id?: boolean
-  name?: boolean
-  email?: boolean
-  profileViews?: boolean
-  role?: boolean
-  coinflips?: boolean
-  posts?: boolean | PostFindManyArgs
-  _count?: boolean | UserCountOutputTypeArgs
-}
-```
+- In [3.0.1](https://github.com/prisma/prisma/releases/3.0.1) and later, you can [select a `_count` of relations](#select-a-_count-of-relations).
 
 #### Examples
 
@@ -1575,7 +1558,7 @@ const result = await prisma.user.findUnique({
 </cmdResult>
 </CodeWithResult>
 
-##### Select the `name` and `profileViews` fields of a multiple `User` records
+##### Select the `email` and `role` fields of a multiple `User` records
 
 <CodeWithResult>
 <cmd>
@@ -1771,20 +1754,11 @@ const selectNameEmailNotPosts = Prisma.validator<Prisma.UserSelect>()({
 
 ### <inlinecode>include</inlinecode>
 
-`include` defines which relations are included in the result that the Prisma Client returns. See: [Select fields and include relations](/concepts/components/prisma-client/select-fields) <span class="concept"></span>.
+`include` defines which relations are included in the result that Prisma Client returns. See: [Select fields and include relations](/concepts/components/prisma-client/select-fields) <span class="concept"></span>.
 
 #### Remarks
 
-- In [2.20.0](https://github.com/prisma/prisma/releases/2.20.0)P and later, you can [`include` a `_count` of relations](#include-a-_count-of-relations)
-
-#### Reference
-
-```ts
-export type UserInclude = {
-  posts?: boolean | PostFindManyArgs
-  _count?: boolean | UserCountOutputTypeArgs
-}
-```
+- In [3.0.1](https://github.com/prisma/prisma/releases/3.0.1) and later, you can [`include` a `_count` of relations](#include-a-_count-of-relations)
 
 #### Examples
 
@@ -1870,36 +1844,6 @@ const usersWithCount = await prisma.user.findMany({
 
 `where` defines one or more [filters](#filter-conditions-and-operators), and can be used to filter on record properties (like a user's email address) or related record properties (like a user's top 10 most recent post titles).
 
-#### Reference
-
-For queries like `findMany` and `updateMany` that return multiple records, `where` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserWhereInput = {
-  AND?: Enumerable<UserWhereInput>
-  OR?: Enumerable<UserWhereInput>
-  NOT?: Enumerable<UserWhereInput>
-  id?: IntFilter | number
-  name?: StringNullableFilter | string | null
-  email?: StringFilter | string
-  profileViews?: IntFilter | number
-  role?: EnumRoleFilter | Role
-  coinflips?: BoolNullableListFilter
-  posts?: PostListRelationFilter
-}
-```
-
-> `findFirst` is a `findMany` query with a `take: 1`, and also accepts `UserWhereInput`.
-
-For queries like `findUnique`, which returns a single record by ID or unique identifier, `where` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserWhereUniqueInput = {
-  id?: number
-  email?: string
-}
-```
-
 #### Examples
 
 ```ts
@@ -1940,12 +1884,14 @@ The following examples demonstrate how to use the [`validator`](/concepts/compon
 - `UserWhereUniqueInput` This type works by exposing any unique fields on the model. A field assigned `@id` is considered unique,
   as is one assigned `@unique`.
 
-  ```ts
-  // UserWhereUniqueInput
-  const whereEmailIsUnique = Prisma.validator<Prisma.UserWhereUniqueInput>()({
-    email: 'rich@boop.com',
-  })
-  ```
+  From version 4.5.0, this type exposes all fields on the model. This means that when you filter for a single record based on a unique field, you can check additional non-unique and unique fields at the same time. [Learn more](#filter-on-non-unique-fields-with-userwhereuniqueinput).
+
+```ts
+// UserWhereUniqueInput
+const whereEmailIsUnique = Prisma.validator<Prisma.UserWhereUniqueInput>()({
+  email: 'rich@boop.com',
+})
+```
 
 - `PostScalarWhereInput`
 
@@ -2030,71 +1976,13 @@ Sorts a list of records. See also: [Sorting](/concepts/components/prisma-client/
 Note:
 
 - This argument is optional.
-- It is for use on optional [scalar](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#scalar-fields) fields only. If you try to sort by nulls on a required or [relation](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#relation-fields) field, Prisma Client throws a [P2009 error](/reference/api-reference/error-reference#p2009).
+- It is for use on optional [scalar](/concepts/components/prisma-schema/data-model#scalar-fields) fields only. If you try to sort by nulls on a required or [relation](/concepts/components/prisma-schema/data-model#relation-fields) field, Prisma Client throws a [P2009 error](/reference/api-reference/error-reference#p2009).
 - It is available in version 4.1.0 and later, as a preview feature. See [sort with nulls first or last](/concepts/components/prisma-client/filtering-and-sorting#sort-with-null-records-first-or-last) for details of how to enable the feature.
 
 | Name    | Description                    |
 | ------- | ------------------------------ |
 | `first` | Sort with `null` values first. |
 | `last`  | Sort with `null` values last.  |
-
-#### Reference
-
-`orderBy` accepts the following input type:
-
-```ts file=index.d.ts
-export type UserOrderByInput = {
-  id?: SortOrder
-  name?: SortOrder | SortOrderInput
-  email?: SortOrder
-  profileViews?: SortOrder
-  role?: SortOrder
-  coinflips?: SortOrder
-  posts?: PostOrderByRelationAggregateInput
-  city?: SortOrder
-  country?: SortOrder
-  profile?: ExtendedProfileOrderByWithRelationAndSearchRelevanceInput
-  pets?: SortOrder
-  _relevance?: UserOrderByRelevanceInput
-}
-
-export type SortOrderInput = {
-  sort: SortOrder
-  nulls?: NullsOrder
-}
-```
-
-Related types:
-
-```ts
-export declare const SortOrder: {
-  asc: 'asc'
-  desc: 'desc'
-}
-
-export declare const NullsOrder: {
-  first: 'first'
-  last: 'last'
-}
-
-export type PostOrderByRelationAggregateInput = {
-  _count?: SortOrder
-}
-
-export type ExtendedProfileOrderByWithRelationAndSearchRelevanceInput = {
-  id?: SortOrder
-  userId?: SortOrder
-  bio?: SortOrder
-  User?: UserOrderByWithRelationAndSearchRelevanceInput
-  _relevance?: ExtendedProfileOrderByRelevanceInput
-}
-
-export type UserOrderByRelevanceInput = {
-  fields: Enumerable<UserOrderByRelevanceFieldEnum>
-  sort: SortOrder
-  search: string
-}
-```
 
 #### Examples
 
@@ -2152,7 +2040,7 @@ const posts = await prisma.post.findMany({
 
 <Admonition type="warning">
 
-This feature is available from version 3.5.0 onwards in PostgreSQL only. You'll need to use the `fullTextSearch` preview flag to enable this feature.
+This feature is available from version 3.5.0 onwards in PostgreSQL and MySQL only. You'll need to use the `fullTextSearch` preview flag to enable this feature.
 
 </Admonition>
 
@@ -2566,24 +2454,7 @@ The following examples demonstrate how to use the [`validator`](/concepts/compon
 
 ### <inlinecode>distinct</inlinecode>
 
-See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-client/aggregation-grouping-summarizing#select-distinct) <span class="concept"></span>
-
-#### Reference
-
-```ts file=index.d.ts
-distinct?: Enumerable<UserDistinctFieldEnum>
-```
-
-```ts
-export declare const UserDistinctFieldEnum: {
-  id: 'id'
-  name: 'name'
-  email: 'email'
-  profileViews: 'profileViews'
-  role: 'role'
-  coinflips: 'coinflips'
-}
-```
+Deduplicate a list of records from [`findMany`](#findmany) or [`findFirst`](#findfirst). See also: [Aggregation, grouping, and summarizing](/concepts/components/prisma-client/aggregation-grouping-summarizing#select-distinct) <span class="concept"></span>
 
 #### Examples
 
@@ -2751,7 +2622,7 @@ const user = await prisma.user.create({
 
 Because it's a one-to-many relation, you can also create several `Post` records at once by passing an array to `create`:
 
-```ts highlight=5;normal
+```ts highlight=5-12;normal
 const user = await prisma.user.create({
   data: {
     email: 'alice@prisma.io',
@@ -3035,7 +2906,7 @@ The following example:
 
 1. Creates a `Profile`
 2. Attempts to connect the profile to a `User` where the email address is `alice@prisma.io`
-3. Creates a new user if a user if a matching user does not exist
+3. Creates a new user if a matching user does not exist
 
 ```ts
 const user = await prisma.profile.create({
@@ -3135,7 +3006,7 @@ A nested `disconnect` query breaks the connection between a parent record and a 
 
 ```ts
 const user = await prisma.user.update({
-  where: { email: 'bob  @prisma.io' },
+  where: { email: 'bob@prisma.io' },
   data: {
     profile: {
       disconnect: true,
@@ -3356,6 +3227,15 @@ const result = await prisma.user.update({
 ```
 
 ## Filter conditions and operators
+
+<Admonition type="info">
+
+**Note:** The following examples show how to compare columns in separate tables.
+
+- From version 4.3.0, you can also use these operators to [compare columns in the same table, with the `<model>.fields` property](#compare-columns-in-the-same-table).
+- In versions before 4.3.0, you can [compare columns in the same table with raw queries](/guides/other/troubleshooting-orm/help-articles/comparing-columns-through-raw-queries).
+
+</Admonition>
 
 ### <inlinecode>equals</inlinecode>
 
@@ -3942,27 +3822,14 @@ Returns all records where **one or more** ("some") _related_ records match filte
 
 - You can use `some` without parameters to return all records with at least one relation
 
-#### Reference
-
-```ts file=index.d.ts
-export type PostFilter = {
-  every?: PostWhereInput | null
-|  some?: PostWhereInput | null
-  none?: PostWhereInput | null
-}
-```
-
 #### Examples
 
-##### Get all `User` records where _all_ posts are published and at least one related `Post` mentions `Prisma`
+##### Get all `User` records where _some_ posts mention `Prisma`
 
 ```ts
 const result = await prisma.user.findMany({
   where: {
     post: {
-      every: {
-        published: true
-      },
       some: {
         content: {
           contains: "Prisma"
@@ -3977,19 +3844,9 @@ const result = await prisma.user.findMany({
 
 Returns all records where **all** ("every") _related_ records match filtering criteria.
 
-#### Reference
-
-```ts file=index.d.ts
-export type PostFilter = {
-|  every?: PostWhereInput | null
-  some?: PostWhereInput | null
-  none?: PostWhereInput | null
-}
-```
-
 #### Examples
 
-##### Get all `User` records where _all_ posts are published and a least one related `Post` mentions `Prisma`
+##### Get all `User` records where _all_ posts are published
 
 ```ts
 const result = await prisma.user.findMany({
@@ -3998,11 +3855,6 @@ const result = await prisma.user.findMany({
       every: {
         published: true
       },
-      some: {
-        content: {
-          contains: "Prisma"
-        }
-      }
     }
   }
 }
@@ -4015,16 +3867,6 @@ Returns all records where **zero** _related_ records match filtering criteria.
 #### Remarks
 
 - You can use `none` without parameters to [return all records with no relations](#get-all-user-records-with-zero-posts)
-
-#### Reference
-
-```ts file=index.d.ts
-export type PostFilter = {
-  every?: PostWhereInput | null
-  some?: PostWhereInput | null
-|  none?: PostWhereInput | null
-}
-```
 
 #### Examples
 
@@ -4058,15 +3900,6 @@ const result = await prisma.user.findMany({
 
 Returns all records where related record matches filtering criteria (for example, user's name `is` Bob).
 
-#### Reference
-
-```ts file=index.d.ts highlight=2;normal
-export type UserRelationFilter = {
-  is?: UserWhereInput | null
-  isNot?: UserWhereInput | null
-}
-```
-
 #### Examples
 
 ##### Get all `Post` records where user's name is `"Bob"`
@@ -4087,15 +3920,6 @@ const result = await prisma.post.findMany({
 
 Returns all records where related record matches filtering criteria (for example, user's name `isNot` Bob).
 
-#### Reference
-
-```ts file=index.d.ts highlight=3;normal
-export type UserRelationFilter = {
-  is?: UserWhereInput | null
-  isNot?: UserWhereInput | null
-}
-```
-
 #### Examples
 
 ##### Get all `Post` records where user's name is NOT `"Bob"`
@@ -4113,15 +3937,6 @@ const result = await prisma.post.findMany({
 ```
 
 ## Scalar list methods
-
-### Reference
-
-```ts
-export type PostUpdatetagsInput = {
-  set?: Enumerable<string>
-  push?: string
-}
-```
 
 ### <inlinecode>set</inlinecode>
 
@@ -4142,15 +3957,14 @@ Use `set` to overwrite the value of a scalar list field.
 ```ts
 const setTags = await prisma.post.update({
   where: {
-    id: 9
+    id: 9,
   },
   data: {
-      tags: {
-        set: ["computing", "books"]
-      }
-    }
-  })
-}
+    tags: {
+      set: ['computing', 'books'],
+    },
+  },
+})
 ```
 
 ##### Set `tags` to a list of values _without_ using the `set` keyword
@@ -4158,13 +3972,12 @@ const setTags = await prisma.post.update({
 ```ts
 const setTags = await prisma.post.update({
   where: {
-    id: 9
+    id: 9,
   },
   data: {
-      tags: ["computing", "books"]
-    }
-  })
-}
+    tags: ['computing', 'books'],
+  },
+})
 ```
 
 #### Set the value of `tags` to a single string value
@@ -4184,12 +3997,12 @@ const setTags = await prisma.post.update({
 
 ### <inlinecode>push</inlinecode>
 
-`push` is available in version [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later. Use `push` to add _one_ value to a scalar list field.
+`push` is available in version [2.20.0](https://github.com/prisma/prisma/releases/2.20.0) and later. Use `push` to add _one_ value or _multiple_ values to a scalar list field.
 
 #### Remarks
 
 - Available for PostgreSQL and MongoDB only.
-- You cannot push a list of values - only a single value.
+- You can push a list of values or only a single value.
 
 #### Examples
 
@@ -4203,6 +4016,19 @@ const addTag = await prisma.post.update({
   data: {
     tags: {
       push: 'computing',
+    },
+  },
+})
+```
+
+```ts
+const addTag = await prisma.post.update({
+  where: {
+    id: 9,
+  },
+  data: {
+    tags: {
+      push: ['computing', 'genetics'],
     },
   },
 })
@@ -4226,15 +4052,14 @@ Use `unset` to unset the value of a scalar list. Unlike `set: null`, `unset` rem
 ```ts
 const setTags = await prisma.post.update({
   where: {
-    id: 9
+    id: 9,
   },
   data: {
-      tags: {
-        unset: true,
-      }
-    }
-  })
-}
+    tags: {
+      unset: true,
+    },
+  },
+})
 ```
 
 ## Scalar list filters
@@ -4255,35 +4080,13 @@ Available for:
 
 - Scalar list / array filters [ignore `NULL` values](/concepts/components/prisma-client/working-with-fields/working-with-scalar-lists-arrays#null-values-in-arrays) <span class="concept"></span>. Using `isEmpty` or `NOT` does not return records with `NULL` value lists / arrays, and `{ equals: null }` results in an error.
 
-### Reference
-
-```ts file=index.d.ts
-export type StringNullableListFilter = {
-  equals?: Enumerable<string> | null
-  has?: string | null
-  hasEvery?: Enumerable<string>
-  hasSome?: Enumerable<string>
-  isEmpty?: boolean
-}
-```
-
-```ts file=index.d.ts
-export type BoolNullableListFilter = {
-  equals?: Enumerable<boolean> | null
-  has?: boolean | null
-  hasEvery?: Enumerable<boolean>
-  hasSome?: Enumerable<boolean>
-  isEmpty?: boolean
-}
-```
-
 ### <inlinecode>has</inlinecode>
 
 The given value exists in the list.
 
 #### Examples
 
-The following query returns all `Post` records where the `tags` list includes `"database"`:
+The following query returns all `Post` records where the `tags` list includes `"databases"`:
 
 ```ts
 const posts = await client.post.findMany({
@@ -4295,7 +4098,7 @@ const posts = await client.post.findMany({
 })
 ```
 
-The following query returns all `Post` records where the `tags` list **does not** include `"database"`:
+The following query returns all `Post` records where the `tags` list **does not** include `"databases"`:
 
 ```ts
 const posts = await client.post.findMany({
@@ -4315,7 +4118,7 @@ Every value exists in the list.
 
 #### Examples
 
-The following query returns all `Post` records where the `tags` list includes _at least_ `"database"` _and_ `"typescript"`:
+The following query returns all `Post` records where the `tags` list includes _at least_ `"databases"` _and_ `"typescript"`:
 
 ```ts
 const posts = await prisma.post.findMany({
@@ -4333,7 +4136,7 @@ At least one value exists in the list.
 
 #### Examples
 
-The following query returns all `Post` records where the `tags` list `"database"` _or_ `"typescript"`:
+The following query returns all `Post` records where the `tags` list includes `"databases"` _or_ `"typescript"`:
 
 ```ts
 const posts = await prisma.post.findMany({
@@ -4394,7 +4197,7 @@ The list matches the given value exactly.
 
 #### Examples
 
-The following query returns all `Post` records where the `tags` list include `"database"` and `"typescript"` only:
+The following query returns all `Post` records where the `tags` list includes `"databases"` and `"typescript"` only:
 
 ```ts
 const posts = await prisma.post.findMany({
@@ -4423,13 +4226,12 @@ Use `set` to overwrite the value of a composite type.
 #### Remarks
 
 - The `set` keyword is optional - you can set the value directly:
-
-```ts
-photos: [
-  { height: 100, width: 200, url: '1.jpg' },
-  { height: 100, width: 200, url: '2.jpg' },
-]
-```
+  ```ts
+  photos: [
+    { height: 100, width: 200, url: '1.jpg' },
+    { height: 100, width: 200, url: '2.jpg' },
+  ]
+  ```
 
 #### Examples
 
@@ -4586,26 +4388,6 @@ Available for MongoDB only in Prisma `3.11.0` and later.
 
 Composite type filters allow you to filter the contents of [composite types](/concepts/components/prisma-client/composite-types).
 
-### Reference
-
-```ts file=index.d.ts
-export type AddressCompositeFilter = {
-  equals?: AddressObjectEqualityInput
-  is?: AddressWhereInput
-  isNot?: AddressWhereInput
-}
-```
-
-```ts file=index.d.ts
-export type PhotoCompositeListFilter = {
-  equals?: Enumerable<PhotoObjectEqualityInput>
-  every?: PhotoWhereInput
-  some?: PhotoWhereInput
-  none?: PhotoWhereInput
-  isEmpty?: boolean
-}
-```
-
 ### <inlinecode>equals</inlinecode>
 
 Use `equals` to filter results by matching a composite type or a list of composite types. Requires all required fields of the composite type to match.
@@ -4712,17 +4494,17 @@ const product = prisma.product.findMany({
 
 ### <inlinecode>every</inlinecode>
 
-Use `every`to filter for lists of composite types where every item in the list matches the condition
+Use `every` to filter for lists of composite types where every item in the list matches the condition
 
 #### Examples
 
-##### Find the first product where every photo has a <inlinecode>height</inlinecode> of <inlinecode>™200™</inlinecode>
+##### Find the first product where every photo has a <inlinecode>height</inlinecode> of <inlinecode>200</inlinecode>
 
 ```ts
 const product = prisma.product.findFirst({
   where: {
     photos: {
-      some: {
+      every: {
         { height: 200 },
       }
     }
@@ -4736,7 +4518,7 @@ Use `some` to filter for lists of composite types where one or more items in the
 
 #### Examples
 
-##### Find the first product where one or more photos have a <inlinecode>url</inlinecode> of <inlinecode>™2.jpg™</inlinecode>
+##### Find the first product where one or more photos have a <inlinecode>url</inlinecode> of <inlinecode>2.jpg</inlinecode>
 
 ```ts
 const product = prisma.product.findFirst({
@@ -4756,7 +4538,7 @@ Use `none` to filter for lists of composite types where no items in the list mat
 
 #### Examples
 
-##### Find the first product where no photos have a <inlinecode>url</inlinecode> of <inlinecode>™2.jpg™</inlinecode>
+##### Find the first product where no photos have a <inlinecode>url</inlinecode> of <inlinecode>2.jpg</inlinecode>
 
 ```ts
 const product = prisma.product.findFirst({
@@ -4805,18 +4587,6 @@ The value _should_ be `23`, but the two clients did not read and write to the `p
 | `divide`    | Divides the current value by `n`.                             |
 | `set`       | Sets the current field value. Identical to `{ myField : n }`. |
 
-### Reference
-
-```ts file=index.d.ts
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-```
-
 ### Remarks
 
 - You can only perform **one** atomic update per field, per query.
@@ -4861,7 +4631,7 @@ const updatePosts = await prisma.post.updateMany({
 })
 ```
 
-## <inlinecode>JSON</inlinecode> filters
+## <inlinecode>Json</inlinecode> filters
 
 For use cases and advanced examples, see: [Working with `Json` fields](/concepts/components/prisma-client/working-with-fields/working-with-json-fields) <span class="concepts"></span>
 
@@ -4895,7 +4665,7 @@ The examples in this section assumes that the value of the `pet` field is:
 
 ### Remarks
 
-- The implementation of JSON filtering [differs between database connectors](/concepts/components/prisma-client/working-with-fields/working-with-json-fields)
+- The implementation of `Json` filtering [differs between database connectors](/concepts/components/prisma-client/working-with-fields/working-with-json-fields)
 - Filtering is case sensitive in PostgreSQL and does not yet support `mode`
 
 ### <inlinecode>path</inlinecode>
@@ -5126,7 +4896,7 @@ const getUsers = await prisma.user.findMany({
 
 <Admonition type="info">
 
-**Note**: In PostgresSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
+**Note**: In PostgreSQL, the value of `array_contains` must be an array and not a string, even if the array only contains a single value.
 
 </Admonition>
 
@@ -5192,17 +4962,11 @@ const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: ['sanctuaries'],
-      array_starts_with: ['RSPCA'],
+      array_starts_with: 'RSPCA',
     },
   },
 })
 ```
-
-<Admonition type="info">
-
-**Note**: In PostgresSQL, the value of `array_starts_with` must be an array and not a string, even if the array only contains a single value.
-
-</Admonition>
 
 </tab>
 
@@ -5234,17 +4998,11 @@ const getUsers = await prisma.user.findMany({
   where: {
     pets: {
       path: ['sanctuaries'],
-      array_ends_with: ['Alley Cat Allies'],
+      array_ends_with: 'Alley Cat Allies',
     },
   },
 })
 ```
-
-<Admonition type="info">
-
-**Note**: In PostgresSQL, the value of `array_ends_with` must be an array and not a string, even if the array only contains a single value.
-
-</Admonition>
 
 </tab>
 <tab>
@@ -5265,9 +5023,20 @@ const getUsers = await prisma.user.findMany({
 
 ## Client methods
 
-Client-level methods are prefixed by `$`.
+**Note:** Client-level methods are prefixed by `$`.
 
-<!-- prettier-ignore -->
+### Remarks
+
+- `$on` and `$use` client methods do not exist on extended client instances which are extended using [`$extends`](#extends)<span class="api"></span>
+
+<Admonition type="warning">
+
+In [extended clients](/concepts/components/prisma-client/client-extensions), Client methods do not necessarily exist. If you are extending your client, make sure to check for existence before using Client methods like `$transaction` or `$connect`.
+
+In addition, if you are using `$on` or `$use`, you will need to use these client methods before extending your client as these methods do not exist on extended clients. For `$use` specifically we recommend transitioning [to use query extensions](/concepts/components/prisma-client/client-extensions/query).
+
+</Admonition>
+
 ### <inlinecode>$disconnect()</inlinecode>
 
 The `$disconnect()` method closes the database connections that were established when `$connect` was called and stops the process that was running Prisma's query engine. See [Connection management](/concepts/components/prisma-client/working-with-prismaclient/connection-management) for an overview of `$connect()` and `$disconnect()`.
@@ -5276,13 +5045,6 @@ The `$disconnect()` method closes the database connections that were established
 
 - `$disconnect()` returns a `Promise`, so you should call it inside an `async` function with the `await` keyword.
 
-#### Reference
-
-```ts
-$disconnect(): Promise<void>
-```
-
-<!-- prettier-ignore -->
 ### <inlinecode>$connect()</inlinecode>
 
 The `$connect()` method establishes a physical connection to the database via Prisma's query engine. See [Connection management](/concepts/components/prisma-client/working-with-prismaclient/connection-management) for an overview of `$connect()` and `$disconnect()`.
@@ -5291,19 +5053,23 @@ The `$connect()` method establishes a physical connection to the database via Pr
 
 - `$connect()` returns a `Promise`, so you should call it inside an `async` function with the `await` keyword.
 
-#### Reference
-
-```ts
-$connect(): Promise<void>
-```
-
-<!-- prettier-ignore -->
 ### <inlinecode>$on()</inlinecode>
 
-The `$on()` method allows you to subscribe to events. With those you can subscribe to [logging events](#log) or the [exit hook](/concepts/components/prisma-client/working-with-prismaclient/connection-management#exit-hooks).
+<Admonition type="warning">
 
-<!-- prettier-ignore -->
+`$on` is not available in [extended clients](/concepts/components/prisma-client/client-extensions). Please either migrate to client extensions or use the `$on` method prior to extending your client.
+
+</Admonition>
+
+The `$on()` method allows you to subscribe to [logging events](#log) or the [exit hook](/concepts/components/prisma-client/working-with-prismaclient/connection-management#exit-hooks).
+
 ### <inlinecode>$use()</inlinecode>
+
+<Admonition type="warning">
+
+`$use` is not available in [extended clients](/concepts/components/prisma-client/client-extensions). Please [either migrate to query extensions](/concepts/components/prisma-client/client-extensions/query) or use the `$use` method prior to extending your client.
+
+</Admonition>
 
 The `$use()` method adds [middleware](/concepts/components/prisma-client/middleware) <span class="concept"></span>:
 
@@ -5350,52 +5116,26 @@ Example parameter values:
 }
 ```
 
-#### Reference
-
-`params` accepts the following type:
-
-```ts file=index.d.ts
-export type MiddlewareParams = {
-  model?: ModelName
-  action: PrismaAction
-  args: any
-  dataPath: string[]
-  runInTransaction: boolean
-}
-
-export declare const ModelName: {
-  User: 'User'
-  Post: 'Post'
-}
-
-export declare type ModelName = typeof ModelName[keyof typeof ModelName]
-```
-
 #### Examples
 
-See [middleware examples](/concepts/components/prisma-client/middleware#examples) <span class="concept"></span>.
+See [middleware examples](/concepts/components/prisma-client/middleware#samples) <span class="concept"></span>.
 
-<!-- prettier-ignore -->
 ### <inlinecode>$executeRaw()</inlinecode>
 
 See: [Raw database access (`$executeRaw()`)](/concepts/components/prisma-client/raw-database-access#executeraw).
 
-<!-- prettier-ignore -->
 ### <inlinecode>$queryRaw()</inlinecode>
 
 See: [Raw database access (`$queryRaw()`)](/concepts/components/prisma-client/raw-database-access#queryraw).
 
-<!-- prettier-ignore -->
 ### <inlinecode>$runCommandRaw()</inlinecode>
 
 See: [Raw database access (`$runCommandRaw()`)](/concepts/components/prisma-client/raw-database-access#runcommandraw).
 
-<!-- prettier-ignore -->
 ### <inlinecode>$transaction()</inlinecode>
 
 See: [Transactions](/concepts/components/prisma-client/transactions).
 
-<!-- prettier-ignore -->
 ### <inlinecode>$metrics</inlinecode>
 
 Prisma metrics give you a detailed insight into how Prisma Client interacts with your database. You can use this insight to help diagnose performance issues with your application. Learn more: [Metrics](/concepts/components/prisma-client/metrics).
@@ -5405,6 +5145,17 @@ Prisma metrics has the following methods:
 - `$metrics.json()`: [Retrieves Prisma metrics in JSON format](/concepts/components/prisma-client/metrics#retrieve-metrics-in-json-format).
 - `$metrics.prometheus()`: [Retrieves Prisma metrics in Prometheus format](/concepts/components/prisma-client/metrics#retrieve-metrics-in-prometheus-format).
 
+### <inlinecode>$extends</inlinecode>
+
+With `$extends`, you can create and use Prisma Client extensions to add functionality to Prisma Client in the following ways:
+
+- `model`: add custom methods to your models
+- `client`: add custom methods to your client
+- `query`: create custom Prisma Client queries
+- `result`: add custom fields to your query results
+
+Learn more: [Prisma Client extensions](/concepts/components/prisma-client/client-extensions).
+
 ## Utility types
 
 Utility types are helper functions and types that live on the Prisma namespace. They are useful for keeping your application type safe.
@@ -5413,40 +5164,39 @@ Utility types are helper functions and types that live on the Prisma namespace. 
 
 The `validator` helps you create re-usable query parameters based on your schema models while making sure that the objects you create are valid. See also: [Using `Prisma.validator`](/concepts/components/prisma-client/advanced-type-safety/prisma-validator) <span class="concept"></span>
 
-#### Reference
+There are two ways you can use the `validator`:
+
+#### Using generated Prisma Client types
+
+Using types provides a type-level approach to validate data:
 
 ```ts
-export function validator<V>(): <S>(select: Exact<S, V>) => S
+Prisma.validator<GeneratedType>({ args })
+```
 
-type Exact<A, W = unknown> = W extends unknown
-  ? A extends Narrowable
-    ? Cast<A, W>
-    : Cast<
-        { [K in keyof A]: K extends keyof W ? Exact<A[K], W[K]> : never },
-        { [K in keyof W]: K extends keyof A ? Exact<A[K], W[K]> : W[K] }
-      >
-  : never
+#### Using a "selector"
 
-type Narrowable = string | number | boolean | bigint
+When using the selector pattern, you use an existing Prisma Client instance to create a validator. This pattern allows you to select the model, operation, and query option to validate against.
 
-type Cast<A, B> = A extends B ? A : B
+You can also use an instance of Prisma Client that has been extended using a [Prisma Client extension](/concepts/components/prisma-client/client-extensions)<span class="concept"></span>.
 
-export const type: unique symbol
+```ts
+Prisma.validator(
+  PrismaClientInstance,
+  '<model>',
+  '<operation>',
+  '<query option>'
+)({ args })
 ```
 
 #### Examples
 
-The following example shows how you can extract a `create` operation into a custom function for re-use and accepting form data:
+The following example shows how you can extract and validate the input for the `create` operation you can reuse within your app:
 
 ```ts
 import { Prisma } from '@prisma/client'
 
-const createUserAndPost = (
-  name: string,
-  email: string,
-  postTitle: string,
-  profileBio: string
-) => {
+const validateUserAndPostInput = (name, email, postTitle) => {
   return Prisma.validator<Prisma.UserCreateInput>()({
     name,
     email,
@@ -5455,11 +5205,328 @@ const createUserAndPost = (
         title: postTitle,
       },
     },
-    profile: {
+  })
+}
+```
+
+Here is an alternative syntax for the same operation:
+
+```ts
+import { Prisma } from '@prisma/client'
+import prisma from './prisma'
+
+const validateUserAndPostInput = (name, email, postTitle) => {
+  return Prisma.validator(
+    prisma,
+    'user',
+    'create',
+    'data'
+  )({
+    name,
+    email,
+    posts: {
       create: {
-        bio: profileBio,
+        title: postTitle,
       },
     },
   })
 }
 ```
+
+## Compare columns in the same table
+
+You can compare columns in the same table directly, for non-unique filters.
+
+This feature was moved to general availability in version 5.0.0 and was available via the `fieldReference` Preview feature from Prisma versions 4.3.0 to 4.16.2.
+
+<Admonition type="info">
+
+In the following situations, you must [use raw queries to compare columns in the same table](/guides/other/troubleshooting-orm/help-articles/comparing-columns-through-raw-queries):
+
+- If you use a version earlier than 4.3.0
+- If you want to use a unique filter, such as [`findUnique`](#findunique) or [`findUniqueOrThrow`](#finduniqueorthrow)
+- If you want to compare a field with a [unique constraint](/concepts/components/prisma-schema/data-model#defining-a-unique-field)
+- If you want to use one of the following operators to compare a [JSON field](/concepts/components/prisma-client/working-with-fields/working-with-json-fields) in MySQL or MariaDB with another field: [`gt`](#gt), [`gte`](#gte), [`lt`](#lt), or [`lte`](#lte). Note that you can use these operators to compare the JSON field with a scalar value. This limitation applies only if you try to compare a JSON field with another field.
+
+</Admonition>
+
+To compare columns in the same table, use the `<model>.fields` property. In the following example, the query returns all records where the value in the `prisma.product.quantity` field is less than or equal to the value in the `prisma.product.warnQuantity` field.
+
+```ts
+prisma.product.findMany({
+  where: { quantity: { lte: prisma.product.fields.warnQuantity } },
+})
+```
+
+<Admonition type="info">
+
+`fields` is a special property of every model. It contains the list of fields for that model.
+
+</Admonition>
+
+### Considerations
+
+#### Fields must be of the same type
+
+You can only make comparisons on fields of the same type. For example, the following causes an error:
+
+```ts
+await prisma.order.findMany({
+  where: {
+    id: { equals: prisma.order.fields.due },
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Type error: id is a string, while amountDue is an integer
+  },
+})
+```
+
+#### Fields must be in the same model
+
+You can only make comparisons with the `fields` property on fields in the same model. The following example does not work:
+
+```ts
+await prisma.order.findMany({
+  where: {
+    id: { equals: prisma.user.fields.name },
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Type error: name is a field on the User model, not Order
+  },
+})
+```
+
+However, you can compare fields in separate models with [standard queries](#model-queries).
+
+#### In <inlinecode>groupBy</inlinecode> model queries, put your referenced fields in the <inlinecode>by</inlinecode> argument
+
+If you use the [groupBy](#groupby) model query with the `having` option, then you must put your referenced fields in the `by` argument.
+
+The following example works:
+
+```ts
+prisma.user.groupBy({
+  by: ['id', 'name'],
+  having: { id: { equals: prisma.user.fields.name } },
+})
+```
+
+The following example does not work, because `name` is not in the `by` argument:
+
+```ts
+prisma.user.groupBy({
+  by: ['id'],
+  having: { id: { equals: prisma.user.fields.name } },
+  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  // name is not in the 'by' argument
+})
+```
+
+#### Search for fields in scalar lists
+
+If your data source supports scalar lists (for example in PostgreSQL), then you can search for all records where a specific field is in a list of fields. To do so, reference the scalar list with the [`in`](#in) and [`notIn`](#notin) filters. For example:
+
+```ts
+await prisma.user.findMany({
+  where: {
+    // find all users where 'name' is in a list of tags
+    name: { in: prisma.user.fields.tags },
+  },
+})
+```
+
+## Filter on non-unique fields with <inlinecode>UserWhereUniqueInput</inlinecode>
+
+From version 5.0.0, the generated type `UserWhereUniqueInput` on [`where`](#where) exposes all fields on the model, not just unique fields.
+This was available under the [`extendedWhereUnique` Preview flag](/concepts/components/preview-features/client-preview-features#preview-features-promoted-to-general-availability) between versions 4.5.0 to 4.16.2
+
+You must specify at least one unique field in your `where` statement [outside of boolean operators](#boolean-operators-with-userwhereuniqueinput), and you can specify any number of additional unique and non-unique fields. You can use this to add filters to any operation that returns a single record. For example, you can use this feature for the following:
+
+- [Optimistic concurrency control on updates](#optimistic-concurrency-control-on-updates)
+- [Permission checks](#permission-checks)
+- [Soft deletes](#soft-deletes)
+
+From version 4.6.0, you can use this feature to filter on optional [one-to-one nested reads](/concepts/components/prisma-client/relation-queries#nested-reads).
+
+### Optimistic concurrency control on updates
+
+You can filter on non-unique fields to perform [optimistic concurrency control](/guides/performance-and-optimization/prisma-client-transactions-guide#optimistic-concurrency-control) on `update` operations.
+
+To perform optimistic concurrency control, we recommend that you use a `version` field to check whether the data in a record or related record has changed while your code executes. Before version 4.5.0, you could not evaluate the `version` field in an `update` operation, because the field is non-unique. From version 4.5.0, you can evaluate the `version` field.
+
+In the following example, `updateOne` and `updateTwo` first read the same record and then attempt to update it. The database only executes these updates if the value in `version` is the same as the value when it did the initial read. When the database executes the first of these updates (which might be `updateOne` or `updateTwo`, depending on timing), it increments the value in `version`. This means that the database does not execute the second update because the value in `version` has changed.
+
+```prisma
+model User {
+  id      Int    @id @default(autoincrement())
+  email   String @unique
+  city    String
+  version Int
+}
+```
+
+```ts
+function updateOne() {
+  const user = await prisma.user.findUnique({ id: 1 })
+
+  await prisma.user.update({
+    where: { id: user.id, version: user.version },
+    data: { city: 'Berlin', version: { increment: 1 } },
+  })
+}
+
+function updateTwo() {
+  const user = await prisma.user.findUnique({ id: 1 })
+
+  await prisma.user.update({
+    where: { id: user.id, version: user.version },
+    data: { city: 'New York', version: { increment: 1 } },
+  })
+}
+
+function main() {
+  await Promise.allSettled([updateOne(), updateTwo()])
+}
+```
+
+### Permission checks
+
+You can filter on non-unique fields to check permissions during an update.
+
+In the following example, a user wants to update a post title. The `where` statement checks the value in `authorId` to confirm that the user is the author of the post. The application only updates the post title if the user is the post author.
+
+```ts
+await prisma.post.update({
+  where: { id: 1, authorId: 1 },
+  data: { title: 'Updated post title' },
+})
+```
+
+### Soft deletes
+
+You can filter on non-unique fields to handle soft deletes.
+
+In the following example, we do not want to return a post if it is soft-deleted. The operation only returns the post if the value in `isDeleted` is `false`.
+
+```ts
+prisma.Post.findUnique({ where: { id: postId, isDeleted: false } })
+```
+
+### <inlinecode>UserWhereUniqueInput</inlinecode> considerations
+
+#### Boolean operators with <inlinecode>UserWhereUniqueInput</inlinecode>
+
+With `UserWhereUniqueInput`, you must specify at least one unique field outside of the boolean operators `AND`, `OR`, `NOT`. You can still use these boolean operators in conjunction with any other unique fields or non-unique fields in your filter.
+
+In the following example, we test `id`, a unique field, in conjunction with `email`. This is valid.
+
+```ts
+await prisma.user.update({
+  where: { id: 1, OR: [{ email: "bob@prisma.io" }, { email: "alice@prisma.io" }] },
+        // ^^^ Valid: the expression specifies a unique field (`id`) outside of any boolean operators
+  data: { ... }
+})
+
+// SQL equivalent:
+// WHERE id = 1 AND (email = "bob@prisma.io" OR email = "alice@prisma.io")
+```
+
+The following example is not valid, because there is no unique field outside of any boolean operators:
+
+```ts
+await prisma.user.update({
+  where: { OR: [{ email: "bob@prisma.io" }, { email: "alice@prisma.io" }] },
+        // ^^^ Invalid: the expressions does not contain a unique field outside of boolean operators
+  data: { ... }
+})
+```
+
+#### One-to-one relations
+
+From version 4.5.0, you can filter on non-unique fields in the following operations on [one-to-one relations](/concepts/components/prisma-schema/relations/one-to-one-relations):
+
+- Nested update
+- Nested upsert
+- Nested disconnect
+- Nested delete
+
+Prisma Client automatically uses a unique filter to select the appropriate related record. As a result, you do not need to specify a unique filter in your `where` statement with a `WhereUniqueInput` [generated type](#generated-types-for-where). Instead, the `where` statement has a `WhereInput` generated type. You can use this to filter without the restrictions of `WhereUniqueInput`.
+
+##### Nested update example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      // Before Prisma version 4.5.0
+      update: { field: "updated" }
+      // From Prisma version 4.5.0, you can also do the following:
+      update: { where: { /*WhereInput*/ }, data: { field: "updated" } } }
+    }
+  }
+})
+```
+
+##### Nested upsert example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      upsert: {
+        where: { /* WhereInput */ } // new argument from Prisma 4.5.0
+        create: { /* CreateInput */ },
+        update: { /* CreateInput */ },
+      }
+    }
+  }
+})
+```
+
+##### Nested disconnect example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      // Before Prisma version 4.5.0
+      disconnect: true
+      // From Prisma version 4.5.0, you can also do the following:
+      disconnect: { /* WhereInput */ }
+    }
+  }
+})
+```
+
+##### Nested delete example
+
+```ts
+await prisma.user.update({
+  where: { id: 1, },
+  data: {
+    to_one: {
+      // Before Prisma version 4.5.0
+      delete: true
+      // From Prisma version 4.5.0, you can also do the following:
+      delete: { /* WhereInput */ }
+    }
+  }
+})
+```
+
+## <inlinecode>PrismaPromise</inlinecode> behavior
+
+All Prisma Client queries return an instance of `PrismaPromise`. This is a ["thenable"](https://masteringjs.io/tutorials/fundamentals/thenable), meaning a `PrismaPromise` only executes when you call `await` or `.then()` or `.catch()`. This behavior is different from a regular JavaScript [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), which starts executing immediately.
+
+For example:
+
+```ts
+const findPostOperation = prisma.post.findMany({}) // Query not yet executed
+
+findPostOperation.then() // Prisma Client now executes the query
+// or
+await findPostOperation // Prisma Client now executes the query
+```
+
+When using the [`$transaction` API](/concepts/components/prisma-client/transactions#the-transaction-api), this behavior makes it possible for Prisma Client to pass all the queries on to the query engine as a single transaction.

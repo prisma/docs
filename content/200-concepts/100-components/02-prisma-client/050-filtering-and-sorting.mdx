@@ -1,19 +1,25 @@
 ---
-title: 'Filtering and sorting'
-metaTitle: 'Filtering and sorting (Concepts)'
-metaDescription: 'Use the Prisma Client API to filter records by any combination of fields or related record fields, and sort the results.'
-tocDepth: 2
+title: 'Filtering and Sorting'
+metaTitle: 'Filtering and Sorting (Concepts)'
+metaDescription: 'Use Prisma Client API to filter records by any combination of fields or related record fields, and/or sort query results.'
+tocDepth: 3
 ---
 
 <TopBlock>
 
-Prisma Client supports filtering and sorting with the `where` and `orderBy` query options respectively.
+Prisma Client supports [filtering](#filtering) with the `where` query option, and [sorting](#sorting) with the `orderBy` query option.
 
 </TopBlock>
 
 ## Filtering
 
 Prisma Client allows you to filter records on any combination of model fields, [including related models](#filter-on-relations), and supports a variety of [filter conditions](#filter-conditions-and-operators).
+
+<Admonition type="warning">
+
+Some filter conditions use the SQL operators `LIKE` and `ILIKE` which may cause unexpected behavior in your queries. Please refer to [our filtering FAQs](#filtering-faqs) for more information.
+
+</Admonition>
 
 The following query:
 
@@ -81,11 +87,11 @@ const result = await prisma.user.findMany({
 
 ### Filter conditions and operators
 
-Refer to the Prisma Client reference documentation for [a full list of operators](/reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span>, such as `startsWith` and `contains`.
+Refer to Prisma Client's reference documentation for [a full list of operators](/reference/api-reference/prisma-client-reference#filter-conditions-and-operators) <span class="api"></span>, such as `startsWith` and `contains`.
 
 #### Combining operators
 
-You can use operators (such as [`NOT`](/reference/api-reference/prisma-client-reference#not) <span class="api"></span> and [`OR`](/reference/api-reference/prisma-client-reference#or) <span class="api"></span>) to filter by a combination of conditions. The following query returns all users with an `email` that ends in `"prisma.io"` or `"gmail.com"`, but not `"hotmail.com"`:
+You can use operators (such as [`NOT`](/reference/api-reference/prisma-client-reference#not-1) <span class="api"></span> and [`OR`](/reference/api-reference/prisma-client-reference#or) <span class="api"></span>) to filter by a combination of conditions. The following query returns all users with an `email` that ends in `"prisma.io"` or `"gmail.com"`, but not `"hotmail.com"`:
 
 <CodeWithResult>
 <cmd>
@@ -122,6 +128,30 @@ const result = await prisma.user.findMany({
 
 </cmdResult>
 </CodeWithResult>
+
+### Filter on null fields
+
+The following query returns all posts whose `content` field is `null`:
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    content: null,
+  },
+})
+```
+
+### Filter for non-null fields
+
+The following query returns all posts whose `content` field is **not** `null`:
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    content: { not: null },
+  },
+})
+```
 
 ### Filter on relations
 
@@ -209,6 +239,40 @@ const users = await prisma.user.findMany({
 ```
 
 See also: [Case sensitivity](case-sensitivity)
+
+### Filtering FAQs
+
+#### How does filtering work at the database level?
+
+For MySQL and PostgreSQL, Prisma Client utilizes the [`LIKE`](https://www.w3schools.com/sql/sql_like.asp) (and [`ILIKE`](https://www.postgresql.org/docs/current/functions-matching.html#FUNCTIONS-LIKE)) operator to search for a given pattern. The operators have built-in pattern matching using symbols unique to `LIKE`. The pattern-matching symbols include `%` for zero or more characters (similar to `*` in other regex implementations) and `_` for one character (similar to `.`)
+
+To match the literal characters, `%` or `_`, make sure you escape those characters. For example:
+
+<!-- prettier-ignore-start -->
+```ts
+const users = await prisma.user.findMany({
+  where: {
+    name: {
+      startsWith: '_benny',
+    },
+  },
+})
+```
+<!-- prettier-ignore-end -->
+
+The above query will match any user whose name starts with a character followed by `benny` such as `7benny` or `&benny`. If you instead wanted to find any user whose name starts with the literal string `_benny`, you could do:
+
+<!-- prettier-ignore-start -->
+```ts highlight=4
+const users = await prisma.user.findMany({
+  where: {
+    name: {
+      startsWith: '\\_benny', // note that the `_` character is escaped, preceding `\` with `\` when included in a string
+    },
+  },
+})
+```
+<!-- prettier-ignore-end -->
 
 ## Sorting
 
@@ -323,7 +387,7 @@ const getActiveUsers = await prisma.user.findMany({
 
 ### Sort by relevance (PostgreSQL)
 
-In [3.5.0](https://github.com/prisma/prisma/releases/3.5.0) and later, when using PostgresSQL you can sort records by relevance to the query using the `_relevance` keyword. This uses the relevance ranking functions from PostgreSQL's full text search feature, which are explained further in [the PostgreSQL documentation](https://www.postgresql.org/docs/12/textsearch-controls.html).
+In [3.5.0](https://github.com/prisma/prisma/releases/3.5.0) and later, when using PostgreSQL you can sort records by relevance to the query using the `_relevance` keyword. This uses the relevance ranking functions from PostgreSQL's full text search feature, which are explained further in [the PostgreSQL documentation](https://www.postgresql.org/docs/12/textsearch-controls.html).
 
 Enable order by relevance with the `fullTextSearch` [preview feature](/concepts/components/prisma-client/full-text-search):
 
@@ -351,20 +415,23 @@ const getUsersByRelevance = await prisma.user.findMany({
 
 ### Sort with null records first or last
 
-In version 4.1.0 and later, you can sort the results so that records with `null` fields appear either first or last.
+<Admonition type="info">
 
-To use this feature, in the `generator` block of your `schema.prisma` file, enable the `orderByNulls` [preview feature](/concepts/components/preview-features/client-preview-features):
+This feature is generally available in version `4.16.0` and later. To use this feature in versions [`4.1.0`](https://github.com/prisma/prisma/releases/tag/4.1.0) to [`4.15.0`](https://github.com/prisma/prisma/releases/tag/4.15.0) the [Preview feature](/concepts/components/preview-features/client-preview-features#enabling-a-prisma-client-preview-feature) `orderByNulls` will need to be enabled.
 
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["orderByNulls"]
-}
-```
+</Admonition>
 
 <Admonition type="info">
 
-**Note:** You can only sort by nulls on optional [scalar](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#scalar-fields) fields. If you try to sort by nulls on a required or [relation](https://www.prisma.io/docs/concepts/components/prisma-schema/data-model#relation-fields) field, Prisma Client throws a [P2009 error](/reference/api-reference/error-reference#p2009).
+Note: Prisma Client does not support this feature for MongoDB.
+
+</Admonition>
+
+You can sort the results so that records with `null` fields appear either first or last.
+
+<Admonition type="info">
+
+**Note:** You can only sort by nulls on optional [scalar](/concepts/components/prisma-schema/data-model#scalar-fields) fields. If you try to sort by nulls on a required or [relation](/concepts/components/prisma-schema/data-model#relation-fields) field, Prisma Client throws a [P2009 error](/reference/api-reference/error-reference#p2009).
 
 </Admonition>
 

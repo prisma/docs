@@ -1,6 +1,8 @@
 import * as React from 'react'
-import styled from 'styled-components'
 import Select, { components } from 'react-select'
+import styled from 'styled-components'
+
+import { defaultTheme as theme } from '../theme'
 
 interface SelectProps {
   items: any[]
@@ -47,6 +49,7 @@ const SelectComponent = (props: SelectProps) => {
         options={options}
         defaultValue={selectedOption}
         onChange={handleChange}
+        classNamePrefix="tech-select"
         components={{ DropdownIndicator, IndicatorSeperator, Option, SingleValue, SelectContainer }}
       />
     </SelectComponentWrapper>
@@ -56,6 +59,28 @@ const SelectComponent = (props: SelectProps) => {
 export default SelectComponent
 
 const SelectComponentWrapper = styled.div`
+  @media (prefers-color-scheme: dark) {
+    .select-container {
+      .tech-select__control {
+        background-color: ${theme.colors.gray[800]};
+        border-color: ${theme.colors.gray[700]};
+      }
+      .tech-select__single-value {
+        color: ${theme.colors.gray[100]};
+      }
+      .tech-select__menu {
+        background-color: ${theme.colors.gray[800]};
+        .tech-select__option {
+          background-color: ${theme.colors.gray[800]};
+          color: ${theme.colors.gray[100]};
+          &:hover {
+            background-color: ${theme.colors.gray[700]};
+            color: ${theme.colors.gray[100]};
+          }
+        }
+      }
+    }
+  }
   .select-container {
     > div:first-child {
       height: 38px;

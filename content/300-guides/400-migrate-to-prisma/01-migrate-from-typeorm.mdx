@@ -20,6 +20,7 @@ Note that the steps for migrating from TypeORM to Prisma are always the same, no
 
 1. Install the Prisma CLI
 1. Introspect your database
+1. Create a baseline migration
 1. Install Prisma Client
 1. Gradually replace your TypeORM queries with Prisma Client
 
@@ -239,7 +240,7 @@ As mentioned before, this guide is an extended variation of the TypeORM Express 
 
 ## Step 1. Install the Prisma CLI
 
-The first step to adopt Prisma is to [install the Prisma CLI](/concepts/components/prisma-cli/installation#local-installation-recommended) in your project:
+The first step to adopt Prisma is to [install the Prisma CLI](/reference/api-reference/command-reference#installation) in your project:
 
 ```terminal copy
 npm install prisma --save-dev
@@ -355,13 +356,13 @@ Assume you have the following database connection details in `ormconfig.json`:
 
 The respective connection URL would look as follows in Prisma:
 
-```sh file=.env
+```env file=.env
 DATABASE_URL="postgresql://alice:myPassword42@localhost:5432/blog-typeorm"
 ```
 
 Note that you can optionally configure the PostgreSQL [schema](https://www.postgresql.org/docs/9.1/ddl-schemas.html) by appending the `schema` argument to the connection URL:
 
-```sh file=.env
+```env file=.env
 DATABASE_URL="postgresql://alice:myPassword42@localhost:5432/blog-typeorm?schema=myschema"
 ```
 
@@ -386,7 +387,7 @@ Assume you have the following database connection details in `ormconfig.json`:
 
 The respective connection URL would look as follows in Prisma:
 
-```sh file=.env
+```env file=.env
 DATABASE_URL="mysql://alice:myPassword42@localhost:3306/blog-typeorm"
 ```
 
@@ -409,7 +410,7 @@ Assume you have the following database connection details in `ormconfig.json`:
 
 The respective connection URL would look as follows in Prisma:
 
-```sh file=.env
+```env file=.env
 DATABASE_URL="sqlserver://localhost:1433;database=blog-typeorm;user=alice;password=myPassword42;trustServerCertificate=true"
 ```
 
@@ -428,7 +429,7 @@ Assume you have the following database connection details in `ormconfig.json`:
 
 The respective connection URL would look as follows in Prisma:
 
-```sh file=.env
+```env file=.env
 DATABASE_URL="file:./blog-typeorm.db"
 ```
 
@@ -436,7 +437,7 @@ DATABASE_URL="file:./blog-typeorm.db"
 
 </TabbedContent>
 
-### 2.3. Run Prisma's introspection
+### 2.3. Introspect your database using Prisma
 
 With your connection URL in place, you can [introspect](/concepts/components/introspection) your database to generate your Prisma models:
 
@@ -500,13 +501,45 @@ model user {
 
 The generated Prisma models represent your database tables and are the foundation for your programmatic Prisma Client API which allows you to send queries to your database.
 
-### 2.4. Adjust the Prisma schema (optional)
+### 2.4. Create a baseline migration
+
+To continue using Prisma Migrate to evolve your database schema, you will need to [baseline your database](/guides/migrate/developing-with-prisma-migrate/add-prisma-migrate-to-a-project).
+
+First, create a `migrations` directory and add a directory inside with your preferred name for the migration. In this example, we will use `0_init` as the migration name:
+
+```terminal
+mkdir -p prisma/migrations/0_init
+```
+
+Next, generate the migration file with `prisma migrate diff`. Use the following arguments:
+
+- `--from-empty`: assumes the data model you're migrating from is empty
+- `--to-schema-datamodel`: the current database state using the URL in the `datasource` block
+- `--script`: output a SQL script
+
+```terminal wrap
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+```
+
+Review the generated migration to ensure everything is correct.
+
+Next, mark the migration as applied using `prisma migrate resolve` with the `--applied` argument.
+
+```terminal
+npx prisma migrate resolve --applied 0_init
+```
+
+The command will mark `0_init` as applied by adding it to the `_prisma_migrations` table.
+
+You now have a baseline for your current database schema. To make further changes to your database schema, you can update your Prisma schema and use `prisma migrate dev` to apply the changes to your database.
+
+### 2.5. Adjust the Prisma schema (optional)
 
 The models that were generated via introspection currently _exactly_ map to your database tables. In this section, you'll learn how you can adjust the naming of the Prisma models to adhere to [Prisma's naming conventions](/reference/api-reference/prisma-schema-reference#naming-conventions).
 
 All of these adjustment are entirely optional and you are free to skip to the next step already if you don't want to adjust anything for now. You can go back and make the adjustments at any later point.
 
-As opposed to the current snake_case notation of Prisma models, Prisma's naming conventions are:
+As opposed to the current snake_case notation of TypeORM models, Prisma's naming conventions are:
 
 - PascalCase for model names
 - camelCase for field names
@@ -545,7 +578,6 @@ model PostToCategories {
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
   post       Post     @relation(fields: [postId], references: [id])
-
 
   @@id([postId, categoryId])
   @@index([postId], name: "IDX_93b566d522b73cb8bc46f7405b")
@@ -696,7 +728,7 @@ export async function filterPostsAction(req, res) {
 }
 ```
 
-Note that TypeORM by default combines several `where` conditions with an implicit `OR` operator. Prisma on the other hand [combines several `where` conditions with an implicit `AND` operator](/concepts/components/prisma-client/filtering-and-sorting#retrieve-all-post-records-where-the-content-field-contains-prisma-and-published-is-false), so in this case the Prisma query needs to make the `OR` explicit.
+Note that TypeORM by default combines several `where` conditions with an implicit `OR` operator. Prisma on the other hand [combines several `where` conditions with an implicit `AND` operator](/reference/api-reference/prisma-client-reference#get-all-post-records-where-the-content-field-contains-prisma-and-published-is-false-no-and), so in this case the Prisma query needs to make the `OR` explicit.
 
 #### `/post/:postId`
 
@@ -962,7 +994,7 @@ const post = await prisma.post.update({
 
 ### Implicit many-to-many relations
 
-Similar to the `@manyToMany` decorator in TypeORM, Prisma allows you to [model many-to-many relations _implicitly_](/concepts/components/prisma-schema/relations#implicit-vs-explicit-many-to-many-relations). That is, a many-to-many relation where you do not have to manage the [relation table](/concepts/components/prisma-schema/relations/many-to-many-relations#relation-tables) (also sometimes called JOIN table) _explicitly_ in your schema. Here is an example with TypeORM:
+Similar to the `@manyToMany` decorator in TypeORM, Prisma allows you to [model many-to-many relations _implicitly_](/concepts/components/prisma-schema/relations/many-to-many-relations#implicit-many-to-many-relations). That is, a many-to-many relation where you do not have to manage the [relation table](/concepts/components/prisma-schema/relations/many-to-many-relations#relation-tables) (also sometimes called JOIN table) _explicitly_ in your schema. Here is an example with TypeORM:
 
 ```ts
 import {
