@@ -150,6 +150,10 @@ module.exports = async function plugin(
         // return true for broken links, false = pass
         const { key, hasHash, hashIndex } = getHeadingsMapKey(link.tranformedUrl, pathL)
 
+        if (link.originalUrl === '') {
+          return true
+        }
+
         if (prefixedExceptions.includes(key) || /^https?:\/\//.test(key)) {
           // do not test this link as it is on the list of exceptions
           return false

@@ -12,7 +12,10 @@ const excludedPaths = [
   '/getting-started/setup-prisma/start-from-scratch-prisma-migrate',
 ]
 
-const errorPages = ['/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-mysql']
+const errorPages = [
+  '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-mysql',
+  '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-mysql',
+]
 
 const longPages = [
   '/reference/api-reference/prisma-client-reference',
@@ -39,9 +42,6 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
   // Construct the pages json by iterating over the mdx files.
 
   const pages = data.allSitePage.edges
-    .filter(
-      (edge) => edge.node.path.includes('/concepts/') || edge.node.path.includes('/reference/')
-    )
     .map((edge, i) => {
       // Skip explicitly excluded paths
       if (
@@ -54,12 +54,12 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
 
       // console.log('entry', {
       //   path: edge.node.path,
-      //   name: edge.node.path.split('/').join('-'),
+      //   name: edge.node.path
       // })
 
       return {
         path: edge.node.path,
-        name: edge.node.path.split('/').join('-'),
+        name: (edge.node.path === '/' || edge.node.path === '/404/') ? edge.node.path.split('/').join('-') : edge.node.path
       }
     })
     .filter((edge) => edge !== null)

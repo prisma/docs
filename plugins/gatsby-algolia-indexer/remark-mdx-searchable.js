@@ -21,7 +21,9 @@ module.exports = () => (tree, file) => {
   visit(
     tree,
     ({ type }) => {
-      return ['heading', 'paragraph', 'code', 'table', 'jsx'].includes(type)
+      return ['heading', 'paragraph', 'code', 'table', 'jsx', 'tableCell', 'tableRow'].includes(
+        type
+      )
     },
     (node) => {
       if (node.type === 'jsx' && node.value.includes('<SwitchTech')) {
