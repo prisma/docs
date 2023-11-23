@@ -176,12 +176,14 @@ A `generator` block accepts the following fields:
 
 The following tables list all supported operating systems with the name of platform to specify in [`binaryTargets`](/concepts/components/prisma-schema/generators#binary-targets).
 
+Unless specified otherwise, the default supported CPU architecture is x86_64.
+
 ##### macOS
 
-| Build OS        | Prisma engine build name |
-| :-------------- | :----------------------- |
-| macOS Intel x86 | `darwin`                 |
-| macOS ARM64     | `darwin-arm64`           |
+| Build OS           | Prisma engine build name |
+| :----------------- | :----------------------- |
+| macOS Intel x86_64 | `darwin`                 |
+| macOS ARM64        | `darwin-arm64`           |
 
 ##### Windows
 
@@ -189,18 +191,23 @@ The following tables list all supported operating systems with the name of platf
 | :------- | :----------------------- |
 | Windows  | `windows`                |
 
-##### Linux (Alpine)
+##### Linux (Alpine on x86_64 architectures)
 
-| Build OS                        | Prisma engine build name             | OpenSSL |
-| :------------------------------ | :----------------------------------- | :-----: |
-| Alpine (3.16 and older), x86_64 | `linux-musl`                         |  1.1.x  |
-| Alpine (3.17 and newer), x86_64 | `linux-musl-openssl-3.0.x`\*         |  3.0.x  |
-| Alpine (3.16 and older), ARM64  | `linux-musl-arm64-openssl-1.1.x`\*\* |  1.1.x  |
-| Alpine (3.17 and newer), ARM64  | `linux-musl-arm64-openssl-3.0.x`\*\* |  3.0.x  |
+| Build OS            | Prisma engine build name     | OpenSSL |
+| :------------------ | :--------------------------- | :-----: |
+| Alpine (3.17 and newer) | `linux-musl-openssl-3.0.x`\* |  3.0.x  |
+| Alpine (3.16 and older) | `linux-musl`                 |  1.1.x  |
 
 \* Available in Prisma versions 4.8.0 and later.
 
-\*\* Available in Prisma versions 4.10.0 and later.
+##### Linux (Alpine on ARM64 architectures)
+
+| Build OS            | Prisma engine build name           | OpenSSL |
+| :------------------ | :--------------------------------- | :-----: |
+| Alpine (3.17 and newer) | `linux-musl-arm64-openssl-3.0.x`\* |  3.0.x  |
+| Alpine (3.16 and older) | `linux-musl-arm64-openssl-1.1.x`\* |  1.1.x  |
+
+\* Available in Prisma versions 4.10.0 and later.
 
 ##### Linux (Debian), x86_64
 
@@ -259,7 +266,7 @@ The following tables list all supported operating systems with the name of platf
 | Arch Linux 2019.09.01 | `debian-openssl-1.1.x`   |  1.1.x  |
 | Arch Linux 2023.04.23 | `debian-openssl-3.0.x`   |  3.0.x  |
 
-##### Linux (most distributions except Alpine), ARM64
+##### Linux ARM64 (all major distros but Alpine)
 
 | Build OS                       | Prisma engine build name    | OpenSSL |
 | :----------------------------- | :-------------------------- | :-----: |
@@ -343,7 +350,7 @@ Defines a Prisma [model](/concepts/components/prisma-schema/data-model#defining-
 
 #### Order of fields
 
-- In version 2.3.0 and later, introspection lists model fields same order as the corresponding columns in the database. Relation fields are listed after scalar fields.
+- In version 2.3.0 and later, introspection lists model fields in the same order as the corresponding columns in the database. Relation fields are listed after scalar fields.
 
 ### Examples
 
@@ -385,7 +392,7 @@ model User {
 - Typically spelled in camelCase
 - Must adhere to the following regular expression: `[A-Za-z][A-Za-z0-9_]*`
 
-> **Note**: You can use the [`@map` attribute](#map) to map a field name (for example, `MyField`) to a column with a different name that does not match field naming conventions (for example, `myField`).
+> **Note**: You can use the [`@map` attribute](#map) to [map a field name to a column](/concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) with a different name that does not match field naming conventions: e.g. `myField @map("my_field")`.
 
 ## <inlinecode>model</inlinecode> field scalar types
 
@@ -885,7 +892,7 @@ A JSON object.
 | Connector   | Default mapping                                                                                          |
 | ----------- | -------------------------------------------------------------------------------------------------------- |
 | PostgreSQL  | `jsonb`                                                                                                  |
-| SQL Server  | `nvarchar(1000)`                                                                                         |
+| SQL Server  | [Not supported](https://github.com/prisma/prisma/issues/7417)                                            |
 | MySQL       | `JSON`                                                                                                   |
 | MongoDB     | [A valid `BSON` object (Relaxed mode)](https://docs.mongodb.com/manual/reference/mongodb-extended-json/) |
 | SQLite      | Not supported                                                                                            |
@@ -3130,7 +3137,7 @@ Generate a globally unique identifier based on the [`cuid`](https://github.com/e
 
 - Compatible with `String`
 - Implemented by Prisma and therefore not "visible" in the underlying database schema. You can still use `cuid()` when using [introspection](/concepts/components/introspection) by [manually changing your Prisma schema](/concepts/components/prisma-client/working-with-prismaclient/use-custom-model-and-field-names) and [generating Prisma Client](/concepts/components/prisma-client/working-with-prismaclient/generating-prisma-client), in that case the values will be generated by Prisma's [query engine](/concepts/components/prisma-engines/query-engine).
-- Since the length of `cuid()` output is undefined per the cuid creator, a safe minimum field size is 30 characters, in order to allow for enough characters for very large values. If you set the minimum field size as less than 30, and then a larger value is generated by `cuid()`, you might see Prisma errors such as `Error: The provided value for the column is too long for the column's type.`
+- Since the length of `cuid()` output is undefined per the cuid creator, a safe field size is 30 characters, in order to allow for enough characters for very large values. If you set the field size as less than 30, and then a larger value is generated by `cuid()`, you might see Prisma errors such as `Error: The provided value for the column is too long for the column's type.`
 
 ##### MongoDB
 
@@ -3233,6 +3240,34 @@ Set a timestamp of the time when a record is created.
 ##### MongoDB
 
 - Implemented at Prisma level
+
+#### Examples
+
+##### Set current timestamp value when a record is created
+
+<TabbedContent tabs={[<FileWithIcon text="Relational databases" icon="database"/>, <FileWithIcon text="MongoDB" icon="database"/>]}>
+<tab>
+
+```prisma
+model User {
+  id        String   @id 
+  createdAt DateTime @default(now())
+}
+```
+
+</tab>
+<tab>
+
+```prisma
+model User {
+  id        String   @id @default(auto()) @map("_id")  @db.ObjectId
+  createdAt DateTime @default(now())
+}
+```
+
+</tab>
+</TabbedContent>
+
 
 ### <inlinecode>dbgenerated()</inlinecode>
 
