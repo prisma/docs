@@ -1,15 +1,17 @@
-import React, { useState, useCallback, MouseEvent } from 'react'
-import styled from 'styled-components'
-import Up from '../icons/Up'
-import Down from '../icons/Down'
-import Link from './link'
-import config from '../../config'
-import { ButtonWrapper } from './customMdx/button'
-import Twitter from '../icons/Twitter'
 import { useLocation } from '@reach/router'
+import React, { MouseEvent, useCallback, useState } from 'react'
 import { X } from 'react-feather'
-import { theme } from '@prisma/lens/dist/web'
-import { ToastContainer, toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
+import styled from 'styled-components'
+
+import config from '../../config'
+import Down from '../icons/Down'
+import Twitter from '../icons/Twitter'
+import Up from '../icons/Up'
+import { defaultTheme as theme } from '../theme'
+import Link from './link'
+import { ButtonWrapper } from './shortcodes/button'
+
 import 'react-toastify/dist/ReactToastify.css'
 
 const sentiments: any = {
@@ -31,7 +33,8 @@ const ToastForm = ({ sentiment, fbId, fbSubmitted }: any) => {
     e.preventDefault()
     await fetch(config.feedback.feedbackUrl, {
       method: 'POST',
-      mode: 'cors',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: fbId, feedback }),
     })
     fbSubmitted(true)
@@ -45,7 +48,7 @@ const ToastForm = ({ sentiment, fbId, fbSubmitted }: any) => {
             : `Thank you for letting us know! Was there anything you particularly enjoyed?`}
         </p>
         <a onClick={closeForm}>
-          <X color={theme.colors.blue300} />
+          <X color={theme.colors.blue[300]} />
         </a>
       </Title>
       <form>
@@ -83,7 +86,6 @@ const PageBottom = ({ editDocsPath }: any) => {
   let location = useLocation()
   const pageUrl = location ? location.pathname : '/'
   const closeForm = (e: any) => toast.dismiss()
-
   const fbSumitted = (state: boolean) => {
     setSubmittedFeedback(state)
     toast.dismiss()
@@ -92,7 +94,7 @@ const PageBottom = ({ editDocsPath }: any) => {
         <span>🎉 </span>
         <p>Message sent! Thank you for making Prisma better for the community.</p>
         <a onClick={closeForm}>
-          <X color={theme.colors.blue300} />
+          <X color={theme.colors.blue[300]} />
         </a>
       </SuccessToast>
     )
@@ -100,12 +102,15 @@ const PageBottom = ({ editDocsPath }: any) => {
 
   // Send the initial sentiment
   const sendSentiment = useCallback(
-    async (sentiment) => {
+    async (sentiment: any) => {
       const createdSetiment = await fetch(config.feedback.sentimentUrl, {
         method: 'POST',
         mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pageUrl, sentiment }),
-      }).then((response) => response.json())
+      })
+        .then((response) => response.json())
+        .then((data) => data)
 
       toast(<ToastForm sentiment={sentiment} fbId={createdSetiment.id} fbSubmitted={fbSumitted} />)
 
@@ -191,10 +196,10 @@ export default PageBottom
 
 const PageBottomWrapper = styled.div`
   display: flex;
-  font-size: ${(p) => p.theme.fontSizes[14]};
+  font-size: ${theme.fontSizes[14]};
   flex-direction: row;
   justify-content: space-between;
-  padding: ${(p) => p.theme.space[16]} ${(p) => p.theme.space[40]};
+  padding: ${theme.space[16]} ${theme.space[40]};
   align-items: center;
   button svg {
     cursor: pointer;
@@ -202,14 +207,14 @@ const PageBottomWrapper = styled.div`
   }
   .edit-git,
   .message {
-    color: ${(p) => p.theme.colors.gray600} !important;
+    color: ${theme.colors.gray[600]} !important;
   }
 
   button {
-    color: ${(p) => p.theme.colors.white} !important;
+    color: ${theme.colors.white} !important;
   }
-  @media (min-width: 0px) and (max-width: ${(p) => p.theme.breakpoints.tablet}) {
-    padding: ${(p) => p.theme.space[16]};
+  @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
+    padding: ${theme.space[16]};
     flex-direction: column;
     align-items: flex-start;
     .edit-git {
@@ -224,18 +229,19 @@ const Feedback = styled.div`
     font-weight: bold;
     letter-spacing: 0.01em;
     text-transform: uppercase;
-    color: ${(p) => p.theme.colors.gray500} !important;
+    margin: revert;
+    color: ${theme.colors.gray[500]} !important;
   }
   .sentiments {
     button {
       background: transparent;
       border: 0;
       &.active {
-        border-color: ${(p) => p.theme.colors.blue500};
+        border-color: ${theme.colors.blue[500]};
         svg {
           circle,
           path {
-            stroke: ${(p) => p.theme.colors.blue500};
+            stroke: ${theme.colors.blue[500]};
           }
         }
       }
@@ -280,47 +286,47 @@ const Content = styled.div`
       padding: 0;
     }
 
-    margin-top: ${(p) => p.theme.space[24]};
+    margin-top: ${theme.space[24]};
     align-items: center;
     input {
       width: 100%;
       border: 0;
-      padding: ${(p) => p.theme.space[12]} 20px;
+      padding: ${theme.space[12]} 20px;
       font-size: 100%;
       font-weight: normal;
       margin-bottom: 20px;
 
       &::placeholder {
-        color: ${(p) => p.theme.colors.gray500};
+        color: ${theme.colors.gray[500]};
       }
     }
     button {
-      background: ${(p) => p.theme.colors.green500};
+      background: ${theme.colors.green[500]};
       border-radius: 6px;
       padding: 8px;
       font-size: 1rem;
       font-weight: 600;
       border-color: transparent;
       &:hover {
-        background: ${(p) => p.theme.colors.green600};
+        background: ${theme.colors.green[600]};
       }
     }
   }
   .yay-toast {
-    background: ${(p) => p.theme.colors.blue100};
+    background: ${theme.colors.blue[100]};
     font-size: 14px;
-    color: ${(p) => p.theme.colors.blue600};
+    color: ${theme.colors.blue[600]};
     min-width: 360px;
   }
 `
 
 const Title = styled.div`
-  background: ${(p) => p.theme.colors.blue100};
+  background: ${theme.colors.blue[100]};
   display: flex;
   padding: 20px;
   p {
-    color: ${(p) => p.theme.colors.blue600};
-    font-size: ${(p) => p.theme.fontSizes[14]};
+    color: ${theme.colors.blue[600]};
+    font-size: ${theme.fontSizes[14]};
     margin: 0;
   }
 
@@ -339,14 +345,14 @@ const Button = styled(ButtonWrapper)`
     height: 1rem;
     width: 1rem;
     path {
-      stroke: ${(p) => p.theme.colors.blue300};
+      stroke: ${theme.colors.blue[300]};
     }
   }
-  background: ${(p) => p.theme.colors.blue500} !important;
+  background: ${theme.colors.blue[500]} !important;
   margin: 0;
   margin-left: 20px;
   @media (min-width: 0px) and (max-width: 767px) {
-    font-size: ${(p) => p.theme.fontSizes[12]};
+    font-size: ${theme.fontSizes[12]};
     text-transform: none;
     svg {
       width: 14px;
@@ -361,7 +367,7 @@ const ButtonRow = styled.div`
   .git-link {
     text-decoration: underline;
     margin-left: 20px;
-    color: ${(p) => p.theme.colors.gray700} !important;
+    color: ${theme.colors.gray[700]} !important;
     font-weight: 600;
     font-size: 14px;
   }
