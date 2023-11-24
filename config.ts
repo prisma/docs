@@ -22,10 +22,10 @@ const siteConfig = {
         bucketName: '/100-getting-started',
       },
       {
-        text: 'Concepts',
-        to: '/concepts',
+        text: 'ORM',
+        to: '/orm',
         type: 'bucket',
-        bucketName: '/200-concepts',
+        bucketName: '/200-orm',
       },
       {
         text: 'Guides',
