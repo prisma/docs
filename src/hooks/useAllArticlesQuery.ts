@@ -13,6 +13,7 @@ export const useAllArticlesQuery = () => {
               navTitle
               staticLink
               preview
+              deprecated
               earlyaccess
               langSwitcher
               search

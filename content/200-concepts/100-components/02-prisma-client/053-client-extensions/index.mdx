@@ -43,6 +43,8 @@ Extended clients interact with each other, and with the standard client, as foll
 - All extended clients and the standard client communicate with the same [Prisma query engine](/concepts/components/prisma-engines/query-engine).
 - All extended clients and the standard client share the same connection pool.
 
+> **Note**: The author of an extension can modify this behavior since they're able to run arbitrary code as part of an extension. For example, an extension might actually create an entirely new `PrismaClient` instance (including its own query engine and connection pool). Be sure to check the documentation of the extension you're using to learn about any specific behavior it might implement.
+
 ### Example use cases for extended clients
 
 Because extended clients operate in isolated instances, they can be a good way to do the following, for example:
@@ -53,27 +55,55 @@ Because extended clients operate in isolated instances, they can be a good way t
 - Attach a unique request id to all logs so that you can correlate them later, for example to help you analyze the operations that Prisma Client carries out.
 - Remove a `delete` method from models unless the application calls the admin endpoint and the user has the necessary privileges.
 
-## Create an extension
+## Add an extension to Prisma Client
 
-Use the `$extends` [client-level method](/reference/api-reference/prisma-client-reference#client-methods) to create an extended client. In your `$extends` structure, use the appropriate extension component or components ([`model`](/concepts/components/prisma-client/client-extensions/model), [`client`](/concepts/components/prisma-client/client-extensions/client), [`result`](/concepts/components/prisma-client/client-extensions/result) or [`query`](/concepts/components/prisma-client/client-extensions/query)).
+You can create an extension using two primary ways:
 
-For example, the following code uses a [`model` extension component](/concepts/components/prisma-client/client-extensions/model) to extend the `User` model.
+- Use the client-level [`$extends`](/reference/api-reference/prisma-client-reference#client-methods) method
 
-```ts
-const xprisma = prisma.$extends({
-  name: `signUp`, // Optional: name appears in error logs
-  model: {        // This is a `model` component
-    user: { ... } // The extension logic for the `user` model goes inside the curly braces
-  },
-})
-```
+   ```ts
+   const xprisma = prisma.$extends({
+     name: 'signUp', // Optional: name appears in error logs
+     model: {        // This is a `model` component
+       user: { ... } // The extension logic for the `user` model goes inside the curly braces
+     },
+   })
+   ```
+
+- Use the `Prisma.defineExtension` method to define an extension and assign it to a variable, and then pass the extension to the client-level `$extends`  method
+
+   ```ts
+   import { Prisma } from '@prisma/client'
+
+   // Define the extension
+   const myExtension = Prisma.defineExtension({
+     name: 'signUp', // Optional: name appears in error logs
+     model: {        // This is a `model` component
+       user: { ... } // The extension logic for the `user` model goes inside the curly braces
+     },
+   })
+
+   // Pass the extension to a Prisma Client instance
+   const xprisma = prisma.$extends(myExtension)
+   ```
+
+    <Tip>
+
+   This pattern is useful for when you would like to separate extensions into multiple files or directories within a project.
+
+    </Tip>
+
+The above examples use the [`model` extension component](/concepts/components/prisma-client/client-extensions/model) to extend the `User` model.
+
+In your `$extends` method, use the appropriate extension component or components ([`model`](/concepts/components/prisma-client/client-extensions/model), [`client`](/concepts/components/prisma-client/client-extensions/client), [`result`](/concepts/components/prisma-client/client-extensions/result) or [`query`](/concepts/components/prisma-client/client-extensions/query)).
+
 
 ## Name an extension for error logs
 
 You can name your extensions to help identify them in error logs. To do so, use the optional field `name`. For example:
 
 ```ts
-const xprisma = prisma.$extends({
+const prisma = new PrismaClient().$extends({
   name: `signUp`,  // (Optional) Extension name
   model: {
     user: { ... }
@@ -149,7 +179,9 @@ If you're using Prisma Client as a singleton, you can get the type of the extend
 
 ```ts
 function getExtendedClient() {
-  return new PrismaClient().$extends({ /* extension */ })
+  return new PrismaClient().$extends({
+    /* extension */
+  })
 }
 
 type ExtendedPrismaClient = ReturnType<typeof getExtendedClient>
@@ -159,7 +191,7 @@ type ExtendedPrismaClient = ReturnType<typeof getExtendedClient>
 
 ### Usage of `$on` and `$use` with extended clients
 
-`$on` and `$use` are not available in extended clients. If you would like to continue using these [client-level methods](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#client-methods) with an extended client, you will need to hook them up before extending the client.
+`$on` and `$use` are not available in extended clients. If you would like to continue using these [client-level methods](/reference/api-reference/prisma-client-reference#client-methods) with an extended client, you will need to hook them up before extending the client.
 
 ```ts
 const prisma = new PrismaClient()
@@ -185,7 +217,7 @@ To learn more, see our documentation on [`$on`](/reference/api-reference/prisma-
 
 ### Usage of client-level methods in extended clients
 
-[Client-level methods](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#client-methods) do not necessarily exist on extended clients. For these clients you will need to first check for existence before using.
+[Client-level methods](/reference/api-reference/prisma-client-reference#client-methods) do not necessarily exist on extended clients. For these clients you will need to first check for existence before using.
 
 ```ts
 const xPrisma = prisma.$extends(...);
@@ -194,3 +226,7 @@ if (xPrisma.$connect) {
   xPrisma.$connect()
 }
 ```
+
+### Usage with nested operations
+
+The `query` extension type does not support nested read and write operations.

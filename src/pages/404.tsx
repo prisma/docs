@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -17,7 +17,7 @@ const NotFoundWrapper = styled.div`
 `
 
 const NotFoundPage = () => (
-  <Layout toc={false}>
+  <Layout toc={false} homePage={false}>
     <NotFoundWrapper>
       <h1>404 | NOT FOUND</h1>
       You just hit a route that doesn&#39;t exist!

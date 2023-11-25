@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -21,7 +21,7 @@ const TopSectionWrapper = styled.div`
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: start;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.mobile}) {
     flex-direction: column;
     align-items: baseline;
@@ -45,6 +45,10 @@ const MainTitle = styled.h1`
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     font-size: ${theme.fontSizes[24]};
   }
+
+  @media (prefers-color-scheme: dark) {
+    color: ${theme.colors.gray[100]};
+  }
 `
 
 const TopSection = ({
@@ -58,9 +62,9 @@ const TopSection = ({
 }: any) => {
   return (
     <TopSectionWrapper>
+      <ParentTitle slug={slug} />
       <Header>
         <div className="title">
-          <ParentTitle slug={slug} />
           <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
         </div>
         <div className="tech-switch-block">
