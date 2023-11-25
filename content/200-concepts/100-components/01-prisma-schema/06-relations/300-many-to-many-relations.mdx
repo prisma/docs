@@ -14,7 +14,7 @@ Prisma schema syntax and the implementation in the underlying database differs b
 
 ## Relational databases
 
-In relational databases, m-n-relations are typically modelled via [relation tables](/concepts/components/prisma-schema/relations/many-to-many-relations#relation-tables). m-n-relations can be either [explicit](#explicit-many-to-many-relations) or [implicit](#implicit-many-to-many-relations) in the Prisma schema. We recommend using [implicit](#implicit-many-to-many-relations) m-n-relations if you do not need to store any additional meta-data in the relation table itself. You can always migrate to an [explicit](#explict-many-to-many-relations) m-n-relation later if needed.
+In relational databases, m-n-relations are typically modelled via [relation tables](/concepts/components/prisma-schema/relations/many-to-many-relations#relation-tables). m-n-relations can be either [explicit](#explicit-many-to-many-relations) or [implicit](#implicit-many-to-many-relations) in the Prisma schema. We recommend using [implicit](#implicit-many-to-many-relations) m-n-relations if you do not need to store any additional meta-data in the relation table itself. You can always migrate to an [explicit](#explicit-many-to-many-relations) m-n-relation later if needed.
 
 ### Explicit many-to-many relations
 
@@ -350,18 +350,22 @@ Implicit m-n relations:
 
 If you obtain your data model from [introspection](/concepts/components/introspection), you can still use implicit m-n-relations by following Prisma's [conventions for relation tables](#conventions-for-relation-tables-in-implicit-m-n-relations). The following example assumes you want to create a relation table to get an implicit m-n-relation for two models called `Post` and `Category`.
 
-##### Table names
+##### Relation table
 
 If you want a relation table to be picked up by introspection as an implicit m-n-relation, the name must follow this exact structure:
 
 - It must start with an underscore `_`
-- Then the name of the first table in alphabetical order (in this case `Category`)
-- Then `To`
-- Then the name of the second table in alphabetical order (in this case `Post`)
+- Then the name of the first model in alphabetical order (in this case `Category`)
+- Then the relationship (in this case `To`)
+- Then the name of the second model in alphabetical order (in this case `Post`)
 
 In the example, the correct table name is `_CategoryToPost`.
 
 When creating an implicit m-n-relation yourself in the Prisma schema file, you can [configure the relation](#configuring-the-name-of-the-relation-table-in-implicit-many-to-many-relations) to have a different name. This will change the name given to the relation table in the database. For example, for a relation named `"MyRelation"` the corresponding table will be called `_MyRelation`.
+
+###### Multi-schema
+
+If your implicit many-to-many relationship spans multiple database schemas (using the [`multiSchema` preview feature](/guides/database/multi-schema)), the relation table (with the name defined directly above, in the example `_CategoryToPost`) must be present in the same database schema as the first model in alphabetical order (in this case `Category`).
 
 ##### Columns
 
@@ -407,6 +411,49 @@ CREATE TABLE "Category" (
 CREATE TABLE "Post" (
     id integer SERIAL PRIMARY KEY
 );
+```
+
+And you can define multiple many-to-many relations between two tables by using the different relationship name. This example shows how the Prisma introspection works under such case:
+
+```sql
+CREATE TABLE IF NOT EXISTS "User" (
+    "id" SERIAL PRIMARY KEY
+);
+CREATE TABLE IF NOT EXISTS "Video" (
+    "id" SERIAL PRIMARY KEY
+);
+CREATE TABLE IF NOT EXISTS "_UserLikedVideos" (
+    "A" SERIAL NOT NULL,
+    "B" SERIAL NOT NULL,
+    CONSTRAINT "_UserLikedVideos_A_fkey" FOREIGN KEY ("A") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_UserLikedVideos_B_fkey" FOREIGN KEY ("B") REFERENCES "Video" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "_UserDislikedVideos" (
+    "A" SERIAL NOT NULL,
+    "B" SERIAL NOT NULL,
+    CONSTRAINT "_UserDislikedVideos_A_fkey" FOREIGN KEY ("A") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_UserDislikedVideos_B_fkey" FOREIGN KEY ("B") REFERENCES "Video" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX "_UserLikedVideos_AB_unique" ON "_UserLikedVideos"("A", "B");
+CREATE INDEX "_UserLikedVideos_B_index" ON "_UserLikedVideos"("B");
+CREATE UNIQUE INDEX "_UserDislikedVideos_AB_unique" ON "_UserDislikedVideos"("A", "B");
+CREATE INDEX "_UserDislikedVideos_B_index" ON "_UserDislikedVideos"("B");
+```
+
+If you run `prisma db pull` on this database, the Prisma CLI will generate the following schema through introspection:
+
+```prisma
+model User {
+  id                       Int     @id @default(autoincrement())
+  Video_UserDislikedVideos Video[] @relation("UserDislikedVideos")
+  Video_UserLikedVideos    Video[] @relation("UserLikedVideos")
+}
+
+model Video {
+  id                      Int    @id @default(autoincrement())
+  User_UserDislikedVideos User[] @relation("UserDislikedVideos")
+  User_UserLikedVideos    User[] @relation("UserLikedVideos")
+}
 ```
 
 #### Configuring the name of the relation table in implicit many-to-many relations

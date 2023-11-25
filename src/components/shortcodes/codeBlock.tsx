@@ -1,3 +1,4 @@
+import { defaultTheme as theme } from '../../theme'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -42,13 +43,19 @@ const Tabs = styled.div`
   display: flex;
   .tab {
     margin-right: 10px;
-    color: ${(p) => p.theme.colors.gray[600]};
+    color: ${theme.colors.gray[600]};
     cursor: pointer;
   }
 
   .tab.active {
     font-weight: 600;
-    color: ${(p) => p.theme.colors.gray[900]};
+    color: ${theme.colors.gray[900]};
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .tab.active {
+      color: ${theme.colors.gray[500]};
+    }
   }
 `
 const Wrapper = styled.div`
