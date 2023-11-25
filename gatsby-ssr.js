@@ -66,5 +66,37 @@ export const onRenderBody = ({ setHeadComponents }) => {
       crossOrigin="anonymous"
       key="interFont"
     />,
+    <link
+      rel="preload"
+      href="/docs/fonts/fa-brands-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="/docs/fonts/fa-light-300.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="/docs/fonts/fa-regular-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
+    <link
+      rel="preload"
+      href="/docs/fonts/fa-solid-900.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+      key="interFont"
+    />,
   ])
 }
