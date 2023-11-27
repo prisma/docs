@@ -13,9 +13,39 @@ If you would like to build a shareable extension, we also recommend using the [`
 
 </TopBlock>
 
-## Share Prisma Client extensions
+## Install a shared, packaged extension
+
+In your project, you can install any Prisma Client extension that another user has published to `npm`. To do so, run the following command:
+
+```terminal
+npm install prisma-extension-<package-name>
+```
+
+For example, if the package name for an available extension is `prisma-extension-find-or-create`, you could install it as follows:
+
+```terminal
+npm install prisma-extension-find-or-create
+```
+
+To import the `find-or-create` extension from the example above, and wrap your client instance with it, you could use the following code. This example assumes that the extension name is `findOrCreate`.
+
+```ts
+import findOrCreate from 'prisma-extension-find-or-create'
+
+const prisma = new PrismaClient().$extends(findOrCreate)
+const user = await prisma.user.findOrCreate()
+```
+
+When you call a method in an extension, use the constant name from your `$extends` statement, not `prisma`. In the above example,`xprisma.user.findOrCreate` works, but `prisma.user.findOrCreate` does not, because the original `prisma` is not modified.
+
+## Create a shareable extension
 
 When you want to create extensions other users can use, and that are not tailored just for your schema, Prisma provides utilities to allow you to create shareable extensions.
+
+To create a shareable extension:
+
+1. Define the extension as a module using `Prisma.defineExtension`
+2. Use one of the methods that begin with the `$all` prefix such as [`$allModels`](/concepts/components/prisma-client/client-extensions/model#add-a-custom-method-to-all-models-in-your-schema) or [`$allOperations`](/concepts/components/prisma-client/client-extensions/query#modify-all-prisma-client-operations)
 
 ### Define an extension
 
@@ -23,10 +53,7 @@ Use the `Prisma.defineExtension` method to make your extension shareable. You ca
 
 The benefit of `Prisma.defineExtension` is that it provides strict type checks and auto completion for authors of extension in development and users of shared extensions.
 
-To define an extension:
-
-1. Define the extension as a module using `Prisma.defineExtension`
-2. Use one of the methods that begin with the `$all` prefix such as [`$allModels`](/concepts/components/prisma-client/client-extensions/model#add-a-custom-method-to-all-models-in-your-schema) or [`$allOperations`](/concepts/components/prisma-client/client-extensions/query#modify-all-prisma-client-operations)
+### Use a generic method
 
 Extensions that contain methods under `$allModels` apply to every model instead of a specific one. Similarly, methods under `$allOperations` apply to a client instance as a whole and not to a named component, e.g. `result` or `query`.
 
@@ -42,20 +69,6 @@ export default Prisma.defineExtension({
       // new method
       findOrCreate(/* args */) {
         /* code for the new method */
-      },
-    },
-  },
-})
-```
-
-You can combine `$allOperations` and `$allModels` to modify all operations on all models in a schema:
-
-```ts
-export default Prisma.defineExtension({
-  query: {
-    $allModels: {
-      $allOperations({ model, operation, args, query }) {
-        /* code for the extension */
         return query(args)
       },
     },
@@ -63,20 +76,11 @@ export default Prisma.defineExtension({
 })
 ```
 
-Use the `$allOperations` method to modify all query methods present in Prisma Client. The `$allOperations` can be used on both model operations and raw queries:
+Refer to the following pages to learn the different ways you can modify Prisma Client operations:
 
-```ts
-export default Prisma.defineExtension({
-  query: {
-    $allOperations({ model, operation, args, query }) {
-      /* code for the extension */
-      return query(args)
-    },
-  },
-})
-```
-
-In the event a raw query is invoked, the `model` argument passed to the callback will be `null`.
+- [Modify all Prisma Client operations](./query#modify-all-prisma-client-operations)
+- [Modify a specific operation in all models of your schema](./query#modify-a-specific-operation-in-all-models-of-your-schema)
+- [Modify all operations in all models of your schema](./query#modify-all-operations-in-all-models-of-your-schema)
 
 <details>
 <summary> For versions earlier than 4.16.0 </summary>
@@ -93,7 +97,10 @@ export default Prisma.defineExtension({
 
 </details>
 
+### Publishing the shareable extension to npm
+
 You can then share the extension on `npm`. When you choose a package name, we recommend that you use the `prisma-extension-<package-name>` convention, to make it easier to find and install.
+
 
 ### Call a client-level method from your packaged extension
 
@@ -132,29 +139,6 @@ export default Prisma.defineExtension((client) => {
 })
 ```
 
-## Advanced type safety: type utilities for defining generic extensions
+### Advanced type safety: type utilities for defining generic extensions
 
 You can improve the type-safety of your shared extensions using [type utilities](/concepts/components/prisma-client/client-extensions/type-utilities).
-
-## Install a packaged extension
-
-In your project, you can install any Prisma Client extension that another user has published to `npm`. To do so, run the following command:
-
-```terminal
-npm install prisma-extension-<package-name>
-```
-
-For example, if the package name for an available extension is `prisma-extension-find-or-create`, you could install it as follows:
-
-```terminal
-npm install prisma-extension-find-or-create
-```
-
-To import the `find-or-create` extension from the example above, and wrap your client instance with it, you could use the following code. This example assumes that the extension name is `findOrCreate`.
-
-```ts
-import findOrCreate from 'prisma-extension-find-or-create'
-
-const prisma = new PrismaClient().$extends(findOrCreate)
-const user = await prisma.user.findOrCreate()
-```

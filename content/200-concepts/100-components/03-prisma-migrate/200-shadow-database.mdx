@@ -12,13 +12,13 @@ The shadow database is a second, _temporary_ database that is **created and dele
 
 <FootNote>
 
-\* If you use a cloud-hosted database for development, you need to [create the shadow database manually](#cloud-hosted-shadow-databases-must-be-created-manually).
+\* If your database does not allow creation and deleting of databases (e.g. in a cloud-hosted environment), you need to [create and configure the shadow database manually](#cloud-hosted-shadow-databases-must-be-created-manually).
 
 </FootNote>
 
 > **Important**: The shadow database is **not** required in production, and is not used by production-focused commands such as `prisma migrate resolve` and `prisma migrate deploy`.
 
-> **Note**: A shadow database is never used for MongoDB as these commands are not used there.
+> **Note**: A shadow database is never used for MongoDB as `migrate dev` is not used there.
 
 </TopBlock>
 
@@ -26,8 +26,8 @@ The shadow database is a second, _temporary_ database that is **created and dele
 
 When you run `prisma migrate dev` to create a new migration, Prisma Migrate uses the shadow database to:
 
-- [Detect schema drift](#detecting-schema-drift), which means checking that no **manual changes** have been made to the development database
-- [Generate new migrations](#generating-new-migrations)
+- [Detect schema drift](#detecting-schema-drift), which means checking that no **unexpected changes** have been made to the development database
+- [Generate new migrations](#generating-new-migrations) and evaluate if those could lead to **data loss** when applied
 
 <details><summary>🎨 Expand to see the shadow database explained as a cartoon.
 
@@ -41,42 +41,32 @@ When you run `prisma migrate dev` to create a new migration, Prisma Migrate uses
 
 To detect drift in development, Prisma Migrate:
 
-1. Creates a fresh copy of the shadow database (or performs a soft reset if the shadow database is configured via [`shadowDatabaseUrl`](/reference/api-reference/prisma-schema-reference#datasource)
-1. Reruns the **current** migration history in the shadow database.
+1. Creates a fresh copy of the shadow database (or performs a soft reset if the shadow database is configured via [`shadowDatabaseUrl`](/reference/api-reference/prisma-schema-reference#datasource))
+1. Reruns the **current**, existing migration history in the shadow database.
 1. **Introspects** the shadow database to generate the 'current state' of your Prisma schema.
 1. Compares the end state of the current migration history to the development database.
-1. Reports **schema drift** if the end state of the current migration history does not match the development database (for example, due to a manual change)
+1. Reports **schema drift** if the end state of the current migration history (via the shadow database) does not match the development database (for example, due to a manual change)
 
 If Prisma Migrate does not detect schema drift, it moves on to [generating new migrations](#generating-new-migrations).
 
 > **Note**: The shadow database is not responsible for checking if a migration file has been **edited or deleted**. This is done using the `checksum` field in the `_prisma_migrations` table.
 
-In [2.25.0](https://github.com/prisma/prisma/releases/tag/2.25.0) and later, Prisma Migrate outputs detailed information about which parts of the database have drifted. In the following example output, the schema that would be generated from the target database differs from the expected schema. For example, the `Color` enum in the target database is missing the expected variant `RED` and include the unexpected variant `TRANSPARENT`:
+If Prisma Migrate detects schema drift, it outputs detailed information about which parts of the database have drifted. The following example output could be shown when the development database has been modified manually: The `Color` enum is missing the expected variant `RED` and includes the unexpected variant `TRANSPARENT`:
 
 ```
 [*] Changed the `Color` enum
   [+] Added variant `TRANSPARENT`
   [-] Removed variant `RED`
-
-[*] Changed the `Cat` table
-  [-] Removed column `color`
-  [+] Added column `vaccinated`
-
-[*] Changed the `Dog` table
-  [-] Dropped the primary key on columns (id)
-  [-] Removed column `name`
-  [+] Added column `weight`
-  [*] Altered column `isGoodDog` (arity changed from Nullable to Required, default changed from `None` to `Some(Value(Boolean(true)))`)
-  [+] Added unique index on columns (weight)
 ```
 
 ### Generating new migrations
 
-Assuming Prisma Migrate did not [detect schema drift](#detecting-schema-drift), it moves on to generating new migrations from schema changes. To generate new migrations, Prisma Migrate:
+Assuming Prisma Migrate did not [detect schema drift](#detecting-schema-drift), it moves on to generating new migrations from Prisma schema changes. To generate new migrations, Prisma Migrate:
 
 1. Calculates the target database schema as a function of the current Prisma schema.
 1. Compares the end state of the existing migration history and the target schema, and generates steps to get from one to the other.
 1. Renders these steps to a SQL string and saves it in the new migration file.
+1. Evaluate data loss caused by the SQL and warns about that.
 1. Applies the generated migration to the development database (assuming you have not specified the `--create-only` flag)
 1. Drops the shadow database (shadow databases configured via [`shadowDatabaseUrl`](/reference/api-reference/prisma-schema-reference#datasource) are not dropped, but are reset at the start of the `migrate dev` command)
 
