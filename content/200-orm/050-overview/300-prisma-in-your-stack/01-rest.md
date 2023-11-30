@@ -8,7 +8,7 @@ metaDescription: 'This page gives an overview of the most important things when 
 
 When building REST APIs, Prisma Client can be used inside your _route controllers_ to send databases queries.
 
-![REST APIs with Prisma Client](../prisma-rest-apis.png)
+![REST APIs with Prisma Client](../100-introduction/prisma-rest-apis.png)
 
 </TopBlock>
 
