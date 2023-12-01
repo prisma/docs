@@ -115,13 +115,13 @@ const siteConfig = {
       {
         title: `What is Prisma`,
         description: 'An overview of what Prisma ORM is and how it works.',
-        url: 'orm/prisma-client/queries/crud',
+        url: 'orm/overview/introduction/what-is-prisma',
         icon: 'fa-regular fa-question',
       },
       {
         title: `CRUD`,
         description: 'How to perform CRUD operations with your generated Prisma Client API. ',
-        url: 'concepts/components/prisma-client/crud',
+        url: 'orm/prisma-client/queries/crud',
         icon: 'fa-solid fa-arrow-right-arrow-left',
       },
       {
