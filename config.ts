@@ -44,8 +44,9 @@ const siteConfig = {
         to: '/platform',
         type: 'bucket',
         bucketName: '/800-platform',
+        hidden: true,
       },
-      { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
+      { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about', hidden: true },
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
