@@ -101,11 +101,11 @@ const siteConfig = {
           'An ecosystem of tools empowering teams to build data-heavy, global-first applications.',
         links: [
           {
-            url: 'data-platform/accelerate',
+            url: 'data-platform/accelerate/what-is-accelerate',
             title: 'Prisma Accelerate',
           },
           {
-            url: 'data-platform/pulse',
+            url: 'data-platform/pulse/what-is-pulse',
             title: 'Prisma Pulse',
           },
         ],
