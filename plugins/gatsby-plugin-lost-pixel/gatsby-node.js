@@ -13,8 +13,8 @@ const excludedPaths = [
 ]
 
 const errorPages = [
-  '/guides/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-mysql',
-  '/guides/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-mysql',
+  '/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-mysql',
+  '/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-mysql',
 ]
 
 const longPages = [
@@ -59,7 +59,10 @@ exports.onPostBuild = async ({ graphql, pathPrefix, basePath = pathPrefix }, plu
 
       return {
         path: edge.node.path,
-        name: (edge.node.path === '/' || edge.node.path === '/404/') ? edge.node.path.split('/').join('-') : edge.node.path
+        name:
+          edge.node.path === '/' || edge.node.path === '/404/'
+            ? edge.node.path.split('/').join('-')
+            : edge.node.path,
       }
     })
     .filter((edge) => edge !== null)

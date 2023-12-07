@@ -14,7 +14,7 @@ export const useAllArticlesQuery = () => {
               staticLink
               preview
               deprecated
-              earlyaccess
+              # earlyaccess
               langSwitcher
               search
               wide
