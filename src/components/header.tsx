@@ -12,6 +12,7 @@ import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
 import { defaultTheme as theme } from '../theme'
+import { Button } from './button'
 import { Icon } from './Icon'
 
 type HeaderViewProps = {
@@ -29,8 +30,30 @@ const BucketHeader = styled.div<{ wide?: boolean }>`
   width: 100%;
   display: flex;
   gap: 16px;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+
+  .log-btn {
+    padding: 6px 16px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 22.4px;
+
+    @media (min-width: 0px) and (max-width: 600px) {
+      display: none;
+    }
+  }
+
+  .log-btn-mobile {
+    font-size: 20px;
+    line-height: 28px;
+    padding: 10px;
+    width: calc(100% - 70px);
+    margin: 24px 35px 0 35px;
+    @media (min-width: 600px) {
+      display: none;
+    }
+  }
 
   > * {
     padding: 0;
@@ -61,7 +84,7 @@ const BucketHeader = styled.div<{ wide?: boolean }>`
       }
     }
   }
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     justify-content: space-between;
   }
 `
@@ -82,7 +105,7 @@ const DocsMobileButton = styled.div`
   svg {
     margin-left: ${theme.space[8]};
   }
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     display: flex;
     align-items: center;
   }
@@ -101,7 +124,7 @@ const MobileOnlyNav = styled.div`
   background: ${theme.colors.gray[800]};
   right: 0;
   padding: ${theme.space[32]} ${theme.space[16]};
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     display: block;
   }
 `
@@ -128,7 +151,7 @@ const HeaderWrapper = styled.div<{ open: boolean }>`
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 12px 16px;
   }
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     z-index: 105;
     padding: 20px 16px;
     ${(p) => p.open && `position: fixed;`}
@@ -166,7 +189,7 @@ const NonMobileMenu = styled.div`
       border-bottom: 2px solid black;
     }
   }
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     display: none;
   }
 `
@@ -202,7 +225,7 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
   }
 
   .menu-item {
-    padding: 24px;
+    padding: 32px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -235,7 +258,7 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
       display: block;
     }
   }
-  @media (min-width: ${theme.breakpoints.tabletVertical}) and (max-width: 1024px) {
+  @media (min-width: ${theme.breakpoints.tabletVertical}) and (max-width: 940px) {
     font-size: 14px;
   }
 
@@ -253,8 +276,8 @@ const SecondLevelMobileNavLink = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid ${theme.colors.gray[300]};
-  color: ${theme.colors.gray[600]};
+  border-bottom: 1px solid #e2e8f0;
+  color: #1a202c;
   font-weight: 600;
   cursor: pointer;
   &:hover {
@@ -274,7 +297,7 @@ const SearchComponentDesktop = styled.div<{
   display: block;
   transform: translateX(-50%);
   transition: all 50ms ease-out;
-  padding: 24px 10px;
+  padding: 16px;
   width: 100%;
   z-index: ${(p) => (p.open ? 200 : 101)};
   background: ${(p) => (p.sidenavSearchOpened ? 'transparent' : theme.colors.gray[100])};
@@ -292,9 +315,10 @@ const SecondLevelNav = styled.div<{ wide?: boolean }>`
   width: fit-content;
   width: 100%;
   display: flex;
+  background: white;
   justify-content: space-between;
-  @media (min-width: 0px) and (max-width: 1024px) {
-    margin: 94px 0 0 0;
+  @media (min-width: 0px) and (max-width: 940px) {
+    margin: 92px 0 0 0;
     flex-direction: column;
     ${(p) => p.wide && `padding: 0;`}
   }
@@ -388,12 +412,18 @@ const HomeIcons = styled.div`
 
 const OverflowContainer = styled.div`
   height: 100%;
+  background: white;
   overflow: scroll;
 `
 
 const GithubLink = styled.a`
-  @media (min-width: 0px) and (max-width: 1024px) {
+  margin-left: auto;
+  @media (min-width: 0px) and (max-width: 600px) {
     display: none;
+  }
+  > svg {
+    height: 35px;
+    width: 31px;
   }
 `
 
@@ -465,6 +495,18 @@ const Header = ({
           <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
             <SecondLevelMenu />
           </NonMobileMenu>
+          <GithubLink href="https://github.com/prisma" target="_blank">
+            <Github className="light" fill={'#2d3748'} width={24} height={24} />
+            <Github className="dark" fill={'#ffffff'} width={24} height={24} />
+          </GithubLink>
+          <Button
+            type="primary"
+            color="teal"
+            className="log-btn"
+            href="https://console.prisma.io/login?utm_source=website&utm_medium=header"
+          >
+            Log in
+          </Button>
           <DocsMobileButton onClick={toggleMobileNav}>
             {showMobileNav ? (
               <Icon icon="fa-regular fa-xmark" size="28px" />
@@ -473,15 +515,18 @@ const Header = ({
             )}
           </DocsMobileButton>
 
-          <GithubLink href="https://github.com/prisma" target="_blank">
-            <Github className="light" fill={'#2d3748'} width={24} height={24} />
-            <Github className="dark" fill={'#ffffff'} width={24} height={24} />
-          </GithubLink>
-
           {showMobileNav && (
             <SecondLevelMobileOnlyNav>
               <OverflowContainer>
                 <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
+                <Button
+                  type="primary"
+                  color="teal"
+                  className="log-btn-mobile"
+                  href="https://console.prisma.io/login?utm_source=website&utm_medium=header"
+                >
+                  Log in
+                </Button>
               </OverflowContainer>
             </SecondLevelMobileOnlyNav>
           )}
