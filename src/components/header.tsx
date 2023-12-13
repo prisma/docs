@@ -460,7 +460,7 @@ const Header = ({
               <Logo className="light" fill={'#2d3748'} />
               <Logo className="dark" fill={'#ffffff'} />
             </a>
-            <a href="/docs">Docs</a>
+            <Link to="/docs">Docs</Link>
           </HomeIcons>
           <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
             <SecondLevelMenu />
