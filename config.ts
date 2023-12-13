@@ -48,7 +48,7 @@ const siteConfig = {
         to: '/platform',
         type: 'bucket',
         bucketName: '/500-platform',
-        hidden: true,
+        hidden: false,
       },
       {
         text: 'About',

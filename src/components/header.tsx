@@ -469,7 +469,7 @@ const Header = ({
                 to={item.to}
                 state={{ bucketName: item.bucketName }}
                 activeClassName="active-item"
-                dataPlatform={item.to.includes('data-platform')}
+                dataPlatform={item.to.includes('/accelerate') || item.to.includes('/pulse')}
                 className={isCurrent ? 'active-item' : 'non-active'}
               >
                 <span>{item.text}</span>
