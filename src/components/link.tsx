@@ -1,6 +1,7 @@
 import { Link as GatsbyLink } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
 import React from 'react'
+import CustomLink from './customLink'
 
 interface LinkProps {
   to: string | null
@@ -18,11 +19,12 @@ const Link = ({
   ...props
 }: LinkProps & React.ReactNode) => {
   return !to || isAbsoluteUrl(to) ? (
-    <a
+    <CustomLink
       href={to}
       {...props}
-      target={!to?.includes('prisma.io') ? '_blank' : '_self'}
-      rel={!to?.includes('prisma.io') ? 'noopener' : ''}
+      mdx={true}
+      // target={!to?.includes('prisma.io') ? '_blank' : '_self'}
+      // rel={!to?.includes('prisma.io') ? 'noopener' : ''}
       style={{ display: 'inline-block' }}
     >
       {props.children}
@@ -42,7 +44,7 @@ const Link = ({
           />
         </svg>
       )}
-    </a>
+    </CustomLink>
   ) : (
     <GatsbyLink
       to={to}
