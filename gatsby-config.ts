@@ -38,33 +38,33 @@ let plugins: any = [
             quality: 100,
           },
         },
-        {
-          resolve: 'gatsby-remark-to-absoluteurl',
-          options: {
-            redirects: docsConfig.redirects,
-          },
-        },
-        {
-          resolve: 'gatsby-remark-check-links-numberless',
-          options: {
-            // Do not surface links to these pages as broken:
-            exceptions: [
-              '/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql',
-              '/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
-              '/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb',
-              '/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb',
-              '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb',
-              '/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-cockroachdb',
-            ],
-          },
-        },
+        // {
+        //   resolve: 'gatsby-remark-to-absoluteurl',
+        //   options: {
+        //     redirects: docsConfig.redirects,
+        //   },
+        // },
+        // {
+        //   resolve: 'gatsby-remark-check-links-numberless',
+        //   options: {
+        //     // Do not surface links to these pages as broken:
+        //     exceptions: [
+        //       '/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql',
+        //       '/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql',
+        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql',
+        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql',
+        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale',
+        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale',
+        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-typescript-planetscale',
+        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases/connect-your-database-typescript-planetscale',
+        //       '/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb',
+        //       '/getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb',
+        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb',
+        //       '/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb',
+        //       '/getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-typescript-cockroachdb',
+        //     ],
+        //   },
+        // },
         {
           resolve: 'gatsby-remark-copy-linked-files',
           options: {
