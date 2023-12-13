@@ -13,6 +13,7 @@ import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
 import { defaultTheme as theme } from '../theme'
 import { Icon } from './Icon'
+import CustomLink from './customLink'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -455,11 +456,11 @@ const Header = ({
       <HeaderWrapper open={showMobileNav}>
         <BucketHeader wide={wide}>
           <HomeIcons>
-            <a href="https://www.prisma.io">
+            <CustomLink href="https://www.prisma.io">
               <Logo className="light" fill={'#2d3748'} />
               <Logo className="dark" fill={'#ffffff'} />
-            </a>
-            <a href="https://www.prisma.io/docs">Docs</a>
+            </CustomLink>
+            <CustomLink href="https://www.prisma.io/docs">Docs</CustomLink>
           </HomeIcons>
           <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
             <SecondLevelMenu />
