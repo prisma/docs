@@ -426,7 +426,6 @@ const Header = ({
       (item) => item.type === 'external-link' && !item.hidden
     )
 
-    console.log(headerProps.secondLevelHeaderMenuItems)
     return (
       <SecondLevelNav wide={wide}>
         <div>
@@ -460,7 +459,7 @@ const Header = ({
               <Logo className="light" fill={'#2d3748'} />
               <Logo className="dark" fill={'#ffffff'} />
             </a>
-            <Link to="/docs">Docs</Link>
+            <a href="https://www.prisma.io/docs">Docs</a>
           </HomeIcons>
           <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
             <SecondLevelMenu />
