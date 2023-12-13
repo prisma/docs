@@ -103,7 +103,8 @@ const ProductCard = styled.div<{ color?: string }>`
       : 'linear-gradient(102.41deg, #FFFFFF 6.22%, #F4F5FF 87.23%)'};
   box-shadow: 0px 18px 42px 0px rgba(23, 43, 77, 0.08), 0px 4px 26px 0px rgba(23, 43, 77, 0.05),
     0px 0px 46px 0px rgba(23, 43, 77, 0.01);
-  a {
+  a,
+  button {
     color: ${(props) => (props.color === 'teal' ? '#16A394' : '#5A67D8')};
   }
   @media (min-width: 768px) {
@@ -123,7 +124,8 @@ const ProductCard = styled.div<{ color?: string }>`
   }
 
   @media (prefers-color-scheme: dark) {
-    a {
+    a,
+    button {
       color: ${(props) =>
         props.color === 'teal' ? `${theme.colors.teal[400]}` : `${theme.colors.indigo[400]}`};
     }
@@ -150,7 +152,8 @@ const LinkGrid = styled.div`
   width: 100%;
   flex-wrap: wrap;
   justify-content: space-between;
-  a {
+  a,
+  button {
     min-width: calc(50% - 8px);
     white-space: nowrap;
     font-family: 'Inter';

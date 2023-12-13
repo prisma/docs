@@ -9,6 +9,7 @@ interface LinkProps {
   partiallyActive?: string
   getProps?: any
   wide?: boolean
+  sidenav?: boolean
 }
 
 const Link = ({
@@ -16,9 +17,10 @@ const Link = ({
   activeClassName,
   partiallyActive,
   getProps,
+  sidenav = false,
   ...props
 }: LinkProps & React.ReactNode) => {
-  return !to || isAbsoluteUrl(to) ? (
+  return (!to || isAbsoluteUrl(to)) && !sidenav ? (
     <CustomLink
       href={to}
       {...props}
@@ -28,7 +30,7 @@ const Link = ({
       style={{ display: 'inline-block' }}
     >
       {props.children}
-      {to && isAbsoluteUrl(to) && !to.includes('prisma.io') && (
+      {to && isAbsoluteUrl(to) && (!to.includes('prisma.io') || to.includes('slack.prisma.io')) && (
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="12"

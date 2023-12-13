@@ -18,9 +18,13 @@ const CustomButton = styled.button<{ mdx?: string }>`
 
 const CustomLink = ({ href, mdx, ...props }: any) => {
   const goToPath = () => {
-    window.open(href, '_self')
+    window.open('https://prisma.io/href', '_self')
   }
-  return <CustomButton onClick={goToPath} {...props} mdx={mdx} />
+  return (
+    <CustomButton onClick={goToPath} {...props} mdx={mdx}>
+      {props.children}
+    </CustomButton>
+  )
 }
 
 export default CustomLink
