@@ -160,7 +160,8 @@ const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
   font-size: ${theme.fontSizes[16]};
-  a {
+  a,
+  button {
     padding: 30px 8px;
     border-bottom: 2px solid transparent;
     &:hover {
