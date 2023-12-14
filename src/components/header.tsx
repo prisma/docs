@@ -509,7 +509,7 @@ const Header = ({
             className="log-btn"
             href="https://console.prisma.io/login?utm_source=docs&utm_medium=login"
           >
-            Log in
+            Login
           </Button>
           <DocsMobileButton onClick={toggleMobileNav}>
             {showMobileNav ? (
