@@ -7,6 +7,7 @@ import { defaultTheme as theme } from '../theme'
 import { getParentTitle } from '../utils/parentTitle'
 import { Icon } from './Icon'
 import Link from './link'
+import CustomLink from './customLink'
 
 const BreadcrumbTitle = styled.div`
   color: ${theme.colors.gray[600]} !important;
@@ -51,9 +52,9 @@ const ParentTitle = ({ slug, nonLink, isSearchItem }: ParentTitleProps) => {
   return (
     <BreadcrumbTitle>
       {!isSearchItem && (
-        <a href="/docs">
+        <CustomLink href="https://www.prisma.io/docs">
           <Icon icon="fa-solid fa-house" size="16px"></Icon>
-        </a>
+        </CustomLink>
       )}
       {!isSearchItem && <span> {`/`} </span>}
       {parentTitle.map((part: any, index: number) => (
