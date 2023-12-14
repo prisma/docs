@@ -469,7 +469,11 @@ const Header = ({
                 to={item.to}
                 state={{ bucketName: item.bucketName }}
                 activeClassName="active-item"
-                dataPlatform={item.to.includes('/accelerate') || item.to.includes('/pulse')}
+                dataPlatform={
+                  item.to.includes('/accelerate') ||
+                  item.to.includes('/pulse') ||
+                  item.to.includes('/platform')
+                }
                 className={isCurrent ? 'active-item' : 'non-active'}
               >
                 <span>{item.text}</span>
@@ -503,7 +507,7 @@ const Header = ({
             type="primary"
             color="teal"
             className="log-btn"
-            href="https://console.prisma.io/login?utm_source=website&utm_medium=header"
+            href="https://console.prisma.io/login?utm_source=docs&utm_medium=login"
           >
             Log in
           </Button>
@@ -523,7 +527,7 @@ const Header = ({
                   type="primary"
                   color="teal"
                   className="log-btn-mobile"
-                  href="https://console.prisma.io/login?utm_source=website&utm_medium=header"
+                  href="https://console.prisma.io/login?utm_source=docs&utm_medium=login"
                 >
                   Log in
                 </Button>
