@@ -269,6 +269,7 @@ const TreeNode = ({
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'non-active'}
           id={withPrefix(url)}
+          sidenav={true}
         >
           {hasExpandButton ? (
             <span className="collapse-title" onClick={collapse}>

@@ -14,6 +14,7 @@ import { HeaderProps } from '../interfaces/Layout.interface'
 import { defaultTheme as theme } from '../theme'
 import { Button } from './button'
 import { Icon } from './Icon'
+import CustomLink from './customLink'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -182,7 +183,8 @@ const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
   font-size: ${theme.fontSizes[16]};
-  a {
+  a,
+  button {
     padding: 30px 8px;
     border-bottom: 2px solid transparent;
     &:hover {
@@ -380,7 +382,7 @@ const SecondLevelMobileMenu = ({ headerProps, wide }: HeaderViewProps) => (
 const HomeIcons = styled.div`
   display: flex;
   align-items: center;
-  a {
+  button {
     color: var(--main-font-color);
     transition: transform 0.18s ease-out;
     &:hover {
@@ -456,7 +458,6 @@ const Header = ({
       (item) => item.type === 'external-link' && !item.hidden
     )
 
-    console.log(headerProps.secondLevelHeaderMenuItems)
     return (
       <SecondLevelNav wide={wide}>
         <div>
@@ -490,11 +491,11 @@ const Header = ({
       <HeaderWrapper open={showMobileNav}>
         <BucketHeader wide={wide}>
           <HomeIcons>
-            <a href="https://www.prisma.io">
+            <CustomLink href="https://www.prisma.io">
               <Logo className="light" fill={'#2d3748'} />
               <Logo className="dark" fill={'#ffffff'} />
-            </a>
-            <a href="/docs">Docs</a>
+            </CustomLink>
+            <CustomLink href="https://www.prisma.io/docs">Docs</CustomLink>
           </HomeIcons>
           <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
             <SecondLevelMenu />
