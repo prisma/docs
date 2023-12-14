@@ -317,7 +317,6 @@ const SecondLevelNav = styled.div<{ wide?: boolean }>`
   width: fit-content;
   width: 100%;
   display: flex;
-  background: white;
   justify-content: space-between;
   @media (min-width: 0px) and (max-width: 940px) {
     margin: 92px 0 0 0;
