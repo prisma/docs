@@ -14,7 +14,8 @@ const BreadcrumbTitle = styled.div`
   line-height: 1.6rem;
   font-weight: normal;
   margin: 0;
-  a {
+  a,
+  button {
     color: ${theme.colors.gray[600]} !important;
     text-decoration: none;
 
@@ -27,7 +28,8 @@ const BreadcrumbTitle = styled.div`
   }
 
   @media (prefers-color-scheme: dark) {
-    a {
+    a,
+    button {
       color: ${theme.colors.gray[500]} !important;
       &:hover,
       &:focus {
