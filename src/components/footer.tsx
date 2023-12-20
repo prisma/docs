@@ -5,6 +5,7 @@ import styled, { css } from 'styled-components'
 import { darkTheme, defaultTheme as theme } from '../theme'
 import { Icon } from './Icon'
 import { FooterNewsletterForm } from './newsletter/FooterNewsletterForm'
+import CustomLink from './customLink'
 
 const FooterWrapper = styled.div`
   background: transparent;
@@ -164,7 +165,7 @@ namespace S {
     )
   }
 
-  const StyledLink = styled.a<{
+  const StyledLink = styled(CustomLink)<{
     color?: ColorType
   }>(
     ({ color = 'indigo' }) => css`
@@ -250,7 +251,7 @@ interface FooterProps {
 const FooterSec = ({
   className,
   lightTheme = false,
-  absoluteLinks = false,
+  absoluteLinks = true,
   newsletterComponent,
   color = 'indigo',
 }: FooterProps) => {
@@ -287,9 +288,7 @@ const FooterSec = ({
                   theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/data-platform/accelerate`}
                 >
-                  <div className="link-title-label">
-                    Accelerate
-                  </div>
+                  <div className="link-title-label">Accelerate</div>
                 </S.Link>
                 <S.Link
                   color={color}
