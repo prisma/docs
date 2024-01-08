@@ -12,9 +12,9 @@ const HTML = (props: any) => {
           src="https://widget.kapa.ai/kapa-widget-v1.1.0.bundle.js"
           data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
           data-project-name="Prisma"
-          data-project-color="#2D3748"
+          data-project-color="#04C8BB"
           data-project-logo="https://www.prisma.io/docs/ai_logo.png"
-          data-button-text="Ask AI"
+          data-button-text="ASK AI"
         ></script>
 
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
