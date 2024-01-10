@@ -71,7 +71,6 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
   if (slug) {
     const slugBucketPart = `/${slug.split('/')[1]}`
     const selectedBucket = bucketNames.filter((bn: any) => bn === slugBucketPart)[0]
-    console.log(selectedBucket)
 
     const bucket = config.header.secondLevelHeaderMenuItems.filter(
       (item: any) => item.bucketName === selectedBucket
