@@ -71,10 +71,25 @@ const SidebarLayout = ({ isMobile, location, slug }: any) => {
   if (slug) {
     const slugBucketPart = `/${slug.split('/')[1]}`
     const selectedBucket = bucketNames.filter((bn: any) => bn === slugBucketPart)[0]
+    console.log(selectedBucket)
+
+    const bucket = config.header.secondLevelHeaderMenuItems.filter(
+      (item: any) => item.bucketName === selectedBucket
+    )[0]
+
     if (selectedBucket) {
-      bucketEdges = allMdx.edges?.filter((edge) => {
-        return edge.node.fields.slug.includes(selectedBucket)
-      })
+      if (bucket && bucket.includeSideNav) {
+        bucketEdges = allMdx.edges?.filter((edge) => {
+          return (
+            edge.node.fields.slug.includes(selectedBucket) ||
+            edge.node.fields.slug.includes(bucket.includeSideNav)
+          )
+        })
+      } else {
+        bucketEdges = allMdx.edges?.filter((edge) => {
+          return edge.node.fields.slug.includes(selectedBucket)
+        })
+      }
 
       bucketEdgesMobile = bucketEdges?.filter(
         (edge) => edge.node.fields.slug !== `${selectedBucket}/index`

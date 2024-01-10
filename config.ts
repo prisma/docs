@@ -35,6 +35,7 @@ const siteConfig = {
         type: 'bucket',
         bucketName: '/300-accelerate',
         hidden: false,
+        includeSideNav: '/500-platform',
       },
       {
         text: 'Pulse',
