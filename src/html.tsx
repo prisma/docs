@@ -12,7 +12,7 @@ const HTML = (props: any) => {
           src="https://widget.kapa.ai/kapa-widget-v1.1.0.bundle.js"
           data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
           data-project-name="Prisma"
-          data-project-color="#04C8BB"
+          data-project-color="#16A394"
           data-project-logo="https://www.prisma.io/docs/ai_logo.png"
           data-button-text="ASK AI"
         ></script>
