@@ -9,12 +9,13 @@ const HTML = (props: any) => {
         {/* Kapa.ai script */}
         <script
           defer
-          src="https://widget.kapa.ai/kapa-widget-v1.1.0.bundle.js"
+          src="https://widget.kapa.ai/kapa-widget.bundle.js"
           data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
           data-project-name="Prisma"
           data-project-color="#2D3748"
           data-project-logo="https://www.prisma.io/docs/ai_logo.png"
           data-button-text="ASK AI"
+          data-modal-example-questions="How can I setup relations in my schema file?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?"
           data-button-image="https://www.prisma.io/docs/ai_button.svg"
           data-button-text-color="#71E8DF"
           data-button-bg-color="#2D3748"
