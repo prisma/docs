@@ -9,7 +9,7 @@ const HTML = (props: any) => {
         {/* Kapa.ai script */}
         <script
           defer
-          src="https://widget.kapa.ai/kapa-widget-v1.1.0.bundle.js"
+          src="https://widget.kapa.ai/kapa-widget.bundle.js"
           data-website-id="1b51bb03-43cc-4ef4-95f1-93288a91b560"
           data-project-name="Prisma"
           data-project-color="#2D3748"
