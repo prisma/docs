@@ -15,6 +15,7 @@ const HTML = (props: any) => {
           data-project-color="#2D3748"
           data-project-logo="https://www.prisma.io/docs/ai_logo.png"
           data-button-text="Ask AI"
+          data-modal-example-questions="How can I setup relations in my schema file?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?"
         ></script>
 
         {/* OneTrust Cookies Consent Notice start for prisma.io  */}
