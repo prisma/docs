@@ -19,7 +19,16 @@ import TabbedContent from './tabbedContent'
 import Table from './table'
 import Tip from './tip'
 import TopBlock from './topBlock'
-import { Bolt, BorderBox, BoxTitle, Database, SignalStream } from './gettingstarted'
+import {
+  Bolt,
+  BorderBox,
+  BoxTitle,
+  CategoryTitle,
+  Database,
+  Grid,
+  LinkCard,
+  SignalStream,
+} from './gettingstarted'
 
 const shortcodes = {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -71,6 +80,9 @@ const shortcodes = {
   SignalStream,
   BorderBox,
   BoxTitle,
+  CategoryTitle,
+  LinkCard,
+  Grid,
 }
 
 export default shortcodes
