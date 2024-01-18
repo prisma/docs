@@ -56,7 +56,7 @@ export const BorderBoxWrapper = styled.div<{ border: boolean }>`
     font-family: Inter;
     text-align: left;
     letter-spacing: 0em;
-    line-height: 16.8px;
+    line-height: 20px;
     font-size: 14px;
     :first-child {
       margin-top: 0;
@@ -87,7 +87,6 @@ export const CategoryTitle = styled.div`
   line-height: 38px;
   letter-spacing: -0.800000011920929px;
   text-align: left;
-  // padding: 0px 2.5rem;
   margin: 60px 0 24px;
   svg {
     width: 21px;
@@ -139,7 +138,6 @@ export const Grid = styled.div`
   gap: 16px;
   display: grid;
   grid-template-columns: none;
-  // padding: 0px 2.5rem;
   @media (min-width: 600px) {
     grid-template-columns: 1fr 1fr;
   }
@@ -181,6 +179,17 @@ const SquareWrapper = styled.div`
   border: 1px solid var(--border-color);
   background: var(--header-bg-color);
   border-radius: 8px;
+  transition: all 300ms ease-out;
+  cursor: pointer;
+  &:hover {
+    background: var(--main-bgd-color);
+    border-color: ${defaultTheme.colors.indigo[600]};
+  }
+  &:active,
+  &:focus {
+    background: var(--code-inline-bgd-color);
+    border-color: ${defaultTheme.colors.indigo[700]};
+  }
   svg {
     width: 100%;
     height: 100%;
@@ -195,4 +204,5 @@ export const List = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  justify-content: flex-start;
 `
