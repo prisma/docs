@@ -1,23 +1,24 @@
-import React from 'react'
-import SwitchTech from './switchTech'
-import CodeBlock from './codeBlock'
-import TabbedContent from './tabbedContent'
-import ParallelBlocks from './parallelBlocks'
-import CodeWithResult from './codeWithResult'
-import Code from './code'
-import CollapseBox from './collapsible'
-import Table from './table'
-import ButtonLink from './button'
-import FileWithIcon from './fileWithIcon'
-import Subsections from './subSections'
-import TopBlock from './topBlock'
-import FootNote from './footnote'
-import Admonition from './admonition'
-import Quiz from './quiz'
-import Tip from './tip'
-import NavigationLinksContainer from './navigationLinksContainer'
 import isAbsoluteUrl from 'is-absolute-url'
+import React from 'react'
+
 import Link from '../link'
+import Admonition from './admonition'
+import ButtonLink, { Database } from './button'
+import Code from './code'
+import CodeBlock from './codeBlock'
+import CodeWithResult from './codeWithResult'
+import CollapseBox from './collapsible'
+import FileWithIcon from './fileWithIcon'
+import FootNote from './footnote'
+import NavigationLinksContainer from './navigationLinksContainer'
+import ParallelBlocks from './parallelBlocks'
+import Quiz from './quiz'
+import Subsections from './subSections'
+import SwitchTech from './switchTech'
+import TabbedContent from './tabbedContent'
+import Table from './table'
+import Tip from './tip'
+import TopBlock from './topBlock'
 
 const shortcodes = {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -64,6 +65,7 @@ const shortcodes = {
   NavigationLinksContainer: (props: any) => (
     <NavigationLinksContainer {...props}>{props.children}</NavigationLinksContainer>
   ),
+  Database,
 }
 
 export default shortcodes
