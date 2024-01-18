@@ -51,7 +51,7 @@ export const SignalStream = ({ color }: any) => (
 export const BorderBoxWrapper = styled.div<{ border: boolean }>`
   padding: 24px 24px 32px 24px;
   border-radius: 8px;
-  background: #f7fafc;
+  background: var(--main-bgd-color);
   > * {
     font-family: Inter;
     text-align: left;
@@ -87,7 +87,7 @@ export const CategoryTitle = styled.div`
   line-height: 38px;
   letter-spacing: -0.800000011920929px;
   text-align: left;
-  padding: 0px 2.5rem;
+  // padding: 0px 2.5rem;
   margin: 60px 0 24px;
   svg {
     width: 21px;
@@ -99,13 +99,18 @@ export const CategoryTitle = styled.div`
 `
 
 const LinkCardWrapper = styled.a`
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   padding: 20px 24px;
   border-radius: 8px;
   color: var(--main-font-color);
+  transition: all 300ms ease-out;
   display: flex;
   flex-direction: column;
   text-decoration: none;
+  &:hover {
+    background: var(--main-bgd-color);
+    border-color: #5a67d8;
+  }
   .title {
     display: inline-block;
     h6 {
@@ -134,7 +139,7 @@ export const Grid = styled.div`
   gap: 16px;
   display: grid;
   grid-template-columns: none;
-  padding: 0px 2.5rem;
+  // padding: 0px 2.5rem;
   @media (min-width: 600px) {
     grid-template-columns: 1fr 1fr;
   }
@@ -151,3 +156,43 @@ export const LinkCard = ({ icon, title, desc, link }: any) => {
     </LinkCardWrapper>
   )
 }
+
+export const Tab = styled.div`
+  padding: 15px;
+  background-color: var(--main-bgd-color);
+  border: 1px solid ${defaultTheme.colors.indigo[600]};
+  border-radius: 0px 8px 8px 8px;
+  font-family: Inter;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0em;
+  text-align: left;
+  p {
+    margin-top: 0;
+  }
+`
+
+const SquareWrapper = styled.div`
+  width: 90px;
+  height: 90px;
+  padding: 22px;
+  display: inline-block;
+  border: 1px solid var(--border-color);
+  background: var(--header-bg-color);
+  border-radius: 8px;
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+`
+
+export const SquareLogo = ({ image, alt }: any) => {
+  return <SquareWrapper>{image}</SquareWrapper>
+}
+
+export const List = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+`

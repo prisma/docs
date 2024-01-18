@@ -27,8 +27,17 @@ import {
   Database,
   Grid,
   LinkCard,
+  List,
   SignalStream,
+  SquareLogo,
+  Tab,
 } from './gettingstarted'
+import PostgresSQLSimple from '../../icons/technologies/PostgresSQLSimple'
+import MySQLSimple from '../../icons/technologies/MySQLSimple'
+import SQLServer from '../../icons/technologies/SQLServer'
+import PlanetScale from '../../icons/technologies/PlanetScale'
+import CockroachDBgradient from '../../icons/technologies/CockroachDBgradient'
+import MongoDBSimple from '../../icons/technologies/MongoDBSimple'
 
 const shortcodes = {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -83,6 +92,15 @@ const shortcodes = {
   CategoryTitle,
   LinkCard,
   Grid,
+  Tab,
+  SquareLogo,
+  PostgresSQLSimple,
+  MySQLSimple,
+  SQLServer,
+  PlanetScale,
+  CockroachDBgradient,
+  MongoDBSimple,
+  List,
 }
 
 export default shortcodes
