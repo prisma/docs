@@ -16,6 +16,7 @@ export const useAllArticlesQuery = () => {
               deprecated
               # earlyaccess
               langSwitcher
+              hideTitle
               search
               wide
               dbSwitcher

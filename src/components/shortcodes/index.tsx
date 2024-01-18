@@ -3,7 +3,7 @@ import React from 'react'
 
 import Link from '../link'
 import Admonition from './admonition'
-import ButtonLink, { Database } from './button'
+import ButtonLink from './button'
 import Code from './code'
 import CodeBlock from './codeBlock'
 import CodeWithResult from './codeWithResult'
@@ -19,6 +19,7 @@ import TabbedContent from './tabbedContent'
 import Table from './table'
 import Tip from './tip'
 import TopBlock from './topBlock'
+import { Bolt, BorderBox, BoxTitle, Database, SignalStream } from './gettingstarted'
 
 const shortcodes = {
   h1: () => <h1 style={{ display: 'none' }} />,
@@ -66,6 +67,10 @@ const shortcodes = {
     <NavigationLinksContainer {...props}>{props.children}</NavigationLinksContainer>
   ),
   Database,
+  Bolt,
+  SignalStream,
+  BorderBox,
+  BoxTitle,
 }
 
 export default shortcodes

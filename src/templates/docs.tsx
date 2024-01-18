@@ -18,7 +18,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
   const {
     mdx: {
       fields: { slug, modSlug },
-      frontmatter: { title, langSwitcher, dbSwitcher, toc, tocDepth, codeStyle, wide },
+      frontmatter: { title, langSwitcher, dbSwitcher, toc, tocDepth, codeStyle, wide, hideTitle },
       body,
       parent,
       tableOfContents,
@@ -39,6 +39,7 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
         <TopSection
           location={props.location}
           title={title}
+          hideTitle={hideTitle}
           slug={modSlug}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}

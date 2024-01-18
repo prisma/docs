@@ -59,13 +59,16 @@ const TopSection = ({
   langSwitcher,
   dbSwitcher,
   codeStyle,
+  hideTitle = false,
 }: any) => {
   return (
     <TopSectionWrapper>
       <ParentTitle slug={slug} />
       <Header>
         <div className="title">
-          <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
+          {!hideTitle ? (
+            <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
+          ) : null}
         </div>
         <div className="tech-switch-block">
           {(langSwitcher || dbSwitcher) && (
