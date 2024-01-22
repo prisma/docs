@@ -65,11 +65,11 @@ const TopSection = ({
     <TopSectionWrapper>
       <ParentTitle slug={slug} />
       <Header>
-        <div className="title">
-          {!hideTitle ? (
+        {!hideTitle ? (
+          <div className="title">
             <MainTitle className={`${codeStyle ? 'inline-code' : ''}`}>{title}</MainTitle>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         <div className="tech-switch-block">
           {(langSwitcher || dbSwitcher) && (
             <SwitcherBlock

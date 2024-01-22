@@ -86,6 +86,7 @@ export const query = graphql`
         search
         wide
         dbSwitcher
+        hideTitle
         toc
         tocDepth
         codeStyle
