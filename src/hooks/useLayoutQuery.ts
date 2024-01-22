@@ -19,6 +19,7 @@ export const useLayoutQuery = () => {
               to
               bucketName
               text
+              hidden
             }
           }
         }

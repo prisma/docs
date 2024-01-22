@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '@prisma/lens/dist/web'
+import { defaultTheme as theme } from '../../theme'
 import { useLocation } from '@reach/router'
 import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 import * as React from 'react'
@@ -136,6 +136,31 @@ const ListItem = styled.li`
       transition: transform 0.2s ease;
     }
   }
+
+  @media (prefers-color-scheme: dark) {
+    a {
+      color: ${theme.colors.gray[500]} !important;
+      &:hover {
+        color: ${theme.colors.gray[400]} !important;
+      }
+      .tag {
+        color: ${theme.colors.gray[100]} !important;
+        background: ${theme.colors.gray[800]} !important;
+      }
+    }
+    .active-item {
+      color: ${theme.colors.indigo[400]} !important;
+    }
+    &.top-level,
+    &.static-link {
+      > a {
+        color: ${theme.colors.gray[100]} !important;
+        &:hover {
+          color: ${theme.colors.gray[100]} !important;
+        }
+      }
+    }
+  }
 `
 
 const TreeNode = ({
@@ -152,6 +177,7 @@ const TreeNode = ({
   staticLink,
   duration,
   preview,
+  deprecated,
   earlyaccess,
   lastLevel,
   hidePage,
@@ -243,6 +269,7 @@ const TreeNode = ({
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'non-active'}
           id={withPrefix(url)}
+          sidenav={true}
         >
           {hasExpandButton ? (
             <span className="collapse-title" onClick={collapse}>
@@ -260,6 +287,7 @@ const TreeNode = ({
           )}
           {duration && <span className="tag">{duration}</span>}
           {preview && <span className="tag small">Preview</span>}
+          {deprecated && <span className="tag small">Deprecated</span>}
           {earlyaccess && <span className="tag small">Early Access</span>}
         </Link>
       )}

@@ -1,4 +1,3 @@
-import { defaultTheme as theme, WebsiteHeader } from '@prisma/lens/dist/web'
 import { useLocation } from '@reach/router'
 import * as React from 'react'
 import styled from 'styled-components'
@@ -6,38 +5,56 @@ import styled from 'styled-components'
 import Link from '../components/link'
 import Search from '../components/search'
 import Sidebar from '../components/sidebar'
-import useWindowDimensions from '../hooks/useWindowDimensions'
-import DownChevron from '../icons/DownChevron'
 import ExternalLink from '../icons/ExternalLink'
+import Github from '../icons/Github'
+import Logo from '../icons/Logo'
 import RightChevron from '../icons/RightChevron'
 import UpChevron from '../icons/UpChevron'
 import { HeaderProps } from '../interfaces/Layout.interface'
+import { defaultTheme as theme } from '../theme'
+import { Button } from './button'
+import { Icon } from './Icon'
+import CustomLink from './customLink'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
   wide?: boolean
+  mobileNavOpen?: any
+  sidenavSearchOpened?: boolean
+  homePage?: boolean
+  closeSidenavSearch?: any
+  setInputText?: any
 }
 
-const HeaderWrapper = styled.div`
-  background: radial-gradient(
-      37.86% 77.79% at 50% 100%,
-      rgba(113, 128, 150, 0.25) 0%,
-      rgba(113, 128, 150, 0) 100%
-    ),
-    linear-gradient(180deg, ${theme.colors.gray[900]} 0%, ${theme.colors.gray[800]} 100%),
-    linear-gradient(180deg, ${theme.colors.gray[900]} 0%, rgba(27, 32, 43, 0) 100%),
-    ${theme.colors.gray[800]};
-  img {
-    margin-bottom: 0;
-  }
-  //padding: ${theme.space[24]} ${theme.space[16]};
-  display: flex;
-  justify-content: center;
-`
-
-const Container = styled.div`
-  max-width: 1200px;
+const BucketHeader = styled.div<{ wide?: boolean }>`
+  max-width: ${(props) => (!props.wide ? '1240' : '1440')}px;
   width: 100%;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-start;
+  align-items: center;
+
+  .log-btn {
+    padding: 6px 16px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 22.4px;
+
+    @media (min-width: 0px) and (max-width: 600px) {
+      display: none;
+    }
+  }
+
+  .log-btn-mobile {
+    font-size: 20px;
+    line-height: 28px;
+    padding: 10px;
+    width: calc(100% - 70px);
+    margin: 24px 35px 0 35px;
+    @media (min-width: 600px) {
+      display: none;
+    }
+  }
 
   > * {
     padding: 0;
@@ -68,15 +85,9 @@ const Container = styled.div`
       }
     }
   }
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     justify-content: space-between;
   }
-`
-
-const SearchComponent = styled(Search)`
-  position: absolute;
-  top: 12px;
-  left: 12px;
 `
 
 const DocsMobileButton = styled.div`
@@ -89,13 +100,13 @@ const DocsMobileButton = styled.div`
   margin-left: ${theme.space[8]};
   font-weight: 600;
   position: relative;
-  z-index: 300;
+  z-index: 3;
   justify-content: space-between;
   cursor: pointer;
   svg {
     margin-left: ${theme.space[8]};
   }
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     display: flex;
     align-items: center;
   }
@@ -103,7 +114,8 @@ const DocsMobileButton = styled.div`
 
 const MobileOnlyNav = styled.div`
   display: none;
-  position: relative;
+  position: fixed;
+  width: 100%;
   z-index: 210;
   top: 70px;
   transition: top 0.35s;
@@ -113,28 +125,57 @@ const MobileOnlyNav = styled.div`
   background: ${theme.colors.gray[800]};
   right: 0;
   padding: ${theme.space[32]} ${theme.space[16]};
-  @media (min-width: 0px) and (max-width: 1024px) {
+  @media (min-width: 0px) and (max-width: 940px) {
     display: block;
   }
 `
 
 const SecondLevelMobileOnlyNav = styled(MobileOnlyNav)`
-  background: ${theme.colors.gray[200]};
+  background: ${theme.colors.gray[100]};
   box-shadow: 0px 1px 0px ${theme.colors.gray[300]};
-  top: 0;
+  top: 80px;
   padding: 0;
+  height: calc(100% - 80px);
   z-index: 200;
 `
 
-const SecondLevelHeader = styled.div`
-  background: ${theme.colors.gray[200]};
-  padding: 20px 16px;
+const HeaderWrapper = styled.div<{ open: boolean }>`
+  background: var(--header-bg-color);
+  padding: 0 16px;
   display: flex;
   justify-content: center;
+  border-bottom: 1px solid #e2e8f0;
   position: relative;
-  z-index: 105;
+  //position: fixed;
+  z-index: 202;
+  width: 100%;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     padding: 12px 16px;
+  }
+  @media (min-width: 0px) and (max-width: 940px) {
+    z-index: 105;
+    padding: 20px 16px;
+    ${(p) => p.open && `position: fixed;`}
+  }
+
+  .dark {
+    display: none;
+  }
+
+  .light {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    border-color: #242c3a;
+
+    .dark {
+      display: block;
+    }
+
+    .light {
+      display: none;
+    }
   }
 `
 
@@ -142,29 +183,41 @@ const NonMobileMenu = styled.div`
   display: flex;
   align-items: center;
   font-size: ${theme.fontSizes[16]};
-  @media (min-width: 0px) and (max-width: 1024px) {
+  a,
+  button {
+    padding: 30px 8px;
+    border-bottom: 2px solid transparent;
+    &:hover {
+      border-bottom: 2px solid black;
+    }
+  }
+  @media (min-width: 0px) and (max-width: 940px) {
     display: none;
   }
 `
 
 const NavLink = styled(Link)<{ wide?: boolean }>`
-  transition: color 0.1s ease-in;
-  ${(p) =>
-    p.wide
-      ? `padding: 0.25rem 0.5rem;`
-      : `padding: 0 0.5rem;
-  margin: 0 0.5rem;`}
+  transition: all 0.1s ease-in;
   color: ${theme.colors.gray[400]} !important;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
     margin: 0;
     padding: 0;
   }
 `
-const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
-  color: ${theme.colors.gray[700]} !important;
+const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
+  color: ${theme.colors.gray[800]} !important;
+  font-family: Inter;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 100%;
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  span {
+    padding: 8px;
+    border-radius: 8px;
+  }
   &.link {
     padding: 0;
     margin: 0;
@@ -174,7 +227,7 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
   }
 
   .menu-item {
-    padding: 24px;
+    padding: 32px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -187,13 +240,14 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
   }
 
   &:hover {
-    color: ${theme.colors.gray[900]} !important;
+    //color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
+    border-color: ${(props) =>
+      theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
+    //background: ${theme.colors.gray[200]};
   }
-  &.active-item {
-    background: ${theme.colors.white};
-    border-radius: ${theme.radii.small};
-    color: ${theme.colors.gray[500]} !important;
-    padding: 0.25rem 0.5rem;
+  &.active-item span {
+    background: ${theme.colors.gray[200]};
+    color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
   }
 
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
@@ -206,8 +260,16 @@ const DarkNavLink = styled(NavLink)<{ wide?: boolean }>`
       display: block;
     }
   }
-  @media (min-width: ${theme.breakpoints.tabletVertical}) and (max-width: 1024px) {
+  @media (min-width: ${theme.breakpoints.tabletVertical}) and (max-width: 940px) {
     font-size: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--main-font-color) !important;
+    &.active-item span {
+      background: ${theme.colors.gray[800]};
+      color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][400]} !important;
+    }
   }
 `
 
@@ -216,8 +278,8 @@ const SecondLevelMobileNavLink = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid ${theme.colors.gray[300]};
-  color: ${theme.colors.gray[600]};
+  border-bottom: 1px solid #e2e8f0;
+  color: #1a202c;
   font-weight: 600;
   cursor: pointer;
   &:hover {
@@ -225,15 +287,47 @@ const SecondLevelMobileNavLink = styled.div`
   }
 `
 
+const SearchComponentDesktop = styled.div<{
+  open?: boolean
+  homePage?: boolean
+  sidenavSearchOpened?: boolean
+  openSearch?: boolean
+}>`
+  position: ${(p) => (p.open ? 'fixed' : 'absolute')};
+  top: 80px;
+  left: 50%;
+  display: block;
+  transform: translateX(-50%);
+  transition: all 50ms ease-out;
+  padding: 16px;
+  width: 100%;
+  z-index: ${(p) => (p.open ? 200 : 101)};
+  background: ${(p) => (p.sidenavSearchOpened ? 'transparent' : theme.colors.gray[100])};
+  @media (min-width: 1025px) {
+    position: absolute;
+    ${(p) => !p.homePage && !p.sidenavSearchOpened && 'display: none;'}
+    ${(p) => !p.homePage && p.sidenavSearchOpened && 'margin-top: 1rem;'}
+  }
+  @media (prefers-color-scheme: dark) {
+    background: #242c3a;
+  }
+`
 const SecondLevelNav = styled.div<{ wide?: boolean }>`
   ${(p) => (p.wide ? `padding: 0 2.5rem 0 0;` : `margin-left: 48px;`)}
+  width: fit-content;
   width: 100%;
   display: flex;
   justify-content: space-between;
-  @media (min-width: 0px) and (max-width: 1024px) {
-    margin: 0;
+  @media (min-width: 0px) and (max-width: 940px) {
+    margin: 92px 0 0 0;
     flex-direction: column;
     ${(p) => p.wide && `padding: 0;`}
+  }
+  > div {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 2px;
   }
 `
 
@@ -271,35 +365,98 @@ const SecondLevelMobileMenu = ({ headerProps, wide }: HeaderViewProps) => (
   <SecondLevelNav wide={wide}>
     {headerProps.secondLevelHeaderMenuItems.map((item) => {
       return (
-        <MenuItem
-          componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
-          type={item.type}
-          text={item.text}
-          link={item.to}
-        />
+        !item.hidden && (
+          <MenuItem
+            componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
+            type={item.type}
+            text={item.text}
+            link={item.to}
+          />
+        )
       )
     })}
   </SecondLevelNav>
 )
 
-const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
-  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
-  const [showMobileNav, setShowMobileNav] = React.useState(false)
+const HomeIcons = styled.div`
+  display: flex;
+  align-items: center;
+  button {
+    color: var(--main-font-color);
+    transition: transform 0.18s ease-out;
+    &:hover {
+      transform: translateY(-2px);
+    }
+    &:first-of-type {
+      svg {
+        height: 36px;
+      }
+    }
+    &:last-of-type {
+      //color: #2d3748;
+      font-family: 'Inter';
+      font-size: 22px;
+      font-style: normal;
+      font-weight: 500;
+      padding-left: 22px;
+      position: relative;
+      line-height: 100%;
+      &:before {
+        position: absolute;
+        content: '/';
+        left: 6px;
+        color: #a0aec0;
+      }
+    }
+  }
+`
 
-  const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
+const OverflowContainer = styled.div`
+  height: 100%;
+  background: white;
+  overflow: scroll;
+`
+
+const GithubLink = styled.a`
+  margin-left: auto;
+  @media (min-width: 0px) and (max-width: 600px) {
+    display: none;
+  }
+  > svg {
+    height: 35px;
+    width: 31px;
+  }
+`
+
+const Header = ({
+  headerProps,
+  wide,
+  mobileNavOpen,
+  homePage,
+  sidenavSearchOpened,
+  closeSidenavSearch,
+  setInputText,
+}: HeaderViewProps) => {
+  const [showMobileNav, setShowMobileNav] = React.useState(false)
+  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
 
-  const { width } = useWindowDimensions()
+  const toggleMobileNav = () => setShowMobileNav(!showMobileNav)
 
   const location = useLocation()
 
+  React.useEffect(() => {
+    mobileNavOpen(showMobileNav)
+  }, [showMobileNav])
+
   const SecondLevelMenu = () => {
     const bucketItems = headerProps.secondLevelHeaderMenuItems.filter(
-      (item) => item.type === 'bucket'
+      (item) => item.type === 'bucket' && !item.hidden
     )
     const externalLinkItems = headerProps.secondLevelHeaderMenuItems.filter(
-      (item) => item.type === 'external-link'
+      (item) => item.type === 'external-link' && !item.hidden
     )
+
     return (
       <SecondLevelNav wide={wide}>
         <div>
@@ -307,72 +464,98 @@ const HeaderSec = ({ headerProps, wide }: HeaderViewProps) => {
             const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
             const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
             const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
-
             return (
               <DarkNavLink
                 to={item.to}
                 state={{ bucketName: item.bucketName }}
                 activeClassName="active-item"
+                dataPlatform={
+                  item.to.includes('/accelerate') ||
+                  item.to.includes('/pulse') ||
+                  item.to.includes('/platform')
+                }
                 className={isCurrent ? 'active-item' : 'non-active'}
               >
-                {item.text}
+                <span>{item.text}</span>
               </DarkNavLink>
             )
           })}
         </div>
-
-        {/* <div>
-          {externalLinkItems.map((item) => (
-            <DarkNavLink className="link" to={item.to}>
-              {item.text} &nbsp;&nbsp;
-              <ExternalLink />
-            </DarkNavLink>
-          ))}
-        </div> */}
       </SecondLevelNav>
     )
   }
 
   return (
     <>
-      {/* Top level header */}
-      <HeaderWrapper>
-        <Container>
-          <WebsiteHeader lightTheme={false} clearBg={true} notFixed={true} />
-        </Container>
+      <HeaderWrapper open={showMobileNav}>
+        <BucketHeader wide={wide}>
+          <HomeIcons>
+            <CustomLink href="https://www.prisma.io">
+              <Logo className="light" fill={'#2d3748'} />
+              <Logo className="dark" fill={'#ffffff'} />
+            </CustomLink>
+            <CustomLink href="https://www.prisma.io/docs">Docs</CustomLink>
+          </HomeIcons>
+          <NonMobileMenu style={headerProps.wide ? { paddingRight: '200px' } : {}}>
+            <SecondLevelMenu />
+          </NonMobileMenu>
+          <GithubLink href="https://github.com/prisma" target="_blank">
+            <Github className="light" fill={'#2d3748'} width={24} height={24} />
+            <Github className="dark" fill={'#ffffff'} width={24} height={24} />
+          </GithubLink>
+          <Button
+            type="primary"
+            color="teal"
+            className="log-btn"
+            href="https://console.prisma.io/login?utm_source=docs&utm_medium=login"
+          >
+            Login
+          </Button>
+          <DocsMobileButton onClick={toggleMobileNav}>
+            {showMobileNav ? (
+              <Icon icon="fa-regular fa-xmark" size="28px" />
+            ) : (
+              <Icon icon="fa-regular fa-bars" size="28px" />
+            )}
+          </DocsMobileButton>
+
+          {showMobileNav && (
+            <SecondLevelMobileOnlyNav>
+              <OverflowContainer>
+                <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
+                <Button
+                  type="primary"
+                  color="teal"
+                  className="log-btn-mobile"
+                  href="https://console.prisma.io/login?utm_source=docs&utm_medium=login"
+                >
+                  Login
+                </Button>
+              </OverflowContainer>
+            </SecondLevelMobileOnlyNav>
+          )}
+        </BucketHeader>
       </HeaderWrapper>
-
-      {/* Second level header */}
-      <SecondLevelHeader>
-        <Container
-          style={headerProps.wide ? { display: 'flex', maxWidth: '1440px' } : { display: 'flex' }}
+      {(location || sidenavSearchOpened) && (
+        <SearchComponentDesktop
+          open={showMobileNav}
+          homePage={homePage}
+          openSearch={!showDocsBtn}
+          sidenavSearchOpened={sidenavSearchOpened}
         >
-          <SearchComponent hitsStatus={changeHitsStatus} location={location} />
-          {showDocsBtn && (
-            <NonMobileMenu
-              style={
-                headerProps.wide ? { width: '100%', paddingRight: '200px' } : { width: '100%' }
-              }
-            >
-              <SecondLevelMenu />
-            </NonMobileMenu>
-          )}
-          {showDocsBtn && (
-            <DocsMobileButton onClick={toggleMobileNav}>
-              {width > 640 ? 'Documentation' : 'Docs'}
-              {showMobileNav ? <UpChevron /> : <DownChevron />}
-            </DocsMobileButton>
-          )}
-        </Container>
-      </SecondLevelHeader>
-
-      {showMobileNav && (
-        <SecondLevelMobileOnlyNav>
-          <SecondLevelMobileMenu headerProps={headerProps} wide={wide} />
-        </SecondLevelMobileOnlyNav>
+          <Search
+            hitsStatus={changeHitsStatus}
+            location={location}
+            sidenavSearchOpened={sidenavSearchOpened}
+            closeSidenavSearch={closeSidenavSearch}
+            path="home"
+            setInputText={setInputText}
+            wide={wide}
+          />
+        </SearchComponentDesktop>
       )}
     </>
   )
 }
 
-export default HeaderSec
+export default Header

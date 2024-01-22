@@ -1,5 +1,11 @@
 export interface HeaderProps {
-  secondLevelHeaderMenuItems: { text: string; type: string; to: string; bucketName: string }[]
+  secondLevelHeaderMenuItems: {
+    hidden: boolean
+    text: string
+    type: string
+    to: string
+    bucketName: string
+  }[]
   wide?: boolean
 }
 

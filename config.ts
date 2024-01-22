@@ -20,32 +20,43 @@ const siteConfig = {
         to: '/getting-started',
         type: 'bucket',
         bucketName: '/100-getting-started',
+        hidden: false,
       },
       {
-        text: 'Concepts',
-        to: '/concepts',
+        text: 'ORM',
+        to: '/orm',
         type: 'bucket',
-        bucketName: '/200-concepts',
+        bucketName: '/200-orm',
+        hidden: false,
       },
       {
-        text: 'Guides',
-        to: '/guides',
+        text: 'Accelerate',
+        to: '/accelerate',
         type: 'bucket',
-        bucketName: '/300-guides',
+        bucketName: '/300-accelerate',
+        hidden: false,
       },
       {
-        text: 'Reference',
-        to: '/reference',
+        text: 'Pulse',
+        to: '/pulse',
         type: 'bucket',
-        bucketName: '/400-reference',
+        bucketName: '/400-pulse',
+        hidden: false,
       },
       {
-        text: 'Prisma Data Platform',
-        to: '/data-platform',
+        text: 'Platform',
+        to: '/platform',
         type: 'bucket',
-        bucketName: '/800-data-platform',
+        bucketName: '/500-platform',
+        hidden: false,
       },
-      { text: 'About', to: '/about', type: 'bucket', bucketName: '/600-about' },
+      {
+        text: 'About',
+        to: '/about',
+        type: 'bucket',
+        bucketName: '/600-about',
+        hidden: true,
+      },
     ],
     search: {
       indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
@@ -59,7 +70,7 @@ const siteConfig = {
       gettingStarted: 'getting-started',
       readyToRun: 'https://github.com/prisma/prisma-examples',
       slack: 'https://slack.prisma.io/',
-      discord: 'https://discord.gg/KQyTW2H5ca',
+      discord: 'https://pris.ly/discord',
       git: 'https://github.com/prisma',
       buttons: [
         {
@@ -76,334 +87,157 @@ const siteConfig = {
         },
       ],
     },
+    ORMPlatformLinkData: {
+      porm: {
+        title: 'Prisma ORM',
+        icon: 'database',
+        description:
+          'Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.',
+        links: [
+          {
+            url: 'getting-started',
+            title: 'Getting started',
+          },
+          {
+            url: 'https://github.com/prisma/prisma-examples',
+            title: 'Example projects',
+            external: true,
+          },
+        ],
+      },
+      pdp: {
+        title: 'Prisma Data Platform',
+        icon: 'triangle',
+        description:
+          'An ecosystem of tools empowering teams to build data-heavy, global-first applications.',
+        links: [
+          {
+            url: 'accelerate',
+            title: 'Prisma Accelerate',
+          },
+          {
+            url: 'pulse',
+            title: 'Prisma Pulse',
+          },
+        ],
+      },
+    },
     GeneralLinkData: [
       {
-        categoryName: 'Overview',
-        icon: 'OverviewIcon',
-        links: [
-          {
-            text: 'What is Prisma',
-            url: 'concepts/overview/what-is-prisma',
-            codeBlock: false,
-          },
-          {
-            text: 'Why Prisma?',
-            url: 'concepts/overview/why-prisma',
-            codeBlock: false,
-          },
-          {
-            text: 'Should you use Prisma?',
-            url: 'concepts/overview/should-you-use-prisma',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma in your stack',
-            url: 'concepts/overview/prisma-in-your-stack',
-            codeBlock: false,
-          },
-          {
-            text: 'Under the hood',
-            url: 'concepts/components/prisma-engines',
-            codeBlock: false,
-          },
-          {
-            text: 'CRUD',
-            url: 'concepts/components/prisma-client/crud',
-            codeBlock: false,
-          },
-        ],
+        title: `What is Prisma`,
+        description: 'An overview of what Prisma ORM is and how it works.',
+        url: 'orm/overview/introduction/what-is-prisma',
+        icon: 'fa-regular fa-question',
       },
       {
-        categoryName: 'Components',
-        icon: 'ComponentsIcon',
-        links: [
-          {
-            text: 'Prisma schema',
-            url: 'concepts/components/prisma-schema',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma Client',
-            url: 'concepts/components/prisma-client',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma Migrate',
-            url: 'concepts/components/prisma-migrate',
-            codeBlock: false,
-          },
-          {
-            text: 'Introspection',
-            url: 'concepts/components/introspection',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma CLI',
-            url: 'concepts/components/prisma-cli',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma Studio',
-            url: 'concepts/components/prisma-studio',
-            codeBlock: false,
-          },
-          {
-            text: 'Preview features',
-            url: 'concepts/components/preview-features',
-            codeBlock: false,
-          },
-        ],
+        title: `CRUD`,
+        description: 'How to perform CRUD operations with your generated Prisma Client API. ',
+        url: 'orm/prisma-client/queries/crud',
+        icon: 'fa-solid fa-arrow-right-arrow-left',
       },
       {
-        categoryName: 'Database Connectors',
-        icon: 'DatabaseIcon',
-        links: [
-          {
-            text: 'PostgreSQL',
-            url: 'concepts/database-connectors/postgresql',
-            codeBlock: false,
-          },
-          {
-            text: 'MySQL',
-            url: 'concepts/database-connectors/mysql',
-            codeBlock: false,
-          },
-          {
-            text: 'MongoDB',
-            url: 'concepts/database-connectors/mongodb',
-            codeBlock: false,
-          },
-          {
-            text: 'SQL Server',
-            url: 'concepts/database-connectors/sql-server',
-            codeBlock: false,
-          },
-          {
-            text: 'SQLite',
-            url: 'concepts/database-connectors/sqlite',
-            codeBlock: false,
-          },
-          {
-            text: 'CockroachDB',
-            url: 'concepts/database-connectors/cockroachdb',
-            codeBlock: false,
-          },
-        ],
+        title: `Prisma in your stack`,
+        description:
+          'Use Prisma to build a GraphQL or REST API, or as part of a fullstack application.',
+        url: 'orm/overview/prisma-in-your-stack',
+        icon: 'fa-solid fa-server',
       },
       {
-        categoryName: 'More',
-        icon: 'MoreIcon',
-        links: [
-          {
-            text: 'Editor setup',
-            url: 'guides/development-environment/editor-setup',
-            codeBlock: false,
-          },
-          {
-            text: 'Codemod',
-            url: 'guides/upgrade-guides/upgrading-versions/codemods',
-            codeBlock: false,
-          },
-          {
-            text: 'Telemetry',
-            url: 'concepts/more/telemetry',
-            codeBlock: false,
-          },
-          {
-            text: 'Comparing Prisma',
-            url: 'concepts/more/comparisons',
-            codeBlock: false,
-          },
-        ],
+        title: `Preview features`,
+        description: 'Available preview features and how to enable them.',
+        url: 'orm/reference/preview-features',
+        icon: 'fa-solid fa-eye',
+      },
+      {
+        title: `Adopting Prisma`,
+        description: 'Migrate to Prisma from other ORMs.',
+        url: 'orm/more/migrating-to-prisma',
+        icon: 'fa-solid fa-download',
+      },
+      {
+        title: `Deployment guides`,
+        description:
+          'Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.',
+        url: 'orm/prisma-client/deployment',
+        icon: 'fa-solid fa-book',
       },
     ],
-    GuideText: 'Guides for building and deploying applications with Prisma.',
-
-    GuideLinkData: [
+    CommunityLinksData: [
       {
-        title: 'Developing with Prisma Migrate',
-        color: '#48BB78',
-        small: false,
-        content: 'Get started with Prisma Migrate.',
-        url: 'guides/migrate/developing-with-prisma-migrate',
+        id: 'slack',
+        title: 'Slack',
+        description: 'Engage with a vibrant community of developers and companies adopting Prisma',
+        icon: 'fa-brands fa-slack',
+        link: 'https://slack.prisma.io/',
+        linkText: 'Join our channel',
       },
       {
-        title: 'Performance and optimization',
-        color: '#38B2AC',
-        small: true,
-        content: 'Tune your queries and monitor your application.',
-        url: 'guides/performance-and-optimization',
+        id: 'github',
+        title: 'GitHub',
+        description:
+          'Browse the Prisma source code, send feedback, or join the discussion on GitHub.',
+        icon: 'fa-brands fa-github',
+        link: 'https://github.com/prisma',
+        linkText: 'Contribute in GitHub',
       },
       {
-        title: 'Working with your database',
-        color: '#4299E1',
-        small: true,
-        content:
-          'Guides for common database workflow such as configuring constraints or cascading deletes.',
-        url: 'guides/database',
-      },
-      {
-        title: 'Adopting Prisma',
-        color: '#9F7AEA',
-        small: true,
-        content: 'Migrate to Prisma from other ORMs.',
-        url: 'guides/migrate-to-prisma',
-      },
-      {
-        title: 'Upgrading to Prisma',
-        color: '#ED64A6',
-        small: true,
-        content: 'Upgrade to Prisma from Prisma 1 or Graphcool.',
-        url: 'guides/upgrade-guides',
-      },
-      {
-        title: 'Deploying Prisma apps',
-        color: '#667EEA',
-        small: false,
-        content:
-          'Deploy a Node.js application with Prisma Client to platforms like Vercel, AWS Lambda, Netlify, and Heroku.',
-        url: 'guides/deployment',
+        id: 'discord',
+        title: 'Discord',
+        description:
+          'Chat in real-time, hang out, and share ideas with community members and our team.',
+        icon: 'fa-brands fa-discord',
+        link: 'https://pris.ly/discord',
+        linkText: 'Join our server',
       },
     ],
-    ReferenceText:
-      'Reference documentation for Prisma Client, the Prisma Schema Language (PSL), the Prisma CLI, and supported database providers.',
-
-    ReferenceLinkData: [
-      {
-        categoryName: 'Prisma Reference',
-        mainUrl: 'reference',
-        icon: 'Schema',
-        links: [
-          {
-            text: 'Prisma Client API reference',
-            url: 'reference/api-reference/prisma-client-reference',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma schema reference',
-            url: 'reference/api-reference/prisma-schema-reference',
-            codeBlock: false,
-          },
-          {
-            text: 'Prisma error reference',
-            url: 'reference/api-reference/error-reference',
-            codeBlock: false,
-          },
-        ],
-      },
-      {
-        categoryName: 'CLI Commands',
-        mainUrl: 'reference/api-reference/command-reference',
-        icon: 'CLI',
-        links: [
-          {
-            text: 'db',
-            url: 'reference/api-reference/command-reference#db',
-            codeBlock: true,
-          },
-          {
-            text: 'migrate',
-            url: 'reference/api-reference/command-reference#prisma-migrate',
-            codeBlock: true,
-          },
-          {
-            text: 'studio',
-            url: 'reference/api-reference/command-reference#studio',
-            codeBlock: true,
-          },
-        ],
-      },
-      {
-        categoryName: 'Database',
-        mainUrl: 'reference/database-reference',
-        icon: 'DbLink',
-        links: [
-          {
-            text: 'Features matrix',
-            url: 'reference/database-reference/database-features',
-            codeBlock: false,
-          },
-          {
-            text: 'Connection URLs',
-            url: 'reference/database-reference/connection-urls',
-            codeBlock: false,
-          },
-          {
-            text: 'Supported databases',
-            url: 'reference/database-reference/supported-databases',
-            codeBlock: false,
-          },
-        ],
-      },
-    ],
-
-    MoreUsefulLinks: [
-      {
-        text: 'About the docs ',
-        url: 'about/prisma-docs/about-the-docs',
-        codeBlock: false,
-      },
-      {
-        text: 'Prisma style guide',
-        url: 'about/prisma-docs/style-guide',
-        codeBlock: false,
-      },
-      {
-        text: 'Ask a question on Github',
-        url: 'guides/other/troubleshooting-orm#need-help',
-        codeBlock: false,
-      },
-      {
-        text: 'Create a bug report',
-        url: 'guides/other/troubleshooting-orm',
-        codeBlock: false,
-      },
-      {
-        text: 'Submit a feature request',
-        url: 'guides/other/troubleshooting-orm',
-        codeBlock: false,
-      },
-      {
-        text: 'Slack',
-        url: 'https://slack.prisma.io/',
-        codeBlock: false,
-      },
-      {
-        text: 'FAQ',
-        url: 'about/prisma/faq',
-      },
-      {
-        text: 'Limitations',
-        url: 'about/prisma/limitations',
-        codeBlock: false,
-      },
-      {
-        text: 'Community',
-        url: 'https://www.prisma.io/community',
-        codeBlock: false,
-      },
-      {
-        text: 'Roadmap',
-        url: 'about/prisma/roadmap',
-        codeBlock: false,
-      },
-      {
-        text: 'ORM Releases and maturity levels',
-        url: 'about/prisma/releases',
-        codeBlock: false,
-      },
-      {
-        text: 'Platform Releases and maturity levels',
-        url: 'data-platform/about/releases',
-        codeBlock: false,
-      },
-    ],
+    CardLinks: {
+      components: [
+        {
+          url: 'orm/prisma-schema',
+          title: 'Prisma Schema',
+        },
+        {
+          url: 'orm/tools/prisma-cli',
+          title: 'Prisma CLI',
+        },
+        {
+          url: 'orm/prisma-client',
+          title: 'Prisma Client',
+        },
+        {
+          url: 'orm/tools/prisma-studio',
+          title: 'Prisma Studio',
+        },
+        {
+          url: 'orm/prisma-migrate',
+          title: 'Prisma Migrate',
+        },
+      ],
+      reference: [
+        {
+          url: 'orm/reference/prisma-client-reference',
+          title: 'Prisma Client API reference',
+        },
+        {
+          url: 'orm/reference/prisma-schema-reference',
+          title: 'Prisma schema reference',
+        },
+        {
+          url: 'orm/reference/error-reference',
+          title: 'Error message reference',
+        },
+        {
+          url: 'orm/reference/prisma-cli-reference',
+          title: 'Prisma CLI reference',
+        },
+      ],
+    },
   },
   siteMetadata: {
-    title: 'Prisma Documentation | Concepts, Guides, and Reference',
+    title: 'Prisma Documentation | ORM, Accelerate, Pulse & More',
     description:
       "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
-    keywords: 'Docs, prisma, 2.0',
+    keywords: 'Docs, Prisma, ORM',
     docsLocation: 'https://github.com/prisma/docs/tree/main/content',
     twitter: {
       site: '@prisma',
