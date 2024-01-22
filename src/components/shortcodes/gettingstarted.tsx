@@ -1,13 +1,14 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
 import { defaultTheme } from '../../theme'
 import { Icon } from '../Icon'
+import { Tooltip } from '../tooltip/Tooltip'
 
-export const Database = ({ color }: any) => (
+export const Database = ({ color, width, height }: any) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    height="16"
-    width="14"
+    height={height ? height : '16'}
+    width={width ? width : '14'}
     viewBox="0 0 448 512"
     style={{ marginRight: `4px`, transform: `translateY(2px)` }}
   >
@@ -18,11 +19,11 @@ export const Database = ({ color }: any) => (
   </svg>
 )
 
-export const Bolt = ({ color }: any) => (
+export const Bolt = ({ color, width, height }: any) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    height="16"
-    width="14"
+    height={height ? height : '16'}
+    width={width ? width : '14'}
     viewBox="0 0 448 512"
     style={{ marginRight: `4px`, transform: `translateY(2px)` }}
   >
@@ -33,11 +34,11 @@ export const Bolt = ({ color }: any) => (
   </svg>
 )
 
-export const SignalStream = ({ color }: any) => (
+export const SignalStream = ({ color, height, width }: any) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    height="16"
-    width="18"
+    height={height ? height : '16'}
+    width={width ? width : '18'}
     viewBox="0 0 576 512"
     style={{ marginRight: `4px`, transform: `translateY(2px)` }}
   >
@@ -80,23 +81,6 @@ export const BorderBox = ({ border, ...props }: any) => (
   <BorderBoxWrapper {...props}>{props.children}</BorderBoxWrapper>
 )
 
-export const CategoryTitle = styled.div`
-  font-family: Barlow;
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 38px;
-  letter-spacing: -0.800000011920929px;
-  text-align: left;
-  margin: 60px 0 24px;
-  svg {
-    width: 21px;
-    height: 24px;
-    transform: translateY(-1px);
-    margin-right: 10px !important;
-    color: ${defaultTheme.colors.indigo[600]};
-  }
-`
-
 const LinkCardWrapper = styled.a`
   border: 1px solid var(--border-color);
   padding: 20px 24px;
@@ -137,6 +121,7 @@ const LinkCardWrapper = styled.a`
 export const Grid = styled.div`
   gap: 16px;
   display: grid;
+  margin-top: 24px;
   grid-template-columns: none;
   @media (min-width: 600px) {
     grid-template-columns: 1fr 1fr;
@@ -144,8 +129,9 @@ export const Grid = styled.div`
 `
 
 export const LinkCard = ({ icon, title, desc, link }: any) => {
+  const linkCardRef = useRef(null)
   return (
-    <LinkCardWrapper href={link}>
+    <LinkCardWrapper href={link} ref={linkCardRef}>
       <div className="title">
         <Icon icon={icon} btn="left" size="18px" />
         <h6>{title}</h6>
@@ -196,8 +182,25 @@ const SquareWrapper = styled.div`
   }
 `
 
-export const SquareLogo = ({ image, alt }: any) => {
-  return <SquareWrapper>{image}</SquareWrapper>
+export const SquareLogo = ({ image, tech }: any) => {
+  const squareCardRef = useRef(null)
+  const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false)
+  return (
+    <>
+      <SquareWrapper
+        ref={squareCardRef}
+        onMouseMove={() => setVisibleTooltip(true)}
+        onMouseLeave={() => setVisibleTooltip(false)}
+      >
+        {image}
+      </SquareWrapper>
+      {visibleTooltip && (
+        <Tooltip target={squareCardRef} position="top">
+          {tech}
+        </Tooltip>
+      )}
+    </>
+  )
 }
 
 export const List = styled.div`
