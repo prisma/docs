@@ -157,9 +157,10 @@ export const Tab = styled.div`
   }
 `
 
-const SquareWrapper = styled.div`
+const SquareWrapper = styled.a`
   width: 90px;
   height: 90px;
+  text-decoration: none;
   padding: 22px;
   display: inline-block;
   border: 1px solid var(--border-color);
@@ -182,12 +183,13 @@ const SquareWrapper = styled.div`
   }
 `
 
-export const SquareLogo = ({ image, tech }: any) => {
+export const SquareLogo = ({ image, tech, url }: any) => {
   const squareCardRef = useRef(null)
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false)
   return (
     <>
       <SquareWrapper
+        href={url}
         ref={squareCardRef}
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
