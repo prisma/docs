@@ -2,7 +2,7 @@ import * as React from 'react'
 import { AnchorHTMLAttributes } from 'react'
 import styled, { css } from 'styled-components'
 
-import { darkTheme, defaultTheme as theme } from '../theme'
+import { darkTheme, defaultTheme as theme } from '../themes'
 import { Icon } from './Icon'
 import { FooterNewsletterForm } from './newsletter/FooterNewsletterForm'
 import CustomLink from './customLink'

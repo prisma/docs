@@ -1,6 +1,6 @@
-import { defaultTheme as theme } from '../../theme'
-import { useLocation } from '@reach/router'
-import { graphql, useStaticQuery, withPrefix } from 'gatsby'
+import { defaultTheme as theme } from '../../themes'
+import { useLocation } from 'react-router-dom'
+// import { withPrefix } from 'gatsby'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -207,9 +207,8 @@ const TreeNode = ({
   const location = useLocation()
   const level = slug ? slug.split('/').indexOf(label) : ''
 
-  const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
-    staticLink ? 'static-link' : ''
-  } ${lastLevel ? 'last-level' : ''} ${level > 2 ? 'more-padding' : ''}`
+  const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${staticLink ? 'static-link' : ''
+    } ${lastLevel ? 'last-level' : ''} ${level > 2 ? 'more-padding' : ''}`
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {
@@ -268,7 +267,7 @@ const TreeNode = ({
           to={staticLink || topLevel ? null : url}
           activeClassName="active-item"
           className={isCurrent ? 'active-item' : 'non-active'}
-          id={withPrefix(url)}
+          id={url}
           sidenav={true}
         >
           {hasExpandButton ? (

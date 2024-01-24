@@ -1,6 +1,6 @@
-import { RouterProps, navigate } from '@reach/router'
-import { graphql } from 'gatsby'
-import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
+import { RouterProps, Navigate } from 'react-router-dom'
+// import { graphql } from 'gatsby'
+// import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer'
 import * as React from 'react'
 import Layout from '../components/layout'
 import PageBottom from '../components/pageBottom'
@@ -43,11 +43,11 @@ const ArticleLayout = ({ data, ...props }: ArticleLayoutProps) => {
           slug={modSlug}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
-          navigate={navigate}
+          navigate={Navigate}
           codeStyle={codeStyle}
         />
       </section>
-      <MDXRenderer>{body}</MDXRenderer>
+      {body}
       <PageBottom editDocsPath={`${docsLocation}/${parent.relativePath}`} pageUrl={slug} />
     </Layout>
   )
@@ -59,38 +59,38 @@ export const Head = ({ pageContext: { seoTitle, seoDescription } }: ArticleLayou
   return <SEO title={seoTitle} homepage={false} description={seoDescription} />
 }
 
-export const query = graphql`
-  query ($id: String!) {
-    site {
-      siteMetadata {
-        docsLocation
-      }
-    }
-    mdx(fields: { id: { eq: $id } }) {
-      fields {
-        slug
-        modSlug
-      }
-      body
-      parent {
-        ... on File {
-          relativePath
-        }
-      }
-      tableOfContents
-      frontmatter {
-        title
-        metaTitle
-        metaDescription
-        langSwitcher
-        search
-        wide
-        dbSwitcher
-        hideTitle
-        toc
-        tocDepth
-        codeStyle
-      }
-    }
-  }
-`
+// export const query = graphql`
+//   query ($id: String!) {
+//     site {
+//       siteMetadata {
+//         docsLocation
+//       }
+//     }
+//     mdx(fields: { id: { eq: $id } }) {
+//       fields {
+//         slug
+//         modSlug
+//       }
+//       body
+//       parent {
+//         ... on File {
+//           relativePath
+//         }
+//       }
+//       tableOfContents
+//       frontmatter {
+//         title
+//         metaTitle
+//         metaDescription
+//         langSwitcher
+//         search
+//         wide
+//         dbSwitcher
+//        hideTitle
+//         toc
+//         tocDepth
+//         codeStyle
+//       }
+//     }
+//   }
+// `

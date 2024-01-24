@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import TreeNode from './treeNode'
 import { AllEdges } from '../../interfaces/AllArticles.interface'
-import { useLocation } from '@reach/router'
+import { useLocation } from 'react-router-dom'
 import { calculateTreeData } from '../../utils/treeData'
 
 let defaultCollapsed: any = {}

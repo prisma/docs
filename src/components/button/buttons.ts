@@ -1,4 +1,4 @@
-import * as t from '../../theme/primitives'
+import * as t from '../../themes/primitives'
 
 const buttonDefault = {
   transition: 'background-color .1s ease, color .2s ease',

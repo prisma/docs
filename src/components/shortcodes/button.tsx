@@ -1,5 +1,5 @@
-import { useLocation } from '@reach/router'
-import { withPrefix } from 'gatsby'
+import { defaultTheme as theme } from '../../themes'
+import { useLocation } from 'react-router-dom'
 import isAbsoluteUrl from 'is-absolute-url'
 import * as path from 'path-browserify'
 import * as React from 'react'
@@ -78,21 +78,20 @@ export const ButtonWrapper = styled.a<{ block?: boolean; disabled?: boolean; col
 `
 
 const getAbsPath = (href: any, location: any) => {
-  return withPrefix(
-    path
-      .resolve(
-        location.pathname
-          .replace('/docs', '')
-          .replace('docs', '')
-          .replace(/\/$/, '')
-          .split(path.sep)
-          .slice(0, -1)
-          .join(path.sep) || '/',
-        href
-      )
-      .replace(/\/?(\?|$)/, '/$1')
-      .replace(/\/$/, '')
-  )
+  return path
+    .resolve(
+      location.pathname
+        .replace('/docs', '')
+        .replace('docs', '')
+        .replace(/\/$/, '')
+        .split(path.sep)
+        .slice(0, -1)
+        .join(path.sep) || '/',
+      href
+    )
+    .replace(/\/?(\?|$)/, '/$1')
+    .replace(/\/$/, '')
+
 }
 const ButtonLink = ({ href, ...props }: ButtonProps) => {
   const location = useLocation()

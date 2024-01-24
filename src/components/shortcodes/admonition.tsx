@@ -2,7 +2,7 @@ import React from 'react'
 import { AlertCircle } from 'react-feather'
 import styled from 'styled-components'
 
-import { defaultTheme as theme } from '../../theme'
+import { defaultTheme as theme } from '../../themes'
 
 interface AdmonitionType {
   type?: string

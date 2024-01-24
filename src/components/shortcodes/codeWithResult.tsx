@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '../../theme'
+import { defaultTheme as theme } from '../../themes'
 import * as React from 'react'
 import styled from 'styled-components'
 
@@ -31,13 +31,13 @@ const CodeWithResult = ({
   const toggleShowText = showText
     ? showText
     : outputResultText
-    ? `Show ${outputResultText} results`
-    : 'Show CLI results'
+      ? `Show ${outputResultText} results`
+      : 'Show CLI results'
   const toggleHideText = hideText
     ? hideText
     : outputResultText
-    ? `Hide ${outputResultText} results`
-    : 'Hide CLI results'
+      ? `Hide ${outputResultText} results`
+      : 'Hide CLI results'
 
   return (
     <Wrapper>

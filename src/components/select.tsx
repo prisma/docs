@@ -2,7 +2,7 @@ import * as React from 'react'
 import Select, { components } from 'react-select'
 import styled from 'styled-components'
 
-import { defaultTheme as theme } from '../theme'
+import { defaultTheme as theme } from '../themes'
 
 interface SelectProps {
   items: any[]

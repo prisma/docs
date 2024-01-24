@@ -1,7 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 
-import { defaultTheme as theme } from '../../theme'
+import { defaultTheme as theme } from '../../themes'
 
 const CardLibWrapper = styled.div`
   box-shadow: 0px 5px 3px rgba(23, 43, 77, 0.04), 0px 8px 5px rgba(23, 43, 77, 0.08);

@@ -1,7 +1,8 @@
 import * as React from 'react'
 import favicon from '../images/favicon-32x32.png'
-import { useStaticQuery, graphql } from 'gatsby'
-import { useLocation } from '@reach/router'
+// import { useStaticQuery, graphql } from 'gatsby'
+import { useLocation } from 'react-router-dom'
+import siteConfig from '../../config'
 
 type SEOProps = {
   title?: string
@@ -11,7 +12,6 @@ type SEOProps = {
 
 const SEO = ({ title, description, homepage }: SEOProps) => {
   const location = useLocation()
-  const { site } = useStaticQuery(query)
   const {
     siteMetadata: {
       pathPrefix,
@@ -26,7 +26,7 @@ const SEO = ({ title, description, homepage }: SEOProps) => {
         image: { alt: oImgAlt, url: oUrl, type: oImgType, width: oImgWidth, height: oImgHeight },
       },
     },
-  } = site
+  } = siteConfig
 
   let canonicalUrl = `${siteUrl}${location.pathname}`.replace(/\/$/, '')
 
@@ -65,32 +65,3 @@ const SEO = ({ title, description, homepage }: SEOProps) => {
 }
 
 export default SEO
-
-const query = graphql`
-  query SEO {
-    site {
-      siteMetadata {
-        pathPrefix
-        titlePrefix
-        titleSuffix
-        siteUrl
-        twitter {
-          site
-          creator
-          image
-        }
-        og {
-          site_name
-          type
-          image {
-            url
-            alt
-            type
-            height
-            width
-          }
-        }
-      }
-    }
-  }
-`

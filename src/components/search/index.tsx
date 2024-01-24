@@ -1,6 +1,6 @@
-import { defaultTheme as theme } from '../../theme'
+import { defaultTheme as theme } from '../../themes'
 import algoliasearch from 'algoliasearch/lite'
-import { navigate } from 'gatsby'
+// import { navigate } from 'gatsby'
 import qs from 'qs'
 import React, { useEffect, useRef, useState } from 'react'
 import { connectHits, connectStateResults, Index, InstantSearch } from 'react-instantsearch-dom'
@@ -163,11 +163,10 @@ const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) =>
   searchState
-    ? `${
-        location.pathname === '/docs'
-          ? location.pathname.replace('docs', '')
-          : location.pathname.replace('/docs', '')
-      }${createURL(searchState)}`
+    ? `${location.pathname === '/docs'
+      ? location.pathname.replace('docs', '')
+      : location.pathname.replace('/docs', '')
+    }${createURL(searchState)}`
     : ``
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))

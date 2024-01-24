@@ -2,7 +2,7 @@
 import React, { AnchorHTMLAttributes, HTMLAttributes } from 'react'
 import styled from 'styled-components'
 
-import { buttonCss } from '../../theme/css/button'
+import { buttonCss } from '../../themes/css/button'
 
 type ColorType = 'indigo' | 'teal' | 'white' | undefined
 type BtnType = 'primary' | 'secondary' | 'link' | undefined
@@ -45,10 +45,10 @@ const StyledIcon = styled.svg`
     right: 16px;
   `
       : props.icon === 'left'
-      ? `
+        ? `
     left: -10px;
 `
-      : `
+        : `
   right: -6px;
 `}
 `

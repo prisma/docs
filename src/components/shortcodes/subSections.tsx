@@ -3,9 +3,9 @@ import * as React from 'react'
 import { calculateTreeData } from '../../utils/treeData'
 import { AllArticles } from '../../interfaces/AllArticles.interface'
 import { useAllArticlesQuery } from '../../hooks/useAllArticlesQuery'
-import { useLocation } from '@reach/router'
+import { useLocation } from 'react-router-dom'
 import styled from 'styled-components'
-import { withPrefix } from 'gatsby'
+// import { withPrefix } from 'gatsby'
 
 interface SubsecProps {
   depth?: number
@@ -27,8 +27,8 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
       const tree = treeItems[i]
       if (
         !(
-          withPrefix(tree.url) ===
-            `${currentPath.substring(-1) === '/' ? currentPath.slice(0, -1) : currentPath}` &&
+          tree.url ===
+          `${currentPath.substring(-1) === '/' ? currentPath.slice(0, -1) : currentPath}` &&
           tree.label !== 'index'
         )
       ) {

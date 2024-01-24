@@ -23,8 +23,8 @@ export const Icon = ({ icon, color, className, size, btn, fit }: IconProps) => {
     const parentElement = iconRef.current.parentElement.getBoundingClientRect()
     setFontSize(
       (100 * parentElement[parentElement.width > parentElement.height ? 'height' : 'width']) /
-        window[parentElement.width > parentElement.height ? 'innerHeight' : 'innerWidth'] -
-        0.6
+      window[parentElement.width > parentElement.height ? 'innerHeight' : 'innerWidth'] -
+      0.6
     )
     setMeasure(parentElement.width > parentElement.height ? 'vh' : 'vw')
   }

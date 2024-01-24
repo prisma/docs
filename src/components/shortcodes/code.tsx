@@ -1,11 +1,10 @@
 import rangeParser from 'parse-numeric-range'
-import Highlight, { defaultProps } from 'prism-react-renderer'
-import theme from 'prism-react-renderer/themes/github'
+import Highlight, { themes } from 'prism-react-renderer'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import Copy from '../../icons/Copy'
-import { defaultTheme } from '../../theme'
+import { defaultTheme } from '../../themes'
 import { stringify } from '../../utils/stringify'
 import CopyButton from './copy'
 import FileWithIcon from './fileWithIcon'
@@ -99,8 +98,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
     if (codeEl.current !== null && preEl.current !== null) {
       if (debugState.length === 0)
         setDebugState(
-          `${codeEl.current.getBoundingClientRect().width},${
-            preEl.current.getBoundingClientRect().width - 44
+          `${codeEl.current.getBoundingClientRect().width},${preEl.current.getBoundingClientRect().width - 44
           }`
         )
     }
@@ -114,7 +112,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
         </div>
       )}
       <div className="gatsby-highlight pre-highlight">
-        <Highlight {...defaultProps} code={code} language={language} theme={theme}>
+        <Highlight code={code} language={language} theme={themes.github}>
           {({ className: blockClassName, style, tokens, getLineProps, getTokenProps }) => (
             <Pre
               ref={preEl}
@@ -122,11 +120,10 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                 ${wrapContent ? 'wrap-content' : ''}
                 ${blockClassName} 
                 ${isTerminal ? 'is-terminal' : ''} 
-                ${
-                  parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
+                ${parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
                   wrapContent
-                    ? `not-scrollable`
-                    : ``
+                  ? `not-scrollable`
+                  : ``
                 }
 
               `}
@@ -145,7 +142,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                 style={{
                   width:
                     parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) + 40 ||
-                    wrapContent
+                      wrapContent
                       ? 'auto'
                       : 'max-content',
                   overflow: 'visible',

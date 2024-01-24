@@ -3,7 +3,7 @@ import styled from 'styled-components'
 
 import { useAllArticlesQuery } from '../hooks/useAllArticlesQuery'
 import { AllArticles } from '../interfaces/AllArticles.interface'
-import { defaultTheme as theme } from '../theme'
+import { defaultTheme as theme } from '../themes'
 import { getParentTitle } from '../utils/parentTitle'
 import { Icon } from './Icon'
 import Link from './link'

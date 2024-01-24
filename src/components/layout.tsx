@@ -1,12 +1,12 @@
 import { MDXProvider } from '@mdx-js/react'
-import { RouterProps } from '@reach/router'
-import { Script } from 'gatsby'
+import { RouterProps } from 'react-router-dom'
 import React, { useState } from 'react'
 import StickyBox from 'react-sticky-box'
 import styled from 'styled-components'
 
-import { useLayoutQuery } from '../hooks/useLayoutQuery'
-import { defaultTheme as theme } from '../theme'
+// import { useLayoutQuery } from '../hooks/useLayoutQuery'
+import siteConfig from '../../config'
+import { defaultTheme as theme } from '../themes'
 import Footer from './footer'
 import Header from './header'
 import SearchBox from './search/minimalInput'
@@ -43,8 +43,8 @@ const Content = styled.article<{ homePage?: boolean; wide?: boolean }>`
     p.homePage
       ? 'max-width: 100%;'
       : p.wide
-      ? 'min-width: 0; max-width: 988px; flex-shrink: 1; padding: 0 1rem;'
-      : 'max-width: 748px; margin: 0 20px;'}
+        ? 'min-width: 0; max-width: 988px; flex-shrink: 1; padding: 0 1rem;'
+        : 'max-width: 748px; margin: 0 20px;'}
   flex: 1;
   position: relative;
   z-index: 100;
@@ -166,8 +166,7 @@ export default function Layout({
   homePage,
   wide,
 }: LayoutProps) {
-  const { site } = useLayoutQuery()
-  const { header, footer } = site.siteMetadata
+  const { header, footer } = siteConfig
   const [mobileNavOpen, setMobileNav] = useState(false)
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const queryString = new URLSearchParams(location?.search).get('query')
@@ -180,7 +179,7 @@ export default function Layout({
   const setInputText = (input: any) => setValue(input)
   return (
     <WebProvider>
-      <Script src="https://kit.fontawesome.com/1772ab679c.js" crossOrigin="anonymous" />
+      <script src="https://kit.fontawesome.com/1772ab679c.js" crossOrigin="anonymous"></script>
       <MDXProvider components={shortcodes}>
         <LayoutWrapper className="dark">
           <Header

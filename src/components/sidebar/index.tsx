@@ -1,4 +1,4 @@
-import { defaultTheme as theme } from '../../theme'
+import { defaultTheme as theme } from '../../themes'
 import * as React from 'react'
 import styled from 'styled-components'
 

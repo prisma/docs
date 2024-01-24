@@ -1,10 +1,9 @@
-import { useLocation } from '@reach/router'
-import { graphql, useStaticQuery } from 'gatsby'
 import * as React from 'react'
 import styled from 'styled-components'
 
 import { Icon } from '../components/Icon'
-import Layout from '../components/layout'
+// import Layout from '../components/layout'
+import Layout from '@theme/Layout'
 import Link from '../components/link'
 import SEO from '../components/seo'
 import ShadowCard from '../components/shadow-card'
@@ -20,7 +19,8 @@ import PostgresSQLDark from '../icons/technologies/PostgresSQLDark'
 import PostgresSQLSimple from '../icons/technologies/PostgresSQLSimple'
 import SQLite from '../icons/technologies/SQLite'
 import SQLServer from '../icons/technologies/SQLServer'
-import { defaultTheme as theme } from '../theme'
+import { defaultTheme as theme } from '../themes'
+import siteConfig from '../../config'
 
 export const Body = styled.div`
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
@@ -127,12 +127,12 @@ const ProductCard = styled.div<{ color?: string }>`
     a,
     button {
       color: ${(props) =>
-        props.color === 'teal' ? `${theme.colors.teal[400]}` : `${theme.colors.indigo[400]}`};
+    props.color === 'teal' ? `${theme.colors.teal[400]}` : `${theme.colors.indigo[400]}`};
     }
     background: ${(p) =>
-      p.color === 'teal'
-        ? `linear-gradient(287.43deg, rgba(4, 200, 187, 0.17) -34.29%, rgba(4, 200, 187, 0) 98.22%),linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`
-        : `linear-gradient(283.66deg, rgba(102, 126, 234, 0.2418) -32.46%, rgba(102, 126, 234, 0) 96.55%), linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`};
+    p.color === 'teal'
+      ? `linear-gradient(287.43deg, rgba(4, 200, 187, 0.17) -34.29%, rgba(4, 200, 187, 0) 98.22%),linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`
+      : `linear-gradient(283.66deg, rgba(102, 126, 234, 0.2418) -32.46%, rgba(102, 126, 234, 0) 96.55%), linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`};
   }
 `
 
@@ -568,23 +568,15 @@ const CommunityLinksRow = styled.div`
 `
 
 const Homepage = () => {
-  const { site } = useStaticQuery(query)
-  const changeHitsStatus = (status: boolean) => setShowDocsBtn(!status)
-  const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const {
-    siteMetadata: {
-      title,
-      description,
-      homepage: { GeneralLinkData, CommunityLinksData, CardLinks, ORMPlatformLinkData },
-    },
-  } = site
-  const location = useLocation()
+    homepage: { GeneralLinkData, CommunityLinksData, CardLinks, ORMPlatformLinkData },
+  } = siteConfig
 
   return (
-    <Layout homePage={true}>
+    <Layout>
       <TopSection>
         <ProductCardsWrapper>
-          {Object.keys(ORMPlatformLinkData).map((e: string) => (
+          {(Object.keys(ORMPlatformLinkData) as Array<keyof typeof ORMPlatformLinkData>).map((e) => (
             <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
               <H3>
                 <IconWrapper>
@@ -728,68 +720,9 @@ const Homepage = () => {
 
 export default Homepage
 
-export const query = graphql`
-  query Homepage {
-    site {
-      siteMetadata {
-        title
-        description
-        homepage {
-          GeneralLinkData {
-            title
-            description
-            url
-            icon
-          }
-          CardLinks {
-            components {
-              url
-              title
-            }
-            reference {
-              url
-              title
-            }
-          }
-          CommunityLinksData {
-            id
-            title
-            description
-            icon
-            link
-            linkText
-          }
-          ORMPlatformLinkData {
-            porm {
-              title
-              description
-              icon
-              links {
-                url
-                title
-                external
-              }
-            }
-            pdp {
-              title
-              icon
-              description
-              links {
-                url
-                title
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`
-
 export const Head = () => {
-  const { site } = useStaticQuery(query)
   const {
     siteMetadata: { title, description },
-  } = site
+  } = siteConfig
   return <SEO title={title} description={description} homepage />
 }
