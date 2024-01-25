@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlertCircle } from 'react-feather'
+// import { AlertCircle } from 'react-feather'
 import styled from 'styled-components'
 
 import { defaultTheme as theme } from '../../themes'
@@ -20,9 +20,7 @@ const Admonition = ({ children, type, ...props }: AdmonitionProps) => {
   return (
     <AdmonitionWrapper {...props} type={type}>
       {type === 'alert' && (
-        <span className="alert-circle">
-          <AlertCircle color="white" />
-        </span>
+        <span className="alert-circle">{/* <AlertCircle color="white" /> */}</span>
       )}
       {children && Array.isArray(children) ? (
         <FlexContainer>

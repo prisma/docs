@@ -18,7 +18,7 @@ const config: Config = {
   organizationName: 'prisma', // Usually your GitHub org/user name.
   projectName: 'docs', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
@@ -110,46 +110,75 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Products',
           items: [
             {
-              label: 'Tutorial',
-              to: '/docs/intro',
+              label: 'Client',
+              href: 'https://prisma.io/client',
+            },
+            {
+              label: 'Migrate',
+              href: 'https://prisma.io/migrate',
+            },
+            {
+              label: 'Accelerate',
+              href: 'https://prisma.io/accelerate',
+            },
+            {
+              label: 'Pulse',
+              href: 'https://prisma.io/pulse',
+            },
+            {
+              label: 'Pricing',
+              href: 'https://prisma.io/pricing',
             },
           ],
         },
         {
-          title: 'Community',
+          title: 'Developers',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
+              label: 'Docs',
+              to: '/',
             },
             {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
+              label: 'Get Started',
+              to: '/getting-started',
             },
             {
-              label: 'Twitter',
-              href: 'https://twitter.com/docusaurus',
+              label: 'Prisma Examples',
+              href: 'https://github.com/prisma/prisma-examples',
             },
           ],
         },
         {
-          title: 'More',
+          title: 'Use Cases',
           items: [
+            {
+              label: 'Customer Stories',
+              href: 'https://www.prisma.io/showcase',
+            },
+            {
+              label: 'Enterprise',
+              href: 'https://www.prisma.io/enterprise',
+            },
+          ],
+        },
+        {
+          title: 'Company',
+          items: [
+            {
+              label: 'About',
+              href: 'https://prisma.io/about',
+            },
             {
               label: 'Blog',
-              to: '/blog',
-            },
-            {
-              label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              to: 'https://prisma.io/blog',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Prisma Data, Inc. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

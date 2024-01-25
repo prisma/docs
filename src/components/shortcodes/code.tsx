@@ -1,5 +1,5 @@
 import rangeParser from 'parse-numeric-range'
-import Highlight, { themes } from 'prism-react-renderer'
+import { themes, Highlight } from 'prism-react-renderer'
 import * as React from 'react'
 import styled from 'styled-components'
 
