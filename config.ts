@@ -59,14 +59,10 @@ const siteConfig = {
   //     },
   //   ],
   //   search: {
-  //     indexName: '',
-  //     algoliaAppId: '',
-  //     algoliaSearchKey: '',
-  //     algoliaAdminKey: '',
-  //     // indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
-  //     // algoliaAppId: process.env.GATSBY_ALGOLIA_APP_ID,
-  //     // algoliaSearchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
-  //     // algoliaAdminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
+  //     indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
+  //     algoliaAppId: process.env.GATSBY_ALGOLIA_APP_ID,
+  //     algoliaSearchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
+  //     algoliaAdminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
   //   },
   // },
   homepage: {

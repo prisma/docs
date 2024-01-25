@@ -1,6 +1,6 @@
-import { themes as prismThemes } from 'prism-react-renderer';
-import type { Config } from '@docusaurus/types';
-import type * as Preset from '@docusaurus/preset-classic';
+import { themes as prismThemes } from 'prism-react-renderer'
+import type { Config } from '@docusaurus/types'
+import type * as Preset from '@docusaurus/preset-classic'
 
 const config: Config = {
   title: 'My Site',
@@ -62,19 +62,29 @@ const config: Config = {
       },
       items: [
         {
-          to: '/getting-started', label: 'Get Started', position: 'left'
+          to: '/getting-started',
+          label: 'Get Started',
+          position: 'left',
         },
         {
-          to: '/orm', label: 'ORM', position: 'left'
+          to: '/orm',
+          label: 'ORM',
+          position: 'left',
         },
         {
-          to: '/accelerate', label: 'Accelerate', position: 'left'
+          to: '/accelerate',
+          label: 'Accelerate',
+          position: 'left',
         },
         {
-          to: '/pulse', label: 'Pulse', position: 'left'
+          to: '/pulse',
+          label: 'Pulse',
+          position: 'left',
         },
         {
-          to: '/platform', label: 'Platform', position: 'left'
+          to: '/platform',
+          label: 'Platform',
+          position: 'left',
         },
         // {
         //   type: 'docSidebar',
@@ -90,6 +100,11 @@ const config: Config = {
           'aria-label': 'GitHub repository',
         },
       ],
+    },
+    algolia: {
+      appId: 'MK4LNFW4EO',
+      apiKey: 'd8ae0173fc0d9170b085840d0c95f389',
+      indexName: 'docs-prod', // this is probably wrong but don't really know what to do about it right now
     },
     footer: {
       style: 'dark',
@@ -141,6 +156,6 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
-};
+}
 
-export default config;
+export default config
