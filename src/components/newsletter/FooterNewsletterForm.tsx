@@ -69,7 +69,7 @@ namespace S {
       &:focus {
         outline: 1px solid
           ${(props) =>
-      props.error ? props.theme.colors.red[700] : props.theme.colors.blueGray[800]};
+            props.error ? props.theme.colors.red[700] : props.theme.colors.blueGray[800]};
       }
 
       &::placeholder {

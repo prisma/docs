@@ -1,4 +1,4 @@
-import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs'
 
 /**
  * Creating a sidebar enables you to:
@@ -26,6 +26,6 @@ const sidebars: SidebarsConfig = {
     },
   ],
    */
-};
+}
 
-export default sidebars;
+export default sidebars

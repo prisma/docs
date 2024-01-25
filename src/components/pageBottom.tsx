@@ -275,7 +275,9 @@ const Content = styled.div`
   }
   .feedback-toast {
     background: #ffffff;
-    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25), 0px 2px 12px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0px 1px 3px rgba(0, 0, 0, 0.25),
+      0px 2px 12px rgba(0, 0, 0, 0.12);
     border-radius: 8px;
     position: relative;
     width: 360px;

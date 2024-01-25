@@ -61,7 +61,10 @@ export const ButtonWrapper = styled.a<{ block?: boolean; disabled?: boolean; col
   cursor: ${(p) => (p.disabled ? 'default' : 'pointer')};
   pointer-events: ${(p) => (p.disabled ? 'none' : 'all')};
   border-radius: 6px;
-  transition: color 150ms ease 0s, background 150ms ease 0s, transform 100ms ease 0s;
+  transition:
+    color 150ms ease 0s,
+    background 150ms ease 0s,
+    transform 100ms ease 0s;
   white-space: nowrap;
   word-break: keep-all;
   max-width: 100%;
@@ -91,7 +94,6 @@ const getAbsPath = (href: any, location: any) => {
     )
     .replace(/\/?(\?|$)/, '/$1')
     .replace(/\/$/, '')
-
 }
 const ButtonLink = ({ href, ...props }: ButtonProps) => {
   const location = useLocation()

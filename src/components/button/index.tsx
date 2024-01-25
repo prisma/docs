@@ -32,7 +32,9 @@ const StyledIcon = styled.svg`
   top: 50%;
   transform: translateY(-50%);
   path {
-    transition: left, right 0.2s ease;
+    transition:
+      left,
+      right 0.2s ease;
     fill: inherit;
   }
   ${(props) =>

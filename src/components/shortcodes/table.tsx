@@ -13,7 +13,8 @@ const Table = ({ children, ...props }: TableProps) => {
     if (tableContent.current !== null && tableWrapper.current !== null) {
       if (widthState.length === 0)
         setWidthState(
-          `${tableContent.current.getBoundingClientRect().width},${tableWrapper.current.getBoundingClientRect().width
+          `${tableContent.current.getBoundingClientRect().width},${
+            tableWrapper.current.getBoundingClientRect().width
           }`
         )
     }

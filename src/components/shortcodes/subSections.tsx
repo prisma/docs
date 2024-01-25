@@ -28,7 +28,7 @@ const Subsections = ({ depth, rootPath }: SubsecProps) => {
       if (
         !(
           tree.url ===
-          `${currentPath.substring(-1) === '/' ? currentPath.slice(0, -1) : currentPath}` &&
+            `${currentPath.substring(-1) === '/' ? currentPath.slice(0, -1) : currentPath}` &&
           tree.label !== 'index'
         )
       ) {

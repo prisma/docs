@@ -37,32 +37,32 @@ export const buttonCss = (
     disabled
       ? t.colors.gray[300]
       : transparent
-      ? 'transparent !important'
-      : color
-      ? btnType[color]?.backgroundColor
-      : btnType.backgroundColor
+        ? 'transparent !important'
+        : color
+          ? btnType[color]?.backgroundColor
+          : btnType.backgroundColor
   };
   color: ${
     disabled
       ? t.colors.gray[600]
       : color
-      ? transparent
-        ? btnType[color]?.backgroundColor
-        : btnType[color]?.color
-      : transparent
-      ? btnType.backgroundColor
-      : btnType.color
+        ? transparent
+          ? btnType[color]?.backgroundColor
+          : btnType[color]?.color
+        : transparent
+          ? btnType.backgroundColor
+          : btnType.color
   };
   padding: ${
     type !== 'link'
       ? !icon
         ? '16px 24px'
         : icon === 'left'
-        ? '16px 24px 16px 40px'
-        : '16px 40px 16px 24px'
+          ? '16px 24px 16px 40px'
+          : '16px 40px 16px 24px'
       : icon === 'left'
-      ? '0 0 0 10px'
-      : '0 10px 0 0'
+        ? '0 0 0 10px'
+        : '0 10px 0 0'
   };
   ${
     icon === 'left'

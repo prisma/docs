@@ -69,7 +69,9 @@ const TabContent = styled.div`
   max-height: 0;
   overflow: hidden;
   color: ${theme.colors.gray[800]};
-  transition: max-height 0.35s, padding 0.35s;
+  transition:
+    max-height 0.35s,
+    padding 0.35s;
   padding-left: 36px;
   padding-bottom: 0;
   @media (prefers-color-scheme: dark) {

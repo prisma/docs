@@ -1,16 +1,16 @@
 // import { Link as GatsbyLink } from 'gatsby'
 // import isAbsoluteUrl from 'is-absolute-url'
-import Link from "@docusaurus/Link"
+import Link from '@docusaurus/Link'
 // import React from 'react'
 // import CustomLink from './customLink'
 
 interface LinkProps {
-    to: string | null
-    activeClassName?: string
-    partiallyActive?: string
-    getProps?: any
-    wide?: boolean
-    sidenav?: boolean
+  to: string | null
+  activeClassName?: string
+  partiallyActive?: string
+  getProps?: any
+  wide?: boolean
+  sidenav?: boolean
 }
 
 // const Link = ({

@@ -98,7 +98,8 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
     if (codeEl.current !== null && preEl.current !== null) {
       if (debugState.length === 0)
         setDebugState(
-          `${codeEl.current.getBoundingClientRect().width},${preEl.current.getBoundingClientRect().width - 44
+          `${codeEl.current.getBoundingClientRect().width},${
+            preEl.current.getBoundingClientRect().width - 44
           }`
         )
     }
@@ -120,10 +121,11 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                 ${wrapContent ? 'wrap-content' : ''}
                 ${blockClassName} 
                 ${isTerminal ? 'is-terminal' : ''} 
-                ${parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
+                ${
+                  parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) ||
                   wrapContent
-                  ? `not-scrollable`
-                  : ``
+                    ? `not-scrollable`
+                    : ``
                 }
 
               `}
@@ -142,7 +144,7 @@ const Code = ({ children, className, ...props }: PreCodeProps) => {
                 style={{
                   width:
                     parseInt(debugState.split(',')[0]) <= parseInt(debugState.split(',')[1]) + 40 ||
-                      wrapContent
+                    wrapContent
                       ? 'auto'
                       : 'max-content',
                   overflow: 'visible',

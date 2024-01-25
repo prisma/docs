@@ -207,8 +207,9 @@ const TreeNode = ({
   const location = useLocation()
   const level = slug ? slug.split('/').indexOf(label) : ''
 
-  const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${staticLink ? 'static-link' : ''
-    } ${lastLevel ? 'last-level' : ''} ${level > 2 ? 'more-padding' : ''}`
+  const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
+    staticLink ? 'static-link' : ''
+  } ${lastLevel ? 'last-level' : ''} ${level > 2 ? 'more-padding' : ''}`
 
   items.sort((a: any, b: any) => {
     if (a.label < b.label) {

@@ -196,7 +196,7 @@ const NonMobileMenu = styled.div`
   }
 `
 
-const NavLink = styled(Link) <{ wide?: boolean }>`
+const NavLink = styled(Link)<{ wide?: boolean }>`
   transition: all 0.1s ease-in;
   color: ${theme.colors.gray[400]} !important;
   @media (min-width: 0px) and (max-width: ${theme.breakpoints.tabletVertical}) {
@@ -204,7 +204,7 @@ const NavLink = styled(Link) <{ wide?: boolean }>`
     padding: 0;
   }
 `
-const DarkNavLink = styled(NavLink) <{ wide?: boolean; dataPlatform?: boolean }>`
+const DarkNavLink = styled(NavLink)<{ wide?: boolean; dataPlatform?: boolean }>`
   color: ${theme.colors.gray[800]} !important;
   font-family: Inter;
   font-size: 16px;
@@ -242,7 +242,7 @@ const DarkNavLink = styled(NavLink) <{ wide?: boolean; dataPlatform?: boolean }>
   &:hover {
     //color: ${(props) => theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
     border-color: ${(props) =>
-    theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
+      theme.colors[props.dataPlatform ? 'teal' : 'indigo'][700]} !important;
     //background: ${theme.colors.gray[200]};
   }
   &.active-item span {

@@ -65,7 +65,12 @@ namespace S {
   `
 
   export const Row = styled.div`
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI';
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI';
     @media only screen and (min-width: 940px) {
       display: flex;
     }
@@ -87,13 +92,23 @@ namespace S {
   `
 
   export const PrismaDataText = styled.div`
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI';
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI';
     ${(props) => defaultText(props.theme.footer)}
   `
 
   export const FooterWrapper = styled.div`
     display: flex;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI';
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI';
     flex-direction: column-reverse;
     @media only screen and (min-width: ${(props) => props.theme.breakpoints.tabletVertical}px) {
       flex-direction: column;

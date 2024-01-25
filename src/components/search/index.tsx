@@ -30,7 +30,9 @@ const HitsWrapper = styled.div`
   max-width: 1240px;
   width: 100%;
   background: ${theme.colors.white};
-  box-shadow: 0px 4px 8px rgba(47, 55, 71, 0.05), 0px 1px 3px rgba(47, 55, 71, 0.1);
+  box-shadow:
+    0px 4px 8px rgba(47, 55, 71, 0.05),
+    0px 1px 3px rgba(47, 55, 71, 0.1);
   border-radius: 8px;
   // border-top-left-radius: 0;
   // border-top-right-radius: 0;
@@ -163,10 +165,11 @@ const createURL = (state: any) => `?${qs.stringify(state)}`
 
 const searchStateToUrl = (location: any, searchState: any) =>
   searchState
-    ? `${location.pathname === '/docs'
-      ? location.pathname.replace('docs', '')
-      : location.pathname.replace('/docs', '')
-    }${createURL(searchState)}`
+    ? `${
+        location.pathname === '/docs'
+          ? location.pathname.replace('docs', '')
+          : location.pathname.replace('/docs', '')
+      }${createURL(searchState)}`
     : ``
 
 const urlToSearchState = (location: any) => qs.parse(location.search.slice(1))

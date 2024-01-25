@@ -23,9 +23,21 @@ import { defaultTheme as theme } from '../themes'
 import siteConfig from '../../config'
 
 export const Body = styled.div`
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji';
   font-weight: normal;
   font-size: 18px;
   letter-spacing: 0em;
@@ -101,7 +113,9 @@ const ProductCard = styled.div<{ color?: string }>`
     p.color === 'teal'
       ? 'linear-gradient(102.41deg, #FFFFFF 6.22%, #E8FFFD 87.23%)'
       : 'linear-gradient(102.41deg, #FFFFFF 6.22%, #F4F5FF 87.23%)'};
-  box-shadow: 0px 18px 42px 0px rgba(23, 43, 77, 0.08), 0px 4px 26px 0px rgba(23, 43, 77, 0.05),
+  box-shadow:
+    0px 18px 42px 0px rgba(23, 43, 77, 0.08),
+    0px 4px 26px 0px rgba(23, 43, 77, 0.05),
     0px 0px 46px 0px rgba(23, 43, 77, 0.01);
   a,
   button {
@@ -127,12 +141,12 @@ const ProductCard = styled.div<{ color?: string }>`
     a,
     button {
       color: ${(props) =>
-    props.color === 'teal' ? `${theme.colors.teal[400]}` : `${theme.colors.indigo[400]}`};
+        props.color === 'teal' ? `${theme.colors.teal[400]}` : `${theme.colors.indigo[400]}`};
     }
     background: ${(p) =>
-    p.color === 'teal'
-      ? `linear-gradient(287.43deg, rgba(4, 200, 187, 0.17) -34.29%, rgba(4, 200, 187, 0) 98.22%),linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`
-      : `linear-gradient(283.66deg, rgba(102, 126, 234, 0.2418) -32.46%, rgba(102, 126, 234, 0) 96.55%), linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`};
+      p.color === 'teal'
+        ? `linear-gradient(287.43deg, rgba(4, 200, 187, 0.17) -34.29%, rgba(4, 200, 187, 0) 98.22%),linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`
+        : `linear-gradient(283.66deg, rgba(102, 126, 234, 0.2418) -32.46%, rgba(102, 126, 234, 0) 96.55%), linear-gradient(99.45deg, #1A202C -40.85%, #27303E 91.67%)`};
   }
 `
 
@@ -576,28 +590,30 @@ const Homepage = () => {
     <Layout>
       <TopSection>
         <ProductCardsWrapper>
-          {(Object.keys(ORMPlatformLinkData) as Array<keyof typeof ORMPlatformLinkData>).map((e) => (
-            <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
-              <H3>
-                <IconWrapper>
-                  <Icon
-                    icon={`fa-solid fa-${ORMPlatformLinkData[e].icon}`}
-                    size="22px"
-                    color="white"
-                  />
-                </IconWrapper>
-                {ORMPlatformLinkData[e].title}
-              </H3>
-              <Body>{ORMPlatformLinkData[e].description}</Body>
-              <LinkGrid>
-                {ORMPlatformLinkData[e].links.map((e: any) => (
-                  <Link to={e.url}>
-                    {e.title} {e.external ? <>&#8599;</> : <>&#8594;</>}
-                  </Link>
-                ))}
-              </LinkGrid>
-            </ProductCard>
-          ))}
+          {(Object.keys(ORMPlatformLinkData) as Array<keyof typeof ORMPlatformLinkData>).map(
+            (e) => (
+              <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
+                <H3>
+                  <IconWrapper>
+                    <Icon
+                      icon={`fa-solid fa-${ORMPlatformLinkData[e].icon}`}
+                      size="22px"
+                      color="white"
+                    />
+                  </IconWrapper>
+                  {ORMPlatformLinkData[e].title}
+                </H3>
+                <Body>{ORMPlatformLinkData[e].description}</Body>
+                <LinkGrid>
+                  {ORMPlatformLinkData[e].links.map((e: any) => (
+                    <Link to={e.url}>
+                      {e.title} {e.external ? <>&#8599;</> : <>&#8594;</>}
+                    </Link>
+                  ))}
+                </LinkGrid>
+              </ProductCard>
+            )
+          )}
         </ProductCardsWrapper>
       </TopSection>
       <PrismaORMSection>
