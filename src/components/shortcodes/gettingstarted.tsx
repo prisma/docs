@@ -206,8 +206,20 @@ export const SquareLogo = ({ image, tech, url }: any) => {
 }
 
 export const List = styled.div`
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 12px;
-  justify-content: flex-start;
+  justify-content: space-between;
+  grid-template-columns: repeat(3, auto);
+  @media (min-width: 1240px) {
+    grid-template-columns: repeat(6, auto);
+  }
+  @media (min-width: 1025px) and (max-width: 1240px) {
+    grid-template-columns: repeat(3, auto);
+  }
+  @media (min-width: 768px) and (max-width: 1025px) {
+    grid-template-columns: repeat(6, auto);
+  }
+  @media (min-width: 480px) and (max-width: 768px) {
+    grid-template-columns: repeat(4, auto);
+  }
 `
