@@ -214,6 +214,9 @@ const useIntersectionObserver = (
 const TOC = ({ headings, tocDepth }: any) => {
   const [activeId, setActiveId] = React.useState()
   const idList = getIds(headings, tocDepth || 2)
+  React.useEffect(() => {
+    console.log(tocDepth)
+  }, [])
   useIntersectionObserver(setActiveId, idList, tocDepth, headings)
   return (
     <nav aria-label="Table of contents">
