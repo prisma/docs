@@ -24,6 +24,65 @@ Nested reads allow you to read related data from multiple tables in your databas
 - Use [`include`](/orm/reference/prisma-client-reference#include) to include related records, such as a user's posts or profile, in the query response.
 - Use a nested [`select`](/orm/reference/prisma-client-reference#select) to include specific fields from a related record. You can also nest `select` inside an `include`.
 
+### Relation load strategies (Preview)
+
+Since version [5.9.0](https://github.com/prisma/prisma/releases/tag/5.9.0), you can decide on a per-query-level _how_ you want Prisma Client to execute a relation query (i.e. what _load strategy_ should be applied) via the `relationLoadStrategy` option.
+
+Because the `relationLoadStrategy` option is currently in Preview, you need to enable it via the `relationJoins` preview feature flag in your Prisma schema file:
+
+```prisma file=schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+```
+
+After adding this flag, you need to run `prisma generate` again to re-generate Prisma Client. Also note that this feature is currently only available on PostgreSQL and CockroachDB for now.
+
+Prisma Client supports two load strategies for relations:
+
+- `join` (default): Uses a database-level `LATERAL JOIN` and fetches all data with a single query to the database.
+- `query`: Sends multiple queries to the database (one per table) and joins them on the application level.
+
+Another important difference between these two options is that the `join` strategy uses JSON aggregation on the database level. That means that it creates the JSON structures returned by Prisma Client already in the database which saves computation resources on the application level.
+
+> **Note**: Once `relationLoadStrategy` moves from [Preview](/orm/more/releases/preview) into [General Availability](/orm/more/releases/#generally-available-ga), `join` will universally become the default for all relation queries.
+
+#### Examples
+
+You can use the `relationLoadStrategy` option on the top-level in any query that supports `include` or `select`.
+
+Here is an example with `include`:
+
+```ts
+const users = await prisma.user.findMany({
+  relationLoadStrategy: 'join', // or 'query'
+  include: {
+    posts: true,
+  },
+})
+```
+
+And here is another example with `select`:
+
+```ts
+const users = await prisma.user.findMany({
+  relationLoadStrategy: 'join', // or 'query'
+  select: {
+    posts: true,
+  },
+})
+```
+
+#### When to use which load strategy?
+
+- The `join` strategy will be more effective in most scenarios. It uses a combination of `LATERAL JOINs` and JSON aggregation to reduce redundancy in result sets and delegate the work of transforming the query results into the expected JSON structures on the database server.
+- There may be edge cases where `query` could be more performant depending on the characteristics of the dataset and query. We recommend that you profile your database queries to identify these situations.
+- Use `query` if you want to save resources on the database server and do heavy-lifting of merging and transforming data in the application server which might be easier to scale.
+- Older database versions that don’t implement the `LATERAL` keyword may struggle require query complexity and data redundancy so that sending individual queries could be more performant.
+
+### Include a relation
+
 The following example returns a single user and that user's posts:
 
 <CodeWithResult outputResultText="query">
