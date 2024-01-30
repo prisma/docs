@@ -11,11 +11,13 @@ enum DefaultTabType {
 interface CodeProps {
   tabs?: any[]
   defaultTabType?: DefaultTabType
+  gettingStarted?: boolean
+  children?: any
 }
 
 type CodeBlockProps = CodeProps & React.ReactNode
 
-const TabbedContent = ({ tabs, defaultTabType, children }: CodeBlockProps) => {
+const TabbedContent = ({ tabs, defaultTabType, gettingStarted, children }: CodeBlockProps) => {
   const [activeIndex, setActiveIndex] = React.useState(0)
   const tabContent =
     children &&
@@ -44,7 +46,9 @@ const TabbedContent = ({ tabs, defaultTabType, children }: CodeBlockProps) => {
             const setCurrentActive = () => setActiveIndex(index)
             return (
               <div
-                className={`tabHeading ${index === activeIndex ? 'active' : ''}`}
+                className={`tabHeading ${index === activeIndex ? 'active' : ''} ${
+                  gettingStarted ? `getting-started` : ``
+                }`}
                 key={index}
                 data-index={`${index}`}
                 onClick={setCurrentActive}
@@ -76,6 +80,12 @@ const Tabs = styled.div`
     svg {
       margin-right: ${theme.space[8]};
     }
+    &.getting-started {
+      padding: 6px 12px;
+      margin-right: 4px;
+      border-radius: 4px 4px 0 0 !important;
+      background-color: var(--border-color);
+    }
   }
 
   .tabHeading.active {
@@ -84,6 +94,10 @@ const Tabs = styled.div`
     border-radius: ${theme.radii.small};
     svg path {
       stroke: ${theme.colors.gray[600]};
+    }
+    &.getting-started {
+      background-color: ${theme.colors.indigo[600]};
+      color: var(--white-color);
     }
   }
 `
