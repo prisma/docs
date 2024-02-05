@@ -9,7 +9,7 @@ import { stringify } from '../../utils/stringify'
 import CopyButton from './copy'
 import FileWithIcon from './fileWithIcon'
 
-import './prism/index.css'
+// import './prism/index.css'
 
 require('./prism/prism-prisma')
 

@@ -15,8 +15,6 @@ import SidebarLayout from './sidebar'
 import TableOfContents from './toc'
 import { WebProvider } from './WebProvider'
 
-import '../styles/layout.css'
-
 interface LayoutContentProps {
   toc: any
   tocDepth?: number

@@ -61,7 +61,7 @@ const shortcodes = {
   SwitchTech,
   FileWithIcon,
   inlineCode: (props: any) => <code className="inline-code" {...props} />,
-  code: (props: any) => <Code {...props} />,
+  // code: (props: any) => <Code {...props} />,
   details: (props: any) => <CollapseBox {...props} />,
   table: (props: any) => <Table {...props} />,
   ButtonLink,
