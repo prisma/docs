@@ -547,13 +547,15 @@ const checkJson = await prisma.user.findMany({
 - If you are using PostgreSQL, you must pass in an array of objects to match, even if that array only contains one object:
 
   ```json5
-  [{ status: 'expired', insuranceID: 92 }] // PostgreSQL
+  [{ status: 'expired', insuranceID: 92 }]
+   // PostgreSQL
   ```
 
   If you are using MySQL, you must pass in a single object to match:
 
   ```json5
-  { status: 'expired', insuranceID: 92 } // MySQL
+  { status: 'expired', insuranceID: 92 }
+   // MySQL
   ```
 
 - If your filter array contains multiple objects, PostgreSQL will only return results if _all_ objects are present - not if at least one object is present.
@@ -956,6 +958,46 @@ prisma.log.findMany({
 These _null enums_ do not apply to MongoDB because MongoDB does not differentiate between a JSON `null` and a database `NULL`. They also do not apply to the `array_contains` operator in all databases because there can only be a JSON `null` within a JSON array. Since there cannot be a database `NULL` within a JSON array, `{ array_contains: null }` is not ambiguous.
 
 </Admonition>
+
+## Typed <inlinecode>Json</inlinecode>
+
+By default, `Json` fields are not typed in Prisma models. To accomplish strong typing inside of these fields, you will need to use an external package like [prisma-json-types-generator](https://www.npmjs.com/package/prisma-json-types-generator) to accomplish this.
+
+### Using <inlinecode>prisma-json-types-generator</inlinecode>
+
+First, install and configure `prisma-json-types-generator` [according to the package's instructions](https://www.npmjs.com/package/prisma-json-types-generator#using-it).
+
+Then, assuming you have a model like the following:
+
+```prisma no-copy
+model Log {
+  id   Int  @id
+  meta Json
+}
+```
+
+You can update it and type it by using [abstract syntax tree comments](https://www.prisma.io/docs/orm/prisma-schema/overview#comments)
+
+```prisma highlight=4;normal file=schema.prisma
+model Log {
+  id Int @id
+
+  /// [LogMetaType]
+  meta Json
+}
+```
+
+Then, make sure you define the above type in a type declaration file included in your `tsconfig.json`
+
+```ts file=types.ts
+declare global {
+  namespace PrismaJson {
+    type LogMetaType = { timestamp: number; host: string }
+  }
+}
+```
+
+Now, when working with `Log.meta` it will be strongly typed!
 
 ## <inlinecode>Json</inlinecode> FAQs
 
