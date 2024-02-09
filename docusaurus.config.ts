@@ -28,7 +28,12 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
-
+  scripts: [
+    {
+      src: 'https://kit.fontawesome.com/1772ab679c.js',
+      crossOrigin: 'anonymous',
+    },
+  ],
   presets: [
     [
       'classic',
@@ -43,7 +48,7 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: ['./src/css/custom.css'],
         },
       } satisfies Preset.Options,
     ],
