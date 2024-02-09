@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
-import { defaultTheme } from '../../theme'
+import { defaultTheme } from '../../themes'
 import { Icon } from '../Icon'
 import { Tooltip } from '../tooltip/Tooltip'
 

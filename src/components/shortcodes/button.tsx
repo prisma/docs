@@ -6,7 +6,6 @@ import * as React from 'react'
 import styled from 'styled-components'
 
 import ArrowRight from '../../icons/ArrowRight'
-import { defaultTheme as theme } from '../../theme'
 
 export interface ButtonProps {
   href?: string

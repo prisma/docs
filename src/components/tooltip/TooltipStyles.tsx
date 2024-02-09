@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { defaultTheme } from '../../theme'
+import { defaultTheme } from '../../themes'
 
 export const animationStyle: any = {
   bottom: `
