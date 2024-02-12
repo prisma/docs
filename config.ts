@@ -89,7 +89,7 @@ const siteConfig = {
     },
     ORMPlatformLinkData: {
       porm: {
-        title: 'Prisma ORM',
+        title: 'Build with Prisma ORM',
         icon: 'database',
         description:
           'Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.',
@@ -106,10 +106,10 @@ const siteConfig = {
         ],
       },
       pdp: {
-        title: 'Prisma Data Platform',
+        title: 'Adapt as your app evolves.',
         icon: 'triangle',
         description:
-          'An ecosystem of tools empowering teams to build data-heavy, global-first applications.',
+          'Scale confidently with infrastructure that adapts to your application. Prisma expands your application capabilities to handle increased traffic and work with your database in completely new ways.',
         links: [
           {
             url: 'accelerate',
