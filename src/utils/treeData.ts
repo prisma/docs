@@ -38,6 +38,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             langSwitcher,
             hidePage,
             codeStyle,
+            hideTitle,
           },
         },
       }: TreeNode
@@ -82,6 +83,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.codeStyle = codeStyle
           tmp.parentLabel = parts[parts.length - 3]
           tmp.parents = parts.filter((part) => part !== 'index')
+          tmp.hideTitle = hideTitle
           if (defaultCollapsed && location) {
             defaultCollapsed[part.toLowerCase()] =
               tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
@@ -101,6 +103,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           items: [],
           title,
           navTitle,
+          hideTitle,
           staticLink,
           duration,
           preview,

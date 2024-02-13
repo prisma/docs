@@ -14,8 +14,9 @@ export const useAllArticlesQuery = () => {
               staticLink
               preview
               deprecated
-              # earlyaccess
+              earlyaccess
               langSwitcher
+              hideTitle
               search
               wide
               dbSwitcher

@@ -6,6 +6,7 @@ export default () => (
     width="24px"
     height="24px"
     viewBox="0 0 24 23"
+    className="planetscale"
     version="1.1"
   >
     <g id="surface1">
