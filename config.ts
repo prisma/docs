@@ -106,10 +106,10 @@ const siteConfig = {
         ],
       },
       pdp: {
-        title: 'Adapt as your app evolves.',
+        title: 'Grow as your app evolves',
         icon: 'triangle',
         description:
-          'Scale confidently with infrastructure that adapts to your application. Prisma expands your application capabilities to handle increased traffic and work with your database in completely new ways.',
+          'Expand your application capabilities with global database caching, connection pooling and real-time database events.',
         links: [
           {
             url: 'accelerate',
