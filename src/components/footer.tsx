@@ -316,7 +316,7 @@ const FooterSec = ({
                   theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/docs/getting-started`}
                 >
-                  Get Started
+                  Get started
                 </S.Link>
                 <S.Link
                   color={color}
@@ -325,14 +325,14 @@ const FooterSec = ({
                   referrerPolicy="no-referrer"
                   external={true}
                 >
-                  Prisma Examples
+                  prisma-examples
                 </S.Link>
                 <S.Link
                   color={color}
                   theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/stack`}
                 >
-                  Prisma in your Stack
+                  Prisma in your stack
                 </S.Link>
                 <S.Link
                   color={color}
@@ -362,14 +362,14 @@ const FooterSec = ({
                   theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/showcase`}
                 >
-                  Customer Stories
+                  Customer stories
                 </S.Link>
                 <S.Link
                   color={color}
                   theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/dataguide`}
                 >
-                  Data Guide
+                  Data guide
                 </S.Link>
                 <S.Link
                   color={color}
@@ -378,7 +378,7 @@ const FooterSec = ({
                   href="https://www.prisma-status.com"
                   external={true}
                 >
-                  Data Platform Status
+                  Data Platform status
                 </S.Link>
                 <S.Link
                   color={color}
@@ -387,7 +387,7 @@ const FooterSec = ({
                   href="https://marketplace.visualstudio.com/items?itemName=Prisma.prisma"
                   external={true}
                 >
-                  VS Code Extension
+                  VS Code extension
                 </S.Link>
               </S.Column>
 
