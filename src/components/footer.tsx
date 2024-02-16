@@ -272,16 +272,9 @@ const FooterSec = ({
                 <S.Link
                   color={color}
                   theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/client`}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/orm`}
                 >
-                  Client
-                </S.Link>
-                <S.Link
-                  color={color}
-                  theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/migrate`}
-                >
-                  Migrate
+                  ORM
                 </S.Link>
                 <S.Link
                   color={color}
@@ -310,7 +303,7 @@ const FooterSec = ({
               </S.Column>
 
               <S.Column theme={themeToUse}>
-                <S.Title theme={themeToUse}>Developers</S.Title>
+                <S.Title theme={themeToUse}>Resources</S.Title>
                 <S.Link
                   color={color}
                   theme={themeToUse}
@@ -337,13 +330,6 @@ const FooterSec = ({
                 <S.Link
                   color={color}
                   theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/dataguide`}
-                >
-                  Data Guide
-                </S.Link>
-                <S.Link
-                  color={color}
-                  theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/stack`}
                 >
                   Prisma in your Stack
@@ -351,16 +337,39 @@ const FooterSec = ({
                 <S.Link
                   color={color}
                   theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/support`}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/ecosystem`}
                 >
-                  Support
+                  Ecosystem
                 </S.Link>
                 <S.Link
                   color={color}
                   theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/community`}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/learn`}
                 >
-                  Community
+                  Tutorials
+                </S.Link>
+                <S.Link
+                  color={color}
+                  theme={themeToUse}
+                  href="https://playground.prisma.io/"
+                  referrerPolicy="no-referrer"
+                  external={true}
+                >
+                  Playground
+                </S.Link>
+                <S.Link
+                  color={color}
+                  theme={themeToUse}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/showcase`}
+                >
+                  Customer Stories
+                </S.Link>
+                <S.Link
+                  color={color}
+                  theme={themeToUse}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/dataguide`}
+                >
+                  Data Guide
                 </S.Link>
                 <S.Link
                   color={color}
@@ -381,14 +390,22 @@ const FooterSec = ({
                   VS Code Extension
                 </S.Link>
               </S.Column>
+
               <S.Column theme={themeToUse}>
-                <S.Title theme={themeToUse}>Use Cases</S.Title>
+                <S.Title theme={themeToUse}>Contact us</S.Title>
                 <S.Link
                   color={color}
                   theme={themeToUse}
-                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/showcase`}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/community`}
                 >
-                  Customer Stories
+                  Community
+                </S.Link>
+                <S.Link
+                  color={color}
+                  theme={themeToUse}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/support`}
+                >
+                  Support
                 </S.Link>
                 <S.Link
                   color={color}
@@ -397,6 +414,7 @@ const FooterSec = ({
                 >
                   Enterprise
                 </S.Link>
+                
               </S.Column>
 
               <S.Column theme={themeToUse}>
@@ -414,6 +432,15 @@ const FooterSec = ({
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/blog`}
                 >
                   Blog
+                </S.Link>
+                <S.Link
+                  color={color}
+                  theme={themeToUse}
+                  referrerPolicy="no-referrer"
+                  href="https://www.datadx.io/"
+                  external={true}
+                >
+                  Data DX
                 </S.Link>
                 <S.Link
                   color={color}
@@ -441,11 +468,27 @@ const FooterSec = ({
                 <S.Link
                   color={color}
                   theme={themeToUse}
+                  href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/oss-friends`}
+                >
+                  OSS Friends
+                </S.Link>
+                <S.Link
+                  color={color}
+                  theme={themeToUse}
                   referrerPolicy="no-referrer"
                   external={true}
                   href="https://pris.ly/privacy"
                 >
                   Terms & Privacy
+                </S.Link>
+                <S.Link
+                  color={color}
+                  theme={themeToUse}
+                  referrerPolicy="no-referrer"
+                  external={true}
+                  href="https://pris.ly/sla"
+                >
+                  Service Level Agreement
                 </S.Link>
               </S.Column>
             </S.Row>
