@@ -274,7 +274,9 @@ const siteConfig = {
   footer: {
     newsletter: {
       text: 'Stay up to date with the latest features and changes to Prisma',
-      BREVO_API_KEY: process.env.BREVO_API_KEY,
+      BREVO_API_KEY:
+        process.env.BREVO_API_KEY ||
+        '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',
     },
   },
 }
