@@ -3,6 +3,7 @@ import styled from 'styled-components'
 
 import { Button } from '../button'
 import { Icon } from '../Icon'
+import config from '../../../config'
 
 namespace S {
   export const Container = styled.div<{ error?: boolean }>`
@@ -110,48 +111,40 @@ type FooterNewsletterFormProps = {
 
 export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewsletterFormProps) => {
   const [email, setEmail] = useState<string>('')
-  const [name, setName] = useState<string>('')
   const [submitted, setSubmitted] = useState<boolean>(false)
   const mailchimpForm = useRef(null)
 
-  useEffect(() => {
-    if (mailchimpForm.current) {
-      // @ts-ignore
-      mailchimpForm.current.addEventListener('submit', () => {
-        setSubmitted(true)
-        setTimeout(() => {
-          setEmail('')
-          setName('')
-        }, 1)
-      })
+  const setFormSubmitted = (event: any) => {
+    const options = {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        'api-key': config.footer.newsletter.BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        email: email,
+        attributes: {
+          EMAIL: email,
+          SOURCE: 'website',
+        },
+        includeListIds: [15],
+        templateId: 36,
+        redirectionUrl: 'https://prisma.io',
+      }),
     }
-  }, [mailchimpForm.current])
+    //@ts-ignore
+    fetch('https://api.brevo.com/v3/contacts/doubleOptinConfirmation', options)
+
+    setTimeout(() => {
+      setEmail('')
+      setSubmitted(true)
+    }, 200)
+  }
 
   return (
     <S.Container theme={theme}>
-      <form
-        action="https://prisma.us14.list-manage.com/subscribe/post-json"
-        method="POST"
-        target="hiddenFrame"
-        ref={mailchimpForm}
-      >
-        <input type="hidden" name="u" value="dbacf466dc6e90901d8936391" />
-        <input type="hidden" name="id" value="83e066a034" />
-        <input type="hidden" name="c" value="?" />
-        <input type="hidden" name="f_id" value="00b0c2e1f0" />
-
-        <label className="input-name" htmlFor="MERGE1">
-          <div className="leading-icon">{icon('fa-light fa-user')}</div>
-          <input
-            type="text"
-            className="input-el"
-            name="FNAME"
-            id="MERGE1"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </label>
+      <form target="hiddenFrame" ref={mailchimpForm} onSubmit={setFormSubmitted}>
         <label className="input-email" htmlFor="MERGE0">
           <div className="leading-icon">{icon('fa-light fa-envelope')}</div>
           <input
