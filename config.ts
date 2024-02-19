@@ -165,14 +165,14 @@ const siteConfig = {
       },
     ],
     CommunityLinksData: [
-      {
-        id: 'slack',
-        title: 'Slack',
-        description: 'Engage with a vibrant community of developers and companies adopting Prisma',
-        icon: 'fa-brands fa-slack',
-        link: 'https://slack.prisma.io/',
-        linkText: 'Join our channel',
-      },
+      // {
+      //   id: 'slack',
+      //   title: 'Slack',
+      //   description: 'Engage with a vibrant community of developers and companies adopting Prisma',
+      //   icon: 'fa-brands fa-slack',
+      //   link: 'https://slack.prisma.io/',
+      //   linkText: 'Join our channel',
+      // },
       {
         id: 'github',
         title: 'GitHub',
