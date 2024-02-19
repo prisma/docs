@@ -167,6 +167,11 @@ const config: Config = {
       ],
       copyright: `Copyright © ${new Date().getFullYear()} Prisma Data, Inc. Built with Docusaurus.`,
     },
+    docs: {
+      sidebar: {
+        autoCollapseCategories: true,
+      },
+    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
