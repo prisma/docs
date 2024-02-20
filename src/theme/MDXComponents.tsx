@@ -27,9 +27,25 @@ const SwitchTech: React.FC<React.PropsWithChildren> = ({ children }) => {
   return <p>{children}</p>
 }
 
-// TODO: we should fix this
 const ParallelBlocks: React.FC<React.PropsWithChildren> = ({ children }) => {
-  return <>{children}</>
+  const childArray = React.Children.toArray(children).map(child => {
+    if (React.isValidElement(child)) {
+      return <div className='col col--6'>
+        <b>{child.props.content}</b>
+        <div>{child}</div>
+      </div>
+    } else {
+      return <div className='col col--6'>
+        <div>{child}</div>
+      </div>
+    }
+  });
+
+  return <div className='container'>
+    <div className='row'>
+      {childArray}
+    </div>
+  </div>
 }
 
 type ButtonColor = 'red' | 'green' | 'grey' | 'grey-bg' | 'dark'
