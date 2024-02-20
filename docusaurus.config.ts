@@ -49,24 +49,49 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
-      title: 'My Site',
+      title: 'Docs',
       logo: {
-        alt: 'My Site Logo',
-        src: 'img/logo.svg',
+        alt: 'Prisma Logo',
+        src: 'img/logo-dark.svg',
+        srcDark: 'img/logo-white.svg',
       },
       items: [
         {
           type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
+          sidebarId: 'getStartedSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: 'Get Started',
         },
         {
-          href: 'https://github.com/facebook/docusaurus',
-          label: 'GitHub',
+          type: 'docSidebar',
+          sidebarId: 'ormSidebar',
+          position: 'left',
+          label: 'ORM',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'accelerateSidebar',
+          position: 'left',
+          label: 'Accelerate',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'pulseSidebar',
+          position: 'left',
+          label: 'Pulse',
+        },
+        {
+          href: 'https://github.com/prisma/docs',
           position: 'right',
+          className: 'header-github-link',
+          'aria-label': 'GitHub repository',
         },
       ],
+    },
+    algolia: {
+      appId: 'MK4LNFW4EO',
+      apiKey: 'd8ae0173fc0d9170b085840d0c95f389',
+      indexName: 'docs-prod', // this is probably wrong but don't really know what to do about it right now
     },
     footer: {
       style: 'dark',
