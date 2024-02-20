@@ -174,6 +174,15 @@ const siteConfig = {
       //   linkText: 'Join our channel',
       // },
       {
+        id: 'discord',
+        title: 'Discord',
+        description:
+          'Chat in real-time, hang out, and share ideas with community members and our team.',
+        icon: 'fa-brands fa-discord',
+        link: 'https://pris.ly/discord',
+        linkText: 'Join our server',
+      },
+      {
         id: 'github',
         title: 'GitHub',
         description:
@@ -183,13 +192,12 @@ const siteConfig = {
         linkText: 'Contribute in GitHub',
       },
       {
-        id: 'discord',
-        title: 'Discord',
-        description:
-          'Chat in real-time, hang out, and share ideas with community members and our team.',
-        icon: 'fa-brands fa-discord',
-        link: 'https://pris.ly/discord',
-        linkText: 'Join our server',
+        id: 'X',
+        title: 'X',
+        description: 'Stay up-to-date, join the discussion, and connect with the community on X.',
+        icon: 'fa-brands fa-x-twitter',
+        link: 'https://twitter.com/prisma',
+        linkText: 'Follow us on X',
       },
     ],
     CardLinks: {
