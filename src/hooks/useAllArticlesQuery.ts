@@ -15,6 +15,7 @@ export const useAllArticlesQuery = () => {
               preview
               deprecated
               earlyaccess
+              highlight
               langSwitcher
               hideTitle
               search
