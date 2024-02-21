@@ -92,6 +92,7 @@ const LinkCardWrapper = styled.a`
   &:hover {
     background: var(--main-bgd-color);
     border-color: #5a67d8;
+    color: var(--main-font-color) !important;
   }
   .title {
     display: inline-block;
@@ -176,9 +177,11 @@ const SquareWrapper = styled.a`
     background: var(--code-inline-bgd-color);
     border-color: var(--indigo-700);
   }
-  svg {
+  img {
     width: 100%;
     height: 100%;
+    margin-bottom: 0;
+    object-fit: contain;
   }
 `
 
@@ -193,7 +196,7 @@ export const SquareLogo = ({ image, tech, url }: any) => {
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
-        {image}
+        <img src={image} />
       </SquareWrapper>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
@@ -207,6 +210,7 @@ export const SquareLogo = ({ image, tech, url }: any) => {
 export const List = styled.div`
   display: grid;
   gap: 12px;
+  margin-top: 16px;
   justify-content: space-between;
   grid-template-columns: repeat(3, auto);
   @media (min-width: 1240px) {
