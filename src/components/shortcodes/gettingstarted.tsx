@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
+import { defaultTheme } from '../../theme'
 import { Icon } from '../Icon'
 import { Tooltip } from '../tooltip/Tooltip'
 
@@ -143,7 +144,7 @@ export const LinkCard = ({ icon, title, desc, link }: any) => {
 export const Tab = styled.div`
   padding: 15px;
   background-color: var(--main-bgd-color);
-  border: 1px solid var(--indigo-600);
+  border: 1px solid ${defaultTheme.colors.indigo[600]};
   border-radius: 0px 8px 8px 8px;
   font-family: Inter;
   font-size: 14px;
@@ -169,12 +170,12 @@ const SquareWrapper = styled.a`
   cursor: pointer;
   &:hover {
     background: var(--main-bgd-color);
-    border-color: var(--indigo-600);
+    border-color: ${defaultTheme.colors.indigo[600]};
   }
   &:active,
   &:focus {
     background: var(--code-inline-bgd-color);
-    border-color: var(--indigo-700);
+    border-color: ${defaultTheme.colors.indigo[700]};
   }
   svg {
     width: 100%;
