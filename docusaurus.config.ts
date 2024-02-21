@@ -51,16 +51,47 @@ const config: Config = {
     navbar: {
       title: 'Docs',
       logo: {
-        alt: 'Prisma Logo',
-        src: 'img/logo-dark.svg',
         srcDark: 'img/logo-white.svg',
+        alt: 'Prisma logo',
+        src: 'img/logo.svg',
+        href: "https://prisma.io/",
+        target: "_self"
       },
       items: [
         {
           type: 'docSidebar',
-          sidebarId: 'getStartedSidebar',
+          sidebarId: 'index',
+          position: 'left',
+          label: '/docs',
+          className: 'logo-link',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'gettingStarted',
           position: 'left',
           label: 'Get Started',
+          className: 'indigo first-item',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'ormSidebar',
+          position: 'left',
+          className: 'indigo',
+          label: 'ORM',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'accelerateSidebar',
+          position: 'left',
+          className: 'teal',
+          label: 'Accelerate',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'pulseSidebar',
+          position: 'left',
+          className: 'teal',
+          label: 'Pulse',
         },
         {
           type: 'docSidebar',
@@ -169,7 +200,7 @@ const config: Config = {
     },
     docs: {
       sidebar: {
-        autoCollapseCategories: true,
+        autoCollapseCategories: true
       },
     },
     prism: {
