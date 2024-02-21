@@ -9,8 +9,7 @@ tocDepth: 3
 
 A database transaction refers to a sequence of read/write operations that are _guaranteed_ to either succeed or fail as a whole. This section describes the ways in which the Prisma Client API supports transactions.
 
-- For more in-depth examples and use cases, refer to the 📖 [transactions guide](/orm/prisma-client/queries/transactions).
-- For information about transactions in general and the reasoning behind Prisma's current solutions, see [Blog: How Prisma supports transactions](https://www.prisma.io/blog/how-prisma-supports-transactions-x45s1d5l0ww1).
+For more in-depth examples and use cases, refer to the 📖 [transactions guide](/orm/prisma-client/queries/transactions).
 
 </TopBlock>
 
@@ -18,7 +17,7 @@ A database transaction refers to a sequence of read/write operations that are _g
 
 <Admonition type="info">
 
-Before Prisma version 4.4.0, you could not set isolation levels on transactions. The isolation level in your database configuration always applied.
+Before Prisma ORM version 4.4.0, you could not set isolation levels on transactions. The isolation level in your database configuration always applied.
 
 </Admonition>
 
@@ -45,9 +44,9 @@ The technique you choose depends on your particular use case.
 
 > **Note**: For the purposes of this guide, _writing_ to a database encompasses creating, updating, and deleting data.
 
-## About transactions in Prisma
+## About transactions in Prisma Client
 
-Prisma provides the following options for using transactions:
+Prisma Client provides the following options for using transactions:
 
 - [Nested writes](#nested-writes): use the Prisma Client API to process multiple operations on one or more related records inside the same transaction.
 - [Batch / bulk transactions](#batchbulk-operations): process one or more operations in bulk with `updateMany`, `deleteMany`, and `createMany`.
@@ -196,6 +195,8 @@ await prisma.$transaction(
 
 ### Interactive transactions
 
+#### Overview
+
 Sometimes you need more control over what queries execute within a transaction. Interactive transactions are meant to provide you with an escape hatch.
 
 <Admonition type="info">
@@ -208,7 +209,15 @@ If you use interactive transactions in preview from version 2.29.0 to 4.6.1 (inc
 
 To use interactive transactions, you can pass an async function into [`$transaction`](/orm/prisma-client/queries/transactions#transaction-api).
 
-The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma call invoked on this `tx` instance is encapsulated into the transaction.
+The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma Client call invoked on this `tx` instance is encapsulated into the transaction.
+
+<Admonition type="warning">
+
+**Use interactive transactions with caution**. Keeping transactions open for a long time hurts database performance and can even cause deadlocks. Try to avoid performing network requests and executing slow queries inside your transaction functions. We recommend you get in and out as quick as possible!
+
+</Admonition>
+
+#### Example
 
 Let's look at an example:
 
@@ -290,6 +299,8 @@ try {
 }
 ```
 
+#### Transaction options
+
 The transaction API has a second parameter. For interactive transactions, you can use the following optional configuration options in this parameter:
 
 - `maxWait`: The maximum amount of time Prisma Client will wait to acquire a transaction from the database. The default value is 2 seconds.
@@ -298,7 +309,7 @@ The transaction API has a second parameter. For interactive transactions, you ca
 
 For example:
 
-```jsx
+```ts
 await prisma.$transaction(
   async (tx) => {
     // Code running in a transaction...
@@ -311,14 +322,17 @@ await prisma.$transaction(
 )
 ```
 
-<Admonition type="warning">
+You can also set these globally on the constructor-level:
 
-**Use interactive transactions with caution**. Keeping transactions
-open for a long time hurts database performance and can even cause deadlocks.
-Try to avoid performing network requests and executing slow queries inside your
-transaction functions. We recommend you get in and out as quick as possible!
-
-</Admonition>
+```ts
+const prisma = new PrismaClient({
+  transactionOptions: {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    maxWait: 5000, // default: 2000
+    timeout: 10000, // default: 5000
+  },
+})
+```
 
 ### Transaction isolation level
 
@@ -332,9 +346,9 @@ You can set the transaction [isolation level](https://www.prisma.io/dataguide/in
 
 <Admonition type="info">
 
-This is available in the following Prisma versions for interactive transactions from version 4.2.0, for sequential operations from version 4.4.0.
+This is available in the following Prisma ORM versions for interactive transactions from version 4.2.0, for sequential operations from version 4.4.0.
 
-In versions before 4.2.0 (for interactive transactions), or 4.4.0 (for sequential operations), you cannot configure the transaction isolation level at a Prisma level. Prisma does not explicitly set the isolation level, so the [isolation level configured in your database](#database-specific-information-on-isolation-levels) is used.
+In versions before 4.2.0 (for interactive transactions), or 4.4.0 (for sequential operations), you cannot configure the transaction isolation level at a Prisma ORM level. Prisma ORM does not explicitly set the isolation level, so the [isolation level configured in your database](#database-specific-information-on-isolation-levels) is used.
 
 </Admonition>
 
@@ -493,7 +507,7 @@ Dependent writes must succeed together in order to maintain data consistency and
 
 ### Nested writes
 
-Prisma's solution to dependent writes is the **nested writes** feature, which is supported by `create` and `update`. The following nested write creates one user and two blog posts:
+Prisma Client's solution to dependent writes is the **nested writes** feature, which is supported by `create` and `update`. The following nested write creates one user and two blog posts:
 
 ```ts
 const nestedWrite = await prisma.user.create({
@@ -509,7 +523,7 @@ const nestedWrite = await prisma.user.create({
 })
 ```
 
-If any operation fails, Prisma rolls back the entire transaction. Nested writes are not currently supported by top-level bulk operations like `client.user.deleteMany` and `client.user.updateMany`.
+If any operation fails, Prisma Client rolls back the entire transaction. Nested writes are not currently supported by top-level bulk operations like `client.user.deleteMany` and `client.user.updateMany`.
 
 #### When to use nested writes
 
@@ -730,7 +744,7 @@ Depending on your requirements, Prisma Client has four options for handling inde
 
 ### Bulk operations
 
-Bulk writes allow you to write multiple records of the same type in a single transaction - if any operation fails, Prisma rolls back the entire transaction. Prisma currently supports:
+Bulk writes allow you to write multiple records of the same type in a single transaction - if any operation fails, Prisma Client rolls back the entire transaction. Prisma Client currently supports:
 
 - `updateMany`
 - `deleteMany`
@@ -804,7 +818,7 @@ Yes - for example, you can include multiple `deleteMany` operations inside a `$t
 
 ### `$transaction([])` API
 
-The `$transaction([])` API is generic solution to independent writes that allows you to run multiple operations as a single, atomic operation - if any operation fails, Prisma rolls back the entire transaction.
+The `$transaction([])` API is generic solution to independent writes that allows you to run multiple operations as a single, atomic operation - if any operation fails, Prisma Client rolls back the entire transaction.
 
 Its also worth noting that operations are executed according to the order they are placed in the transaction.
 
@@ -1259,7 +1273,7 @@ If you have an existing application, it can be a significant undertaking to refa
 
 To create an interactive transaction, pass an async function into [$transaction](#transaction-api).
 
-The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma call invoked on this `tx` instance is encapsulated into the transaction.
+The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma Client call invoked on this `tx` instance is encapsulated into the transaction.
 
 In the example below, Alice and Bob each have $100 in their account. If they try to send more money than they have, the transfer is rejected.
 
@@ -1331,4 +1345,4 @@ transaction functions. We recommend you get in and out as quick as possible!
 
 ## Conclusion
 
-Prisma supports multiple ways of handling transactions, either directly through the API or by supporting your ability to introduce optimistic concurrency control and idempotency into your application. If you feel like you have use cases in your application that are not covered by any of the suggested options, please open a [GitHub issue](https://github.com/prisma/prisma/issues/new/choose) to start a discussion.
+Prisma Client supports multiple ways of handling transactions, either directly through the API or by supporting your ability to introduce optimistic concurrency control and idempotency into your application. If you feel like you have use cases in your application that are not covered by any of the suggested options, please open a [GitHub issue](https://github.com/prisma/prisma/issues/new/choose) to start a discussion.
