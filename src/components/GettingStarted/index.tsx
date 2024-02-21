@@ -209,7 +209,7 @@ export const SquareLogo = ({ image, tech, url }: any) => {
 
 export const List = styled.div`
   display: grid;
-  gap: 12px;
+  gap: 16px;
   margin-top: 16px;
   justify-content: space-between;
   grid-template-columns: repeat(3, auto);
