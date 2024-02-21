@@ -40,6 +40,7 @@ const sidebars: SidebarsConfig = {
     collapsed: false,
     collapsible: false,
     items: [
+    'orm/orm-index',
     {
       type: "category",
       label: "Overview",
