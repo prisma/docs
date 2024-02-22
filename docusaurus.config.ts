@@ -39,7 +39,7 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          customCss: ['./src/css/custom.css', './src/css/all.css'],
+          customCss: ['./src/css/custom.css', './src/css/all.css', './src/css/theming.css'],
         },
       } satisfies Preset.Options,
     ],
