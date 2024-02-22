@@ -1,32 +1,7 @@
 import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
-// import { defaultTheme } from '../../theme'
-// import { Icon } from '../Icon'
-// import { Tooltip } from '../tooltip/Tooltip'
-
-// TODO: consider this https://david-gilbertson.medium.com/icons-as-react-components-de3e33cb8792
-
-// TODO: this is filler
-const Icon: React.FC<{ icon: string, btn?: string, size?: string }> = ({ icon }) => {
-  return <i className={icon}></i>
-}
-
-// TODO: this is filler
-const Tooltip: React.FC<React.PropsWithChildren<{ target: any, position?: string }>> = ({ children }) => {
-  return <>{children}</>
-}
-
-// TODO: this is filler
-const indigo = {
-  100: '#EBF4FF',
-  200: '#C3DAFE',
-  300: '#A3BFFA',
-  400: '#7F9CF5',
-  500: '#667EEA',
-  600: '#5A67D8',
-  700: '#4C51BF',
-  800: '#434190',
-}
+import { Icon } from '../Icon'
+import { Tooltip } from '../tooltip/Tooltip'
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -117,6 +92,7 @@ const LinkCardWrapper = styled.a`
   &:hover {
     background: var(--main-bgd-color);
     border-color: #5a67d8;
+    color: var(--main-font-color) !important;
   }
   .title {
     display: inline-block;
@@ -168,7 +144,7 @@ export const LinkCard = ({ icon, title, desc, link }: any) => {
 export const Tab = styled.div`
   padding: 15px;
   background-color: var(--main-bgd-color);
-  border: 1px solid ${indigo[600]};
+  border: 1px solid var(--indigo-600);
   border-radius: 0px 8px 8px 8px;
   font-family: Inter;
   font-size: 14px;
@@ -194,16 +170,18 @@ const SquareWrapper = styled.a`
   cursor: pointer;
   &:hover {
     background: var(--main-bgd-color);
-    border-color: ${indigo[600]};
+    border-color: var(--indigo-600);
   }
   &:active,
   &:focus {
     background: var(--code-inline-bgd-color);
-    border-color: ${indigo[700]};
+    border-color: var(--indigo-700);
   }
-  svg {
+  img {
     width: 100%;
     height: 100%;
+    margin-bottom: 0;
+    object-fit: contain;
   }
 `
 
@@ -218,7 +196,7 @@ export const SquareLogo = ({ image, tech, url }: any) => {
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
-        {image}
+        <img src={image} />
       </SquareWrapper>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
@@ -231,7 +209,8 @@ export const SquareLogo = ({ image, tech, url }: any) => {
 
 export const List = styled.div`
   display: grid;
-  gap: 12px;
+  gap: 16px;
+  margin-top: 16px;
   justify-content: space-between;
   grid-template-columns: repeat(3, auto);
   @media (min-width: 1240px) {
