@@ -179,6 +179,7 @@ const TreeNode = ({
   preview,
   deprecated,
   earlyaccess,
+  highlight,
   lastLevel,
   hidePage,
   codeStyle,
@@ -289,6 +290,7 @@ const TreeNode = ({
           {preview && <span className="tag small">Preview</span>}
           {deprecated && <span className="tag small">Deprecated</span>}
           {earlyaccess && <span className="tag small">Early Access</span>}
+          {highlight && <span className="tag small">New</span>}
         </Link>
       )}
 

@@ -204,6 +204,7 @@ exports.createSchemaCustomization = ({ actions }: any) => {
       preview: Boolean
       deprecated: Boolean
       earlyaccess: Boolean
+      highlight: Boolean
       toc: Boolean
       hidePage: Boolean
       tocDepth: Int
