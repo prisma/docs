@@ -1,7 +1,7 @@
 import * as React from 'react'
 import styled from 'styled-components'
 
-const Link = styled.a<{ mdx?: string }>`
+const StyledLink = styled.a<{ mdx?: string }>`
   background: transparent;
   border: none;
   padding: 0;
@@ -22,9 +22,9 @@ const CustomLink = ({ href, mdx, ...props }: any) => {
   const rel = href.includes('prisma.io') ? '' : 'noopener noreferrer'
 
   return (
-    <Link {...props} mdx={mdx} href={href} target={target} rel={rel}>
+    <StyledLink {...props} mdx={mdx} href={href} target={target} rel={rel}>
       {props.children}
-    </Link>
+    </StyledLink>
   )
 }
 
