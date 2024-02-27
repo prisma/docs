@@ -27,7 +27,7 @@ const Link = ({
       mdx={true}
       // target={!to?.includes('prisma.io') ? '_blank' : '_self'}
       // rel={!to?.includes('prisma.io') ? 'noopener' : ''}
-      style={{ display: 'inline-block' }}
+      // style={{ display: 'inline-block' }}
     >
       {props.children}
       {to && isAbsoluteUrl(to) && (!to.includes('prisma.io') || to.includes('slack.prisma.io')) && (
