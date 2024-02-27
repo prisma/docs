@@ -381,6 +381,7 @@ const SecondLevelMobileMenu = ({ headerProps, wide }: HeaderViewProps) => (
 const HomeIcons = styled.div`
   display: flex;
   align-items: center;
+  a,
   button {
     color: var(--main-font-color);
     transition: transform 0.18s ease-out;
