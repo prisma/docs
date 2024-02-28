@@ -46,7 +46,7 @@ Inside of the `subscribe()` method you can use filters to get specific events an
 
 You can use the `create` filter to retrieve all _create_ events on a table. A create event is triggered when a new record is created in a table.
 
-Pulse returns the values of the new record as an object named `after`.
+Pulse returns the values of the new record as an object named `created`. This represents the state of the record _after_ the create event.
 
 ##### Example
 
@@ -65,7 +65,7 @@ const subscription = await prisma.user.subscribe({
 ```ts no-copy
 {
   action: 'create',
-  after: {
+  created: {
     id: 1,
     email: 'marc@prisma.io',
     name: 'Marc'
@@ -114,7 +114,7 @@ const subscription = await prisma.user.subscribe({
 
 You can use the `delete` filter to retrieve all _delete_ events on a table. A delete event is triggered when a record has been removed from the database.
 
-Pulse returns the values of the changed record as an object named `before`. This represents the state of the record _before_ the change event.
+Pulse returns the values of the changed record as an object named `deleted`. This represents the state of the record _before_ the change event.
 
 ##### Example
 
@@ -133,7 +133,7 @@ const subscription = await prisma.user.subscribe({
 ```ts no-copy
 {
   action: 'delete',
-  before: {
+  deleted: {
     id: 1,
     email: '',
     name: null
@@ -155,16 +155,48 @@ ALTER TABLE public."User" REPLICA IDENTITY FULL;
 
 </Admonition>
 
+## <inlinecode>stop</inlinecode>
+
+Allows you to explicitly stop subscriptions and close the connection. This is needed to ensure that the limited number of subscriptions allowed per table is not exhausted.
+
+```ts
+async function main() {
+  // Subscribe to new events on the `user` table
+  const subscription = await prisma.user.subscribe({})
+
+  // Set a timeout to the subscription after 60 seconds.
+  // Explicitly stopping the subscriptions and closing the connection is needed
+  // to not exhaust the limited number of subscriptions allowed per table.
+
+  setTimeout(() => {
+    console.log('Stopping the subscription.')
+    subscription.stop()
+  }, 60000)
+
+  // Waiting loop that prints new events when something changes in the database
+  for await (const event of subscription) {
+    console.log('new event:', event) // 'create', 'update', 'delete'
+  }
+}
+
+main()
+```
+
 ### Filter conditions and operators
 
 Pulse allows you to subscribe to change events based on filter conditions and operators. Pulse supports all of Prisma Client’s [supported filter conditions and operators](/orm/reference/prisma-client-reference#filter-conditions-and-operators) except for `search` and `mode`. You also won't be able to define filters that reference other models via relations. <!-- As described here -->
 
-You must wrap your filter criteria inside a `before` or `after` object depending on the type of event your subscription is listening for:
+You may have to wrap your filter criteria inside a `after` object depending on the type of event your subscription is listening for:
 
-- `before`: `delete` events
-- `after`: `create` and `update` events
+- `after`: `update` events
 
-This makes it explicit that the specified filter criteria apply to the `before` or `after` state of the change event.
+This makes it explicit that the specified filter criteria apply to the `after` state of the change event.
+
+<Admonition type="info">
+
+All [`create`](#create) event results implicitly represent the `after` state of the change event. And all [`delete`](#delete) event results implicitly represent the `before` state of the change event.
+
+</Admonition>
 
 <Admonition type="info">
 
@@ -177,38 +209,6 @@ In the future, Pulse may support the ability to return both the `before` and `af
 Using a filter inside of `after` will return changed records that match your filter criteria as applied to the state of the record after the change event.
 
 ##### Examples
-
-Get `create` events where the value of name is equal to `'Jim'` after the event has occurred:
-
-<CodeWithResult outputResultText="event">
-<cmd>
-
-```ts
-const subscription = await prisma.user.subscribe({
-  create: {
-    after: {
-      name: 'Jim',
-    },
-  },
-})
-```
-
-</cmd>
-<cmdResult>
-
-```ts no-copy
-{
-  action: 'create',
-  after: {
-    id: 6,
-    email: 'test@test.com',
-    name: 'Jim'
-  }
-}
-```
-
-</cmdResult>
-</CodeWithResult>
 
 Get `update` events where the value of name is equal to `Jim` after the event has occurred:
 
@@ -241,47 +241,3 @@ const subscription = await prisma.user.subscribe({
 
 </cmdResult>
 </CodeWithResult>
-
-#### Usage in the before state filter
-
-Using a filter inside of `before` will return changed records that match your filter criteria as applied to the state of the record before the change event.
-
-##### Example
-
-Get delete events where the value of name was equal to Marc.
-
-<CodeWithResult outputResultText="event">
-<cmd>
-
-```ts
-const subscription = await prisma.user.subscribe({
-  delete: {
-    before: {
-      name: 'Jim',
-    },
-  },
-})
-```
-
-</cmd>
-<cmdResult>
-
-```ts no-copy
-{
-  action: 'update',
-  after: {
-    id: 6,
-    email: 'updated@test.com',
-    name: 'Jim',
-  }
-}
-```
-
-</cmdResult>
-</CodeWithResult>
-
-<Admonition type="warning">
-
-Specifying a filter condition for delete events only works if you’ve set the table’s `REPLICA IDENTITY` to `FULL`. See [this section](/pulse/api-reference#delete) for more details.
-
-</Admonition>
