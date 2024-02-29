@@ -37,12 +37,8 @@ Many aspects of using Prisma ORM with PlanetScale are just like using Prisma ORM
 PlanetScale's branching model and design for scalability means that there are also a number of differences to consider. You should be aware of the following points when deciding to use PlanetScale with Prisma ORM:
 
 - **Branching and deploy requests.** PlanetScale provides two types of database branches: _development branches_, which allow you to test out schema changes, and _production branches_, which are protected from direct schema changes. Instead, changes must be first created on a development branch and then deployed to production using a deploy request. Production branches are highly available and include automated daily backups. To learn more, see [How to use branches and deploy requests](#how-to-use-branches-and-deploy-requests).
-
-- **Referential actions and integrity.** To support scaling across multiple database servers, PlanetScale [does not allow the use of foreign key constraints](https://planetscale.com/docs/learn/operating-without-foreign-key-constraints), which are normally used in relational databases to enforce relationships between data in different tables, and asks users to handle this manually in their applications.  
-  With Prisma ORM you can maintain these relationships in your data and allow the use of [referential actions](/orm/prisma-schema/data-model/relations/referential-actions) by using Prisma ORM's ability to [emulate relations in Prisma Client](/orm/prisma-schema/data-model/relations/relation-mode#emulate-relations-in-prisma-orm-with-the-prisma-relation-mode) with the `prisma` relation mode. For more information, see [How to emulate relations in Prisma Client](#how-to-emulate-relations-in-prisma-client).
-
-- **Creating indexes on foreign keys.** When emulating relations in Prisma ORM, you will need to create indexes on foreign keys. In a standard MySQL database, if a table has a column with a foreign key constraint, an index is automatically created on that column. Because PlanetScale does not support foreign keys, these indexes are [currently](https://github.com/prisma/prisma/issues/10611) not created when Prisma Client emulates relations, which can lead to issues with queries not being well optimised. To avoid this, you can create indexes in Prisma ORM. For more information, see [How to create indexes on foreign keys](#how-to-create-indexes-on-foreign-keys).
-
+- **Referential actions and integrity.** To support scaling across multiple database servers, PlanetScale [by default does not use foreign key constraints](https://planetscale.com/docs/learn/operating-without-foreign-key-constraints), which are normally used in relational databases to enforce relationships between data in different tables, and asks users to handle this manually in their applications. However, you can explicitly [enable them in the PlanetScale database settings](https://planetscale.com/docs/concepts/foreign-key-constraints). If you don't enable these explicitly, you can still maintain these relationships in your data and allow the use of [referential actions](/orm/prisma-schema/data-model/relations/referential-actions) by using Prisma ORM's ability to [emulate relations in Prisma Client](/orm/prisma-schema/data-model/relations/relation-mode#emulate-relations-in-prisma-orm-with-the-prisma-relation-mode) with the `prisma` relation mode. For more information, see [How to emulate relations in Prisma Client](#option-1-emulate-relations-in-prisma-client).
+- **Creating indexes on foreign keys.** When [emulating relations in Prisma ORM](#option-1-emulate-relations-in-prisma-client) (i.e. when _not_ using foreign key constraints on the database-level), you will need to create dedicated indexes on foreign keys. In a standard MySQL database, if a table has a column with a foreign key constraint, an index is automatically created on that column. When PlanetScale is configured to not use foreign key constraints, these indexes are [currently](https://github.com/prisma/prisma/issues/10611) not created when Prisma Client emulates relations, which can lead to issues with queries not being well optimised. To avoid this, you can create indexes in Prisma ORM. For more information, see [How to create indexes on foreign keys](#2-create-indexes-on-foreign-keys).
 - **Making schema changes with `db push`.** When you merge a development branch into your production branch, PlanetScale will automatically compare the two schemas and generate its own schema diff. This means that Prisma ORM's [`prisma migrate`](/orm/prisma-migrate) workflow, which generates its own history of migration files, is not a natural fit when working with PlanetScale. These migration files may not reflect the actual schema changes run by PlanetScale when the branch is merged.
 
   <Admonition type="warning">
@@ -53,7 +49,7 @@ PlanetScale's branching model and design for scalability means that there are al
 
   For an example of how this works, see [How to make schema changes with `db push`](#how-to-make-schema-changes-with-db-push)
 
-- **Introspection**. When you introspect on an existing database, you will get a schema with no relations, as they are usually defined based on foreign keys that connect tables. Because PlanetScale does not support foreign keys, and you use Prisma ORM to emulate relations, you will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-introspection).
+- **Introspection**. When you introspect on an existing database and you have _not_ enabled [foreign key constraints in your PlanetScale database](#option-2-enable-foreign-key-constraints-in-the-planetscale-database-settings), you will get a schema with no relations, as they are usually defined based on foreign keys that connect tables. In that case, you will need to add the missing relations in manually. For more information, see [How to add in missing relations after Introspection](#how-to-add-in-missing-relations-after-introspection).
 
 ## How to use branches and deploy requests
 
@@ -63,9 +59,15 @@ Every PlanetScale database is created with a branch called `main`, which is init
 
 If you try to push to a production branch, you will get the [error message](/orm/reference/error-reference#p3022) `Direct execution of DDL (Data Definition Language) SQL statements is disabled on this database.`
 
-## How to emulate relations in Prisma Client
+## How to use relations (and enable referential integrity) with PlanetScale
 
-PlanetScale does not allow foreign keys in its database schema. By default, Prisma ORM uses foreign keys in the underlying database to enforce relations between fields in your Prisma schema. In Prisma ORM versions 3.1.1 and later, you can [emulate relations in Prisma Client with the `prisma` relation mode](/orm/prisma-schema/data-model/relations/relation-mode#emulate-relations-in-prisma-orm-with-the-prisma-relation-mode), which avoids the need for foreign keys in the database.
+### Option 1: Emulate relations in Prisma Client
+
+#### 1. Set `relationMode = "prisma"`
+
+PlanetScale does not use foreign key constraints in its database schema by default. However, Prisma ORM relies on foreign key constraints in the underlying database to enforce referential integrity between models in your Prisma schema.
+
+In Prisma ORM versions 3.1.1 and later, you can [emulate relations in Prisma Client with the `prisma` relation mode](/orm/prisma-schema/data-model/relations/relation-mode#emulate-relations-in-prisma-orm-with-the-prisma-relation-mode), which avoids the need for foreign key constraints in the database.
 
 To enable emulation of relations in Prisma Client, set the `relationMode` field to `"prisma"` in the `datasource` block:
 
@@ -83,11 +85,11 @@ The ability to set the relation mode was introduced as part of the `referentialI
 
 </Admonition>
 
-If you use relations in your Prisma schema with the default `"foreignKeys"` option for the `referentialIntegrity` field, PlanetScale will error when Prisma ORM tries to create foreign keys. In versions 2.27.0 and later, Prisma ORM will output the [P3021 error message](/orm/reference/error-reference#p3021).
+If you use relations in your Prisma schema with the default `"foreignKeys"` option for the `relationMode` field, PlanetScale will error and Prisma ORM output the [P3021 error message](/orm/reference/error-reference#p3021) when it tries to create foreign keys. (In versions before 2.27.0 it will output a raw database error.)
 
-## How to create indexes on foreign keys
+#### 2. Create indexes on foreign keys
 
-When [you emulate relations in Prisma Client](#how-to-emulate-relations-in-prisma-client), you need to create your own indexes. As an example of a situation where you would want to add an index, take this schema for a blog with posts and comments:
+When [you emulate relations in Prisma Client](#option-1-emulate-relations-in-prisma-client), you need to create your own indexes. As an example of a situation where you would want to add an index, take this schema for a blog with posts and comments:
 
 ```prisma file=schema.prisma
 model Post {
@@ -139,9 +141,41 @@ One issue to be aware of is that [implicit many-to-many relations](/orm/prisma-s
 
 </Admonition>
 
+### Option 2: Enable foreign key constraints in the PlanetScale database settings
+
+Support for foreign key constraints in PlanetScale databases has been Generally Available since February 2024. Follow the instructions in the [PlanetScale documentation](https://planetscale.com/docs/concepts/foreign-key-constraints) to enable them in your database.
+
+You can then use Prisma ORM and define relations in your Prisma schema without the need for extra configuration.
+
+In that case, you can define a relation as with other database that supports foreign key constraints, for example:
+
+```prisma file=schema.prisma
+model Post {
+  id       Int       @id @default(autoincrement())
+  title    String
+  content  String
+  likes    Int       @default(0)
+  comments Comment[]
+}
+
+model Comment {
+  id      Int    @id @default(autoincrement())
+  comment String
+  postId  Int
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+```
+
+With this approach, it is _not_ necessary to:
+
+- set `relationMode = "prisma"` in your Prisma schema
+- define additional indexes on foreign keys
+
+Also, introspection will automatically create relation fields in your Prisma schema because it can detect the foreign key constraints in the database.
+
 ## How to make schema changes with <inlinecode>db push</inlinecode>
 
-To use `db push` with PlanetScale, you will first need to [enable emulation of relations in Prisma Client](#how-to-emulate-relations-in-prisma-client). Pushing to your branch without referential emulation enabled will give the [error message](/orm/reference/error-reference#p3021) `Foreign keys cannot be created on this database.`
+To use `db push` with PlanetScale, you will first need to [enable emulation of relations in Prisma Client](#option-1-emulate-relations-in-prisma-client). Pushing to your branch without referential emulation enabled will give the [error message](/orm/reference/error-reference#p3021) `Foreign keys cannot be created on this database.`
 
 As an example, let's say you decide to decide to add a new `excerpt` field to the blog post schema above. You will first need to [create a new development branch and connect to it](#how-to-use-branches-and-deploy-requests).
 
@@ -178,6 +212,8 @@ Once you are happy with your changes on your development branch, you can open a 
 For more examples, see PlanetScale's tutorial on [automatic migrations with Prisma ORM](https://planetscale.com/docs/prisma/automatic-prisma-migrations) using `db push`.
 
 ## How to add in missing relations after Introspection
+
+> **Note**: This section is only relevant if you use `relationMode = "prisma"` to emulate foreign key constraints with Prisma ORM. If you enabled foreign key constraints in your PlanetScale database, you can ignore this section.
 
 After introspecting with `npx prisma db pull`, the schema you get may be missing some relations. For example, the following schema is missing a relation between the `User` and `Post` models:
 
