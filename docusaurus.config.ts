@@ -56,6 +56,17 @@ const config: Config = {
     [
       'classic',
       {
+        gtag: {
+          trackingID: 'G-999X9XX9XX',
+          anonymizeIP: true,
+        },
+      },
+      {
+        googleTagManager: {
+          containerId: 'GTM-KCGZPWB',
+        },
+      },
+      {
         docs: {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
