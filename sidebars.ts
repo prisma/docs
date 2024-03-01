@@ -1,6 +1,12 @@
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
-const platformCategory: any = {
+// workaround suggested by Docusaurus team: https://github.com/facebook/docusaurus/issues/9902#issuecomment-1972125804
+type SidebarConfig = SidebarsConfig[string];
+type OnlyArray<Type> = Type extends unknown[] ? Type : never;
+type SidebarItemConfigArray = OnlyArray<SidebarConfig>;
+type SidebarItemConfig = SidebarItemConfigArray[number];
+
+const platformCategory: SidebarItemConfig = {
   type: "category",
   label: "Platform",
   collapsed: false,
