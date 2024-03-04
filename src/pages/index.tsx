@@ -1,8 +1,6 @@
-import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
 
 import styles from './index.module.css';
 
@@ -122,7 +120,13 @@ export default function Home(): JSX.Element {
             {DatabaseData.map((e: any) => (
               <Link to={e.url}>
                 <div className="entry light">
-                  {e.icon}
+                  <img src={`/img/technologies/${e.icon}.svg`} {...{
+                    style: {
+                      height: `100%`,
+                      width: e.icon === "sqlite" ? `55px` : `auto`,
+                      marginRight: e.icon === "sqlite" ? `-30px` : 0,
+                    }
+                  }} />
                   <span>{e.title}</span>
                 </div>
               </Link>
