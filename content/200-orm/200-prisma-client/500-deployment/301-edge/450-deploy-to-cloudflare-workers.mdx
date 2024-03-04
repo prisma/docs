@@ -7,17 +7,19 @@ tocDepth: 3
 
 <TopBlock>
 
-This page covers how the things you need to know in order to deploy an Edge function to Cloudflare Workers that uses Prisma Client for talking to a database.
+This page covers everything you need to know in order to deploy an rdge function to Cloudflare Workers that uses Prisma Client for talking to a database.
 
 </TopBlock>
 
 ## General considerations when deploying to Cloudflare Workers
 
+This section covers _general_ things you need to be aware of when deploying to Cloudflare Workers and are using Prisma ORM, regardless of the database provider you use.
+
 ### Using an edge-compatible driver
 
-**Note**: [Prisma Accelerate](/acccelerate) enables you to access _any_ database from _any_ edge function provider. No edge-compatible driver is necessary.
-
 When deploying a Cloudflare Worker that uses Prisma ORM, you need to use an [edge-compatible driver]() and its respective [driver adapter]() for Prisma ORM.
+
+> **Note**: [Prisma Accelerate](/acccelerate) enables you to access _any_ database from _any_ edge function provider. No edge-compatible driver is necessary.
 
 The edge-compatible drivers for Cloudflare Workers are:
 
@@ -58,13 +60,19 @@ DATABASE_URL="postgresql://admin:mypassword42@somehost.aws.com:5432/mydb"
 
 Note that **the `.dev.vars` file is not compatible with `.env` files which are typically used by Prisma ORM**.
 
-This means that you need to _additionally_ set the environment variable for Prisma ORM, e.g. in a `.env` file.
+This means that you need make sure that Prisma ORM gets access to the environemnt variable when needed, e.g. when running a Prisma CLI command like `prisma migrate dev`.
 
-Alternatively you can run your Prisma CLI commands using `dotenv` to specify from where the CLI should read the environment variable, for example:
+There are several options for achieving this:
 
-```terminal
-dotenv -e .dev.vars -- npx prisma migrate dev
-```
+- Run your Prisma CLI commands using `dotenv` to specify from where the CLI should read the environment variable, for example:
+  ```terminal
+  dotenv -e .dev.vars -- npx prisma migrate dev
+  ```
+- Create a script in `package.json` that reads `.dev.vars` via `dotenv`. You can then execute `prisma` commands as follows: `npm run env -- npx prisma migrate dev`. Here's a reference for the script:
+  ```js
+  "scripts":  { "env": "dotenv -e .dev.vars" }
+  ```
+- Duplicate the `DATABASE_URL` and any other relevant env vars into a new file called `.env`. that's used by Prisma ORM.
 
 #### Production
 
@@ -135,31 +143,32 @@ datasource db {
 }
 ```
 
-Next, you need to set the `DATABASE_URL` environment variable to the value of your database connection string.
+Next, you need to set the `DATABASE_URL` environment variable to the value of your database connection string. You'll do this in a file called `.dev.vars` used by Cloudflare:
 
-If you ran `npx prisma init`, you can use the `.env` file that was created by this command. Another option is to follow [Cloudflare's documentation](https://developers.cloudflare.com/workers/configuration/secrets/#secrets-in-development) and create a `.dev.vars` file. The syntax for declaring environment variables is identical in both cases:
-
-<TabbedContent tabs={[<FileWithIcon text=".env" icon="file"/>, <FileWithIcon text=".dev.vars" icon="file"/>]}>
-
-<tab>
-
-```bash
-# .env
+```bash file=.dev.vars
 DATABASE_URL="postgresql://admin:mypassword42@somehost.aws.com:5432/mydb"
 ```
 
-</tab>
+Because the Prisma CLI by default is only compatible with `.env` files, you can adjust your `package.json` with the following script that loads the env vars from `.dev.vars`. You can then use this script to load the env vars before executing a `prisma` command.
 
-<tab>
+Add this script to your `package.json`:
 
-```bash
-# .dev.vars
-DATABASE_URL="postgresql://admin:mypassword42@somehost.aws.com:5432/mydb"
+```js file=package.json highlight=5;add
+{
+  // ...
+  "scripts": {
+    // ....
+    "env": "dotenv -e .dev.vars"
+  },
+  // ...
+}
 ```
 
-</tab>
+Now you can execute Prisma CLI commands as follows while enusring that the command has access to the env vars in `.dev.vars`:
 
-</TabbedContent>
+```terminal
+npm run env -- npx prisma
+```
 
 #### 2. Install dependencies
 
@@ -184,7 +193,7 @@ node_compat = true
 If you ran `npx prisma init` above, you need to migrate your database schema to create the `User` table that's defined in your Prisma schema (if you already have all the tables you need in your database, you can skip this step):
 
 ```terminal
-npx prisma migrate dev --name init
+npm run env -- npx prisma migrate dev --name init
 ```
 
 #### 5. Use Prisma Client in your Worker to send a query to the database
@@ -226,8 +235,12 @@ npx wrangler dev
 To deploy the worker, you first need to the `DATABASE_URL` environment variable [via the `wrangler` CLI](https://developers.cloudflare.com/workers/configuration/secrets/#secrets-on-deployed-workers):
 
 ```terminal
-npx wrangler secret put DATABASE_URL postgresql://admin:mypassword42@somehost.aws.com:5432/mydb
+npx wrangler secret put DATABASE_URL
 ```
+
+The command is interactive and will ask you to enter the value for the `DATABASE_URL` env var as the next step in the terminal.
+
+> **Note**: This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
 
 Then you can go ahead then deploy the worker:
 
