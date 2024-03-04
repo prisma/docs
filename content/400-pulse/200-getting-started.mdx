@@ -55,7 +55,7 @@ ALTER SYSTEM SET max_replication_slots = 20;
 ALTER SYSTEM SET wal_keep_size = 2048;
 ```
 
-#### Configuring replication and publication slots
+#### Configuring replication slots and publications
 
 When using Prisma Pulse with a database that permits superuser access, it will handle the management of logical replication slots automatically.
 
@@ -81,63 +81,54 @@ SELECT slot_name, slot_type FROM pg_replication_slots WHERE slot_type = 'logical
 
 3. You can create publications in the following ways below depending on the version of your PostgreSQL database.
 
-  <details>
-    <summary>Examples:</summary>
+   - Publication for all models:
 
-    - Publication for all models:
+     ```sql
+     CREATE PUBLICATION $PUBLICATION_NAME FOR ALL TABLES;
+     ```
 
-```sql
-CREATE PUBLICATION $PUBLICATION_NAME FOR ALL TABLES;
-```
+   - Publication for specific models. For example, create a publication that publishes all changes in two tables:
 
-- Publication for specific models. For example, create a publication that publishes all changes in two tables:
+     ```sql
+     CREATE PUBLICATION user_and_department_publication FOR TABLE users, departments;
+     ```
 
-  ```sql
-  CREATE PUBLICATION user_and_department_publication FOR TABLE users, departments;
-  ```
+   - Publication for a model with a `WHERE` clause on it’s fields. For example, create a publication that publishes all changes from active `departments`:
 
-- Publication for a model with a `WHERE` clause on it’s fields. For example, create a publication that publishes all changes from active `departments`:
+     ```sql
+     CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
+     ```
 
-  ```sql
-  CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
-  ```
+   - Publication for specific fields. For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
 
-- Publication for specific fields. For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
+     ```sql
+     CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
+     ```
 
-  ```sql
-  CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
-  ```
+   - Publication based on DML operations. For example, create a publication that only publishes `INSERT` operations in one table:
 
-- Publication based on DML operations. For example, create a publication that only publishes `INSERT` operations in one table:
+     ```sql
+     CREATE PUBLICATION insert_only FOR TABLE departments
+       WITH (publish = 'insert');
+     ```
 
-  ```sql
-  CREATE PUBLICATION insert_only FOR TABLE departments
-    WITH (publish = 'insert');
-  ```
+     > `publish` (`string`)
+     >
+     > This parameter determines which DML operations will be published by the new publication to the subscribers. The value is comma-separated list of operations. The allowed operations are `insert`, `update`, `delete`, and `truncate`. The default is to publish all actions, and so the default value for this option is `'insert, update, delete, truncate'`.
 
-  > `publish` (`string`)
-  >
-  > This parameter determines which DML operations will be published by the new publication to the subscribers. The value is comma-separated list of operations. The allowed operations are `insert`, `update`, `delete`, and `truncate`. The default is to publish all actions, and so the default value for this option is `'insert, update, delete, truncate'`.
-
-You can learn more about the PostgreSQL's `CREATE PUBLICATION`, supported versions and see more examples [here](https://www.postgresql.org/docs/current/sql-createpublication.html).
-
-  </details>
+     You can learn more about the PostgreSQL's `CREATE PUBLICATION`, supported versions and see more examples [here](https://www.postgresql.org/docs/current/sql-createpublication.html).
 
 4. Then you can submit the replication slot name and the publication slot name in the Platform console, before enabling Prisma Pulse:
    ![](./images/replication-slot-submission.png)
 
-#### Removing replication and publication slots
+#### Removing replication slots and publications
 
-If you are managing your replication and publication slots independently and opt to disable Prisma Pulse for a particular environment, you can refer to the following SQL queries.
+If you are managing your replication slots and publications independently and opt to disable Prisma Pulse for a particular environment, you can refer to the following SQL queries.
 
 1. View your replication slots:
 
 ```sql
-SELECT
-    pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) as restart_diff,
-    pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)) as confirmed_flush_diff,
-    *
-FROM pg_replication_slots;
+SELECT FROM pg_replication_slots;
 ```
 
 2. To delete a replication slot:
@@ -225,7 +216,7 @@ The following instructions show how to create a parameter group, enable logical 
 
 3. Modify **Database options** (`RDS` > `Databases` > `Modify`) to use the new DB parameter group:
 
-![](./images/add-group.png)
+![Add Parameter group to AWS RDS](./images/add-group.png)
 
 To reflect the configuration change into `wal_level`, select the **Apply immediately** option.
 
