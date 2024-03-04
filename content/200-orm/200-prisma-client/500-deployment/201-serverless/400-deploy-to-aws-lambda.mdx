@@ -1,19 +1,19 @@
 ---
 title: 'Deploy to AWS Lambda'
-metaTitle: 'Deploy your application using Prisma to AWS Lambda'
-metaDescription: 'Learn how to deploy your Prisma-backed applications to AWS Lambda with AWS SAM, Serverless Framework, or SST'
+metaTitle: 'Deploy your application using Prisma ORM to AWS Lambda'
+metaDescription: 'Learn how to deploy your Prisma ORM-backed applications to AWS Lambda with AWS SAM, Serverless Framework, or SST'
 tocDepth: 3
 ---
 
 <TopBlock>
 
-This guide explains how to avoid common issues when deploying a project using Prisma to [AWS Lambda](https://aws.amazon.com/lambda/).
+This guide explains how to avoid common issues when deploying a project using Prisma ORM to [AWS Lambda](https://aws.amazon.com/lambda/).
 
 While a deployment framework is not required to deploy to AWS Lambda, this guide covers deploying with:
 
 - [AWS Serverless Application Model (SAM)](https://aws.amazon.com/serverless/sam/) is an open-source framework from AWS that can be used in the creation of serverless applications. AWS SAM includes the [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-reference.html#serverless-sam-cli), which you can use to build, test, and deploy your application.
-- [Serverless Framework](https://www.serverless.com/framework/) provides a CLI that helps with workflow automation and AWS resource provisioning. While Prisma works well with the Serverless Framework "out of the box", there are a few improvements that can be made within your project to ensure a smooth deployment and performance. There is also additional configuration that is needed if you are using the [`serverless-webpack`](https://www.npmjs.com/package/serverless-webpack) or [`serverless-bundle`](https://www.npmjs.com/package/serverless-bundle) libraries.
-- [SST](https://sst.dev/) provides tools that make it easy for developers to define, test, debug, and deploy their applications. Prisma works well with SST but must be configured so that your schema is correctly packaged by SST.
+- [Serverless Framework](https://www.serverless.com/framework/) provides a CLI that helps with workflow automation and AWS resource provisioning. While Prisma ORM works well with the Serverless Framework "out of the box", there are a few improvements that can be made within your project to ensure a smooth deployment and performance. There is also additional configuration that is needed if you are using the [`serverless-webpack`](https://www.npmjs.com/package/serverless-webpack) or [`serverless-bundle`](https://www.npmjs.com/package/serverless-bundle) libraries.
+- [SST](https://sst.dev/) provides tools that make it easy for developers to define, test, debug, and deploy their applications. Prisma ORM works well with SST but must be configured so that your schema is correctly packaged by SST.
 
 </TopBlock>
 
@@ -27,13 +27,28 @@ This section covers changes you will need to make to your application, regardles
 
 ### Define binary targets in Prisma Schema
 
-The Prisma schema should contain the following in the `generator` block:
+Depending on the version of Node.js, your Prisma schema should contain either `rhel-openssl-1.0.x` or `rhel-openssl-3.0.x` in the `generator` block:
+
+<TabbedContent tabs={['Node.js 16 and 18', 'Node.js 20+']}>
+
+<tab>
 
 ```prisma
 binaryTargets = ["native", "rhel-openssl-1.0.x"]
 ```
 
-This is necessary because the runtimes used in development and deployment differ. Add the [`binaryTarget`](/orm/reference/prisma-schema-reference#binarytargets-options) to make the compatible Prisma engine file available.
+</tab>
+<tab>
+
+```prisma
+binaryTargets = ["native", "rhel-openssl-3.0.x"]
+```
+
+</tab>
+
+</TabbedContent>
+
+This is necessary because the runtimes used in development and deployment differ. Add the [`binaryTarget`](/orm/reference/prisma-schema-reference#binarytargets-options) to make the compatible Prisma ORM engine file available.
 
 #### Lambda functions with arm64 architectures
 
@@ -73,9 +88,9 @@ AWS SAM does not directly support loading values from a `.env` file. You will ha
 
 ### Loading required files
 
-AWS SAM uses [esbuild](https://esbuild.github.io/) to bundle your TypeScript code. However, the full esbuild API is not exposed and esbuild plugins are not supported. This leads to problems when using Prisma in your application as certain files (like `schema.prisma`) must be available at runtime.
+AWS SAM uses [esbuild](https://esbuild.github.io/) to bundle your TypeScript code. However, the full esbuild API is not exposed and esbuild plugins are not supported. This leads to problems when using Prisma ORM in your application as certain files (like `schema.prisma`) must be available at runtime.
 
-To get around this, you need to directly reference the needed files in your code to bundle them correctly. In your application, you could add the following lines to your application where Prisma is instantiated.
+To get around this, you need to directly reference the needed files in your code to bundle them correctly. In your application, you could add the following lines to your application where Prisma ORM is instantiated.
 
 ```ts file=app.ts
 import schema from './prisma/schema.prisma'
@@ -95,7 +110,7 @@ Loader:
 AssetNames: '[name]'
 ```
 
-This will make sure that files needed by Prisma will be included in the AWS SAM build.
+This will make sure that files needed by Prisma ORM will be included in the AWS SAM build.
 
 ## Deploying with the Serverless Framework
 
@@ -144,7 +159,7 @@ Packaging deployment-example-sls for stage dev (us-east-1)
 
 ### Deploy only the required files
 
-To reduce your deployment footprint, you can update your deployment process to only upload the files your application needs. The Serverless configuration file, `serverless.yml`, below shows a `package` pattern that includes only the Prisma engine file relevant to the Lambda runtime and excludes the others. This means that when Serverless Framework packages your app for upload, it includes only one engine file. This ensures the packaged archive is as small as possible.
+To reduce your deployment footprint, you can update your deployment process to only upload the files your application needs. The Serverless configuration file, `serverless.yml`, below shows a `package` pattern that includes only the Prisma ORM engine file relevant to the Lambda runtime and excludes the others. This means that when Serverless Framework packages your app for upload, it includes only one engine file. This ensures the packaged archive is as small as possible.
 
 ```code file=serverless.yml no-copy
 package:
@@ -174,7 +189,7 @@ If you use `serverless-webpack`, you will need additional configuration so that 
 
 1. Copy your `schema.prisma` with [`copy-webpack-plugin`](https://www.npmjs.com/package/copy-webpack-plugin).
 2. Run `prisma generate` via `custom > webpack > packagerOptions > scripts` in your `serverless.yml`.
-3. Only package the correct Prisma engine file to save more than 40mb of capacity.
+3. Only package the correct Prisma ORM engine file to save more than 40mb of capacity.
 
 #### 1. Install webpack specific dependencies
 
@@ -218,7 +233,7 @@ module.exports = {
 }
 ```
 
-This plugin will allow you to copy your `schema.prisma` file into your bundled code. Prisma requires that your `schema.prisma` be present in order make sure that queries are encoded and decoded according to your schema. In most cases, bundlers will not include this file by default and will cause your application to fail to run.
+This plugin will allow you to copy your `schema.prisma` file into your bundled code. Prisma ORM requires that your `schema.prisma` be present in order make sure that queries are encoded and decoded according to your schema. In most cases, bundlers will not include this file by default and will cause your application to fail to run.
 
 <Admonition>
 
@@ -242,7 +257,7 @@ custom:
 
 This will ensure that, after webpack bundles your code, the Prisma Client is generated according to your schema. Without this step, your app will fail to run.
 
-Lastly, you will want to exclude [Prisma query engines](/orm/more/under-the-hood/engines) that do not match the AWS Lambda runtime. Update your `serverless.yml` by adding the following script that makes sure only the required query engine, `rhel-openssl-1.0.x`, is included in the final packaged archive.
+Lastly, you will want to exclude [Prisma ORM query engines](/orm/more/under-the-hood/engines) that do not match the AWS Lambda runtime. Update your `serverless.yml` by adding the following script that makes sure only the required query engine, `rhel-openssl-1.0.x`, is included in the final packaged archive.
 
 ```yaml file=serverless.yml highlight=6;add
 custom:
