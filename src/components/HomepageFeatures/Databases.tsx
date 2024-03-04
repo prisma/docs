@@ -138,6 +138,7 @@ const DatabaseGrid = styled.div`
       padding: 0 24px;
     }
     img {
+      margin: auto 0;
       max-height: 36px;
     }
     span {
