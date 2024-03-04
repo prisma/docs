@@ -1,72 +1,4 @@
-const siteConfig = {
-  gatsby: {
-    pathPrefix: '/docs',
-    siteUrl: 'https://www.prisma.io',
-    titlePrefix: '',
-    titleSuffix: ' | Prisma Docs',
-  },
-  redirects: [
-    // Added this object for redirect because gatsby filters through the redirects key in gatsby-browser.js.
-    // This object will create a "dummy" page in percy, creating a 404 page of `/foo/index`
-    {
-      from: '/foo',
-      to: '/bar',
-    },
-  ],
-  header: {
-    secondLevelHeaderMenuItems: [
-      {
-        text: 'Get Started',
-        to: '/getting-started',
-        type: 'bucket',
-        bucketName: '/100-getting-started',
-        hidden: false,
-      },
-      {
-        text: 'ORM',
-        to: '/orm',
-        type: 'bucket',
-        bucketName: '/200-orm',
-        hidden: false,
-      },
-      {
-        text: 'Accelerate',
-        to: '/accelerate',
-        type: 'bucket',
-        bucketName: '/300-accelerate',
-        hidden: false,
-        includeSideNav: '/500-platform',
-      },
-      {
-        text: 'Pulse',
-        to: '/pulse',
-        type: 'bucket',
-        bucketName: '/400-pulse',
-        hidden: false,
-        includeSideNav: '/500-platform',
-      },
-      {
-        text: 'Platform',
-        to: '/platform',
-        type: 'bucket',
-        bucketName: '/500-platform',
-        hidden: true,
-      },
-      {
-        text: 'About',
-        to: '/about',
-        type: 'bucket',
-        bucketName: '/600-about',
-        hidden: true,
-      },
-    ],
-    search: {
-      indexName: process.env.GATSBY_ALGOLIA_INDEX_NAME,
-      algoliaAppId: process.env.GATSBY_ALGOLIA_APP_ID,
-      algoliaSearchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
-      algoliaAdminKey: process.env.GATSBY_ALGOLIA_ADMIN_API_KEY,
-    },
-  },
+const siteConfigData = {
   homepage: {
     SummaryLinkData: {
       gettingStarted: 'getting-started',
@@ -242,41 +174,7 @@ const siteConfig = {
         },
       ],
     },
-  },
-  siteMetadata: {
-    title: 'Prisma Documentation | ORM, Accelerate, Pulse & More',
-    description:
-      "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
-    keywords: 'Docs, Prisma, ORM',
-    docsLocation: 'https://github.com/prisma/docs/tree/main/content',
-    twitter: {
-      site: '@prisma',
-      creator: '@prisma',
-      image: '/social/docs-social.png',
-    },
-    og: {
-      site_name: 'Prisma',
-      type: 'website',
-      image: {
-        alt: 'Database tools for modern developers',
-        height: '630',
-        type: 'image/png',
-        url: '/social/docs-social.png',
-        width: '1200',
-      },
-    },
-    SpecialPaths: ['prisma-cli', 'deployment', 'sql-views'],
-  },
-  feedback: {
-    sentimentUrl: '/docs/api/sentiment',
-    feedbackUrl: '/docs/api/feedback',
-  },
-  footer: {
-    newsletter: {
-      text: 'Stay up to date with the latest features and changes to Prisma',
-      GATSBY_BREVO_API_KEY: process.env.GATSBY_BREVO_API_KEY || '',
-    },
-  },
+  }
 }
 
-export default siteConfig
+export default siteConfigData
