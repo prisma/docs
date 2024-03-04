@@ -60,13 +60,9 @@ const config: Config = {
           trackingID: 'G-YS7QHR40SL',
           anonymizeIP: true,
         },
-      },
-      {
         googleTagManager: {
           containerId: 'GTM-KCGZPWB',
         },
-      },
-      {
         docs: {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
