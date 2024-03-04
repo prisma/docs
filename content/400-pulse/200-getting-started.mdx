@@ -57,15 +57,15 @@ ALTER SYSTEM SET wal_keep_size = 2048;
 
 #### Configuring replication and publication slots
 
-If the database you use with Prisma Pulse allows superuser access, Prisma Pulse will automatically manage the creation and removal of your logical replication slots.
+When using Prisma Pulse with a database that permits superuser access, it will handle the management of logical replication slots automatically.
 
-When Prisma Pulse is enabled, it creates a replication slot that is enabled for **all tables**. The replication slot will automatically be deleted when you disable Prisma Pulse.
+When Prisma Pulse is enabled, by default, it creates a logical replication slot enabled for all tables, which is removed automatically when Prisma Pulse is disabled.
 
-If you want to enable replication for specific models or use a database provider that doesn’t allow super user access for Prisma Pulse. You must create and submit your replication slot before enabling Prisma Pulse.
+If you want to enable replication for _specific models_ or use a database provider that restricts superuser access for Prisma Pulse, you must manually create and submit your replication slot before activating Prisma Pulse.
 
-Our **paid plan** users can provide a **replication slot name** and a **publication name**.
+Our **paid plan** users can provide a **logical replication slot name** and a **publication name**.
 
-1. Create a replication slot:
+1. Create a logical replication slot:
 
 ```sql
 SELECT pg_create_logical_replication_slot('$REPLICATION_SLOT_NAME', 'pgoutput');
@@ -73,48 +73,55 @@ SELECT pg_create_logical_replication_slot('$REPLICATION_SLOT_NAME', 'pgoutput');
 
 Learn more [here](https://pgpedia.info/p/pg_create_logical_replication_slot.html).
 
-2. View your replication slots:
+2. View your logical replication slots:
 
 ```sql
-SELECT
-  pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) as restart_diff,
-  pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)) as confirmed_flush_diff,
-  *
-FROM pg_replication_slots;
+SELECT slot_name, slot_type FROM pg_replication_slots WHERE slot_type = 'logical';
 ```
 
-3. You can create publication slots in the following ways below depending on the version of your PostgreSQL database:
+3. You can create publications in the following ways below depending on the version of your PostgreSQL database.
 
-   - Publication slots for specific tables/models. For example, create a publication that publishes all changes in two tables:
+  <details>
+    <summary>Examples:</summary>
 
-     ```sql
-     CREATE PUBLICATION user_and_department_publication FOR TABLE users, departments;
-     ```
+    - Publication for all models:
 
-   - Publication slots for a table/model with a `WHERE` clause on it’s fields. For example, create a publication that publishes all changes from active `departments`:
+```sql
+CREATE PUBLICATION $PUBLICATION_NAME FOR ALL TABLES;
+```
 
-     ```sql
-     CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
-     ```
+- Publication for specific models. For example, create a publication that publishes all changes in two tables:
 
-   - Publication slots for specific fields. For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
+  ```sql
+  CREATE PUBLICATION user_and_department_publication FOR TABLE users, departments;
+  ```
 
-     ```sql
-     CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
-     ```
+- Publication for a model with a `WHERE` clause on it’s fields. For example, create a publication that publishes all changes from active `departments`:
 
-   - Publication slot based on DML operations. For example, create a publication that only publishes `INSERT` operations in one table:
+  ```sql
+  CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
+  ```
 
-     ```sql
-     CREATE PUBLICATION insert_only FOR TABLE departments
-       WITH (publish = 'insert');
-     ```
+- Publication for specific fields. For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
 
-     > `publish` (`string`)
-     >
-     > This parameter determines which DML operations will be published by the new publication to the subscribers. The value is comma-separated list of operations. The allowed operations are `insert`, `update`, `delete`, and `truncate`. The default is to publish all actions, and so the default value for this option is `'insert, update, delete, truncate'`.
+  ```sql
+  CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
+  ```
 
-Learn more about the PostgreSQL's `CREATE PUBLICATION` and find more examples [here](https://www.postgresql.org/docs/current/sql-createpublication.html).
+- Publication based on DML operations. For example, create a publication that only publishes `INSERT` operations in one table:
+
+  ```sql
+  CREATE PUBLICATION insert_only FOR TABLE departments
+    WITH (publish = 'insert');
+  ```
+
+  > `publish` (`string`)
+  >
+  > This parameter determines which DML operations will be published by the new publication to the subscribers. The value is comma-separated list of operations. The allowed operations are `insert`, `update`, `delete`, and `truncate`. The default is to publish all actions, and so the default value for this option is `'insert, update, delete, truncate'`.
+
+You can learn more about the PostgreSQL's `CREATE PUBLICATION`, supported versions and see more examples [here](https://www.postgresql.org/docs/current/sql-createpublication.html).
+
+  </details>
 
 4. Then you can submit the replication slot name and the publication slot name in the Platform console, before enabling Prisma Pulse:
    ![](./images/replication-slot-submission.png)
@@ -199,6 +206,47 @@ SELECT pg_reload_conf();
 3. Go into the three-dots menu on the latest deployment and click the `Restart` option.
 
 </details>
+
+After setting up your Railway database, you have to use the [connection string](https://docs.railway.app/guides/postgresql#tcp-proxy-connection) provided by Railway that allows public access your PostgreSQL database.
+
+#### Amazon RDS for PostgreSQL
+
+You have to enable logical replication on AWS RDS to make it compatible with Prisma Pulse.
+
+The following instructions show how to create a parameter group, enable logical replication, and add the parameter group to your AWS RDS PostgreSQL database.
+
+1. Create a parameter group for your RDS database (`RDS` > `Parameter groups` > `Create a parameter group`). In the **Parameter group family**, select your Postgres version. Select the type **DB Parameter group** option and assign a descriptive group name and description:
+
+![Create a parameter group in AWS RDS](./images/aws-rds-create-parameter-group.png)
+
+2. Set the `rds.logical_replication` parameter to `1`(`true`) in the parameter group.
+
+![Set logical replication parameter group](./images/set-logical-replication-parameter.png)
+
+3. Modify **Database options** (`RDS` > `Databases` > `Modify`) to use the new DB parameter group:
+
+![](./images/add-group.png)
+
+To reflect the configuration change into `wal_level`, select the **Apply immediately** option.
+
+4. Go to `RDS` > `Databases` > `[database name]`, then click on **Actions**, and then click on **Reboot** to restart your database.
+
+#### Supabase
+
+You have to use a direct database connection from Supabase to use it with Prisma Pulse.
+
+To use a direct database connection string in Supabase:
+
+1. Navigate to your Project settings (`Settings` > `Configurations` > `Database`).
+2. Disable the **Use connection pooling** option.
+   ![Supabase direct database connection](./images/supabase-direct-database-connection.png)
+3. Copy the direct database connection string.
+
+<Admonition type="info">
+
+ℹ️ Prisma Pulse is currently incompatible with Supabase's connection pooler. This results from the connection pooler intercepting the connection between your database and Prisma Pulse and removing the [Streaming Replication Protocol](https://www.postgresql.org/docs/current/protocol-replication.html#PROTOCOL-REPLICATION) which is used by Prisma Pulse to transmit replication commands to the database.
+
+</Admonition>
 
 ## 2. Enable Pulse in a project
 
