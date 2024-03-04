@@ -1,4 +1,3 @@
-import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 
@@ -33,30 +32,7 @@ export default function Home(): JSX.Element {
       description="Description will go into a meta tag in <head />">
       <main>
         <TopSection>
-          <ProductCardsWrapper>
-            {Object.keys(ORMPlatformLinkData).map((e: string) => (
-              <ProductCard color={e === 'porm' ? 'indigo' : 'teal'}>
-                <H3>
-                  <IconWrapper>
-                    <Icon
-                      icon={`fa-solid fa-${ORMPlatformLinkData[e].icon}`}
-                      size="22px"
-                      color="white"
-                    />
-                  </IconWrapper>
-                  {ORMPlatformLinkData[e].title}
-                </H3>
-                <Body>{ORMPlatformLinkData[e].description}</Body>
-                <LinkGrid>
-                  {ORMPlatformLinkData[e].links.map((e: any) => (
-                    <Link to={e.url}>
-                      {e.title} {e.external ? <>&#8599;</> : <>&#8594;</>}
-                    </Link>
-                  ))}
-                </LinkGrid>
-              </ProductCard>
-            ))}
-          </ProductCardsWrapper>
+          <ProductCards />
         </TopSection>
         <PrismaORMSection>
           <H4>Prisma ORM</H4>
