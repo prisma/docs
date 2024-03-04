@@ -1,15 +1,11 @@
-import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
 
-import styles from './index.module.css';
 import styled from 'styled-components';
 import * as theme from "../css/primitives"
 import siteConfigData from "../../config"
 import { Icon } from '../components/Icon';
-import { CockroachDB, CockroachDBDark, MariaDB, MariaDBDark, MongoDBSimple, MySQLSimple, Planetscale, PlanetscaleDark, PostgresSQLDark, PostgresSQLSimple, SQLServer, SQLite } from '../components/icons/technologies/index';
 import ShadowCard from '../components/shadow-card';
 
 const IconWrapper = styled.div`
@@ -297,6 +293,7 @@ const DatabaseGrid = styled.div`
     }
     img {
       max-height: 36px;
+      margin: auto 0;
     }
     span {
       color: var(--main-font-color);
@@ -312,50 +309,50 @@ const DatabaseGrid = styled.div`
 const DatabaseData = [
   {
     title: 'PostgreSQL',
-    icon: <PostgresSQLSimple />,
-    darkIcon: <PostgresSQLDark />,
+    icon: "postgresqlsimple",
+    darkIcon: "postgresqldark",
     url: 'orm/overview/databases/postgresql',
   },
   {
     title: 'MySQL',
-    icon: <MySQLSimple />,
-    darkIcon: <MySQLSimple />,
+    icon: "mysqlsimple",
+    darkIcon: "mysqlsimple",
     url: 'orm/overview/databases/mysql',
   },
   {
     title: 'SQL Server',
-    icon: <SQLServer />,
-    darkIcon: <img src="/docs/tech/sqlserver.svg" />,
+    icon: "sqlserver",
+    darkIcon: "sqlserver",
     url: 'orm/overview/databases/sql-server',
   },
   {
     title: 'SQLite',
-    icon: <SQLite />,
-    darkIcon: <SQLite />,
+    icon: "sqlite",
+    darkIcon: "sqlite",
     url: 'orm/overview/databases/sqlite',
   },
   {
     title: 'MongoDB',
-    icon: <MongoDBSimple />,
-    darkIcon: <MongoDBSimple />,
+    icon: "mongodbsimple",
+    darkIcon: "mongodbsimple",
     url: 'orm/overview/databases/mongodb',
   },
   {
     title: 'CockroachDB',
-    icon: <CockroachDB />,
-    darkIcon: <CockroachDBDark />,
+    icon: "cockroachdb",
+    darkIcon: "cockroachdbdark",
     url: 'orm/overview/databases/cockroachdb',
   },
   {
     title: 'Planetscale',
-    icon: <Planetscale />,
-    darkIcon: <PlanetscaleDark />,
+    icon: "planetscale",
+    darkIcon: "planetscaledark",
     url: 'orm/overview/databases/planetscale',
   },
   {
     title: 'MariaDB',
-    icon: <MariaDB />,
-    darkIcon: <MariaDBDark />,
+    icon: "mariadb",
+    darkIcon: "mariadbdark",
     url: 'orm/overview/databases/mysql',
   },
 ]
@@ -440,9 +437,6 @@ const CommunityLinksRow = styled.div`
 
 export default function Home(): JSX.Element {
   const {siteConfig} = useDocusaurusContext();
-  // useEffect(() => {
-  //   console.log(siteConfig)
-  // }, [siteConfig])
   const { ORMPlatformLinkData, GeneralLinkData, CardLinks, CommunityLinksData } = siteConfigData.homepage
   return (
     <Layout
@@ -537,7 +531,11 @@ export default function Home(): JSX.Element {
             {DatabaseData.map((e: any) => (
               <Link to={e.url}>
                 <div className="entry light">
-                  {e.icon}
+                  <img src={`/img/technologies/${e.icon}.svg`} {...{style: {
+                    height: `100%`,
+                    width: e.icon === "sqlite" ? `55px` : `auto`,
+                    marginRight: e.icon === "sqlite" ? `-30px` : 0,
+                  }}}/>
                   <span>{e.title}</span>
                 </div>
               </Link>
