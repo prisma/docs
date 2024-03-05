@@ -16,11 +16,13 @@ export interface ArticleFrontmatter {
   duration?: string
   preview?: boolean
   earlyaccess?: boolean
+  highlight?: boolean
   toc?: boolean
   hidePage?: boolean
   tocDepth?: number
   codeStyle?: boolean
   deprecated?: boolean
+  hideTitle?: boolean
 }
 
 export interface ArticleData {

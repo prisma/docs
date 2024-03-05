@@ -7,7 +7,7 @@ tocDepth: 3
 
 <TopBlock>
 
-Use the [`Json`](/orm/reference/prisma-schema-reference#json) Prisma field type to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `extendedPetsData`:
+Use the [`Json`](/orm/reference/prisma-schema-reference#json) Prisma ORM field type to read, write, and perform basic filtering on JSON types in the underlying database. In the following example, the `User` model has an optional `Json` field named `extendedPetsData`:
 
 ```prisma highlight=6;normal
 model User {
@@ -112,7 +112,7 @@ See also: [Advanced example: Update a nested JSON key value](#advanced-example-u
 
 From v2.23.0, you can filter rows by the data inside a `Json` type. We call this **advanced `Json` filtering**.
 
-The availability of advanced `Json` filtering depends on your Prisma version:
+The availability of advanced `Json` filtering depends on your Prisma ORM version:
 
 - V4.0.0 or later: advanced `Json` filtering is [generally available](/orm/more/releases#generally-available-ga).
 - From v2.23.0, but before v4.0.0: advanced `Json` filtering is a [preview feature](/orm/reference/preview-features/client-preview-features). Add `previewFeatures = ["filterJson"]` to your schema. [Learn more](/orm/reference/preview-features/client-preview-features#enabling-a-prisma-client-preview-feature).
@@ -547,18 +547,20 @@ const checkJson = await prisma.user.findMany({
 - If you are using PostgreSQL, you must pass in an array of objects to match, even if that array only contains one object:
 
   ```json5
-  [{ status: 'expired', insuranceID: 92 }] // PostgreSQL
+  [{ status: 'expired', insuranceID: 92 }]
+  // PostgreSQL
   ```
 
   If you are using MySQL, you must pass in a single object to match:
 
   ```json5
-  { status: 'expired', insuranceID: 92 } // MySQL
+  { status: 'expired', insuranceID: 92 }
+  // MySQL
   ```
 
 - If your filter array contains multiple objects, PostgreSQL will only return results if _all_ objects are present - not if at least one object is present.
 
-- You must set `array_contains` to a JSON object, not a string. If you use a string, Prisma escapes the quotation marks and the query will not return results. For example:
+- You must set `array_contains` to a JSON object, not a string. If you use a string, Prisma Client escapes the quotation marks and the query will not return results. For example:
 
   ```ts
   array_contains: '[{"status": "expired", "insuranceID": 92}]'
@@ -956,6 +958,46 @@ prisma.log.findMany({
 These _null enums_ do not apply to MongoDB because MongoDB does not differentiate between a JSON `null` and a database `NULL`. They also do not apply to the `array_contains` operator in all databases because there can only be a JSON `null` within a JSON array. Since there cannot be a database `NULL` within a JSON array, `{ array_contains: null }` is not ambiguous.
 
 </Admonition>
+
+## Typed <inlinecode>Json</inlinecode>
+
+By default, `Json` fields are not typed in Prisma models. To accomplish strong typing inside of these fields, you will need to use an external package like [prisma-json-types-generator](https://www.npmjs.com/package/prisma-json-types-generator) to accomplish this.
+
+### Using <inlinecode>prisma-json-types-generator</inlinecode>
+
+First, install and configure `prisma-json-types-generator` [according to the package's instructions](https://www.npmjs.com/package/prisma-json-types-generator#using-it).
+
+Then, assuming you have a model like the following:
+
+```prisma no-copy
+model Log {
+  id   Int  @id
+  meta Json
+}
+```
+
+You can update it and type it by using [abstract syntax tree comments](/orm/prisma-schema/overview#comments)
+
+```prisma highlight=4;normal file=schema.prisma
+model Log {
+  id Int @id
+
+  /// [LogMetaType]
+  meta Json
+}
+```
+
+Then, make sure you define the above type in a type declaration file included in your `tsconfig.json`
+
+```ts file=types.ts
+declare global {
+  namespace PrismaJson {
+    type LogMetaType = { timestamp: number; host: string }
+  }
+}
+```
+
+Now, when working with `Log.meta` it will be strongly typed!
 
 ## <inlinecode>Json</inlinecode> FAQs
 

@@ -668,9 +668,9 @@ const Homepage = () => {
       <DatabasesSection>
         <H4>Databases</H4>
         <Body>
-          Prisma works seamlessly across most popular databases and service providers. <br /> Refer
-          to our Database features matrix for information about supported features and types for
-          each database.
+          Prisma ORM works seamlessly across most popular databases and service providers. <br />{' '}
+          Refer to our Database features matrix for information about supported features and types
+          for each database.
         </Body>
         <DatabaseGrid>
           {DatabaseData.map((e: any) => (

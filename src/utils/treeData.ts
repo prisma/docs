@@ -34,10 +34,12 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             preview,
             deprecated,
             earlyaccess,
+            highlight,
             dbSwitcher,
             langSwitcher,
             hidePage,
             codeStyle,
+            hideTitle,
           },
         },
       }: TreeNode
@@ -63,6 +65,7 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
             preview,
             deprecated,
             earlyaccess,
+            highlight,
             staticLink,
           }
           prevItems.push(tmp)
@@ -77,11 +80,13 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           tmp.preview = preview
           tmp.deprecated = deprecated
           tmp.earlyaccess = earlyaccess
+          tmp.highlight = highlight
           tmp.topLevel = topLevel
           tmp.hidePage = hidePage
           tmp.codeStyle = codeStyle
           tmp.parentLabel = parts[parts.length - 3]
           tmp.parents = parts.filter((part) => part !== 'index')
+          tmp.hideTitle = hideTitle
           if (defaultCollapsed && location) {
             defaultCollapsed[part.toLowerCase()] =
               tmp.topLevel || tmp.staticLink ? null : getCollpaseState(modSlug, location)
@@ -101,11 +106,13 @@ export const calculateTreeData = (edges: any, defaultCollapsed: any, location: a
           items: [],
           title,
           navTitle,
+          hideTitle,
           staticLink,
           duration,
           preview,
           deprecated,
           earlyaccess,
+          highlight,
           topLevel,
           hidePage,
           codeStyle,
