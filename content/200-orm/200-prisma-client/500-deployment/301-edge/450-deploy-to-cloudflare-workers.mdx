@@ -7,7 +7,7 @@ tocDepth: 3
 
 <TopBlock>
 
-This page covers everything you need to know in order to deploy an rdge function to Cloudflare Workers that uses Prisma Client for talking to a database.
+This page covers everything you need to know in order to deploy an edge function to Cloudflare Workers that uses Prisma Client for talking to a database.
 
 </TopBlock>
 
@@ -120,12 +120,11 @@ If you are using a traditional PostgreSQL database that's accessed via TCP, you 
 - use the `@prisma/adapter-pg` database adapter (via the `driverAdapters` Preview feature)
 - set `node_compat = true` in `wrangler.toml`
 
-<!--
-<details><summary>Expand to see step-by-step deployment instructions</summary>
+<!-- <details><summary>Expand to see step-by-step deployment instructions</summary>
 
 The following steps are the instructions to deploy the Cloudflare Worker.
 
-</details> -->
+</details>  -->
 
 #### 1. Configure Prisma schema & database connection
 
@@ -291,31 +290,32 @@ datasource db {
 }
 ```
 
-Next, you need to set the `DATABASE_URL` environment variable to the value of your database connection string.
+Next, you need to set the `DATABASE_URL` environment variable to the value of your database connection string. You'll do this in a file called `.dev.vars` used by Cloudflare:
 
-If you ran `npx prisma init`, you can use the `.env` file that was created by this command. Another option is to follow [Cloudflare's documentation](https://developers.cloudflare.com/workers/configuration/secrets/#secrets-in-development) and create a `.dev.vars` file. The syntax for declaring environment variables is identical in both cases:
-
-<TabbedContent tabs={[<FileWithIcon text=".env" icon="file"/>, <FileWithIcon text=".dev.vars" icon="file"/>]}>
-
-<tab>
-
-```bash
-# .env
-DATABASE_URL="mysql://admin:mypassword42@somehost.aws.com:5432/mydb"
+```bash file=.dev.vars
+DATABASE_URL="postgresql://admin:mypassword42@somehost.aws.com:5432/mydb"
 ```
 
-</tab>
+Because the Prisma CLI by default is only compatible with `.env` files, you can adjust your `package.json` with the following script that loads the env vars from `.dev.vars`. You can then use this script to load the env vars before executing a `prisma` command.
 
-<tab>
+Add this script to your `package.json`:
 
-```bash
-# .dev.vars
-DATABASE_URL="mysql://admin:mypassword42@somehost.aws.com:5432/mydb"
+```js file=package.json highlight=5;add
+{
+  // ...
+  "scripts": {
+    // ....
+    "env": "dotenv -e .dev.vars"
+  },
+  // ...
+}
 ```
 
-</tab>
+Now you can execute Prisma CLI commands as follows while enusring that the command has access to the env vars in `.dev.vars`:
 
-</TabbedContent>
+```terminal
+npm run env -- npx prisma
+```
 
 #### 2. Install dependencies
 
@@ -326,15 +326,15 @@ npm install @prisma/adapter-planetscale
 npm install @planetscale/database
 ```
 
-#### 4. Migrate your database schema (if applicable)
+#### 3. Migrate your database schema (if applicable)
 
 If you ran `npx prisma init` above, you need to migrate your database schema to create the `User` table that's defined in your Prisma schema (if you already have all the tables you need in your database, you can skip this step):
 
 ```terminal
-npx prisma db push
+npm run env -- npx prisma db push
 ```
 
-#### 5. Use Prisma Client in your Worker to send a query to the database
+#### 4. Use Prisma Client in your Worker to send a query to the database
 
 Here is a sample code snippet that you can code to instantiate `PrismaClient` and send a query to your database:
 
@@ -376,8 +376,12 @@ npx wrangler dev
 To deploy the worker, you first need to the `DATABASE_URL` environment variable [via the `wrangler` CLI](https://developers.cloudflare.com/workers/configuration/secrets/#secrets-on-deployed-workers):
 
 ```terminal
-npx wrangler secret put DATABASE_URL mysql://admin:mypassword42@somehost.aws.com:5432/mydb
+npx wrangler secret put DATABASE_URL
 ```
+
+The command is interactive and will ask you to enter the value for the `DATABASE_URL` env var as the next step in the terminal.
+
+> **Note**: This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
 
 Then you can go ahead then deploy the worker:
 
@@ -407,31 +411,32 @@ datasource db {
 }
 ```
 
-Next, you need to set the `DATABASE_URL` environment variable to the value of your database connection string.
+Next, you need to set the `DATABASE_URL` environment variable to the value of your database connection string. You'll do this in a file called `.dev.vars` used by Cloudflare:
 
-If you ran `npx prisma init`, you can use the `.env` file that was created by this command. Another option is to follow [Cloudflare's documentation](https://developers.cloudflare.com/workers/configuration/secrets/#secrets-in-development) and create a `.dev.vars` file. The syntax for declaring environment variables is identical in both cases:
-
-<TabbedContent tabs={[<FileWithIcon text=".env" icon="file"/>, <FileWithIcon text=".dev.vars" icon="file"/>]}>
-
-<tab>
-
-```bash
-# .env
+```bash file=.dev.vars
 DATABASE_URL="postgresql://admin:mypassword42@somehost.aws.com:5432/mydb"
 ```
 
-</tab>
+Because the Prisma CLI by default is only compatible with `.env` files, you can adjust your `package.json` with the following script that loads the env vars from `.dev.vars`. You can then use this script to load the env vars before executing a `prisma` command.
 
-<tab>
+Add this script to your `package.json`:
 
-```bash
-# .dev.vars
-DATABASE_URL="postgresql://admin:mypassword42@somehost.aws.com:5432/mydb"
+```js file=package.json highlight=5;add
+{
+  // ...
+  "scripts": {
+    // ....
+    "env": "dotenv -e .dev.vars"
+  },
+  // ...
+}
 ```
 
-</tab>
+Now you can execute Prisma CLI commands as follows while enusring that the command has access to the env vars in `.dev.vars`:
 
-</TabbedContent>
+```terminal
+npm run env -- npx prisma
+```
 
 #### 2. Install dependencies
 
@@ -442,12 +447,12 @@ npm install @prisma/adapter-neon
 npm install @neondatabase/serverless
 ```
 
-#### 4. Migrate your database schema (if applicable)
+#### 3. Migrate your database schema (if applicable)
 
 If you ran `npx prisma init` above, you need to migrate your database schema to create the `User` table that's defined in your Prisma schema (if you already have all the tables you need in your database, you can skip this step):
 
 ```terminal
-npx prisma migrate dev --name init
+npm run env -- npx prisma migrate dev --name init
 ```
 
 #### 5. Use Prisma Client in your Worker to send a query to the database
@@ -459,11 +464,17 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { Pool } from '@neondatabase/serverless'
 
-...
+export default {
+  async fetch(request, env, ctx) {
+    const neon = new Pool({ connectionString: env.DATABASE_URL })
+    const adapter = new PrismaNeon(neon)
+    const prisma = new PrismaClient({ adapter })
 
-const neon = new Pool({ connectionString: env.DATABASE_URL })
-const adapter = new PrismaNeon(neon)
-const prisma = new PrismaClient({ adapter })
+    const users = await prisma.user.findMany()
+    const result = JSON.stringify(users)
+    return new Response(result)
+  },
+}
 ```
 
 #### 6. Run the Worker locally
@@ -479,8 +490,12 @@ npx wrangler dev
 To deploy the worker, you first need to the `DATABASE_URL` environment variable [via the `wrangler` CLI](https://developers.cloudflare.com/workers/configuration/secrets/#secrets-on-deployed-workers):
 
 ```terminal
-npx wrangler secret put DATABASE_URL postgresql://admin:mypassword42@somehost.aws.com:5432/mydb
+npx wrangler secret put DATABASE_URL
 ```
+
+The command is interactive and will ask you to enter the value for the `DATABASE_URL` env var as the next step in the terminal.
+
+> **Note**: This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
 
 Then you can go ahead then deploy the worker:
 
