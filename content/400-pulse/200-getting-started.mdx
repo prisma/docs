@@ -39,52 +39,72 @@ ALTER SYSTEM SET wal_level = logical;
 
 You will need to restart the database after changing this setting.
 
+##### Replication management
+
+Prisma Pulse provides two setups to manage database replications, _Automatic_ and _Advanced_ setup.
+
+###### Automatic setup
+
+When Prisma Pulse is enabled in automatic mode, a publication for all tables is created in the database. This publication will be automatically deleted if Prisma Pulse is disabled. This setup requires the superuser account of the database instance.
+
+###### Advanced setup (Optional)
+
+Advanced setup allows for more control over the replication. This is only available to **paid** tiers and allows usage of a non-superuser account of the database instance. See how to create publications [here](#replication-management-advance-setup).
+
+<Admonition type="info">
+
+In both automatic and advanced setups, Prisma Pulse will automatically create a replication slot to capture changes from the publication. This replication slot will be automatically deleted if Prisma Pulse is disabled.
+
+</Admonition>
+
 #### Optional settings
 
 The following increases the memory usage of the [write-ahead log](https://www.postgresql.org/docs/current/wal-intro.html) on your PostgreSQL database. We suggest setting these values initially and adjusting them if necessary.
 
-##### <inlinecode>[max_replication_slots](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode>
-
-```sql
-ALTER SYSTEM SET max_replication_slots = 20;
-```
-
 ##### <inlinecode>[wal_keep_size](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode>
+
+We recommend setting a value for `wal_keep_size` tailored to your database's storage capacity. This ensures smooth operation of both your database and Prisma Pulse.
 
 ```sql
 ALTER SYSTEM SET wal_keep_size = 2048;
 ```
 
-##### Configuring replication slots and publications
+##### <inlinecode>[max_replication_slots](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode>
 
-When using Prisma Pulse with a database that permits superuser access, it will handle the management of logical replication slots automatically.
-
-When Prisma Pulse is enabled, by default, it creates a logical replication slot enabled for all tables, which is removed automatically when Prisma Pulse is disabled.
-
-If you want to enable replication for _specific models_ or use a database provider that restricts superuser access for Prisma Pulse, you must manually create and submit your replication slot before activating Prisma Pulse.
-
-Our **paid plan** users can provide a **logical replication slot name** and a **publication name**.
-
-1. Create a logical replication slot:
+Prisma Pulse only needs one replication slot available. You can set the `max_replication_slots` if you have other replications in use.
 
 ```sql
-SELECT pg_create_logical_replication_slot('$REPLICATION_SLOT_NAME', 'pgoutput');
+ALTER SYSTEM SET max_replication_slots = 20;
 ```
 
-Learn more [here](https://pgpedia.info/p/pg_create_logical_replication_slot.html).
+##### <inlinecode>[REPLICA IDENTITY](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)</inlinecode>
 
-2. View your logical replication slots:
+To get the **before** values of **all fields** in the record for some events, you must set `REPLICA IDENTITY` to `FULL` on the table(s) you want to get field values for. If this is not configured, defining a filter for those events will only be possible on the primary key.
+
+For example, running the following SQL command will set the `REPLICA IDENTITY` to `FULL` on a table named `User`:
 
 ```sql
-SELECT slot_name, slot_type FROM pg_replication_slots WHERE slot_type = 'logical';
+ALTER TABLE public."User" REPLICA IDENTITY FULL;
 ```
 
-3. You can create publications in the following ways below depending on the version of your PostgreSQL database.
+##### Replication management: Advance setup
+
+If you want to enable replication for _specific models_ or use a database provider that restricts superuser access for Prisma Pulse, you must manually create and submit your publication before activating Prisma Pulse.
+
+Our **paid plan** users can provide a **publication name** before enabling Prisma Pulse.
+
+1. You can create publications in the following ways below depending on the version of your PostgreSQL database.
 
    - Publication for all models:
 
      ```sql
      CREATE PUBLICATION $PUBLICATION_NAME FOR ALL TABLES;
+     ```
+
+   - Publication for specific fields. For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
+
+     ```sql
+     CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
      ```
 
    - Publication for specific models. For example, create a publication that publishes all changes in two tables:
@@ -97,12 +117,6 @@ SELECT slot_name, slot_type FROM pg_replication_slots WHERE slot_type = 'logical
 
      ```sql
      CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
-     ```
-
-   - Publication for specific fields. For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
-
-     ```sql
-     CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
      ```
 
    - Publication based on DML operations. For example, create a publication that only publishes `INSERT` operations in one table:
@@ -118,31 +132,30 @@ SELECT slot_name, slot_type FROM pg_replication_slots WHERE slot_type = 'logical
 
      You can learn more about the PostgreSQL's `CREATE PUBLICATION`, supported versions and see more examples [here](https://www.postgresql.org/docs/current/sql-createpublication.html).
 
-4. Then you can submit the replication slot name and the publication slot name in the Platform console, before enabling Prisma Pulse:
+2. View your [publications](https://www.postgresql.org/docs/current/view-pg-publication-tables.html):
+
+```sql
+SELECT * FROM pg_publication_tables;
+```
+
+3. Then you can submit the publication name in the Platform console, before enabling Prisma Pulse:
+
    ![](./images/replication-slot-submission.png)
 
-##### Removing replication slots and publications
+##### Removing publications
 
-If you are managing your replication slots and publications independently and opt to disable Prisma Pulse for a particular environment, you can refer to the following SQL queries.
+If you are managing your replications independently and choose to disable Prisma Pulse for a particular environment, you can refer to the following SQL queries to remove your publications.
 
-1. View your replication slots:
-
-```sql
-SELECT FROM pg_replication_slots;
-```
-
-2. To delete a replication slot:
-
-```sql
-SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name = '$REPLICATION_SLOT_NAME';
-```
-
-> ℹ️ An active replication slot cannot be deleted, please ensure you’ve disabled Prisma Pulse before you’re attempting to delete the replication slot.
-
-3. To delete a publication slot:
+1. To delete a publication:
 
 ```sql
 DROP PUBLICATION IF EXISTS "$PUBLICATION_SLOT_NAME";
+```
+
+2. View your [publications](https://www.postgresql.org/docs/current/view-pg-publication-tables.html):
+
+```sql
+SELECT * FROM pg_publication_tables;
 ```
 
 ### Provider specific configuration
@@ -214,15 +227,15 @@ The following instructions show how to create a parameter group, enable logical 
 
 1. Create a parameter group for your RDS database (`RDS` > `Parameter groups` > `Create a parameter group`). In the **Parameter group family**, select your Postgres version. Select the type **DB Parameter group** option and assign a descriptive group name and description:
 
-![Create a parameter group in AWS RDS](./images/aws-rds-create-parameter-group.png)
+   ![Create a parameter group in AWS RDS](./images/aws-rds-create-parameter-group.png)
 
 2. Set the `rds.logical_replication` parameter to `1`(`true`) in the parameter group.
 
-![Set logical replication parameter group](./images/set-logical-replication-parameter.png)
+   ![Set logical replication parameter group](./images/set-logical-replication-parameter.png)
 
 3. Modify **Database options** (`RDS` > `Databases` > `Modify`) to use the new DB parameter group:
 
-![Add Parameter group to AWS RDS](./images/add-group.png)
+   ![Add Parameter group to AWS RDS](./images/add-group.png)
 
 To reflect the configuration change into `wal_level`, select the **Apply immediately** option.
 
@@ -244,6 +257,31 @@ To use a direct database connection string in Supabase:
 ℹ️ Prisma Pulse is currently incompatible with Supabase's connection pooler. This results from the connection pooler intercepting the connection between your database and Prisma Pulse and removing the [Streaming Replication Protocol](https://www.postgresql.org/docs/current/protocol-replication.html#PROTOCOL-REPLICATION) which is used by Prisma Pulse to transmit replication commands to the database.
 
 </Admonition>
+
+#### Neon
+
+To enable logical replication in Neon for Prisma Pulse, follow these steps:
+
+1. Enable logical replication in Neon console:
+
+   - Navigate to your project in the Neon console.
+   - Access the **Project settings** from the Neon Dashboard.
+   - Go to the **Beta** section.
+   - Click on **Enable**.
+
+   Learn more about enabling logical replication in Neon [here](https://neon.tech/docs/guides/logical-replication-neon#enabling-logical-replication-in-neon).
+
+2. Create publication for database events. Use the following SQL query to create a publication for all tables:
+
+   ```sql
+   CREATE Publication $PUBLICATION_NAME FOR ALL TABLES;
+   ```
+
+   Additionally, you can manage specific models for which you want to listen to database events in Neon. Refer to [this](#replication-management-advance-setup) section for more details on managing Publications.
+
+3. Before enabling Prisma Pulse, make sure to provide the publication name in the Platform Console:
+
+   ![](./images/replication-slot-submission.png)
 
 ## 2. Enable Pulse in a project
 
