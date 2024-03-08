@@ -63,6 +63,17 @@ const config: Config = {
         googleTagManager: {
           containerId: 'GTM-KCGZPWB',
         },
+        sitemap: {
+          priority: 0.5,
+          ignorePatterns: [
+            // Remove these from sitemap for SEO purposes as they're redirected
+            '/getting-started/quickstart',
+            '/getting-started/setup-prisma/add-to-existing-project',
+            '/getting-started/setup-prisma/start-from-scratch-prisma-migrate',
+            '/getting-started/setup-prisma/start-from-scratch-sql',
+          ],
+          filename: 'sitemap.xml',
+        },
         docs: {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
