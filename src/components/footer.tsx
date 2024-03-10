@@ -332,7 +332,7 @@ const FooterSec = ({
                   theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/stack`}
                 >
-                  Prisma in your stack
+                  Prisma ORM in your stack
                 </S.Link>
                 <S.Link
                   color={color}
