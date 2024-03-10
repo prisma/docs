@@ -126,7 +126,7 @@ const siteConfig = {
     },
     GeneralLinkData: [
       {
-        title: `What is Prisma`,
+        title: `What is Prisma ORM`,
         description: 'An overview of what Prisma ORM is and how it works.',
         url: 'orm/overview/introduction/what-is-prisma',
         icon: 'fa-regular fa-question',
@@ -138,9 +138,9 @@ const siteConfig = {
         icon: 'fa-solid fa-arrow-right-arrow-left',
       },
       {
-        title: `Prisma in your stack`,
+        title: `Prisma ORM in your stack`,
         description:
-          'Use Prisma to build a GraphQL or REST API, or as part of a fullstack application.',
+          'Use Prisma ORM to build a GraphQL or REST API, or as part of a fullstack application.',
         url: 'orm/overview/prisma-in-your-stack',
         icon: 'fa-solid fa-server',
       },
@@ -151,8 +151,8 @@ const siteConfig = {
         icon: 'fa-solid fa-eye',
       },
       {
-        title: `Adopting Prisma`,
-        description: 'Migrate to Prisma from other ORMs.',
+        title: `Adopting Prisma ORM`,
+        description: 'Migrate to Prisma ORM from other ORMs.',
         url: 'orm/more/migrating-to-prisma',
         icon: 'fa-solid fa-download',
       },
@@ -165,23 +165,14 @@ const siteConfig = {
       },
     ],
     CommunityLinksData: [
-      {
-        id: 'slack',
-        title: 'Slack',
-        description: 'Engage with a vibrant community of developers and companies adopting Prisma',
-        icon: 'fa-brands fa-slack',
-        link: 'https://slack.prisma.io/',
-        linkText: 'Join our channel',
-      },
-      {
-        id: 'github',
-        title: 'GitHub',
-        description:
-          'Browse the Prisma source code, send feedback, or join the discussion on GitHub.',
-        icon: 'fa-brands fa-github',
-        link: 'https://github.com/prisma',
-        linkText: 'Contribute in GitHub',
-      },
+      // {
+      //   id: 'slack',
+      //   title: 'Slack',
+      //   description: 'Engage with a vibrant community of developers and companies adopting Prisma',
+      //   icon: 'fa-brands fa-slack',
+      //   link: 'https://slack.prisma.io/',
+      //   linkText: 'Join our channel',
+      // },
       {
         id: 'discord',
         title: 'Discord',
@@ -190,6 +181,23 @@ const siteConfig = {
         icon: 'fa-brands fa-discord',
         link: 'https://pris.ly/discord',
         linkText: 'Join our server',
+      },
+      {
+        id: 'github',
+        title: 'GitHub',
+        description:
+          'Browse the Prisma ORM source code, send feedback, or join the discussion on GitHub.',
+        icon: 'fa-brands fa-github',
+        link: 'https://github.com/prisma',
+        linkText: 'Contribute in GitHub',
+      },
+      {
+        id: 'X',
+        title: 'X',
+        description: 'Stay up-to-date, join the discussion, and connect with the community on X.',
+        icon: 'fa-brands fa-x-twitter',
+        link: 'https://twitter.com/prisma',
+        linkText: 'Follow us on X',
       },
     ],
     CardLinks: {

@@ -13,7 +13,7 @@ toc: true
 To participate in Pulse's Early Access program, you need to meet the following prerequisites:
 
 - A GitHub account.
-- Pulse requires [Prisma Client](/orm/prisma-client) version `4.16.1` or higher and [`@prisma/extension-pulse`](https://www.npmjs.com/package/@prisma/extension-pulse) version `v0.2.2` or higher.
+- Pulse requires [Prisma Client](/orm/prisma-client) version `4.16.1` or higher and [`@prisma/extension-pulse`](https://www.npmjs.com/package/@prisma/extension-pulse) version `v0.2.3` or higher.
 - A publicly accessible PostgreSQL database.
 - Ability to use the superuser account of the database instance. In the future, we will support the ability to connect to your database from Pulse with a limited access, non-superuser account.
 
@@ -23,7 +23,7 @@ You will also need a database with the following configurations:
 - Ensure your database is publicly accessible.
 - [Set the `wal_level` setting in PostgreSQL to `logical`](/pulse/getting-started#wal_level).
 - A database superuser that can be used for connections inside Pulse.
-- Connect to the database using `sslmode=disable` if the database provider uses self-signed certificates.
+- Connect to the database using `sslmode=disable` if the database provider uses self-signed certificates. _This is a Prisma Pulse [Early Access](/platform/maturity-levels#early-access) limitation that will be lifted before Prisma Pulse [General Availability](platform/maturity-levels#general-availability)_.
 
 ## 1. Database setup
 
@@ -74,31 +74,25 @@ To learn about the database providers that Pulse supports, visit [here](/pulse/f
 
 You can run these queries in the Railway Database **Query** tab, using the [railway cli](https://docs.railway.app/databases/postgresql), or any other way you might run queries on your database.
 
-1. Drop the Timescale extension:
-
-```sql
-DROP EXTENSION timescaledb;
-```
-
-2. Set the <inlinecode>[wal_level](https://www.postgresql.org/docs/current/runtime-config-wal.html)</inlinecode> to `logical`:
+1. Set the <inlinecode>[wal_level](https://www.postgresql.org/docs/current/runtime-config-wal.html)</inlinecode> to `logical`:
 
 ```sql
 ALTER SYSTEM SET wal_level = logical;
 ```
 
-3. Set the <inlinecode>[max_replication_slots](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode> to `20`:
+2. Set the <inlinecode>[max_replication_slots](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode> to `20`:
 
 ```sql
 ALTER SYSTEM SET max_replication_slots = 20;
 ```
 
-4. Set the <inlinecode>[wal_keep_size](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode> to `2048`:
+3. Set the <inlinecode>[wal_keep_size](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode> to `2048`:
 
 ```sql
 ALTER SYSTEM SET wal_keep_size = 2048;
 ```
 
-5. Reload the PostgreSQL configuration:
+4. Reload the PostgreSQL configuration:
 
 ```sql
 SELECT pg_reload_conf();
@@ -118,7 +112,7 @@ SELECT pg_reload_conf();
 
 ##### SSL mode
 
-As Railway uses a self-signed certificate, you have to use [`sslmode=disable`](/orm/overview/databases/postgresql#configuring-an-ssl-connection) with Pulse.
+As Railway uses a self-signed certificate, you have to use [`sslmode=disable`](/orm/overview/databases/postgresql#configuring-an-ssl-connection) with Pulse. _This is a Prisma Pulse [Early Access](/platform/maturity-levels#early-access) limitation that will be lifted before Prisma Pulse [General Availability](platform/maturity-levels#general-availability)_.
 
 ## 2. Enable Pulse in a project
 
@@ -192,6 +186,15 @@ async function main() {
   if (subscription instanceof Error) {
     throw subscription
   }
+
+  // Example: Set a timeout to the subscription after 60 seconds.
+  // Explicitly stopping the subscriptions and closing the connection is needed
+  // to not exhaust the limited number of subscriptions allowed per table.
+
+  setTimeout(() => {
+    console.log('Stopping the subscription.')
+    subscription.stop()
+  }, 60000)
 
   for await (const event of subscription) {
     console.log('just received an event:', event)
