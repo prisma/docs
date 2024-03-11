@@ -10,334 +10,24 @@ toc: true
 
 ## Prerequisites
 
-To use Prisma Pulse, you need to meet the following prerequisites:
+You'll need the following to integrate Prisma Pulse into your application;
 
-- A GitHub account.
-- Pulse requires [Prisma Client](/orm/prisma-client) version `4.16.1` or higher and [`@prisma/extension-pulse`](https://www.npmjs.com/package/@prisma/extension-pulse) version `v0.2.3` or higher.
-- A publicly accessible PostgreSQL database.
-- For the [**Starter Plan**](https://www.prisma.io/pricing): Ability to use the superuser account of the database instance.
+- Prisma Data Platform workspace
+- [Prisma Client](/orm/prisma-client) version `4.16.1` or higher and [`@prisma/extension-pulse`](https://www.npmjs.com/package/@prisma/extension-pulse) version `v0.2.3` or higher.
+- A publicly accessible PostgreSQL (version 12+) database with [logical replication](https://www.postgresql.org/docs/current/logical-replication-quick-setup.html) enabled.
+  - Learn how to enable logical replication [here](/pulse/database-setup#enable-logical-replication)
 
-You will also need a database with the following configurations:
+## 1. Enable Prisma Pulse
 
-- PostgreSQL version 12+.
-- Ensure your database is publicly accessible.
-- [Set the `wal_level` setting in PostgreSQL to `logical`](/pulse/getting-started#wal_level).
+Access your Prisma Data Platform project and enable Prisma Pulse within an environment. We'll connect to your database and verify connectivity during setup.
 
-## 1. Database setup
+> Once enabled, you'll be prompted to create an API key that you'll use in your extended Prisma Client to authenticate requests. Store this API key in your application's `.env` file:
+>
+> ```env file=.env
+> PULSE_API_KEY="your_lengthy_secure_pulse_api_key"
+> ```
 
-### General database configuration
-
-#### Required settings
-
-##### [<inlinecode id="wal_level">wal_level</inlinecode>](https://www.postgresql.org/docs/current/runtime-config-wal.html)
-
-Some providers may not allow direct access to this setting. If you are unable to change this setting, please refer to the provider-specific guides for further assistance.
-
-```sql
-ALTER SYSTEM SET wal_level = logical;
-```
-
-You will need to restart the database after changing this setting.
-
-##### Replication management
-
-Prisma Pulse provides two setups to manage database replications, _Automatic_ and _Advanced_ setup.
-
-###### Automatic setup
-
-When Prisma Pulse is enabled in automatic mode, a publication for all tables is created in the database. This publication will be automatically deleted if Prisma Pulse is disabled. This setup requires the superuser account of the database instance.
-
-###### Advanced setup (Optional)
-
-Advanced setup allows for more control over the replication. This is only available to **paid** tiers and allows usage of a non-superuser account of the database instance. See how to create publications [here](#replication-management-advance-setup).
-
-<Admonition type="info">
-
-In both automatic and advanced setups, Prisma Pulse will automatically create a replication slot to capture changes from the publication. This replication slot will be automatically deleted if Prisma Pulse is disabled.
-
-</Admonition>
-
-#### Optional settings
-
-The following increases the memory usage of the [write-ahead log](https://www.postgresql.org/docs/current/wal-intro.html) on your PostgreSQL database. We suggest setting these values initially and adjusting them if necessary.
-
-##### <inlinecode>[wal_keep_size](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode>
-
-We recommend setting a value for `wal_keep_size` tailored to your database's storage capacity. This ensures smooth operation of both your database and Prisma Pulse.
-
-```sql
-ALTER SYSTEM SET wal_keep_size = 2048;
-```
-
-##### <inlinecode>[max_replication_slots](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode>
-
-Prisma Pulse only needs one replication slot available. You can set the `max_replication_slots` if you have other replications in use.
-
-```sql
-ALTER SYSTEM SET max_replication_slots = 20;
-```
-
-##### <inlinecode>[REPLICA IDENTITY](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)</inlinecode>
-
-To get the **before** values of **all fields** in the record for some events, you must set `REPLICA IDENTITY` to `FULL` on the table(s) you want to get field values for. If this is not configured, defining a filter for those events will only be possible on the primary key.
-
-For example, running the following SQL command will set the `REPLICA IDENTITY` to `FULL` on a table named `User`:
-
-```sql
-ALTER TABLE public."User" REPLICA IDENTITY FULL;
-```
-
-##### Replication management: Advance setup
-
-If you want to enable replication for _specific models_ or use a database provider that restricts superuser access for Prisma Pulse, you must manually create and submit your publication before enabling Prisma Pulse.
-
-Our **paid plan** users can provide a **publication name** before enabling Prisma Pulse.
-
-1. You can create publications in the following ways below depending on the version of your PostgreSQL database.
-
-   - Publication for all models:
-
-     ```sql
-     CREATE PUBLICATION $PUBLICATION_NAME FOR ALL TABLES;
-     ```
-
-   - Publication for specific fields. For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
-
-     ```sql
-     CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
-     ```
-
-   - Publication for specific models. For example, create a publication that publishes all changes in two tables:
-
-     ```sql
-     CREATE PUBLICATION user_and_department_publication FOR TABLE users, departments;
-     ```
-
-   - Publication for a model with a `WHERE` clause on it’s fields. For example, create a publication that publishes all changes from active `departments`:
-
-     ```sql
-     CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
-     ```
-
-   - Publication based on DML operations. For example, create a publication that only publishes `INSERT` operations in one table:
-
-     ```sql
-     CREATE PUBLICATION insert_only FOR TABLE departments
-       WITH (publish = 'insert');
-     ```
-
-     > `publish` (`string`)
-     >
-     > This parameter determines which DML operations will be published by the new publication to the subscribers. The value is comma-separated list of operations. The allowed operations are `insert`, `update`, `delete`, and `truncate`. The default is to publish all actions, and so the default value for this option is `'insert, update, delete, truncate'`.
-
-     You can learn more about the PostgreSQL's `CREATE PUBLICATION`, supported versions and see more examples [here](https://www.postgresql.org/docs/current/sql-createpublication.html).
-
-2. View your [publications](https://www.postgresql.org/docs/current/view-pg-publication-tables.html):
-
-```sql
-SELECT * FROM pg_publication_tables;
-```
-
-3. Then you can submit the publication name in the Platform console, before enabling Prisma Pulse:
-
-   ![](./images/replication-slot-submission.png)
-
-##### Removing publications
-
-If you are managing your replications independently and choose to disable Prisma Pulse for a particular environment, you can refer to the following SQL queries to remove your publications.
-
-1. To delete a publication:
-
-```sql
-DROP PUBLICATION IF EXISTS "$PUBLICATION_SLOT_NAME";
-```
-
-2. View your [publications](https://www.postgresql.org/docs/current/view-pg-publication-tables.html):
-
-```sql
-SELECT * FROM pg_publication_tables;
-```
-
-### Provider specific configuration
-
-Database provider specific configurations for Prisma Pulse are provided below.
-
-<Admonition>
-
-To see a list of database providers that are supported by Prisma Pulse, visit [here](/pulse/faq#what-database-providers-are-supported-with-pulse).
-
-</Admonition>
-
-#### Railway
-
-[Railway.app](https://railway.app) offers an excellent [templates feature](https://railway.app/templates). If you wish to quickly start with Prisma Pulse, you can use either of two templates:
-
-- [Prisma Pulse DB Only](https://railway.app/template/pulse-pg): Provides a fresh, pre-configured PostgreSQL database which you can use with Prisma Pulse.
-- [Prisma Pulse DB & App](https://railway.app/template/pulse-starter): Provides a pre-configured PostgreSQL database and a [Prisma Pulse starter app](https://github.com/prisma/pulse-starter).
-
-##### Setup after deploying the template
-
-<details>
-<summary>
-Get your database connection string and delete the service
-</summary>
-
-- Click on the service called `restart-db-then-delete-me`.
-- You will see a list of deployments under the **Deployments** tab.
-- Click the most recent build's **View Logs** button.
-- Click on the **Deploy Logs** tab.
-
-  > If the service ran correctly, you should see a message in the logs that says "All done please restart the database" along with your `DATABASE_URL` connection string.
-
-- Copy the `DATABASE_URL` connection string and save it for later. Then restart your Railway database.
-
-  <details>
-
-  <summary>Restart your Railway database</summary>
-
-  1. Click on your database.
-
-  2. Navigate to the Deployments tab.
-
-  3. Go into the three-dots menu on the latest deployment and click the `Restart` option.
-
-  </details>
-
-- After restarting your database. Click on the `restart-db-then-delete-me` service and navigate to the **Settings** tab.
-
-- Scroll down to the bottom and click the red **Delete Service** button.
-
-  > Note: If you would like to use this service and the corresponding repository to create a new Prisma Pulse project. You can do so by cloning the repo from your GitHub account to your local machine.
-
-  - Once you have cloned the repository, you can run the following command:
-
-    ```bash
-
-      bash rm config-db.ts
-
-    ```
-
-  - Then remove the script `start: ts-node config-db.ts` from the `scripts` object in the `package.json` file.
-
-    > This is to prevent the script from running every time you push up to the repo associated with the `restart-db-then-delete-me` service.
-
-</details>
-
-##### Setup without using a template
-
-<details><summary>1. Change the PostgreSQL database settings</summary>
-
-You can run these queries in the Railway Database **Query** tab, using the [railway cli](https://docs.railway.app/databases/postgresql), or any other way you might run queries on your database.
-
-1. Set the <inlinecode>[wal_level](https://www.postgresql.org/docs/current/runtime-config-wal.html)</inlinecode> to `logical`:
-
-```sql
-ALTER SYSTEM SET wal_level = logical;
-```
-
-2. Set the <inlinecode>[max_replication_slots](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode> to `20`:
-
-```sql
-ALTER SYSTEM SET max_replication_slots = 20;
-```
-
-3. Set the <inlinecode>[wal_keep_size](https://www.postgresql.org/docs/current/runtime-config-replication.html)</inlinecode> to `2048`:
-
-```sql
-ALTER SYSTEM SET wal_keep_size = 2048;
-```
-
-4. Reload the PostgreSQL configuration:
-
-```sql
-SELECT pg_reload_conf();
-```
-
-</details>
-<details>
-<summary>2. Restart your database</summary>
-
-1. Click on your database.
-
-2. Navigate to the Deployments tab.
-
-3. Go into the three-dots menu on the latest deployment and click the `Restart` option.
-
-</details>
-
-After setting up your Railway database, you have to use the [connection string](https://docs.railway.app/guides/postgresql#tcp-proxy-connection) provided by Railway that allows public access your PostgreSQL database.
-
-#### Amazon RDS for PostgreSQL
-
-You have to enable logical replication on AWS RDS to make it compatible with Prisma Pulse.
-
-The following instructions show how to create a parameter group, enable logical replication, and add the parameter group to your AWS RDS PostgreSQL database.
-
-1. Create a parameter group for your RDS database (`RDS` > `Parameter groups` > `Create a parameter group`). In the **Parameter group family**, select your Postgres version. Select the type **DB Parameter group** option and assign a descriptive group name and description:
-
-   ![Create a parameter group in AWS RDS](./images/aws-rds-create-parameter-group.png)
-
-2. Set the `rds.logical_replication` parameter to `1`(`true`) in the parameter group.
-
-   ![Set logical replication parameter group](./images/set-logical-replication-parameter.png)
-
-3. Modify **Database options** (`RDS` > `Databases` > `Modify`) to use the new DB parameter group:
-
-   ![Add Parameter group to AWS RDS](./images/add-group.png)
-
-To reflect the configuration change into `wal_level`, select the **Apply immediately** option.
-
-4. Go to `RDS` > `Databases` > `[database name]`, then click on **Actions**, and then click on **Reboot** to restart your database.
-
-#### Supabase
-
-You have to use a direct database connection from Supabase to use it with Prisma Pulse.
-
-To use a direct database connection string in Supabase:
-
-1. Navigate to your Project settings (`Settings` > `Configurations` > `Database`).
-2. Disable the **Use connection pooling** option.
-   ![Supabase direct database connection](./images/supabase-direct-database-connection.png)
-3. Copy the direct database connection string.
-
-<Admonition type="info">
-
-ℹ️ Prisma Pulse is currently incompatible with Supabase's connection pooler. This results from the connection pooler intercepting the connection between your database and Prisma Pulse and removing the [Streaming Replication Protocol](https://www.postgresql.org/docs/current/protocol-replication.html#PROTOCOL-REPLICATION) which is used by Prisma Pulse to transmit replication commands to the database.
-
-</Admonition>
-
-#### Neon
-
-To enable logical replication in Neon for Prisma Pulse, follow these steps:
-
-1. Enable logical replication in Neon console:
-
-   - Navigate to your project in the Neon console.
-   - Access the **Project settings** from the Neon Dashboard.
-   - Go to the **Beta** section.
-   - Click on **Enable**.
-
-   Learn more about enabling logical replication in Neon [here](https://neon.tech/docs/guides/logical-replication-neon#enabling-logical-replication-in-neon).
-
-2. Create publication for database events. Use the following SQL query to create a publication for all tables:
-
-   ```sql
-   CREATE Publication $PUBLICATION_NAME FOR ALL TABLES;
-   ```
-
-   Additionally, you can manage specific models for which you want to listen to database events in Neon. Refer to [this](#replication-management-advance-setup) section for more details on managing Publications.
-
-3. Before enabling Prisma Pulse, make sure to provide the publication name in the Platform Console:
-
-   ![](./images/replication-slot-submission.png)
-
-## 2. Enable Pulse in a project
-
-Log into the [Prisma Data Platform](https://console.prisma.io/login), create a new project and enable Prisma Pulse in an environment.
-
-> An API key will be created after you enable and setup Prisma Pulse in your [environment](/platform/concepts/environments).
-
-## 3. Use Pulse in your application
+## 2. Use Prisma Pulse in your application
 
 <Admonition type="info">
 
@@ -345,36 +35,23 @@ We have created an [example repository](https://github.com/prisma/pulse-starter)
 
 </Admonition>
 
-The following will show how you can utilize Prisma Pulse in an existing application. We will be adding Prisma Pulse to the [hello-prisma](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql) example from our documentation.
+We'll be adding Prisma Pulse to the [hello-prisma](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql) starter project from our documentation.
 
-### 3.1. Install the Pulse Prisma Client extension
+### 2.1. Install the Prisma Pulse Client extension
 
-In a project using [Prisma Client](/orm/prisma-client), run the following command to install the Pulse extension:
+<Admonition>
 
-```terminal
-npm install @prisma/extension-pulse
-```
-
-#### Store your Pulse API key in your .env file
-
-The Prisma Pulse extension requires you to use an API key.
-
-<Admonition type="info">
-
-You should have received an API key when you added Prisma Pulse to your environment in the Platform Console.
+💡 Prisma Pulse requires [Prisma Client](/orm/prisma-client) version `4.16.1` or higher and [`@prisma/extension-pulse`](https://www.npmjs.com/package/@prisma/extension-pulse) `v0.2.3` or higher
 
 </Admonition>
 
-In `.env`, add a variable named `PULSE_API_KEY`:
+Install the latest version of Prisma Client and Pulse Prisma Client extension
 
-```env file=.env
-PULSE_API_KEY="YOUR-API-KEY"
-
-# Example:
-# PULSE_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiNGMxNzM0MGItMmFhYy00MGMxLWE1ZDctNzYyNmRjNjg3NjM4IiwidGVuYW50X2lkIjoiY2VhZjE0NThkZGUyYzJmNTU0ZmNkNTI2MmFmOWY1ODljMWJiZmRhNDU0N2UxMjM1ODk3MGQ2MGI1ZjRlNTU0OCIsImludGVybmFsX3NlY3JldCI6ImM1ZTcxYjJhLTE0NzdawdwDliZS1hM2IzLTczODFkNDM5ZmEwZSJ9.wCUlghC_suFBr2vnk0q_5I8iRNRDyEQo0W9rnhf6mCw"
+```bash
+npm install @prisma/client@latest @prisma/extension-pulse@latest
 ```
 
-### 3.2. Create a Pulse-enabled Prisma Client
+### 2.2. Create a Prisma Pulse-enabled Prisma Client
 
 To use Prisma Pulse, you must extend Prisma Client with the Prisma Pulse extension.
 Add the following to extend your existing Prisma Client instance with the Prisma Pulse extension:
@@ -388,7 +65,13 @@ const prisma = new PrismaClient().$extends(
 )
 ```
 
-### 3.3. Create your first Pulse subscription
+<Admonition type="info">
+
+You should have received an **API key** when you added Prisma Pulse to your environment in the Platform Console.
+
+</Admonition>
+
+### 2.3. Create your first Prisma Pulse subscription
 
 With the Prisma Pulse extension applied, you may now use Prisma Pulse's `subscribe()` method on any model defined in your Prisma Schema to subscribe to data change events.
 
@@ -426,3 +109,13 @@ main()
 Refer to the [API Reference](/pulse/api-reference) section for more detail on the filtering options available to the `subscribe()` method.
 
 </Admonition>
+
+## Database setup
+
+<Admonition>
+
+Prisma Pulse requires a publicly accessible PostgreSQL (version 12+) database with logical replication enabled.
+
+</Admonition>
+
+To setup your database to work with Prisma Pulse, refer to the [database setup section](/pulse/database-setup) or the [provider-specific instructions](/pulse/database-setup/providers)
