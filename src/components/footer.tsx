@@ -414,7 +414,6 @@ const FooterSec = ({
                 >
                   Enterprise
                 </S.Link>
-                
               </S.Column>
 
               <S.Column theme={themeToUse}>
