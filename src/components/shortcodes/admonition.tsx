@@ -46,6 +46,7 @@ export default Admonition
 const FlexContainer = styled.div`
   display: flex;
   flex-direction: column;
+  max-width: inherit;
 `
 
 const ChildDiv = styled.div`
