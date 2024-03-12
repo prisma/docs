@@ -288,10 +288,7 @@ const FooterSec = ({
                   theme={themeToUse}
                   href={`${absoluteLinks ? 'https://www.prisma.io' : ''}/data-platform/pulse`}
                 >
-                  <div className="link-title-label">
-                    Pulse
-                    <span className="label">Early Access</span>
-                  </div>
+                  <div className="link-title-label">Pulse</div>
                 </S.Link>
                 <S.Link
                   color={color}
@@ -414,7 +411,6 @@ const FooterSec = ({
                 >
                   Enterprise
                 </S.Link>
-                
               </S.Column>
 
               <S.Column theme={themeToUse}>
