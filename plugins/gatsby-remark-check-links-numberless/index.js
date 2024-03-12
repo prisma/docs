@@ -46,6 +46,8 @@ module.exports = async function plugin(
   { markdownAST, markdownNode, files, getNode, cache, getCache, pathPrefix },
   { exceptions = [], ignore = [], verbose = true } = {}
 ) {
+  console.log("### Triggering gatsby-remark-check-links-numberless ###")
+  
   const withPathPrefix = createPathPrefixer(pathPrefix)
   const pathSep = '/'
   var pattern = /^https?:\/\//i
@@ -367,6 +369,6 @@ module.exports = async function plugin(
   } else if (verbose) {
     console.info('No internal broken links found')
   }
-
+  
   return markdownAST
 }
