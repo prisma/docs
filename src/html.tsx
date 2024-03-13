@@ -43,12 +43,10 @@ const HTML = (props: any) => {
         <div key={`body`} id="___gatsby" dangerouslySetInnerHTML={{ __html: props.body }} />
         {props.postBodyComponents}
 
-        <script
+        <script 
+          id="kompassious" 
+          src="https://player.kompassify.com/kompassifyPlayer.js?uuid=859a2c0a-0614-41a7-ab90-2fe762012eb9" 
           type="text/javascript"
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(g,u,i,d,e,s){g[e]=g[e]||[];var f=u.getElementsByTagName(i)[0];var k=u.createElement(i);k.async=true;k.src='https://static.userguiding.com/media/user-guiding-'+s+'-embedded.js';f.parentNode.insertBefore(k,f);if(g[d])return;var ug=g[d]={q:[]};ug.c=function(n){return function(){ug.q.push([n,arguments])};};var m=['previewGuide','finishPreview','track','identify','hideChecklist','launchChecklist'];for(var j=0;j<m.length;j+=1){ug[m[j]]=ug.c(m[j]);}})(window,document,'script','userGuiding','userGuidingLayer','SSG79689XZ2ID');",
-          }}
         ></script>
       </body>
     </html>
