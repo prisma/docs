@@ -660,14 +660,33 @@ console.log(result)
 
 > **Note**: Subsequent examples will just use show PostgreSQL queries.
 
-##### Building raw queries in stages
+##### Building raw queries elsewhere or in stages
 
-If you want to build your raw queries in stages, this is still possible but requires some care as it is uses the potentially dangerous `Prisma.raw` method.
+If you want to build your raw queries somewhere other than where the query is executed, the ideal way to do this is to create an `Sql` object from the segments of your query and pass it the parameter value.
 
-The following example is safe ✅ from SQL Injection as long as the variables being passed to `Prisma.raw` only contain trusted content:
+In the following example we have two variables to parameterize. The example is safe ✅ from SQL Injection as long as the query strings being passed to `Prisma.sql` only contain trusted content:
 
 ```ts
-// Safe if the text query below is completely trusted content
+// Example is safe if the text query below is completely trusted content
+const query1 = `SELECT id, name FROM "User" WHERE name = ` // The first parameter would be inserted after this string
+const query2 = ` OR name = ` // The second parameter would be inserted after this string
+
+const inputString1 = "Fred"
+const inputString2 = `'Sarah' UNION SELECT id, title FROM "Post"`
+
+const query = Prisma.sql([query1, query2, ""], inputString1, inputString2)
+const result = await prisma.$queryRaw(query);
+console.log(result);
+```
+
+> Note: Notice that the string array being passed as the first parameter `Prisma.sql` needs to have an empty string at the end as the `sql` function expects one more query segment than the number of parameters.
+
+If you want to build your raw queries into one large string, this is still possible but requires some care as it is uses the potentially dangerous `Prisma.raw` method. You also need to build your query using the correct parameter markers for your database as Prisma won't be able to provide markers for the relevant database as it usually is.
+
+The following example is safe ✅ from SQL Injection as long as the query strings being passed to `Prisma.raw` only contain trusted content:
+
+```ts
+// Example is safe if the text query below is completely trusted content
 const query1 = `SELECT id, name FROM "User" `
 const query2 = `WHERE name = $1 `
 
