@@ -20,15 +20,15 @@ This error is triggered when the response size from a database query exceeds the
 
 #### Transmitting images/files in response
 
-This error may arise if images or files stored in base64 format within your table are being fetched, resulting in a large response size. Storing assets in base64 format is generally discouraged because it significantly impacts database performance and scalability. In addition to performance, it makes database backups slow and significantly increases the cost of storing routine backups.
+This error may arise if images or files stored within your table are being fetched, resulting in a large response size. Storing assets directly in the database is generally discouraged because it significantly impacts database performance and scalability. In addition to performance, it makes database backups slow and significantly increases the cost of storing routine backups.
 
-**Suggested solution:** Store the image/file in a BLOB store like Cloudflare [R2](https://developers.cloudflare.com/r2/), [AWS S3](https://aws.amazon.com/pm/serv-s3/), [Cloudinary](https://cloudinary.com/), etc. These services would allow you to store the assets optimally and return a URL through which you should be able to access the asset. You can store this URL in your table instead of storing the asset in a base64 format. This would substantially reduce the size of your response.
+**Suggested solution:** Store the image/file in a BLOB store like [Cloudflare R2](https://developers.cloudflare.com/r2/), [AWS S3](https://aws.amazon.com/pm/serv-s3/), [Cloudinary](https://cloudinary.com/), etc. These services would allow you to store the assets optimally and return a URL through which you should be able to access the asset. You can store this URL in your table instead of storing the asset directly in database. This would substantially reduce the size of your response.
 
-#### Incorrect/Missing <inlinecode>[where](/orm/reference/prisma-client-reference#where)</inlinecode> or <inlinecode>[select](/orm/reference/prisma-client-reference#select)</inlinecode> clause
+#### Overfetching of data
 
-In certain cases, a large number of records or fields are unintentionally fetched, which results in exceeding the 5MB limit. This could happen when the `where` clause in the query is incorrect or entirely missing. If you only need to use specific fields from the table, then you can use the select clause in your queries to prevent unnecessary data from being fetched.
+In certain cases, a large number of records or fields are unintentionally fetched, which results in exceeding the 5MB limit. This could happen when the [`where`](/orm/reference/prisma-client-reference#where) clause in the query is incorrect or entirely missing.
 
-**Suggested solution:** Double-check if the `where` clause is filtering the data as you expect. Consider using [pagination](/orm/prisma-client/queries/pagination) to prevent a large number of records from being fetched. Using the [select](/orm/reference/prisma-client-reference#select) clause to return only the fields that are being consumed can also be helpful in reducing the response size.
+**Suggested solution:** Double-check if the `where` clause is filtering the data as you expect. Consider using [pagination](/orm/prisma-client/queries/pagination) to prevent a large number of records from being fetched. Additionally, use the [`select`](/orm/reference/prisma-client-reference#select) clause to return only the fields that are being consumed to further reduce the response size.
 
 #### Fetching a large volume of data
 
@@ -61,6 +61,7 @@ different `connection_limit` is specified in your database connection string.
 Queries may be slow to respond, hitting the 10-second timeout even when connections are available. This could happen if a very large amount of data is being fetched in a single query or if appropriate indexes are missing from the table.
 
 **Suggested solution**: Identify the slow-running queries and fetch only the required data. If you only need to use specific fields from the table, then you can use the select clause in your queries to prevent unnecessary data from being fetched. Additionally, you could consider adding appropriate indexes based on the query to ensure that data is fetched efficiently.
+You can also consider isolating long running queries into separate environments, so that these long running queries would not affect the transactional queries.
 
 #### Database resource contention
 
@@ -72,9 +73,9 @@ Moreover, it's crucial to periodically scrutinize and refine essential queries a
 
 ### Considerations for <inlinecode>[P6009](/orm/reference/error-reference#p6009-responsesizelimitexceeded)</inlinecode> and <inlinecode>[P6004](/orm/reference/error-reference#p6004-querytimeout)</inlinecode> errors
 
-For runtimes that support Prisma ORM natively, you could consider creating two `PrismaClient` Instances. One with the Accelerate connection string (prefixed with `prisma://`) and the other one with the direct database connection string (prefixed with `postgres://`, `mysql://` etc)
+For runtimes that support Prisma ORM natively, you could consider creating two `PrismaClient` Instances. One with the Accelerate connection string (prefixed with `prisma://`) and the other one with the direct database connection string (prefixed with `postgres://`, `mysql://` etc). The main idea behind this approach is to bypass Accelerate for certain specific queries.
 
-However, please note that the available connections would be split between both of your `PrismaClient` Instances. It's crucial to understand the implications of managing multiple instances, particularly in regards to direct database connections. Utilizing a `PrismaClient` instance with a direct database connection string means that this connection will interact directly with your database.
+⚠️ However, please note that the available connections would be split between both of your `PrismaClient` Instances. It's crucial to understand the implications of managing multiple instances, particularly in regards to direct database connections. Utilizing a `PrismaClient` instance with a direct database connection string means that this connection will interact directly with your database.
 
 This approach requires careful consideration because the direct connections and those managed by Accelerate share the same underlying database connection pool. This can lead to competition for resources, potentially affecting the performance and availability of your database services.
 
