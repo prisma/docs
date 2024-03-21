@@ -93,6 +93,7 @@ const AdmonitionWrapper = styled.span<{ type?: string }>`
     left: 0px;
     display: flex;
     justify-content: center;
+    align-items: center;
     padding: 12px 0;
     background: ${(p) => (p.type ? colorMap[p.type] : colorMap['info'])} !important;
     border-radius: 5px;
