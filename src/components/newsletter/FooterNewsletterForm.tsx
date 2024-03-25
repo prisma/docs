@@ -120,7 +120,7 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'api-key': config.footer.newsletter.BREVO_API_KEY,
+        'api-key': config.footer.newsletter.GATSBY_BREVO_API_KEY,
       },
       body: JSON.stringify({
         email: email,
