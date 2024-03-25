@@ -23,6 +23,7 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, d
         dbSwitcher={dbSwitcher}
         slug={slug}
       />
+      {children}
     </section>
     )
 }
