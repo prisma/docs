@@ -43,15 +43,11 @@ const HTML = (props: any) => {
         <div key={`body`} id="___gatsby" dangerouslySetInnerHTML={{ __html: props.body }} />
         {props.postBodyComponents}
 
-        {/* Start of Reo Javascript */}
-        <script
+        <script 
+          id="kompassious" 
+          src="https://player.kompassify.com/kompassifyPlayer.js?uuid=859a2c0a-0614-41a7-ab90-2fe762012eb9" 
           type="text/javascript"
-          dangerouslySetInnerHTML={{
-            __html:
-              '!function(){var e,t,n;e="dea12ffb2578f27",t=function(){Reo.init({ clientID: "dea12ffb2578f27" })},(n=document.createElement("script")).src="https://static.reo.dev/"+e+"/reo.js",n.async=!0,n.onload=t,document.head.appendChild(n)}();',
-          }}
         ></script>
-        {/* End of Reo Javascript */}
       </body>
     </html>
   )
