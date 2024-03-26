@@ -11,6 +11,7 @@ import SelectComponent from './select'
 // import PlanetScale from '../icons/technologies/PlanetScale'
 // import CockroachDB from '../icons/technologies/CockroachDB'
 import { components } from 'react-select'
+import Link from '@docusaurus/Link'
 // import ArrowDown from '../icons/ArrowDown'
 
 interface TechSwitchProps {
@@ -75,10 +76,10 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
     const href = type === "lang" ? `${url}${item.technology}-${dbSelected}` : `${url}${item.technology}`
     return (
       <SelectItem>
-        <a href={href}>
+        <Link href={href}>
           {icons[item.technology]}
           <span>{technologyNames[item.technology]}</span>
-        </a>
+        </Link>
       </SelectItem>
     )
   }
@@ -138,7 +139,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
 }
 
 const Container = styled.div`
-  margin: 16px 1rem 0 0;
+  margin: 16px 0 0 0;
   width: 180px;
   text-overflow: ellipsis;
 
