@@ -59,33 +59,4 @@ const SelectComponent = (props: SelectProps) => {
 export default SelectComponent
 
 const SelectComponentWrapper = styled.div`
-  @media (prefers-color-scheme: dark) {
-    .select-container {
-      .tech-select__control {
-        background-color: ${theme.colors.gray[800]};
-        border-color: ${theme.colors.gray[700]};
-      }
-      .tech-select__single-value {
-        color: ${theme.colors.gray[100]};
-      }
-      .tech-select__menu {
-        background-color: ${theme.colors.gray[800]};
-        .tech-select__option {
-          background-color: ${theme.colors.gray[800]};
-          color: ${theme.colors.gray[100]};
-          &:hover {
-            background-color: ${theme.colors.gray[700]};
-            color: ${theme.colors.gray[100]};
-          }
-        }
-      }
-    }
-  }
-  .select-container {
-    > div:first-child {
-      height: 38px;
-      border-color: #e2e8f0;
-      border-radius: 5px;
-    }
-  }
 ` as any

@@ -13,18 +13,21 @@ import TopSection from '../components/topSection';
 import { useLocation } from '@docusaurus/router';
 
 // TODO: do we want to fix this?
-const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, dbSwitcher, slug }: any) => {
+const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, dbSwitcher, slug, title }: any) => {
   const location = useLocation()
   return (
-    <section className="top-section">
-      <TopSection
-        location={location}
-        langSwitcher={langSwitcher}
-        dbSwitcher={dbSwitcher}
-        slug={slug}
-      />
+    <>
+      <section className="top-section">
+        {title && <header><h1>{title}</h1></header>}
+        <TopSection
+          location={location}
+          langSwitcher={langSwitcher}
+          dbSwitcher={dbSwitcher}
+          slug={slug}
+        />
+      </section>
       {children}
-    </section>
+    </>
     )
 }
 
