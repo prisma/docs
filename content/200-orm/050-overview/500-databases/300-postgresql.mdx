@@ -7,7 +7,7 @@ tocDepth: 3
 
 <TopBlock>
 
-The PostgreSQL data source connector connects Prisma to a [PostgreSQL](https://www.postgresql.org/) database server.
+The PostgreSQL data source connector connects Prisma ORM to a [PostgreSQL](https://www.postgresql.org/) database server.
 
 By default, the PostgreSQL connector contains a database driver responsible for connecting to your database. You can use a [driver adapter](/orm/overview/databases/database-drivers#driver-adapters) (Preview) to connect to your database using a JavaScript database driver from Prisma Client.
 
@@ -29,11 +29,69 @@ The fields passed to the `datasource` block are:
 - `provider`: Specifies the `postgresql` data source connector.
 - `url`: Specifies the [connection URL](#connection-url) for the PostgreSQL database server. In this case, an [environment variable is used](/orm/prisma-schema/overview#accessing-environment-variables-from-the-schema) to provide the connection URL.
 
+## Using the <inlinecode>node-postgres</inlinecode> driver
+
+As of [`v5.4.0`](https://github.com/prisma/prisma/releases/tag/5.4.0), you can use Prisma ORM with database drivers from the JavaScript ecosystem (instead of using Prisma ORM's built-in drivers). You can do this by using a [driver adapter](/orm/overview/databases/database-drivers).
+
+For PostgreSQL, [`node-postgres`](https://node-postgres.com) (`pg`) is one of the most popular drivers in the JavaScript ecosystem. It can be used with any PostgreSQL database that's accessed via TCP.
+
+This section explains how you can use it with Prisma ORM and the `@prisma/adapter-pg` driver adapter.
+
+### 1. Enable the <inlinecode>driverAdapters</inlinecode> Preview feature flag
+
+Since driver adapters are currently in [Preview](/orm/more/releases#preview), you need to enable its feature flag on the `datasource` block in your Prisma schema:
+
+```prisma
+// schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+Once you have added the feature flag to your schema, re-generate Prisma Client:
+
+```terminal copy
+npx prisma generate
+```
+
+### 2. Install the dependencies
+
+Next, install the `pg` package and Prisma ORM's driver adapter:
+
+```terminal copy
+npm install pg
+npm install @prisma/adapter-pg
+```
+
+### 3. Instantiate Prisma Client using the driver adapter
+
+Finally, when you instantiate Prisma Client, you need to pass an instance of Prisma ORM's driver adapter to the `PrismaClient` constructor:
+
+```ts copy
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
+
+const connectionString = `${process.env.DATABASE_URL}`
+
+const pool = new Pool({ connectionString })
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
+```
+
+Notice that this code requires the `DATABASE_URL` environment variable to be set to your PostgreSQL connection string. You can learn more about the connection string below.
+
 ## Connection details
 
 ### Connection URL
 
-Prisma is based on the [official PostgreSQL format](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING) for connection URLs, but does not support all arguments and includes additional arguments such as `schema`. Here's an overview of the components needed for a PostgreSQL connection URL:
+Prisma ORM follows the connection URL format specified by [PostgreSQL's official guidelines](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING), but does not support all arguments and includes additional arguments such as `schema`. Here's an overview of the components needed for a PostgreSQL connection URL:
 
 ![Structure of the PostgreSQL connection URL](postgresql-connection-string.png)
 
@@ -131,15 +189,15 @@ Note that `localhost` is required, the value itself is ignored and can be anythi
 
 ## Type mapping between PostgreSQL and Prisma schema
 
-These two tables show the type mapping between PostgreSQL and Prisma schema. First [how Prisma scalar types are translated into PostgreSQL database column types](#mapping-between-prisma-scalar-types-and-postgresql-database-column-types), and then [how PostgreSQL database column types relate to Prisma scalar and native types](#mapping-between-postgresql-database-column-types-to-prisma-scalar-and-native-types).
+These two tables show the type mapping between PostgreSQL and Prisma schema. First [how Prisma ORM scalar types are translated into PostgreSQL database column types](#mapping-between-prisma-orm-scalar-types-and-postgresql-database-column-types), and then [how PostgreSQL database column types relate to Prisma ORM scalar and native types](#mapping-between-postgresql-database-column-types-to-prisma-orm-scalar-and-native-types).
 
 > Alternatively, see [Prisma schema reference](/orm/reference/prisma-schema-reference#model-field-scalar-types) for type mappings organized by Prisma type.
 
-### Mapping between Prisma scalar types and PostgreSQL database column types
+### Mapping between Prisma ORM scalar types and PostgreSQL database column types
 
-The PostgreSQL connector maps the [scalar types](/orm/prisma-schema/data-model/models#scalar-fields) from the Prisma [data model](/orm/prisma-schema/data-model/models) as follows to database column types:
+The PostgreSQL connector maps the [scalar types](/orm/prisma-schema/data-model/models#scalar-fields) from the Prisma ORM [data model](/orm/prisma-schema/data-model/models) as follows to database column types:
 
-| Prisma     | PostgreSQL         |
+| Prisma ORM | PostgreSQL         |
 | ---------- | ------------------ |
 | `String`   | `text`             |
 | `Boolean`  | `boolean`          |
@@ -151,12 +209,12 @@ The PostgreSQL connector maps the [scalar types](/orm/prisma-schema/data-model/m
 | `Json`     | `jsonb`            |
 | `Bytes`    | `bytea`            |
 
-### Mapping between PostgreSQL database column types to Prisma scalar and native types
+### Mapping between PostgreSQL database column types to Prisma ORM scalar and native types
 
-- When [introspecting](/orm/prisma-schema/introspection) a PostgreSQL database, the database types are mapped to Prisma types according to the following table.
+- When [introspecting](/orm/prisma-schema/introspection) a PostgreSQL database, the database types are mapped to Prisma ORM types according to the following table.
 - When [creating a migration](/orm/prisma-migrate) or [prototyping your schema](/orm/prisma-migrate/workflows/prototyping-your-schema) the table is also used - in the other direction.
 
-| PostgreSQL (Type \| Aliases)                | Supported | Prisma        | Native database type attribute           | Notes                                                                                                                                                                       |
+| PostgreSQL (Type \| Aliases)                | Supported | Prisma ORM    | Native database type attribute           | Notes                                                                                                                                                                       |
 | ------------------------------------------- | :-------: | ------------- | :--------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `bigint` \| `int8`                          |    ✔️     | `BigInt`      | `@db.BigInt`\*                           | \*Default mapping for `BigInt` - no type attribute added to schema.                                                                                                         |
 | `boolean` \| `bool`                         |    ✔️     | `Bool`        | `@db.Boolean`\*                          | \*Default mapping for `Bool` - no type attribute added to schema.                                                                                                           |
@@ -239,6 +297,6 @@ The two queries after parameterization will be the same, and the second query ca
 SELECT * FROM user WHERE name = $1
 ```
 
-Every database connection maintained by Prisma has a separate cache for storing prepared statements. The size of this cache can be tweaked with the `statement_cache_size` parameter in the connection string. By default, Prisma Client caches 500 statements per connection.
+Every database connection maintained by Prisma Client has a separate cache for storing prepared statements. The size of this cache can be tweaked with the `statement_cache_size` parameter in the connection string. By default, Prisma Client caches 500 statements per connection.
 
 Due to the nature of pgBouncer, if the `pgbouncer` parameter is set to `true`, the prepared statement cache is automatically disabled for that connection.

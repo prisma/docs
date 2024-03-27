@@ -1,4 +1,3 @@
-import { defaultTheme as theme } from '../../theme'
 import { useLocation } from '@reach/router'
 import { withPrefix } from 'gatsby'
 import isAbsoluteUrl from 'is-absolute-url'
@@ -7,6 +6,7 @@ import * as React from 'react'
 import styled from 'styled-components'
 
 import ArrowRight from '../../icons/ArrowRight'
+import { defaultTheme as theme } from '../../theme'
 
 export interface ButtonProps {
   href?: string
