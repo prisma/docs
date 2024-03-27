@@ -152,9 +152,10 @@ const config: Config = {
       ],
     },
     algolia: {
-      appId: 'MK4LNFW4EO',
-      apiKey: 'd8ae0173fc0d9170b085840d0c95f389',
-      indexName: 'docs-prod', // this is probably wrong but don't really know what to do about it right now
+      appId: 'MF58UJZ648',
+      apiKey: 'fd3d0a05bfe5d280348060ca5ea416be',
+      indexName: 'prisma',
+      contextualSearch: false,
     },
     footer: {
       style: 'dark',
