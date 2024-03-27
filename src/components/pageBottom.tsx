@@ -131,58 +131,6 @@ const PageBottom = ({ editDocsPath }: any) => {
 
   return (
     <PageBottomWrapper>
-      <Feedback>
-        <h4>Was this helpful?</h4>
-        <div className="sentiments">
-          <button
-            id="happy"
-            onClick={handleSentiment}
-            className={submittedSentiment && sentiment === 'Happy' ? 'active' : ''}
-            disabled={submittedSentiment}
-          >
-            <Up />
-          </button>
-          <button
-            id="unhappy"
-            onClick={handleSentiment}
-            className={submittedSentiment && sentiment === 'Unhappy' ? 'active' : ''}
-            disabled={submittedSentiment}
-          >
-            <Down />
-          </button>
-        </div>
-      </Feedback>
-      <Wrapper>
-        <Content>
-          {submittedFeedback ? (
-            <>
-              <ToastContainer
-                autoClose={false}
-                closeOnClick={false}
-                closeButton={false}
-                hideProgressBar
-                className="yay-container"
-                toastClassName="yay-toast"
-                position="bottom-right"
-                bodyClassName="yay-body"
-                limit={1}
-              />
-            </>
-          ) : (
-            <ToastContainer
-              autoClose={false}
-              closeOnClick={false}
-              closeButton={false}
-              hideProgressBar
-              className="feedback-container"
-              toastClassName="feedback-toast"
-              position="bottom-right"
-              bodyClassName="feedback-body"
-              limit={1}
-            />
-          )}
-        </Content>
-      </Wrapper>
       {editDocsPath && (
         <Link className="edit-git" to={`${editDocsPath}`}>
           Edit this page on GitHub

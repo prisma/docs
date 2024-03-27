@@ -181,6 +181,11 @@ export default function Layout({
   return (
     <WebProvider>
       <Script src="https://kit.fontawesome.com/1772ab679c.js" crossOrigin="anonymous" />
+      <Script
+        async
+        src="https://cdn.tolt.io/tolt.js"
+        data-tolt="fda67739-7ed0-42d2-b716-6da0edbec191"
+      />
       <MDXProvider components={shortcodes}>
         <LayoutWrapper className="dark">
           <Header
