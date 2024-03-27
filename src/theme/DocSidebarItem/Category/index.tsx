@@ -145,11 +145,11 @@ export default function DocSidebarItemCategory({
           'menu__list-item-collapsible--active': isCurrentPage,
         })}>
         <Link
-          className={clsx('menu__link', {
+          className={`${clsx('menu__link', {
             'menu__link--sublist': collapsible,
             'menu__link--sublist-caret': !href && collapsible,
             'menu__link--active': isActive,
-          })}
+          })} ${isActive ? styles.active : ''}`}
           onClick={
             collapsible
               ? (e) => {

@@ -33,13 +33,13 @@ export default function DocSidebarItemLink({
       )}
       key={label}>
       <Link
-        className={clsx(
+        className={`${clsx(
           'menu__link',
           !isInternalLink && styles.menuExternalLink,
           {
             'menu__link--active': isActive,
           },
-        )}
+        )} ${isActive ? styles.active : ``}`}
         autoAddBaseUrl={autoAddBaseUrl}
         aria-current={isActive ? 'page' : undefined}
         to={href}
