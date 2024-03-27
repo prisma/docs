@@ -8,10 +8,27 @@ import Admonition from '@theme/Admonition';
 import TabbedContent from '@theme/Tabs'; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from '@theme/TabItem';
 import Link from '@docusaurus/Link';
+import CollapseBox from '../components/collapsible';
+import TopSection from '../components/topSection';
+import { useLocation } from '@docusaurus/router';
 
 // TODO: do we want to fix this?
-const TopBlock: React.FC<React.PropsWithChildren> = ({ children }) => {
-  return <p>{children}</p>
+const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, dbSwitcher, slug, title }: any) => {
+  const location = useLocation()
+  return (
+    <>
+      <section className="top-section">
+        {title && <header><h1>{title}</h1></header>}
+        <TopSection
+          location={location}
+          langSwitcher={langSwitcher}
+          dbSwitcher={dbSwitcher}
+          slug={slug}
+        />
+      </section>
+      {children}
+    </>
+    )
 }
 
 // TODO: we should fix this
@@ -77,6 +94,7 @@ export default {
   Subsections,
   Admonition,
   TabbedContent,
+  details: (props: any) => <CollapseBox {...props} />,
   TabItem,
   Link,
   TopBlock,
