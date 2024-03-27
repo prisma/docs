@@ -28,15 +28,15 @@ interface TechItem {
 }
 
 const icons = {
-  node: ``, //<JS />,
-  typescript: ``, //<Typescript />,
-  mysql: ``, //<MySQL />,
-  postgresql: ``, //<PostgreSQL />,
-  sqlite: ``, //<SQLite />,
-  mongodb: ``, //<MongoDB />,
-  sqlserver: ``, //<SQLServer />,
-  planetscale: ``, //<PlanetScale />,
-  cockroachdb: ``, //<CockroachDB />,
+  node: `/img/technologies/nodejs.svg`, //<JS />,
+  typescript: `/img/technologies/typescript.svg`, //<Typescript />,
+  mysql: `/img/technologies/mysql.svg`, //<MySQL />,
+  postgresql: `/img/technologies/postgresql.svg`, //<PostgreSQL />,
+  sqlite: `/img/technologies/sqlite.svg`, //<SQLite />,
+  mongodb: `/img/technologies/mongodb.svg`, //<MongoDB />,
+  sqlserver: `/img/technologies/sqlserver.svg`, //<SQLServer />,
+  planetscale: `/img/technologies/planetscale.svg`, //<PlanetScale />,
+  cockroachdb: `/img/technologies/cockroachdb.svg`, //<CockroachDB />,
 }
 
 const technologyTypes = {
@@ -77,7 +77,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
     return (
       <SelectItem>
         <Link href={href}>
-          {icons[item.technology]}
+          <img src={icons[item.technology]} />
           <span>{technologyNames[item.technology]}</span>
         </Link>
       </SelectItem>
@@ -140,21 +140,28 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
 
 const Container = styled.div`
   margin: 16px 0 0 0;
-  width: 180px;
+  width: 198px;
   text-overflow: ellipsis;
 
   @media only screen and (max-width: 767px) {
     margin: 8px 0 0;
     width: 100%;
   }
+  .tech-select__input {
+    user-select: none !important;
+    caret-color: transparent;
+  }
 `
 
 const SelectItem = styled.div`
-  display: flex;
-  align-items: center;
-
-  svg {
-    margin-right: 10px;
+  a {
+    display: flex;
+    align-items: center;
+  
+    img {
+      margin-right: 10px;
+      margin-bottom: 0;
+    }
   }
 `
 
