@@ -46,6 +46,7 @@ const SelectComponent = (props: SelectProps) => {
       <Select
         width={width}
         options={options}
+        readonly
         defaultValue={selectedOption}
         onChange={handleChange}
         classNamePrefix="tech-select"
