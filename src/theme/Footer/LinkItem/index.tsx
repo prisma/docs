@@ -19,7 +19,7 @@ export default function FooterLinkItem({item}) {
           })}
       {...props}>
       {label}
-      {href && !isInternalUrl(href) && <Icon icon='fa-solid fa-arrow-up-right' size='1rem'/>}
+      {!item.customProps?.internal && href && !isInternalUrl(href) && <Icon icon='fa-solid fa-arrow-up-right' size='1rem'/>}
     </Link>
   );
 }
