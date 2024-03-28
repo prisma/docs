@@ -24,10 +24,10 @@ export default function DocSidebarItemLink({
   const [badgeContent, setBadgeContent] = useState<string | undefined>(undefined)
 
   const checkPath = () => {
-    const tmp = "connect-your-database-"
-    const splitItem = item.href.split(tmp)
-    const splitLocation = location.pathname.split(tmp)
-    if (item.href.includes(tmp) && location.pathname.includes(tmp) && splitItem[0] === splitLocation[0]) return true
+    const splitLocation = location.pathname.split("typescript-")[0].split("node-")[0]
+    const splitItem = href.split("typescript-")[0].split("node-")[0]
+    
+    if (splitItem === splitLocation) return true
     return false
   }
 
