@@ -377,27 +377,42 @@ const config: Config = {
             {
               label: ' ',
               href: "https://discord.gg/KQyTW2H5ca",
-              class: "fa-brands fa-discord internal"
+              customProps: {
+                icon: "fa-brands fa-discord",
+                internal: true,
+              }
             },
             {
               label: ' ',
               href: "https://discord.gg/KQyTW2H5ca",
-              class: "fa-brands fa-x-twitter internal"
+              customProps: {
+                icon: "fa-brands fa-x-twitter",
+                internal: true,
+              }
             },
             {
               label: ' ',
               href: "https://discord.gg/KQyTW2H5ca",
-              class: "fa-brands fa-youtube internal"
+              customProps: {
+                icon: "fa-brands fa-youtube",
+                internal: true,
+              }
             },
             {
               label: ' ',
               href: "https://discord.gg/KQyTW2H5ca",
-              class: "fa-brands fa-slack internal"
+              customProps: {
+                icon: "fa-brands fa-slack",
+                internal: true,
+              }
             },
             {
               label: ' ',
               href: "https://discord.gg/KQyTW2H5ca",
-              class: "fa-brands fa-github internal"
+              customProps: {
+                icon: "fa-brands fa-github",
+                internal: true,
+              }
             },
           ]
         }
