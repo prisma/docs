@@ -126,6 +126,16 @@ export const Grid = styled.div`
   @media (min-width: 600px) {
     grid-template-columns: 1fr 1fr;
   }
+  a {
+
+    border-color: var(--ifm-btn-border-color);
+    background: transparent;
+    color: var(--main-font-color);
+    &:hover {
+      border-color: var(--ifm-btn-border-color-active);
+      background: transparent;
+    }
+  }
 `
 
 export const LinkCard = ({ icon, title, desc, link }: any) => {
@@ -168,9 +178,13 @@ const SquareWrapper = styled.a`
   border-radius: 8px;
   transition: all 300ms ease-out;
   cursor: pointer;
+
+  border-color: var(--ifm-btn-border-color);
+  background: transparent;
+  color: var(--main-font-color);
   &:hover {
-    background: var(--main-bgd-color);
-    border-color: var(--indigo-600);
+    border-color: var(--ifm-btn-border-color-active);
+    background: transparent;
   }
   &:active,
   &:focus {
