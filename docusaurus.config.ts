@@ -3,7 +3,7 @@ import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: 'Prisma Docs',
+  title: 'Prisma Documentation',
   tagline: 'Get started with Prisma in the official documentation, and learn more about all Prisma\'s features with reference documentation, guides, and more.',
   favicon: 'img/favicon.png',
 
@@ -138,7 +138,7 @@ const config: Config = {
           label: 'Pulse',
         },
         {
-          href: 'https://github.com/prisma/docs',
+          href: 'https://github.com/prisma/',
           position: 'right',
           className: 'header-github-link',
           'aria-label': 'GitHub repository',
