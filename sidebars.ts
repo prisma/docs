@@ -11,6 +11,11 @@ const platformCategory: SidebarItemConfig = {
   label: 'Platform',
   collapsed: false,
   collapsible: false,
+  link: {
+    type: 'doc',
+    id: 'platform/index',
+  },
+  className: "firstTitle",
   items: [
     {
       type: 'category',

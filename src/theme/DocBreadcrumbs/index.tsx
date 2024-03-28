@@ -55,9 +55,13 @@ export default function DocBreadcrumbs() {
   if (!breadcrumbs) {
     return null;
   }
-  useEffect(() => {
-    console.log(breadcrumbs)
-  }, [])
+  const repeatedBreadcrumbs = () => {
+    if (breadcrumbs.length === 2) {
+      if (breadcrumbs[0].label === breadcrumbs[1].label) return false
+      else return true
+    }
+    return true
+  }
   return (
     <nav
       className={clsx(
@@ -69,7 +73,7 @@ export default function DocBreadcrumbs() {
         message: 'Breadcrumbs',
         description: 'The ARIA label for the breadcrumbs',
       })}>
-      {breadcrumbs.length > 2 && <ul
+      {repeatedBreadcrumbs() && <ul
         className="breadcrumbs"
         itemScope
         itemType="https://schema.org/BreadcrumbList">
