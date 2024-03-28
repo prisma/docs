@@ -24,6 +24,9 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
+  customFields: {
+    'BREVO_API_KEY': process.env.BREVO_API_KEY
+  },
   scripts: [
     // kapa.ai script
     {
