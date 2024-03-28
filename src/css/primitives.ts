@@ -242,3 +242,12 @@ export const space = {
   medium: baseSpace[12],
   large: baseSpace[20],
 }
+
+export const breakpoints = {
+   mobile:  360,
+ tabletVertical:  768,
+ desktopSmall:  940,
+ tabletHorizontal:  1024,
+ desktopLarge:  1440,
+
+}
