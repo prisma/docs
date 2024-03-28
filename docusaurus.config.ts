@@ -84,9 +84,9 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          customCss: ['./src/css/custom.css', './src/css/all.css', './src/css/theming.css'],
+          customCss: ['./src/css/custom.css', './src/css/admonition.css', './src/css/docsearch.css', './src/css/all.css', './src/css/theming.css'],
         },
-      } satisfies Preset.Options,
+      } satisfies Preset.Options
     ],
   ],
 
@@ -161,7 +161,7 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Products',
+          title: 'Product',
           items: [
             {
               label: 'ORM',
@@ -187,6 +187,12 @@ const config: Config = {
               target: "_self",
               class: "internal footer__link-item"
             },
+            {
+              label: 'Changelog',
+              href: 'https://prisma.io/changelog',
+              target: "_self",
+              class: "internal footer__link-item"
+            },
           ],
         },
         {
@@ -197,11 +203,11 @@ const config: Config = {
               to: '/',
             },
             {
-              label: 'Get Started',
+              label: 'Get started',
               to: '/getting-started',
             },
             {
-              label: 'Prisma Examples',
+              label: 'prisma-examples',
               href: 'https://github.com/prisma/prisma-examples',
             },
             {
@@ -233,11 +239,17 @@ const config: Config = {
               class: "internal footer__link-item"
             },
             {
+              label: 'Data guide',
+              href: 'https://prisma.io/dataguide',
+              target: "_self",
+              class: "internal footer__link-item"
+            },
+            {
               label: 'Data Platform status',
               href: 'https://www.prisma-status.com/',
             },
             {
-              label: 'VS Code Extension',
+              label: 'VS Code extension',
               href: 'https://marketplace.visualstudio.com/items?itemName=Prisma.prisma',
             },
           ],
@@ -263,6 +275,12 @@ const config: Config = {
               target: "_self",
               class: "internal footer__link-item"
             },
+            {
+              label: 'Partners',
+              href: 'https://www.prisma.io/partners',
+              target: "_self",
+              class: "internal footer__link-item"
+            },
           ],
         },
         {
@@ -282,7 +300,7 @@ const config: Config = {
             },
             {
               label: 'Data DX',
-              to: 'https://www.datadx.io/',
+              href: 'https://www.datadx.io/',
             },
             {
               label: 'Careers',
@@ -298,7 +316,7 @@ const config: Config = {
             },
             {
               label: 'Causes',
-              to: 'https://prismaio.notion.site/Prisma-Causes-0c9e1ddc0f5942edaba355692cfee69f',
+              href: 'https://prismaio.notion.site/Prisma-Causes-0c9e1ddc0f5942edaba355692cfee69f',
             },
             {
               label: 'OSS Friends',
@@ -308,11 +326,11 @@ const config: Config = {
             },
             {
               label: 'Terms & Privacy',
-              to: 'https://prismaio.notion.site/Terms-Privacy-5b5b9938b3a941ccb2ad97eaf5524c07',
+              href: 'https://prismaio.notion.site/Terms-Privacy-5b5b9938b3a941ccb2ad97eaf5524c07',
             },
             {
               label: 'Service Level Agreement',
-              to: 'https://pris.ly/sla',
+              href: 'https://pris.ly/sla',
             },
           ],
         },
