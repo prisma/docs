@@ -50,18 +50,14 @@ function BreadcrumbsItem({children, active, index, addMicrodata}) {
   );
 }
 export default function DocBreadcrumbs() {
-  const [breadcrumbs, setBreadcrumbs] = useState<any>(useSidebarBreadcrumbs());
+  const breadcrumbs = useSidebarBreadcrumbs();
   const homePageRoute = useHomePageRoute();
   if (!breadcrumbs) {
     return null;
   }
   useEffect(() => {
-    const last = breadcrumbs.length - 1
-    const sLast = breadcrumbs.length - 2
-    // if (breadcrumbs[last].label === breadcrumbs[sLast].label) {
-    //   setBreadcrumbs(breadcrumbs.filter((e, idx) => idx !== sLast))
-    // }
-  }, [breadcrumbs])
+    console.log(breadcrumbs)
+  }, [])
   return (
     <nav
       className={clsx(
