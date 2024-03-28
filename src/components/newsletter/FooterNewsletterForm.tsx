@@ -1,12 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
-
-import { Button } from '../button'
+import styles from "./styles.module.css"
 import { Icon } from '../Icon'
-import config from '../../../config'
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 
 namespace S {
-  export const Container = styled.div<{ error?: boolean }>`
+  export const Container = styled.div`
     form {
       position: relative;
       display: flex;
@@ -40,7 +39,6 @@ namespace S {
       width: 100%;
       .leading-icon {
         left: 24px;
-        color: ${(props) => props.theme.colors.blueGray[600]};
         display: none;
         position: absolute;
         top: 50%;
@@ -56,25 +54,20 @@ namespace S {
       }
     }
     .input-el {
+      background: white;
       box-sizing: border-box;
       width: 100%;
-      line-height: ${(props) => props.theme.fontSizes[20]};
       font-size: 18px;
       height: 48px;
       border: none;
       border-radius: 10px;
-      border: 1px solid ${(props) => props.theme.colors.gray[300]};
-      outline: ${(props) => (props.error ? `1px solid ${props.theme.colors.red[700]}` : 0)};
       padding: 12px 25px 12px 58px;
 
       &:focus {
         outline: 1px solid
-          ${(props) =>
-            props.error ? props.theme.colors.red[700] : props.theme.colors.blueGray[800]};
       }
 
       &::placeholder {
-        color: ${(props) => props.theme.colors.gray[600]};
       }
     }
     button {
@@ -101,7 +94,7 @@ namespace S {
   `
 }
 
-const icon = (name: string) => <Icon size="1.125rem" color="currentColor" icon={name} />
+const icon = (name: string) => <Icon size="1.125rem" color="rgb(113, 128, 150)" icon={name} />
 type ColorType = 'indigo' | 'teal' | 'white' | undefined
 
 type FooterNewsletterFormProps = {
@@ -113,6 +106,7 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
   const [email, setEmail] = useState<string>('')
   const [submitted, setSubmitted] = useState<boolean>(false)
   const mailchimpForm = useRef(null)
+  const { siteConfig: { customFields } } = useDocusaurusContext();
 
   const setFormSubmitted = (event: any) => {
     const options = {
@@ -120,7 +114,8 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'api-key': process.env.GATSBY_BREVO_API_KEY,
+        // Add API key to cloudfare deployment
+        'api-key': customFields.BREVO_API_KEY,
       },
       body: JSON.stringify({
         email: email,
@@ -159,7 +154,7 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
             autoCorrect="off"
           />
         </label>
-        <Button type="primary" color={color === 'white' ? 'indigo' : color}>
+        <button className={styles.formBtn} color={color === 'white' ? 'indigo' : color}>
           <input
             type="submit"
             value={submitted ? 'Thank you!' : 'Subscribe for updates'}
@@ -167,7 +162,7 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
             id="mc-embedded-subscribe"
             className="button"
           />
-        </Button>
+        </button>
       </form>
       <iframe name="hiddenFrame" src="about:blank" style={{ display: 'none' }}></iframe>
     </S.Container>
