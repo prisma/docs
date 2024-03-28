@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
 import styles from "./styles.module.css"
 import { Icon } from '../Icon'
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 
 namespace S {
   export const Container = styled.div`
@@ -105,6 +106,7 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
   const [email, setEmail] = useState<string>('')
   const [submitted, setSubmitted] = useState<boolean>(false)
   const mailchimpForm = useRef(null)
+  const { siteConfig: { customFields } } = useDocusaurusContext();
 
   const setFormSubmitted = (event: any) => {
     const options = {
@@ -113,7 +115,7 @@ export const FooterNewsletterForm = ({ theme, color = 'indigo' }: FooterNewslett
         accept: 'application/json',
         'content-type': 'application/json',
         // Add API key to cloudfare deployment
-        // 'api-key': process.env.GATSBY_BREVO_API_KEY,
+        'api-key': customFields.BREVO_API_KEY,
       },
       body: JSON.stringify({
         email: email,
