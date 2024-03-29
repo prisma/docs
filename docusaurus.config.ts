@@ -87,7 +87,14 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          customCss: ['./src/css/custom.css', './src/css/admonition.css', './src/css/docsearch.css', './src/css/all.css', './src/css/theming.css'],
+          customCss: [
+            './src/css/custom.css',
+            './src/css/admonition.css',
+            './src/css/docsearch.css',
+            './src/css/all.css',
+            './src/css/theming.css',
+            './src/css/prism.css'
+          ],
         },
       } satisfies Preset.Options
     ],
