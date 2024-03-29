@@ -11,7 +11,7 @@ const config: Config = {
   url: 'https://prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/docs',
 
   trailingSlash: false,
   onBrokenLinks: 'warn',
@@ -80,14 +80,20 @@ const config: Config = {
         docs: {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/prisma/docs',
         },
         blog: false,
         theme: {
-          customCss: ['./src/css/custom.css', './src/css/admonition.css', './src/css/docsearch.css', './src/css/all.css', './src/css/theming.css'],
+          customCss: [
+            './src/css/custom.css',
+            './src/css/admonition.css',
+            './src/css/docsearch.css',
+            './src/css/all.css',
+            './src/css/theming.css',
+            './src/css/prism.css'
+          ],
         },
       } satisfies Preset.Options
     ],
