@@ -1,18 +1,8 @@
 import * as React from 'react'
 import styled from 'styled-components'
-// import { Typescript } from '../icons/technologies/Typescript'
 import SelectComponent from './select'
-// import PostgreSQL from '../icons/technologies/PostgreSQL'
-// import MySQL from '../icons/technologies/MySQL'
-// import SQLite from '../icons/technologies/SQLite'
-// import MongoDB from '../icons/technologies/MongoDB'
-// import JS from '../icons/technologies/JS'
-// import SQLServer from '../icons/technologies/MSSQL'
-// import PlanetScale from '../icons/technologies/PlanetScale'
-// import CockroachDB from '../icons/technologies/CockroachDB'
 import { components } from 'react-select'
 import Link from '@docusaurus/Link'
-// import ArrowDown from '../icons/ArrowDown'
 
 interface TechSwitchProps {
   type: string
@@ -28,15 +18,15 @@ interface TechItem {
 }
 
 const icons = {
-  node: `/img/technologies/nodejs.svg`, //<JS />,
-  typescript: `/img/technologies/typescript.svg`, //<Typescript />,
-  mysql: `/img/technologies/mysql.svg`, //<MySQL />,
-  postgresql: `/img/technologies/postgresql.svg`, //<PostgreSQL />,
-  sqlite: `/img/technologies/sqlite.svg`, //<SQLite />,
-  mongodb: `/img/technologies/mongodb.svg`, //<MongoDB />,
-  sqlserver: `/img/technologies/sqlserver.svg`, //<SQLServer />,
-  planetscale: `/img/technologies/planetscale.svg`, //<PlanetScale />,
-  cockroachdb: `/img/technologies/cockroachdb.svg`, //<CockroachDB />,
+  node: `/docs/img/technologies/nodejs.svg`, //<JS />,
+  typescript: `/docs/img/technologies/typescript.svg`, //<Typescript />,
+  mysql: `/docs/img/technologies/mysql.svg`, //<MySQL />,
+  postgresql: `/docs/img/technologies/postgresql.svg`, //<PostgreSQL />,
+  sqlite: `/docs/img/technologies/sqlite.svg`, //<SQLite />,
+  mongodb: `/docs/img/technologies/mongodb.svg`, //<MongoDB />,
+  sqlserver: `/docs/img/technologies/sqlserver.svg`, //<SQLServer />,
+  planetscale: `/docs/img/technologies/planetscale.svg`, //<PlanetScale />,
+  cockroachdb: `/docs/img/technologies/cockroachdb.svg`, //<CockroachDB />,
 }
 
 const technologyTypes = {
