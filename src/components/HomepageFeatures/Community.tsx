@@ -127,45 +127,45 @@ const CommunityLinksRow = styled.div`
   }
   i {
     margin-top: 4px;
-  } 
+  }
 `
 
 export default function ORMCards(): JSX.Element {
-    return (
-        <CommunitySection>
-            <div>
-                <div className="section-hero">
-                    <H3>Join our Community</H3>
-                    <p>
-                    We have multiple channels where you can get help from members of our community as well
-                    as the Prisma team.
-                    </p>
+  return (
+    <CommunitySection>
+      <div>
+        <div className="section-hero">
+          <H3>Join our Community</H3>
+          <p>
+            We have multiple channels where you can get help from members of our community as well
+            as the Prisma team.
+          </p>
+        </div>
+        <CommunityLinksRow>
+          {CommunityLinksData.map((comm: any) => (
+            <ShadowCard key={comm.id}>
+              <a
+                className="community-link-wrapper content"
+                href={comm.link}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <Icon icon={comm.icon} color={theme.colors.indigo[600]} size="22px" />
+                <div>
+                  <div>
+                    <h4>{comm.title}</h4>
+                    <Body>{comm.description}</Body>
+                  </div>
+                  <div className="link">
+                    <span>{comm.linkText}</span>
+                    <span> &#8599;</span>
+                  </div>
                 </div>
-                <CommunityLinksRow>
-                    {CommunityLinksData.map((comm: any) => (
-                    <ShadowCard key={comm.id}>
-                        <a
-                        className="community-link-wrapper content"
-                        href={comm.link}
-                        rel="noreferrer"
-                        target="_blank"
-                        >
-                        <Icon icon={comm.icon} color={theme.colors.indigo[600]} size="22px" />
-                        <div>
-                            <div>
-                            <h4>{comm.title}</h4>
-                            <Body>{comm.description}</Body>
-                            </div>
-                            <div className="link">
-                            <span>{comm.linkText}</span>
-                            <span> &#8599;</span>
-                            </div>
-                        </div>
-                        </a>
-                    </ShadowCard>
-                    ))}
-                </CommunityLinksRow>
-            </div>
-        </CommunitySection>
-    )
+              </a>
+            </ShadowCard>
+          ))}
+        </CommunityLinksRow>
+      </div>
+    </CommunitySection>
+  )
 }

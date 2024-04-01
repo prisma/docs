@@ -1,106 +1,183 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import Link from '@docusaurus/Link';
+
 import Layout from '@theme/Layout';
+import Heading from '@theme/Heading';
 
-import styled from 'styled-components';
-import ProductCards from '../components/HomepageFeatures/ProductCards';
-import PrismaORM from '../components/HomepageFeatures/PrismaORM';
-import ORMCards from '../components/HomepageFeatures/ORMCards';
-import Databases from '../components/HomepageFeatures/Databases';
-import Community from '../components/HomepageFeatures/Community';
+import { Icon } from '@site/src/components/Icon';
+import {
+  CommunityLinksData,
+  DatabaseData,
+  ORMGeneralLinkData,
+  ORMCardLinkData,
+  ProductLinkData
+} from '@site/src/data/indexData';
 
-export const IconWrapper = styled.div`
-width: 64px;
-height: 64px;
-flex-shrink: 0;
-border-radius: 8px;
-display: inline-flex;
-align-items: center;
-justify-content: center;
-color: var(--icon-svg-color);
-`
+import styles from './index.module.css';
 
-export const H4 = styled.h4`
-  font-family: 'Barlow';
-  margin: 0;
-  font-size: 24px;
-  font-style: normal;
-  font-weight: 700;
-  line-height: 110%; /* 26.4px */
-  letter-spacing: -0.48px;
-`
 
-export const H3 = styled.h3`
-font-family: 'Barlow', sans-serif;
-font-weight: bold;
-font-size: 28px;
-letter-spacing: -0.02em;
-line-height: 110%;
-@media (min-width: 940px) {
-  font-size: 36px;
+function HomepageCard({
+  className, heading, body, links
+}: {
+  className: string, heading: JSX.Element, body: JSX.Element, links: JSX.Element[]
+}): JSX.Element {
+  return (
+    <div className={className}>
+      {heading}
+      {body}
+      <div className={styles.linkGrid}>
+        {links}
+      </div>
+    </div>
+  )
 }
-`
 
-export const Body = styled.div`
-font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-  'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-  'Segoe UI Symbol', 'Noto Color Emoji';
-font-weight: normal;
-font-size: 18px;
-letter-spacing: 0em;
-line-height: 140%;
-`
+function HomepageProductCards() {
+  return (
+    <div className={styles.homepageTopSection}>
+      <div className={styles.productCardsWrapper}>
+        {Object.keys(ProductLinkData).map((e: keyof typeof ProductLinkData) => {
+          const cardHeader = <Heading as="h3" className={styles.h3}>
+            <div className={styles.icon}>
+              <Icon
+                icon={`fa-solid fa-${ProductLinkData[e].icon}`}
+                size="22px"
+                color="white"
+              />
+            </div>
+            {ProductLinkData[e].title}
+          </Heading>
+          const cardBody = <div className={styles.body}>{ProductLinkData[e].description}</div>
+          const cardLinks = ProductLinkData[e].links.map((link) => (
+            <Link to={link.url}>
+              {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}
+            </Link>
+          ))
+          return <HomepageCard
+            className={e === 'porm' ? styles.productCardIndigo : styles.productCardTeal}
+            heading={cardHeader}
+            body={cardBody}
+            links={cardLinks}
+          />
+        })}
+      </div>
+    </div >
+  )
+}
 
-const TopSection = styled.div`
-  padding: 64px 12px;
-  background: #f7fafc;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 40px;
-  background: var(--homepage-header-bg);
-`
+function HomepageORMLinksSection() {
+  return (
+    <div className={styles.ormLinkSectionWrapper}>
+      <Heading as='h4' className={styles.h4}>Prisma ORM</Heading>
+      <div>
+        {ORMGeneralLinkData.map((link, index) => (
+          <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
+            <div className={styles.icon}>
+              <Icon icon={link.icon} color="inherit" size="22px" className="light" />
+            </div>
+            <div>
+              <h5>{link.title} <span>&#8594;</span></h5>
+              <p>{link.description}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-export const LinkGrid = styled.div`
-  display: flex;
-  max-width: 338px;
-  gap: 16px;
-  width: 100%;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  a,
-  button {
-    min-width: calc(50% - 8px);
-    white-space: nowrap;
-    font-family: 'Inter';
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 600;
-    line-height: 100%; /* 16px */
-    letter-spacing: -0.32px;
-    text-decoration: none;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-  svg {
-    display: none;
-  }
-`
+function HomepageORMCards() {
+  return (
+    <div className={styles.ormCardsSection}>
+      <div className={styles.ormCardsWrapper}>
+        {Object.keys(ORMCardLinkData).map((e) => {
+          const cardHeader = <Heading as='h4' className={styles.h4}>{e[0].toUpperCase() + e.substring(1).toLowerCase()}</Heading>;
+          const cardBody = <p>Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.</p>
+          const links = ORMCardLinkData[e].map((card) => (<Link to={card.url}>{card.title} &#8594;</Link>))
+          return <HomepageCard
+            className={styles.productCardIndigo}
+            heading={cardHeader}
+            body={cardBody}
+            links={links}
+          />
+        })}
+      </div>
+    </div>
+  )
+}
 
+function HomepageDatabasesSection() {
+  return (
+    <div className={styles.databasesSection}>
+      <Heading as='h4' className={styles.h4}>Databases</Heading>
+      <div className={styles.body}>
+        Prisma ORM works seamlessly across most popular databases and service providers. <br />
+        Refer to our Database features matrix for information about supported features and types for each database.
+      </div>
+      <div className={styles.databaseGrid}>
+        {DatabaseData.map((e) => (
+          <Link to={e.url}>
+            <div className={styles.databaseEntry}>
+              <img src={`/img/technologies/${e.icon}.svg`} style={{
+                height: `100%`,
+                width: e.icon === "sqlite" ? `55px` : `auto`,
+                marginRight: e.icon === "sqlite" ? `-30px` : 0,
+              }} />
+              <span>{e.title}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function HomepageCommunitySection() {
+  return (
+    <div className={styles.communityLinksSection}>
+      <div>
+        <div className={styles.sectionHero}>
+          <Heading as='h3' className={styles.h3}>Join our Community</Heading>
+          <p>We have multiple channels where you can get help from members of our community as well as the Prisma team.</p>
+        </div>
+        <div className={styles.communityLinksRow}>
+          {CommunityLinksData.map((communityInfo) => (
+            <div key={communityInfo.id} className={styles.communityLinkCard}>
+              <Link to={communityInfo.link} rel='noreferrer' target='_blank' className={`${styles.communityLinkWrapper} ${styles.content}`}>
+                <Icon icon={communityInfo.icon} color='VAR HERE' size='22px' />
+                <div>
+                  <div>
+                    <h4>{communityInfo.title}</h4>
+                    <div className={styles.body}>{communityInfo.description}</div>
+                  </div>
+                  <div className={styles.link}>
+                    <span>{communityInfo.linkText}</span>
+                    <span> &#8599;</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Home(): JSX.Element {
-  const {siteConfig} = useDocusaurusContext();
+  const {
+    siteConfig: { title },
+  } = useDocusaurusContext();
   return (
     <Layout
-      title={siteConfig.title}
-      description="Description will go into a meta tag in <head />">
+      title={title}
+      description="Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.">
       <main>
-        <TopSection>
-          <ProductCards />
-        </TopSection>
-        <PrismaORM />
-        <ORMCards />
-        <Databases />
-        <Community />
+        <HomepageProductCards />
+        <HomepageORMLinksSection />
+        <HomepageORMCards />
+        <HomepageDatabasesSection />
+        <HomepageCommunitySection />
       </main>
     </Layout>
   );

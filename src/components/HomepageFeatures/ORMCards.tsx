@@ -123,39 +123,23 @@ const ORMProductCard = styled(ProductCard)`
   }
 `
 export default function ORMCards(): JSX.Element {
-    return (
-        <ORMCardsSection>
-            <ORMCardsWrapper>
-                <ORMProductCard color="indigo" style={{ padding: '40px' }}>
-                    <H4>Components</H4>
-                    <p>
-                    Open source Node.js and TypeScript ORM with an intuitive data model, automated
-                    migrations, type-safety, and auto-completion.
-                    </p>
-                    <div>
-                    <LinkGrid>
-                        {CardLinks.components.map((card: any) => (
-                        <Link to={card.url}>{card.title} &#8594;</Link>
-                        ))}
-                    </LinkGrid>
-                    </div>
-                </ORMProductCard>
-
-                <ORMProductCard color="indigo" style={{ padding: '40px' }}>
-                    <H4>Reference</H4>
-                    <p>
-                    Open source Node.js and TypeScript ORM with an intuitive data model, automated
-                    migrations, type-safety, and auto-completion.
-                    </p>
-                    <div>
-                    <LinkGrid>
-                        {CardLinks.reference.map((card: any) => (
-                        <Link to={card.url}>{card.title} &#8594;</Link>
-                        ))}
-                    </LinkGrid>
-                    </div>
-                </ORMProductCard>
-            </ORMCardsWrapper>
-        </ORMCardsSection>
-    )
+  return (
+    <ORMCardsSection>
+      <ORMCardsWrapper>
+        {Object.keys(CardLinks).map((e) => (
+          <ORMProductCard color="indigo" style={{ padding: '40px' }}>
+            <H4>{e[0].toUpperCase() + e.substring(1).toLowerCase()}</H4>
+            <p>Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.</p>
+            <div>
+              <LinkGrid>
+                {CardLinks[e].map((card) => (
+                  <Link to={card.url}>{card.title} &#8594;</Link>
+                ))}
+              </LinkGrid>
+            </div>
+          </ORMProductCard>
+        ))}
+      </ORMCardsWrapper>
+    </ORMCardsSection>
+  )
 }

@@ -8,8 +8,8 @@ import Admonition from '@theme/Admonition';
 import TabbedContent from '@theme/Tabs'; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from '@theme/TabItem';
 import Link from '@docusaurus/Link';
-import CollapseBox from '../components/collapsible';
-import TopSection from '../components/topSection';
+import CollapseBox from '@site/src/components/collapsible';
+import TopSection from '@site/src/components/topSection';
 import { useLocation } from '@docusaurus/router';
 
 // TODO: do we want to fix this?
@@ -28,7 +28,7 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, d
       </section>
       {children}
     </>
-    )
+  )
 }
 
 // TODO: we should fix this
