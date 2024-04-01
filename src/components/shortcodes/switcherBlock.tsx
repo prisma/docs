@@ -1,15 +1,6 @@
 import * as React from 'react'
-import styled from 'styled-components'
 import TechnologySwitch from './techSwitcher'
-import { Redirect } from '@docusaurus/router'
-
-const SwitcherWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  @media only screen and (max-width: 767px) {
-    width: 100%;
-  }
-`
+import styles from "./styles.module.scss"
 
 const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
   const currentPath = location?.pathname.replace(/\/$/, '')
@@ -70,7 +61,7 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
     }
   }, [langSelected, dbSelected])
   return (
-    <SwitcherWrapper>
+    <div className={styles.switcherWrapper}>
       {langSwitcher && (
         <TechnologySwitch
           type="lang"
@@ -108,7 +99,7 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
           defaultTech={dbSelected}
         />
       }
-    </SwitcherWrapper>
+    </div>
   )
 }
 

@@ -1,31 +1,7 @@
-import * as theme from '../css/primitives'
 import * as React from 'react'
-import styled from 'styled-components'
+import styles from '../css/topSection.module.scss'
 
 import SwitcherBlock from './shortcodes/switcherBlock'
-
-const TopSectionWrapper = styled.div`
-  position: relative;
-
-  .tech-switch-block {
-    position: relative;
-  }
-
-  @media (min-width: 0px) and (max-width: ${theme.breakpoints.mobile}) {
-    .tech-switch-block {
-      width: 100%;
-    }
-  }
-`
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  @media (min-width: 0px) and (max-width: ${theme.breakpoints.mobile}) {
-    flex-direction: column;
-    align-items: baseline;
-  }
-`
 
 
 const TopSection = ({
@@ -35,9 +11,9 @@ const TopSection = ({
   dbSwitcher,
 }: any) => {
   return (
-    <TopSectionWrapper>
-      <Header>
-        <div className="tech-switch-block">
+    <div className={styles.topSectionWrapper}>
+      <div className={styles.header}>
+        <div className={styles["tech-switch-block"]}>
           {(langSwitcher || dbSwitcher) && (
             <SwitcherBlock
               langSwitcher={langSwitcher}
@@ -47,8 +23,8 @@ const TopSection = ({
             />
           )}
         </div>
-      </Header>
-    </TopSectionWrapper>
+      </div>
+    </div>
   )
 }
 
