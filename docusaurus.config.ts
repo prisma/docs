@@ -55,6 +55,7 @@ const config: Config = {
       'data-domain-script': '22c2e2c0-3df0-4958-8672-1194370ee230',
     },
   ],
+  plugins: ['docusaurus-plugin-sass'],
   presets: [
     [
       'classic',
