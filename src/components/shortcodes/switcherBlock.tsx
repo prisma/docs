@@ -90,19 +90,10 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
           defaultTech={dbSelected}
         />
       )}
-      {langSelected === "typescript" && langSwitcher && dbSwitcher &&
+      {langSelected === "typescript" && dbSwitcher &&
         <TechnologySwitch
           type="db"
           url={`${slug}typescript-`}
-          onChangeTech={dbChanged}
-          technologies={dbSwitcher}
-          defaultTech={dbSelected}
-        />
-      }
-      {!langSwitcher && dbSwitcher &&
-        <TechnologySwitch
-          type="db"
-          url={slug}
           onChangeTech={dbChanged}
           technologies={dbSwitcher}
           defaultTech={dbSelected}
