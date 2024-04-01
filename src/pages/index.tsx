@@ -13,7 +13,7 @@ import {
   ProductLinkData
 } from '@site/src/data/indexData';
 
-import styles from './index.module.css';
+import styles from './index.module.scss';
 
 
 function HomepageCard({
