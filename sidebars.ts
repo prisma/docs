@@ -31,7 +31,6 @@ const platformCategory: SidebarItemConfig = {
  */
 const sidebars: SidebarsConfig = {
   // By default, Docusaurus generates a sidebar from the docs folder structure
-  index: ['index'],
   gettingStarted: [
     {
       type: 'category',

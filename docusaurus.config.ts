@@ -112,8 +112,7 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'index',
+          to: '/',
           position: 'left',
           label: '/docs',
           className: 'logo-link',
