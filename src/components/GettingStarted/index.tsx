@@ -52,6 +52,9 @@ export const BorderBoxWrapper = styled.div<{ border: boolean }>`
   padding: 24px 24px 32px 24px;
   border-radius: 8px;
   background: var(--main-bgd-color);
+  a {
+    text-decoration: underline;
+  }
   > * {
     font-family: Inter;
     text-align: left;
