@@ -1,8 +1,8 @@
 import * as React from 'react'
-import styled from 'styled-components'
 import SelectComponent from './select'
 import { components } from 'react-select'
 import Link from '@docusaurus/Link'
+import styles from "./styles.module.scss"
 
 interface TechSwitchProps {
   type: string
@@ -63,12 +63,12 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
   const renderItem = (item: TechItem) => {
     const href = type === "lang" ? `${url}${item.technology}-${dbSelected}` : `${url}${item.technology}`
     return (
-      <SelectItem>
+      <div className={styles.selectItem}>
         <Link href={href}>
           <img src={icons[item.technology]} />
           <span>{technologyNames[item.technology]}</span>
         </Link>
-      </SelectItem>
+      </div>
     )
   }
 
@@ -111,7 +111,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
   }
 
   return (
-    <Container>
+    <div className={styles.container}>
       <SelectComponent
         items={items}
         DropdownIndicator={DropdownIndicator}
@@ -122,35 +122,9 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
         onChange={handleChange}
         width={168}
       />
-    </Container>
+    </div>
   )
 }
 
-const Container = styled.div`
-  margin: 16px 0 0 0;
-  width: 198px;
-  text-overflow: ellipsis;
-
-  @media only screen and (max-width: 767px) {
-    margin: 8px 0 0;
-    width: 100%;
-  }
-  .tech-select__input {
-    user-select: none !important;
-    caret-color: transparent;
-  }
-`
-
-const SelectItem = styled.div`
-  a {
-    display: flex;
-    align-items: center;
-  
-    img {
-      margin-right: 10px;
-      margin-bottom: 0;
-    }
-  }
-`
 
 export default TechnologySwitch

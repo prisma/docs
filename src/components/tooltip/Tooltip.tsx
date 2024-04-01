@@ -4,7 +4,7 @@ import { mergeProps } from '@react-aria/utils'
 import { useTooltipTriggerState } from '@react-stately/tooltip'
 import React, { ReactPortal, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowWrapper, TooltipWrapper } from './TooltipStyles'
+import styles from './styles.module.scss'
 
 const ARROW_SIZE = 5 // in px
 const SPACING = 8
@@ -106,10 +106,10 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
   }, [])
   return typeof window === 'object'
     ? createPortal(
-        <TooltipWrapper
+        <div
+          className={`${styles[placement]}`}
           ref={ref}
           lens-role="tooltip"
-          placement={placement as Position}
           {...mergeProps(overlayProps, tooltipProps)}
           style={{
             ...overlayProps.style,
@@ -127,7 +127,7 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
         >
           <Arrow arrowProps={arrowProps} position={placement as Position} />
           <div
-            className="children-wrapper"
+            className={styles.childrenWrapper}
             style={{
               marginTop: placement === 'bottom' ? ARROW_SIZE * 2 : undefined,
               marginLeft: placement === 'right' ? ARROW_SIZE * 2 : undefined,
@@ -135,7 +135,7 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
           >
             {children}
           </div>
-        </TooltipWrapper>,
+        </div>,
         document.body
       )
     : null
@@ -149,7 +149,8 @@ type ArrowProps = {
 
 function Arrow({ arrowProps, position }: ArrowProps) {
   return (
-    <ArrowWrapper
+    <div
+      className={styles.arrowWrapper}
       lens-role="tooltip-arrow"
       {...arrowProps}
       style={{
@@ -160,6 +161,6 @@ function Arrow({ arrowProps, position }: ArrowProps) {
         borderTopColor: position === 'top' ? undefined : 'transparent',
         borderBottomColor: position === 'bottom' ? undefined : 'transparent',
       }}
-    ></ArrowWrapper>
+    ></div>
   )
 }
