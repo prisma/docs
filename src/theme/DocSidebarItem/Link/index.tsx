@@ -24,11 +24,19 @@ export default function DocSidebarItemLink({
   const [badgeContent, setBadgeContent] = useState<string | undefined>(undefined)
 
   const checkPath = () => {
-    const splitLocation = location.pathname.split("typescript-")[0].split("node-")[0]
-    const splitItem = href.split("typescript-")[0].split("node-")[0]
-    
-    if (splitItem === splitLocation) return true
-    return false
+    if (location.pathname.includes("-typescript-") || location.pathname.includes("-node-")) {
+      const splitLocation = location.pathname.split("typescript-")[0].split("node-")[0]
+      const splitItem = href.split("typescript-")[0].split("node-")[0]
+      
+      if (splitItem === splitLocation) return true
+      else return false
+    } else {
+      const splitLocation = location.pathname.split("-mysql")[0].split("-postgresql")[0]
+      const splitItem = href.split("-mysql")[0].split("-postgresql")[0]
+
+      if (splitItem === splitLocation) return true
+      else return false
+    }
   }
 
   useEffect(() => {

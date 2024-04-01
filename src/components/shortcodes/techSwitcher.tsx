@@ -68,8 +68,6 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
   const langDefault = { technology: defaultTech || 'typescript' }
   const dbDefault = { technology: defaultTech || 'postgresql' }
   const defaultItem = type === 'lang' ? langDefault : dbDefault
-
-  console
   const [selectedItem, setSelectedItem] = React.useState(defaultItem)
 
   const renderItem = (item: TechItem) => {
