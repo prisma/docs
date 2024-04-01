@@ -122,24 +122,24 @@ const ORMLinkWrapper = styled(Link)`
 `
 
 export default function PrismaORM(): JSX.Element {
-    return (
-      <PrismaORMSectionWrapper>
-        <H4>Prisma ORM</H4>
-        <ORMLinkContainer>
-          {GeneralLinkData.map((generalLink: any, index: number) => (
-            <ORMLinkWrapper key={index} to={generalLink.url}>
-              <IconWrapper>
-                <Icon icon={generalLink.icon} color="inherit" size="22px" className="light" />
-              </IconWrapper>
-              <div>
-                <h5>
-                  {generalLink.title} <span>&#8594;</span>
-                </h5>
-                <p>{generalLink.description}</p>
-              </div>
-            </ORMLinkWrapper>
-          ))}
-        </ORMLinkContainer>
-      </PrismaORMSectionWrapper>
-    )
+  return (
+    <PrismaORMSectionWrapper>
+      <H4>Prisma ORM</H4>
+      <ORMLinkContainer>
+        {GeneralLinkData.map((generalLink: any, index: number) => (
+          <ORMLinkWrapper key={index} to={generalLink.url}>
+            <IconWrapper>
+              <Icon icon={generalLink.icon} color="inherit" size="22px" className="light" />
+            </IconWrapper>
+            <div>
+              <h5>
+                {generalLink.title} <span>&#8594;</span>
+              </h5>
+              <p>{generalLink.description}</p>
+            </div>
+          </ORMLinkWrapper>
+        ))}
+      </ORMLinkContainer>
+    </PrismaORMSectionWrapper>
+  )
 }

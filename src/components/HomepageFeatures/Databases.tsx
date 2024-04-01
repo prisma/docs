@@ -152,28 +152,30 @@ const DatabaseGrid = styled.div`
   }
 `
 export default function ORMCards(): JSX.Element {
-    return (
-        <DatabasesSection>
-            <H4>Databases</H4>
-            <Body>
-            Prisma ORM works seamlessly across most popular databases and service providers. <br /> Refer
-            to our Database features matrix for information about supported features and types for
-            each database.
-            </Body>
-            <DatabaseGrid>
-                {DatabaseData.map((e: any) => (
-                    <Link to={e.url}>
-                    <div className="entry light">
-                        <img src={`/img/technologies/${e.icon}.svg`} {...{style: {
-                          height: `100%`,
-                          width: e.icon === "sqlite" ? `55px` : `auto`,
-                          marginRight: e.icon === "sqlite" ? `-30px` : 0,
-                        }}}/>
-                        <span>{e.title}</span>
-                    </div>
-                    </Link>
-                ))}
-            </DatabaseGrid>
-        </DatabasesSection>
-    )
+  return (
+    <DatabasesSection>
+      <H4>Databases</H4>
+      <Body>
+        Prisma ORM works seamlessly across most popular databases and service providers. <br /> Refer
+        to our Database features matrix for information about supported features and types for
+        each database.
+      </Body>
+      <DatabaseGrid>
+        {DatabaseData.map((e: any) => (
+          <Link to={e.url}>
+            <div className="entry light">
+              <img src={`/img/technologies/${e.icon}.svg`} {...{
+                style: {
+                  height: `100%`,
+                  width: e.icon === "sqlite" ? `55px` : `auto`,
+                  marginRight: e.icon === "sqlite" ? `-30px` : 0,
+                }
+              }} />
+              <span>{e.title}</span>
+            </div>
+          </Link>
+        ))}
+      </DatabaseGrid>
+    </DatabasesSection>
+  )
 }
