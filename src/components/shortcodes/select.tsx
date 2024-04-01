@@ -1,7 +1,5 @@
 import * as React from 'react'
 import Select, { components } from 'react-select'
-import styled from 'styled-components'
-import * as theme from '../../css/primitives'
 
 interface SelectProps {
   items: any[]
@@ -42,7 +40,7 @@ const SelectComponent = (props: SelectProps) => {
     )
   }
   return (
-    <SelectComponentWrapper>
+    <div>
       <Select
         width={width}
         options={options}
@@ -53,11 +51,8 @@ const SelectComponent = (props: SelectProps) => {
         //@ts-ignore
         components={{ DropdownIndicator, IndicatorSeperator, Option, SingleValue, SelectContainer }}
       />
-    </SelectComponentWrapper>
+    </div>
   )
 }
 
 export default SelectComponent
-
-const SelectComponentWrapper = styled.div`
-` as any

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
-import styled from 'styled-components'
 import { Icon } from '../Icon'
 import { Tooltip } from '../tooltip/Tooltip'
+import styles from "../../css/gettingStarted.module.scss"
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -48,173 +48,45 @@ export const SignalStream = ({ color, height, width }: any) => (
   </svg>
 )
 
-export const BorderBoxWrapper = styled.div<{ border: boolean }>`
-  padding: 24px 24px 32px 24px;
-  border-radius: 8px;
-  background: var(--main-bgd-color);
-  a {
-    text-decoration: underline;
-  }
-  > * {
-    font-family: Inter;
-    text-align: left;
-    letter-spacing: 0em;
-    line-height: 20px;
-    font-size: 14px;
-    :first-child {
-      margin-top: 0;
-    }
-    :last-child {
-      margin-bottom: 0;
-    }
-  }
-`
+export const BorderBoxWrapper = ({children, ...props}) => <div {...props} className={styles.borderBox}>{children}</div>
 
-export const BoxTitle = styled.h1<{}>`
-  font-family: Barlow, system-ui, Arial, sans-serif;
-  font-style: normal;
-  font-weight: bold;
-  font-size: 2.5rem !important;
-  line-height: 48px;
-  letter-spacing: -0.8px;
-`
+export const BoxTitle = ({children, ...props}) => <h1 {...props} className={styles.boxTitle}>{children}</h1>
 
 export const BorderBox = ({ border, ...props }: any) => (
   <BorderBoxWrapper {...props}>{props.children}</BorderBoxWrapper>
 )
 
-const LinkCardWrapper = styled.a`
-  border: 1px solid var(--border-color);
-  padding: 20px 24px;
-  border-radius: 8px;
-  color: var(--main-font-color);
-  transition: all 300ms ease-out;
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  &:hover {
-    background: var(--main-bgd-color);
-    border-color: #5a67d8;
-    color: var(--main-font-color) !important;
-  }
-  .title {
-    display: inline-block;
-    h6 {
-      font-size: 18px;
-      display: inline-block;
-      margin: 0;
-      font-family: Barlow;
-      font-weight: 600;
-      line-height: 24px;
-      letter-spacing: 0px;
-      text-align: left;
-    }
-  }
-  p {
-    font-family: Inter;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 20px;
-    letter-spacing: 0em;
-    margin-bottom: 0;
-    text-align: left;
-  }
-`
-
-export const Grid = styled.div`
-  gap: 16px;
-  display: grid;
-  margin-top: 24px;
-  grid-template-columns: none;
-  @media (min-width: 600px) {
-    grid-template-columns: 1fr 1fr;
-  }
-  a {
-
-    border-color: var(--ifm-btn-border-color);
-    background: transparent;
-    color: var(--main-font-color);
-    &:hover {
-      border-color: var(--ifm-btn-border-color-active);
-      background: transparent;
-    }
-  }
-`
+export const Grid = ({children, ...props}) => <div {...props} className={styles.grid}>{children}</div>
 
 export const LinkCard = ({ icon, title, desc, link }: any) => {
   const linkCardRef = useRef(null)
   return (
-    <LinkCardWrapper href={link} ref={linkCardRef}>
-      <div className="title">
+    <a href={link} ref={linkCardRef} className={styles.linkCardWrapper}>
+      <div className={styles.title}>
         <Icon icon={icon} btn="left" size="18px" />
         <h6>{title}</h6>
       </div>
       <p>{desc}</p>
-    </LinkCardWrapper>
+    </a>
   )
 }
 
-export const Tab = styled.div`
-  padding: 15px;
-  background-color: var(--main-bgd-color);
-  border: 1px solid var(--indigo-600);
-  border-radius: 0px 8px 8px 8px;
-  font-family: Inter;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 0em;
-  text-align: left;
-  p {
-    margin-top: 0;
-  }
-`
-
-const SquareWrapper = styled.a`
-  width: 90px;
-  height: 90px;
-  text-decoration: none;
-  padding: 22px;
-  display: inline-block;
-  border: 1px solid var(--border-color);
-  background: var(--header-bg-color);
-  border-radius: 8px;
-  transition: all 300ms ease-out;
-  cursor: pointer;
-
-  border-color: var(--ifm-btn-border-color);
-  background: transparent;
-  color: var(--main-font-color);
-  &:hover {
-    border-color: var(--ifm-btn-border-color-active);
-    background: transparent;
-  }
-  &:active,
-  &:focus {
-    background: var(--code-inline-bgd-color);
-    border-color: var(--indigo-700);
-  }
-  img {
-    width: 100%;
-    height: 100%;
-    margin-bottom: 0;
-    object-fit: contain;
-  }
-`
+export const Tab = ({children, ...props}) => <div {...props} className={styles.tab}>{children}</div>
 
 export const SquareLogo = ({ image, tech, url }: any) => {
   const squareCardRef = useRef(null)
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false)
   return (
     <>
-      <SquareWrapper
+      <a
+        className={styles.squareWrapper}
         href={url}
         ref={squareCardRef}
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
         <img src={image} />
-      </SquareWrapper>
+      </a>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
           {tech}
@@ -224,22 +96,4 @@ export const SquareLogo = ({ image, tech, url }: any) => {
   )
 }
 
-export const List = styled.div`
-  display: grid;
-  gap: 16px;
-  margin-top: 16px;
-  justify-content: space-between;
-  grid-template-columns: repeat(3, auto);
-  @media (min-width: 1240px) {
-    grid-template-columns: repeat(6, auto);
-  }
-  @media (min-width: 1025px) and (max-width: 1240px) {
-    grid-template-columns: repeat(3, auto);
-  }
-  @media (min-width: 768px) and (max-width: 1025px) {
-    grid-template-columns: repeat(6, auto);
-  }
-  @media (min-width: 480px) and (max-width: 768px) {
-    grid-template-columns: repeat(4, auto);
-  }
-`
+export const List = ({children, ...props}) => <div {...props} className={styles.list}>{children}</div>
