@@ -5,6 +5,7 @@ import {isActiveSidebarItem} from '@docusaurus/theme-common/internal';
 import Link from '@docusaurus/Link';
 import isInternalUrl from '@docusaurus/isInternalUrl';
 import styles from './styles.module.css';
+import {useLocation} from '@docusaurus/router';
 import { Icon } from '@site/src/components/Icon';
 export default function DocSidebarItemLink({
   item,
@@ -16,13 +17,38 @@ export default function DocSidebarItemLink({
 }) {
   const {href, label, className, autoAddBaseUrl} = item;
   const isActive = isActiveSidebarItem(item, activePath);
+  const [techSwitch, setTechSwitch] = useState<boolean>(false)
   const isInternalLink = isInternalUrl(href);
+  const location = useLocation();
+
   const [badgeContent, setBadgeContent] = useState<string | undefined>(undefined)
+
+  const checkPath = () => {
+    if (location.pathname.includes("-typescript-") || location.pathname.includes("-node-")) {
+      const splitLocation = location.pathname.split("typescript-")[0].split("node-")[0]
+      const splitItem = href.split("typescript-")[0].split("node-")[0]
+      
+      if (splitItem === splitLocation) return true
+      else return false
+    } else {
+      const splitLocation = location.pathname.split("-mysql")[0].split("-postgresql")[0]
+      const splitItem = href.split("-mysql")[0].split("-postgresql")[0]
+
+      if (splitItem === splitLocation) return true
+      else return false
+    }
+  }
+
   useEffect(() => {
     if (item && item.customProps && item.customProps.badge) {
       setBadgeContent(item.customProps.badge)
     }
+    setTechSwitch(checkPath())
   }, [item])
+  
+  useEffect(() => {
+    setTechSwitch(checkPath())
+  }, [location])
   return (
     <li
       className={clsx(
@@ -39,7 +65,7 @@ export default function DocSidebarItemLink({
           {
             'menu__link--active': isActive,
           },
-        )} ${isActive ? styles.active : ``}`}
+        )} ${isActive || techSwitch ? styles.active : ``}`}
         autoAddBaseUrl={autoAddBaseUrl}
         aria-current={isActive ? 'page' : undefined}
         to={href}
