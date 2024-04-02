@@ -96,7 +96,17 @@ export default {
   TabbedContent,
   details: (props: any) => <CollapseBox {...props} />,
   TabItem,
-  Link,
+  a: (props: any) => {
+    if (props?.href?.includes("prisma.io/") || props?.href?.charAt(0) === "/")
+      return <Link {...props}>{props.children}</Link>
+    else
+      return <a {...props} target='_blank' rel='openeer noreferrer'>
+        {props.children}
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" style={{paddingLeft: `3px`}}>
+          <path fill="currentColor" d="M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1"/>
+        </svg>
+      </a>
+  },
   TopBlock,
   CodeWithResult,
   SwitchTech,
