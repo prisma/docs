@@ -56,7 +56,7 @@ export default function DocBreadcrumbs() {
     return true
   }
   return (
-    <nav
+    repeatedBreadcrumbs() && breadcrumbs.length > 1 && <nav
       className={clsx(
         ThemeClassNames.docs.docBreadcrumbs,
         styles.breadcrumbsContainer,
@@ -66,7 +66,7 @@ export default function DocBreadcrumbs() {
         message: 'Breadcrumbs',
         description: 'The ARIA label for the breadcrumbs',
       })}>
-      {repeatedBreadcrumbs() && breadcrumbs.length > 1 && <ul
+      <ul
         className="breadcrumbs"
         itemScope
         itemType="https://schema.org/BreadcrumbList">
@@ -89,7 +89,7 @@ export default function DocBreadcrumbs() {
             </BreadcrumbsItem>
           );
         })}
-      </ul>}
+      </ul>
     </nav>
   );
 }
