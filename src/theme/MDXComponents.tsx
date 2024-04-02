@@ -92,7 +92,7 @@ const StyledLink: React.FC<React.PropsWithChildren> = ({ children, ...props }) =
   //@ts-ignore
   const url = props && props?.href
   if (url?.includes("prisma.io/") || url?.charAt(0) === "/")
-    return <Link {...props} />
+    return <Link {...props}>{children}</Link>
   else
     return <a {...props} target='_blank' rel='openeer noreferrer'>
       {children}
