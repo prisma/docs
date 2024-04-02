@@ -14,6 +14,7 @@ import {
 } from '@site/src/data/indexData';
 
 import styles from './index.module.scss';
+import { useRef } from 'react';
 
 
 function HomepageCard({
@@ -116,7 +117,9 @@ function HomepageDatabasesSection() {
       </div>
       <div className={styles.databaseGrid}>
         {DatabaseData.map((e) => (
-          <Link to={e.url}>
+          // <Link to={e.url}>
+          // </Link>
+          <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
               <img src={`/img/technologies/${e.icon}.svg`} style={{
                 height: `100%`,
