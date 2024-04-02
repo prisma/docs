@@ -32,6 +32,7 @@ import {
   Tab,
 } from './gettingstarted'
 import PostgresSQLSimple from '../../icons/technologies/PostgresSQLSimple'
+import MariaDBDark from '../../icons/technologies/MariaDBDark'
 import MySQLSimple from '../../icons/technologies/MySQLSimple'
 import SQLServer from '../../icons/technologies/SQLServer'
 import PlanetScale from '../../icons/technologies/PlanetScale'
@@ -93,6 +94,7 @@ const shortcodes = {
   Tab,
   SquareLogo,
   PostgresSQLSimple,
+  MariaDBDark,
   MySQLSimple,
   SQLServer,
   PlanetScale,

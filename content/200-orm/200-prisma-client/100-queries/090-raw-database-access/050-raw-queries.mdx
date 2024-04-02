@@ -23,10 +23,14 @@ Raw queries are available for all relational databases Prisma ORM supports. In a
 
 For relational databases, Prisma Client exposes four methods that allow you to send raw queries. You can use:
 
-- `$queryRaw` to return actual records (for example, using `SELECT`)
-- `$executeRaw` to return a count of affected rows (for example, after an `UPDATE` or `DELETE`)
-- `$queryRawUnsafe` to return actual records (for example, using `SELECT`) using a raw string. **Potential SQL injection risk**
-- `$executeRawUnsafe` to return a count of affected rows (for example, after an `UPDATE` or `DELETE`) using a raw string. **Potential SQL injection risk**
+- `$queryRaw` to return actual records (for example, using `SELECT`).
+- `$executeRaw` to return a count of affected rows (for example, after an `UPDATE` or `DELETE`).
+- `$queryRawUnsafe` to return actual records (for example, using `SELECT`) using a raw string.
+- `$executeRawUnsafe` to return a count of affected rows (for example, after an `UPDATE` or `DELETE`) using a raw string.
+
+The methods with "Unsafe" in the name are a lot more flexible but are at **significant risk of making your code vulnerable to SQL injection**.
+ 
+The other two methods are safe to use with a simple template tag, no string building, and no concatenation. **However**, caution is required for more complex use cases as it is still possible to introduce SQL injection if these methods are used in certain ways. For more details, see the [SQL injection prevention](#sql-injection-prevention) section below.
 
 > **Note**: All methods in the above list can only run **one** query at a time. You cannot append a second query - for example, calling any of them with `select 1; select 2;` will not work.
 
@@ -53,6 +57,12 @@ const result = await prisma.$queryRaw(
   Prisma.sql`SELECT * FROM User WHERE email = ${email}`
 )
 ```
+
+<Admonition type="warning">
+
+If you use string building to incorporate untrusted input into queries passed to this method, then you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data to modification or deletion. The prefered mechanism would be to include the text of the query at the point that you run this method. For more information on this risk and also examples of how to prevent it, see the [SQL injection prevention](#sql-injection-prevention) section below.
+
+</Admonition>
 
 #### Considerations
 
@@ -153,7 +163,7 @@ result.forEach((x) => {
 })
 ```
 
-> **Note**: The Prisma Client query engine standardizes the return type for all databases. **Using the raw queries does not**. If the database provider is MySQL, the values are `1` or `0`. However, if the database provider is PostgreSQL, the values are `true`, `false`, or `NULL`.
+For regular CRUD queries, the Prisma Client query engine standardizes the return type for all databases. **Using the raw queries does not**. If the database provider is MySQL, the returned values are `1` or `0`. However, if the database provider is PostgreSQL, the values are `true` or `false`.
 
 > **Note**: Prisma sends JavaScript integers to PostgreSQL as `INT8`. This might conflict with your user-defined functions that accept only `INT4` as input. If you use `$queryRaw` in conjunction with a PostgreSQL database, update the input types to `INT8`, or cast your query parameters to `INT4`.
 
@@ -176,7 +186,7 @@ The `$queryRawUnsafe` method allows you to pass a raw string (or template string
 
 If you use this method with user inputs (in other words, `SELECT * FROM table WHERE columnx = ${userInput}`), then you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data to modification or deletion.<br /><br />
 
-We strongly advise that you use the `$queryRaw` query instead. For more information on SQL injection attacks, see the [OWASP SQL Injection guide](https://www.owasp.org/index.php/SQL_Injection).
+Wherever possible you should use the `$queryRaw` method instead. When used correctly `$queryRaw` method is significantly safer but note that the `$queryRaw` method can also be made vulnerable in certain circumstances. For more information, see the [SQL injection prevention](#sql-injection-prevention) section below.
 
 </Admonition>
 
@@ -200,61 +210,13 @@ prisma.$queryRawUnsafe(
 
 > **Note**: Prisma sends JavaScript integers to PostgreSQL as `INT8`. This might conflict with your user-defined functions that accept only `INT4` as input. If you use a parameterized `$queryRawUnsafe` query in conjunction with a PostgreSQL database, update the input types to `INT8`, or cast your query parameters to `INT4`.
 
+For more details on using parameterized queries, see the [parameterized queries](#parameterized-queries) section below.
+
 #### Signature
 
 ```ts no-lines
 $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): PrismaPromise<T>;
 ```
-
-#### Parameterized queries
-
-As an alternative to tagged templates, `$queryRawUnsafe` supports standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL). The following example uses a MySQL query:
-
-```ts
-const userName = 'Sarah'
-const email = 'sarah@prisma.io'
-const result = await prisma.$queryRawUnsafe(
-  'SELECT * FROM User WHERE (name = ? OR email = ?)',
-  userName,
-  email
-)
-```
-
-> **Note**: MySQL variables are represented by `?`
-
-The following example uses a PostgreSQL query:
-
-```ts
-const userName = 'Sarah'
-const email = 'sarah@prisma.io'
-const result = await prisma.$queryRawUnsafe(
-  'SELECT * FROM User WHERE (name = $1 OR email = $2)',
-  userName,
-  email
-)
-```
-
-> **Note**: PostgreSQL variables are represented by `$1` and `$2`
-
-As with tagged templates, Prisma Client escapes all variables.
-
-> **Note**: You cannot pass a table or column name as a variable into a parameterized query. For example, you cannot `SELECT ?` and pass in `*` or `id, name` based on some condition.
-
-##### Parameterized PostgreSQL `ILIKE` query
-
-When you use `ILIKE`, the `%` wildcard character(s) should be included in the variable itself, not the query (`string`):
-
-```ts
-const userName = 'Sarah'
-const emailFragment = 'prisma.io'
-const result = await prisma.$queryRawUnsafe(
-  'SELECT * FROM "User" WHERE (name = $1 OR email ILIKE $2)',
-  userName,
-  `%${emailFragment}`
-)
-```
-
-> **Note**: Using `%$2` as an argument would not work
 
 ### <inlinecode>$executeRaw</inlinecode>
 
@@ -274,6 +236,14 @@ const active = true
 const result: number =
   await prisma.$executeRaw`UPDATE User SET active = ${active} WHERE emailValidated = ${emailValidated};`
 ```
+
+<Admonition type="warning">
+
+If you use string building to incorporate untrusted input into queries passed to this method, then you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data to modification or deletion. The prefered mechanism would be to include the text of the query at the point that you run this method. For more information on this risk and also examples of how to prevent it, see the [SQL injection prevention](#sql-injection-prevention) section below.
+
+</Admonition>
+
+#### Considerations
 
 Be aware that:
 
@@ -329,7 +299,7 @@ The `$executeRawUnsafe` method allows you to pass a raw string (or template stri
 
 If you use this method with user inputs (in other words, `SELECT * FROM table WHERE columnx = ${userInput}`), then you open up the possibility for SQL injection attacks. SQL injection attacks can expose your data to modification or deletion.<br /><br />
 
-We strongly advise that you use the `$executeRaw` query instead. For more information on SQL injection attacks, see the [OWASP SQL Injection guide](https://www.owasp.org/index.php/SQL_Injection).
+Wherever possible you should use the `$executeRaw` method instead. When used correctly `$executeRaw` method is significantly safer but note that the `$executeRaw` method can also be made vulnerable in certain circumstances. For more information, see the [SQL injection prevention](#sql-injection-prevention) section below.
 
 </Admonition>
 
@@ -353,6 +323,8 @@ const result = prisma.$executeRawUnsafe(
   true
 )
 ```
+
+For more details on using parameterized queries, see the [parameterized queries](#parameterized-queries) section below.
 
 #### Signature
 
@@ -550,20 +522,184 @@ The database will thus provide a `String` representation of your data which Pris
 
 For details of supported Prisma types, see the [Prisma connector overview](/orm/overview/databases) for the relevant database.
 
-### SQL injection
+## SQL injection prevention
 
-Prisma Client mitigates the risk of SQL injection in the following ways:
+The ideal way to avoid SQL injection in Prisma Client is to use the ORM models to perform queries wherever possible.
 
-- Prisma Client escapes all variables when you use tagged templates and sends all queries as prepared statements.
+Where this is not possible and raw queries are required, Prisma Client provides various raw methods, but it is important to use these methods safely.
 
-  ```ts
-  $queryRaw`...` // Tagged template
-  $executeRaw`...` // Tagged template
-  ```
+This section will provide various examples of using these methods safely and unsafely. You can test these examples in the [Prisma Playground](https://playground.prisma.io/examples).
 
-If you cannot use tagged templates, you can instead use [`$queryRawUnsafe`](/orm/prisma-client/queries/raw-database-access/raw-queries#queryrawunsafe) or [`$executeRawUnsafe`](/orm/prisma-client/queries/raw-database-access/raw-queries#executerawunsafe) but **be aware that your code may be vulnerable to SQL injection**.
+### In <inlinecode>$queryRaw</inlinecode> and <inlinecode>$executeRaw</inlinecode>
 
-#### ⚠️ String concatenation
+#### Simple, safe use of <inlinecode>$queryRaw</inlinecode> and <inlinecode>$executeRaw</inlinecode>
+
+These methods can mitigate the risk of SQL injection by escaping all variables when you use tagged templates and sends all queries as prepared statements.
+
+```ts
+$queryRaw`...` // Tagged template
+$executeRaw`...` // Tagged template
+```
+
+The following example is safe ✅ from SQL Injection:
+
+```ts
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"`
+const result =
+  await prisma.$queryRaw`SELECT id, name FROM "User" WHERE name = ${inputString}`
+
+console.log(result)
+```
+
+#### Unsafe use of <inlinecode>$queryRaw</inlinecode> and <inlinecode>$executeRaw</inlinecode>
+
+However, it is also possible to use these methods in unsafe ways.
+
+One way is by artificially generating a tagged template that unsafely concatenates user input.
+
+The following example is vulnerable ❌ to SQL Injection:
+
+```ts
+// Unsafely generate query text
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"` // SQL Injection
+const query = `SELECT id, name FROM "User" WHERE name = ${inputString}`
+
+// Version for Typescript
+const stringsArray: any = [...[query]]
+
+// Version for Javascript
+const stringsArray = [...[query]]
+
+// Use the `raw` property to impersonate a tagged template
+stringsArray.raw = [query]
+
+// Use queryRaw
+const result = await prisma.$queryRaw(stringsArray)
+console.log(result)
+```
+
+Another way to make these methods vulnerable is misuse of the `Prisma.raw` function.
+
+The following examples are all vulnerable ❌ to SQL Injection:
+
+```ts
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"`
+const result =
+  await prisma.$queryRaw`SELECT id, name FROM "User" WHERE name = ${Prisma.raw(
+    inputString
+  )}`
+console.log(result)
+```
+
+```ts
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"`
+const result = await prisma.$queryRaw(
+  Prisma.raw(`SELECT id, name FROM "User" WHERE name = ${inputString}`)
+)
+console.log(result)
+```
+
+```ts
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"`
+const query = Prisma.raw(
+  `SELECT id, name FROM "User" WHERE name = ${inputString}`
+)
+const result = await prisma.$queryRaw(query)
+console.log(result)
+```
+
+#### Safely using <inlinecode>$queryRaw</inlinecode> and <inlinecode>$executeRaw</inlinecode> in more complex scenarios
+
+##### Building raw queries separate to query execution
+
+If you want to build your raw queries elsewhere or separate to your parameters you will need to use one of the following methods.
+
+In this example, the `sql` helper method is used to build the query text by safely including the variable. It is safe ✅ from SQL Injection:
+
+```ts
+// inputString can be untrusted input
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"`
+
+// Safe if the text query below is completely trusted content
+const query = Prisma.sql`SELECT id, name FROM "User" WHERE name = ${inputString}`
+
+const result = await prisma.$queryRaw(query)
+console.log(result)
+```
+
+In this example which is safe ✅ from SQL Injection, the `sql` helper method is used to build the query text including a parameter marker for the input value. Each variable is represented by a marker symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL). Note that the examples just show PostgreSQL queries.
+
+```ts
+// Version for Typescript
+const query: any
+
+// Version for Javascript
+const query
+
+// Safe if the text query below is completely trusted content
+query = Prisma.sql`SELECT id, name FROM "User" WHERE name = $1`
+
+// inputString can be untrusted input
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"`
+query.values = [inputString]
+
+const result = await prisma.$queryRaw(query)
+console.log(result)
+```
+
+> **Note**: PostgreSQL variables are represented by `$1`, etc
+
+##### Building raw queries elsewhere or in stages
+
+If you want to build your raw queries somewhere other than where the query is executed, the ideal way to do this is to create an `Sql` object from the segments of your query and pass it the parameter value.
+
+In the following example we have two variables to parameterize. The example is safe ✅ from SQL Injection as long as the query strings being passed to `Prisma.sql` only contain trusted content:
+
+```ts
+// Example is safe if the text query below is completely trusted content
+const query1 = `SELECT id, name FROM "User" WHERE name = ` // The first parameter would be inserted after this string
+const query2 = ` OR name = ` // The second parameter would be inserted after this string
+
+const inputString1 = "Fred"
+const inputString2 = `'Sarah' UNION SELECT id, title FROM "Post"`
+
+const query = Prisma.sql([query1, query2, ""], inputString1, inputString2)
+const result = await prisma.$queryRaw(query);
+console.log(result);
+```
+
+> Note: Notice that the string array being passed as the first parameter `Prisma.sql` needs to have an empty string at the end as the `sql` function expects one more query segment than the number of parameters.
+
+If you want to build your raw queries into one large string, this is still possible but requires some care as it is uses the potentially dangerous `Prisma.raw` method. You also need to build your query using the correct parameter markers for your database as Prisma won't be able to provide markers for the relevant database as it usually is.
+
+The following example is safe ✅ from SQL Injection as long as the query strings being passed to `Prisma.raw` only contain trusted content:
+
+```ts
+// Version for Typescript
+const query: any
+
+// Version for Javascript
+const query
+
+// Example is safe if the text query below is completely trusted content
+const query1 = `SELECT id, name FROM "User" `
+const query2 = `WHERE name = $1 `
+
+query = Prisma.raw(`${query1}${query2}`)
+
+// inputString can be untrusted input
+const inputString = `'Sarah' UNION SELECT id, title FROM "Post"`
+query.values = [inputString]
+
+const result = await prisma.$queryRaw(query)
+console.log(result)
+```
+
+### In <inlinecode>$queryRawUnsafe</inlinecode> and <inlinecode>$executeRawUnsafe</inlinecode>
+
+#### Using <inlinecode>$queryRawUnsafe</inlinecode> and <inlinecode>$executeRawUnsafe</inlinecode> unsafely
+
+If you cannot use tagged templates, you can instead use [`$queryRawUnsafe`](/orm/prisma-client/queries/raw-database-access/raw-queries#queryrawunsafe) or [`$executeRawUnsafe`](/orm/prisma-client/queries/raw-database-access/raw-queries#executerawunsafe) but **be aware that your these functions make it much more likely that your code will be vulnerable to SQL injection**.
 
 The following example concatenates `query` and `inputString`. Prisma Client ❌ **cannot** escape `inputString` in this example, which makes it vulnerable to SQL injection:
 
@@ -574,6 +710,44 @@ const result = await prisma.$queryRawUnsafe(query)
 
 console.log(result)
 ```
+
+#### Parameterized queries
+
+As an alternative to tagged templates, `$queryRawUnsafe` supports standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL). Note that the examples just show PostgreSQL queries.
+
+The following example is safe ✅ from SQL Injection:
+
+```ts
+const userName = 'Sarah'
+const email = 'sarah@prisma.io'
+const result = await prisma.$queryRawUnsafe(
+  'SELECT * FROM User WHERE (name = $1 OR email = $2)',
+  userName,
+  email
+)
+```
+
+> **Note**: PostgreSQL variables are represented by `$1` and `$2`
+
+As with tagged templates, Prisma Client escapes all variables when they are provided in this way.
+
+> **Note**: You cannot pass a table or column name as a variable into a parameterized query. For example, you cannot `SELECT ?` and pass in `*` or `id, name` based on some condition.
+
+##### Parameterized PostgreSQL `ILIKE` query
+
+When you use `ILIKE`, the `%` wildcard character(s) should be included in the variable itself, not the query (`string`). This example is safe ✅ from SQL Injection.
+
+```ts
+const userName = 'Sarah'
+const emailFragment = 'prisma.io'
+const result = await prisma.$queryRawUnsafe(
+  'SELECT * FROM "User" WHERE (name = $1 OR email ILIKE $2)',
+  userName,
+  `%${emailFragment}`
+)
+```
+
+> **Note**: Using `%$2` as an argument would not work
 
 ## Raw queries with MongoDB
 
