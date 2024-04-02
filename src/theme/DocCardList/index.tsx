@@ -16,10 +16,7 @@ export default function DocCardList(props) {
   if (!items) {
     return <DocCardListForCurrentSidebarCategory {...props} />;
   }
-  const filteredItems = filterDocCardListItems(items).filter((e: any) => e.href.slice(-1) !== "/");
-  useEffect(() => {
-    console.log(filteredItems)
-  }, [location])
+  const filteredItems = filterDocCardListItems(items)
   return (
     <section className={clsx('row', className)}>
       {filteredItems.map((item, index) => (
