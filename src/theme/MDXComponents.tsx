@@ -88,6 +88,20 @@ const NavigationLinksContainer: React.FC<React.PropsWithChildren> = ({ children 
   return <>{children}</>
 }
 
+const StyledLink: React.FC<React.PropsWithChildren> = ({ children, ...props }) => {
+  //@ts-ignore
+  const url = props && props?.href
+  if (url?.includes("prisma.io/") || url?.charAt(0) === "/")
+    return <Link {...props}>{children}</Link>
+  else
+    return <a {...props} target='_blank' rel='openeer noreferrer'>
+      {children}
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 12 12" style={{paddingLeft: `3px`}}>
+        <path fill="currentColor" d="M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1"/>
+      </svg>
+    </a>
+}
+
 export default {
   // Re-use the default mapping
   ...MDXComponents,
@@ -96,6 +110,7 @@ export default {
   TabbedContent,
   details: (props: any) => <CollapseBox {...props} />,
   TabItem,
+  a: StyledLink,
   Link,
   TopBlock,
   CodeWithResult,

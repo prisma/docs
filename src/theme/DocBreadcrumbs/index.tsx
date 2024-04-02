@@ -10,15 +10,8 @@ import {translate} from '@docusaurus/Translate';
 import HomeBreadcrumbItem from '@theme/DocBreadcrumbs/Items/Home';
 import styles from './styles.module.css';
 // TODO move to design system folder
-function BreadcrumbsItemLink({children, href, isLast}) {
+function BreadcrumbsItemLink({children, href}) {
   const className = 'breadcrumbs__link';
-  if (isLast) {
-    return (
-      <span className={className} itemProp="name">
-        {children}
-      </span>
-    );
-  }
   return href ? (
     <Link className={className} href={href} itemProp="item">
       <span itemProp="name">{children}</span>
@@ -63,7 +56,7 @@ export default function DocBreadcrumbs() {
     return true
   }
   return (
-    <nav
+    repeatedBreadcrumbs() && breadcrumbs.length > 1 && <nav
       className={clsx(
         ThemeClassNames.docs.docBreadcrumbs,
         styles.breadcrumbsContainer,
@@ -73,7 +66,7 @@ export default function DocBreadcrumbs() {
         message: 'Breadcrumbs',
         description: 'The ARIA label for the breadcrumbs',
       })}>
-      {repeatedBreadcrumbs() && <ul
+      <ul
         className="breadcrumbs"
         itemScope
         itemType="https://schema.org/BreadcrumbList">
@@ -84,19 +77,19 @@ export default function DocBreadcrumbs() {
             item.type === 'category' && item.linkUnlisted
               ? undefined
               : item.href;
-          return (
+          return ( !isLast && 
             <BreadcrumbsItem
               key={idx}
               active={isLast}
               index={idx}
               addMicrodata={!!href}>
-              <BreadcrumbsItemLink href={href} isLast={isLast}>
+              <BreadcrumbsItemLink href={href}>
                 {item.label}
               </BreadcrumbsItemLink>
             </BreadcrumbsItem>
           );
         })}
-      </ul>}
+      </ul>
     </nav>
   );
 }
