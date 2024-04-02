@@ -1,8 +1,6 @@
 import * as React from 'react'
 import styles from "../css/collapsible.module.scss"
 
-// import ArrowRight from '../../icons/ArrowRight'
-
 type CollapseProps = React.ReactNode
 let index = 0
 
