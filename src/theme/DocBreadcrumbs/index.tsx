@@ -66,7 +66,7 @@ export default function DocBreadcrumbs() {
         message: 'Breadcrumbs',
         description: 'The ARIA label for the breadcrumbs',
       })}>
-      {repeatedBreadcrumbs() && <ul
+      {repeatedBreadcrumbs() && breadcrumbs.length > 1 && <ul
         className="breadcrumbs"
         itemScope
         itemType="https://schema.org/BreadcrumbList">
