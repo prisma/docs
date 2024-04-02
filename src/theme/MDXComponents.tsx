@@ -111,6 +111,7 @@ export default {
   details: (props: any) => <CollapseBox {...props} />,
   TabItem,
   a: StyledLink,
+  Link,
   TopBlock,
   CodeWithResult,
   SwitchTech,
