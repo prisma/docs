@@ -393,7 +393,7 @@ const config: Config = {
             },
             {
               label: ' ',
-              href: "https://discord.gg/KQyTW2H5ca",
+              href: "https://x.com/prisma",
               customProps: {
                 icon: "fa-brands fa-x-twitter",
                 internal: true,
@@ -401,7 +401,7 @@ const config: Config = {
             },
             {
               label: ' ',
-              href: "https://discord.gg/KQyTW2H5ca",
+              href: "https://www.youtube.com/prismadata",
               customProps: {
                 icon: "fa-brands fa-youtube",
                 internal: true,
@@ -409,15 +409,7 @@ const config: Config = {
             },
             {
               label: ' ',
-              href: "https://discord.gg/KQyTW2H5ca",
-              customProps: {
-                icon: "fa-brands fa-slack",
-                internal: true,
-              }
-            },
-            {
-              label: ' ',
-              href: "https://discord.gg/KQyTW2H5ca",
+              href: "https://github.com/prisma",
               customProps: {
                 icon: "fa-brands fa-github",
                 internal: true,
