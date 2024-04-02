@@ -79,7 +79,7 @@ const config: Config = {
           filename: 'sitemap.xml',
         },
         docs: {
-          routeBasePath: '/',
+          // routeBasePath: '/',
           sidebarPath: './sidebars.ts',
           // Remove this to remove the "edit this page" links.
           editUrl:
@@ -101,8 +101,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/docs-social.png',
     navbar: {
       logo: {
         srcDark: 'img/logo-white.svg',
@@ -113,7 +112,7 @@ const config: Config = {
       },
       items: [
         {
-          to: '/',
+          to: '/docs',
           position: 'left',
           label: '/docs',
           className: 'logo-link',
@@ -219,11 +218,11 @@ const config: Config = {
           items: [
             {
               label: 'Docs',
-              to: '/',
+              to: '/docs',
             },
             {
               label: 'Get started',
-              to: '/getting-started',
+              to: '/docs/getting-started',
             },
             {
               label: 'prisma-examples',
