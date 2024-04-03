@@ -11,7 +11,7 @@ const config: Config = {
   url: 'https://prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/docs/',
 
   trailingSlash: false,
   onBrokenLinks: 'warn',
@@ -79,7 +79,7 @@ const config: Config = {
           filename: 'sitemap.xml',
         },
         docs: {
-          // routeBasePath: '/',
+          routeBasePath: '/',
           sidebarPath: './sidebars.ts',
           // Remove this to remove the "edit this page" links.
           editUrl:
