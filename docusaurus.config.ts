@@ -413,6 +413,14 @@ const config: Config = {
             },
             {
               label: ' ',
+              href: "https://pris.ly/whatsapp",
+              customProps: {
+                icon: "fa-brands fa-whatsapp",
+                internal: true,
+              }
+            },
+            {
+              label: ' ',
               href: "https://github.com/prisma",
               customProps: {
                 icon: "fa-brands fa-github",
