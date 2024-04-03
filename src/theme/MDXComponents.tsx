@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 // Import the original mapper
 import MDXComponents from '@theme-original/MDXComponents';
 
@@ -11,6 +11,7 @@ import Link from '@docusaurus/Link';
 import CollapseBox from '@site/src/components/collapsible';
 import TopSection from '@site/src/components/topSection';
 import { useLocation } from '@docusaurus/router';
+import styles from "./styles.module.scss"
 
 // TODO: do we want to fix this?
 const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, dbSwitcher, slug, title }: any) => {
@@ -33,10 +34,14 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, d
 
 // TODO: we should fix this
 const CodeWithResult: React.FC<{ children: React.ReactElement[] }> = ({ children }) => {
-  return <>
-    <p>{children[0]}</p>
-    <p>{children[1]}</p>
-  </>
+  const [show, setShow] = useState<boolean>(false)
+  return <div className={styles.codeWithResult}>
+    <div className={styles.cmd}>{children[0]}</div>
+    <div className={styles.result}>
+      <div className={styles.showBtn} onClick={() => setShow(!show)}>Show CLI results</div>
+      {show && children[1]}
+    </div>
+  </div>
 }
 
 // TODO: we should fix this

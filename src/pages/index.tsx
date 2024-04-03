@@ -117,8 +117,6 @@ function HomepageDatabasesSection() {
       </div>
       <div className={styles.databaseGrid}>
         {DatabaseData.map((e) => (
-          // <Link to={e.url}>
-          // </Link>
           <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
               <img src={`/img/technologies/${e.icon}.svg`} style={{

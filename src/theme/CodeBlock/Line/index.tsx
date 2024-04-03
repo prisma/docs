@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import styles from './styles.module.css';
 export default function CodeBlockLine({
@@ -18,12 +18,15 @@ export default function CodeBlockLine({
   const lineTokens = line.map((token, key) => (
     <span key={key} {...getTokenProps({token, key})} />
   ));
+  const highlightedLine = classNames?.find((e:string) => e.includes("code-highlight"))
   return (
     <span {...lineProps}>
       {showLineNumbers ? (
         <>
-          <span className={styles.codeLineNumber} />
-          <span className={styles.codeLineContent}>{lineTokens}</span>
+          <span className={styles.codeLineContent}>
+            {!highlightedLine && <span className={styles.codeLineNumber} />}
+            {lineTokens}
+          </span>
         </>
       ) : (
         lineTokens

@@ -93,7 +93,7 @@ export default function CodeBlockString({
               isEnabled={wordWrap.isEnabled}
             />
           )}
-          <CopyButton className={styles.codeButton} code={code} />
+          {!metastring?.includes("no-copy") && <CopyButton className={styles.codeButton} code={code} />}
         </div>
       </div>
     </Container>
