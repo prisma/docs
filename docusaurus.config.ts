@@ -439,6 +439,24 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      magicComments: [
+        // Remember to extend the default highlight class name as well!
+        {
+          className: 'theme-code-block-highlighted-line highlighted-line code-highlight',
+          line: 'highlight-next-line',
+          block: {start: 'highlight-start', end: 'highlight-end'},
+        },
+        {
+          className: 'theme-code-block-deleted-line deleted-line code-highlight',
+          line: 'delete-next-line',
+          block: {start: 'delete-start', end: 'delete-end'},
+        },
+        {
+          className: 'theme-code-block-edited-line edited-line code-highlight',
+          line: 'edit-next-line',
+          block: {start: 'edit-start', end: 'edit-end'},
+        }
+      ]
     },
   } satisfies Preset.ThemeConfig,
 };
