@@ -1,7 +1,10 @@
 import React, { useRef, useState } from 'react'
-import { Icon } from '../Icon'
-import { Tooltip } from '../tooltip/Tooltip'
-import styles from "../../css/gettingStarted.module.scss"
+
+import Link from '@docusaurus/Link'
+
+import { Icon } from '@site/src/components/Icon'
+import { Tooltip } from '@site/src/components/tooltip/Tooltip'
+import styles from '@site/src/css/gettingStarted.module.scss'
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -48,45 +51,45 @@ export const SignalStream = ({ color, height, width }: any) => (
   </svg>
 )
 
-export const BorderBoxWrapper = ({children, ...props}) => <div {...props} className={styles.borderBox}>{children}</div>
+export const BorderBoxWrapper = ({ children, ...props }) => <div {...props} className={styles.borderBox}>{children}</div>
 
-export const BoxTitle = ({children, ...props}) => <h1 {...props} className={styles.boxTitle}>{children}</h1>
+export const BoxTitle = ({ children, ...props }) => <h1 {...props} className={styles.boxTitle}>{children}</h1>
 
 export const BorderBox = ({ border, ...props }: any) => (
   <BorderBoxWrapper {...props}>{props.children}</BorderBoxWrapper>
 )
 
-export const Grid = ({children, ...props}) => <div {...props} className={styles.grid}>{children}</div>
+export const Grid = ({ children, ...props }) => <div {...props} className={styles.grid}>{children}</div>
 
 export const LinkCard = ({ icon, title, desc, link }: any) => {
   const linkCardRef = useRef(null)
   return (
-    <a href={link} ref={linkCardRef} className={styles.linkCardWrapper}>
+    <Link to={link} ref={linkCardRef} className={styles.linkCardWrapper}>
       <div className={styles.title}>
         <Icon icon={icon} btn="left" size="18px" />
         <h6>{title}</h6>
       </div>
       <p>{desc}</p>
-    </a>
+    </Link>
   )
 }
 
-export const Tab = ({children, ...props}) => <div {...props} className={styles.tab}>{children}</div>
+export const Tab = ({ children, ...props }) => <div {...props} className={styles.tab}>{children}</div>
 
 export const SquareLogo = ({ image, tech, url }: any) => {
   const squareCardRef = useRef(null)
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false)
   return (
     <>
-      <a
+      <Link
         className={styles.squareWrapper}
-        href={url}
+        to={url}
         ref={squareCardRef}
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
         <img src={image} />
-      </a>
+      </Link>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
           {tech}
@@ -96,4 +99,4 @@ export const SquareLogo = ({ image, tech, url }: any) => {
   )
 }
 
-export const List = ({children, ...props}) => <div {...props} className={styles.list}>{children}</div>
+export const List = ({ children, ...props }) => <div {...props} className={styles.list}>{children}</div>
