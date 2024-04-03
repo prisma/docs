@@ -165,6 +165,10 @@ const config: Config = {
       apiKey: 'fd3d0a05bfe5d280348060ca5ea416be',
       indexName: 'prisma',
       contextualSearch: false,
+      replaceSearchResultPathname: {
+        from: '/docs/',
+        to: '/'
+      }
     },
     footer: {
       style: 'dark',
