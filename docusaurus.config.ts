@@ -11,7 +11,7 @@ const config: Config = {
   url: 'https://prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/docs/',
+  baseUrl: '/',
 
   trailingSlash: false,
   onBrokenLinks: 'warn',
@@ -101,7 +101,8 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docs-social.png',
+    // Replace with your project's social card
+    image: 'img/docusaurus-social-card.jpg',
     navbar: {
       logo: {
         srcDark: 'img/logo-white.svg',
@@ -112,7 +113,7 @@ const config: Config = {
       },
       items: [
         {
-          to: '/docs',
+          to: '/',
           position: 'left',
           label: '/docs',
           className: 'logo-link',
@@ -218,11 +219,11 @@ const config: Config = {
           items: [
             {
               label: 'Docs',
-              to: '/docs',
+              to: '/',
             },
             {
               label: 'Get started',
-              to: '/docs/getting-started',
+              to: '/getting-started',
             },
             {
               label: 'prisma-examples',
