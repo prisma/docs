@@ -80,6 +80,7 @@ const config: Config = {
         },
         docs: {
           routeBasePath: '/',
+          path: 'content',
           sidebarPath: './sidebars.ts',
           // Remove this to remove the "edit this page" links.
           editUrl:
@@ -452,17 +453,17 @@ const config: Config = {
         {
           className: 'theme-code-block-highlighted-line highlighted-line code-highlight',
           line: 'highlight-next-line',
-          block: {start: 'highlight-start', end: 'highlight-end'},
+          block: { start: 'highlight-start', end: 'highlight-end' },
         },
         {
           className: 'theme-code-block-deleted-line deleted-line code-highlight',
           line: 'delete-next-line',
-          block: {start: 'delete-start', end: 'delete-end'},
+          block: { start: 'delete-start', end: 'delete-end' },
         },
         {
           className: 'theme-code-block-edited-line edited-line code-highlight',
           line: 'edit-next-line',
-          block: {start: 'edit-start', end: 'edit-end'},
+          block: { start: 'edit-start', end: 'edit-end' },
         }
       ]
     },
