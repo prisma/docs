@@ -23,6 +23,7 @@ export default function prismIncludeLanguages(PrismObject: typeof PrismNamespace
     }
     // eslint-disable-next-line global-require, import/no-dynamic-require
     require(`prismjs/components/prism-${lang}`)
+    require(`prismjs/components/prism-json`)
   })
 
   require('@site/src/theme/prism-prisma.js')
