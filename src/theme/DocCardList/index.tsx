@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import {
   useCurrentSidebarCategory,
@@ -16,7 +16,10 @@ export default function DocCardList(props) {
   if (!items) {
     return <DocCardListForCurrentSidebarCategory {...props} />;
   }
-  const filteredItems = filterDocCardListItems(items)
+  const [filteredItems, setFilteredItems] = useState<any>(filterDocCardListItems(items))
+  useEffect(() => {
+    setFilteredItems(filteredItems.filter((e: any) => e?.href?.slice(0, -1) !== location.pathname))
+  }, [items])
   return (
     <section className={clsx('row', className)}>
       {filteredItems.map((item, index) => (
