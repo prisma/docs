@@ -102,8 +102,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: '/docs/social/docs-social.png',
     navbar: {
       logo: {
         srcDark: 'img/logo-white.svg',
@@ -453,7 +452,7 @@ const config: Config = {
         {
           className: 'theme-code-block-added-line added-line code-highlight',
           line: 'add-next-line',
-          block: {start: 'add-start', end: 'add-end'},
+          block: { start: 'add-start', end: 'add-end' },
         },
         {
           className: 'theme-code-block-deleted-line deleted-line code-highlight',
