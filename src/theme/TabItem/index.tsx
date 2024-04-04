@@ -5,7 +5,7 @@ export default function TabItem({children, hidden, className, code = true, table
   return (
     <div
       role="tabpanel"
-      className={clsx(styles.tabItem, className, code && 'code-children')}
+      className={clsx(styles.tabItem, className)}
       {...{hidden}}>
       <div className={
         clsx(code ? styles.codeChildren : styles.children, table && styles.tableChildren)

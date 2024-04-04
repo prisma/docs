@@ -20,7 +20,7 @@ export default function CodeBlockLine({
   ));
   const highlightedLine = classNames?.find((e:string) => e.includes("code-highlight"))
   return (
-    <span {...lineProps} className={!showLineNumbers ? styles.noLineNumbers : ``}>
+    <span {...lineProps}>
       {showLineNumbers ? (
         <>
           <span className={styles.codeLineContent}>
