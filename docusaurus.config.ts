@@ -451,9 +451,9 @@ const config: Config = {
       magicComments: [
         // Remember to extend the default highlight class name as well!
         {
-          className: 'theme-code-block-added-line added-line code-highlight',
-          line: 'add-next-line',
-          block: {start: 'add-start', end: 'add-end'},
+          className: 'theme-code-block-highlighted-line highlighted-line code-highlight',
+          line: 'highlight-next-line',
+          block: { start: 'highlight-start', end: 'highlight-end' },
         },
         {
           className: 'theme-code-block-deleted-line deleted-line code-highlight',
@@ -464,11 +464,6 @@ const config: Config = {
           className: 'theme-code-block-edited-line edited-line code-highlight',
           line: 'edit-next-line',
           block: { start: 'edit-start', end: 'edit-end' },
-        },
-        {
-          className: 'theme-code-block-highlighted-line highlighted-line',
-          line: 'highlight-next-line',
-          block: { start: 'highlight-start', end: 'highlight-end' },
         }
       ]
     },
