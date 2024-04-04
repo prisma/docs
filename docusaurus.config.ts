@@ -469,6 +469,11 @@ const config: Config = {
           className: 'theme-code-block-edited-line edited-line code-highlight',
           line: 'edit-next-line',
           block: { start: 'edit-start', end: 'edit-end' },
+        },
+        {
+          className: 'theme-code-block-highlighted-line highlighted-line',
+          line: 'highlight-next-line',
+          block: { start: 'highlight-start', end: 'highlight-end' },
         }
       ]
     },
