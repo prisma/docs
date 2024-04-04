@@ -14,8 +14,6 @@ import {
 } from '@site/src/data/indexData';
 
 import styles from './index.module.scss';
-import { useRef } from 'react';
-
 
 function HomepageCard({
   className, heading, body, links
@@ -173,7 +171,7 @@ export default function Home(): JSX.Element {
     <Layout
       title={title}
       description="Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.">
-      <main>
+      <main className={styles.mainHome}>
         <HomepageProductCards />
         <HomepageORMLinksSection />
         <HomepageORMCards />
