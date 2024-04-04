@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { Icon } from '../Icon'
 import { Tooltip } from '../tooltip/Tooltip'
 import styles from "../../css/gettingStarted.module.scss"
+import Link from '@docusaurus/Link'
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -61,13 +62,13 @@ export const Grid = ({children, ...props}) => <div {...props} className={styles.
 export const LinkCard = ({ icon, title, desc, link }: any) => {
   const linkCardRef = useRef(null)
   return (
-    <a href={link} ref={linkCardRef} className={styles.linkCardWrapper}>
+    <Link to={link} ref={linkCardRef} className={styles.linkCardWrapper}>
       <div className={styles.title}>
         <Icon icon={icon} btn="left" size="18px" />
         <h6>{title}</h6>
       </div>
       <p>{desc}</p>
-    </a>
+    </Link>
   )
 }
 
@@ -78,15 +79,15 @@ export const SquareLogo = ({ image, tech, url }: any) => {
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false)
   return (
     <>
-      <a
+      <Link
         className={styles.squareWrapper}
-        href={url}
+        to={url}
         ref={squareCardRef}
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
         <img src={image} />
-      </a>
+      </Link>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
           {tech}
