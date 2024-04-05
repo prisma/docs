@@ -1,13 +1,13 @@
 ---
-title: 'MySQL'
+title: 'MySQL/MariaDB'
 metaTitle: 'MySQL database connector'
-metaDescription: 'This page explains how Prisma can connect to a MySQL database using the MySQL database connector.'
+metaDescription: 'This page explains how Prisma can connect to a MySQL or MariaDB database using the MySQL database connector.'
 tocDepth: 3
 ---
 
 <TopBlock title={frontMatter.title}>
 
-The MySQL data source connector connects Prisma ORM to a [MySQL](https://www.mysql.com/) database server.
+The MySQL data source connector connects Prisma ORM to a [MySQL](https://www.mysql.com/) or [MariaDB](https://mariadb.org/) database server.
 
 By default, the MySQL connector contains a database driver responsible for connecting to your database. You can use a [driver adapter](/orm/overview/databases/database-drivers#driver-adapters) (Preview) to connect to your database using a JavaScript database driver from Prisma Client.
 
@@ -50,7 +50,7 @@ The following components make up the _base URL_ of your database, they are alway
 | Name     | Placeholder | Description                                                                                                         |
 | :------- | :---------- | :------------------------------------------------------------------------------------------------------------------ |
 | Host     | `HOST`      | IP address/domain of your database server, e.g. `localhost`                                                         |
-| Port     | `PORT`      | Port on which your database server is running, e.g. `5432`                                                          |
+| Port     | `PORT`      | Port on which your database server is running, e.g. `5432`  (default is `3306`, or no port when using Unix socket)  |
 | User     | `USER`      | Name of your database user, e.g. `janedoe`                                                                          |
 | Password | `PASSWORD`  | Password for your database user                                                                                     |
 | Database | `DATABASE`  | Name of the [database](https://dev.mysql.com/doc/refman/8.0/en/creating-database.html) you want to use, e.g. `mydb` |
@@ -112,8 +112,8 @@ mysql://USER:PASSWORD@HOST:PORT/DATABASE?sslidentity=client-identity.p12&sslpass
 
 ### Connecting via sockets
 
-To connect to your MySQL database via sockets, you must add a `socket` field as a _query parameter_ to the connection URL (instead of setting it as the `host` part of the URI).
-The value of this parameter then must point to the directory that contains the socket, e.g.: `mysql://USER:POST@localhost/database?socket=/var/run/mysql/`
+To connect to your MySQL/MariaDB database via a socket, you must add a `socket` field as a _query parameter_ to the connection URL (instead of setting it as the `host` part of the URI).
+The value of this parameter then must point to the directory that contains the socket, e.g. on a default installation of MySQL/MariaDB on Ubuntu or Debian use: `mysql://USER:POST@localhost/database?socket=/run/mysqld/mysqld.sock`
 
 Note that `localhost` is required, the value itself is ignored and can be anything.
 
@@ -138,6 +138,20 @@ The MySQL connector maps the [scalar types](/orm/prisma-schema/data-model/models
 | `DateTime` | `DATETIME(3)`    |                                                  |
 | `Json`     | `JSON`           | Supported in MySQL 5.7+ only                     |
 | `Bytes`    | `LONGBLOB`       |
+
+### Native type mapping from Prisma ORM to MariaDB
+
+| Prisma ORM | MariaDB            | Notes                                            |
+| ---------- | ---------------- | -------------------------------------------------- |
+| `String`   | `VARCHAR(191)`   |                                                    |
+| `Boolean`  | `BOOLEAN`        | In MariaDB `BOOLEAN` is a synonym for `TINYINT(1)` |
+| `Int`      | `INT`            |                                                    |
+| `BigInt`   | `BIGINT`         |                                                    |
+| `Float`    | `DOUBLE`         |                                                    |
+| `Decimal`  | `DECIMAL(65,30)` |                                                    |
+| `DateTime` | `DATETIME(3)`    |                                                    |
+| `Json`     | `LONGTEXT`       | See https://mariadb.com/kb/en/json-data-type/      |
+| `Bytes`    | `LONGBLOB`       |                                                    |
 
 ### Native type mappings
 
@@ -204,3 +218,18 @@ model Device {
 ## Engine
 
 If you are using a version of MySQL where MyISAM is the default engine, you must specify `ENGINE = InnoDB;` when you create a table. If you introspect a database that uses a different engine, relations in the Prisma Schema are not created (or lost, if the relation already existed).
+
+## Permissions
+
+A fresh new installation of MySQL/MariaDB has by default only a `root` database user. Do not use `root` user in your Prisma configuration, but instead create a database and database user for each application. On most Linux hosts (e.g. Ubuntu) you can simply run this as the Linux `root` user (which automatically has database `root` access as well):
+
+```
+mysql -e "CREATE DATABASE IF NOT EXISTS $DB_PRISMA;"
+mysql -e "GRANT ALL PRIVILEGES ON $DB_PRISMA.* TO $DB_USER@'%' IDENTIFIED BY '$DB_PASSWORD';"
+```
+
+The above is enough to run the `prisma db pull` and `prisma db push` commands. In order to also run `prisma migrate` commands these permissions need to be granted:
+
+```
+mysql -e "GRANT CREATE, DROP, REFERENCES, ALTER ON *.* TO $DB_USER@'%';"
+```
