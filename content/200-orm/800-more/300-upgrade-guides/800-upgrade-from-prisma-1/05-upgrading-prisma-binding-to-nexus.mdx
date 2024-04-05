@@ -92,7 +92,7 @@ touch tsconfig.json
 
 Now add the following contents to the new file:
 
-```json5 copy file=tsconfig.json
+```json5 copy file=tsconfig.json showLineNumbers
 {
   "compilerOptions": {
     "skipLibCheck": true,
@@ -116,7 +116,7 @@ Note that for this guide, you'll write the entire application inside of `index.t
 
 For some basic setup, add this code to `index.ts`:
 
-```ts file=index.ts
+```ts file=index.ts showLineNumbers
 import { queryType, makeSchema } from '@nexus/schema'
 import { nexusSchemaPrisma } from 'nexus-plugin-prisma/schema'
 import { GraphQLServer } from 'graphql-yoga'
@@ -281,10 +281,12 @@ const User = objectType({
     t.model.jsonData()
     t.model.role()
     t.model.profile()
+    //add-start
     t.model.posts({
       filtering: true,
       ordering: true,
     })
+    //add-end
   },
 })
 ```
@@ -382,6 +384,7 @@ Be sure to include all newly defined types in the `types` option that's provided
 
 ```ts line-number highlight=2;normal
 export const schema = makeSchema({
+  //highlight-next-line
   types: [Query, User, Post, Profile, Category],
   plugins: [nexusSchemaPrisma()],
   outputs: {
@@ -472,10 +475,12 @@ To add the `users` query to your GraphQL API, add the following lines to the que
 ```ts line-number highlight=3-6;add
 const Query = queryType({
   definition(t) {
+    //add-start
     t.crud.users({
       filtering: true,
       ordering: true,
     })
+    //add-end
   },
 })
 ```
@@ -558,11 +563,13 @@ const Query = queryType({
   definition(t) {
     // ... previous queries
 
+    //add-start
     t.list.field('posts', {
       type: 'Post',
       nullable: false,
       args: { searchString: stringArg() },
     })
+    //add-end
   },
 })
 ```
@@ -571,6 +578,7 @@ Although this code gives probably gives you a type error in your editor, you can
 
 ```graphql line-number
 type Query {
+//highlight-next-line
 |  posts(searchString: String): [Post!]!
   users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: Enumerable<UserOrderByInput>, skip: Int, where: UserWhereInput): [User!]!
 }
@@ -591,6 +599,7 @@ const Query = queryType({
       type: 'Post',
       nullable: false,
       args: { searchString: stringArg() },
+      //add-start
       resolve: (_, args, context) => {
         return context.prisma.post.findMany({
           where: {
@@ -604,6 +613,7 @@ const Query = queryType({
             ],
           },
         })
+      //add-end
       },
     })
   },
@@ -668,8 +678,10 @@ const resolvers = {
 To get the same behavior with Nexus, you'll need to add a `t.field` definition to the `queryType` and define an `inputObjectType` that includes the two `@unique` fields of your `User` model:
 
 ```ts line-number highlight=1,3-9,15-23;add
+//add-next-line
 import { inputObjectType, arg } from '@nexus/schema'
 
+//add-start
 const UserUniqueInput = inputObjectType({
   name: 'UserUniqueInput',
   definition(t) {
@@ -677,11 +689,13 @@ const UserUniqueInput = inputObjectType({
     t.string('email')
   },
 })
+//add-end
 
 const Query = queryType({
   definition(t) {
     // ... previous queries
 
+    //add-start
     t.field('user', {
       type: 'User',
       args: {
@@ -691,6 +705,7 @@ const Query = queryType({
         }),
       },
     })
+    //add-end
   },
 })
 ```
@@ -699,6 +714,7 @@ Since `UserUniqueInput` is a new type in your GraphQL schema, you again need to 
 
 ```ts line-number highlight=2;normal
 export const schema = makeSchema({
+  //highlight-next-line
   types: [Query, User, Post, Profile, Category, UserUniqueInput],
   plugins: [nexusSchemaPrisma()],
   outputs: {
@@ -721,14 +737,17 @@ If you look at the generated SDL version of your GraphQL schema inside `schema.g
 ```graphql line-number highlight=3,7-10;normal
 type Query {
   posts(searchString: String): [Post!]
+  //highlight-next-line
   user(userUniqueInput: UserUniqueInput!): User
   users(after: UserWhereUniqueInput, before: UserWhereUniqueInput, first: Int, last: Int, orderBy: Enumerable<UserOrderByInput>, skip: Int, where: UserWhereInput): [User!]!
 }
 
+//highlight-start
 input UserUniqueInput {
   email: String
   id: String
 }
+//highlight-end
 ```
 
 You can even send the respective query via the GraphQL Playground already:
@@ -770,6 +789,7 @@ const Query = queryType({
           nullable: false,
         }),
       },
+      //add-start
       resolve: (_, args, context) => {
         return context.prisma.user.findUnique({
           where: {
@@ -778,6 +798,7 @@ const Query = queryType({
           },
         })
       },
+      //add-end
     })
   },
 })
@@ -807,6 +828,7 @@ In order to make sure that the new `Mutation` type is picked by up Nexus, you ne
 
 ```ts line-number highlight=2;normal
 export const schema = makeSchema({
+  //highlight-next-line
   types: [Query, User, Post, Profile, Category, UserUniqueInput, Mutation],
   plugins: [nexusSchemaPrisma()],
   outputs: {
@@ -861,9 +883,11 @@ To add the `createUser` mutation to your GraphQL API, add the following lines to
 ```ts line-number highlight=3-5;add
 const Mutation = mutationType({
   definition(t) {
+    //add-start
     t.crud.createOneUser({
       alias: 'createUser',
     })
+    //add-end
   },
 })
 ```
@@ -938,6 +962,7 @@ const Mutation = mutationType({
   definition(t) {
     // ... previous mutations
 
+    //add-start
     t.field('createDraft', {
       type: 'Post',
       args: {
@@ -946,6 +971,7 @@ const Mutation = mutationType({
         authorId: stringArg({ nullable: false }),
       },
     })
+    //add-end
   },
 })
 ```
@@ -955,6 +981,7 @@ If you look at the generated SDL version of your GraphQL schema inside `schema.g
 ```graphql line-number highlight=3;normal
 type Mutation {
   createUser(data: UserCreateInput!): User!
+  //highlight-next-line
   createDraft(title: String!, content: String, authorId: String!): Post!
 }
 ```
@@ -992,6 +1019,7 @@ const Mutation = mutationType({
         content: stringArg(),
         authorId: stringArg({ nullable: false }),
       },
+      //add-start
       resolve: (_, args, context) => {
         return context.prisma.post.create({
           data: {
@@ -1003,6 +1031,7 @@ const Mutation = mutationType({
           },
         })
       },
+      //add-end
     })
   },
 })
@@ -1055,6 +1084,7 @@ const Mutation = mutationType({
   definition(t) {
     // ... previous mutations
 
+    //add-start
     t.field('updateBio', {
       type: 'User',
       args: {
@@ -1065,6 +1095,7 @@ const Mutation = mutationType({
         bio: stringArg({ nullable: false }),
       },
     })
+    //add-end
   },
 })
 ```
@@ -1075,6 +1106,7 @@ If you look at the generated SDL version of your GraphQL schema inside `schema.g
 type Mutation {
   createUser(data: UserCreateInput!): User!
   createDraft(title: String!, content: String, authorId: String!): Post!
+  //highlight-next-line
   updateBio(bio: String!, userUniqueInput: UserUniqueInput!): User
 }
 ```
@@ -1117,6 +1149,7 @@ const Mutation = mutationType({
         }),
         bio: stringArg()
       },
+      //add-start
       resolve: (_, args, context) => {
         return context.prisma.user.update({
           where: {
@@ -1130,6 +1163,7 @@ const Mutation = mutationType({
           }
         })
       }
+      //add-end
     }
   }
 })
@@ -1185,6 +1219,7 @@ const Mutation = mutationType({
   definition(t) {
     // ... mutations from before
 
+    //add-start
     t.field('addPostToCategories', {
       type: 'Post',
       args: {
@@ -1195,6 +1230,7 @@ const Mutation = mutationType({
         }),
       },
     })
+    //add-end
   },
 })
 ```
@@ -1206,6 +1242,7 @@ type Mutation {
   createUser(data: UserCreateInput!): User!
   createDraft(title: String!, content: String, authorId: String!): Post!
   updateBio(bio: String, userUniqueInput: UserUniqueInput!): User
+  //highlight-next-line
   addPostToCategories(postId: String!, categoryIds: [String!]!): Post
 }
 ```
@@ -1247,6 +1284,7 @@ const Mutation = mutationType({
           nullable: false,
         }),
       },
+      //add-start
       resolve: (_, args, context) => {
         const ids = args.categoryIds.map((id) => ({ id }))
         return context.prisma.post.update({
@@ -1258,6 +1296,7 @@ const Mutation = mutationType({
           },
         })
       },
+      //add-end
     })
   },
 })
