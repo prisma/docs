@@ -9,7 +9,7 @@ import {
   useCodeWordWrap,
 } from '@docusaurus/theme-common/internal';
 import {Highlight} from 'prism-react-renderer';
-import styles from './styles.module.css';
+import styles from './styles.module.scss';
 import Container from '../Container';
 import WordWrapButton from '../WordWrapButton';
 import CopyButton from '../CopyButton';
@@ -70,6 +70,7 @@ export default function CodeBlockString({
                 className={clsx(
                   styles.codeBlockLines,
                   showLineNumbers && styles.codeBlockLinesWithNumbering,
+                  !showLineNumbers && 'no-line-numbers'
                 )}>
                 {tokens.map((line, i) => (
                   <Line
