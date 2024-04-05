@@ -68,8 +68,11 @@ const config: Config = {
           containerId: 'GTM-KCGZPWB',
         },
         sitemap: {
-          priority: 0.5,
+          // @ts-ignore
+          changefreq: 'daily',
+          priority: 0.7,
           ignorePatterns: [
+            '/search',
             // Remove these from sitemap for SEO purposes as they're redirected
             '/getting-started/quickstart',
             '/getting-started/setup-prisma/add-to-existing-project',
