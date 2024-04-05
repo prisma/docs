@@ -73,7 +73,7 @@ function TabList({className, block, selectedValue, selectValue, tabValues}) {
     </ul>
   );
 }
-function TabContent({lazy, children, selectedValue, transparent}) {
+function TabContent({lazy, children, selectedValue, transparent, code}) {
   const childTabs = (Array.isArray(children) ? children : [children]).filter(
     Boolean,
   );
@@ -88,7 +88,7 @@ function TabContent({lazy, children, selectedValue, transparent}) {
     return cloneElement(selectedTabItem, {className: 'margin-top--md'});
   }
   return (
-    <div className={clsx("margin-top--md", transparent && styles.transparent)}>
+    <div className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code)}>
       {childTabs.map((tabItem, i) =>
         cloneElement(tabItem, {
           key: i,
@@ -103,7 +103,7 @@ function TabsComponent(props) {
   return (
     <div className={clsx('tabs-container', styles.tabList)}>
       <TabList {...props} {...tabs} />
-      <TabContent {...props} {...tabs} transparent={props.transparent} />
+      <TabContent {...props} {...tabs} transparent={props.transparent} code={props.code} />
     </div>
   );
 }
