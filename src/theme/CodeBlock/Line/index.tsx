@@ -13,11 +13,17 @@ export default function CodeBlockLine({
   }
   const lineProps = getLineProps({
     line,
-    className: clsx(classNames, showLineNumbers && styles.codeLine),
+    className: clsx(
+      classNames,
+      showLineNumbers ? styles.codeLine : styles.noLineNumbers
+    ),
   });
   const lineTokens = line.map((token, key) => (
     <span key={key} {...getTokenProps({token, key})} />
   ));
+  useEffect(() => {
+    console.log(lineProps.className)
+  }, [lineProps])
   const highlightedLine = classNames?.find((e:string) => e.includes("code-highlight"))
   return (
     <span {...lineProps}>
@@ -29,7 +35,9 @@ export default function CodeBlockLine({
           </span>
         </>
       ) : (
-        lineTokens
+        <span className={styles.codeLineContent}>
+          {lineTokens}
+        </span>
       )}
       <br />
     </span>

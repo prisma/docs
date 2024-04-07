@@ -8,10 +8,10 @@ const config: Config = {
   favicon: 'img/favicon.png',
 
   // Set the production url of your site here
-  url: 'https://prisma.io',
+  url: 'https://www.prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: process.env.DOCUSAURUS_BASE_URL ?? '/',
 
   trailingSlash: false,
   onBrokenLinks: 'warn',
@@ -68,8 +68,11 @@ const config: Config = {
           containerId: 'GTM-KCGZPWB',
         },
         sitemap: {
-          priority: 0.5,
+          // @ts-ignore
+          changefreq: 'daily',
+          priority: 0.7,
           ignorePatterns: [
+            '/search',
             // Remove these from sitemap for SEO purposes as they're redirected
             '/getting-started/quickstart',
             '/getting-started/setup-prisma/add-to-existing-project',
@@ -80,6 +83,7 @@ const config: Config = {
         },
         docs: {
           routeBasePath: '/',
+          path: 'content',
           sidebarPath: './sidebars.ts',
           // Remove this to remove the "edit this page" links.
           editUrl:
@@ -101,8 +105,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: '/docs/social/docs-social.png',
     navbar: {
       logo: {
         srcDark: 'img/logo-white.svg',
@@ -447,22 +450,28 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['json', 'bash'],
       magicComments: [
         // Remember to extend the default highlight class name as well!
         {
-          className: 'theme-code-block-highlighted-line highlighted-line code-highlight',
-          line: 'highlight-next-line',
-          block: {start: 'highlight-start', end: 'highlight-end'},
+          className: 'theme-code-block-added-line added-line code-highlight',
+          line: 'add-next-line',
+          block: { start: 'add-start', end: 'add-end' },
         },
         {
           className: 'theme-code-block-deleted-line deleted-line code-highlight',
           line: 'delete-next-line',
-          block: {start: 'delete-start', end: 'delete-end'},
+          block: { start: 'delete-start', end: 'delete-end' },
         },
         {
           className: 'theme-code-block-edited-line edited-line code-highlight',
           line: 'edit-next-line',
-          block: {start: 'edit-start', end: 'edit-end'},
+          block: { start: 'edit-start', end: 'edit-end' },
+        },
+        {
+          className: 'theme-code-block-highlighted-line highlighted-line',
+          line: 'highlight-next-line',
+          block: { start: 'highlight-start', end: 'highlight-end' },
         }
       ]
     },

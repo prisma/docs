@@ -5,7 +5,7 @@ import MDXComponents from '@theme-original/MDXComponents';
 // Import components we'd like to use across Docs
 import Subsections from './DocCardList' // DocCardList renamed to Subsections for backwards compat
 import Admonition from '@theme/Admonition';
-import TabbedContent from '@theme/Tabs'; // Tabs renamed to TabbedContent for backwards compat
+import TabbedContent from './Tabs'; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from '@theme/TabItem';
 import Link from '@docusaurus/Link';
 import CollapseBox from '@site/src/components/collapsible';
