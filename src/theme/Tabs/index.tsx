@@ -73,7 +73,7 @@ function TabList({className, block, selectedValue, selectValue, tabValues}) {
     </ul>
   );
 }
-function TabContent({lazy, children, selectedValue, transparent, code}) {
+function TabContent({lazy, children, selectedValue, transparent, code, terminal}) {
   const childTabs = (Array.isArray(children) ? children : [children]).filter(
     Boolean,
   );
@@ -93,6 +93,8 @@ function TabContent({lazy, children, selectedValue, transparent, code}) {
         cloneElement(tabItem, {
           key: i,
           hidden: tabItem.props.value !== selectedValue,
+          code: code,
+          terminal: terminal
         }),
       )}
     </div>
@@ -103,7 +105,7 @@ function TabsComponent(props) {
   return (
     <div className={clsx('tabs-container', styles.tabList)}>
       <TabList {...props} {...tabs} />
-      <TabContent {...props} {...tabs} transparent={props.transparent} code={props.code} />
+      <TabContent {...props} {...tabs} />
     </div>
   );
 }

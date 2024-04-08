@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
-import styles from './styles.module.css';
+import styles from './styles.module.scss';
 export default function CodeBlockLine({
   line,
   classNames,
@@ -11,31 +11,35 @@ export default function CodeBlockLine({
   if (line.length === 1 && line[0].content === '\n') {
     line[0].content = '';
   }
+  const highlightedLine = classNames?.find((e:string) => e.includes("code-highlight"))
   const lineProps = getLineProps({
     line,
     className: clsx(
       classNames,
-      showLineNumbers ? styles.codeLine : styles.noLineNumbers
+      showLineNumbers ? styles.codeLine : styles.noLineNumbers,
+      highlightedLine && (showLineNumbers ? styles.highlightedNumbers : styles.highlightedLine)
     ),
   });
   const lineTokens = line.map((token, key) => (
     <span key={key} {...getTokenProps({token, key})} />
   ));
-  useEffect(() => {
-    console.log(lineProps.className)
-  }, [lineProps])
-  const highlightedLine = classNames?.find((e:string) => e.includes("code-highlight"))
   return (
     <span {...lineProps}>
       {showLineNumbers ? (
         <>
-          <span className={styles.codeLineContent}>
+          <span className={clsx(
+            styles.codeLineContent,
+            highlightedLine && styles.codeHighlighted
+          )}>
             {!highlightedLine && <span className={styles.codeLineNumber} />}
             {lineTokens}
           </span>
         </>
       ) : (
-        <span className={styles.codeLineContent}>
+        <span className={clsx(
+          styles.codeLineContent,
+          highlightedLine && styles.codeHighlighted
+        )}>
           {lineTokens}
         </span>
       )}
