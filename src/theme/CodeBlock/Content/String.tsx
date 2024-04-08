@@ -27,6 +27,7 @@ export default function CodeBlockString({
   title: titleProp,
   showLineNumbers: showLineNumbersProp,
   language: languageProp,
+  wrap = false
 }) {
   const {
     prism: {defaultLanguage, magicComments},
@@ -70,7 +71,8 @@ export default function CodeBlockString({
                 className={clsx(
                   styles.codeBlockLines,
                   showLineNumbers && styles.codeBlockLinesWithNumbering,
-                  !showLineNumbers && 'no-line-numbers'
+                  !showLineNumbers && 'no-line-numbers',
+                  wrap && styles.wrap
                 )}>
                 {tokens.map((line, i) => (
                   <Line

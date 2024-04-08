@@ -23,6 +23,7 @@ export default function CodeBlock({children: rawChildren, ...props}) {
   // relevant styles.
   const isBrowser = useIsBrowser();
   const children = maybeStringifyChildren(rawChildren);
+  const wrap = Boolean(props?.metastring?.split(" ").find(e => e === "wrap"))
   const file =
     props?.metastring?.includes("file") ?
       props?.metastring?.split(" ").find((e: string) => e.includes("file")).replace("file=", "") : false
@@ -37,7 +38,7 @@ export default function CodeBlock({children: rawChildren, ...props}) {
         </span>
       </div>}
       {/* @ts-ignore */}
-      <CodeBlockComp key={String(isBrowser)} {...props}>
+      <CodeBlockComp key={String(isBrowser)} {...props} wrap={wrap}>
         {children}
       </CodeBlockComp>
     </>
