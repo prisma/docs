@@ -113,7 +113,7 @@ export default {
   Subsections,
   Admonition,
   TabbedContent,
-  details: (props: any) => <CollapseBox {...props} />,
+  details: CollapseBox,
   TabItem,
   a: StyledLink,
   Link,
