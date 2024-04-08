@@ -33,9 +33,9 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({ children, langSwitcher, d
 }
 
 // TODO: we should fix this
-const CodeWithResult: React.FC<{ children: React.ReactElement[] }> = ({ children, outputResultText }: any) => {
-  const [show, setShow] = useState<boolean>(false)
-  return <div className={styles.codeWithResult}>
+const CodeWithResult: React.FC<{ children: React.ReactElement[] }> = ({ children, outputResultText, ...rest }: any) => {
+const [show, setShow] = useState<boolean>(false)
+  return <div className={styles.codeWithResult} {...rest}>
     <div className={styles.cmd}>{children[0]}</div>
     <div className={styles.result}>
       <div className={styles.showBtn} onClick={() => setShow(!show)}>Show {outputResultText ? outputResultText : "CLI"} results</div>
