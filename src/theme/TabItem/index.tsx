@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import styles from './styles.module.scss';
-export default function TabItem({children, hidden, className, code = true, table = false, terminal = false }) {
+export default function TabItem({children, hidden, className, code = false, table = false, terminal = false }) {
   return (
     <div
       role="tabpanel"
