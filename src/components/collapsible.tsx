@@ -16,7 +16,6 @@ const CollapseBox = ({ children, ...props }: CollapseProps) => {
     <div className={styles.wrapper} {...props}>
       <div className={styles.tab}>
         <input className={styles.input} id={`tab-${++index}`} type="checkbox" name="tab" />
-        {/* <StyledArrow /> */}
         <label className={styles.label} htmlFor={`tab-${index}`}>{title}</label>
         <div className={styles.tabContent}>{getRemainingChildren(children)}</div>
       </div>
