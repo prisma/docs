@@ -112,7 +112,7 @@ const config: Config = {
         srcDark: 'img/logo-white.svg',
         alt: 'Prisma logo',
         src: 'img/logo.svg',
-        href: "https://prisma.io/",
+        href: "https://www.prisma.io/",
         target: "_self"
       },
       items: [
@@ -182,7 +182,7 @@ const config: Config = {
           items: [
             {
               label: 'ORM',
-              href: 'https://prisma.io/orm',
+              href: 'https://www.prisma.io/orm',
               target: "_self",
               customProps: {
                 internal: true
@@ -190,7 +190,7 @@ const config: Config = {
             },
             {
               label: 'Accelerate',
-              href: 'https://prisma.io/accelerate',
+              href: 'https://www.prisma.io/accelerate',
               target: "_self",
               customProps: {
                 internal: true
@@ -198,7 +198,7 @@ const config: Config = {
             },
             {
               label: 'Pulse',
-              href: 'https://prisma.io/pulse',
+              href: 'https://www.prisma.io/pulse',
               target: "_self",
               customProps: {
                 internal: true
@@ -206,7 +206,7 @@ const config: Config = {
             },
             {
               label: 'Pricing',
-              href: 'https://prisma.io/pricing',
+              href: 'https://www.prisma.io/pricing',
               target: "_self",
               customProps: {
                 internal: true
@@ -214,7 +214,7 @@ const config: Config = {
             },
             {
               label: 'Changelog',
-              href: 'https://prisma.io/changelog',
+              href: 'https://www.prisma.io/changelog',
               target: "_self",
               customProps: {
                 internal: true
@@ -239,7 +239,7 @@ const config: Config = {
             },
             {
               label: 'Prisma in your stack',
-              href: 'https://prisma.io/stack',
+              href: 'https://www.prisma.io/stack',
               target: "_self",
               customProps: {
                 internal: true
@@ -247,7 +247,7 @@ const config: Config = {
             },
             {
               label: 'Ecosystem',
-              href: 'https://prisma.io/ecosystem',
+              href: 'https://www.prisma.io/ecosystem',
               target: "_self",
               customProps: {
                 internal: true
@@ -255,7 +255,7 @@ const config: Config = {
             },
             {
               label: 'Tutorials',
-              href: 'https://prisma.io/learn',
+              href: 'https://www.prisma.io/learn',
               target: "_self",
               customProps: {
                 internal: true
@@ -267,7 +267,7 @@ const config: Config = {
             },
             {
               label: 'Customer stories',
-              href: 'https://prisma.io/showcase',
+              href: 'https://www.prisma.io/showcase',
               target: "_self",
               customProps: {
                 internal: true
@@ -275,7 +275,7 @@ const config: Config = {
             },
             {
               label: 'Data guide',
-              href: 'https://prisma.io/dataguide',
+              href: 'https://www.prisma.io/dataguide',
               target: "_self",
               customProps: {
                 internal: true
@@ -333,7 +333,7 @@ const config: Config = {
           items: [
             {
               label: 'About',
-              href: 'https://prisma.io/about',
+              href: 'https://www.prisma.io/about',
               target: "_self",
               customProps: {
                 internal: true
@@ -341,7 +341,7 @@ const config: Config = {
             },
             {
               label: 'Blog',
-              to: 'https://prisma.io/blog',
+              to: 'https://www.prisma.io/blog',
               target: "_self",
               customProps: {
                 internal: true
@@ -353,7 +353,7 @@ const config: Config = {
             },
             {
               label: 'Careers',
-              to: 'https://prisma.io/careers',
+              to: 'https://www.prisma.io/careers',
               target: "_self",
               customProps: {
                 internal: true
@@ -361,7 +361,7 @@ const config: Config = {
             },
             {
               label: 'Events',
-              to: 'https://prisma.io/events',
+              to: 'https://www.prisma.io/events',
               target: "_self",
               customProps: {
                 internal: true
@@ -373,7 +373,7 @@ const config: Config = {
             },
             {
               label: 'OSS Friends',
-              to: 'https://prisma.io/oss-friends',
+              to: 'https://www.prisma.io/oss-friends',
               target: "_self",
               customProps: {
                 internal: true
@@ -438,7 +438,7 @@ const config: Config = {
         srcDark: 'img/logo-white.svg',
         alt: 'Prisma logo',
         src: 'img/logo-white.svg',
-        href: "https://prisma.io/",
+        href: "https://www.prisma.io/",
         target: "_self",
       },
       copyright: `© ${new Date().getFullYear()} Prisma Data, Inc.`,
