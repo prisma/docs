@@ -2,6 +2,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
+const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? '/';
+
 const config: Config = {
   title: 'Prisma Documentation',
   tagline: 'Get started with Prisma in the official documentation, and learn more about all Prisma\'s features with reference documentation, guides, and more.',
@@ -11,7 +13,7 @@ const config: Config = {
   url: 'https://www.prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: process.env.DOCUSAURUS_BASE_URL ?? '/',
+  baseUrl: DOCUSAURUS_BASE_URL ?? '/',
 
   trailingSlash: false,
   onBrokenLinks: 'throw',
@@ -117,7 +119,7 @@ const config: Config = {
       },
       items: [
         {
-          to: '/',
+          to: DOCUSAURUS_BASE_URL,
           position: 'left',
           label: '/docs',
           className: 'logo-link',
@@ -171,7 +173,7 @@ const config: Config = {
       contextualSearch: false,
       replaceSearchResultPathname: {
         from: '/docs/',
-        to: '/'
+        to: DOCUSAURUS_BASE_URL
       }
     },
     footer: {
