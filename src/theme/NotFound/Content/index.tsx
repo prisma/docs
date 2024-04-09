@@ -11,7 +11,7 @@ export default function NotFoundContent({className}) {
       <div className={`row ${styles.notFoundRow}`}>
         <img src='/icons/derp.svg' />
         <div>
-          <Heading as="h1" className="hero__title">
+          <Heading as="h1" className={styles.hero__title}>
             <Translate
               id="theme.NotFound.title"
               description="The title of the 404 page">
@@ -26,7 +26,7 @@ export default function NotFoundContent({className}) {
             </Translate>
           </p>
           <p>
-          <Link to="/">Docs</Link> | <a href="https://prisma.io/blog">Blog</a>
+          <Link to="/">Docs</Link> | <a href="https://www.prisma.io/blog">Blog</a>
           </p>
         </div>
       </div>
