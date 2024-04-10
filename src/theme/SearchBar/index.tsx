@@ -47,8 +47,10 @@ function Hit({
 }) {
     return (
         <Link to={hit.url}>
+            {hit?.hierarchy?.lvl0 && (
+                <span className="search-hit-0">{hit.hierarchy.lvl0}</span>
+            )}
             {children}
-            {hit?.hierarchy?.lvl0 && <span>{hit.hierarchy.lvl0}</span>}
             {/* {hit?.hierarchy?.lvl1 && <span>{hit.hierarchy.lvl1}</span>} */}
             {/* {hit?.hierarchy?.lvl2 && <span>{hit.hierarchy.lvl2}</span>} */}
             {/* {hit?.content && <p>{hit.content}</p>} */}
