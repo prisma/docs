@@ -6,7 +6,7 @@ export const ProductLinkData = {
       'Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.',
     links: [
       {
-        url: 'docs/getting-started',
+        url: '/getting-started',
         title: 'Getting started',
       },
       {
@@ -23,11 +23,11 @@ export const ProductLinkData = {
       'Expand your application capabilities with global database caching, connection pooling and real-time database events.',
     links: [
       {
-        url: 'docs/accelerate',
+        url: '/accelerate',
         title: 'Prisma Accelerate',
       },
       {
-        url: 'docs/pulse',
+        url: '/pulse',
         title: 'Prisma Pulse',
       },
     ],
@@ -37,41 +37,41 @@ export const ProductLinkData = {
 export const ORMCardLinkData = {
   components: [
     {
-      url: 'docs/orm/prisma-schema',
+      url: '/orm/prisma-schema',
       title: 'Prisma Schema',
     },
     {
-      url: 'docs/orm/tools/prisma-cli',
+      url: '/orm/tools/prisma-cli',
       title: 'Prisma CLI',
     },
     {
-      url: 'docs/orm/prisma-client',
+      url: '/orm/prisma-client',
       title: 'Prisma Client',
     },
     {
-      url: 'docs/orm/tools/prisma-studio',
+      url: '/orm/tools/prisma-studio',
       title: 'Prisma Studio',
     },
     {
-      url: 'docs/orm/prisma-migrate',
+      url: '/orm/prisma-migrate',
       title: 'Prisma Migrate',
     },
   ],
   reference: [
     {
-      url: 'docs/orm/reference/prisma-client-reference',
+      url: '/orm/reference/prisma-client-reference',
       title: 'Prisma Client API reference',
     },
     {
-      url: 'docs/orm/reference/prisma-schema-reference',
+      url: '/orm/reference/prisma-schema-reference',
       title: 'Prisma schema reference',
     },
     {
-      url: 'docs/orm/reference/error-reference',
+      url: '/orm/reference/error-reference',
       title: 'Error message reference',
     },
     {
-      url: 'docs/orm/reference/prisma-cli-reference',
+      url: '/orm/reference/prisma-cli-reference',
       title: 'Prisma CLI reference',
     },
   ],
@@ -81,39 +81,39 @@ export const ORMGeneralLinkData = [
   {
     title: `What is Prisma ORM`,
     description: 'An overview of what Prisma ORM is and how it works.',
-    url: 'docs/orm/overview/introduction/what-is-prisma',
+    url: '/orm/overview/introduction/what-is-prisma',
     icon: 'fa-regular fa-question',
   },
   {
     title: `CRUD`,
     description: 'How to perform CRUD operations with your generated Prisma Client API. ',
-    url: 'docs/orm/prisma-client/queries/crud',
+    url: '/orm/prisma-client/queries/crud',
     icon: 'fa-solid fa-arrow-right-arrow-left',
   },
   {
     title: `Prisma ORM in your stack`,
     description:
       'Use Prisma ORM to build a GraphQL or REST API, or as part of a fullstack application.',
-    url: 'docs/orm/overview/prisma-in-your-stack',
+    url: '/orm/overview/prisma-in-your-stack',
     icon: 'fa-solid fa-server',
   },
   {
     title: `Preview features`,
     description: 'Available preview features and how to enable them.',
-    url: 'docs/orm/reference/preview-features',
+    url: '/orm/reference/preview-features',
     icon: 'fa-solid fa-eye',
   },
   {
     title: `Adopting Prisma ORM`,
     description: 'Migrate to Prisma ORM from other ORMs.',
-    url: 'docs/orm/more/migrating-to-prisma',
+    url: '/orm/more/migrating-to-prisma',
     icon: 'fa-solid fa-download',
   },
   {
     title: `Deployment guides`,
     description:
       'Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.',
-    url: 'docs/orm/prisma-client/deployment',
+    url: '/orm/prisma-client/deployment',
     icon: 'fa-solid fa-book',
   },
 ]
@@ -123,49 +123,49 @@ export const DatabaseData = [
     title: 'PostgreSQL',
     icon: "postgresqlsimple",
     darkIcon: "postgresqldark",
-    url: 'docs/orm/overview/databases/postgresql',
+    url: '/orm/overview/databases/postgresql',
   },
   {
     title: 'MySQL',
     icon: "mysqlsimple",
     darkIcon: "mysqlsimple",
-    url: 'docs/orm/overview/databases/mysql',
+    url: '/orm/overview/databases/mysql',
   },
   {
     title: 'SQL Server',
     icon: "sqlserver",
     darkIcon: "sqlserver",
-    url: 'docs/orm/overview/databases/sql-server',
+    url: '/orm/overview/databases/sql-server',
   },
   {
     title: 'SQLite',
     icon: "sqlite",
     darkIcon: "sqlite",
-    url: 'docs/orm/overview/databases/sqlite',
+    url: '/orm/overview/databases/sqlite',
   },
   {
     title: 'MongoDB',
     icon: "mongodbsimple",
     darkIcon: "mongodbsimple",
-    url: 'docs/orm/overview/databases/mongodb',
+    url: '/orm/overview/databases/mongodb',
   },
   {
     title: 'CockroachDB',
     icon: "cockroachdb",
     darkIcon: "cockroachdbdark",
-    url: 'docs/orm/overview/databases/cockroachdb',
+    url: '/orm/overview/databases/cockroachdb',
   },
   {
     title: 'Planetscale',
     icon: "planetscale",
     darkIcon: "planetscaledark",
-    url: 'docs/orm/overview/databases/planetscale',
+    url: '/orm/overview/databases/planetscale',
   },
   {
     title: 'MariaDB',
     icon: "mariadb",
     darkIcon: "mariadbdark",
-    url: 'docs/orm/overview/databases/mysql',
+    url: '/orm/overview/databases/mysql',
   },
 ]
 
