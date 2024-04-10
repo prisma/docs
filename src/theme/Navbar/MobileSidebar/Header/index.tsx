@@ -1,4 +1,5 @@
 import React from 'react';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import { useNavbarMobileSidebar } from '@docusaurus/theme-common/internal';
 import { translate } from '@docusaurus/Translate';
 import NavbarColorModeToggle from '@theme/Navbar/ColorModeToggle';
@@ -25,10 +26,11 @@ function CloseButton() {
   );
 }
 export default function NavbarMobileSidebarHeader() {
+  const baseUrl = useBaseUrl('/')
   return (
     <div className="navbar-sidebar__brand">
       <NavbarLogo />
-      <Link to="/docs" className={styles.docsLink}>
+      <Link to={baseUrl === '/' ? '/' : '/docs'} className={styles.docsLink}>
         /docs
       </Link>
       <NavbarColorModeToggle className="margin-right--md" />
