@@ -90,7 +90,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/prisma/docs',
+            'https://github.com/prisma/docs/tree/main',
         },
         blog: false,
         theme: {
