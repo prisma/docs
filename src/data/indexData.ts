@@ -156,7 +156,7 @@ export const DatabaseData = [
     url: '/orm/overview/databases/cockroachdb',
   },
   {
-    title: 'Planetscale',
+    title: 'PlanetScale',
     icon: "planetscale",
     darkIcon: "planetscaledark",
     url: '/orm/overview/databases/planetscale',
