@@ -106,7 +106,6 @@ const config: Config = {
       } satisfies Preset.Options
     ],
   ],
-
   themeConfig: {
     image: '/docs/social/docs-social.png',
     navbar: {
