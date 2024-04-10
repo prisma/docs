@@ -5,11 +5,11 @@ import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 import styles from './styles.module.scss'
 
-export default function NotFoundContent({className}) {
+export default function NotFoundContent({ className }) {
   return (
     <main className={clsx('container margin-vert--xl', className)}>
       <div className={`row ${styles.notFoundRow}`}>
-        <img src='/icons/derp.svg' />
+        <img src='/docs/icons/derp.svg' />
         <div>
           <Heading as="h1" className={styles.hero__title}>
             <Translate
@@ -26,7 +26,7 @@ export default function NotFoundContent({className}) {
             </Translate>
           </p>
           <p>
-          <Link to="/">Docs</Link> | <a href="https://www.prisma.io/blog">Blog</a>
+            <Link to="/">Docs</Link> | <a href="https://www.prisma.io/blog">Blog</a>
           </p>
         </div>
       </div>
