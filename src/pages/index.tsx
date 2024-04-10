@@ -117,7 +117,7 @@ function HomepageDatabasesSection() {
         {DatabaseData.map((e) => (
           <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
-              <img src={`/img/technologies/${e.icon}.svg`} style={{
+              <img src={`/docs/img/technologies/${e.icon}.svg`} style={{
                 height: `100%`,
                 width: e.icon === "sqlite" ? `55px` : `auto`,
                 marginRight: e.icon === "sqlite" ? `-30px` : 0,
