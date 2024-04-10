@@ -118,7 +118,7 @@ const config: Config = {
       },
       items: [
         {
-          to: DOCUSAURUS_BASE_URL,
+          to: '/docs',
           position: 'left',
           label: '/docs',
           className: 'logo-link',
@@ -228,7 +228,7 @@ const config: Config = {
           items: [
             {
               label: 'Docs',
-              to: '/',
+              to: '/docs',
             },
             {
               label: 'Get started',
