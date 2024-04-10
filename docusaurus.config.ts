@@ -191,7 +191,7 @@ const config: Config = {
             },
             {
               label: 'Accelerate',
-              href: 'https://www.prisma.io/accelerate',
+              href: 'https://www.prisma.io/data-platform/accelerate',
               target: '_self',
               customProps: {
                 internal: true,
@@ -199,7 +199,7 @@ const config: Config = {
             },
             {
               label: 'Pulse',
-              href: 'https://www.prisma.io/pulse',
+              href: 'https://www.prisma.io/data-platform/pulse',
               target: '_self',
               customProps: {
                 internal: true,
