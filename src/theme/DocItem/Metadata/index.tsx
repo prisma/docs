@@ -5,8 +5,8 @@ import { useDoc } from '@docusaurus/theme-common/internal';
 import type { DocFrontMatter } from '@docusaurus/plugin-content-docs'
 
 type PrismaDocFrontMatter = DocFrontMatter & {
-  metaTitle: string,
-  metaDescription: string,
+  metaTitle?: string,
+  metaDescription?: string,
 }
 
 export default function DocItemMetadata(): JSX.Element {
