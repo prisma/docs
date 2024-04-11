@@ -207,7 +207,7 @@ export default function Home(): JSX.Element {
   } = useDocusaurusContext();
   return (
     <Layout
-      title={title}
+      title="Prisma ORM, Accelerate, Pulse & More"
       description="Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more."
     >
       <Head>
