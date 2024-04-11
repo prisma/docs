@@ -170,10 +170,10 @@ const config: Config = {
       apiKey: 'fd3d0a05bfe5d280348060ca5ea416be',
       indexName: 'prisma',
       contextualSearch: false,
-      // replaceSearchResultPathname: {
-      //   from: '/docs/',
-      //   to: DOCUSAURUS_BASE_URL,
-      // },
+      replaceSearchResultPathname: {
+        from: '/docs/',
+        to: DOCUSAURUS_BASE_URL,
+      },
     },
     footer: {
       style: 'dark',
