@@ -123,7 +123,7 @@ const config: Config = {
       },
       items: [
         {
-          to: DOCUSAURUS_BASE_URL,
+          to: DOCUSAURUS_BASE_URL === '/' ? DOCUSAURUS_BASE_URL : '/docs',
           position: 'left',
           label: '/docs',
           className: 'logo-link',
@@ -233,7 +233,7 @@ const config: Config = {
           items: [
             {
               label: 'Docs',
-              to: '/',
+              to: DOCUSAURUS_BASE_URL === '/' ? DOCUSAURUS_BASE_URL : '/docs',
             },
             {
               label: 'Get started',
