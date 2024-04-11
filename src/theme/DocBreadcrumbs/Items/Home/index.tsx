@@ -5,8 +5,7 @@ import { translate } from '@docusaurus/Translate';
 import IconHome from '@theme/Icon/Home';
 import styles from './styles.module.css';
 export default function HomeBreadcrumbItem() {
-  let homeHref = useBaseUrl('/');
-  homeHref = homeHref === '/' ? homeHref : '/docs'
+  const homeHref = useBaseUrl('/');
   return (
     <li className="breadcrumbs__item">
       <Link

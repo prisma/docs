@@ -30,7 +30,7 @@ export default function NavbarMobileSidebarHeader() {
   return (
     <div className="navbar-sidebar__brand">
       <NavbarLogo />
-      <Link to={baseUrl === '/' ? '/' : '/docs'} className={styles.docsLink}>
+      <Link to={baseUrl} className={styles.docsLink}>
         /docs
       </Link>
       <NavbarColorModeToggle className="margin-right--md" />

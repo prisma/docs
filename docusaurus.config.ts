@@ -14,7 +14,7 @@ const config: Config = {
   url: 'https://www.prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: DOCUSAURUS_BASE_URL ?? '/',
+  baseUrl: DOCUSAURUS_BASE_URL,
 
   trailingSlash: false,
   onBrokenLinks: 'throw',
@@ -118,7 +118,7 @@ const config: Config = {
       },
       items: [
         {
-          to: DOCUSAURUS_BASE_URL === '/' ? DOCUSAURUS_BASE_URL : '/docs',
+          to: DOCUSAURUS_BASE_URL,
           position: 'left',
           label: '/docs',
           className: 'logo-link',
@@ -170,10 +170,10 @@ const config: Config = {
       apiKey: 'fd3d0a05bfe5d280348060ca5ea416be',
       indexName: 'prisma',
       contextualSearch: false,
-      replaceSearchResultPathname: {
-        from: '/docs/',
-        to: DOCUSAURUS_BASE_URL,
-      },
+      // replaceSearchResultPathname: {
+      //   from: '/docs/',
+      //   to: DOCUSAURUS_BASE_URL,
+      // },
     },
     footer: {
       style: 'dark',
@@ -228,7 +228,7 @@ const config: Config = {
           items: [
             {
               label: 'Docs',
-              to: DOCUSAURUS_BASE_URL === '/' ? DOCUSAURUS_BASE_URL : '/docs',
+              to: DOCUSAURUS_BASE_URL,
             },
             {
               label: 'Get started',
