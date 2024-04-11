@@ -206,10 +206,7 @@ export default function Home(): JSX.Element {
     siteConfig: { title },
   } = useDocusaurusContext();
   return (
-    <Layout
-      title={title}
-      description="Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more."
-    >
+    <Layout description="Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.">
       <Head>
         <link rel="canonical" href="https://www.prisma.io/docs" />
       </Head>
