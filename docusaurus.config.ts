@@ -58,6 +58,11 @@ const config: Config = {
       'data-document-language': 'true',
       'data-domain-script': '22c2e2c0-3df0-4958-8672-1194370ee230',
     },
+    // Tolt script
+    {
+      src: 'https://cdn.tolt.io/tolt.js',
+      'data-tolt': 'fda67739-7ed0-42d2-b716-6da0edbec191',
+    },
   ],
   plugins: ['docusaurus-plugin-sass'],
   presets: [
