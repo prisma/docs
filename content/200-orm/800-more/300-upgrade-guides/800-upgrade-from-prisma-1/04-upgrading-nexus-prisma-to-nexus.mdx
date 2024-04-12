@@ -1,7 +1,7 @@
 ---
 title: 'Old to new Nexus'
 metaTitle: 'Upgrade Prisma 1 with nexus-prisma to @nexus/schema'
-metaDescription: 'Learn how to upgrade existing Prisma 1 projects with nexus-prisma to Prisma 2 and Nexus.'
+metaDescription: 'Learn how to upgrade existing Prisma 1 projects with nexus-prisma to Prisma ORM 2 and Nexus.'
 ---
 
 ## Overview
@@ -12,10 +12,10 @@ This upgrade guide describes how to upgrade a project that's based on [Prisma 1]
 
 The code will be upgraded to the latest version of `@nexus/schema`. Further, the `nexus-prisma` package will be replaced with the new [`nexus-plugin-prisma`](https://github.com/graphql-nexus/nexus-plugin-prisma).
 
-The guide assumes that you already went through the [guide for upgrading the Prisma layer](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql). This means you already:
+The guide assumes that you already went through the [guide for upgrading the Prisma ORM layer](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql). This means you already:
 
-- installed the Prisma 2 CLI
-- created your Prisma 2 schema
+- installed the Prisma ORM 2 CLI
+- created your Prisma ORM 2 schema
 - introspected your database and resolved potential [schema incompatibilities](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql)
 - installed and generated Prisma Client
 
@@ -42,7 +42,7 @@ The guide further assumes that you have a file setup that looks similar to this:
 
 The important parts are:
 
-- A folder called with `prisma` with your Prisma 2 schema
+- A folder called with `prisma` with your Prisma ORM 2 schema
 - A folder called `src` with your application code
 
 If this is not what your project structure looks like, you'll need to adjust the instructions in the guide to match your own setup.
@@ -61,19 +61,19 @@ Then, you can install the latest `@nexus/schema` dependency in your project:
 npm install @nexus/schema
 ```
 
-Next, install the Prisma plugin for Nexus which will allow you to expose Prisma models in your GraphQL API (this is the new equivalent of the former `nexus-prisma` package):
+Next, install the Prisma ORM plugin for Nexus which will allow you to expose Prisma ORM models in your GraphQL API (this is the new equivalent of the former `nexus-prisma` package):
 
 ```copy
 npm install nexus-plugin-prisma
 ```
 
-The `nexus-plugin-prisma` dependency bundles all required Prisma dependencies. You should therefore remove the dependencies that you added installed when you upgraded the Prisma layer of your app:
+The `nexus-plugin-prisma` dependency bundles all required Prisma ORM dependencies. You should therefore remove the dependencies that you added installed when you upgraded the Prisma ORM layer of your app:
 
 ```copy
 npm uninstall @prisma/cli @prisma/client
 ```
 
-Note however that you can still invoke the Prisma 2 CLI with the familiar command:
+Note however that you can still invoke the Prisma ORM 2 CLI with the familiar command:
 
 ```copy
 npx prisma -v
@@ -81,43 +81,53 @@ npx prisma -v
 
 > **Note**: If you see the output of the Prisma 1 CLI when running `npx prisma -v`, be sure to delete your `node_modules` folder and re-run `npm install`.
 
-## 2. Update the configuration of Nexus and Prisma
+## 2. Update the configuration of Nexus and Prisma ORM
 
 To get started, you can remove the old imports that are not needed any more with your new setup:
 
 ```ts line-number highlight=1-3;delete
+//delete-start
 import { makePrismaSchema, prismaObjectType } from 'nexus-prisma'
 import datamodelInfo from './generated/nexus-prisma'
 import { prisma } from './generated/prisma-client'
+//delete-end
 ```
 
 Instead, you now import the following into your application:
 
 ```ts line-number highlight=1-3;add
+//add-start
 import { nexusSchemaPrisma } from 'nexus-plugin-prisma/schema'
 import { objectType, makeSchema, queryType, mutationType } from '@nexus/schema'
 import { PrismaClient } from '@prisma/client'
+//add-end
 ```
 
-Next you need to adjust the code where you currently create your `GraphQLSchema`, most likely this is currently happening via the `makePrismaSchema` function in your code. Since this function was imported from the removed `nexus-prisma` package, you'll need to replace it with the `makeSchema` function from the `@nexus/schema` package. The way how the Prisma plugin for Nexus is used also changes in the latest version.
+Next you need to adjust the code where you currently create your `GraphQLSchema`, most likely this is currently happening via the `makePrismaSchema` function in your code. Since this function was imported from the removed `nexus-prisma` package, you'll need to replace it with the `makeSchema` function from the `@nexus/schema` package. The way how the Prisma ORM plugin for Nexus is used also changes in the latest version.
 
 Here's an example for such a configuration:
 
-```ts file=./src/index.ts line-number highlight=2,12-14;add|1,8-11;delete
+```ts file=./src/index.ts line-number highlight=2,12-14;add|1,8-11;delete showLineNumbers
+//delete-next-line
  const schema = makePrismaSchema({
+//add-next-line
  const schema = makeSchema({
 
   // Provide all the GraphQL types we've implemented
   types: [Query, Mutation, UserUniqueInput, User, Post, Category, Profile],
 
   // Configure the interface to Prisma
+  //delete-start
   prisma: {
     datamodelInfo,
     client: prisma,
   },
+  //delete-end
+  //add-start
   plugins: [nexusSchemaPrisma({
     experimentalCRUD: true,
   })],
+  //add-end
 
   // Specify where Nexus should put the generated files
   outputs: {
@@ -146,12 +156,16 @@ Here's an example for such a configuration:
 
 If you previously typed the GraphQL `context` object that's passed through your resolver chain, you need to adjust the type like so:
 
-```ts file=./src/types.ts highlight=2,6;add|1,5;delete
+```ts file=./src/types.ts highlight=2,6;add|1,5;delete showLineNumbers
+//delete-next-line
 import { Prisma } from './generated/prisma-client'
+//add-next-line
 import { PrismaClient } from '@prisma/client'
 
 export interface Context {
+  //delete-next-line
   prisma: Prisma
+  //add-next-line
   prisma: PrismaClient
 }
 ```
@@ -217,6 +231,7 @@ Note that `t.model` looks at the `name` attribute in the object that's passed as
 At this point, you might see errors on the relation fields `posts` and `profile`, e.g.:
 
 ```bash highlight=1;delete
+//delete-next-line
 Missing type Post, did you forget to import a type to the root query?
 ```
 
@@ -313,7 +328,7 @@ const Category = prismaObjectType({
 })
 ```
 
-The asterisk in `prismaFields` means that _all_ Prisma fields are exposed.
+The asterisk in `prismaFields` means that _all_ Prisma ORM fields are exposed.
 
 #### Type definition with the latest version of `@nexus/schema` and the `nexus-plugin-prisma`
 
@@ -424,7 +439,7 @@ queryType({
 })
 ```
 
-The only thing that needs to be updated for this query is the call to Prisma since the new Prisma Client API looks a bit different from the one used in Prisma 1.
+The only thing that needs to be updated for this query is the call to Prisma ORM since the new Prisma Client API looks a bit different from the one used in Prisma 1.
 
 ```ts line-number highlight=6,9,12,13;normal
 queryType({
@@ -493,18 +508,21 @@ const Query = queryType({
     t.field('user', {
       type: 'User',
       args: {
+        //highlight-next-line
         userUniqueInput: arg({
           type: 'UserUniqueInput',
           nullable: false,
         }),
       },
       resolve: (_, args, context) => {
+        //highlight-start
         return context.prisma.user.findUnique({
           where: {
             id: args.userUniqueInput?.id,
             email: args.userUniqueInput?.email,
           },
         })
+        //highlight-end
       },
     })
   },
@@ -583,6 +601,7 @@ const Mutation = mutationType({
         authorId: stringArg({ nullable: false }),
       },
       resolve: (_, args, context) => {
+        //highlight-start
         return context.prisma.post.create({
           data: {
             title: args.title,
@@ -592,6 +611,7 @@ const Mutation = mutationType({
             },
           },
         })
+        //highlight-end
       },
     })
   },
@@ -647,6 +667,7 @@ const Mutation = mutationType({
         bio: stringArg(),
       },
       resolve: (_, args, context) => {
+        //highlight-start
         return context.prisma.user.update({
           where: {
             id: args.userUniqueInput?.id,
@@ -658,6 +679,7 @@ const Mutation = mutationType({
             },
           },
         })
+        //highlight-end
       },
     })
   },
@@ -712,6 +734,7 @@ const Mutation = mutationType({
       },
       resolve: (_, args, context) => {
         const ids = args.categoryIds.map((id) => ({ id }))
+        //highlight-start
         return context.prisma.post.update({
           where: {
             id: args.postId,
@@ -720,6 +743,7 @@ const Mutation = mutationType({
             categories: { connect: ids },
           },
         })
+        //highlight-end
       },
     })
   },
@@ -745,6 +769,6 @@ rm -rf src/generated
 rm -rf prisma1
 ```
 
-### 5.3. Stop the Prisma server
+### 5.3. Stop the Prisma ORM server
 
-Finally, you can stop running your Prisma server.
+Finally, you can stop running your Prisma ORM server.
