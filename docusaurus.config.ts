@@ -6,14 +6,15 @@ const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? '/';
 
 const config: Config = {
   title: 'Prisma Documentation',
-  tagline: 'Get started with Prisma in the official documentation, and learn more about all Prisma\'s features with reference documentation, guides, and more.',
+  tagline:
+    "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
   favicon: 'img/favicon.png',
 
   // Set the production url of your site here
   url: 'https://www.prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: DOCUSAURUS_BASE_URL ?? '/',
+  baseUrl: DOCUSAURUS_BASE_URL,
 
   trailingSlash: false,
   onBrokenLinks: 'throw',
@@ -28,7 +29,7 @@ const config: Config = {
     locales: ['en'],
   },
   customFields: {
-    'BREVO_API_KEY': process.env.BREVO_API_KEY
+    BREVO_API_KEY: process.env.BREVO_API_KEY,
   },
   scripts: [
     // kapa.ai script
@@ -56,6 +57,11 @@ const config: Config = {
       src: 'https://cdn.cookielaw.org/scripttemplates/otSDKStub.js',
       'data-document-language': 'true',
       'data-domain-script': '22c2e2c0-3df0-4958-8672-1194370ee230',
+    },
+    // Tolt script
+    {
+      src: 'https://cdn.tolt.io/tolt.js',
+      'data-tolt': 'fda67739-7ed0-42d2-b716-6da0edbec191',
     },
   ],
   plugins: ['docusaurus-plugin-sass'],
@@ -89,8 +95,7 @@ const config: Config = {
           path: 'content',
           sidebarPath: './sidebars.ts',
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/prisma/docs/tree/main',
+          editUrl: 'https://github.com/prisma/docs/tree/main',
         },
         blog: false,
         theme: {
@@ -100,10 +105,10 @@ const config: Config = {
             './src/css/docsearch.css',
             './src/css/all.css',
             './src/css/theming.css',
-            './src/css/prism.css'
+            './src/css/prism.css',
           ],
         },
-      } satisfies Preset.Options
+      } satisfies Preset.Options,
     ],
   ],
   themeConfig: {
@@ -113,8 +118,8 @@ const config: Config = {
         srcDark: 'img/logo-white.svg',
         alt: 'Prisma logo',
         src: 'img/logo.svg',
-        href: "https://www.prisma.io/",
-        target: "_self"
+        href: 'https://www.prisma.io/',
+        target: '_self',
       },
       items: [
         {
@@ -160,7 +165,7 @@ const config: Config = {
         {
           href: 'https://console.prisma.io/login?utm_source=docs&utm_medium=login',
           position: 'right',
-          label: "Login",
+          label: 'Login',
           className: 'navbar-login-btn internal teal-btn',
         },
       ],
@@ -172,8 +177,8 @@ const config: Config = {
       contextualSearch: false,
       replaceSearchResultPathname: {
         from: '/docs/',
-        to: DOCUSAURUS_BASE_URL
-      }
+        to: DOCUSAURUS_BASE_URL,
+      },
     },
     footer: {
       style: 'dark',
@@ -184,42 +189,42 @@ const config: Config = {
             {
               label: 'ORM',
               href: 'https://www.prisma.io/orm',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Accelerate',
-              href: 'https://www.prisma.io/accelerate',
-              target: "_self",
+              href: 'https://www.prisma.io/data-platform/accelerate',
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Pulse',
-              href: 'https://www.prisma.io/pulse',
-              target: "_self",
+              href: 'https://www.prisma.io/data-platform/pulse',
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Pricing',
               href: 'https://www.prisma.io/pricing',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Changelog',
               href: 'https://www.prisma.io/changelog',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
           ],
         },
@@ -228,7 +233,7 @@ const config: Config = {
           items: [
             {
               label: 'Docs',
-              to: '/',
+              to: DOCUSAURUS_BASE_URL,
             },
             {
               label: 'Get started',
@@ -241,26 +246,26 @@ const config: Config = {
             {
               label: 'Prisma in your stack',
               href: 'https://www.prisma.io/stack',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Ecosystem',
               href: 'https://www.prisma.io/ecosystem',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Tutorials',
               href: 'https://www.prisma.io/learn',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Playground',
@@ -269,18 +274,18 @@ const config: Config = {
             {
               label: 'Customer stories',
               href: 'https://www.prisma.io/showcase',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Data guide',
               href: 'https://www.prisma.io/dataguide',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Data Platform status',
@@ -298,34 +303,34 @@ const config: Config = {
             {
               label: 'Community',
               href: 'https://www.prisma.io/community',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Support',
               href: 'https://www.prisma.io/support',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Enterprise',
               href: 'https://www.prisma.io/enterprise',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Partners',
               href: 'https://www.prisma.io/partners',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
           ],
         },
@@ -335,18 +340,18 @@ const config: Config = {
             {
               label: 'About',
               href: 'https://www.prisma.io/about',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Blog',
               to: 'https://www.prisma.io/blog',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Data DX',
@@ -355,18 +360,18 @@ const config: Config = {
             {
               label: 'Careers',
               to: 'https://www.prisma.io/careers',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Events',
               to: 'https://www.prisma.io/events',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Causes',
@@ -375,10 +380,10 @@ const config: Config = {
             {
               label: 'OSS Friends',
               to: 'https://www.prisma.io/oss-friends',
-              target: "_self",
+              target: '_self',
               customProps: {
-                internal: true
-              }
+                internal: true,
+              },
             },
             {
               label: 'Terms & Privacy',
@@ -394,59 +399,59 @@ const config: Config = {
           items: [
             {
               label: ' ',
-              href: "https://discord.gg/KQyTW2H5ca",
+              href: 'https://discord.gg/KQyTW2H5ca',
               customProps: {
-                icon: "fa-brands fa-discord",
+                icon: 'fa-brands fa-discord',
                 internal: true,
-              }
+              },
             },
             {
               label: ' ',
-              href: "https://x.com/prisma",
+              href: 'https://x.com/prisma',
               customProps: {
-                icon: "fa-brands fa-x-twitter",
+                icon: 'fa-brands fa-x-twitter',
                 internal: true,
-              }
+              },
             },
             {
               label: ' ',
-              href: "https://www.youtube.com/prismadata",
+              href: 'https://www.youtube.com/prismadata',
               customProps: {
-                icon: "fa-brands fa-youtube",
+                icon: 'fa-brands fa-youtube',
                 internal: true,
-              }
+              },
             },
             {
               label: ' ',
-              href: "https://pris.ly/whatsapp",
+              href: 'https://pris.ly/whatsapp',
               customProps: {
-                icon: "fa-brands fa-whatsapp",
+                icon: 'fa-brands fa-whatsapp',
                 internal: true,
-              }
+              },
             },
             {
               label: ' ',
-              href: "https://github.com/prisma",
+              href: 'https://github.com/prisma',
               customProps: {
-                icon: "fa-brands fa-github",
+                icon: 'fa-brands fa-github',
                 internal: true,
-              }
+              },
             },
-          ]
-        }
+          ],
+        },
       ],
       logo: {
         srcDark: 'img/logo-white.svg',
         alt: 'Prisma logo',
         src: 'img/logo-white.svg',
-        href: "https://www.prisma.io/",
-        target: "_self",
+        href: 'https://www.prisma.io/',
+        target: '_self',
       },
       copyright: `© ${new Date().getFullYear()} Prisma Data, Inc.`,
     },
     docs: {
       sidebar: {
-        autoCollapseCategories: true
+        autoCollapseCategories: true,
       },
     },
     prism: {
@@ -474,8 +479,8 @@ const config: Config = {
           className: 'theme-code-block-highlighted-line highlighted-line',
           line: 'highlight-next-line',
           block: { start: 'highlight-start', end: 'highlight-end' },
-        }
-      ]
+        },
+      ],
     },
   } satisfies Preset.ThemeConfig,
 };
