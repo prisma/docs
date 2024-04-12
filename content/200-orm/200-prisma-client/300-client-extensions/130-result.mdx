@@ -19,8 +19,6 @@ You can use the `result` [Prisma Client extensions](/orm/prisma-client/client-ex
 
 Use the `$extends` [client-level method](/orm/reference/prisma-client-reference#client-methods) to create an _extended client_. An extended client is a variant of the standard Prisma Client that is wrapped by one or more extensions.
 
-Use the `result` extension component to add custom fields and methods to query results.
-
 To add a custom [field](#add-a-custom-field-to-query-results) or [method](#add-a-custom-method-to-the-result-object) to query results, use the following structure. In this example, we add the custom field `myComputedField` to the result of a `user` model query.
 
 ```ts
@@ -142,3 +140,35 @@ const user = await prisma.user.findUniqueOrThrow({ where: { id: someId } })
 user.email = 'mynewmail@mailservice.com'
 await user.save()
 ```
+
+## Using `omit` query option with `result` extension component
+
+When using the [`omit` (Preview) option](https://www.prisma.io/docs/orm/reference/prisma-client-reference#omit) with result extensions, there are certain considerations to keep in mind. 
+
+If you `omit` a field that is needed by a computed field, it will still be read from the database even though it will not be included in the query result. 
+
+Consider the following example: 
+
+```ts
+const xprisma = prisma.$extends({
+  result: {
+    user: {
+      sanitizedPassword: {
+        needs: { password: true },
+        compute(user) {
+          return sanitize(user.password)
+        },
+      },
+    },
+  },
+})
+
+const user = await xprisma.user.findFirstOrThrow({
+  exclude: {
+    password: true,
+  },
+})
+```
+In this case, although `password` is omitted from the result, it will still be queried from the database because it is a dependency of the `sanitizedPassword` computed field. 
+
+To ensure omitted fields are not queried from the database at all, you must also omit dependent fields. For example, omitting both `password` and `sanitizedPassword` will exclude both from the result as well as prevent the `password` field from being read from the database. 
