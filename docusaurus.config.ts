@@ -14,7 +14,7 @@ const config: Config = {
   url: 'https://www.prisma.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: DOCUSAURUS_BASE_URL ?? '/',
+  baseUrl: DOCUSAURUS_BASE_URL,
 
   trailingSlash: false,
   onBrokenLinks: 'throw',
@@ -57,6 +57,11 @@ const config: Config = {
       src: 'https://cdn.cookielaw.org/scripttemplates/otSDKStub.js',
       'data-document-language': 'true',
       'data-domain-script': '22c2e2c0-3df0-4958-8672-1194370ee230',
+    },
+    // Tolt script
+    {
+      src: 'https://cdn.tolt.io/tolt.js',
+      'data-tolt': 'fda67739-7ed0-42d2-b716-6da0edbec191',
     },
   ],
   plugins: ['docusaurus-plugin-sass'],
@@ -228,7 +233,7 @@ const config: Config = {
           items: [
             {
               label: 'Docs',
-              to: '/',
+              to: DOCUSAURUS_BASE_URL,
             },
             {
               label: 'Get started',

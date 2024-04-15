@@ -15,6 +15,7 @@ import {
 } from '@site/src/data/indexData';
 
 import styles from './index.module.scss';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 function HomepageCard({
   className,
@@ -143,11 +144,11 @@ function HomepageDatabasesSection() {
           <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
               <img
-                src={`/docs/img/technologies/${e.icon}.svg`}
+                src={useBaseUrl(e.icon)}
                 style={{
                   height: `100%`,
-                  width: e.icon === 'sqlite' ? `55px` : `auto`,
-                  marginRight: e.icon === 'sqlite' ? `-30px` : 0,
+                  width: e.icon.endsWith('sqlite.svg') ? `55px` : `auto`,
+                  marginRight: e.icon.endsWith('sqlite.svg') ? `-30px` : 0,
                 }}
               />
               <span>{e.title}</span>
@@ -206,10 +207,7 @@ export default function Home(): JSX.Element {
     siteConfig: { title },
   } = useDocusaurusContext();
   return (
-    <Layout
-      title={title}
-      description="Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more."
-    >
+    <Layout description="Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.">
       <Head>
         <link rel="canonical" href="https://www.prisma.io/docs" />
       </Head>
