@@ -1,99 +1,62 @@
-name: Comment based on changed pages (Vercel Deploy URLs + Redirect Suggestions)
-
+name: List Changed Pages
 on:
   pull_request:
+    branches:
+      - main
+      - docusaurus
+    paths:
+      - 'content/**/*'
 
 jobs:
-  post-comment-with-links-to-changed-pages:
-    name: Create or Update
+  post-files-changed-comment:
+    name: 'Post files changed comment'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Get list of changed files
-        id: files
-        uses: Ana06/get-changed-files@v1.2 # it's a fork of jitterbit/get-changed-files@v1 which works better with pull requests
-      - name: List Vercel Deploy URLs
-        id: links
-        # Note that this uses `%0A` instead of `\n` because of https://github.com/peter-evans/create-or-update-comment#setting-the-comment-body-from-a-file which I could not get to work here - but this brute force method does.
+      - name: Get all changed markdown files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: content/**/*.{md,mdx}
+
+      - name: Build comment body
+        id: build-comment-body
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.any_changed }}
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          body="This PR changes the following pages (Vercel Preview Deploy links):%0A%0A"
-          no_changed_pages="%0A- This PR does not change any pages the [GH Actions workflow](https://github.com/prisma/docs/blob/main/.github/workflows/list-changed-pages.yml) could detect."
-          vercelLinks="Changed Vercel links"
-          body="$body%0A%0A$vercelLinks"
-          for changed_file in ${{ steps.files.outputs.all }}; do
-            if [[ $changed_file == content/* ]]
-            then
-              no_changed_pages=""
+          OUTPUT=""
+          if [ ${CHANGED_FILES} == 'true' ]; then
+            OUTPUT="| original | preview |%0A| ------ | ------ |%0A"
+            for file in ${ALL_CHANGED_FILES}
+            do
+              OUTPUT+="| ${file} |  |%0A"
+            done
+          else
+            OUTPUT="No files changed."
+          fi
+          echo "::set-output name=body::$OUTPUT"
 
-              cleaned_file=$(echo "$changed_file" | sed -E 's:content/:/:g' | sed -E 's:/index.mdx::g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
-              branch_name=$(echo "${{github.event.pull_request.head.ref}}" |  sed -e 's/\//-/g')
-              # TODO special case for images and similar non .mdx files
-
-              # Output inside the action
-              echo "- https://docs-git-${branch_name}-prisma.vercel.app$cleaned_file"
-
-              # Also collect into string
-              linksVercel="%0A- [/docs$cleaned_file](https://docs-git-${branch_name}-prisma.vercel.app$cleaned_file) ([currently](https://prisma.io/docs$cleaned_file))"
-              body="$body$linksVercel"
-            fi
-          done
-
-          body="$body$no_changed_pages"
-          body="$body%0A%0A(Note that links will only be valid after Vercel preview deploy succeeded)"
-          echo "::set-output name=body::$body"
-
-      - name: Find existing comment (links)
-        uses: peter-evans/find-comment@v1
-        id: fc
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-existing
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
-          body-includes: following pages
+          body-includes: 'original | preview'
 
-      - name: Create comment (links)
-        if: steps.fc.outputs.comment-id == ''
-        uses: peter-evans/create-or-update-comment@v1
+      - name: Create comment
+        if: steps.find-existing.outputs.comment-id == ''
+        uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.links.outputs.body }}
+          body: ${{ steps.build-comment-body.outputs.body }}
 
-      - name: Update comment (links)
-        if: steps.fc.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v1
+      - name: Update comment
+        if: steps.find-existing.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v4
         with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: ${{ steps.links.outputs.body }}
-          edit-mode: replace
-
-      ### REDIRECTS ###
-
-      - name: Create suggested redirects
-        id: redirects
-        run: |
-          bash .github/workflows/scripts/generate-redirects.sh
-
-      - name: Find existing comment (redirects)
-        uses: peter-evans/find-comment@v1
-        id: fc2
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: following redirects
-
-      - name: Create comment (redirects)
-        if: steps.fc2.outputs.comment-id == ''
-        uses: peter-evans/create-or-update-comment@v1
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.redirects.outputs.body }}
-
-      - name: Update comment (redirects)
-        if: steps.fc2.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v1
-        with:
-          comment-id: ${{ steps.fc2.outputs.comment-id }}
-          body: ${{ steps.redirects.outputs.body }}
+          comment-id: ${{ steps.find-existing.outputs.comment-id }}
+          body: ${{ steps.build-comment-body.outputs.body }}
           edit-mode: replace
