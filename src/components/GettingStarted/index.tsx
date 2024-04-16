@@ -3,6 +3,7 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../tooltip/Tooltip'
 import styles from "../../css/gettingStarted.module.scss"
 import Link from '@docusaurus/Link'
+import useBaseUrl from '@docusaurus/useBaseUrl'
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -76,6 +77,7 @@ export const Tab = ({children, ...props}) => <div {...props} className={styles.t
 
 export const SquareLogo = ({ image, tech, url }: any) => {
   const squareCardRef = useRef(null)
+  const imgUrl = useBaseUrl(image)
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false)
   return (
     <>
@@ -86,7 +88,7 @@ export const SquareLogo = ({ image, tech, url }: any) => {
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
-        <img src={image} />
+        <img src={imgUrl} />
       </Link>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">

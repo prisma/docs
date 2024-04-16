@@ -3,6 +3,7 @@ import SelectComponent from './select'
 import { components } from 'react-select'
 import Link from '@docusaurus/Link'
 import styles from "./styles.module.scss"
+import useBaseUrl from '@docusaurus/useBaseUrl'
 
 interface TechSwitchProps {
   type: string
@@ -18,15 +19,15 @@ interface TechItem {
 }
 
 const icons = {
-  node: `/docs/img/technologies/nodejs.svg`, //<JS />,
-  typescript: `/docs/img/technologies/typescript.svg`, //<Typescript />,
-  mysql: `/docs/img/technologies/mysql.svg`, //<MySQL />,
-  postgresql: `/docs/img/technologies/postgresql.svg`, //<PostgreSQL />,
-  sqlite: `/docs/img/technologies/sqlite.svg`, //<SQLite />,
-  mongodb: `/docs/img/technologies/mongodb.svg`, //<MongoDB />,
-  sqlserver: `/docs/img/technologies/sqlserver.svg`, //<SQLServer />,
-  planetscale: `/docs/img/technologies/planetscale.svg`, //<PlanetScale />,
-  cockroachdb: `/docs/img/technologies/cockroachdb.svg`, //<CockroachDB />,
+  node: `/img/technologies/nodejs.svg`, //<JS />,
+  typescript: `/img/technologies/typescript.svg`, //<Typescript />,
+  mysql: `/img/technologies/mysql.svg`, //<MySQL />,
+  postgresql: `/img/technologies/postgresql.svg`, //<PostgreSQL />,
+  sqlite: `/img/technologies/sqlite.svg`, //<SQLite />,
+  mongodb: `/img/technologies/mongodb.svg`, //<MongoDB />,
+  sqlserver: `/img/technologies/sqlserver.svg`, //<SQLServer />,
+  planetscale: `/img/technologies/planetscale.svg`, //<PlanetScale />,
+  cockroachdb: `/img/technologies/cockroachdb.svg`, //<CockroachDB />,
 }
 
 const technologyTypes = {
@@ -65,7 +66,7 @@ const TechnologySwitch = ({ type, onChangeTech, technologies, defaultTech, url, 
     return (
       <div className={styles.selectItem}>
         <Link href={href}>
-          <img src={icons[item.technology]} />
+          <img src={useBaseUrl(icons[item.technology])} />
           <span>{technologyNames[item.technology]}</span>
         </Link>
       </div>
