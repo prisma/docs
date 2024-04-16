@@ -9,16 +9,19 @@ tocDepth: 3
 
 In Prisma schema, relations between records are defined with the [`@relation`](/orm/reference/prisma-schema-reference#relation) attribute. For example, in the following schema there is a one-to-many relation between the `User` and `Post` models:
 
-```prisma file=schema.prisma highlight=4,5,10;normal
+```prisma file=schema.prisma highlight=4,5,10;normal showLineNumbers
 model Post {
   id       Int    @id @default(autoincrement())
   title    String
+  //highlight-start
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId Int
+  //highlight-end
 }
 
 model User {
   id    Int    @id @default(autoincrement())
+  //highlight-next-line
   posts Post[]
 }
 ```
@@ -53,10 +56,12 @@ CREATE TABLE "User" (
 );
 
 -- AddForeignKey
+//highlight-start
 ALTER TABLE "Post"
   ADD CONSTRAINT "Post_authorId_fkey"
   FOREIGN KEY ("authorId")
   REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+//highlight-end
 ```
 
 In this case, the foreign key constraint on the `authorId` column of the `Post` table references the `id` column of the `User` table, and guarantees that a post must have an author that exists. If you update or delete a user then the `ON DELETE` and `ON UPDATE` referential actions specify the `CASCADE` option, which will also delete or update all posts belonging to the user.
@@ -75,10 +80,11 @@ Some databases, such as MongoDB or [PlanetScale](/orm/overview/databases/planets
 
 To set the relation mode, add the `relationMode` field in the `datasource` block:
 
-```prisma file=schema.prisma highlight=4,9;add
+```prisma file=schema.prisma highlight=4,9;add showLineNumbers
 datasource db {
   provider     = "mysql"
   url          = env("DATABASE_URL")
+  //add-next-line
   relationMode = "prisma"
 }
 ```
@@ -102,7 +108,7 @@ If you switch between relation modes, Prisma ORM will add or remove foreign keys
 
 </Admonition>
 
-## Handle relations in your relational database with the <inlineCode>foreignKeys</inlineCode> relation mode
+## Handle relations in your relational database with the `foreignKeys` relation mode
 
 The `foreignKeys` relation mode handles relations in your relational database with foreign keys. This is the default option when you use a relational database connector (PostgreSQL, MySQL, SQLite, SQL Server, CockroachDB).
 
@@ -126,11 +132,11 @@ For more information, see the [referential actions](/orm/prisma-schema/data-mode
 
 When you introspect a relational database with the `db pull` command with the `foreignKeys` relation mode enabled, a `@relation` attribute will be added to your Prisma schema for relations where foreign keys exist.
 
-### Prisma Migrate and <inlineCode>db push</inlineCode>
+### Prisma Migrate and `db push`
 
 When you apply changes to your Prisma schema with Prisma Migrate or `db push` with the `foreignKeys` relation mode enabled, foreign keys will be created in your database for all `@relation` attributes in your schema.
 
-## Emulate relations in Prisma ORM with the <inlineCode>prisma</inlineCode> relation mode
+## Emulate relations in Prisma ORM with the `prisma` relation mode
 
 The `prisma` relation mode emulates some foreign key constraints and referential actions for each Prisma Client query to maintain referential integrity, using some additional database queries and logic.
 
@@ -187,7 +193,7 @@ Example:
 
 When you introspect a database with the `db pull` command with the `prisma` relation mode enabled, relations will not be automatically added to your schema. You will instead need to add any relations manually with the `@relation` attribute. This only needs to be done once – next time you introspect your database, Prisma ORM will keep your added `@relation` attributes.
 
-### Prisma Migrate and <inlineCode>db push</inlineCode>
+### Prisma Migrate and `db push`
 
 When you apply changes to your Prisma schema with Prisma Migrate or `db push` with the `prisma` relation mode enabled, Prisma ORM will not use foreign keys in your database.
 
@@ -201,7 +207,7 @@ The `prisma` relation mode does not use foreign keys, so no indexes are created 
 
 If you do not add the index manually, queries might require full table scans. This can be slow, and also expensive on database providers that bill per accessed row. To help avoid this, Prisma ORM warns you when your schema contains fields that are used in a `@relation` that does not have an index defined. For example, take the following schema with a relation between the `User` and `Post` models:
 
-```prisma file=schema.prisma
+```prisma file=schema.prisma showLineNumbers
 datasource db {
   provider     = "mysql"
   url          = env("DATABASE_URL")
@@ -228,25 +234,26 @@ With `relationMode = "prisma"`, no foreign keys are used, so relation fields wil
 
 To fix this, add an index to your `Post` model:
 
-```prisma file=schema.prisma highlight=6;add
+```prisma file=schema.prisma highlight=6;add showLineNumbers
 model Post {
   id     Int  @id
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
+  //add-next-line
   @@index([userId])
 }
 ```
 
 If you use the [Prisma VS Code extension](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) (or our [language server in another editor](/orm/more/development-environment/editor-setup)), the warning is augmented with a Quick Fix that adds the required index for you:
 
-![The Quick Fix pop-up for adding an index on a relation scalar field in VS Code](quick-fix-index.png)
+![The Quick Fix pop-up for adding an index on a relation scalar field in VS Code](./quick-fix-index.png)
 
 ## Switch between relation modes
 
 It is only possible to switch between relation modes when you use a relational database connector (PostgreSQL, MySQL, SQLite, SQL Server, CockroachDB).
 
-### Switch from <inlineCode>foreignKeys</inlineCode> to <inlineCode>prisma</inlineCode>
+### Switch from `foreignKeys` to `prisma`
 
 The default relation mode if you use a relational database and do not include the `relationMode` field in your `datasource` block is `foreignKeys`. To switch to the `prisma` relation mode, add the `relationMode` field with a value of `prisma`, or update the `relationMode` field value to `prisma` if it already exists.
 
@@ -254,6 +261,6 @@ When you switch the relation mode from `foreignKeys` to `prisma`, after you firs
 
 If you keep the same database, you can then continue to work as normal. If you switch to a database that does not support foreign keys at all, your existing migration history contains SQL DDL that creates foreign keys, which might trigger errors if you ever have to rerun these migrations. In this case, we recommend that you delete the `migrations` directory. (If you use PlanetScale, which does not support foreign keys, we generally recommend that you [use `db push` rather than Prisma Migrate](/orm/overview/databases/planetscale#differences-to-consider).)
 
-### Switch from <inlineCode>prisma</inlineCode> to <inlineCode>foreignKeys</inlineCode>
+### Switch from `prisma` to `foreignKeys`
 
 To switch from the `prisma` relation mode to the `foreignKeys` relation mode, update the `relationMode` field value from `prisma` to `foreignKeys`. To do this, the database must support foreign keys. When you apply changes to your schema with Prisma Migrate or `db push` for the first time after you switch relation modes, Prisma ORM will create foreign keys for all relations in the next migration.
