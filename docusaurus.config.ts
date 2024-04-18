@@ -55,7 +55,6 @@ const config: Config = {
     // Enzuzo Cookies Consent script for prisma.io
     {
       src: 'https://app.enzuzo.com/apps/enzuzo/static/js/__enzuzo-cookiebar.js?uuid=5606ab18-eb9a-11ee-98cc-b303d4429aa8',
-      
     },
     // Tolt script
     {
