@@ -130,16 +130,15 @@ function HomepageORMCards() {
 
 function HomepageDatabasesSection() {
   return (
-    <div className={styles.databasesSection}>
+    <><div className={styles.databasesSection}>
       <Heading as="h4" className={styles.h4}>
         Databases
       </Heading>
       <div className={styles.body}>
         Prisma ORM works seamlessly across most popular databases and service providers. <br />
-        Refer to our Database features matrix for information about supported features and types for
-        each database.
-      </div>
-      <div className={styles.databaseGrid}>
+        Refer to our <a href="https://www.prisma.io/docs/orm/reference/database-features" Database features matrix /></a> for information about supported features and types for
+      each database.
+    </div><div className={styles.databaseGrid}>
         {DatabaseData.map((e) => (
           <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
@@ -149,13 +148,12 @@ function HomepageDatabasesSection() {
                   height: `100%`,
                   width: e.icon.endsWith('sqlite.svg') ? `55px` : `auto`,
                   marginRight: e.icon.endsWith('sqlite.svg') ? `-30px` : 0,
-                }}
-              />
+                }} />
               <span>{e.title}</span>
             </div>
           </Link>
         ))}
-      </div>
+      </div></>
     </div>
   );
 }
