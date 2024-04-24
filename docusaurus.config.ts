@@ -224,6 +224,10 @@ const config: Config = {
                 internal: true,
               },
             },
+            {
+              label: 'Data Platform status',
+              href: 'https://www.prisma-status.com/',
+            },
           ],
         },
         {
@@ -234,32 +238,8 @@ const config: Config = {
               to: DOCUSAURUS_BASE_URL,
             },
             {
-              label: 'Get started',
-              to: '/getting-started',
-            },
-            {
-              label: 'prisma-examples',
-              href: 'https://github.com/prisma/prisma-examples',
-            },
-            {
-              label: 'Prisma in your stack',
-              href: 'https://www.prisma.io/stack',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
               label: 'Ecosystem',
               href: 'https://www.prisma.io/ecosystem',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
-              label: 'Tutorials',
-              href: 'https://www.prisma.io/learn',
               target: '_self',
               customProps: {
                 internal: true,
@@ -284,14 +264,6 @@ const config: Config = {
               customProps: {
                 internal: true,
               },
-            },
-            {
-              label: 'Data Platform status',
-              href: 'https://www.prisma-status.com/',
-            },
-            {
-              label: 'VS Code extension',
-              href: 'https://marketplace.visualstudio.com/items?itemName=Prisma.prisma',
             },
           ],
         },
@@ -330,6 +302,14 @@ const config: Config = {
                 internal: true,
               },
             },
+            {
+              label: 'OSS Friends',
+              to: 'https://www.prisma.io/oss-friends',
+              target: '_self',
+              customProps: {
+                internal: true,
+              },
+            },
           ],
         },
         {
@@ -358,26 +338,6 @@ const config: Config = {
             {
               label: 'Careers',
               to: 'https://www.prisma.io/careers',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
-              label: 'Events',
-              to: 'https://www.prisma.io/events',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
-              label: 'Causes',
-              href: 'https://prismaio.notion.site/Prisma-Causes-0c9e1ddc0f5942edaba355692cfee69f',
-            },
-            {
-              label: 'OSS Friends',
-              to: 'https://www.prisma.io/oss-friends',
               target: '_self',
               customProps: {
                 internal: true,
