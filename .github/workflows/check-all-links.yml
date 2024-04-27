@@ -1,0 +1,62 @@
+name: Check all content (MDX) links
+
+on:
+  pull_request:
+
+jobs:
+  # check-for-absolute-urls:
+  #   name: Check for Absolute URLs
+  #   runs-on: ubuntu-latest
+
+  # check-for-broken-links:
+  #   name: Check for broken links
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  remark-lint:
+    name: runner / remark-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: remark-lint
+        uses: reviewdog/action-remark-lint@v5
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+
+  check-for-redirects:
+    name: Check for needed redirects
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create suggested redirects
+        id: redirects
+        run: |
+          bash .github/workflows/scripts/generate-redirects.sh
+
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-existing-comment-redirect
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: following redirects
+
+      - name: Create comment
+        if: steps.find-existing-comment-redirect.outputs.comment-id == ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.redirects.outputs.body }}
+
+      - name: Update comment
+        if: steps.find-existing-comment-redirect.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-existing-comment-redirect.outputs.comment-id }}
+          body: ${{ steps.redirects.outputs.body }}
+          edit-mode: replace
