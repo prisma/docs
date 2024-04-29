@@ -4,9 +4,44 @@ on:
   pull_request:
 
 jobs:
-  # check-for-absolute-urls:
-  #   name: Check for Absolute URLs
-  #   runs-on: ubuntu-latest
+  check-for-absolute-urls:
+    name: Check for Absolute URLs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check for docs urls
+        id: absolute-urls
+        run: |
+          FILES_WITH_ABS_URLS=$(grep -Erl "https:\/\/prisma\.io\/docs|https:\/\/www\.prisma\.io/docs" content)
+          OUTPUT=""
+          SUCCESS=false
+          if [ -n "${FILES_WITH_ABS_URLS}" ]; then  # if there were matching files
+            OUTPUT="The following files have absolute URLs to prisma.io/docs%0A"
+            for line in ${FILES_WITH_ABS_URLS}
+            do
+              OUTPUT+="${}%0A"
+          else
+            # no matching files
+            OUTPUT="No absolute URLs to prisma.io/docs found."
+            SUCCESS=true
+          fi
+          echo "body=${OUTPUT}" >> "$GITHUB_OUTPUT"
+          echo "success=${SUCCESS}" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/workflows/create-or-update-comment.yml
+        with:
+          pull-request: ${{ github.event.pull_request.number }}
+          body: ${{ steps.absolute-urls.outputs.body }}
+          body-inclues: absolute URLs
+
+      - name: report success
+        run: |
+          if ${{ steps.absolute-urls.outputs.success }}; then
+            exit 0;
+          else
+            exit 1;
+          fi
 
   remark-lint:
     name: runner / remark-lint
@@ -58,25 +93,8 @@ jobs:
         run: |
           bash .github/workflows/scripts/generate-redirects.sh
 
-      - name: Find existing comment
-        uses: peter-evans/find-comment@v3
-        id: find-existing-comment-redirect
+      - uses: ./.github/workflows/create-or-update-comment.yml
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: following redirects
-
-      - name: Create comment
-        if: steps.find-existing-comment-redirect.outputs.comment-id == ''
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
+          pull-request: ${{ github.event.pull_request.number }}
           body: ${{ steps.redirects.outputs.body }}
-
-      - name: Update comment
-        if: steps.find-existing-comment-redirect.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find-existing-comment-redirect.outputs.comment-id }}
-          body: ${{ steps.redirects.outputs.body }}
-          edit-mode: replace
+          body-inclues: following redirects
