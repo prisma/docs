@@ -136,7 +136,7 @@ function HomepageDatabasesSection() {
       </Heading>
       <div className={styles.body}>
         Prisma ORM works seamlessly across most popular databases and service providers. <br />
-        Refer to our Database features matrix for information about supported features and types for
+        Refer to our <Link to="/orm/reference/database-features">Database features matrix</Link> for information about supported features and types for
         each database.
       </div>
       <div className={styles.databaseGrid}>
