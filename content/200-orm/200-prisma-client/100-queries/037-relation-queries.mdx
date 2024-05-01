@@ -2,7 +2,7 @@
 title: 'Relation queries'
 metaTitle: 'Relation queries (Concepts)'
 metaDescription: 'Prisma Client provides convenient queries for working with relations, such as a fluent API, nested writes (transactions), nested reads and relation filters.'
-tocDepth: 4
+toc_max_heading_level: 4
 ---
 
 <TopBlock>
@@ -10,7 +10,7 @@ tocDepth: 4
 A key feature of Prisma Client is the ability to query [relations](/orm/prisma-schema/data-model/relations) between two or more models. Relation queries include:
 
 - [Nested reads](#nested-reads) (sometimes referred to as _eager loading_) via [`select`](/orm/reference/prisma-client-reference#select) and [`include`](/orm/reference/prisma-client-reference#include)
-- [Nested writes](#nested-writes) with [transactional](transactions) guarantees
+- [Nested writes](#nested-writes) with [transactional](/orm/prisma-client/queries/transactions) guarantees
 - [Filtering on related records](#relation-filters)
 
 Prisma Client also has a [fluent API for traversing relations](#fluent-api).
@@ -26,11 +26,13 @@ Nested reads allow you to read related data from multiple tables in your databas
 
 ### Relation load strategies (Preview)
 
-Since version [5.9.0](https://github.com/prisma/prisma/releases/tag/5.9.0), you can decide on a per-query-level _how_ you want Prisma Client to execute a relation query (i.e. what _load strategy_ should be applied) via the `relationLoadStrategy` option.
+Since version [5.8.0](https://github.com/prisma/prisma/releases/tag/5.8.0), you can decide on a per-query-level _how_ you want Prisma Client to execute a relation query (i.e. what _load strategy_ should be applied) via the `relationLoadStrategy` option for PostgreSQL databases.
+
+Since version [5.10.0](https://github.com/prisma/prisma/releases/tag/5.10.0), this feature is also available for MySQL.
 
 Because the `relationLoadStrategy` option is currently in Preview, you need to enable it via the `relationJoins` preview feature flag in your Prisma schema file:
 
-```prisma file=schema.prisma
+```prisma file=schema.prisma showLineNumbers
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["relationJoins"]
@@ -318,9 +320,11 @@ Note that you **cannot** use `select` and `include` _on the same level_. This me
 ```ts highlight=3,6;delete
 // The following query returns an exception
 const user = await prisma.user.findFirst({
+  //delete-next-line
   select: { // This won't work!
     email:  true
   }
+  //delete-next-line
   include: { // This won't work!
     posts: {
       select: {
@@ -380,7 +384,7 @@ const user = await prisma.user.findFirst({
 
 ## Relation count
 
-In [3.0.1](https://github.com/prisma/prisma/releases/3.0.1) and later, you can [`include` or `select` a count of relations](aggregation-grouping-summarizing#count-relations) alongside fields - for example, a user's post count.
+In [3.0.1](https://github.com/prisma/prisma/releases/3.0.1) and later, you can [`include` or `select` a count of relations](/orm/prisma-client/queries/aggregation-grouping-summarizing#count-relations) alongside fields - for example, a user's post count.
 
 <CodeWithResult outputResultText="query">
 <cmd>
@@ -472,12 +476,14 @@ const result = await prisma.user.create({
   data: {
     email: 'elsa@prisma.io',
     name: 'Elsa Prisma',
+    //highlight-start
     posts: {
       create: [
         { title: 'How to make an omelette' },
         { title: 'How to eat an omelette' },
       ],
     },
+    //highlight-end
   },
   include: {
     posts: true, // Include all posts in the returned object
@@ -540,13 +546,15 @@ Each technique has pros and cons:
 | Supports has-many relations           | ✔        | ✔            | For example, you can create a user and multiple posts (one user has many posts)                                                                                                                 |
 | Supports many-to-many relations       | ✔        | ✘            | For example, you can create a post and several categories (one post can have many categories, and one category can have many posts)                                                             |
 
-The following query uses nested [`create`](/orm/reference/prisma-client-reference#create) to create:
+#### Using nested `create`
+
+The following query uses nested [`create`](/orm/reference/prisma-client-reference#create-1) to create:
 
 - One user
 - Two posts
 - One post category
 
-The example uses a nested `include` to include all posts and post categories.
+The example also uses a nested `include` to include all posts and post categories in the returned data.
 
 <CodeWithResult outputResultText="query">
 <cmd>
@@ -556,6 +564,7 @@ const result = await prisma.user.create({
   data: {
     email: 'yvette@prisma.io',
     name: 'Yvette',
+    //highlight-start
     posts: {
       create: [
         {
@@ -569,6 +578,7 @@ const result = await prisma.user.create({
         { title: 'How to eat an omelette' },
       ],
     },
+    //highlight-end
   },
   include: {
     // Include posts
@@ -628,12 +638,14 @@ const result = await prisma.user.create({
 </cmdResult>
 </CodeWithResult>
 
-The following query uses a nested [`createMany`](/orm/reference/prisma-client-reference#create) to create:
+#### Using nested `createMany`
+
+The following query uses a nested [`createMany`](/orm/reference/prisma-client-reference#create-1) to create:
 
 - One user
 - Two posts
 
-The example uses a nested `include` to include all posts.
+The example also uses a nested `include` to include all posts in the returned data.
 
 <CodeWithResult outputResultText="query">
 <cmd>
@@ -642,11 +654,13 @@ The example uses a nested `include` to include all posts.
 const result = await prisma.user.create({
   data: {
     email: 'saanvi@prisma.io',
+    //highlight-start
     posts: {
       createMany: {
         data: [{ title: 'My first post' }, { title: 'My second post' }],
       },
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -710,16 +724,20 @@ const createMany = await prisma.user.createMany({
     {
       name: 'Yewande',
       email: 'yewande@prisma.io',
+      //delete-start
       posts: {
         // Not possible to create posts!
       },
+      //delete-end
     },
     {
       name: 'Noor',
       email: 'noor@prisma.io',
+      //delete-start
       posts: {
         // Not possible to create posts!
       },
+      //delete-end
     },
   ],
 })
@@ -736,9 +754,11 @@ The following query creates ([`create`](/orm/reference/prisma-client-reference#c
 const result = await prisma.user.create({
   data: {
     email: 'vlad@prisma.io',
+    //highlight-start
     posts: {
       connect: [{ id: 8 }, { id: 9 }, { id: 10 }],
     },
+    //highlight-end
   },
   include: {
     posts: true, // Include all posts in the returned object
@@ -786,10 +806,12 @@ const result = await prisma.user.update({
     id: 9,
   },
   data: {
+    //highlight-start
     posts: {
       connect: {
         id: 11,
       },
+    //highlight-end
     },
   },
   include: {
@@ -812,6 +834,7 @@ If a related record may or may not already exist, use [`connectOrCreate`](/orm/r
 const result = await prisma.post.create({
   data: {
     title: 'How to make croissants',
+    //highlight-start
     author: {
       connectOrCreate: {
         where: {
@@ -823,6 +846,7 @@ const result = await prisma.post.create({
         },
       },
     },
+    //highlight-end
   },
   include: {
     author: true,
@@ -868,9 +892,11 @@ const result = await prisma.user.update({
     id: 16,
   },
   data: {
+    //highlight-start
     posts: {
       disconnect: [{ id: 12 }, { id: 19 }],
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -907,9 +933,11 @@ const result = await prisma.post.update({
     id: 23,
   },
   data: {
+    //highlight-start
     author: {
       disconnect: true,
     },
+    //highlight-end
   },
   include: {
     author: true,
@@ -949,9 +977,11 @@ const result = await prisma.user.update({
     id: 16,
   },
   data: {
+    //highlight-start
     posts: {
       set: [],
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -987,9 +1017,11 @@ const result = await prisma.user.update({
     id: 11,
   },
   data: {
+    //highlight-start
     posts: {
       deleteMany: {},
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1007,11 +1039,13 @@ const result = await prisma.user.update({
     id: 11,
   },
   data: {
+    //highlight-start
     posts: {
       deleteMany: {
         published: false,
       },
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1027,9 +1061,11 @@ const result = await prisma.user.update({
     id: 6,
   },
   data: {
+    //highlight-start
     posts: {
       deleteMany: [{ id: 7 }],
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1047,6 +1083,7 @@ const result = await prisma.user.update({
     id: 6,
   },
   data: {
+    //highlight-start
     posts: {
       updateMany: {
         where: {
@@ -1057,6 +1094,7 @@ const result = await prisma.user.update({
         },
       },
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1072,6 +1110,7 @@ const result = await prisma.user.update({
     id: 6,
   },
   data: {
+    //highlight-start
     posts: {
       update: {
         where: {
@@ -1082,6 +1121,7 @@ const result = await prisma.user.update({
         },
       },
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1099,6 +1139,7 @@ const result = await prisma.post.update({
     id: 6,
   },
   data: {
+    //highlight-start
     author: {
       upsert: {
         create: {
@@ -1111,6 +1152,7 @@ const result = await prisma.post.update({
         },
       },
     },
+    //highlight-end
   },
   include: {
     author: true,
@@ -1128,11 +1170,13 @@ const result = await prisma.user.update({
     id: 9,
   },
   data: {
+    //highlight-start
     posts: {
       createMany: {
         data: [{ title: 'My first post' }, { title: 'My second post' }],
       },
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1162,6 +1206,7 @@ For example, the following query returns `User` that meet the following criteria
 ```ts highlight=3-14;normal
 const users = await prisma.user.findMany({
   where: {
+    //highlight-start
     posts: {
       none: {
         views: {
@@ -1174,6 +1219,7 @@ const users = await prisma.user.findMany({
         },
       },
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1193,6 +1239,7 @@ For example, the following query returns `Post` records that meet the following 
 ```ts highlight=3-13;normal
 const users = await prisma.post.findMany({
   where: {
+    //highlight-start
     author: {
       isNot: {
         name: 'Bob',
@@ -1204,6 +1251,7 @@ const users = await prisma.post.findMany({
       },
     },
   },
+  //highlight-end
   include: {
     author: true,
   },
@@ -1217,9 +1265,11 @@ For example, the following query uses `none` to return all users that have zero 
 ```ts highlight=3-5;normal
 const usersWithZeroPosts = await prisma.user.findMany({
   where: {
+    //highlight-start
     posts: {
       none: {},
     },
+    //highlight-end
   },
   include: {
     posts: true,
@@ -1234,6 +1284,7 @@ The following query returns all posts that don't have an author relation:
 ```js highlight=3;normal
 const postsWithNoAuthor = await prisma.post.findMany({
   where: {
+    //highlight-next-line
     author: null, // or author: { }
   },
   include: {
@@ -1249,9 +1300,11 @@ The following query returns all users with at least one post:
 ```ts highlight=3-5;normal
 const usersWithSomePosts = await prisma.user.findMany({
   where: {
+    //highlight-start
     posts: {
       some: {},
     },
+    //highlight-end
   },
   include: {
     posts: true,

@@ -12,11 +12,13 @@ This guide discusses the concepts behind using Prisma ORM and Cloudflare D1, exp
 
 Prisma ORM support for Cloudflare D1 is currently in [Preview](/orm/more/releases#preview). We would appreciate your feedback [on GitHub](https://github.com/prisma/prisma/discussions/23646).
 
+If you want to deploy a Cloudflare Worker with D1 and Prisma ORM, follow this [tutorial](/orm/prisma-client/deployment/edge/deploy-to-cloudflare#cloudflare-d1).
+
 </TopBlock>
 
 ## What is Cloudflare D1?
 
-D1 is Cloudflare's native serverless database and was initially [launched in 2022](https://blog.cloudflare.com/introducing-d1). It's based on SQLite and can be used when deploying applications with Cloudflare. D1 .
+D1 is Cloudflare's native serverless database and was initially [launched in 2022](https://blog.cloudflare.com/introducing-d1). It's based on SQLite and can be used when deploying applications with Cloudflare.
 
 Following Cloudflare's principles of geographic distribution and bringing compute and data closer to application users, D1 supports automatic read-replication. It dynamically manages the number of database instances and locations of read-only replicas based on how many queries a database is getting, and from where.
 
@@ -39,7 +41,7 @@ There are a number of differences between D1 and SQLite to consider. You should 
 - **Local and remote D1 (SQLite) databases**. Cloudflare provides local and remote versions of D1. The [local](https://developers.cloudflare.com/d1/configuration/local-development) version is managed using the `--local` option of the `wrangler d1` CLI and is located in `.wrangler/state`. The [remote](https://developers.cloudflare.com/d1/configuration/remote-development) version is managed by Cloudflare and is accessed via HTTP.
 - **Making schema changes**. Since D1 uses HTTP to connect to the remote database, this makes it incompatible with some commands of Prisma Migrate, like `prisma migrate dev`. However, you can use D1's [migration system](https://developers.cloudflare.com/d1/reference/migrations/) and the [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) command for your migration workflows. See the [Migration workflows](#migration-workflows) below for more information.
 
-## How to connect to D1 in Cloudflare Workers or Cloudflare pages
+## How to connect to D1 in Cloudflare Workers or Cloudflare Pages
 
 When using Prisma ORM with D1, you need to use the `sqlite` database provider and the `@prisma/adapter-d1` [driver adapter](/orm/overview/databases/database-drivers#driver-adapters).
 
@@ -49,7 +51,7 @@ If you want to deploy a Cloudflare Worker with D1 and Prisma ORM, follow these [
 
 Cloudflare D1 comes with its own [migration system](https://developers.cloudflare.com/d1/reference/migrations/). We recommend that you use this migration system via the `wrangler d1 migrations` command to create and manage migration files on your file system.
 
-This command doesn't help you in figuring out the SQL statements for creating your database schema that need to be put _inside_ of these migration files though. If you want to query your database using Prisma Client, it's important that your database schema maps to your Prisma schema, this is why it's recommended to generated the SQL statements from your Prisma schema.
+This command doesn't help you in figuring out the SQL statements for creating your database schema that need to be put _inside_ of these migration files though. If you want to query your database using Prisma Client, it's important that your database schema maps to your Prisma schema, this is why it's recommended to generate the SQL statements from your Prisma schema.
 
 When using D1, you can use the [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) command for that purpose.
 
@@ -98,7 +100,8 @@ For the initial migration, you can use the special `--from-empty` option though:
 npx prisma migrate diff \
   --from-empty \
   --to-schema-datamodel ./prisma/schema.prisma \
-  --script > migrations/0001_create_user_table.sql
+  --script \
+  --output migrations/0001_create_user_table.sql
 ```
 
 The command above uses the following options:
@@ -106,7 +109,7 @@ The command above uses the following options:
 - `--from-empty`: The source for the SQL statement is an empty schema.
 - `--to-schema-datamodel ./prisma/schema.prisma`: The target for the SQL statement is the data model in `./prisma/schema.prisma`.
 - `--script`: Output the result as SQL. If you omit this option, the "migration steps" will be generated in plain English.
-- `> migrations/0001_create_user_table.sql`: Store the result in `migrations/0001_create_user_table.sql`.
+- `--output migrations/0001_create_user_table.sql`: Store the result in `migrations/0001_create_user_table.sql`.
 
 After running this command, `migrations/0001_create_user_table.sql` will have the following contents:
 
@@ -141,22 +144,6 @@ npx wrangler d1 migrations apply __YOUR_DATABASE_NAME__ --remote
 ### Evolve your schema with further migrations
 
 For any further migrations, you can use the same workflow but instead of using `--from-empty`, you'll need to use `--from-local-d1` because your source schema for the `prisma migrate diff` command now is the current schema of that local D1 instance, while the target remains your (then updated) Prisma schema.
-
-<!-- For any further migrations, you can use the same workflow but instead of using `--from-empty`, you'll need to use `--from-url __FILE_PATH_` (where `__FILE_PATH_` points to your local D1 instance) because your source schema for the `prisma migrate diff` command now is the current schema of that local D1 instance, while the target remains your (then updated) Prisma schema. -->
-
-<!-- #### 1. Locate the SQLite database file in `.wrangler`
-
-Your local D1 instance is represented by a SQLite database file that's stored in `./wrangler/state/d1`. Locate this file and grab the full path to the SQLite database instance. It likely looks similar to this:
-
-```no-copy
-./.wrangler/state/v3/d1/miniflare-D1DatabaseObject/0fee8d0e0152078a4a36c1a547dec875c1c7aa598e931fbbefdd7bff19d3d60d.sqlite
-```
-
-Keep this file path handy since you'll need it for any future migrations. The instructions will refer to the file path as:
-
-```
-./.wrangler/state/v3/d1/miniflare-D1DatabaseObject/__YOUR_DB__.sqlite
-``` -->
 
 #### 1. Update your Prisma data model
 
@@ -204,24 +191,16 @@ As explained above, you now need to use `--from-local-d1` instead of `--from-emp
 npx prisma migrate diff \
   --from-local-d1 \
   --to-schema-datamodel ./prisma/schema.prisma \
-  --script > migrations/0002_create_post_table.sql
+  --script \
+  --output migrations/0002_create_post_table.sql
 ```
-
-<!-- ```terminal
-npx prisma migrate diff \
-  --from-url file:./.wrangler/state/v3/d1/miniflare-D1DatabaseObject/__YOUR_DB__.sqlite \
-  --to-schema-datamodel ./prisma/schema.prisma \
-  --script > migrations/0002_create_post_table.sql
-```
-
-> **Note**: Remember that you need to replace `__YOUR_DB__` with the long string of numbers and characters that represent the file name of your local D1 instance. -->
 
 The command above uses the following options:
 
 - `--from-local-d1`: The source for the SQL statement is the local D1 database file.
 - `--to-schema-datamodel ./prisma/schema.prisma`: The target for the SQL statement is the data model in `./prisma/schema.prisma`.
 - `--script`: Output the result as SQL. If you omit this option, the "migration steps" will be generated in plain English.
-- `> migrations/0002_create_post_table.sql`: Store the result in `migrations/0002_create_post_table.sql`.
+- `--output migrations/0002_create_post_table.sql`: Store the result in `migrations/0002_create_post_table.sql`.
 
 After running this command, `migrations/0002_create_post_table.sql` will have the following contents:
 
