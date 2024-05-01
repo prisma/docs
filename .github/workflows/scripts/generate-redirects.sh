@@ -1,6 +1,6 @@
 #!/bin/bash
 
-body="This PR probably requires the following redirects to be added to vercel.json:%0A%0A"
+body="## Redirect check%0AThis PR probably requires the following redirects to be added to static/_redirects:%0A%0A"
 no_changed_pages="%0A- This PR does not change any pages in a way that would require a redirect."
 
 echo $GITHUB_BASE_REF
@@ -10,7 +10,7 @@ git reset --soft origin/$GITHUB_BASE_REF
 git status -s
 status=$(git status -s)
 
-while IFS= read -r line 
+while IFS= read -r line
 do
     # Split line into parts
     IFS=' '
@@ -23,7 +23,7 @@ do
     if [[ "${values[0]}" != "D" && "${values[0]}" != "R" ]]; then
         continue
     fi
-    
+
     # Delete msg for no edited pages and start code block
     if [ -n "$no_changed_pages" ]; then
         no_changed_pages=""
@@ -43,25 +43,17 @@ do
     # clean paths
     path1_cleaned=$(echo "$path1" | sed -E 's:content/:/:g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
     path2_cleaned=$(echo "$path2" | sed -E 's:content/:/:g' | sed -e 's/.mdx//g' | sed -E 's:/[0-9]+-:/:g' )
-    
+
     # special case for deletion
     if [[ "${values[0]}" == "D" ]]; then
         path2_cleaned="/##( TODO: Path of page that replaces deleted page )##"
     fi
 
-    redirect=$(cat <<-END
-  {
-    "source": "/docs$path1_cleaned",
-    "destination": "/docs$path2_cleaned"
-  },
+    redirect="$path1_cleaned /docs$path2_cleaned"
 
-END
-)
     echo $redirect
     echo ""
     body="$body$redirect%0A"
-
-    #echo "foo" 
 
 
 done < <(printf '%s\n' "$status")
@@ -71,4 +63,3 @@ body=$(echo "$body" | sed ':a;N;$!ba;s/\n/%0A/g')
 echo $body
 
 echo "::set-output name=body::$body"
-
