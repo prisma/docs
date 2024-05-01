@@ -1,6 +1,6 @@
 #!/bin/bash
 
-body="## Redirect check%0A---%0AThis PR probably requires the following redirects to be added to static/_redirects:%0A%0A"
+body="## Redirect check%0AThis PR probably requires the following redirects to be added to static/_redirects:%0A%0A"
 no_changed_pages="%0A- This PR does not change any pages in a way that would require a redirect."
 
 echo $GITHUB_BASE_REF
