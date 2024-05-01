@@ -52,11 +52,9 @@ const config: Config = {
       'data-button-box-shadow':
         'drop-shadow(0px 0.724px 1.251px rgba(14, 18, 28, 0.02)) drop-shadow(0px 1.608px 2.909px rgba(14, 18, 28, 0.04)) drop-shadow(0px 2.793px 5.225px rgba(14, 18, 28, 0.06)) drop-shadow(0px 4.55px 8.671px rgba(14, 18, 28, 0.07)) drop-shadow(0px 7.485px 14.285px rgba(14, 18, 28, 0.08)) drop-shadow(0px 13.358px 24.966px rgba(14, 18, 28, 0.09)) drop-shadow(0px 33px 54px rgba(14, 18, 28, 0.07))',
     },
-    // OneTrust Cookies Consent Notice start for prisma.io
+    // Enzuzo Cookies Consent script for prisma.io
     {
-      src: 'https://cdn.cookielaw.org/scripttemplates/otSDKStub.js',
-      'data-document-language': 'true',
-      'data-domain-script': '22c2e2c0-3df0-4958-8672-1194370ee230',
+      src: 'https://app.enzuzo.com/apps/enzuzo/static/js/__enzuzo-cookiebar.js?uuid=5606ab18-eb9a-11ee-98cc-b303d4429aa8',
     },
     // Tolt script
     {
@@ -226,6 +224,10 @@ const config: Config = {
                 internal: true,
               },
             },
+            {
+              label: 'Data Platform status',
+              href: 'https://www.prisma-status.com/',
+            },
           ],
         },
         {
@@ -236,32 +238,8 @@ const config: Config = {
               to: DOCUSAURUS_BASE_URL,
             },
             {
-              label: 'Get started',
-              to: '/getting-started',
-            },
-            {
-              label: 'prisma-examples',
-              href: 'https://github.com/prisma/prisma-examples',
-            },
-            {
-              label: 'Prisma in your stack',
-              href: 'https://www.prisma.io/stack',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
               label: 'Ecosystem',
               href: 'https://www.prisma.io/ecosystem',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
-              label: 'Tutorials',
-              href: 'https://www.prisma.io/learn',
               target: '_self',
               customProps: {
                 internal: true,
@@ -286,14 +264,6 @@ const config: Config = {
               customProps: {
                 internal: true,
               },
-            },
-            {
-              label: 'Data Platform status',
-              href: 'https://www.prisma-status.com/',
-            },
-            {
-              label: 'VS Code extension',
-              href: 'https://marketplace.visualstudio.com/items?itemName=Prisma.prisma',
             },
           ],
         },
@@ -332,6 +302,14 @@ const config: Config = {
                 internal: true,
               },
             },
+            {
+              label: 'OSS Friends',
+              to: 'https://www.prisma.io/oss-friends',
+              target: '_self',
+              customProps: {
+                internal: true,
+              },
+            },
           ],
         },
         {
@@ -360,26 +338,6 @@ const config: Config = {
             {
               label: 'Careers',
               to: 'https://www.prisma.io/careers',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
-              label: 'Events',
-              to: 'https://www.prisma.io/events',
-              target: '_self',
-              customProps: {
-                internal: true,
-              },
-            },
-            {
-              label: 'Causes',
-              href: 'https://prismaio.notion.site/Prisma-Causes-0c9e1ddc0f5942edaba355692cfee69f',
-            },
-            {
-              label: 'OSS Friends',
-              to: 'https://www.prisma.io/oss-friends',
               target: '_self',
               customProps: {
                 internal: true,

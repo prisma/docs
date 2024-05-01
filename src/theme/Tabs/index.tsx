@@ -73,7 +73,7 @@ function TabList({className, block, selectedValue, selectValue, tabValues}) {
     </ul>
   );
 }
-function TabContent({lazy, children, selectedValue, transparent, code, terminal}) {
+function TabContent({lazy, children, selectedValue, transparent, code, terminal, customStyles}) {
   const childTabs = (Array.isArray(children) ? children : [children]).filter(
     Boolean,
   );
@@ -87,8 +87,9 @@ function TabContent({lazy, children, selectedValue, transparent, code, terminal}
     }
     return cloneElement(selectedTabItem, {className: 'margin-top--md'});
   }
+
   return (
-    <div className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code)}>
+    <div className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code)} style={customStyles ? customStyles : {}}>
       {childTabs.map((tabItem, i) =>
         cloneElement(tabItem, {
           key: i,
