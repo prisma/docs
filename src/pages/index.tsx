@@ -105,12 +105,12 @@ function HomepageORMCards() {
               {e[0].toUpperCase() + e.substring(1).toLowerCase()}
             </Heading>
           );
-          const cardBody = (
+          //const cardBody = (
             <p>
               Open source Node.js and TypeScript ORM with an intuitive data model, automated
               migrations, type-safety, and auto-completion.
             </p>
-          );
+          //);
           const links = ORMCardLinkData[e].map((card) => (
             <Link to={card.url}>{card.title} &#8594;</Link>
           ));
@@ -137,7 +137,7 @@ function HomepageDatabasesSection() {
       <div className={styles.body}>
         Prisma ORM works seamlessly across most popular databases and service providers. <br />
         Refer to our <Link to="/orm/reference/database-features">Database features matrix</Link> for information about supported features and types for
-        each database.
+        each database.<br />
         Explore what databases and database providers <Link to="/accelerate/getting-started#prerequisites">Accelerate</Link> and <Link to="https://www.prisma.io/docs/pulse/database-setup">Pulse</Link> support. 
       </div>
       <div className={styles.databaseGrid}>
