@@ -35,54 +35,63 @@ export const ProductLinkData = {
 }
 
 export const ORMCardLinkData = {
-  components: [
-    {
-      url: '/orm/prisma-schema',
-      title: 'Prisma Schema',
-    },
-    {
-      url: '/orm/tools/prisma-cli',
-      title: 'Prisma CLI',
-    },
-    {
-      url: '/orm/prisma-client',
-      title: 'Prisma Client',
-    },
-    {
-      url: '/orm/tools/prisma-studio',
-      title: 'Prisma Studio',
-    },
-    {
-      url: '/orm/prisma-migrate',
-      title: 'Prisma Migrate',
-    },
-  ],
-  reference: [
-    {
-      url: '/orm/reference/prisma-client-reference',
-      title: 'Client API reference',
-    },
-    {
-      url: '/orm/reference/prisma-schema-reference',
-      title: 'Schema reference',
-    },
-    {
-      url: '/orm/reference/error-reference',
-      title: 'Error message reference',
-    },
-    {
-      url: '/orm/reference/prisma-cli-reference',
-      title: 'Prisma CLI reference',
-    },
-    {
-      url: '/accelerate/api-reference',
-      title: 'Accelerate API',
-    },
-    {
-      url: '/pulse/api-reference',
-      title: 'Pulse API',
-    },
-  ],
+  components: {
+    title: 'ORM Components',
+    description: 'Learn about the building blocks of Prisma ORM.',
+    links: [
+      {
+        url: '/orm/prisma-schema',
+        title: 'Prisma Schema',
+      },
+      {
+        url: '/orm/tools/prisma-cli',
+        title: 'Prisma CLI',
+      },
+      {
+        url: '/orm/prisma-client',
+        title: 'Prisma Client',
+      },
+      {
+        url: '/orm/tools/prisma-studio',
+        title: 'Prisma Studio',
+      },
+      {
+        url: '/orm/prisma-migrate',
+        title: 'Prisma Migrate',
+      },
+    ],
+  }, 
+
+  reference: {
+    title: 'Reference', 
+    description: 'Understand the capabilities and usage of our products.',
+    links: [
+      {
+        url: '/orm/reference/prisma-client-reference',
+        title: 'Client API reference',
+      },
+      {
+        url: '/orm/reference/prisma-schema-reference',
+        title: 'Schema reference',
+      },
+      {
+        url: '/orm/reference/error-reference',
+        title: 'Error message reference',
+      },
+      {
+        url: '/orm/reference/prisma-cli-reference',
+        title: 'Prisma CLI reference',
+      },
+      {
+        url: '/accelerate/api-reference',
+        title: 'Accelerate API',
+      },
+      {
+        url: '/pulse/api-reference',
+        title: 'Pulse API',
+      },
+    ],
+  }
 }
 
 export const ORMGeneralLinkData = [
@@ -115,7 +124,7 @@ export const ORMGeneralLinkData = [
   {
     title: `Accelerate`,
     description:
-      'Set up connection pooling and global cache with Accelerate ',
+      'Set up connection pooling and global cache in your app with Accelerate.',
     url: '/accelerate/getting-started',
     icon: 'fa-solid fa-bolt',
   },
@@ -129,14 +138,14 @@ export const ORMGeneralLinkData = [
   {
     title: `Console`,
     description:
-      'Reflect the way you and your team develop projects with workspaces, projects and environments.',
+      'Explore how use our Console to efficiently collaborate with your team on the Prisma Data Platform.',
     url: '/platform/concepts',
     icon: 'fa-solid fa-chart-simple',
   },
   {
     title: `Platform CLI commands`,
     description:
-      'Learn how to access the Prisma Data Platform using the integrated commands in the Prisma CLI',
+      'Learn how to access the Prisma Data Platform using the integrated commands in the Prisma CLI.',
     url: '/platform/platform-cli/commands',
     icon: 'fa-solid fa-terminal',
   },

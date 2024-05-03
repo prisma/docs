@@ -102,24 +102,21 @@ function HomepageORMCards() {
         {Object.keys(ORMCardLinkData).map((e) => {
           const cardHeader = (
             <Heading as="h4" className={styles.h4}>
-              {e[0].toUpperCase() + e.substring(1).toLowerCase()}
+              {ORMCardLinkData[e].title}
             </Heading>
           );
-          const cardBody = (
-            <p>
-              Open source Node.js and TypeScript ORM with an intuitive data model, automated
-              migrations, type-safety, and auto-completion.
-            </p>
-          );
-          const links = ORMCardLinkData[e].map((card) => (
-            <Link to={card.url}>{card.title} &#8594;</Link>
+          const cardBody = <div className={styles.body}>{ORMCardLinkData[e].description}</div>;
+          const cardLinks = ORMCardLinkData[e].links.map((link) => (
+            <Link to={link.url}>
+              {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}
+            </Link>
           ));
           return (
             <HomepageCard
               className={styles.productCardIndigo}
               heading={cardHeader}
               body={cardBody}
-              links={links}
+              links={cardLinks}
             />
           );
         })}
@@ -135,7 +132,7 @@ function HomepageDatabasesSection() {
         Databases
       </Heading>
       <div className={styles.body}>
-        Prisma ORM works seamlessly across most popular databases and service providers. <br />
+        Prisma ORM works seamlessly across most popular databases and service providers.
         Refer to our <Link to="/orm/reference/database-features">Database features matrix</Link> for information about supported features and types for
         each database.<br />
         Explore what databases and database providers <Link to="/accelerate/getting-started#prerequisites">Accelerate</Link> and <Link to="https://www.prisma.io/docs/pulse/database-setup">Pulse</Link> support. 
