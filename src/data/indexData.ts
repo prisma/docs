@@ -20,7 +20,7 @@ export const ProductLinkData = {
     title: 'Grow as your app evolves',
     icon: 'triangle',
     description:
-      'Expand your application capabilities with global database caching, connection pooling and real-time database events.',
+      'Expand your application capabilities with global database caching, connection pooling, and real-time database subscriptions.',
     links: [
       {
         url: '/accelerate/what-is-accelerate',
