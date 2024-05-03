@@ -74,7 +74,7 @@ function HomepageORMLinksSection() {
   return (
     <div className={styles.ormLinkSectionWrapper}>
       <Heading as="h4" className={styles.h4}>
-        Prisma ORM
+        Resources
       </Heading>
       <div>
         {ORMGeneralLinkData.map((link, index) => (
@@ -138,6 +138,7 @@ function HomepageDatabasesSection() {
         Prisma ORM works seamlessly across most popular databases and service providers. <br />
         Refer to our <Link to="/orm/reference/database-features">Database features matrix</Link> for information about supported features and types for
         each database.
+        Explore what databases and database providers <Link to="/accelerate/getting-started#prerequisites">Accelerate</Link> and <Link to="https://www.prisma.io/docs/pulse/database-setup">Pulse</Link> support. 
       </div>
       <div className={styles.databaseGrid}>
         {DatabaseData.map((e) => (
