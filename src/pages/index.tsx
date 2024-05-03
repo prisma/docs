@@ -105,12 +105,12 @@ function HomepageORMCards() {
               {e[0].toUpperCase() + e.substring(1).toLowerCase()}
             </Heading>
           );
-          //const cardBody = (
-          //  <p>
-          //    Open source Node.js and TypeScript ORM with an intuitive data model, automated
-          //    migrations, type-safety, and auto-completion.
-          //  </p>
-          //);
+          const cardBody = (
+            <p>
+              Open source Node.js and TypeScript ORM with an intuitive data model, automated
+              migrations, type-safety, and auto-completion.
+            </p>
+          );
           const links = ORMCardLinkData[e].map((card) => (
             <Link to={card.url}>{card.title} &#8594;</Link>
           ));
