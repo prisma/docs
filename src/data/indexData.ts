@@ -60,11 +60,11 @@ export const ORMCardLinkData = {
   reference: [
     {
       url: '/orm/reference/prisma-client-reference',
-      title: 'Prisma Client API reference',
+      title: 'Client API reference',
     },
     {
       url: '/orm/reference/prisma-schema-reference',
-      title: 'Prisma schema reference',
+      title: 'Schema reference',
     },
     {
       url: '/orm/reference/error-reference',
@@ -76,11 +76,11 @@ export const ORMCardLinkData = {
     },
     {
       url: '/accelerate/api-reference',
-      title: 'Accelerate API reference',
+      title: 'Accelerate API',
     },
     {
       url: '/pulse/api-reference',
-      title: 'Pulse API reference',
+      title: 'Pulse API',
     },
   ],
 }
@@ -131,7 +131,7 @@ export const ORMGeneralLinkData = [
     description:
       'Reflect the way you and your team develop projects with workspaces, projects and environments.',
     url: '/platform/concepts',
-    icon: 'fa-solid fa-diagram-project',
+    icon: 'fa-solid fa-chart-simple',
   },
   {
     title: `Platform CLI commands`,
