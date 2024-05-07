@@ -136,7 +136,7 @@ export const ORMGeneralLinkData = [
     icon: 'fa-solid fa-signal-stream',
   },
   {
-    title: `Console`,
+    title: `Platform`,
     description:
       'Explore how to use the Platform to easily manage your projects and collaborate within your team.',
     url: '/platform/concepts',
