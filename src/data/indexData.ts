@@ -138,7 +138,7 @@ export const ORMGeneralLinkData = [
   {
     title: `Console`,
     description:
-      'Explore how use our Console to efficiently collaborate with your team on the Prisma Data Platform.',
+      'Explore how to use the Platform to easily manage your projects and collaborate within your team.',
     url: '/platform/concepts',
     icon: 'fa-solid fa-chart-simple',
   },
