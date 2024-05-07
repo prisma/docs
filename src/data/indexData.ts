@@ -84,11 +84,11 @@ export const ORMCardLinkData = {
       },
       {
         url: '/accelerate/api-reference',
-        title: 'Accelerate API',
+        title: 'Accelerate API reference',
       },
       {
         url: '/pulse/api-reference',
-        title: 'Pulse API',
+        title: 'Pulse API reference',
       },
     ],
   }
