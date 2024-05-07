@@ -64,7 +64,7 @@ export const ORMCardLinkData = {
 
   reference: {
     title: 'Reference', 
-    description: 'Understand the capabilities and usage of our products.',
+    description: 'Understand the usage and API surface of our products.',
     links: [
       {
         url: '/orm/reference/prisma-client-reference',
