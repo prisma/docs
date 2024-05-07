@@ -124,7 +124,7 @@ export const ORMGeneralLinkData = [
   {
     title: `Accelerate`,
     description:
-      'Set up connection pooling and global cache in your app with Accelerate.',
+      'Set up connection pooling and global caching in your app with Accelerate.',
     url: '/accelerate/getting-started',
     icon: 'fa-solid fa-bolt',
   },
