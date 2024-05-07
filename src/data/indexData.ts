@@ -71,20 +71,20 @@ export const ORMCardLinkData = {
         title: 'Client API reference',
       },
       {
-        url: '/orm/reference/prisma-schema-reference',
-        title: 'Schema reference',
-      },
-      {
-        url: '/orm/reference/error-reference',
-        title: 'Error message reference',
-      },
-      {
         url: '/orm/reference/prisma-cli-reference',
         title: 'Prisma CLI reference',
       },
       {
+        url: '/orm/reference/prisma-schema-reference',
+        title: 'Schema reference',
+      },
+      {
         url: '/accelerate/api-reference',
         title: 'Accelerate API reference',
+      },
+      {
+        url: '/orm/reference/error-reference',
+        title: 'Error message reference',
       },
       {
         url: '/pulse/api-reference',
