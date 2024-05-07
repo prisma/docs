@@ -145,7 +145,7 @@ export const ORMGeneralLinkData = [
   {
     title: `Platform CLI commands`,
     description:
-      'Learn how to access the Prisma Data Platform using the integrated commands in the Prisma CLI.',
+      'Learn how to access the Platform using the integrated commands in the Prisma CLI.',
     url: '/platform/platform-cli/commands',
     icon: 'fa-solid fa-terminal',
   },
