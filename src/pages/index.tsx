@@ -135,7 +135,7 @@ function HomepageDatabasesSection() {
         Prisma ORM works seamlessly across most popular databases and service providers.
         Refer to our <Link to="/orm/reference/database-features">Database features matrix</Link> for information about supported features and types for
         each database.<br />
-        Explore what databases and database providers <Link to="/accelerate/getting-started#prerequisites">Accelerate</Link> and <Link to="https://www.prisma.io/docs/pulse/database-setup">Pulse</Link> support. 
+        To explore supported databases for Accelerate, visit the <Link to="/accelerate/getting-started#prerequisites">prerequisites section</Link>. For Pulse, see the <Link to="/pulse/database-setup">database setup documentation</Link>.
       </div>
       <div className={styles.databaseGrid}>
         {DatabaseData.map((e) => (
