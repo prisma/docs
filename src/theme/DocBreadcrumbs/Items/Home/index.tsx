@@ -5,8 +5,8 @@ import { translate } from "@docusaurus/Translate";
 import IconHome from "@theme/Icon/Home";
 import styles from "./styles.module.css";
 export default function HomeBreadcrumbItem() {
-  const homeHref = useBaseUrl('/');
-  const isDocs = homeHref === '/docs/' || homeHref === '/docs';
+  const homeHref = useBaseUrl("/");
+  const isDocs = homeHref === "/docs/" || homeHref === "/docs";
 
   return (
     <li className="breadcrumbs__item">
@@ -18,7 +18,7 @@ export default function HomeBreadcrumbItem() {
         })}
         autoAddBaseUrl={isDocs ? false : undefined}
         className="breadcrumbs__link"
-        href={isDocs ? '/docs' : homeHref}
+        href={isDocs ? "/docs" : homeHref}
       >
         <IconHome className={styles.breadcrumbHomeIcon} />
       </Link>

@@ -9,14 +9,14 @@ import clsx from "clsx";
 export default function FooterLinkItem({ item }) {
   const { to, href, label, prependBaseUrlToHref, ...props } = item;
   const toUrl = useBaseUrl(to);
-  const normalizedHref = useBaseUrl(href, {forcePrependBaseUrl: true});
-  const isRoot = to === '/docs' || to === '/docs/';
-  
+  const normalizedHref = useBaseUrl(href, { forcePrependBaseUrl: true });
+  const isRoot = to === "/docs" || to === "/docs/";
+
   const footerProps = {
     className: clsx(
       props.className,
-      styles['footer__link-item'],
-      'footer__link-item',
+      styles["footer__link-item"],
+      "footer__link-item",
       item.customProps?.icon && item.customProps?.icon
     ),
     autoAddBaseUrl: isRoot ? false : undefined,
@@ -25,11 +25,10 @@ export default function FooterLinkItem({ item }) {
           href: prependBaseUrlToHref ? normalizedHref : href,
         }
       : {
-          to: isRoot ? '/docs' : toUrl,
-        }
-    ),
-    ...(props.target && { target: props.target } ),
-    style: props?.style
+          to: isRoot ? "/docs" : toUrl,
+        }),
+    ...(props.target && { target: props.target }),
+    style: props?.style,
   };
   return (
     <Link {...footerProps}>
