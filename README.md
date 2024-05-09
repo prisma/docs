@@ -125,6 +125,23 @@ $ mdtool remove 2
 # Result: 01-a, 02-b, 03-c, 04-d becomes 01-a, 02-b, 02-c, 03-d; 02-b is supposed to be manually deleted
 ```
 
+### Prettier
+
+To align with the current standards specified in our `.prettierc` configuration, it's recommended to include the `pre-commit` hook within the `/.github/` directory. This can be achieved by executing the following commands from the project's root:
+
+```bash
+mv /.github/pre-commit /.git/hooks/
+```
+
+After that, and upon executing a commit command, you may encounter the following message:
+
+```
+hint: The '.git/hooks/pre-commit' hook was ignored because it's not set as executable.
+hint: You can disable this warning with `git config advice.ignoredHook false`.
+```
+
+To address this, you can follow the provided instructions to disable the `ignoredHook` flag.
+
 #### Thanks Luca
 
 ![](https://res.cloudinary.com/prismaio/image/upload/v1628765536/docs/LJ0FGHk_u2jjxv.png)
