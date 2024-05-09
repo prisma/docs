@@ -1,12 +1,11 @@
-import React from 'react';
-import clsx from 'clsx';
-import { FooterNewsletterForm } from '@site/src/components/newsletter/FooterNewsletterForm';
-import styles from "./styles.module.scss"
+import React from "react";
+import clsx from "clsx";
+import { FooterNewsletterForm } from "@site/src/components/newsletter/FooterNewsletterForm";
+import styles from "./styles.module.scss";
 
-export default function FooterLayout({style, links, logo, copyright}) {
+export default function FooterLayout({ style, links, logo, copyright }) {
   return (
-    <footer
-      className={`${styles[`footer--dark`]} footer footer--dark`}>
+    <footer className={`${styles[`footer--dark`]} footer footer--dark`}>
       <div className={`${styles.container} container container-fluid`}>
         {links}
 
