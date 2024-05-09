@@ -1,16 +1,16 @@
-import React from 'react';
-import Translate from '@docusaurus/Translate';
-import { ThemeClassNames } from '@docusaurus/theme-common';
-import Link from '@docusaurus/Link';
-import type { Props } from '@theme/EditThisPage';
-import styles from './styles.module.scss';
-import clsx from 'clsx';
+import React from "react";
+import Translate from "@docusaurus/Translate";
+import { ThemeClassNames } from "@docusaurus/theme-common";
+import Link from "@docusaurus/Link";
+import type { Props } from "@theme/EditThisPage";
+import styles from "./styles.module.scss";
+import clsx from "clsx";
 
 export default function EditThisPage({ editUrl }: Props): JSX.Element {
   return (
     <Link
       to={editUrl}
-      className={clsx(ThemeClassNames.common.editThisPage, 'edit-git', styles.editLink)}
+      className={clsx(ThemeClassNames.common.editThisPage, "edit-git", styles.editLink)}
     >
       <Translate
         id="theme.common.editThisPage"

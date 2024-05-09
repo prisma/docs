@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 // Import the original mapper
-import MDXComponents from '@theme-original/MDXComponents';
+import MDXComponents from "@theme-original/MDXComponents";
 
 // Import components we'd like to use across Docs
-import Subsections from './DocCardList'; // DocCardList renamed to Subsections for backwards compat
-import Admonition from '@theme/Admonition';
-import TabbedContent from './Tabs'; // Tabs renamed to TabbedContent for backwards compat
-import TabItem from '@theme/TabItem';
-import Link from '@docusaurus/Link';
-import CollapseBox from '@site/src/components/collapsible';
-import TopSection from '@site/src/components/topSection';
-import { useLocation } from '@docusaurus/router';
-import styles from './styles.module.scss';
+import Subsections from "./DocCardList"; // DocCardList renamed to Subsections for backwards compat
+import Admonition from "@theme/Admonition";
+import TabbedContent from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
+import TabItem from "@theme/TabItem";
+import Link from "@docusaurus/Link";
+import CollapseBox from "@site/src/components/collapsible";
+import TopSection from "@site/src/components/topSection";
+import { useLocation } from "@docusaurus/router";
+import styles from "./styles.module.scss";
 
 // TODO: do we want to fix this?
 const TopBlock: React.FC<React.PropsWithChildren> = ({
@@ -48,7 +48,7 @@ const CodeWithResult: React.FC<{ children: React.ReactElement[] }> = ({
       <div className={styles.cmd}>{children[0]}</div>
       <div className={styles.result}>
         <div className={styles.showBtn} onClick={() => setShow(!show)}>
-          Show {outputResultText ? outputResultText : 'CLI'} results
+          Show {outputResultText ? outputResultText : "CLI"} results
         </div>
         {show && children[1]}
       </div>
@@ -86,7 +86,7 @@ const ParallelBlocks: React.FC<React.PropsWithChildren> = ({ children }) => {
   );
 };
 
-type ButtonColor = 'red' | 'green' | 'grey' | 'grey-bg' | 'dark';
+type ButtonColor = "red" | "green" | "grey" | "grey-bg" | "dark";
 interface ButtonProps {
   href?: string;
   target?: string;
@@ -112,7 +112,7 @@ const NavigationLinksContainer: React.FC<React.PropsWithChildren> = ({ children 
 const StyledLink: React.FC<React.PropsWithChildren> = ({ children, ...props }) => {
   //@ts-ignore
   const url = props && props?.href;
-  if (url?.includes('prisma.io/') || url?.charAt(0) === '/')
+  if (url?.includes("prisma.io/") || url?.charAt(0) === "/")
     return <Link {...props}>{children}</Link>;
   else
     return (

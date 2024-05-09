@@ -1,22 +1,22 @@
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Link from '@docusaurus/Link';
-import Head from '@docusaurus/Head';
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import Link from "@docusaurus/Link";
+import Head from "@docusaurus/Head";
 
-import Layout from '@theme/Layout';
-import Heading from '@theme/Heading';
+import Layout from "@theme/Layout";
+import Heading from "@theme/Heading";
 
-import { Icon } from '@site/src/components/Icon';
+import { Icon } from "@site/src/components/Icon";
 import {
   CommunityLinksData,
   DatabaseData,
   ORMGeneralLinkData,
   ORMCardLinkData,
   ProductLinkData,
-} from '@site/src/data/indexData';
+} from "@site/src/data/indexData";
 
-import styles from './index.module.scss';
-import useBaseUrl from '@docusaurus/useBaseUrl';
-import clsx from 'clsx';
+import styles from "./index.module.scss";
+import useBaseUrl from "@docusaurus/useBaseUrl";
+import clsx from "clsx";
 
 function HomepageCard({
   className,
@@ -59,7 +59,7 @@ function HomepageProductCards() {
           ));
           return (
             <HomepageCard
-              className={e === 'porm' ? styles.productCardIndigo : styles.productCardTeal}
+              className={e === "porm" ? styles.productCardIndigo : styles.productCardTeal}
               heading={cardHeader}
               body={cardBody}
               links={cardLinks}
@@ -137,7 +137,7 @@ function HomepageDatabasesSection() {
         our <Link to="/orm/reference/database-features">Database features matrix</Link> for
         information about supported features and types for each database.
         <br />
-        To explore supported databases for Accelerate, visit the{' '}
+        To explore supported databases for Accelerate, visit the{" "}
         <Link to="/accelerate/getting-started#prerequisites">prerequisites section</Link>. For
         Pulse, see the <Link to="/pulse/database-setup">database setup documentation</Link>.
       </div>
@@ -149,8 +149,8 @@ function HomepageDatabasesSection() {
                 src={useBaseUrl(e.icon)}
                 style={{
                   height: `100%`,
-                  width: e.icon.endsWith('sqlite.svg') ? `55px` : `auto`,
-                  marginRight: e.icon.endsWith('sqlite.svg') ? `-30px` : 0,
+                  width: e.icon.endsWith("sqlite.svg") ? `55px` : `auto`,
+                  marginRight: e.icon.endsWith("sqlite.svg") ? `-30px` : 0,
                 }}
               />
               <span>{e.title}</span>

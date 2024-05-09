@@ -1,23 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import clsx from 'clsx';
+import React, { useEffect, useMemo, useState } from "react";
+import clsx from "clsx";
 import {
   ThemeClassNames,
   useThemeConfig,
   usePrevious,
   Collapsible,
   useCollapsible,
-} from '@docusaurus/theme-common';
+} from "@docusaurus/theme-common";
 import {
   isActiveSidebarItem,
   findFirstSidebarItemLink,
   useDocSidebarItemsExpandedState,
   isSamePath,
-} from '@docusaurus/theme-common/internal';
-import Link from '@docusaurus/Link';
-import { translate } from '@docusaurus/Translate';
-import useIsBrowser from '@docusaurus/useIsBrowser';
-import DocSidebarItems from '@theme/DocSidebarItems';
-import styles from '../Link/styles.module.css';
+} from "@docusaurus/theme-common/internal";
+import Link from "@docusaurus/Link";
+import { translate } from "@docusaurus/Translate";
+import useIsBrowser from "@docusaurus/useIsBrowser";
+import DocSidebarItems from "@theme/DocSidebarItems";
+import styles from "../Link/styles.module.css";
 // If we navigate to a category and it becomes active, it should automatically
 // expand itself
 function useAutoExpandActiveCategory({ isActive, collapsed, updateCollapsed }) {
@@ -58,23 +58,23 @@ function CollapseButton({ collapsed, categoryLabel, onClick }) {
         collapsed
           ? translate(
               {
-                id: 'theme.DocSidebarItem.expandCategoryAriaLabel',
+                id: "theme.DocSidebarItem.expandCategoryAriaLabel",
                 message: "Expand sidebar category '{label}'",
-                description: 'The ARIA label to expand the sidebar category',
+                description: "The ARIA label to expand the sidebar category",
               },
               { label: categoryLabel }
             )
           : translate(
               {
-                id: 'theme.DocSidebarItem.collapseCategoryAriaLabel',
+                id: "theme.DocSidebarItem.collapseCategoryAriaLabel",
                 message: "Collapse sidebar category '{label}'",
-                description: 'The ARIA label to collapse the sidebar category',
+                description: "The ARIA label to collapse the sidebar category",
               },
               { label: categoryLabel }
             )
       }
       type="button"
-      className={clsx(!collapsed && styles.collapsed, 'clean-btn', 'menu__caret')}
+      className={clsx(!collapsed && styles.collapsed, "clean-btn", "menu__caret")}
       onClick={onClick}
     />
   );
@@ -129,25 +129,25 @@ export default function DocSidebarItemCategory({
       className={clsx(
         ThemeClassNames.docs.docSidebarItemCategory,
         ThemeClassNames.docs.docSidebarItemCategoryLevel(level),
-        'menu__list-item',
+        "menu__list-item",
         {
-          'menu__list-item--collapsed': collapsed,
+          "menu__list-item--collapsed": collapsed,
         },
         className
       )}
     >
       <div
-        className={clsx('menu__list-item-collapsible', {
-          'menu__list-item-collapsible--active': isCurrentPage,
+        className={clsx("menu__list-item-collapsible", {
+          "menu__list-item-collapsible--active": isCurrentPage,
         })}
       >
         <Link
           className={clsx(
-            'menu__link',
+            "menu__link",
             {
-              'menu__link--sublist': collapsible,
-              'menu__link--sublist-caret': !href && collapsible,
-              'menu__link--active': isActive,
+              "menu__link--sublist": collapsible,
+              "menu__link--sublist-caret": !href && collapsible,
+              "menu__link--active": isActive,
             },
             isActive && styles.active
           )}
@@ -166,9 +166,9 @@ export default function DocSidebarItemCategory({
                   onItemClick?.(item);
                 }
           }
-          aria-current={isCurrentPage ? 'page' : undefined}
+          aria-current={isCurrentPage ? "page" : undefined}
           aria-expanded={collapsible ? !collapsed : undefined}
-          href={collapsible ? hrefWithSSRFallback ?? '#' : hrefWithSSRFallback}
+          href={collapsible ? hrefWithSSRFallback ?? "#" : hrefWithSSRFallback}
           {...props}
         >
           {label}

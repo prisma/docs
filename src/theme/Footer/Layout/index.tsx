@@ -1,12 +1,12 @@
-import React from 'react';
-import clsx from 'clsx';
-import { FooterNewsletterForm } from '@site/src/components/newsletter/FooterNewsletterForm';
-import styles from './styles.module.scss';
+import React from "react";
+import clsx from "clsx";
+import { FooterNewsletterForm } from "@site/src/components/newsletter/FooterNewsletterForm";
+import styles from "./styles.module.scss";
 
 export default function FooterLayout({ style, links, logo, copyright }) {
   return (
-    <footer className={clsx(styles[`footer--dark`], 'footer', 'footer--dark')}>
-      <div className={clsx(styles.container, 'container', 'container-fluid')}>
+    <footer className={clsx(styles[`footer--dark`], "footer", "footer--dark")}>
+      <div className={clsx(styles.container, "container", "container-fluid")}>
         {links}
 
         <div className={styles.newsletterRow}>
@@ -14,7 +14,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
           <FooterNewsletterForm />
         </div>
         {(logo || copyright) && (
-          <div className={clsx(styles[`footer__bottom`], 'footer__bottom', 'text--center')}>
+          <div className={clsx(styles[`footer__bottom`], "footer__bottom", "text--center")}>
             {logo && <div className="margin-bottom--sm">{logo}</div>}
             {copyright}
           </div>

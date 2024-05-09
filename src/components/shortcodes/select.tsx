@@ -1,5 +1,5 @@
-import * as React from 'react';
-import Select, { components } from 'react-select';
+import * as React from "react";
+import Select, { components } from "react-select";
 
 interface SelectProps {
   items: any[];

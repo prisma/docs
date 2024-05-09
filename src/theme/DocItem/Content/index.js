@@ -1,11 +1,11 @@
-import React from 'react';
-import clsx from 'clsx';
-import { ThemeClassNames } from '@docusaurus/theme-common';
-import { useDoc } from '@docusaurus/theme-common/internal';
-import Heading from '@theme/Heading';
-import MDXContent from '@theme/MDXContent';
-import TopSection from '@site/src/components/topSection';
-import { useLocation } from '@docusaurus/router';
+import React from "react";
+import clsx from "clsx";
+import { ThemeClassNames } from "@docusaurus/theme-common";
+import { useDoc } from "@docusaurus/theme-common/internal";
+import Heading from "@theme/Heading";
+import MDXContent from "@theme/MDXContent";
+import TopSection from "@site/src/components/topSection";
+import { useLocation } from "@docusaurus/router";
 /**
  Title can be declared inside md content or declared through
  front matter and added manually. To make both cases consistent,
@@ -18,7 +18,7 @@ import { useLocation } from '@docusaurus/router';
 */
 function useSyntheticTitle() {
   const { metadata, frontMatter, contentTitle } = useDoc();
-  const shouldRender = !frontMatter.hide_title && typeof contentTitle === 'undefined';
+  const shouldRender = !frontMatter.hide_title && typeof contentTitle === "undefined";
   if (!shouldRender) {
     return null;
   }
@@ -29,7 +29,7 @@ export default function DocItemContent({ children }) {
   const syntheticTitle = useSyntheticTitle();
   const location = useLocation();
   return (
-    <div className={clsx(ThemeClassNames.docs.docMarkdown, 'markdown')}>
+    <div className={clsx(ThemeClassNames.docs.docMarkdown, "markdown")}>
       {syntheticTitle && (
         <header>
           <Heading as="h1">{syntheticTitle}</Heading>

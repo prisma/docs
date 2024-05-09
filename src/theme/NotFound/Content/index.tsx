@@ -1,16 +1,16 @@
-import React from 'react';
-import clsx from 'clsx';
-import Translate from '@docusaurus/Translate';
-import Heading from '@theme/Heading';
-import Link from '@docusaurus/Link';
-import styles from './styles.module.scss';
-import useBaseUrl from '@docusaurus/useBaseUrl';
+import React from "react";
+import clsx from "clsx";
+import Translate from "@docusaurus/Translate";
+import Heading from "@theme/Heading";
+import Link from "@docusaurus/Link";
+import styles from "./styles.module.scss";
+import useBaseUrl from "@docusaurus/useBaseUrl";
 
 export default function NotFoundContent({ className }) {
   return (
-    <main className={clsx('container margin-vert--xl', className)}>
-      <div className={clsx('row', styles.notFoundRow)}>
-        <img src={useBaseUrl('/icons/derp.svg')} />
+    <main className={clsx("container margin-vert--xl", className)}>
+      <div className={clsx("row", styles.notFoundRow)}>
+        <img src={useBaseUrl("/icons/derp.svg")} />
         <div>
           <Heading as="h1" className={styles.hero__title}>
             <Translate id="theme.NotFound.title" description="The title of the 404 page">

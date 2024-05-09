@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import clsx from 'clsx';
-import styles from './styles.module.scss';
+import React, { useEffect } from "react";
+import clsx from "clsx";
+import styles from "./styles.module.scss";
 export default function TabItem({
   children,
   hidden,
@@ -15,7 +15,7 @@ export default function TabItem({
       className={clsx(
         styles.tabItem,
         className,
-        code && 'code-children',
+        code && "code-children",
         terminal && styles.terminal
       )}
       {...{ hidden }}

@@ -1,15 +1,15 @@
-import { useOverlayPosition } from '@react-aria/overlays';
-import { useTooltip } from '@react-aria/tooltip';
-import { mergeProps } from '@react-aria/utils';
-import { useTooltipTriggerState } from '@react-stately/tooltip';
-import React, { ReactPortal, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import styles from './styles.module.scss';
+import { useOverlayPosition } from "@react-aria/overlays";
+import { useTooltip } from "@react-aria/tooltip";
+import { mergeProps } from "@react-aria/utils";
+import { useTooltipTriggerState } from "@react-stately/tooltip";
+import React, { ReactPortal, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import styles from "./styles.module.scss";
 
 const ARROW_SIZE = 5; // in px
 const SPACING = 8;
 
-type Position = 'top' | 'bottom' | 'left' | 'right';
+type Position = "top" | "bottom" | "left" | "right";
 
 export type TooltipProps = React.PropsWithChildren<{
   /** An HTML ID attribute that will be attached to the the rendered component. Useful for targeting it from tests */
@@ -69,24 +69,24 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
       ...arrowProps,
       style: {
         ...arrowProps.style,
-        ...(placement === 'top'
+        ...(placement === "top"
           ? {
               top: overlayDimensions.height,
               left,
             }
           : undefined),
-        ...(placement === 'bottom'
+        ...(placement === "bottom"
           ? {
               left,
             }
           : undefined),
-        ...(placement === 'left'
+        ...(placement === "left"
           ? {
               left: overlayDimensions.width,
               top,
             }
           : undefined),
-        ...(placement === 'right'
+        ...(placement === "right"
           ? {
               top,
               left: 0,
@@ -100,12 +100,12 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
   }, [placement]);
 
   useEffect(() => {
-    window.addEventListener('resize', checkForResize);
+    window.addEventListener("resize", checkForResize);
     return () => {
-      window.removeEventListener('resize', checkForResize);
+      window.removeEventListener("resize", checkForResize);
     };
   }, []);
-  return typeof window === 'object'
+  return typeof window === "object"
     ? createPortal(
         <div
           className={styles[placement]}
@@ -114,12 +114,12 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
           {...mergeProps(overlayProps, tooltipProps)}
           style={{
             ...overlayProps.style,
-            ...(placement === 'bottom'
+            ...(placement === "bottom"
               ? {
                   top: (overlayProps.style!.top as number) - ARROW_SIZE * 2,
                 }
               : undefined), // Spacing isn't quite right with this placement, so we adjust it ourselves
-            ...(placement === 'right'
+            ...(placement === "right"
               ? {
                   left: (overlayProps.style!.left as number) - ARROW_SIZE * 2,
                 }
@@ -130,8 +130,8 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
           <div
             className={styles.childrenWrapper}
             style={{
-              marginTop: placement === 'bottom' ? ARROW_SIZE * 2 : undefined,
-              marginLeft: placement === 'right' ? ARROW_SIZE * 2 : undefined,
+              marginTop: placement === "bottom" ? ARROW_SIZE * 2 : undefined,
+              marginLeft: placement === "right" ? ARROW_SIZE * 2 : undefined,
             }}
           >
             {children}
@@ -157,10 +157,10 @@ function Arrow({ arrowProps, position }: ArrowProps) {
       style={{
         ...arrowProps.style,
         borderWidth: 5,
-        borderLeftColor: position === 'left' ? undefined : 'transparent',
-        borderRightColor: position === 'right' ? undefined : 'transparent',
-        borderTopColor: position === 'top' ? undefined : 'transparent',
-        borderBottomColor: position === 'bottom' ? undefined : 'transparent',
+        borderLeftColor: position === "left" ? undefined : "transparent",
+        borderRightColor: position === "right" ? undefined : "transparent",
+        borderTopColor: position === "top" ? undefined : "transparent",
+        borderBottomColor: position === "bottom" ? undefined : "transparent",
       }}
     ></div>
   );
