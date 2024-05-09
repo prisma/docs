@@ -6,6 +6,8 @@ import IconHome from '@theme/Icon/Home';
 import styles from './styles.module.css';
 export default function HomeBreadcrumbItem() {
   const homeHref = useBaseUrl('/');
+  const isDocs = homeHref === '/docs/' || homeHref === '/docs';
+
   return (
     <li className="breadcrumbs__item">
       <Link
@@ -14,8 +16,9 @@ export default function HomeBreadcrumbItem() {
           message: 'Home page',
           description: 'The ARIA label for the home page in the breadcrumbs',
         })}
+        autoAddBaseUrl={isDocs ? false : undefined}
         className="breadcrumbs__link"
-        href={homeHref}
+        href={isDocs ? '/docs' : homeHref}
       >
         <IconHome className={styles.breadcrumbHomeIcon} />
       </Link>
