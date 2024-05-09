@@ -2,8 +2,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? '/';
-
+const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL?.startsWith('/docs') ? '/docs' : '/';
+console.log(DOCUSAURUS_BASE_URL);
 const config: Config = {
   title: 'Prisma Documentation',
   tagline:
