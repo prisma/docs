@@ -108,7 +108,7 @@ export function Tooltip({ id, children, target, position }: TooltipProps): React
   return typeof window === 'object'
     ? createPortal(
         <div
-          className={`${styles[placement]}`}
+          className={styles[placement]}
           ref={ref}
           lens-role="tooltip"
           {...mergeProps(overlayProps, tooltipProps)}

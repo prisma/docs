@@ -16,6 +16,7 @@ import {
 
 import styles from './index.module.scss';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import clsx from 'clsx';
 
 function HomepageCard({
   className,
@@ -181,7 +182,7 @@ function HomepageCommunitySection() {
                 to={communityInfo.link}
                 rel="noreferrer"
                 target="_blank"
-                className={`${styles.communityLinkWrapper} ${styles.content}`}
+                className={clsx(styles.communityLinkWrapper, styles.content)}
               >
                 <Icon icon={communityInfo.icon} color="VAR HERE" size="22px" />
                 <div>

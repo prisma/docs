@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface IconProps {
@@ -36,7 +37,7 @@ export const Icon = ({ icon, color, className, size, btn, fit }: IconProps) => {
   return (
     <i
       ref={iconRef}
-      className={`${icon} ${className}`}
+      className={clsx(icon, className)}
       style={{
         textAlign: 'center',
         fontSize: size ? size : `${font}${measure}`,

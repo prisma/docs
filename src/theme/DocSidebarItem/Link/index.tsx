@@ -60,9 +60,14 @@ export default function DocSidebarItemLink({
       key={label}
     >
       <Link
-        className={`${clsx('menu__link', !isInternalLink && styles.menuExternalLink, {
-          'menu__link--active': isActive,
-        })} ${isActive || techSwitch ? styles.active : ``}`}
+        className={clsx(
+          'menu__link',
+          !isInternalLink && styles.menuExternalLink,
+          (isActive || techSwitch) && styles.active,
+          {
+            'menu__link--active': isActive,
+          }
+        )}
         autoAddBaseUrl={autoAddBaseUrl}
         aria-current={isActive ? 'page' : undefined}
         to={href}

@@ -9,7 +9,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 export default function NotFoundContent({ className }) {
   return (
     <main className={clsx('container margin-vert--xl', className)}>
-      <div className={`row ${styles.notFoundRow}`}>
+      <div className={clsx('row', styles.notFoundRow)}>
         <img src={useBaseUrl('/icons/derp.svg')} />
         <div>
           <Heading as="h1" className={styles.hero__title}>

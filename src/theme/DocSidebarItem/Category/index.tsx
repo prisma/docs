@@ -74,7 +74,7 @@ function CollapseButton({ collapsed, categoryLabel, onClick }) {
             )
       }
       type="button"
-      className={`${!collapsed ? `${styles.collapsed} ` : ``}clean-btn menu__caret`}
+      className={clsx(!collapsed && styles.collapsed, 'clean-btn', 'menu__caret')}
       onClick={onClick}
     />
   );
@@ -142,11 +142,15 @@ export default function DocSidebarItemCategory({
         })}
       >
         <Link
-          className={`${clsx('menu__link', {
-            'menu__link--sublist': collapsible,
-            'menu__link--sublist-caret': !href && collapsible,
-            'menu__link--active': isActive,
-          })} ${isActive ? styles.active : ''}`}
+          className={clsx(
+            'menu__link',
+            {
+              'menu__link--sublist': collapsible,
+              'menu__link--sublist-caret': !href && collapsible,
+              'menu__link--active': isActive,
+            },
+            isActive && styles.active
+          )}
           onClick={
             collapsible
               ? (e) => {
