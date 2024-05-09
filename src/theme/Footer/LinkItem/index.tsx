@@ -1,32 +1,40 @@
 import React from 'react';
-
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import isInternalUrl from '@docusaurus/isInternalUrl';
-import IconExternalLink from '@theme/Icon/ExternalLink';
-import type { Props } from '@theme/Footer/LinkItem';
+import { Icon } from '@site/src/components/Icon';
+import styles from "../Layout/styles.module.scss"
+import clsx from 'clsx';
 
-export default function FooterLinkItem({item}: Props): JSX.Element {
+export default function FooterLinkItem({item}) {
   const {to, href, label, prependBaseUrlToHref, ...props} = item;
   const toUrl = useBaseUrl(to);
   const normalizedHref = useBaseUrl(href, {forcePrependBaseUrl: true});
+  const isRoot = to === '/docs' || to === '/docs/';
   
-  const isRoot = to === '/docs' || to === '/docs/'
-
-  return (
-    <Link
-      autoAddBaseUrl={isRoot ? false : undefined}
-      className="footer__link-item"
-      {...(href
-        ? {
-            href: prependBaseUrlToHref ? normalizedHref : href,
-          }
-        : {
+  const footerProps = {
+    className: clsx(
+      props.className,
+      styles['footer__link-item'],
+      'footer__link-item',
+      item.customProps?.icon && item.customProps?.icon
+    ),
+    autoAddBaseUrl: isRoot ? false : undefined,
+    ...(href
+      ? {
+          href: prependBaseUrlToHref ? normalizedHref : href,
+        }
+      : {
           to: isRoot ? '/docs' : toUrl,
-          })}
-      {...props}>
+        }
+    ),
+    ...(props.target && { target: props.target } ),
+    style: props?.style
+  };
+  return (
+    <Link {...footerProps}>
       {label}
-      {href && !isInternalUrl(href) && <IconExternalLink />}
+      {!item.customProps?.internal && href && !isInternalUrl(href) && <Icon icon='fa-solid fa-arrow-up-right' size='1rem'/>}
     </Link>
   );
 }
