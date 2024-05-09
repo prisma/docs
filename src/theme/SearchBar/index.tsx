@@ -1,24 +1,24 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { DocSearchButton, useDocSearchKeyboardEvents } from "@docsearch/react";
-import Head from "@docusaurus/Head";
-import Link from "@docusaurus/Link";
-import { useHistory } from "@docusaurus/router";
-import { isRegexpStringMatch, useSearchLinkCreator } from "@docusaurus/theme-common";
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { DocSearchButton, useDocSearchKeyboardEvents } from '@docsearch/react';
+import Head from '@docusaurus/Head';
+import Link from '@docusaurus/Link';
+import { useHistory } from '@docusaurus/router';
+import { isRegexpStringMatch, useSearchLinkCreator } from '@docusaurus/theme-common';
 import {
   useAlgoliaContextualFacetFilters,
   useSearchResultUrlProcessor,
-} from "@docusaurus/theme-search-algolia/client";
-import Translate from "@docusaurus/Translate";
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import translations from "@theme/SearchTranslations";
+} from '@docusaurus/theme-search-algolia/client';
+import Translate from '@docusaurus/Translate';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import translations from '@theme/SearchTranslations';
 
-import type { AutocompleteState } from "@algolia/autocomplete-core";
-import type { DocSearchModal as DocSearchModalType, DocSearchModalProps } from "@docsearch/react";
-import type { InternalDocSearchHit, StoredDocSearchHit } from "@docsearch/react/dist/esm/types";
-import type { SearchClient } from "algoliasearch/lite";
+import type { AutocompleteState } from '@algolia/autocomplete-core';
+import type { DocSearchModal as DocSearchModalType, DocSearchModalProps } from '@docsearch/react';
+import type { InternalDocSearchHit, StoredDocSearchHit } from '@docsearch/react/dist/esm/types';
+import type { SearchClient } from 'algoliasearch/lite';
 
-type DocSearchProps = Omit<DocSearchModalProps, "onClose" | "initialScrollY"> & {
+type DocSearchProps = Omit<DocSearchModalProps, 'onClose' | 'initialScrollY'> & {
   contextualSearch?: string;
   externalUrlRegex?: string;
   searchPagePath: boolean | string;
@@ -55,19 +55,19 @@ function ResultsFooter({ state, onClose }: ResultsFooterProps) {
   return (
     <Link to={createSearchLink(state.query)} onClick={onClose}>
       <Translate id="theme.SearchBar.seeAll" values={{ count: state.context.nbHits }}>
-        {"See all {count} results"}
+        {'See all {count} results'}
       </Translate>
     </Link>
   );
 }
 
-type FacetFilters = Required<Required<DocSearchProps>["searchParameters"]>["facetFilters"];
+type FacetFilters = Required<Required<DocSearchProps>['searchParameters']>['facetFilters'];
 
 function mergeFacetFilters(f1: FacetFilters, f2: FacetFilters): FacetFilters {
   const normalize = (
     f: FacetFilters
   ): readonly string[] | readonly (string | readonly string[])[] =>
-    typeof f === "string" ? [f] : f;
+    typeof f === 'string' ? [f] : f;
   return [...normalize(f1), ...normalize(f2)] as FacetFilters;
 }
 
@@ -86,7 +86,7 @@ function DocSearch({ contextualSearch, externalUrlRegex, ...props }: DocSearchPr
       configFacetFilters;
 
   // We let user override default searchParameters if she wants to
-  const searchParameters: DocSearchProps["searchParameters"] = {
+  const searchParameters: DocSearchProps['searchParameters'] = {
     ...props.searchParameters,
     facetFilters,
   };
@@ -103,9 +103,9 @@ function DocSearch({ contextualSearch, externalUrlRegex, ...props }: DocSearchPr
     }
 
     return Promise.all([
-      import("@docsearch/react/modal") as Promise<typeof import("@docsearch/react")>,
-      import("@docsearch/react/style"),
-      import("./styles.css"),
+      import('@docsearch/react/modal') as Promise<typeof import('@docsearch/react')>,
+      import('@docsearch/react/style'),
+      import('./styles.css'),
     ]).then(([{ DocSearchModal: Modal }]) => {
       DocSearchModal = Modal;
     });
@@ -113,7 +113,7 @@ function DocSearch({ contextualSearch, externalUrlRegex, ...props }: DocSearchPr
 
   const onOpen = useCallback(() => {
     importDocSearchModalIfNeeded().then(() => {
-      searchContainer.current = document.createElement("div");
+      searchContainer.current = document.createElement('div');
       document.body.insertBefore(searchContainer.current, document.body.firstChild);
       setIsOpen(true);
     });
@@ -147,7 +147,7 @@ function DocSearch({ contextualSearch, externalUrlRegex, ...props }: DocSearchPr
     },
   }).current;
 
-  const transformItems = useRef<DocSearchModalProps["transformItems"]>((items) =>
+  const transformItems = useRef<DocSearchModalProps['transformItems']>((items) =>
     props.transformItems
       ? // Custom transformItems
         props.transformItems(items)
@@ -158,10 +158,10 @@ function DocSearch({ contextualSearch, externalUrlRegex, ...props }: DocSearchPr
         }))
   ).current;
 
-  const resultsFooterComponent: DocSearchProps["resultsFooterComponent"] = useMemo(
+  const resultsFooterComponent: DocSearchProps['resultsFooterComponent'] = useMemo(
     () =>
       // eslint-disable-next-line react/no-unstable-nested-components
-      (footerProps: Omit<ResultsFooterProps, "onClose">): JSX.Element => (
+      (footerProps: Omit<ResultsFooterProps, 'onClose'>): JSX.Element => (
         <ResultsFooter {...footerProps} onClose={onClose} />
       ),
     [onClose]
@@ -169,7 +169,7 @@ function DocSearch({ contextualSearch, externalUrlRegex, ...props }: DocSearchPr
 
   const transformSearchClient = useCallback(
     (searchClient: SearchClient) => {
-      searchClient.addAlgoliaAgent("docusaurus", siteMetadata.docusaurusVersion);
+      searchClient.addAlgoliaAgent('docusaurus', siteMetadata.docusaurusVersion);
 
       return searchClient;
     },

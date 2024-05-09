@@ -1,5 +1,5 @@
-import * as React from "react";
-import styles from "./styles.module.scss";
+import * as React from 'react';
+import styles from './styles.module.scss';
 
 interface CodeProps {
   technologies?: string[];
@@ -10,7 +10,7 @@ let c = 0;
 const SwitchTech = ({ technologies, children }: CodeBlockProps) => {
   c++;
   return (
-    <section className={styles.switchWrapper} id={`techswitch-${technologies.join("-")}-no-${c}`}>
+    <section className={styles.switchWrapper} id={`techswitch-${technologies.join('-')}-no-${c}`}>
       {children}
     </section>
   );

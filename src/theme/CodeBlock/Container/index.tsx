@@ -1,8 +1,8 @@
-import React from "react";
-import clsx from "clsx";
-import { ThemeClassNames, usePrismTheme } from "@docusaurus/theme-common";
-import { getPrismCssVariables } from "@docusaurus/theme-common/internal";
-import styles from "./styles.module.scss";
+import React from 'react';
+import clsx from 'clsx';
+import { ThemeClassNames, usePrismTheme } from '@docusaurus/theme-common';
+import { getPrismCssVariables } from '@docusaurus/theme-common/internal';
+import styles from './styles.module.scss';
 export default function CodeBlockContainer({ as: As, ...props }) {
   const prismTheme = usePrismTheme();
   const prismCssVariables = getPrismCssVariables(prismTheme);

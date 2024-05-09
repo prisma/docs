@@ -1,7 +1,7 @@
-import React from "react";
-import clsx from "clsx";
-import { ThemeClassNames } from "@docusaurus/theme-common";
-import styles from "./styles.module.css";
+import React from 'react';
+import clsx from 'clsx';
+import { ThemeClassNames } from '@docusaurus/theme-common';
+import styles from './styles.module.css';
 export default function DocSidebarItemHtml({ item, level, index }) {
   const { value, defaultStyle, className } = item;
   return (
@@ -9,7 +9,7 @@ export default function DocSidebarItemHtml({ item, level, index }) {
       className={clsx(
         ThemeClassNames.docs.docSidebarItemLink,
         ThemeClassNames.docs.docSidebarItemLinkLevel(level),
-        defaultStyle && [styles.menuHtmlItem, "menu__list-item"],
+        defaultStyle && [styles.menuHtmlItem, 'menu__list-item'],
         className
       )}
       key={index}

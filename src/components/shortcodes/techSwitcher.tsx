@@ -1,9 +1,9 @@
-import * as React from "react";
-import SelectComponent from "./select";
-import { components } from "react-select";
-import Link from "@docusaurus/Link";
-import styles from "./styles.module.scss";
-import useBaseUrl from "@docusaurus/useBaseUrl";
+import * as React from 'react';
+import SelectComponent from './select';
+import { components } from 'react-select';
+import Link from '@docusaurus/Link';
+import styles from './styles.module.scss';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 interface TechSwitchProps {
   type: string;
@@ -31,28 +31,28 @@ const icons = {
 };
 
 const technologyTypes = {
-  languages: ["node", "typescript"],
+  languages: ['node', 'typescript'],
   databases: [
-    "mysql",
-    "postgresql",
-    "sqlite",
-    "mongodb",
-    "sqlserver",
-    "planetscale",
-    "cockroachdb",
+    'mysql',
+    'postgresql',
+    'sqlite',
+    'mongodb',
+    'sqlserver',
+    'planetscale',
+    'cockroachdb',
   ],
 };
 
 export const technologyNames = {
-  node: "JavaScript",
-  typescript: "TypeScript",
-  mysql: "MySQL",
-  postgresql: "PostgreSQL",
-  sqlite: "SQLite",
-  mongodb: "MongoDB",
-  sqlserver: "SQL Server",
-  planetscale: "PlanetScale",
-  cockroachdb: "CockroachDB",
+  node: 'JavaScript',
+  typescript: 'TypeScript',
+  mysql: 'MySQL',
+  postgresql: 'PostgreSQL',
+  sqlite: 'SQLite',
+  mongodb: 'MongoDB',
+  sqlserver: 'SQL Server',
+  planetscale: 'PlanetScale',
+  cockroachdb: 'CockroachDB',
 };
 
 const TechnologySwitch = ({
@@ -63,14 +63,14 @@ const TechnologySwitch = ({
   url,
   dbSelected,
 }: TechSwitchProps) => {
-  const langDefault = { technology: defaultTech || "typescript" };
-  const dbDefault = { technology: defaultTech || "postgresql" };
-  const defaultItem = type === "lang" ? langDefault : dbDefault;
+  const langDefault = { technology: defaultTech || 'typescript' };
+  const dbDefault = { technology: defaultTech || 'postgresql' };
+  const defaultItem = type === 'lang' ? langDefault : dbDefault;
   const [selectedItem, setSelectedItem] = React.useState(defaultItem);
 
   const renderItem = (item: TechItem) => {
     const href =
-      type === "lang" ? `${url}${item.technology}-${dbSelected}` : `${url}${item.technology}`;
+      type === 'lang' ? `${url}${item.technology}-${dbSelected}` : `${url}${item.technology}`;
     return (
       <div className={styles.selectItem}>
         <Link href={href}>
@@ -88,7 +88,7 @@ const TechnologySwitch = ({
   };
 
   const IndicatorSeparator = () => {
-    return <span style={{ display: "none" }} />;
+    return <span style={{ display: 'none' }} />;
   };
 
   const Option = (props: any) => {
@@ -109,7 +109,7 @@ const TechnologySwitch = ({
   };
 
   let items =
-    type === "lang"
+    type === 'lang'
       ? technologyTypes.languages.map((lang: any) => ({ technology: lang }))
       : technologyTypes.databases.map((db: any) => ({ technology: db }));
 

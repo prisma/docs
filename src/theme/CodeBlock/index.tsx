@@ -1,8 +1,8 @@
-import React, { isValidElement, useEffect } from "react";
-import useIsBrowser from "@docusaurus/useIsBrowser";
-import CodeBlockString from "./Content/String";
-import CodeBlockJSX from "./Content/Element";
-import styles from "./Container/styles.module.scss";
+import React, { isValidElement, useEffect } from 'react';
+import useIsBrowser from '@docusaurus/useIsBrowser';
+import CodeBlockString from './Content/String';
+import CodeBlockJSX from './Content/Element';
+import styles from './Container/styles.module.scss';
 /**
  * Best attempt to make the children a plain string so it is copyable. If there
  * are react elements, we will not be able to copy the content, and it will
@@ -14,7 +14,7 @@ function maybeStringifyChildren(children) {
     return children;
   }
   // The children is now guaranteed to be one/more plain strings
-  return Array.isArray(children) ? children.join("") : children;
+  return Array.isArray(children) ? children.join('') : children;
 }
 export default function CodeBlock({ children: rawChildren, ...props }) {
   // The Prism theme on SSR is always the default theme but the site theme can
@@ -23,14 +23,14 @@ export default function CodeBlock({ children: rawChildren, ...props }) {
   // relevant styles.
   const isBrowser = useIsBrowser();
   const children = maybeStringifyChildren(rawChildren);
-  const wrap = Boolean(props?.metastring?.split(" ").find((e) => e === "wrap"));
-  const file = props?.metastring?.includes("file")
+  const wrap = Boolean(props?.metastring?.split(' ').find((e) => e === 'wrap'));
+  const file = props?.metastring?.includes('file')
     ? props?.metastring
-        ?.split(" ")
-        .find((e: string) => e.includes("file"))
-        .replace("file=", "")
+        ?.split(' ')
+        .find((e: string) => e.includes('file'))
+        .replace('file=', '')
     : false;
-  const CodeBlockComp = typeof children === "string" ? CodeBlockString : CodeBlockJSX;
+  const CodeBlockComp = typeof children === 'string' ? CodeBlockString : CodeBlockJSX;
   return (
     <>
       {file && (

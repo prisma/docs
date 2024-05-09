@@ -1,12 +1,12 @@
-import React, { cloneElement } from "react";
-import clsx from "clsx";
+import React, { cloneElement } from 'react';
+import clsx from 'clsx';
 import {
   useScrollPositionBlocker,
   useTabs,
   sanitizeTabsChildren,
-} from "@docusaurus/theme-common/internal";
-import useIsBrowser from "@docusaurus/useIsBrowser";
-import styles from "./styles.module.scss";
+} from '@docusaurus/theme-common/internal';
+import useIsBrowser from '@docusaurus/useIsBrowser';
+import styles from './styles.module.scss';
 function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const tabRefs = [];
   const { blockElementScrollPositionUntilNextRender } = useScrollPositionBlocker();
@@ -22,16 +22,16 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const handleKeydown = (event) => {
     let focusElement = null;
     switch (event.key) {
-      case "Enter": {
+      case 'Enter': {
         handleTabChange(event);
         break;
       }
-      case "ArrowRight": {
+      case 'ArrowRight': {
         const nextTab = tabRefs.indexOf(event.currentTarget) + 1;
         focusElement = tabRefs[nextTab] ?? tabRefs[0];
         break;
       }
-      case "ArrowLeft": {
+      case 'ArrowLeft': {
         const prevTab = tabRefs.indexOf(event.currentTarget) - 1;
         focusElement = tabRefs[prevTab] ?? tabRefs[tabRefs.length - 1];
         break;
@@ -46,9 +46,9 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
       role="tablist"
       aria-orientation="horizontal"
       className={clsx(
-        "tabs",
+        'tabs',
         {
-          "tabs--block": block,
+          'tabs--block': block,
         },
         className
       )}
@@ -64,8 +64,8 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
           onKeyDown={handleKeydown}
           onClick={handleTabChange}
           {...attributes}
-          className={clsx("tabs__item", styles.tabItem, attributes?.className, {
-            "tabs__item--active": selectedValue === value,
+          className={clsx('tabs__item', styles.tabItem, attributes?.className, {
+            'tabs__item--active': selectedValue === value,
           })}
         >
           {label ?? value}
@@ -82,12 +82,12 @@ function TabContent({ lazy, children, selectedValue, transparent, code, terminal
       // fail-safe or fail-fast? not sure what's best here
       return null;
     }
-    return cloneElement(selectedTabItem, { className: "margin-top--md" });
+    return cloneElement(selectedTabItem, { className: 'margin-top--md' });
   }
 
   return (
     <div
-      className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code)}
+      className={clsx('margin-top--md', transparent && styles.transparent, code && styles.code)}
       style={customStyles ? customStyles : {}}
     >
       {childTabs.map((tabItem, i) =>
@@ -104,7 +104,7 @@ function TabContent({ lazy, children, selectedValue, transparent, code, terminal
 function TabsComponent(props) {
   const tabs = useTabs(props);
   return (
-    <div className={clsx("tabs-container", styles.tabList)}>
+    <div className={clsx('tabs-container', styles.tabList)}>
       <TabList {...props} {...tabs} />
       <TabContent {...props} {...tabs} />
     </div>

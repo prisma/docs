@@ -1,7 +1,7 @@
-import React from "react";
-import clsx from "clsx";
-import { FooterNewsletterForm } from "@site/src/components/newsletter/FooterNewsletterForm";
-import styles from "./styles.module.scss";
+import React from 'react';
+import clsx from 'clsx';
+import { FooterNewsletterForm } from '@site/src/components/newsletter/FooterNewsletterForm';
+import styles from './styles.module.scss';
 
 export default function FooterLayout({ style, links, logo, copyright }) {
   return (

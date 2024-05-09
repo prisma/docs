@@ -1,32 +1,32 @@
-import * as React from "react";
-import TechnologySwitch from "./techSwitcher";
-import styles from "./styles.module.scss";
+import * as React from 'react';
+import TechnologySwitch from './techSwitcher';
+import styles from './styles.module.scss';
 
 const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
-  const currentPath = location?.pathname.replace(/\/$/, "");
-  let [pathTechParams] = currentPath?.split("/")?.splice(-1);
+  const currentPath = location?.pathname.replace(/\/$/, '');
+  let [pathTechParams] = currentPath?.split('/')?.splice(-1);
 
   const isTechPath = true;
   const getTechFromParam = (type: string, defaultVal: string) => {
     let tech = defaultVal;
 
     if (isTechPath) {
-      if (type === "lang") {
-        [tech] = pathTechParams.split("-").splice(dbSwitcher ? -2 : -1);
+      if (type === 'lang') {
+        [tech] = pathTechParams.split('-').splice(dbSwitcher ? -2 : -1);
       }
 
-      if (type === "db") {
-        [tech] = pathTechParams.split("-").splice(-1);
+      if (type === 'db') {
+        [tech] = pathTechParams.split('-').splice(-1);
       }
     }
     return tech;
   };
 
   const [langSelected, setLangSelected] = React.useState(
-    langSwitcher ? getTechFromParam("lang", langSwitcher[0]) : "typescript"
+    langSwitcher ? getTechFromParam('lang', langSwitcher[0]) : 'typescript'
   );
   const [dbSelected, setDbSelected] = React.useState(
-    dbSwitcher ? getTechFromParam("db", dbSwitcher[0]) : "postgresql"
+    dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgresql'
   );
 
   // TODO : Simplify the function!
@@ -36,12 +36,12 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
   };
 
   const langChanged = (item: any) => {
-    techChanged(item, "lang");
+    techChanged(item, 'lang');
     setLangSelected(item.technology);
   };
 
   const dbChanged = (item: any) => {
-    techChanged(item, "db");
+    techChanged(item, 'db');
     setDbSelected(item.technology);
   };
 
@@ -72,7 +72,7 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
           defaultTech={langSelected}
         />
       )}
-      {langSelected === "node" && dbSwitcher && (
+      {langSelected === 'node' && dbSwitcher && (
         <TechnologySwitch
           type="db"
           url={`${slug}node-`}
@@ -81,7 +81,7 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
           defaultTech={dbSelected}
         />
       )}
-      {langSelected === "typescript" && langSwitcher && dbSwitcher && (
+      {langSelected === 'typescript' && langSwitcher && dbSwitcher && (
         <TechnologySwitch
           type="db"
           url={`${slug}typescript-`}
