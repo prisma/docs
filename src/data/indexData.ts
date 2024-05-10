@@ -20,14 +20,14 @@ export const ProductLinkData = {
     title: 'Grow as your app evolves',
     icon: 'triangle',
     description:
-      'Expand your application capabilities with global database caching, connection pooling and real-time database events.',
+      'Expand your application capabilities with global database caching, connection pooling, and real-time database subscriptions.',
     links: [
       {
-        url: '/accelerate',
+        url: '/accelerate/what-is-accelerate',
         title: 'Prisma Accelerate',
       },
       {
-        url: '/pulse',
+        url: '/pulse/what-is-pulse',
         title: 'Prisma Pulse',
       },
     ],
@@ -35,55 +35,66 @@ export const ProductLinkData = {
 }
 
 export const ORMCardLinkData = {
-  components: [
-    {
-      url: '/orm/prisma-schema',
-      title: 'Prisma Schema',
-    },
-    {
-      url: '/orm/tools/prisma-cli',
-      title: 'Prisma CLI',
-    },
-    {
-      url: '/orm/prisma-client',
-      title: 'Prisma Client',
-    },
-    {
-      url: '/orm/tools/prisma-studio',
-      title: 'Prisma Studio',
-    },
-    {
-      url: '/orm/prisma-migrate',
-      title: 'Prisma Migrate',
-    },
-  ],
-  reference: [
-    {
-      url: '/orm/reference/prisma-client-reference',
-      title: 'Prisma Client API reference',
-    },
-    {
-      url: '/orm/reference/prisma-schema-reference',
-      title: 'Prisma schema reference',
-    },
-    {
-      url: '/orm/reference/error-reference',
-      title: 'Error message reference',
-    },
-    {
-      url: '/orm/reference/prisma-cli-reference',
-      title: 'Prisma CLI reference',
-    },
-  ],
+  components: {
+    title: 'ORM Components',
+    description: 'Learn about the building blocks of Prisma ORM.',
+    links: [
+      {
+        url: '/orm/prisma-schema',
+        title: 'Prisma Schema',
+      },
+      {
+        url: '/orm/tools/prisma-cli',
+        title: 'Prisma CLI',
+      },
+      {
+        url: '/orm/prisma-client',
+        title: 'Prisma Client',
+      },
+      {
+        url: '/orm/tools/prisma-studio',
+        title: 'Prisma Studio',
+      },
+      {
+        url: '/orm/prisma-migrate',
+        title: 'Prisma Migrate',
+      },
+    ],
+  }, 
+
+  reference: {
+    title: 'Reference', 
+    description: 'Understand the usage and API surface of our products.',
+    links: [
+      {
+        url: '/orm/reference/prisma-client-reference',
+        title: 'Client API reference',
+      },
+      {
+        url: '/orm/reference/prisma-cli-reference',
+        title: 'Prisma CLI reference',
+      },
+      {
+        url: '/orm/reference/prisma-schema-reference',
+        title: 'Schema reference',
+      },
+      {
+        url: '/accelerate/api-reference',
+        title: 'Accelerate API reference',
+      },
+      {
+        url: '/orm/reference/error-reference',
+        title: 'Error message reference',
+      },
+      {
+        url: '/pulse/api-reference',
+        title: 'Pulse API reference',
+      },
+    ],
+  }
 }
 
 export const ORMGeneralLinkData = [
-  {
-    title: `What is Prisma ORM`,
-    description: 'An overview of what Prisma ORM is and how it works.',
-    url: '/orm/overview/introduction/what-is-prisma',
-    icon: 'fa-regular fa-question',
-  },
   {
     title: `CRUD`,
     description: 'How to perform CRUD operations with your generated Prisma Client API. ',
@@ -98,12 +109,6 @@ export const ORMGeneralLinkData = [
     icon: 'fa-solid fa-server',
   },
   {
-    title: `Preview features`,
-    description: 'Available preview features and how to enable them.',
-    url: '/orm/reference/preview-features',
-    icon: 'fa-solid fa-eye',
-  },
-  {
     title: `Adopting Prisma ORM`,
     description: 'Migrate to Prisma ORM from other ORMs.',
     url: '/orm/more/migrating-to-prisma',
@@ -115,6 +120,34 @@ export const ORMGeneralLinkData = [
       'Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.',
     url: '/orm/prisma-client/deployment',
     icon: 'fa-solid fa-book',
+  },
+  {
+    title: `Accelerate`,
+    description:
+      'Set up connection pooling and global caching in your app with Accelerate.',
+    url: '/accelerate/getting-started',
+    icon: 'fa-solid fa-bolt',
+  },
+  {
+    title: `Pulse`,
+    description:
+      'React to changes in your database with Pulse.',
+    url: '/pulse/getting-started',
+    icon: 'fa-solid fa-signal-stream',
+  },
+  {
+    title: `Platform`,
+    description:
+      'Explore how to use the Platform to easily manage your projects and collaborate within your team.',
+    url: '/platform/concepts',
+    icon: 'fa-solid fa-chart-simple',
+  },
+  {
+    title: `Platform CLI commands`,
+    description:
+      'Learn how to access the Platform using the integrated commands in the Prisma CLI.',
+    url: '/platform/platform-cli/commands',
+    icon: 'fa-solid fa-terminal',
   },
 ]
 
