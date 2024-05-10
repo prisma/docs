@@ -1,18 +1,19 @@
 import React from 'react';
 import clsx from 'clsx';
-import {useThemeConfig} from '@docusaurus/theme-common';
+import { useThemeConfig } from '@docusaurus/theme-common';
 import Logo from '@theme/Logo';
 import CollapseButton from '@theme/DocSidebar/Desktop/CollapseButton';
 import Content from '@theme/DocSidebar/Desktop/Content';
-import type {Props} from '@theme/DocSidebar/Desktop';
+import type { Props } from '@theme/DocSidebar/Desktop';
+import { Promo } from '@site/src/components/promo';
 
 import styles from './styles.module.css';
 
-function DocSidebarDesktop({path, sidebar, onCollapse, isHidden}: Props) {
+function DocSidebarDesktop({ path, sidebar, onCollapse, isHidden }: Props) {
   const {
-    navbar: {hideOnScroll},
+    navbar: { hideOnScroll },
     docs: {
-      sidebar: {hideable},
+      sidebar: { hideable },
     },
   } = useThemeConfig();
 
@@ -21,9 +22,11 @@ function DocSidebarDesktop({path, sidebar, onCollapse, isHidden}: Props) {
       className={clsx(
         styles.sidebar,
         hideOnScroll && styles.sidebarWithHideableNavbar,
-        isHidden && styles.sidebarHidden,
-      )}>
+        isHidden && styles.sidebarHidden
+      )}
+    >
       {hideOnScroll && <Logo tabIndex={-1} className={styles.sidebarLogo} />}
+      {location.pathname.split('/')[1] == 'orm' && <Promo />}
       <Content path={path} sidebar={sidebar} />
       {hideable && <CollapseButton onClick={onCollapse} />}
     </div>
