@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 export default function AdmonitionIconCaution(props) {
   return (
     <svg viewBox="0 0 512 512" {...props} width={20} height={24}>
