@@ -277,12 +277,6 @@ const sidebars: SidebarsConfig = {
     },
   ],
   ormSidebar: [
-    // { // Marc: this is the item added, it should pick a random one from a list of text+link combinations. Options/ideas for copy are in the Slack thread.
-    //   type: 'html',
-    //   value: `<a href="prisma.io/accelerate">Want to speed up your queries? Try Accelerate → ${Math.random()}</a>`, // Marc: random is not changing here on page load, I'm not well-versed in SSR stuff, I assume that's the problem. I'm sure you know better.
-    //   defaultStyle: true,
-    //   className: 'sidebar-promo'
-    // },
     {
       type: "category",
       label: "ORM",
