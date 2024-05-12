@@ -61,7 +61,7 @@ export const Promo = () => {
   let promo = promoOptions[Math.floor(Math.random() * promoOptions.length)];
 
   return (
-    <a className={`sidebar-promo sidebar-promo-${promo.color}`} href={promo.link}>
+    <a className={`sidebar-promo sidebar-promo-${promo.color}`} href={promo.link} target="_blank">
         {promo.text}
     </a>
   );
