@@ -137,7 +137,7 @@ export const ORMGeneralLinkData = [
     title: `Platform`,
     description:
       "Explore how to use the Platform to easily manage your projects and collaborate within your team.",
-    url: "/platform/concepts",
+    url: "/platform/about",
     icon: "fa-solid fa-chart-simple",
   },
   {
