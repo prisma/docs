@@ -29,7 +29,7 @@ function DocSidebarDesktop({ path, sidebar, onCollapse, isHidden }: Props) {
       )}
     >
       {hideOnScroll && <Logo tabIndex={-1} className={styles.sidebarLogo} />}
-      {location.pathname.split("/")[1] == "orm" && <Promo />}
+      {(location.pathname.split("/")[1] == "orm" || location.pathname.split("/")[2] == "orm") && <Promo />}
       <Content path={path} sidebar={sidebar} />
       {hideable && <CollapseButton onClick={onCollapse} />}
     </div>
