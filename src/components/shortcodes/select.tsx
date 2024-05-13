@@ -1,15 +1,15 @@
-import * as React from 'react'
-import Select, { components } from 'react-select'
+import * as React from "react";
+import Select, { components } from "react-select";
 
 interface SelectProps {
-  items: any[]
-  onChange: (item: any) => void
-  selectedItem: any
-  width?: number
-  DropdownIndicator: any
-  IndicatorSeperator: any
-  Option: any
-  SingleValue: any
+  items: any[];
+  onChange: (item: any) => void;
+  selectedItem: any;
+  width?: number;
+  DropdownIndicator: any;
+  IndicatorSeperator: any;
+  Option: any;
+  SingleValue: any;
 }
 
 const SelectComponent = (props: SelectProps) => {
@@ -21,24 +21,24 @@ const SelectComponent = (props: SelectProps) => {
     IndicatorSeperator,
     Option,
     SingleValue,
-  } = props
-  const width = props.width || 160
+  } = props;
+  const width = props.width || 160;
 
   const handleChange = (newValue: any) => {
-    onChange({ technology: newValue.value })
-  }
+    onChange({ technology: newValue.value });
+  };
 
-  const options = items.map((it) => ({ value: it.technology, label: it.technology }))
+  const options = items.map((it) => ({ value: it.technology, label: it.technology }));
 
-  const selectedOption = options.filter((ff) => ff.value === selectedItem.technology)
+  const selectedOption = options.filter((ff) => ff.value === selectedItem.technology);
 
   const SelectContainer = (props: any) => {
     return (
       <components.SelectContainer {...props} className="select-container">
         {props.children}
       </components.SelectContainer>
-    )
-  }
+    );
+  };
   return (
     <div>
       <Select
@@ -52,7 +52,7 @@ const SelectComponent = (props: SelectProps) => {
         components={{ DropdownIndicator, IndicatorSeperator, Option, SingleValue, SelectContainer }}
       />
     </div>
-  )
-}
+  );
+};
 
-export default SelectComponent
+export default SelectComponent;
