@@ -1,13 +1,13 @@
-import React from 'react';
-import { PageMetadata } from '@docusaurus/theme-common';
-import { useDoc } from '@docusaurus/theme-common/internal';
+import React from "react";
+import { PageMetadata } from "@docusaurus/theme-common";
+import { useDoc } from "@docusaurus/theme-common/internal";
 
-import type { DocFrontMatter } from '@docusaurus/plugin-content-docs'
+import type { DocFrontMatter } from "@docusaurus/plugin-content-docs";
 
 type PrismaDocFrontMatter = DocFrontMatter & {
-  metaTitle: string,
-  metaDescription: string,
-}
+  metaTitle: string;
+  metaDescription: string;
+};
 
 export default function DocItemMetadata(): JSX.Element {
   const { metadata, frontMatter, assets } = useDoc();

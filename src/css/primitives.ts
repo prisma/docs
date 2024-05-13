@@ -8,8 +8,8 @@ export const gray = {
   "700": "#4A5568",
   "800": "#2D3748",
   "900": "#1A202C",
-}
-export const black = "#1A202C"
+};
+export const black = "#1A202C";
 
 export const blueGray = {
   "100": "#F7FAFC",
@@ -21,7 +21,7 @@ export const blueGray = {
   "700": "#4A5568",
   "800": "#2D3748",
   "900": "#1A202C",
-}
+};
 
 export const teal = {
   "100": "#D9F9F6",
@@ -33,7 +33,7 @@ export const teal = {
   "700": "#187367",
   "800": "#154F47",
   "900": "#154F47",
-}
+};
 
 export const purple = {
   "100": "#FAE8FA",
@@ -45,7 +45,7 @@ export const purple = {
   "700": "#891A8A",
   "800": "#5B115F",
   "900": "#5B115F",
-}
+};
 
 export const indigo = {
   "100": "#EBF4FF",
@@ -57,7 +57,7 @@ export const indigo = {
   "700": "#4C51BF",
   "800": "#434190",
   "900": "#434190",
-}
+};
 
 export const green = {
   "100": "#F0FFF4",
@@ -69,7 +69,7 @@ export const green = {
   "700": "#276749",
   "800": "#22543D",
   "900": "#22543D",
-}
+};
 
 export const orange = {
   "100": "#FFFAF0",
@@ -81,7 +81,7 @@ export const orange = {
   "700": "#C05621",
   "800": "#9C4221",
   "900": "#9C4221",
-}
+};
 
 export const red = {
   "100": "#FFF5F5",
@@ -93,7 +93,7 @@ export const red = {
   "700": "#C53030",
   "800": "#9B2C2C",
   "900": "#9B2C2C",
-}
+};
 
 export const pink = {
   "100": "#FFF5F7",
@@ -105,7 +105,7 @@ export const pink = {
   "700": "#B83280",
   "800": "#97266D",
   "900": "#702459",
-}
+};
 
 export const blue = {
   "100": "#EBF8FF",
@@ -117,7 +117,7 @@ export const blue = {
   "700": "#2B6CB0",
   "800": "#2C5282",
   "900": "#2A4365",
-}
+};
 
 export const yellow = {
   "100": "#FFFFF0",
@@ -129,7 +129,7 @@ export const yellow = {
   "700": "#B7791F",
   "800": "#975A16",
   "900": "#744210",
-}
+};
 
 export const colors = {
   gray,
@@ -151,7 +151,7 @@ export const colors = {
     terciary: `#A0AEC0`,
     disabled: `#4A5568`,
     darkPrimary: gray[800],
-    darkSecondary: gray[600]
+    darkSecondary: gray[600],
   },
   surface: {
     primary: "#090A15",
@@ -159,17 +159,17 @@ export const colors = {
       gray: "#1A202C",
       darker: "#7F9CF5",
       light: "#282B6B",
-      default: "#5A67D8"
-    }
-  }
-}
+      default: "#5A67D8",
+    },
+  },
+};
 
 export const fonts = {
   text: `"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"`,
   display: `"Barlow", system-ui,  Arial, sans-serif`,
   mono: `"JetBrains Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace`,
   heading: `'Barlow', sans-serif`,
-}
+};
 
 export const baseFontSizes = {
   12: ".75rem",
@@ -190,7 +190,7 @@ export const baseFontSizes = {
   56: "3.5rem",
   64: "4rem",
   72: "4.5rem",
-}
+};
 
 export const fontSizes = {
   ...baseFontSizes,
@@ -200,7 +200,7 @@ export const fontSizes = {
   display: baseFontSizes[48],
   displaySmall: baseFontSizes[24],
   displayLarge: baseFontSizes[72],
-}
+};
 
 export const baseSpace = {
   0: "0rem",
@@ -232,7 +232,7 @@ export const baseSpace = {
   192: "12rem",
   224: "14rem",
   256: "16rem",
-}
+};
 
 export const space = {
   ...baseSpace,
@@ -241,13 +241,12 @@ export const space = {
   small: baseSpace[8],
   medium: baseSpace[12],
   large: baseSpace[20],
-}
+};
 
 export const breakpoints = {
-   mobile:  360,
- tabletVertical:  768,
- desktopSmall:  940,
- tabletHorizontal:  1024,
- desktopLarge:  1440,
-
-}
+  mobile: 360,
+  tabletVertical: 768,
+  desktopSmall: 940,
+  tabletHorizontal: 1024,
+  desktopLarge: 1440,
+};

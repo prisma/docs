@@ -1,12 +1,12 @@
-import React from 'react';
-import useBaseUrl from '@docusaurus/useBaseUrl';
-import { useNavbarMobileSidebar } from '@docusaurus/theme-common/internal';
-import { translate } from '@docusaurus/Translate';
-import NavbarColorModeToggle from '@theme/Navbar/ColorModeToggle';
-import IconClose from '@theme/Icon/Close';
-import NavbarLogo from '@theme/Navbar/Logo';
-import Link from '@docusaurus/Link';
-import styles from './styles.module.scss';
+import React from "react";
+import useBaseUrl from "@docusaurus/useBaseUrl";
+import { useNavbarMobileSidebar } from "@docusaurus/theme-common/internal";
+import { translate } from "@docusaurus/Translate";
+import NavbarColorModeToggle from "@theme/Navbar/ColorModeToggle";
+import IconClose from "@theme/Icon/Close";
+import NavbarLogo from "@theme/Navbar/Logo";
+import Link from "@docusaurus/Link";
+import styles from "./styles.module.scss";
 
 function CloseButton() {
   const mobileSidebar = useNavbarMobileSidebar();
@@ -14,9 +14,9 @@ function CloseButton() {
     <button
       type="button"
       aria-label={translate({
-        id: 'theme.docs.sidebar.closeSidebarButtonAriaLabel',
-        message: 'Close navigation bar',
-        description: 'The ARIA label for close button of mobile sidebar',
+        id: "theme.docs.sidebar.closeSidebarButtonAriaLabel",
+        message: "Close navigation bar",
+        description: "The ARIA label for close button of mobile sidebar",
       })}
       className="clean-btn navbar-sidebar__close"
       onClick={() => mobileSidebar.toggle()}
@@ -26,7 +26,7 @@ function CloseButton() {
   );
 }
 export default function NavbarMobileSidebarHeader() {
-  const baseUrl = useBaseUrl('/')
+  const baseUrl = useBaseUrl("/");
   return (
     <div className="navbar-sidebar__brand">
       <NavbarLogo />
