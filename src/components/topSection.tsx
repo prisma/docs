@@ -1,15 +1,9 @@
-import * as React from 'react'
-import styles from '../css/topSection.module.scss'
+import * as React from "react";
+import styles from "../css/topSection.module.scss";
 
-import SwitcherBlock from './shortcodes/switcherBlock'
+import SwitcherBlock from "./shortcodes/switcherBlock";
 
-
-const TopSection = ({
-  location,
-  slug,
-  langSwitcher,
-  dbSwitcher,
-}: any) => {
+const TopSection = ({ location, slug, langSwitcher, dbSwitcher }: any) => {
   return (
     <div className={styles.topSectionWrapper}>
       <div className={styles.header}>
@@ -25,7 +19,7 @@ const TopSection = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TopSection
+export default TopSection;
