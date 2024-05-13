@@ -1,9 +1,9 @@
 ---
 name: 🎉 Documentation release
 about: INTERNAL ONLY. Documentation release tasks.
-title: 'Release:'
-labels: 'docs,docs/task'
-assignees: ''
+title: "Release:"
+labels: "docs,docs/task"
+assignees: ""
 ---
 
 ## Release

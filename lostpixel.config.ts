@@ -1,12 +1,12 @@
-import { CustomProjectConfig } from 'lost-pixel';
+import { CustomProjectConfig } from "lost-pixel";
 
 export const config: CustomProjectConfig = {
   pageShots: {
     pages: [],
-    pagesJsonUrl: './lost-pixel-pages.json',
-    baseUrl: 'http://172.17.0.1:3000',
+    pagesJsonUrl: "./lost-pixel-pages.json",
+    baseUrl: "http://172.17.0.1:3000",
   },
-  lostPixelProjectId: 'clb5ek3mm1772001qqg7yban38',
+  lostPixelProjectId: "clb5ek3mm1772001qqg7yban38",
   apiKey: process.env.LOST_PIXEL_API_KEY,
   compareConcurrency: 10,
   shotConcurrency: 10,
@@ -37,6 +37,6 @@ export const config: CustomProjectConfig = {
           vertical-align: baseline;
         }
         `,
-    })
-  }
+    });
+  },
 };
