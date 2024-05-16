@@ -7,7 +7,7 @@ export const config: CustomProjectConfig = {
     baseUrl: "http://172.17.0.1:3000",
     mask: [
       { selector: '.sidebar-promo' },
-      { selector: 'img' },
+      { selector: 'article img' },
     ]
   },
   lostPixelProjectId: "clb5ek3mm1772001qqg7yban38",
