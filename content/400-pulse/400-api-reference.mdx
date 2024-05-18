@@ -7,8 +7,6 @@ toc_max_heading_level: 4
 toc: true
 ---
 
-<TopBlock>
-
 The Pulse API reference documentation is based on the following schema:
 
 ```prisma
@@ -19,9 +17,7 @@ model User {
 }
 ```
 
-All example are based on the `User` model.
-
-</TopBlock>
+## `stream`
 
 ## `subscribe`
 
@@ -156,9 +152,54 @@ ALTER TABLE public."User" REPLICA IDENTITY FULL;
 
 </Admonition>
 
+## `stream()` vs `subscribe()`
+
+`stream()` and `subscribe()` differ in the following ways:
+
+|                          | `stream()`                         | `subscribe()`                                   |
+| :----------------------- | :--------------------------------- | :---------------------------------------------- |
+| Persists events          | Yes                                | No                                              |
+| Delivery guarantees      | At least once                      | At most once                                    |
+| Event order              | Same order as events were produced | Maybe different order than events were produced |
+| Can "replay" lost events | Yes                                | No                                              |
+
+For the majority of use cases, `stream()` is the recommended option because can provide guarantees for events to arrive on the consumer-side.
+
 ## `stop`
 
-Allows you to explicitly stop subscriptions and close the connection. This is needed to ensure that the limited number of subscriptions allowed per table is not exhausted.
+Allows you to explicitly stop streams and subscriptions and close the connection. This is needed to ensure that the limited number of subscriptions allowed per table is not exhausted.
+
+
+<TabbedContent>
+
+<TabItem value="stream()">
+
+```ts
+async function main() {
+  // Stream new events from the `user` table
+  const stream = await prisma.user.stream({})
+
+  // Set a timeout to the stream after 60 seconds.
+  // Explicitly stopping the stream and closing the connection is needed
+  // to not exhaust the limited number of streams allowed per table.
+
+  setTimeout(() => {
+    console.log('Stopping the stream.')
+    stream.stop()
+  }, 60000)
+
+  // Waiting loop that prints new events when something changes in the database
+  for await (const event of stream) {
+    console.log('new event:', event) // 'create', 'update', 'delete'
+  }
+}
+
+main()
+```       
+
+</TabItem>
+
+<TabItem value="subscribe())">
 
 ```ts
 async function main() {
@@ -181,7 +222,14 @@ async function main() {
 }
 
 main()
-```
+```                                                                               |
+
+</TabItem>
+
+</TabbedContent>
+
+
+
 
 ### Filter conditions and operators
 
