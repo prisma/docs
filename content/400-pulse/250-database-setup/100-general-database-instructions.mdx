@@ -7,17 +7,17 @@ toc_max_heading_level: 6
 toc: true
 ---
 
-
-
 <Admonition> 
-Prisma Pulse requires a publicly accessible PostgreSQL (**version 12+**) database with logical replication enabled. To configure specific database providers for Prisma Pulse, visit [here](/pulse/database-setup#provider-specific-instructions).
-</Admonition> 
 
-## Database Replication
+Prisma Pulse requires a publicly accessible PostgreSQL (**version 12+**) database with logical replication enabled. To configure specific database providers for Prisma Pulse, visit [here](/pulse/database-setup#provider-specific-instructions).
+
+</Admonition> 
 
 Database replication is the process of creating copies of a database and storing them across various on-premises or cloud destinations. Prisma Pulse uses logical replication to monitor your database for changes.
 
-### Enable logical replication
+## Enable logical replication
+
+### Required settings
 
 You can enable logical replication by setting [`wal_level`](https://www.postgresql.org/docs/current/runtime-config-wal.html) to `logical` in your database. 
 
@@ -30,33 +30,36 @@ You will need to restart the database after changing this setting.
 > **Note**: Some providers may not allow direct access to this setting. If you are unable to change this setting via the SQL command above, please refer to the provider-specific guides for further assistance.
 
 
-##### Optional settings
+### Optional settings
 
-###### [`wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html)
+#### [`wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html)
 
 Setting `wal_keep_size` increases the memory usage of the [write-ahead log](https://www.postgresql.org/docs/current/wal-intro.html) on your PostgreSQL database.
 
 We recommend setting a value for `wal_keep_size` tailored to your database's storage capacity. This ensures smooth operation of both your database and Prisma Pulse.
 
-> We suggest setting these values initially and adjusting them if necessary.
-
 ```sql
 ALTER SYSTEM SET wal_keep_size = 2048;
 ```
 
-###### [`max_replication_slots`](https://www.postgresql.org/docs/current/runtime-config-replication.html)
+#### [`max_replication_slots`](https://www.postgresql.org/docs/current/runtime-config-replication.html)
 
 Prisma Pulse only needs one replication slot available. You can set the `max_replication_slots` if you have other replications in use.
-
-> We suggest setting these values initially and adjusting them if necessary.
 
 ```sql
 ALTER SYSTEM SET max_replication_slots = 20;
 ```
 
-###### [`REPLICA IDENTITY`](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+#### [`REPLICA IDENTITY`](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
 
-To get the **before** values of **all fields** in the record for some events, you must set `REPLICA IDENTITY` to `FULL` on the table(s) you want to get field values for. If this is not configured, defining a filter for those events will only be possible on the primary key.
+For update and delete events, you have the option to include in the event the values of the record _before_ the operation was performed:
+
+- For `update`: Include the values of the updated record before the update was performed in a field called `before`
+- For `delete`: Include the values of the deleted record.
+
+If you enable this, you will also be able to filter on these fields.
+
+To include this data, you must set `REPLICA IDENTITY` to `FULL` on the table(s) you want to get field values for.
 
 For example, running the following SQL command will set the `REPLICA IDENTITY` to `FULL` on a table named `User`:
 
@@ -64,11 +67,11 @@ For example, running the following SQL command will set the `REPLICA IDENTITY` t
 ALTER TABLE public."User" REPLICA IDENTITY FULL;
 ```
 
-### Manage your own publication slot
+## Manage your own publication slot
 
-If you want to enable replication for *specific models* or use a database provider that restricts superuser access for Prisma Pulse our advanced setup allows you to configure your own publication slot and use it to enable Pulse.
+If you want to enable replication for _specific models_ or use a database provider that restricts superuser access for Prisma Pulse you can configure your own publication slot and use it to enable Pulse.
 
-#### Creating a publication slot
+### Creating a publication slot
 
 You can create publications in the following ways below depending on the version of your PostgreSQL database.
 
@@ -77,7 +80,7 @@ You can create publications in the following ways below depending on the version
 <summary>Publication for all models.</summary>
 <br/>
 ```sql
-CREATE PUBLICATION $PUBLICATION_NAME FOR ALL TABLES;
+CREATE PUBLICATION all_models FOR ALL TABLES;
 ```
 
 </details>
@@ -137,7 +140,7 @@ You can learn more about the PostgreSQL's `CREATE PUBLICATION`, supported versio
 
 </details>
 
-#### Submit your publication slot
+### Submit your publication slot
 
 You can submit the publication name in the [Console](https://console.prisma.io/), before enabling Prisma Pulse:
 
@@ -151,14 +154,14 @@ You can submit the publication name in the [Console](https://console.prisma.io/)
 
    ![](/img/pulse/replication-slot-submission.png)
 
-#### Removing publications
+### Removing publications
 
 If you are managing your replications independently and choose to disable Prisma Pulse for a particular environment, you can refer to the following SQL queries to remove your publications.
 
 1. To delete a publication:
 
    ```sql
-   DROP PUBLICATION IF EXISTS "$PUBLICATION_SLOT_NAME";
+   DROP PUBLICATION IF EXISTS "my_publication";
    ```
 
 2. View your [publications](https://www.postgresql.org/docs/current/view-pg-publication-tables.html):
@@ -167,4 +170,11 @@ If you are managing your replications independently and choose to disable Prisma
    SELECT * FROM pg_publication_tables;
    ```
 
-> 💡 To configure specific database providers for Prisma Pulse, visit [here](/pulse/database-setup#provider-specific-instructions).
+## Provider-specific instructions
+
+If you want to see the specific instructions for your database, select your database provider:
+
+- [AWS RDS](/pulse/database-setup/aws-rds)
+- [Railway](/pulse/database-setup/railway)
+- [Neon](/pulse/database-setup/neon)
+- [Supabase](/pulse/database-setup/supabase)

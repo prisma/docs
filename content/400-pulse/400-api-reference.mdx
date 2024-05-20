@@ -280,19 +280,11 @@ const subscription = await prisma.user.subscribe({
 });
 ```
 
-
 ## `stream()` vs `subscribe()`
 
-`stream()` and `subscribe()` differ in the following ways:
-
-|                              | `stream()`                         | `subscribe()`                                   |
-| :--------------------------- | :--------------------------------- | :---------------------------------------------- |
-| **Persists events**          | Yes                                | No                                              |
-| **Delivery guarantees**      | At least once                      | At most once                                    |
-| **Event order**              | Same order as events were produced | Maybe different order than events were produced |
-| **Can "replay" lost events** | Yes                                | No                                              |
-
 For the majority of use cases, `stream()` is the recommended option because can provide guarantees for events to arrive on the consumer-side. Note though that because `stream()` requires event persistence to be enabled, this has implications for [pricing](https://www.prisma.io/pricing).
+
+See a [more detailed comparison](/pulse/database-events#event-delivery-semantics-in-prisma-pulse).
 
 ## `stop()`
 
@@ -308,7 +300,7 @@ const stream = await prisma.user.stream();
 
 // Stop the stream
 // highlight-next-line
-stream.stop()
+stream.stop();
 ```
 
 ### For `subscribe()`
@@ -321,7 +313,7 @@ const subscription = await prisma.user.subscribe();
 
 // Stop the subscription
 // highlight-next-line
-subscription.stop()
+subscription.stop();
 ```
 
 ## `PulseCreateEvent<Model>`
@@ -370,13 +362,13 @@ An object of type `PulseUpdateEvent` is returned by any `delete` event that happ
 
 A `PulseUpdateEvent` has the following fields:
 
-| Name        | Type     | Example value                     | Description                                                                                                 |
-| :---------- | :------- | :-------------------------------- | :---------------------------------------------------------------------------------------------------------- |
-| `id`        | `string` | `0/1981650`                       | A unique identifier / idempotency key.                                                                      |
-| `modelName` | `string` | `User`                            | The name of the model affected by this event. This is a model name from your Prisma schema.                 |
-| `action`    | `string` | `update`                          | The kind of write-operation performed in the database: `update`                                             |
-| `before`    | `User`   | null                              | An object with the _old_ values of the record that was just created (i.e. _before_ the `update` operation). |
-| `after`     | `User`   | See `after` in the example below. | An object with the _new_ values of the record that was just created (i.e. _after_ the `update` operation).  |
+| Name        | Type     | Example value                     | Description                                                                                                                                                                                         |
+| :---------- | :------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string` | `0/1981650`                       | A unique identifier / idempotency key.                                                                                                                                                              |
+| `modelName` | `string` | `User`                            | The name of the model affected by this event. This is a model name from your Prisma schema.                                                                                                         |
+| `action`    | `string` | `update`                          | The kind of write-operation performed in the database: `update`                                                                                                                                     |
+| `before`    | `User`   | `null`                            | An object with the _old_ values of the record that was just updated. This only works with when the `REPLICA IDENTITY` in your database is set to `FULL`. Otherwise the value will always be `null`. |
+| `after`     | `User`   | See `after` in the example below. | An object with the _new_ values of the record that was just updated.                                                                                                                                |
 
 The type of the event is generic to the fields of your model. In the case, of the `User` model above, it looks as follows:
 
@@ -390,39 +382,73 @@ PulseUpdateEvent<{
 
 ### Example
 
-Here is an example:
+_Without_ having set the `REPLICA IDENDITY` to `FULL`:
 
 ```js
 {
   action: 'update',
-  after: { id: 2, email: 'hi@prisma.com', name: 'asd2345' },
+  after: { id: 2, email: 'doe@prisma.io', name: 'Jane Doe' },
   before: null,
   id: '0/2A5A248',
   modelName: 'User'
 }
 ```
 
+_With_ having set the `REPLICA IDENDITY` to `FULL`:
+
+```js
+{
+  action: 'update',
+  after: { id: 2, email: 'support@prisma.io', name: 'Jane Doe' },
+  before: { id: 2, email: 'support@prisma.io', name: null },
+  id: '0/2A5A248',
+  modelName: 'User'
+}
+```
+
+
 ## `PulseDeleteEvent<Model>`
+
+### Type
 
 A `PulseDeleteEvent` has the following fields:
 
-| Name        | Type     | Example value | Description                                                                                 |
-| :---------- | :------- | :------------ | :------------------------------------------------------------------------------------------ |
-| `id`        | `string` | `0/1981650`   | A unique identifier / idempotency key.                                                      |
-| `modelName` | `string` | `User`        | The name of the model affected by this event. This is a model name from your Prisma schema. |
-| `action`    | `string` | `delete`      | The kind of write-operation performed in the database: `create`, `update` or `delete`.      |
-| `deleted`   | `User`   | `{ id: 3 }`   | An object with the `id` value of the record was just deleted.                               |
+| Name        | Type     | Example value | Description                                                                                                                                                                                            |
+| :---------- | :------- | :------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string` | `0/1981650`   | A unique identifier / idempotency key.                                                                                                                                                                 |
+| `modelName` | `string` | `User`        | The name of the model affected by this event. This is a model name from your Prisma schema.                                                                                                            |
+| `action`    | `string` | `delete`      | The kind of write-operation performed in the database: `create`, `update` or `delete`.                                                                                                                 |
+| `deleted`   | `User`   | `{ id: 3 }`   | An object with the values of the record that was just deleted. This only works with when the `REPLICA IDENTITY` in your database is set to `FULL`. Otherwise the object will only carry an `id` field. |
 
 The type of the event is generic to the fields of your model. In the case, of the `User` model above, it looks as follows:
 
+```ts
+PulseDeleteEvent<{
+  id: number;
+  email: string;
+  name: string | null;
+}>;
+```
+
 ### Example
 
-Here is an example:
+_Without_ having set the `REPLICA IDENDITY` to `FULL`:
 
 ```js
  {
   action: 'delete',
   deleted: { id: 1 },
+  id: '0/2A5A398',
+  modelName: 'User'
+}
+```
+
+_With_ having set the `REPLICA IDENDITY` to `FULL`:
+
+```js
+ {
+  action: 'delete',
+  deleted: { id: 42, email: 'doe@prisma.io', name: 'Jane Doe' },
   id: '0/2A5A398',
   modelName: 'User'
 }
