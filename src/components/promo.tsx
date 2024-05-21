@@ -56,6 +56,21 @@ export const Promo = () => {
       link: 'https://pris.ly/sidebar-promo/serverless-architecture-global-scaling',
       color: 'indigo',
     },
+    {
+      text: `Effortlessly uncover and fix slow SQL queries in your app.`,
+      link: 'https://pris.ly/optimize-blog',
+      color: 'teal',
+    },
+    {
+      text: `Want to dentifying inefficient database interactions?`,
+      link: 'https://pris.ly/optimize-blog',
+      color: 'indigo',
+    },
+    {
+      text: `Curious about the SQL queries Prisma ORM generates?`,
+      link: 'https://pris.ly/optimize-blog',
+      color: 'teal',
+    },
   ];
 
   let promo = promoOptions[Math.floor(Math.random() * promoOptions.length)];
