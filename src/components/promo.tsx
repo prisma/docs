@@ -57,18 +57,18 @@ export const Promo = () => {
       color: 'indigo',
     },
     {
-      text: `Effortlessly uncover and fix slow SQL queries in your app.`,
-      link: 'https://pris.ly/optimize-blog',
+      text: `Easily identify and fix slow SQL queries in your app.`,
+      link: 'https://pris.ly/sidebar-promo/identify-fix-sql-queries',
       color: 'teal',
     },
     {
-      text: `Want to dentifying inefficient database interactions?`,
-      link: 'https://pris.ly/optimize-blog',
+      text: `Looking to uncover inefficient database operations?`,
+      link: 'https://pris.ly/sidebar-promo/inefficient-db-operations',
       color: 'indigo',
     },
     {
       text: `Curious about the SQL queries Prisma ORM generates?`,
-      link: 'https://pris.ly/optimize-blog',
+      link: 'https://pris.ly/sidebar-promo/sql-queries-in-orm',
       color: 'teal',
     },
   ];
