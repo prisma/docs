@@ -91,6 +91,16 @@ const config: Config = {
             "/getting-started/setup-prisma/start-from-scratch-sql",
           ],
           filename: "sitemap.xml",
+          createSitemapItems: async (params) => {
+            const { defaultCreateSitemapItems, ...rest } = params;
+            const items = await defaultCreateSitemapItems(rest);
+            return items.map((item) => {
+              if (item.url.endsWith("/docs/")) {
+                item.url = item.url.slice(0, -1); // remove trailing slash
+              }
+              return item;
+            });
+          },
         },
         docs: {
           routeBasePath: "/",
