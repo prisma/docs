@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import type { ComponentProps } from "react";
 // Import the original mapper
 import MDXComponents from "@theme-original/MDXComponents";
 
@@ -7,7 +8,7 @@ import Subsections from "./DocCardList"; // DocCardList renamed to Subsections f
 import Admonition from "@theme/Admonition";
 import TabbedContent from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from "@theme/TabItem";
-import Link from "@docusaurus/Link";
+import Link, { NavLinkProps } from "@docusaurus/Link";
 import CollapseBox from "@site/src/components/collapsible";
 import TopSection from "@site/src/components/topSection";
 import { useLocation } from "@docusaurus/router";
@@ -109,10 +110,9 @@ const NavigationLinksContainer: React.FC<React.PropsWithChildren> = ({ children 
   return <>{children}</>;
 };
 
-const StyledLink: React.FC<React.PropsWithChildren> = ({ children, ...props }) => {
-  //@ts-ignore
-  const url = props && props?.href;
-  if (url?.includes("prisma.io/") || url?.charAt(0) === "/")
+const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<'a'>>> = ({ children, ...props }) => {
+  const url = props.href;
+  if (url.includes("prisma.io/") || url.startsWith('/') || url.startsWith('#'))
     return <Link {...props}>{children}</Link>;
   else
     return (
