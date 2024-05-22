@@ -4,6 +4,7 @@ import { Tooltip } from "../tooltip/Tooltip";
 import styles from "../../css/gettingStarted.module.scss";
 import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
+import clsx from "clsx";
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -62,6 +63,10 @@ export const BoxTitle = ({ children, ...props }) => (
   </h1>
 );
 
+export const Separator = () => (
+  <div className={styles.separator} />
+)
+
 export const BorderBox = ({ border, ...props }: any) => (
   <BorderBoxWrapper {...props}>{props.children}</BorderBoxWrapper>
 );
@@ -115,8 +120,8 @@ export const SquareLogo = ({ image, tech, url }: any) => {
   );
 };
 
-export const List = ({ children, ...props }) => (
-  <div {...props} className={styles.list}>
+export const List = ({ children, framed, split, ...props }) => (
+  <div {...props} className={clsx(styles.list, framed && styles.framedList, split && styles.splitList)}>
     {children}
   </div>
 );
