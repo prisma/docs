@@ -115,8 +115,8 @@ export const SquareLogo = ({ image, tech, url }: any) => {
   );
 };
 
-export const List = ({ children, ...props }) => (
-  <div {...props} className={styles.list}>
+export const List = ({ children, framed, ...props }) => (
+  <div {...props} className={clsx(styles.list, framed && styles.framedList)}>
     {children}
   </div>
 );
