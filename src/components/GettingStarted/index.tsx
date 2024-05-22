@@ -77,10 +77,10 @@ export const Grid = ({ children, ...props }) => (
   </div>
 );
 
-export const LinkCard = ({ icon, title, desc, link }: any) => {
+export const LinkCard = ({ icon, title, desc, link, highlight }: any) => {
   const linkCardRef = useRef(null);
   return (
-    <Link to={link} ref={linkCardRef} className={styles.linkCardWrapper}>
+    <Link to={link} ref={linkCardRef} className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}>
       <div className={styles.title}>
         <Icon icon={icon} btn="left" size="18px" />
         <h6>{title}</h6>
