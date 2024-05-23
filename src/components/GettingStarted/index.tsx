@@ -96,9 +96,10 @@ export const Tab = ({ children, ...props }) => (
   </div>
 );
 
-export const SquareLogo = ({ image, tech, url }: any) => {
+export const SquareLogo = ({ image, tech, url, imageDark }: any) => {
   const squareCardRef = useRef(null);
   const imgUrl = useBaseUrl(image);
+  const imgDarkUrl = useBaseUrl(imageDark);
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false);
   return (
     <>
@@ -109,7 +110,8 @@ export const SquareLogo = ({ image, tech, url }: any) => {
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
-        <img src={imgUrl} />
+        <img src={imgUrl} className={clsx(imageDark && styles.lightImg)}/>
+        {imageDark && <img src={imgDarkUrl} className={styles.darkImg}/>}
       </Link>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
