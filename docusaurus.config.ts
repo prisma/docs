@@ -28,9 +28,7 @@ const config: Config = {
     defaultLocale: "en",
     locales: ["en"],
   },
-  customFields: {
-    BREVO_API_KEY: process.env.BREVO_API_KEY,
-  },
+  customFields: {},
   scripts: [
     // kapa.ai script
     {
@@ -438,7 +436,8 @@ const config: Config = {
           block: { start: "add-start", end: "add-end" },
         },
         {
-          className: "theme-code-block-deleted-line deleted-line code-highlight",
+          className:
+            "theme-code-block-deleted-line deleted-line code-highlight",
           line: "delete-next-line",
           block: { start: "delete-start", end: "delete-end" },
         },
