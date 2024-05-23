@@ -8,9 +8,27 @@ toc: true
 
 ## Structure
 
-The structure of a database change event depends on the kind of operation that was performed. You can learn more in the [API reference](/pulse/api-reference).
+The structure of a database change event depends on the model and the kind of operation that was performed. You can learn more in the [API reference](/pulse/api-reference).
 
-### `create`
+The examples below are based on this `User` model:
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  email String  @unique
+}
+```
+
+All events the have the following fields in common: 
+
+- `id`: Unique identifier
+- `modelName`: The model on which this was performed, e.g. `User` or `Post`
+- `action`: The kind of event that was performed, either of the following: `create`, `update`, `delete`
+
+Depending on the kind of event, there may be additional fields in the event objects received via Prisma Pulse. See the following sections for a few sample events.
+
+### Create events
 
 ```js
 {
@@ -21,7 +39,7 @@ The structure of a database change event depends on the kind of operation that w
 }
 ```
 
-### `update`
+### Update events
 
 ```js
 {
@@ -33,9 +51,19 @@ The structure of a database change event depends on the kind of operation that w
 }
 ```
 
-> **Note**: If you want the `before` field to carry the values of the record _before_ it was updated, you need to set `REPLICA IDENTITY` to `FULL` as explained [here](/pulse/database-setup/general-database-instructions#replica-identity).
+If you want the `before` field to carry the values of the record _before_ it was updated, you need to set `REPLICA IDENTITY` to `FULL` as explained [here](/pulse/database-setup/general-database-instructions#replica-identity). In that case, the event object may look as follows:
 
-### `delete`
+```js
+{
+  action: 'update',
+  after: { id: 2, email: 'jane@prisma.io', name: 'Jane Doe' },
+  before: { id: 2, email: 'jane@prisma.io', name: 'Jane' },
+  id: '0/2A5A248',
+  modelName: 'User'
+}
+```
+
+### Delete events
 
 Here is an example:
 
@@ -48,8 +76,16 @@ Here is an example:
 }
 ```
 
-> **Note**: If you want the `deleted` field to carry the values of the record that was deleted, you need to set `REPLICA IDENTITY` to `FULL` as explained [here](/pulse/database-setup/general-database-instructions#replica-identity). Otherwise it will only carry the `id` value of the record.
+If you want the `deleted` field to carry the values of the record that was deleted, you need to set `REPLICA IDENTITY` to `FULL` as explained [here](/pulse/database-setup/general-database-instructions#replica-identity). Otherwise it will only carry the `id` value of the record. In that case, the event object may look as follows:
 
+```js
+ {
+  action: 'delete',
+  deleted: { id: 21, email: 'jane@prisma.io', name: 'Jane Doe' },
+  id: '0/2A5A398',
+  modelName: 'User'
+}
+```
 
 ## Delivery semantics
 
