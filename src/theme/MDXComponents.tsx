@@ -110,9 +110,12 @@ const NavigationLinksContainer: React.FC<React.PropsWithChildren> = ({ children 
   return <>{children}</>;
 };
 
-const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<'a'>>> = ({ children, ...props }) => {
+const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
+  children,
+  ...props
+}) => {
   const url = props.href;
-  if (url.includes("prisma.io/") || url.startsWith('/') || url.startsWith('#'))
+  if (url.includes("prisma.io/") || url.startsWith("/") || url.startsWith("#"))
     return <Link {...props}>{children}</Link>;
   else
     return (
