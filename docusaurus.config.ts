@@ -356,9 +356,13 @@ const config: Config = {
               },
             },
             {
-              label: "Terms & Privacy",
-              href: "https://prismaio.notion.site/Terms-Privacy-5b5b9938b3a941ccb2ad97eaf5524c07",
+              label: "Privacy Policy",
+              href: "https://pris.ly/privacy",
             },
+            {
+              label: "Terms of Service",
+              href: "https://pris.ly/terms",
+            }
             {
               label: "Service Level Agreement",
               href: "https://pris.ly/sla",
