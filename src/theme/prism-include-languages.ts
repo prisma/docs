@@ -1,12 +1,12 @@
-import siteConfig from '@generated/docusaurus.config'
-import type * as PrismNamespace from 'prismjs'
-import type { Optional } from 'utility-types'
+import siteConfig from "@generated/docusaurus.config";
+import type * as PrismNamespace from "prismjs";
+import type { Optional } from "utility-types";
 
 export default function prismIncludeLanguages(PrismObject: typeof PrismNamespace): void {
   const {
     themeConfig: { prism },
-  } = siteConfig
-  const { additionalLanguages } = prism as { additionalLanguages: string[] }
+  } = siteConfig;
+  const { additionalLanguages } = prism as { additionalLanguages: string[] };
 
   // Prism components work on the Prism instance on the window, while prism-
   // react-renderer uses its own Prism instance. We temporarily mount the
@@ -14,19 +14,19 @@ export default function prismIncludeLanguages(PrismObject: typeof PrismNamespace
   // avoid polluting global namespace.
   // You can mutate PrismObject: registering plugins, deleting languages... As
   // long as you don't re-assign it
-  globalThis.Prism = PrismObject
+  globalThis.Prism = PrismObject;
 
   additionalLanguages.forEach((lang) => {
-    if (lang === 'php') {
+    if (lang === "php") {
       // eslint-disable-next-line global-require
-      require('prismjs/components/prism-markup-templating.js')
+      require("prismjs/components/prism-markup-templating.js");
     }
     // eslint-disable-next-line global-require, import/no-dynamic-require
-    require(`prismjs/components/prism-${lang}`)
-  })
+    require(`prismjs/components/prism-${lang}`);
+  });
 
-  require('@site/src/theme/prism-prisma.js')
+  require("@site/src/theme/prism-prisma.js");
 
   // @ts-ignore
-  delete (globalThis as Optional<typeof globalThis, 'Prism'>).Prism
+  delete (globalThis as Optional<typeof globalThis, "Prism">).Prism;
 }

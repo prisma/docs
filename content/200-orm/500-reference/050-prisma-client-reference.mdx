@@ -825,7 +825,7 @@ const user = await prisma.user.create({
 
 ##### Create multiple new records
 
-In most cases, you can carry out batch inserts with the [`createMany`](#createmany) query. However, [there are scenarios where `create` is the best option to insert multiple records](#remarks-10).
+In most cases, you can carry out batch inserts with the [`createMany()`](#createmany) or [`createManyAndReturn()`](#createmanyandreturn) queries. However, [there are scenarios where `create()` is the best option to insert multiple records](#remarks-10).
 
 The following example results in **two** `INSERT` statements:
 
@@ -1255,6 +1255,73 @@ const users = await prisma.user.createMany({
 })
 ```
 
+### `createManyAndReturn()`
+
+`createManyAndReturn` creates multiple records and returns the resulting objects.
+
+:::info
+
+`createManyAndReturn()` is only available in Prisma ORM version 5.14.0 and up.
+`createManyAndReturn()` is only available for PostgreSQL, CockroachDB, and SQLite.
+
+:::
+
+#### Options
+
+| Name              | Type                              | Required | Description                                                                                                                                                                                                                                             |
+| ----------------- | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`            | `Enumerable<UserCreateManyInput>` | **Yes**  | Wraps all the model fields in a type so that they can be provided when creating new records. Fields that are marked as optional or have default values in the datamodel are optional.                                    |
+| [`select`](#select)            | `XOR<UserSelect, null>`  | No       | [Specifies which properties to include](/orm/prisma-client/queries/select-fields) on the returned objects.                                                                                 |
+| [`omit`](#omit-preview)        | `XOR<UserOmit, null>`    | No       | Specifies which properties to exclude on the returned objects. In [Preview](/orm/more/releases#preview) since 5.13.0. Mutually exclusive with `select`.                                            |
+| [`include`](#include)          | `XOR<UserInclude, null>` | No       | [Specifies which relations should be eagerly loaded](/orm/prisma-client/queries/relation-queries) on the returned objects.                                                                                 |
+| `skipDuplicates?` | `boolean`                         | No       | Do not insert records with unique fields or ID fields that already exist. Only supported by databases that support [`ON CONFLICT DO NOTHING`](https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT). This excludes MongoDB and SQLServer |
+
+#### Remarks
+
+- The `skipDuplicates` option is not supported by SQLite.
+- You **cannot** create or connect relations by using nested `create`, `createMany`, `connect`, `connectOrCreate` queries inside a top-level `createManyAndReturn()` query.
+- When relations are included via `include`, a separate query is generated per relation.
+- `relationLoadStrategy: join` is not supported.
+
+#### Return type
+
+| Return type | Example | Description |
+| ----------- | ------- | ----------- |
+| JavaScript array object (typed) | `User[]` |     |
+| JavaScript array object (plain) | `[{ name: "Sonali" }]` | Use `select`, `omit` and `include` to determine which fields to return. |
+
+#### Examples
+
+##### Create and return several new users
+
+<CodeWithResult expanded="{true}">
+
+<cmd>
+
+```ts
+const users = await prisma.user.createManyAndReturn({
+  data: [
+    { name: 'Sonali', email: 'sonali@prisma.io' },
+    { name: 'Alex', email: 'alex@prisma.io' },
+  ],
+})
+```
+
+</cmd>
+
+<cmdResult>
+
+```json no-copy
+[
+  { "id": 0, "name": "Sonali", "email": "sonali@prisma.io", "profileViews": 0 },
+  { "id": 1, "name": "Alex", "email": "alex@prisma.io", "profileViews": 0  }
+]
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
 ### `updateMany()`
 
 `updateMany` updates a batch of existing database records in bulk and returns the number of updated records.
@@ -1571,6 +1638,14 @@ const groupUsers = await prisma.user.groupBy({
 
 </cmdResult>
 </CodeWithResult>
+
+### `findRaw()`
+
+See: [Raw database access (`findRaw()`)](/orm/prisma-client/queries/raw-database-access/raw-queries#findraw).
+
+### `aggreagateRaw()`
+
+See: [Raw database access (`aggreagateRaw()`)](/orm/prisma-client/queries/raw-database-access/raw-queries#aggregateraw).
 
 ## Model query options
 
@@ -2092,12 +2167,12 @@ The following examples demonstrate how to use the [`validator`](/orm/prisma-clie
 
   From version 4.5.0, this type exposes all fields on the model. This means that when you filter for a single record based on a unique field, you can check additional non-unique and unique fields at the same time. [Learn more](#filter-on-non-unique-fields-with-userwhereuniqueinput).
 
-```ts
-// UserWhereUniqueInput
-const whereEmailIsUnique = Prisma.validator<Prisma.UserWhereUniqueInput>()({
-  email: 'rich@boop.com',
-})
-```
+  ```ts
+  // UserWhereUniqueInput
+  const whereEmailIsUnique = Prisma.validator<Prisma.UserWhereUniqueInput>()({
+    email: 'rich@boop.com',
+  })
+  ```
 
 - `PostScalarWhereInput`
 
@@ -2780,7 +2855,7 @@ A nested `create` query adds a new related record or set of records to a parent 
 #### Remarks
 
 - `create` is available as a nested query when you `create()` (`prisma.user.create(...)`) a new parent record or `update()` (`prisma.user.update(...)`) an existing parent record.
-- You can use a nested `create` _or_ a nested [`createMany`](#createmany-1) to create multiple related records - [each technique pros and cons](/orm/prisma-client/queries/relation-queries#create-a-single-record-and-multiple-related-records).
+- You can use a nested `create` _or_ a nested [`createMany`](#createmany-1) to create multiple related records. If you require the [`skipDuplicates` query option](#nested-createmany-options) you should use `createMany`.
 
 #### Examples
 
@@ -2885,9 +2960,9 @@ A nested `createMany` query adds a new set of records to a parent record. See: [
 - You cannot nest an additional `create` or `createMany`.
 - Allows setting foreign keys directly — for example, setting the `categoryId` on a post.
 - As of Prisma ORM version 5.12.0, nested `createMany` is supported by SQLite.
-- You can use a nested `create` _or_ a nested `createMany` to create multiple related records - [each technique pros and cons](/orm/prisma-client/queries/relation-queries#create-a-single-record-and-multiple-related-records).
+- You can use a nested `create` _or_ a nested `createMany` to create multiple related records - [if you do not need the `skipDuplicates` query option, you should probably use `create`](/orm/prisma-client/queries/relation-queries#create-a-single-record-and-multiple-related-records).
 
-#### Options
+#### Options \{#nested-createmany-options}
 
 | Name              | Type                              | Required | Description                                                                                                                                                                                                                                             |
 | ----------------- | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -5311,13 +5386,21 @@ Example parameter values:
 
 See [middleware examples](/orm/prisma-client/client-extensions/middleware#samples) .
 
-### `$executeRaw()`
+### `$queryRaw`
 
-See: [Raw database access (`$executeRaw()`)](/orm/prisma-client/queries/raw-database-access/raw-queries#executeraw).
+See: [Raw database access (`$queryRaw`)](/orm/prisma-client/queries/raw-database-access/raw-queries#queryraw).
 
-### `$queryRaw()`
+### `$queryRawUnsafe()`
 
-See: [Raw database access (`$queryRaw()`)](/orm/prisma-client/queries/raw-database-access/raw-queries#queryraw).
+See: [Raw database access (`$queryRawUnsafe()`)](/orm/prisma-client/queries/raw-database-access/raw-queries#queryrawunsafe).
+
+### `$executeRaw`
+
+See: [Raw database access (`$executeRaw`)](/orm/prisma-client/queries/raw-database-access/raw-queries#executeraw).
+
+### `$executeRawUnsafe()`
+
+See: [Raw database access (`$executeRawUnsafe()`)](/orm/prisma-client/queries/raw-database-access/raw-queries#executerawunsafe).
 
 ### `$runCommandRaw()`
 
