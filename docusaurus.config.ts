@@ -40,7 +40,7 @@ const config: Config = {
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
-        "How can I setup relations in my schema file?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?",
+        "How can I setup relations in my Prisma schema?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?",
       "data-button-image": "https://www.prisma.io/docs/ai_button.svg",
       "data-button-width": "64px",
       "data-button-height": "64px",
