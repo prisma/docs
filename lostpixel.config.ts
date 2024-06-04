@@ -11,6 +11,7 @@ export const config: CustomProjectConfig = {
     await page.addStyleTag({
       content: `.sidebar-promo {
           height: 50px;
+          overflow: hidden;
         }
         `,
     })
