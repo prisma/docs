@@ -13,6 +13,9 @@ export const config: CustomProjectConfig = {
           height: 50px;
           overflow: hidden;
         }
+        .footer-scarf {
+          display: none;
+        }
         `,
     })
   },
