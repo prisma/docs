@@ -63,6 +63,11 @@ const config: Config = {
       src: "https://cdn.tolt.io/tolt.js",
       "data-tolt": "fda67739-7ed0-42d2-b716-6da0edbec191",
     },
+    // Scarf script
+    {
+      <img referrerpolicy="no-referrer-when-downgrade" 
+      src="https://static.scarf.sh/a.png?x-pxid=d3850fa1-ff40-448d-9a15-5496ce99c9ae" />
+    },
   ],
   plugins: ["docusaurus-plugin-sass"],
   presets: [
