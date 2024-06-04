@@ -6,6 +6,7 @@ import styles from "./styles.module.scss";
 export default function FooterLayout({ style, links, logo, copyright }) {
   return (
     <footer className={clsx(styles[`footer--dark`], "footer", "footer--dark")}>
+      <img referrerPolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=d3850fa1-ff40-448d-9a15-5496ce99c9ae" />
       <div className={clsx(styles.container, "container", "container-fluid")}>
         {links}
 
