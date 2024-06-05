@@ -6,7 +6,7 @@ import styles from "./styles.module.scss";
 
 type SimpleDropType = {
   items: Array<any>;
-  anchor: any;
+  anchor: React.ReactNode;
   dark?: boolean;
   rightClick?: boolean;
   pos?: "top" | "bottom";
