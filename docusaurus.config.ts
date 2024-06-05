@@ -1,4 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
+
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
@@ -358,14 +359,23 @@ const config: Config = {
             {
               label: "Privacy Policy",
               href: "https://pris.ly/privacy",
+              customProps: {
+                dropdown: "legal",
+              },
             },
             {
               label: "Terms of Service",
               href: "https://pris.ly/terms",
+              customProps: {
+                dropdown: "legal",
+              },
             },
             {
               label: "Service Level Agreement",
               href: "https://pris.ly/sla",
+              customProps: {
+                dropdown: "legal",
+              },
             },
           ],
         },
