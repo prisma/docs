@@ -6,6 +6,7 @@ import type {Props} from '@theme/Footer/Links/MultiColumn';
 import SimpleDropdown from '@site/src/components/dropdown';
 import { Icon } from '@site/src/components/Icon';
 import styles from "./styles.module.scss";
+import clsx from 'clsx';
 
 type ColumnType = Props['columns'][number];
 type ColumnItemType = ColumnType['items'][number];
@@ -29,10 +30,8 @@ function Column({column}: {column: ColumnType}) {
   // @ts-ignore
   const legalDropdownItems = column.items.filter((item, i) => item?.customProps?.dropdown === "legal")
 
-  console.log(legalDropdownItems)
-
   return (
-    <div className="col footer__col">
+    <div className={clsx(styles.col, "col footer__col")}>
       <div className="footer__title">{column.title}</div>
       <ul className="footer__items clean-list">
         {/* @ts-ignore */}
@@ -75,7 +74,7 @@ function Column({column}: {column: ColumnType}) {
 
 export default function FooterLinksMultiColumn({columns}: Props): JSX.Element {
   return (
-    <div className="row footer__links">
+    <div className={clsx(styles.row, "row footer__links")}>
       {columns.map((column, i) => (
         <Column key={i} column={column} />
       ))}
