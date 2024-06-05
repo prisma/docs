@@ -1,10 +1,11 @@
-import React from "react";
+import isInternalUrl from "@docusaurus/isInternalUrl";
 import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
-import isInternalUrl from "@docusaurus/isInternalUrl";
 import { Icon } from "@site/src/components/Icon";
-import styles from "../Layout/styles.module.scss";
 import clsx from "clsx";
+import React from "react";
+
+import styles from "../Layout/styles.module.scss";
 
 export default function FooterLinkItem({ item }) {
   const { to, href, label, prependBaseUrlToHref, ...props } = item;
@@ -30,12 +31,13 @@ export default function FooterLinkItem({ item }) {
     ...(props.target && { target: props.target }),
     style: props?.style,
   };
+
   return (
     <Link {...footerProps}>
-      {label}
-      {!item.customProps?.internal && href && !isInternalUrl(href) && (
-        <Icon icon="fa-solid fa-arrow-up-right" size="1rem" />
-      )}
+      {!item.customProps?.dropdown && label}
+      {!item.customProps?.internal && href && !isInternalUrl(href) &&
+        <>&nbsp;↗</>
+      }
     </Link>
   );
 }
