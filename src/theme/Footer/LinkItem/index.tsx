@@ -35,9 +35,7 @@ export default function FooterLinkItem({ item }) {
   return (
     <Link {...footerProps}>
       {!item.customProps?.dropdown && label}
-      {!item.customProps?.internal && href && !isInternalUrl(href) &&
-        <>&nbsp;↗</>
-      }
+      {!item.customProps?.internal && href && !isInternalUrl(href) && <>&nbsp;↗</>}
     </Link>
   );
 }
