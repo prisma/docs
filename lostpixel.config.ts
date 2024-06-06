@@ -17,7 +17,7 @@ export const config: CustomProjectConfig = {
           display: none;
         }
         `,
-    })
+    });
   },
   lostPixelProjectId: "clb5ek3mm1772001qqg7yban38",
   apiKey: process.env.LOST_PIXEL_API_KEY,
