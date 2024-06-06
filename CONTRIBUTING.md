@@ -1,6 +1,6 @@
 # Contributing to Prisma Documentation
 
-Thank you for looking to contribute to our docs! If you come across some documentation on [prisma.io/docs](https://www.prisma.io/docs) that you feel is missing or incorrect, please open an issue or submit a pull request.
+Thank you for wanting to contribute to our docs! If you come across some documentation on [prisma.io/docs](https://www.prisma.io/docs) that you feel is missing or incorrect, please open an issue or submit a pull request.
 
 ## New contributor guide
 
