@@ -377,6 +377,13 @@ const config: Config = {
                 dropdown: "legal",
               },
             },
+            {
+              label: "Security & Compliance",
+              to: "https://trust.prisma.io/",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
           ],
         },
         {
