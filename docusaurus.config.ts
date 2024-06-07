@@ -379,7 +379,7 @@ const config: Config = {
             },
             {
               label: "Security & Compliance",
-              to: "https://trust.prisma.io/",
+              href: "https://trust.prisma.io/",
               target: "_self",
               customProps: {
                 internal: true,
