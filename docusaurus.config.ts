@@ -384,6 +384,7 @@ const config: Config = {
               customProps: {
                 internal: true,
               },
+            },
           ],
         },
         {
