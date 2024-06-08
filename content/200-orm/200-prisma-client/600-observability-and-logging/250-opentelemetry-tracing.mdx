@@ -22,8 +22,8 @@ Tracing gives you a highly detailed, operation-level insight into your Prisma OR
 
 When you enable tracing, Prisma Client outputs the following:
 
-- One trace for each operation (e.g. findMany) that Prisma Client makes.
-- In each trace, one or more [spans](https://www.opentelemetry.io/docs/reference/specification/trace/api/#span). Each span represents the length of time that one stage of the operation takes, such as serialization, or a database query. Spans are represented in a tree structure, where child spans indicate that execution is happening within a larger parent span.
+- One _trace_ for each operation (e.g. `findMany()`) that Prisma Client makes.
+- In each trace, one or more [_spans_](https://www.opentelemetry.io/docs/reference/specification/trace/api/#span). Each span represents the length of time that one stage of the operation takes, such as serialization, or a database query. Spans are represented in a tree structure, where child spans indicate that execution is happening within a larger parent span.
 
 The number and type of spans in a trace depends on the type of operation the trace covers, but an example is as follows:
 
@@ -33,7 +33,11 @@ You can [send tracing output to the console](#send-tracing-output-to-the-console
 
 ## Trace output
 
-For each trace, Prisma Client outputs a series of spans. The number and type of these spans depends on the Prisma Client operation. A typical Prisma trace has the following spans:
+For each trace, Prisma Client outputs a series of spans. The number and type of these spans depends on the Prisma Client operation, and the [database driver](/orm/overview/databases/database-drivers) being used. 
+
+### Native built-in drivers
+
+A typical Prisma trace for the [native build-in drivers](/orm/overview/databases/database-drivers#default-built-in-drivers) has the following spans:
 
 - `prisma:client:operation`: Represents the entire Prisma Client operation, from Prisma Client to the database and back. It contains details such as the model and method called by Prisma Client. Depending on the Prisma operation, it contains one or more of the following spans:
   - `prisma:client:connect`: Represents how long it takes for Prisma Client to connect to the database.
@@ -59,12 +63,26 @@ prisma.user.findMany({
 The trace is structured as follows:
 
 - `prisma:client:operation`
+  - `prisma:client:connect`
   - `prisma:client:serialize`
   - `prisma:engine`
     - `prisma:engine:connection`
     - `prisma:engine:db_query`: details of the first SQL query or command...
     - `prisma:engine:db_query`: ...details of the next SQL query or command...
     - `prisma:engine:serialize`
+
+### Driver adapters
+
+When using a [driver adapter](/orm/overview/databases/database-drivers#driver-adapters), the trace contains less spans as the database driver it out of the control of Prisma. Its structure usually looks lik this:
+
+- `prisma:client:operation`
+  - `prisma:client:serialize`
+  - `prisma:engine`
+    - `prisma:engine:db_query`: details of the first SQL query or command...
+    - `prisma:engine:db_query`: ...details of the next SQL query or command...
+    - `prisma:engine:serialize`
+
+Note the missing spans for `prisma:client:connect` and `prisma:engine:connection`. `prisma:engine:db_query` might also be tracking a slightly different stage of query execution.
 
 ## Considerations and prerequisites
 
