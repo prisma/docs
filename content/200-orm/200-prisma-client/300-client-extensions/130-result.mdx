@@ -17,11 +17,7 @@ You can use the `result` [Prisma Client extensions](/orm/prisma-client/client-ex
 
 </TopBlock>
 
-## Add custom fields or methods to query results
-
 Use the `$extends` [client-level method](/orm/reference/prisma-client-reference#client-methods) to create an _extended client_. An extended client is a variant of the standard Prisma Client that is wrapped by one or more extensions.
-
-Use the `result` extension component to add custom fields and methods to query results.
 
 To add a custom [field](#add-a-custom-field-to-query-results) or [method](#add-a-custom-method-to-the-result-object) to query results, use the following structure. In this example, we add the custom field `myComputedField` to the result of a `user` model query.
 
@@ -46,7 +42,7 @@ The parameters are as follows:
 - `needs`: an object which describes the dependencies of the result field.
 - `compute`: a method that defines how the virtual field is computed when it is accessed.
 
-### Add a custom field to query results
+## Add a custom field to query results
 
 You can use the `result` extension component to add fields to query results. These fields are computed at runtime and are type-safe.
 
@@ -76,7 +72,7 @@ console.log(user.fullName)
 
 In above example, the input `user` of `compute` is automatically typed according to the object defined in `needs`. `firstName` and `lastName` are of type `string`, because they are specified in `needs`. If they are not specified in `needs`, then they cannot be accessed.
 
-### Re-use a computed field in another computed field
+## Re-use a computed field in another computed field
 
 The following example computes a user's title and full name in a type-safe way. `titleFullName` is a computed field that reuses the `fullName` computed field.
 
@@ -108,7 +104,7 @@ const prisma = new PrismaClient()
   })
 ```
 
-#### Considerations for fields
+### Considerations for fields
 
 - For performance reasons, Prisma Client computes results on access, not on retrieval.
 - You can only create computed fields that are based on scalar fields.
@@ -121,7 +117,7 @@ const prisma = new PrismaClient()
   console.log(user.fullName) // undefined
   ```
 
-### Add a custom method to the result object
+## Add a custom method to the result object
 
 You can use the `result` component to add methods to query results. The following example adds a new method, `save` to the result object.
 
@@ -144,3 +140,65 @@ const user = await prisma.user.findUniqueOrThrow({ where: { id: someId } })
 user.email = 'mynewmail@mailservice.com'
 await user.save()
 ```
+
+## Using `omit` query option with `result` extension component
+
+You can use the [`omit` (Preview) option](/orm/reference/prisma-client-reference#omit-preview) with [custom fields](#add-a-custom-field-to-query-results) and fields needed by custom fields.
+
+### `omit` fields needed by custom fields from query result
+
+If you `omit` a field that is a dependency of a custom field, it will still be read from the database even though it will not be included in the query result.
+
+The following example omits the `password` field, which is a dependency of the custom field `sanitizedPassword`:
+
+```ts
+const xprisma = prisma.$extends({
+  result: {
+    user: {
+      sanitizedPassword: {
+        needs: { password: true },
+        compute(user) {
+          return sanitize(user.password)
+        },
+      },
+    },
+  },
+})
+
+const user = await xprisma.user.findFirstOrThrow({
+  omit: {
+    password: true,
+  },
+})
+```
+
+In this case, although `password` is omitted from the result, it will still be queried from the database because it is a dependency of the `sanitizedPassword` custom field.
+
+### `omit` custom field and dependencies from query result
+
+To ensure omitted fields are not queried from the database at all, you must omit both the custom field and its dependencies.
+
+The following example omits both the custom field `sanitizedPassword` and the dependent `password` field:
+
+```ts
+const xprisma = prisma.$extends({
+  result: {
+    user: {
+      sanitizedPassword: {
+        needs: { password: true },
+        compute(user) {
+          return sanitize(user.password)
+        },
+      },
+    },
+  },
+})
+
+const user = await xprisma.user.findFirstOrThrow({
+  omit: {
+    sanitizedPassword: true,
+    password: true,
+  },
+})
+```
+In this case, omitting both `password` and `sanitizedPassword` will exclude both from the result as well as prevent the `password` field from being read from the database.

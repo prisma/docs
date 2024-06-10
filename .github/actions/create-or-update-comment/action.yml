@@ -1,0 +1,38 @@
+name: Post Comment
+description: Create or update a comment on a pull request
+inputs:
+  pull-request:
+    description: The PR (number) to post in
+    required: true
+  body:
+    description: The comment body (will replace if comment already exists)
+    required: true
+  body-includes:
+    description: An optional string to search by (use this almost always)
+    required: false
+    default: "bot"
+runs:
+  using: composite
+  steps:
+    - name: Find existing comment
+      uses: peter-evans/find-comment@v3
+      id: find-existing
+      with:
+        issue-number: ${{ inputs.pull-request }}
+        comment-author: "github-actions[bot]"
+        body-includes: ${{ inputs.body-includes }}
+
+    - name: Create comment
+      if: steps.find-existing.outputs.comment-id == ''
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        issue-number: ${{ inputs.pull-request }}
+        body: ${{ inputs.body }}
+
+    - name: Update comment
+      if: steps.find-existing.outputs.comment-id != ''
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-existing.outputs.comment-id }}
+        body: ${{ inputs.body }}
+        edit-mode: replace

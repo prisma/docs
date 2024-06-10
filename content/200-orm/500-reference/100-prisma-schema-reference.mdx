@@ -807,6 +807,7 @@ Floating point number.
 #### Remarks
 
 - Prisma Client returns all `DateTime` as native [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) objects.
+- Currently, Prisma ORM [does not support](https://github.com/prisma/prisma/issues/5006) [zero dates](https://dev.mysql.com/doc/refman/8.3/en/date-and-time-types.html#:~:text=The%20following%20table%20shows%20the%20format%20of%20the%20%E2%80%9Czero%E2%80%9D%20value%20for%20each%20type) (`0000-00-00 00:00:00`, `0000-00-00`, `00:00:00`) in MySQL.
 
 #### Default type mappings
 
@@ -1159,7 +1160,7 @@ Defines a single-field ID on the model.
 
 ##### Relational databases
 
-- Corresponding database type: `PRIMARY KEY`
+- Corresponding database construct: `PRIMARY KEY`
 - Can be annotated with a [`@default()`](#default) value that uses [functions](#attribute-functions) to auto-generate an ID:
 
   - [`autoincrement()`](#autoincrement)
@@ -1170,7 +1171,7 @@ Defines a single-field ID on the model.
 
 ##### MongoDB
 
-- Corresponding database type: [Any valid BSON type, except arrays](https://docs.mongodb.com/manual/core/document/#the-_id-field)
+- Corresponding database construct: [Any valid BSON type, except arrays](https://docs.mongodb.com/manual/core/document/#the-_id-field)
 - Every model must define an `@id` field
 - The [underlying ID field name is always `_id`](https://docs.mongodb.com/manual/core/document/#the-_id-field), and must be mapped with `@map("_id")`
 - Can be defined on any scalar field (`String`, `Int`, `enum`) unless you want to use `ObjectId` in your database
@@ -1448,7 +1449,7 @@ Defines a multi-field ID (composite ID) on the model.
 
 #### Remarks
 
-- Corresponding database type: `PRIMARY KEY`
+- Corresponding database construct: `PRIMARY KEY`
 - Can be annotated with a [`@default()`](#default) value that uses [functions](#attribute-functions) to auto-generate an ID
 - Cannot be optional
 - Can be defined on any scalar field (`String`, `Int`, `enum`)
@@ -1586,15 +1587,18 @@ const post = await prisma.post.create({
 
 ### `@default`
 
-Defines a [default value for a field](/orm/prisma-schema/data-model/models#defining-a-default-value) .
+Defines a [default value for a field](/orm/prisma-schema/data-model/models#defining-a-default-value).
 
 #### Remarks
 
+- Default values that cannot yet be represented in the Prisma schema are represented by the [`dbgenerated()` function](#dbgenerated) when you use [introspection](/orm/prisma-schema/introspection).
+- Default values are not allowed on relation fields in the Prisma schema. Note however that you can still define default values on the fields backing a relation (the ones listed in the `fields` argument in the `@relation` attribute). A default value on the field backing a relation will mean that relation is populated automatically for you.
+- Default values can be used with [scalar lists](/orm/prisma-client/special-fields-and-types/working-with-scalar-lists-arrays) in databases that natively support them.
+
 ##### Relational databases
 
-- Corresponding database type: `DEFAULT`
+- Corresponding database construct: `DEFAULT`
 - Default values can be a static value (`4`, `"hello"`) or one of the following [functions](#attribute-functions):
-
   - [`autoincrement()`](#autoincrement)
   - [`sequence()`](#sequence) (CockroachDB only)
   - [`dbgenerated()`](#dbgenerated)
@@ -1602,21 +1606,13 @@ Defines a [default value for a field](/orm/prisma-schema/data-model/models#defin
   - [`uuid()`](#uuid)
   - [`now()`](#now)
 
-- Default values that cannot yet be represented in the Prisma schema are represented by the `dbgenerated()` function when you use [introspection](/orm/prisma-schema/introspection).
-- Default values are not allowed on relation fields in the Prisma schema. Note however that you can still define default values on the fields backing a relation (the ones listed in the `fields` argument in the `@relation` attribute). A default value on the field backing a relation will mean that relation is populated automatically for you.
-- Default values can be used with [scalar lists](/orm/prisma-client/special-fields-and-types/working-with-scalar-lists-arrays) in databases that natively support them.
-
 ##### MongoDB
 
 - Default values can be a static value (`4`, `"hello"`) or one of the following [functions](#attribute-functions):
-
   - [`auto()`](#auto) (can only be used with `@db.ObjectId` to generate an `ObjectId` in MongoDB)
   - [`cuid()`](#cuid)
   - [`uuid()`](#uuid)
   - [`now()`](#now)
-
-- Default values are currently not allowed on relation fields in the Prisma schema.
-- Default values can be used with [scalar lists](/orm/prisma-client/special-fields-and-types/working-with-scalar-lists-arrays) in databases that natively support them.
 
 #### Arguments
 
@@ -1951,7 +1947,7 @@ Defines a unique constraint for this field.
 
 ##### Relational databases
 
-- Corresponding database type: `UNIQUE`
+- Corresponding database construct: `UNIQUE`
 - `NULL` values are considered to be distinct (multiple rows with `NULL` values in the same column are allowed)
 - Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s).
 
@@ -2144,7 +2140,7 @@ Defines a compound [unique constraint](/orm/prisma-schema/data-model/models#defi
 
 ##### Relational databases
 
-- Corresponding database type: `UNIQUE`
+- Corresponding database construct: `UNIQUE`
 - A `@@unique` block is required if it represents the only unique constraint on a model without an `@id` / `@@id`
 - Adding a unique constraint automatically adds a corresponding _unique index_ to the specified column(s)
 
@@ -2381,7 +2377,7 @@ Defines an index in the database.
 
 ##### Relational databases
 
-- Corresponding database type: `INDEX`
+- Corresponding database construct: `INDEX`
 - There are some additional index configuration options that cannot be provided via the Prisma schema yet. These include:
   - PostgreSQL and CockroachDB:
     - Define index fields as expressions (e.g. `CREATE INDEX title ON public."Post"((lower(title)) text_ops);`)
@@ -2504,7 +2500,7 @@ Defines meta information about the relation. [Learn more](/orm/prisma-schema/dat
 
 ##### Relational databases
 
-- Corresponding database types: `FOREIGN KEY` / `REFERENCES`
+- Corresponding database constructs: `FOREIGN KEY` / `REFERENCES`
 
 ##### MongoDB
 
@@ -2523,7 +2519,7 @@ Defines meta information about the relation. [Learn more](/orm/prisma-schema/dat
 
 The name of the `name` argument on the `@relation` attribute can be omitted (`references` is required):
 
-<!-- prettier-ignore-start -->
+
 ```prisma
 @relation(name: "UserOnPost", references: [id])
 @relation("UserOnPost", references: [id])
@@ -2533,7 +2529,7 @@ The name of the `name` argument on the `@relation` attribute can be omitted (`re
 @relation(name: "UserOnPost")
 @relation("UserOnPost")
 ```
-<!-- prettier-ignore-end -->
+
 
 #### Signature
 

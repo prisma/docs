@@ -5,8 +5,6 @@ metaDescription: 'Learn how you can send raw SQL and MongoDB queries to your dat
 tocDepth: 3
 ---
 
-<TopBlock>
-
 Prisma Client supports the option of sending raw queries to your database. You may wish to use raw queries if:
 
 - you want to run a heavily optimized query
@@ -16,8 +14,6 @@ Raw queries are available for all relational databases Prisma ORM supports. In a
 
 - [Raw queries with relational databases](#raw-queries-with-relational-databases)
 - [Raw queries with MongoDB](#raw-queries-with-mongodb)
-
-</TopBlock>
 
 ## Raw queries with relational databases
 
@@ -136,9 +132,7 @@ const result = await prisma.$queryRaw<User[]>`SELECT * FROM User`
 
 > **Note**: If you do not provide a type, `$queryRaw` defaults to `unknown`.
 
-<!-- ![Typing $queryRaw results](../../../doc-images/unused/H2TCRc5.png) -->
-
-If you are selecting **specific fields** of the model or want to include relations, refer to the documentation about [leveraging Prisma Client's generated types](/orm/prisma-client/type-safety) if you want to make sure that the results are properly typed.
+If you are selecting **specific fields** of the model or want to include relations, refer to the documentation about [leveraging Prisma Client's generated types](/orm/prisma-client/type-safety/operating-against-partial-structures-of-model-types#problem-using-variations-of-the-generated-model-type) if you want to make sure that the results are properly typed.
 
 #### Type caveats when using raw SQL
 
@@ -179,9 +173,9 @@ let result = await prisma.$queryRawUnsafe(`SELECT * FROM ${userTable}`)
 
 Note that if you use `$queryRawUnsafe` in conjunction with user inputs, you risk SQL injection attacks. [Learn more](#queryrawunsafe).
 
-### `$queryRawUnsafe`
+### `$queryRawUnsafe()`
 
-The `$queryRawUnsafe` method allows you to pass a raw string (or template string) to the database.
+The `$queryRawUnsafe()` method allows you to pass a raw string (or template string) to the database.
 
 <Admonition type="warning">
 
@@ -292,9 +286,9 @@ Be aware that:
 $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): PrismaPromise<number>;
 ```
 
-### `$executeRawUnsafe`
+### `$executeRawUnsafe()`
 
-The `$executeRawUnsafe` method allows you to pass a raw string (or template string) to the database. Like `$executeRaw`, it does **not** return database records, but returns the number of rows affected.
+The `$executeRawUnsafe()` method allows you to pass a raw string (or template string) to the database. Like `$executeRaw`, it does **not** return database records, but returns the number of rows affected.
 
 <Admonition type="warning">
 
@@ -335,7 +329,7 @@ $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): PrismaPromise<n
 
 ### Raw query type mapping
 
-Prisma maps any database values returned by `$queryRaw` and `$queryRawUnsafe`to their corresponding [JavaScript types](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures). This behavior is the same as for regular Prisma query methods like `findMany`.
+Prisma maps any database values returned by `$queryRaw` and `$queryRawUnsafe`to their corresponding [JavaScript types](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures). This behavior is the same as for regular Prisma query methods like `findMany()`.
 
 <Admonition type="info">
 
@@ -393,43 +387,45 @@ The following table shows the conversion between types used in the database and 
 
 Note that the exact name for each database type will vary between databases – for example, the boolean type is known as `boolean` in PostgreSQL and `STRING` in CockroachDB. See the [Scalar types reference](/orm/reference/prisma-schema-reference#model-field-scalar-types) for full details of type names for each database.
 
-### PostgreSQL typecasting fixes
+### Raw query typecasting behavior
 
-Prisma ORM resolves a number of issues with typecasting in PostgreSQL.
+Raw queries with Prisma Client might require parameters to be in the expected types of the SQL function or query. Prisma Client does not do subtle, implicit casts.
 
-<Admonition type="info">
-
-**Feature availability:** In v3.14.x and v3.15.x, these PostgreSQL fixes were available with the preview feature `improvedQueryRaw`. We made these fixes [Generally Available](/orm/more/releases#generally-available-ga) in version 4.0.0, so you do not need to use `improvedQueryRaw` in version 4.0.0 or later.
-
-</Admonition>
-
-For example, the following raw query now works correctly, returning an integer result:
-
-```ts
-await prisma.$queryRaw`SELECT ${1.5}::int as int`
-
-// Before: db error: ERROR: incorrect binary data format in bind parameter 1
-// After: [{ int: 2 }]
-```
-
-A consequence of this fix is that some subtle implicit casts are now handled more strictly, so some queries that previously were allowed will now fail. As an example, take the following query using PostgreSQL's `LENGTH` function, which only accepts the `text` type as an input:
+As an example, take the following query using PostgreSQL's `LENGTH` function, which only accepts the `text` type as an input:
 
 ```ts
 await prisma.$queryRaw`SELECT LENGTH(${42});`
 ```
 
-Before version 4.0.0, Prisma ORM silently coerces `42` to `text`. From version 4.0.0, the query returns an error:
+This query returns an error:
 
 ```terminal wrap
 // ERROR: function length(integer) does not exist
 // HINT: No function matches the given name and argument types. You might need to add explicit type casts.
 ```
 
-The fix in this case is to explicitly cast `42` to the `text` type:
+The solution in this case is to explicitly cast `42` to the `text` type:
 
 ```ts
 await prisma.$queryRaw`SELECT LENGTH(${42}::text);`
 ```
+
+:::info
+
+**Feature availability:** This funtionality is [Generally Available](/orm/more/releases#generally-available-ga) since version 4.0.0. In v3.14.x and v3.15.x, it was available with the preview feature `improvedQueryRaw`.
+
+For the example above before version 4.0.0, Prisma ORM silently coerces `42` to `text` and does not require the explicit cast. 
+
+On the other hand the following raw query now works correctly, returning an integer result, and failed before:
+
+```ts
+await prisma.$queryRaw`SELECT ${1.5}::int as int`
+
+// Now: [{ int: 2 }]
+// Before: db error: ERROR: incorrect binary data format in bind parameter 1
+```
+
+:::
 
 ### Transactions
 
@@ -628,7 +624,7 @@ const result = await prisma.$queryRaw(query)
 console.log(result)
 ```
 
-In this example which is safe ✅ from SQL Injection, the `sql` helper method is used to build the query text including a parameter marker for the input value. Each variable is represented by a marker symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL). Note that the examples just show PostgreSQL queries.
+In this example which is safe ✅ from SQL Injection, the `sql` helper method is used to build the query text including a parameter marker for the input value. Each variable is represented by a marker symbol (`?` for MySQL, `$1`, `$2`, and so on for PostgreSQL). Note that the examples just show PostgreSQL queries.
 
 ```ts
 // Version for Typescript
@@ -714,7 +710,7 @@ console.log(result)
 
 #### Parameterized queries
 
-As an alternative to tagged templates, `$queryRawUnsafe` supports standard parameterized queries where each variable is represented by a symbol (`?` for mySQL, `$1`, `$2`, and so on for PostgreSQL). Note that the examples just show PostgreSQL queries.
+As an alternative to tagged templates, `$queryRawUnsafe` supports standard parameterized queries where each variable is represented by a symbol (`?` for MySQL, `$1`, `$2`, and so on for PostgreSQL). Note that the examples just show PostgreSQL queries.
 
 The following example is safe ✅ from SQL Injection:
 
@@ -758,16 +754,16 @@ For MongoDB in versions `3.9.0` and later, Prisma Client exposes three methods t
 - `<model>.findRaw` to find zero or more documents that match the filter.
 - `<model>.aggregateRaw` to perform aggregation operations on a collection.
 
-### `$runCommandRaw`
+### `$runCommandRaw()`
 
-`$runCommandRaw` runs a raw MongoDB command against the database. As input, it accepts all [MongoDB database commands](https://www.mongodb.com/docs/manual/reference/command/), with the following exceptions:
+`$runCommandRaw()` runs a raw MongoDB command against the database. As input, it accepts all [MongoDB database commands](https://www.mongodb.com/docs/manual/reference/command/), with the following exceptions:
 
-- `find` (use [`findRaw`](#findraw) instead)
-- `aggregate` (use [`aggregateRaw`](#aggregateraw) instead)
+- `find` (use [`findRaw()`](#findraw) instead)
+- `aggregate` (use [`aggregateRaw()`](#aggregateraw) instead)
 
-When you use `$runCommandRaw` to run a MongoDB database command, note the following:
+When you use `$runCommandRaw()` to run a MongoDB database command, note the following:
 
-- The object that you pass when you invoke `$runCommandRaw` must follow the syntax of the MongoDB database command.
+- The object that you pass when you invoke `$runCommandRaw()` must follow the syntax of the MongoDB database command.
 - You must connect to the database with an appropriate role for the MongoDB database command.
 
 In the following example, a query inserts two records with the same `_id`. This bypasses normal document validation.
@@ -797,13 +793,13 @@ prisma.$runCommandRaw({
 
 <Admonition type="warning">
 
-Do not use `$runCommandRaw` for queries which contain the `"find"` or `"aggregate"` commands, because you might be unable to fetch all data. This is because MongoDB returns a [cursor](https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/) that is attached to your MongoDB session, and you might not hit the same MongoDB session every time. For these queries, you should use the specialised [`findRaw`](#findraw) and [`aggregateRaw`](#aggregateraw) methods instead.
+Do not use `$runCommandRaw()` for queries which contain the `"find"` or `"aggregate"` commands, because you might be unable to fetch all data. This is because MongoDB returns a [cursor](https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/) that is attached to your MongoDB session, and you might not hit the same MongoDB session every time. For these queries, you should use the specialised [`findRaw()`](#findraw) and [`aggregateRaw()`](#aggregateraw) methods instead.
 
 </Admonition>
 
 #### Return type
 
-`$runCommandRaw` returns a `JSON` object whose shape depends on the inputs.
+`$runCommandRaw()` returns a `JSON` object whose shape depends on the inputs.
 
 #### Signature
 
@@ -811,9 +807,9 @@ Do not use `$runCommandRaw` for queries which contain the `"find"` or `"aggregat
 $runCommandRaw(command: InputJsonObject): PrismaPromise<JsonObject>;
 ```
 
-### `findRaw`
+### `findRaw()`
 
-`<model>.findRaw` returns actual database records. It will find zero or more documents that match the filter on the `User` collection:
+`<model>.findRaw()` returns actual database records. It will find zero or more documents that match the filter on the `User` collection:
 
 ```ts no-lines
 const result = await prisma.user.findRaw({
@@ -824,7 +820,7 @@ const result = await prisma.user.findRaw({
 
 #### Return type
 
-`<model>.findRaw` returns a `JSON` object whose shape depends on the inputs.
+`<model>.findRaw()` returns a `JSON` object whose shape depends on the inputs.
 
 #### Signature
 
@@ -833,12 +829,11 @@ const result = await prisma.user.findRaw({
 ```
 
 - `filter`: The query predicate filter. If unspecified, then all documents in the collection will match the [predicate](https://docs.mongodb.com/manual/reference/operator/query).
-
 - `options`: Additional options to pass to the [`find` command](https://docs.mongodb.com/manual/reference/command/find/#command-fields).
 
-### `aggregateRaw`
+### `aggregateRaw()`
 
-`<model>.aggregateRaw` returns aggregated database records. It will perform aggregation operations on the `User` collection:
+`<model>.aggregateRaw()` returns aggregated database records. It will perform aggregation operations on the `User` collection:
 
 ```ts no-lines
 const result = await prisma.user.aggregateRaw({
@@ -851,7 +846,7 @@ const result = await prisma.user.aggregateRaw({
 
 #### Return type
 
-`<model>.aggregateRaw` returns a `JSON` object whose shape depends on the inputs.
+`<model>.aggregateRaw()` returns a `JSON` object whose shape depends on the inputs.
 
 #### Signature
 
@@ -860,5 +855,4 @@ const result = await prisma.user.aggregateRaw({
 ```
 
 - `pipeline`: An array of aggregation stages to process and transform the document stream via the [aggregation pipeline](https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline).
-
 - `options`: Additional options to pass to the [`aggregate` command](https://docs.mongodb.com/manual/reference/command/aggregate/#command-fields).
