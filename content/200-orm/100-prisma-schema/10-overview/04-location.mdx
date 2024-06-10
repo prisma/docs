@@ -1,0 +1,121 @@
+---
+title: Schema location
+metaTitle: Prisma Schema Location and Configuration
+metaDescription: Documentation regarding proper location of Prisma Schema including default naming and multiple files.
+---
+
+The default name for the Prisma Schema is a single file `schema.prisma` in your `prisma` folder. When your schema is named like this, the Prisma CLI will detect it automatically.
+
+> If you are using the [`prismaSchemaFolder` preview feature](#multi-file-prisma-schema) any files in the `prisma/schema` directory are detected automatically.
+
+## Prisma Schema location
+
+The Prisma CLI looks for the Prisma Schema in the following locations, in the following order:
+
+1.  The location specified by the [`--schema` flag](/orm/reference/prisma-cli-reference), which is available when you `introspect`, `generate`, `migrate`, and `studio`:
+
+    ```terminal
+    prisma generate --schema=./alternative/schema.prisma
+    ```
+
+2.  The location specified in the `package.json` file (version 2.7.0 and later):
+
+    ```json
+    "prisma": {
+      "schema": "db/schema.prisma"
+    }
+    ```
+
+3.  Default locations:
+
+    - `./prisma/schema.prisma`
+    - `./schema.prisma`
+
+The Prisma CLI outputs the path of the schema that will be used. The following example shows the terminal output for `prisma db pull`:
+
+```no-lines
+Environment variables loaded from .env
+//highlight-next-line
+Prisma Schema loaded from prisma/schema.prisma
+
+Introspecting based on datasource defined in prisma/schema.prisma …
+
+✔ Introspected 4 models and wrote them into prisma/schema.prisma in 239ms
+
+Run prisma generate to generate Prisma Client.
+```
+
+## Multi-file Prisma Schema
+
+:::tip
+
+Multi-file Prisma Schema is available via the `prismaSchemaFolder` preview feature in Prisma versions 5.15.0 and later.
+
+:::
+
+To use multiple Prisma Schema files, add a `schema` folder inside of your current `prisma` directory. With the `prismaSchemaFolder` Preview feature enabled, you can add as many files as you want to the `prisma/schema` directory.
+```
+my-app/
+├─ ...
+├─ prisma/
+│  ├─ schema/
+│  │  ├─ post.prisma
+│  │  ├─ schema.prisma
+│  │  ├─ user.prisma
+├─ ...
+```
+
+### How to enable multi-file Prisma schema support
+
+Support for multiple Prisma Schema files is currently in preview. To enable the feature, add the `prismaSchemaFolder` feature flag to the `previewFeatures` field of the `generator` block in your Prisma Schema: 
+
+```prisma file=schema.prisma showLineNumbers
+generator client {
+  provider        = "prisma-client-js"
+  //add-next-line
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+:::info
+
+When first updating to Prisma ORM 5.15.0 or later, your IDE may not recognize the new multi-file format immediately. Be sure to restart your IDE to confirm you have the latest version of the Prisma VS Code Extension installed.
+
+:::
+
+### How to use existing Prisma CLI commands with multiple Prisma schema files
+
+For most Prisma CLI commands, no changes will be necessary to work with a multi-file Prisma schema. Only in the specific cases where you need to supply a schema via an option will a command need to be changed. In these cases, simply replace references to a file with a directory. As an example, the following `prisma db push` command:
+
+```terminal
+npx prisma db push --schema custom/path/to/my/schema.prisma
+```
+
+becomes the following:
+
+```terminal
+npx prisma db push --schema custom/path/to/my/schema  # note this is now a directory!
+```
+
+### Tips for multi-file Prisma Schema
+
+We’ve found that a few patterns work well with this feature and will help you get the most out of it:
+
+- Organize your files by domain: group related models into the same file. For example, keep all user-related models in `user.prisma` while post-related models go in `post.prisma`. Try to avoid having “kitchen sink” schema files.
+
+- Use clear naming conventions: schema files should be named clearly and succinctly. Use names like `user.prisma` and `post.prisma` and not `myModels.prisma` or `CommentFeaturesSchema.prisma`.
+
+- Have an obvious “main” schema file: while you can now have as many schema files as you want, you’ll still need a place where you define `datasource` and `generator` blocks. We recommend having a single schema file that’s obviously the “main” file so that these blocks are easy to find. `main.prisma`, `schema.prisma`, and `base.prisma` are a few we’ve seen that work well.
+
+### Examples
+
+Our fork of [`dub` by dub.co](https://github.com/prisma/dub) is a great example of a real world project adapted to use a multi-file Prisma Schema.
+
+### Learn more about the `prismaSchemaFolder` preview feature
+
+To give feedback on the `prismaSchemaFolder` Preview feature, please refer to [our dedicated Github discussion](https://github.com/prisma/prisma/discussions/24413).

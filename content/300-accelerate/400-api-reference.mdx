@@ -1,0 +1,122 @@
+---
+title: 'API Reference'
+metaTitle: 'Accelerate: API Reference'
+metaDescription: 'API reference documentation for Accelerate.'
+tocDepth: 3
+toc: true
+---
+
+<TopBlock>
+
+The Accelerate API reference documentation is based on the following schema:
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  email String  @unique
+}
+```
+
+All example are based on the `User` model.
+
+</TopBlock>
+
+## `cacheStrategy`
+
+With the Accelerate extension for Prisma Client, you can use the `cacheStrategy` parameter for model queries and use the [`ttl`](/accelerate/caching#time-to-live-ttl) and [`swr`](/accelerate/caching#stale-while-revalidate-swr) parameters to define a cache strategy for Accelerate. The Accelerate extension requires that you install Prisma Client version `4.10.0`.
+
+### Options
+
+The `cacheStrategy` parameter takes an option with the following keys:
+
+| Option | Example | Type  | Required | Description                                 |
+| ------ | ------- | ----- | -------- | ------------------------------------------- |
+| `swr`  | `60`    | `Int` | No       | The stale-while-revalidate time in seconds. |
+| `ttl`  | `60`    | `Int` | No       | The time-to-live time in seconds.           |
+
+### Examples
+
+Add a caching strategy to a query that defines a 60-second stale-while-revalidate value and 60-second time-to-live value:
+
+```ts highlight=7;normal
+await prisma.user.findMany({
+  where: {
+    email: {
+      contains: 'alice@prisma.io',
+    },
+  },
+  //highlight-next-line
+  cacheStrategy: { swr: 60, ttl: 60 },
+})
+```
+
+### Supported Prisma Client operations
+
+The following is a list of all read query operations and support `cacheStrategy`:
+
+- [`findUnique()`](/orm/reference/prisma-client-reference#findunique)
+- [`findUniqueOrThrow()`](/orm/reference/prisma-client-reference#finduniqueorthrow)
+- [`findFirst()`](/orm/reference/prisma-client-reference#findfirst)
+- [`findFirstOrThrow()`](/orm/reference/prisma-client-reference#findfirstorthrow)
+- [`findMany()`](/orm/reference/prisma-client-reference#findmany)
+- [`count()`](/orm/reference/prisma-client-reference#count)
+- [`aggregate()`](/orm/reference/prisma-client-reference#aggregate)
+- [`groupBy()`](/orm/reference/prisma-client-reference#groupby)
+
+<Admonition type="info">
+
+The `cacheStrategy` parameter is not supported on any write operations, such as `create()`.
+
+</Admonition>
+
+## `withAccelerateInfo`
+
+Any query that supports the `cacheStrategy` can append `withAccelerateInfo()` to wrap the response data and include additional information about the Accelerate response.
+
+To retrieve the status of the response, use:
+
+```ts
+const { data, info } = await prisma.user
+  .count({
+    cacheStrategy: { ttl: 60, swr: 600 },
+    where: { myField: 'value' },
+  })
+  .withAccelerateInfo()
+
+console.dir(info)
+```
+
+<Admonition type="info">
+
+Notice the `info` property of the response object. This is where the request information is stored.
+
+</Admonition>
+
+### Return type
+
+The `info` object is of type `AccelerateInfo` and follows the interface below:
+
+```ts
+interface AccelerateInfo {
+  cacheStatus: 'ttl' | 'swr' | 'miss' | 'none'
+  lastModified: Date
+  region: string
+  requestId: string
+  signature: string
+}
+```
+
+| Property       | Type                                                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cacheStatus`  | `"ttl" \| "swr" \| "miss" \| "none" ` | The cache status of the response.<br/><ul><li>`ttl` indicates a cache hit within the `ttl` duration and no database query was executed</li><li>`swr` indicates a cache hit within the `swr` duration and the data is being refreshed by Accelerate in the background </li><li>`miss` indicates that both `ttl` and `swr` have expired and the database query was executed by the request </li><li> `none` indicates that no cache strategy was specified and the database query was executed by the request</li></ul> |
+| `lastModified` | `Date`                                                       | The date the response was last refreshed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `region`       | `String`                                                     | The data center region that received the request.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `requestId`    | `String`                                                     | Unique identifier of the request. Useful for troubleshooting.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `signature`    | `String`                                                     | The unique signature of the Prisma operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+## Errors
+
+Prisma Accelerate-related errors start with `P6xxx`.
+
+You can find the full error code reference for Prisma Accelerate [here](/orm/reference/error-reference#prisma-accelerate).
