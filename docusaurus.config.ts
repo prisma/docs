@@ -1,4 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
+
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
@@ -40,7 +41,7 @@ const config: Config = {
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
-        "How can I setup relations in my schema file?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?",
+        "How can I setup relations in my Prisma Schema?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?",
       "data-button-image": "https://www.prisma.io/docs/ai_button.svg",
       "data-button-width": "64px",
       "data-button-height": "64px",
@@ -358,14 +359,31 @@ const config: Config = {
             {
               label: "Privacy Policy",
               href: "https://pris.ly/privacy",
+              customProps: {
+                dropdown: "legal",
+              },
             },
             {
               label: "Terms of Service",
               href: "https://pris.ly/terms",
+              customProps: {
+                dropdown: "legal",
+              },
             },
             {
               label: "Service Level Agreement",
               href: "https://pris.ly/sla",
+              customProps: {
+                dropdown: "legal",
+              },
+            },
+            {
+              label: "Security & Compliance",
+              href: "https://trust.prisma.io/",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
             },
           ],
         },
