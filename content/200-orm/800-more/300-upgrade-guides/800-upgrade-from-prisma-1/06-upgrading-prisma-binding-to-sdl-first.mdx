@@ -1,0 +1,1692 @@
+---
+title: 'prisma-binding to SDL-first'
+metaTitle: 'Upgrading from Prisma 1 with prisma-binding to SDL-first'
+metaDescription: 'Learn how to upgrade existing Prisma 1 projects with prisma-binding to Prisma ORM 2 (SDL-first).'
+---
+
+## Overview
+
+This upgrade guide describes how to migrate a Node.js project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses `prisma-binding` to implement a GraphQL server.
+
+The code will keep the [SDL-first approach](https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3) for constructing the GraphQL schema. When migrating from `prisma-binding` to Prisma Client, the main difference is that the `info` object can't be used to resolve relations automatically any more, instead you'll need to implement your _type resolvers_ to ensure that relations get resolved properly.
+
+The guide assumes that you already went through the [guide for upgrading the Prisma ORM layer](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql). This means you already:
+
+- installed the Prisma ORM 2 CLI
+- created your Prisma ORM 2 schema
+- introspected your database and resolved potential schema incompatibilities
+- installed and generated Prisma Client
+
+The guide further assumes that you have a file setup that looks similar to this:
+
+```
+.
+├── README.md
+├── package.json
+├── prisma
+│   └── schema.prisma
+├── prisma1
+│   ├── datamodel.prisma
+│   └── prisma.yml
+└── src
+    ├── generated
+    │   └── prisma.graphql
+    ├── index.js
+    └── schema.graphql
+```
+
+The important parts are:
+
+- A folder called with `prisma` with your Prisma ORM 2 schema
+- A folder called `src` with your application code and a schema called `schema.graphql`
+
+If this is not what your project structure looks like, you'll need to adjust the instructions in the guide to match your own setup.
+
+## 1. Adjusting your GraphQL schema
+
+With `prisma-binding`, your approach for defining your GraphQL schema (sometimes called [application schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#a-note-on-the-application-schema)) is based on _importing_ GraphQL types from the generated `prisma.graphql` file (in Prisma 1, this is typically called [Prisma GraphQL schema](https://v1.prisma.io/docs/1.20/data-model-and-migrations/data-model-knul/#the-prisma-graphql-schema)). These types mirror the types from your Prisma 1 datamodel and serve as foundation for your GraphQL API.
+
+With Prisma ORM 2, there's no `prisma.graphql` file any more that you could import from. Therefore, you have to spell out all the types of your GraphQL schema directly inside your `schema.graphql` file.
+
+The easiest way to do so is by downloading the full GraphQL schema from the GraphQL Playground. To do so, open the **SCHEMA** tab and click the **DOWNLOAD** button in the top-right corner, then select **SDL**:
+
+![Downloading the GraphQL schema with GraphQL Playground](./images/download-graphql-schema.png)
+
+Alternatively, you can use the `get-schema` command of the [GraphQL CLI](https://github.com/Urigo/graphql-cli) to download your full schema:
+
+```
+npx graphql get-schema --endpoint __GRAPHQL_YOGA_ENDPOINT__ --output schema.graphql --no-all
+```
+
+> **Note**: With the above command, you need to replace the `__GRAPHQL_YOGA_ENDPOINT__` placeholder with the actual endpoint of your GraphQL Yoga server.
+
+Once you obtained the `schema.graphql` file, replace your current version in `src/schema.graphql` with the new contents. Note that the two schemas are 100% equivalent, except that the new one doesn't use [`graphql-import`](https://github.com/ardatan/graphql-import) for importing types from a different file. Instead, it spells out all types in a single file.
+
+Here's a comparison of these two versions of the sample GraphQL schema that we'll migrate in this guide (you can use the tabs to switch between the two versions):
+
+<TabbedContent code>
+<TabItem value="Before (with graphql-import)">
+
+```graphql
+# import Post from './generated/prisma.graphql'
+# import User from './generated/prisma.graphql'
+# import Category from './generated/prisma.graphql'
+
+type Query {
+  posts(searchString: String): [Post!]!
+  user(userUniqueInput: UserUniqueInput!): User
+  users(where: UserWhereInput, orderBy: Enumerable<UserOrderByInput>, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+  allCategories: [Category!]!
+}
+
+input UserUniqueInput {
+  id: String
+  email: String
+}
+
+type Mutation {
+  createDraft(authorId: ID!, title: String!, content: String!): Post
+  publish(id: ID!): Post
+  deletePost(id: ID!): Post
+  signup(name: String!, email: String!): User!
+  updateBio(userId: String!, bio: String!): User
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+}
+```
+
+</TabItem>
+<TabItem value="After (with Prisma 2)">
+
+```graphql
+type Query {
+  posts(searchString: String): [Post!]!
+  user(id: ID!): User
+  users(where: UserWhereInput, orderBy: Enumerable<UserOrderByInput>, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+  allCategories: [Category!]!
+}
+
+type Category implements Node {
+  id: ID!
+  name: String!
+  posts(where: PostWhereInput, orderBy: Enumerable<PostOrderByInput>, skip: Int, after: String, before: String, first: Int, last: Int): [Post!]
+}
+
+input CategoryCreateManyWithoutPostsInput {
+  create: [CategoryCreateWithoutPostsInput!]
+  connect: [CategoryWhereUniqueInput!]
+}
+
+input CategoryCreateWithoutPostsInput {
+  id: ID
+  name: String!
+}
+
+enum CategoryOrderByInput {
+  id_ASC
+  id_DESC
+  name_ASC
+  name_DESC
+}
+
+input CategoryWhereInput {
+  """Logical AND on all given filters."""
+  AND: [CategoryWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [CategoryWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [CategoryWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  name: String
+
+  """All values that are not equal to given value."""
+  name_not: String
+
+  """All values that are contained in given list."""
+  name_in: [String!]
+
+  """All values that are not contained in given list."""
+  name_not_in: [String!]
+
+  """All values less than the given value."""
+  name_lt: String
+
+  """All values less than or equal the given value."""
+  name_lte: String
+
+  """All values greater than the given value."""
+  name_gt: String
+
+  """All values greater than or equal the given value."""
+  name_gte: String
+
+  """All values containing the given string."""
+  name_contains: String
+
+  """All values not containing the given string."""
+  name_not_contains: String
+
+  """All values starting with the given string."""
+  name_starts_with: String
+
+  """All values not starting with the given string."""
+  name_not_starts_with: String
+
+  """All values ending with the given string."""
+  name_ends_with: String
+
+  """All values not ending with the given string."""
+  name_not_ends_with: String
+  posts_every: PostWhereInput
+  posts_some: PostWhereInput
+  posts_none: PostWhereInput
+}
+
+input CategoryWhereUniqueInput {
+  id: ID
+}
+
+scalar DateTime
+
+"""Raw JSON value"""
+scalar Json
+
+"""An object with an ID"""
+interface Node {
+  """The id of the object."""
+  id: ID!
+}
+
+type Post implements Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  title: String!
+  content: String
+  published: Boolean!
+  author: User
+  categories(where: CategoryWhereInput, orderBy: Enumerable<CategoryOrderByInput>, skip: Int, after: String, before: String, first: Int, last: Int): [Category!]
+}
+
+input PostCreateManyWithoutAuthorInput {
+  create: [PostCreateWithoutAuthorInput!]
+  connect: [PostWhereUniqueInput!]
+}
+
+input PostCreateWithoutAuthorInput {
+  id: ID
+  title: String!
+  content: String
+  published: Boolean
+  categories: CategoryCreateManyWithoutPostsInput
+}
+
+enum PostOrderByInput {
+  id_ASC
+  id_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  title_ASC
+  title_DESC
+  content_ASC
+  content_DESC
+  published_ASC
+  published_DESC
+}
+
+input PostWhereInput {
+  """Logical AND on all given filters."""
+  AND: [PostWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [PostWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [PostWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  createdAt: DateTime
+
+  """All values that are not equal to given value."""
+  createdAt_not: DateTime
+
+  """All values that are contained in given list."""
+  createdAt_in: [DateTime!]
+
+  """All values that are not contained in given list."""
+  createdAt_not_in: [DateTime!]
+
+  """All values less than the given value."""
+  createdAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  createdAt_lte: DateTime
+
+  """All values greater than the given value."""
+  createdAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+
+  """All values that are not equal to given value."""
+  updatedAt_not: DateTime
+
+  """All values that are contained in given list."""
+  updatedAt_in: [DateTime!]
+
+  """All values that are not contained in given list."""
+  updatedAt_not_in: [DateTime!]
+
+  """All values less than the given value."""
+  updatedAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  updatedAt_lte: DateTime
+
+  """All values greater than the given value."""
+  updatedAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  updatedAt_gte: DateTime
+  title: String
+
+  """All values that are not equal to given value."""
+  title_not: String
+
+  """All values that are contained in given list."""
+  title_in: [String!]
+
+  """All values that are not contained in given list."""
+  title_not_in: [String!]
+
+  """All values less than the given value."""
+  title_lt: String
+
+  """All values less than or equal the given value."""
+  title_lte: String
+
+  """All values greater than the given value."""
+  title_gt: String
+
+  """All values greater than or equal the given value."""
+  title_gte: String
+
+  """All values containing the given string."""
+  title_contains: String
+
+  """All values not containing the given string."""
+  title_not_contains: String
+
+  """All values starting with the given string."""
+  title_starts_with: String
+
+  """All values not starting with the given string."""
+  title_not_starts_with: String
+
+  """All values ending with the given string."""
+  title_ends_with: String
+
+  """All values not ending with the given string."""
+  title_not_ends_with: String
+  content: String
+
+  """All values that are not equal to given value."""
+  content_not: String
+
+  """All values that are contained in given list."""
+  content_in: [String!]
+
+  """All values that are not contained in given list."""
+  content_not_in: [String!]
+
+  """All values less than the given value."""
+  content_lt: String
+
+  """All values less than or equal the given value."""
+  content_lte: String
+
+  """All values greater than the given value."""
+  content_gt: String
+
+  """All values greater than or equal the given value."""
+  content_gte: String
+
+  """All values containing the given string."""
+  content_contains: String
+
+  """All values not containing the given string."""
+  content_not_contains: String
+
+  """All values starting with the given string."""
+  content_starts_with: String
+
+  """All values not starting with the given string."""
+  content_not_starts_with: String
+
+  """All values ending with the given string."""
+  content_ends_with: String
+
+  """All values not ending with the given string."""
+  content_not_ends_with: String
+  published: Boolean
+
+  """All values that are not equal to given value."""
+  published_not: Boolean
+  author: UserWhereInput
+  categories_every: CategoryWhereInput
+  categories_some: CategoryWhereInput
+  categories_none: CategoryWhereInput
+}
+
+input PostWhereUniqueInput {
+  id: ID
+}
+
+type Profile implements Node {
+  id: ID!
+  bio: String
+  user: User!
+}
+
+input ProfileCreateOneWithoutUserInput {
+  create: ProfileCreateWithoutUserInput
+  connect: ProfileWhereUniqueInput
+}
+
+input ProfileCreateWithoutUserInput {
+  id: ID
+  bio: String
+}
+
+input ProfileWhereInput {
+  """Logical AND on all given filters."""
+  AND: [ProfileWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [ProfileWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [ProfileWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  bio: String
+
+  """All values that are not equal to given value."""
+  bio_not: String
+
+  """All values that are contained in given list."""
+  bio_in: [String!]
+
+  """All values that are not contained in given list."""
+  bio_not_in: [String!]
+
+  """All values less than the given value."""
+  bio_lt: String
+
+  """All values less than or equal the given value."""
+  bio_lte: String
+
+  """All values greater than the given value."""
+  bio_gt: String
+
+  """All values greater than or equal the given value."""
+  bio_gte: String
+
+  """All values containing the given string."""
+  bio_contains: String
+
+  """All values not containing the given string."""
+  bio_not_contains: String
+
+  """All values starting with the given string."""
+  bio_starts_with: String
+
+  """All values not starting with the given string."""
+  bio_not_starts_with: String
+
+  """All values ending with the given string."""
+  bio_ends_with: String
+
+  """All values not ending with the given string."""
+  bio_not_ends_with: String
+  user: UserWhereInput
+}
+
+input ProfileWhereUniqueInput {
+  id: ID
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+type User implements Node {
+  id: ID!
+  email: String
+  name: String!
+  posts(where: PostWhereInput, orderBy: Enumerable<PostOrderByInput>, skip: Int, after: String, before: String, first: Int, last: Int): [Post!]
+  role: Role!
+  profile: Profile
+  jsonData: Json
+}
+
+input UserCreateInput {
+  id: ID
+  email: String
+  name: String!
+  role: Role
+  jsonData: Json
+  posts: PostCreateManyWithoutAuthorInput
+  profile: ProfileCreateOneWithoutUserInput
+}
+
+enum UserOrderByInput {
+  id_ASC
+  id_DESC
+  email_ASC
+  email_DESC
+  name_ASC
+  name_DESC
+  role_ASC
+  role_DESC
+  jsonData_ASC
+  jsonData_DESC
+}
+
+input UserWhereInput {
+  """Logical AND on all given filters."""
+  AND: [UserWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [UserWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [UserWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  email: String
+
+  """All values that are not equal to given value."""
+  email_not: String
+
+  """All values that are contained in given list."""
+  email_in: [String!]
+
+  """All values that are not contained in given list."""
+  email_not_in: [String!]
+
+  """All values less than the given value."""
+  email_lt: String
+
+  """All values less than or equal the given value."""
+  email_lte: String
+
+  """All values greater than the given value."""
+  email_gt: String
+
+  """All values greater than or equal the given value."""
+  email_gte: String
+
+  """All values containing the given string."""
+  email_contains: String
+
+  """All values not containing the given string."""
+  email_not_contains: String
+
+  """All values starting with the given string."""
+  email_starts_with: String
+
+  """All values not starting with the given string."""
+  email_not_starts_with: String
+
+  """All values ending with the given string."""
+  email_ends_with: String
+
+  """All values not ending with the given string."""
+  email_not_ends_with: String
+  name: String
+
+  """All values that are not equal to given value."""
+  name_not: String
+
+  """All values that are contained in given list."""
+  name_in: [String!]
+
+  """All values that are not contained in given list."""
+  name_not_in: [String!]
+
+  """All values less than the given value."""
+  name_lt: String
+
+  """All values less than or equal the given value."""
+  name_lte: String
+
+  """All values greater than the given value."""
+  name_gt: String
+
+  """All values greater than or equal the given value."""
+  name_gte: String
+
+  """All values containing the given string."""
+  name_contains: String
+
+  """All values not containing the given string."""
+  name_not_contains: String
+
+  """All values starting with the given string."""
+  name_starts_with: String
+
+  """All values not starting with the given string."""
+  name_not_starts_with: String
+
+  """All values ending with the given string."""
+  name_ends_with: String
+
+  """All values not ending with the given string."""
+  name_not_ends_with: String
+  role: Role
+
+  """All values that are not equal to given value."""
+  role_not: Role
+
+  """All values that are contained in given list."""
+  role_in: [Role!]
+
+  """All values that are not contained in given list."""
+  role_not_in: [Role!]
+  posts_every: PostWhereInput
+  posts_some: PostWhereInput
+  posts_none: PostWhereInput
+  profile: ProfileWhereInput
+}
+```
+
+</TabItem>
+</TabbedContent>
+
+You'll notice that the new version of your GraphQL schema not only defines the _models_ that were imported directly, but also additional types (e.g. `input` types) that were not present in the schema before.
+
+## 2. Set up your `PrismaClient` instance
+
+`PrismaClient` is your new interface to the database in Prisma ORM 2. It lets you invoke various methods which build SQL queries and send them to the database, returning the results as plain JavaScript objects.
+
+The `PrismaClient` query API is inspired by the initial `prisma-binding` API, so a lot of the queries you send with Prisma Client will feel familiar.
+
+Similar to the `prisma-binding` instance from Prisma 1, you also want to attach your `PrismaClient` from Prisma ORM 2 to GraphQL's `context` so that in can be accessed inside your resolvers:
+
+```js line-number highlight=10-13;delete|14;add
+const { PrismaClient } = require('@prisma/client')
+
+// ...
+
+const server = new GraphQLServer({
+  typeDefs: 'src/schema.graphql',
+  resolvers,
+  context: (req) => ({
+    ...req,
+    //delete-start
+    prisma: new Prisma({
+      typeDefs: 'src/generated/prisma.graphql',
+      endpoint: 'http://localhost:4466',
+    }),
+    //delete-end
+    //add-next-line
+    prisma: new PrismaClient(),
+  }),
+})
+```
+
+In the code block above, the _red_ lines are the lines to be removed from your current setup, the _green_ lines are the ones that you should add. Of course, it's possible that your previous setup differed from this one (e.g. it's unlikely that your Prisma ORM `endpoint` was `http://localhost:4466` if you're running your API in production), this is just a sample to indicate what it _could_ look like.
+
+When you're now accessing `context.prisma` inside of a resolver, you now have access to Prisma Client queries.
+
+## 2. Write your GraphQL type resolvers
+
+`prisma-binding` was able to _magically_ resolve relations in your GraphQL schema. When not using `prisma-binding` though, you need to explicitly resolve your relations using so-called _type resolvers_.
+
+> **Note** You can learn more about the concept of type resolvers and why they're necessary in this article: [GraphQL Server Basics: GraphQL Schemas, TypeDefs & Resolvers Explained](https://www.prisma.io/blog/graphql-server-basics-the-schema-ac5e2950214e)
+
+### 2.1. Implementing the type resolver for the `User` type
+
+The `User` type in our sample GraphQL schema is defined as follows:
+
+```graphql
+type User implements Node {
+  id: ID!
+  email: String
+  name: String!
+  posts(
+    where: PostWhereInput
+    orderBy: Enumerable<PostOrderByInput>
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Post!]
+  role: Role!
+  profile: Profile
+  jsonData: Json
+}
+```
+
+This type has two relations:
+
+- The `posts` field denotes a 1-n relation to `Post`
+- The `profile` field denotes a 1-1 relation to `Profile`
+
+Since you're not using `prisma-binding` any more, you now need to resolve these relations "manually" in type resolvers.
+
+You can do so by adding a `User` field to your _resolver map_ and implement the resolvers for the `posts` and `profile` relations as follows:
+
+```js line-number highlight=8-23;add
+const resolvers = {
+  Query: {
+    // ... your query resolvers
+  },
+  Mutation: {
+    // ... your mutation resolvers
+  },
+  //add-start
+  User: {
+    posts: (parent, args, context) => {
+      return context.prisma.user
+        .findUnique({
+          where: { id: parent.id },
+        })
+        .posts()
+    },
+    profile: (parent, args, context) => {
+      return context.prisma.user
+        .findUnique({
+          where: { id: parent.id },
+        })
+        .profile()
+    },
+  },
+  //add-end
+}
+```
+
+Inside of these resolvers, you're using your new `PrismaClient` to perform a query against the database. Inside the `posts` resolver, the database query loads all `Post` records from the specified `author` (whose `id` is carried in the `parent` object). Inside the `profile` resolver, the database query loads the `Profile` record from the specified `user` (whose `id` is carried in the `parent` object).
+
+Thanks to these extra resolvers, you'll now be able to nest relations in your GraphQL queries/mutations whenever you're requesting information about the `User` type in a query, e.g.:
+
+```graphql
+{
+  users {
+    id
+    name
+    posts {
+      # fetching this relation is enabled by the new type resolver
+      id
+      title
+    }
+    profile {
+      # fetching this relation is enabled by the new type resolver
+      id
+      bio
+    }
+  }
+}
+```
+
+### 2.2. Implementing the type resolver for the `Post` type
+
+The `Post` type in our sample GraphQL schema is defined as follows:
+
+```graphql
+type Post implements Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  title: String!
+  content: String
+  published: Boolean!
+  author: User
+  categories(
+    where: CategoryWhereInput
+    orderBy: Enumerable<CategoryOrderByInput>
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Category!]
+}
+```
+
+This type has two relations:
+
+- The `author` field denotes a 1-n relation to `User`
+- The `categories` field denotes a m-n relation to `Category`
+
+Since you're not using `prisma-binding` any more, you now need to resolve these relations "manually" in type resolvers.
+
+You can do so by adding a `Post` field to your _resolver map_ and implement the resolvers for the `author` and `categories` relations as follows:
+
+```js line-number highlight=11-26;add
+const resolvers = {
+  Query: {
+    // ... your query resolvers
+  },
+  Mutation: {
+    // ... your mutation resolvers
+  },
+  User: {
+    // ... your type resolvers for `User` from before
+  },
+  //add-start
+  Post: {
+    author: (parent, args, context) => {
+      return context.prisma.post
+        .findUnique({
+          where: { id: parent.id },
+        })
+        .author()
+    },
+    categories: (parent, args, context) => {
+      return context.prisma.post
+        .findUnique({
+          where: { id: parent.id },
+        })
+        .categories()
+    },
+  },
+  //add-end
+}
+```
+
+Inside of these resolvers, you're using your new `PrismaClient` to perform a query against the database. Inside the `author` resolver, the database query loads the `User` record that represents the `author` of the `Post`. Inside the `categories` resolver, the database query loads all `Category` records from the specified `post` (whose `id` is carried in the `parent` object).
+
+Thanks to these extra resolvers, you'll now be able to nest relations in your GraphQL queries/mutations whenever you're requesting information about the `User` type in a query, e.g.:
+
+```graphql
+{
+  posts {
+    id
+    title
+    author {
+      # fetching this relation is enabled by the new type resolver
+      id
+      name
+    }
+    categories {
+      # fetching this relation is enabled by the new type resolver
+      id
+      name
+    }
+  }
+}
+```
+
+### 2.3. Implementing the type resolver for the `Profile` type
+
+The `Profile` type in our sample GraphQL schema is defined as follows:
+
+```graphql
+type Profile implements Node {
+  id: ID!
+  bio: String
+  user: User!
+}
+```
+
+This type has one relation: The `user` field denotes a 1-n relation to `User`.
+
+Since you're not using `prisma-binding` any more, you now need to resolve this relation "manually" in type resolvers.
+
+You can do so by adding a `Profile` field to your _resolver map_ and implement the resolvers for the `owner` relation as follows:
+
+```js line-number highlight=14-22;add
+const resolvers = {
+  Query: {
+    // ... your query resolvers
+  },
+  Mutation: {
+    // ... your mutation resolvers
+  },
+  User: {
+    // ... your type resolvers for `User` from before
+  },
+  Post: {
+    // ... your type resolvers for `Post` from before
+  },
+  //add-start
+  Profile: {
+    user: (parent, args, context) => {
+      return context.prisma.profile
+        .findUnique({
+          where: { id: parent.id },
+        })
+        .owner()
+    },
+  },
+  //add-end
+}
+```
+
+Inside of this resolver, you're using your new `PrismaClient` to perform a query against the database. Inside the `user` resolver, the database query loads the `User` records from the specified `profile` (whose `id` is carried in the `parent` object).
+
+Thanks to this extra resolver, you'll now be able to nest relations in your GraphQL queries/mutations whenever you're requesting information about the `Profile` type in a query.
+
+### 2.4. Implementing the type resolver for the `Category` type
+
+The `Category` type in our sample GraphQL schema is defined as follows:
+
+```graphql
+type Category implements Node {
+  id: ID!
+  name: String!
+  posts(
+    where: PostWhereInput
+    orderBy: Enumerable<PostOrderByInput>
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Post!]
+}
+```
+
+This type has one relation: The `posts` field denotes a m-n relation to `Post`.
+
+Since you're not using `prisma-binding` any more, you now need to resolve this relation "manually" in type resolvers.
+
+You can do so by adding a `Category` field to your _resolver map_ and implement the resolvers for the `posts` and `profile` relations as follows:
+
+```js line-number highlight=17-25;add
+const resolvers = {
+  Query: {
+    // ... your query resolvers
+  },
+  Mutation: {
+    // ... your mutation resolvers
+  },
+  User: {
+    // ... your type resolvers for `User` from before
+  },
+  Post: {
+    // ... your type resolvers for `Post` from before
+  },
+  Profile: {
+    // ... your type resolvers for `User` from before
+  },
+  //add-start
+  Category: {
+    posts: (parent, args, context) => {
+      return context.prisma
+        .findUnique({
+          where: { id: parent.id },
+        })
+        .posts()
+    },
+  },
+  //add-end
+}
+```
+
+Inside of this resolver, you're using your new `PrismaClient` to perform a query against the database. Inside the `posts` resolver, the database query loads all `Post` records from the specified `categories` (whose `id` is carried in the `parent` object).
+
+Thanks to this extra resolver, you'll now be able to nest relations in your GraphQL queries/mutations whenever you're requesting information about a `Category` type in a query.
+
+With all your type resolvers in place, you can start migrating the actual GraphQL API operations.
+
+## 3. Migrate GraphQL operations
+
+### 3.1. Migrate GraphQL queries
+
+In this section, you'll migrate all GraphQL _queries_ from `prisma-binding` to Prisma Client.
+
+#### 3.1.1. Migrate the `users` query (which uses `forwardTo`)
+
+In our sample API, the `users` query from the sample GraphQL schema is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Query {
+  users(where: UserWhereInput, orderBy: Enumerable<UserOrderByInput>, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+  # ... other queries
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Query: {
+    users: forwardTo('prisma'),
+    // ... other resolvers
+  },
+}
+```
+
+##### Implementing the `users` resolver with Prisma Client
+
+To re-implement queries that were previously using `forwardTo`, the idea is to pass the incoming filtering, ordering and pagination arguments to `PrismaClient`:
+
+```js
+const resolvers = {
+  Query: {
+    users: (_, args, context, info) => {
+      // this doesn't work yet
+      const { where, orderBy, skip, first, last, after, before } = args
+      return context.prisma.user.findMany({
+        where,
+        orderBy,
+        skip,
+        first,
+        last,
+        after,
+        before,
+      })
+    },
+    // ... other resolvers
+  },
+}
+```
+
+Note that this approach does **not** work yet because the _structures_ of the incoming arguments is different from the ones expected by `PrismaClient`. To ensure the structures are compatible, you can use the `@prisma/binding-argument-transform` npm package which ensures compatibility:
+
+```copy
+npm install @prisma/binding-argument-transform
+```
+
+You can now use this package as follows:
+
+```js
+const {
+  makeOrderByPrisma2Compatible,
+  makeWherePrisma2Compatible,
+} = require('@prisma/binding-argument-transform')
+
+const resolvers = {
+  Query: {
+    users: (_, args, context, info) => {
+      // this still doesn't entirely work
+      const { where, orderBy, skip, first, last, after, before } = args
+      const prisma2Where = makeWherePrisma2Compatible(where)
+      const prisma2OrderBy = makeOrderByPrisma2Compatible(orderBy)
+      return context.prisma.user.findMany({
+        where: prisma2Where,
+        orderBy: prisma2OrderBy,
+        skip,
+        first,
+        last,
+        after,
+        before,
+      })
+    },
+    // ... other resolvers
+  },
+}
+```
+
+The last remaining issue with this are the pagination arguments. Prisma ORM 2 introduces a [new pagination API](https://github.com/prisma/prisma/releases/tag/2.0.0-beta.7):
+
+- The `first`, `last`, `before` and `after` arguments are removed
+- The new `cursor` argument replaces `before` and `after`
+- The new `take` argument replaces `first` and `last`
+
+Here is how you can adjust the call to make it compliant with the new Prisma Client pagination API:
+
+```js
+const {
+  makeOrderByPrisma2Compatible,
+  makeWherePrisma2Compatible,
+} = require('@prisma/binding-argument-transform')
+
+const resolvers = {
+  Query: {
+    users: (_, args, context) => {
+      const { where, orderBy, skip, first, last, after, before } = args
+      const prisma2Where = makeWherePrisma2Compatible(where)
+      const prisma2OrderBy = makeOrderByPrisma2Compatible(orderBy)
+      const skipValue = skip || 0
+      const prisma2Skip = Boolean(before) ? skipValue + 1 : skipValue
+      const prisma2Take = Boolean(last) ? -last : first
+      const prisma2Before = { id: before }
+      const prisma2After = { id: after }
+      const prisma2Cursor =
+        !Boolean(before) && !Boolean(after)
+          ? undefined
+          : Boolean(before)
+          ? prisma2Before
+          : prisma2After
+      return context.prisma.user.findMany({
+        where: prisma2Where,
+        orderBy: prisma2OrderBy,
+        skip: prisma2Skip,
+        cursor: prisma2Cursor,
+        take: prisma2Take,
+      })
+    },
+    // ... other resolvers
+  },
+}
+```
+
+The calculations are needed to ensure the incoming pagination arguments map properly to the ones from the Prisma Client API.
+
+#### 3.1.2. Migrate the `posts(searchString: String): [Post!]!` query
+
+The `posts` query is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Query {
+  posts(searchString: String): [Post!]!
+  # ... other queries
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Query: {
+    posts: (_, args, context, info) => {
+      return context.prisma.query.posts(
+        {
+          where: {
+            OR: [
+              { title_contains: args.searchString },
+              { content_contains: args.searchString },
+            ],
+          },
+        },
+        info
+      )
+    },
+    // ... other resolvers
+  },
+}
+```
+
+##### Implementing the `posts` resolver with Prisma Client
+
+To get the same behavior with the new Prisma Client, you'll need to adjust your resolver implementation:
+
+```js line-number highlight=3-11;normal
+const resolvers = {
+  Query: {
+    //highlight-start
+    posts: (_, args, context) => {
+      return context.prisma.post.findMany({
+        where: {
+          OR: [
+            { title: { contains: args.searchString } },
+            { content: { contains: args.searchString } },
+          ],
+        },
+      })
+      //highlight-end
+    },
+    // ... other resolvers
+  },
+}
+```
+
+You can now send the respective query in the GraphQL Playground:
+
+```graphql
+{
+  posts {
+    id
+    title
+    author {
+      id
+      name
+    }
+  }
+}
+```
+
+#### 3.1.3. Migrate the `user(uniqueInput: UserUniqueInput): User` query
+
+In our sample app, the `user` query is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Query {
+  user(userUniqueInput: UserUniqueInput): User
+  # ... other queries
+}
+
+input UserUniqueInput {
+  id: String
+  email: String
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Query: {
+    user: (_, args, context, info) => {
+      return context.prisma.query.user(
+        {
+          where: args.userUniqueInput,
+        },
+        info
+      )
+    },
+    // ... other resolvers
+  },
+}
+```
+
+##### Implementing the `user` resolver with Prisma Client
+
+To get the same behavior with the new Prisma Client, you'll need to adjust your resolver implementation:
+
+```js line-number highlight=3-7;normal
+const resolvers = {
+  Query: {
+    //highlight-start
+    user: (_, args, context) => {
+      return context.prisma.user.findUnique({
+        where: args.userUniqueInput,
+      })
+    },
+    //highlight-end
+    // ... other resolvers
+  },
+}
+```
+
+You can now send the respective query via the GraphQL Playground:
+
+```graphql
+{
+  user(userUniqueInput: { email: "alice@prisma.io" }) {
+    id
+    name
+  }
+}
+```
+
+### 3.1. Migrate GraphQL mutations
+
+In this section, you'll migrate the GraphQL mutations from the sample schema.
+
+#### 3.1.2. Migrate the `createUser` mutation (which uses `forwardTo`)
+
+In the sample app, the `createUser` mutation from the sample GraphQL schema is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  createUser(data: UserCreateInput!): User!
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    createUser: forwardTo('prisma'),
+    // ... other resolvers
+  },
+}
+```
+
+##### Implementing the `createUser` resolver with Prisma Client
+
+To get the same behavior with the new Prisma Client, you'll need to adjust your resolver implementation:
+
+```js line-number highlight=3-7;normal
+const resolvers = {
+  Mutation: {
+    //highlight-start
+    createUser: (_, args, context, info) => {
+      return context.prisma.user.create({
+        data: args.data,
+      })
+    },
+    //highlight-end
+    // ... other resolvers
+  },
+}
+```
+
+You can now write your first mutation against the new API, e.g.:
+
+```graphql
+mutation {
+  createUser(data: { name: "Alice", email: "alice@prisma.io" }) {
+    id
+  }
+}
+```
+
+#### 3.1.3. Migrate the `createDraft(title: String!, content: String, authorId: String!): Post!` query
+
+In the sample app, the `createDraft` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  createDraft(title: String!, content: String, authorId: String!): Post!
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    createDraft: (_, args, context, info) => {
+      return context.prisma.mutation.createPost(
+        {
+          data: {
+            title: args.title,
+            content: args.content,
+            author: {
+              connect: {
+                id: args.authorId,
+              },
+            },
+          },
+        },
+        info
+      )
+    },
+    // ... other resolvers
+  },
+}
+```
+
+##### Implementing the `createDraft` resolver with Prisma Client
+
+To get the same behavior with the new Prisma Client, you'll need to adjust your resolver implementation:
+
+```js line-number highlight=3-15;normal
+const resolvers = {
+  Mutation: {
+    //highlight-start
+    createDraft: (_, args, context, info) => {
+      return context.prisma.post.create({
+        data: {
+          title: args.title,
+          content: args.content,
+          author: {
+            connect: {
+              id: args.authorId,
+            },
+          },
+        },
+      })
+    },
+    //highlight-end
+    // ... other resolvers
+  },
+}
+```
+
+You can now send the respective mutation via the GraphQL Playground:
+
+```graphql
+mutation {
+  createDraft(title: "Hello World", authorId: "__AUTHOR_ID__") {
+    id
+    published
+    author {
+      id
+      name
+    }
+  }
+}
+```
+
+#### 3.1.4. Migrate the `updateBio(bio: String, userUniqueInput: UserUniqueInput!): User` mutation
+
+In the sample app, the `updateBio` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  updateBio(bio: String!, userUniqueInput: UserUniqueInput!): User
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    updateBio: (_, args, context, info) => {
+      return context.prisma.mutation.updateUser(
+        {
+          data: {
+            profile: {
+              update: { bio: args.bio },
+            },
+          },
+          where: { id: args.userId },
+        },
+        info
+      )
+    },
+    // ... other resolvers
+  },
+}
+```
+
+##### Implementing the `updateBio` resolver with Prisma Client
+
+To get the same behavior with Prisma Client, you'll need to adjust your resolver implementation:
+
+```js line-number highlight=3-12;normal
+const resolvers = {
+  Mutation: {
+    //highlight-start
+    updateBio: (_, args, context, info) => {
+      return context.prisma.user.update({
+        data: {
+          profile: {
+            update: { bio: args.bio },
+          },
+        },
+        where: args.userUniqueInput,
+      })
+    },
+    //highlight-end
+    // ... other resolvers
+  },
+}
+```
+
+You can now send the respective mutation via the GraphQL Playground :
+
+```graphql
+mutation {
+  updateBio(
+    userUniqueInput: { email: "alice@prisma.io" }
+    bio: "I like turtles"
+  ) {
+    id
+    name
+    profile {
+      id
+      bio
+    }
+  }
+}
+```
+
+#### 3.1.5. Migrate the `addPostToCategories(postId: String!, categoryIds: [String!]!): Post` mutation
+
+In our sample app, the `addPostToCategories` mutation is defined and implemented as follows.
+
+##### SDL schema definition with `prisma-binding`
+
+```graphql
+type Mutation {
+  addPostToCategories(postId: String!, categoryIds: [String!]!): Post
+  # ... other mutations
+}
+```
+
+##### Resolver implementation with `prisma-binding`
+
+```js
+const resolvers = {
+  Mutation: {
+    addPostToCategories: (_, args, context, info) => {
+      const ids = args.categoryIds.map((id) => ({ id }))
+      return context.prisma.mutation.updatePost(
+        {
+          data: {
+            categories: {
+              connect: ids,
+            },
+          },
+          where: {
+            id: args.postId,
+          },
+        },
+        info
+      )
+    },
+    // ... other resolvers
+  },
+}
+```
+
+##### Implementing the `addPostToCategories` resolver with Prisma Client
+
+To get the same behavior with Prisma Client, you'll need to adjust your resolver implementation:
+
+```js line-number highlight=3-13;normal
+const resolvers = {
+  Mutation: {
+    //highlight-start
+    addPostToCategories: (_, args, context, info) => {
+      const ids = args.categoryIds.map((id) => ({ id }))
+      return context.prisma.post.update({
+        where: {
+          id: args.postId,
+        },
+        data: {
+          categories: { connect: ids },
+        },
+      })
+    },
+    //highlight-end
+    // ... other resolvers
+  },
+}
+```
+
+You can now send the respective query via the GraphQL Playground:
+
+```graphql
+mutation {
+  addPostToCategories(
+    postId: "__AUTHOR_ID__"
+    categoryIds: ["__CATEGORY_ID_1__", "__CATEGORY_ID_2__"]
+  ) {
+    id
+    title
+    categories {
+      id
+      name
+    }
+  }
+}
+```
+
+## 4. Cleaning up
+
+Since the entire app has now been upgraded to Prisma ORM 2, you can delete all unnecessary files and remove the no longer needed dependencies.
+
+### 4.1. Clean up npm dependencies
+
+You can start by removing npm dependencies that were related to the Prisma 1 setup:
+
+```copy
+npm uninstall graphql-cli prisma-binding prisma1
+```
+
+### 4.2. Delete unused files
+
+Next, delete the files of your Prisma 1 setup:
+
+```copy
+rm prisma1/datamodel.prisma prisma1/prisma.yml
+```
+
+### 4.3. Stop the Prisma ORM server
+
+Finally, you can stop running your Prisma ORM server.

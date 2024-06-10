@@ -1,0 +1,86 @@
+---
+title: "FAQ"
+metaTitle: "Prisma Pulse: FAQ"
+metaDescription: "Frequently asked questions about Prisma Pulse."
+tocDepth: 3
+toc: true
+---
+
+## What databases are supported with Prisma Pulse?
+
+Prisma Pulse currently supports PostgreSQL v12 and higher. We'd love to hear [which databases](https://tally.so/r/wLbb8G) you would like to see supported next.
+
+### What database providers are supported with Prisma Pulse?
+
+Any PostgreSQL provider that enables you to [enable logical replication](/pulse/database-setup/general-database-instructions#enable-logical-replication) is supported:
+
+| Provider     | Starter | Pro | Business | Enterprise |
+| ------------ | ------- | --- | -------- | ---------- |
+| **Railway**  | ✅      | ✅  | ✅       | ✅         |
+| **Supabase** | ✅      | ✅  | ✅       | ✅         |
+| **Neon**     | ❌      | ✅  | ✅       | ✅         |
+| **AWS RDS**  | ✅      | ✅  | ✅       | ✅         |
+
+Note that because Neon doesn't provide [superuser](https://www.postgresql.org/docs/current/role-attributes.html) access to the database, you can't use Neon-hosted databases on the Starter plan.
+
+## Does Pulse store my database events?
+
+Pulse persists database events if you enable the **Event persistence** feature in your [project](/platform/about#project) via the Console. This lets you use the `stream()` API and take advantage of [delivery guarantees](/pulse/database-events#event-delivery-semantics-in-prisma-pulse).
+
+## How does persisting events impact pricing?
+
+If you enable **Event persistence** for your project, Pulse will store the events that happen in your database in the same [shape](/pulse/database-events#structure) that they're delivered.
+
+Usage of the API is billed according to these factors:
+
+- **Database events**: The number of database events _captured_ by Pulse
+- **Events reads**: The number of database events _read_ and _delivered_ by Pulse via `.stream()`
+- **Event storage**: The amount of disk space the stored events consume (in GiB)
+
+## How many Prisma Client instances can subscribe to a database event?
+
+The number of Prisma Client instances that can subscribe to via Prisma Pulse has the following limits:
+
+- 1000 subscribers for `stream()`
+- 20 subscribers for `subscribe()`
+
+## How can I increase the throughput for Prisma Pulse?
+
+Throughput for Prisma Pulse will increase as the database event size and the number of concurrent listeners decrease.
+
+While limiting database event size can be tricky, we recommend some best practices, such as:
+
+- Avoid large fields in your model, such as storing base64 image strings in the database. Instead, consider storing them in popular file storage options such as AWS S3 or Cloudflare.
+- Creating publication slots for specific models rather than all the models in the database. You can learn more about managing your replication slots [here](/pulse/database-setup/general-database-instructions#max_replication_slots).
+- Upgrading to use modern versions of PostgreSQL due to performance optimizations. Modern versions of PostgreSQL (`v15`+) allow you to create a publication slot for specific fields of a particular model.
+
+## Can I use Pulse in my front-end code?
+
+No, Pulse is server-side and subscriptions cannot be initiated directly within client-side code. If you would find this feature valuable, please share your thoughts on the `#help-and-questions` channel in our community [Discord](https://pris.ly/discord).
+
+To propagate events to the frontend, you can use a WebSocket library like [socket.io](https://socket.io/).
+
+## How to configure `tsconfig.json` with the Pulse extension?
+
+If you're using [`"moduleResolution": "bundler"`](https://www.typescriptlang.org/docs/handbook/modules/reference.html#bundler) in your `tsconfig.json` file, you need to
+explicitly set [`customConditions`](https://www.typescriptlang.org/tsconfig/#customConditions) to either `node` or `workerd` depending on your target runtime. This will instruct TypeScript to match the correct type definitions of the Prisma Pulse extension, as well as any other packages that expose multiple entrypoints:
+
+```js
+// tsconfig.json
+{
+  "compilerOptions": {
+    // ...other options
+    "target": "es2022",
+    "moduleResolution": "bundler",
+    "customConditions": ["workerd"] // or "node"
+  }
+}
+```
+
+This is needed because Prisma Pulse extension offers separate implementations tailored for various runtimes, such as Node.js and Cloudflare Workers. 
+
+If you don't add this, you may run into the following error when using the `@prisma/extension-pulse` in your application code:
+
+```
+Cannot find module '@prisma/extension-pulse' or its corresponding type declarations.
+```
