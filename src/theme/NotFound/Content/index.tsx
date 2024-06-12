@@ -28,7 +28,7 @@ export default function NotFoundContent({ className }) {
                 <p></p>
                 <p>Head back to our</p>
                 <p><a href="https://prisma.io/">homepage</a> or check out</p>
-                <p>our <Link to="/">documentation</Link></p>
+                <p>our <Link to="/">documentation</Link>.</p>
               </div>
           </div>
         </div>
