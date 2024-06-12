@@ -20,7 +20,7 @@ export default function NotFoundContent({ className }) {
                 <p>We could not find the page you were looking for.</p>
                 <p></p>
                 <p>Head back to our <a href="https://prisma.io/">homepage</a> or check out</p>
-                <p>our <Link to="/">documentation</Link></p>
+                <p>our <Link to="/">documentation</Link>.</p>
               </div>
               <div className={styles.mobile}>
                 <p>We could not find the page</p>
