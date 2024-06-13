@@ -8,7 +8,7 @@ import Subsections from "./DocCardList"; // DocCardList renamed to Subsections f
 import Admonition from "@theme/Admonition";
 import TabbedContent from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from "@theme/TabItem";
-import Link, { NavLinkProps } from "@docusaurus/Link";
+import Link from "@docusaurus/Link";
 import CollapseBox from "@site/src/components/collapsible";
 import TopSection from "@site/src/components/topSection";
 import { useLocation } from "@docusaurus/router";
@@ -87,6 +87,23 @@ const ParallelBlocks: React.FC<React.PropsWithChildren> = ({ children }) => {
   );
 };
 
+const DocsLink: React.FC<React.PropsWithChildren<ComponentProps<typeof Link>>> = ({
+  children,
+  ...props
+}) => {
+  const queryParams: string | undefined = useLocation().pathname.split('?')[1];
+  if ((queryParams.includes('utm_medium') || queryParams.includes('utm_source') || queryParams.includes('utm_campaign'))) {
+    sessionStorage.setItem('utm', queryParams);
+  }
+
+  if (props.href.includes('console.prisma.io')) {
+    const utmParams = sessionStorage.getItem('utm') ?? '';
+    return <Link {...props} href={`${props.href}?${utmParams}`}>{children}</Link>;
+  }
+
+  return <Link {...props}>{children}</Link>;
+};
+
 type ButtonColor = "red" | "green" | "grey" | "grey-bg" | "dark";
 interface ButtonProps {
   href?: string;
@@ -100,12 +117,10 @@ interface ButtonProps {
   theme?: any;
 }
 
-// TODO: we should fix this
 const ButtonLink: React.FC<React.PropsWithChildren<ButtonProps>> = ({ children, href }) => {
-  return <Link to={href}>{children}</Link>;
+  return <DocsLink to={href}>{children}</DocsLink>;
 };
 
-// TODO: we should fix this
 const NavigationLinksContainer: React.FC<React.PropsWithChildren> = ({ children }) => {
   return <>{children}</>;
 };
@@ -116,7 +131,7 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
 }) => {
   const url = props.href;
   if (url.includes("prisma.io/") || url.startsWith("/") || url.startsWith("#"))
-    return <Link {...props}>{children}</Link>;
+    return <DocsLink {...props}>{children}</DocsLink>;
   else
     return (
       <a {...props} target="_blank" rel="openeer noreferrer">
@@ -146,7 +161,7 @@ export default {
   details: CollapseBox,
   TabItem,
   a: StyledLink,
-  Link,
+  Link: DocsLink,
   TopBlock,
   CodeWithResult,
   SwitchTech,
