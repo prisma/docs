@@ -184,3 +184,27 @@ Microsoft SQL Server [only allows one `NULL` value in a column that has a `UNIQU
 The standard way to get around this issue is to create a filtered unique index that excludes `NULL` values. This allows you to insert multiple `NULL` values. If you do not create an index in the database, you will get an error if you try to insert more than one `null` value into a column with Prisma Client.
 
 _However_, creating an index makes it impossible to use `license_number` as a foreign key in the database (or a relation scalar field in corresponding Prisma Schema)
+
+### Raw query considerations
+
+#### Raw queries with `String @db.VarChar(n)` field s/ `VARCHAR(N) columns
+
+`String` query parameters in [raw queries](/orm/prisma-client/queries/raw-database-access/raw-queries) are always encoded to SQL Server as `NVARCHAR(4000)` (if your `String` length is <= 4000) or `NVARCHAR(MAX)`. If you compare a `String` query parameter to a column of type `String @db.VarChar(N)`/`VARCHAR(N)`, this can lead to implicit conversion on SQL Server which affects your index performance and can lead to high CPU usage. 
+
+Here is an example:
+```prisma
+model user {
+  id Int @id
+  name String @db.VarChar(40)
+}
+```
+This query would be affected:
+```ts
+await prisma.$queryRaw`SELECT * FROM user WHERE name = ${"John"}`
+```
+
+To avoid the problem, we recommend you always manually cast your `String` query parameters to `VARCHAR(N)` in the raw query:
+```ts
+await prisma.$queryRaw`SELECT * FROM user WHERE name = CAST(${"John"} AS VARCHAR(40))`
+```
+This enables SQL Server to perform a Clustered Index Seek instead of a Clustered Index Scan.
