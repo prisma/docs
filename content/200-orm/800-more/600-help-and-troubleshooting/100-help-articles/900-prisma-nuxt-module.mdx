@@ -1,0 +1,152 @@
+---
+
+title: 'Using the Nuxt Prisma Module'
+metaTitle: 'Add Prisma ORM Easily to Your Nuxt Apps'
+metaDescription: 'Learn how to easily add Prisma ORM to your Nuxt apps, use its features, and understand its limitations.'
+
+---
+
+The Nuxt Prisma module simplifies the integration of Prisma ORM into your Nuxt applications. This module provides several features to streamline the setup and usage of Prisma, making it easier to manage your database interactions.
+
+### Features
+
+- **Project initialization**: Automatically sets up a Prisma ORM project with a SQLite database within your Nuxt project.
+- **Composable**: Provides an auto-imported `usePrismaClient()` composable for use in your Vue files.
+- **API Route Integration**: Automatically imports an instance of `prisma` for use in your API routes.
+- **Prisma Studio access**: Enables access to Prisma Studio through Nuxt Devtools for database management.
+
+## Getting Started
+
+1. Create a [new Nuxt Project](https://nuxt.com/docs/getting-started/installation#new-project):
+    ```sh
+    npx nuxi@latest init test-app
+    ```
+
+2. Navigate to project directory and install `@prisma/nuxt`:
+    ```sh
+    cd test-app
+    npm install @prisma/nuxt
+    ```
+
+3. Add `@prisma/nuxt` to your `nuxt.config.ts`:
+    ```typescript
+    export default defineNuxtConfig({
+      modules: ["@prisma/nuxt"],
+      devtools: { enabled: true },
+    });
+    ```
+
+4. Start the development server:
+    ```sh
+    npm run dev
+    ```
+
+    Starting the development server will:
+
+    - Automatically install the [Prisma CLI](https://www.prisma.io/docs/orm/reference/prisma-cli-reference)
+    - Initialize a Prisma project with SQLite
+    - Create an `User` and `Post` example model in the Prisma Schema
+    - Prompt you to run a migration to create database tables with [Prisma Migrate](https://www.prisma.io/docs/orm/prisma-migrate/understanding-prisma-migrate/overview)
+    - Install and generate a [Prisma Client](https://www.prisma.io/docs/orm/reference/prisma-client-reference)
+    - Prompt you to start the [Prisma Studio](https://www.prisma.io/docs/orm/tools/prisma-studio)
+
+5. You can now use Prisma ORM in your project. If you accepted the prompt to add Prisma Studio, you can access Prisma Studio through the Nuxt Devtools. See the [usage section](#usage) to learn how to use Prisma Client in your app.
+
+## Usage 
+
+### Option A: <inlinecode>usePrismaClient</inlinecode> composable
+
+#### Using the composable in your Nuxt server component
+
+If you're using [Nuxt server components](https://nuxt.com/docs/guide/directory-structure/components#server-components), you can use the global instance of the Prisma Client in your `.server.vue` files:
+```html
+<script setup>
+  const prisma = usePrismaClient()
+  const user = await prisma.user.findFirst()
+</script>
+
+<template>
+  <p>{{ user.name }}</p>
+</template>
+```
+
+#### Using the auto-imported Prisma Client instance in your API route
+
+You can use the auto-imported Prisma Client instance, prisma, in your Nuxt API route as follows:
+```typescript
+export default defineEventHandler(async (event) => {
+  return {
+    user: await prisma.user.findFirst(),
+  };
+});
+```
+
+### Option B: <inlinecode>lib/prisma.ts</inlinecode>
+
+After running through the initial setup prompts, this module creates the `lib/prisma.ts` file which contains a global instance of Prisma Client.
+```typescript
+import { PrismaClient } from '@prisma/client'
+
+const prismaClientSingleton = () => {
+  return new PrismaClient()
+}
+
+declare const globalThis: {
+  prismaGlobal: ReturnType<typeof prismaClientSingleton>;
+} & typeof global;
+
+const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
+
+export default prisma
+
+if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma
+```
+
+You can customize Prisma Client's capabilities by using client extensions in your `lib/prisma.ts` file. Here is an example using the [Pulse client extension](https://www.npmjs.com/package/@prisma/extension-pulse):
+```typescript
+import { PrismaClient } from '@prisma/client'
+import { withPulse } from '@prisma/extension-pulse'
+
+const prismaClientSingleton = () => {
+  return new PrismaClient().$extends(withPulse({
+    apiKey: process.env.PULSE_API_KEY
+  }))
+}
+
+declare const globalThis: {
+  prismaGlobal: ReturnType<typeof prismaClientSingleton>;
+} & typeof global;
+
+const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
+
+export default prisma
+
+if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma
+```
+
+#### Using the global Prisma Client instance in your API route
+
+You can use the global instance of the Prisma Client in your Nuxt API route as follows:
+```typescript
+import prisma from "~/lib/prisma";
+
+export default defineEventHandler(async (event) => {
+  return {
+    user: await prisma.user.findFirst(),
+  };
+});
+```
+
+#### Using the global Prisma Client instance in your Nuxt server component
+
+If you're using [Nuxt server components](https://nuxt.com/docs/guide/directory-structure/components#server-components), you can use the global instance of the Prisma Client `.server.vue` files:
+```html
+<script setup>
+  import prisma from '~/lib/prisma';
+  const user = await prisma.user.findFirst()
+</script>
+
+<template>
+  <p>{{ user.name }}</p>
+</template>
+```
