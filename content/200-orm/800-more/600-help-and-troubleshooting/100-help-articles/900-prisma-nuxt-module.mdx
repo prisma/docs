@@ -15,15 +15,15 @@ The Nuxt Prisma module simplifies the integration of Prisma ORM into your Nuxt a
 - **API route integration**: Automatically imports an instance of `PrismaClient` for use in your API routes.
 - **Prisma Studio access**: Enables access to Prisma Studio through Nuxt Devtools for database management.
 
-## Getting Started
+## Getting started
 
 1. Create a [new Nuxt Project](https://nuxt.com/docs/getting-started/installation#new-project):
-    ```sh
+    ```terminal
     npx nuxi@latest init test-nuxt-app
     ```
 
 2. Navigate to project directory and install `@prisma/nuxt`:
-    ```sh
+    ```terminal
     cd test-nuxt-app
     npm install @prisma/nuxt
     ```
@@ -37,20 +37,135 @@ The Nuxt Prisma module simplifies the integration of Prisma ORM into your Nuxt a
     ```
 
 4. Start the development server:
-    ```sh
+    ```terminal
     npm run dev
     ```
 
     Starting the development server will:
-
     1. Automatically install the [Prisma CLI](/orm/reference/prisma-cli-reference)
     2. Initialize a Prisma project with SQLite
-    3. Create an `User` and `Post` example model in the Prisma Schema
+    3. Create an `User` and `Post` example model in the Prisma Schema file:
+       ```prisma file=prisma/schema.prisma
+        // This is your Prisma schema file,
+        // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+        generator client {
+          provider = "prisma-client-js"
+        }
+
+        datasource db {
+          provider = "sqlite"
+          url      = env("DATABASE_URL")
+        }
+
+        model User {
+          id    Int     @id @default(autoincrement())
+          email String  @unique
+          name  String?
+          posts Post[]
+        }
+
+        model Post {
+          id        Int     @id @default(autoincrement())
+          title     String
+          content   String?
+          published Boolean @default(false)
+          author    User    @relation(fields: [authorId], references: [id])
+          authorId  Int
+        }
+       ```
     4. Prompt you to run a migration to create database tables with [Prisma Migrate](/orm/prisma-migrate/understanding-prisma-migrate/overview)
+        <Admonition type="note">
+          The database migrates automatically the first time you start the module if there isn't a `migrations` folder. After that, you need to run `npx prisma migrate dev` manually in the CLI to apply any schema changes. Running the `npx prisma migrate dev` command manually makes it easier and safer to manage migrations and also to [troubleshoot](/orm/prisma-migrate/workflows/troubleshooting) any migration-related errors.
+        </Admonition>
     5. Install and generate a [Prisma Client](/orm/reference/prisma-client-reference)
     6. Prompt you to start the [Prisma Studio](/orm/tools/prisma-studio)
 
 5. You can now use Prisma ORM in your project. If you accepted the prompt to add Prisma Studio, you can access Prisma Studio through the Nuxt Devtools. See the [usage section](#usage) to learn how to use Prisma Client in your app.
+
+## Using a different database provider
+
+The `@prisma/nuxt` module works with any [database provider that Prisma ORM supports](/orm/reference/supported-databases). You can configure the [getting started example](#getting-started) to use a database of your choice. The steps would be different for a [database without existing data](#using-a-database-without-existing-data) and a [database with pre-existing data](#using-a-database-with-pre-existing-data). 
+
+### Using a database without existing data
+
+Let's configure [the getting started example](#getting-started) to use a PostgreSQL database without any existing data:
+
+1. Stop the Nuxt development server and Prisma Studio (if they are still running):
+    ```terminal
+    npx kill-port 3000  # Stops Nuxt dev server (default port)
+    npx kill-port 5555  # Stops Prisma Studio (default port)
+    ```
+2. Navigate to the `schema.prisma` file and update the `datasource` block to specify the `postgresql` provider:
+    ```prisma file=prisma/schema.prisma
+    // This is your Prisma schema file,
+    // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+    generator client {
+      provider = "prisma-client-js"
+    }
+
+    datasource db {
+      provider = "postgresql"
+      url      = env("DATABASE_URL")
+    }
+
+    model User {
+      id    Int     @id @default(autoincrement())
+      email String  @unique
+      name  String?
+      posts Post[]
+    }
+
+    model Post {
+      id        Int     @id @default(autoincrement())
+      title     String
+      content   String?
+      published Boolean @default(false)
+      author    User    @relation(fields: [authorId], references: [id])
+      authorId  Int
+    }
+    ```
+2. Update the `DATABASE_URL` environment variable in the `.env` file with your PostgreSQL database URL:
+    ```.env file=.env
+    ## This is a sample database URL, please use a valid URL
+    DATABASE_URL="postgresql://janedoe:mypassword@localhost:5432/mydb?schema=sample"
+    ```
+3. Delete the SQLite database file and the migrations folder:
+    ```terminal
+    rm prisma/dev.db # Delete SQLite database file
+    rm -r prisma/migrations # Delete the pre-existing migrations folder
+    ```
+4. Run the development server:
+    ```terminal
+    npm run dev
+    ```
+    Starting the development server will prompt you to migrate the schema changes to the database, to which you should agree. Then agree to the prompt to install and access Prisma Studio from the Nuxt Devtools.
+5. The `@prisma/nuxt` module is ready to use with your PostgreSQL database. See the [usage section](#usage) to learn how to use Prisma Client in your app.
+
+### Using a database with pre-existing data
+
+Let's configure [the getting started example](#getting-started) to use a PostgreSQL database that already has data in it:
+
+1. Stop the dev server and Prisma Studio (if they are still running):
+    ```terminal
+    // stops Nuxt dev server from running incase it's still running
+    npx kill-port 3000
+    // stops Prisma Studio instance incase it's still running
+    npx kill-port 5555
+    ```
+2. Delete the Prisma folder:
+    ```terminal
+    rm -r prisma/
+    ```
+3. Update the `DATABASE_URL` environment variable in the `.env` file with your PostgreSQL database URL:
+    ```.env file=.env
+    ## This is a sample database URL, please use a valid URL
+    DATABASE_URL="postgresql://janedoe:mypassword@localhost:5432/mydb?schema=sample"
+    ```
+4. To generate a Prisma Schema and migrations folder from the existing database, you have to [inrospect](/orm/prisma-schema/introspection) the database. Complete **step 1** to **step 4** from the [introspection guide](/orm/prisma-migrate/getting-started#adding-prisma-migrate-to-an-existing-project) and continue.
+5. Starting the development server will skip the prompt to migrate the schema changes to the database, as the migrations folder already exists. Agree to the prompt to install and access Prisma Studio from the Nuxt Devtools.
+6. The `@prisma/nuxt` module is ready to be used with your PostgreSQL database. See the [usage section](#usage) to learn how to use Prisma Client in your app.
 
 ## Usage 
 
@@ -176,3 +291,13 @@ export default defineNuxtConfig({
 | **formatSchema**    | `boolean` |  true   | Whether to [format](/orm/reference/prisma-cli-reference#format) the [Prisma Schema](/orm/prisma-schema) file. |
 | **installStudio**   | `boolean` |  true   | Whether to install and start [Prisma Studio](https://www.prisma.io/studio) in the Nuxt Devtools. |
 | **autoSetupPrisma** | `boolean` |  false  | Whether to skip all prompts during setup. This option is useful for automating Prisma setup in scripts or CI/CD pipelines. |
+
+## Limitations
+
+### `PrismaClient` constructor options are not configurable in the `usePrismaClient` composable
+
+The `usePrismaClient` module does not currently allow for configuration of `PrismaClient` [constructor options](/orm/reference/prisma-client-reference#prismaclient). We are actively working to incorporate this functionality in an upcoming release.
+
+### The `usePrismaClient` composable is not supported in edge runtimes
+
+The `usePrismaClient` composable currently relies on a `PrismaClient` instance that does not work in edge runtimes. If you require edge support for the composable, please let us know on [Discord](https://pris.ly/discord) or [GitHub](https://github.com/prisma/nuxt-prisma), so we can prioritize its implementation.
