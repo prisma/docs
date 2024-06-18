@@ -4,15 +4,137 @@ metaTitle: 'Excluding fields'
 metaDescription: 'This page explains how to exclude sensitive fields from Prisma Client'
 ---
 
-<TopBlock>
-
 By default Prisma Client returns all fields from a model. You can use `select` to narrow the result set, but that can be unwieldy if you have a large model and you only want to exclude one or two fields.
 
-Prisma Client doesn't have a native way of excluding fields yet, but it's easy to create a function that you can use to exclude certain fields in a type-safe way.
+:::info
 
-</TopBlock>
+As of Prisma ORM 5.16.0, excluding fields globally and locally is supported via the `omitApi` Preview feature.
 
-## Excluding the password field
+:::
+
+## Excluding a field globally using `omit`
+
+The following is a type-safe way to exclude a field globally using the `omitApi` Preview feature.
+
+<TabbedContent code>
+
+<TabItem value="Schema">
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+</TabItem>
+
+<TabItem value="Code">
+
+```tsx
+const prisma = new PrismaClient({
+  omit: {
+    user: {
+      password: true
+    }
+  }
+})
+
+// The password field is excluded in all queries, including this one
+const user = await prisma.user.findUnique({ where: { id: 1 } })
+```
+
+</TabItem>
+
+</TabbedContent>
+
+## Excluding a field locally using `omit`
+
+The following is a type-safe way to exclude a field locally using the `omitApi` Preview feature.
+
+<TabbedContent code>
+
+<TabItem value="Schema">
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+</TabItem>
+
+<TabItem value="Code">
+
+```tsx
+const prisma = new PrismaClient()
+
+// The password field is excluded only in this query
+const user = await prisma.user.findUnique({
+  omit: {
+    password: true
+  },
+  where: { 
+    id: 1 
+  } 
+})
+```
+
+</TabItem>
+
+</TabbedContent>
+
+## How to select a previously omitted field
+
+If you [omit a field globally](#excluding-a-field-globally-using-omit), you can select it by setting `omit` to `false` in any query.
+
+```tsx
+const user = await prisma.user.findUnique({
+  omit: {
+    password: false // The password field is now selected.
+  },
+  where: {
+    id: 1
+  }
+})
+```
+
+## When to use `omit` globally or locally
+
+When beginning to use `omit`, it's important to understand why a field is being omitted in the first place. 
+
+- If you are omitting a field due to security reasons, it's best to omit it globally. 
+- If you are omitting a field because it's not needed in a query, it's best to omit it locally.
+
+## Excluding the password field without using `omit`
+
+:::note
+
+The `omitApi` Preview feature, released in Prisma ORM 5.13.0, is the preferred way of omitting fields.
+This documentation is still relevant for versions of Prisma ORM prior to 5.13.0.
+
+:::
 
 The following is a type-safe `exclude` function returns a user without the `password` field.
 
@@ -62,9 +184,3 @@ function main() {
 In the TypeScript example, we've provided two generics: `User` and `Key`. The `Key` generic is defined as the keys of a `User` (e.g. `email`, `password`, `firstName`, etc.).
 
 These generics flow through the logic, returning a `User` that omits the list of `Key`s provided.
-
-## Going further
-
-- Learn how you can move the `exclude` function into [a custom model](/orm/prisma-client/queries/custom-models).
-- Instead of excluding fields, another option is to [obfuscate the field](https://github.com/prisma/prisma-client-extensions/tree/main/obfuscated-fields).
-- There's an [outstanding feature request](https://github.com/prisma/prisma/issues/5042) to add exclude support natively in Prisma Client. If you'd like to see that happen, make sure to upvote that issue and share your use case!
