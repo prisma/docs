@@ -17,7 +17,7 @@ Prisma Pulse currently supports PostgreSQL. We'd love to hear [which databases](
 To get started with Pulse, you will need the following:
 
 - A [Prisma Data Platform](https://console.prisma.io) account
-- The **connection string** of a Pulse-ready database (if you don't have one yet, you can configure your database the instructions [here](/pulse/database-setup) or [use a Railway template](https://railway.app/template/pulse-pg?referralCode=VQ09uv))
+- The **connection string** of a Pulse-ready database (if you don't have one yet, you can [configure your existing database](/pulse/database-setup) or [use a Railway template](https://railway.app/template/pulse-pg?referralCode=VQ09uv))
 
 ## 1. Enable Pulse in the Platform Console
 
@@ -35,9 +35,10 @@ In the project environment of your choice, click the **Enable Pulse** button.
 
 The Pulse **Setup** screen requires you to:
 
-- provide your **Database connection string**
-- select a **Region** where Pulse should be hosted
-- decide whether you want to use the **Automatic setup** for [**Database replication**](/pulse/concepts#logical-replication) (only available on paid plans)
+1. provide your **Database connection string**
+1. select a **Region** where Pulse should be hosted
+1. decide whether you want to use the **Automatic setup** for [**Database replication**](/pulse/database-setup/general-database-instructions#enable-logical-replication) (only available on paid plans)
+1. make sure **Event persistence** is enabled to use delivery guarantees with [`.stream()`](/pulse/api-reference#stream) (or disable it if you want to use [`.subscribe()`](/pulse/api-reference#subscribe) for fully ephemeral events without delivery guarantees)
 
 When you're done with that, click the **Enable Pulse** button at the bottom of the screen. This will test the connectivity to your database.
 
@@ -59,17 +60,17 @@ You won't be able to access the same API key again afterwards.
 
 ## 2. Add Pulse to your application
 
-With Pulse enabled, proceed with these steps to integrate Pulse into your application. You can also utilize our [example repository](https://github.com/prisma/pulse-starter) on GitHub as a reference guide.
+With Pulse enabled, proceed with these steps to integrate Pulse into your application. You can also utilize our [example repository](https://github.com/prisma/prisma-examples/tree/latest/pulse/starter) on GitHub as a reference guide.
 
 ### 2.1. Install the Pulse Client extension
 
 <Admonition>
 
-Pulse requires [Prisma Client](/orm/prisma-client) version `4.16.1` or higher and [`@prisma/extension-pulse`](https://www.npmjs.com/package/@prisma/extension-pulse) version `1.0.1` or higher
+Pulse requires [Prisma Client](/orm/prisma-client) version `4.16.1` or higher and [`@prisma/extension-pulse`](https://www.npmjs.com/package/@prisma/extension-pulse) version `1.1.0` or higher.
 
 </Admonition>
 
-Install the Pulse Client extension:
+Install the Pulse extension:
 
 ```terminal
 npm install @prisma/extension-pulse@latest
@@ -88,14 +89,20 @@ const prisma = new PrismaClient().$extends(
 )
 ```
 
-### 2.3. Create your first Pulse subscription
+You may need to [configure your `tsconfig.json`](/pulse/faq#how-to-configure-tsconfigjson-with-the-pulse-extension) if you see the following error message:
 
-With the Pulse extension applied, you can use Pulse's `subscribe()` method on any model defined in your Prisma Schema to subscribe to data change events.
+```
+Cannot find module '@prisma/extension-pulse' or its corresponding type declarations.
+```
 
-In the below example, it is assumed that your Prisma schema has a `User` model. A subscription is made to that `User` model that listens for _any_ change event on that table:
+### 2.3. Create your first Pulse stream
+
+With the Pulse extension applied, you can use Pulse's `.stream()` method on any model defined in your Prisma Schema to stream data change events.
+
+In the below example, it is assumed that your Prisma schema has a `User` model. A stream is created for the `User` model that listens for _any_ change event on that table:
 
 <TabbedContent code>
-<TabItem value="Subscription">
+<TabItem value="Stream">
 
 ```ts highlight=9-13;add
 import { PrismaClient } from '@prisma/client'
@@ -106,9 +113,9 @@ const prisma = new PrismaClient().$extends(
 )
 
 async function main() {
-  const subscription = await prisma.user.subscribe()
+  const stream = await prisma.user.stream()
 
-  for await (const event of subscription) {
+  for await (const event of stream) {
     console.log('just received an event:', event)
   }
 }
@@ -132,9 +139,9 @@ model User {
 
 </TabbedContent>
 
-## 3. Test your subscription
+## 3. Test your stream
 
-After running the code snippet above, you can test the subscription by _creating_, _updating_ or _deleting_ a `User` record in your database. 
+After running the code snippet above, you can test the stream by _creating_, _updating_ or _deleting_ a `User` record in your database. 
 
 You can do that using Prisma Studio (by running `npx prisma studio`) or by using any other database client of your choice (like [Postico](https://eggerapps.at/postico2/) or `psql`).
 
@@ -142,29 +149,29 @@ If everything worked, you should see the event being logged to the terminal wher
 
 ## Next steps
 
-You can try out more filters on your Pulse subscription, for example:
+You can try out more filters on your Pulse stream, for example:
 
-**Subscribe only to `create` events**:
+**Stream only `create` events**:
 
 ```ts
-const subscription = await prisma.user.subscribe({
+const stream = await prisma.user.stream({
   create: { },
 })
 ```
 
-**Subscribe only to `update` events**:
+**Stream only `update` events**:
 
 ```ts
-const subscription = await prisma.user.subscribe({
+const stream = await prisma.user.stream({
   update: { },
 })
 ```
 
 
-**Subscribe only to `delete` events**:
+**Stream only `delete` events**:
 
 ```ts
-const subscription = await prisma.user.subscribe({
+const stream = await prisma.user.stream({
   delete: { },
 })
 ```

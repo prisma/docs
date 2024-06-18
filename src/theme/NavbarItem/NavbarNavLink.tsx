@@ -1,10 +1,10 @@
-import React from 'react';
-import Link from '@docusaurus/Link';
-import useBaseUrl from '@docusaurus/useBaseUrl';
-import isInternalUrl from '@docusaurus/isInternalUrl';
-import {isRegexpStringMatch} from '@docusaurus/theme-common';
-import IconExternalLink from '@theme/Icon/ExternalLink';
-import type {Props} from '@theme/NavbarItem/NavbarNavLink';
+import React from "react";
+import Link from "@docusaurus/Link";
+import useBaseUrl from "@docusaurus/useBaseUrl";
+import isInternalUrl from "@docusaurus/isInternalUrl";
+import { isRegexpStringMatch } from "@docusaurus/theme-common";
+import IconExternalLink from "@theme/Icon/ExternalLink";
+import type { Props } from "@theme/NavbarItem/NavbarNavLink";
 
 export default function NavbarNavLink({
   activeBasePath,
@@ -21,20 +21,18 @@ export default function NavbarNavLink({
   // {to: 'version'} should probably be forbidden, in favor of {to: '/version'}
   const toUrl = useBaseUrl(to);
   const activeBaseUrl = useBaseUrl(activeBasePath);
-  const normalizedHref = useBaseUrl(href, {forcePrependBaseUrl: true});
+  const normalizedHref = useBaseUrl(href, { forcePrependBaseUrl: true });
   const isExternalLink = label && href && !isInternalUrl(href);
 
   // Link content is set through html XOR label
   const linkContentProps = html
-    ? {dangerouslySetInnerHTML: {__html: html}}
+    ? { dangerouslySetInnerHTML: { __html: html } }
     : {
         children: (
           <>
             {label}
             {isExternalLink && (
-              <IconExternalLink
-                {...(isDropdownLink && {width: 12, height: 12})}
-              />
+              <IconExternalLink {...(isDropdownLink && { width: 12, height: 12 })} />
             )}
           </>
         ),
@@ -42,19 +40,15 @@ export default function NavbarNavLink({
 
   if (href) {
     return (
-      <Link
-        href={prependBaseUrlToHref ? normalizedHref : href}
-        {...props}
-        {...linkContentProps}
-      />
+      <Link href={prependBaseUrlToHref ? normalizedHref : href} {...props} {...linkContentProps} />
     );
   }
-  
-  const isRoot = toUrl === '/docs' || toUrl === '/docs/'
+
+  const isRoot = toUrl === "/docs" || toUrl === "/docs/";
 
   return (
     <Link
-      to={isRoot ? '/docs' : toUrl}
+      to={isRoot ? "/docs" : toUrl}
       autoAddBaseUrl={isRoot ? false : undefined}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {

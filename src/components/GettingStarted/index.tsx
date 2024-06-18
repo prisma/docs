@@ -4,6 +4,7 @@ import { Tooltip } from "../tooltip/Tooltip";
 import styles from "../../css/gettingStarted.module.scss";
 import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
+import clsx from "clsx";
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -62,6 +63,8 @@ export const BoxTitle = ({ children, ...props }) => (
   </h1>
 );
 
+export const Separator = () => <div className={styles.separator} />;
+
 export const BorderBox = ({ border, ...props }: any) => (
   <BorderBoxWrapper {...props}>{props.children}</BorderBoxWrapper>
 );
@@ -72,10 +75,14 @@ export const Grid = ({ children, ...props }) => (
   </div>
 );
 
-export const LinkCard = ({ icon, title, desc, link }: any) => {
+export const LinkCard = ({ icon, title, desc, link, highlight }: any) => {
   const linkCardRef = useRef(null);
   return (
-    <Link to={link} ref={linkCardRef} className={styles.linkCardWrapper}>
+    <Link
+      to={link}
+      ref={linkCardRef}
+      className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}
+    >
       <div className={styles.title}>
         <Icon icon={icon} btn="left" size="18px" />
         <h6>{title}</h6>
@@ -91,9 +98,10 @@ export const Tab = ({ children, ...props }) => (
   </div>
 );
 
-export const SquareLogo = ({ image, tech, url }: any) => {
+export const SquareLogo = ({ image, tech, url, imageDark }: any) => {
   const squareCardRef = useRef(null);
   const imgUrl = useBaseUrl(image);
+  const imgDarkUrl = useBaseUrl(imageDark);
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false);
   return (
     <>
@@ -104,7 +112,8 @@ export const SquareLogo = ({ image, tech, url }: any) => {
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
-        <img src={imgUrl} />
+        <img src={imgUrl} className={clsx(imageDark && styles.lightImg)} />
+        {imageDark && <img src={imgDarkUrl} className={styles.darkImg} />}
       </Link>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
@@ -115,8 +124,11 @@ export const SquareLogo = ({ image, tech, url }: any) => {
   );
 };
 
-export const List = ({ children, ...props }) => (
-  <div {...props} className={styles.list}>
+export const List = ({ children, framed, split, ...props }) => (
+  <div
+    {...props}
+    className={clsx(styles.list, framed && styles.framedList, split && styles.splitList)}
+  >
     {children}
   </div>
 );
