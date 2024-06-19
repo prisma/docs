@@ -1,26 +1,26 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import clsx from 'clsx';
+import React, { useEffect, useMemo, useState } from "react";
+import clsx from "clsx";
 import {
   ThemeClassNames,
   useThemeConfig,
   usePrevious,
   Collapsible,
   useCollapsible,
-} from '@docusaurus/theme-common';
+} from "@docusaurus/theme-common";
 import {
   isActiveSidebarItem,
   findFirstSidebarItemLink,
   useDocSidebarItemsExpandedState,
   isSamePath,
-} from '@docusaurus/theme-common/internal';
-import Link from '@docusaurus/Link';
-import {translate} from '@docusaurus/Translate';
-import useIsBrowser from '@docusaurus/useIsBrowser';
-import DocSidebarItems from '@theme/DocSidebarItems';
-import styles from '../Link/styles.module.css';
+} from "@docusaurus/theme-common/internal";
+import Link from "@docusaurus/Link";
+import { translate } from "@docusaurus/Translate";
+import useIsBrowser from "@docusaurus/useIsBrowser";
+import DocSidebarItems from "@theme/DocSidebarItems";
+import styles from "../Link/styles.module.css";
 // If we navigate to a category and it becomes active, it should automatically
 // expand itself
-function useAutoExpandActiveCategory({isActive, collapsed, updateCollapsed}) {
+function useAutoExpandActiveCategory({ isActive, collapsed, updateCollapsed }) {
   const wasActive = usePrevious(isActive);
   useEffect(() => {
     const justBecameActive = isActive && !wasActive;
@@ -51,30 +51,30 @@ function useCategoryHrefWithSSRFallback(item) {
     return findFirstSidebarItemLink(item);
   }, [item, isBrowser]);
 }
-function CollapseButton({collapsed, categoryLabel, onClick}) {
+function CollapseButton({ collapsed, categoryLabel, onClick }) {
   return (
     <button
       aria-label={
         collapsed
           ? translate(
               {
-                id: 'theme.DocSidebarItem.expandCategoryAriaLabel',
+                id: "theme.DocSidebarItem.expandCategoryAriaLabel",
                 message: "Expand sidebar category '{label}'",
-                description: 'The ARIA label to expand the sidebar category',
+                description: "The ARIA label to expand the sidebar category",
               },
-              {label: categoryLabel},
+              { label: categoryLabel }
             )
           : translate(
               {
-                id: 'theme.DocSidebarItem.collapseCategoryAriaLabel',
+                id: "theme.DocSidebarItem.collapseCategoryAriaLabel",
                 message: "Collapse sidebar category '{label}'",
-                description: 'The ARIA label to collapse the sidebar category',
+                description: "The ARIA label to collapse the sidebar category",
               },
-              {label: categoryLabel},
+              { label: categoryLabel }
             )
       }
       type="button"
-      className={`${!collapsed ? `${styles.collapsed} ` : ``}clean-btn menu__caret`}
+      className={clsx(!collapsed && styles.collapsed, "clean-btn", "menu__caret")}
       onClick={onClick}
     />
   );
@@ -87,17 +87,17 @@ export default function DocSidebarItemCategory({
   index,
   ...props
 }) {
-  const {items, label, collapsible, className, href} = item;
+  const { items, label, collapsible, className, href } = item;
   const {
     docs: {
-      sidebar: {autoCollapseCategories},
+      sidebar: { autoCollapseCategories },
     },
   } = useThemeConfig();
   const hrefWithSSRFallback = useCategoryHrefWithSSRFallback(item);
   const isActive = isActiveSidebarItem(item, activePath);
   const isCurrentPage = isSamePath(href, activePath);
-  const [badgeContent, setBadgeContent] = useState<string | undefined>(undefined)
-  const {collapsed, setCollapsed} = useCollapsible({
+  const [badgeContent, setBadgeContent] = useState<string | undefined>(undefined);
+  const { collapsed, setCollapsed } = useCollapsible({
     // Active categories are always initialized as expanded. The default
     // (`item.collapsed`) is only used for non-active categories.
     initialState: () => {
@@ -107,49 +107,50 @@ export default function DocSidebarItemCategory({
       return isActive ? false : item.collapsed;
     },
   });
-  const {expandedItem, setExpandedItem} = useDocSidebarItemsExpandedState();
+  const { expandedItem, setExpandedItem } = useDocSidebarItemsExpandedState();
   // Use this instead of `setCollapsed`, because it is also reactive
   const updateCollapsed = (toCollapsed = !collapsed) => {
     setExpandedItem(toCollapsed ? null : index);
     setCollapsed(toCollapsed);
   };
-  useAutoExpandActiveCategory({isActive, collapsed, updateCollapsed});
+  useAutoExpandActiveCategory({ isActive, collapsed, updateCollapsed });
   useEffect(() => {
-    if (
-      collapsible &&
-      expandedItem != null &&
-      expandedItem !== index &&
-      autoCollapseCategories
-    ) {
+    if (collapsible && expandedItem != null && expandedItem !== index && autoCollapseCategories) {
       setCollapsed(true);
     }
   }, [collapsible, expandedItem, index, setCollapsed, autoCollapseCategories]);
   useEffect(() => {
     if (item && item.customProps && item.customProps.badge) {
-      setBadgeContent(item.customProps.badge)
+      setBadgeContent(item.customProps.badge);
     }
-  }, [item])
+  }, [item]);
   return (
     <li
       className={clsx(
         ThemeClassNames.docs.docSidebarItemCategory,
         ThemeClassNames.docs.docSidebarItemCategoryLevel(level),
-        'menu__list-item',
+        "menu__list-item",
         {
-          'menu__list-item--collapsed': collapsed,
+          "menu__list-item--collapsed": collapsed,
         },
-        className,
-      )}>
+        className
+      )}
+    >
       <div
-        className={clsx('menu__list-item-collapsible', {
-          'menu__list-item-collapsible--active': isCurrentPage,
-        })}>
+        className={clsx("menu__list-item-collapsible", {
+          "menu__list-item-collapsible--active": isCurrentPage,
+        })}
+      >
         <Link
-          className={`${clsx('menu__link', {
-            'menu__link--sublist': collapsible,
-            'menu__link--sublist-caret': !href && collapsible,
-            'menu__link--active': isActive
-          })} ${isActive ? styles.active : ''}`}
+          className={clsx(
+            "menu__link",
+            {
+              "menu__link--sublist": collapsible,
+              "menu__link--sublist-caret": !href && collapsible,
+              "menu__link--active": isActive,
+            },
+            isActive && styles.active
+          )}
           onClick={
             collapsible
               ? (e) => {
@@ -165,10 +166,11 @@ export default function DocSidebarItemCategory({
                   onItemClick?.(item);
                 }
           }
-          aria-current={isCurrentPage ? 'page' : undefined}
+          aria-current={isCurrentPage ? "page" : undefined}
           aria-expanded={collapsible ? !collapsed : undefined}
-          href={collapsible ? hrefWithSSRFallback ?? '#' : hrefWithSSRFallback}
-          {...props}>
+          href={collapsible ? hrefWithSSRFallback ?? "#" : hrefWithSSRFallback}
+          {...props}
+        >
           {label}
           {badgeContent && <span className={styles.badge}>{badgeContent}</span>}
         </Link>

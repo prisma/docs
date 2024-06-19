@@ -3,13 +3,12 @@ on:
   pull_request:
     branches:
       - main
-      - docusaurus
     paths:
-      - 'content/**/*'
+      - "content/**/*"
 
 jobs:
   post-files-changed-comment:
-    name: 'Post files changed comment'
+    name: "Post files changed comment"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,38 +24,30 @@ jobs:
         env:
           CHANGED_FILES: ${{ steps.changed-files.outputs.any_changed }}
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
+          shopt -s extglob # enable extended globbing
           OUTPUT=""
           if [ ${CHANGED_FILES} == 'true' ]; then
             OUTPUT="| original | preview |%0A| ------ | ------ |%0A"
             for file in ${ALL_CHANGED_FILES}
             do
-              OUTPUT+="| ${file} |  |%0A"
+              FILE_PATH=${file//+([0-9])-/} # remove numeric prefixes
+              FILE_PATH=${FILE_PATH#content\/} # remove "content/"
+              FILE_PATH=${FILE_PATH%.mdx} # remove ".mdx"
+              FILE_PATH=${FILE_PATH%index} # remove "index"
+              BRANCH_NAME=${BRANCH_NAME:0:28} # shorten branch name for preview link to a maximum of 28 characters
+              OUTPUT+="| [${file}](https://www.prisma.io/docs/${FILE_PATH}) | [${file}](https://${BRANCH_NAME//\//-}.docs-51g.pages.dev/${FILE_PATH}) |%0A"
             done
           else
             OUTPUT="No files changed."
           fi
           echo "::set-output name=body::$OUTPUT"
+          shopt -u extglob # disable extended globbing
 
-      - name: Find existing comment
-        uses: peter-evans/find-comment@v3
-        id: find-existing
+      - name: Post comment
+        uses: ./.github/actions/create-or-update-comment
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: 'original | preview'
-
-      - name: Create comment
-        if: steps.find-existing.outputs.comment-id == ''
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
+          pull-request: ${{ github.event.pull_request.number }}
           body: ${{ steps.build-comment-body.outputs.body }}
-
-      - name: Update comment
-        if: steps.find-existing.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find-existing.outputs.comment-id }}
-          body: ${{ steps.build-comment-body.outputs.body }}
-          edit-mode: replace
+          body-includes: "original | preview"
