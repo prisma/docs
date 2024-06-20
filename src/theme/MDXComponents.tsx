@@ -8,6 +8,7 @@ import Subsections from "./DocCardList"; // DocCardList renamed to Subsections f
 import Admonition from "@theme/Admonition";
 import TabbedContent from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from "@theme/TabItem";
+import BrowserOnly from "@docusaurus/BrowserOnly";
 import Link from "@docusaurus/Link";
 import CollapseBox from "@site/src/components/collapsible";
 import TopSection from "@site/src/components/topSection";
@@ -91,14 +92,18 @@ const DocsLink: React.FC<React.PropsWithChildren<ComponentProps<typeof Link>>> =
   children,
   ...props
 }) => {
-  const queryParams: string | undefined = useLocation().pathname.split('?')[1];
-  if ((queryParams.includes('utm_medium') || queryParams.includes('utm_source') || queryParams.includes('utm_campaign'))) {
-    sessionStorage.setItem('utm', queryParams);
-  }
-
-  if (props.href.includes('console.prisma.io')) {
-    const utmParams = sessionStorage.getItem('utm') ?? '';
-    return <Link {...props} href={`${props.href}?${utmParams}`}>{children}</Link>;
+  if (props.href?.includes('console.prisma.io')) {
+    return <BrowserOnly>
+      {() => {
+        const queryParams = window.location.href.split('?')[1] ?? '';
+        if (queryParams.includes('utm_')) {
+          sessionStorage.setItem('prismaUTM', queryParams);
+        }
+        const utmParams = sessionStorage.getItem('prismaUTM');
+        const modifiedHref = `${props.href?.split('?')[0]}?${utmParams ?? props.href?.split('?')[1]}`;
+        return <Link {...props} href={modifiedHref}>{children}</Link>
+      }}
+    </BrowserOnly>
   }
 
   return <Link {...props}>{children}</Link>;
@@ -130,7 +135,7 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
   ...props
 }) => {
   const url = props.href;
-  if (url.includes("prisma.io/") || url.startsWith("/") || url.startsWith("#"))
+  if (url?.includes("prisma.io/") || url?.startsWith("/") || url?.startsWith("#"))
     return <DocsLink {...props}>{children}</DocsLink>;
   else
     return (
