@@ -12,6 +12,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
         <img
           className="footer-scarf"
           referrerPolicy="no-referrer-when-downgrade"
+          alt=""
           src="https://static.scarf.sh/a.png?x-pxid=d3850fa1-ff40-448d-9a15-5496ce99c9ae"
         />
         <div className={styles.newsletterRow}>
