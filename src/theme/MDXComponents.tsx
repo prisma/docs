@@ -92,18 +92,24 @@ const DocsLink: React.FC<React.PropsWithChildren<ComponentProps<typeof Link>>> =
   children,
   ...props
 }) => {
-  if (props.href?.includes('console.prisma.io')) {
-    return <BrowserOnly>
-      {() => {
-        const queryParams = window.location.href.split('?')[1] ?? '';
-        if (queryParams.includes('utm_')) {
-          sessionStorage.setItem('prismaUTM', queryParams);
-        }
-        const utmParams = sessionStorage.getItem('prismaUTM');
-        const modifiedHref = `${props.href?.split('?')[0]}?${utmParams ?? props.href?.split('?')[1]}`;
-        return <Link {...props} href={modifiedHref}>{children}</Link>
-      }}
-    </BrowserOnly>
+  if (props.href?.includes("console.prisma.io")) {
+    return (
+      <BrowserOnly>
+        {() => {
+          const queryParams = window.location.href.split("?")[1] ?? "";
+          if (queryParams.includes("utm_")) {
+            sessionStorage.setItem("prismaUTM", queryParams);
+          }
+          const utmParams = sessionStorage.getItem("prismaUTM");
+          const modifiedHref = `${props.href?.split("?")[0]}?${utmParams ?? props.href?.split("?")[1]}`;
+          return (
+            <Link {...props} href={modifiedHref}>
+              {children}
+            </Link>
+          );
+        }}
+      </BrowserOnly>
+    );
   }
 
   return <Link {...props}>{children}</Link>;
