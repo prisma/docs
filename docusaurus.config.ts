@@ -188,6 +188,51 @@ const config: Config = {
       style: "dark",
       links: [
         {
+          title: "socials",
+          items: [
+            {
+              label: " ",
+              href: "https://discord.gg/KQyTW2H5ca",
+              customProps: {
+                icon: "fa-brands fa-discord",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://x.com/prisma",
+              customProps: {
+                icon: "fa-brands fa-x-twitter",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://www.youtube.com/prismadata",
+              customProps: {
+                icon: "fa-brands fa-youtube",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://pris.ly/whatsapp",
+              customProps: {
+                icon: "fa-brands fa-whatsapp",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://github.com/prisma",
+              customProps: {
+                icon: "fa-brands fa-github",
+                internal: true,
+              },
+            },
+          ],
+        },
+        {
           title: "Product",
           items: [
             {
@@ -375,50 +420,6 @@ const config: Config = {
               href: "https://trust.prisma.io/",
               target: "_self",
               customProps: {
-                internal: true,
-              },
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              label: " ",
-              href: "https://discord.gg/KQyTW2H5ca",
-              customProps: {
-                icon: "fa-brands fa-discord",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://x.com/prisma",
-              customProps: {
-                icon: "fa-brands fa-x-twitter",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://www.youtube.com/prismadata",
-              customProps: {
-                icon: "fa-brands fa-youtube",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://pris.ly/whatsapp",
-              customProps: {
-                icon: "fa-brands fa-whatsapp",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://github.com/prisma",
-              customProps: {
-                icon: "fa-brands fa-github",
                 internal: true,
               },
             },

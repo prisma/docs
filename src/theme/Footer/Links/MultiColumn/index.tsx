@@ -32,11 +32,13 @@ function Column({ column }: { column: ColumnType }) {
     (item, i) => item?.customProps?.dropdown === "legal"
   );
 
+  console.log(column)
+
   return (
-    <div className={clsx(styles.col, "col footer__col")}>
-      <div className="footer__title">{column.title}</div>
-      <ul className="footer__items clean-list">
-        {/* @ts-ignore */}
+    <div className={clsx(styles.col, "col footer__col", column.title === "socials" && styles.socialColWrapper)}>
+      {column.title !== "socials" && <div className="footer__title">{column.title}</div>}
+      {/* @ts-ignore */}
+      <ul className={clsx("footer__items clean-list", column.title === "socials" && styles.socialCol)}>
         {column.items.map(
           (item, i) => !item?.customProps?.dropdown && <ColumnLinkItem key={i} item={item} />
         )}

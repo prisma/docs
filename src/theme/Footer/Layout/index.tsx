@@ -5,9 +5,11 @@ import React from "react";
 import styles from "./styles.module.scss";
 
 export default function FooterLayout({ style, links, logo, copyright }) {
+  console.log(links)
   return (
     <footer className={clsx(styles[`footer--dark`], "footer", "footer--dark")}>
       <div className={clsx(styles.container, "container", "container-fluid")}>
+        {logo && <div className={clsx(styles.logo, "margin-bottom--sm")}>{logo}</div>}
         {links}
         <img
           className="footer-scarf"
@@ -19,8 +21,13 @@ export default function FooterLayout({ style, links, logo, copyright }) {
         </div>
         {(logo || copyright) && (
           <div className={clsx(styles[`footer__bottom`], "footer__bottom", "text--center")}>
-            {logo && <div className="margin-bottom--sm">{logo}</div>}
             {copyright}
+            <div className={styles.complianceLogos}>
+              <img src={"/img/icons/gdpr.svg"} alt="gdpr" width={35} height={35}/>
+              <img src={"/img/icons/hipaa.svg"} alt="gdpr" width={62} height={29}/>
+              <img src={"/img/icons/iso27.svg"} alt="gdpr" width={73} height={27}/>
+              <img src={"/img/icons/soc2.svg"} alt="gdpr" width={60} height={27}/>
+            </div>
           </div>
         )}
       </div>
