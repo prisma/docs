@@ -1,11 +1,10 @@
-import { FooterNewsletterForm } from "@site/src/components/newsletter/FooterNewsletterForm";
+import useBaseUrl from "@docusaurus/useBaseUrl";
 import clsx from "clsx";
 import React from "react";
 
 import styles from "./styles.module.scss";
 
 export default function FooterLayout({ style, links, logo, copyright }) {
-  console.log(links)
   return (
     <footer className={clsx(styles[`footer--dark`], "footer", "footer--dark")}>
       <div className={clsx(styles.container, "container", "container-fluid")}>
@@ -24,10 +23,10 @@ export default function FooterLayout({ style, links, logo, copyright }) {
             {copyright}
             <div className={styles.complianceLogos}>
               <a href="https://trust.prisma.io/" target="__blank" rel="openeer noreferrer" aria-label="Prisma Trust">
-                <img src={"/img/icons/gdpr.svg"} alt="gdpr" width={35} height={35}/>
+                <img src={useBaseUrl("/img/icons/gdpr.svg")} alt="gdpr" width={35} height={35}/>
               </a>
               <a href="https://trust.prisma.io/" target="__blank" rel="openeer noreferrer" aria-label="Prisma Trust">
-                <img src={"/img/icons/hipaa.svg"} alt="hipaa" width={62} height={29}/>
+                <img src={useBaseUrl("/img/icons/hipaa.svg")} alt="hipaa" width={62} height={29}/>
               </a>
               {/* <img src={"/img/icons/iso27.svg"} alt="iso" width={73} height={27}/>
               <img src={"/img/icons/soc2.svg"} alt="soc" width={60} height={27}/> */}
