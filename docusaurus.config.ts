@@ -34,7 +34,7 @@ const config: Config = {
     // kapa.ai script
     {
       src: "https://widget.kapa.ai/kapa-widget.bundle.js",
-      defer: true,
+      async: true,
       "data-website-id": "1b51bb03-43cc-4ef4-95f1-93288a91b560",
       "data-project-name": "Prisma",
       "data-project-color": "#2D3748",
@@ -55,13 +55,10 @@ const config: Config = {
       "data-button-box-shadow":
         "drop-shadow(0px 0.724px 1.251px rgba(14, 18, 28, 0.02)) drop-shadow(0px 1.608px 2.909px rgba(14, 18, 28, 0.04)) drop-shadow(0px 2.793px 5.225px rgba(14, 18, 28, 0.06)) drop-shadow(0px 4.55px 8.671px rgba(14, 18, 28, 0.07)) drop-shadow(0px 7.485px 14.285px rgba(14, 18, 28, 0.08)) drop-shadow(0px 13.358px 24.966px rgba(14, 18, 28, 0.09)) drop-shadow(0px 33px 54px rgba(14, 18, 28, 0.07))",
     },
-    // Enzuzo Cookies Consent script for prisma.io
-    {
-      src: "https://app.enzuzo.com/apps/enzuzo/static/js/__enzuzo-cookiebar.js?uuid=5606ab18-eb9a-11ee-98cc-b303d4429aa8",
-    },
     // Tolt script
     {
       src: "https://cdn.tolt.io/tolt.js",
+      async: true,
       "data-tolt": "fda67739-7ed0-42d2-b716-6da0edbec191",
     },
   ],
@@ -70,10 +67,6 @@ const config: Config = {
     [
       "classic",
       {
-        gtag: {
-          trackingID: "G-YS7QHR40SL",
-          anonymizeIP: true,
-        },
         googleTagManager: {
           containerId: "GTM-KCGZPWB",
         },
@@ -194,6 +187,51 @@ const config: Config = {
     footer: {
       style: "dark",
       links: [
+        {
+          title: "socials",
+          items: [
+            {
+              label: " ",
+              href: "https://discord.gg/KQyTW2H5ca",
+              customProps: {
+                icon: "fa-brands fa-discord",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://x.com/prisma",
+              customProps: {
+                icon: "fa-brands fa-x-twitter",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://www.youtube.com/prismadata",
+              customProps: {
+                icon: "fa-brands fa-youtube",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://pris.ly/whatsapp",
+              customProps: {
+                icon: "fa-brands fa-whatsapp",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://github.com/prisma",
+              customProps: {
+                icon: "fa-brands fa-github",
+                internal: true,
+              },
+            },
+          ],
+        },
         {
           title: "Product",
           items: [
@@ -382,50 +420,6 @@ const config: Config = {
               href: "https://trust.prisma.io/",
               target: "_self",
               customProps: {
-                internal: true,
-              },
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              label: " ",
-              href: "https://discord.gg/KQyTW2H5ca",
-              customProps: {
-                icon: "fa-brands fa-discord",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://x.com/prisma",
-              customProps: {
-                icon: "fa-brands fa-x-twitter",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://www.youtube.com/prismadata",
-              customProps: {
-                icon: "fa-brands fa-youtube",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://pris.ly/whatsapp",
-              customProps: {
-                icon: "fa-brands fa-whatsapp",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://github.com/prisma",
-              customProps: {
-                icon: "fa-brands fa-github",
                 internal: true,
               },
             },
