@@ -119,9 +119,9 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
     return <Link {...props}>{children}</Link>;
   else
     return (
-      <a {...props} target="_blank" rel="openeer noreferrer">
+      <a {...props} target="_blank" rel="openeer noreferrer" className={styles.externalLink}>
         {children}
-        <svg
+        {/* <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
           height="16"
@@ -132,7 +132,7 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
             fill="currentColor"
             d="M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1"
           />
-        </svg>
+        </svg> */}
       </a>
     );
 };
