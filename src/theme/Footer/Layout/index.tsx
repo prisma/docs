@@ -16,8 +16,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
           alt=""
           src="https://static.scarf.sh/a.png?x-pxid=d3850fa1-ff40-448d-9a15-5496ce99c9ae"
         />
-        <div className={styles.newsletterRow}>
-        </div>
+        <div className={styles.newsletterRow}></div>
         {(logo || copyright) && (
           <div className={clsx(styles[`footer__bottom`], "footer__bottom", "text--center")}>
             {copyright}
