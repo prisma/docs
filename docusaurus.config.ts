@@ -117,6 +117,11 @@ const config: Config = {
   ],
   themeConfig: {
     image: "/docs/social/docs-social.png",
+    metadata: [
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:site", content: "@prisma" },
+      { name: "twitter:creator", content: "@prisma" },
+    ],
     navbar: {
       logo: {
         srcDark: "img/logo-white.svg",
