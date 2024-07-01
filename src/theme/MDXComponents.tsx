@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import type { ComponentProps } from "react";
 // Import the original mapper
 import MDXComponents from "@theme-original/MDXComponents";
@@ -126,6 +127,12 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
     );
 };
 
+const Image: React.FC<React.PropsWithChildren<ComponentProps<"img">>> = ({
+  ...props
+}) => {
+  return <img {...props} className={clsx(props.className, styles.img)} />
+}
+
 export default {
   // Re-use the default mapping
   ...MDXComponents,
@@ -136,6 +143,7 @@ export default {
   TabItem,
   a: StyledLink,
   Link,
+  img: Image,
   TopBlock,
   CodeWithResult,
   SwitchTech,
