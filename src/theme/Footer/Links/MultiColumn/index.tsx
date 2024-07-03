@@ -32,8 +32,6 @@ function Column({ column }: { column: ColumnType }) {
     (item, i) => item?.customProps?.dropdown === "legal"
   );
 
-  console.log(column)
-
   return (
     <div className={clsx(styles.col, "col footer__col", column.title === "socials" && styles.socialColWrapper)}>
       {column.title !== "socials" && <div className="footer__title">{column.title}</div>}
