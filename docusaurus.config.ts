@@ -61,6 +61,11 @@ const config: Config = {
       async: true,
       "data-tolt": "fda67739-7ed0-42d2-b716-6da0edbec191",
     },
+    // Common Room
+    {
+      src: "https://cdn.cr-relay.com/v1/site/cc8b954c-5f74-4254-a72a-e0d61048bd58/signals.js",
+      async: true,
+    },
   ],
   plugins: ["docusaurus-plugin-sass"],
   presets: [
@@ -457,7 +462,8 @@ const config: Config = {
           block: { start: "add-start", end: "add-end" },
         },
         {
-          className: "theme-code-block-deleted-line deleted-line code-highlight",
+          className:
+            "theme-code-block-deleted-line deleted-line code-highlight",
           line: "delete-next-line",
           block: { start: "delete-start", end: "delete-end" },
         },
