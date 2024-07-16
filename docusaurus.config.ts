@@ -179,7 +179,7 @@ const config: Config = {
         {
           href: "https://console.prisma.io/login?utm_source=docs&utm_medium=login",
           position: "right",
-          label: "Login",
+          label: "Log in",
           className: "navbar-login-btn internal teal-btn",
         },
       ],
