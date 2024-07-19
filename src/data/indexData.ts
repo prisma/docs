@@ -1,7 +1,7 @@
 export const ProductLinkData = {
   porm: {
     title: "Build with Prisma ORM",
-    icon: "database",
+    eyebrow: "Build",
     description:
       "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
     links: [
@@ -16,9 +16,25 @@ export const ProductLinkData = {
       },
     ],
   },
+  poptimize: {
+    title: "Consistent Performance",
+    eyebrow: "Fortify",
+    description: "Ensure that your database and queries are running at peak performance and efficiency. Easily handle connections to your database and scale with your traffic.",
+    links: [
+      {
+        url: "/getting-started",
+        title: "Getting started",
+      },
+      {
+        url: "https://github.com/prisma/prisma-examples",
+        title: "Example projects",
+        external: true,
+      },
+    ],
+  },
   pdp: {
     title: "Grow as your app evolves",
-    icon: "triangle",
+    eyebrow: "Grow",
     description:
       "Expand your application capabilities with global database caching, connection pooling, and real-time database subscriptions.",
     links: [
@@ -148,6 +164,69 @@ export const ORMGeneralLinkData = [
     icon: "fa-solid fa-terminal",
   },
 ];
+
+export const GeneralLinks_Build = [
+  {
+    title: `CRUD`,
+    description: "How to perform CRUD operations with your generated Prisma Client API. ",
+    url: "/orm/prisma-client/queries/crud",
+    icon: "fa-solid fa-arrow-right-arrow-left",
+  },
+  {
+    title: `Prisma ORM in your stack`,
+    description:
+      "Use Prisma ORM to build a GraphQL or REST API, or as part of a fullstack application.",
+    url: "/orm/overview/prisma-in-your-stack",
+    icon: "fa-solid fa-server",
+  },
+  {
+    title: `Adopting Prisma ORM`,
+    description: "Migrate to Prisma ORM from other ORMs.",
+    url: "/orm/more/migrating-to-prisma",
+    icon: "fa-solid fa-download",
+  },
+  {
+    title: `Deployment guides`,
+    description:
+      "Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.",
+    url: "/orm/prisma-client/deployment",
+    icon: "fa-solid fa-book",
+  },
+
+]
+
+export const GeneralLinks_Fortify = [
+  {
+    title: `Pulse`,
+    description: "React to changes in your database with Pulse.",
+    url: "/pulse/getting-started",
+    icon: "fa-solid fa-signal-stream",
+  },
+  {
+    title: `Platform`,
+    description:
+      "Explore how to use the Platform to easily manage your projects and collaborate within your team.",
+    url: "/platform/about",
+    icon: "fa-solid fa-chart-simple",
+  },
+]
+
+
+export const GeneralLinks_Grow = [
+  {
+    title: `Pulse`,
+    description: "React to changes in your database with Pulse.",
+    url: "/pulse/getting-started",
+    icon: "fa-solid fa-signal-stream",
+  },
+  {
+    title: `Platform`,
+    description:
+      "Explore how to use the Platform to easily manage your projects and collaborate within your team.",
+    url: "/platform/about",
+    icon: "fa-solid fa-chart-simple",
+  },
+]
 
 export const DatabaseData = [
   {
