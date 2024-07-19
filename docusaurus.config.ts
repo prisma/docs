@@ -158,6 +158,13 @@ const config: Config = {
         },
         {
           type: "docSidebar",
+          sidebarId: "optimizeSidebar",
+          position: "left",
+          className: "teal",
+          label: "Optimize",
+        },
+        {
+          type: "docSidebar",
           sidebarId: "accelerateSidebar",
           position: "left",
           className: "teal",
