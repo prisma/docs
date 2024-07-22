@@ -1,0 +1,117 @@
+---
+title: 'Recommendations'
+metaTitle: 'Optimize: Recommendations'
+metaDescription: "Learn about everything about the recommendations provided by Optimize."
+tocDepth: 3
+toc: true
+---
+
+<TopBlock>
+
+Optimize provides recommendations focused on performance improvements such as indexing issues, excessive data retrieval, and inefficient query patterns.
+
+</TopBlock>
+
+## Excessive number of rows returned
+The following query targeting a `User` model do not provide a [`take` option](/orm/reference/prisma-client-reference#findmany).
+
+```ts
+await user.findMany({ select: { email: "niko@prisma.io", }})
+```
+
+### Why is this a problem?
+
+When you execute a query without specifying a limit, the query will return all relevant rows. This can be undesirable for several reasons:
+
+#### User experience
+
+    - **Viewing data:** Users typically need only a portion of the data at any given time, rather than all the data at once
+    - **Impact on the user's device:** Displaying all the data at once can burden the user's device resources. For example, loading thousands of rows of data in a web application can cause the browser to become slow or unresponsive, consuming a significant amount of the user's device memory and CPU to display this data
+    - **Waiting time:** Retrieving a large number of rows can significantly increase the time it takes get the data from the database to the user's own device.
+
+#### Resource Utilization
+
+    - **Unnecessary data load:** The application processes more data than required, wasting processing resources.
+    - **Memory usage:** Higher memory consumption leads to inefficient memory use. In severe cases, the system can run out of memory, disrupting the service.
+
+### Recommendation
+
+To avoid these issues, we recommend the [`take` option](/orm/reference/prisma-client-reference#findmany) to limit the number of entries returned by your queries:
+
+```typescript
+const users = await prisma.user.findMany({
+  take: 10, // Limits the number of results to 10
+  // other query parameters
+})
+```
+<br />
+:::note
+
+Before applying this recommendation, it is important to verify that your application does not depend on retrieving all results from the query. If your application requires all results, you may need to implement *pagination*. Learn more about pagination in Prisma: [Pagination Documentation](/orm/prisma-client/queries/pagination)
+
+:::
+
+## Queries on unindexed columns
+
+The following queries targeting the `user` model have a [`where` property](/orm/prisma-client/queries/filtering-and-sorting) for filtering on columns that do not have indexes.
+
+```ts
+await prisma.user.findFirst({
+   where: {
+      name: "Marc"
+   }
+})
+
+await prisma.user.findFirst({
+   where: {
+      name: "Jon"
+   }
+})
+
+await prisma.user.count({
+   where: {
+      name: "Nikolas"
+   }
+})
+```
+
+### Why is this a problem?
+
+An index allows the database to retrieve data more quickly. An index is similar to an index in a book: it helps you quickly locate the information you're looking for without having to go through every page.
+
+When providing Prisma with a `where` property, if there are no indexes defined for the columns provided, the database might need to look through every row in the table (a *”full table scan”*) to determine whether or not it matches the relevant conditions. This can be undesirable for several reasons:
+
+#### User experience
+
+For large datasets, if the database needs to look through the entire table to find the matching rows, this can result in longer waiting times for users.
+
+#### Resource utilization
+
+- **High CPU usage:** Scanning large tables can lead to increased CPU usage, affecting overall system performance.
+- **Memory consumption:** More memory is used to process and hold the data during the scan.
+- **Disk I/O:** Full table scans increase disk input/output operations, potentially slowing down other database activities.
+
+:::warning
+
+While the issues might not show up in development due to smaller datasets, they can become *significant* problems in production where datasets are typically much larger.
+
+:::
+
+### Recommendation
+
+To avoid these issues, we recommend creating an index on the columns that are frequently used in filters.
+
+Consider a `user` model with a `name` field that is frequently used in filters. You can add an index to this column as follows:
+
+```prisma
+model User {
+  id       Int    @id @default(autoincrement())
+  name String
+  // other fields
+  @@index([name])
+}
+```
+
+The best way to define indexes for your schema depends factors such as the type of the column, and what database you are using. Learn more about indexes in Prisma: [Indexes Documentation](/orm/prisma-schema/data-model/indexes)
+
+## Full table scans caused by LIKE operations
