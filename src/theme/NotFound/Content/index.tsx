@@ -20,7 +20,7 @@ export default function NotFoundContent({ className }) {
               <p>We could not find the page you were looking for.</p>
               <p></p>
               <p>
-                Head back to our <a href="https://prisma.io/">homepage</a> or check out
+                Head back to our <a href="https://www.prisma.io/">homepage</a> or check out
               </p>
               <p>
                 our <Link to="/">documentation</Link>.
@@ -32,7 +32,7 @@ export default function NotFoundContent({ className }) {
               <p></p>
               <p>Head back to our</p>
               <p>
-                <a href="https://prisma.io/">homepage</a> or check out
+                <a href="https://www.prisma.io/">homepage</a> or check out
               </p>
               <p>
                 our <Link to="/">documentation</Link>.
