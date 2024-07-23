@@ -103,7 +103,7 @@ const DocsLink: React.FC<React.PropsWithChildren<ComponentProps<typeof Link>>> =
             sessionStorage.setItem("prismaUTM", queryParams);
           }
           const utmParams = sessionStorage.getItem("prismaUTM");
-          const modifiedHref = `${props.href?.split("?")[0]}?${utmParams ?? props.href?.split("?")[1]}`;
+          const modifiedHref = `${props.href?.split("?")[0]}?${utmParams ?? props.href?.split("?")[1] ?? ""}`;
           return (
             <Link {...props} href={modifiedHref}>
               {children}
@@ -143,7 +143,7 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
   ...props
 }) => {
   const url = props.href;
-  if (url?.includes("prisma.io/") || url?.startsWith("/") || url?.startsWith("#"))
+  if (url?.includes(".prisma.io") || url?.startsWith("/") || url?.startsWith("#"))
     return <DocsLink {...props}>{children}</DocsLink>;
   else
     return (
