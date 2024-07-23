@@ -9,7 +9,8 @@ import Subsections from "./DocCardList"; // DocCardList renamed to Subsections f
 import Admonition from "@theme/Admonition";
 import TabbedContent from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from "@theme/TabItem";
-import Link, { NavLinkProps } from "@docusaurus/Link";
+import BrowserOnly from "@docusaurus/BrowserOnly";
+import Link from "@docusaurus/Link";
 import CollapseBox from "@site/src/components/collapsible";
 import TopSection from "@site/src/components/topSection";
 import { useLocation } from "@docusaurus/router";
@@ -89,6 +90,33 @@ const ParallelBlocks: React.FC<React.PropsWithChildren> = ({ children }) => {
   );
 };
 
+const DocsLink: React.FC<React.PropsWithChildren<ComponentProps<typeof Link>>> = ({
+  children,
+  ...props
+}) => {
+  if (props.href?.includes("console.prisma.io")) {
+    return (
+      <BrowserOnly>
+        {() => {
+          const queryParams = window.location.href.split("?")[1] ?? "";
+          if (queryParams.includes("utm_")) {
+            sessionStorage.setItem("prismaUTM", queryParams);
+          }
+          const utmParams = sessionStorage.getItem("prismaUTM");
+          const modifiedHref = `${props.href?.split("?")[0]}?${utmParams ?? props.href?.split("?")[1] ?? ""}`;
+          return (
+            <Link {...props} href={modifiedHref}>
+              {children}
+            </Link>
+          );
+        }}
+      </BrowserOnly>
+    );
+  }
+
+  return <Link {...props}>{children}</Link>;
+};
+
 type ButtonColor = "red" | "green" | "grey" | "grey-bg" | "dark";
 interface ButtonProps {
   href?: string;
@@ -102,12 +130,10 @@ interface ButtonProps {
   theme?: any;
 }
 
-// TODO: we should fix this
 const ButtonLink: React.FC<React.PropsWithChildren<ButtonProps>> = ({ children, href }) => {
-  return <Link to={href}>{children}</Link>;
+  return <DocsLink to={href}>{children}</DocsLink>;
 };
 
-// TODO: we should fix this
 const NavigationLinksContainer: React.FC<React.PropsWithChildren> = ({ children }) => {
   return <>{children}</>;
 };
@@ -117,8 +143,8 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
   ...props
 }) => {
   const url = props.href;
-  if (url.includes("prisma.io/") || url.startsWith("/") || url.startsWith("#"))
-    return <Link {...props}>{children}</Link>;
+  if (url?.includes(".prisma.io") || url?.startsWith("/") || url?.startsWith("#"))
+    return <DocsLink {...props}>{children}</DocsLink>;
   else
     return (
       <a {...props} target="_blank" rel="openeer noreferrer" className={clsx(props.className, styles.externalLink)}>
@@ -142,7 +168,7 @@ export default {
   details: CollapseBox,
   TabItem,
   a: StyledLink,
-  Link,
+  Link: DocsLink,
   img: Image,
   TopBlock,
   CodeWithResult,
