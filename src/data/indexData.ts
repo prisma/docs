@@ -6,13 +6,12 @@ export const ProductLinkData = {
       "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
     links: [
       {
-        url: "/getting-started",
-        title: "Getting started",
+        url: "/orm",
+        title: "ORM",
       },
       {
-        url: "https://github.com/prisma/prisma-examples",
-        title: "Example projects",
-        external: true,
+        url: "/orm/tools/prisma-studio",
+        title: "Studio",
       },
     ],
   },
@@ -22,13 +21,12 @@ export const ProductLinkData = {
     description: "Ensure that your database and queries are running at peak performance and efficiency. Easily handle connections to your database and scale with your traffic.",
     links: [
       {
-        url: "/getting-started",
-        title: "Getting started",
+        url: "/optimize",
+        title: "Optimize",
       },
       {
-        url: "https://github.com/prisma/prisma-examples",
-        title: "Example projects",
-        external: true,
+        url: "/accelerate/what-is-accelerate",
+        title: "Accelerate",
       },
     ],
   },
@@ -60,20 +58,32 @@ export const ORMCardLinkData = {
         title: "Prisma Schema",
       },
       {
-        url: "/orm/tools/prisma-cli",
-        title: "Prisma CLI",
+        url: "/orm/reference/prisma-schema-reference",
+        title: "Schema reference",
       },
       {
         url: "/orm/prisma-client",
         title: "Prisma Client",
       },
       {
-        url: "/orm/tools/prisma-studio",
-        title: "Prisma Studio",
+        url: "/orm/reference/prisma-client-reference",
+        title: "Client API reference",
+      },
+      {
+        url: "/orm/tools/prisma-cli",
+        title: "Prisma CLI",
+      },
+      {
+        url: "/orm/reference/prisma-cli-reference",
+        title: "Prisma CLI reference",
       },
       {
         url: "/orm/prisma-migrate",
         title: "Prisma Migrate",
+      },
+      {
+        url: "/orm/reference/error-reference",
+        title: "Error message reference",
       },
     ],
   },
@@ -83,28 +93,21 @@ export const ORMCardLinkData = {
     description: "Understand the usage and API surface of our products.",
     links: [
       {
-        url: "/orm/reference/prisma-client-reference",
-        title: "Client API reference",
-      },
-      {
-        url: "/orm/reference/prisma-cli-reference",
-        title: "Prisma CLI reference",
-      },
-      {
-        url: "/orm/reference/prisma-schema-reference",
-        title: "Schema reference",
-      },
-      {
         url: "/accelerate/api-reference",
         title: "Accelerate API reference",
       },
-      {
-        url: "/orm/reference/error-reference",
-        title: "Error message reference",
-      },
+      
       {
         url: "/pulse/api-reference",
         title: "Pulse API reference",
+      },
+      {
+        url: "/platform",
+        title: "Platform",
+      },
+      {
+        url: "/platform/platform-cli/commands",
+        title: "Platform CLI commands",
       },
     ],
   },
@@ -197,33 +200,45 @@ export const GeneralLinks_Build = [
 
 export const GeneralLinks_Fortify = [
   {
-    title: `Pulse`,
-    description: "React to changes in your database with Pulse.",
-    url: "/pulse/getting-started",
+    title: `Recommendations`,
+    description: "Detect missing indexes, uncover queries performing full table-scans causing unnecessary resource consumption.",
+    url: "/optimize/recommendations",
     icon: "fa-solid fa-signal-stream",
   },
   {
-    title: `Platform`,
-    description:
-      "Explore how to use the Platform to easily manage your projects and collaborate within your team.",
-    url: "/platform/about",
-    icon: "fa-solid fa-chart-simple",
+    title: `Recordings`,
+    description: "Learn how to debug and isolate different sets of queries into distinct sessions",
+    url: "/optimize/recording",
+    icon: "fa-solid fa-signal-stream",
   },
+
 ]
 
 
 export const GeneralLinks_Grow = [
   {
-    title: `Pulse`,
-    description: "React to changes in your database with Pulse.",
+    title: `Database set up with Pulse`,
+    description: "Use Prisma Pulse to  trigger events and actions in real-time.",
     url: "/pulse/getting-started",
     icon: "fa-solid fa-signal-stream",
   },
   {
-    title: `Platform`,
+    title: `Connection pooling`,
+    description: "Process more queries without exhausting the available database connections.",
+    url: "/accelerate/connection-pooling",
+    icon: "fa-solid fa-signal-stream",
+  },
+  {
+    title: `Caching`,
+    description: "Learn how to use Accelerate's global database caching.",
+    url: "/accelerate/caching",
+    icon: "fa-solid fa-signal-stream",
+  },
+  {
+    title: `Database events`,
     description:
-      "Explore how to use the Platform to easily manage your projects and collaborate within your team.",
-    url: "/platform/about",
+      "Explore how to create, update, and delete events.",
+    url: "/docs/pulse/database-events",
     icon: "fa-solid fa-chart-simple",
   },
 ]
