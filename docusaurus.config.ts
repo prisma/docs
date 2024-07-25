@@ -254,6 +254,22 @@ const config: Config = {
               },
             },
             {
+              label: "Studio",
+              href: "https://www.prisma.io/studio",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
+              label: "Optimize",
+              href: "https://www.prisma.io/blog/prisma-optimize-early-access",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
               label: "Accelerate",
               href: "https://www.prisma.io/data-platform/accelerate",
               target: "_self",
@@ -309,6 +325,10 @@ const config: Config = {
             {
               label: "Playground",
               href: "https://playground.prisma.io/",
+            },
+            {
+              label: "ORM Benchmarks",
+              href: "https://benchmarks.prisma.io/",
             },
             {
               label: "Customer stories",
