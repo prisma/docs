@@ -277,6 +277,14 @@ const config: Config = {
               },
             },
             {
+              label: "Optimize",
+              href: "https://www.prisma.io/data-platform/optimize",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
               label: "Pricing",
               href: "https://www.prisma.io/pricing",
               target: "_self",
