@@ -38,6 +38,7 @@ const config: Config = {
       "data-website-id": "1b51bb03-43cc-4ef4-95f1-93288a91b560",
       "data-project-name": "Prisma",
       "data-project-color": "#2D3748",
+      "data-user-analytics-fingerprint-enabled": "true",
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
