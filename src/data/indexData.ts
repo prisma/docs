@@ -21,7 +21,7 @@ export const ProductLinkData = {
     description: "Ensure that your database and queries are running at peak performance and efficiency. Easily handle connections to your database and scale with your traffic.",
     links: [
       {
-        url: "/optimize",
+        url: "https://www.prisma.io/blog/prisma-optimize-early-access",
         title: "Optimize",
       },
       {
@@ -202,13 +202,13 @@ export const GeneralLinks_Fortify = [
   {
     title: `Recommendations`,
     description: "Detect missing indexes, uncover queries performing full table-scans causing unnecessary resource consumption.",
-    url: "/optimize/recommendations",
+    url: "/platform/about",
     icon: "fa-solid fa-signal-stream",
   },
   {
     title: `Recordings`,
     description: "Learn how to debug and isolate different sets of queries into distinct sessions",
-    url: "/optimize/recording",
+    url: "/platform/about",
     icon: "fa-solid fa-signal-stream",
   },
 
@@ -229,7 +229,7 @@ export const GeneralLinks_Grow = [
     icon: "fa-solid fa-signal-stream",
   },
   {
-    title: `Caching`,
+    title: `Database Caching`,
     description: "Learn how to use Accelerate's global database caching.",
     url: "/accelerate/caching",
     icon: "fa-solid fa-signal-stream",
@@ -238,7 +238,7 @@ export const GeneralLinks_Grow = [
     title: `Database events`,
     description:
       "Explore how to create, update, and delete events.",
-    url: "/docs/pulse/database-events",
+    url: "/pulse/database-events",
     icon: "fa-solid fa-chart-simple",
   },
 ]
