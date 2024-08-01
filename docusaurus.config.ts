@@ -62,6 +62,11 @@ const config: Config = {
       async: true,
       "data-tolt": "fda67739-7ed0-42d2-b716-6da0edbec191",
     },
+    {
+      "src": "https://plausible.io/js/script.js",
+      defer: true,
+      "data-domain": "prisma.io"
+    },
     // Common Room
     {
       src: "https://cdn.cr-relay.com/v1/site/cc8b954c-5f74-4254-a72a-e0d61048bd58/signals.js",
