@@ -60,6 +60,57 @@ No, Pulse is server-side and subscriptions cannot be initiated directly within c
 
 To propagate events to the frontend, you can use a WebSocket library like [socket.io](https://socket.io/).
 
+## How do I import the Pulse Client extension when using `"moduleResolution":"bundler"` in my `tsconfig.json`?
+
+If you're using [`"moduleResolution": "bundler"`](https://www.typescriptlang.org/docs/handbook/modules/reference.html#bundler) in your `tsconfig.json` file and your Pulse extension version is `1.2.0` or greater, import the Pulse extension based on your runtime:
+
+<TabbedContent code>
+
+<TabItem value="Node.js">
+
+```ts
+import { withPulse } from '@prisma/extension-pulse/node';
+```
+
+</TabItem>
+
+<TabItem value="Cloudflare Workers">
+
+```ts
+import { withPulse } from '@prisma/extension-pulse/workerd';
+```
+
+</TabItem>
+
+</TabbedContent>
+
+The Pulse Client extension provides runtime-specific implementations. This approach ensures TypeScript uses the correct type definitions for your target environment and any other multi-entrypoint packages.
+
+Using the correct runtime-specific import prevents the following error:
+```
+Cannot find module '@prisma/extension-pulse' or its corresponding type declarations.
+```
+
+Alternatively, you can configure tsconfig.json to set the correct runtime condition:
+
+```js
+// tsconfig.json
+{
+  "compilerOptions": {
+    // ...other options
+    "target": "es2022",
+    "moduleResolution": "bundler",
+    "customConditions": ["node"] // or "workerd" for Cloudflare Workers
+  }
+}
+```
+<br/>
+:::note
+We recommend this approach when building a package that uses the Prisma Pulse Client extension as a dependency.
+:::
+
+Both methods ensure the correct runtime-specific types are used and resolve module resolution errors.
+
 ## How can I ensure SSL/TLS encryption works in SSL-only mode with PostgreSQL database and Pulse?
 
 If you encounter issues with SSL/TLS encryption while using Pulse, ensure your database server has a valid SSL certificate and append `sslmode=require` to your database connection string in your project environment in [Prisma Data Platform](https://pris.ly/pdp), for example:
@@ -69,28 +120,3 @@ postgres://username:password@hostname:port/database?sslmode=require
 ```
 
 This [setting](/orm/overview/databases/postgresql#configuring-an-ssl-connection) will enforce SSL/TLS encryption and accept self-signed certificates.
-
-## How to configure `tsconfig.json` with the Pulse extension?
-
-If you're using [`"moduleResolution": "bundler"`](https://www.typescriptlang.org/docs/handbook/modules/reference.html#bundler) in your `tsconfig.json` file, you need to
-explicitly set [`customConditions`](https://www.typescriptlang.org/tsconfig/#customConditions) to either `node` or `workerd` depending on your target runtime. This will instruct TypeScript to match the correct type definitions of the Prisma Pulse extension, as well as any other packages that expose multiple entrypoints:
-
-```js
-// tsconfig.json
-{
-  "compilerOptions": {
-    // ...other options
-    "target": "es2022",
-    "moduleResolution": "bundler",
-    "customConditions": ["workerd"] // or "node"
-  }
-}
-```
-
-This is needed because Prisma Pulse extension offers separate implementations tailored for various runtimes, such as Node.js and Cloudflare Workers. 
-
-If you don't add this, you may run into the following error when using the `@prisma/extension-pulse` in your application code:
-
-```
-Cannot find module '@prisma/extension-pulse' or its corresponding type declarations.
-```
