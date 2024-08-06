@@ -452,6 +452,13 @@ const config: Config = {
               },
             },
             {
+              label: "Event Code of Conduct",
+              href: "https://pris.ly/code-conduct",
+              customProps: {
+                dropdown: "legal",
+              },
+            },
+            {
               label: "Security & Compliance",
               href: "https://trust.prisma.io/",
               target: "_self",
