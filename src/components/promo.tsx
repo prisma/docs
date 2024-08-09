@@ -71,6 +71,11 @@ export const Promo = () => {
       link: "https://pris.ly/sidebar-promo/sql-queries-in-orm",
       color: "teal",
     },
+    {
+      text: `Tell us how you like working with Prisma ORM in your projects!`,
+      link: "https://pris.ly/orm-survey-5-18",
+      color: "indigo",
+    },
   ];
 
   let promo = promoOptions[Math.floor(Math.random() * promoOptions.length)];
