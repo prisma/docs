@@ -177,6 +177,13 @@ const config: Config = {
           label: "Pulse",
         },
         {
+          type: "docSidebar",
+          sidebarId: "optimizeSidebar",
+          position: "left",
+          className: "teal",
+          label: "Optimize",
+        },
+        {
           href: "https://github.com/prisma/",
           position: "right",
           className: "header-github-link",
@@ -286,6 +293,14 @@ const config: Config = {
             {
               label: "Pulse",
               href: "https://www.prisma.io/data-platform/pulse",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
+              label: "Optimize",
+              href: "https://www.prisma.io/data-platform/optimize",
               target: "_self",
               customProps: {
                 internal: true,
