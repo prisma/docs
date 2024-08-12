@@ -38,6 +38,7 @@ const config: Config = {
       "data-website-id": "1b51bb03-43cc-4ef4-95f1-93288a91b560",
       "data-project-name": "Prisma",
       "data-project-color": "#2D3748",
+      "data-user-analytics-fingerprint-enabled": "true",
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
@@ -60,6 +61,11 @@ const config: Config = {
       src: "https://cdn.tolt.io/tolt.js",
       async: true,
       "data-tolt": "fda67739-7ed0-42d2-b716-6da0edbec191",
+    },
+    {
+      "src": "https://plausible.io/js/script.js",
+      defer: true,
+      "data-domain": "prisma.io"
     },
     // Common Room
     {
@@ -261,6 +267,22 @@ const config: Config = {
               },
             },
             {
+              label: "Studio",
+              href: "https://www.prisma.io/studio",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
+              label: "Optimize",
+              href: "https://www.prisma.io/blog/prisma-optimize-early-access",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
               label: "Accelerate",
               href: "https://www.prisma.io/data-platform/accelerate",
               target: "_self",
@@ -324,6 +346,10 @@ const config: Config = {
             {
               label: "Playground",
               href: "https://playground.prisma.io/",
+            },
+            {
+              label: "ORM Benchmarks",
+              href: "https://benchmarks.prisma.io/",
             },
             {
               label: "Customer stories",
@@ -436,6 +462,13 @@ const config: Config = {
             {
               label: "Service Level Agreement",
               href: "https://pris.ly/sla",
+              customProps: {
+                dropdown: "legal",
+              },
+            },
+            {
+              label: "Event Code of Conduct",
+              href: "https://pris.ly/code-conduct",
               customProps: {
                 dropdown: "legal",
               },

@@ -23,11 +23,11 @@ export const ProductLinkData = {
       "Expand your application capabilities with global database caching, connection pooling, and real-time database subscriptions.",
     links: [
       {
-        url: "/accelerate/what-is-accelerate",
+        url: "/accelerate",
         title: "Prisma Accelerate",
       },
       {
-        url: "/pulse/what-is-pulse",
+        url: "/pulse",
         title: "Prisma Pulse",
       },
     ],
