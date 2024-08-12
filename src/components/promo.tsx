@@ -72,7 +72,7 @@ export const Promo = () => {
       color: "teal",
     },
     {
-      text: `Tell us how you like working with Prisma ORM in your projects!`,
+      text: `Tell us how Prisma ORM is working for you!`,
       link: "https://pris.ly/orm-survey-5-18",
       color: "indigo",
     },
