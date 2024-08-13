@@ -1,0 +1,53 @@
+---
+title: 'Full table scans caused by LIKE operations'
+metaTitle: 'Optimize Recommendations: Full table scans caused by LIKE operations'
+metaDescription: "Learn about the recommendation provided by Optimize for full table scans caused by Like operations."
+tocDepth: 3
+toc: true
+---
+
+The following query targeting the user model provides `contains` and `endsWith` as options, which translate to `LIKE` and `ILIKE` SQL operators.
+
+```jsx
+user.findMany({ 
+  where: { 
+    email: { contains: "gmail.com" }, 
+    name: { endsWith: "Burk" } 
+  } 
+})
+```
+
+## Why is this a problem?
+
+`LIKE` and `ILIKE` operators in SQL can lead to full table scans, potentially impacting performance, especially with larger datasets:
+
+### UX
+
+- **Slower load times:** Full table scans can significantly increase the time it takes to retrieve data, leading to longer wait times for users.
+
+### Resource utilization
+
+- **Increased resource usage:** Full table scans increase CPU, memory usage, and disk I/O, straining system resources for your database.
+- **Increased costs:** In serverless database pricing plans, more intensive resource usage can translate into higher costs.
+
+## Recommendation
+
+To mitigate potential performance issues, consider extracting a separate indexed String field for the substring being filtered on, or a `Boolean` field indicating the presence of a given substring. These approaches are particularly useful if you have a limited, known set of substrings.
+
+For example, if you frequently filter on the file extension of a `filePath` field, you can create an indexed column for the file extension:
+
+```prisma file=schema.prisma
+model File {
+  id            Int     @id @default(autoincrement())
+  filePath      String
+  fileExtension String
+
+  @@index([fileExtension])
+}
+```
+<br />
+:::note
+
+This solution has trade-offs, such as increased storage requirements and potential impacts on write performance due to the additional index. Consider whether this approach is beneficial for your use case.
+
+:::
