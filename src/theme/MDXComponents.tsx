@@ -44,9 +44,10 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({
 const CodeWithResult: React.FC<{ children: React.ReactElement[] }> = ({
   children,
   outputResultText,
+  expanded = false,
   ...rest
 }: any) => {
-  const [show, setShow] = useState<boolean>(false);
+  const [show, setShow] = useState<boolean>(expanded);
   return (
     <div className={styles.codeWithResult} {...rest}>
       <div className={styles.cmd}>{children[0]}</div>
