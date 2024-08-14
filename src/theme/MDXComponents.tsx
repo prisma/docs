@@ -27,14 +27,14 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({
   const location = useLocation();
   return (
     <>
-      <section className="top-section">
+      {(langSwitcher || dbSwitcher) && <section className="top-section">
         <TopSection
           location={location}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
           slug={slug}
         />
-      </section>
+      </section>}
       {children}
     </>
   );
