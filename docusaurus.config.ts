@@ -525,6 +525,11 @@ const config: Config = {
           line: "highlight-next-line",
           block: { start: "highlight-start", end: "highlight-end" },
         },
+        {
+          className: "theme-code-block-stronger-line stronger-line",
+          line: "stronger-next-line",
+          block: { start: "stronger-start", end: "stronger-end" },
+        },
       ],
     },
   } satisfies Preset.ThemeConfig,
