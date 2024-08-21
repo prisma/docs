@@ -452,6 +452,13 @@ const config: Config = {
               },
             },
             {
+              label: "Event Code of Conduct",
+              href: "https://pris.ly/code-conduct",
+              customProps: {
+                dropdown: "legal",
+              },
+            },
+            {
               label: "Security & Compliance",
               href: "https://trust.prisma.io/",
               target: "_self",
@@ -502,6 +509,11 @@ const config: Config = {
           className: "theme-code-block-highlighted-line highlighted-line",
           line: "highlight-next-line",
           block: { start: "highlight-start", end: "highlight-end" },
+        },
+        {
+          className: "theme-code-block-stronger-line stronger-line",
+          line: "stronger-next-line",
+          block: { start: "stronger-start", end: "stronger-end" },
         },
       ],
     },

@@ -17,6 +17,7 @@ import {
 import styles from "./index.module.scss";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import clsx from "clsx";
+import DarkImg from "../theme/DarkImg";
 
 function HomepageCard({
   className,
@@ -145,8 +146,9 @@ function HomepageDatabasesSection() {
         {DatabaseData.map((e) => (
           <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
-              <img
-                src={useBaseUrl(e.icon)}
+              <DarkImg
+                icon={useBaseUrl(e.icon)}
+                darkIcon={useBaseUrl(e.darkIcon)}
                 style={{
                   height: `100%`,
                   width: e.icon.endsWith("sqlite.svg") ? `55px` : `auto`,
