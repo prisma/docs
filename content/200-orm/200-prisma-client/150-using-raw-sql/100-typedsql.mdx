@@ -10,14 +10,16 @@ To start using TypedSQL in your Prisma project, follow these steps:
 
 1. Ensure you have `@prisma/client` and `prisma` installed and updated to at least version `5.19.0`.
 
-2. Create a `sql` directory inside your `prisma` directory. This is where you'll write your SQL queries.
+1. Create a `sql` directory inside your `prisma` directory. This is where you'll write your SQL queries.
 
    ```terminal
    cd prisma
    mkdir sql
    ```
 
-3. Write your SQL queries in `.sql` files within the `sql` directory. For example:
+1. Create a new `.sql` file in your `prisma/sql` directory. For example, `getUsersWithPosts.sql`. Note that the file name must be a valid JS identifier and cannot start with a `$`.
+
+1. Write your SQL queries in your new `.sql` file. For example:
 
    ```sql title="prisma/sql/getUsersWithPosts.sql"
    SELECT u.id, u.name, COUNT(p.id) as postCount
@@ -26,13 +28,19 @@ To start using TypedSQL in your Prisma project, follow these steps:
    GROUP BY u.id, u.name
    ```
 
-4. Generate Prisma Client with the `sql` flag to ensure TypeScript functions and types for your SQL queries are created:
+1. Generate Prisma Client with the `sql` flag to ensure TypeScript functions and types for your SQL queries are created:
+
+   :::warning
+
+   Make sure that any pending migrations are applied before generating the client with the `sql` flag.
+
+   :::
 
    ```terminal
    prisma generate --sql
    ```
 
-5. Now you can import and use your SQL queries in your TypeScript code:
+1. Now you can import and use your SQL queries in your TypeScript code:
 
    ```typescript title="/src/index.ts"
    import { PrismaClient } from '@prisma/client'
@@ -40,15 +48,109 @@ To start using TypedSQL in your Prisma project, follow these steps:
 
    const prisma = new PrismaClient()
 
-   async function main() {
-     const usersWithPostCounts = await prisma.$queryRawTyped(getUsersWithPosts)
-     console.log(usersWithPostCounts)
-   }
-
-   main()
-     .catch(console.error)
-     .finally(() => prisma.$disconnect())
+   const usersWithPostCounts = await prisma.$queryRawTyped(getUsersWithPosts)
+   console.log(usersWithPostCounts)
    ```
+
+## Passing Arguments to TypedSQL Queries
+
+To pass arguments to your TypedSQL queries, you can use parameterized queries. This allows you to write flexible and reusable SQL statements while maintaining type safety. Here's how to do it:
+
+1. In your SQL file, use placeholders for the parameters you want to pass. The syntax for placeholders depends on your database engine:
+
+   <TabbedContent>
+   <TabItem value="PostgreSQL">
+   For PostgreSQL, use the positional placeholders `$1`, `$2`, etc.:
+
+   ```sql title="prisma/sql/getUsersByAge.sql"
+   SELECT id, name, age
+   FROM users
+   WHERE age > $1 AND age < $2
+   ```
+   </TabItem>
+   <TabItem value="MySQL">
+   For MySQL, use the positional placeholders `?`:
+
+   ```sql title="prisma/sql/getUsersByAge.sql"
+   SELECT id, name, age
+   FROM users
+   WHERE age > ? AND age < ?
+   ```
+   </TabItem>
+   <TabItem value="SQLite">
+   In SQLite, there are a number of different placeholders you can use. For this example, we'll use named placeholders `:minAge` and `:maxAge`:
+
+   ```sql title="prisma/sql/getUsersByAge.sql"
+   SELECT id, name, age
+   FROM users
+   WHERE age > :minAge AND age < :maxAge
+   ```
+   </TabItem>
+   </TabbedContent>
+
+   :::note
+   
+   See below for information on how to type placeholders in your SQL files.
+
+   :::
+
+1. When using the generated function in your TypeScript code, pass the arguments as additional parameters to `$queryRawTyped`:
+
+   ```typescript
+   import { PrismaClient } from '@prisma/client'
+   import { getUsersByAge } from '@prisma/client/sql'
+
+   const prisma = new PrismaClient()
+
+   const minAge = 18
+   const maxAge = 30
+   const users = await prisma.$queryRawTyped(getUsersByAge(minAge, maxAge))
+   console.log(users)
+   ```
+
+By using parameterized queries, you ensure type safety and protect against SQL injection vulnerabilities. The TypedSQL generator will create the appropriate TypeScript types for the parameters based on your SQL query, providing full type checking for both the query results and the input parameters.
+
+### Passing array arguments to TypedSQL
+
+TypedSQL supports passing arrays as arguments for PostgreSQL. Use PostgreSQL's `ANY` operator with an array parameter.
+
+```sql title="prisma/sql/getUsersByIds.sql"
+SELECT id, name, email
+FROM users
+WHERE id = ANY($1)
+```
+
+```typescript
+import { PrismaClient } from '@prisma/client'
+import { getUsersByIds } from '@prisma/client/sql'
+
+const prisma = new PrismaClient()
+
+const userIds = [1, 2, 3]
+const users = await prisma.$queryRawTyped(getUsersByIds(userIds))
+console.log(users)
+```
+
+TypedSQL will generate the appropriate TypeScript types for the array parameter, ensuring type safety for both the input and the query results.
+
+:::note
+
+When passing array arguments, be mindful of the maximum number of placeholders your database supports in a single query. For very large arrays, you may need to split the query into multiple smaller queries.
+
+:::
+
+### Typing arguments in your SQL files
+
+Argument typing in TypedSQL is accomplished via specific comments in your SQL files. These comments are of the form
+```sql
+-- @param {Type} $N:alias
+```
+Where `Type` is a valid database type, `N` is the position of the argument in the query, and `alias` is an optional alias for the argument that is used in the TypeScript type.
+
+As an example, if you needed to type a single string argument with the alias `name`, you would add the following comment to your SQL file:
+```sql
+-- @param {String} $1:name
+```
 
 ## Examples
 
