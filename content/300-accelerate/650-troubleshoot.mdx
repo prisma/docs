@@ -14,7 +14,7 @@ When working with Prisma Accelerate, you may encounter errors often highlighted 
 
 ## [`P6009`](/orm/reference/error-reference#p6009-responsesizelimitexceeded) (`ResponseSizeLimitExceeded`)
 
-This error is triggered when the response size from a database query exceeds the 5MB limit. We've implemented this restriction to safeguard your application performance, as retrieving data over 5MB can significantly slow down your application due to multiple network layers. Typically, transmitting more than 5MB of data is common when conducting ETL (Extract, Transform, Load) operations. However, for other scenarios such as transactional queries, real-time data fetching for user interfaces, bulk data updates, or aggregating large datasets for analytics outside of ETL contexts, it should generally be avoided. These use cases, while essential, can often be optimized to work within the 5MB limit, ensuring smoother performance and a better user experience.
+This error is triggered when the response size from a database query exceeds [the configured query response size limit](/accelerate/limitations#response-size-limit). We've implemented this restriction to safeguard your application performance, as retrieving data over 5MB can significantly slow down your application due to multiple network layers. Typically, transmitting more than 5MB of data is common when conducting ETL (Extract, Transform, Load) operations. However, for other scenarios such as transactional queries, real-time data fetching for user interfaces, bulk data updates, or aggregating large datasets for analytics outside of ETL contexts, it should generally be avoided. These use cases, while essential, can often be optimized to work within [the configured query response size limit](/accelerate/limitations#response-size-limit), ensuring smoother performance and a better user experience.
 
 ### Possible causes for [`P6009`](/orm/reference/error-reference#p6009-responsesizelimitexceeded)
 
@@ -22,11 +22,11 @@ This error is triggered when the response size from a database query exceeds the
 
 This error may arise if images or files stored within your table are being fetched, resulting in a large response size. Storing assets directly in the database is generally discouraged because it significantly impacts database performance and scalability. In addition to performance, it makes database backups slow and significantly increases the cost of storing routine backups.
 
-**Suggested solution:** Store the image/file in a BLOB store like [Cloudflare R2](https://developers.cloudflare.com/r2/), [AWS S3](https://aws.amazon.com/pm/serv-s3/), [Cloudinary](https://cloudinary.com/), etc. These services would allow you to store the assets optimally and return a URL through which you should be able to access the asset. You can store this URL in your table instead of storing the asset directly in database. This would substantially reduce the size of your response.
+**Suggested solution:** Store the image/file in a BLOB store like [Cloudflare R2](https://developers.cloudflare.com/r2/), [AWS S3](https://aws.amazon.com/pm/serv-s3/), [Cloudinary](https://cloudinary.com/), etc. These services would allow you to store the assets optimally and return a URL through which you should be able to access the asset. You can store this URL in your table instead of storing the asset directly in the database. This would substantially reduce the size of your response.
 
 #### Over-fetching of data
 
-In certain cases, a large number of records or fields are unintentionally fetched, which results in exceeding the 5MB limit. This could happen when the [`where`](/orm/reference/prisma-client-reference#where) clause in the query is incorrect or entirely missing.
+In certain cases, a large number of records or fields are unintentionally fetched, which results in exceeding [the configured query response size limit](/accelerate/limitations#response-size-limit). This could happen when the [`where`](/orm/reference/prisma-client-reference#where) clause in the query is incorrect or entirely missing.
 
 **Suggested solution:** Double-check if the `where` clause is filtering the data as you expect. Consider using [pagination](/orm/prisma-client/queries/pagination) to prevent a large number of records from being fetched. Additionally, use the [`select`](/orm/reference/prisma-client-reference#select) clause to return only the fields that are being consumed to further reduce the response size.
 
@@ -34,13 +34,13 @@ In certain cases, a large number of records or fields are unintentionally fetche
 
 In many data processing workflows, especially those involving ETL (Extract-Transform-Load) processes or scheduled CRON jobs, there's a need to extract large amounts of data from data sources (like databases, APIs, or file systems) for analysis, reporting, or further processing. If you are running an ETL/CRON workload that fetches a huge chunk of data for analytical processing then you might run into this limit.
 
-**Suggested solution:** Consider splitting your query to fetch data in batches to prevent the 5MB limit from being reached. By splitting your query to retrieve data in batches, you ensure that each operation fetches only a portion of the total data volume, thereby not exceeding the size limit for a single fetch operation.
+**Suggested solution:** Consider splitting your query to fetch data in batches to prevent [the configured query response size limit](/accelerate/limitations#response-size-limit). By splitting your query to retrieve data in batches, you ensure that each operation fetches only a portion of the total data volume, thereby not exceeding the size limit for a single fetch operation.
 
 ## [`P6004`](/orm/reference/error-reference#p6004-querytimeout) (`QueryTimeout`)
 
-This error occurs when a database query fails to return a response within 10 seconds. The 10-second limit includes the duration of waiting for a connection from the pool, network latency to the database, and the execution time of the query itself. We enforce this limit to prevent unintentional long-running queries that can overload system resources.
+This error occurs when a database query fails to return a response within [the configured query timeout limit](/accelerate/limitations#query-timeout-limit). The query timeout limit includes the duration of waiting for a connection from the pool, network latency to the database, and the execution time of the query itself. We enforce this limit to prevent unintentional long-running queries that can overload system resources.
 
-> The time for Accelerate's cross-region networking is excluded from the 10-second limit.
+> The time for Accelerate's cross-region networking is excluded from [the configured query timeout limit](/accelerate/limitations#query-timeout-limit) limit.
 
 ### Possible causes for [`P6004`](/orm/reference/error-reference#p6004-querytimeout)
 
@@ -48,20 +48,17 @@ This error could be caused by numerous reasons. Some of the prominent ones are:
 
 #### High traffic and insufficient connections
 
-If the application is receiving very high traffic and there are not a sufficient number of connections available to the database, then the queries would need to wait for a connection to become available. This situation can lead to queries waiting longer than 10 seconds for a connection, ultimately triggering a timeout error if they do not get serviced within this duration.
+If the application is receiving very high traffic and there are not a sufficient number of connections available to the database, then the queries would need to wait for a connection to become available. This situation can lead to queries waiting longer than [the configured query timeout limit](/accelerate/limitations#query-timeout-limit) for a connection, ultimately triggering a timeout error if they do not get serviced within this duration.
 
-**Suggested solution**: Review and possibly increase the `connection_limit` specified in the connection string parameter when setting up Accelerate in a platform environment ([reference](/accelerate/connection-pooling#configuring-the-connection-pool-size)).
-This limit should align with your database's maximum number of connections.
+**Suggested solution**: Review and possibly increase the `connection_limit` specified in the connection string parameter when setting up Accelerate in a platform environment ([reference](/accelerate/connection-pooling#configuring-the-connection-pool-size)). This limit should align with your database's maximum number of connections.
 
-By default, the connection limit is set to 10 unless a
-different `connection_limit` is specified in your database connection string.
+By default, the connection limit is set to 10 unless a different `connection_limit` is specified in your database connection string.
 
 #### Long-running queries
 
-Queries may be slow to respond, hitting the 10-second timeout even when connections are available. This could happen if a very large amount of data is being fetched in a single query or if appropriate indexes are missing from the table.
+Queries may be slow to respond, hitting [the configured query timeout limit](/accelerate/limitations#query-timeout-limit) even when connections are available. This could happen if a very large amount of data is being fetched in a single query or if appropriate indexes are missing from the table.
 
-**Suggested solution**: Identify the slow-running queries and fetch only the required data. If you only need to use specific fields from the table, then you can use the select clause in your queries to prevent unnecessary data from being fetched. Additionally, you could consider adding appropriate indexes based on the query to ensure that data is fetched efficiently.
-You can also consider isolating long running queries into separate environments, so that these long running queries would not affect the transactional queries.
+**Suggested solution**: Identify the slow-running queries and fetch only the required data. If you only need to use specific fields from the table, then you can use the `select` clause in your queries to prevent unnecessary data from being fetched. Additionally, you could consider adding appropriate indexes based on the query to ensure that data is fetched efficiently. You can also consider isolating long-running queries into separate environments, so that these long-running queries would not affect the transactional queries.
 
 #### Database resource contention
 
@@ -69,7 +66,7 @@ A common yet challenging issue is when other services operating on the same data
 
 Users often rely on CPU and memory usage metrics to gauge database load, which can be misleading. While these are important indicators, they might not fully represent the database's operational state. Direct metrics like the number of reads, writes, and wait times offer a clearer view of the database's performance and should be monitored closely. A noticeable degradation in these metrics, especially in the absence of changes to the queries or data model, suggests that external pressures are affecting database performance.
 
-**Suggestion solution**: If normally quick queries are intermittently slow or timing out without any modifications to them, it's probable that competing queries are exerting pressure on the same database tables. To diagnose this, adopt monitoring tools or leverage your database's inherent capabilities to observe reads, writes, and wait times. Such monitoring will unveil activity patterns or spikes that align with the observed performance dips.
+**Suggested solution**: If normally quick queries are intermittently slow or timing out without any modifications to them, it's probable that competing queries are exerting pressure on the same database tables. To diagnose this, adopt monitoring tools or leverage your database's inherent capabilities to observe reads, writes, and wait times. Such monitoring will unveil activity patterns or spikes that align with the observed performance dips.
 
 Moreover, it's crucial to periodically scrutinize and refine essential queries and verify that tables are properly indexed. This proactive approach minimizes the vulnerability of these queries to slowdowns caused by competing workloads.
 
@@ -77,7 +74,9 @@ Moreover, it's crucial to periodically scrutinize and refine essential queries a
 
 For runtimes that support Prisma ORM natively, you could consider creating two `PrismaClient` Instances. One with the Accelerate connection string (prefixed with `prisma://`) and the other one with the direct database connection string (prefixed with `postgres://`, `mysql://` etc). The main idea behind this approach is to bypass Accelerate for certain specific queries.
 
-However, please note that the available connections would be split between both of your `PrismaClient` Instances. It's crucial to understand the implications of managing multiple instances, particularly in regards to direct database connections. Utilizing a `PrismaClient` instance with a direct database connection string means that this connection will interact directly with your database.
+However, please note that the available connections would be split between both of
+
+ your `PrismaClient` Instances. It's crucial to understand the implications of managing multiple instances, particularly in regards to direct database connections. Utilizing a `PrismaClient` instance with a direct database connection string means that this connection will interact directly with your database.
 
 This approach requires careful consideration because the direct connections and those managed by Accelerate share the same underlying database connection pool. This can lead to competition for resources, potentially affecting the performance and availability of your database services.
 
@@ -86,7 +85,7 @@ Additionally, direct connections could have a significant impact on your databas
 If your application's runtime environment supports Prisma ORM natively and you're considering this strategy to circumvent P6009 and P6004 errors, you might create two `PrismaClient` instances:
 
 1. An instance using the Accelerate connection string (prefixed with `prisma://`) for general operations.
-2. Another instance with the direct database connection string (e.g., prefixed with `postgres://`, `mysql://`, etc.) for specific operations anticipated to exceed 10 seconds in execution time or to result in responses larger than 5MB.
+2. Another instance with the direct database connection string (e.g., prefixed with `postgres://`, `mysql://`, etc.) for specific operations anticipated to exceed 10 seconds in execution time or to result in responses larger than [the configured query response size limit](/accelerate/limitations#response-size-limit).
 
 ```jsx
 export const prisma = new PrismaClient({
