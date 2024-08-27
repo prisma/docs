@@ -9,7 +9,8 @@ import Subsections from "./DocCardList"; // DocCardList renamed to Subsections f
 import Admonition from "@theme/Admonition";
 import TabbedContent from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from "@theme/TabItem";
-import Link, { NavLinkProps } from "@docusaurus/Link";
+import BrowserOnly from "@docusaurus/BrowserOnly";
+import Link from "@docusaurus/Link";
 import CollapseBox from "@site/src/components/collapsible";
 import TopSection from "@site/src/components/topSection";
 import { useLocation } from "@docusaurus/router";
@@ -26,14 +27,14 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({
   const location = useLocation();
   return (
     <>
-      <section className="top-section">
+      {(langSwitcher || dbSwitcher) && <section className="top-section">
         <TopSection
           location={location}
           langSwitcher={langSwitcher}
           dbSwitcher={dbSwitcher}
           slug={slug}
         />
-      </section>
+      </section>}
       {children}
     </>
   );
@@ -43,9 +44,10 @@ const TopBlock: React.FC<React.PropsWithChildren> = ({
 const CodeWithResult: React.FC<{ children: React.ReactElement[] }> = ({
   children,
   outputResultText,
+  expanded = false,
   ...rest
 }: any) => {
-  const [show, setShow] = useState<boolean>(false);
+  const [show, setShow] = useState<boolean>(expanded);
   return (
     <div className={styles.codeWithResult} {...rest}>
       <div className={styles.cmd}>{children[0]}</div>
@@ -89,6 +91,33 @@ const ParallelBlocks: React.FC<React.PropsWithChildren> = ({ children }) => {
   );
 };
 
+const DocsLink: React.FC<React.PropsWithChildren<ComponentProps<typeof Link>>> = ({
+  children,
+  ...props
+}) => {
+  if (props.href?.includes("console.prisma.io")) {
+    return (
+      <BrowserOnly>
+        {() => {
+          const queryParams = window.location.href.split("?")[1] ?? "";
+          if (queryParams.includes("utm_")) {
+            sessionStorage.setItem("prismaUTM", queryParams);
+          }
+          const utmParams = sessionStorage.getItem("prismaUTM");
+          const modifiedHref = `${props.href?.split("?")[0]}?${utmParams ?? props.href?.split("?")[1] ?? ""}`;
+          return (
+            <Link {...props} href={modifiedHref}>
+              {children}
+            </Link>
+          );
+        }}
+      </BrowserOnly>
+    );
+  }
+
+  return <Link {...props}>{children}</Link>;
+};
+
 type ButtonColor = "red" | "green" | "grey" | "grey-bg" | "dark";
 interface ButtonProps {
   href?: string;
@@ -102,27 +131,39 @@ interface ButtonProps {
   theme?: any;
 }
 
-// TODO: we should fix this
 const ButtonLink: React.FC<React.PropsWithChildren<ButtonProps>> = ({ children, href }) => {
-  return <Link to={href}>{children}</Link>;
+  return <DocsLink to={href}>{children}</DocsLink>;
 };
 
-// TODO: we should fix this
 const NavigationLinksContainer: React.FC<React.PropsWithChildren> = ({ children }) => {
   return <>{children}</>;
 };
+
+const ExternalIcon = () => <svg
+xmlns="http://www.w3.org/2000/svg"
+width="16"
+height="16"
+viewBox="0 0 12 12"
+>
+<path
+  color="inherit"
+  fill="currentColor"
+  d="M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1"
+/>
+</svg>
 
 const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
   children,
   ...props
 }) => {
   const url = props.href;
-  if (url.includes("prisma.io/") || url.startsWith("/") || url.startsWith("#"))
-    return <Link {...props}>{children}</Link>;
+  if (url?.includes(".prisma.io") || url?.startsWith("/") || url?.startsWith("#"))
+    return <DocsLink {...props}>{children}</DocsLink>;
   else
     return (
       <a {...props} target="_blank" rel="openeer noreferrer" className={clsx(props.className, styles.externalLink)}>
         {children}
+        <ExternalIcon />  
       </a>
     );
 };
@@ -142,7 +183,7 @@ export default {
   details: CollapseBox,
   TabItem,
   a: StyledLink,
-  Link,
+  Link: DocsLink,
   img: Image,
   TopBlock,
   CodeWithResult,

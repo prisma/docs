@@ -16,8 +16,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
           alt=""
           src="https://static.scarf.sh/a.png?x-pxid=d3850fa1-ff40-448d-9a15-5496ce99c9ae"
         />
-        <div className={styles.newsletterRow}>
-        </div>
+        <div className={styles.newsletterRow}></div>
         {(logo || copyright) && (
           <div className={clsx(styles[`footer__bottom`], "footer__bottom", "text--center")}>
             {copyright}
@@ -28,8 +27,10 @@ export default function FooterLayout({ style, links, logo, copyright }) {
               <a href="https://trust.prisma.io/" target="__blank" rel="openeer noreferrer" aria-label="Prisma Trust">
                 <img src={useBaseUrl("/img/icons/hipaa.svg")} alt="hipaa" width={62} height={29}/>
               </a>
-              {/* <img src={"/img/icons/iso27.svg"} alt="iso" width={73} height={27}/>
-              <img src={"/img/icons/soc2.svg"} alt="soc" width={60} height={27}/> */}
+              <a href="https://trust.prisma.io/" target="__blank" rel="openeer noreferrer" aria-label="Prisma Trust">
+                <img src={useBaseUrl("/img/icons/iso27.svg")} alt="iso27001" width={73} height={27}/>
+              </a>
+              {/* <img src={"/img/icons/soc2.svg"} alt="soc" width={60} height={27}/> */}
             </div>
           </div>
         )}
