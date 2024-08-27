@@ -101,6 +101,7 @@ function TabContent({ lazy, children, selectedValue, transparent, code, terminal
     </div>
   );
 }
+
 function TabsComponent(props) {
   const tabs = useTabs(props);
   return (
@@ -110,9 +111,9 @@ function TabsComponent(props) {
     </div>
   );
 }
+
 export default function Tabs(props) {
   const isBrowser = useIsBrowser();
-  console.log(props)
   return (
     <TabsComponent
       // Remount tabs after hydration
