@@ -38,6 +38,7 @@ const config: Config = {
       "data-website-id": "1b51bb03-43cc-4ef4-95f1-93288a91b560",
       "data-project-name": "Prisma",
       "data-project-color": "#2D3748",
+      "data-user-analytics-fingerprint-enabled": "true",
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
@@ -60,6 +61,16 @@ const config: Config = {
       src: "https://cdn.tolt.io/tolt.js",
       async: true,
       "data-tolt": "fda67739-7ed0-42d2-b716-6da0edbec191",
+    },
+    {
+      "src": "https://plausible.io/js/script.js",
+      defer: true,
+      "data-domain": "prisma.io"
+    },
+    // Common Room
+    {
+      src: "https://cdn.cr-relay.com/v1/site/cc8b954c-5f74-4254-a72a-e0d61048bd58/signals.js",
+      async: true,
     },
   ],
   plugins: ["docusaurus-plugin-sass"],
@@ -117,6 +128,11 @@ const config: Config = {
   ],
   themeConfig: {
     image: "/docs/social/docs-social.png",
+    metadata: [
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:site", content: "@prisma" },
+      { name: "twitter:creator", content: "@prisma" },
+    ],
     navbar: {
       logo: {
         srcDark: "img/logo-white.svg",
@@ -169,7 +185,7 @@ const config: Config = {
         {
           href: "https://console.prisma.io/login?utm_source=docs&utm_medium=login",
           position: "right",
-          label: "Login",
+          label: "Log in",
           className: "navbar-login-btn internal teal-btn",
         },
       ],
@@ -188,11 +204,72 @@ const config: Config = {
       style: "dark",
       links: [
         {
+          title: "socials",
+          items: [
+            {
+              label: " ",
+              href: "https://discord.gg/KQyTW2H5ca",
+              customProps: {
+                icon: "fa-brands fa-discord",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://x.com/prisma",
+              customProps: {
+                icon: "fa-brands fa-x-twitter",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://www.youtube.com/prismadata",
+              customProps: {
+                icon: "fa-brands fa-youtube",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://pris.ly/whatsapp",
+              customProps: {
+                icon: "fa-brands fa-whatsapp",
+                internal: true,
+              },
+            },
+            {
+              label: " ",
+              href: "https://github.com/prisma",
+              customProps: {
+                icon: "fa-brands fa-github",
+                internal: true,
+              },
+            },
+          ],
+        },
+        {
           title: "Product",
           items: [
             {
               label: "ORM",
               href: "https://www.prisma.io/orm",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
+              label: "Studio",
+              href: "https://www.prisma.io/studio",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
+              label: "Optimize",
+              href: "https://www.prisma.io/blog/prisma-optimize-early-access",
               target: "_self",
               customProps: {
                 internal: true,
@@ -254,6 +331,10 @@ const config: Config = {
             {
               label: "Playground",
               href: "https://playground.prisma.io/",
+            },
+            {
+              label: "ORM Benchmarks",
+              href: "https://benchmarks.prisma.io/",
             },
             {
               label: "Customer stories",
@@ -371,54 +452,17 @@ const config: Config = {
               },
             },
             {
+              label: "Event Code of Conduct",
+              href: "https://pris.ly/code-conduct",
+              customProps: {
+                dropdown: "legal",
+              },
+            },
+            {
               label: "Security & Compliance",
               href: "https://trust.prisma.io/",
               target: "_self",
               customProps: {
-                internal: true,
-              },
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              label: " ",
-              href: "https://discord.gg/KQyTW2H5ca",
-              customProps: {
-                icon: "fa-brands fa-discord",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://x.com/prisma",
-              customProps: {
-                icon: "fa-brands fa-x-twitter",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://www.youtube.com/prismadata",
-              customProps: {
-                icon: "fa-brands fa-youtube",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://pris.ly/whatsapp",
-              customProps: {
-                icon: "fa-brands fa-whatsapp",
-                internal: true,
-              },
-            },
-            {
-              label: " ",
-              href: "https://github.com/prisma",
-              customProps: {
-                icon: "fa-brands fa-github",
                 internal: true,
               },
             },
@@ -451,7 +495,8 @@ const config: Config = {
           block: { start: "add-start", end: "add-end" },
         },
         {
-          className: "theme-code-block-deleted-line deleted-line code-highlight",
+          className:
+            "theme-code-block-deleted-line deleted-line code-highlight",
           line: "delete-next-line",
           block: { start: "delete-start", end: "delete-end" },
         },
@@ -464,6 +509,11 @@ const config: Config = {
           className: "theme-code-block-highlighted-line highlighted-line",
           line: "highlight-next-line",
           block: { start: "highlight-start", end: "highlight-end" },
+        },
+        {
+          className: "theme-code-block-stronger-line stronger-line",
+          line: "stronger-next-line",
+          block: { start: "stronger-start", end: "stronger-end" },
         },
       ],
     },

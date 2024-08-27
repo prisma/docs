@@ -30,6 +30,6 @@ Similar to issues, we do not have hard and fast rules for Pull Requests. If you 
 
 The Prisma team may ask for changes before a PR can be merged. As these changes are made, please mark the corresponding comments as "resolved". If you need help on a pull request or would like feedback, please feel free to mention the `@Dev-Connections` team.
 
-As a final note, if you're still working on a PR, please utilize the "Draft Pull Request" feature to let us know that your work is not yet ready. 
+As a final note, if you're still working on a PR, please utilize the "Draft Pull Request" feature to let us know that your work is not yet ready.
 
 Thank you again for contributing to our documentation!
