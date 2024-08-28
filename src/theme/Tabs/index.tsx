@@ -1,4 +1,4 @@
-import React, { cloneElement } from "react";
+import React, { cloneElement, useEffect } from "react";
 import clsx from "clsx";
 import {
   useScrollPositionBlocker,
@@ -74,7 +74,7 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     </ul>
   );
 }
-function TabContent({ lazy, children, selectedValue, transparent, code, terminal, customStyles }) {
+function TabContent({ lazy, children, selectedValue, transparent, code, terminal, fullWidth, customStyles }) {
   const childTabs = (Array.isArray(children) ? children : [children]).filter(Boolean);
   if (lazy) {
     const selectedTabItem = childTabs.find((tabItem) => tabItem.props.value === selectedValue);
@@ -87,7 +87,7 @@ function TabContent({ lazy, children, selectedValue, transparent, code, terminal
 
   return (
     <div
-      className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code)}
+      className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code, fullWidth && styles[`full-width`])}
       style={customStyles ? customStyles : {}}
     >
       {childTabs.map((tabItem, i) =>
@@ -101,6 +101,7 @@ function TabContent({ lazy, children, selectedValue, transparent, code, terminal
     </div>
   );
 }
+
 function TabsComponent(props) {
   const tabs = useTabs(props);
   return (
@@ -110,6 +111,7 @@ function TabsComponent(props) {
     </div>
   );
 }
+
 export default function Tabs(props) {
   const isBrowser = useIsBrowser();
   return (
