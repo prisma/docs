@@ -1,7 +1,7 @@
 export const ProductLinkData = {
   porm: {
     title: "Build with Prisma ORM",
-    eyebrow: "Build",
+    //eyebrow: "Build",
     description:
       "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
     links: [
@@ -17,7 +17,7 @@ export const ProductLinkData = {
   },
   poptimize: {
     title: "Consistent Performance",
-    eyebrow: "Fortify",
+    //eyebrow: "Fortify",
     description: "Ensure that your database and queries are running at peak performance and efficiency. Easily handle connections to your database and scale with your traffic.",
     links: [
       {
@@ -32,7 +32,7 @@ export const ProductLinkData = {
   },
   pdp: {
     title: "Grow as your app evolves",
-    eyebrow: "Grow",
+    //eyebrow: "Grow",
     description:
       "Expand your application capabilities with global database caching, connection pooling, and real-time database subscriptions.",
     links: [
