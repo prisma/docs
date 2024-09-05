@@ -1,6 +1,6 @@
 export const ProductLinkData = {
   porm: {
-    title: "Build with Prisma ORM",
+    title: "Start building with Prisma ORM",
     //eyebrow: "Build",
     description:
       "Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion. <br><br>Combine it with <b>Prisma Studio</b> to explore and manipulate your data.",
