@@ -159,7 +159,7 @@ export const GeneralLinks_Build = [
     icon: "fa-solid fa-book",
   },
 
-]
+];
 
 export const GeneralLinks_Fortify = [
   {
@@ -180,7 +180,7 @@ export const GeneralLinks_Fortify = [
     url: "/optimize/ai-explainer",
     icon: "fa-solid fa-message-bot",
   },
-]
+];
 
 
 export const GeneralLinks_Grow = [
@@ -202,7 +202,7 @@ export const GeneralLinks_Grow = [
     url: "/pulse/getting-started",
     icon: "fa-solid fa-signal-stream",
   },
-]
+];
 
 export const DatabaseData = [
   {
