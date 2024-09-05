@@ -55,7 +55,7 @@ function HomepageProductCards() {
             </Heading>
             </>
           );
-          const cardBody = <div className={styles.body}>{ProductLinkData[e].description}</div>;
+          const cardBody = <div className={styles.body} dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description}}></div>;
           const cardLinks = ProductLinkData[e].links.map((link) => (
             <Link to={link.url}>
               {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}
