@@ -3,7 +3,7 @@ export const ProductLinkData = {
     title: "Build with Prisma ORM",
     //eyebrow: "Build",
     description:
-      "Start with <b>Prisma ORM</b> — Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion. <br>Use <b>Prisma Studio</b> to explore and manipulate your data.",
+      "Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion. <br><br>Combine it with <b>Prisma Studio</b> to explore and manipulate your data.",
     links: [
       {
         url: "/orm",
@@ -16,9 +16,9 @@ export const ProductLinkData = {
     ],
   },
   poptimize: {
-    title: "Optimize your queries",
+    title: "Optimize your database queries",
     //eyebrow: "Fortify",
-    description: "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your app run faster.",
+    description: "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your application run faster.",
     links: [
       {
         url: "https://optimize-docs.docs-51g.pages.dev/optimize",
@@ -27,10 +27,10 @@ export const ProductLinkData = {
     ],
   },
   pdp: {
-    title: "Grow and evolve your app",
+    title: "Grow and evolve your application",
     //eyebrow: "Grow",
     description:
-      "Scale your database connections and cache your database results at the edge with <b>Prisma Accelerate</b>. <br>Add <b>Prisma Pulse</b> to your app to react to database changes with type-safe model subscriptions.",
+      "Scale your database connections and cache your database results at the edge with <b>Prisma Accelerate</b>. <br><br>Add <b>Prisma Pulse</b> to your app to react to database changes with type-safe model subscriptions.",
     links: [
       {
         url: "/accelerate",
@@ -145,7 +145,7 @@ export const GeneralLinks_Build = [
     url: "/orm/prisma-client/queries/crud",
     icon: "fa-solid fa-arrow-right-arrow-left",
   },
-  {
+   {
     title: `Adopting Prisma ORM`,
     description: "Migrate to Prisma ORM from other ORMs.",
     url: "/orm/more/migrating-to-prisma",
@@ -158,13 +158,14 @@ export const GeneralLinks_Build = [
     url: "/orm/prisma-client/deployment",
     icon: "fa-solid fa-book",
   },
+  
 
 ];
 
 export const GeneralLinks_Fortify = [
   {
     title: `Set up Optimize`,
-    description: "Start analyzing your queries and generate insights to improve your queries. ",
+    description: "Start analyzing your queries and generate insights to improve your queries.",
     url: "https://optimize-docs.docs-51g.pages.dev/optimize/getting-started",
     icon: "fa-solid fa-magnifying-glass-chart",
   },
@@ -186,7 +187,7 @@ export const GeneralLinks_Fortify = [
 export const GeneralLinks_Grow = [
   {
     title: `Connection pooling`,
-    description: "Adjust pool size, configure timeouts, and enable autoscaling to improve performance. .",
+    description: "Adjust pool size, configure timeouts, and enable autoscaling to improve performance.",
     url: "/accelerate/connection-pooling",
     icon: "fa-solid fa-bolt",
   },
