@@ -3,7 +3,7 @@ export const ProductLinkData = {
     title: "Build with Prisma ORM",
     //eyebrow: "Build",
     description:
-      "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
+      "Start with <b>Prisma ORM</b> — Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion. <br>Use <b>Prisma Studio</b> to explore and manipulate your data.",
     links: [
       {
         url: "/orm",
@@ -16,25 +16,21 @@ export const ProductLinkData = {
     ],
   },
   poptimize: {
-    title: "Consistent Performance",
+    title: "Optimize your queries",
     //eyebrow: "Fortify",
-    description: "Ensure that your database and queries are running at peak performance and efficiency. Easily handle connections to your database and scale with your traffic.",
+    description: "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your app run faster.",
     links: [
       {
-        url: "https://www.prisma.io/blog/prisma-optimize-early-access",
+        url: "/optimize",
         title: "Optimize",
-      },
-      {
-        url: "/accelerate/what-is-accelerate",
-        title: "Accelerate",
       },
     ],
   },
   pdp: {
-    title: "Grow as your app evolves",
+    title: "Grow and evolve your app",
     //eyebrow: "Grow",
     description:
-      "Expand your application capabilities with global database caching, connection pooling, and real-time database subscriptions.",
+      "Scale your database connections and cache your database results at the edge with <b>Prisma Accelerate</b>. <br>Add <b>Prisma Pulse</b> to your app to react to database changes with type-safe model subscriptions.",
     links: [
       {
         url: "/accelerate",
@@ -50,7 +46,7 @@ export const ProductLinkData = {
 
 export const ORMCardLinkData = {
   components: {
-    title: "ORM Components",
+    title: "ORM Components and Reference",
     description: "Learn about the building blocks of Prisma ORM.",
     links: [
       {
@@ -89,8 +85,8 @@ export const ORMCardLinkData = {
   },
 
   reference: {
-    title: "Reference",
-    description: "Understand the usage and API surface of our products.",
+    title: "Platform Reference",
+    description: "Understand the usage and API surface of our platform products built on top of Prisma ORM.",
     links: [
       {
         url: "/accelerate/api-reference",
@@ -121,13 +117,6 @@ export const ORMGeneralLinkData = [
     icon: "fa-solid fa-arrow-right-arrow-left",
   },
   {
-    title: `Prisma ORM in your stack`,
-    description:
-      "Use Prisma ORM to build a GraphQL or REST API, or as part of a fullstack application.",
-    url: "/orm/overview/prisma-in-your-stack",
-    icon: "fa-solid fa-server",
-  },
-  {
     title: `Adopting Prisma ORM`,
     description: "Migrate to Prisma ORM from other ORMs.",
     url: "/orm/more/migrating-to-prisma",
@@ -139,25 +128,6 @@ export const ORMGeneralLinkData = [
       "Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.",
     url: "/orm/prisma-client/deployment",
     icon: "fa-solid fa-book",
-  },
-  {
-    title: `Accelerate`,
-    description: "Set up connection pooling and global caching in your app with Accelerate.",
-    url: "/accelerate/getting-started",
-    icon: "fa-solid fa-bolt",
-  },
-  {
-    title: `Pulse`,
-    description: "React to changes in your database with Pulse.",
-    url: "/pulse/getting-started",
-    icon: "fa-solid fa-signal-stream",
-  },
-  {
-    title: `Platform`,
-    description:
-      "Explore how to use the Platform to easily manage your projects and collaborate within your team.",
-    url: "/platform/about",
-    icon: "fa-solid fa-chart-simple",
   },
   {
     title: `Platform CLI commands`,
@@ -174,13 +144,6 @@ export const GeneralLinks_Build = [
     description: "How to perform CRUD operations with your generated Prisma Client API. ",
     url: "/orm/prisma-client/queries/crud",
     icon: "fa-solid fa-arrow-right-arrow-left",
-  },
-  {
-    title: `Prisma ORM in your stack`,
-    description:
-      "Use Prisma ORM to build a GraphQL or REST API, or as part of a fullstack application.",
-    url: "/orm/overview/prisma-in-your-stack",
-    icon: "fa-solid fa-server",
   },
   {
     title: `Adopting Prisma ORM`,
@@ -200,46 +163,44 @@ export const GeneralLinks_Build = [
 
 export const GeneralLinks_Fortify = [
   {
-    title: `Recommendations`,
-    description: "Detect missing indexes, uncover queries performing full table-scans causing unnecessary resource consumption.",
-    url: "/platform/about",
-    icon: "fa-solid fa-signal-stream",
+    title: `Set up Optimize`,
+    description: "Start analyzing your queries and generate insights to improve your queries. ",
+    url: "/optimize/getting-started",
+    icon: "fa-solid fa-magnifying-glass-chart",
   },
   {
-    title: `Recordings`,
-    description: "Learn how to debug and isolate different sets of queries into distinct sessions",
-    url: "/platform/about",
-    icon: "fa-solid fa-signal-stream",
+    title: `Recommendations`,
+    description: "Explore the different recommendations such as indexing issues, excessive data retrieval, and inefficient query patterns.",
+    url: "/optimize/recommendations",
+    icon: "fa-solid fa-chart-simple",
   },
-
+  {
+    title: `AI Explainer`,
+    description: "Understand the recommendations easier by asking questions to our AI.",
+    url: "/optimize/ai-explainer",
+    icon: "fa-solid fa-message-bot",
+  },
 ]
 
 
 export const GeneralLinks_Grow = [
   {
-    title: `Database set up with Pulse`,
-    description: "Use Prisma Pulse to  trigger events and actions in real-time.",
-    url: "/pulse/getting-started",
-    icon: "fa-solid fa-signal-stream",
-  },
-  {
     title: `Connection pooling`,
-    description: "Process more queries without exhausting the available database connections.",
+    description: "Adjust pool size, configure timeouts, and enable autoscaling to improve performance. .",
     url: "/accelerate/connection-pooling",
-    icon: "fa-solid fa-signal-stream",
+    icon: "fa-solid fa-bolt",
   },
   {
     title: `Database Caching`,
-    description: "Learn how to use Accelerate's global database caching.",
+    description: "How to improve query performance by configuring cache behavior using TTL and SWR.",
     url: "/accelerate/caching",
-    icon: "fa-solid fa-signal-stream",
+    icon: "fa-solid fa-bolt",
   },
   {
-    title: `Database events`,
-    description:
-      "Explore how to create, update, and delete events.",
-    url: "/pulse/database-events",
-    icon: "fa-solid fa-chart-simple",
+    title: `React to database changes`,
+    description: "Use Pulse to stream database events to your app in real-time. ",
+    url: "/pulse/getting-started",
+    icon: "fa-solid fa-signal-stream",
   },
 ]
 
