@@ -34,11 +34,11 @@ export const ProductLinkData = {
     links: [
       {
         url: "/accelerate",
-        title: "Prisma Accelerate",
+        title: "Accelerate",
       },
       {
         url: "/pulse",
-        title: "Prisma Pulse",
+        title: "Pulse",
       },
     ],
   },
