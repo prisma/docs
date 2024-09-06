@@ -72,7 +72,7 @@ function HomepageProductCards() {
         })}
       </div>
       <div className={styles.ormLinkSectionWrapper}>
-        <div>
+        <div className={styles.ormLinkCol}>
           {GeneralLinks_Build.map((link, index) => (
             <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
               <div className={styles.icon}>
@@ -87,7 +87,7 @@ function HomepageProductCards() {
             </Link>
           ))}
         </div>
-        <div>
+        <div className={styles.ormLinkCol}>
           {GeneralLinks_Fortify.map((link, index) => (
             <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
               <div className={styles.icon}>
@@ -102,7 +102,7 @@ function HomepageProductCards() {
             </Link>
           ))}
         </div>
-        <div>
+        <div className={styles.ormLinkCol}>
           {GeneralLinks_Grow.map((link, index) => (
             <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
               <div className={styles.icon}>
