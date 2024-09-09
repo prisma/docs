@@ -176,8 +176,8 @@ export const GeneralLinks_Fortify = [
     icon: "fa-solid fa-chart-simple",
   },
   {
-    title: `AI Explainer`,
-    description: "Understand the recommendations easier by asking questions to our AI.",
+    title: `Prisma AI`,
+    description: "Understand the recommendations easier by asking our AI follow-up questions.",
     url: "https://optimize-docs.docs-51g.pages.dev/optimize/ai-explainer",
     icon: "fa-solid fa-message-bot",
   },
@@ -192,7 +192,7 @@ export const GeneralLinks_Grow = [
     icon: "fa-solid fa-bolt",
   },
   {
-    title: `Database Caching`,
+    title: `Database caching`,
     description: "How to improve query performance by configuring cache behavior using TTL and SWR.",
     url: "/accelerate/caching",
     icon: "fa-solid fa-bolt",
