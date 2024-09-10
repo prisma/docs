@@ -178,7 +178,7 @@ export const GeneralLinks_Fortify = [
   {
     title: `Prisma AI`,
     description: "Understand the recommendations easier by asking our AI follow-up questions.",
-    url: "/optimize/ai-explainer",
+    url: "/optimize/prisma-ai",
     icon: "fa-solid fa-message-bot",
   },
 ];
