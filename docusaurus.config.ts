@@ -159,6 +159,13 @@ const config: Config = {
         },
         {
           type: "docSidebar",
+          sidebarId: "optimizeSidebar",
+          position: "left",
+          className: "teal",
+          label: "Optimize",
+        },
+        {
+          type: "docSidebar",
           sidebarId: "accelerateSidebar",
           position: "left",
           className: "teal",
@@ -264,7 +271,7 @@ const config: Config = {
             },
             {
               label: "Optimize",
-              href: "https://www.prisma.io/blog/prisma-optimize-early-access",
+              href: "https://www.prisma.io/data-platform/optimize",
               target: "_self",
               customProps: {
                 internal: true,
