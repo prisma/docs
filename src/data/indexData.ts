@@ -21,7 +21,7 @@ export const ProductLinkData = {
     description: "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your application run faster.",
     links: [
       {
-        url: "https://optimize-docs.docs-51g.pages.dev/optimize",
+        url: "/optimize",
         title: "Optimize",
       },
     ],
@@ -166,19 +166,19 @@ export const GeneralLinks_Fortify = [
   {
     title: `Set up Optimize`,
     description: "Start analyzing your queries and generate insights to improve your queries.",
-    url: "https://optimize-docs.docs-51g.pages.dev/optimize/getting-started",
+    url: "/optimize/getting-started",
     icon: "fa-solid fa-magnifying-glass-chart",
   },
   {
     title: `Recommendations`,
     description: "Explore the different recommendations such as indexing issues, excessive data retrieval, and inefficient query patterns.",
-    url: "https://optimize-docs.docs-51g.pages.dev/optimize/recommendations",
+    url: "/optimize/recommendations",
     icon: "fa-solid fa-chart-simple",
   },
   {
     title: `Prisma AI`,
     description: "Understand the recommendations easier by asking our AI follow-up questions.",
-    url: "https://optimize-docs.docs-51g.pages.dev/optimize/ai-explainer",
+    url: "/optimize/ai-explainer",
     icon: "fa-solid fa-message-bot",
   },
 ];
