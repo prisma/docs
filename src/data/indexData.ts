@@ -134,6 +134,12 @@ export const ORMGeneralLinkData = [
     icon: "fa-solid fa-signal-stream",
   },
   {
+    title: `Optimize`,
+    description: "Debug database queries and use recommendations to improve query performance.",
+    url: "/optimize/getting-started",
+    icon: "fa-solid fa-magnifying-glass-chart",
+  },
+  {
     title: `Platform`,
     description:
       "Explore how to use the Platform to easily manage your projects and collaborate within your team.",
