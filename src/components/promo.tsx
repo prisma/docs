@@ -42,7 +42,7 @@ export const Promo = () => {
       color: "indigo",
     },
     {
-      text: `Want to to enhance response times while reducing database load?`,
+      text: `Want to enhance response times while reducing database load?`,
       link: "https://pris.ly/sidebar-promo/enhance-response-times-reduce-load",
       color: "teal",
     },
