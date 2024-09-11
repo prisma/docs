@@ -76,6 +76,17 @@ export const Promo = () => {
       link: "https://pris.ly/orm-survey-5-18",
       color: "indigo",
     },
+    {
+      text: `Need to improve app performance? Get tailored recommendations.`,
+      link: "https://pris.ly/sidebar-promo/tailored-recommendations",
+      color: "teal",
+    },
+     {
+      text: `Your db queries could be faster? Let Optimize figure out why. `,
+      link: "https://pris.ly/sidebar-promo/faster-db-queries",
+      color: "teal",
+    },
+    
   ];
 
   let promo = promoOptions[Math.floor(Math.random() * promoOptions.length)];
