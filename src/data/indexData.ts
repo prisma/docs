@@ -18,7 +18,8 @@ export const ProductLinkData = {
   poptimize: {
     title: "Optimize your database queries",
     //eyebrow: "Fortify",
-    description: "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your application run faster.",
+    description:
+      "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your application run faster.",
     links: [
       {
         url: "/optimize",
@@ -86,13 +87,14 @@ export const ORMCardLinkData = {
 
   reference: {
     title: "Platform Reference",
-    description: "Understand the usage and API surface of our platform products built on top of Prisma ORM.",
+    description:
+      "Understand the usage and API surface of our platform products built on top of Prisma ORM.",
     links: [
       {
         url: "/accelerate/api-reference",
         title: "Accelerate API reference",
       },
-      
+
       {
         url: "/pulse/api-reference",
         title: "Pulse API reference",
@@ -145,7 +147,7 @@ export const GeneralLinks_Build = [
     url: "/orm/prisma-client/queries/crud",
     icon: "fa-solid fa-arrow-right-arrow-left",
   },
-   {
+  {
     title: `Adopting Prisma ORM`,
     description: "Migrate to Prisma ORM from other ORMs.",
     url: "/orm/more/migrating-to-prisma",
@@ -158,8 +160,6 @@ export const GeneralLinks_Build = [
     url: "/orm/prisma-client/deployment",
     icon: "fa-solid fa-book",
   },
-  
-
 ];
 
 export const GeneralLinks_Fortify = [
@@ -171,7 +171,8 @@ export const GeneralLinks_Fortify = [
   },
   {
     title: `Recommendations`,
-    description: "Explore the different recommendations such as indexing issues, excessive data retrieval, and inefficient query patterns.",
+    description:
+      "Explore the different recommendations such as indexing issues, excessive data retrieval, and inefficient query patterns.",
     url: "/optimize/recommendations",
     icon: "fa-solid fa-chart-simple",
   },
@@ -183,17 +184,18 @@ export const GeneralLinks_Fortify = [
   },
 ];
 
-
 export const GeneralLinks_Grow = [
   {
     title: `Connection pooling`,
-    description: "Adjust pool size, configure timeouts, and enable autoscaling to improve performance.",
+    description:
+      "Adjust pool size, configure timeouts, and enable autoscaling to improve performance.",
     url: "/accelerate/connection-pooling",
     icon: "fa-solid fa-bolt",
   },
   {
     title: `Database caching`,
-    description: "How to improve query performance by configuring cache behavior using TTL and SWR.",
+    description:
+      "How to improve query performance by configuring cache behavior using TTL and SWR.",
     url: "/accelerate/caching",
     icon: "fa-solid fa-bolt",
   },
