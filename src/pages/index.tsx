@@ -49,13 +49,18 @@ function HomepageProductCards() {
         {Object.keys(ProductLinkData).map((e: keyof typeof ProductLinkData) => {
           const cardHeader = (
             <>
-            <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
-            <Heading as="h3" className={styles.h3}>
-              {ProductLinkData[e].title}
-            </Heading>
+              <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
+              <Heading as="h3" className={styles.h3}>
+                {ProductLinkData[e].title}
+              </Heading>
             </>
           );
-          const cardBody = <div className={styles.body} dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description}}></div>;
+          const cardBody = (
+            <div
+              className={styles.body}
+              dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description }}
+            ></div>
+          );
           const cardLinks = ProductLinkData[e].links.map((link) => (
             <Link to={link.url}>
               {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}

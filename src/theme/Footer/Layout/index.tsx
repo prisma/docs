@@ -21,14 +21,34 @@ export default function FooterLayout({ style, links, logo, copyright }) {
           <div className={clsx(styles[`footer__bottom`], "footer__bottom", "text--center")}>
             {copyright}
             <div className={styles.complianceLogos}>
-              <a href="https://trust.prisma.io/" target="__blank" rel="openeer noreferrer" aria-label="Prisma Trust">
-                <img src={useBaseUrl("/img/icons/gdpr.svg")} alt="gdpr" width={35} height={35}/>
+              <a
+                href="https://trust.prisma.io/"
+                target="__blank"
+                rel="openeer noreferrer"
+                aria-label="Prisma Trust"
+              >
+                <img src={useBaseUrl("/img/icons/gdpr.svg")} alt="gdpr" width={35} height={35} />
               </a>
-              <a href="https://trust.prisma.io/" target="__blank" rel="openeer noreferrer" aria-label="Prisma Trust">
-                <img src={useBaseUrl("/img/icons/hipaa.svg")} alt="hipaa" width={62} height={29}/>
+              <a
+                href="https://trust.prisma.io/"
+                target="__blank"
+                rel="openeer noreferrer"
+                aria-label="Prisma Trust"
+              >
+                <img src={useBaseUrl("/img/icons/hipaa.svg")} alt="hipaa" width={62} height={29} />
               </a>
-              <a href="https://trust.prisma.io/" target="__blank" rel="openeer noreferrer" aria-label="Prisma Trust">
-                <img src={useBaseUrl("/img/icons/iso27.svg")} alt="iso27001" width={73} height={27}/>
+              <a
+                href="https://trust.prisma.io/"
+                target="__blank"
+                rel="openeer noreferrer"
+                aria-label="Prisma Trust"
+              >
+                <img
+                  src={useBaseUrl("/img/icons/iso27.svg")}
+                  alt="iso27001"
+                  width={73}
+                  height={27}
+                />
               </a>
               {/* <img src={"/img/icons/soc2.svg"} alt="soc" width={60} height={27}/> */}
             </div>

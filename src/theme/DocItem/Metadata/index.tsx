@@ -19,12 +19,7 @@ export default function DocItemMetadata(): JSX.Element {
   const image = assets.image ?? prismaFrontMatter.image;
 
   return (
-    <PageMetadata
-      title={title}
-      description={description}
-      keywords={keywords}
-      image={image}
-    >
+    <PageMetadata title={title} description={description} keywords={keywords} image={image}>
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
     </PageMetadata>

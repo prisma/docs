@@ -497,8 +497,7 @@ const config: Config = {
           block: { start: "add-start", end: "add-end" },
         },
         {
-          className:
-            "theme-code-block-deleted-line deleted-line code-highlight",
+          className: "theme-code-block-deleted-line deleted-line code-highlight",
           line: "delete-next-line",
           block: { start: "delete-start", end: "delete-end" },
         },

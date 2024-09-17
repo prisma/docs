@@ -3,7 +3,7 @@ import styles from "./styles.module.scss";
 import { Icon } from "../Icon";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
-namespace S { }
+namespace S {}
 
 const icon = (name: string) => <Icon size="1.125rem" color="rgb(113, 128, 150)" icon={name} />;
 type ColorType = "indigo" | "teal" | "white" | undefined;
