@@ -1,7 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 import Link from "@docusaurus/Link";
-import { findFirstSidebarItemLink, useDocById } from "@docusaurus/theme-common/internal";
+import { findFirstSidebarItemLink, useDocById } from "@docusaurus/plugin-content-docs/client";
 import isInternalUrl from "@docusaurus/isInternalUrl";
 import { translate } from "@docusaurus/Translate";
 import Heading from "@theme/Heading";
