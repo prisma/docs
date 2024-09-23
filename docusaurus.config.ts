@@ -38,6 +38,7 @@ const config: Config = {
       "data-website-id": "1b51bb03-43cc-4ef4-95f1-93288a91b560",
       "data-project-name": "Prisma",
       "data-project-color": "#2D3748",
+      "data-user-analytics-fingerprint-enabled": "true",
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
@@ -158,6 +159,13 @@ const config: Config = {
         },
         {
           type: "docSidebar",
+          sidebarId: "optimizeSidebar",
+          position: "left",
+          className: "teal",
+          label: "Optimize",
+        },
+        {
+          type: "docSidebar",
           sidebarId: "accelerateSidebar",
           position: "left",
           className: "teal",
@@ -263,7 +271,7 @@ const config: Config = {
             },
             {
               label: "Optimize",
-              href: "https://www.prisma.io/blog/prisma-optimize-early-access",
+              href: "https://www.prisma.io/data-platform/optimize",
               target: "_self",
               customProps: {
                 internal: true,
@@ -446,6 +454,13 @@ const config: Config = {
               },
             },
             {
+              label: "Event Code of Conduct",
+              href: "https://pris.ly/code-conduct",
+              customProps: {
+                dropdown: "legal",
+              },
+            },
+            {
               label: "Security & Compliance",
               href: "https://trust.prisma.io/",
               target: "_self",
@@ -482,8 +497,7 @@ const config: Config = {
           block: { start: "add-start", end: "add-end" },
         },
         {
-          className:
-            "theme-code-block-deleted-line deleted-line code-highlight",
+          className: "theme-code-block-deleted-line deleted-line code-highlight",
           line: "delete-next-line",
           block: { start: "delete-start", end: "delete-end" },
         },
@@ -496,6 +510,11 @@ const config: Config = {
           className: "theme-code-block-highlighted-line highlighted-line",
           line: "highlight-next-line",
           block: { start: "highlight-start", end: "highlight-end" },
+        },
+        {
+          className: "theme-code-block-stronger-line stronger-line",
+          line: "stronger-next-line",
+          block: { start: "stronger-start", end: "stronger-end" },
         },
       ],
     },

@@ -42,7 +42,7 @@ export const Promo = () => {
       color: "indigo",
     },
     {
-      text: `Want to to enhance response times while reducing database load?`,
+      text: `Want to enhance response times while reducing database load?`,
       link: "https://pris.ly/sidebar-promo/enhance-response-times-reduce-load",
       color: "teal",
     },
@@ -69,6 +69,21 @@ export const Promo = () => {
     {
       text: `Curious about the SQL queries Prisma ORM generates?`,
       link: "https://pris.ly/sidebar-promo/sql-queries-in-orm",
+      color: "teal",
+    },
+    {
+      text: `Tell us how Prisma ORM is working for you!`,
+      link: "https://pris.ly/orm-survey-5-18",
+      color: "indigo",
+    },
+    {
+      text: `Need to improve app performance? Get tailored recommendations.`,
+      link: "https://pris.ly/sidebar-promo/tailored-recommendations",
+      color: "teal",
+    },
+    {
+      text: `Your db queries could be faster? Let Optimize figure out why. `,
+      link: "https://pris.ly/sidebar-promo/faster-db-queries",
       color: "teal",
     },
   ];

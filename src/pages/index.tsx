@@ -12,11 +12,15 @@ import {
   ORMGeneralLinkData,
   ORMCardLinkData,
   ProductLinkData,
+  GeneralLinks_Build,
+  GeneralLinks_Fortify,
+  GeneralLinks_Grow,
 } from "@site/src/data/indexData";
 
 import styles from "./index.module.scss";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import clsx from "clsx";
+import DarkImg from "../theme/DarkImg";
 
 function HomepageCard({
   className,
@@ -44,14 +48,19 @@ function HomepageProductCards() {
       <div className={styles.productCardsWrapper}>
         {Object.keys(ProductLinkData).map((e: keyof typeof ProductLinkData) => {
           const cardHeader = (
-            <Heading as="h3" className={styles.h3}>
-              <div className={styles.icon}>
-                <Icon icon={`fa-solid fa-${ProductLinkData[e].icon}`} size="22px" color="white" />
-              </div>
-              {ProductLinkData[e].title}
-            </Heading>
+            <>
+              <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
+              <Heading as="h3" className={styles.h3}>
+                {ProductLinkData[e].title}
+              </Heading>
+            </>
           );
-          const cardBody = <div className={styles.body}>{ProductLinkData[e].description}</div>;
+          const cardBody = (
+            <div
+              className={styles.body}
+              dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description }}
+            ></div>
+          );
           const cardLinks = ProductLinkData[e].links.map((link) => (
             <Link to={link.url}>
               {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}
@@ -66,6 +75,53 @@ function HomepageProductCards() {
             />
           );
         })}
+      </div>
+      <div className={styles.ormLinkSectionWrapper}>
+        <div className={styles.ormLinkCol}>
+          {GeneralLinks_Build.map((link, index) => (
+            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
+              <div className={styles.icon}>
+                <Icon icon={link.icon} color="#5A67D8" size="22px" className="light" />
+              </div>
+              <div>
+                <h5>
+                  {link.title} <span>&#8594;</span>
+                </h5>
+                <p>{link.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className={styles.ormLinkCol}>
+          {GeneralLinks_Fortify.map((link, index) => (
+            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
+              <div className={styles.icon}>
+                <Icon icon={link.icon} color="#16A394" size="22px" className="light" />
+              </div>
+              <div>
+                <h5>
+                  {link.title} <span>&#8594;</span>
+                </h5>
+                <p>{link.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className={styles.ormLinkCol}>
+          {GeneralLinks_Grow.map((link, index) => (
+            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
+              <div className={styles.icon}>
+                <Icon icon={link.icon} color="#16A394" size="22px" className="light" />
+              </div>
+              <div>
+                <h5>
+                  {link.title} <span>&#8594;</span>
+                </h5>
+                <p>{link.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -145,8 +201,9 @@ function HomepageDatabasesSection() {
         {DatabaseData.map((e) => (
           <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
-              <img
-                src={useBaseUrl(e.icon)}
+              <DarkImg
+                icon={useBaseUrl(e.icon)}
+                darkIcon={useBaseUrl(e.darkIcon)}
                 style={{
                   height: `100%`,
                   width: e.icon.endsWith("sqlite.svg") ? `55px` : `auto`,
@@ -215,7 +272,7 @@ export default function Home(): JSX.Element {
       </Head>
       <main className={styles.mainHome}>
         <HomepageProductCards />
-        <HomepageORMLinksSection />
+        {/* <HomepageORMLinksSection /> */}
         <HomepageORMCards />
         <HomepageDatabasesSection />
         <HomepageCommunitySection />
