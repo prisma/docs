@@ -1,11 +1,129 @@
 ---
 title: 'Null and undefined'
-metaTitle: 'Null and undefined (Reference)'
-metaDescription: 'How Prisma Client handles null and undefined, including a GraphQL use case.'
+metaTitle: 'Null and undefined in Prisma Client (Reference)'
+metaDescription: 'How Prisma Client handles null and undefined'
 preview: false
 ---
 
-<TopBlock>
+:::warning
+
+Prior to Prisma ORM 5.20.0, `undefined` was treated as a special value that would not be included in the generated query. This behavior could lead to unexpected results and data loss. If you are using an older version of Prisma ORM, we strongly recommend updating to 5.20.0 or later to take advantage of the new `strictUndefinedChecks` feature.
+
+For documentation on the legacy behavior, see [Legacy behavior](#legacy-behavior).
+
+:::
+
+## Strict undefined checks (Preview feature)
+
+Prisma ORM 5.20.0 introduces a new Preview feature called `strictUndefinedChecks`. This feature changes how Prisma Client handles `undefined` values, offering better protection against accidental data loss or unintended query behavior.
+
+### Enabling strict undefined checks
+
+To enable this feature, add the following to your Prisma schema:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["strictUndefinedChecks"]
+}
+```
+
+### Using strict undefined checks
+
+When this feature is enabled:
+
+1. Explicitly setting a field to `undefined` in a query will cause a runtime error.
+2. To skip a field in a query, use the new `Prisma.skip` symbol instead of `undefined`.
+
+Example usage:
+
+```typescript
+// This will throw an error
+prisma.user.create({
+  data: {
+    name: 'Alice',
+    email: undefined // Error: Cannot explicitly use undefined here
+  }
+})
+
+// Use `Prisma.skip` (a symbol provided by Prisma) to omit a field
+prisma.user.create({
+  data: {
+    name: 'Alice',
+    email: Prisma.skip // This field will be omitted from the query
+  }
+})
+```
+
+This change helps prevent accidental deletions or updates, such as:
+
+```typescript
+// Before: This would delete all users
+prisma.user.deleteMany({
+  where: {
+    id: undefined
+  }
+})
+
+// After: This will throw an error
+Invalid \`prisma.user.deleteMany()\` invocation in
+/client/tests/functional/strictUndefinedChecks/test.ts:0:0
+  XX })
+  XX 
+  XX test('throws on undefined input field', async () => {
+→ XX   const result = prisma.user.deleteMany({
+         where: {
+           id: undefined
+               ~~~~~~~~~
+         }
+       })
+Invalid value for argument \`where\`: explicitly \`undefined\` values are not allowed."
+```
+
+### Migration path
+
+To migrate existing code:
+
+```typescript
+// Before
+let optionalEmail: string | undefined
+
+prisma.user.create({
+  data: {
+    name: 'Alice',
+    email: optionalEmail
+  }
+})
+
+// After
+prisma.user.create({
+  data: {
+    name: 'Alice',
+    // highlight-next-line
+    email: optionalEmail ?? Prisma.skip
+  }
+})
+```
+
+This new behavior is intended to become the default in Prisma ORM 6.
+
+### `exactOptionalPropertyTypes`
+
+In addition to `strictUndefinedChecks`, we also recommend enabling the TypeScript compiler option `exactOptionalPropertyTypes`. This option enforces that optional properties must match exactly, which can help catch potential issues with `undefined` values in your code. While `strictUndefinedChecks` will raise runtime errors for invalid `undefined` usage, `exactOptionalPropertyTypes` will catch these issues during the build process.
+
+Learn more about `exactOptionalPropertyTypes` in the [TypeScript documentation](https://www.typescriptlang.org/tsconfig/#exactOptionalPropertyTypes).
+
+### Feedback
+
+As always, we welcome your feedback on this feature. Please share your thoughts and suggestions in the [GitHub discussion for this Preview feature](https://github.com/prisma/prisma/discussions/).
+
+## Legacy behavior
+
+:::warning
+
+This section is relevant if you are using Prisma ORM 5.19.1 or earlier.
+
+:::
 
 Prisma Client differentiates between `null` and `undefined`:
 
@@ -27,13 +145,11 @@ The data below represents a `User` table. This set of data will be used in all o
 | 3   | _empty_ | sabin@gmail.com   |
 | 4   | Tyler   | tyler@gmail.com   |
 
-</TopBlock>
-
-## `null` and `undefined` in queries that affect _many_ records
+### `null` and `undefined` in queries that affect _many_ records
 
 This section will cover how `undefined` and `null` values affect the behavior of queries that interact with or create multiple records in a database.
 
-### Null
+#### Null
 
 Consider the following Prisma Client query which searches for all users whose `name` value matches the provided `null` value:
 
@@ -69,7 +185,7 @@ const users = await prisma.user.findMany({
 
 Because `null` was provided as the filter for the `name` column, Prisma Client will generate a query that searches for all records in the `User` table whose `name` column is _empty_.
 
-### Undefined
+#### Undefined
 
 Now consider the scenario where you run the same query with `undefined` as the filter value on the `name` column:
 
@@ -134,7 +250,7 @@ This query will select every row from the `User` table.
 
 Although this section's examples focused on the `findMany` function, the same concepts apply to any function that can affect multiple records, such as `updateMany` and `deleteMany`.
 
-## `null` and `undefined` in queries that affect _one_ record
+### `null` and `undefined` in queries that affect _one_ record
 
 This section will cover how `undefined` and `null` values affect the behavior of queries that interact with or create a single record in a database.
 
@@ -146,7 +262,7 @@ This section will cover how `undefined` and `null` values affect the behavior of
 
 The query behavior when using `null` and `undefined` in the filter criteria of a query that affects a single record is very similar to the behaviors described in the previous section.
 
-### Null
+#### Null
 
 Consider the following query where `null` is used to filter the `name` column:
 
@@ -181,7 +297,7 @@ const user = await prisma.user.findFirst({
 
 Because `null` was used as the filter on the `name` column, Prisma Client will generate a query that searches for the first record in the `User` table whose `name` value is _empty_.
 
-### Undefined
+#### Undefined
 
 If `undefined` is used as the filter value on the `name` column instead, _the query will act as if no filter criteria was passed to that column at all_.
 
@@ -226,7 +342,7 @@ const user = await prisma.user.findFirst()
 
 Although this section's examples focused on the `findFirst` function, the same concepts apply to any function that affects a single record.
 
-## `null` and `undefined` in a GraphQL resolver
+### `null` and `undefined` in a GraphQL resolver
 
 For this example, consider a database based on the following Prisma schema:
 
@@ -282,7 +398,7 @@ updateUser: (parent, args, ctx: Context) => {
 },
 ```
 
-## The effect of `null` and `undefined` on conditionals
+### The effect of `null` and `undefined` on conditionals
 
 There are some caveats to filtering with conditionals which might produce unexpected results. When filtering with conditionals you might expect one result but receive another given how Prisma Client treats nullable values.
 
