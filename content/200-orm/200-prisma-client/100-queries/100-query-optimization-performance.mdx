@@ -5,15 +5,17 @@ metaDescription: 'How Prisma optimizes queries under the hood'
 tocDepth: 3
 ---
 
-<TopBlock>
-
 This guide describes ways to optimize query performance, debug performance issues, and how to tackle common performance issues such as the [n+1 problem](#solving-the-n1-problem).
 
-</TopBlock>
+:::tip
+
+To debug slow queries, you can use [Prisma Optimize](/optimize) and follow the [recommendations](/optimize/recommendations) provided to improve query performance in your app.
+
+:::
 
 ## Debugging performance issues
 
-To help you debug and diagnose performance issues, you can [log query events at client level](/orm/prisma-client/observability-and-logging/logging#event-based-logging), which allows you to see the generated queries, parameters, and durations.
+To help you debug and diagnose performance issues, you can [log query events at client level](/orm/prisma-client/observability-and-logging/logging#event-based-logging), which allows you to see the generated queries, parameters, and durations. 
 
 Alternatively, if you are only interested in the time taken to run a query, you can implement [logging middleware](/orm/prisma-client/client-extensions/middleware/logging-middleware).
 
@@ -36,7 +38,11 @@ The n+1 problem occurs when you loop through the results of a query and perform 
 
 </div>
 
-The Prisma Client dataloader automatically **batches** `findUnique()` queries that ✔ occur in the same tick and ✔ have the same `where` and `include` parameters.
+The Prisma Client dataloader automatically _batches_ `findUnique()` queries that occur in the same [tick](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick#processnexttick) and have the same `where` and `include` parameters if:
+
+- All criteria of the `where` filter are on scalar fields (unique or non-unique) of the same model you're querying.
+- All criteria use the `equal` filter, whether that's via the shorthand or explicit syntax `(where: { field: <val>, field1: { equals: <val> } })`.
+- No boolean operators or relation filters are present.
 
 Automatic batching of `findUnique()` is particularly useful in a **GraphQL context**. GraphQL runs a separate resolver function for every field, which can make it difficult to optimize a nested query.
 
@@ -331,6 +337,7 @@ SELECT "public"."Post"."id", "public"."Post"."createdAt", "public"."Post"."updat
 It is generally more performant to read and write large amounts of data in bulk - for example, inserting 50,000 records in batches of 1000 rather than as 50,000 separate inserts. Prisma Client supports the following bulk queries:
 
 - [`createMany()`](/orm/reference/prisma-client-reference#createmany)
+- [`createManyAndReturn()`](/orm/reference/prisma-client-reference#createmanyandreturn)
 - [`deleteMany()`](/orm/reference/prisma-client-reference#deletemany)
 - [`updateMany()`](/orm/reference/prisma-client-reference#updatemany)
 - [`findMany()`](/orm/reference/prisma-client-reference#findmany)
@@ -343,5 +350,3 @@ Using `select` to limit the number of columns that are returned is **unlikely to
 - Large columns that are stored in a separate location on disk rather than a row, which results in an additional disk read
 
 Furthermore, if you have a mature product with well-established query patterns and finely tuned indexes, selecting a specific subset of fields may be beneficial as it avoids reading data from disk. However, in most cases, this level of performance tuning is only necessary at a certain scale.
-
-<!-- Pagination -->

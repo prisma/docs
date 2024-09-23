@@ -1,34 +1,44 @@
-import React from 'react';
-import clsx from 'clsx';
-import Translate from '@docusaurus/Translate';
-import Heading from '@theme/Heading';
-import Link from '@docusaurus/Link';
-import styles from './styles.module.scss'
-import useBaseUrl from '@docusaurus/useBaseUrl';
+import Link from "@docusaurus/Link";
+import clsx from "clsx";
+import React from "react";
+
+import styles from "./styles.module.scss";
 
 export default function NotFoundContent({ className }) {
   return (
-    <main className={clsx('container margin-vert--xl', className)}>
-      <div className={`row ${styles.notFoundRow}`}>
-        <img src={useBaseUrl('/icons/derp.svg')} />
-        <div>
-          <Heading as="h1" className={styles.hero__title}>
-            <Translate
-              id="theme.NotFound.title"
-              description="The title of the 404 page">
-              404 | Page not found
-            </Translate>
-          </Heading>
-          <p>
-            <Translate
-              id="theme.NotFound.p1"
-              description="The first paragraph of the 404 page">
-              We could not find what you were looking for.
-            </Translate>
-          </p>
-          <p>
-            <Link to="/">Docs</Link> | <a href="https://www.prisma.io/blog">Blog</a>
-          </p>
+    <main className={clsx("container margin-vert--xl", className)}>
+      <div className={clsx("row", styles.notFoundRow)}>
+        <div className={styles.wrapper}>
+          <h1 className={styles.heroRoot}>
+            <span className={styles.glitch} data-text="[404]">
+              [404]
+            </span>
+          </h1>
+          <div className={styles.description}>
+            <h5>404 - Page not found</h5>
+            <div className={styles.desktop}>
+              <p>We could not find the page you were looking for.</p>
+              <p></p>
+              <p>
+                Head back to our <a href="https://www.prisma.io/">homepage</a> or check out
+              </p>
+              <p>
+                our <Link to="/">documentation</Link>.
+              </p>
+            </div>
+            <div className={styles.mobile}>
+              <p>We could not find the page</p>
+              <p>you were looking for.</p>
+              <p></p>
+              <p>Head back to our</p>
+              <p>
+                <a href="https://www.prisma.io/">homepage</a> or check out
+              </p>
+              <p>
+                our <Link to="/">documentation</Link>.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </main>

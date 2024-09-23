@@ -1,199 +1,288 @@
 export const ProductLinkData = {
   porm: {
-    title: 'Build with Prisma ORM',
-    icon: 'database',
+    title: "Start building with Prisma ORM",
+    //eyebrow: "Build",
     description:
-      'Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.',
+      "Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion. <br><br>Combine it with <b>Prisma Studio</b> to explore and manipulate your data.",
     links: [
       {
-        url: '/getting-started',
-        title: 'Getting started',
+        url: "/orm",
+        title: "ORM",
       },
       {
-        url: 'https://github.com/prisma/prisma-examples',
-        title: 'Example projects',
-        external: true,
+        url: "/orm/tools/prisma-studio",
+        title: "Studio",
+      },
+    ],
+  },
+  poptimize: {
+    title: "Optimize your database queries",
+    //eyebrow: "Fortify",
+    description:
+      "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your application run faster.",
+    links: [
+      {
+        url: "/optimize",
+        title: "Optimize",
       },
     ],
   },
   pdp: {
-    title: 'Grow as your app evolves',
-    icon: 'triangle',
+    title: "Grow and evolve your application",
+    //eyebrow: "Grow",
     description:
-      'Expand your application capabilities with global database caching, connection pooling and real-time database events.',
+      "Scale your database connections and cache your database results at the edge with <b>Prisma Accelerate</b>. <br><br>Add <b>Prisma Pulse</b> to your app to react to database changes with type-safe model subscriptions.",
     links: [
       {
-        url: '/accelerate',
-        title: 'Prisma Accelerate',
+        url: "/accelerate",
+        title: "Accelerate",
       },
       {
-        url: '/pulse',
-        title: 'Prisma Pulse',
+        url: "/pulse",
+        title: "Pulse",
       },
     ],
   },
-}
+};
 
 export const ORMCardLinkData = {
-  components: [
-    {
-      url: '/orm/prisma-schema',
-      title: 'Prisma Schema',
-    },
-    {
-      url: '/orm/tools/prisma-cli',
-      title: 'Prisma CLI',
-    },
-    {
-      url: '/orm/prisma-client',
-      title: 'Prisma Client',
-    },
-    {
-      url: '/orm/tools/prisma-studio',
-      title: 'Prisma Studio',
-    },
-    {
-      url: '/orm/prisma-migrate',
-      title: 'Prisma Migrate',
-    },
-  ],
-  reference: [
-    {
-      url: '/orm/reference/prisma-client-reference',
-      title: 'Prisma Client API reference',
-    },
-    {
-      url: '/orm/reference/prisma-schema-reference',
-      title: 'Prisma schema reference',
-    },
-    {
-      url: '/orm/reference/error-reference',
-      title: 'Error message reference',
-    },
-    {
-      url: '/orm/reference/prisma-cli-reference',
-      title: 'Prisma CLI reference',
-    },
-  ],
-}
+  components: {
+    title: "ORM Components and Reference",
+    description: "Learn about the building blocks of Prisma ORM.",
+    links: [
+      {
+        url: "/orm/prisma-schema",
+        title: "Prisma Schema",
+      },
+      {
+        url: "/orm/reference/prisma-schema-reference",
+        title: "Schema reference",
+      },
+      {
+        url: "/orm/prisma-client",
+        title: "Prisma Client",
+      },
+      {
+        url: "/orm/reference/prisma-client-reference",
+        title: "Client API reference",
+      },
+      {
+        url: "/orm/tools/prisma-cli",
+        title: "Prisma CLI",
+      },
+      {
+        url: "/orm/reference/prisma-cli-reference",
+        title: "Prisma CLI reference",
+      },
+      {
+        url: "/orm/prisma-migrate",
+        title: "Prisma Migrate",
+      },
+      {
+        url: "/orm/reference/error-reference",
+        title: "Error message reference",
+      },
+    ],
+  },
+
+  reference: {
+    title: "Platform Reference",
+    description:
+      "Understand the usage and API surface of our platform products built on top of Prisma ORM.",
+    links: [
+      {
+        url: "/accelerate/api-reference",
+        title: "Accelerate API reference",
+      },
+
+      {
+        url: "/pulse/api-reference",
+        title: "Pulse API reference",
+      },
+      {
+        url: "/platform",
+        title: "Platform",
+      },
+      {
+        url: "/platform/platform-cli/commands",
+        title: "Platform CLI commands",
+      },
+    ],
+  },
+};
 
 export const ORMGeneralLinkData = [
   {
-    title: `What is Prisma ORM`,
-    description: 'An overview of what Prisma ORM is and how it works.',
-    url: '/orm/overview/introduction/what-is-prisma',
-    icon: 'fa-regular fa-question',
-  },
-  {
     title: `CRUD`,
-    description: 'How to perform CRUD operations with your generated Prisma Client API. ',
-    url: '/orm/prisma-client/queries/crud',
-    icon: 'fa-solid fa-arrow-right-arrow-left',
-  },
-  {
-    title: `Prisma ORM in your stack`,
-    description:
-      'Use Prisma ORM to build a GraphQL or REST API, or as part of a fullstack application.',
-    url: '/orm/overview/prisma-in-your-stack',
-    icon: 'fa-solid fa-server',
-  },
-  {
-    title: `Preview features`,
-    description: 'Available preview features and how to enable them.',
-    url: '/orm/reference/preview-features',
-    icon: 'fa-solid fa-eye',
+    description: "How to perform CRUD operations with your generated Prisma Client API. ",
+    url: "/orm/prisma-client/queries/crud",
+    icon: "fa-solid fa-arrow-right-arrow-left",
   },
   {
     title: `Adopting Prisma ORM`,
-    description: 'Migrate to Prisma ORM from other ORMs.',
-    url: '/orm/more/migrating-to-prisma',
-    icon: 'fa-solid fa-download',
+    description: "Migrate to Prisma ORM from other ORMs.",
+    url: "/orm/more/migrating-to-prisma",
+    icon: "fa-solid fa-download",
   },
   {
     title: `Deployment guides`,
     description:
-      'Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.',
-    url: '/orm/prisma-client/deployment',
-    icon: 'fa-solid fa-book',
+      "Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.",
+    url: "/orm/prisma-client/deployment",
+    icon: "fa-solid fa-book",
   },
-]
+  {
+    title: `Platform CLI commands`,
+    description:
+      "Learn how to access the Platform using the integrated commands in the Prisma CLI.",
+    url: "/platform/platform-cli/commands",
+    icon: "fa-solid fa-terminal",
+  },
+];
+
+export const GeneralLinks_Build = [
+  {
+    title: `CRUD`,
+    description: "How to perform CRUD operations with your generated Prisma Client API. ",
+    url: "/orm/prisma-client/queries/crud",
+    icon: "fa-solid fa-arrow-right-arrow-left",
+  },
+  {
+    title: `Adopting Prisma ORM`,
+    description: "Migrate to Prisma ORM from other ORMs.",
+    url: "/orm/more/migrating-to-prisma",
+    icon: "fa-solid fa-download",
+  },
+  {
+    title: `Deployment guides`,
+    description:
+      "Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.",
+    url: "/orm/prisma-client/deployment",
+    icon: "fa-solid fa-book",
+  },
+];
+
+export const GeneralLinks_Fortify = [
+  {
+    title: `Set up Optimize`,
+    description: "Start analyzing your queries and generate insights to improve your queries.",
+    url: "/optimize/getting-started",
+    icon: "fa-solid fa-magnifying-glass-chart",
+  },
+  {
+    title: `Recommendations`,
+    description:
+      "Explore the different recommendations such as indexing issues, excessive data retrieval, and inefficient query patterns.",
+    url: "/optimize/recommendations",
+    icon: "fa-solid fa-chart-simple",
+  },
+  {
+    title: `Prisma AI`,
+    description: "Understand the recommendations easier by asking our AI follow-up questions.",
+    url: "/optimize/prisma-ai",
+    icon: "fa-solid fa-message-bot",
+  },
+];
+
+export const GeneralLinks_Grow = [
+  {
+    title: `Connection pooling`,
+    description:
+      "Adjust pool size, configure timeouts, and enable autoscaling to improve performance.",
+    url: "/accelerate/connection-pooling",
+    icon: "fa-solid fa-bolt",
+  },
+  {
+    title: `Database caching`,
+    description:
+      "How to improve query performance by configuring cache behavior using TTL and SWR.",
+    url: "/accelerate/caching",
+    icon: "fa-solid fa-bolt",
+  },
+  {
+    title: `React to database changes`,
+    description: "Use Pulse to stream database events to your app in real-time. ",
+    url: "/pulse/getting-started",
+    icon: "fa-solid fa-signal-stream",
+  },
+];
 
 export const DatabaseData = [
   {
-    title: 'PostgreSQL',
+    title: "PostgreSQL",
     icon: "/img/technologies/postgresqlsimple.svg",
-    darkIcon: "postgresqldark",
-    url: '/orm/overview/databases/postgresql',
+    darkIcon: "/img/technologies/postgresqldark.svg",
+    url: "/orm/overview/databases/postgresql",
   },
   {
-    title: 'MySQL',
+    title: "MySQL",
     icon: "/img/technologies/mysqlsimple.svg",
-    darkIcon: "mysqlsimple",
-    url: '/orm/overview/databases/mysql',
+    darkIcon: "/img/technologies/mysqlsimple.svg",
+    url: "/orm/overview/databases/mysql",
   },
   {
-    title: 'SQL Server',
+    title: "SQL Server",
     icon: "/img/technologies/sqlserver.svg",
-    darkIcon: "sqlserver",
-    url: '/orm/overview/databases/sql-server',
+    darkIcon: "/img/technologies/sqlserver.svg",
+    url: "/orm/overview/databases/sql-server",
   },
   {
-    title: 'SQLite',
+    title: "SQLite",
     icon: "/img/technologies/sqlite.svg",
-    darkIcon: "sqlite",
-    url: '/orm/overview/databases/sqlite',
+    darkIcon: "/img/technologies/sqlite.svg",
+    url: "/orm/overview/databases/sqlite",
   },
   {
-    title: 'MongoDB',
+    title: "MongoDB",
     icon: "/img/technologies/mongodbsimple.svg",
-    darkIcon: "mongodbsimple",
-    url: '/orm/overview/databases/mongodb',
+    darkIcon: "/img/technologies/mongodbsimple.svg",
+    url: "/orm/overview/databases/mongodb",
   },
   {
-    title: 'CockroachDB',
+    title: "CockroachDB",
     icon: "/img/technologies/cockroachdb.svg",
-    darkIcon: "cockroachdbdark",
-    url: '/orm/overview/databases/cockroachdb',
+    darkIcon: "/img/technologies/cockroachdbdark.svg",
+    url: "/orm/overview/databases/cockroachdb",
   },
   {
-    title: 'PlanetScale',
+    title: "PlanetScale",
     icon: "/img/technologies/planetscale.svg",
-    darkIcon: "planetscaledark",
-    url: '/orm/overview/databases/planetscale',
+    darkIcon: "/img/technologies/planetscaledark.svg",
+    url: "/orm/overview/databases/planetscale",
   },
   {
-    title: 'MariaDB',
+    title: "MariaDB",
     icon: "/img/technologies/mariadb.svg",
-    darkIcon: "mariadbdark",
-    url: '/orm/overview/databases/mysql',
+    darkIcon: "/img/technologies/mariadbdark.svg",
+    url: "/orm/overview/databases/mysql",
   },
-]
+];
 
 export const CommunityLinksData = [
   {
-    id: 'discord',
-    title: 'Discord',
+    id: "discord",
+    title: "Discord",
     description:
-      'Chat in real-time, hang out, and share ideas with community members and our team.',
-    icon: 'fa-brands fa-discord',
-    link: 'https://pris.ly/discord',
-    linkText: 'Join our server',
+      "Chat in real-time, hang out, and share ideas with community members and our team.",
+    icon: "fa-brands fa-discord",
+    link: "https://pris.ly/discord",
+    linkText: "Join our server",
   },
   {
-    id: 'github',
-    title: 'GitHub',
+    id: "github",
+    title: "GitHub",
     description:
-      'Browse the Prisma ORM source code, send feedback, or join the discussion on GitHub.',
-    icon: 'fa-brands fa-github',
-    link: 'https://github.com/prisma',
-    linkText: 'Contribute in GitHub',
+      "Browse the Prisma ORM source code, send feedback, or join the discussion on GitHub.",
+    icon: "fa-brands fa-github",
+    link: "https://github.com/prisma",
+    linkText: "Contribute in GitHub",
   },
   {
-    id: 'X',
-    title: 'X',
-    description: 'Stay up-to-date, join the discussion, and connect with the community on X.',
-    icon: 'fa-brands fa-x-twitter',
-    link: 'https://twitter.com/prisma',
-    linkText: 'Follow us on X',
+    id: "X",
+    title: "X",
+    description: "Stay up-to-date, join the discussion, and connect with the community on X.",
+    icon: "fa-brands fa-x-twitter",
+    link: "https://twitter.com/prisma",
+    linkText: "Follow us on X",
   },
-]
+];

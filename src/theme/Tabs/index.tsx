@@ -1,16 +1,15 @@
-import React, {cloneElement} from 'react';
-import clsx from 'clsx';
+import React, { cloneElement, useEffect } from "react";
+import clsx from "clsx";
 import {
   useScrollPositionBlocker,
   useTabs,
   sanitizeTabsChildren,
-} from '@docusaurus/theme-common/internal';
-import useIsBrowser from '@docusaurus/useIsBrowser';
-import styles from './styles.module.scss';
-function TabList({className, block, selectedValue, selectValue, tabValues}) {
+} from "@docusaurus/theme-common/internal";
+import useIsBrowser from "@docusaurus/useIsBrowser";
+import styles from "./styles.module.scss";
+function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const tabRefs = [];
-  const {blockElementScrollPositionUntilNextRender} =
-    useScrollPositionBlocker();
+  const { blockElementScrollPositionUntilNextRender } = useScrollPositionBlocker();
   const handleTabChange = (event) => {
     const newTab = event.currentTarget;
     const newTabIndex = tabRefs.indexOf(newTab);
@@ -23,16 +22,16 @@ function TabList({className, block, selectedValue, selectValue, tabValues}) {
   const handleKeydown = (event) => {
     let focusElement = null;
     switch (event.key) {
-      case 'Enter': {
+      case "Enter": {
         handleTabChange(event);
         break;
       }
-      case 'ArrowRight': {
+      case "ArrowRight": {
         const nextTab = tabRefs.indexOf(event.currentTarget) + 1;
         focusElement = tabRefs[nextTab] ?? tabRefs[0];
         break;
       }
-      case 'ArrowLeft': {
+      case "ArrowLeft": {
         const prevTab = tabRefs.indexOf(event.currentTarget) - 1;
         focusElement = tabRefs[prevTab] ?? tabRefs[tabRefs.length - 1];
         break;
@@ -47,13 +46,14 @@ function TabList({className, block, selectedValue, selectValue, tabValues}) {
       role="tablist"
       aria-orientation="horizontal"
       className={clsx(
-        'tabs',
+        "tabs",
         {
-          'tabs--block': block,
+          "tabs--block": block,
         },
-        className,
-      )}>
-      {tabValues.map(({value, label, attributes}) => (
+        className
+      )}
+    >
+      {tabValues.map(({ value, label, attributes }) => (
         <li
           // TODO extract TabListItem
           role="tab"
@@ -64,52 +64,68 @@ function TabList({className, block, selectedValue, selectValue, tabValues}) {
           onKeyDown={handleKeydown}
           onClick={handleTabChange}
           {...attributes}
-          className={clsx('tabs__item', styles.tabItem, attributes?.className, {
-            'tabs__item--active': selectedValue === value,
-          })}>
+          className={clsx("tabs__item", styles.tabItem, attributes?.className, {
+            "tabs__item--active": selectedValue === value,
+          })}
+        >
           {label ?? value}
         </li>
       ))}
     </ul>
   );
 }
-function TabContent({lazy, children, selectedValue, transparent, code, terminal, customStyles}) {
-  const childTabs = (Array.isArray(children) ? children : [children]).filter(
-    Boolean,
-  );
+function TabContent({
+  lazy,
+  children,
+  selectedValue,
+  transparent,
+  code,
+  terminal,
+  fullWidth,
+  customStyles,
+}) {
+  const childTabs = (Array.isArray(children) ? children : [children]).filter(Boolean);
   if (lazy) {
-    const selectedTabItem = childTabs.find(
-      (tabItem) => tabItem.props.value === selectedValue,
-    );
+    const selectedTabItem = childTabs.find((tabItem) => tabItem.props.value === selectedValue);
     if (!selectedTabItem) {
       // fail-safe or fail-fast? not sure what's best here
       return null;
     }
-    return cloneElement(selectedTabItem, {className: 'margin-top--md'});
+    return cloneElement(selectedTabItem, { className: "margin-top--md" });
   }
 
   return (
-    <div className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code)} style={customStyles ? customStyles : {}}>
+    <div
+      className={clsx(
+        "margin-top--md",
+        transparent && styles.transparent,
+        code && styles.code,
+        fullWidth && styles[`full-width`]
+      )}
+      style={customStyles ? customStyles : {}}
+    >
       {childTabs.map((tabItem, i) =>
         cloneElement(tabItem, {
           key: i,
           hidden: tabItem.props.value !== selectedValue,
           code: code,
-          terminal: terminal
-        }),
+          terminal: terminal,
+        })
       )}
     </div>
   );
 }
+
 function TabsComponent(props) {
   const tabs = useTabs(props);
   return (
-    <div className={clsx('tabs-container', styles.tabList)}>
+    <div className={clsx("tabs-container", styles.tabList)}>
       <TabList {...props} {...tabs} />
       <TabContent {...props} {...tabs} />
     </div>
   );
 }
+
 export default function Tabs(props) {
   const isBrowser = useIsBrowser();
   return (
@@ -117,7 +133,8 @@ export default function Tabs(props) {
       // Remount tabs after hydration
       // Temporary fix for https://github.com/facebook/docusaurus/issues/5653
       key={String(isBrowser)}
-      {...props}>
+      {...props}
+    >
       {sanitizeTabsChildren(props.children)}
     </TabsComponent>
   );
