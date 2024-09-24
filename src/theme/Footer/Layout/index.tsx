@@ -50,7 +50,19 @@ export default function FooterLayout({ style, links, logo, copyright }) {
                   height={27}
                 />
               </a>
-              {/* <img src={"/img/icons/soc2.svg"} alt="soc" width={60} height={27}/> */}
+              <a
+                href="https://trust.prisma.io/"
+                target="__blank"
+                rel="openeer noreferrer"
+                aria-label="Prisma Trust"
+              >
+                <img
+                  src={useBaseUrl("/img/icons/soc2.svg")}
+                  alt="soc"
+                  width={60}
+                  height={27}
+                />
+              </a>
             </div>
           </div>
         )}
