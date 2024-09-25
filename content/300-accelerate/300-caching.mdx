@@ -108,3 +108,52 @@ For example, consider writing a query on a critical path without explicitly defi
 You must explicitly opt-in to caching if you want to use it. This makes it clear to developers that caching is not enabled by default and helps prevent counterintuitive issues from occurring.
 
 > When no cache strategy is specified or during a cache miss, a Prisma Client with the Accelerate extension routes all queries to the database through a connection pool instance near the database region.
+
+## Invalidating a cached query result
+
+You can invalidate the cache using the [`$accelerate.invalidate` API](/accelerate/):
+
+:::note
+
+To programmatically invalidate cached queries, a paid plan is required. See our [pricing for more details](https://www.prisma.io/pricing#accelerate).
+
+:::
+
+```ts
+await prisma.user.findMany({
+  where: {
+    email: {
+      contains: "alice@prisma.io",
+    },
+  },
+  cacheStrategy: {
+    swr: 60,
+    ttl: 60,
+    // highlight-start
+    tags: ["emails_with_alice"],
+    // highlight-end
+  },
+});
+```
+
+You need to provide the cache tag in the `$accelerate.invalidate` API:
+
+```ts
+try {
+  // highlight-start
+  await prisma.$accelerate.invalidate({
+    tags: ["emails_with_alice"],
+  });
+  // highlight-end
+} catch (e) {
+  if (e instanceof Prisma.PrismaClientKnownRequestError) {
+    // The .code property can be accessed in a type-safe manner
+    if (e.code === "P6003") {
+      console.log(
+        "The cache invalidation rate limit has been reached. Please try again later."
+      );
+    }
+  }
+  throw e;
+}
+```
