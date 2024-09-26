@@ -6,8 +6,6 @@ tocDepth: 3
 toc: true
 ---
 
-<TopBlock>
-
 The Accelerate API reference documentation is based on the following schema:
 
 ```prisma
@@ -19,8 +17,6 @@ model User {
 ```
 
 All example are based on the `User` model.
-
-</TopBlock>
 
 ## `cacheStrategy`
 
@@ -34,23 +30,29 @@ The `cacheStrategy` parameter takes an option with the following keys:
 | ------ | ------- | ----- | -------- | ------------------------------------------- |
 | `swr`  | `60`    | `Int` | No       | The stale-while-revalidate time in seconds. |
 | `ttl`  | `60`    | `Int` | No       | The time-to-live time in seconds.           |
+| `tags` | `["user"]` | `String[]` | No | The `tag` serves as a variable to control the invalidation of specific queries within your application. It is an optional array of strings to [invalidate](/accelerate/api-reference#accelerateinvalidate) the cache, with each tag containing only alphanumeric characters and underscores, and a maximum length of 64 characters.
+|
 
 ### Examples
 
-Add a caching strategy to a query that defines a 60-second stale-while-revalidate value and 60-second time-to-live value:
+Add a caching strategy to the query, defining a 60-second stale-while-revalidate (SWR) value, a 60-second time-to-live (TTL) value, and a cache tag of `"emails_with_alice"`:
 
-```ts highlight=7;normal
+```ts highlight=7:11;normal
 await prisma.user.findMany({
   where: {
     email: {
-      contains: 'alice@prisma.io',
+      contains: "alice@prisma.io",
     },
   },
-  //highlight-next-line
-  cacheStrategy: { swr: 60, ttl: 60 },
-})
+  // highlight-start
+  cacheStrategy: {
+    swr: 60,
+    ttl: 60,
+    tags: ["emails_with_alice"],
+  },
+  // highlight-end
+});
 ```
-
 ### Supported Prisma Client operations
 
 The following is a list of all read query operations and support `cacheStrategy`:
@@ -114,6 +116,63 @@ interface AccelerateInfo {
 | `region`       | `String`                                                     | The data center region that received the request.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `requestId`    | `String`                                                     | Unique identifier of the request. Useful for troubleshooting.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `signature`    | `String`                                                     | The unique signature of the Prisma operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+## `$accelerate.invalidate`
+
+You can invalidate the cache using the [`$accelerate.invalidate` API](/accelerate/).
+
+:::note
+
+To invalidate cached query results on-demand, a paid plan is required. Each plan has specific limits on the number of cache tag-based invalidations allowed per day, though there are no limits on calling the `$accelerate.invalidate` API itself. See our [pricing for more details](https://www.prisma.io/pricing#accelerate).
+
+:::
+
+### Example 
+
+To invalidate the query below:
+
+```ts
+await prisma.user.findMany({
+  where: {
+    email: {
+      contains: "alice@prisma.io",
+    },
+  },
+  cacheStrategy: {
+    swr: 60,
+    ttl: 60,
+    // highlight-start
+    tags: ["emails_with_alice"],
+    // highlight-end
+  },
+});
+```
+
+You need to provide the cache tag in the `$accelerate.invalidate` API:
+
+```ts
+try {
+  // highlight-start
+  await prisma.$accelerate.invalidate({
+    tags: ["emails_with_alice"],
+  });
+  // highlight-end
+} catch (e) {
+  if (e instanceof Prisma.PrismaClientKnownRequestError) {
+    // The .code property can be accessed in a type-safe manner
+    if (e.code === "P6003") {
+      console.log(
+        "The cache invalidation rate limit has been reached. Please try again later."
+      );
+    }
+  }
+  throw e;
+}
+```
+
+:::note
+You can invalidate up to 5 tags per call.
+:::
 
 ## Errors
 

@@ -195,3 +195,54 @@ For information about which strategy best serves your application, see [Select a
 As of Prisma version `5.2.0` you can use Prisma Studio with the Accelerate connection string.
 
 </Admonition>
+
+#### Invalidating a cached query result
+
+To invalidate a cached query result, you can add tags and then use the `$accelerate.invalidate` API.
+
+:::note
+
+On-demand cache invalidation is available with our paid plans. For more details, please see our [pricing](https://www.prisma.io/pricing#accelerate).
+
+:::
+
+To invalidate the query below:
+
+```ts
+await prisma.user.findMany({
+  where: {
+    email: {
+      contains: "alice@prisma.io",
+    },
+  },
+  cacheStrategy: {
+    swr: 60,
+    ttl: 60,
+    // highlight-start
+    tags: ["emails_with_alice"],
+    // highlight-end
+  },
+});
+```
+
+You need to provide the cache tag in the `$accelerate.invalidate` API:
+
+```ts
+try {
+  // highlight-start
+  await prisma.$accelerate.invalidate({
+    tags: ["emails_with_alice"],
+  });
+  // highlight-end
+} catch (e) {
+  if (e instanceof Prisma.PrismaClientKnownRequestError) {
+    // The .code property can be accessed in a type-safe manner
+    if (e.code === "P6003") {
+      console.log(
+        "You've reached the cache invalidation rate limit. Please try again shortly."
+      );
+    }
+  }
+  throw e;
+}
+```
