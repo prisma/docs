@@ -1,0 +1,550 @@
+---
+title: Comments
+metaDescription: Learn how to add Prisma Migrate to an existing project.
+tocDepth: 3
+---
+
+<!-- #region TopBlock -->
+
+<TopBlock>
+
+COMMENTS are useful for providing metadata that describes your database schema, i.e., tables, fields, enums, etc. <br />
+They can currently be detected in the following providers: `PostgreSQL`, `CockroachDB`, and `MySQL`.
+
+Currently, COMMENTS cannot be expressed using the Prisma Schema Language. This means that COMMENTS will not be picked up when you introspect your database. COMMENTS will then also not be persisted in your migration history when updating your database schema.
+
+<Admonition type ="info">
+
+You can track support for database-level comments in this [GitHub issue](https://github.com/prisma/prisma/issues/8703).
+
+</Admonition>
+
+Currently, Prisma Migrate can detect if your database schema contains COMMENTS. The following section describes how to work around this limitation:
+
+1. [How to handle existing Database Comments in your database](https://www.notion.so/Documentation-for-Stopgaps-a654b09ca7c14094a5b616d9ba2d062b)
+2. [How to create and update Database Comments in a new database](https://www.notion.so/Documentation-for-Stopgaps-a654b09ca7c14094a5b616d9ba2d062b)
+
+<Admonition type ="info">
+
+Note: this workaround does not work with `prisma db push`.
+
+</Admonition>
+
+</TopBlock>
+
+<!-- #endregion -->
+
+## Detecting comments during introspection
+
+When `prisma db pull` detects COMMENT, it will output a warning and add a comment to your schema file to surface its presence. For example, with the following SQL:
+
+<TabbedContent tabs={[
+<FileWithIcon text="PostgreSQL" icon="database"/>,
+<FileWithIcon text="CockroachDB" icon="database"/>,
+<FileWithIcon text="MySQL" icon="database"/>,
+]}>
+
+<!-- #region postgresql SQL -->
+
+<tab>
+
+```sql
+CREATE TYPE "Team" AS ENUM('Marketing', 'Management');
+COMMENT ON TYPE "Team" IS 'Organisational Teams';
+
+CREATE TABLE IF NOT EXISTS "Employee"
+(
+  "id" BIGSERIAL UNIQUE PRIMARY KEY,
+  "create_dt" DATE NOT NULL DEFAULT now(),
+  "salary" INT NOT NULL,
+  "team" "Team" NOT NULL
+);
+
+COMMENT ON TABLE "Employee" IS 'The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was hired';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in EUR';
+COMMENT ON COLUMN "Employee"."team" IS 'Team employee belongs to';
+
+CREATE VIEW "TeamSalary" as
+  SELECT "Employee"."team", SUM("Employee"."salary")
+  FROM "Employee"
+  GROUP BY "Employee"."team";
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by teams';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region cockroachdb SQL -->
+
+<tab>
+
+```sql
+CREATE TYPE "Team" AS ENUM('Marketing', 'Management');
+COMMENT ON TYPE "Team" IS 'Organisational Teams';
+
+CREATE TABLE IF NOT EXISTS "Employee"
+(
+  "id" BIGSERIAL UNIQUE PRIMARY KEY,
+  "create_dt" DATE NOT NULL DEFAULT now(),
+  "salary" INT NOT NULL,
+  "team" "Team" NOT NULL
+);
+
+COMMENT ON TABLE "Employee" IS 'The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was hired';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in EUR';
+COMMENT ON COLUMN "Employee"."team" IS 'Team employee belongs to';
+
+CREATE VIEW "TeamSalary" as
+  SELECT "Employee"."team", SUM("Employee"."salary")
+  FROM "Employee"
+  GROUP BY "Employee"."team";
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by teams';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region mysql SQL -->
+
+<tab>
+
+```sql
+CREATE TABLE Employee(
+    id INT NOT NULL AUTO_INCREMENT,
+    create_dt DATE NOT NULL COMMENT 'the date when employee was hired',
+    salary INT NOT NULL COMMENT 'salary in EUR',
+    team ENUM('Marketing', 'Management') NOT NULL COMMENT 'team employee belongs to',
+    PRIMARY KEY (id)
+) COMMENT 'The employee table';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+</TabbedContent>
+
+Running `prisma db pull` will then return the following warning on your terminal and comment in your Prisma schema:
+
+<TabbedContent tabs={[
+<FileWithIcon text="PostgreSQL" icon="code"/>,
+<FileWithIcon text="CockroachDB" icon="code"/>,
+<FileWithIcon text="MySQL" icon="code"/>,
+]}>
+
+<!-- #region postgres terminal warnings -->
+
+<tab>
+
+```terminal
+// *** WARNING ***
+//
+// These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
+// - Type: "enum", name: "Team"
+// - Type: "model", name: "Employee"
+// - Type: "field", name: "Employee.create_dt"
+// - Type: "field", name: "Employee.salary"
+// - Type: "view", name: "TeamSalary"
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region cockroachdb terminal warnings -->
+
+<tab>
+
+```terminal
+// *** WARNING ***
+//
+// These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
+// - Type: "enum", name: "Team"
+// - Type: "model", name: "Employee"
+// - Type: "field", name: "Employee.create_dt"
+// - Type: "field", name: "Employee.salary"
+// - Type: "view", name: "TeamSalary"
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region mysql terminal warnings -->
+
+<tab>
+
+```terminal
+// *** WARNING ***
+//
+// These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
+// - Type: "model", name: "Employee"
+// - Type: "field", name: "Employee.create_dt"
+// - Type: "field", name: "Employee.salary"
+// - Type: "field", name: "Employee.team"
+```
+
+</tab>
+
+<!-- #endregion -->
+
+</TabbedContent>
+
+<TabbedContent tabs={[
+<FileWithIcon text="PostgreSQL" icon="prisma"/>,
+<FileWithIcon text="CockroachDB" icon="prisma"/>,
+<FileWithIcon text="MySQL" icon="prisma"/>,
+]}>
+
+<!-- #region postgres schema warnings -->
+
+<tab>
+
+```prisma
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Employee {
+  id        BigInt   @id @default(autoincrement())
+  create_dt DateTime @default(now()) @db.Date
+  salary    Int
+  team      Team
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+/// This view or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+view TeamSalary {
+team Team?
+sum  BigInt?
+@@ignore
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum Team {
+  Marketing
+  Management
+}
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region cockroachdb schema warnings -->
+
+<tab>
+
+```prisma
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Employee {
+  id        BigInt   @id @default(autoincrement())
+  create_dt DateTime @default(now()) @db.Date
+  salary    Int
+  team      Team
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+/// This view or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+view TeamSalary {
+team Team?
+sum  BigInt?
+@@ignore
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum Team {
+  Marketing
+  Management
+}
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region mysql schema warnings -->
+
+<tab>
+
+```prisma
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Employee {
+  id        Int           @id @default(autoincrement())
+  create_dt DateTime      @db.Date
+  salary    Int
+  team      Employee_team
+}
+
+enum Employee_team {
+  Marketing
+  Management
+}
+```
+
+</tab>
+
+<!-- #endregion -->
+
+</TabbedContent>
+
+## How to persist database comments in your migration history
+
+First, create a migration directory that will be used to persist the SQL migration files.
+
+```terminal
+   mkdir -p prisma/migrations
+```
+
+Next, create a baseline migration
+
+> Baselining is the process of initializing a migration history. Refer to [Baselining a database](https://www.prisma.io/docs/guides/migrate/developing-with-prisma-migrate/baselining) for more information.
+
+1. Take note of the warning generated during prisma db pull that highlights where it detected comments in your database schema:
+
+## How to create and update database comments in a database
+
+When you start a new project with an empty database, you can use Prisma schema to define your database schema. As the Prisma Schema Language does not support SQL comments, you can manage them by:
+
+### Creating Database Comments
+
+1. Defining your data model
+
+<TabbedContent tabs={[
+<FileWithIcon text="PostgreSQL" icon="prisma"/>,
+<FileWithIcon text="CockroachDB" icon="prisma"/>,
+<FileWithIcon text="MySQL" icon="prisma"/>,
+]}>
+
+<!-- #region postgres model -->
+
+<tab>
+
+```prisma
+model Employee {
+  id        Int      @id @default(autoincrement())
+  create_dt DateTime @db.Date
+  salary    Int
+  team      Team
+}
+
+// previewFeatures = ['views']
+view TeamSalary {
+team        Team @unique
+totalSalary Int
+}
+
+enum Team {
+  Marketing
+  Management
+}
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region cockroachdb model -->
+
+<tab>
+
+```prisma
+model Employee {
+  id        Int      @id @default(autoincrement())
+  create_dt DateTime @db.Date
+  salary    Int
+  team      Team
+}
+
+// previewFeatures = ['views']
+view TeamSalary {
+team        Team @unique
+totalSalary Int
+}
+
+enum Team {
+  Marketing
+  Management
+}
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region mysql model -->
+
+<tab>
+
+```prisma
+model Employee {
+  id        Int      @id @default(autoincrement())
+  create_dt DateTime @db.Date
+  salary    Int
+  team      Team
+}
+
+enum Team {
+  Marketing
+  Management˝
+}
+```
+
+</tab>
+
+<!-- #endregion -->
+
+</TabbedContent>
+
+2. Generating a draft migration using `prisma migrate dev --create-only`
+
+```sql
+-- This is an empty migration.
+```
+
+3. Editing the migration by adding SQL comments
+
+<TabbedContent tabs={[
+<FileWithIcon text="PostgreSQL" icon="database"/>,
+<FileWithIcon text="CockroachDB" icon="database"/>,
+<FileWithIcon text="MySQL" icon="database"/>,
+]}>
+
+<!-- #region postgres diff -->
+
+<tab>
+
+```sql
+COMMENT ON TYPE "Team" IS 'Organisational Teams';
+
+COMMENT ON TABLE "Employee" IS 'The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was hired';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in EUR';
+COMMENT ON COLUMN "Employee"."team" IS 'Team employee belongs to';
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by teams';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region cockroachdb diff -->
+
+<tab>
+
+```sql
+COMMENT ON TYPE "Team" IS 'Organisational Teams';
+
+COMMENT ON TABLE "Employee" IS 'The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was hired';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in EUR';
+COMMENT ON COLUMN "Employee"."team" IS 'Team employee belongs to';
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by teams';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region mysql diff -->
+
+<tab>
+
+```sql
+ALTER TABLE Employee COMMENT 'The employee table';
+
+ALTER TABLE Employee
+    MODIFY id INT NOT NULL AUTO_INCREMENT
+    MODIFY create_dt DATE NOT NULL COMMENT 'the date when employee was hired',
+    MODIFY salary INT NOT NULL COMMENT 'salary in EUR',
+    MODIFY team ENUM('Marketing', 'Management') NOT NULL COMMENT 'Team employee belongs to';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+</TabbedContent>
+
+4. Applying the migration with `prisma migrate dev`
+
+### Updating database comments
+
+1. Generating a draft migration using `prisma migrate dev --create-only`
+
+```sql
+  -- This is an empty migration
+```
+
+2. Editing the migration by adding the updated SQL comments
+
+<TabbedContent tabs={[
+<FileWithIcon text="PostgreSQL" icon="database"/>,
+<FileWithIcon text="CockroachDB" icon="database"/>,
+<FileWithIcon text="MySQL" icon="database"/>,
+]}>
+
+<!-- #region postgres update sql -->
+
+<tab>
+
+```sql
+COMMENT ON TYPE "Team" IS 'Collaborative Teams';
+
+COMMENT ON TABLE "Employee" IS 'Updated The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was onboarded';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in SEK';
+COMMENT ON COLUMN "Employee"."team" IS 'team employee reports to';
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by collaborations';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region cockroachdb update sql -->
+
+<tab>
+
+```sql
+COMMENT ON TYPE "Team" IS 'Collaborative Teams';
+
+COMMENT ON TABLE "Employee" IS 'Updated The employee table';
+COMMENT ON COLUMN "Employee"."create_dt" IS 'the date when employee was onboarded';
+COMMENT ON COLUMN "Employee"."salary" IS 'salary in SEK';
+COMMENT ON COLUMN "Employee"."team" IS 'team employee reports to';
+
+COMMENT ON VIEW "TeamSalary" IS 'Salary grouped by collaborations';
+```
+
+</tab>
+
+<!-- #endregion -->
+
+<!-- #region mysql update sql -->
+
+<tab>
+
+```sql
+ALTER TABLE Employee comment 'Updated employee table comment';
+
+ALTER TABLE Employee
+    MODIFY create_dt date comment 'the date when employee was onboarded' not null,
+    MODIFY salary int comment 'salary in SEK' not null,
+    MODIFY team ENUM('Marketing', 'Management') comment 'team employee reports to' not null;
+```
+
+</tab>
+
+<!-- #endregion -->
+
+</TabbedContent>
+
+3. Apply the migration with `prisma migrate dev`
+4. When running `prisma db pull` or `prisma migrate dev` you should now not have any changes to your Prisma schema file, or migration file, created as your database and Prisma schema are in sync.
