@@ -27,18 +27,8 @@ export const Promo = () => {
       color: "teal",
     },
     {
-      text: `Leverage global cache to serve your data fast, no matter where your users are.`,
-      link: "https://pris.ly/sidebar-promo/global-cache",
-      color: "teal",
-    },
-    {
       text: `Want to make your database perform globally?`,
       link: "https://pris.ly/sidebar-promo/make-your-db-global",
-      color: "teal",
-    },
-    {
-      text: `Serving a global audience? You need a global database.`,
-      link: "https://pris.ly/sidebar-promo/serving-global-audience",
       color: "teal",
     },
     {
