@@ -68,7 +68,17 @@ const config: Config = {
       async: true,
     },
   ],
-  plugins: ["docusaurus-plugin-sass"],
+  plugins: [
+    "docusaurus-plugin-sass",
+    [
+      "posthog-docusaurus",
+      {
+        apiKey: "<ph_project_api_key>",
+        appUrl: "https://us.i.posthog.com",
+        enableInDevelopment: false,
+      },
+    ],
+  ],
   presets: [
     [
       "classic",
