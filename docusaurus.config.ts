@@ -6,6 +6,8 @@ import type * as Preset from "@docusaurus/preset-classic";
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
 const DOCUSAURUS_POST_HOG_KEY = process.env.DOCUSAURUS_POST_HOG_KEY ?? "";
 
+console.log(process.env)
+
 const config: Config = {
   title: "Prisma Documentation",
   tagline:
@@ -74,7 +76,7 @@ const config: Config = {
     [
       "posthog-docusaurus",
       {
-        apiKey: DOCUSAURUS_POST_HOG_KEY,
+        apiKey: process.env.DOCUSAURUS_POST_HOG_KEY,
         appUrl: "https://us.i.posthog.com",
         enableInDevelopment: false,
         person_profiles: "identified_only"
