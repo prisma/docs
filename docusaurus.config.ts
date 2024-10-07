@@ -4,6 +4,7 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
+const DOCUSAURUS_POST_HOG_KEY = process.env.DOCUSAURUS_POST_HOG_KEY ?? "";
 
 const config: Config = {
   title: "Prisma Documentation",
@@ -73,9 +74,10 @@ const config: Config = {
     [
       "posthog-docusaurus",
       {
-        apiKey: "<ph_project_api_key>",
+        apiKey: DOCUSAURUS_POST_HOG_KEY,
         appUrl: "https://us.i.posthog.com",
         enableInDevelopment: false,
+        person_profiles: "identified_only"
       },
     ],
   ],
