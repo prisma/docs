@@ -133,6 +133,9 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
     image: "/docs/social/docs-social.png",
     metadata: [
       { name: "twitter:card", content: "summary_large_image" },
