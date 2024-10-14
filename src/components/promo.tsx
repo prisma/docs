@@ -21,7 +21,7 @@ export const Promo = () => {
       link: "https://pris.ly/sidebar-promo/managed-connection-pool",
       color: "teal",
     },
-    { 
+    {
       text: `Want to make your database perform globally?`,
       link: "https://pris.ly/sidebar-promo/make-your-db-global",
       color: "teal",
