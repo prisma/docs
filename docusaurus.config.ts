@@ -77,7 +77,7 @@ const config: Config = {
         apiKey: DOCUSAURUS_POST_HOG_KEY,
         appUrl: "https://us.i.posthog.com",
         person_profiles: "identified_only",
-        enableInDevelopment: false
+        enableInDevelopment: false,
       },
     ],
   ],
@@ -134,6 +134,11 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    colorMode: {
+      defaultMode: "light",
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
+    },
     image: "/docs/social/docs-social.png",
     metadata: [
       { name: "twitter:card", content: "summary_large_image" },
