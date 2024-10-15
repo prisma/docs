@@ -76,7 +76,8 @@ const config: Config = {
       {
         apiKey: DOCUSAURUS_POST_HOG_KEY,
         appUrl: "https://us.i.posthog.com",
-        person_profiles: "identified_only"
+        person_profiles: "identified_only",
+        enableInDevelopment: false
       },
     ],
   ],
