@@ -75,7 +75,7 @@ const config: Config = {
       "posthog-docusaurus",
       {
         apiKey: DOCUSAURUS_POST_HOG_KEY,
-        appUrl: "https://proxy.prisma.io",
+        appUrl: "https://us.i.posthog.com",
         person_profiles: "identified_only",
         enableInDevelopment: false
       },
