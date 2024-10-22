@@ -74,7 +74,7 @@ const config: Config = {
     [
       "posthog-docusaurus",
       {
-        apiKey: DOCUSAURUS_POST_HOG_KEY,
+        apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
         appUrl: "https://proxy.prisma.io",
         person_profiles: "identified_only",
         enableInDevelopment: false
@@ -95,7 +95,7 @@ const config: Config = {
           ignorePatterns: [
             "/search",
             // Remove these from sitemap for SEO purposes as they're redirected
-            "/getting-started/quickstart",
+            "/getting-started/quickstart-sqlite",
             "/getting-started/setup-prisma/add-to-existing-project",
             "/getting-started/setup-prisma/start-from-scratch-prisma-migrate",
             "/getting-started/setup-prisma/start-from-scratch-sql",

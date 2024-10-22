@@ -46,7 +46,7 @@ const sidebars: SidebarsConfig = {
         "getting-started/index",
         {
           type: "doc",
-          id: "getting-started/quickstart",
+          id: "getting-started/quickstart-sqlite",
           label: "Quickstart",
         },
         {
