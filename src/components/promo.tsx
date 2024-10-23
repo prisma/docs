@@ -81,6 +81,11 @@ export const Promo = () => {
       link: "https://pris.ly/sidebar-promo/faster-db-queries",
       color: "teal",
     },
+    {
+      text: `Using Raycast? Try our "docs search" extension. `,
+      link: "https://pris.ly/sidebar-promo/raycast-extension",
+      color: "indigo",
+    },
   ];
 
   let promo = promoOptions[Math.floor(Math.random() * promoOptions.length)];
