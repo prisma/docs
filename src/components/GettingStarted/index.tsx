@@ -66,6 +66,22 @@ export const SignalStream = ({ color, height, width }: any) => (
   </svg>
 );
 
+export const PrismaPostgres = ({ color, height, width }: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    height={height ? height : "16"}
+    width={width ? width : "18"}
+    viewBox="0 0 576 512"
+    style={{ marginRight: `4px`, transform: `translateY(2px)` }}
+  >
+    <path
+      id="POSTGRES / Logo  / pulse-icon-01"
+      d="M43.0469 3.40625L51.8047 18.25H24.1954L32.8047 3.40625C35.0313 -0.453125 40.8204 -0.453125 43.0469 3.40625ZM10.2422 42L21.375 23H54.4766L65.6094 42H10.2422ZM7.57035 46.75H68.4297L74.2188 56.8438C76.5938 60.8516 73.7735 65.75 69.1719 65.75H6.67973C2.2266 65.75 -0.742146 60.8516 1.63285 56.8438L7.57035 46.75Z"
+      fill="#71E8DF"
+    />
+  </svg>
+);
+
 export const BorderBoxWrapper = ({ children, ...props }) => (
   <div {...props} className={styles.borderBox}>
     {children}
