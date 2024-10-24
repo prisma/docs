@@ -1,53 +1,52 @@
 export const ProductLinkData = {
-  porm: {
-    title: "Start building with Prisma ORM",
-    //eyebrow: "Build",
+  i_orm: {
+    title: "Talk to your database, easily",
+    eyebrow: "ORM",
     description:
-      "Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion. <br><br>Combine it with <b>Prisma Studio</b> to explore and manipulate your data.",
-    links: [
-      {
-        url: "/orm",
-        title: "ORM",
-      },
-      {
-        url: "/orm/tools/prisma-studio",
-        title: "Studio",
-      },
-    ],
+      "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
+    link:  "/orm",
+    icon: "fa-regular fa-database"
   },
-  poptimize: {
-    title: "Optimize your database queries",
-    //eyebrow: "Fortify",
-    description:
-      "Use <b>Prisma Optimize</b> to generate insights and get recommendations to improve your database queries, making your application run faster.",
-    links: [
-      {
-        url: "/optimize",
-        title: "Optimize",
-      },
-    ],
+  i_postgres: {
+    title: "Managed Postgres for global workloads",
+    eyebrow: "Postgres",
+    description: "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
+    link: "/",
+    icon: "fa-regular fa-chart-pyramid"
   },
-  pdp: {
-    title: "Grow and evolve your application",
-    //eyebrow: "Grow",
-    description:
-      "Scale your database connections and cache your database results at the edge with <b>Prisma Accelerate</b>. <br><br>Add <b>Prisma Pulse</b> to your app to react to database changes with type-safe model subscriptions.",
-    links: [
-      {
-        url: "/accelerate",
-        title: "Accelerate",
-      },
-      {
-        url: "/pulse",
-        title: "Pulse",
-      },
-    ],
+  i_studio: {
+    title: "Explore and manipulate your data",
+    eyebrow: "Studio",
+    description: "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
+    link: "/studio",
+    icon: "fa-regular fa-table"
   },
+  t_optimize: {
+    title: "AI-driven insights",
+    eyebrow: "Optimize",
+    description: "Analyze your queries and get recommedations to improve your database queries, making your app run faster.",
+    link: "/optimize",
+    icon: "fa-regular fa-magnifying-glass-chart"
+  },
+  t_accelerate: {
+    title: "Connection pooling & caching",
+    eyebrow: "Accelerate",
+    description: "A fully managed global connection pool and caching layer for your existing database, enabling query-level cache policies.",
+    link: "/accelerate",
+    icon: "fa-regular fa-bolt"
+  },
+  t_pulse: {
+    title: "Real-time db events",
+    eyebrow: "Pulse",
+    description: "Distribute change events to your application at scale, enabling database changes to trigger events and actions in real-time.",
+    link: "/pulse",
+    icon: "fa-regular fa-signal-stream"
+  }
 };
 
 export const ORMCardLinkData = {
   components: {
-    title: "ORM Components and Reference",
+    title: "ORM Components",
     description: "Learn about the building blocks of Prisma ORM.",
     links: [
       {
