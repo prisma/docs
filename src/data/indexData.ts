@@ -18,7 +18,7 @@ export const ProductLinkData = {
     title: "Explore and manipulate your data",
     eyebrow: "Studio",
     description: "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
-    link: "/studio",
+    link: "/",
     icon: "fa-regular fa-table"
   },
   t_optimize: {
