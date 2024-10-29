@@ -11,14 +11,14 @@ export const ProductLinkData = {
     title: "Managed Postgres for global workloads",
     eyebrow: "Postgres",
     description: "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
-    link: "/",
+    link: "/orm/overview/databases/prisma-postgres",
     icon: "fa-regular fa-chart-pyramid"
   },
   i_studio: {
     title: "Explore and manipulate your data",
     eyebrow: "Studio",
     description: "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
-    link: "/",
+    link: "/orm/tools/prisma-studio",
     icon: "fa-regular fa-table"
   },
   t_optimize: {
