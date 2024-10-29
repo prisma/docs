@@ -95,7 +95,7 @@ const config: Config = {
           ignorePatterns: [
             "/search",
             // Remove these from sitemap for SEO purposes as they're redirected
-            "/getting-started/quickstart-sqlite",
+            "/getting-started/quickstart",
             "/getting-started/setup-prisma/add-to-existing-project",
             "/getting-started/setup-prisma/start-from-scratch-prisma-migrate",
             "/getting-started/setup-prisma/start-from-scratch-sql",
