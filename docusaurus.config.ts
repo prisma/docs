@@ -175,7 +175,7 @@ const config: Config = {
             },
             {
               className: "indigo",
-              to: "https://https://prisma.io/postgres",
+              to: "/orm/overview/databases/prisma-postgres",
               label: "Postgres",
             },
             {
@@ -204,7 +204,7 @@ const config: Config = {
           ],
         },
         {
-          to: "https://playground.prisma.io/examples",
+          to: "https://www.github.com/prisma/prisma-examples",
           external: true,
           position: "left",
           label: "Examples",
