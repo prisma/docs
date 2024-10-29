@@ -3,7 +3,7 @@ import TechnologySwitch from "./techSwitcher";
 import styles from "./styles.module.scss";
 
 const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
-  const currentPath = location?.pathname.replace(/\/$/, "");
+  const currentPath: string = location?.pathname.replace(/\/$/, "");
   let [pathTechParams] = currentPath?.split("/")?.splice(-1);
 
   const isTechPath = true;
@@ -16,7 +16,8 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
       }
 
       if (type === "db") {
-        [tech] = pathTechParams.split("-").splice(-1);
+        // since prisma-postgres is a valid path we instead need to just drop the first part.
+        tech = pathTechParams.split("-").slice(1).join("-");
       }
     }
     return tech;

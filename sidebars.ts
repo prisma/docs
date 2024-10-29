@@ -50,6 +50,12 @@ const sidebars: SidebarsConfig = {
           label: "Quickstart",
         },
         {
+          type: "doc",
+          id: "getting-started/quickstart-prisma-postgres",
+          label: "Quickstart",
+          className: "hidden-sidebar",
+        },
+        {
           type: "category",
           label: "Set up Prisma ORM",
           collapsed: false,
