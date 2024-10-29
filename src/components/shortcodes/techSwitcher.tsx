@@ -29,7 +29,7 @@ const icons = {
   sqlserver: `/img/technologies/sqlserver.svg`, //<SQLServer />,
   planetscale: `/img/technologies/planetscale.svg`, //<PlanetScale />,
   cockroachdb: `/img/technologies/cockroachdb.svg`, //<CockroachDB />,
-  "prisma-postgres": `/img/technologies/postgresql.svg` //<PrismaPostgres />
+  prismaPostgres: `/img/technologies/postgresql.svg` //<PrismaPostgres />
 };
 
 const technologyTypes = {
@@ -42,7 +42,7 @@ const technologyTypes = {
     "sqlserver",
     "planetscale",
     "cockroachdb",
-    "prisma-postgres"
+    "prismaPostgres"
   ],
 };
 
@@ -56,7 +56,7 @@ export const technologyNames = {
   sqlserver: "SQL Server",
   planetscale: "PlanetScale",
   cockroachdb: "CockroachDB",
-  "prisma-postgres": "Prisma Postgres"
+  prismaPostgres: "Prisma Postgres"
 };
 
 const TechnologySwitch = ({

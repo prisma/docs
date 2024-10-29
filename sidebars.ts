@@ -51,7 +51,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "doc",
-          id: "getting-started/quickstart-prisma-postgres",
+          id: "getting-started/quickstart-prismaPostgres",
           label: "Quickstart",
           className: "hidden-sidebar",
         },

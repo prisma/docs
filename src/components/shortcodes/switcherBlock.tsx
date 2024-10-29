@@ -16,8 +16,7 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
       }
 
       if (type === "db") {
-        // since prisma-postgres is a valid path we instead need to just drop the first part.
-        tech = pathTechParams.split("-").slice(1).join("-");
+        [tech] = pathTechParams.split("-").splice(-1);
       }
     }
     return tech;
