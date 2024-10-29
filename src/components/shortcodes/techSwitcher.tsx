@@ -23,11 +23,13 @@ const icons = {
   typescript: `/img/technologies/typescript.svg`, //<Typescript />,
   mysql: `/img/technologies/mysql.svg`, //<MySQL />,
   postgresql: `/img/technologies/postgresql.svg`, //<PostgreSQL />,
-  sqlite: `/img/technologies/sqlite.svg`, //<SQLite />,
+  // sqlite: `/img/technologies/sqlite.svg`, //<SQLite />,
+  sqlite: `/img/technologies/mysql.svg`, // tmp
   mongodb: `/img/technologies/mongodb.svg`, //<MongoDB />,
   sqlserver: `/img/technologies/sqlserver.svg`, //<SQLServer />,
   planetscale: `/img/technologies/planetscale.svg`, //<PlanetScale />,
   cockroachdb: `/img/technologies/cockroachdb.svg`, //<CockroachDB />,
+  prismaPostgres: `/img/technologies/postgresql.svg` //<PrismaPostgres />
 };
 
 const technologyTypes = {
@@ -40,6 +42,7 @@ const technologyTypes = {
     "sqlserver",
     "planetscale",
     "cockroachdb",
+    "prismaPostgres"
   ],
 };
 
@@ -53,6 +56,7 @@ export const technologyNames = {
   sqlserver: "SQL Server",
   planetscale: "PlanetScale",
   cockroachdb: "CockroachDB",
+  prismaPostgres: "Prisma Postgres"
 };
 
 const TechnologySwitch = ({
