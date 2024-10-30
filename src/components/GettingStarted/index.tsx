@@ -1,10 +1,11 @@
-import React, { useRef, useState } from "react";
-import { Icon } from "../Icon";
-import { Tooltip } from "../tooltip/Tooltip";
-import styles from "../../css/gettingStarted.module.scss";
 import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import clsx from "clsx";
+import React, { useRef, useState } from "react";
+
+import styles from "../../css/gettingStarted.module.scss";
+import { Icon } from "../Icon";
+import { Tooltip } from "../tooltip/Tooltip";
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -69,14 +70,14 @@ export const SignalStream = ({ color, height, width }: any) => (
 export const PrismaPostgres = ({ color, height, width }: any) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    height={height ? height : "16"}
-    width={width ? width : "18"}
-    viewBox="0 0 576 512"
+    viewBox="0 0 512 512"
+    height={height ?? "16"}
+    width={width ?? "18"}
     style={{ marginRight: `4px`, transform: `translateY(2px)` }}
   >
     <path
       fill={color ? color : "currentColor"}
-      d="M43.0469 3.40625L51.8047 18.25H24.1954L32.8047 3.40625C35.0313 -0.453125 40.8204 -0.453125 43.0469 3.40625ZM10.2422 42L21.375 23H54.4766L65.6094 42H10.2422ZM7.57035 46.75H68.4297L74.2188 56.8438C76.5938 60.8516 73.7735 65.75 69.1719 65.75H6.67973C2.2266 65.75 -0.742146 60.8516 1.63285 56.8438L7.57035 46.75Z"
+      d="M290.6 59.7c-15.4-26.5-53.7-26.5-69.1 0L163 160 349 160 290.6 59.7zM69.6 320l372.8 0L367.7 192l-223.4 0L69.6 320zM51 352L11.4 419.8C-4.2 446.5 15.1 480 45.9 480l420.1 0c30.9 0 50.1-33.5 34.6-60.2L461 352 51 352z"
     />
   </svg>
 );
