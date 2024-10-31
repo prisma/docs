@@ -303,7 +303,7 @@ const config: Config = {
             },
             {
               label: "Optimize",
-              href: "https://www.prisma.io/data-platform/optimize",
+              href: "https://www.prisma.io/optimize",
               target: "_self",
               customProps: {
                 internal: true,
@@ -311,7 +311,7 @@ const config: Config = {
             },
             {
               label: "Accelerate",
-              href: "https://www.prisma.io/data-platform/accelerate",
+              href: "https://www.prisma.io/accelerate",
               target: "_self",
               customProps: {
                 internal: true,
@@ -319,7 +319,7 @@ const config: Config = {
             },
             {
               label: "Pulse",
-              href: "https://www.prisma.io/data-platform/pulse",
+              href: "https://www.prisma.io/pulse",
               target: "_self",
               customProps: {
                 internal: true,
