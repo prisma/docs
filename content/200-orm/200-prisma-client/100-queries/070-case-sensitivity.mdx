@@ -170,14 +170,72 @@ The MongoDB uses a RegEx rule for case-insensitive filtering.
 
 ### SQLite provider
 
-By default, SQLite itself only [supports case-insensitive comparisons of ASCII characters](https://www.sqlite.org/faq.html#q18). Therefore, Prisma Client does not offer support for case-insensitive filtering with SQLite.
+By default, text fields created by Prisma Client in SQLite databases do not support case-insensitive filtering. In SQLite, only [case-insensitive comparisons of ASCII characters](https://www.sqlite.org/faq.html#q18) are possible.
 
-To enable limited support (ASCII only) for case-insensitive filtering on a per-column basis, use `COLLATE NOCASE` when you define table columns:
+To enable limited support (ASCII only) for case-insensitive filtering on a per-column basis, you will need to add `COLLATE NOCASE` when you define a text column.
+
+#### Adding case-insensitive filtering to a new column.
+
+To add case-insensitive filtering to a new column, you will need to modify the migration file that is created by Prisma Client.
+
+Taking the following Prisma Schema model:
+
+```prisma
+model User {
+  id    Int    @id
+  email String
+}
+```
+
+and using `prisma migrate dev --create-only` to create the following migration file:
 
 ```sql
-CREATE TABLE mytable (
-    sample TEXT COLLATE NOCASE   /* collating sequence NOCASE */
+-- CreateTable
+CREATE TABLE "User" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "email" TEXT NOT NULL
 );
+```
+
+You would need to add `COLLATE NOCASE` to the `email` column in order to make case-insensitive filtering possible:
+
+```sql
+-- CreateTable
+CREATE TABLE "User" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    //highlight-next-line
+    "email" TEXT NOT NULL COLLATE NOCASE
+);
+```
+
+#### Adding case-insensitive filtering to an existing column.
+
+Since columns cannot be updated in SQLite, `COLLATE NOCASE` can only be added to an existing column by creating a blank migration file and migrating data to a new table.
+
+Taking the following Prisma Schema model:
+
+```prisma
+model User {
+  id    Int    @id
+  email String
+}
+```
+
+and using `prisma migrate dev --create-only` to create an empty migration file, you will need to rename the current `User` table and create a new `User` table with `COLLATE NOCASE`.
+
+```sql
+-- UpdateTable
+ALTER TABLE "User" RENAME TO "User_old";
+
+CREATE TABLE "User" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "email" TEXT NOT NULL COLLATE NOCASE
+);
+
+INSERT INTO "User" (id, email)
+SELECT id, email FROM "User_old";
+
+DROP TABLE "User_old";
 ```
 
 ### Microsoft SQL Server provider
