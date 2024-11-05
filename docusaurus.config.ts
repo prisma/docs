@@ -72,7 +72,7 @@ const config: Config = {
   ],
   plugins: [
     "docusaurus-plugin-sass",
-    [path.resolve(__dirname, 'plugins', 'posthog-docusaurus'),
+    [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
         apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
         appUrl: "https://us.i.posthog.com",
