@@ -3,7 +3,7 @@ import TechnologySwitch from "./techSwitcher";
 import styles from "./styles.module.scss";
 
 const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
-  const currentPath = location?.pathname.replace(/\/$/, "");
+  const currentPath: string = location?.pathname.replace(/\/$/, "");
   let [pathTechParams] = currentPath?.split("/")?.splice(-1);
 
   const isTechPath = true;
