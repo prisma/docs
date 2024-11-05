@@ -222,7 +222,7 @@ const config: Config = {
           items: [
             {
               label: " ",
-              href: "https://discord.gg/KQyTW2H5ca",
+              href: "https://discord.gg/invite/KQyTW2H5ca",
               customProps: {
                 icon: "fa-brands fa-discord",
                 internal: true,
