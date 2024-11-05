@@ -10,7 +10,7 @@ export const ProductLinkData = {
   i_postgres: {
     title: "Managed Postgres for global workloads",
     eyebrow: "Postgres",
-    description: "A managed PostgreSQL database without cold starts. Deploy your database in three clicks, explore with a generous free tier and scale as needed.",
+    description: "A managed PostgreSQL database without cold starts. Easily deploy your database in three clicks, explore with a generous free tier, and scale as needed.",
     link: "/orm/overview/databases/prisma-postgres",
     icon: "fa-regular fa-chart-pyramid"
   },
