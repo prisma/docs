@@ -6,16 +6,9 @@ export default (function () {
   }
 
   return {
-    onRouteUpdate() {
-      window.posthog.capture('$pageview');
-    },
     onRouteDidUpdate({location, previousLocation}) {
       if (previousLocation && location.pathname !== previousLocation.pathname) {
-        emitAnalyticsEvent('pageview', {
-          page_title: document.title,
-          page_location: window.location.href,
-          page_path: location.pathname,
-        });
+        window.posthog.capture('$pageview');
       }
     },
   };
