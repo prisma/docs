@@ -1,4 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
+const path = require('path')
 
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
@@ -71,8 +72,7 @@ const config: Config = {
   ],
   plugins: [
     "docusaurus-plugin-sass",
-    [
-      "posthog-docusaurus",
+    [path.resolve(__dirname, 'plugins', 'posthog-docusaurus'),
       {
         apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
         appUrl: "https://us.i.posthog.com",
