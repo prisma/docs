@@ -22,23 +22,8 @@ export const Promo = () => {
       color: "teal",
     },
     {
-      text: `Scaling your app globally? Make sure your database can keep up.`,
-      link: "https://pris.ly/sidebar-promo/scaling-your-app-globally",
-      color: "teal",
-    },
-    {
-      text: `Leverage global cache to serve your data fast, no matter where your users are.`,
-      link: "https://pris.ly/sidebar-promo/global-cache",
-      color: "teal",
-    },
-    {
       text: `Want to make your database perform globally?`,
       link: "https://pris.ly/sidebar-promo/make-your-db-global",
-      color: "teal",
-    },
-    {
-      text: `Serving a global audience? You need a global database.`,
-      link: "https://pris.ly/sidebar-promo/serving-global-audience",
       color: "teal",
     },
     {
@@ -80,6 +65,11 @@ export const Promo = () => {
       text: `Your db queries could be faster? Let Optimize figure out why. `,
       link: "https://pris.ly/sidebar-promo/faster-db-queries",
       color: "teal",
+    },
+    {
+      text: `Using Raycast? Try our "docs search" extension. `,
+      link: "https://pris.ly/sidebar-promo/raycast-extension",
+      color: "indigo",
     },
   ];
 
