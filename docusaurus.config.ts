@@ -1,9 +1,11 @@
 import { themes as prismThemes } from "prism-react-renderer";
+const path = require('path')
 
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
+const DOCUSAURUS_POST_HOG_KEY = process.env.DOCUSAURUS_POST_HOG_KEY ?? "";
 
 const config: Config = {
   title: "Prisma Documentation",
@@ -38,6 +40,7 @@ const config: Config = {
       "data-website-id": "1b51bb03-43cc-4ef4-95f1-93288a91b560",
       "data-project-name": "Prisma",
       "data-project-color": "#2D3748",
+      "data-user-analytics-fingerprint-enabled": "true",
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
@@ -67,7 +70,17 @@ const config: Config = {
       async: true,
     },
   ],
-  plugins: ["docusaurus-plugin-sass"],
+  plugins: [
+    "docusaurus-plugin-sass",
+    [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
+      {
+        apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
+        appUrl: "https://us.i.posthog.com",
+        person_profiles: "identified_only",
+        enableInDevelopment: false
+      },
+    ],
+  ],
   presets: [
     [
       "classic",
@@ -121,6 +134,9 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
     image: "/docs/social/docs-social.png",
     metadata: [
       { name: "twitter:card", content: "summary_large_image" },
@@ -150,25 +166,52 @@ const config: Config = {
           className: "indigo first-item",
         },
         {
-          type: "docSidebar",
-          sidebarId: "ormSidebar",
-          position: "left",
-          className: "indigo",
-          label: "ORM",
+          type: 'dropdown',
+          label: 'Products',
+          position: 'left',
+          items: [
+            {
+              type: "docSidebar",
+              sidebarId: "ormSidebar",
+              className: "indigo",
+              label: "ORM",
+            },
+            {
+              className: "indigo",
+              to: "/orm/overview/databases/prisma-postgres",
+              label: "Postgres",
+            },
+            {
+              className: "indigo",
+              to: "/orm/tools/prisma-studio",
+              label: "Studio",
+            },
+            {
+              type: "docSidebar",
+              sidebarId: "optimizeSidebar",
+              className: "teal",
+              label: "Optimize",
+            },
+            {
+              type: "docSidebar",
+              sidebarId: "accelerateSidebar",
+              className: "teal",
+              label: "Accelerate",
+            },
+            {
+              type: "docSidebar",
+              sidebarId: "pulseSidebar",
+              className: "teal",
+              label: "Pulse",
+            },
+          ],
         },
         {
-          type: "docSidebar",
-          sidebarId: "accelerateSidebar",
+          to: "https://www.github.com/prisma/prisma-examples",
+          external: true,
           position: "left",
-          className: "teal",
-          label: "Accelerate",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "pulseSidebar",
-          position: "left",
-          className: "teal",
-          label: "Pulse",
+          label: "Examples",
+          className: "indigo external__link",
         },
         {
           href: "https://github.com/prisma/",
@@ -254,8 +297,24 @@ const config: Config = {
               },
             },
             {
+              label: "Studio",
+              href: "https://www.prisma.io/studio",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
+              label: "Optimize",
+              href: "https://www.prisma.io/optimize",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
               label: "Accelerate",
-              href: "https://www.prisma.io/data-platform/accelerate",
+              href: "https://www.prisma.io/accelerate",
               target: "_self",
               customProps: {
                 internal: true,
@@ -263,7 +322,7 @@ const config: Config = {
             },
             {
               label: "Pulse",
-              href: "https://www.prisma.io/data-platform/pulse",
+              href: "https://www.prisma.io/pulse",
               target: "_self",
               customProps: {
                 internal: true,
@@ -309,6 +368,10 @@ const config: Config = {
             {
               label: "Playground",
               href: "https://playground.prisma.io/",
+            },
+            {
+              label: "ORM Benchmarks",
+              href: "https://benchmarks.prisma.io/",
             },
             {
               label: "Customer stories",
@@ -426,6 +489,13 @@ const config: Config = {
               },
             },
             {
+              label: "Event Code of Conduct",
+              href: "https://pris.ly/code-conduct",
+              customProps: {
+                dropdown: "legal",
+              },
+            },
+            {
               label: "Security & Compliance",
               href: "https://trust.prisma.io/",
               target: "_self",
@@ -462,8 +532,7 @@ const config: Config = {
           block: { start: "add-start", end: "add-end" },
         },
         {
-          className:
-            "theme-code-block-deleted-line deleted-line code-highlight",
+          className: "theme-code-block-deleted-line deleted-line code-highlight",
           line: "delete-next-line",
           block: { start: "delete-start", end: "delete-end" },
         },
@@ -476,6 +545,11 @@ const config: Config = {
           className: "theme-code-block-highlighted-line highlighted-line",
           line: "highlight-next-line",
           block: { start: "highlight-start", end: "highlight-end" },
+        },
+        {
+          className: "theme-code-block-stronger-line stronger-line",
+          line: "stronger-next-line",
+          block: { start: "stronger-start", end: "stronger-end" },
         },
       ],
     },
