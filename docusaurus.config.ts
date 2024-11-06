@@ -1,4 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
+const path = require('path')
 
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
@@ -71,8 +72,7 @@ const config: Config = {
   ],
   plugins: [
     "docusaurus-plugin-sass",
-    [
-      "posthog-docusaurus",
+    [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
         apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
         appUrl: "https://us.i.posthog.com",
@@ -134,6 +134,9 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
     image: "/docs/social/docs-social.png",
     metadata: [
       { name: "twitter:card", content: "summary_large_image" },
