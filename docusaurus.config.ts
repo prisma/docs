@@ -1,4 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
+
 const path = require('path')
 
 import type { Config } from "@docusaurus/types";
@@ -75,7 +76,7 @@ const config: Config = {
     [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
         apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
-        appUrl: "https://us.i.posthog.com",
+        appUrl: "https://proxyhog.prisma-data.net",
         person_profiles: "identified_only",
         enableInDevelopment: false
       },
