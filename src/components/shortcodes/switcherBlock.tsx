@@ -1,65 +1,65 @@
-import * as React from 'react'
-import TechnologySwitch from './techSwitcher'
-import styles from "./styles.module.scss"
+import * as React from "react";
+import TechnologySwitch from "./techSwitcher";
+import styles from "./styles.module.scss";
 
 const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
-  const currentPath = location?.pathname.replace(/\/$/, '')
-  let [pathTechParams] = currentPath?.split('/')?.splice(-1)
-  
-  const isTechPath = true
+  const currentPath: string = location?.pathname.replace(/\/$/, "");
+  let [pathTechParams] = currentPath?.split("/")?.splice(-1);
+
+  const isTechPath = true;
   const getTechFromParam = (type: string, defaultVal: string) => {
-    let tech = defaultVal
+    let tech = defaultVal;
 
     if (isTechPath) {
-      if (type === 'lang') {
-        ;[tech] = pathTechParams.split('-').splice(dbSwitcher ? -2 : -1)
+      if (type === "lang") {
+        [tech] = pathTechParams.split("-").splice(dbSwitcher ? -2 : -1);
       }
 
-      if (type === 'db') {
-        ;[tech] = pathTechParams.split('-').splice(-1)
+      if (type === "db") {
+        [tech] = pathTechParams.split("-").splice(-1);
       }
     }
-    return tech
-  }
+    return tech;
+  };
 
   const [langSelected, setLangSelected] = React.useState(
-    langSwitcher ? getTechFromParam('lang', langSwitcher[0]) : 'typescript'
-  )
+    langSwitcher ? getTechFromParam("lang", langSwitcher[0]) : "typescript"
+  );
   const [dbSelected, setDbSelected] = React.useState(
-    dbSwitcher ? getTechFromParam('db', dbSwitcher[0]) : 'postgresql'
-  )
+    dbSwitcher ? getTechFromParam("db", dbSwitcher[0]) : "postgresql"
+  );
 
   // TODO : Simplify the function!
   const techChanged: any = (item: any, type: string) => {
     // <Redirect to={`/${slug}${langSelected}-${dbSelected}`} />
     // window.location.href = `/${slug}${langSelected}-${dbSelected}`
-  }
+  };
 
   const langChanged = (item: any) => {
-    techChanged(item, 'lang')
-    setLangSelected(item.technology)
-  }
+    techChanged(item, "lang");
+    setLangSelected(item.technology);
+  };
 
   const dbChanged = (item: any) => {
-    techChanged(item, 'db')
-    setDbSelected(item.technology)
-  }
+    techChanged(item, "db");
+    setDbSelected(item.technology);
+  };
 
   React.useEffect(() => {
-    let mounted = true
+    let mounted = true;
 
     if (langSwitcher && !dbSwitcher && mounted) {
-      langChanged({ technology: langSelected })
+      langChanged({ technology: langSelected });
     } else if (dbSwitcher && !langSwitcher && mounted) {
-      dbChanged({ technology: dbSelected })
+      dbChanged({ technology: dbSelected });
     } else if (dbSwitcher && langSwitcher && mounted) {
-      langChanged({ technology: langSelected })
-      dbChanged({ technology: dbSelected })
+      langChanged({ technology: langSelected });
+      dbChanged({ technology: dbSelected });
     }
     return function cleanup() {
-      mounted = false
-    }
-  }, [langSelected, dbSelected])
+      mounted = false;
+    };
+  }, [langSelected, dbSelected]);
   return (
     <div className={styles.switcherWrapper}>
       {langSwitcher && (
@@ -81,7 +81,7 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
           defaultTech={dbSelected}
         />
       )}
-      {langSelected === "typescript" && langSwitcher && dbSwitcher &&
+      {langSelected === "typescript" && langSwitcher && dbSwitcher && (
         <TechnologySwitch
           type="db"
           url={`${slug}typescript-`}
@@ -89,8 +89,8 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
           technologies={dbSwitcher}
           defaultTech={dbSelected}
         />
-      }
-      {!langSwitcher && dbSwitcher &&
+      )}
+      {!langSwitcher && dbSwitcher && (
         <TechnologySwitch
           type="db"
           url={slug}
@@ -98,9 +98,9 @@ const SwitcherBlock = ({ langSwitcher, dbSwitcher, location, slug }: any) => {
           technologies={dbSwitcher}
           defaultTech={dbSelected}
         />
-      }
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default SwitcherBlock
+export default SwitcherBlock;

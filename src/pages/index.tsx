@@ -1,39 +1,42 @@
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Link from '@docusaurus/Link';
-import Head from '@docusaurus/Head';
+import Head from "@docusaurus/Head";
+import Link from "@docusaurus/Link";
+import useBaseUrl from "@docusaurus/useBaseUrl";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import { Icon } from "@site/src/components/Icon";
+import { CommunityLinksData, DatabaseData, GeneralLinks_Build, GeneralLinks_Fortify, GeneralLinks_Grow, ORMCardLinkData, ORMGeneralLinkData, ProductLinkData } from "@site/src/data/indexData";
+import Heading from "@theme/Heading";
+import Layout from "@theme/Layout";
+import clsx from "clsx";
 
-import Layout from '@theme/Layout';
-import Heading from '@theme/Heading';
-
-import { Icon } from '@site/src/components/Icon';
-import {
-  CommunityLinksData,
-  DatabaseData,
-  ORMGeneralLinkData,
-  ORMCardLinkData,
-  ProductLinkData,
-} from '@site/src/data/indexData';
-
-import styles from './index.module.scss';
-import useBaseUrl from '@docusaurus/useBaseUrl';
+import DarkImg from "../theme/DarkImg";
+import styles from "./index.module.scss";
 
 function HomepageCard({
   className,
   heading,
   body,
+  link,
   links,
 }: {
   className: string;
   heading: JSX.Element;
   body: JSX.Element;
-  links: JSX.Element[];
+  links?: JSX.Element;
+  link?: string;
 }): JSX.Element {
   return (
-    <div className={className}>
-      {heading}
-      {body}
-      <div className={styles.linkGrid}>{links}</div>
-    </div>
+    link 
+      ? <Link className={className} to={link}>
+          {heading}
+          {body}
+          <Icon className={styles.mobileArrow} icon="fa-regular fa-arrow-right" size="24px" color="var(--tertiary-font-color)"/>
+        </Link>
+      : <div className={className}>
+          {heading}
+          {body}
+          <div className={styles.linkGrid}>{links}</div>
+        </div>
+
   );
 }
 
@@ -43,25 +46,30 @@ function HomepageProductCards() {
       <div className={styles.productCardsWrapper}>
         {Object.keys(ProductLinkData).map((e: keyof typeof ProductLinkData) => {
           const cardHeader = (
-            <Heading as="h3" className={styles.h3}>
-              <div className={styles.icon}>
-                <Icon icon={`fa-solid fa-${ProductLinkData[e].icon}`} size="22px" color="white" />
+            <div className={styles.cardHeader}>
+              <div className={styles.iconWrapper}>
+                <Icon icon={ProductLinkData[e].icon} color="#fff" size="32px" />
               </div>
-              {ProductLinkData[e].title}
-            </Heading>
+              <div className={styles.cardHeaderContent}>
+                <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
+                <Heading as="h4" className={styles.h4}>
+                  {ProductLinkData[e].title}
+                </Heading>
+              </div>
+            </div>
           );
-          const cardBody = <div className={styles.body}>{ProductLinkData[e].description}</div>;
-          const cardLinks = ProductLinkData[e].links.map((link) => (
-            <Link to={link.url}>
-              {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}
-            </Link>
-          ));
+          const cardBody = (
+            <div
+              className={styles.body}
+              dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description }}
+            ></div>
+          );
           return (
             <HomepageCard
-              className={e === 'porm' ? styles.productCardIndigo : styles.productCardTeal}
+              className={e.startsWith("i_") ? styles.productCardIndigo : styles.productCardTeal}
               heading={cardHeader}
               body={cardBody}
-              links={cardLinks}
+              link={ProductLinkData[e].link}
             />
           );
         })}
@@ -73,24 +81,46 @@ function HomepageProductCards() {
 function HomepageORMLinksSection() {
   return (
     <div className={styles.ormLinkSectionWrapper}>
-      <Heading as="h4" className={styles.h4}>
-        Prisma ORM
-      </Heading>
-      <div>
-        {ORMGeneralLinkData.map((link, index) => (
-          <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
-            <div className={styles.icon}>
-              <Icon icon={link.icon} color="inherit" size="22px" className="light" />
-            </div>
-            <div>
-              <h5>
-                {link.title} <span>&#8594;</span>
-              </h5>
-              <p>{link.description}</p>
-            </div>
-          </Link>
-        ))}
+      <Heading as="h2" className={styles.h2}>Resources</Heading>
+      <div className={styles.ormLinkGrid}>
+        <div className={styles.ormLinkCol}>
+          {GeneralLinks_Build.map((link, index) => (
+            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
+              <div>
+                <h5>
+                  {link.title} <span>&#8594;</span>
+                </h5>
+                <p>{link.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className={styles.ormLinkCol}>
+          {GeneralLinks_Fortify.map((link, index) => (
+            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
+              <div>
+                <h5>
+                  {link.title} <span>&#8594;</span>
+                </h5>
+                <p>{link.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className={styles.ormLinkCol}>
+          {GeneralLinks_Grow.map((link, index) => (
+            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
+              <div>
+                <h5>
+                  {link.title} <span>&#8594;</span>
+                </h5>
+                <p>{link.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
+      <HomepageORMCards />
     </div>
   );
 }
@@ -102,24 +132,21 @@ function HomepageORMCards() {
         {Object.keys(ORMCardLinkData).map((e) => {
           const cardHeader = (
             <Heading as="h4" className={styles.h4}>
-              {e[0].toUpperCase() + e.substring(1).toLowerCase()}
+              {ORMCardLinkData[e].title}
             </Heading>
           );
-          const cardBody = (
-            <p>
-              Open source Node.js and TypeScript ORM with an intuitive data model, automated
-              migrations, type-safety, and auto-completion.
-            </p>
-          );
-          const links = ORMCardLinkData[e].map((card) => (
-            <Link to={card.url}>{card.title} &#8594;</Link>
+          const cardBody = <div className={styles.body}>{ORMCardLinkData[e].description}</div>;
+          const cardLinks = ORMCardLinkData[e].links.map((link) => (
+            <Link to={link.url}>
+              {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}
+            </Link>
           ));
           return (
             <HomepageCard
               className={styles.productCardIndigo}
               heading={cardHeader}
               body={cardBody}
-              links={links}
+              links={cardLinks}
             />
           );
         })}
@@ -131,24 +158,29 @@ function HomepageORMCards() {
 function HomepageDatabasesSection() {
   return (
     <div className={styles.databasesSection}>
-      <Heading as="h4" className={styles.h4}>
+      <Heading as="h2" className={styles.h2}>
         Databases
       </Heading>
       <div className={styles.body}>
-        Prisma ORM works seamlessly across most popular databases and service providers. <br />
-        Refer to our <Link to="/orm/reference/database-features">Database features matrix</Link> for information about supported features and types for
-        each database.
+        Prisma ORM works seamlessly across most popular databases and service providers. Refer to
+        our <Link to="/orm/reference/database-features">Database features matrix</Link> for
+        information about supported features and types for each database.
+        <br />
+        To explore supported databases for Accelerate, visit the{" "}
+        <Link to="/accelerate/getting-started#prerequisites">prerequisites section</Link>. For
+        Pulse, see the <Link to="/pulse/database-setup">database setup documentation</Link>.
       </div>
       <div className={styles.databaseGrid}>
         {DatabaseData.map((e) => (
           <Link to={e.url} className={styles.linkCardWrapper}>
             <div className={styles.databaseEntry}>
-              <img
-                src={useBaseUrl(e.icon)}
+              <DarkImg
+                icon={useBaseUrl(e.icon)}
+                darkIcon={useBaseUrl(e.darkIcon)}
                 style={{
                   height: `100%`,
-                  width: e.icon.endsWith('sqlite.svg') ? `55px` : `auto`,
-                  marginRight: e.icon.endsWith('sqlite.svg') ? `-30px` : 0,
+                  width: e.icon.endsWith("sqlite.svg") ? `55px` : `auto`,
+                  marginRight: e.icon.endsWith("sqlite.svg") ? `-30px` : 0,
                 }}
               />
               <span>{e.title}</span>
@@ -165,7 +197,7 @@ function HomepageCommunitySection() {
     <div className={styles.communityLinksSection}>
       <div>
         <div className={styles.sectionHero}>
-          <Heading as="h3" className={styles.h3}>
+          <Heading as="h2" className={styles.h2}>
             Join our Community
           </Heading>
           <p>
@@ -180,7 +212,7 @@ function HomepageCommunitySection() {
                 to={communityInfo.link}
                 rel="noreferrer"
                 target="_blank"
-                className={`${styles.communityLinkWrapper} ${styles.content}`}
+                className={clsx(styles.communityLinkWrapper, styles.content)}
               >
                 <Icon icon={communityInfo.icon} color="VAR HERE" size="22px" />
                 <div>
@@ -214,7 +246,7 @@ export default function Home(): JSX.Element {
       <main className={styles.mainHome}>
         <HomepageProductCards />
         <HomepageORMLinksSection />
-        <HomepageORMCards />
+        
         <HomepageDatabasesSection />
         <HomepageCommunitySection />
       </main>

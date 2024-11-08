@@ -33,6 +33,8 @@ To prettify or format the code, run:
 npm run format
 ```
 
+Please note that `.md` and `.mdx` files are not formatted by Prettier because they are written in [MDX 3](https://mdxjs.com/blog/v3/) which Prettier [does not support](https://github.com/prettier/prettier/issues/12209).
+
 Visit `http://localhost:3000` to view the app.
 
 ## Configure

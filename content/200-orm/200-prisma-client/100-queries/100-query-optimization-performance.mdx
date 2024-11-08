@@ -5,17 +5,95 @@ metaDescription: 'How Prisma optimizes queries under the hood'
 tocDepth: 3
 ---
 
-<TopBlock>
-
-This guide describes ways to optimize query performance, debug performance issues, and how to tackle common performance issues such as the [n+1 problem](#solving-the-n1-problem).
-
-</TopBlock>
+This guide shows how to identify and optimize query performance, debug performance issues, and address common challenges.
 
 ## Debugging performance issues
 
-To help you debug and diagnose performance issues, you can [log query events at client level](/orm/prisma-client/observability-and-logging/logging#event-based-logging), which allows you to see the generated queries, parameters, and durations.
+Several common practices can lead to slow queries and performance problems, such as:
 
-Alternatively, if you are only interested in the time taken to run a query, you can implement [logging middleware](/orm/prisma-client/client-extensions/middleware/logging-middleware).
+- Over-fetching data
+- Missing indexes
+- Not caching repeated queries
+- Performing full table scans
+
+:::info
+
+For more potential causes of performance issues, visit [this page](/optimize/recommendations).
+
+:::
+
+[Prisma Optimize](/optimize) offers [recommendations](/optimize/recommendations) to identify and address the inefficiencies listed above and more, helping to improve query performance.
+
+To get started, follow the [integration guide](/optimize/getting-started) and add Prisma Optimize to your project to begin diagnosing slow queries.
+
+<div class="videoWrapper">
+  <iframe
+    width="660"
+    height="315"
+    src="https://www.youtube.com/embed/gWROOjjEiM0"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
+</div>
+
+:::tip
+
+You can also [log query events at the client level](/orm/prisma-client/observability-and-logging/logging#event-based-logging) to view the generated queries, their parameters, and execution times.
+
+If you are particularly focused on monitoring query duration, consider using [logging middleware](/orm/prisma-client/client-extensions/middleware/logging-middleware).
+
+:::
+
+## Using bulk queries
+
+It is generally more performant to read and write large amounts of data in bulk - for example, inserting `50,000` records in batches of `1000` rather than as `50,000` separate inserts. `PrismaClient` supports the following bulk queries:
+
+- [`createMany()`](/orm/reference/prisma-client-reference#createmany)
+- [`createManyAndReturn()`](/orm/reference/prisma-client-reference#createmanyandreturn)
+- [`deleteMany()`](/orm/reference/prisma-client-reference#deletemany)
+- [`updateMany()`](/orm/reference/prisma-client-reference#updatemany)
+- [`findMany()`](/orm/reference/prisma-client-reference#findmany)
+
+## Reuse `PrismaClient` or use connection pooling to avoid database connection pool exhaustion
+
+Creating multiple instances of `PrismaClient` can exhaust your database connection pool, especially in serverless or edge environments, potentially slowing down other queries. Learn more in the [serverless challenge](/orm/prisma-client/setup-and-configuration/databases-connections#the-serverless-challenge).
+
+For applications with a traditional server, instantiate `PrismaClient` once and reuse it throughout your app instead of creating multiple instances. For example, instead of:
+
+```ts file=query.ts
+async function getPosts() {
+  const prisma = new PrismaClient()
+  await prisma.post.findMany()
+}
+
+async function getUsers() {
+  const prisma = new PrismaClient()
+  await prisma.user.findMany()
+}
+```
+
+Define a single `PrismaClient` instance in a dedicated file and re-export it for reuse:
+
+```ts file=db.ts
+export const prisma = new PrismaClient()
+```
+
+Then import the shared instance:
+
+```ts file=query.ts
+import { prisma } from "db.ts"
+
+async function getPosts() {
+  await prisma.post.findMany()
+}
+
+async function getUsers() {
+  await prisma.user.findMany()
+}
+```
+
+For serverless development environments with frameworks that use HMR (Hot Module Replacement), ensure you properly handle a [single instance of Prisma in development](/orm/more/help-and-troubleshooting/help-articles/nextjs-prisma-client-dev-practices).
 
 ## Solving the n+1 problem
 
@@ -36,7 +114,11 @@ The n+1 problem occurs when you loop through the results of a query and perform 
 
 </div>
 
-The Prisma Client dataloader automatically **batches** `findUnique()` queries that ✔ occur in the same tick and ✔ have the same `where` and `include` parameters.
+The Prisma Client dataloader automatically _batches_ `findUnique()` queries that occur in the same [tick](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick#processnexttick) and have the same `where` and `include` parameters if:
+
+- All criteria of the `where` filter are on scalar fields (unique or non-unique) of the same model you're querying.
+- All criteria use the `equal` filter, whether that's via the shorthand or explicit syntax `(where: { field: <val>, field1: { equals: <val> } })`.
+- No boolean operators or relation filters are present.
 
 Automatic batching of `findUnique()` is particularly useful in a **GraphQL context**. GraphQL runs a separate resolver function for every field, which can make it difficult to optimize a nested query.
 
@@ -150,7 +232,19 @@ const User = objectType({
 </cmdResult>
 </CodeWithResult>
 
-Instead, use `findUnique()` in combination with [the fluent API](/orm/prisma-client/queries/relation-queries#fluent-api) (`.posts()`) as shown to return a user's posts. Even though the resolver is called once per user, the Prisma dataloader in Prisma Client **✔ batches the `findUnique()` queries**.
+#### Solution 1: Batching queries with the fluent API
+
+Use `findUnique()` in combination with [the fluent API](/orm/prisma-client/queries/relation-queries#fluent-api) (`.posts()`) as shown to return a user's posts. Even though the resolver is called once per user, the Prisma dataloader in Prisma Client **✔ batches the `findUnique()` queries**.
+
+:::info
+
+It may seem counterintitive to use a `prisma.user.findUnique(...).posts()` query to return posts instead of `prisma.posts.findMany()` - particularly as the former results in two queries rather than one.
+
+The **only** reason you need to use the fluent API (`user.findUnique(...).posts()`) to return posts is that the dataloader in Prisma Client batches `findUnique()` queries and does not currently [batch `findMany()` queries](https://github.com/prisma/prisma/issues/1477).
+
+When the dataloader batches `findMany()` queries or your query has the `relationStrategy` set to `join`, you no longer need to use `findUnique()` with the fluent API in this way.
+
+::: 
 
 <CodeWithResult>
 <cmd>
@@ -215,13 +309,29 @@ const User = objectType({
 
 If the `posts` resolver is invoked once per user, the dataloader in Prisma Client groups `findUnique()` queries with the same parameters and selection set. Each group is optimized into a single `findMany()`.
 
-#### Do I have to use the fluent API to enable batching of queries?
+#### Solution 2: Using JOINs to perform queries
 
-It may seem counterintitive to use a `prisma.user.findUnique(...).posts()` query to return posts instead of `prisma.posts.findMany()` - particularly as the former results in two queries rather than one.
+You can perform the query with a [database join](/orm/prisma-client/queries/relation-queries#relation-load-strategies-preview) by setting `relationLoadStrategy` to `"join"`, ensuring that only **one** query is executed against the database.
 
-The **only** reason you need to use the fluent API (`user.findUnique(...).posts()`) to return posts is that the dataloader in Prisma Client batches `findUnique()` queries and does not currently [batch `findMany()` queries](https://github.com/prisma/prisma/issues/1477).
-
-When the dataloader batches `findMany()` queries, you no longer need to use `findUnique()` with the fluent API in this way.
+```ts
+const User = objectType({
+  name: 'User',
+  definition(t) {
+    t.nonNull.int('id')
+    t.string('name')
+    t.nonNull.string('email')
+    t.nonNull.list.nonNull.field('posts', {
+      type: 'Post',
+      resolve: (parent, _, context) => {
+        return context.prisma.post.findMany({
+          relationLoadStrategy: "join",
+          where: { authorId: parent.id || undefined },
+        })
+      },
+    })
+  },
+})
+```
 
 ### n+1 in other contexts
 
@@ -267,6 +377,8 @@ This is not an efficient way to query. Instead, you can:
 
 - Use nested reads ([`include`](/orm/reference/prisma-client-reference#include) ) to return users and related posts
 - Use the [`in`](/orm/reference/prisma-client-reference#in) filter
+- Use the [`in`](/orm/reference/prisma-client-reference#in) filter
+- Set the [`relationLoadStrategy`](/orm/prisma-client/queries/relation-queries#relation-load-strategies-preview) to `"join"`
 
 #### Solving n+1 with `include`
 
@@ -326,20 +438,21 @@ SELECT "public"."Post"."id", "public"."Post"."createdAt", "public"."Post"."updat
 </cmdResult>
 </CodeWithResult>
 
-## Using bulk queries
+#### Solving n+1 with `relationLoadStrategy: "join"`
 
-It is generally more performant to read and write large amounts of data in bulk - for example, inserting 50,000 records in batches of 1000 rather than as 50,000 separate inserts. Prisma Client supports the following bulk queries:
+You can perform the query with a [database join](/orm/prisma-client/queries/relation-queries#relation-load-strategies-preview) by setting `relationLoadStrategy` to `"join"`, ensuring that only **one** query is executed against the database.
 
-- [`createMany()`](/orm/reference/prisma-client-reference#createmany)
-- [`deleteMany()`](/orm/reference/prisma-client-reference#deletemany)
-- [`updateMany()`](/orm/reference/prisma-client-reference#updatemany)
-- [`findMany()`](/orm/reference/prisma-client-reference#findmany)
+```ts
+const users = await prisma.user.findMany({})
 
-## Using `select` to limit number of columns returned
+const userIds = users.map((x) => x.id)
 
-Using `select` to limit the number of columns that are returned is **unlikely to have an effect on performance** unless you have identified this as a performance bottleneck through testing. For example, reading all fields may negatively affect performance if you have:
-
-- Tables with a large number of columns
-- Large columns that are stored in a separate location on disk rather than a row, which results in an additional disk read
-
-Furthermore, if you have a mature product with well-established query patterns and finely tuned indexes, selecting a specific subset of fields may be beneficial as it avoids reading data from disk. However, in most cases, this level of performance tuning is only necessary at a certain scale.
+const posts = await prisma.post.findMany({
+  relationLoadStrategy: "join",
+  where: {
+    authorId: {
+      in: userIds,
+    },
+  },
+})
+```
