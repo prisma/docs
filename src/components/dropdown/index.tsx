@@ -19,21 +19,20 @@ const SimpleDropdown = ({
   pos = "bottom",
 }: SimpleDropType) => {
   const [isOpen, openDrop] = useState<boolean>(false);
-  const { ref, isComponentVisible, setIsComponentVisible } =
-    useComponentVisible(true);
+  const { ref, isComponentVisible, setIsComponentVisible } = useComponentVisible(true);
 
   useEffect(() => {
     if (!isComponentVisible) openDrop(false);
   }, [isComponentVisible]);
 
   const escEvent = (e: KeyboardEvent) => {
-    if (e.key === "Escape") openDrop(false)
-  }
+    if (e.key === "Escape") openDrop(false);
+  };
 
   useEffect(() => {
-    window.addEventListener("keydown", escEvent)
-    return () => window.removeEventListener("keydown", escEvent)
-  }, [])
+    window.addEventListener("keydown", escEvent);
+    return () => window.removeEventListener("keydown", escEvent);
+  }, []);
 
   return (
     <div
@@ -54,23 +53,24 @@ const SimpleDropdown = ({
       }}
     >
       <div className={clsx(rightClick && styles.anchor)}>{anchor}</div>
-        <div
-          className={clsx(!rightClick && styles.overlayWrapper, !rightClick && isOpen && styles.showOverlay)}
-          onClick={(e: any) => {
-            e.stopPropagation();
-            openDrop(false);
-          }}
-        >
-          <div
-            className={clsx(pos === "top" && styles.topPos, styles.container)}
-          >
-            {items.map((item: any, idx: number) => (
-              <div key={idx} className={styles.item}>
-                {item}
-              </div>
-            ))}
-          </div>
+      <div
+        className={clsx(
+          !rightClick && styles.overlayWrapper,
+          !rightClick && isOpen && styles.showOverlay
+        )}
+        onClick={(e: any) => {
+          e.stopPropagation();
+          openDrop(false);
+        }}
+      >
+        <div className={clsx(pos === "top" && styles.topPos, styles.container)}>
+          {items.map((item: any, idx: number) => (
+            <div key={idx} className={styles.item}>
+              {item}
+            </div>
+          ))}
         </div>
+      </div>
     </div>
   );
 };

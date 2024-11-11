@@ -5,13 +5,9 @@ metaDescription: 'This page explains how to search for text within a field.'
 sidebar_class_name: preview-badge
 ---
 
-<TopBlock>
-
 Prisma Client supports full-text search for **PostgreSQL** databases in versions 2.30.0 and later, and **MySQL** databases in versions 3.8.0 and later. With full-text search enabled, you can add search functionality to your application by searching for text within a database column.
 
 > **Note**: There currently is a [known issue](https://github.com/prisma/prisma/issues/23627) in the full-text search feature. If you observe slow search queries, you can [optimize your query with raw SQL](#full-text-search-with-raw-sql).
-
-</TopBlock>
 
 ## Enabling full-text search
 
@@ -90,14 +86,14 @@ To get a sense of how the query format works, consider the following text:
 
 Here's how the following queries would match that text:
 
-| Query                                   | Match? | Description                             |
+| Query                                   | Match? | Explanation                             |
 | :-------------------------------------- | :----- | :-------------------------------------- |
 | `fox & dog`                             | Yes    | The text contains 'fox' and 'dog'       |
 | `dog & fox`                             | Yes    | The text contains 'dog' and 'fox'       |
 | `dog & cat`                             | No     | The text contains 'dog' but not 'cat'   |
 | `!cat`                                  | Yes    | 'cat' is not in the text                |
-| `fox &#124; cat` | Yes    | The text contains 'fox' or 'cat'        |
-| `cat &#124; pig` | No     | The text doesn't contain 'cat' or 'pig' |
+| `fox \| cat` | Yes    | The text contains 'fox' or 'cat'        |
+| `cat \| pig` | No     | The text doesn't contain 'cat' or 'pig' |
 | `fox <-> dog`                           | Yes    | 'dog' follows 'fox' in the text         |
 | `dog <-> fox`                           | No     | 'fox' doesn't follow 'dog' in the text  |
 
@@ -188,6 +184,7 @@ const posts = await prisma.post.findMany({
       search: 'database',
       sort: 'asc'
     },
+  },
 })
 ```
 
@@ -246,38 +243,86 @@ const result = await prisma.blogs.findMany({
 })
 ```
 
-However, if you try to search on `title` alone, the search will fail with the error "Cannot find a fulltext index to use for the search" and the message code is `P2030`, because the index requires a search on both fields.
+However, if you try to search on `title` alone, the search will fail with the error "Cannot find a fulltext index to use for the search" and the message code is `P2030`, because the search requires an index on both fields.
 
 ## Full-text search with raw SQL
 
-Full-text search is currently in Preview and due to a [known issue](https://github.com/prisma/prisma/issues/23627), you may be seeing slow search queries. If that's the case, you can optimize your query using [raw SQL](/orm/prisma-client/queries/raw-database-access).
+Full-text search is currently in Preview, and due to a [known issue](https://github.com/prisma/prisma/issues/23627), you might experience slow search queries. If so, you can optimize your query using [TypedSQL](/orm/prisma-client/using-raw-sql).
 
 ### PostgreSQL
 
-In PostgreSQL, you can use `to_tsvector` and `to_tsquery` to express your search query:
+With [TypedSQL](/orm/prisma-client/using-raw-sql), you can use PostgreSQL's `to_tsvector` and `to_tsquery` to express your search query.
 
-```ts
-const term = `cat`
-const result =
-  await prisma.$queryRaw`SELECT * FROM "Blog" WHERE to_tsvector('english', "Blog"."content") @@ to_tsquery('english', ${term});`
-```
+<TabbedContent code>
+
+  <TabItem value="fullTextSearch.sql">
+
+  ```sql
+  SELECT * FROM "Blog" WHERE to_tsvector('english', "Blog"."content") @@ to_tsquery('english', ${term});
+  ```
+
+  </TabItem>
+
+  <TabItem value="index.ts">
+
+  ```ts
+  import { fullTextSearch } from "@prisma/client/sql"
+  
+  const term = `cat`
+  const result = await prisma.$queryRawTyped(fullTextSearch(term))
+  ```
+
+  </TabItem>
+
+</TabbedContent>
 
 > **Note**: Depending on your language preferences, you may exchange `english` against another language in the SQL statement.
 
 If you want to include a wildcard in your search term, you can do this as follows:
 
-```ts
-const term = `cat:*`
-const result =
-  await prisma.$queryRaw`SELECT * FROM "Blog" WHERE to_tsvector('english', "Blog"."content") @@ to_tsquery('english', ${term});`
-```
+<TabbedContent code>
+
+  <TabItem value="fullTextSearch.sql">
+
+  ```sql
+  SELECT * FROM "Blog" WHERE to_tsvector('english', "Blog"."content") @@ to_tsquery('english', ${term});
+  ```
+
+  </TabItem>
+
+  <TabItem value="index.ts">
+
+  ```ts
+  //highlight-next-line
+  const term = `cat:*`
+  const result = await prisma.$queryRawTyped(fullTextSearch(term))
+  ```
+
+  </TabItem>
+
+</TabbedContent>
 
 ### MySQL
 
 In MySQL, you can express your search query as follows:
 
-```ts
-const term = `cat`
-const result =
-  await prisma.$queryRaw`SELECT * FROM Blog WHERE MATCH(content) AGAINST(${term} IN NATURAL LANGUAGE MODE);`
-```
+<TabbedContent code>
+
+  <TabItem value="fullTextSearch.sql">
+
+  ```sql
+  SELECT * FROM Blog WHERE MATCH(content) AGAINST(${term} IN NATURAL LANGUAGE MODE);
+  ```
+
+  </TabItem>
+
+  <TabItem value="index.ts">
+
+  ```ts
+  const term = `cat`
+  const result = await prisma.$queryRawTyped(fullTextSearch(term))
+  ```
+
+  </TabItem>
+
+</TabbedContent>

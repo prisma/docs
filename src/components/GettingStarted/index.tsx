@@ -1,10 +1,11 @@
-import React, { useRef, useState } from "react";
-import { Icon } from "../Icon";
-import { Tooltip } from "../tooltip/Tooltip";
-import styles from "../../css/gettingStarted.module.scss";
 import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import clsx from "clsx";
+import React, { useRef, useState } from "react";
+
+import styles from "../../css/gettingStarted.module.scss";
+import { Icon } from "../Icon";
+import { Tooltip } from "../tooltip/Tooltip";
 
 export const Database = ({ color, width, height }: any) => (
   <svg
@@ -36,6 +37,21 @@ export const Bolt = ({ color, width, height }: any) => (
   </svg>
 );
 
+export const Inspect = ({ color, width, height }: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    height={height ? height : "16"}
+    width={width ? width : "14"}
+    viewBox="0 0 65 57"
+    style={{ marginRight: `4px`, transform: `translateY(2px)` }}
+  >
+    <path
+      fill={color ? color : "currentColor"}
+      d="M50.2455 22.8125C50.2455 28.0234 48.5463 32.8945 45.7142 36.7461L59.9877 51.1328C61.4603 52.4922 61.4603 54.8711 59.9877 56.2305C58.6283 57.7031 56.2494 57.7031 54.89 56.2305L40.5033 41.8438C36.6517 44.7891 31.7806 46.375 26.683 46.375C13.6556 46.375 3.12048 35.8398 3.12048 22.8125C3.12048 9.89844 13.6556 -0.75 26.683 -0.75C39.597 -0.75 50.2455 9.89844 50.2455 22.8125ZM14.9017 23.7188V30.9688C14.9017 32.5547 16.0345 33.6875 17.6205 33.6875C19.0931 33.6875 20.3392 32.5547 20.3392 30.9688V23.7188C20.3392 22.2461 19.0931 21 17.6205 21C16.0345 21 14.9017 22.2461 14.9017 23.7188ZM23.9642 12.8438V30.9688C23.9642 32.5547 25.097 33.6875 26.683 33.6875C28.1556 33.6875 29.4017 32.5547 29.4017 30.9688V12.8438C29.4017 11.3711 28.1556 10.125 26.683 10.125C25.097 10.125 23.9642 11.3711 23.9642 12.8438ZM33.0267 20.0938V30.9688C33.0267 32.5547 34.1595 33.6875 35.7455 33.6875C37.2181 33.6875 38.4642 32.5547 38.4642 30.9688V20.0938C38.4642 18.6211 37.2181 17.375 35.7455 17.375C34.1595 17.375 33.0267 18.6211 33.0267 20.0938Z"
+    />
+  </svg>
+);
+
 export const SignalStream = ({ color, height, width }: any) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -48,7 +64,22 @@ export const SignalStream = ({ color, height, width }: any) => (
       fill={color ? color : "currentColor"}
       d="M108.2 71c13.8 11.1 16 31.2 5 45C82.4 154.4 64 203 64 256s18.4 101.6 49.1 140c11.1 13.8 8.8 33.9-5 45s-33.9 8.8-45-5C23.7 386.7 0 324.1 0 256S23.7 125.3 63.2 76c11.1-13.8 31.2-16 45-5zm359.7 0c13.8-11.1 33.9-8.8 45 5C552.3 125.3 576 187.9 576 256s-23.7 130.7-63.2 180c-11.1 13.8-31.2 16-45 5s-16-31.2-5-45c30.7-38.4 49.1-87 49.1-140s-18.4-101.6-49.1-140c-11.1-13.8-8.8-33.9 5-45zM232 256a56 56 0 1 1 112 0 56 56 0 1 1 -112 0zm-27.5-74.7c-17.8 19.8-28.5 46-28.5 74.7s10.8 54.8 28.5 74.7c11.8 13.2 10.7 33.4-2.5 45.2s-33.4 10.7-45.2-2.5C129 342.2 112 301.1 112 256s17-86.2 44.8-117.3c11.8-13.2 32-14.3 45.2-2.5s14.3 32 2.5 45.2zm214.7-42.7C447 169.8 464 210.9 464 256s-17 86.2-44.8 117.3c-11.8 13.2-32 14.3-45.2 2.5s-14.3-32-2.5-45.2c17.8-19.8 28.5-46 28.5-74.7s-10.8-54.8-28.5-74.7c-11.8-13.2-10.7-33.4 2.5-45.2s33.4-10.7 45.2 2.5z"
     />
-  </svg> 
+  </svg>
+);
+
+export const PrismaPostgres = ({ color, height, width }: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 512 512"
+    height={height ?? "16"}
+    width={width ?? "18"}
+    style={{ marginRight: `4px`, transform: `translateY(2px)` }}
+  >
+    <path
+      fill={color ? color : "currentColor"}
+      d="M290.6 59.7c-15.4-26.5-53.7-26.5-69.1 0L163 160 349 160 290.6 59.7zM69.6 320l372.8 0L367.7 192l-223.4 0L69.6 320zM51 352L11.4 419.8C-4.2 446.5 15.1 480 45.9 480l420.1 0c30.9 0 50.1-33.5 34.6-60.2L461 352 51 352z"
+    />
+  </svg>
 );
 
 export const BorderBoxWrapper = ({ children, ...props }) => (
@@ -63,9 +94,7 @@ export const BoxTitle = ({ children, ...props }) => (
   </h1>
 );
 
-export const Separator = () => (
-  <div className={styles.separator} />
-)
+export const Separator = () => <div className={styles.separator} />;
 
 export const BorderBox = ({ border, ...props }: any) => (
   <BorderBoxWrapper {...props}>{props.children}</BorderBoxWrapper>
@@ -80,7 +109,11 @@ export const Grid = ({ children, ...props }) => (
 export const LinkCard = ({ icon, title, desc, link, highlight }: any) => {
   const linkCardRef = useRef(null);
   return (
-    <Link to={link} ref={linkCardRef} className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}>
+    <Link
+      to={link}
+      ref={linkCardRef}
+      className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}
+    >
       <div className={styles.title}>
         <Icon icon={icon} btn="left" size="18px" />
         <h6>{title}</h6>
@@ -110,8 +143,8 @@ export const SquareLogo = ({ image, tech, url, imageDark }: any) => {
         onMouseMove={() => setVisibleTooltip(true)}
         onMouseLeave={() => setVisibleTooltip(false)}
       >
-        <img src={imgUrl} className={clsx(imageDark && styles.lightImg)}/>
-        {imageDark && <img src={imgDarkUrl} className={styles.darkImg}/>}
+        <img src={imgUrl} className={clsx(imageDark && styles.lightImg)} />
+        {imageDark && <img src={imgDarkUrl} className={styles.darkImg} />}
       </Link>
       {visibleTooltip && (
         <Tooltip target={squareCardRef} position="top">
@@ -123,7 +156,10 @@ export const SquareLogo = ({ image, tech, url, imageDark }: any) => {
 };
 
 export const List = ({ children, framed, split, ...props }) => (
-  <div {...props} className={clsx(styles.list, framed && styles.framedList, split && styles.splitList)}>
+  <div
+    {...props}
+    className={clsx(styles.list, framed && styles.framedList, split && styles.splitList)}
+  >
     {children}
   </div>
 );

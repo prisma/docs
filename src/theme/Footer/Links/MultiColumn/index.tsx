@@ -1,23 +1,23 @@
-import React from 'react';
+import React from "react";
 
-import LinkItem from '../../LinkItem';
+import LinkItem from "../../LinkItem";
 
-import type {Props} from '@theme/Footer/Links/MultiColumn';
-import SimpleDropdown from '@site/src/components/dropdown';
-import { Icon } from '@site/src/components/Icon';
+import type { Props } from "@theme/Footer/Links/MultiColumn";
+import SimpleDropdown from "@site/src/components/dropdown";
+import { Icon } from "@site/src/components/Icon";
 import styles from "./styles.module.scss";
-import clsx from 'clsx';
+import clsx from "clsx";
 
-type ColumnType = Props['columns'][number];
-type ColumnItemType = ColumnType['items'][number];
+type ColumnType = Props["columns"][number];
+type ColumnItemType = ColumnType["items"][number];
 
-function ColumnLinkItem({item}: {item: ColumnItemType}) {
+function ColumnLinkItem({ item }: { item: ColumnItemType }) {
   return item.html ? (
     <li
       className="footer__item"
       // Developer provided the HTML, so assume it's safe.
       // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{__html: item.html}}
+      dangerouslySetInnerHTML={{ __html: item.html }}
     />
   ) : (
     <li key={item.href ?? item.to} className="footer__item">
@@ -26,19 +26,29 @@ function ColumnLinkItem({item}: {item: ColumnItemType}) {
   );
 }
 
-function Column({column}: {column: ColumnType}) {
+function Column({ column }: { column: ColumnType }) {
   // @ts-ignore
-  const legalDropdownItems = column.items.filter((item, i) => item?.customProps?.dropdown === "legal")
+  const legalDropdownItems = column.items.filter(
+    (item, i) => item?.customProps?.dropdown === "legal"
+  );
 
   return (
-    <div className={clsx(styles.col, "col footer__col")}>
-      <div className="footer__title">{column.title}</div>
-      <ul className="footer__items clean-list">
-        {/* @ts-ignore */}
-        {column.items.map((item, i) => !item?.customProps?.dropdown && (
-          <ColumnLinkItem key={i} item={item} />
-        ))}
-        {legalDropdownItems.length > 0 && 
+    <div
+      className={clsx(
+        styles.col,
+        "col footer__col",
+        column.title === "socials" && styles.socialColWrapper
+      )}
+    >
+      {column.title !== "socials" && <div className="footer__title">{column.title}</div>}
+      {/* @ts-ignore */}
+      <ul
+        className={clsx("footer__items clean-list", column.title === "socials" && styles.socialCol)}
+      >
+        {column.items.map(
+          (item, i) => !item?.customProps?.dropdown && <ColumnLinkItem key={i} item={item} />
+        )}
+        {legalDropdownItems.length > 0 && (
           <SimpleDropdown
             dark
             pos="top"
@@ -54,25 +64,19 @@ function Column({column}: {column: ColumnType}) {
                 />
               </li>
             }
-            items={legalDropdownItems.map(
-              (dropLink: { label: string; href: string }) => (
-                <a
-                  href={dropLink.href}
-                  target="__blank"
-                  className={styles.dropdownLink}
-                >
-                  {dropLink.label}
-                </a>
-              )
-            )}
+            items={legalDropdownItems.map((dropLink: { label: string; href: string }) => (
+              <a href={dropLink.href} target="__blank" className={styles.dropdownLink}>
+                {dropLink.label}
+              </a>
+            ))}
           />
-          }
+        )}
       </ul>
     </div>
   );
 }
 
-export default function FooterLinksMultiColumn({columns}: Props): JSX.Element {
+export default function FooterLinksMultiColumn({ columns }: Props): JSX.Element {
   return (
     <div className={clsx(styles.row, "row footer__links")}>
       {columns.map((column, i) => (

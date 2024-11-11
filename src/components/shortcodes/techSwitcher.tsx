@@ -1,9 +1,10 @@
-import * as React from "react";
-import SelectComponent from "./select";
-import { components } from "react-select";
 import Link from "@docusaurus/Link";
-import styles from "./styles.module.scss";
 import useBaseUrl from "@docusaurus/useBaseUrl";
+import * as React from "react";
+import { components } from "react-select";
+
+import SelectComponent from "./select";
+import styles from "./styles.module.scss";
 
 interface TechSwitchProps {
   type: string;
@@ -23,11 +24,13 @@ const icons = {
   typescript: `/img/technologies/typescript.svg`, //<Typescript />,
   mysql: `/img/technologies/mysql.svg`, //<MySQL />,
   postgresql: `/img/technologies/postgresql.svg`, //<PostgreSQL />,
-  sqlite: `/img/technologies/sqlite.svg`, //<SQLite />,
+  // sqlite: `/img/technologies/sqlite.svg`, //<SQLite />,
+  sqlite: `/img/technologies/mysql.svg`, // tmp
   mongodb: `/img/technologies/mongodb.svg`, //<MongoDB />,
   sqlserver: `/img/technologies/sqlserver.svg`, //<SQLServer />,
   planetscale: `/img/technologies/planetscale.svg`, //<PlanetScale />,
   cockroachdb: `/img/technologies/cockroachdb.svg`, //<CockroachDB />,
+  prismaPostgres: `/img/technologies/prismaPostgres.svg` //<PrismaPostgres />
 };
 
 const technologyTypes = {
@@ -40,6 +43,7 @@ const technologyTypes = {
     "sqlserver",
     "planetscale",
     "cockroachdb",
+    "prismaPostgres"
   ],
 };
 
@@ -53,6 +57,7 @@ export const technologyNames = {
   sqlserver: "SQL Server",
   planetscale: "PlanetScale",
   cockroachdb: "CockroachDB",
+  prismaPostgres: "Prisma Postgres"
 };
 
 const TechnologySwitch = ({
@@ -74,7 +79,7 @@ const TechnologySwitch = ({
     return (
       <div className={styles.selectItem}>
         <Link href={href}>
-          <img src={useBaseUrl(icons[item.technology])} />
+          <img src={useBaseUrl(icons[item.technology])} width={24} height={24} />
           <span>{technologyNames[item.technology]}</span>
         </Link>
       </div>
