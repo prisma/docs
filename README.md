@@ -1,21 +1,12 @@
 # Prisma Documentation
 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg?style=flat-square)](https://slack.prisma.io/) [![Vercel](https://vercelbadge.vercel.app/api/prisma/docs)](https://vercel.com/prisma/docs/deployments)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) ![Discord](https://img.shields.io/discord/937751382725886062)
 
 This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs).
 
 ## Contributing to the docs
 
 New contributors are welcome! Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
-
-## Prerequisites for Apple M1 chip (macOS BigSur and later)
-
-1. Install [`homebrew`](https://brew.sh/).
-2. Install [`libvips`](https://github.com/libvips/libvips) via homebrew.
-
-   ```
-   brew install libvips
-   ```
 
 ## Run the docs site locally
 
@@ -26,18 +17,15 @@ New contributors are welcome! Read through the [contributing guide](CONTRIBUTING
 ```
 cd docs
 npm install
-npm run dev
+npm run start
 ```
 
-## Run functions locally
-
-Run a local build to run the functions using the following command:
+Be sure to also test building the static site:
 
 ```
-vercel dev
+npm run clean && npm run build
+npm run serve
 ```
-
-> Make sure you have the correct path to `POSTGRES_URL` in your local `.env` file to test the functions
 
 To prettify or format the code, run:
 
@@ -45,48 +33,17 @@ To prettify or format the code, run:
 npm run format
 ```
 
-Visit `http://localhost:8000` to view the app.
+Please note that `.md` and `.mdx` files are not formatted by Prettier because they are written in [MDX 3](https://mdxjs.com/blog/v3/) which Prettier [does not support](https://github.com/prettier/prettier/issues/12209).
+
+Visit `http://localhost:3000` to view the app.
 
 ## Configure
 
 Write MDX files in `content` folder.
 
-Open `config.ts` for available config options for `gatsby`, `header`, `footer` and `siteMetadata`.
+Most frontmatter for the docs are the same as [Docusaurus Frontmatter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter). There are some differences due to legacy frontmatter which are handled [here](https://github.com/prisma/docs/blob/94b04aa1d8f723802e715b531b9808bab2d7ae15/src/theme/DocItem/Metadata/index.tsx).
 
-- `gatsby` config for global configuration like
-
-  - `pathPrefix` - Gatsby Path Prefix
-  - `siteUrl` - The url of the deployed site
-  - `titlePrefix` - The prefix to title that is added to the SEO title of the page
-  - `titleSuffix` - The suffix to title that is added to the SEO title of the page
-
-- `header` config for site header configuration like
-
-  - `secondLevelHeaderMenuItems` - The text and links for the buckets on the second level of header
-  - `search` - The API keys for search functionality
-
-- `footer` config for site footer configuration like
-
-  - `newsletter` - Newsletter text
-
-- `homepage` config for various links and content in the homepage of https://www.prisma.io/docs
-
-  - `SummaryLinkData` - Links and text in the Summary section of homepage
-  - `GeneralLinkData` - Links and text in the General section of homepage
-  - `GuideLinkData` - Links and text in the Guide section of homepage
-  - `ReferenceLinkData` - Links and text in the Reference section of homepage
-  - `MoreUsefulLinks` - Links and text in the More Useful section of homepage
-
-- `siteMetadata` config for website related configuration
-
-  - `title` - Title of the website in main page
-  - `description` - Description of the website
-  - `keywords` - Keywords of the website for SEO
-
-- `feedback` config for feedback urls
-
-  - `sentimentUrl` - api path for sentiment details on feedback functionality
-  - `feedbackUrl` - api path for feedback details on feedback functionality
+When possible, avoid using custom frontmatter fields and use the default ones available via Docusaurus.
 
 ## Inserting, moving and deleting files
 
