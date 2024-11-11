@@ -12,29 +12,52 @@ permissions:
 
 jobs:
   check-for-absolute-urls:
-    name: "Check for absolute prisma.io urls"
+    name: "Check for dangerous urls"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: check for docs urls
+      - name: check docs urls
         id: absolute-urls
         run: |
           FILES_WITH_ABS_URLS=$(grep -Erl "https://prisma\.io/docs|https://www\.prisma\.io/docs" content) || echo "no absolute URLs found."
-          OUTPUT="## Absolute URL check"$'\n'
+          FILES_WITH_LOCAL_URLS=$(grep -Prl "(?<!!)\[.+\]\(\..+\)" content) || echo "no local URLs found."
+          OUTPUT="## Dangerous URL check"$'\n'
           SUCCESS=false
           if [ -n "${FILES_WITH_ABS_URLS}" ]; then  # if there were matching files
+            OUTPUT+="### Absolute URLs"$'\n'
             OUTPUT+="The following files have absolute URLs to prisma.io/docs. Please replace them with relative URLs."$'\n'
             OUTPUT+="Example: https://www.prisma.io/docs/getting-started/quickstart -> /getting-started/quickstart"$'\n'
             for line in ${FILES_WITH_ABS_URLS}
             do
               OUTPUT+="${line}"$'\n'
             done
+            OUTPUT+=""$'\n'
           else
             # no matching files
-            OUTPUT+="No absolute URLs to prisma.io/docs found."
+            OUTPUT+="No absolute URLs to prisma.io/docs found."$'\n'
             SUCCESS=true
           fi
+          if [ -n "${FILES_WITH_LOCAL_URLS}" ]; then
+            OUTPUT+="### Local URLs"$'\n'
+            OUTPUT+="The following files have local URLs. Please remove any leading dots."$'\n'
+            OUTPUT+="Example: ./getting-started/quickstart -> /getting-started/quickstart"$'\n'
+            for line in ${FILES_WITH_LOCAL_URLS}
+            do
+              OUTPUT+="${line}"$'\n'
+            done
+          else
+            OUTPUT+="No local URLs found."$'\n'
+            SUCCESS=true
+          fi
+
+          # check success
+          if [ -n "${FILES_WITH_ABS_URLS}" ] || [ -n "${FILES_WITH_LOCAL_URLS}" ]; then
+            SUCCESS=false
+          else
+            SUCCESS=true
+          fi
+
           # https://github.com/orgs/community/discussions/26288#discussioncomment-3876281
           {
             echo 'body<<EOF'
@@ -59,8 +82,8 @@ jobs:
             exit 1;
           fi
 
-  check-for-dead-external-links:
-    name: Check external links
+  check-for-dead-links:
+    name: Check links
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,27 +97,27 @@ jobs:
       - name: Install remark presets
         run: npm install remark-lint-no-dead-urls remark-custom-header-id
 
-      - name: run remark-cli
+      - name: Check external links (remark-cli)
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
           npx remark-cli . -qf -e=md,mdx --use remark-mdx --use remark-custom-header-id --use remark-frontmatter --use remark-gfm \
-          --use "remark-lint-no-dead-urls=skipLocalhost:true,skipUrlPatterns:['https://www.notion.so/prismaio','https://www.prisma.io/docs','https://dash.cloudflare.com','https://www.cloudflare.com']"
+          --use "remark-lint-no-dead-urls=skipLocalhost:true,skipUrlPatterns:[\
+          'https://console.prisma.io',\
+          'https://dash.cloudflare.com',\
+          'https://www.cloudflare.com',\
+          'https://www.mysql.com',\
+          'https://dev.mysql.com',\
+          'https://azure.microsoft.com',\
+          'https://pris.ly/*',\
+          'https://typeorm.io',\
+          'https://github.com',\
+          'mailto*'\
+          ]"
 
-  check-for-dead-internal-links:
-    name: Check internal links
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install deps
-        run: npm install
-
-      - name: test build
+      - name: Check internal links (docusaurus build)
+        env:
+          DOCUSAURUS_POST_HOG_KEY: ${{ secrets.DOCUSAURUS_POST_HOG_KEY }}
         run: npm run clean && npm run build
 
   check-for-redirects:

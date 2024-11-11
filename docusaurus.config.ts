@@ -1,9 +1,12 @@
 import { themes as prismThemes } from "prism-react-renderer";
 
+const path = require('path')
+
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
+const DOCUSAURUS_POST_HOG_KEY = process.env.DOCUSAURUS_POST_HOG_KEY ?? "";
 
 const config: Config = {
   title: "Prisma Documentation",
@@ -68,7 +71,17 @@ const config: Config = {
       async: true,
     },
   ],
-  plugins: ["docusaurus-plugin-sass"],
+  plugins: [
+    "docusaurus-plugin-sass",
+    [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
+      {
+        apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
+        appUrl: "https://proxyhog.prisma-data.net",
+        person_profiles: "identified_only",
+        enableInDevelopment: false
+      },
+    ],
+  ],
   presets: [
     [
       "classic",
@@ -122,6 +135,9 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
     image: "/docs/social/docs-social.png",
     metadata: [
       { name: "twitter:card", content: "summary_large_image" },
@@ -151,32 +167,52 @@ const config: Config = {
           className: "indigo first-item",
         },
         {
-          type: "docSidebar",
-          sidebarId: "ormSidebar",
-          position: "left",
-          className: "indigo",
-          label: "ORM",
+          type: 'dropdown',
+          label: 'Products',
+          position: 'left',
+          items: [
+            {
+              type: "docSidebar",
+              sidebarId: "ormSidebar",
+              className: "indigo",
+              label: "ORM",
+            },
+            {
+              className: "indigo",
+              to: "/orm/overview/databases/prisma-postgres",
+              label: "Postgres",
+            },
+            {
+              className: "indigo",
+              to: "/orm/tools/prisma-studio",
+              label: "Studio",
+            },
+            {
+              type: "docSidebar",
+              sidebarId: "optimizeSidebar",
+              className: "teal",
+              label: "Optimize",
+            },
+            {
+              type: "docSidebar",
+              sidebarId: "accelerateSidebar",
+              className: "teal",
+              label: "Accelerate",
+            },
+            {
+              type: "docSidebar",
+              sidebarId: "pulseSidebar",
+              className: "teal",
+              label: "Pulse",
+            },
+          ],
         },
         {
-          type: "docSidebar",
-          sidebarId: "optimizeSidebar",
+          to: "https://www.github.com/prisma/prisma-examples",
+          external: true,
           position: "left",
-          className: "teal",
-          label: "Optimize",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "accelerateSidebar",
-          position: "left",
-          className: "teal",
-          label: "Accelerate",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "pulseSidebar",
-          position: "left",
-          className: "teal",
-          label: "Pulse",
+          label: "Examples",
+          className: "indigo external__link",
         },
         {
           href: "https://github.com/prisma/",
@@ -210,7 +246,7 @@ const config: Config = {
           items: [
             {
               label: " ",
-              href: "https://discord.gg/KQyTW2H5ca",
+              href: "https://discord.com/invite/KQyTW2H5ca",
               customProps: {
                 icon: "fa-brands fa-discord",
                 internal: true,
@@ -271,7 +307,7 @@ const config: Config = {
             },
             {
               label: "Optimize",
-              href: "https://www.prisma.io/data-platform/optimize",
+              href: "https://www.prisma.io/optimize",
               target: "_self",
               customProps: {
                 internal: true,
@@ -279,7 +315,7 @@ const config: Config = {
             },
             {
               label: "Accelerate",
-              href: "https://www.prisma.io/data-platform/accelerate",
+              href: "https://www.prisma.io/accelerate",
               target: "_self",
               customProps: {
                 internal: true,
@@ -287,7 +323,7 @@ const config: Config = {
             },
             {
               label: "Pulse",
-              href: "https://www.prisma.io/data-platform/pulse",
+              href: "https://www.prisma.io/pulse",
               target: "_self",
               customProps: {
                 internal: true,
