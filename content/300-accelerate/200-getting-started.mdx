@@ -11,9 +11,9 @@ toc: true
 
 To get started with Accelerate, you will need the following:
 
-- A [Prisma Data Platform workspace](https://console.prisma.io/login).
+- A [Prisma Data Platform account](https://console.prisma.io)
 - A project that uses [Prisma Client](/orm/prisma-client) `4.16.1` or higher. If your project is using interactive transactions, you need to use `5.1.1` or higher. (We always recommend using the latest version of Prisma.)
-- A hosted PostgreSQL, MySQL/MariaDB, PlanetScale, CockroachDB, or MongoDB database.
+- A hosted PostgreSQL, MySQL/MariaDB, PlanetScale, CockroachDB, or MongoDB database
 
 ## 1. Enable Accelerate
 
@@ -102,13 +102,9 @@ When using Prisma Accelerate in a Serverless or an Edge application, we recommen
 npx prisma generate --no-engine
 ```
 
-<Admonition type="info">
-
 The `--no-engine` flag prevents a Query Engine file from being included in the generated Prisma Client, this ensures the bundle size of your application remains small.
 
-</Admonition>
-
-<Admonition type="warning">
+:::warning
 
 If your Prisma version is below `5.2.0`, generate Prisma Client with the `--accelerate` option:
 
@@ -118,7 +114,11 @@ npx prisma generate --accelerate
 
 If your Prisma version is below `5.0.0`, generate Prisma Client with the `--data-proxy` option:
 
-</Admonition>
+```terminal
+npx prisma generate --data-proxy
+```
+
+:::
 
 ### 2.4. Extend your Prisma Client instance with the Accelerate extension
 
@@ -142,15 +142,21 @@ const prisma = new PrismaClient().$extends(withAccelerate())
 
 If VS Code does not recognize the `$extends` method, refer to [this section](/accelerate/faq#vs-code-does-not-recognize-the-extends-method) on how to resolve the issue.
 
-<Admonition type="info">
+#### Using the Accelerate extension with other extensions or middleware
+
+Since [extensions are applied one after another](/orm/prisma-client/client-extensions#conflicts-in-combined-extensions), make sure you apply them in the correct order. Extensions cannot share behavior and the last extension applied takes precedence.
+
+If you are using [Prisma Optimize](/optimize) in your application, make sure you apply it _before_ the Accelerate extension. For example:
+
+```ts
+const prisma = new PrismaClient().$extends(withOptimize()).$extends(withAccelerate())
+```
 
 If you are using [Prisma Middleware](/orm/prisma-client/client-extensions/middleware) in your application, make sure they are added before any Prisma Client extensions (like Accelerate). For example:
 
 ```ts
 const prisma = new PrismaClient().$use(middleware).$extends(withAccelerate())
 ```
-
-</Admonition>
 
 ### 2.5. Use Accelerate in your database queries
 
@@ -195,3 +201,58 @@ For information about which strategy best serves your application, see [Select a
 As of Prisma version `5.2.0` you can use Prisma Studio with the Accelerate connection string.
 
 </Admonition>
+
+#### Invalidate the cache and keep your cached query results up-to-date
+
+If your application requires real-time or near-real-time data, cache invalidation ensures that users see the most current data, even when using a large `ttl` (Time-To-Live) or `swr` (Stale-While-Revalidate) [cache strategy](/accelerate/caching#cache-strategies). By invalidating your cache, you can bypass extended caching periods to show live data whenever it's needed.
+
+For example, if a dashboard displays customer information and a customer’s contact details change, cache invalidation allows you to refresh only that data instantly, ensuring support staff always see the latest information without waiting for the cache to expire.
+
+To invalidate a cached query result, you can add tags and then use the `$accelerate.invalidate` API.
+
+:::note
+
+On-demand cache invalidation is available with our paid plans. For more details, please see our [pricing](https://www.prisma.io/pricing#accelerate).
+
+:::
+
+To invalidate the query below:
+
+```ts
+await prisma.user.findMany({
+  where: {
+    email: {
+      contains: "alice@prisma.io",
+    },
+  },
+  cacheStrategy: {
+    swr: 60,
+    ttl: 60,
+    // highlight-start
+    tags: ["emails_with_alice"],
+    // highlight-end
+  },
+});
+```
+
+You need to provide the cache tag in the `$accelerate.invalidate` API:
+
+```ts
+try {
+  // highlight-start
+  await prisma.$accelerate.invalidate({
+    tags: ["emails_with_alice"],
+  });
+  // highlight-end
+} catch (e) {
+  if (e instanceof Prisma.PrismaClientKnownRequestError) {
+    // The .code property can be accessed in a type-safe manner
+    if (e.code === "P6003") {
+      console.log(
+        "You've reached the cache invalidation rate limit. Please try again shortly."
+      );
+    }
+  }
+  throw e;
+}
+```

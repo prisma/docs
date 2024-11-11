@@ -1,18 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import {
+  isActiveSidebarItem,
+  findFirstSidebarItemLink,
+  useDocSidebarItemsExpandedState,
+} from "@docusaurus/plugin-content-docs/client";
+import {
   ThemeClassNames,
   useThemeConfig,
   usePrevious,
   Collapsible,
   useCollapsible,
 } from "@docusaurus/theme-common";
-import {
-  isActiveSidebarItem,
-  findFirstSidebarItemLink,
-  useDocSidebarItemsExpandedState,
-  isSamePath,
-} from "@docusaurus/theme-common/internal";
+import { isSamePath } from "@docusaurus/theme-common/internal";
 import Link from "@docusaurus/Link";
 import { translate } from "@docusaurus/Translate";
 import useIsBrowser from "@docusaurus/useIsBrowser";
@@ -168,7 +168,7 @@ export default function DocSidebarItemCategory({
           }
           aria-current={isCurrentPage ? "page" : undefined}
           aria-expanded={collapsible ? !collapsed : undefined}
-          href={collapsible ? hrefWithSSRFallback ?? "#" : hrefWithSSRFallback}
+          href={collapsible ? (hrefWithSSRFallback ?? "#") : hrefWithSSRFallback}
           {...props}
         >
           {label}

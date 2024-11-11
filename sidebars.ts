@@ -46,8 +46,14 @@ const sidebars: SidebarsConfig = {
         "getting-started/index",
         {
           type: "doc",
-          id: "getting-started/quickstart",
+          id: "getting-started/quickstart-sqlite",
           label: "Quickstart",
+        },
+        {
+          type: "doc",
+          id: "getting-started/quickstart-prismaPostgres",
+          label: "Quickstart",
+          className: "hidden-sidebar",
         },
         {
           type: "category",

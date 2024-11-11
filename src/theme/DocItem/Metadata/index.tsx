@@ -1,6 +1,6 @@
 import React from "react";
 import { PageMetadata } from "@docusaurus/theme-common";
-import { useDoc } from "@docusaurus/theme-common/internal";
+import { useDoc } from "@docusaurus/plugin-content-docs/client";
 
 import type { DocFrontMatter } from "@docusaurus/plugin-content-docs";
 
@@ -19,12 +19,7 @@ export default function DocItemMetadata(): JSX.Element {
   const image = assets.image ?? prismaFrontMatter.image;
 
   return (
-    <PageMetadata
-      title={title}
-      description={description}
-      keywords={keywords}
-      image={image}
-    >
+    <PageMetadata title={title} description={description} keywords={keywords} image={image}>
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
     </PageMetadata>

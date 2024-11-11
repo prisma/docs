@@ -17,19 +17,19 @@ export const Promo = () => {
       color: "indigo",
     },
     {
-      text: `Want to react to database changes in your app, as they happen?`,
-      link: "https://pris.ly/sidebar-promo/react-to-database-changes",
+      text: `Running a serverless backend? You need a managed connection pool.`,
+      link: "https://pris.ly/sidebar-promo/managed-connection-pool",
       color: "teal",
     },
     {
-      text: `Working on real-time interactions in your distributed systems?`,
-      link: "https://pris.ly/sidebar-promo/real-time-interactions-distributed-systems",
-      color: "indigo",
+      text: `Want to make your database perform globally?`,
+      link: "https://pris.ly/sidebar-promo/make-your-db-global",
+      color: "teal",
     },
     {
-      text: `Working on critical workflows triggered by changes in your db?`,
-      link: "https://pris.ly/sidebar-promo/critical-workflows-triggered-by-db",
-      color: "indigo",
+      text: `Want to react to database changes in your app, as they happen?`,
+      link: "https://pris.ly/sidebar-promo/react-to-database-changes",
+      color: "teal",
     },
     {
       text: `Need your database queries to be 1000x faster?`,
@@ -37,24 +37,9 @@ export const Promo = () => {
       color: "teal",
     },
     {
-      text: `Working on highly scaleable serverless or edge applications?`,
-      link: "https://pris.ly/sidebar-promo/scaleable-serverless-edge-apps",
-      color: "indigo",
-    },
-    {
-      text: `Want to enhance response times while reducing database load?`,
-      link: "https://pris.ly/sidebar-promo/enhance-response-times-reduce-load",
-      color: "teal",
-    },
-    {
       text: `Interested in query caching in just a few lines of code?`,
       link: "https://pris.ly/sidebar-promo/caching-few-lines-of-code",
       color: "teal",
-    },
-    {
-      text: `Does your serverless architecture handle global scaling effectively?`,
-      link: "https://pris.ly/sidebar-promo/serverless-architecture-global-scaling",
-      color: "indigo",
     },
     {
       text: `Easily identify and fix slow SQL queries in your app.`,
@@ -72,21 +57,20 @@ export const Promo = () => {
       color: "teal",
     },
     {
-      text: `Tell us how Prisma ORM is working for you!`,
-      link: "https://pris.ly/orm-survey-5-18",
-      color: "indigo",
-    },
-    {
       text: `Need to improve app performance? Get tailored recommendations.`,
       link: "https://pris.ly/sidebar-promo/tailored-recommendations",
       color: "teal",
     },
-     {
+    {
       text: `Your db queries could be faster? Let Optimize figure out why. `,
       link: "https://pris.ly/sidebar-promo/faster-db-queries",
       color: "teal",
     },
-    
+    {
+      text: `Using Raycast? Try our "docs search" extension. `,
+      link: "https://pris.ly/sidebar-promo/raycast-extension",
+      color: "indigo",
+    },
   ];
 
   let promo = promoOptions[Math.floor(Math.random() * promoOptions.length)];

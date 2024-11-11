@@ -74,7 +74,16 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     </ul>
   );
 }
-function TabContent({ lazy, children, selectedValue, transparent, code, terminal, fullWidth, customStyles }) {
+function TabContent({
+  lazy,
+  children,
+  selectedValue,
+  transparent,
+  code,
+  terminal,
+  fullWidth,
+  customStyles,
+}) {
   const childTabs = (Array.isArray(children) ? children : [children]).filter(Boolean);
   if (lazy) {
     const selectedTabItem = childTabs.find((tabItem) => tabItem.props.value === selectedValue);
@@ -87,7 +96,12 @@ function TabContent({ lazy, children, selectedValue, transparent, code, terminal
 
   return (
     <div
-      className={clsx("margin-top--md", transparent && styles.transparent, code && styles.code, fullWidth && styles[`full-width`])}
+      className={clsx(
+        "margin-top--md",
+        transparent && styles.transparent,
+        code && styles.code,
+        fullWidth && styles[`full-width`]
+      )}
       style={customStyles ? customStyles : {}}
     >
       {childTabs.map((tabItem, i) =>
