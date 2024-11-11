@@ -38,12 +38,12 @@ export const FooterNewsletterForm = ({ theme, color = "indigo" }: FooterNewslett
         },
         includeListIds: [15],
         templateId: 36,
-        redirectionUrl: "https://prisma.io",
+        redirectionUrl: "https://www.prisma.io",
       }),
     };
 
     try {
-      const response = await fetch("https://prisma.io/api/newsletter", options);
+      const response = await fetch("https://www.prisma.io/api/newsletter", options);
       if (!response.ok) {
         throw new Error("Failed to submit the form");
       }

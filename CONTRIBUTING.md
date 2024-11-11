@@ -14,11 +14,11 @@ If you are not sure your changes are valid, then please still open an issue and 
 
 There are no hard and fast rules for creating an issues to the repository. We only ask that you outline your reasoning for creating the issue and try to provide as much detail as possible. Depending on the issue, this could mean explaining what machine you are working on (Is it a Mac? Are you on a Windows machine?), or including a code snippet that demonstrates the issue.
 
-If you spot a problem with the docs, [search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/github/docs/issues/new/choose).
+If you spot a problem with the docs, [search if an issue already exists](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/prisma/docs/issues/new/choose).
 
 ### Solving an issue
 
-Scan through our [existing issues](https://github.com/github/docs/issues) to find one that interests you. You can narrow down the search using `labels` as filters. See "[Label reference](https://docs.github.com/en/contributing/collaborating-on-github-docs/label-reference)" for more information. As a general rule, we don’t assign issues to anyone. If you find an issue to work on, you are welcome to open a PR with a fix.
+Scan through our [existing issues](https://github.com/prisma/docs/issues) to find one that interests you. You can narrow down the search using `labels` as filters. See "[Label reference](https://docs.github.com/en/contributing/collaborating-on-github-docs/label-reference)" for more information. As a general rule, we don’t assign issues to anyone. If you find an issue to work on, you are welcome to open a PR with a fix.
 
 ### Creating a pull request (PR)
 
@@ -30,6 +30,6 @@ Similar to issues, we do not have hard and fast rules for Pull Requests. If you 
 
 The Prisma team may ask for changes before a PR can be merged. As these changes are made, please mark the corresponding comments as "resolved". If you need help on a pull request or would like feedback, please feel free to mention the `@Dev-Connections` team.
 
-As a final note, if you're still working on a PR, please utilize the "Draft Pull Request" feature to let us know that your work is not yet ready. 
+As a final note, if you're still working on a PR, please utilize the "Draft Pull Request" feature to let us know that your work is not yet ready.
 
 Thank you again for contributing to our documentation!
