@@ -86,8 +86,10 @@ const config: Config = {
     [
       "classic",
       {
-        googleTagManager: {
-          containerId: process.env.GT_CONTAINER_ID,
+        ...process.env.GT_CONTAINER_ID && {
+          googleTagManager: {
+            containerId: process.env.GT_CONTAINER_ID,
+          }
         },
         sitemap: {
           // @ts-ignore
@@ -228,7 +230,7 @@ const config: Config = {
         },
       ],
     },
-    algolia: {
+    ...process.env.ALGOLIA_APP_ID && process.env.ALGOLIA_API_KEY && {algolia: {
       appId: process.env.ALGOLIA_APP_ID,
       apiKey: process.env.ALGOLIA_API_KEY,
       indexName: "prisma",
@@ -236,7 +238,7 @@ const config: Config = {
       replaceSearchResultPathname: {
         from: "/docs/",
         to: DOCUSAURUS_BASE_URL,
-      },
+      }}
     },
     footer: {
       style: "dark",
