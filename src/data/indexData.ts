@@ -7,19 +7,19 @@ export const ProductLinkData = {
     link:  "/orm",
     icon: "fa-regular fa-database"
   },
-  i_postgres: {
-    title: "Managed Postgres for global workloads",
-    eyebrow: "Postgres",
-    description: "A managed PostgreSQL database without cold starts. Easily deploy your database in three clicks, explore with a generous free tier, and scale as needed.",
-    link: "/orm/overview/databases/prisma-postgres",
-    icon: "fa-regular fa-chart-pyramid"
-  },
   i_studio: {
     title: "Explore and manipulate your data",
     eyebrow: "Studio",
     description: "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
     link: "/orm/tools/prisma-studio",
     icon: "fa-regular fa-table"
+  },
+  t_postgres: {
+    title: "Managed Postgres for global workloads",
+    eyebrow: "Postgres",
+    description: "A managed PostgreSQL database without cold starts. Easily deploy your database in three clicks, explore with a generous free tier, and scale as needed.",
+    link: "/orm/overview/databases/prisma-postgres",
+    icon: "fa-regular fa-chart-pyramid"
   },
   t_optimize: {
     title: "AI-driven insights",
