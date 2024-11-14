@@ -230,7 +230,7 @@ const config: Config = {
         },
       ],
     },
-    ...process.env.ALGOLIA_APP_ID && {algolia: {
+    algolia: {
       appId: process.env.ALGOLIA_APP_ID,
       apiKey: "fd3d0a05bfe5d280348060ca5ea416be",
       indexName: "prisma",
@@ -238,7 +238,7 @@ const config: Config = {
       replaceSearchResultPathname: {
         from: "/docs/",
         to: DOCUSAURUS_BASE_URL,
-      }}
+      }
     },
     footer: {
       style: "dark",
