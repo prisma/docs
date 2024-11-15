@@ -232,7 +232,7 @@ const config: Config = {
     },
     algolia: {
       appId: process.env.ALGOLIA_APP_ID,
-      apiKey: "fd3d0a05bfe5d280348060ca5ea416be",
+      apiKey: process.env.ALGOLIA_API_KEY,
       indexName: "prisma",
       contextualSearch: false,
       replaceSearchResultPathname: {
