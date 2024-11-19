@@ -75,8 +75,8 @@ const config: Config = {
     "docusaurus-plugin-sass",
     [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
-        apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
-        appUrl: "https://proxyhog.prisma-data.net",
+        apiKey: DOCUSAURUS_POST_HOG_KEY,
+        appUrl: DOCUSAURUS_BASE_URL,
         person_profiles: "identified_only",
         enableInDevelopment: false
       },
@@ -86,8 +86,10 @@ const config: Config = {
     [
       "classic",
       {
-        googleTagManager: {
-          containerId: "GTM-KCGZPWB",
+        ...process.env.GT_CONTAINER_ID && {
+          googleTagManager: {
+            containerId: process.env.GT_CONTAINER_ID,
+          }
         },
         sitemap: {
           // @ts-ignore
@@ -229,14 +231,14 @@ const config: Config = {
       ],
     },
     algolia: {
-      appId: "MF58UJZ648",
-      apiKey: "fd3d0a05bfe5d280348060ca5ea416be",
+      appId: process.env.ALGOLIA_APP_ID,
+      apiKey: process.env.ALGOLIA_API_KEY,
       indexName: "prisma",
       contextualSearch: false,
       replaceSearchResultPathname: {
         from: "/docs/",
         to: DOCUSAURUS_BASE_URL,
-      },
+      }
     },
     footer: {
       style: "dark",
