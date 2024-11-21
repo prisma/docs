@@ -1,0 +1,275 @@
+---
+title: 'Deploy to Deno Deploy'
+metaTitle: 'Deploy to Deno Deploy'
+metaDescription: 'Learn how to deploy a TypeScript application to Deno Deploy.'
+---
+
+<TopBlock>
+
+With this guide, you can learn how to build and deploy a simple application to [Deno Deploy](https://deno.com/deploy). The application uses Prisma ORM to save a log of each request to a PostgreSQL database.
+
+This guide covers the use of Prisma CLI with Deno CLI, Deno Deploy, Prisma Client, and Prisma Accelerate.
+
+<Admonition type="info">
+
+This guide demonstrates how to deploy an application to Deno Deploy in conjunction with a PostgreSQL database, but you can use [any database type that Prisma ORM supports](/orm/reference/supported-databases).
+
+</Admonition>
+
+</TopBlock>
+
+## Prerequisites
+
+- a free [Prisma Data Platform](https://console.prisma.io/login) account
+- a free [Deno Deploy](https://deno.com/deploy) account
+- a PostgreSQL database
+- Node.js & npm installed
+- Deno v1.29.4 or later installed. [Learn more](https://docs.deno.com/runtime/#install-deno).
+- (Recommended) Latest version of Prisma ORM.
+- (Recommended) Deno extension for VS Code. [Learn more](https://docs.deno.com/runtime/reference/vscode/).
+
+## 1. Set up your application
+
+To start, you create a directory for your project, and then use `deno run` to initialize your application with `prisma init` as an [npm package with npm specifiers](https://docs.deno.com/runtime/fundamentals/node/).
+
+To set up your application:
+
+1. Open your terminal and navigate to a location of your choice.
+2. Run the following commands to set up your application.
+
+   ```terminal
+   mkdir prisma-deno-deploy
+   cd prisma-deno-deploy
+   deno run -A npm:prisma init
+   ```
+
+3. Edit the `prisma/schema.prisma` file to define the data model and enable the `deno` preview feature flag.
+
+   Later in the guide, you create an application that uses the `Log` model to store data for incoming requests from the application.
+
+   To use Deno, you need to add the preview feature flag `deno` to the `generator` block of your `schema.prisma` file. Also, Deno requires that you generate Prisma Client in a custom location. You can enable this with the `output` parameter in the `generator` block. To satisfy both of these requirements, add the following lines to the `generator` block:
+
+   ```prisma file=schema.prisma highlight=3-4,12-23;add showLineNumbers
+   generator client {
+     provider        = "prisma-client-js"
+     //add-start
+     previewFeatures = ["deno"]
+     output          = "../generated/client"
+     //add-end
+   }
+   
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   
+   //add-start
+   model Log {
+     id      Int    @id @default(autoincrement())
+     level   Level
+     message String
+     meta    Json
+   }
+   
+   enum Level {
+     Info
+     Warn
+     Error
+   }
+   //add-end
+   ```
+
+4. In your `.env` file, replace the current placeholder connection string `postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public` with your PostgreSQL connection string.
+
+## 2. Create the database schema
+
+With the data model in place and your database connection configured, you can now apply the data model to your database.
+
+```terminal
+deno run -A npm:prisma migrate dev --name init
+```
+
+The command does two things:
+
+1. It creates a new SQL migration file for this migration
+1. It runs the SQL migration file against the database
+
+At this point, the command has two additional side effects. The command installs Prisma Client and creates the `package.json` file for the project, which includes the `@prisma/client` package as a dependency.
+
+## 3. Generate Prisma Client for Prisma Accelerate
+
+Next, generate Prisma Client for the Prisma Accelerate with the `--no-engine` flag. Later, you will use [Prisma Accelerate](/accelerate) to connect to your database over HTTP.
+
+```terminal
+deno run -A --unstable npm:prisma generate --no-engine
+```
+
+<Admonition>
+
+Prior to Prisma ORM 5.2.0, the `--no-engine` flag is not available. Instead, use the `--accelerate` flag.
+
+```terminal
+deno run -A npm:prisma generate --accelerate
+```
+
+</Admonition>
+
+You now have a database schema and a locally generated Prisma Client for the Prisma Accelerate.
+
+## 4. Create your application
+
+You can now create a local Deno application. Create `index.ts` in the root folder of your project and add the content below:
+
+```ts
+import { serve } from 'https://deno.land/std@0.140.0/http/server.ts'
+import { PrismaClient } from './generated/client/deno/edge.ts'
+
+const prisma = new PrismaClient()
+
+async function handler(request: Request) {
+  const log = await prisma.log.create({
+    data: {
+      level: 'Info',
+      message: `${request.method} ${request.url}`,
+      meta: {
+        headers: JSON.stringify(request.headers),
+      },
+    },
+  })
+  const body = JSON.stringify(log, null, 2)
+  return new Response(body, {
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+  })
+}
+
+serve(handler)
+```
+
+<Admonition>
+
+**VS Code error: `An import path cannot end with a '.ts' extension`**<br /><br />
+
+If you use VS Code and see the error `An import path cannot end with a '.ts' extension` for the `import` statements at the beginning of `index.ts`, you need to install the [Deno extension for VS Code](https://docs.deno.com/runtime/reference/vscode/), select **View** > **Command Palette** and run the command **Deno: Initialize Workspace Configuration**. This tells VS Code that the TypeScript files in the current project need to run with Deno, which then triggers the correct validations.
+
+</Admonition>
+
+### What's next
+
+You cannot run this script yet, because you do not yet have the required Prisma Accelerate connection string to use Prisma Client with your database. Later in this guide, you will obtain the required credentials when you next add your application to the Prisma Data Platform.
+
+After that, you test your application locally.
+
+## 5. Enable Accelerate in the Prisma Data Platform
+
+To get started with Prisma Accelerate:
+
+1. Sign up for a free [Prisma Data Platform account](https://console.prisma.io/login)
+1. Create a project
+1. Navigate to the project you created
+1. Enable Accelerate
+1. Generate an Accelerate connection string and copy it to your clipboard
+
+## 6. Configure Prisma Accelerate in your environment
+
+With the Accelerate connection string copied, you can replace the existing connection string that you used to create the database schema in your `.env` file.
+
+Prisma Client does not read `.env` files by default on Deno, so you must also install `dotenv-cli` locally.
+
+To configure Prisma Accelerate:
+
+1. Install the `dotenv-cli`.
+
+   ```bash
+   npm install dotenv-cli
+   ```
+
+2. Add the Prisma Accelerate connection string to the `.env` file. Also, comment out the direct connection string.
+
+   ```bash file=.env
+   DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
+   # Previous database connection
+   # DATABASE_URL="postgres://..."
+   ```
+
+The configuration of your local environment is now ready to send Prisma Client queries to the database through Prisma Accelerate.
+
+## 7. Test your application locally
+
+You can now start your application locally and test the creation of log entries.
+
+```terminal
+npx dotenv -- deno run -A ./index.ts
+```
+
+In a web browser, open [http://localhost:8000/](http://localhost:8000/). This page writes your request to the database.
+
+```
+{
+  "id": 3,
+  "level": "Info",
+  "message": "GET http://localhost:8000/",
+  "meta": {
+    "headers": "{}"
+  }
+}
+```
+
+Reload the page a few times.<br /><br />Every time you reload, the script generates a new log entry and the id of the current log entry increments.
+
+This confirms that your application works when you run it from your local environment.
+
+## 8. Create a repository and push to GitHub
+
+You need a GitHub repository to add your project to Deno Deploy and enable automated deployments whenever you push changes.
+
+To set up a GitHub repository:
+
+1. [Create a private GitHub repository](https://github.com/new).
+
+2. Initialize your repository locally and push your changes to GitHub, with the following commands:
+
+   ```terminal
+   git init -b main
+   git remote add origin https://github.com/<username>/prisma-deno-deploy
+   git add .
+   git commit -m "initial commit"
+   git push -u origin main
+   ```
+
+## 9. Deploy to Deno Deploy
+
+Use the GitHub repository to add your application to Deno Deploy:
+
+1. Go to [https://dash.deno.com/new](https://dash.deno.com/new).
+1. Select a GitHub organization or user and then select a repository.
+1. Select a production branch and select **Automatic** mode so that Deno Deploy can deploy every time you push a change to the repository.
+1. Select `index.ts` as the entry point to your project.
+1. To define the Accelerate connection string, click **Add Env Variable**.
+   1. For **KEY**, enter `DATABASE_URL`.
+   1. For **VALUE**, paste the Accelerate connection string.
+      ![Deno Deploy - project parameters](./images/550-02-deploy-to-deno-project-parameters.png)
+1. Click **Link**.<br />
+   Wait for the first Deno deployment to finish.
+
+When the first deployment finishes, your browser is redirected to the project view.
+
+### What's next
+
+Click the blue **View** button at the top right to open the deployed Deno application.
+
+The application shows a similar result as when you tested locally with a further increment of the new `Log` record id number.
+
+```
+{
+  "id": 5,
+  "level": "Info",
+  "message": "GET https://prisma-deno-deploy.deno.dev/",
+  "meta": {
+    "headers": "{}"
+  }
+}
+```
+
+## Summary
+
+You successfully deployed a Deno application that you created in TypeScript, which uses Prisma Client for the Prisma Accelerate to connect to a PostgreSQL database.

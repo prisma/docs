@@ -1,22 +1,19 @@
-import * as React from 'react'
-import styled from 'styled-components'
+import * as React from "react";
+import styles from "./styles.module.scss";
 
 interface CodeProps {
-  technologies?: string[]
+  technologies?: string[];
 }
 
-type CodeBlockProps = CodeProps & React.ReactNode
-
+type CodeBlockProps = CodeProps & React.ReactNode & { children?: any };
+let c = 0;
 const SwitchTech = ({ technologies, children }: CodeBlockProps) => {
-  return <SwitchWrapper id={`techswitch-${technologies.join('-')}`}>{children}</SwitchWrapper>
-}
+  c++;
+  return (
+    <section className={styles.switchWrapper} id={`techswitch-${technologies.join("-")}-no-${c}`}>
+      {children}
+    </section>
+  );
+};
 
-export default SwitchTech
-
-const SwitchWrapper = styled.section`
-  display: none;
-  position: relative;
-  &.show {
-    display: block;
-  }
-`
+export default SwitchTech;

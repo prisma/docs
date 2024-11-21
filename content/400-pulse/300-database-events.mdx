@@ -1,0 +1,199 @@
+---
+title: "Database events"
+metaTitle: "Database events with Prisma Pulse"
+metaDescription: "Learn about database change events in Prisma Pulse, their structure, delivery semantics, and more."
+---
+
+## Structure
+
+The structure of a database change event depends on the model and the kind of operation that was performed. You can learn more in the [API reference](/pulse/api-reference).
+
+The examples below are based on this `User` model:
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  email String  @unique
+}
+```
+
+All events have the following fields in common:
+
+- `id`: Unique identifier
+- `action`: The kind of event that was performed, either of the following: `create`, `update`, `delete`
+
+Depending on the kind of event, there may be additional fields in the event objects received via Prisma Pulse. See the following sections for a few sample events.
+
+### Create events
+
+Here is an example of an event object you may receive when a new record is _created_:
+
+```js
+{
+  action: 'create',
+  created: { id: 3, email: 'jane@prisma.io', name: 'Jane Doe' },
+  id: '0/2A5A590'
+}
+```
+
+### Update events
+
+Here is an example of an event object you may receive when a record is _updated_:
+
+```js
+{
+  action: 'update',
+  after: { id: 2, email: 'jane@prisma.io', name: 'Jane Doe' },
+  before: null,
+  id: '0/2A5A248'
+}
+```
+
+If you want the `before` field to carry the values of the record _before_ it was updated, you need to set `REPLICA IDENTITY` to `FULL` as explained [here](/pulse/database-setup/general-database-instructions#replica-identity). In that case, the event object may look as follows:
+
+```js
+{
+  action: 'update',
+  after: { id: 2, email: 'jane@prisma.io', name: 'Jane Doe' },
+  before: { id: 2, email: 'jane@prisma.io', name: 'Jane' },
+  id: '0/2A5A248'
+}
+```
+
+### Delete events
+
+Here is an example of an event object you may receive when a record is _deleted_:
+
+```js
+ {
+  action: 'delete',
+  deleted: { id: 1 },
+  id: '0/2A5A398'
+}
+```
+
+If you want the `deleted` field to carry the values of the record that was deleted, you need to set `REPLICA IDENTITY` to `FULL` as explained [here](/pulse/database-setup/general-database-instructions#replica-identity). Otherwise it will only carry the `id` value of the record. In that case, the event object may look as follows:
+
+```js
+ {
+  action: 'delete',
+  deleted: { id: 21, email: 'jane@prisma.io', name: 'Jane Doe' },
+  id: '0/2A5A398'
+}
+```
+
+## Delivery semantics
+
+This section gives an overview of the event delivery semantics of Prisma Pulse.
+
+### What are event delivery semantics?
+
+Event delivery semantics describe the _guarantees_ an event producer can provide about the delivery of events in an event-driven architecture.
+
+There generally are three kinds of delivery guarantees:
+
+- **At most once**: The event is delivered either once or not at all.
+- **At least once**: The event is delivered one or more times, ensuring it never goes undelivered.
+- **Exactly once**: The event is delivered exactly once, avoiding duplicates.
+
+### Event delivery semantics in Prisma Pulse
+
+Here is a summary of the event delivery semantics in Prisma Pulse:
+
+|                                | `stream()`                         | `subscribe()`                                   |
+| :----------------------------- | :--------------------------------- | :---------------------------------------------- |
+| **Requires event persistence** | Yes                                | No                                              |
+| **Delivery guarantees**        | At least once                      | At most once                                    |
+| **Event order**                | Same order as events were produced | Maybe different order than events were produced |
+| **Can "replay" missed events** | Yes                                | No                                              |
+
+<Admonition type="warning">
+
+Note that if an events exceeds the [size limit](/pulse/known-limitations#size-limit-for-database-events) for your [subscription plan](https://www.prisma.io/pricing), the event will be rejected and won't make it to your application..
+
+</Admonition>
+
+#### `stream()`
+
+When using `stream()`, Prisma Pulse provides the following delivery guarantees:
+
+##### At least once delivery
+
+When streaming database change events with `stream()`, database change events are guaranteed to be delivered with _at least once_ semantics, meaning that Prisma Pulse can guarantee that any event happening in the database will be delivered one or more times.
+
+##### Delivery of events in the right order
+
+Prisma Pulse further guarantees to deliver the database change events in the order they were produced.
+
+##### Exactly once delivery
+
+While Pulse by default offers _at least once_ semantics, it also provides the _primitives_ for you to implement _exactly once_ delivery guarantees yourself!
+
+Each event produced by Prisma Pulse carries an identifier/idempotency key that you can use to deduplicate during downstream processing of the event. This is best implemented by passing the identifier along to external services that support idempotency or using concepts like upsert when working with a database.
+
+The `id` field in this event payload for a `User` model represent the identifier/idempotency key:
+
+```js
+{
+  action: 'update',
+  after: { id: 1, name: 'Jane', email: "doe@prisma.io" },
+  before: null,
+  // highlight-next-line
+  id: '01HYBEER1JPSBVPG2NQADNQTA6'
+}
+```
+
+#### `subscribe()`
+
+##### At most once delivery
+
+When streaming database change events with `.subscribe()`, database change events are guaranteed to be delivered with _at most once_ semantics, meaning that some of the database events may get lost.
+
+##### No guarantees about the order of the events
+
+`subscribe()` doesn't provide any guarantees about the order in which events will arrive.
+
+## Event persistence
+
+You can configure **Event persistence** for Pulse in your Console [project](/platform/about#project). Only with **Event persistence** enabled, you will be able to take advantage of _at least once_ and _right order_ delivery guarantees by Prisma Pulse via the `stream()` API.
+
+### What events are persisted?
+
+As soon as you enable **Event persistence** for Pulse in your Console [project](/platform/about#project), Pulse will store _all database_ events from _all tables_.
+
+### In what shape are events being persisted?
+
+Events are being persisted in the same [structure](#structure) that they're delivered.
+
+### How does event persistence impact pricing?
+
+With event persistence enabled, pricing is impacted as follows:
+
+- **Database events**: The number of database events _captured_ by Pulse
+- **Events reads**: The number of database events _read_ and _delivered_ by Pulse via `.stream()`
+- **Event storage**: The amount of disk space the stored events consume (in GiB)
+
+See the [subscription plans](https://www.prisma.io/pricing) for more details. Pricing applies regardless of whether you use `subscribe()` or `stream()`.
+
+## Resuming event streams
+
+The `stream()` API offers the option to provide a [`name`](/pulse/api-reference#options) argument which makes a stream _resumable_:
+
+```ts
+const stream = await prisma.user.stream({
+  name: "all-user-events"
+})
+```
+
+If a `name` is provided, Pulse tracks the delivery of events with a _cursor_. Only if the event is acknowledged on the receiver side, the cursor associated with that `name` will move. 
+
+In case a stream is unavailable for some reason, e.g. because your server was down, the receiver can't acknowledge any events. Once the stream is available again, the stream will pick up at the last cursor position and deliver any events that haven't been acknowledged in the meantime:
+
+![Resuming event streams with a name argument](/img/pulse/with-name.png)
+
+If the `name` option is omitted, no cursor will be associated with the stream and events that happen while a stream is down will not be delivered:
+
+![Resuming event streams without a name argument](/img/pulse/without-name.png)
+
+Note that if `name` is provided, only one client can be connected to a stream with that particular `name` at any given time.

@@ -1,0 +1,169 @@
+---
+title: 'Writing style'
+metaTitle: 'Prisma docs style guide: writing style'
+metaDescription: 'This section of the style guide provides guidelines on tone of voice, audience, and other tonal matters.'
+tocDepth: 4
+toc_max_heading_level: 4
+search: false
+---
+
+## Audience
+
+We assume that our audience has basic software development knowledge. Our audience know how to use their tools, such as their IDE and a terminal window. Many of our users are familiar with advanced software development concepts and techniques, but we cannot assume this in the docs. We cannot assume that our users have any database knowledge.
+
+## Simplify
+
+It's a good principle of technical communication to write as simply as possible. This is harder than it sounds, but the extra work is worth it to make clearer, more readable docs. It's particularly important when you write for a global audience, not all of whom are fluent with English.
+
+- Use short paragraphs
+- Stick to short, simple sentences. Where possible, avoid sentences with multiple clauses.
+- English has many synonyms - where possible, choose the simplest available word for the job. Examples: "in" instead of "within", "use" instead of "utilize".
+- Use bullet lists to break up complex sentences into component points
+- Use examples
+- Use [appropriate text emphasis, such as bold and italics](/about/style-guide/spelling-punctuation-formatting#text-emphasis) to make your writing clearer
+- Use tables to set out complex information
+- Use diagrams to make complex workflows or concepts easier to visualize
+
+## Tone of voice
+
+Write in a calm, assured tone of voice. Our tone is friendly and direct, but [we don't use slang](#avoid-emojis-slang-and-metaphors).
+
+## Write in US English
+
+US English is the most globally recognized form of English. Use US English punctuation, grammar, and spelling. For example:
+
+- `color` over `colour`
+- `behavior` over `behaviour`
+- `Prisma plans to` over `Prisma plan to`
+
+## Avoid emojis, slang, and metaphors
+
+Avoid emojis, idiomatic expressions, slang, and metaphors. Prisma has a global community, and the cultural meaning of these items might be different around the world, and can change over time.
+
+## Avoid imprecise pronouns like "it" or "that"
+
+Try to be as specific as possible when you refer to a specific noun. Do not refer to the noun as "it" unless you have just defined the proper noun in a previous sentence or clause. Even then, your writing might be clearer for international audiences if you specify the noun again. In particular, avoid starting sentences with "It".
+
+## Write in the second person
+
+The second person ("you") gives a conversational tone and speaks directly to the reader. Avoid the first person ("I", "we", "let's", and "us"). Example:
+
+> "You must commit the entire `prisma/migrations` folder to source control."
+
+Exception: Use "we" when you refer to Prisma the organization. For example, here Prisma (the organization) recommends a course of action:
+
+> "We recommend that you share a single instance of `PrismaClient` across your application".
+
+## Use inclusive language
+
+When you refer to one or more people in the third person, use inclusive, gender-neutral language. Use "they/them/their" instead of "he/him/his" or "she/her/her". Avoid gender-specific words like "guys".
+
+## Jargon
+
+> Jargon: (n.) special words or expressions that are used by a particular profession or group and are difficult for others to understand.
+
+The Prisma docs include a lot of technical detail, and jargon is unavoidable. However, we strive to use as little jargon as possible.
+
+When you use jargon, follow these guidelines:
+
+- If you can explain the jargon in a few words, then you might prefer to explain it there and then. Use your judgement to decide whether that is best for this doc.
+
+- For longer explanations, link to a definition elsewhere.
+
+  - If the jargon is specific to Prisma, then link to a definition in our docs.
+
+  - If the jargon is _not_ specific to Prisma, check if you can find the definition quickly with a web search. If so, then do not explain the term or link to a definition. We can reasonably expect users to know the jargon or to find an explanation for themselves.
+
+- Only link on the first instance of a jargon term in a logical section of the docs.
+
+  A logical section is a section of the docs that we might expect someone to read at one time. Typically, it is a page, or a self-contained part of a page that comprises one or more headed sections.
+
+- When you link to an external definition, choose a credible source. Wikipedia is acceptable, and official third-party documentation is better.
+
+## Use active voice
+
+Use active voice instead of passive voice. It's a more concise and straightforward way to communicate. For example:
+
+- (passive) The `for` loop in JavaScript is used by programmers to…
+- (active) Programmers use the `for` loop in JavaScript to…
+
+When our software or third-party software does something, state which module or component carries out the action, if this is important to the user.
+
+- "Prisma Client returns all `DateTime` as ISO 8601-formatted strings."
+
+Where the module or component is not important to the user, say that Prisma (or the name of the third-party software) carries out the action:
+
+- "Prisma reads from the system's environment when it looks for environment variables..."
+- "This is because MongoDB returns a cursor that is attached to your MongoDB session..."
+
+Sometimes you can omit the acting component or module altogether:
+
+- “Refer to the generated log file in `/directoryX`.”
+
+## Be assertive
+
+Use assertive language.
+
+Good:
+
+- Use the `createMany` method to create multiple records in a single transaction
+- You can use nested writes to create a user and that user's posts at the same time
+
+Avoid:
+
+- This example tries to...
+- You might be able to...
+- You could use...
+
+Assertive language in procedures:
+
+Good:
+
+- Install dotenv-cli
+
+Avoid:
+
+- Please install dotenv-cli
+
+## Use "that" to clarify sentences
+
+Example: "Ensure that you rebuild your schema.".
+
+See: ["That" as a conjunction for noun clauses](https://academicguides.waldenu.edu/formandstyle/writing/grammarmechanics/that).
+
+## Use the present simple tense
+
+- Write in the [present simple](https://en.wikipedia.org/wiki/Simple_present) tense.
+- Use present simple even when you want to write about something that will happen as the result of a user action: say that the result happens, not that it will happen.
+
+```md
+<!-- Good -->
+
+When you run this command, Prisma writes the following log file.
+
+<!-- Bad -->
+
+When you run this command, Prisma will write the following log file.
+```
+
+## Indicate when something is optional
+
+When a paragraph or sentence offers an optional path, the beginning of the first sentence should indicate that it’s optional. For example, "if you’d like to learn more about xyz, see our reference guide" is clearer than "Go to the reference guide if you’d like to learn more about xyz."
+
+This method allows people who would not like to learn more about xyz to stop reading the sentence as early as possible. It also allows people who would like to learn more about xyz to recognize the opportunity to learn quicker instead of accidentally skipping over the paragraph.
+
+For optional steps in a procedure, a succinct way to convey this is to precede the step with "Optional:". For example:
+
+5. Optional: In the **Tags** field, specify one or more tags for your file. Separate multiple tags with commas.
+
+## Code examples
+
+Start all query examples with a constant. This gives you a noun to refer to later in the document, and in most cases this clarifies the example.
+
+Example:
+
+```ts
+const aggregations = await prisma.user.aggregate({
+  ...
+})
+```

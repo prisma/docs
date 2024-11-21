@@ -1,0 +1,188 @@
+---
+title: 'General instructions'
+metaTitle: 'Prisma Pulse: General instructions'
+metaDescription: 'Instructions to use your database with Prisma Pulse'
+tocDepth: 3
+toc_max_heading_level: 6
+toc: true
+---
+
+:::note
+
+Prisma Pulse requires a PostgreSQL (**version 12+**) database with logical replication enabled. To configure specific database providers for Prisma Pulse, visit [here](/pulse/database-setup#provider-specific-instructions).
+
+:::
+
+Database replication is the process of creating copies of a database and storing them across various on-premises or cloud destinations. Prisma Pulse uses logical replication to monitor your database for changes.
+
+## Enable logical replication
+
+### Required settings
+
+You can enable logical replication by setting [`wal_level`](https://www.postgresql.org/docs/current/runtime-config-wal.html) to `logical` in your database. 
+
+```sql
+ALTER SYSTEM SET wal_level = logical;
+```
+
+You will need to restart the database after changing this setting.
+
+> **Note**: Some providers may not allow direct access to this setting. If you are unable to change this setting via the SQL command above, please refer to the provider-specific guides for further assistance.
+
+
+### Optional settings
+
+#### [`wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html)
+
+Setting `wal_keep_size` increases the memory usage of the [write-ahead log](https://www.postgresql.org/docs/current/wal-intro.html) on your PostgreSQL database.
+
+We recommend setting a value for `wal_keep_size` tailored to your database's storage capacity. This ensures smooth operation of both your database and Prisma Pulse.
+
+```sql
+ALTER SYSTEM SET wal_keep_size = 2048;
+```
+
+#### [`max_replication_slots`](https://www.postgresql.org/docs/current/runtime-config-replication.html)
+
+Prisma Pulse only needs one replication slot available. You can set the `max_replication_slots` if you have other replications in use.
+
+```sql
+ALTER SYSTEM SET max_replication_slots = 20;
+```
+
+#### [`REPLICA IDENTITY`](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+
+For update and delete events, you have the option to include in the event the values of the record _before_ the operation was performed:
+
+- For `update`: Include the values of the updated record before the update was performed in a field called `before`
+- For `delete`: Include the values of the deleted record.
+
+If you enable this, you will also be able to filter on these fields.
+
+To include this data, you must set `REPLICA IDENTITY` to `FULL` on the table(s) you want to get field values for.
+
+For example, running the following SQL command will set the `REPLICA IDENTITY` to `FULL` on a table named `User`:
+
+```sql
+ALTER TABLE public."User" REPLICA IDENTITY FULL;
+```
+
+## Manage the tables monitored by Pulse
+
+By default, Pulse monitors all tables for changes in your database. If you want to enable replication for *specific models* or if you use a database provider that restricts superuser access for Prisma Pulse, you can configure your own publication slot. A publication slot is a reserved space in the primary database that publishes data to replicas. It allows the database to track changes by publishing data from specific tables or operations. If you want to configure your own publication slot and enable Pulse, you'll need to opt for one of [our paid plans](https://www.prisma.io/pricing#pulse).
+
+### Creating a publication slot
+
+You can create publications in the following ways below depending on the version of your PostgreSQL database.
+
+<details>
+
+<summary>Publication for all models.</summary>
+<br/>
+```sql
+CREATE PUBLICATION all_models FOR ALL TABLES;
+```
+
+</details>
+
+<details>
+
+<summary>Publication for specific fields.</summary>
+
+For example, create a publication that publishes all changes for table `users`, but replicates only columns `user_id` and `firstname`:
+
+```sql
+   CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
+```
+
+</details>
+
+<details>
+
+<summary>Publication for specific models.</summary>
+
+For example, create a publication that publishes all changes in two tables:
+
+```sql
+CREATE PUBLICATION user_and_department_publication FOR TABLE users, departments;
+```
+
+</details>
+
+<details>
+
+<summary>Publication for a model with a `WHERE` clause on it’s fields.</summary>
+
+For example, create a publication that publishes all changes from active `departments`:
+
+```sql
+CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
+```
+
+</details>
+
+<details>
+
+<summary>Publication based on DML operations.</summary>{' '}
+
+For example, create a publication that only publishes `INSERT` operations in one table:
+
+```sql
+CREATE PUBLICATION insert_only FOR TABLE departments
+WITH (publish = 'insert');
+```
+
+> `publish` (`string`)
+>
+> This parameter determines which DML operations will be published by the new publication to the subscribers. The value is comma-separated list of operations. The allowed operations are `insert`, `update`, `delete`, and `truncate`. The default is to publish all actions, and so the default value for this option is `'insert, update, delete, truncate'`.
+
+You can learn more about the PostgreSQL's `CREATE PUBLICATION`, supported versions and see more examples [here](https://www.postgresql.org/docs/current/sql-createpublication.html).
+
+</details>
+
+### Submit your publication slot
+
+You can submit the publication name in the [Console](https://console.prisma.io/login), before enabling Prisma Pulse:
+
+1. To view your [publications](https://www.postgresql.org/docs/current/view-pg-publication-tables.html), execute:
+
+   ```sql
+   SELECT * FROM pg_publication_tables;
+   ```
+
+2. Navigate to [Prisma Data Platform](https://pris.ly/pdp) to enable Pulse.
+
+3. Submit the database connection string and region in the **Database connection** section.
+
+4. In your project environment configuration for Pulse, enter the publication name in the **Publication name** field. To access this, toggle the **Automatic setup** button in the **Database replication** section (available with a [paid plan](https://www.prisma.io/pricing#pulse)).
+
+5. After toggling **Automatic setup**, the button will transition to **Advanced setup**, and a textbox labeled **Publication name** will appear.
+
+6. Copy and paste the publication name from *step 2*.
+
+7. Click **Enable Pulse**.
+
+### Removing publications
+
+If you are managing your replications independently and choose to disable Prisma Pulse for a particular environment, you can refer to the following SQL queries to remove your publications.
+
+1. To delete a publication:
+
+   ```sql
+   DROP PUBLICATION IF EXISTS "my_publication";
+   ```
+
+2. View your [publications](https://www.postgresql.org/docs/current/view-pg-publication-tables.html):
+
+   ```sql
+   SELECT * FROM pg_publication_tables;
+   ```
+
+## Provider-specific instructions
+
+If you want to see the specific instructions for your database, select your database provider:
+
+- [AWS RDS](/pulse/database-setup/aws-rds)
+- [Railway](/pulse/database-setup/railway)
+- [Neon](/pulse/database-setup/neon)
+- [Supabase](/pulse/database-setup/supabase)

@@ -1,5 +1,0 @@
-export * from './PrimaryButton'
-export * from './SecondaryButton'
-export * from './SpecialButton'
-export * from './AccentButton'
-export { ButtonSize } from './Button'
