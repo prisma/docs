@@ -111,9 +111,18 @@ npm install @opentelemetry/semantic-conventions @opentelemetry/exporter-trace-ot
 
 ### Register tracing in your application
 
-The following code provides a minimal tracing configuration. You need to customize this configuration for your specific application.
+The following code provides two examples of configuring OpenTelemetry tracing in Prisma: 
 
-```ts file=setup.ts
+1. Using `@opentelemetry/sdk-trace-node` (existing example), which gives fine-grained control over tracing setup.
+2. Using `@opentelemetry/sdk-node`, which offers a simpler configuration and aligns with OpenTelemetry's JavaScript getting started guide.
+
+---
+
+#### Option 1: Using `@opentelemetry/sdk-trace-node`
+
+This setup gives you fine-grained control over instrumentation and tracing. You need to customize this configuration for your specific application. This approach is concise and easier for users who need a quick setup for sending traces to OTLP-compatible backends, such as Honeycomb, Jaeger, or Datadog.
+
+```ts
 // Imports
 import { SEMRESATTRS_SERVICE_NAME, SEMRESATTRS_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
@@ -126,13 +135,13 @@ import { Resource } from '@opentelemetry/resources'
 // Configure the trace provider
 const provider = new NodeTracerProvider({
   resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: 'example application',
-    [SEMRESATTRS_SERVICE_VERSION]: '0.0.1',
+    [SEMRESATTRS_SERVICE_NAME]: 'example application', // Replace with your service name
+    [SEMRESATTRS_SERVICE_VERSION]: '0.0.1', // Replace with your service version
   }),
 })
 
-// Configure how spans are processed and exported. In this case we're sending spans
-// as we receive them to an OTLP-compatible collector (e.g. Jaeger).
+// Configure how spans are processed and exported. In this case, we're sending spans
+// as we receive them to an OTLP-compatible collector (e.g., Jaeger).
 provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()))
 
 // Register your auto-instrumentors
@@ -144,6 +153,63 @@ registerInstrumentations({
 // Register the provider globally
 provider.register()
 ```
+
+This approach provides maximum flexibility but may involve additional configuration steps.
+
+#### Option 2: Using `@opentelemetry/sdk-node`
+
+For many users, especially beginners, the `NodeSDK` class simplifies OpenTelemetry setup by bundling common defaults into a single, unified configuration.
+
+```ts
+// Imports
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto'
+import { NodeSDK } from '@opentelemetry/sdk-node'
+import { PrismaInstrumentation } from '@prisma/instrumentation'
+
+// Configure the OTLP trace exporter
+const traceExporter = new OTLPTraceExporter({
+  url: 'https://api.honeycomb.io/v1/traces', // Replace with your collector's endpoint
+  headers: {
+    'x-honeycomb-team': 'HONEYCOMB_API_KEY', // Replace with your Honeycomb API key or collector auth header
+  },
+})
+
+// Initialize the NodeSDK
+const sdk = new NodeSDK({
+  serviceName: 'my-service-name', // Replace with your service name
+  traceExporter,
+  instrumentations: [
+    new PrismaInstrumentation({
+      middleware: true, // Enable middleware tracing if needed
+    }),
+  ],
+})
+
+// Start the SDK
+sdk.start()
+
+// Handle graceful shutdown
+process.on('SIGTERM', async () => {
+  try {
+    await sdk.shutdown()
+    console.log('Tracing shut down successfully')
+  } catch (err) {
+    console.error('Error shutting down tracing', err)
+  } finally {
+    process.exit(0)
+  }
+})
+```
+
+Choose the `NodeSDK` approach if:
+* You are starting with OpenTelemetry and want a simplified setup.
+* You need to quickly integrate tracing with minimal boilerplate.
+* You are using an OTLP-compatible tracing backend like Honeycomb, Jaeger, or Datadog.
+
+Choose the `NodeTracerProvider` approach if:
+* You need detailed control over how spans are created, processed, and exported.
+* You are using custom span processors or exporters.
+* Your application requires specific instrumentation or sampling strategies.
 
 OpenTelemetry is highly configurable. You can customize the resource attributes, what components gets instrumented, how spans are processed, and where spans are sent.
 
