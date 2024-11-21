@@ -5,7 +5,7 @@ export const config: CustomProjectConfig = {
     pages: [],
     pagesJsonUrl: "./lost-pixel-pages.json",
     baseUrl: "http://172.17.0.1:3000",
-    mask: [{ selector: ".sidebar-promo" }, { selector: "article img" }],
+    mask: [{ selector: ".sidebar-promo" }, { selector: "article img" }, { selector: ".videoWrapper" }],
   },
   beforeScreenshot: async (page) => {
     await page.addStyleTag({

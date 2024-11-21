@@ -14,7 +14,7 @@ If you are not sure your changes are valid, then please still open an issue and 
 
 There are no hard and fast rules for creating an issues to the repository. We only ask that you outline your reasoning for creating the issue and try to provide as much detail as possible. Depending on the issue, this could mean explaining what machine you are working on (Is it a Mac? Are you on a Windows machine?), or including a code snippet that demonstrates the issue.
 
-If you spot a problem with the docs, [search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/prisma/docs/issues/new/choose).
+If you spot a problem with the docs, [search if an issue already exists](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/prisma/docs/issues/new/choose).
 
 ### Solving an issue
 

@@ -5,29 +5,11 @@ metaDescription: 'Guide to Turso'
 tocDepth: 3
 ---
 
-<TopBlock>
-
 This guide discusses the concepts behind using Prisma ORM and Turso, explains the commonalities and differences between Turso and other database providers, and leads you through the process for configuring your application to integrate with Turso.
 
 Prisma ORM support for Turso is currently in [Early Access](/orm/more/releases#early-access). We would appreciate your feedback in this [GitHub discussion](https://github.com/prisma/prisma/discussions/21345).
 
-</TopBlock>
-
 ## What is Turso?
-
-<img
-  src="https://avatars.githubusercontent.com/u/139391156?s=200&v=4"
-  style={{
-    margin: 'auto',
-    width: '20%',
-    'padding-left': '20px',
-    float: 'right',
-    '@media (max-width: 641px)': {
-      display: 'none',
-    },
-  }}
-  alt="Turso's logo"
-/>
 
 [Turso](https://turso.tech/) is an edge-hosted, distributed database that's based on [libSQL](https://turso.tech/libsql), an open-source and open-contribution fork of [SQLite](https://sqlite.org/), enabling you to bring data closer to your application and minimize query latency. Turso can also be hosted on a remote server.
 
@@ -176,7 +158,7 @@ For subsequent migrations, repeat the above steps to apply changes to your datab
 
 ## Embedded Turso database replicas
 
-Turso supports [embedded replicas](https://blog.turso.tech/introducing-embedded-replicas-deploy-turso-anywhere-2085aa0dc242). Turso's embedded replicas enable you to have a copy of your primary, remote database _inside_ your application. Embedded replicas behave similarly to a local SQLite database. Database queries are faster because your database is inside your application.
+Turso supports [embedded replicas](https://turso.tech/blog/introducing-embedded-replicas-deploy-turso-anywhere-2085aa0dc242). Turso's embedded replicas enable you to have a copy of your primary, remote database _inside_ your application. Embedded replicas behave similarly to a local SQLite database. Database queries are faster because your database is inside your application.
 
 ### How embedded database replicas work
 
@@ -188,7 +170,7 @@ Turso will (1) create an embedded replica inside your application and (2) copy d
 
 ![Embedded Replica: Remote DB Copy](./images/embedded-replica-create-replica.png)
 
-The embedded replica will fulfill subsequent read queries. The libSQL client provides a [`sync()`](<https://docs.turso.tech/libsql/client-access/javascript-typescript-sdk#client-capability-summary:~:text=an%20interactive%20transaction-,sync(),-Synchronize%20the%20embedded>) method which you can invoke to ensure the embedded replica's data remains fresh.
+The embedded replica will fulfill subsequent read queries. The libSQL client provides a [`sync()`](https://docs.turso.tech/sdk/ts/reference#manual-sync) method which you can invoke to ensure the embedded replica's data remains fresh.
 
 ![Embedded Replica: Local DB reads](./images/embedded-replica-read.png)
 
@@ -221,4 +203,24 @@ app.use(async (req, res, next) => {
 //add-end
 
 app.listen(3000, () => console.log(`Server ready at http://localhost:3000`))
+```
+It could be also implemented as a [Prisma Client extension](/orm/prisma-client/client-extensions). The below example shows auto-syncing after create, update or delete operation is performed.
+
+```ts highlight=5-8
+const prisma = new PrismaClient().$extends({
+  query: {
+    $allModels: {
+      async $allOperations({ operation, model, args, query }) {
+        const result = await query(args)
+        
+        // Synchronize the embedded replica after any write operation
+        if (['create', 'update', 'delete'].includes(operation)) {
+          await libsql.sync()
+        }
+        
+        return result
+      }
+    }
+  }
+})
 ```
