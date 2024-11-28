@@ -75,6 +75,79 @@ There is _no_ official support for Node.js 16, 17, 19 and 21.
 
 The new minimum supported TypeScript version for Prisma ORM v6 is: **5.1.0**.
 
+### Schema change for implicit m-n relations on PostgreSQL
+
+If you're using PostgreSQL and are defining [implicit many-to-many relations](/orm/prisma-schema/data-model/relations/many-to-many-relations#implicit-many-to-many-relations) in your Prisma schema, Prisma ORM maintains the [relation table](/orm/prisma-schema/data-model/relations/many-to-many-relations#relation-tables) for you under the hood. This relation table has `A` and `B` columns to represent the tables of the models that are part of this relation.
+
+
+Previous versions of Prisma ORM used to create a _unique index_ on these two columns. In Prisma v6, this unique index is changing to a _primary key_ in order to [simplify for the default replica identity behaviour](https://github.com/prisma/prisma/issues/25196).
+
+<details>
+<summary>Expand for an example</summary>
+
+As an example, consider this relation table of an implicit m-n relation between `Post` and `Tag` models:
+
+```sql
+-- CreateTable
+CREATE TABLE "_PostToTag" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
+-- CreateIndex
+-- highlight-next-line 
+CREATE UNIQUE INDEX "_PostToTag_AB_unique" ON "_PostToTag"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_PostToTag_B_index" ON "_PostToTag"("B");
+
+-- AddForeignKey
+ALTER TABLE "_PostToTag" ADD CONSTRAINT "_PostToTag_A_fkey" FOREIGN KEY ("A") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_PostToTag" ADD CONSTRAINT "_PostToTag_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+In Prisma v6, the `UNIQUE INDEX` is changing into a `PRIMARY KEY`:
+
+```sql
+-- CreateTable
+CREATE TABLE "_PostToTag" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+
+    -- highlight-next-line 
+    CONSTRAINT "_PostToTag_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateIndex
+CREATE INDEX "_PostToTag_B_index" ON "_PostToTag"("B");
+
+-- AddForeignKey
+ALTER TABLE "_PostToTag" ADD CONSTRAINT "_PostToTag_A_fkey" FOREIGN KEY ("A") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_PostToTag" ADD CONSTRAINT "_PostToTag_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+</details>
+
+If you're defining m-n relations in your Prisma schema, the **next migration you'll create with contain `ALTER TABLE` statements for all the relation tables** looking similar to this:
+
+```sql
+-- AlterTable
+ALTER TABLE "_PostToTag" ADD CONSTRAINT "_PostToTag_AB_pkey" PRIMARY KEY ("A", "B");
+
+-- DropIndex
+DROP INDEX "_PostToTag_AB_unique";
+```
+
+In order to isolate these schema changes (and not having them bundled with your next migration), **we recommend that you create a new migration _right after_ having upgraded to Prisma v6**:
+
+```terminal
+npx prisma migrate dev
+```
+
 ### Full-text search on PostgreSQL
 
 The `fullTextSearch` Preview feature is promoted to General Availability only for MySQL. This means that if you're using PostgreSQL and currently make use of this Preview feature, you now need to use the new `fullTextSearchPostgres` Preview feature:
@@ -245,37 +318,6 @@ try {
   }
 }
 ```
-
-
-### Changed unique index to primary key constraint for implicit m-n relations
-
-If you're using an [implicit many-to-many relation](/orm/prisma-schema/data-model/relations/many-to-many-relations#implicit-many-to-many-relations), Prisma ORM maintains the [relation table](/orm/prisma-schema/data-model/relations/many-to-many-relations#relation-tables) for you under the hood. This relation table has `A` and `B` columns to represent the tables of the models that are part of this relation.
-
-Previous versions of Prisma ORM used to create a unique index on these two columns. As an example, consider this relation table of an implicit m-n relation between `Post` and `Tag` models:
-
-```sql
--- CreateTable
-CREATE TABLE "_PostToTag" (
-    "A" INTEGER NOT NULL,
-    "B" INTEGER NOT NULL
-);
-
--- highlight-next-line 
--- CreateIndex
--- highlight-next-line 
-CREATE UNIQUE INDEX "_PostToTag_AB_unique" ON "_PostToTag"("A", "B");
-
--- CreateIndex
-CREATE INDEX "_PostToTag_B_index" ON "_PostToTag"("B");
-
--- AddForeignKey
-ALTER TABLE "_PostToTag" ADD CONSTRAINT "_PostToTag_A_fkey" FOREIGN KEY ("A") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_PostToTag" ADD CONSTRAINT "_PostToTag_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-```
-
-Going forward, TBD ...
 
 
 ## Preview features promoted to General Availability
