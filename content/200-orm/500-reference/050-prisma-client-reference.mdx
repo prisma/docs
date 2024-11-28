@@ -529,7 +529,6 @@ Use model queries to perform CRUD operations on your models. See also: [CRUD](/o
 | `include`                       | `XOR<UserInclude, null>` | No       | [Specifies which relations should be eagerly loaded](/orm/prisma-client/queries/relation-queries) on the returned object.                                                                                                                                                                    |
 | `omit`                          | `XOR<UserOmit, null>`    | No       | Specifies which properties to exclude on the returned object. In [Preview](/orm/more/releases#preview) since 5.13.0                                                                                                                                                                          |
 | `relationLoadStrategy`          | `'join'` or `'query'`    | No       | **Default: `join`**. Specifies the [load strategy](/orm/prisma-client/queries/relation-queries#relation-load-strategies-preview) for a relation query. Only available in combination with `include` (or `select` on a relation field). In [Preview](/orm/more/releases#preview) since 5.9.0. |
-| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`       | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound`is deprecated in v4.0.0. From v4.0.0, use [`findUniqueOrThrow`](#finduniqueorthrow) instead.                            |
 
 #### Return type
 
@@ -538,7 +537,6 @@ Use model queries to perform CRUD operations on your models. See also: [CRUD](/o
 | JavaScript object (typed) | `User`                     |                                                                                                                                                                     |
 | JavaScript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return.                                                                                                     |
 | `null`                    | `null`                     | Record not found                                                                                                                                                    |
-| Error                     |                            | If `rejectOnNotFound` is true, `findUnique()` throws an error (`NotFoundError` by default, [customizable globally](#rejectonnotfound)) instead of returning `null`. |
 
 #### Examples
 
@@ -621,26 +619,23 @@ const result = await prisma.user.findUnique({
 
 ### `findUniqueOrThrow()`
 
-:::note
 
-We introduced `findUniqueOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`](#rejectonnotfound) option. `rejectOnNotFound` is deprecated in v4.0.0.
+`findUniqueOrThrow()` retrieves a single record in the same way as [`findUnique()`](#findunique). However, if the query does not find the requested record, it throws a `PrismaClientKnownRequestError`.
 
-:::
+Note that [before Prisma v6](/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-6#removed-notfounderror), it would throw a `NotFoundError: No User found error`. 
 
-`findUniqueOrThrow` retrieves a single data record similarly to [`findUnique()`](#findunique). However, if no record is found, it throws a `NotFoundError` with a message like: `No <Model> found`. Here’s an example of its usage:
+Here’s an example of its usage:
 
 ```ts
 await prisma.user.findUniqueOrThrow({
-  where: {
-    id: 1,
-  },
+  where: { id: 1 },
 });
 ```
 
-`findUniqueOrThrow` differs from `findUnique()` as follows:
+`findUniqueOrThrow()` differs from `findUnique()` as follows:
 
 - Its return type is non-nullable. For example, `post.findUnique()` can return `post` or `null`, but `post.findUniqueOrThrow()` always returns `post`.
-- It is not compatible with sequential operations in the [`$transaction` API](/orm/prisma-client/queries/transactions#the-transaction-api). If the query returns `NotFoundError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
+- It is not compatible with sequential operations in the [`$transaction` API](/orm/prisma-client/queries/transactions#the-transaction-api). If the query throws a `PrismaClientKnownRequestError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
 
   ```ts
    $transaction(async (prisma) => {
@@ -659,20 +654,14 @@ await prisma.user.findUniqueOrThrow({
 
 #### Options
 
-| Name                            | Example type (`User`)                                 | Required | Description                                                                                                                                                                                                                                                                                  |
-| ------------------------------- | ----------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `select`                        | `XOR<UserSelect, null>`                               | No       | [Specifies which properties to include](/orm/prisma-client/queries/select-fields) on the returned object.                                                                                                                                                                                    |
-| `include`                       | `XOR<UserInclude, null>`                              | No       | [Specifies which relations should be eagerly loaded](/orm/prisma-client/queries/relation-queries) on the returned object.                                                                                                                                                                    |
-| `omit`                          | `XOR<UserOmit, null>`                                 | No       | Specifies which properties to exclude on the returned object. In [Preview](/orm/more/releases#preview) since 5.13.0.                                                                                                                                                                         |
-| `relationLoadStrategy`          | `'join'` or `'query'`                                 | No       | **Default: `join`**. Specifies the [load strategy](/orm/prisma-client/queries/relation-queries#relation-load-strategies-preview) for a relation query. Only available in combination with `include` (or `select` on a relation field). In [Preview](/orm/more/releases#preview) since 5.9.0. |
-| `where`                         | `UserWhereInput`                                      | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                                                                         |
-| `orderBy`                       | `XOR<Enumerable<UserOrderByInput>, UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                                                                            |
-| `cursor`                        | `UserWhereUniqueInput`                                | No       | Specifies the position for the list (the value typically specifies an `id` or another unique value).                                                                                                                                                                                         |
-| `take`                          | `number`                                              | No       | Specifies how many objects should be returned in the list. When used with `findFirst`, `take` is implicitly `1` or `-1`. `findFirst` is only affected by whether the value is positive or negative - any negative value reverses the list.                                                   |
-| `skip`                          | `number`                                              | No       | Specifies how many of the returned objects in the list should be skipped.                                                                                                                                                                                                                    |
-| `distinct`                      | `Enumerable<UserDistinctFieldEnum>`                   | No       | Lets you filter out duplicate rows by a specific field - for example, return only distinct `Post` titles.                                                                                                                                                                                    |
-| `rejectOnNotFound` (deprecated) | `RejectOnNotFound`                                    | No       | If true, throw a `NotFoundError: No User found error`. You can also [configure `rejectOnNotFound` globally](#rejectonnotfound). <br></br>**Note:** `rejectOnNotFound` is deprecated in v4.0.0. From v4.0.0, use [`findFirstOrThrow`](#findfirstorthrow) instead.                             |
-
+| Name                   | Example type (`User`)                                 | Required | Description                                                                                                                                                                                                                                                                                  |
+| ---------------------- | ----------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `select`               | `XOR<UserSelect, null>`                               | No       | [Specifies which properties to include](/orm/prisma-client/queries/select-fields) on the returned object.                                                                                                                                                                                    |
+| `include`              | `XOR<UserInclude, null>`                              | No       | [Specifies which relations should be eagerly loaded](/orm/prisma-client/queries/relation-queries) on the returned object.                                                                                                                                                                    |
+| `omit`                 | `XOR<UserOmit, null>`                                 | No       | Specifies which properties to exclude on the returned object. In [Preview](/orm/more/releases#preview) since 5.13.0.                                                                                                                                                                         |
+| `relationLoadStrategy` | `'join'` or `'query'`                                 | No       | **Default: `join`**. Specifies the [load strategy](/orm/prisma-client/queries/relation-queries#relation-load-strategies-preview) for a relation query. Only available in combination with `include` (or `select` on a relation field). In [Preview](/orm/more/releases#preview) since 5.9.0. |
+| `where`                | `UserWhereInput`                                      | No       | Wraps _all_ model fields in a type so that the list can be filtered by any property.                                                                                                                                                                                                         |
+| `orderBy`              | `XOR<Enumerable<UserOrderByInput>, UserOrderByInput>` | No       | Lets you order the returned list by any property.                                                                                                                                                                                                                                            |
 
 #### Return type
 
@@ -681,7 +670,6 @@ await prisma.user.findUniqueOrThrow({
 | JavaScript object (typed) | `User`                     | Specifies which properties to include on the returned object.                                                                                                       |
 | JavaScript object (plain) | `{ title: "Hello world" }` | Use `select` and `include` to determine which fields to return.                                                                                                     |
 | `null`                    | `null`                     | Record not found                                                                                                                                                    |
-| Error                     |                            | If `rejectOnNotFound` is true, `findUnique()` throws an error (`NotFoundError` by default, [customizable globally](#rejectonnotfound)) instead of returning `null`. |
 
 #### Remarks
 
@@ -738,18 +726,14 @@ main();
 
 ### `findFirstOrThrow()`
 
-<Admonition type="info">
+`findFirstOrThrow()` retrieves a single data record in the same way as [`findFirst()`](#findfirst). However, if the query does not find a record, it throws a `PrismaClientKnownRequestError`.
 
-We introduced `findFirstOrThrow` in v4.0.0. It replaces the [`rejectOnNotFound`](#rejectonnotfound) option. `rejectOnNotFound` is deprecated in v4.0.0.
+Note that [before Prisma v6](/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-6#removed-notfounderror), it would throw a `NotFoundError: No User found error`. 
 
-</Admonition>
-
-`findFirstOrThrow` retrieves the first record in a list in the same way as [`findFirst`](#findfirst). However, if the query does not find a record, it returns `NotFoundError: No User found error`.
-
-`findFirstOrThrow` differs from `findFirst` as follows:
+`findFirstOrThrow()` differs from `findFirst()` as follows:
 
 - Its return type is non-nullable. For example, `post.findFirst()` can return `post` or `null`, but `post.findFirstOrThrow` always returns `post`.
-- It is not compatible with sequential operations in the [`$transaction` API](/orm/prisma-client/queries/transactions#the-transaction-api). If the query returns `NotFoundError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
+- It is not compatible with sequential operations in the [`$transaction` API](/orm/prisma-client/queries/transactions#the-transaction-api). If the query returns `PrismaClientKnownRequestError`, then the API will not roll back any operations in the array of calls. As a workaround, you can use interactive transactions with the `$transaction` API, as follows:
 
   ```ts
   prisma.$transaction(async (tx) => {
@@ -2324,11 +2308,11 @@ const posts = await prisma.post.findMany({
 
 #### Sort `Post` by relevance of the title
 
-<Admonition type="warning">
+:::info
 
-This feature is available from version 3.5.0 onwards in PostgreSQL and MySQL only. You'll need to use the `fullTextSearch` preview flag to enable this feature.
+For PostgreSQL, this feature is still in Preview. [Enable the `fullTextSearchPostgres` feature flag](/orm/prisma-client/queries/full-text-search#enabling-full-text-search-for-postgresql) in order to use it.
 
-</Admonition>
+:::
 
 The following query orders posts by relevance of the search term `'database'` to the title:
 
@@ -3811,15 +3795,11 @@ const result = await prisma.post.count({
 
 Use [Full-Text Search](/orm/prisma-client/queries/full-text-search) to search within a `String` field.
 
-Full-Text Search is currently in **Preview** and only available for **PostgreSQL** and **MySQL**. To use `search`, you'll need to enable the `fullTextSearch`
-preview feature.
+:::info
 
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch"]
-}
-```
+For PostgreSQL, this feature is still in Preview. [Enable the `fullTextSearchPostgres` feature flag](/orm/prisma-client/queries/full-text-search#enabling-full-text-search-for-postgresql) in order to use it.
+
+:::
 
 #### Examples
 
