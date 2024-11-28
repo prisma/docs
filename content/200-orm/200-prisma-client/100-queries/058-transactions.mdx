@@ -491,6 +491,36 @@ To avoid transaction write conflicts and deadlocks on a transaction:
    }
    ```
 
+### Using `$transaction` within `Promise.all()`
+
+If you wrap a `$transaction` inside a call to `Promise.all()`, the queries inside the transaction will be executed _serially_ (i.e. one after another):
+
+```ts
+await prisma.$transaction(async (prisma) => {
+  await Promise.all([
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+    prisma.user.findMany(),
+  ])
+})
+```
+
+ This may be counterintuitive because `Promise.all()` usually _parallelizes_ the calls passed into it.
+
+The reason for this behaviour is that:
+- One transaction means that all queries inside it have to be run on the same connection.
+- A database connection can only ever execute one query at a time. 
+- As one query blocks the connection while it is doing its work, putting a transaction into `Promise.all` effectively means that queries should be ran one after another.
+
+
+
 ## Dependent writes
 
 Writes are considered **dependent** on each other if:
