@@ -92,7 +92,6 @@ const config: Config = {
           }
         },
         sitemap: {
-          // @ts-ignore
           changefreq: "daily",
           priority: 0.7,
           ignorePatterns: [
@@ -238,7 +237,11 @@ const config: Config = {
       replaceSearchResultPathname: {
         from: "/docs/",
         to: DOCUSAURUS_BASE_URL,
-      }
+      },
+      // @ts-expect-error
+      getMissingResultsUrl: ({ query }) => {
+        return `https://github.com/prisma/docs/issues/new?title=Missing results for ${query}`;
+      },
     },
     footer: {
       style: "dark",
