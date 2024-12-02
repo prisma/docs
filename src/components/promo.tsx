@@ -7,11 +7,6 @@ export const Promo = () => {
 
   const promoOptions: PromoOptions = [
     {
-      text: `Tell us what you think of Prisma ORM in this 2min survey.`,
-      link: "https://pris.ly/orm/survey/release-5-22",
-      color: "teal",
-    },
-    {
       text: `Want real-time updates from your database without manual polling?`,
       link: "https://pris.ly/sidebar-promo/real-time-updates-without-polling",
       color: "teal",
