@@ -15,7 +15,6 @@ New contributors are welcome! Read through the [contributing guide](CONTRIBUTING
 3. Run the following commands:
 
 ```
-cd docs
 npm install
 npm run start
 ```
