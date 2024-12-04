@@ -27,9 +27,9 @@ type Button = {
 
 // Button component that accepts the specified props.
 export default function Button ({ 
-    variant = 'secondary', 
+    variant = 'primary', 
     disabled = false, 
-    color = 'teal',
+    color = 'indigo',
     leftIcon,
     className, 
     style, 
