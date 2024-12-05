@@ -5,8 +5,6 @@ metaDescription: 'Prisma Client provides convenient queries for working with rel
 toc_max_heading_level: 4
 ---
 
-<TopBlock>
-
 A key feature of Prisma Client is the ability to query [relations](/orm/prisma-schema/data-model/relations) between two or more models. Relation queries include:
 
 - [Nested reads](#nested-reads) (sometimes referred to as _eager loading_) via [`select`](/orm/reference/prisma-client-reference#select) and [`include`](/orm/reference/prisma-client-reference#include)
@@ -14,8 +12,6 @@ A key feature of Prisma Client is the ability to query [relations](/orm/prisma-s
 - [Filtering on related records](#relation-filters)
 
 Prisma Client also has a [fluent API for traversing relations](#fluent-api).
-
-</TopBlock>
 
 ## Nested reads
 
@@ -240,7 +236,6 @@ const user = await prisma.user.findFirst({
 
 </cmdResult>
 </CodeWithResult>
-
 
 
 ### Select specific fields of included relations
@@ -712,11 +707,39 @@ const result = await prisma.user.create({
 </cmdResult>
 </CodeWithResult>
 
-<Admonition type="warning">
+Note that it is **not possible** to nest an additional `create` or `createMany` inside the highlighted query, which means that you cannot create a user, posts, and post categories at the same time.
 
-**Note**: It is **not possible** to nest an additional `create` or `createMany` inside the highlighted query, which means that you cannot create a user, posts, and post categories at the same time.
+As a workaround, you can send a query to create the records that will be connected first, and then create the actual records. For example:
 
-</Admonition>
+```ts
+const categories = await prisma.category.createManyAndReturn({
+  data: [
+    { name: 'Fun', },
+    { name: 'Technology', },
+    { name: 'Sports', }
+  ],
+  select: {
+    id: true
+  }
+});
+
+const posts = await prisma.post.createManyAndReturn({
+  data: [{
+    title: "Funniest moments in 2024",
+    categoryId: categories[0].id
+  }, {
+    title: "Linux or macOS — what's better?",
+    categoryId: categories[1].id
+  },
+  {
+    title: "Who will win the next soccer championship?",
+    categoryId: categories[2].id
+  }]
+});
+```
+
+If you want to create _all_ records in a single database query, consider using a [`$transaction`](/orm/prisma-client/queries/transactions#the-transaction-api) or [type-safe, raw SQL](/orm/prisma-client/using-raw-sql/typedsql).
+
 
 ### Create multiple records and multiple related records
 
