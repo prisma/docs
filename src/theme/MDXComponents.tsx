@@ -16,6 +16,7 @@ import TopSection from "@site/src/components/topSection";
 import { useLocation } from "@docusaurus/router";
 import styles from "./styles.module.scss";
 import clsx from "clsx";
+import Button from "../components/button/Button";
 
 // TODO: do we want to fix this?
 const TopBlock: React.FC<React.PropsWithChildren> = ({
@@ -193,5 +194,6 @@ export default {
   table: (p: any) => <div className="mdx-table"><table {...p}>{p.children}</table></div>,
   ParallelBlocks,
   ButtonLink,
+  Button,
   NavigationLinksContainer,
 };
