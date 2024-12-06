@@ -1,5 +1,5 @@
 Prism.languages.prisma = Prism.languages.extend("clike", {
-  keyword: /\b(?:datasource|enum|generator|model|type|view)\b/,
+  keyword: /\b(?:datasource|enum|generator|model|view)\b/,
   "type-class-name": /(\s+)[A-Z]\w+/, ///(\b)(\s+)[A-Z]\w+/
 });
 
