@@ -284,45 +284,56 @@ let statsd = new StatsD({
   port: 8125,
 })
 
-let diffMetrics = (metrics: any) => {
-  return metrics.map((metric: any) => {
-    let prev = 0
-    let diffBuckets = metric.value.buckets.map((values: any) => {
-      let [bucket, value] = values
-      let diff = value - prev
-      prev = value
-      return [bucket, diff]
-    })
+const diffMetrics = (metrics: Metric<MetricHistogram>[]) => {
+  return metrics.map((metric) => {
+    let prev = 0;
+
+    const diffBuckets = metric.value.buckets.map<MetricHistogramBucket>(
+      (values) => {
+        const [bucket, value] = values
+        const diff = value - prev
+        prev = value
+        return [bucket, diff]
+      }
+    )
+
     metric.value.buckets = diffBuckets
     return metric
   })
 }
 
-let previousHistograms: any = null
-let statsdSender = async () => {
-  let metrics = await prisma.$metrics.json()
+let previousHistograms: Metric<MetricHistogram>[] = []
+
+
+const statsdSender = async ({ prisma, serviceName }: RecordMetricsOptions) => {
+  const metrics = await prisma.$metrics.json()
+
+  const tags = {
+    serviceName,
+  }
 
   metrics.counters.forEach((counter: any) => {
     statsd.gauge('prisma.' + counter.key, counter.value, (...res) => {})
-  })
+  });
 
   metrics.gauges.forEach((counter: any) => {
     statsd.gauge('prisma.' + counter.key, counter.value, (...res) => {})
   })
 
-  if (previousHistograms === null) {
+  if (!previousHistograms.length) {
     previousHistograms = diffMetrics(metrics.histograms)
+
     return
   }
 
-  let diffHistograms = diffMetrics(metrics.histograms)
+  const diffHistograms = diffMetrics(metrics.histograms);
 
-  diffHistograms.forEach((diffHistograms: any, histogramIndex: any) => {
-    diffHistograms.value.buckets.forEach((values: any, bucketIndex: any) => {
-      let [bucket, count] = values
-      let [_, prev] =
+  diffHistograms.forEach((diffHistogram, histogramIndex) => {
+    diffHistogram.value.buckets.forEach((values, bucketIndex) => {
+      const [bucket, count] = values
+      const [_, prev] =
         previousHistograms[histogramIndex].value.buckets[bucketIndex]
-      let change = count - prev
+      const change = count - prev
 
       for (let sendTimes = 0; sendTimes < change; sendTimes++) {
         statsd.timing('prisma.' + diffHistograms.key, bucket)
