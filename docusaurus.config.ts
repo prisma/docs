@@ -70,6 +70,12 @@ const config: Config = {
       src: "https://cdn.cr-relay.com/v1/site/cc8b954c-5f74-4254-a72a-e0d61048bd58/signals.js",
       async: true,
     },
+    {
+      async: true,
+      id: "cookieyes",
+      type: "text/javascript",
+      src: "https://cdn-cookieyes.com/client_data/96980f76df67ad5235fc3f0d/script.js"
+    }
   ],
   plugins: [
     "docusaurus-plugin-sass",
