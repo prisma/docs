@@ -71,6 +71,7 @@ const config: Config = {
       async: true,
     },
     {
+      async: true,
       id: "cookieyes",
       type: "text/javascript",
       src: "https://cdn-cookieyes.com/client_data/96980f76df67ad5235fc3f0d/script.js"
