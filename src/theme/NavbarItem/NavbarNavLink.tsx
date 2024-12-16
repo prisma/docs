@@ -1,9 +1,10 @@
-import React from "react";
-import Link from "@docusaurus/Link";
-import useBaseUrl from "@docusaurus/useBaseUrl";
 import isInternalUrl from "@docusaurus/isInternalUrl";
+import Link from "@docusaurus/Link";
 import { isRegexpStringMatch } from "@docusaurus/theme-common";
+import useBaseUrl from "@docusaurus/useBaseUrl";
 import IconExternalLink from "@theme/Icon/ExternalLink";
+import React from "react";
+
 import type { Props } from "@theme/NavbarItem/NavbarNavLink";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 
@@ -39,7 +40,7 @@ export default function NavbarNavLink({
         ),
       };
 
-  if (href?.includes("console.prisma.io")) {
+  if (href) {
     return (
       <BrowserOnly>
         {() => {
@@ -52,12 +53,6 @@ export default function NavbarNavLink({
           return <Link {...props} {...linkContentProps} href={modifiedHref} />;
         }}
       </BrowserOnly>
-    );
-  }
-
-  if (href) {
-    return (
-      <Link href={prependBaseUrlToHref ? normalizedHref : href} {...props} {...linkContentProps} />
     );
   }
 
