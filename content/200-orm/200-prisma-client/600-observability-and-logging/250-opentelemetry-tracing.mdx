@@ -37,7 +37,8 @@ For each trace, Prisma Client outputs a series of spans. The number and type of 
   - `prisma:engine:query`: Represents how long a query takes in the query engine.
     - `prisma:engine:connection`: Represents how long it takes for Prisma Client to get a database connection.
     - `prisma:engine:db_query`: Represents the database query that was executed against the database. It includes the query in the tags, and how long the query took to run.
-    - `prisma:engine:serialize`: Represents how long it takes to transform a database query result into a Prisma Client result.
+    - `prisma:engine:serialize`: Represents how long it takes to transform a raw response from the database into a typed result.
+    - `prisma:engine:response_json_serialization`: Represents how long it takes to serialize the database query result into a JSON response to the Prisma Client.
 
 For example, given the following Prisma Client code:
 
@@ -61,6 +62,7 @@ The trace is structured as follows:
     - `prisma:engine:db_query`: details of the first SQL query or command...
     - `prisma:engine:db_query`: ...details of the next SQL query or command...
     - `prisma:engine:serialize`
+    - `prisma:engine:response_json_serialization`
 
 ## Considerations and prerequisites
 
@@ -106,7 +108,7 @@ generator client {
 Now install the appropriate OpenTelemetry packages, as follows:
 
 ```console
-npm install @opentelemetry/semantic-conventions @opentelemetry/exporter-trace-otlp-http @opentelemetry/instrumentation @opentelemetry/sdk-trace-base @opentelemetry/sdk-trace-node @opentelemetry/resources
+npm install @opentelemetry/semantic-conventions @opentelemetry/exporter-trace-otlp-http @opentelemetry/sdk-trace-base @opentelemetry/sdk-trace-node @opentelemetry/resources
 ```
 
 ### Step 3: Register tracing in your application
@@ -126,10 +128,9 @@ This setup gives you fine-grained control over instrumentation and tracing. You 
 // Imports
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
-import { PrismaInstrumentation } from '@prisma/instrumentation'
+import { PrismaInstrumentation, registerInstrumentations } from '@prisma/instrumentation'
 import { Resource } from '@opentelemetry/resources'
 
 // Configure the trace provider
@@ -240,7 +241,6 @@ The following example sends output tracing to the console with `ConsoleSpanExpor
 ```ts
 // Imports
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import {
   BasicTracerProvider,
   ConsoleSpanExporter,
@@ -248,7 +248,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks'
 import * as api from '@opentelemetry/api'
-import { PrismaInstrumentation } from '@prisma/instrumentation'
+import { PrismaInstrumentation, registerInstrumentations } from '@prisma/instrumentation'
 import { Resource } from '@opentelemetry/resources'
 
 // Export the tracing
