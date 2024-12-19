@@ -5,9 +5,9 @@ import type { ComponentProps } from "react";
 import MDXComponents from "@theme-original/MDXComponents";
 
 // Import components we'd like to use across Docs
-import Subsections from "./DocCardList"; // DocCardList renamed to Subsections for backwards compat
+import DocCardList from "./DocCardList";
 import Admonition from "@theme/Admonition";
-import TabbedContent from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
+import Tabs from "./Tabs"; // Tabs renamed to TabbedContent for backwards compat
 import TabItem from "@theme/TabItem";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 import Link from "@docusaurus/Link";
@@ -180,11 +180,13 @@ const Image: React.FC<React.PropsWithChildren<ComponentProps<"img">>> = ({ ...pr
 export default {
   // Re-use the default mapping
   ...MDXComponents,
-  Subsections,
+  Subsections: DocCardList, // DocCardList renamed to Subsections for backwards compat
+  DocCardList,
   Admonition,
-  TabbedContent,
-  details: CollapseBox,
+  TabbedContent: Tabs, // Tabs renamed to TabbedContent for backwards compat
+  Tabs,
   TabItem,
+  details: CollapseBox,
   a: StyledLink,
   Link: DocsLink,
   img: Image,

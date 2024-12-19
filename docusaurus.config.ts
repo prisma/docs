@@ -80,12 +80,12 @@ const config: Config = {
   plugins: [
     "docusaurus-plugin-sass",
     [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
-      {
-        apiKey: DOCUSAURUS_POST_HOG_KEY,
-        appUrl: DOCUSAURUS_BASE_URL,
-        person_profiles: "identified_only",
-        enableInDevelopment: false
-      },
+    {
+      apiKey: DOCUSAURUS_POST_HOG_KEY,
+      appUrl: DOCUSAURUS_BASE_URL,
+      person_profiles: "identified_only",
+      enableInDevelopment: false
+    },
     ],
   ],
   presets: [
@@ -214,6 +214,12 @@ const config: Config = {
               label: "Pulse",
             },
           ],
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "guidesSidebar",
+          className: "teal",
+          label: "Guides",
         },
         {
           to: "https://www.github.com/prisma/prisma-examples",

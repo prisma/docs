@@ -1,0 +1,142 @@
+---
+title: 'Build a Video Processing Pipeline'
+metaTitle: 'Build a Video Processing Pipeline with Prisma Pulse and Trigger.dev'
+description: 'Learn how to build a scalable video processing pipeline using a decoupled, event-driven architecture with Prisma Pulse and Trigger.dev.'
+sidebar_label: 'Video Processing Pipeline'
+
+---
+
+Serverless computing enables applications to scale efficiently, supporting millions of users. However, it faces challenges with longer runtimes and intensive data processing, both of which are crucial for machine learning (ML) applications. To address this, tools like Pulse and Trigger.dev assist developers in creating decoupled, event-driven workflows, facilitating efficient handling of complex tasks.
+
+## The Benefits of a Decoupled Event-Driven Architecture
+
+An event-driven, decoupled architecture offers several key benefits:
+
+- **Scalability**: Systems can scale more easily since components are independent, allowing individual scaling based on demand.
+- **Flexibility**: Decoupled components can be modified or updated without affecting the entire system, enabling faster innovation and adaptability.
+- **Resilience**: A failure in one service doesn’t necessarily affect the entire system because components are loosely connected, improving reliability.
+- **Asynchronous Processing**: Events are processed asynchronously, allowing tasks to run in the background, improving performance.
+- **Fault Isolation**: Decoupled services isolate issues, reducing the risk of cascading failures across the system.
+- **Maintainability**: Clear separation of concerns allows teams to develop and maintain different parts of the system independently, making the architecture more maintainable.
+
+These benefits make decoupled, event-driven architectures an ideal choice for modern, scalable applications, especially those involving complex workflows, such as video transcription.
+
+## Building a Video Transcribing Workflow with Pulse and Trigger.dev
+
+To demonstrate how you can apply this architecture, let's build a video transcribing workflow using [Pulse](https://www.prisma.io/pulse) and [Trigger.dev](https://trigger.dev). We'll create a system that transcribes a video from a URL and stores the transcription in a database.
+
+![Pulse and Trigger.dev Flow](https://www.prisma.io/blog/assets/pulse-trigger-workflow.png)
+
+### Defining the Data Model
+
+First, consider the following Prisma model, which defines how we store the video URL and its transcribed data:
+
+```prisma
+model Video {
+  id             Int    @id @default(autoincrement())
+  url            String
+  transcription  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+```
+
+This model will store both the URL of the video and its corresponding transcription, once processed.
+
+### Implementing the Video Transcription Task
+
+Next, we'll set up a transcription task using Trigger.dev. This script will take a video URL, extract its audio, and transcribe it using the Deepgram API:
+
+```typescript
+import { Job, Trigger } from '@trigger.dev/sdk';
+import { prisma } from './prisma';
+import { deepgram } from './deepgram';
+import ffmpeg from 'fluent-ffmpeg';
+import { Readable } from 'stream';
+
+new Trigger({
+  id: 'video-transcription',
+  name: 'Video Transcription',
+  on: 'video.uploaded',
+  run: async (event) => {
+    const video = await prisma.video.findUnique({
+      where: { id: event.videoId },
+    });
+
+    if (!video) {
+      throw new Error('Video not found');
+    }
+
+    const audioStream = new Readable();
+    ffmpeg(video.url)
+      .noVideo()
+      .audioCodec('pcm_s16le')
+      .format('wav')
+      .pipe(audioStream);
+
+    const transcription = await deepgram.transcription.preRecorded(
+      { buffer: audioStream },
+      { punctuate: true }
+    );
+
+    await prisma.video.update({
+      where: { id: video.id },
+      data: { transcription: transcription.results.channels[0].alternatives[0].transcript },
+    });
+  },
+});
+```
+
+In this task, we first download the video data and extract its audio using `ffmpeg`. Then, we pass the audio to Deepgram’s transcription service, which processes the audio and returns the transcription. The final transcription is stored in the database using Prisma.
+
+When a new video is uploaded, we use Prisma ORM to save the video URL in the database:
+
+```typescript
+import { prisma } from './prisma';
+
+async function uploadVideo(url: string) {
+  const video = await prisma.video.create({
+    data: { url },
+  });
+
+  // Emit 'video.uploaded' event
+  // ...
+}
+```
+
+### Triggering the Workflow
+
+Once the video is uploaded, we can trigger the transcription workflow. Using Prisma Pulse, we listen for new video records and trigger the transcription task accordingly:
+
+```typescript
+import { pulse } from '@prisma/pulse';
+import { trigger } from './trigger';
+
+pulse.model('Video').on('create', async (video) => {
+  await trigger.emit('video.uploaded', { videoId: video.id });
+});
+```
+
+### Reacting to Completed Transcriptions
+
+After the transcription is complete, we can react to this event by notifying a client or triggering additional processes. This can also be done using Prisma Pulse:
+
+```typescript
+pulse.model('Video').on('update', async (video) => {
+  if (video.transcription) {
+    // Notify client or trigger additional processes
+    // ...
+  }
+});
+```
+
+This demonstrates how efficiently you can build an end-to-end workflow using these tools, taking advantage of decoupled, event-driven architectures.
+
+## Try It Out for Yourself
+
+Now, it's your turn to implement this approach and see how easily you can integrate decoupled workflows in your own projects. Experiment with these tools and see how they can simplify your development processes. Whether you're transcribing videos or building more complex applications, Pulse and Trigger.dev provide the scalability and flexibility to handle a wide range of tasks.
+
+- [Get started with Trigger.dev](https://trigger.dev)
+- [Get started with Pulse](https://www.prisma.io/pulse)
+
+If you build something new, we'd love to hear about it. Share your experiences with us, and stay up to date with our latest updates on [X](https://x.com) and [our changelog](https://www.prisma.io/changelog). Need help? Join our [Discord community](https://discord.com/invite/prisma), where you can ask questions and connect with other developers.
