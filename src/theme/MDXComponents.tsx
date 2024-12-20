@@ -193,7 +193,11 @@ export default {
   TopBlock,
   CodeWithResult,
   SwitchTech,
-  table: (p: any) => <div className="mdx-table"><table {...p}>{p.children}</table></div>,
+  table: (p: any) => (
+    <div className="mdx-table">
+      <table {...p}>{p.children}</table>
+    </div>
+  ),
   ParallelBlocks,
   ButtonLink,
   Button,
