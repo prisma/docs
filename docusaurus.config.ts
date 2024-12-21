@@ -216,6 +216,12 @@ const config: Config = {
           ],
         },
         {
+          type: "docSidebar",
+          sidebarId: "guidesSidebar",
+          className: "teal",
+          label: "Guides",
+        },
+        {
           to: "https://www.github.com/prisma/prisma-examples",
           external: true,
           position: "left",
