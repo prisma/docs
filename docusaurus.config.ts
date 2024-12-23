@@ -82,8 +82,8 @@ const config: Config = {
     [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
         apiKey: DOCUSAURUS_POST_HOG_KEY,
-        appUrl: DOCUSAURUS_BASE_URL,
-        person_profiles: "identified_only",
+        appUrl: 'https://proxyhog.prisma-data.net', // this is safe to have in version control
+        person_profiles: 'identified_only',
         enableInDevelopment: false
       },
     ],
