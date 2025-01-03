@@ -1,0 +1,412 @@
+---
+title: 'Using Prisma with Turborepo'
+metaTitle: 'Using Prisma with Turborepo'
+metaDescription: 'Learn how to use Prisma ORM with Turborepo'
+---
+
+You can use [Turborepo](https://turbo.build/) to manage Prisma ORM as a separate package for your apps in a monorepo. This approach simplifies Prisma configuration management and ensures consistency, scalability, and efficient dependency sharing across larger projects.
+
+## 1. Create your monorepo using Turborepo
+
+To create a Turborepo monorepo named `hello-world`, execute:
+
+```terminal
+npx create-turbo@latest hello-world
+```
+
+Choose your package manager for the `hello-world` project and navigate into the project root and install the Turborepo as a development dependency to pin the version for other developers:
+
+<TabbedContent code>
+
+  <TabItem value="npm">
+
+  ```terminal
+  cd ./hello-world
+  npm install turbo --save-dev
+  ```
+
+  </TabItem>
+
+  <TabItem value="yarn">
+
+  ```terminal
+  cd ./hello-world
+  yarn add turbo --dev --ignore-workspace-root-check
+  ```
+
+  </TabItem>
+
+  <TabItem value="pnpm">
+
+  ```terminal
+  cd ./hello-world
+  pnpm add turbo --save-dev --ignore-workspace-root-check
+  ```
+
+  </TabItem>
+
+</TabbedContent>
+
+For more details to install Turborepo, visit the official Turborepo guide [here](https://turbo.build/repo/docs/getting-started/installation).
+
+
+## 2. Add a new `database` package to the `hello-world` monorepo
+
+Create a new `database` package inside the `packages` directory, and the create a `package.json` file:
+
+```terminal
+cd packages/
+mkdir database
+cd database
+touch package.json
+```
+
+The `package.json` file should be like:
+
+```ts
+{
+  "name": "@repo/db",
+  "version": "0.0.0"
+}
+```
+
+Run your package manager's install step to install the required dependencies to use Prisma ORM:
+
+<TabbedContent code>
+
+  <TabItem value="npm">
+
+  ```terminal
+  npm install prisma --save-dev
+  npm install @prisma/client
+  ```
+
+  </TabItem>
+
+  <TabItem value="yarn">
+
+  ```terminal
+  yarn add prisma --dev
+  yarn add @prisma/client
+  ```
+
+  </TabItem>
+
+  <TabItem value="pnpm">
+
+  ```terminal
+  pnpm add prisma --save-dev
+  pnpm add @prisma/client
+  ```
+
+  </TabItem>
+
+</TabbedContent>
+
+## 3. Initialize prisma by running `prisma init`
+
+Inside the `database` directory, initialize prisma by running:
+
+<TabbedContent code>
+
+  <TabItem value="npm">
+
+  ```terminal
+  npx prisma init
+  ```
+
+  </TabItem>
+
+  <TabItem value="yarn">
+
+  ```terminal
+  yarn prisma init
+  ```
+
+  </TabItem>
+
+  <TabItem value="pnpm">
+
+  ```terminal
+  pnpm prisma init
+  ```
+
+  </TabItem>
+
+</TabbedContent>
+
+This should create several files inside `packages/database`:
+
+- `schema.prisma` is where your [Prisma schema](/orm/prisma-schema/overview) lives. Here, you'll be able to modify the shape of your database. The `prisma init` command by default will create a configuration for `PostgreSQL` to be used. You can modify the schema to use any other [supported database](/orm/reference/supported-databases) by Prisma ORM.
+- `.gitignore` adds some ignored files to git
+- `.env` lets you manually specify your `DATABASE_URL` for prisma.
+
+:::warning
+
+Make sure to replace the `DATABASE_URL` inside `database/package/.env` with a valid database url. 
+
+:::
+
+Add a model to your Prisma schema in `database/package/prisma/schema.prisma`:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output = "../generated/client"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  name      String?
+}
+```
+
+:::note
+
+Notice that in the `schema.prisma` file, we're specifying a custom `output` path, where prisma will generate it's types in. This makes sure prisma's types are resolved correctly across different package managers. 
+
+In this guide's case, the types will be generated in the `database/generated/client` directory.
+
+:::
+
+## 4. Create scripts to execute Prisma CLI commands
+
+Let's add some scripts to the `package.json` inside `packages/database`:
+
+```json
+{
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --skip-generate",
+    "db:deploy": "prisma migrate deploy"
+  }
+}
+```
+
+Let's also add these scripts to `turbo.json` in the root:
+
+```json
+{
+  "tasks": {
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "persistent": true // this allows you to interact with the CLI to add names to your migrations
+    },
+    "db:deploy": {
+      "cache": false
+    }
+  }
+}
+```
+
+#### 1. Migrate your `prisma.schema`
+
+Navigate to the project root and run the following command to automatically migrate our database and generate our type-safe Prisma client:
+
+<TabbedContent code>
+
+  <TabItem value="npm">
+
+  ```terminal
+  npx turbo db:migrate db:generate
+  ```
+
+  </TabItem>
+
+  <TabItem value="yarn">
+
+  ```terminal
+  yarn turbo db:migrate db:generate
+  ```
+
+  </TabItem>
+
+  <TabItem value="pnpm">
+
+  ```terminal
+  pnpm turbo db:migrate db:generate
+  ```
+
+  </TabItem>
+
+</TabbedContent>
+
+
+#### 2. Generate your `prisma.schema`
+
+<TabbedContent code>
+
+  <TabItem value="npm">
+
+  ```terminal
+  npx turbo db:generate
+  ```
+
+  </TabItem>
+
+  <TabItem value="yarn">
+
+  ```terminal
+  yarn turbo db:generate
+  ```
+
+  </TabItem>
+
+  <TabItem value="pnpm">
+
+  ```terminal
+  pnpm turbo db:generate
+  ```
+
+  </TabItem>
+
+</TabbedContent>
+
+## 5. Export prisma types and an instance of `PrismaClient` to be used across the monorepo
+
+Next, export the generated types and an instance of `PrismaClient` so it can used in your applications. 
+
+Create a `src` folder in `packages/database` and create an `client.ts` file in it with an instance of `PrismaClient`:
+
+```ts
+import { PrismaClient } from "../generated/client";
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+export const prisma =
+  globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+```
+
+Then create an `index.ts` file in the src folder to re-export the generated prisma types and the `PrismaClient` instance:
+
+```ts
+export { prisma } from './client.ts' // exports instance of prisma 
+export * from "../generated/client" // exports generated types from prisma
+```
+
+Following the [Just-in-Time packaging pattern](https://turbo.build/repo/docs/core-concepts/internal-packages#just-in-time-packages), you'll also create an entrypoint to the package inside `packages/database/package.json`:
+
+```json
+{
+  "exports": {
+    ".": "./src/index.ts"
+  } 
+}
+```
+
+## 6. Importing the `database` package into the `web` app in the monorepo
+
+The `hello-world` project should have an app called `web` at `apps/web`. Add the `database` dependency to `apps/web/package.json`:
+
+<TabbedContent code>
+
+  <TabItem value="npm">
+
+  ```json
+  {
+    "dependencies": {
+      "@repo/db": "*"
+    }
+  } 
+  ```
+
+  </TabItem>
+
+  <TabItem value="yarn">
+
+  ```json
+  {
+    "dependencies": {
+      "@repo/db": "*"
+    }
+  } 
+  ```
+
+  </TabItem>
+
+  <TabItem value="pnpm">
+
+  ```json
+  {
+    "dependencies": {
+      "@repo/db": "workspace:*"
+    }
+  } 
+  ```
+
+  </TabItem>
+
+</TabbedContent>
+
+Run your package manager's install command inside the `apps/web` directory.
+
+Let's import the intantiated `prisma` client from the `database` package in the `web` app in the `page.tsx` file:
+
+```tsx
+import styles from "./page.module.css";
+import { prisma } from "@repo/db";
+
+export default async function Home() {
+  const user = await prisma.user.findFirst() 
+  return (
+    <div className={styles.page}>
+      {user?.name ?? "No user added yet"}
+    </div>
+  );
+}
+```
+
+Then add a copy of the `.env` file with the `DATABASE_URL` to the web app directory as well:
+
+```env
+DATABASE_URL="Same database url as used in the Prisma direcotory"
+```
+
+## 7. Run the project in development
+
+Then from the project root run the project:
+
+<TabbedContent code>
+
+  <TabItem value="npm">
+
+  ```terminal
+  npx turbo run dev --filter=web
+  ```
+
+  </TabItem>
+
+  <TabItem value="yarn">
+
+  ```terminal
+  yarn turbo run dev --filter=web
+  ```
+
+  </TabItem>
+
+  <TabItem value="pnpm">
+
+  ```terminal
+  pnpm turbo run dev --filter=web
+  ```
+
+  </TabItem>
+
+</TabbedContent>
+
+
+
+
+
