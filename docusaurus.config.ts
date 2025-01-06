@@ -78,6 +78,7 @@ const config: Config = {
     }
   ],
   plugins: [
+    "@orama/plugin-docusaurus-v3",
     "docusaurus-plugin-sass",
     [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
