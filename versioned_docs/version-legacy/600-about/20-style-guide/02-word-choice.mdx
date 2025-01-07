@@ -1,0 +1,329 @@
+---
+title: 'Word choice'
+metaTitle: 'Prisma docs style guide: word choice'
+metaDescription: 'This section of the style guide provides guidelines on what terms and phrase constructions to use.'
+tocDepth: 4
+toc_max_heading_level: 4
+search: false
+---
+
+## Avoid words like "easy" and "just"
+
+Avoid words like "easy", "just", "simple", and "basic". If users have a hard time completing the task that is supposedly "easy," then they will question their abilities, or get aggravated by the docs. Consider using more specific descriptors. For example, when you say the phrase "deployment is easy," what do you really mean? Is it easy because it takes fewer steps than another option? If so, use the most specific descriptor possible, which in that case would be "this deployment method involves fewer steps than other options."
+
+For even more inclusive docs, avoid phrases that assume a reader’s experience or skill level, like "just deploy it and you’re done" or "for a refresher (when you refer to a completely different doc that someone might not have read)". Often, when you rephrase, you get stronger sentences that work in a wider range of contexts.
+
+## Avoid Latin terms
+
+These are common in English, but can be problematic for non-first-language speakers. Some of them can be confusing even to native English speakers.
+
+For example:
+
+| Avoid | Good                                                                                                        |
+| ----- | ----------------------------------------------------------------------------------------------------------- |
+| et al | "and others"                                                                                                |
+| etc.  | "and so on", or list all of the cases                                                                       |
+| i.e.  | "in other words"                                                                                            |
+| e.g.  | "such as" or "for example"                                                                                  |
+| via   | "with" or other equivalent, as in "Now you can start to send queries with the generated Prisma Client API") |
+
+## Avoid gerunds ("ing" verb forms)
+
+Avoid gerunds (the "ing" form of verbs). For example, use "Get started" instead of "Getting started". This guideline applies to headings and body text.
+
+Examples:
+
+| Avoid                                           | Good                                      |
+| ----------------------------------------------- | ----------------------------------------- |
+| Test the certificate using a browser            | Test the certificate with a browser       |
+| Excluding fields                                | Exclude fields                            |
+| If you are using Node.js version 18 or later... | If you use Node.js version 18 or later... |
+| You can do this by rebuilding Prisma Client     | To do this, rebuild Prisma Client         |
+| When designing your schema...                   | When you design your schema...            |
+
+Note that nouns ending in "ing" are fine - for example "Tracing".
+
+## Avoid incomplete sentences before lists
+
+When you introduce a list, do not use an incomplete sentence.
+
+### Use
+
+You can configure your schema in the following ways:
+
+- Item 1
+- Item 2
+
+### Avoid
+
+You can:
+
+- Item 1
+- Item 2
+
+## When you refer to other parts of the docs
+
+Use the following terms:
+
+- Page
+- Section
+
+## Records
+
+Refer to rows in the database as **records**. For example:
+
+"The following `create` query creates a single `User` **record**."
+
+Do not use:
+
+- Entry
+- Row
+- Object
+
+## Model property
+
+Model property refers to the top-level `PrismaClient` properties that refer to models:
+
+```
+
+const result = await prisma.user.findMany(...) // "user" model property
+const result = await prisma.post.findMany(...) // "post" model property
+
+```
+
+## Version numbers
+
+- Refer to version numbers as "version x.x.x"
+- When you compare version numbers, use "before" and "after" (or "later")
+- Do not use "lower" and "higher"
+
+```md
+<!-- Good -->
+
+This feature is in Preview in versions 3.5.0 and later.
+
+<!-- Bad -->
+
+This feature is in Preview in v3.5.0 and higher.
+```
+
+When you write about a specific version, make it clear _what product_ you are referring to. For example, in the following sentence, version 3.11.1 might refer to Prisma or to MongoDB:
+
+_This filter is available for MongoDB only in versions 3.11.1 and later._
+
+When the product is not clear from the context, explicitly mention the product name in front of the version number.
+
+_This filter is available for MongoDB only in Prisma versions 3.11.1 and later._
+
+### In deprecation notices, mention the deprecation version number but not the planned removal version number
+
+When you explain that a feature is deprecated, include the version number in which it was deprecated. However, plans change. To keep docs lean and accurate, do not mention the version in which Prisma plans to remove the feature.
+
+```md
+<!-- Good -->
+
+From v3.0.0, the `command name` command is deprecated.
+
+<!-- Bad -->
+
+From v3.0.0, the `command name` command is deprecated.
+We plan to remove `command name` in v.4.0.0.
+```
+
+## Abbreviate terms
+
+If you want to abbreviate a term, write it out fully first, then put the abbreviation in parentheses. After that, you can use the abbreviation for the rest of the page. For example, "In computer science, an abstract syntax tree (AST) is …".
+
+See also: [Jargon](/about/style-guide/writing-style#jargon)
+
+## Avoid ambiguous English words
+
+Avoid the following common words in English, because they are ambiguous to many readers.
+
+| Word to avoid                    | Reason to avoid                                    | Use the following word instead                                                       |
+| -------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| As                               | Can mean "because" or "at the same time as"        | "Because", or "At the same time", as appropriate                                     |
+| Since (to mean "because")        | Can also mean "after" (as in "since you upgraded") | "Because"                                                                            |
+| May (to mean "might")            | Can also mean "is permitted to"                    | "Might"                                                                              |
+| Should (to mean "ought to")      | Can also mean "might happen"                       | "Must": "You must rebuild Prisma Client", or <br></br>Omit: "Rebuild Prisma Client." |
+| Once (to mean "when" or "after") | Can also mean "happens once"                       | "When": "When the build completes..."                                                |
+| Wish (to mean "want")            | Not always clear internationally                   | "Want"                                                                               |
+
+## Use clear hyperlinks
+
+Avoid the constructions "click here" or "here" for link text. They are considered bad practice on the web.
+
+```md
+<!-- Good -->
+
+Read more in the [Prisma ORM docs](/orm)
+
+<!-- Bad -->
+
+Read more in the Prisma ORM docs [here](/orm)
+```
+
+If your link text is the title of the destination page, use sentence case:
+
+```md
+<!-- Good -->
+
+For more information, see [Relation queries](/orm/prisma-client/queries/relation-queries).
+
+<!-- Bad -->
+
+For more information, see [Relation Queries](/orm/prisma-client/queries/relation-queries).
+```
+
+When it is obvious what the link destination is (for example if you've explained the concept in the preceding sentence), then a very concise (and maintainable) way to provide a link to further information is as follows:
+
+```md
+[Learn more](/orm/prisma-client/queries/relation-queries)
+```
+
+## Specific terms
+
+### "Preview" and "general availability"
+
+Use lower case for these. For "GA", the abbreviation of general availability, use all caps.
+
+```md
+<!-- Good -->
+
+We made composite types generally available in version 3.12.0.
+They were previously available in preview from version 3.10.0.
+
+<!-- Bad -->
+
+We made composite types Generally Available in version 3.12.0.
+They were previously available in Preview from version 3.10.0.
+```
+
+### SQL
+
+Write "a SQL query", not "an SQL query". Example: "A SQL database...".
+
+### macOS
+
+Good: macOS
+
+Bad: Mac OS, MacOS, or any other variant
+
+### Terminal window
+
+Use the term "terminal window". Do not use "command prompt" or "shell". Example:
+
+```
+Open a terminal window.
+```
+
+### Set up/setup
+
+This can be a noun ("setup") or verb ("set up") and as such can cause confusion. Try to avoid, and use an alternative term. For example, "configure" or "enable".
+
+If you must use it, ensure that you use the correct form. Remember to check in code snippets, where it might lurk in the code comments.
+
+### Relations
+
+When referring to relations, use the following forms:
+
+| Avoid | Good         |
+| ----- | ------------ |
+| 1-1   | One-to-one   |
+| 1-n   | One-to-many  |
+| m-n   | Many-to-many |
+
+### The `prisma` root command
+
+We often refer to `prisma` CLI commands such as `prisma db push`.
+
+- The long form of these commands includes the `prisma` root command. For example: `prisma db push`.
+- The short form of these commands omits the `prisma` root command. For example: `db push`.
+
+`prisma` CLI commands only work when the user includes `prisma`. In most cases, use the long form to help docs users who drop into the docs at that point. The long form also let docs users copy and paste a working command into their terminal windows.
+
+Use the long form in these circumstances:
+
+- When you include a `prisma` command in a code box.
+- When you include a `prisma` command in a procedure.
+
+It is OK to use the short form in the following circumstances. This can help with brevity and readability in the docs.
+
+- When you discuss a `prisma` command, for example in reference material. Example: ["`db push` uses the same engine as Prisma Migrate..."](/orm/prisma-migrate/workflows/prototyping-your-schema)
+- When you mention a `prisma` command in a heading. [Example](/orm/reference/prisma-cli-reference#init)
+
+### Possessive s
+
+Indicate owner and ownership clearly and do not use possessive _s_.
+
+When you avoid possessive s, you also avoid:
+
+- stringing together too many nouns
+- issues related to localization and how well international readers understand what you document
+
+```md
+<!-- Good -->
+
+Change the database connection string of an environment
+
+<!-- Bad -->
+
+Change the environment's database connection string
+```
+
+### enter vs [*provide, type*]
+
+Use _enter_ for the action of filling out or typing in a text box or input field.
+
+Do not use _provide_ or _type_.
+
+```md
+<!-- Good -->
+
+In **Display Name**, enter a name for your project.
+
+<!-- Bad -->
+
+In **Display Name**, type a name for your project.
+In **Display Name**, provide a name for your project.
+```
+
+### _clear_ vs [*deselect*, *unselect*, *uncheck*, *unmark*]
+
+Use _clear_ to guide readers to remove the check mark from a checkbox.
+
+```md
+<!-- Good -->
+
+Clear **Include sample data**.
+
+<!-- Bad -->
+
+Deselect the **Include sample data** checkbox.
+```
+
+### _select_ vs _choose_
+
+_Choose_ conveys the idea of making a choice in general, while _select_ works better in the context of fine-picking an option or making a UI selection among a list of options.
+
+Use _select_ when you guide readers which UI option to select.
+
+```md
+<!-- Good -->
+
+From **Payment method**, select **Wire transfer**.
+```
+
+Use _choose_ when you make a conceptual description of choosing one option over another.
+
+```md
+<!-- Good -->
+
+You can choose to host your project in Vercel or Netlify.
+```
+
+### checkbox vs ~~check box~~
+
+Use _checkbox_.
+
+See [Avoid excessive use of UI terminology](/about/style-guide/user-interace-guidelines#avoid-excessive-use-of-ui-terminology).

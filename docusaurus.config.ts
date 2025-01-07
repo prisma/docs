@@ -127,6 +127,12 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/prisma/docs/tree/main",
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '6.0',
+            },
+          },
         },
         blog: false,
         theme: {
@@ -221,6 +227,10 @@ const config: Config = {
           position: "left",
           label: "Examples",
           className: "indigo external__link",
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
         },
         {
           href: "https://github.com/prisma/",

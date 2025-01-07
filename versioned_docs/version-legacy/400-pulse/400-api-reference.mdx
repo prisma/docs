@@ -1,0 +1,412 @@
+---
+title: "API reference"
+metaTitle: "Pulse: API reference"
+metaDescription: "API reference documentation for Pulse."
+tocDepth: 3
+toc_max_heading_level: 3
+toc: true
+---
+
+The Pulse API reference documentation on this page is based on the following schema:
+
+```prisma
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String?
+  email String  @unique
+}
+```
+
+## `stream()`
+
+`stream()` returns an [async iterable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols) that receives all database change events related to the table you call this method on.
+
+```ts
+const stream = await prisma.user.stream();
+```
+
+Because an async iterable is returned, you can use a [`for await...of`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of) loop to wait for and receive events:
+
+```ts
+for await (let event of subscription) {
+  console.log(event);
+}
+```
+
+### Notes
+
+- Usage of `stream()` requires [event persistence](/pulse/database-events#event-persistence) to be enabled in your Pulse project.
+- `stream()` guarantees that all events will be delivered at least once and in the right order.
+
+### Options
+
+You can pass an object with configuration options to `stream()`. The object has the following fields:
+
+| Name     | Description                                                                                                                                                                                                                                                                                                                                               |
+| :------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`   | The name of the stream. Providing this option enables "resumability" and will make sure you receive events later if your stream isn't active at the time when the event actually happened (e.g. because your server was down). Note that if `name` is provided, only one client can be connected to a stream with that particular `name` at any given time. |
+| `create` | An object to specify filters for the create events to be received. If you leave the object empty with `create: {}`, you will receive _all_ create events. You can filter on any scalar field of your model.                                                                                                                                               |
+| `update` | An object with an `after` field to specify filters for the update events to be received. If you leave the object empty with `update: {}`, you will receive _all_ update events. The filter is applied to the values of the record _after_ an update has been performed. You can filter on any scalar field of your model.                                 |
+| `delete` | An object to specify filters for the delete events to be received. You can filter on any scalar field of your model.                                                                                                                                                                                                                                      |
+
+### Return type
+
+When called with no filter arguments, the `stream()` method returns the following type:
+
+```ts no-copy
+const stream: PulseSubscription<
+  | PulseCreateEvent<{
+      id: number;
+      name: string | null;
+      email: string;
+    }>
+  | PulseUpdateEvent<{
+      id: number;
+      name: string | null;
+      email: string;
+    }>
+  | PulseDeleteEvent<{
+      id: number;
+      name: string | null;
+      email: string;
+    }>
+> = await prisma.user.stream();
+```
+
+Depending on the arguments you provide, the return type may change. For example, if you filter for only `create` events, the type will get adjusted:
+
+```ts no-copy
+const stream: PulseSubscription<
+  PulseCreateEvent<{
+    id: number;
+    email: string;
+    name: string | null;
+  }>
+> = await prisma.user.stream({
+  create: {},
+});
+```
+
+### Examples
+
+#### Use a `name` to be able to "resume" the stream
+
+```ts
+const stream = await prisma.user.stream({
+  name: "all-user-events",
+});
+```
+
+Learn more about resuming streams [here](/pulse/database-events#resuming-event-streams).
+
+#### Filter for new `User` records with a non-null value for `name`
+
+```ts
+const stream = await prisma.user.stream({
+  create: {
+    name: { not: null },
+  },
+});
+```
+
+#### Filter for updated `User` records where the `email` ends with `@prisma.io` after the update
+
+```ts
+const stream = await prisma.user.stream({
+  update: {
+    after: {
+      email: { endsWith: "@prisma.io" },
+    },
+  },
+});
+```
+
+#### Filter for deleted `User` records where the `email` contains `hello`
+
+```ts
+const stream = await prisma.user.stream({
+  delete: {
+    email: { contains: "hello" },
+  },
+});
+```
+
+## `subscribe()`
+
+`subscribe()` returns an [async iterable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols) that receives all database change events related to the table you call this method on.
+
+```ts
+const subscription = await prisma.user.subscribe();
+```
+
+Because an async iterable is returned, you can use a [`for await...of`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of) loop to wait for and receive events:
+
+```ts
+for await (let event of subscription) {
+  console.log(event);
+}
+```
+
+### Notes
+
+- `subscribe()` guarantees that all events will be delivered at most once. There are no guarantees about the order in which the events arrive.
+- Events delivered with `subscribe()` are _ephemeral_, meaning they won't be delivered if your subscription isn't active during the time when the event happens in the database (e.g. because your server is down).
+
+### Options
+
+You can pass an object with configuration options to `subscribe()`. The object has the following fields:
+
+| Name     | Description                                                                                                                                                                                                                                                                                                               |
+| :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `create` | An object to specify filters for the create events to be received. If you leave the object empty with `create: {}`, you will receive _all_ create events. You can filter on any scalar field of your model.                                                                                                               |
+| `update` | An object with an `after` field to specify filters for the update events to be received. If you leave the object empty with `update: {}`, you will receive _all_ update events. The filter is applied to the values of the record _after_ an update has been performed. You can filter on any scalar field of your model. |
+| `delete` | An object to specify filters for the delete events to be received. You can filter on any scalar field of your model.                                                                                                                                                                                                      |
+
+### Return type
+
+When called with no filter arguments, the `subscribe()` method returns the following type:
+
+```ts no-copy
+const subscription: PulseSubscription<
+  | PulseCreateEvent<{
+      id: number;
+      name: string | null;
+      email: string;
+    }>
+  | PulseUpdateEvent<{
+      id: number;
+      name: string | null;
+      email: string;
+    }>
+  | PulseDeleteEvent<{
+      id: number;
+      name: string | null;
+      email: string;
+    }>
+> = await prisma.user.subscribe();
+```
+
+Depending on the arguments you provide, the return type may change. For example, if you filter for only `create` events, the type will get adjusted:
+
+```ts no-copy
+const subscription: PulseSubscription<
+  PulseCreateEvent<{
+    id: number;
+    email: string;
+    name: string | null;
+  }>
+> = await prisma.user.subscribe({
+  create: {},
+});
+```
+
+### Examples
+
+#### Filter for new `User` records with a non-null value for `name`
+
+```ts
+const subscription = await prisma.user.subscribe({
+  create: {
+    name: { not: null },
+  },
+});
+```
+
+#### Filter for updated `User` records where the `email` ends with `@prisma.io` after the update
+
+```ts
+const subscription = await prisma.user.subscribe({
+  update: {
+    after: {
+      email: { endsWith: "@prisma.io" },
+    },
+  },
+});
+```
+
+#### Filter for deleted `User` records where the `email` contains `hello`
+
+```ts
+const subscription = await prisma.user.subscribe({
+  delete: {
+    email: { contains: "hello" },
+  },
+});
+```
+
+## `stream()` vs `subscribe()`
+
+For the majority of use cases, `stream()` is the recommended option because it can provide guarantees for events to arrive on the consumer-side. Note though that because `stream()` requires event persistence to be enabled, this has implications for [event storage and costs](https://www.prisma.io/pricing).
+
+See a [more detailed comparison](/pulse/database-events#event-delivery-semantics-in-prisma-pulse).
+
+## `stop()`
+
+Allows you to explicitly stop streams and subscriptions and close the connection. This is needed to ensure that the limited number of subscriptions allowed per table is not exhausted.
+
+### For `stream()`
+
+```ts
+// Create the stream
+const stream = await prisma.user.stream();
+
+// ... Use the stream
+
+// Stop the stream
+// highlight-next-line
+stream.stop();
+```
+
+### For `subscribe()`
+
+```ts
+// Create the subscription
+const subscription = await prisma.user.subscribe();
+
+// ... Use the subscription
+
+// Stop the subscription
+// highlight-next-line
+subscription.stop();
+```
+
+## `PulseCreateEvent<User>`
+
+An object of type `PulseCreateEvent` is returned by any `create` event that happens in the database.
+
+### Type
+
+A `PulseCreateEvent` has the following fields:
+
+| Name        | Type     | Example value                       | Description                                                                                                           |
+| :---------- | :------- | :---------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string` | `01HYBEER1JPSBVPG2NQADNQTA6`        | A unique identifier / idempotency key following the [ULID](https://github.com/ulid/spec#specification) specification. |
+| `action`    | `string` | `create`                            | The kind of write-operation performed in the database: `create`                                                       |
+| `created`   | `User`   | See `created` in the example below. | An object with the values of the record was just created.                                                             |
+
+The type of the event is generic to the fields of your model. In the case, of the `User` model above, it looks as follows:
+
+```ts
+PulseCreateEvent<{
+
+  email: string;
+  name: string | null;
+}>;
+```
+
+### Example
+
+Here is an example:
+
+```js
+{
+  action: 'create',
+  created: { id: 3, email: 'jane@prisma.io', name: 'Jane Doe' },
+  id: '0/2A5A590'
+}
+```
+
+## `PulseUpdateEvent<User>`
+
+An object of type `PulseUpdateEvent` is returned by any `delete` event that happens in the database.
+
+### Type
+
+A `PulseUpdateEvent` has the following fields:
+
+| Name        | Type     | Example value                     | Description                                                                                                                                                                                                                                                                 |
+| :---------- | :------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string` | `01HYBEER1JPSBVPG2NQADNQTA6`      | A unique identifier / idempotency key following the [ULID](https://github.com/ulid/spec#specification) specification.                                                                                                                                                       |
+| `action`    | `string` | `update`                          | The kind of write-operation performed in the database: `update`                                                                                                                                                                                                             |
+| `before`    | `User`   | `null`                            | An object with the _old_ values of the record that was just updated. This only works with when the [`REPLICA IDENTITY`](/pulse/database-setup/general-database-instructions#replica-identity) in your database is set to `FULL`. Otherwise the value will always be `null`. |
+| `after`     | `User`   | See `after` in the example below. | An object with the _new_ values of the record that was just updated.                                                                                                                                                                                                        |
+
+The type of the event is generic to the fields of your model. In the case, of the `User` model above, it looks as follows:
+
+```ts
+PulseUpdateEvent<{
+  id: number;
+  email: string;
+  name: string | null;
+}>;
+```
+
+### Example
+
+_Without_ having set the `REPLICA IDENDITY` to `FULL`:
+
+```js
+{
+  action: 'update',
+  after: { id: 2, email: 'doe@prisma.io', name: 'Jane Doe' },
+  before: null,
+  id: '0/2A5A248'
+}
+```
+
+_With_ having set the `REPLICA IDENDITY` to `FULL`:
+
+```js
+{
+  action: 'update',
+  after: { id: 2, email: 'support@prisma.io', name: 'Jane Doe' },
+  before: { id: 2, email: 'support@prisma.io', name: null },
+  id: '0/2A5A248'
+}
+```
+
+:::note
+
+To enable `REPLICA IDENTITY` with the `FULL` setting, you must configure it on a per-table basis, as it is not enabled by default. This requires executing an SQL query against your database. [Learn more here.](/pulse/database-setup/general-database-instructions#replica-identity)
+
+:::
+
+## `PulseDeleteEvent<User>`
+
+### Type
+
+A `PulseDeleteEvent` has the following fields:
+
+| Name        | Type     | Example value                | Description                                                                                                                                                                                                                                                                    |
+| :---------- | :------- | :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string` | `01HYBEER1JPSBVPG2NQADNQTA6` | A unique identifier / idempotency key following the [ULID](https://github.com/ulid/spec#specification) specification.                                                                                                                                                          |
+| `action`    | `string` | `delete`                     | The kind of write-operation performed in the database: `create`, `update` or `delete`.                                                                                                                                                                                         |
+| `deleted`   | `User`   | `{ id: 3 }`                  | An object with the values of the record that was just deleted. This only works with when the [`REPLICA IDENTITY`](/pulse/database-setup/general-database-instructions#replica-identity) in your database is set to `FULL`. Otherwise the object will only carry an `id` field. |
+
+The type of the event is generic to the fields of your model. In the case, of the `User` model above, it looks as follows:
+
+```ts
+PulseDeleteEvent<{
+  id: number;
+  email: string;
+  name: string | null;
+}>;
+```
+
+### Example
+
+_Without_ having set the `REPLICA IDENDITY` to `FULL`:
+
+```js
+ {
+  action: 'delete',
+  deleted: { id: 1 },
+  id: '0/2A5A398'
+}
+```
+
+_With_ having set the `REPLICA IDENDITY` to `FULL`:
+
+```js
+ {
+  action: 'delete',
+  deleted: { id: 42, email: 'doe@prisma.io', name: 'Jane Doe' },
+  id: '0/2A5A398'
+}
+```
+
+:::note
+
+To enable `REPLICA IDENTITY` with the `FULL` setting, you must configure it on a per-table basis, as it is not enabled by default. This requires executing an SQL query against your database. [Learn more here.](/pulse/database-setup/general-database-instructions#replica-identity)
+
+:::
