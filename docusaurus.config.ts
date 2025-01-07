@@ -132,6 +132,9 @@ const config: Config = {
             current: {
               label: '6.0',
             },
+            legacy: {
+              label: 'Legacy',
+            }
           },
         },
         blog: false,
