@@ -4,44 +4,23 @@ metaTitle: 'Excluding fields'
 metaDescription: 'This page explains how to exclude sensitive fields from Prisma Client'
 ---
 
-By default Prisma Client returns all fields from a model. You can use `select` to narrow the result set, but that can be unwieldy if you have a large model and you only want to exclude one or two fields.
+By default Prisma Client returns all fields from a model. You can use [`select`](/orm/prisma-client/queries/select-fields) to narrow the result set, but that can be unwieldy if you have a large model and you only want to exclude a small number of fields.
 
 :::info
 
-As of Prisma ORM 5.16.0, excluding fields globally and locally is supported via the `omitApi` Preview feature.
+As of Prisma ORM 6.2.0, excluding fields is supported via the `omit` option that you can pass to Prisma Client. From versions 5.16.0 through 6.1.0, you must use the `omitApi` Preview feature to access this option.
 
 :::
 
 ## Excluding a field globally using `omit`
 
-The following is a type-safe way to exclude a field globally using the [`omitApi` Preview feature](/orm/reference/preview-features):
+The following is a type-safe way to exclude a field _globally_ (i.e. for _all_ queries against a given model):
 
 <TabbedContent code>
 
-<TabItem value="Schema">
-
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["omitApi"]
-}
-
-model User {
-  id        Int      @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-```
-
-</TabItem>
-
 <TabItem value="Code">
 
-```tsx
+```ts
 const prisma = new PrismaClient({
   omit: {
     user: {
@@ -56,38 +35,33 @@ const user = await prisma.user.findUnique({ where: { id: 1 } })
 
 </TabItem>
 
-</TabbedContent>
-
-## Excluding a field locally using `omit`
-
-The following is a type-safe way to exclude a field locally using the `omitApi` Preview feature:
-
-<TabbedContent code>
-
 <TabItem value="Schema">
 
 ```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["omitApi"]
-}
-
 model User {
   id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   firstName String
   lastName  String
   email     String   @unique
   password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 ```
 
 </TabItem>
 
+</TabbedContent>
+
+## Excluding a field locally using `omit`
+
+The following is a type-safe way to exclude a field _locally_ (i.e. for a _single_ query):
+
+<TabbedContent code>
+
 <TabItem value="Code">
 
-```tsx
+```ts
 const prisma = new PrismaClient()
 
 // The password field is excluded only in this query
@@ -99,6 +73,23 @@ const user = await prisma.user.findUnique({
     id: 1 
   } 
 })
+```
+
+</TabItem>
+
+
+<TabItem value="Schema">
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String
+}
 ```
 
 </TabItem>
@@ -171,64 +162,7 @@ const user = await prisma.user.findUnique({
 
 It's important to understand when to omit a field globally or locally:
 
-- If you are omitting a field in order to prevent it from accidentally being included in a query, it's best to omit it globally. For example: Globally omitting the password field from a User model so that sensitive information doesn't accidentally get exposed.
-- If you are omitting a field because it's not needed in a query, it's best to omit it locally.
+- If you are omitting a field in order to prevent it from accidentally being included in a query, it's best to omit it _globally_. For example: Globally omitting the `password` field from a `User` model so that sensitive information doesn't accidentally get exposed.
+- If you are omitting a field because it's not needed in a query, it's best to omit it _locally_.
 
 Local omit (when an `omit` option is provided in a query) only applies to the query it is defined in, while a global omit applies to every query made with the same Prisma Client instance, [unless a specific select is used or the omit is overridden](#how-to-select-a-previously-omitted-field).
-
-## Excluding the password field without using `omit`
-
-:::note
-
-The `omitApi` Preview feature, released in Prisma ORM 5.13.0, is the preferred way of omitting fields from a query result. The ability to globally omit fields was added to the `omitApi` Preview feature in Prisma ORM 5.16.0. This documentation is still relevant for versions of Prisma ORM prior to 5.13.0.
-
-:::
-
-The following is a type-safe `exclude` function returns a user without the `password` field.
-
-<TabbedContent code>
-
-<TabItem value="TypeScript">
-
-```tsx
-// Exclude keys from user
-function exclude<User, Key extends keyof User>(
-  user: User,
-  keys: Key[]
-): Omit<User, Key> {
-  return Object.fromEntries(
-    Object.entries(user).filter(([key]) => !keys.includes(key))
-  )
-}
-
-function main() {
-  const user = await prisma.user.findUnique({ where: 1 })
-  const userWithoutPassword = exclude(user, ['password'])
-}
-```
-
-</TabItem>
-
-<TabItem value="JavaScript">
-
-```js
-// Exclude keys from user
-function exclude(user, keys) {
-  return Object.fromEntries(
-    Object.entries(user).filter(([key]) => !keys.includes(key))
-  );
-}
-
-function main() {
-  const user = await prisma.user.findUnique({ where: 1 })
-  const userWithoutPassword = exclude(user, ['password'])
-}
-```
-
-</TabItem>
-
-</TabbedContent>
-
-In the TypeScript example, we've provided two generics: `User` and `Key`. The `Key` generic is defined as the keys of a `User` (e.g. `email`, `password`, `firstName`, etc.).
-
-These generics flow through the logic, returning a `User` that omits the list of `Key`s provided.
