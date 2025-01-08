@@ -1,20 +1,24 @@
 ---
-title: Team development
-metaTitle: Team development
-metaDescription: How to use Prisma Migrate when collaborating on a project as a team.
+title: 'How to manage schema changes in a team'
+metaTitle: 'How to manage schema changes in a team with Prisma Migrate'
+metaDescription: 'Learn how to use Prisma Migrate effectively when collaborating on a project as a team'
+sidebar_label: 'Team schema changes'
 image: '/img/guides/schema-migration-cover.png'
 ---
 
-To incorporate changes from collaborators:
+## Introduction
 
-1. Pull the changed Prisma schema and `./prisma/migrations` folder
-1. Run the `migrate dev` command to apply new migrations:
+When working in a team, managing database schema changes can be challenging. This guide shows you how to effectively collaborate on schema changes using Prisma Migrate, ensuring that all team members can safely contribute to and incorporate schema changes.
 
-   ```terminal
-   npx prisma migrate dev
-   ```
+## Prerequisites
 
-Migrations are **applied in the same order as they were created**. The creation date is part of the migration subfolder name - for example, `20210316081837-updated-fields` was created on `2021-03-16-08:18:37`.
+Before starting this guide, make sure you have:
+
+- Node.js installed (version 18 or higher)
+- A Prisma project set up with migrations
+- A relational database (PostgreSQL, MySQL, SQLite, SQL Server, etc.)
+- Basic understanding of Git
+- Basic familiarity with Prisma Migrate
 
 :::warning
 
@@ -23,11 +27,40 @@ Instead of `migrate dev`, [`db push`](/orm/prisma-migrate/workflows/prototyping-
 
 :::
 
-## Example: Incorporating your team's changes
+## 1. Understand migration basics
 
-The following sample scenario demonstrates how a team of three developers share and incorporate changes to the Prisma schema and the migration history.
+### 1.1. Migration order
 
-The following tabs show the team's Prisma schema before and after a round of changes:
+Migrations are **applied in the same order as they were created**. The creation date is part of the migration subfolder name - for example, `20210316081837-updated-fields` was created on `2021-03-16-08:18:37`.
+
+### 1.2. Source control requirements
+
+You should commit the following files to source control:
+
+- The contents of the `.prisma/migrations` folder, including the `migration_lock.toml` file
+- The Prisma Schema (`schema.prisma`)
+
+Source-controlling the `schema.prisma` file is not enough - you must include your migration history because:
+
+- Customized migrations contain information that cannot be represented in the Prisma schema
+- The `prisma migrate deploy` command only runs migration files
+
+## 2. Incorporate team changes
+
+### 2.1. Pull latest changes
+
+To incorporate changes from collaborators:
+
+1. Pull the changed Prisma schema and `./prisma/migrations` folder
+2. Run the migrate command:
+
+```terminal
+npx prisma migrate dev
+```
+
+### 2.2. Example scenario
+
+Let's walk through a sample scenario with three developers sharing schema changes:
 
 <TabbedContent code>
 
@@ -55,7 +88,7 @@ model User {
 
 <TabItem value="After">
 
-```prisma file=schema.prisma highlight=14,15,19-23;add
+```prisma file=schema.prisma
 model Post {
   id        Int     @id @default(autoincrement())
   title     String
@@ -88,120 +121,100 @@ model Tag {
 </TabItem>
 </TabbedContent>
 
-### The team's changes
+## 3. Handle concurrent changes
 
-Your team members Ania and Javier make additive changes to the schema in their local environment and generate migrations.
+### 3.1. Developer A's changes
 
-**Ania** makes the following changes:
+Ania adds a new field:
 
-1. Adds a model field:
+```prisma
+model User {
+  /* ... */
+  favoriteColor String?
+}
+```
 
-   ```prisma highlight=3;add
-   model User {
-     /* ... */
-     //add-next-line
-     favoriteColor String?
-   }
-   ```
+And generates a migration:
 
-1. Generates a migration:
+```terminal
+npx prisma migrate dev --name new-field
+```
 
-   ```terminal
-   npx prisma migrate dev --name new-field
-   ```
+### 3.2. Developer B's changes
 
-1. Commits the changed schema and the new migration:
+Javier adds a new model:
 
-   - `./prisma/schema.prisma`
-   - `./prisma/migrations/20210316081837-new-field/migration.sql`
+```prisma
+model Tag {
+  tagName     String   @id
+  tagCategory Category
+}
+```
 
-**Javier** makes the following changes:
+And generates a migration:
 
-1. Adds a new model to the schema:
+```terminal
+npx prisma migrate dev --name new-model
+```
 
-   ```prisma highlight=1-4;add
-   //add-start
-   model Tag {
-     tagName     String   @id
-     tagCategory Category
-   }
-   //add-end
-   ```
+### 3.3. Merge changes
 
-1. Generates a migration:
-
-   ```terminal
-   npx prisma migrate dev --name new-model
-   ```
-
-1. Commits the changed schema and the new migration:
-
-   - `./prisma/schema.prisma`
-   - `./prisma/migrations/20210316091837-new-model/migration.sql`
-
-The migration history now has **two** new migrations:
+The migration history now has two new migrations:
 
 ![A diagram showing changes by two separate developers converging in a single migration history.](/img/guides/migrate-team-dev.png)
 
-### Integrating changes
+## 4. Integrate your changes
 
-**You** want to incorporate your team's changes. To do that, you:
+### 4.1. Pull team changes
 
-1. Pull the most recent changes from your team, including:
+1. Pull the most recent changes:
+   - Two new migrations
+   - Updated schema file
 
-   - Two new migrations:
+2. Review the merged schema:
 
-     - `./prisma/migrations/20210316081837-new-field/migration.sql`
-     - `./prisma/migrations/20210316091837-new-model/migration.sql`
+```prisma
+model User {
+  /* ... */
+  favoriteColor   String?
+  bestPacmanScore Int?
+}
 
-   - An updated schema file. Git automatically merges the updated schema with _your_ local schema changes (a new `bestPacmanScore` field):
+model Tag {
+  tagName     String   @id
+  tagCategory Category
+  posts       Post[]
+}
+```
 
-     ```prisma highlight=3,7-11;add
-     model User {
-       /* ... */
-       //add-next-line
-       favoriteColor   String?
-       bestPacmanScore Int?
-     }
-     
-     //add-start
-     model Tag {
-       tagName     String   @id
-       tagCategory Category
-       posts       Post[]
-     }
-     //add-end
-     ```
+### 4.2. Generate your migration
 
-1. Run the `migrate dev` command:
+Run the migrate command:
 
-   ```terminal
-   npx prisma migrate dev
-   ```
+```terminal
+npx prisma migrate dev
+```
 
-   1. Applies Ania and Javier's migrations to your local database.
+This will:
+1. Apply your team's migrations
+2. Create a new migration for your changes
+3. Apply your new migration
 
-      - `./prisma/migrations/20210316081837-new-field/migration.sql`
-      - `./prisma/migrations/20210316091837-new-model/migration.sql`
+### 4.3. Commit changes
 
-   1. Creates a new migration with your changes, prompts you to name it (`pacman-field`), and applies the new migration to your local database:
+Commit:
+- The merged `schema.prisma`
+- Your new migration file
 
-      - `./prisma/migrations/20210322081837-pacman-field/migration.sql`
+## Next steps
 
-1. Commit the merged `schema.prisma` and your new migration: `./prisma/migrations/20210322081837-pacman-field/migration.sql`
+Now that you understand team schema management, you can:
 
-Your `schema.prisma` and local database now include your team's changes, and the migration history includes your migration:
+- Learn about [customizing migrations](/orm/prisma-migrate/workflows/customizing-migrations)
+- Explore [deployment workflows](/orm/prisma-migrate/workflows/deployment)
+- Set up [continuous integration](/orm/prisma-migrate/workflows/team-development#continuous-integration)
 
-![A migration history with 5 migrations.](/img/guides/migration-history.png)
-
-## Source control
-
-You should commit the following files to source control:
-
-- The contents of the `.prisma/migrations` folder, including the `migration_lock.toml` file
-- The Prisma Schema (`schema.prisma`)
-
-Source-controlling the `schema.prisma` file is not enough - you must include your migration history. This is because:
-
-- As you start to [customize migrations](/orm/prisma-migrate/workflows/customizing-migrations), your migration history contains **information that cannot be represented in the Prisma schema**. For example, you can customize a migration to mitigate data loss that would be caused by a breaking change.
-- The `prisma migrate deploy` command, which is used to deploy changes to staging, testing, and production environments, _only_ runs migration files. Prisma Migrate only uses the schema to read the `url` and `provider` fields, not models and fields.
+For more information and updates:
+- [Prisma Migrate documentation](/orm/prisma-migrate)
+- [Team development workflows](/orm/prisma-migrate/workflows/team-development)
+- Join our [Discord community](https://discord.com/invite/prisma)

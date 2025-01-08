@@ -1,8 +1,8 @@
 ---
-title: 'Build Real-Time Durable Workflows'
-metaTitle: 'Build Real-Time, Durable Workflows with Pulse and Inngest'
+title: 'How to build real-time durable workflows'
+metaTitle: 'How to build real-time durable workflows with Pulse and Inngest'
 metaDescription: 'Learn how to create real-time, durable, and extensible workflows using Prisma Pulse and Inngest.'
-sidebar_label: 'Real-Time Durable Workflows'
+sidebar_label: 'Real-time durable workflows'
 image: '/img/guides/real-time-durable-workflows-cover.svg'
 tags:
   - real-time
@@ -14,17 +14,74 @@ tags:
   - pulse
 ---
 
-Building web applications today isn't just about functionality—it's about creating seamless and engaging user experiences. Users expect applications to be responsive, real-time, and feature-rich, handling ever-increasing data sets efficiently.
+## Introduction
 
-To simplify the development of such applications, Prisma and Inngest have collaborated to provide developers with tools that enable real-time, durable, and extensible workflows.
+Building web applications today isn't just about functionality—it's about creating seamless and engaging user experiences. Users expect applications to be responsive, real-time, and feature-rich, handling ever-increasing data sets efficiently. This guide will show you how to use Prisma Pulse and Inngest to create real-time, durable workflows that enhance your application's functionality.
 
-## Using Inngest with Prisma Pulse
+## Prerequisites
 
-Let's explore a straightforward example: onboarding a new user after they sign up.
+Before starting this guide, make sure you have:
 
-Assume you have a `User` table in your database that records a new row whenever a user signs up. Upon registration, you want to send a welcome email immediately and schedule another follow-up email three days later.
+- Node.js installed (version 18 or higher)
+- A PostgreSQL database
+- An [Inngest](https://www.inngest.com) account
+- The [Pulse/Inngest router service](https://github.com/prisma/pulse-inngest-router) repository
+- An OpenAI API key (for the AI writer example)
 
-First, stream database changes to your application to react when a new user is created. This can be achieved with just a few lines of code using Prisma Pulse:
+## 1. Set up your project
+
+### 1.1. Create a new project
+
+First, clone the Pulse/Inngest router repository and install the necessary dependencies:
+
+```bash
+git clone https://github.com/prisma/pulse-inngest-router
+cd pulse-inngest-router
+npm install
+```
+
+### 1.2. Define the data model
+
+Initialize Prisma and create your data model:
+
+```bash
+npx prisma init
+```
+
+Add the following model to your `schema.prisma`:
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+### 1.3. Run database migration
+
+Apply the database schema:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+## 2. Implement user onboarding workflow
+
+### 2.1. Set up Prisma Pulse stream
+
+Create a file called `user-stream.ts`:
 
 ```typescript
 import { prisma } from './prismaClient';
@@ -36,7 +93,6 @@ async function main() {
 
   for await (let event of stream) {
     const newUser = event.created;
-    // Trigger Inngest workflow
     await inngest.send('user.signed_up', { data: newUser });
   }
 }
@@ -47,17 +103,9 @@ main().catch((e) => {
 });
 ```
 
-*Note: This example assumes you have installed the Pulse extension and instantiated your Prisma client with it.*
+### 2.2. Create onboarding workflow
 
-Next, trigger a workflow in Inngest by submitting an event with the Inngest client:
-
-```typescript
-import { inngest } from './inngestClient';
-
-await inngest.send('user.signed_up', { data: newUser });
-```
-
-To handle this event, create a function in your project:
+Create a file called `onboarding-workflow.ts`:
 
 ```typescript
 import { inngest } from './inngestClient';
@@ -68,15 +116,12 @@ export const userOnboarding = inngest.createFunction(
   async ({ event, step }) => {
     const { email } = event.data;
 
-    // Send welcome email immediately
     await step.run('Send Welcome Email', async () => {
       await sendEmail(email, 'Welcome to our platform!');
     });
 
-    // Wait for 3 days
     await step.sleep('Wait 3 Days', 3 * 24 * 60 * 60 * 1000);
 
-    // Send follow-up email
     await step.run('Send Follow-Up Email', async () => {
       await sendEmail(email, 'We hope you're enjoying our platform!');
     });
@@ -84,30 +129,21 @@ export const userOnboarding = inngest.createFunction(
 );
 ```
 
-In this function, `step.run` executes tasks, and `step.sleep` introduces delays between tasks, allowing you to create an elegant workflow with multiple contact points over days and weeks to nurture your new user.
+## 3. Implement AI writer workflow
 
-With **Pulse’s Delivery Guarantees**, even if your server experiences downtime, Prisma ensures that all events are delivered at least once. Your server can resume processing events upon recovery, ensuring no user misses out on onboarding, and your workflows remain durable from start to finish.
+### 3.1. Set up Pulse/Inngest router
 
-## Prisma Pulse + Inngest in Practice: Building an AI Writer Workflow
+Clone and set up the Pulse/Inngest router:
 
-Consider building a cutting-edge CMS that provides an AI Writer Assistant to review articles and offer suggestions. Your CMS Editor UI is linked to the following Prisma schema:
-
-```prisma
-model Article {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  status    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+```bash
+git clone https://github.com/prisma/pulse-inngest-router
+cd pulse-inngest-router
+npm install
 ```
 
-Instead of setting up Prisma Pulse from scratch, you can leverage a [Pulse/Inngest router service](https://github.com/prisma/pulse-inngest-router) that streams database changes using Prisma Pulse and forwards the events to Inngest.
+### 3.2. Create AI writer workflow
 
-Clone the service from GitHub and set it up by following the instructions in the README.
-
-The Pulse Inngest Router transforms Prisma Pulse events into Inngest events, triggering an Inngest function listening for the `"db/article.update"` event:
+Create a file called `ai-writer-workflow.ts`:
 
 ```typescript
 import { inngest } from './inngestClient';
@@ -119,14 +155,11 @@ export const aiWriterWorkflow = inngest.createFunction(
   async ({ event, step }) => {
     const { id, content, status } = event.data;
 
-    // Proceed only if the article status is 'REVIEW'
     if (status === 'REVIEW') {
-      // Generate AI suggestions
       const suggestions = await step.run('Generate Suggestions', async () => {
         return await openai.generateSuggestions(content);
       });
 
-      // Save suggestions to the database
       await step.run('Save Suggestions', async () => {
         await prisma.suggestion.create({
           data: {
@@ -136,13 +169,11 @@ export const aiWriterWorkflow = inngest.createFunction(
         });
       });
 
-      // Wait for the article to be published
       await step.waitForEvent('db/article.update', {
         'data.id': id,
         'data.status': 'PUBLISH',
-      }, 7 * 24 * 60 * 60 * 1000); // Wait up to 7 days
+      }, 7 * 24 * 60 * 60 * 1000);
 
-      // Send notification upon publication
       await step.run('Send Publication Notification', async () => {
         await sendNotification(`Article ${id} has been published.`);
       });
@@ -151,20 +182,37 @@ export const aiWriterWorkflow = inngest.createFunction(
 );
 ```
 
-In this workflow:
+## 4. Deploy and test
 
-- **Generate Suggestions**: Uses OpenAI to analyze the article content and provide suggestions.
-- **Save Suggestions**: Stores the AI-generated suggestions in the database.
-- **Wait for Publication**: Pauses the workflow until the article status changes to 'PUBLISH'.
-- **Send Publication Notification**: Sends a notification once the article is published.
+### 4.1. Set up environment variables
 
-By combining Prisma Pulse and Inngest, you can build sophisticated, real-time workflows that enhance user experience and streamline operations.
+Create a `.env` file with your credentials:
 
-## Try It Out for Yourself
+```
+DATABASE_URL="your-database-url"
+INNGEST_EVENT_KEY="your-inngest-key"
+OPENAI_API_KEY="your-openai-key"
+```
 
-Now it's your turn to implement these approaches and integrate decoupled workflows into your projects. Experiment with Prisma Pulse and Inngest to simplify your development processes and create engaging user experiences.
+### 4.2. Start the services
 
+Start both the Pulse stream and Inngest functions:
+
+```bash
+npm run start:stream
+npm run start:functions
+```
+
+## Next steps
+
+Now that you have working real-time workflows, you can:
+
+- Add error handling and retries
+- Implement more complex workflow patterns
+- Add monitoring and observability
+- Scale your workflows with additional steps
+
+For more information and updates:
 - [Get started with Inngest](https://www.inngest.com)
 - [Get started with Pulse](https://www.prisma.io/pulse)
-
-Share your creations with us and stay updated with our latest developments on [Twitter](https://twitter.com/prisma) and [our changelog](https://www.prisma.io/changelog). Need assistance? Join our [Discord community](https://discord.com/invite/prisma) to connect with other developers and seek support.
+- Join our [Discord community](https://discord.com/invite/prisma)
