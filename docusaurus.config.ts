@@ -1,14 +1,16 @@
 import { themes as prismThemes } from "prism-react-renderer";
-
-const path = require('path')
+import path from "path";
 
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
-const DOCUSAURUS_POST_HOG_KEY = process.env.DOCUSAURUS_POST_HOG_KEY ?? "";
 
 const config: Config = {
+  future: {
+    // See https://github.com/facebook/docusaurus/issues/10556
+    experimental_faster: true
+  },
   title: "Prisma Documentation",
   tagline:
     "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
@@ -82,8 +84,9 @@ const config: Config = {
     "docusaurus-plugin-sass",
     [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
-        apiKey: DOCUSAURUS_POST_HOG_KEY,
-        appUrl: 'https://proxyhog.prisma-data.net', // this is safe to have in version control
+        // these are safe to have in version control
+        apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
+        appUrl: 'https://proxyhog.prisma-data.net',
         person_profiles: 'identified_only',
         enableInDevelopment: false
       },
@@ -215,6 +218,12 @@ const config: Config = {
               label: "Pulse",
             },
           ],
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "guidesSidebar",
+          className: "teal",
+          label: "Guides",
         },
         {
           to: "https://www.github.com/prisma/prisma-examples",
