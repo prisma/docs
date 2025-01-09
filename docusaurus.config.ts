@@ -80,7 +80,13 @@ const config: Config = {
     }
   ],
   plugins: [
-    "@orama/plugin-docusaurus-v3",
+    ["@orama/plugin-docusaurus-v3", {
+      cloud: {
+        indexId: "pu4l6iu7q1ogusc39a9itocf", // This is your index ID
+        oramaCloudAPIKey: process.env.ORAMA_CLOUD_API_KEY, // This is your Private API key. Keep it safe!
+        deploy: 'default', // true or false. Enables deploy while building/starting
+      },
+    }],
     "docusaurus-plugin-sass",
     [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
       {
