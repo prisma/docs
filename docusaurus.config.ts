@@ -1,6 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
-
-const path = require('path')
+import path from "path";
 
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
@@ -8,6 +7,10 @@ import type * as Preset from "@docusaurus/preset-classic";
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
 
 const config: Config = {
+  future: {
+    // See https://github.com/facebook/docusaurus/issues/10556
+    experimental_faster: true
+  },
   title: "Prisma Documentation",
   tagline:
     "Get started with Prisma in the official documentation, and learn more about all Prisma's features with reference documentation, guides, and more.",
