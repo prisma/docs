@@ -118,9 +118,9 @@ export const ORMGeneralLinkData = [
     icon: "fa-solid fa-arrow-right-arrow-left",
   },
   {
-    title: `Adopting Prisma ORM`,
-    description: "Migrate to Prisma ORM from other ORMs.",
-    url: "/orm/more/migrating-to-prisma",
+    title: `Advanced queries`,
+    description: "Learn how to perform advanced queries with raw SQL in Prisma ORM.",
+    url: "/orm/prisma-client/using-raw-sql",
     icon: "fa-solid fa-download",
   },
   {
@@ -147,9 +147,9 @@ export const GeneralLinks_Build = [
     icon: "fa-solid fa-arrow-right-arrow-left",
   },
   {
-    title: `Adopting Prisma ORM`,
-    description: "Migrate to Prisma ORM from other ORMs.",
-    url: "/orm/more/migrating-to-prisma",
+    title: `Advanced queries`,
+    description: "Learn how to perform advanced queries with raw SQL in Prisma ORM.",
+    url: "/orm/prisma-client/using-raw-sql",
     icon: "fa-solid fa-download",
   },
   {
