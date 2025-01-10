@@ -136,7 +136,6 @@ const config: Config = {
           customCss: [
             "./src/css/custom.css",
             "./src/css/admonition.css",
-            "./src/css/docsearch.css",
             "./src/css/all.css",
             "./src/css/theming.css",
             "./src/css/prism.css",
