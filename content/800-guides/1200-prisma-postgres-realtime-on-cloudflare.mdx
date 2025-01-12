@@ -1,0 +1,442 @@
+---
+title: "Build a real-time application with Prisma Postgres and Cloudflare Workers"
+metaTitle: "Build a real-time application with Prisma Postgres and Cloudflare Workers"
+description: "Learn step-by-step how to develop and deploy a Hono.js app that uses Prisma Postgre's realtime features to Cloudflare"
+sidebar_label: "Build a real-time application with Prisma Postgres and Cloudflare Workers"
+image: "/img/guides/realtime-app-with-ppg.png"
+tags:
+  - Cloudflare
+  - Prisma Postgres
+  - Hono.js
+  - Websockets
+  - Edge
+  - Serverless
+---
+
+This guide walks you through building a real-time application using [Hono.js](https://hono.dev/), [Prisma Postgres](https://www.prisma.io/postgres), and [Cloudflare Workers](https://workers.cloudflare.com/). By the end of this guide, you’ll have a functional app where users can submit points (`x` and `y` coordinates) via a form, visualize the data in a scatter plot, and see updates in real time when new points are added.
+
+### What you'll learn:
+
+- How to set up a Hono.js project for Cloudflare workers with Prisma ORM.
+- How to use real-time features of Prisma Postgres via [Prisma Pulse](https://www.prisma.io/docs/pulse) in Hono.js.
+- How to deploy the project to Cloudflare.
+
+## Prerequisites
+
+To follow this guide, ensure you have the following:  
+
+- Node.js version: A [compatible Node.js version](/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-6#minimum-supported-nodejs-versions), required for Prisma 6.  
+- Accounts:  
+  - [Cloudflare](https://www.cloudflare.com/)  
+  - [Prisma Data Platform](https://console.prisma.io)  
+- Basic knowledge of Cloudflare deployment is recommended for smoother implementation but not mandatory. 
+
+### Guide created using:
+
+- Hono.js: `0.14.3`  
+- Prisma: `6.2.1`  
+- Wrangler: `3.96.0`  
+- Node.js: `v20.11.0`
+- Operating system: `macOS` 
+
+## 1. Set up Hono.js for Cloudflare Workers  
+
+[Hono.js](https://hono.dev/) is a lightweight web framework for building applications optimized for edge environments. Learn more from the official [Hono.js Cloudflare Workers guide](https://hono.dev/docs/getting-started/cloudflare-workers).
+
+1. Create a new Hono.js project:  
+
+   ```terminal
+   npm create hono@latest realtime-app
+   ```
+
+2. Navigate into the newly created app directory:  
+
+   ```terminal
+   cd ./realtime-app
+   ```
+
+3. Follow the CLI prompts to configure your project:  
+   a. Select the `cloudflare-workers` template.  
+   b. Agree to install the project dependencies.  
+   c. Choose `npm` as your package manager (or use your preferred manager but update commands accordingly throughout this guide).  
+
+## 2. Set up Prisma in your application  
+
+
+1. Install Prisma CLI as a dev dependency:  
+
+   ```terminal
+   npm install prisma --save-dev
+   ```
+
+2. Install the [Prisma Accelerate client extension](https://www.npmjs.com/package/@prisma/extension-accelerate) as that's required for Prisma Postgres:  
+
+   ```terminal
+   npm i @prisma/extension-accelerate
+   ```
+
+2. Install the [Prisma Pulse client extension](https://www.npmjs.com/package/@prisma/extension-pulse) for real-time database updates:  
+
+   ```terminal
+   npm i @prisma/extension-pulse
+   ```
+
+3. Initialize Prisma in your application:  
+
+   ```terminal
+   npx prisma init
+   ```
+
+This will create:  
+- A `prisma` folder containing `schema.prisma`, where you will define your database schema.  
+- An `.env` file in the project root, which stores environment variables.  
+    :::note
+    You will not use `.env` files, as they are incompatible with Cloudflare Workers. You will delete this file later.
+    :::
+
+## 3. Create a Prisma Postgres instance  
+
+To store your app’s data, you’ll create a Prisma Postgres database instance using the Prisma Data Platform.
+
+1. Navigate to [Prisma Data Platform](https://console.prisma.io).  
+2. Click **New Project** and enter a name for your project in the **Name** field.  
+3. Under the **Prisma Postgres®** section, click **Get Started**.  
+4. Select a region close to your location from the **Region** dropdown.  
+5. Click **Create Project**. You’ll be redirected to the database setup page.  
+6. In the **Set up database access** section, copy the `DATABASE_URL` and `PULSE_API_KEY` environment variables. These will be required in the next steps.
+
+### 1. Configure development environment variables  
+
+1. In your project root, create a `.dev.vars` file to store environment variables:  
+
+   ```bash file=.env
+   DATABASE_URL=<your-database-url>
+   PULSE_API_KEY=<your-pulse-api-key>
+   ```
+
+2. Delete the `.env` file created by Prisma initialization, as `.env` is not compatible with Cloudflare Workers.  
+
+### 2. Update your Prisma schema  
+
+1. Open the `schema.prisma` file in the `prisma` folder.  
+2. Add the following model to define the structure of your database:  
+
+   ```prisma
+   generator client {
+     provider = "prisma-client-js"
+   }
+
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+
+   model Points {
+     id  Int @id @default(autoincrement())
+     x   Int
+     y   Int
+   }
+   ```
+
+This model defines a `Points` table with the fields `id`, `x`, and `y`.  
+
+### 3. Apply database schema changes  
+
+To update your database with the schema changes, you will create and run a migration.  
+
+1. Install the [`dotenv-cli` package](https://www.npmjs.com/package/dotenv-cli) to load environment variables from `.dev.vars`:  
+
+   ```terminal
+   npm i -D dotenv-cli
+   ```
+
+2. Add a migration script to the `scripts` section of `package.json`:  
+
+   ```json
+   "scripts": {
+     "migrate": "dotenv -e .dev.vars -- npx prisma migrate dev"
+     // Other scripts created by Hono
+   }
+   ```
+
+3. Run the migration script to apply changes to the database:  
+
+   ```terminal
+   npm run migrate
+   ```
+
+4. When prompted, provide a name for the migration (e.g., `init`).  
+
+5. Generate `PrismaClient` with the [`--no-engine`](/orm/reference/prisma-cli-reference#options-1) flag, so that it generates a client for an edge runtime:  
+
+   ```terminal
+   npx prisma generate --no-engine
+   ```
+
+After the steps above are complete, your Prisma ORM is fully set up and connected to your Postgres database.
+
+## 4. Develop the application  
+
+Now, you will develop a real-time application. The app will let users submit points (`x` and `y` coordinates) via a simple form and display them in a scatter plot that is updated automatically whenever a new point is added.
+
+### 1. Clear the existing `src/index.ts` file  
+
+Remove all content from the `src/index.ts` file to start with a clean slate.
+
+### 2. Set up dependencies and environment bindings  
+
+Add the required imports and define [environment variable bindings](https://hono.dev/docs/getting-started/cloudflare-workers#load-env-when-local-development) to use the `DATABASE_URL` and `PULSE_API_KEY` in your application.  
+
+```typescript file=src/index.ts
+import { PrismaClient } from "@prisma/client/edge";
+import { withAccelerate } from "@prisma/extension-accelerate";
+import { withPulse } from "@prisma/extension-pulse/workerd";
+import { Hono } from "hono";
+import { upgradeWebSocket } from "hono/cloudflare-workers";
+
+// Define environment bindings
+type Bindings = {
+  DATABASE_URL: string;
+  PULSE_API_KEY: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+```
+
+### 3. Create a helper method to use `PrismaClient` in the application  
+
+Create a helper function to initialize `PrismaClient` with the Prisma Accelerate and Pulse client extensions: 
+
+```typescript file=src/index.ts
+const createPrismaClient = (databaseUrl: string, pulseApiKey: string) => {
+  return new PrismaClient({
+    datasourceUrl: databaseUrl,
+  })
+  .$extends(withAccelerate())
+  .$extends(
+    withPulse({
+      apiKey: pulseApiKey,
+    })
+  );
+};
+```
+
+### 4. Create a route to establish a Websocket connection  
+
+This route streams updates in real-time  when new points are added to the database.  
+
+```typescript file=src/index.ts
+app.get(
+  "/ws",
+  upgradeWebSocket(async (c) => {
+    const prisma = createPrismaClient(c.env.DATABASE_URL, c.env.PULSE_API_KEY);
+
+    let listeningToPulseStream = false;
+
+    return {
+      onMessage(event, ws) {
+        if (!listeningToPulseStream) {
+          c.executionCtx.waitUntil(
+            (async () => {
+              listeningToPulseStream = true;
+
+              const pointStream = await prisma.points.stream({
+                name: "points-stream",
+                create: {},
+              });
+
+              for await (const event of pointStream) {
+                ws.send(JSON.stringify({ x: event.created.x, y: event.created.y }));
+              }
+            })()
+          );
+        }
+      },
+      onClose: () => console.log("WebSocket connection closed."),
+    };
+  })
+);
+```
+
+### 5. Create a `POST` route which enables you to save `Points` in the database 
+
+This route validates user input and saves new points to the database.  
+
+:::warning
+
+The validation used here is simple, for serious use cases and production we recommend using something like [zod](https://zod.dev/).
+
+:::
+
+```typescript file=src/index.ts
+app.post("/", async (c) => {
+  const { x, y } = await c.req.json();
+
+  if (typeof x !== "number" || typeof y !== "number") {
+    return c.text("Invalid input: x and y must be numbers.", 400);
+  }
+
+  const prisma = createPrismaClient(c.env.DATABASE_URL, c.env.PULSE_API_KEY);
+
+  const newPoint = await prisma.points.create({ data: { x, y } });
+  return c.json({ point: newPoint });
+});
+```
+
+### 6. Create a `GET` route that serves an HTML page  
+
+This route serves an HTML page with a form and scatter plot. Also establishes a connection to the websocket route and receives and reflects events from Pulse in real-time.
+
+
+```typescript file=src/index.ts
+app.get("/", async (c) => {
+  const prisma = createPrismaClient(c.env.DATABASE_URL, c.env.PULSE_API_KEY);
+  const dataPoints = await prisma.points.findMany({
+    take: 100,
+    orderBy: { id: "desc" },
+    select: { x: true, y: true },
+  });
+
+  return c.html(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Real-Time Scatter Plot</title>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+      <form id="addPointForm">
+        <input name="x" type="number" placeholder="X coordinate" required />
+        <input name="y" type="number" placeholder="Y coordinate" required />
+        <button type="submit">Submit</button>
+      </form>
+
+      <canvas id="scatterPlot"></canvas>
+
+      <script>
+        const dataPoints = ${JSON.stringify(dataPoints)};
+        const ctx = document.getElementById('scatterPlot').getContext('2d');
+        const chart = new Chart(ctx, {
+          type: 'scatter',
+          data: { datasets: [{ data: dataPoints }] },
+        });
+
+        document.getElementById('addPointForm').onsubmit = async (e) => {
+          e.preventDefault();
+          const form = new FormData(e.target);
+          await fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ x: +form.get("x"), y: +form.get("y") }),
+          });
+          e.target.reset();
+        };
+
+        const ws = new WebSocket("ws://" + window.location.host + "/ws");
+        ws.onmessage = (event) => {
+          const newPoint = JSON.parse(event.data);
+          chart.data.datasets[0].data.push(newPoint);
+          chart.update();
+        };
+      </script>
+    </body>
+    </html>
+  `);
+});
+```
+
+### 7. Start the server and test your application  
+
+Run the development server:  
+
+```terminal
+npm run dev
+```
+
+Visit `https://localhost:8787` to see your app in action. You should see a form and scatter plot updating in real time.  
+
+## 5. Deploy the application to Cloudflare
+
+Now you'll deploy your real-time application to Cloudflare Workers. This involves uploading your application code and securely configuring your environment variables.
+
+### 1. Set up a Cloudflare account
+
+If you don’t already have a Cloudflare account, [sign up](https://dash.cloudflare.com/sign-up). After creating your account, ensure you have access to the Cloudflare dashboard.
+
+### 2. Deploy the application with Wrangler
+
+1. Use the following command to deploy your project to Cloudflare Workers:
+
+   ```terminal
+   npm run deploy
+   ```
+
+   The `wrangler` CLI will bundle and upload your application.
+
+2. If you’re not already logged in, the `wrangler` CLI will open a browser window prompting you to log in to the [Cloudflare dashboard](https://dash.cloudflare.com/).  
+    :::note
+    If you belong to multiple accounts, select the account where you want to deploy the project.
+    :::
+3. Once the deployment completes, you’ll see output similar to this:
+   ```terminal
+   > deploy
+   > wrangler deploy --minify
+
+    ⛅️ wrangler 3.101.0
+
+   Total Upload: 243.40 KiB / gzip: 83.31 KiB
+   Worker Startup Time: 20 ms
+   Uploaded realtime-app (9.80 sec)
+   Deployed realtime-app triggers (1.60 sec)
+     https://realtime-app.workers.dev
+   Current Version ID: {VERSION_ID}
+   ```
+
+   Note the returned URL, such as `https://realtime-app.workers.dev`. This is your live application URL.
+
+### 3. Configure secrets for the application
+
+Your application requires the `DATABASE_URL` and `PULSE_API_KEY` environment variables to work. These secrets must be securely uploaded to Cloudflare.
+
+1. Use the [`npx wrangler secret put` command](https://developers.cloudflare.com/workers/configuration/secrets/#adding-secrets-to-your-project) to upload the `DATABASE_URL`:
+
+   ```terminal
+   npx wrangler secret put DATABASE_URL
+   ```
+
+   When prompted, paste the `DATABASE_URL` value.
+
+2. Similarly, upload the `PULSE_API_KEY`:
+
+   ```terminal
+   npx wrangler secret put PULSE_API_KEY
+   ```
+
+   When prompted, paste the `PULSE_API_KEY` value.
+
+### 4. Redeploy the application
+
+After configuring the secrets, redeploy your application to ensure it can access the environment variables:
+
+```terminal
+npm run deploy
+```
+
+### 5. Verify the deployment
+
+Visit the live URL provided in the deployment output, such as `https://realtime-app.workers.dev`.  
+Your application should now be fully functional:  
+- The form for submitting points should work.
+- The scatter plot should display data and update in real time.
+
+If you encounter any issues, ensure the secrets were added correctly and check the deployment logs for errors.
+
+
+## Next steps
+
+Congratulations on building and deploying your real-time application with Prisma Postgres and Cloudflare Workers. 
+
+Your app is now live and handles real-time updates using WebSocket support in an edge runtime. To enhance it further:
+
+- Add [caching](https://www.prisma.io/docs/accelerate/caching) for performance using Prisma Accelerate.
+- Explore the [Prisma Postgres documentation](https://www.prisma.io/docs/orm/overview/databases/prisma-postgres).
