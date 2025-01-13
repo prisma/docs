@@ -248,7 +248,7 @@ const config: Config = {
       appId: "MF58UJZ648",
       apiKey: "fd3d0a05bfe5d280348060ca5ea416be",
       indexName: "prisma",
-      contextualSearch: false,
+      contextualSearch: true,
       replaceSearchResultPathname: {
         from: "/docs/",
         to: DOCUSAURUS_BASE_URL,
