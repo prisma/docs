@@ -33,34 +33,21 @@ To follow this guide, ensure you have the following:
   - [Prisma Data Platform](https://console.prisma.io)  
 - Basic knowledge of Cloudflare deployment is recommended for smoother implementation but not mandatory. 
 
-### Guide created using:
-
-- Hono.js: `0.14.3`  
-- Prisma: `6.2.1`  
-- Wrangler: `3.96.0`  
-- Node.js: `v20.11.0`
-- Operating system: `macOS` 
-
 ## 1. Set up Hono.js for Cloudflare Workers  
 
 [Hono.js](https://hono.dev/) is a lightweight web framework for building applications optimized for edge environments. Learn more from the official [Hono.js Cloudflare Workers guide](https://hono.dev/docs/getting-started/cloudflare-workers).
 
-1. Create a new Hono.js project:  
+1. Use the [`create-hono` starter](https://www.npmjs.com/package/create-hono) to create a new Hono.js project named `realtime-app` with the `cloudflare-workers` template and `npm` as the package manager:  
 
    ```terminal
-   npm create hono@latest realtime-app
-   ```
-
-2. Navigate into the newly created app directory:  
+   npm create hono@latest realtime-app -- --template cloudflare-workers --pm npm
+   ```  
+ 
+2. Agree to install the project dependencies from the previous CLI prompt and then navigate into the newly created app directory:
 
    ```terminal
    cd ./realtime-app
    ```
-
-3. Follow the CLI prompts to configure your project:  
-   a. Select the `cloudflare-workers` template.  
-   b. Agree to install the project dependencies.  
-   c. Choose `npm` as your package manager (or use your preferred manager but update commands accordingly throughout this guide).  
 
 ## 2. Set up Prisma in your application  
 
@@ -107,7 +94,7 @@ To store your app’s data, you’ll create a Prisma Postgres database instance 
 5. Click **Create project**. You’ll be redirected to the database setup page.  
 6. In the **Set up database access** section, copy the `DATABASE_URL` and `PULSE_API_KEY` environment variables. These will be required in the next steps.
 
-### 1. Configure development environment variables  
+### 3.1. Configure development environment variables  
 
 1. In your project root, create a `.dev.vars` file to store environment variables:  
 
@@ -118,7 +105,7 @@ To store your app’s data, you’ll create a Prisma Postgres database instance 
 
 2. Delete the `.env` file created by Prisma initialization, as `.env` is not compatible with Cloudflare Workers.  
 
-### 2. Update your Prisma schema  
+### 3.2. Update your Prisma schema  
 
 1. Open the `schema.prisma` file in the `prisma` folder.  
 2. Add the following model to define the structure of your database:  
@@ -142,7 +129,7 @@ To store your app’s data, you’ll create a Prisma Postgres database instance 
 
 This model defines a `Points` table with the fields `id`, `x`, and `y`.  
 
-### 3. Apply database schema changes  
+### 3.3. Apply database schema changes  
 
 To update your database with the schema changes, you will create and run a migration.  
 
@@ -181,11 +168,11 @@ After the steps above are complete, your Prisma ORM is fully set up and connecte
 
 Now, you will develop a real-time application. The app will let users submit points (`x` and `y` coordinates) via a simple form and display them in a scatter plot that is updated automatically whenever a new point is added.
 
-### 1. Clear the existing `src/index.ts` file  
+### 4.1. Clear the existing `src/index.ts` file  
 
 Remove all content from the `src/index.ts` file to start with a clean slate.
 
-### 2. Set up dependencies and environment bindings  
+### 4.2. Set up dependencies and environment bindings  
 
 Add the required imports and define [environment variable bindings](https://hono.dev/docs/getting-started/cloudflare-workers#load-env-when-local-development) to use the `DATABASE_URL` and `PULSE_API_KEY` in your application.  
 
@@ -208,7 +195,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', requestId());
 ```
 
-### 3. Create a helper method to use `PrismaClient` in the application  
+### 4.3. Create a helper method to use `PrismaClient` in the application  
 
 Create a helper function to initialize `PrismaClient` with the Prisma Accelerate and Pulse client extensions: 
 
@@ -226,7 +213,7 @@ const createPrismaClient = (databaseUrl: string, pulseApiKey: string) => {
 };
 ```
 
-### 4. Create a route to establish a WebSocket connection  
+### 4.4. Create a route to establish a WebSocket connection  
 
 This route streams updates in real-time  when new points are added to the database.  
 
@@ -263,7 +250,7 @@ app.get(
 );
 ```
 
-### 5. Create a `POST` route which enables you to save `Points` in the database 
+### 4.5. Create a `POST` route which enables you to save `Points` in the database 
 
 This route validates user input and saves new points to the database:
 
@@ -288,7 +275,7 @@ app.post("/", async (c) => {
 });
 ```
 
-### 6. Create a `GET` route that serves an HTML page  
+### 4.6. Create a `GET` route that serves an HTML page  
 
 This route serves an HTML page with a form and scatter plot. It also establishes a connection to the WebSocket route and receives and reflects events from Pulse in real-time:
 
@@ -352,7 +339,7 @@ app.get("/", async (c) => {
 export default app;
 ```
 
-### 7. Start the server and test your application  
+### 4.7. Start the server and test your application  
 
 Run the development server:  
 
@@ -368,11 +355,7 @@ Visit `https://localhost:8787` to see your app in action. You should see a form 
 
 Now you'll deploy your real-time application to Cloudflare Workers. This involves uploading your application code and securely configuring your environment variables.
 
-### 1. Set up a Cloudflare account
-
-If you don’t already have a Cloudflare account, [sign up](https://dash.cloudflare.com/sign-up). After creating your account, ensure you have access to the Cloudflare dashboard.
-
-### 2. Deploy the application with Wrangler
+### 5.1. Deploy the application with Wrangler
 
 1. Use the following command to deploy your project to Cloudflare Workers:
 
@@ -403,7 +386,7 @@ If you don’t already have a Cloudflare account, [sign up](https://dash.cloudfl
 
    Note the returned URL, such as `https://realtime-app.workers.dev`. This is your live application URL.
 
-### 3. Configure secrets for the application
+### 5.2. Configure secrets for the application
 
 Your application requires the `DATABASE_URL` and `PULSE_API_KEY` environment variables to work. These secrets must be securely uploaded to Cloudflare.
 
@@ -423,7 +406,7 @@ Your application requires the `DATABASE_URL` and `PULSE_API_KEY` environment var
 
    When prompted, paste the `PULSE_API_KEY` value.
 
-### 4. Redeploy the application
+### 5.3. Redeploy the application
 
 After configuring the secrets, redeploy your application to ensure it can access the environment variables:
 
@@ -431,7 +414,7 @@ After configuring the secrets, redeploy your application to ensure it can access
 npm run deploy
 ```
 
-### 5. Verify the deployment
+### 5.4. Verify the deployment
 
 Visit the live URL provided in the deployment output, such as `https://realtime-app.workers.dev`.  
 Your application should now be fully functional:  
