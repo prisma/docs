@@ -225,14 +225,14 @@ app.get(
   upgradeWebSocket(async (c) => {
     const prisma = createPrismaClient(c.env.DATABASE_URL, c.env.PULSE_API_KEY);
 
-    let listeningToPulseStream = false;
+    let listeningToRealtimeStream = false;
 
     return {
       onMessage(event, ws) {
-        if (!listeningToPulseStream) {
+        if (!listeningToRealtimeStream) {
           c.executionCtx.waitUntil(
             (async () => {
-              listeningToPulseStream = true;
+              listeningToRealtimeStream = true;
 
               const pointStream = await prisma.points.stream({
                 name: `points-stream-${c.get('requestId')}`,
@@ -274,8 +274,7 @@ app.post("/", async (c) => {
 
 ### 4.6. Create a `GET` route that serves an HTML page  
 
-This route serves an HTML page with a form and scatter plot. It also establishes a connection to the WebSocket route and receives and reflects events from Pulse in real-time:
-
+This route serves an HTML page with a form and scatter plot. It also establishes a connection to the WebSocket route and receives and reflects events from Prisma Postgres in real-time:
 
 ```typescript file=src/index.ts
 app.get("/", async (c) => {
@@ -284,54 +283,104 @@ app.get("/", async (c) => {
     take: 100,
     orderBy: { id: "desc" },
     select: { x: true, y: true },
-  });
+  }) || [];
 
   return c.html(`
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
-      <title>Real-Time Scatter Plot</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Realtime Line Chart</title>
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <style>
+        html, body {
+          margin: 0;
+          padding: 0;
+          font-family: sans-serif;
+          height: 100%;
+        }
+        .form-container { margin: 1rem; text-align: center; }
+        .chart-container { display: flex; justify-content: center; min-height: 70vh; }
+        canvas { max-width: 500px; height: 100%; }
+      </style>
     </head>
     <body>
-      <form id="addPointForm">
-        <input name="x" type="number" placeholder="X coordinate" required />
-        <input name="y" type="number" placeholder="Y coordinate" required />
-        <button type="submit">Submit</button>
-      </form>
-
-      <canvas id="scatterPlot"></canvas>
-
+      <div class="form-container">
+        <form id="pointForm">
+          <input type="number" name="x" placeholder="Enter X" required />
+          <input type="number" name="y" placeholder="Enter Y" required />
+          <button type="submit">Add Point</button>
+        </form>
+      </div>
+      <div class="chart-container"><canvas id="myChart"></canvas></div>
+      
       <script>
-        const dataPoints = ${JSON.stringify(dataPoints)};
-        const ctx = document.getElementById('scatterPlot').getContext('2d');
-        const chart = new Chart(ctx, {
+        const dataPoints = ${JSON.stringify(dataPoints).replace(/`/g, '\\`')};
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
           type: 'scatter',
-          data: { datasets: [{ data: dataPoints }] },
+          data: {
+            datasets: [
+              {
+                label: \`Points data\`,
+                data: dataPoints,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { type: 'linear', position: 'bottom', title: { display: true, text: 'X Axis' } },
+              y: { beginAtZero: true, title: { display: true, text: 'Y Axis' } },
+            },
+          },
         });
 
-        document.getElementById('addPointForm').onsubmit = async (e) => {
+        const form = document.getElementById('pointForm');
+        form.addEventListener('submit', async (e) => {
           e.preventDefault();
-          const form = new FormData(e.target);
-          await fetch("/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ x: +form.get("x"), y: +form.get("y") }),
-          });
-          e.target.reset();
-        };
 
-        const ws = new WebSocket("ws://" + window.location.host + "/ws");
-        
+          const formData = new FormData(form);
+          const x = parseFloat(formData.get('x'));
+          const y = parseFloat(formData.get('y'));
+
+          if (isNaN(x) || isNaN(y)) return alert('Invalid input');
+
+          try {
+            const res = await fetch('/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ x, y }),
+            });
+
+            if (!res.ok) throw new Error('API error');
+            form.reset();
+          } catch (err) {
+            alert('Failed to add point');
+          }
+        });
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl = wsProtocol.concat("://").concat(window.location.host).concat("/ws");
+        const ws = new WebSocket(wsUrl);
+
         ws.onopen = () => {
           ws.send('Connect to WebSocket server');
         };
 
         ws.onmessage = (event) => {
-          const newPoint = JSON.parse(event.data);
-          chart.data.datasets[0].data.push(newPoint);
-          chart.update();
+          const point = JSON.parse(event.data);
+          myChart.data.datasets[0].data.push(point);
+          myChart.update();
         };
+
+        ws.onerror = () => alert('WebSocket error');
+        ws.onclose = () => alert('WebSocket closed');
       </script>
     </body>
     </html>
@@ -349,9 +398,17 @@ Run the development server:
 npm run dev
 ```
 
-Visit `https://localhost:8787` to see your app in action. You should see a form where, if you input data, the scatter plot updates in real time:
+Visit `https://localhost:8787` to see your app in action.
+
+You'll find a form where you can input `x` and `y` values. Each time you submit the form, the scatter plot should update in real-time to reflect the new data:
 
 ![An demo of the app we built where a scatter plot updates in real-time](/img/guides/realtime-app-demo-ppg-cf-workers.gif)
+
+:::note
+
+You can also add points directly to your Prisma Postgres database from anywhere. For example, use [Prisma Studio for Prisma Postgres](https://www.prisma.io/blog/studio-for-prisma-postgres-view-and-edit-your-data-online) to enter the `x` and `y` points, and the scatter plot chart will update instantly.
+
+:::
 
 ## 5. Deploy the application to Cloudflare
 
