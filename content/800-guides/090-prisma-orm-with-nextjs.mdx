@@ -8,13 +8,13 @@ image: '/img/guides/prisma-nextjs-setup-cover.png'
 
 ## Introduction
 
-This guide shows you how to use Prisma ORM with Next.js 15, a fullstack React framework. You'll learn how to set up Prisma ORM with Next.js, handle migrations, and deploy your application to Vercel. You can find a [deployment-ready example on GitHub](https://github.com/prisma/prisma-examples/blob/latest/deployment-platforms/edge/cloudflare-workers/with-d1).
+This guide shows you how to use Prisma ORM with Next.js 15, a fullstack React framework. You'll learn how to set up Prisma ORM with Next.js, handle migrations, and deploy your application to Vercel. You can find a [deployment-ready example on GitHub](https://github.com/prisma/prisma-examples/blob/latest/orm/nextjs).
 
 ## Prerequisites
 
 Before starting this guide, make sure you have:
 
-- Node.js installed (version 18 or higher)
+- Node.js 18+ installed
 - A [Prisma Postgres](https://www.prisma.io/postgres) database (or any PostgreSQL database)
 - A Vercel account (if you want to deploy your application)
 
@@ -122,7 +122,7 @@ If you're not using Prisma Postgres you won't need the `PULSE_API_KEY` here.
 
 ::warning
 
-If you're connecting to an existing database, skip this step and instead use the `prisma db pull` command to update your local schema.
+If you're connecting to a database with existing data, use the `prisma db pull` command and then skip to [Set up Prisma Client](#25-set-up-prisma-client).
 
 :::
 
@@ -346,7 +346,7 @@ Just reload the page and you'll see the changes.
 
 ## 4. Add a new "posts" list page
 
-We have our home page working, but we want to add a new page that displays all of our posts. 
+We have our home page working, but we should add a new page that displays all of our posts. 
 
 First create a new `posts` directory in the `app` directory and create a new `page.tsx` file inside of it.
 
@@ -354,7 +354,7 @@ First create a new `posts` directory in the `app` directory and create a new `pa
 mkdir -p app/posts && touch app/posts/page.tsx
 ```
 
-Now, replace the existing code in the `app/posts/page.tsx` file with the following:
+Second, add the following code to the `app/posts/page.tsx` file:
 
 ```tsx file=app/posts/page.tsx
 import prisma from "@/lib/prisma";
@@ -426,7 +426,7 @@ In the `posts` directory, create a new `[id]` directory and a new `page.tsx` fil
 mkdir -p app/posts/[id] && touch app/posts/[id]/page.tsx
 ```
 
-This page will display a single post's title, content, and author. Just like our other pages, replace the content of the file with the following:
+This page will display a single post's title, content, and author. Just like our other pages, add the following code to the `app/posts/new/page.tsx` file:
 
 ```tsx file=app/posts/[id]/page.tsx
 import prisma from "@/lib/prisma";
@@ -569,6 +569,7 @@ This form looks good, but it doesn't do anything yet. Let's update the `createPo
 import Form from "next/form";
 //add-start
 import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 //add-end
 
@@ -588,6 +589,7 @@ export default function NewPost() {
       },
     });
 
+    revalidatePath("/posts");
     redirect("/posts");
     //add-end
   }
@@ -632,9 +634,76 @@ export default function NewPost() {
 }
 ```
 
-This page now has a functional form! When you submit the form, it will create a new post in the database and redirect you to the posts list page. Try it out by navigating to `localhost:3000/posts/new` and submitting the form.
+This page now has a functional form! When you submit the form, it will create a new post in the database and redirect you to the posts list page. 
+
+We also added a `revalidatePath` call to revalidate the posts list page so that it will be updated with the new post. That way everyone can read the new post immediately.
+
+Try it out by navigating to `localhost:3000/posts/new` and submitting the form.
 
 ## 7. Deploy your application to Vercel (Optional)
+
+The quickest way to deploy your application to Vercel is to use the [Vercel CLI](https://vercel.com/docs/cli).
+
+First, install the Vercel CLI:
+
+```terminal
+npm install -g vercel
+```
+
+Then, run `vercel login` to log in to your Vercel account.
+
+```terminal
+vercel login
+```
+
+Before we deploy, we also need to tell Vercel to make sure that the Prisma Client is generated. You can do this by adding a `postinstall` script to your `package.json` file.
+
+```json file=package.json
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    //add-next-line
+    "postinstall": "prisma generate",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "@prisma/extension-accelerate": "^1.2.1",
+    "next": "15.1.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.4",
+    "postcss": "^8",
+    "prisma": "^6.2.1",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}
+```
+
+After this change, you can deploy your application to Vercel by running `vercel`.
+
+```terminal
+vercel
+```
+
+After the deployment is complete, you can visit your application at the URL that Vercel provides. Congratulations, you've just deployed a Next.js application with Prisma ORM!
 
 ## 8. Next steps
 
