@@ -91,6 +91,11 @@ const sidebars: SidebarsConfig = {
                     },
                     {
                       type: "doc",
+                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-prismaPostgres",
+                      className: "hidden-sidebar",
+                    },
+                    {
+                      type: "doc",
                       id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-mysql",
                       className: "hidden-sidebar",
                     },
