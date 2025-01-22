@@ -1,0 +1,365 @@
+---
+title: "Using Prisma in Docker"
+metaTitle: "Using Prisma in Docker"
+description: "Learn step-by-step configure a Prisma ORM app in Docker"
+sidebar_label: "Learn step-by-step configure a Prisma ORM app in Docker"
+image: "/img/guides/prisma-orm-docker.png"
+tags:
+  - Docker
+  - Alpine
+  - Container
+---
+
+## Prerequisites
+
+- Docker and Docker compose installed
+
+## 1. Setup a simple express server with Prisma ORM
+
+Create a new folder named `docker-test` to contain the project:
+
+```terminal
+mkdir docker-test
+cd docker-test
+```
+
+Initialize the a node project using `npm`:
+
+```terminal
+npm init -y 
+```
+
+The output of the previous step should generate a `package.json` for you.
+
+```terminal
+{
+  "name": "docker-test-1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+```
+
+Install Prisma CLI as a dev dependency:  
+
+```terminal
+npm install prisma --save-dev
+```
+
+Setup Prisma by running:
+
+```terminal
+npx prisma --init
+```
+
+This will create:  
+
+- A `prisma` folder containing `schema.prisma`, where you will define your database schema.  
+- An `.env` file in the project root, which stores environment variables.  
+
+Then, install express.js so that we can have setup a development server:
+
+```terminal
+npm i express 
+```
+
+Then add a model to the `prisma.schema` file:
+
+```prisma file=schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  //add-start
+  output = "../generated/prisma_client"
+  //add-end
+}
+
+//add-start
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  name      String?
+}
+//add-end
+```
+
+Create a new `index.js` file to contain our express server:
+
+```terminal
+touch index.js
+```
+
+Add the following code to the `package.json`:
+
+```js file=index.js
+//add-start
+const express = require("express");
+const { PrismaClient } = require("./generated/prisma_client");
+
+const app = express();
+const prisma = new PrismaClient();
+app.use(express.json());
+
+// Get all users
+app.get("/", async (req, res) => {
+  const userCount = await prisma.user.count();
+  res.json(
+    userCount == 0
+      ? "No users have been added yet."
+      : "Sonme users have been added to the database."
+  );
+});
+
+const PORT = 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
+//add-end
+```
+
+Add the following `scripts` to the `package.json`:
+
+```json file=package.json
+"scripts": {
+  //remove-start
+  "test": "echo \"Error: no test specified\" && exit 1",
+  //remove-end
+  //add-start
+  "dev": "node index.js",
+  "db:deploy": "npx prisma migrate deploy && npx prisma generate"
+  //add-end
+}
+```
+
+### Create a standalone postgres database docker compose file to perform migrations
+
+Create a file named `docker-compose.postgres.yml` in the root directory:
+
+```docker-compose file=docker-compose.postgres.yml
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=prisma
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prisma -d postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+    volumes:
+      - postgres_standalone_data:/var/lib/postgresql/data
+    command: postgres -c listen_addresses='*'
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  postgres-network:
+
+volumes:
+  postgres_standalone_data:
+```
+
+Then start the standalone docker container:
+
+```terminal
+docker-compose -f docker-compose.postgres.yml up -d
+```
+
+Once the container starts successfully. 
+
+Update the `.env` variable :
+
+```.env file=.env
+// edit-next-line
+DATABASE_URL="postgresql://postgres:prisma@localhost:5432/postgres?schema=public"
+```
+
+Then run the migration script to temporarily to migrate the database changes and generate a `migrations` folder:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+Test the app by running the server:
+
+```termial
+npm run dev
+```
+
+After which you should visit the http://localhost:3000 and see an output like this:
+
+```terminal
+No users have been added yet.
+```
+
+Stop the local server. Then stop and clean up the postgres standlone server by executing the command:
+
+```terminal
+docker-compose -f docker-compose.postgres.yml down
+```
+
+This command will:
+
+- Stop running containers.
+- Remove containers.
+- Remove the default network created by Docker Compose.
+- Remove associated volumes (if not named explicitly).
+
+
+## Using Prisma ORM from within Docker
+
+Create a `Dockerfile` in project root:
+
+### Using Node.js Alpine
+
+```shell file=Dockerfile
+FROM node:lts-alpine3.17
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Copy package.json and lock file to leverage caching
+COPY package.json package-lock.json ./
+
+# Install dependencies, including ts-node
+RUN npm install
+# Copy application files
+COPY . .
+COPY .env.prod .env
+
+# Install bash and curl (needed for wait-for-it)
+RUN apk add --no-cache bash curl
+
+# Download wait-for-it script
+RUN curl -o /usr/src/app/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
+    chmod +x /usr/src/app/wait-for-it.sh
+
+# Start command with wait-for-it
+CMD ["/bin/bash", "-c", "/usr/src/app/wait-for-it.sh postgres_db:5432 --timeout=60 --strict -- npm run db:deploy && npm run dev"]
+```
+
+### Using Node.js Debian slim
+
+
+```shell file=Dockerfile
+FROM node:slim
+
+# Install necessary dependencies and clean up cache to keep image size minimal
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends openssl curl bash ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+    
+# Set working directory
+WORKDIR /usr/src/app
+
+# Copy package files first to leverage caching
+COPY package.json package-lock.json ./
+
+# Copy the rest of the application files
+COPY . .
+
+# Copy production environment variables securely
+COPY .env.prod .env
+
+# Install dependencies with npm ci for a faster, deterministic build
+RUN npm install
+
+# Download and set permissions for wait-for-it script
+RUN curl -o /usr/src/app/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
+    chmod +x /usr/src/app/wait-for-it.sh
+
+# Expose application port
+EXPOSE 3000
+
+# Start command with wait-for-it to ensure dependencies are ready
+CMD ["/bin/bash", "-c", "/usr/src/app/wait-for-it.sh postgres_db:5432 --timeout=60 --strict -- npm run db:deploy && npm run dev"]
+
+# CMD ["npm run db:deploy && npm run dev"]
+```
+
+Create a `docker-compose.yml` file to orchestrate the server and database:
+
+```yml file=docker-compose.yml
+version: '3.7'
+
+services:
+  postgres_db:
+    image: postgres:15
+    hostname: postgres_db
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: prisma
+    ports:
+      - '5432:5432'
+    networks:
+      - prisma-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  server:
+    build: 
+      context: .   
+      dockerfile: Dockerfile 
+    ports:
+      - '3000:3000'
+    stdin_open: true
+    tty: true  # Keeps the container running for debugging
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    networks:
+      - prisma-network
+
+networks:
+  prisma-network:
+    name: prisma-network
+```
+
+Create a new `.env.prod` file to be used from within the docker environment (`postgres_db`) with the host name to off the service we define in the:
+
+```.env file=env
+// edit-next-line
+DATABASE_URL="postgresql://postgres:prisma@postgres_db:5432/postgres?schema=public"
+```
+
+Start the docker compose command:
+
+```terminal
+docker-compose -f docker-compose.yml up --build 
+```
+
+Visit `http://localhost:3000` and you should see your app running and will receive the following message:
+
+```terminal
+No users have been added yet.
+```
+
