@@ -40,6 +40,27 @@ This error happens because AWS Elastic Beanstalk doesn't install `devDependencie
 1. Add the `prisma` CLI package to your `dependencies` instead of the `devDependencies`. (Making sure to run `npm install` afterward to update the `package-lock.json`).
 2. Or install your `devDependencies` on AWS Elastic Beanstalk instances. To do this you must set the AWS Elastic Beanstalk `NPM_USE_PRODUCTION` environment property to false.
 
+## AWS RDS Postgres
+
+When using Prisma ORM with AWS RDS Postgres, you may encounter connection issues or the following error during migration or runtime:
+```bash
+Error: P1010: User <username> was denied access on the database <database>
+```
+### Cause
+AWS RDS enforces SSL connections by default, and Prisma parses the database connection string with `rejectUnauthorized: true`, which requires a valid SSL certificate. If the certificate is not configured properly, Prisma cannot connect to the database.
+
+### Solution
+To resolve this issue, update the `DATABASE_URL` environment variable to include the `sslmode=no-verify` option. This bypasses strict SSL certificate verification and allows Prisma to connect to the database. Update your `.env` file as follows:
+
+```bash
+DATABASE_URL=postgresql://<username>:<password>@<host>/<database>?sslmode=no-verify&schema=public
+```
+### Why This Works
+The `sslmode=no-verify` setting passes `rejectUnauthorized: false` to the SSL configuration via the [pg-connection-string](https://github.com/brianc/node-postgres/blob/95d7e620ef8b51743b4cbca05dd3c3ce858ecea7/packages/pg-connection-string/README.md?plain=1#L71) package. This disables strict certificate validation, allowing Prisma to establish a connection with the RDS database.
+
+### Note
+While using `sslmode=no-verify` can be a quick fix, it bypasses SSL verification and might not meet security requirements for production environments. In such cases, ensure that a valid SSL certificate is properly configured.
+
 ## AWS Lambda upload limit
 
 AWS Lambda defines an **deployment package upload limit**, which includes:
