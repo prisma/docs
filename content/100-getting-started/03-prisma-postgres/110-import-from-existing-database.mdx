@@ -1,7 +1,166 @@
 ---
 title: 'Import from existing database'
 metaTitle: 'Import from existing database'
-metaDescription: 'Get started with Prisma ORM and your favorite database. Learn about data modeling, migrations and querying.'
+metaDescription: 'Learn how to import an existing database into Prisma Postgres'
 hide_table_of_contents: true
 staticLink: true
 ---
+
+# Migrating from Neon
+
+This guide shows you how to migrate your Neon database to a Prisma Postgres database. You can accomplish this migration in three main steps:
+
+1. Back up your Neon database via `pg_dump`.
+2. Create a new Prisma Postgres database.
+3. Import your backup into Prisma Postgres via `pg_restore`.
+
+We will be using the `@prisma/ppg-tunnel` package to securely connect to your Prisma Postgres database during the restore step. This tool sets up a secure proxy tunnel, eliminating the need for manual credential handling.
+
+---
+
+## Prerequisites
+
+- A Neon project containing the data you want to migrate.
+- A Prisma Postgres environment to move the data to.
+- Node.js installed (version 16 or higher)
+- PostgreSQL CLI Tools (`pg_dump`, `pg_restore`) for creating and restoring backups.
+
+---
+
+## Step 1. Back up the Neon database
+
+### 1.1. Installing PostgreSQL utilities
+
+To create and restore backups, ensure you have the PostgreSQL command-line tools installed. Run the following commands based on your operating system:
+
+<TabbedContent code>
+
+<TabItem value="macOS">
+
+```terminal
+brew install postgresql@16
+which pg_dump
+which pg_restore
+```
+
+</TabItem>
+
+<TabItem value="Windows">
+```terminal
+# Download from the official PostgreSQL website:
+# https://www.postgresql.org/download/windows/
+# During installation, select "Command Line Tools".
+# Then verify with:
+
+where pg_dump
+where pg_restore
+```
+</TabItem>
+
+<TabItem value="Linux">
+
+```terminal
+sudo apt-get update
+sudo apt-get install postgresql-client-16
+which pg_dump
+which pg_restore
+```
+
+</TabItem>
+
+</TabbedContent>
+
+:::tip
+If you installed PostgreSQL but still see a “command not found” error for pg_dump or pg_restore, ensure your installation directory is in your system’s PATH environment variable.
+:::
+
+### 1.2. Creating the backup with `pg_dump`
+
+1. Get the connection string for your Neon database. Make sure to select non-pooled connection string by turning off Connection pooling toggle.
+2. Run the following command to create a backup of your Neon database:
+
+```bash
+pg_dump \
+  -Fc \
+  -v \
+  -d "postgresql://USER:PASSWORD@YOUR-NEON-HOST/neondb?sslmode=require" \
+  -f neon_db_dump.bak
+```
+
+Replace the connection string above with your actual Neon database URL (including your username, password, and host).
+
+- `-Fc` uses the custom format for backups, recommended for pg_restore.
+- `-v` runs pg_dump in verbose mode.
+- `-d` specifies the database connection string.
+- `-f` specifies the output file name for the backup.
+
+---
+
+## Step 2. Create a new Prisma Postgres database
+
+Next, create your GA (General Availability) database:
+1.	Visit [console.prisma.io](https://console.prisma.io) and sign in (or create an account).
+2.	Create a Prisma Postgres database in the region of your choice.
+3.	Copy the Database URL and API Key for later use.
+
+---
+
+## Step 3. Import the backup into Prisma Postgres
+
+### 3.1. Connecting to Prisma Postgres with `@prisma/ppg-tunnel`
+
+In a new terminal window, set up a secure connection to your Prisma Postgres database:
+
+1.	Set environment variables for the Prisma Postgres database:
+```bash
+export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."
+# OR
+export PDP_API_KEY="eyJhbGciOiJIUzI..."
+```
+
+2.	Run the tunnel:
+```bash
+npx @prisma/ppg-tunnel
+```
+
+You should see output similar to:
+
+```cmd
+Prisma Postgres auth proxy listening on 127.0.0.1:52604 🚀
+
+Your connection is authenticated using your Prisma Postgres API key.
+...
+
+==============================
+hostname:  127.0.0.1
+port:      52604
+username:  <anything>
+password:  <none>
+==============================
+```
+
+Please note that the port you will see in your output will be a randomly assigned port which may be different from the one mentioned here.
+
+3. Copy the port number from the terminal output, you’ll need it in the next step for the `pg_restore` command.
+
+:::note
+Keep this tunnel process running to maintain the connection!
+:::
+
+### 3.2. Restoring the backup with `pg_restore`
+
+Use the backup file from **Step 1** to restore data into your GA database with `pg_restore` by running this command:
+
+```bash
+PGSSLMODE=disable \
+pg_restore \
+  -h 127.0.0.1 \
+  -p __PORT__ \
+  -v \
+  -d postgres_restore2 \
+  ./neon_db_dump.bak \
+&& echo "-complete-"
+```
+You need to replace the `__PORT__` placeholder above with the port that was printed in terminal in the previous step.
+
+You have successfully migrated your Neon database to Prisma Postgres. Connect to your new database using a favorite IDE or Prisma Client to ensure all tables, rows, and schemas match your old environment.
