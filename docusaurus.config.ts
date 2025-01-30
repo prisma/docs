@@ -190,8 +190,9 @@ const config: Config = {
               label: "ORM",
             },
             {
-              className: "indigo",
-              to: "/orm/overview/databases/prisma-postgres",
+              type: "docSidebar",
+              sidebarId: "prismaPostgresSidebar",
+              className: "teal",
               label: "Postgres",
             },
             {
@@ -216,12 +217,6 @@ const config: Config = {
               sidebarId: "pulseSidebar",
               className: "teal",
               label: "Pulse",
-            },
-            {
-              type: "docSidebar",
-              sidebarId: "prismaPostgresSidebar",
-              className: "teal",
-              label: "Postgres (GA)",
             },
           ],
         },

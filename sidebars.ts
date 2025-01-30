@@ -364,7 +364,7 @@ const sidebars: SidebarsConfig = {
   prismaPostgresSidebar: [
     {
       type: "category",
-      label: "Postgres (GA)",
+      label: "Postgres",
       collapsible: false,
       collapsed: false,
       link: {
