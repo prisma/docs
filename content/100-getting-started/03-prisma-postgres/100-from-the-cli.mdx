@@ -1,7 +1,238 @@
 ---
 title: 'From the CLI'
 metaTitle: 'From the CLI'
-metaDescription: 'Get started with Prisma ORM and your favorite database. Learn about data modeling, migrations and querying.'
+metaDescription: 'Start building a Prisma application with a Prisma Postgres database from the CLI'
 hide_table_of_contents: true
 staticLink: true
 ---
+
+When you run the `prisma init --db` command, it logs you into the Prisma Data Platform from the terminal, creates a new Prisma Postgres instance, and initializes Prisma. If you don’t have an account, you will be prompted to create one. This page provides a step-by-step guide on how to set up a project with [Prisma Postgres®](/prisma-postgres) database from the CLI.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- A [compatible Node.js version](/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-6#minimum-supported-nodejs-versions), required for Prisma 6.
+- A [Prisma Data Platform account](https://console.prisma.io/).
+
+## 1. Set up your project
+
+Create a project directory and navigate into it:
+
+```terminal
+mkdir hello-prisma
+cd hello-prisma
+```
+
+Next, initialize a TypeScript project and add the Prisma CLI as a development dependency:
+
+```terminal
+npm init -y
+npm install prisma typescript tsx @types/node --save-dev
+```
+
+This creates a `package.json` file with an initial setup for your TypeScript app.
+
+Install the required dependency to use Prisma Postgres:
+
+```terminal
+npm i @prisma/extension-accelerate
+```
+
+Initialize TypeScript:
+
+```terminal
+npx tsc --init
+```
+
+This generates a `tsconfig.json` file.
+
+Create an `index.ts` file in the root directory:
+
+```terminal
+touch index.ts
+```
+
+Update your `package.json` to include a script for running the application:
+
+```json
+"scripts": {
+  // add-start
+  "start": "tsx index.ts"
+  // add-end
+}
+```
+
+## 2. Initialize Prisma with a PostgreSQL database
+
+Run the `prisma init --db` command to initialize Prisma with a [Prisma Postgres](/prisma-postgres) database:
+
+```terminal
+npx prisma init --db
+```
+
+
+
+:::warning
+
+Ensure your default workspace in the Prisma Data Platform has available [project](/platform/about#project) slots. If you've reached the limit, delete unused projects or set an active workspace with available slots as the default to enable the CLI to function properly.
+
+:::
+
+After running the command, select a database region closest to you and add a name for your workspace project:
+
+```terminal
+Let's set up your Prisma Postgres® database!
+? Select your region: ap-northeast-1 - Asia Pacific (Tokyo)
+? Enter a project name: starter
+Creating project starter...
+Success! Project starter created
+
+✔ Your Prisma schema was created at prisma/schema.prisma
+  You can now open it in your favorite editor.
+
+Database URL:
+prisma+postgres://accelerate.prisma-data.net/?api_key={API_KEY}
+
+Project link:
+{PROJECT_URL}
+```
+
+When the command runs, the following actions take place:
+
+- A new Prisma project is created.
+- A connection to Prisma Postgres is established and provisioned.
+- The `prisma/` folder is created with a `schema.prisma` file.
+- A `.env` file is generated with a `DATABASE_URL` pointing to Prisma Postgres.
+
+## 3. Define models and migrate the database
+
+Update your `prisma/schema.prisma` file to include a simple `User` model:
+
+```prisma
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String
+  email String @unique
+}
+```
+
+After adding the model, migrate your database using [Prisma Migrate](/orm/prisma-migrate):
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+## 4. Seed the database
+
+Create a `seed.ts` file inside the `prisma` folder to populate the database with initial data:
+
+```ts
+// add-start
+import { PrismaClient } from "@prisma/client";
+import { withAccelerate } from "@prisma/extension-accelerate";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  await prisma.user.createMany({
+    data: [
+      { name: "Alice", email: "alice@example.com" },
+      { name: "Bob", email: "bob@example.com" }
+    ],
+  });
+  console.log("Seeded database with initial users");
+}
+
+main()
+  .catch((e) => console.error(e))
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+// add-end
+```
+
+Add a seed script to your `package.json` file:
+
+```json
+// add-start
+"prisma": {
+  "seed": "tsx prisma/seed.ts"
+}
+// add-end
+```
+
+Run the seeder script:
+
+```terminal
+npx prisma db seed
+```
+
+## 5. Create a simple TypeScript application
+
+In your `index.ts` file, add the following code to query your database:
+
+```ts
+// add-start
+import { PrismaClient } from "@prisma/client";
+import { withAccelerate } from "@prisma/extension-accelerate";
+
+const prisma = new PrismaClient().$extends(withAccelerate());
+
+async function main() {
+  // Fetch all users
+  const users = await prisma.user.findMany();
+  console.log("All users:", users);
+
+  // Count users
+  const userCount = await prisma.user.count();
+  console.log("Total users count:", userCount);
+}
+
+main()
+  .catch((e) => console.error(e))
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+// add-end
+```
+
+## 6. Run the application
+
+Execute the script using:
+
+```terminal
+npm start
+```
+
+If you previously ran the seed script, you should see output similar to:
+
+```terminal
+All users: [
+  { id: 1, name: 'Alice', email: 'alice@example.com' },
+  { id: 2, name: 'Bob', email: 'bob@example.com' }
+]
+Total users count: 2
+```
+
+This confirms that the Prisma client is successfully interacting with the database.
+
+## 7. Interact with the data using Prisma Studio
+
+Use [Prisma Studio](/orm/tools/prisma-studio) to interact with and view your data in a GUI:
+
+```terminal
+npx prisma studio
+```
+
+This starts a GUI available at [`http://localhost:5555`](http://localhost:5555).
+
+You can also use database editors like [TablePlus](https://tableplus.com/) and [PgAdmin](https://www.pgadmin.org/) to interact with your database. For more details, visit [this page](/prisma-postgres).
+
+## Next steps
+
+You now have a simple TypeScript application using Prisma and a Prisma Postgres database. Here are some possible next steps:
+
+- Add caching to your application.
+- Receive real-time events in your application.
+- Learn more about Prisma Postgres.
