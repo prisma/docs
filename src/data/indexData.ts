@@ -4,44 +4,49 @@ export const ProductLinkData = {
     eyebrow: "ORM",
     description:
       "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
-    link:  "/orm",
-    icon: "fa-regular fa-database"
+    link: "/orm",
+    icon: "fa-regular fa-database",
   },
   i_studio: {
     title: "Explore and manipulate your data",
     eyebrow: "Studio",
-    description: "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
+    description:
+      "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
     link: "/orm/tools/prisma-studio",
-    icon: "fa-regular fa-table"
+    icon: "fa-regular fa-table",
   },
   t_postgres: {
     title: "Managed Postgres for global workloads",
     eyebrow: "Postgres",
-    description: "A managed PostgreSQL database without cold starts. Easily deploy your database in three clicks, explore with a generous free tier, and scale as needed.",
-    link: "/prisma-postgres",
-    icon: "fa-regular fa-chart-pyramid"
+    description:
+      "A managed PostgreSQL database without cold starts. Easily deploy your database in three clicks, explore with a generous free tier, and scale as needed.",
+    link: "/postgres",
+    icon: "fa-regular fa-chart-pyramid",
   },
   t_optimize: {
     title: "AI-driven insights",
     eyebrow: "Optimize",
-    description: "Analyze your queries and get recommedations to improve your database queries, making your app run faster.",
+    description:
+      "Analyze your queries and get recommedations to improve your database queries, making your app run faster.",
     link: "/optimize",
-    icon: "fa-regular fa-magnifying-glass-chart"
+    icon: "fa-regular fa-magnifying-glass-chart",
   },
   t_accelerate: {
     title: "Connection pooling & caching",
     eyebrow: "Accelerate",
-    description: "A fully managed global connection pool and caching layer for your existing database, enabling query-level cache policies.",
+    description:
+      "A fully managed global connection pool and caching layer for your existing database, enabling query-level cache policies.",
     link: "/accelerate",
-    icon: "fa-regular fa-bolt"
+    icon: "fa-regular fa-bolt",
   },
   t_pulse: {
     title: "Real-time db events",
     eyebrow: "Pulse",
-    description: "Distribute change events to your application at scale, enabling database changes to trigger events and actions in real-time.",
+    description:
+      "Distribute change events to your application at scale, enabling database changes to trigger events and actions in real-time.",
     link: "/pulse",
-    icon: "fa-regular fa-signal-stream"
-  }
+    icon: "fa-regular fa-signal-stream",
+  },
 };
 
 export const ORMCardLinkData = {
