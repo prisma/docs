@@ -78,6 +78,8 @@ Next, choose a database provider to import data from and proceed with the steps:
 - [Neon](#import-data-from-neon-into-prisma-postgres)
 - [Supabase](#import-data-from-supabase-into-prisma-postgres)
 - [Amazon RDS Postgres](#import-data-from-amazon-rds-postgres-into-prisma-postgres)
+- [Other Postgres provider](#import-data-from-different-postgres-provider-into-prisma-postgres)
+
 
 ## Import data from Neon into Prisma Postgres
 
@@ -154,7 +156,7 @@ Keep this tunnel process running to maintain the connection!
 
 ### 3. Upload the Neon database backup to Prisma Postgres
 
-Use the backup file from **Step 1** to restore data into your GA database with `pg_restore` by running this command:
+Use the backup file from **Step 1** to restore data into your Prisma Postgres database with `pg_restore` by running this command:
 
 ```bash
 PGSSLMODE=disable \
@@ -315,7 +317,7 @@ Keep this tunnel process running to maintain the connection!
 
 ### 3. Upload the Amazon RDS Postgres database backup to Prisma Postgres
 
-Use the backup file from **Step 1** to restore data into your GA database with `pg_restore` by running this command:
+Use the backup file from **Step 1** to restore data into your Prisma Postgres database with `pg_restore` by running this command:
 
 ```bash
 PGSSLMODE=disable \
@@ -329,3 +331,84 @@ pg_restore \
 ```
 
 You have successfully migrated your Amazon RDS Postgres database to Prisma Postgres. Connect to your new database using a favorite IDE or Prisma Client to ensure all tables, rows, and schemas match your old environment.
+
+## Import data from different Postgres provider into Prisma Postgres
+
+You can follow the steps below to import data from your postgres database into Prisma Postgres.
+
+### 1. Get the direct database connection string from your provider
+
+Get the connection string for your Postgres database. 
+
+
+Run the following command to create a backup of your Postgres database:
+
+```terminal
+pg_dump \
+  -Fc \
+  -v \
+  -d "postgresql://user:password@host:port/db" \
+  -f db_dump.bak
+```
+
+Replace the connection string above with your actual Postgres database URL (including your username, password, and host).
+
+- `-Fc` uses the custom format for backups, recommended for pg_restore.
+- `-v` runs pg_dump in verbose mode.
+- `-d` specifies the database connection string.
+- `-f` specifies the output file name for the backup.
+
+Running this command will create a backup file named `db_dump.bak` which you will use to restore data into your Prisma Postgres database.
+
+### 2. Connect to Prisma Postgres with `@prisma/ppg-tunnel`
+
+In a new terminal window, set up a secure connection to your Prisma Postgres database. 
+
+First, export the `DATABASE_URL` environment variable containing the Prisma Postgres database url:
+
+```bash
+export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."
+```
+
+Start the TCP tunnel:
+
+```terminal
+npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5432 
+```
+
+You should see output similar to:
+
+```terminal
+Prisma Postgres auth proxy listening on 127.0.0.1:5432 🚀
+
+Your connection is authenticated using your Prisma Postgres API key.
+...
+
+==============================
+hostname:  127.0.0.1
+port:      5432
+username:  <anything>
+password:  <none>
+==============================
+```
+
+:::note
+Keep this tunnel process running to maintain the connection!
+:::
+
+### 3. Upload the Postgres database backup to Prisma Postgres
+
+Use the backup file from **Step 1** to restore data into your Prisma Postgres database with `pg_restore` by running this command:
+
+```bash
+PGSSLMODE=disable \
+pg_restore \
+  -h 127.0.0.1 \
+  -p 5432 \
+  -v \
+  -d postgres \
+  ./db_dump.bak \
+&& echo "-complete-"
+```
+
+You have successfully migrated your Postgres database to Prisma Postgres. Connect to your new database using a favorite IDE or Prisma Client to ensure all tables, rows, and schemas match your old environment.
