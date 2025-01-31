@@ -7,8 +7,6 @@ tocDepth: 3
 toc: true
 ---
 
-# Introduction
-
 This guide shows you how to migrate your Prisma Postgres Early Access (EA) database to the now official Prisma Postgres General Availability (GA) database. Prisma Postgres Early Access was introduced to allow early adopters to test Prisma’s new managed PostgreSQL service. As we move to GA, it's crucial to safely migrate data from your EA database to the new GA database.
 
 Prisma will _not_ automatically migrate your data to ensure its integrity. Instead, this process must be done manually. You can accomplish this in three main steps:
@@ -17,11 +15,9 @@ Prisma will _not_ automatically migrate your data to ensure its integrity. Inste
 2. Create a new GA database.
 3. Import your backup into the GA database via `pg_restore`.
 
-We will be using the [`@prisma/ppg-tunnel`](https://github.com/prisma/ppg-tunnel-cli) package to securely connect to both databases. This tool sets up a secure proxy tunnel, eliminating the need for manual credential handling.
+We will be using the [`@prisma/ppg-tunnel`](https://www.npmjs.com/package/@prisma/ppg-tunnel) package to securely connect to both databases. This tool sets up a secure proxy tunnel, eliminating the need for manual credential handling.
 
-You can learn more about **Prisma Postgres** at [console.prisma.io](https://console.prisma.io/).
-
----
+You can learn more about **Prisma Postgres** on [this page](/prisma-postgres).
 
 ## Prerequisites
 
@@ -31,9 +27,8 @@ Before you begin, make sure you have:
 - **PostgreSQL CLI Tools** (`pg_dump`, `pg_restore`) for creating and restoring backups.
 - A **Database connection string** for your Prisma Postgres database.
 
----
 
-## Step 1. Back up the EA database
+## 1. Back up the EA database
 
 ### 1.1. Installing PostgreSQL utilities
 
@@ -81,31 +76,31 @@ If you installed PostgreSQL but still see a “command not found” error for pg
 :::
 
 
-### 1.2. Connecting to the EA database with `@prisma/ppg-tunnel`
+### 1.2. Connecting to the EA database directly with `@prisma/ppg-tunnel`
 
 In your terminal, run `npx @prisma/ppg-tunnel` to establish a secure tunnel to your Early Access database.
 
-1.	Set environment variables (with your actual EA database URL):
+Set environment variable (with your actual EA database URL):
 ```bash
 export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."
 ```
 
-2.	Run the tunnel:
+Run the tunnel:
 ```bash
-npx @prisma/ppg-tunnel
+npx @prisma/ppg-tunnel --host 127.0.0.1  --port 5432
 ```
 
 You should see output similar to:
 
 ```cmd
-Prisma Postgres auth proxy listening on 127.0.0.1:63029 🚀
+Prisma Postgres auth proxy listening on 127.0.0.1:5432 🚀
 
 Your connection is authenticated using your Prisma Postgres API key.
 ...
 
 ==============================
 hostname:  127.0.0.1
-port:      63029
+port:      5432
 username:  <anything>
 password:  <none>
 ==============================
@@ -125,14 +120,13 @@ With the tunnel running, you can now dump the EA database by running the followi
 PGSSLMODE=disable \
 pg_dump \
   -h 127.0.0.1 \
-  -p __PORT__ \
+  -p 5432 \
   -Fc \
   -v \
   -d postgres \
   -f ./mydatabase.bak \
 && echo "-complete-"
 ```
-You need to replace the `__PORT__` placeholder above with the port that was printed in terminal in the previous step.
 
 `PGSSLMODE=disable` indicates SSL is not required locally because the tunnel already encrypts the connection.
 
@@ -147,7 +141,7 @@ You need to replace the `__PORT__` placeholder above with the port that was prin
 
 This should create your backup file named `mydatabase.bak` in the current directory. We will use this backup file for importing in next steps.
 
-## Step 2. Create a new GA database
+## 2. Create a new GA database
 
 Next, create your GA (General Availability) database:
 1.	Visit [console.prisma.io](https://console.prisma.io) and sign in (or create an account).
@@ -156,20 +150,20 @@ Next, create your GA (General Availability) database:
 
 Prisma Postgres GA uses PostgreSQL 17, so you’ll be restoring your EA backup into this new environment.
 
-## Step 3. Import the backup into the GA database
+## 3. Import the backup into the GA database
 
 ### 3.1. Connecting to the GA Database with `@prisma/ppg-tunnel`
 
 Open a new terminal (or stop the previous tunnel) and connect to your GA database:
 
-1.	Set environment variables for the new GA database:
+Set environment variables for the new GA database:
 ```bash
 export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."
 ```
 
-2.	Run the tunnel:
+Run the tunnel:
 ```bash
-npx @prisma/ppg-tunnel
+npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5432
 ```
 
 You should see output similar to:
@@ -188,7 +182,6 @@ password:  <none>
 ==============================
 ```
 
-3. Copy the port number from the terminal output, you’ll need it in the next step for the `pg_restore` command.
 
 :::note
 Again, keep this tunnel process running to maintain the connection!
@@ -202,13 +195,12 @@ Use the backup file from **Step 1** to restore data into your GA database with `
 PGSSLMODE=disable \
 pg_restore \
   -h 127.0.0.1 \
-  -p __PORT__ \
+  -p 5432 \
   -v \
   -d postgres \
   ./mydatabase.bak \
 && echo "-complete-"
 ```
-Like before, you need to replace the `__PORT__` placeholder above with the port that was printed in terminal in the previous step.
 
 Also, in this case the database name is `postgres`. You can replace it with your desired database name. It does not matter what you name your database as you will be able to use Prisma Postgres as usual.
 The backup file name (mydatabase.bak in our example) should match the one you created in Step 1.
