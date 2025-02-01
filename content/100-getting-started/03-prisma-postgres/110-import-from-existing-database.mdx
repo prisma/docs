@@ -1,27 +1,28 @@
 ---
 title: 'Import from existing database'
-metaTitle: 'Import from existing database'
-metaDescription: 'Learn how to import an existing database into Prisma Postgres'
+metaTitle: 'Import from existing database into Prisma Postgres'
+metaDescription: 'Learn how to import data from an existing database into Prisma Postgres.'
 staticLink: true
 tocDepth: 3
 toc: true
 ---
 
-This guide shows you how to import data from your existing database provider to a Prisma Postgres database. You can accomplish this migration in three main steps:
+This guide shows you how to import data from an existing PostgreSQL database into Prisma Postgres. You can accomplish this migration in three main steps:
 
-1. Back up your databases via `pg_dump`.
-2. Create a new Prisma Postgres database.
-3. Import your backup into Prisma Postgres via `pg_restore`.
+1. Create a new Prisma Postgres database.
+1. Export your existing database via `pg_dump`.
+1. Import the previously exported database into Prisma Postgres via `pg_restore`.
 
-We will be using the [TCP tunnel](/postgres/tcp-tunnel) and securely connect to your Prisma Postgres database during the restore step. The TCP tunnel uses the [`@prisma/ppg-tunnel` package](https://www.npmjs.com/package/@prisma/ppg-tunnel). The tool sets up a secure proxy tunnel, eliminating the need for manual credential handling.
+We will be using the [TCP tunnel](/postgres/tcp-tunnel) to securely connect to your Prisma Postgres database during the restore step. 
 
 ## Prerequisites
 
-- A Prisma Postgres environment to move the data to.
+- The connection URL to your existing PostgreSQL dartabase
+- A [Prisma Data Platform](https://console.prisma.io) account
 - Node.js installed (version 16 or higher)
-- PostgreSQL CLI Tools (`pg_dump`, `pg_restore`) for creating and restoring backups.
+- PostgreSQL CLI Tools (`pg_dump`, `pg_restore`) for creating and restoring backups
 
-### Installing PostgreSQL 16 utilities
+<!-- ### Installing PostgreSQL 16 utilities
 
 To create and restore backups, ensure you have the PostgreSQL 16 command-line tools installed. Run the following commands based on your operating system:
 
@@ -62,110 +63,149 @@ which pg_restore
 
 :::tip
 If you installed PostgreSQL but still see a “command not found” error for pg_dump or pg_restore, ensure your installation directory is in your system’s PATH environment variable.
-:::
+::: -->
 
 
 ## 1. Create a new Prisma Postgres database
 
-Next, create your GA (General Availability) database:
+Follow these steps to create your Prisma Postgres database:
 
-1.	Visit [console.prisma.io](https://console.prisma.io) and sign in (or create an account).
-2.	Create a Prisma Postgres database in the region of your choice.
-3.	Copy the Database URL for later use.
+1. Log in to [Prisma Data Platform](https://console.prisma.io/) and open the Console.
+1. In a [workspace](/platform/about#workspace) of your choice, click the **New project** button.
+1. Type a name for your project in the **Name** field, e.g. **hello-ppg**.
+1. In the **Prisma Postgres** section, click the **Get started** button.
+1. In the **Region** dropdown, select the region that's closest to your current location, e.g. **US East (N. Virginia)**.
+1. Click the **Create project** button.
 
-## Import data into Prisma Postgres
+Once your database was provisioned, find your Prisma Postgres connection URL in the **Set up database access** section and save it for later, you'll need it in step 3.
 
-You can follow the steps below to import data from your postgres database into Prisma Postgres.
+## 2. Export your existing database
 
-### 1. Get the direct database connection string from your provider
+In this step, you're going to export the data from your existing database into a file on your file system. 
 
-Get the connection string for your Postgres database. 
+Make sure to have the connection URL for your existing database ready, it should be [structured](/orm/overview/databases/postgresql#connection-url) like this:
 
-
-Run the following command to create a backup of your Postgres database:
-
-```terminal
-pg_dump \
-  -Fc \
-  -v \
-  -d "postgresql://user:password@host:port/db" \
-  -f db_dump.bak
+```no-copy
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 ```
 
-Replace the connection string above with your actual Postgres database URL (including your username, password, and host).
-
-- `-Fc` uses the custom format for backups, recommended for pg_restore.
-- `-v` runs pg_dump in verbose mode.
-- `-d` specifies the database connection string.
-- `-f` specifies the output file name for the backup.
-
-Running this command will create a backup file named `db_dump.bak` which you will use to restore data into your Prisma Postgres database.
+Expand below for provider-specific instructions that help you determine the right connection string:
 
 <details>
-<summary>Neon specific instructions</summary>
+<summary>Neon</summary>
 
-1. Make sure to select non-pooled connection string by switching off the `Connection pooling` toggle.
+<br />
 
-2. The `sslmode` has to be set to `require` and appended to your Neon database url for the command to work. Your connection string should look something like this: "postgresql://USER:PASSWORD@YOUR-NEON-HOST/neondb?sslmode=require"
+- Make sure to select non-pooled connection string by switching off the **Connection pooling** toggle.
+- The `sslmode` has to be set to `require` and appended to your Neon database url for the command to work. 
+- The connection URL should look similar to this:
+    ```no-copy
+    postgresql://USER:PASSWORD@YOUR-NEON-HOST/DATABASE?sslmode=require
+    ```
+
 </details>
 
 <details>
-<summary>Supabase specific instructions</summary>
-1. Make sure to get database connection string which uses a Supavisor session mode from your [Supabase database](https://supabase.com/docs/guides/database/connecting-to-postgres#supavisor-session-mode). 
-2. Include the argument `-n public` to only dump the public schema.
+<summary>Supabase</summary>
 
-Your command would look like:
-```
+- Make sure to get a database connection URL that uses [Supabase database](https://supabase.com/docs/guides/database/connecting-to-postgres#supavisor-session-mode).
+- The connection URL should look similar to this:
+    ```no-copy
+    postgres://postgres.apbkobhfnmcqqzqeeqss:[YOUR-PASSWORD]@aws-0-ca-central-1.pooler.supabase.com:5432/postgres
+    ```
+<!-- - Include the argument `-n public` to only dump the public schema.
+
+Your command would look like: -->
+
+<!-- ```
 pg_dump \                                           
   -Fc \
   -v \
   -d "postgresql://user:password@host:port/db" \
   -n public \
   -f db_dump.bak
-```
+``` -->
+
 </details>
 
-### 2. Connect to Prisma Postgres with `@prisma/ppg-tunnel`
-
-In a new terminal window, set up a secure connection to your Prisma Postgres database. 
-
-First, export the `DATABASE_URL` environment variable containing the Prisma Postgres database url:
-
-```bash
-export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."
-```
-
-Start the TCP tunnel:
+Run the following command to export the data of your PostgreSQL database (replace the `__DATABASE_URL__` placeholder with your actual database connection URL):
 
 ```terminal
-npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5432 
+pg_dump \
+  -Fc \
+  -v \
+  -d __DATABASE_URL__ \
+  -n public \
+  -f db_dump.bak
 ```
 
-You should see output similar to:
+Here's a quick overview of the CLI options that were used for this command:
+
+- `-Fc`: Uses the custom format for backups, recommended for pg_restore
+- `-v`: Runs pg_dump in verbose mode
+- `-d`: Specifies the database connection string
+- `-n`: Specifies the PostgreSQL schema
+- `-f`: Specifies the output file name for the backup
+
+Running this command will create a backup file named `db_dump.bak` which you will use to restore data into your Prisma Postgres database in the next step.
+
+## 3. Import data into Prisma Postgres
+
+In this step, you'll use the [TCP tunnel](/postgres/tcp-tunnel) to connect to your Prisma Postgres instance so you can import data via `pg_restore`.
+
+You'll also need the Prisma Postgres connection URL from step 1, it should look similar to this:
+
+```
+prisma+postgres://accelerate.prisma-data.net/?api_key=ey...
+```
+
+Open your terminal and set the `DATABASE_URL` environment variable to the value of your Prisma Postgres database URL (replace the `__API_KEY__` placeholder with the API key of your actual database connection URL):
 
 ```terminal
-Prisma Postgres auth proxy listening on 127.0.0.1:5432 🚀
+export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
+```
+
+Next, start the TCP tunnel:
+
+<CodeWithResult outputResultText="" expanded={false}>
+
+<cmd>
+
+```terminal
+npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5433 
+```
+
+</cmd>
+
+<cmdResult>
+
+```code no-copy wrap
+Prisma Postgres auth proxy listening on 127.0.0.1:5433 🚀
 
 Your connection is authenticated using your Prisma Postgres API key.
 ...
 
 ==============================
 hostname:  127.0.0.1
-port:      5432
+port:      5433
 username:  <anything>
 password:  <none>
 ==============================
 ```
 
+</cmdResult>
+
+</CodeWithResult>
+
 :::note
-Keep this tunnel process running to maintain the connection!
+
+Keep your current terminal window or tab open so that the tunnel process continues running and the connection remains open.
+
 :::
 
-### 3. Upload the Postgres database backup to Prisma Postgres
+Now, use the `db_dump.bak` backup file from the previous step to restore data into your Prisma Postgres database with the `pg_restore` command:
 
-Use the backup file from **Step 1** to restore data into your Prisma Postgres database with `pg_restore` by running this command:
-
-```bash
+```terminal
 PGSSLMODE=disable \
 pg_restore \
   -h 127.0.0.1 \
@@ -176,4 +216,77 @@ pg_restore \
 && echo "-complete-"
 ```
 
-You have successfully migrated your Postgres database to Prisma Postgres. Connect to your new database using a favorite IDE or Prisma Client to ensure all tables, rows, and schemas match your old environment.
+Note that you don't need to provide username and password credentials to this command because the TCP tunnel already authenticated you via the API key in your Prisma Postgres connection URL.
+
+You have successfully imported the data from your your existing PostgreSQL database into Prisma Postgres. 
+
+You can validate that the import worked with Prisma Studio. Either open it in the [Platform Console](https://console.prisma.io) by clicking the **Studio** tab in the left-hand sidenav in your project or run this command to launch Prisma Studio locally:
+
+```terminal
+npx prisma studio
+```
+
+## 4. Update your application code to query Prisma Postgres
+
+### Scenario A: You are already using Prisma ORM
+
+If you already using Prisma ORM, the only things you need to do are:
+
+- add the Prisma Accelerate extension to your project
+- update the database connection URL and re-generate Prisma Client
+
+#### 4.A.1. Add the Prisma Accelerate extension 
+
+Th Prisma Accelerate extension is required when using Prisma Postgres. If you are not currently using Prisma Accelerate with Prisma ORM and have the extension already installed, go through the following steps to make Prisma ORM work with Prisma Postgres.
+
+First, install the `@prisma/extension-accelerate` package in your project:
+
+```terminal
+npm install @prisma/extension-accelerate
+```
+
+Then, add the extension to your Prisma Client instance:
+
+```ts
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+const prisma = new PrismaClient().$extends(withAccelerate())
+```
+
+#### 4.A.2. Update the database connection URL
+
+The database connection URL is configured via the `url` of the `datasource` block in your `schema.prisma` file. Most commonly, it is set via an environment variable called `DATABASE_URL`:
+
+```prisma file=schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+The next steps assumes that you're a `.env` file to set the `DATABASE_URL` environment variable (if that's not the case, you can set the environment variable in your preferred way).
+
+Open `.env` and update the value for the `DATABASE_URL` environment variable to match your Prisma Postgres connection URL, looking similar to this:
+
+```bash
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
+```
+
+As a last step, you need to re-generate Prisma Client for so that the updated environment variables takes effect and your queries go to Prisma Postgres going forward:
+
+```
+npx prisma generate --no-engine
+```
+
+Once this is done, you can run your application and it should work as before.
+
+### Option 2: You are not yet using Prisma ORM
+
+If you are not yet using Prisma ORM, you'll need to go through the following steps to use Prisma Postrgres from your application:
+
+1. Install the Prisma CLI in your project
+1. Introspect the database to generate a Prisma schema
+1. Generate Prisma Client
+1. Update the queries in your application to use Prisma ORM
+
+You can find the detailled step-by-step instructions for this process in this guide: [Add Prisma ORM to an existing project](/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql).
