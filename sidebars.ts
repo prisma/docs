@@ -57,7 +57,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Set up Prisma ORM",
+          label: "Prisma ORM",
           collapsed: false,
           collapsible: false,
           link: {
