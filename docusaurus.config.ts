@@ -9,7 +9,7 @@ const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
 const config: Config = {
   future: {
     // See https://github.com/facebook/docusaurus/issues/10556
-    experimental_faster: true
+    experimental_faster: true,
   },
   title: "Prisma Documentation",
   tagline:
@@ -76,18 +76,19 @@ const config: Config = {
       async: true,
       id: "cookieyes",
       type: "text/javascript",
-      src: "https://cdn-cookieyes.com/client_data/96980f76df67ad5235fc3f0d/script.js"
-    }
+      src: "https://cdn-cookieyes.com/client_data/96980f76df67ad5235fc3f0d/script.js",
+    },
   ],
   plugins: [
     "docusaurus-plugin-sass",
-    [path.resolve(__dirname, 'client-plugins', 'posthog-docusaurus'),
+    [
+      path.resolve(__dirname, "client-plugins", "posthog-docusaurus"),
       {
         // these are safe to have in version control
         apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
-        appUrl: 'https://proxyhog.prisma-data.net',
-        person_profiles: 'identified_only',
-        enableInDevelopment: false
+        appUrl: "https://proxyhog.prisma-data.net",
+        person_profiles: "identified_only",
+        enableInDevelopment: false,
       },
     ],
   ],
@@ -95,11 +96,11 @@ const config: Config = {
     [
       "classic",
       {
-        ...process.env.GT_CONTAINER_ID && {
+        ...(process.env.GT_CONTAINER_ID && {
           googleTagManager: {
             containerId: process.env.GT_CONTAINER_ID,
-          }
-        },
+          },
+        }),
         sitemap: {
           // @ts-ignore
           changefreq: "daily",
@@ -178,9 +179,9 @@ const config: Config = {
           className: "indigo first-item",
         },
         {
-          type: 'dropdown',
-          label: 'Products',
-          position: 'left',
+          type: "dropdown",
+          label: "Products",
+          position: "left",
           items: [
             {
               type: "docSidebar",
@@ -189,8 +190,9 @@ const config: Config = {
               label: "ORM",
             },
             {
-              className: "indigo",
-              to: "/orm/overview/databases/prisma-postgres",
+              type: "docSidebar",
+              sidebarId: "prismaPostgresSidebar",
+              className: "teal",
               label: "Postgres",
             },
             {
@@ -253,7 +255,7 @@ const config: Config = {
       replaceSearchResultPathname: {
         from: "/docs/",
         to: DOCUSAURUS_BASE_URL,
-      }
+      },
     },
     footer: {
       style: "dark",
