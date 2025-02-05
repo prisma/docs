@@ -1,7 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import { themes as prismThemes } from "prism-react-renderer";
-import path from "path";
 
-import type { Config } from "@docusaurus/types";
+import type { Config, RouteConfig } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
@@ -91,6 +92,49 @@ const config: Config = {
         enableInDevelopment: false,
       },
     ],
+    async function pluginLlmsTxt(context) {
+      return {
+        name: "llms-txt-plugin",
+        postBuild: async ({ outDir, routes }) => {
+          // we need to dig down several layers:
+          // find PluginRouteConfig marked by plugin.name === "docusaurus-plugin-content-docs"
+          const docsPluginRouteConfig = routes.filter(
+            (route) => route.plugin.name === "docusaurus-plugin-content-docs"
+          )[0];
+
+          // docsPluginRouteConfig has a routes property has a record with the path "/" that contains all docs routes.
+          const allDocsRouteConfig = docsPluginRouteConfig.routes?.filter(
+            (route) => route.path === "/"
+          )[0];
+
+          // A little type checking first
+          if (!allDocsRouteConfig?.props?.version) {
+            return;
+          }
+
+          // this route config has a `props` property that contains the current documentation.
+          const currentVersionDocsRoutes = (
+            allDocsRouteConfig.props.version as Record<string, unknown>
+          ).docs as Record<string, Record<string, unknown>>;
+
+          // for every single docs route we now parse a path (which is the key) and a title
+          const docsRecords = Object.entries(currentVersionDocsRoutes).map(([path, record]) => {
+            return `- [${record.title}](${path}): ${record.description}`;
+          });
+
+          // Build up llms.txt file
+          const llmsTxt = `# ${context.siteConfig.title}\n\n## Docs\n\n${docsRecords.join("\n")}`;
+
+          // Write llms.txt file
+          const llmsTxtPath = path.join(outDir, "llms.txt");
+          try {
+            fs.writeFileSync(llmsTxtPath, llmsTxt);
+          } catch (err) {
+            throw err;
+          }
+        },
+      };
+    },
   ],
   presets: [
     [
@@ -102,9 +146,6 @@ const config: Config = {
           },
         }),
         sitemap: {
-          // @ts-ignore
-          changefreq: "daily",
-          priority: 0.7,
           ignorePatterns: [
             "/search",
             // Remove these from sitemap for SEO purposes as they're redirected
