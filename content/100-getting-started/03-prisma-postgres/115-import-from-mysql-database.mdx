@@ -1,0 +1,160 @@
+---
+title: 'Import from existing MySQL database'
+metaTitle: 'Import from existing MySQL database into Prisma Postgres'
+metaDescription: 'Learn how to import data from an existing MySQL database into Prisma Postgres.'
+staticLink: true
+tocDepth: 3
+toc: true
+---
+
+This guide provides step-by-step instructions for importing data from an existing MySQL database into Prisma Postgres. 
+
+You can accomplish this migration in three steps:
+
+1. Create a new Prisma Postgres database.
+1. Open the TCP tunnel using @prisma/ppg-tunnel package.
+1. Export your existing data via using `pgloader`.
+1. Import the previously exported data into Prisma Postgres via `pg_restore`.
+
+In the third step, you will be using the [TCP tunnel](/postgres/tcp-tunnel) to securely connect to your Prisma Postgres database during to run `pg_restore`.
+
+## Prerequisites
+
+- The connection URL to your existing MySQL database
+- A [Prisma Data Platform](https://console.prisma.io) account
+- Node.js installed (version 16 or higher)
+- [pgloader](https://pgloader.io/) installed
+
+:::warning 
+
+We suggest to attempt this migration in a separate branch.
+
+:::
+
+## 1. Create a new Prisma Postgres database
+
+Follow these steps to create a new Prisma Postgres database:
+
+1. Log in to [Prisma Data Platform](https://console.prisma.io/) and open the Console.
+1. In a [workspace](/platform/about#workspace) of your choice, click the **New project** button.
+1. Type a name for your project in the **Name** field, e.g. **hello-ppg**.
+1. In the **Prisma Postgres** section, click the **Get started** button.
+1. In the **Region** dropdown, select the region that's closest to your current location, e.g. **US East (N. Virginia)**.
+1. Click the **Create project** button.
+
+Once your database was provisioned, find your Prisma Postgres connection URL in the **Set up database access** section and save it for later, you'll need it in step 3.
+
+## 2. Connect directly to Prisma Postgres instance
+
+In this step, you'll use the [TCP tunnel](/postgres/tcp-tunnel) to connect to your Prisma Postgres instance and import data via `pg_restore`.
+
+You'll also need the Prisma Postgres connection URL from step 1, it should look similar to this:
+
+```no-copy
+prisma+postgres://accelerate.prisma-data.net/?api_key=ey...
+```
+
+Open your terminal and set the `DATABASE_URL` environment variable to the value of your Prisma Postgres database URL (replace the `__API_KEY__` placeholder with the API key of your actual database connection URL):
+
+```terminal
+export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
+```
+
+Next, start the TCP tunnel:
+
+<CodeWithResult outputResultText="" expanded={true}>
+
+<cmd>
+
+```terminal
+npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5433 
+```
+
+</cmd>
+
+<cmdResult>
+
+```code no-copy wrap
+Prisma Postgres auth proxy listening on 127.0.0.1:5433 🚀
+
+Your connection is authenticated using your Prisma Postgres API key.
+...
+
+==============================
+hostname:  127.0.0.1
+port:      5433
+username:  <anything>
+password:  <none>
+==============================
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+:::note
+
+*Keep your current terminal window or tab open* so that the tunnel process continues running and the connection remains open.
+
+:::
+
+
+## 2. Export the data to Prisma Postgres using Pgloader
+
+Now we'll use pgloader to export the data to a PostgreSQL database.
+
+Create a `config.load` file:
+
+```text
+LOAD DATABASE
+     FROM mysql://username:password@host:PORT/database_name
+     INTO postgresql://user:password@127.0.0.1:5433/postgres
+
+     WITH quote identifiers,           -- preserve table/column name case by quoting them
+          include drop,
+          create tables,
+          create indexes,
+          reset sequences
+
+     -- Optionally, if you may have to rename the MySQL schema to PostgreSQL's "public":
+     ALTER SCHEMA 'database_name' RENAME TO 'public';
+```
+
+Then run:
+
+```terminal
+pgloader config.load
+```
+
+And should give you an output similar to:
+
+```terminal
+LOG report summary reset
+               table name     errors       rows      bytes      total time
+-------------------------  ---------  ---------  ---------  --------------
+          fetch meta data          0          9                     2.546s
+           Create Schemas          0          0                     0.325s
+         Create SQL Types          0          0                     0.635s
+            Create tables          0          6                     5.695s
+           Set Table OIDs          0          3                     0.328s
+-------------------------  ---------  ---------  ---------  --------------
+              public.post          0          8     0.5 kB          4.255s
+            public."user"          0          4     0.1 kB          2.775s
+public._prisma_migrations          0          1     0.2 kB          4.278s
+-------------------------  ---------  ---------  ---------  --------------
+  COPY Threads Completion          0          4                     5.095s
+   Index Build Completion          0          5                     9.601s
+           Create Indexes          0          5                     4.116s
+          Reset Sequences          0          2                     4.540s
+             Primary Keys          0          3                     2.917s
+      Create Foreign Keys          0          1                     1.121s
+          Create Triggers          0          0                     0.651s
+         Install Comments          0          0                     0.000s
+-------------------------  ---------  ---------  ---------  --------------
+        Total import time          ✓         13     0.8 kB         28.042s
+```
+
+You're data has been exported.
+
+
+## 3. Of introspection of s

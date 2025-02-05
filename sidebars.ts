@@ -296,6 +296,7 @@ const sidebars: SidebarsConfig = {
           items: [
             "getting-started/prisma-postgres/from-the-cli",
             "getting-started/prisma-postgres/import-from-existing-database",
+            "getting-started/prisma-postgres/import-from-existing-mysql-database",
             "getting-started/prisma-postgres/upgrade-from-early-access",
           ],
         },
