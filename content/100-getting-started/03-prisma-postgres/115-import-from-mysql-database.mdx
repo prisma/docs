@@ -9,25 +9,23 @@ toc: true
 
 This guide provides step-by-step instructions for importing data from an existing MySQL database into Prisma Postgres. 
 
-You can accomplish this migration in three steps:
+You can accomplish this migration in four steps:
 
 1. Create a new Prisma Postgres database.
-1. Open the TCP tunnel using @prisma/ppg-tunnel package.
-1. Export your existing data via using `pgloader`.
-1. Import the previously exported data into Prisma Postgres via `pg_restore`.
-
-In the third step, you will be using the [TCP tunnel](/postgres/tcp-tunnel) to securely connect to your Prisma Postgres database during to run `pg_restore`.
+1. Connect directly to a Prisma Postgres instance using the [`@prisma/ppg-tunnel` package](https://www.npmjs.com/package/@prisma/ppg-tunnel).
+1. Migrate your MySQL data to Prisma Postgres using [pgloader](https://pgloader.io/).
+1. Configure your Prisma project for Prisma Postgres.
 
 ## Prerequisites
 
 - The connection URL to your existing MySQL database
 - A [Prisma Data Platform](https://console.prisma.io) account
-- Node.js installed (version 16 or higher)
+- Node.js 18+ installed
 - [pgloader](https://pgloader.io/) installed
 
 :::warning 
 
-We suggest to attempt this migration in a separate branch.
+We recommend attempting this migration in a separate development branch.
 
 :::
 
@@ -42,13 +40,13 @@ Follow these steps to create a new Prisma Postgres database:
 1. In the **Region** dropdown, select the region that's closest to your current location, e.g. **US East (N. Virginia)**.
 1. Click the **Create project** button.
 
-Once your database was provisioned, find your Prisma Postgres connection URL in the **Set up database access** section and save it for later, you'll need it in step 3.
+Once your database was provisioned, find your Prisma Postgres connection URL in the **Set up database access** section and save it for later, you'll need it in the next step.
 
-## 2. Connect directly to Prisma Postgres instance
+## 2. Connect directly to a Prisma Postgres instance
 
-In this step, you'll use the [TCP tunnel](/postgres/tcp-tunnel) to connect to your Prisma Postgres instance and import data via `pg_restore`.
+In this step, you'll use a secure [TCP tunnel](/postgres/tcp-tunnel) to connect to your Prisma Postgres instance.
 
-You'll also need the Prisma Postgres connection URL from step 1, it should look similar to this:
+You'll need the Prisma Postgres connection URL from [step 1](/getting-started/prisma-postgres/import-from-mysql-database#1-create-a-new-prisma-postgres-database):
 
 ```no-copy
 prisma+postgres://accelerate.prisma-data.net/?api_key=ey...
@@ -60,15 +58,20 @@ Open your terminal and set the `DATABASE_URL` environment variable to the value 
 export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
 ```
 
-Next, start the TCP tunnel:
+Next, start the TCP tunnel using the `@prisma/ppg-tunnel` package, by executing the following command:
 
 <CodeWithResult outputResultText="" expanded={true}>
-
 <cmd>
 
 ```terminal
 npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5433 
 ```
+
+:::note
+
+You can specify a different port by providing your own host and port values using the `--port` and `--host` flags. Just be sure to use the same host and port values consistently throughout the guide.
+
+:::
 
 </cmd>
 
@@ -98,35 +101,44 @@ password:  <none>
 
 :::
 
+## 3. Migrate your MySQL data to Prisma Postgres using pgloader
 
-## 2. Export the data to Prisma Postgres using Pgloader
+Now that you have an active connection to your Prisma Postgres instance, you'll use pgloader to export data from your MySQL database to Prisma Postgres.
 
-Now we'll use pgloader to export the data to a PostgreSQL database.
+Open a separate terminal window and create a `config.load` file:
 
-Create a `config.load` file:
-
-```text
-LOAD DATABASE
-     FROM mysql://username:password@host:PORT/database_name
-     INTO postgresql://user:password@127.0.0.1:5433/postgres
-
-     WITH quote identifiers,           -- preserve table/column name case by quoting them
-          include drop,
-          create tables,
-          create indexes,
-          reset sequences
-
-     -- Optionally, if you may have to rename the MySQL schema to PostgreSQL's "public":
-     ALTER SCHEMA 'database_name' RENAME TO 'public';
+```terminal
+touch config.load
 ```
 
-Then run:
+Open the `config.load` file in your preferred text editor and copy-paste the following configuration:
+
+```text file=config.load
+LOAD DATABASE
+    FROM mysql://username:password@host:PORT/database_name
+    INTO postgresql://user:password@127.0.0.1:5433/postgres
+
+WITH quote identifiers,    -- preserve table/column name case by quoting them
+     include drop,
+     create tables,
+     create indexes,
+     reset sequences
+
+ALTER SCHEMA 'database_name' RENAME TO 'public';
+```
+
+Make sure to update the following details in the config.load file:
+
+- `FROM URL`: Replace `username`, `password`, `host`, `PORT`, and `database_name` with the actual connection details of your MySQL database.
+- `INTO URL`: Update this with your TCP tunnel details if you’re using a custom `host` and `port` (in this example, it’s `127.0.0.1` and `port` `5433` for consistency).
+
+After saving the configuration file with your updated credentials, in the same terminal window, execute the following command:
 
 ```terminal
 pgloader config.load
 ```
 
-And should give you an output similar to:
+You should see a log similar to this, which confirms the successful migration of your data:
 
 ```terminal
 LOG report summary reset
@@ -154,62 +166,72 @@ public._prisma_migrations          0          1     0.2 kB          4.278s
         Total import time          ✓         13     0.8 kB         28.042s
 ```
 
-You're data has been exported.
+If you see output like this, it means your data has been successfully exported to your Prisma Postgres instance.
 
+## 4. Configure your Prisma project for Prisma Postgres
 
-## 3. Next steps
+After migrating your data, you need to set up your Prisma project to work with Prisma Postgres. The steps differ depending on whether you were already using Prisma ORM.
 
-Now that your data has been migrated from MySQL to Prisma Postgres, you can start using Prisma with your new Postgres database.
-Follow one of these two paths depending on whether or not you were already using Prisma ORM in your project.
+### If you **were not** previously using Prisma ORM
 
-### If you were not previously using Prisma ORM
+Initialize Prisma in your project by running `npx prisma init` in your project directory. This creates a `prisma` folder with a `schema.prisma` file and `.env` file (if not already present).
 
-1. Initialize Prisma in your project by running `npx prisma init` in your project directory.
+In the generated `.env` file, update `DATABASE_URL` to match your Prisma Postgres connection string that you received in [step 1](/getting-started/prisma-postgres/import-from-mysql-database#1-create-a-new-prisma-postgres-database):
 
-This creates a `prisma` folder with a `schema.prisma` file and a `.env` file (if not already present).
-
-2. Update your database connection string
-
-In the generated `.env` file, update `DATABASE_URL` to match your new Prisma Postgres connection string, for example
-
-```terminal
+```terminal  file=.env no-copy
 DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
 ```
 
-3. Introspect your newly migrated database
+[Introspect](/orm/prisma-schema/introspection) your newly migrated database by running:
 
-Run `npx prisma db pull` to introspect your newly migrated database and generate Prisma Client.
+```terminal
+npx prisma db pull
+```
 
-This will generate a Prisma model for each table in your database. You can now start using Prisma Client to query your data or Prisma Migrate to manage future schema changes.
+This command updates your `schema.prisma` file with models representing your migrated tables, so you can start using [Prisma Client](/orm/prisma-client) to query your data or [Prisma Migrate](/orm/prisma-migrate/getting-started) to manage future changes.
+
+
+Congratulations! You've successfully migrated your MySQL database to Prisma Postgres and configured your Prisma project. Your migration tutorial is now complete.
+
+:::note
 
 For a comprehensive guide on getting started with Prisma and Prisma Postgres, see [start from scratch with Prisma and Prisma Postgres](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-prismaPostgres).
 
-### If you were already using Prisma ORM
+:::
 
-1. Change the provider in `schema.prisma`
+### If you **were** already using Prisma ORM
 
 In your `schema.prisma` file, change the provider from `mysql` to `postgresql`:
 
-```prisma
+```prisma file=schema.prisma
 datasource db {
+  // delete-start
+  provider = "mysql"
+  // delete-end
+  // add-start
   provider = "postgres"
+  // add-end
   url      = env("DATABASE_URL")
 }
 ```
 
-2. Update your database connection string
+In the generated `.env` file, update `DATABASE_URL` to match your new Prisma Postgres connection string that you received in [step 1](/getting-started/prisma-postgres/import-from-mysql-database#1-create-a-new-prisma-postgres-database):
 
-In the generated `.env` file, update `DATABASE_URL` to match your new Prisma Postgres connection string, for example
-
-```terminal
+```terminal file=.env no-copy
 DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
 ```
 
-3. Re-introspect your schema
+Introspect your newly migrated Prisma Postgres database and generate Prisma Client:
 
-Run `npx prisma db pull` to introspect your newly migrated database and generate Prisma Client.
+```terminal
+npx prisma db pull
+```
 
-4. If you were using Prisma Migrate:
+This command refreshes your Prisma models based on the new database schema.
 
-- Delete your existing `migrations` folder (including migration_lock.toml) file
-- [Baseline your database](/orm/prisma-migrate/workflows/baselining#baselining-a-database) to start creating new migrations.
+If you were using [Prisma Migrate](/orm/prisma-migrate/getting-started) before:
+
+- Delete your existing `migrations` folder in the `prisma` directory.
+- [Baseline your database](/orm/prisma-migrate/workflows/baselining#baselining-a-database) to begin creating new migrations.
+
+Congratulations! You've successfully migrated your MySQL database to Prisma Postgres and configured your Prisma project. Your migration tutorial is now complete.
