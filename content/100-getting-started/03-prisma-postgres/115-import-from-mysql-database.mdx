@@ -125,8 +125,11 @@ ALTER SCHEMA 'database_name' RENAME TO 'public';
 
 Make sure to update the following details in the `config.load` file:
 
-- `FROM URL`: Replace `username`, `password`, `host`, `PORT`, and `database_name` with the actual connection details of your MySQL database.
-- `INTO URL`: Update this with your TCP tunnel details if you’re using a custom `host` and `port` (in this example, it’s `127.0.0.1` and port `5433` for consistency).
+- `FROM` url (MySQL database URL):
+  - Replace `username`, `password`, `host`, `PORT`, and `database_name` with the actual connection details for your MySQL database.
+  - Ensure that your connection string includes useSSL=true if SSL is required. Note that when using PlanetScale, appending sslaccept=strict will not work. For example: `mysql://username:password@host:PORT/database_name?useSSL=true`.
+  - Update the `database_name` in `ALTER SCHEMA 'database_name' RENAME TO 'public';` to exactly match the `database_name` in your MySQL connection string. 
+- `INTO` url (Postgres database URL): Update this with your TCP tunnel details if you’re using a custom `host` and `port` (in this example, it’s `127.0.0.1` and port `5433` for consistency).
 
 After saving the configuration file with your updated credentials, in the same terminal window, execute the following command:
 
@@ -231,116 +234,3 @@ If you were using [Prisma Migrate](/orm/prisma-migrate/getting-started) before:
 - [Baseline your database](/orm/prisma-migrate/workflows/baselining#baselining-a-database) to begin creating new migrations.
 
 Congratulations! You've successfully migrated your MySQL database to Prisma Postgres and configured your Prisma project. Your migration tutorial is now complete.
-
-## Migrating data from PlanetScale to Prisma Postgres
-
-
-If you are migrating from a [PlanetScale](https://planetscale.com/) database, please ensure you have completed all the steps in this guide up to [step 1](/getting-started/prisma-postgres/import-from-mysql-database#1-create-a-new-prisma-postgres-database) before proceeding. This section will guide you through migrating your database schema and then migrating only the data.
-
-### 1. Migrate your database schema to Prisma Postgres
-
-Before moving your data, you need to transfer your existing PlanetScale schema to your new Prisma Postgres instance. If you have been using Prisma ORM with PlanetScale, you may not have a `migrations` folder (since you likely used `prisma db push`).
-
-If you aren’t using Prisma ORM yet, please follow the steps to set up Prisma with PlanetScale first:
-
-1. [Setup Prisma in your project](/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale)
-2. [Introspect your PlanetScale database](/getting-started/setup-prisma/add-to-existing-project/relational-databases/connect-your-database-typescript-planetscale)
-
-Once your PlanetScale schema is available in your Prisma project, continue with the next steps.
-
-In your project `.env` file, update `DATABASE_URL` to match your new Prisma Postgres connection string that you received in the [step 1](/getting-started/prisma-postgres/import-from-mysql-database#1-create-a-new-prisma-postgres-database):
-
-```terminal file=.env no-copy
-DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
-```
-
-In your `schema.prisma` file, modify the `provider` in the `datasource` block from `mysql` to `postgresql`:
-
-```prisma file=schema.prisma
-datasource db {
-  // delete-start
-  provider = "mysql"
-  // delete-end
-  // add-start
-  provider = "postgresql"
-  // add-end
-  url      = env("DATABASE_URL")
-}
-```
-
-Run the migration command to create the tables in your Prisma Postgres database:
-
-```terminal
-npx prisma migrate dev --name init
-```
-
-This command creates a new `migrations` folder inside the `prisma` directory and applies your PlanetScale schema to your Prisma Postgres instance.
-
-### 2. Migrate *only the data* from PlanetScale using pgloader
-
-After your schema is in place on Prisma Postgres, the next step is to migrate the data from your PlanetScale database.
-
-Before proceeding, go to [step 2](/getting-started/prisma-postgres/import-from-mysql-database#2-connect-directly-to-a-prisma-postgres-instance) and start the TCP server to open a secure connection to your Prisma Postgres instance. 
-
-Now that you have an active connection to your Prisma Postgres instance, you'll use pgloader to export data from your MySQL database to Prisma Postgres.
-
-Open a separate terminal window and create a `config.load` file:
-
-```terminal
-touch config.load
-```
-
-Open the `config.load` file in your preferred text editor and copy-paste the following configuration:
-
-```text file=config.load
-LOAD DATABASE
-     FROM mysql://username:password@host:PORT/database_name?useSSL=true
-     INTO postgresql://user:password@127.0.0.1:5433/postgres
-WITH
-     quote identifiers,
-     data only
-ALTER SCHEMA 'database_name' RENAME TO 'public';
-```
-
-Make sure to update the following details in the `config.load` file:
-
-- `FROM URL`: Replace `username`, `password`, `host`, `PORT`, and `database_name` with the actual connection details of your PlanetScale database. Make sure the `useSSL=true` is appended to your connection string. 
-- `INTO URL`: Update this with your TCP tunnel details if you’re using a custom `host` and `port` (in this example, it’s `127.0.0.1` and `port` `5433` for consistency).
-
-After saving the configuration file with your updated credentials, in the same terminal window, execute the following command:
-
-```terminal
-pgloader config.load
-```
-
-You should see a log similar to this, which confirms the successful migration of your data:
-
-```terminal
-LOG report summary reset
-               table name     errors       rows      bytes      total time
--------------------------  ---------  ---------  ---------  --------------
-          fetch meta data          0          9                     2.546s
-           Create Schemas          0          0                     0.325s
-         Create SQL Types          0          0                     0.635s
-            Create tables          0          6                     5.695s
-           Set Table OIDs          0          3                     0.328s
--------------------------  ---------  ---------  ---------  --------------
-              public.post          0          8     0.5 kB          4.255s
-            public."user"          0          4     0.1 kB          2.775s
-public._prisma_migrations          0          1     0.2 kB          4.278s
--------------------------  ---------  ---------  ---------  --------------
-  COPY Threads Completion          0          4                     5.095s
-   Index Build Completion          0          5                     9.601s
-           Create Indexes          0          5                     4.116s
-          Reset Sequences          0          2                     4.540s
-             Primary Keys          0          3                     2.917s
-      Create Foreign Keys          0          1                     1.121s
-          Create Triggers          0          0                     0.651s
-         Install Comments          0          0                     0.000s
--------------------------  ---------  ---------  ---------  --------------
-        Total import time          ✓         13     0.8 kB         28.042s
-```
-
-If you see output like this, it means your data has been successfully exported to your Prisma Postgres instance.
-
-Congratulations! You've successfully migrated your PlanetScale database to Prisma Postgres and configured your Prisma project. Your migration tutorial is now complete.
