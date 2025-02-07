@@ -1,9 +1,9 @@
 ---
-title: 'Use Prisma ORM with pnpm Workspaces'
-metaTitle: 'How to use Prisma ORM with pnpm Workspaces'
+title: 'How to use Prisma ORM in a pnpm Workspaces monorepo'
+metaTitle: 'How to use Prisma ORM in a pnpm workspaces monorepo'
 description: 'Learn step-by-step how to integrate Prisma ORM in a pnpm Workspaces monorepo to build scalable and modular applications efficiently.'
 sidebar_label: 'Use Prisma ORM with pnpm Workspaces'
-image: '/img/guides/prisma-pnpm-setup.png'
+image: '/img/guides/prisma-orm-in-pnpm-monorepo.png'
 tags:
   - pnpm
   - Monorepo
@@ -46,8 +46,14 @@ packages:
   - "packages/*"
 catalogs:
   prisma:
-    prisma: 6.3.1
+    prisma: latest
 ```
+
+:::note 
+
+Explictly mention the lastest version of [prisma](https://www.npmjs.com/package/prisma) when you're following the guide in the `pnpm-workspace.yaml` to pin it for your project. At the time of writing it's version `6.3.1`.
+
+:::
 
 The `catalogs` help you pin a certain version of prisma across your repositories. You can learn more about them here.
 
@@ -60,7 +66,7 @@ mkdir -p packages/database
 
 ## 2. Prepare the shared database package
 
-Now we'll prepare a shared database package using Prisma to shared across the monorepo:
+Now we'll prepare a shared database package using Prisma to shared across the monorepo.
 
 Navigate to the `packages/database` directory and initialize a new package:
 
@@ -69,9 +75,9 @@ cd packages/database
 pnpm init 
 ```
 
-Then add `prisma` to your package.json as a dev dependecy:
+Then add `prisma` to your `package.json` file as a dev dependecy:
 
-```json
+```json file=database/package.json
 "devDependencies": {
     "prisma": "catalog:prisma"
 }
@@ -96,40 +102,25 @@ pnpm add prisma -D --filter database
 
 Install the Prisma CLI and the Prisma Client as dependencies:
 
-<TabbedContent code>
-
-<TabItem value="pnpm">
 
 ```terminal
 pnpm add prisma --save-dev
 pnpm add @prisma/client
 ```
 
-</TabItem>
-
-</TabbedContent>
-
-## 3. Initialize Prisma in the database package
+## Initialize Prisma in the database package
 
 Inside the `packages/database` directory, run the Prisma initialization command:
 
-<TabbedContent code>
-
-<TabItem value="pnpm">
-
 ```terminal
-pnpm exec prisma init
+pnpm prisma init
 ```
-
-</TabItem>
-
-</TabbedContent>
 
 This command creates several files in the `packages/database` directory:
 
-- **schema.prisma**: Where your [Prisma schema](/orm/prisma-schema/overview) is defined.
-- **.env**: Contains your `DATABASE_URL`. Replace this with a valid connection string for your database.
-- **.gitignore**: Configured to ignore sensitive files.
+- **`schema.prisma`**: Where your [Prisma schema](/orm/prisma-schema/overview) is defined.
+- **`.env`**: Contains your `DATABASE_URL`. Replace this with a valid connection string for your database.
+- **`.gitignore`**: Configured to ignore sensitive files.
 
 ### Update the Prisma schema
 
@@ -166,28 +157,27 @@ Add useful scripts in the `packages/database/package.json` to generate the clien
 
 ```json
 {
+
+//add-start
   "scripts": {
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev --skip-generate",
-    "db:deploy": "prisma migrate deploy"
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
   }
+//add-end
 }
 ```
 
 Since pnpm Workspaces installs dependencies at the root, you can execute these scripts from the monorepo root with:
 
-<TabbedContent code>
-
-<TabItem value="pnpm">
 
 ```terminal
 pnpm --filter @workspace/db run db:generate
 pnpm --filter @workspace/db run db:migrate
 ```
 
-</TabItem>
 
-</TabbedContent>
 
 ## 5. Export the Prisma Client for use across the monorepo
 
@@ -200,13 +190,16 @@ mkdir src
 Then, create a file `src/client.ts` that instantiates the Prisma Client:
 
 ```ts file=packages/database/src/client.ts
-import { PrismaClient } from "../generated/client";
+import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+const prisma = new PrismaClient().$extends(withAccelerate())
 
-export const prisma = globalForPrisma.prisma || new PrismaClient();
+const globalForPrisma = global as unknown as { prisma: typeof prisma }
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+export default prisma
 ```
 
 Create an `index.ts` file in the same directory to re-export the Prisma Client instance and the generated types:
@@ -220,7 +213,7 @@ To ensure that the entrypoint of the package is correctly recognized, verify tha
 
 ```json
 {
-  "name": "@workspace/db",
+  "name": "database",
   "version": "0.0.0",
   "main": "src/index.ts",
   "exports": {
