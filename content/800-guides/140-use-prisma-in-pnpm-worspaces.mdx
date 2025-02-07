@@ -66,7 +66,7 @@ mkdir -p packages/database
 
 ## 2. Prepare the shared database package
 
-Now we'll prepare a shared database package using Prisma to shared across the monorepo.
+Now we'll prepare a shared database package using Prisma to be shared across the monorepo. 
 
 Navigate to the `packages/database` directory and initialize a new package:
 
@@ -75,15 +75,17 @@ cd packages/database
 pnpm init 
 ```
 
-Then add `prisma` to your `package.json` file as a dev dependecy:
+Then add `prisma` to your `package.json` file as a development dependecy:
 
 ```json file=database/package.json
 "devDependencies": {
+  // add-start
     "prisma": "catalog:prisma"
+  // add-end 
 }
 ```
 
-Then run pnpm install:
+Then install Prisma in your database package:
 
 ```terminal
 pnpm install
@@ -92,105 +94,84 @@ pnpm install
 Then install the required dependencies for the database package:
 
 ```terminal
-pnpm add prisma -D --filter database
+pnpm add typescript tsx @types/node -D
+pnpm add @prisma/extension-accelerate
 ```
 
-### Setup your shared prisma package
+:::info
 
+We're going to be using [Prisma Postgres](/prisma-postgres/getting-started) in this guide. If you're not using a Prisma Postgres database, you won't need the `@prisma/extension-accelerate` package.
 
-### Installing Prisma ORM
+:::
 
-Install the Prisma CLI and the Prisma Client as dependencies:
+### Install Prisma ORM and create your first models
 
+Then, run `prisma init --db` to initialize Prisma ORM in your project.
 
 ```terminal
-pnpm add prisma --save-dev
-pnpm add @prisma/client
+pnpm prisma init --db
 ```
 
-## Initialize Prisma in the database package
+:::info
 
-Inside the `packages/database` directory, run the Prisma initialization command:
+We're going to be using [Prisma Postgres](/prisma-postgres/getting-started) in this guide. If you're not using a Prisma Postgres database, you won't need to add the `--db` flag.
 
-```terminal
-pnpm prisma init
-```
+:::
 
-This command creates several files in the `packages/database` directory:
+This will open your browser and help you setup a Prisma Data Platform account or login to your account if you dpon't have one. Then, it will create a new `prisma` directory in your project, with a `schema.prisma` file inside of it. The `schema.prisma` file is where you will define your database models.
 
-- **`schema.prisma`**: Where your [Prisma schema](/orm/prisma-schema/overview) is defined.
-- **`.env`**: Contains your `DATABASE_URL`. Replace this with a valid connection string for your database.
-- **`.gitignore`**: Configured to ignore sensitive files.
+The `prisma init` command also creates a `.env` file in your project root with the Prisma Postgres database url. This file is used to store your database connection string.
 
-### Update the Prisma schema
+Next, let's add a `User` model models to your `schema.prisma` file:
 
-Edit `packages/database/prisma/schema.prisma` to define your database schema. For example, add a simple `User` model:
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+  //add-start
+  output = "../generated/client"
+  //add-end
+}
 
-```prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/client"
-}
-
+//add-start
 model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  email     String   @unique
-  name      String?
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
 }
+//add-end
 ```
+
+### The importance of generating Prisma types in a [custom directory](/orm/prisma-client/setup-and-configuration/generating-prisma-client#using-a-custom-output-path)
+
+In the `schema.prisma` file, we specify a custom `output` path where Prisma will generate its types. This ensures Prisma's types are resolved correctly.
 
 :::note
 
-By specifying a custom `output` path for the generated Prisma Client, we ensure that the types are accessible across the monorepo.
+In this guide, the types will be generated in the `database/generated/client` directory.
 
 :::
 
-## 4. Create scripts to run Prisma CLI commands
+Add helper scripts to your `package.json` file in the database package:
 
-Add useful scripts in the `packages/database/package.json` to generate the client and handle migrations:
-
-```json
+```json file=database/package.json
 {
-
-//add-start
   "scripts": {
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate --no-engine",
     "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
+    "db:deploy": "prisma migrate deploy"
   }
-//add-end
 }
 ```
 
-Since pnpm Workspaces installs dependencies at the root, you can execute these scripts from the monorepo root with:
+Then create an `client.ts` file:
 
-
-```terminal
-pnpm --filter @workspace/db run db:generate
-pnpm --filter @workspace/db run db:migrate
-```
-
-
-
-## 5. Export the Prisma Client for use across the monorepo
-
-Create a `src` folder in the `packages/database` directory:
-
-```terminal
-mkdir src
-```
-
-Then, create a file `src/client.ts` that instantiates the Prisma Client:
-
-```ts file=packages/database/src/client.ts
-import { PrismaClient } from '@prisma/client'
+```ts file=database/client.ts
+import { PrismaClient } from "./generated/client";
 import { withAccelerate } from '@prisma/extension-accelerate'
 
 const prisma = new PrismaClient().$extends(withAccelerate())
@@ -202,144 +183,9 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 export default prisma
 ```
 
-Create an `index.ts` file in the same directory to re-export the Prisma Client instance and the generated types:
+Then create an `index.ts` file:
 
-```ts file=packages/database/src/index.ts
-export { prisma } from './client';
-export * from "../generated/client";
+```ts file=database/index.ts
+export { prisma } from "./client"
+export * from "./generated/client";
 ```
-
-To ensure that the entrypoint of the package is correctly recognized, verify that your `packages/database/package.json` includes the following:
-
-```json
-{
-  "name": "database",
-  "version": "0.0.0",
-  "main": "src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
-  }
-}
-```
-
-## 6. Integrate the Prisma package into your web application
-
-Now let’s add a simple web application to consume the database package. Navigate to `apps/web` and initialize a new package:
-
-```terminal
-cd ../../apps/web
-pnpm init -y
-```
-
-Update the `apps/web/package.json` to add a dependency on the database package:
-
-```json
-{
-  "name": "web",
-  "version": "0.0.0",
-  "dependencies": {
-    "@workspace/db": "*"
-  }
-}
-```
-
-Install the dependencies from the monorepo root:
-
-```terminal
-cd ../../
-pnpm install
-```
-
-### Use Prisma in your web app
-
-In your web app, create a file (for example, `index.ts`) and import the Prisma Client instance from the database package:
-
-```ts file=apps/web/index.ts
-import { prisma } from '@workspace/db';
-
-async function main() {
-  const user = await prisma.user.findFirst();
-  console.log(user?.name ?? "No user added yet");
-}
-
-main()
-  .catch(e => console.error(e))
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-```
-
-Don’t forget to create a `.env` file in the `apps/web` directory with the same `DATABASE_URL` as defined in `packages/database/.env`:
-
-```env
-DATABASE_URL="your-database-url-here"
-```
-
-:::note
-
-If you prefer using a single `.env` file at the monorepo root, consider tools like [`dotenvx`](https://dotenvx.com/docs/monorepos/pnpm) to share environment variables across your packages. Just make sure each package loads the appropriate configuration.
-
-:::
-
-## 7. Running the project
-
-### Migrate and generate Prisma Client
-
-From the root of your monorepo, run the migration and generate commands:
-
-<TabbedContent code>
-
-<TabItem value="pnpm">
-
-```terminal
-pnpm --filter @workspace/db run db:migrate
-pnpm --filter @workspace/db run db:generate
-```
-
-</TabItem>
-
-</TabbedContent>
-
-### Run the web app
-
-You can now run your web app. For instance, if you have a build script in `apps/web/package.json`, run:
-
-<TabbedContent code>
-
-<TabItem value="pnpm">
-
-```terminal
-pnpm --filter web run dev
-```
-
-</TabItem>
-
-</TabbedContent>
-
-Open your terminal output or browser console to see the message:
-
-```
-No user added yet
-```
-
-:::note
-
-You can add users to your database using a seed script or via [Prisma Studio](/orm/tools/prisma-studio). To start Prisma Studio, navigate to `packages/database` and run:
-
-<TabbedContent code>
-
-<TabItem value="pnpm">
-
-```terminal
-pnpm exec prisma studio
-```
-
-</TabItem>
-
-</TabbedContent>
-
-This will launch a GUI at [http://localhost:5555](http://localhost:5555) where you can manage your data.
-
-:::
-
-Congratulations! You’ve successfully set up Prisma ORM in a pnpm Workspaces monorepo. Enjoy building scalable and modular applications with this powerful setup!
