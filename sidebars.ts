@@ -295,8 +295,28 @@ const sidebars: SidebarsConfig = {
           },
           items: [
             "getting-started/prisma-postgres/from-the-cli",
-            "getting-started/prisma-postgres/import-from-existing-database",
             "getting-started/prisma-postgres/upgrade-from-early-access",
+            {
+              type: "category",
+              collapsible: false,
+              label: "Import from existing database",
+              link: {
+                type: "doc",
+                id: "getting-started/prisma-postgres/import-from-existing-database-postgresql",
+              },
+              items: [
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-postgres/import-from-existing-database-postgresql",
+                  className: "hidden-sidebar",
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-postgres/import-from-existing-database-mysql",
+                  className: "hidden-sidebar",
+                },
+              ],
+            },
           ],
         },
       ],
