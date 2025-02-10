@@ -447,7 +447,7 @@ const sidebars: SidebarsConfig = {
           label: "Tool Guides",
           collapsed: false,
           collapsible: false,
-          items: ["guides/realtime-apps", "guides/cursor", "guides/docker"],
+          items: ["guides/realtime-apps", "guides/cursor", "guides/docker", "guides/use-prisma-in-pnpm-workspaces"],
         },
         {
           type: "category",
