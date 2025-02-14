@@ -43,6 +43,14 @@ export default function DocItemContent({ children }) {
               />
             </section>
           )}
+          {
+            frontMatter.completion_time &&
+            <div className="completion-time-wrapper">
+              <div className="completion-time-container">
+                {frontMatter.completion_time}
+              </div>
+            </div>
+          }
         </header>
       )}
       <MDXContent>{children}</MDXContent>
