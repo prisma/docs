@@ -95,7 +95,36 @@ const config: Config = {
     async function pluginLlmsTxt(context) {
       return {
         name: "llms-txt-plugin",
-        postBuild: async ({ outDir, routes }) => {
+        loadContent: async () => {
+          const { siteDir } = context;
+          const contentDir = path.join(siteDir, "content");
+          const allMdx: string[] = [];
+
+          // recursive function to get all mdx files
+          const getMdxFiles = async (dir: string) => {
+            const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                await getMdxFiles(fullPath);
+              } else if (entry.name.endsWith(".mdx")) {
+                const content = await fs.promises.readFile(fullPath, "utf8");
+                allMdx.push(content);
+              }
+            }
+          };
+
+          await getMdxFiles(contentDir);
+          return { allMdx };
+        },
+        postBuild: async ({ content, routes, outDir }) => {
+          const { allMdx } = content as { allMdx: string[] };
+
+          // Write concatenated MDX content
+          const concatenatedPath = path.join(outDir, "llms-full.txt");
+          await fs.promises.writeFile(concatenatedPath, allMdx.join("\n\n---\n\n"));
+
           // we need to dig down several layers:
           // find PluginRouteConfig marked by plugin.name === "docusaurus-plugin-content-docs"
           const docsPluginRouteConfig = routes.filter(
