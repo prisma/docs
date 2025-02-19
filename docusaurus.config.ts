@@ -110,7 +110,22 @@ const config: Config = {
                 await getMdxFiles(fullPath);
               } else if (entry.name.endsWith(".mdx")) {
                 const content = await fs.promises.readFile(fullPath, "utf8");
-                allMdx.push(content);
+
+                // extract title from frontmatter if it exists
+                const titleMatch = content.match(
+                  /^---\n(?:.*\n)*?title:\s*["']?([^"'\n]+)["']?\n(?:.*\n)*?---\n/
+                );
+                const title = titleMatch ? titleMatch[1] : "";
+
+                // strip frontmatter
+                const contentWithoutFrontmatter = content.replace(/^---\n[\s\S]*?\n---\n/, "");
+
+                // combine title and content
+                const contentWithTitle = title
+                  ? `# ${title}\n${contentWithoutFrontmatter}`
+                  : contentWithoutFrontmatter;
+
+                allMdx.push(contentWithTitle);
               }
             }
           };
@@ -123,7 +138,7 @@ const config: Config = {
 
           // Write concatenated MDX content
           const concatenatedPath = path.join(outDir, "llms-full.txt");
-          await fs.promises.writeFile(concatenatedPath, allMdx.join("\n\n---\n\n"));
+          await fs.promises.writeFile(concatenatedPath, allMdx.join("\n---\n\n"));
 
           // we need to dig down several layers:
           // find PluginRouteConfig marked by plugin.name === "docusaurus-plugin-content-docs"
