@@ -39,15 +39,12 @@ export default function Layout(props: Props): ReactNode {
       currentParams.has("utm_campaign");
 
     if (!hasUTMParams) {
-      // ✅ Retrieve UTM parameters from localStorage
       const storedParams = localStorage.getItem("utm_params");
 
       if (storedParams) {
-        // ✅ Append UTM parameters to the docs URL without refreshing the page
         history.replace(`${location.pathname}?${storedParams}`);
       }
     } else {
-      // ✅ If UTM params exist, store them for future use
       localStorage.setItem("utm_params", currentParams.toString());
     }
   }, [location, history]);
