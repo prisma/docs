@@ -117,12 +117,26 @@ const config: Config = {
                 );
                 const title = titleMatch ? titleMatch[1] : "";
 
+                // Get the relative path for URL construction
+                const relativePath = path.relative(contentDir, fullPath);
+
+                // Convert file path to URL path by:
+                // 1. Removing numeric prefixes (like 100-, 01-, etc.)
+                // 2. Removing the .mdx extension
+                let urlPath = relativePath
+                  .replace(/^\d+-/, "")
+                  .replace(/\/\d+-/g, "/")
+                  .replace(/\.mdx$/, "");
+
+                // Construct the full URL
+                const fullUrl = `https://www.prisma.io/docs/${urlPath}`;
+
                 // strip frontmatter
                 const contentWithoutFrontmatter = content.replace(/^---\n[\s\S]*?\n---\n/, "");
 
-                // combine title and content
+                // combine title and content with URL
                 const contentWithTitle = title
-                  ? `# ${title}\n${contentWithoutFrontmatter}`
+                  ? `# ${title}\n\nURL: ${fullUrl}\n${contentWithoutFrontmatter}`
                   : contentWithoutFrontmatter;
 
                 allMdx.push(contentWithTitle);
