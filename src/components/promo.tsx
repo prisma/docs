@@ -7,11 +7,6 @@ export const Promo = () => {
 
   const promoOptions: PromoOptions = [
     {
-      text: `Want real-time updates from your database without manual polling?`,
-      link: "https://pris.ly/sidebar-promo/real-time-updates-without-polling",
-      color: "teal",
-    },
-    {
       text: `Need to sync data instantly to your applications?`,
       link: "https://pris.ly/sidebar-promo/sync-data-to-apps",
       color: "indigo",

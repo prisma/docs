@@ -39,14 +39,6 @@ export const ProductLinkData = {
     link: "/accelerate",
     icon: "fa-regular fa-bolt",
   },
-  t_pulse: {
-    title: "Real-time db events",
-    eyebrow: "Pulse",
-    description:
-      "Distribute change events to your application at scale, enabling database changes to trigger events and actions in real-time.",
-    link: "/pulse",
-    icon: "fa-regular fa-signal-stream",
-  },
 };
 
 export const ORMCardLinkData = {
@@ -97,11 +89,6 @@ export const ORMCardLinkData = {
       {
         url: "/accelerate/api-reference",
         title: "Accelerate API reference",
-      },
-
-      {
-        url: "/pulse/api-reference",
-        title: "Pulse API reference",
       },
       {
         url: "/platform",
@@ -202,12 +189,6 @@ export const GeneralLinks_Grow = [
       "How to improve query performance by configuring cache behavior using TTL and SWR.",
     url: "/accelerate/caching",
     icon: "fa-solid fa-bolt",
-  },
-  {
-    title: `React to database changes`,
-    description: "Use Pulse to stream database events to your app in real-time. ",
-    url: "/pulse/getting-started",
-    icon: "fa-solid fa-signal-stream",
   },
 ];
 

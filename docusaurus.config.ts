@@ -48,7 +48,7 @@ const config: Config = {
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
-        "How can I setup relations in my Prisma Schema?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?",
+        "How can I setup relations in my Prisma Schema?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?",
       "data-button-image": "https://www.prisma.io/docs/ai_button.svg",
       "data-button-width": "64px",
       "data-button-height": "64px",
@@ -310,12 +310,6 @@ const config: Config = {
               className: "teal",
               label: "Accelerate",
             },
-            {
-              type: "docSidebar",
-              sidebarId: "pulseSidebar",
-              className: "teal",
-              label: "Pulse",
-            },
           ],
         },
         {
@@ -433,14 +427,6 @@ const config: Config = {
             {
               label: "Accelerate",
               href: "https://www.prisma.io/accelerate",
-              target: "_self",
-              customProps: {
-                internal: true,
-              },
-            },
-            {
-              label: "Pulse",
-              href: "https://www.prisma.io/pulse",
               target: "_self",
               customProps: {
                 internal: true,
