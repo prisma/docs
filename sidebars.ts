@@ -439,6 +439,7 @@ const sidebars: SidebarsConfig = {
             "guides/cloudflare-d1",
             "guides/data-migration",
             "guides/implementing-schema-changes",
+            "guides/multiple-prisma-clients",
           ],
         },
         {
