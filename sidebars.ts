@@ -433,7 +433,6 @@ const sidebars: SidebarsConfig = {
           collapsed: false,
           collapsible: false,
           items: [
-            "orm/more/ai-tools/cursor",
             "guides/docker",
             "guides/use-prisma-in-pnpm-workspaces",
           ],
