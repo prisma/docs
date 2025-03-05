@@ -449,7 +449,6 @@ const sidebars: SidebarsConfig = {
           collapsible: false,
           items: [
             "guides/realtime-apps",
-            "orm/more/ai-tools/cursor",
             "guides/docker",
             "guides/use-prisma-in-pnpm-workspaces",
           ],
