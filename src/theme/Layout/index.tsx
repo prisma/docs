@@ -51,7 +51,7 @@ export default function Layout(props: Props): ReactNode {
   
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isKapaModalOpen = document.querySelector('#__docusaurus[aria-hidden="true"]'); // Replace with actual modal selector
+      const isKapaModalOpen = document.querySelector('#__docusaurus[aria-hidden="true"]');
       if (isKapaModalOpen && event.key === "/") {
         event.stopPropagation();
       }
