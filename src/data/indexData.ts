@@ -39,6 +39,14 @@ export const ProductLinkData = {
     link: "/accelerate",
     icon: "fa-regular fa-bolt",
   },
+  t_platform: {
+    title: "Manage your workspaces and projects",
+    eyebrow: "Platform Console",
+    description:
+      "Manage your Prisma Data Platform projects, account settings, workspaces, and billing.",
+    link: "/platform",
+    icon: "fa-regular fa-desktop",
+  },
 };
 
 export const ORMCardLinkData = {
@@ -189,6 +197,13 @@ export const GeneralLinks_Grow = [
       "How to improve query performance by configuring cache behavior using TTL and SWR.",
     url: "/accelerate/caching",
     icon: "fa-solid fa-bolt",
+  },
+  {
+    title: `Managed Postgres database`,
+    description:
+      "Deploy Prisma Postgres for a scalable, production-ready database featuring integrated connection pooling.",
+    url: "/postgres/",
+    icon: "fa-solid fa-chart-pyramid",
   },
 ];
 

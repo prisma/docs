@@ -433,6 +433,14 @@ const config: Config = {
               },
             },
             {
+              label: "Postgres",
+              href: "https://www.prisma.io/postgres",
+              target: "_self",
+              customProps: {
+                internal: true,
+              },
+            },
+            {
               label: "Pricing",
               href: "https://www.prisma.io/pricing",
               target: "_self",
