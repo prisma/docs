@@ -48,6 +48,19 @@ export default function Layout(props: Props): ReactNode {
       localStorage.setItem("utm_params", currentParams.toString());
     }
   }, [location, history]);
+  
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      const isKapaModalOpen = document.querySelector('#__docusaurus[aria-hidden="true"]'); // Replace with actual modal selector
+      if (isKapaModalOpen && event.key === "/") {
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, []);
 
   return (
     <LayoutProvider>
