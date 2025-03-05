@@ -53,7 +53,10 @@ function HomepageProductCards() {
               <div className={styles.cardHeaderContent}>
                 <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
                 <Heading as="h4" className={styles.h4}>
-                  {ProductLinkData[e].title}
+                  <div
+                    className={styles.h4}
+                    dangerouslySetInnerHTML={{ __html: ProductLinkData[e].title }}
+                  ></div>
                 </Heading>
               </div>
             </div>
