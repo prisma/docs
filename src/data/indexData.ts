@@ -1,6 +1,6 @@
 export const ProductLinkData = {
   i_orm: {
-    title: "Talk to your database, easily",
+    title: "Talk easily <br/>to your database",
     eyebrow: "ORM",
     description:
       "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
@@ -8,7 +8,7 @@ export const ProductLinkData = {
     icon: "fa-regular fa-database",
   },
   i_studio: {
-    title: "Explore and manipulate your data",
+    title: "Explore and manipulate <br>your data",
     eyebrow: "Studio",
     description:
       "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
@@ -16,7 +16,7 @@ export const ProductLinkData = {
     icon: "fa-regular fa-table",
   },
   t_postgres: {
-    title: "Managed Postgres for global workloads",
+    title: "Managed Postgres <br/>for global workloads",
     eyebrow: "Postgres",
     description:
       "A managed PostgreSQL database without cold starts. Easily deploy your database in three clicks, explore with a generous free tier, and scale as needed.",
@@ -32,20 +32,20 @@ export const ProductLinkData = {
     icon: "fa-regular fa-magnifying-glass-chart",
   },
   t_accelerate: {
-    title: "Connection pooling & caching",
+    title: "Edge caching & connection pooling",
     eyebrow: "Accelerate",
     description:
       "A fully managed global connection pool and caching layer for your existing database, enabling query-level cache policies.",
     link: "/accelerate",
     icon: "fa-regular fa-bolt",
   },
-  t_pulse: {
-    title: "Real-time db events",
-    eyebrow: "Pulse",
+  t_platform: {
+    title: "Manage your workspaces <br/>and projects",
+    eyebrow: "Platform Console",
     description:
-      "Distribute change events to your application at scale, enabling database changes to trigger events and actions in real-time.",
-    link: "/pulse",
-    icon: "fa-regular fa-signal-stream",
+      "Manage your Prisma Data Platform projects, account settings, workspaces, and billing.",
+    link: "/platform",
+    icon: "fa-regular fa-desktop",
   },
 };
 
@@ -97,11 +97,6 @@ export const ORMCardLinkData = {
       {
         url: "/accelerate/api-reference",
         title: "Accelerate API reference",
-      },
-
-      {
-        url: "/pulse/api-reference",
-        title: "Pulse API reference",
       },
       {
         url: "/platform",
@@ -204,10 +199,11 @@ export const GeneralLinks_Grow = [
     icon: "fa-solid fa-bolt",
   },
   {
-    title: `React to database changes`,
-    description: "Use Pulse to stream database events to your app in real-time. ",
-    url: "/pulse/getting-started",
-    icon: "fa-solid fa-signal-stream",
+    title: `Managed Postgres database`,
+    description:
+      "Deploy Prisma Postgres for a scalable, production-ready database featuring integrated connection pooling.",
+    url: "/postgres/",
+    icon: "fa-solid fa-chart-pyramid",
   },
 ];
 
