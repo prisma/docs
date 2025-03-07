@@ -31,23 +31,24 @@ export default function Layout(props: Props): ReactNode {
   const location = useLocation(); // Get current URL
   const history = useHistory(); // Router navigation
 
-  useEffect(() => {
-    const currentParams = new URLSearchParams(location.search);
-    const hasUTMParams =
-      currentParams.has("utm_source") ||
-      currentParams.has("utm_medium") ||
-      currentParams.has("utm_campaign");
+  // Commenting out to remove UTM local storge issue
+  // useEffect(() => {
+  //   const currentParams = new URLSearchParams(location.search);
+  //   const hasUTMParams =
+  //     currentParams.has("utm_source") ||
+  //     currentParams.has("utm_medium") ||
+  //     currentParams.has("utm_campaign");
 
-    if (!hasUTMParams) {
-      const storedParams = localStorage.getItem("utm_params");
+  //   if (!hasUTMParams) {
+  //     const storedParams = localStorage.getItem("utm_params");
 
-      if (storedParams) {
-        history.replace(`${location.pathname}?${storedParams}`);
-      }
-    } else {
-      localStorage.setItem("utm_params", currentParams.toString());
-    }
-  }, [location, history]);
+  //     if (storedParams) {
+  //       history.replace(`${location.pathname}?${storedParams}`);
+  //     }
+  //   } else {
+  //     localStorage.setItem("utm_params", currentParams.toString());
+  //   }
+  // }, [location, history]);
   
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
