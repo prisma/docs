@@ -25,17 +25,17 @@ function HomepageCard({
   link?: string;
 }): JSX.Element {
   return (
-    link 
+    link
       ? <Link className={className} to={link}>
-          {heading}
-          {body}
-          <Icon className={styles.mobileArrow} icon="fa-regular fa-arrow-right" size="24px" color="var(--tertiary-font-color)"/>
-        </Link>
+        {heading}
+        {body}
+        <Icon className={styles.mobileArrow} icon="fa-regular fa-arrow-right" size="24px" color="var(--tertiary-font-color)" />
+      </Link>
       : <div className={className}>
-          {heading}
-          {body}
-          <div className={styles.linkGrid}>{links}</div>
-        </div>
+        {heading}
+        {body}
+        <div className={styles.linkGrid}>{links}</div>
+      </div>
 
   );
 }
@@ -53,7 +53,10 @@ function HomepageProductCards() {
               <div className={styles.cardHeaderContent}>
                 <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
                 <Heading as="h4" className={styles.h4}>
-                  {ProductLinkData[e].title}
+                  <div
+                    className={styles.h4}
+                    dangerouslySetInnerHTML={{ __html: ProductLinkData[e].title }}
+                  ></div>
                 </Heading>
               </div>
             </div>
@@ -167,8 +170,7 @@ function HomepageDatabasesSection() {
         information about supported features and types for each database.
         <br />
         To explore supported databases for Accelerate, visit the{" "}
-        <Link to="/accelerate/getting-started#prerequisites">prerequisites section</Link>. For
-        Pulse, see the <Link to="/pulse/database-setup">database setup documentation</Link>.
+        <Link to="/accelerate/getting-started#prerequisites">prerequisites section</Link>.
       </div>
       <div className={styles.databaseGrid}>
         {DatabaseData.map((e) => (
@@ -246,7 +248,7 @@ export default function Home(): JSX.Element {
       <main className={styles.mainHome}>
         <HomepageProductCards />
         <HomepageORMLinksSection />
-        
+
         <HomepageDatabasesSection />
         <HomepageCommunitySection />
       </main>
