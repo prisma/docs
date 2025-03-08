@@ -162,7 +162,7 @@ const config: Config = {
 
           // docsPluginRouteConfig has a routes property has a record with the path "/" that contains all docs routes.
           const allDocsRouteConfig = docsPluginRouteConfig.routes?.filter(
-            (route) => route.path === "/"
+            (route) => route.path === DOCUSAURUS_BASE_URL
           )[0];
 
           // A little type checking first
@@ -185,11 +185,7 @@ const config: Config = {
 
           // Write llms.txt file
           const llmsTxtPath = path.join(outDir, "llms.txt");
-          try {
-            fs.writeFileSync(llmsTxtPath, llmsTxt);
-          } catch (err) {
-            throw err;
-          }
+          await fs.promises.writeFile(llmsTxtPath, llmsTxt);
         },
       };
     },
