@@ -413,7 +413,7 @@ const sidebars: SidebarsConfig = {
           label: "Framework Guides",
           collapsed: false,
           collapsible: false,
-          items: ["guides/turborepo", "guides/nextjs", "guides/nuxt"],
+          items: ["guides/turborepo", "guides/nextjs", "guides/nuxt", "guides/tanstack-start"],
         },
         {
           type: "category",
@@ -432,10 +432,7 @@ const sidebars: SidebarsConfig = {
           label: "Tool Guides",
           collapsed: false,
           collapsible: false,
-          items: [
-            "guides/docker",
-            "guides/use-prisma-in-pnpm-workspaces",
-          ],
+          items: ["guides/docker", "guides/use-prisma-in-pnpm-workspaces"],
         },
         {
           type: "category",
