@@ -61,29 +61,29 @@ export default function DocItemContent({ children }) {
               get involved, and collaborate with other developers:
               <ul>
                 <li>
-                  <a href="https://twitter.com/intent/follow?screen_name=@prisma" target="_blank">
+                  <a href="https://twitter.com/intent/follow?screen_name=prisma" target="_blank">
                     Follow us on X
                   </a>{" "}
                   for announcements, live events and useful tips.
                 </li>
                 <li>
-                  <a href="https://twitter.com/intent/follow?screen_name=@prisma" target="_blank">
+                  <a href="https://pris.ly/discord" target="_blank">
                     Join our Discord
                   </a>{" "}
                   to ask questions, talk to the community, and get active support through
                   conversations.
                 </li>
                 <li>
-                  <a href="https://twitter.com/intent/follow?screen_name=prisma" target="_blank">
+                  <a href="https://pris.ly/youtube" target="_blank">
                     Subscribe on YouTube
                   </a>{" "}
                   for tutorials, demos, and streams.
                 </li>
                 <li>
-                  <a href="https://twitter.com/intent/follow?screen_name=@prisma" target="_blank">
+                  <a href="https://github.com/prisma/" target="_blank">
                     Engage on GitHub
                   </a>{" "}
-                  by starring the repository, [reporting issues](/), or contributing to an issue.
+                  by starring the repository, reporting issues, or contributing to an issue.
                 </li>
               </ul>
               We genuinely value your involvement and look forward to having you as part of our
