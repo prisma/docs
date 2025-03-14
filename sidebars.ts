@@ -413,7 +413,7 @@ const sidebars: SidebarsConfig = {
           label: "Framework Guides",
           collapsed: false,
           collapsible: false,
-          items: ["guides/turborepo", "guides/nextjs", "guides/nuxt"],
+          items: ["guides/turborepo", "guides/nextjs", "guides/nuxt", "guides/tanstack-start"],
         },
         {
           type: "category",
