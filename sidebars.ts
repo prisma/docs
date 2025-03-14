@@ -424,7 +424,7 @@ const sidebars: SidebarsConfig = {
             "guides/cloudflare-d1",
             "guides/data-migration",
             "guides/implementing-schema-changes",
-            "guides/multiple-prisma-clients",
+            "guides/multiple-databases",
           ],
         },
         {
@@ -432,10 +432,7 @@ const sidebars: SidebarsConfig = {
           label: "Tool Guides",
           collapsed: false,
           collapsible: false,
-          items: [
-            "guides/docker",
-            "guides/use-prisma-in-pnpm-workspaces",
-          ],
+          items: ["guides/docker", "guides/use-prisma-in-pnpm-workspaces"],
         },
         {
           type: "category",
