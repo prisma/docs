@@ -265,7 +265,7 @@ export const CommunityLinksData = [
     description:
       "Chat in real-time, hang out, and share ideas with community members and our team.",
     icon: "fa-brands fa-discord",
-    link: "https://pris.ly/discord",
+    link: "https://pris.ly/discord?utm_source=docs&utm_campaign=tracking-cta&utm_medium=community-links",
     linkText: "Join our server",
   },
   {
@@ -274,7 +274,7 @@ export const CommunityLinksData = [
     description:
       "Browse the Prisma ORM source code, send feedback, or join the discussion on GitHub.",
     icon: "fa-brands fa-github",
-    link: "https://github.com/prisma",
+    link: "https://pris.ly/github?utm_source=docs&utm_campaign=tracking-cta&utm_medium=community-links",
     linkText: "Contribute in GitHub",
   },
   {
@@ -282,7 +282,7 @@ export const CommunityLinksData = [
     title: "X",
     description: "Stay up-to-date, join the discussion, and connect with the community on X.",
     icon: "fa-brands fa-x-twitter",
-    link: "https://twitter.com/prisma",
+    link: "https://pris.ly/x?utm_source=docs&utm_campaign=tracking-cta&utm_medium=community-links",
     linkText: "Follow us on X",
   },
 ];
