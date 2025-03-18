@@ -337,7 +337,7 @@ const config: Config = {
     },
     algolia: {
       appId: "MF58UJZ648",
-      apiKey: "fd3d0a05bfe5d280348060ca5ea416be",
+      apiKey: "aae3f55d59a198896509e9fbb30618e7",
       indexName: "prisma",
       contextualSearch: true,
       replaceSearchResultPathname: {
