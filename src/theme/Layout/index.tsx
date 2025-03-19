@@ -30,29 +30,22 @@ export default function Layout(props: Props): ReactNode {
   useKeyboardNavigation();
   const location = useLocation(); // Get current URL
   const history = useHistory(); // Router navigation
+
   useEffect(() => {
     const currentParams = new URLSearchParams(location.search);
     const hasUTMParams =
-      currentParams.has('utm_source') ||
-      currentParams.has('utm_medium') ||
-      currentParams.has('utm_campaign');
+      currentParams.has("utm_source") ||
+      currentParams.has("utm_medium") ||
+      currentParams.has("utm_campaign");
 
-    // If there are no UTM parameters in the URL, check localStorage
     if (!hasUTMParams) {
-      const storedParams = localStorage.getItem('utm_params');
+      const storedParams = localStorage.getItem("utm_params");
 
-      // If stored UTM parameters exist, append them to the URL
       if (storedParams) {
-        const newURL = `${location.pathname}?${storedParams}`;
-
-        // Avoid infinite loops by checking if the URL is already updated
-        if (location.search !== `?${storedParams}`) {
-          history.replace(newURL);
-        }
+        history.replace(`${location.pathname}?${storedParams}`);
       }
     } else {
-      // If UTM parameters are present in the URL, save them to localStorage
-      localStorage.setItem('utm_params', currentParams.toString());
+      localStorage.setItem("utm_params", currentParams.toString());
     }
   }, [location, history]);
   
