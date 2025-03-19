@@ -19,6 +19,7 @@ const useUTMPersistenceDocs = () => {
       clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
         sessionStorage.removeItem("utm_params");
+        localStorage.removeItem("utm_params");
       }, inactivityTimeout);
     };
 
@@ -34,6 +35,7 @@ const useUTMPersistenceDocs = () => {
 
     if (isDirectEntry) {
       sessionStorage.removeItem("utm_params");
+      localStorage.removeItem("utm_params");
     }
 
     let storedUTM = sessionStorage.getItem("utm_params") || localStorage.getItem("utm_params");
