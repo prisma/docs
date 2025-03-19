@@ -15,7 +15,7 @@ import LayoutProvider from '@theme/Layout/Provider';
 import ErrorPageContent from '@theme/ErrorPageContent';
 import type {Props} from '@theme/Layout';
 import styles from './styles.module.css';
-import useUTMPersistenceDocs from '@site/src/utils/useUTMPersistenceDocs';
+import { useHistory, useLocation } from '@docusaurus/router';
 
 export default function Layout(props: Props): ReactNode {
   const {
@@ -28,7 +28,33 @@ export default function Layout(props: Props): ReactNode {
   } = props;
 
   useKeyboardNavigation();
-  useUTMPersistenceDocs();
+  const location = useLocation(); // Get current URL
+  const history = useHistory(); // Router navigation
+  useEffect(() => {
+    const currentParams = new URLSearchParams(location.search);
+    const hasUTMParams =
+      currentParams.has('utm_source') ||
+      currentParams.has('utm_medium') ||
+      currentParams.has('utm_campaign');
+
+    // If there are no UTM parameters in the URL, check localStorage
+    if (!hasUTMParams) {
+      const storedParams = localStorage.getItem('utm_params');
+
+      // If stored UTM parameters exist, append them to the URL
+      if (storedParams) {
+        const newURL = `${location.pathname}?${storedParams}`;
+
+        // Avoid infinite loops by checking if the URL is already updated
+        if (location.search !== `?${storedParams}`) {
+          history.replace(newURL);
+        }
+      }
+    } else {
+      // If UTM parameters are present in the URL, save them to localStorage
+      localStorage.setItem('utm_params', currentParams.toString());
+    }
+  }, [location, history]);
   
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
