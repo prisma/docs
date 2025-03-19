@@ -4,7 +4,7 @@ import { useHistory, useLocation } from "react-router-dom";
 const useUTMPersistenceDocs = () => {
   const location = useLocation();
   const history = useHistory();
-  const [isManualRemoval, setIsManualRemoval] = useState(false);
+  const [utmParams, setUtmParams] = useState("");
 
   const hasUTMParams = (params) => {
     return params.has("utm_source") || params.has("utm_medium") || params.has("utm_campaign");
@@ -34,35 +34,31 @@ const useUTMPersistenceDocs = () => {
 
     if (isDirectEntry) {
       sessionStorage.removeItem("utm_params");
-      setIsManualRemoval(false);
     }
 
-    if (!hasUTMParams(currentParams) && !isDirectEntry) {
-      setIsManualRemoval(true);
-    }
+    let storedUTM = sessionStorage.getItem("utm_params") || localStorage.getItem("utm_params");
 
     if (hasUTMParams(currentParams)) {
-      const utmParams = currentParams.toString();
-      sessionStorage.setItem("utm_params", utmParams);
-      localStorage.setItem("utm_params", utmParams);
-      setIsManualRemoval(false);
-    }
-
-    const storedParams = sessionStorage.getItem("utm_params");
-    if (storedParams && !isManualRemoval) {
-      const newURL = `${location.pathname}?${storedParams}`;
-      if (window.location.href !== newURL) {
-        history.replace(newURL);
-      }
+      const utmParamsString = currentParams.toString();
+      sessionStorage.setItem("utm_params", utmParamsString);
+      localStorage.setItem("utm_params", utmParamsString);
+      setUtmParams(utmParamsString);
+    } else if (storedUTM) {
+      setUtmParams(storedUTM);
     }
 
     clearSessionStorageAfterInactivity();
 
-  }, [location, history, isManualRemoval]);
 
-  const getStoredUTMParams = () => localStorage.getItem("utm_params");
+  }, [location]);
 
-  return { getStoredUTMParams };
+  useEffect(() => {
+    if (utmParams && !location.search.includes("utm_source")) {
+      history.replace(`${location.pathname}?${utmParams}`);
+    }
+  }, [utmParams, location.pathname, history]);
+
+  return { getStoredUTMParams: () => localStorage.getItem("utm_params") };
 };
 
 export default useUTMPersistenceDocs;
