@@ -413,7 +413,13 @@ const sidebars: SidebarsConfig = {
           label: "Framework Guides",
           collapsed: false,
           collapsible: false,
-          items: ["guides/turborepo", "guides/nextjs", "guides/nuxt", "guides/tanstack-start"],
+          items: [
+            "guides/turborepo",
+            "guides/nextjs",
+            "guides/nuxt",
+            "guides/tanstack-start",
+            "guides/react-router-7",
+          ],
         },
         {
           type: "category",
