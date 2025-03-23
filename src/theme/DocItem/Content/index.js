@@ -67,7 +67,7 @@ export default function DocItemContent({ children }) {
               <ul>
                 <li>
                   <a
-                    href="https://pris.ly/x?utm_source=docs&utm_campaign=tracking-cta&utm_medium=conclusion"
+                    href="https://pris.ly/x?utm_source=docs&utm_medium=generated_text_cta"
                     target="_blank"
                   >
                     Follow us on X
@@ -76,7 +76,7 @@ export default function DocItemContent({ children }) {
                 </li>
                 <li>
                   <a
-                    href="https://pris.ly/discord?utm_source=docs&utm_campaign=tracking-cta&utm_medium=conclusion"
+                    href="https://pris.ly/discord?utm_source=docs&utm_medium=generated_text_cta"
                     target="_blank"
                   >
                     Join our Discord
@@ -86,7 +86,7 @@ export default function DocItemContent({ children }) {
                 </li>
                 <li>
                   <a
-                    href="https://pris.ly/youtube?utm_source=docs&utm_campaign=tracking-cta&utm_medium=conclusion"
+                    href="https://pris.ly/youtube?utm_source=docs&utm_medium=generated_text_cta"
                     target="_blank"
                   >
                     Subscribe on YouTube
@@ -95,7 +95,7 @@ export default function DocItemContent({ children }) {
                 </li>
                 <li>
                   <a
-                    href="https://pris.ly/github?utm_source=docs&utm_campaign=tracking-cta&utm_medium=conclusion"
+                    href="https://pris.ly/github?utm_source=docs&utm_medium=generated_text_cta"
                     target="_blank"
                   >
                     Engage on GitHub

@@ -322,7 +322,7 @@ const config: Config = {
           className: "indigo external__link",
         },
         {
-          href: "https://pris.ly/github?utm_source=docs&utm_campaign=tracking-cta&utm_medium=navbar",
+          href: "https://pris.ly/github?utm_source=docs&utm_medium=navbar",
           position: "right",
           className: "header-github-link",
           "aria-label": "GitHub repository",
@@ -353,7 +353,7 @@ const config: Config = {
           items: [
             {
               label: " ",
-              href: "https://pris.ly/discord?utm_source=docs&utm_campaign=track-cta&utm_medium=footer",
+              href: "https://pris.ly/discord?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-discord",
                 internal: true,
@@ -361,7 +361,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://pris.ly/x?utm_source=docs&utm_campaign=track-cta&utm_medium=footer",
+              href: "https://pris.ly/x?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-x-twitter",
                 internal: true,
@@ -369,7 +369,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://pris.ly/youtube?utm_source=docs&utm_campaign=track-cta&utm_medium=footer",
+              href: "https://pris.ly/youtube?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-youtube",
                 internal: true,
@@ -377,7 +377,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://pris.ly/whatsapp?utm_source=docs&utm_campaign=track-cta&utm_medium=footer",
+              href: "https://pris.ly/whatsapp?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-whatsapp",
                 internal: true,
@@ -385,7 +385,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://pris.ly/github?utm_source=docs&utm_campaign=track-cta&utm_medium=footer",
+              href: "https://pris.ly/github?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-github",
                 internal: true,
