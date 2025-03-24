@@ -286,3 +286,71 @@ export const CommunityLinksData = [
     linkText: "Follow us on X",
   },
 ];
+
+
+export const tabs = [
+  {
+    icon: "fa-solid fa-chart-pyramid",
+    label: "Use Prisma Postgres",
+    description: "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres you'll</b> get a hosted database immediately that comes standard with caching, connection pooling, real-time events, and access control all with a generous free tier.",
+    list: [
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/nextjs.svg",
+        tech: "Nextjs"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/nuxtjs.svg",
+        tech: "Nuxtjs"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/reactrouter.svg",
+        tech: "React Router"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/redwood.svg",
+        tech: "Redwood"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/sveltekit.svg",
+        tech: "Sveltekit"
+      },
+    ]
+  },
+  {
+    icon: "fa-solid fa-database",
+    label: "Bring your own database",
+    description: "<b>Already have a database?</b> With Prisma ORM and Prisma Data Platform, you can supercharge your existing stack. Add connection pooling and caching with generous free tiers.",
+    list: [
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/nextjs.svg",
+        tech: "Nextjs"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/nuxtjs.svg",
+        tech: "Nuxtjs"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/reactrouter.svg",
+        tech: "React Router"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/redwood.svg",
+        tech: "Redwood"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/sveltekit.svg",
+        tech: "Sveltekit"
+      },
+    ]
+  }
+]

@@ -3,13 +3,16 @@ import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { Icon } from "@site/src/components/Icon";
-import { CommunityLinksData, DatabaseData, GeneralLinks_Build, GeneralLinks_Fortify, GeneralLinks_Grow, ORMCardLinkData, ORMGeneralLinkData, ProductLinkData } from "@site/src/data/indexData";
+import { CommunityLinksData, DatabaseData, GeneralLinks_Build, GeneralLinks_Fortify, GeneralLinks_Grow, ORMCardLinkData, ORMGeneralLinkData, ProductLinkData, tabs } from "@site/src/data/indexData";
 import Heading from "@theme/Heading";
 import Layout from "@theme/Layout";
 import clsx from "clsx";
 
+import Badge from "../components/button/Badge";
+import CodeBlock from "../theme/CodeBlock";
 import DarkImg from "../theme/DarkImg";
 import styles from "./index.module.scss";
+import { SquareLogo } from "../components/GettingStarted";
 
 function HomepageCard({
   className,
@@ -236,6 +239,56 @@ function HomepageCommunitySection() {
   );
 }
 
+const TabBox = ({icon, label, description, list}: any) => {
+  return (
+    <div className={styles.tabBox}>
+      <div className={styles.heading}>
+        {icon && <Icon className={styles.leftIcon} btn="left" icon={icon} size='inherit' color='var(--teal-600)' /> }
+        <span>{label}</span>
+      </div>
+      <div className={styles.content}>
+        <p dangerouslySetInnerHTML={{__html: description}}></p>
+        <div className={styles.techGrid}>
+          {list && list.length && list.map((l: any, idx: number) => 
+            <SquareLogo
+              className={styles.heroTabs}
+              url={l.url}
+              image={l.image}
+              tech={l.tech}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HomepageHeroSection() {
+  return (
+    <div className={styles.heroWrapper}>
+      <div className={styles.hero}>
+        <h1>Getting Started</h1>
+        <p>Working with Prisma gives you a best-in-class TypeScript ORM, a declarative database migration system, and a database with everything you need to get started.Try out everything Prisma has to offer with one command:</p>
+        <CodeBlock className={clsx("language-terminal", styles["hero-code"])}>
+          npx prisma init --db
+        </CodeBlock>
+        <Badge
+          link="/"
+          className={styles.heroBadge}
+          leftIcon="fa-solid fa-stars"
+          variant="secondary"
+          label="Start with an AI prompt →" color="teal"
+        />
+        <div className={styles.tabBoxes}>
+          {tabs && tabs.map((tab: any, idx: number) => 
+            <TabBox {...tab} key={idx} />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Home(): JSX.Element {
   const {
     siteConfig: { title },
@@ -246,9 +299,9 @@ export default function Home(): JSX.Element {
         <link rel="canonical" href="https://www.prisma.io/docs" />
       </Head>
       <main className={styles.mainHome}>
+        <HomepageHeroSection />
         <HomepageProductCards />
         <HomepageORMLinksSection />
-
         <HomepageDatabasesSection />
         <HomepageCommunitySection />
       </main>
