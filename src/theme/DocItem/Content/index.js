@@ -52,7 +52,7 @@ export default function DocItemContent({ children }) {
       )}
       <MDXContent>
         {children}{" "}
-        {frontMatter.include_cta && (
+        {frontMatter.community_section && (
           <div>
             <br />
             <h2>Stay connected with Prisma</h2>
