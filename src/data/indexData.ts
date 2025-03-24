@@ -265,7 +265,7 @@ export const CommunityLinksData = [
     description:
       "Chat in real-time, hang out, and share ideas with community members and our team.",
     icon: "fa-brands fa-discord",
-    link: "https://pris.ly/discord?utm_source=docs&utm_campaign=tracking-cta&utm_medium=community-links",
+    link: "https://pris.ly/discord?utm_source=docs&utm_medium=community_links",
     linkText: "Join our server",
   },
   {
