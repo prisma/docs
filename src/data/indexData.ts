@@ -274,7 +274,7 @@ export const CommunityLinksData = [
     description:
       "Browse the Prisma ORM source code, send feedback, or join the discussion on GitHub.",
     icon: "fa-brands fa-github",
-    link: "https://pris.ly/github?utm_source=docs&utm_campaign=tracking-cta&utm_medium=community-links",
+    link: "https://pris.ly/github?utm_source=docs&utm_medium=community_links",
     linkText: "Contribute in GitHub",
   },
   {
