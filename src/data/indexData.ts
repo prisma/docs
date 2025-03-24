@@ -282,7 +282,7 @@ export const CommunityLinksData = [
     title: "X",
     description: "Stay up-to-date, join the discussion, and connect with the community on X.",
     icon: "fa-brands fa-x-twitter",
-    link: "https://pris.ly/x?utm_source=docs&utm_campaign=tracking-cta&utm_medium=community_links",
+    link: "https://pris.ly/x?utm_source=docs&utm_medium=community_links",
     linkText: "Follow us on X",
   },
 ];
