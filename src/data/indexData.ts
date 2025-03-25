@@ -51,6 +51,21 @@ export const ProductLinkData = {
 
 export const CommunityLinksData = [
   {
+    id: "X",
+    title: "X",
+    description: "Stay up-to-date, join the discussion, and connect with the community on X.",
+    icon: "fa-brands fa-x-twitter",
+    link: "https://pris.ly/x?utm_source=docs&utm_medium=community_links",
+    linkText: "Follow us on X",
+  },
+  {
+    id: "yt",
+    title: "Youtube",
+    icon: "fa-brands fa-youtube",
+    link: "https://pris.ly/youtube?utm_source=docs&utm_medium=community_links",
+    linkText: "Follow us on Youtube",
+  },
+  {
     id: "discord",
     title: "Discord",
     description:
@@ -67,14 +82,6 @@ export const CommunityLinksData = [
     icon: "fa-brands fa-github",
     link: "https://pris.ly/github?utm_source=docs&utm_medium=community_links",
     linkText: "Contribute in GitHub",
-  },
-  {
-    id: "X",
-    title: "X",
-    description: "Stay up-to-date, join the discussion, and connect with the community on X.",
-    icon: "fa-brands fa-x-twitter",
-    link: "https://pris.ly/x?utm_source=docs&utm_medium=community_links",
-    linkText: "Follow us on X",
   },
 ];
 

@@ -33,7 +33,6 @@ function HomepageCard({
       ? <Link className={className} to={link}>
         {heading}
         {body}
-        <Icon className={styles.mobileArrow} icon="fa-regular fa-arrow-right" size="24px" color="var(--tertiary-font-color)" />
       </Link>
       : <div className={className}>
         {heading}
