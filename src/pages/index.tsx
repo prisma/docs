@@ -6,13 +6,13 @@ import { CommunityLinksData, get_help, how_do_i, ProductLinkData, tabs } from "@
 import Heading from "@theme/Heading";
 import Layout from "@theme/Layout";
 import clsx from "clsx";
+import {useColorMode} from '@docusaurus/theme-common';
 
 import Badge from "../components/button/Badge";
 import CodeBlock from "../theme/CodeBlock";
 import styles from "./index.module.scss";
 import { SquareLogo } from "../components/GettingStarted";
-import Button from "../components/button/Button";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tooltip } from "../components/tooltip/Tooltip";
 
 function HomepageCard({
@@ -211,15 +211,19 @@ const TabBox = ({icon, label, description, list, link}: any) => {
 }
 
 function HomepageHeroSection() {
+  const { colorMode }  = useColorMode();
+
   return (
     <div className={styles.heroWrapper}>
       <div className={styles.hero}>
         <h1>Getting Started</h1>
         <p>Working with Prisma gives you a best-in-class TypeScript ORM, a declarative database migration system, and a database with everything you need to get started.
           <br/> Try out everything Prisma has to offer with one command:</p>
-        <CodeBlock className={clsx("language-terminal", styles["hero-code"])}>
-          npx prisma init --db
-        </CodeBlock>
+        <div className={styles[`hero-code-wrapper`]} data-theme={colorMode}>
+          <CodeBlock className={clsx("language-terminal", styles["hero-code"])}>
+            npx prisma init --db
+          </CodeBlock>
+        </div>
         <Badge
           link="/"
           className={styles.heroBadge}
