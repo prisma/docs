@@ -88,29 +88,41 @@ function HomepageProductCards() {
 }
 
 function HomepageHowDoISection() {
+  const [seeMore, setSeeMore] = useState<boolean>(false);
+  const howRef = useRef<any>(null);
   return (
-    <div className={styles.howDoISection}>
+    <div className={styles.howDoISection} ref={howRef}>
       <Heading as="h3" className={styles.h3}>
         How do I...
       </Heading>
       <div className={styles.howGrid}>
-        {how_do_i.map((e: any) => (
+        {(seeMore ? how_do_i : how_do_i.slice(0, 3)).map((e: any) => (
           <div className={styles.howItem}>
             <Link to={e.url}>
               <h4>{e.title}</h4>
               <p>{e.description}</p>
             </Link>
-            <div className={styles.footer}>
-              <div className={styles.tags}>
+            {(e.tags.length || e.time) && <div className={styles.footer}>
+              {e.tags.length && <div className={styles.tags}>
                 {e.tags.map((tag: any) => <Badge variant="primary" key={tag} color="gray" size="sm" label={tag} />)}
-              </div>
-              <div className={styles.readTime}>
+              </div>}
+              {e.time && <div className={styles.readTime}>
                 <Icon size="24px" color="var(--gray-500)" icon="fa-regular fa-clock" btn="left"/>
                 <span>{e.time} min. read</span>
-              </div>
-            </div>
+              </div>}
+            </div>}
           </div>
         ))}
+      </div>
+      <div
+        className={clsx(styles.seeMore, seeMore && styles.clicked)}
+        onClick={() => {
+          setSeeMore(!seeMore)
+          howRef.current.scrollIntoView({behavior: "smooth", offset: 80});
+        }}
+      >
+        <span>See {seeMore ? `less` : `more`}</span>
+        <Icon icon={`fa-regular fa-arrow-${seeMore ? `up` : `down`}`} size="inherit" color="inherit" btn="right" />
       </div>
     </div>
   );

@@ -221,5 +221,32 @@ export const how_do_i = [
     tags: ["guides", "schema", "orm"],
     url: "/",
     time: 15
+  },
+  {
+    title: "Migrate my schema?",
+    description: "Prisma's metrics feature gives you detailed insights into how Prisma interacts with your database. In this tutorial, you will learn how to use metrics to monitor your database using Prisma, Prometheus and Grafana.",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
+  },
+  {
+    title: "Cache my queries?",
+    description: "Prisma Postgres comes with a built-in global cache (enabled by Prisma Accelerate) that helps you speed up your database queries. You can cache results on a per-query level",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+  },
+  {
+    title: "Integrate with an existing DB?",
+    description: "Baselining is the process of initializing a migration history for a database that existed before you started using Prisma Migrate and contains data",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
+  },
+  {
+    title: "Integrate with an existing DB?",
+    description: "Baselining is the process of initializing a migration history for a database that existed before you started using Prisma Migrate and contains data",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
   }
 ];
