@@ -1,262 +1,53 @@
 export const ProductLinkData = {
-  i_orm: {
-    title: "Talk easily <br/>to your database",
+  t_orm: {
+    title: "Talk to your database, seamlessly",
     eyebrow: "ORM",
     description:
-      "Open source Node.js and TypeScript ORM with an intuitive data model, automated migrations, type-safety, and auto-completion.",
+      "Prisma ORM lets you query your database with an ergonomic TypeScript client.",
     link: "/orm",
     icon: "fa-regular fa-database",
   },
-  i_studio: {
-    title: "Explore and manipulate <br>your data",
-    eyebrow: "Studio",
-    description:
-      "Interact with your data in a simple tabular interface with full CRUD capabilities, filtering, sorting, and safe editing directly in the model cells.",
-    link: "/orm/tools/prisma-studio",
-    icon: "fa-regular fa-table",
-  },
   t_postgres: {
-    title: "Managed Postgres <br/>for global workloads",
+    title: "A DB with next-gen performance",
     eyebrow: "Postgres",
     description:
-      "A managed PostgreSQL database without cold starts. Easily deploy your database in three clicks, explore with a generous free tier, and scale as needed.",
+      "Prisma Postgres is a PostgreSQL database with maximum performance and minimum wait time.",
     link: "/postgres",
     icon: "fa-regular fa-chart-pyramid",
   },
-  t_optimize: {
-    title: "AI-driven insights",
-    eyebrow: "Optimize",
+  t_studio: {
+    title: "See your data in style",
+    eyebrow: "Studio",
     description:
-      "Analyze your queries and get recommedations to improve your database queries, making your app run faster.",
-    link: "/optimize",
-    icon: "fa-regular fa-magnifying-glass-chart",
+      "Prisma Studio makes it easy to explore your data visually.",
+    link: "/orm/tools/prisma-studio",
+    icon: "fa-regular fa-table",
   },
   t_accelerate: {
-    title: "Edge caching & connection pooling",
+    title: "Supercharge your <br /> app's speed",
     eyebrow: "Accelerate",
     description:
-      "A fully managed global connection pool and caching layer for your existing database, enabling query-level cache policies.",
+      "Prisma Accelerate provides caching and connection pooling, making your database available everywhere.",
     link: "/accelerate",
     icon: "fa-regular fa-bolt",
+  },
+  t_optimize: {
+    title: "Your queries, smarter.",
+    eyebrow: "Optimize",
+    description:
+      "Prisma Optimize gives you AI-powered insights on potential issues in your code.",
+    link: "/optimize",
+    icon: "fa-regular fa-magnifying-glass-chart",
   },
   t_platform: {
     title: "Manage your workspaces <br/>and projects",
     eyebrow: "Platform Console",
     description:
-      "Manage your Prisma Data Platform projects, account settings, workspaces, and billing.",
+      "Manage your Prisma Data Platform projects, account settings, workspaces and billing.",
     link: "/platform",
-    icon: "fa-regular fa-desktop",
+    icon: "fa-regular fa-laptop-code",
   },
 };
-
-export const ORMCardLinkData = {
-  components: {
-    title: "ORM Components",
-    description: "Learn about the building blocks of Prisma ORM.",
-    links: [
-      {
-        url: "/orm/prisma-schema",
-        title: "Prisma Schema",
-      },
-      {
-        url: "/orm/reference/prisma-schema-reference",
-        title: "Schema reference",
-      },
-      {
-        url: "/orm/prisma-client",
-        title: "Prisma Client",
-      },
-      {
-        url: "/orm/reference/prisma-client-reference",
-        title: "Client API reference",
-      },
-      {
-        url: "/orm/tools/prisma-cli",
-        title: "Prisma CLI",
-      },
-      {
-        url: "/orm/reference/prisma-cli-reference",
-        title: "Prisma CLI reference",
-      },
-      {
-        url: "/orm/prisma-migrate",
-        title: "Prisma Migrate",
-      },
-      {
-        url: "/orm/reference/error-reference",
-        title: "Error message reference",
-      },
-    ],
-  },
-
-  reference: {
-    title: "Platform Reference",
-    description:
-      "Understand the usage and API surface of our platform products built on top of Prisma ORM.",
-    links: [
-      {
-        url: "/accelerate/api-reference",
-        title: "Accelerate API reference",
-      },
-      {
-        url: "/platform",
-        title: "Platform",
-      },
-      {
-        url: "/platform/platform-cli/commands",
-        title: "Platform CLI commands",
-      },
-    ],
-  },
-};
-
-export const ORMGeneralLinkData = [
-  {
-    title: `CRUD`,
-    description: "How to perform CRUD operations with your generated Prisma Client API. ",
-    url: "/orm/prisma-client/queries/crud",
-    icon: "fa-solid fa-arrow-right-arrow-left",
-  },
-  {
-    title: `Advanced queries`,
-    description: "Learn how to perform advanced queries with raw SQL in Prisma ORM.",
-    url: "/orm/prisma-client/using-raw-sql",
-    icon: "fa-solid fa-download",
-  },
-  {
-    title: `Deployment guides`,
-    description:
-      "Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.",
-    url: "/orm/prisma-client/deployment",
-    icon: "fa-solid fa-book",
-  },
-  {
-    title: `Platform CLI commands`,
-    description:
-      "Learn how to access the Platform using the integrated commands in the Prisma CLI.",
-    url: "/platform/platform-cli/commands",
-    icon: "fa-solid fa-terminal",
-  },
-];
-
-export const GeneralLinks_Build = [
-  {
-    title: `CRUD`,
-    description: "How to perform CRUD operations with your generated Prisma Client API. ",
-    url: "/orm/prisma-client/queries/crud",
-    icon: "fa-solid fa-arrow-right-arrow-left",
-  },
-  {
-    title: `Advanced queries`,
-    description: "Learn how to perform advanced queries with raw SQL in Prisma ORM.",
-    url: "/orm/prisma-client/using-raw-sql",
-    icon: "fa-solid fa-download",
-  },
-  {
-    title: `Deployment guides`,
-    description:
-      "Deploy Node.js applications with Prisma Client to platforms like Vercel, AWS Lambda, Netlify and Heroku.",
-    url: "/orm/prisma-client/deployment",
-    icon: "fa-solid fa-book",
-  },
-];
-
-export const GeneralLinks_Fortify = [
-  {
-    title: `Set up Optimize`,
-    description: "Start analyzing your queries and generate insights to improve your queries.",
-    url: "/optimize/getting-started",
-    icon: "fa-solid fa-magnifying-glass-chart",
-  },
-  {
-    title: `Recommendations`,
-    description:
-      "Explore the different recommendations such as indexing issues, excessive data retrieval, and inefficient query patterns.",
-    url: "/optimize/recommendations",
-    icon: "fa-solid fa-chart-simple",
-  },
-  {
-    title: `Prisma AI`,
-    description: "Understand the recommendations easier by asking our AI follow-up questions.",
-    url: "/optimize/prisma-ai",
-    icon: "fa-solid fa-message-bot",
-  },
-];
-
-export const GeneralLinks_Grow = [
-  {
-    title: `Connection pooling`,
-    description:
-      "Adjust pool size, configure timeouts, and enable autoscaling to improve performance.",
-    url: "/accelerate/connection-pooling",
-    icon: "fa-solid fa-bolt",
-  },
-  {
-    title: `Database caching`,
-    description:
-      "How to improve query performance by configuring cache behavior using TTL and SWR.",
-    url: "/accelerate/caching",
-    icon: "fa-solid fa-bolt",
-  },
-  {
-    title: `Managed Postgres database`,
-    description:
-      "Deploy Prisma Postgres for a scalable, production-ready database featuring integrated connection pooling.",
-    url: "/postgres/",
-    icon: "fa-solid fa-chart-pyramid",
-  },
-];
-
-export const DatabaseData = [
-  {
-    title: "PostgreSQL",
-    icon: "/img/technologies/postgresqlsimple.svg",
-    darkIcon: "/img/technologies/postgresqldark.svg",
-    url: "/orm/overview/databases/postgresql",
-  },
-  {
-    title: "MySQL",
-    icon: "/img/technologies/mysqlsimple.svg",
-    darkIcon: "/img/technologies/mysqlsimple.svg",
-    url: "/orm/overview/databases/mysql",
-  },
-  {
-    title: "SQL Server",
-    icon: "/img/technologies/sqlserver.svg",
-    darkIcon: "/img/technologies/sqlserver.svg",
-    url: "/orm/overview/databases/sql-server",
-  },
-  {
-    title: "SQLite",
-    icon: "/img/technologies/sqlite.svg",
-    darkIcon: "/img/technologies/sqlite.svg",
-    url: "/orm/overview/databases/sqlite",
-  },
-  {
-    title: "MongoDB",
-    icon: "/img/technologies/mongodbsimple.svg",
-    darkIcon: "/img/technologies/mongodbsimple.svg",
-    url: "/orm/overview/databases/mongodb",
-  },
-  {
-    title: "CockroachDB",
-    icon: "/img/technologies/cockroachdb.svg",
-    darkIcon: "/img/technologies/cockroachdbdark.svg",
-    url: "/orm/overview/databases/cockroachdb",
-  },
-  {
-    title: "PlanetScale",
-    icon: "/img/technologies/planetscale.svg",
-    darkIcon: "/img/technologies/planetscaledark.svg",
-    url: "/orm/overview/databases/planetscale",
-  },
-  {
-    title: "MariaDB",
-    icon: "/img/technologies/mariadb.svg",
-    darkIcon: "/img/technologies/mariadbdark.svg",
-    url: "/orm/overview/databases/mysql",
-  },
-];
 
 export const CommunityLinksData = [
   {
@@ -287,6 +78,48 @@ export const CommunityLinksData = [
   },
 ];
 
+export const get_help = [
+  {
+    icon: "fa-regular fa-gear-code",
+    title: "ORM Issues & Requests",
+    description: "Found a bug, or want to request something new? Let us know.",
+    links: [
+      {
+        icon: "fa-brands fa-github",
+        link: "/",
+        label: "Report a bug"
+      },
+      {
+        icon: "fa-brands fa-github",
+        link: "/",
+        label: "Request a new feature"
+      }
+    ]      
+  },
+  {
+    icon: "fa-regular fa-comments-question-check",
+    title: "Community Support",
+    description: "Support for customers on our <b>Starter plan</b> is provided through our <b>community channels.</b>",
+    links: [
+      {
+        icon: "fa-brands fa-discord",
+        link: "pris.ly/discord",
+        label: "Join our Discord"
+      }
+    ]      
+  },
+  {
+    icon: "fa-regular fa-headset",
+    title: "Prisma Support",
+    description: "Support for customers in our <b>Pro</b> or <b>Business</b> plan is provided by the Platform Console.",
+    links: [
+      {
+        link: "pris.ly/discord",
+        label: "Submit a ticket"
+      }
+    ]      
+  }
+]
 
 export const tabs = [
   {
@@ -353,4 +186,28 @@ export const tabs = [
       },
     ]
   }
-]
+];
+
+export const how_do_i = [
+  {
+    title: "Migrate my schema?",
+    description: "Prisma's metrics feature gives you detailed insights into how Prisma interacts with your database. In this tutorial, you will learn how to use metrics to monitor your database using Prisma, Prometheus and Grafana.",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
+  },
+  {
+    title: "Cache my queries?",
+    description: "Prisma Postgres comes with a built-in global cache (enabled by Prisma Accelerate) that helps you speed up your database queries. You can cache results on a per-query level",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
+  },
+  {
+    title: "Integrate with an existing DB?",
+    description: "Baselining is the process of initializing a migration history for a database that existed before you started using Prisma Migrate and contains data",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
+  }
+];

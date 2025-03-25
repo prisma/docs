@@ -1,18 +1,19 @@
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
-import useBaseUrl from "@docusaurus/useBaseUrl";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { Icon } from "@site/src/components/Icon";
-import { CommunityLinksData, DatabaseData, GeneralLinks_Build, GeneralLinks_Fortify, GeneralLinks_Grow, ORMCardLinkData, ORMGeneralLinkData, ProductLinkData, tabs } from "@site/src/data/indexData";
+import { CommunityLinksData, get_help, how_do_i, ProductLinkData, tabs } from "@site/src/data/indexData";
 import Heading from "@theme/Heading";
 import Layout from "@theme/Layout";
 import clsx from "clsx";
 
 import Badge from "../components/button/Badge";
 import CodeBlock from "../theme/CodeBlock";
-import DarkImg from "../theme/DarkImg";
 import styles from "./index.module.scss";
 import { SquareLogo } from "../components/GettingStarted";
+import Button from "../components/button/Button";
+import { useRef, useState } from "react";
+import { Tooltip } from "../components/tooltip/Tooltip";
 
 function HomepageCard({
   className,
@@ -47,154 +48,97 @@ function HomepageProductCards() {
   return (
     <div className={styles.homepageTopSection}>
       <div className={styles.productCardsWrapper}>
-        {Object.keys(ProductLinkData).map((e: keyof typeof ProductLinkData) => {
-          const cardHeader = (
-            <div className={styles.cardHeader}>
-              <div className={styles.iconWrapper}>
-                <Icon icon={ProductLinkData[e].icon} color="#fff" size="32px" />
+        <Heading as="h3" className={styles.h3}>Products</Heading>
+        <div className={styles.productCards}>
+          {Object.keys(ProductLinkData).map((e: keyof typeof ProductLinkData) => {
+            const cardHeader = (
+              <div className={styles.cardHeader}>
+                <div className={styles.iconWrapper}>
+                  <Icon icon={ProductLinkData[e].icon} color="#fff" size="32px" />
+                </div>
+                <div className={styles.cardHeaderContent}>
+                  <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
+                  <Heading as="h4" className={styles.h4}>
+                    <div
+                      className={styles.h4}
+                      dangerouslySetInnerHTML={{ __html: ProductLinkData[e].title }}
+                    ></div>
+                  </Heading>
+                </div>
               </div>
-              <div className={styles.cardHeaderContent}>
-                <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
-                <Heading as="h4" className={styles.h4}>
-                  <div
-                    className={styles.h4}
-                    dangerouslySetInnerHTML={{ __html: ProductLinkData[e].title }}
-                  ></div>
-                </Heading>
-              </div>
-            </div>
-          );
-          const cardBody = (
-            <div
-              className={styles.body}
-              dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description }}
-            ></div>
-          );
-          return (
-            <HomepageCard
-              className={e.startsWith("i_") ? styles.productCardIndigo : styles.productCardTeal}
-              heading={cardHeader}
-              body={cardBody}
-              link={ProductLinkData[e].link}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function HomepageORMLinksSection() {
-  return (
-    <div className={styles.ormLinkSectionWrapper}>
-      <Heading as="h2" className={styles.h2}>Resources</Heading>
-      <div className={styles.ormLinkGrid}>
-        <div className={styles.ormLinkCol}>
-          {GeneralLinks_Build.map((link, index) => (
-            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
-              <div>
-                <h5>
-                  {link.title} <span>&#8594;</span>
-                </h5>
-                <p>{link.description}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-        <div className={styles.ormLinkCol}>
-          {GeneralLinks_Fortify.map((link, index) => (
-            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
-              <div>
-                <h5>
-                  {link.title} <span>&#8594;</span>
-                </h5>
-                <p>{link.description}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-        <div className={styles.ormLinkCol}>
-          {GeneralLinks_Grow.map((link, index) => (
-            <Link key={index} to={link.url} className={styles.ormLinkWrapper}>
-              <div>
-                <h5>
-                  {link.title} <span>&#8594;</span>
-                </h5>
-                <p>{link.description}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-      <HomepageORMCards />
-    </div>
-  );
-}
-
-function HomepageORMCards() {
-  return (
-    <div className={styles.ormCardsSection}>
-      <div className={styles.ormCardsWrapper}>
-        {Object.keys(ORMCardLinkData).map((e) => {
-          const cardHeader = (
-            <Heading as="h4" className={styles.h4}>
-              {ORMCardLinkData[e].title}
-            </Heading>
-          );
-          const cardBody = <div className={styles.body}>{ORMCardLinkData[e].description}</div>;
-          const cardLinks = ORMCardLinkData[e].links.map((link) => (
-            <Link to={link.url}>
-              {link.title} {link.external ? <>&#8599;</> : <>&#8594;</>}
-            </Link>
-          ));
-          return (
-            <HomepageCard
-              className={styles.productCardIndigo}
-              heading={cardHeader}
-              body={cardBody}
-              links={cardLinks}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function HomepageDatabasesSection() {
-  return (
-    <div className={styles.databasesSection}>
-      <Heading as="h2" className={styles.h2}>
-        Databases
-      </Heading>
-      <div className={styles.body}>
-        Prisma ORM works seamlessly across most popular databases and service providers. Refer to
-        our <Link to="/orm/reference/database-features">Database features matrix</Link> for
-        information about supported features and types for each database.
-        <br />
-        To explore supported databases for Accelerate, visit the{" "}
-        <Link to="/accelerate/getting-started#prerequisites">prerequisites section</Link>.
-      </div>
-      <div className={styles.databaseGrid}>
-        {DatabaseData.map((e) => (
-          <Link to={e.url} className={styles.linkCardWrapper}>
-            <div className={styles.databaseEntry}>
-              <DarkImg
-                icon={useBaseUrl(e.icon)}
-                darkIcon={useBaseUrl(e.darkIcon)}
-                style={{
-                  height: `100%`,
-                  width: e.icon.endsWith("sqlite.svg") ? `55px` : `auto`,
-                  marginRight: e.icon.endsWith("sqlite.svg") ? `-30px` : 0,
-                }}
+            );
+            const cardBody = (
+              <div
+                className={styles.body}
+                dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description }}
+              ></div>
+            );
+            return (
+              <HomepageCard
+                className={e.startsWith("i_") ? styles.productCardIndigo : styles.productCardTeal}
+                heading={cardHeader}
+                body={cardBody}
+                link={ProductLinkData[e].link}
               />
-              <span>{e.title}</span>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomepageHowDoISection() {
+  return (
+    <div className={styles.howDoISection}>
+      <Heading as="h3" className={styles.h3}>
+        How do I...
+      </Heading>
+      <div className={styles.howGrid}>
+        {how_do_i.map((e: any) => (
+          <div className={styles.howItem}>
+            <Link to={e.url}>
+              <h4>{e.title}</h4>
+              <p>{e.description}</p>
+            </Link>
+            <div className={styles.footer}>
+              <div className={styles.tags}>
+                {e.tags.map((tag: any) => <Badge variant="primary" key={tag} color="gray" size="sm" label={tag} />)}
+              </div>
+              <div className={styles.readTime}>
+                <Icon size="24px" color="var(--gray-500)" icon="fa-regular fa-clock" btn="left"/>
+                <span>{e.time} min. read</span>
+              </div>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>
   );
+}
+
+const CommunityIcon = ({icon, link, label}: any) => {
+  const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false);
+  const iconRef = useRef(null);
+
+  return (
+    <>
+      <a
+        href={link}
+        className={styles.link}
+        ref={iconRef}
+        onMouseMove={() => setVisibleTooltip(true)}
+        onMouseLeave={() => setVisibleTooltip(false)}
+      >
+        <Icon icon={icon} size="36px" color="var(--teal-600)" />
+      </a>
+      {visibleTooltip && (
+        <Tooltip target={iconRef} position="top">
+          {label}
+        </Tooltip>
+      )}
+    </>
+  )
 }
 
 function HomepageCommunitySection() {
@@ -212,26 +156,11 @@ function HomepageCommunitySection() {
         </div>
         <div className={styles.communityLinksRow}>
           {CommunityLinksData.map((communityInfo) => (
-            <div key={communityInfo.id} className={styles.communityLinkCard}>
-              <Link
-                to={communityInfo.link}
-                rel="noreferrer"
-                target="_blank"
-                className={clsx(styles.communityLinkWrapper, styles.content)}
-              >
-                <Icon icon={communityInfo.icon} color="VAR HERE" size="22px" />
-                <div>
-                  <div>
-                    <h4>{communityInfo.title}</h4>
-                    <div className={styles.body}>{communityInfo.description}</div>
-                  </div>
-                  <div className={styles.link}>
-                    <span>{communityInfo.linkText}</span>
-                    <span> &#8599;</span>
-                  </div>
-                </div>
-              </Link>
-            </div>
+            <CommunityIcon
+              icon={communityInfo.icon}
+              link={communityInfo.link}
+              label={communityInfo.linkText}
+            />
           ))}
         </div>
       </div>
@@ -268,7 +197,8 @@ function HomepageHeroSection() {
     <div className={styles.heroWrapper}>
       <div className={styles.hero}>
         <h1>Getting Started</h1>
-        <p>Working with Prisma gives you a best-in-class TypeScript ORM, a declarative database migration system, and a database with everything you need to get started.Try out everything Prisma has to offer with one command:</p>
+        <p>Working with Prisma gives you a best-in-class TypeScript ORM, a declarative database migration system, and a database with everything you need to get started.
+          <br/> Try out everything Prisma has to offer with one command:</p>
         <CodeBlock className={clsx("language-terminal", styles["hero-code"])}>
           npx prisma init --db
         </CodeBlock>
@@ -288,6 +218,39 @@ function HomepageHeroSection() {
     </div>
   )
 }
+function HomepageGetHelpSection() {
+  return (
+    <div className={styles.getHelpSection}>
+      <Heading as="h3" className={styles.h3}>
+        Get Help
+      </Heading>
+      <div className={styles.getHelpGrid}>
+        {get_help.map((e: any) => (
+          <div className={styles.helpItem}>
+            <div className={styles.heading}>
+              <div className={styles.icon}>
+                <Icon icon={e.icon} size="24px" color="var(--surface-secondary" />
+              </div>
+              <h4>{e.title}</h4>
+            </div>
+            <div className={styles.content}>
+              <p dangerouslySetInnerHTML={{__html: e.description}}/>
+              <div className={styles.links}>
+                {e.links.map((link: any) => 
+                  <a href={link.link} className={styles.link}>
+                    <Icon icon={link.icon} size="inherit" btn="left" color="inherit" />
+                    <span>{link.label}</span>
+                    <Icon icon={"fa-regular fa-arrow-up-right"} size="inherit" btn="right" color="inherit" />
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function Home(): JSX.Element {
   const {
@@ -300,9 +263,9 @@ export default function Home(): JSX.Element {
       </Head>
       <main className={styles.mainHome}>
         <HomepageHeroSection />
+        <HomepageHowDoISection />
         <HomepageProductCards />
-        <HomepageORMLinksSection />
-        <HomepageDatabasesSection />
+        <HomepageGetHelpSection /> 
         <HomepageCommunitySection />
       </main>
     </Layout>
