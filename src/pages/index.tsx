@@ -167,26 +167,33 @@ function HomepageCommunitySection() {
   );
 }
 
-const TabBox = ({icon, label, description, list}: any) => {
+const TabBox = ({icon, label, description, list, link}: any) => {
   return (
-    <div className={styles.tabBox}>
-      <div className={styles.heading}>
-        {icon && <Icon className={styles.leftIcon} btn="left" icon={icon} size='inherit' color='var(--teal-600)' /> }
-        <span>{label}</span>
-      </div>
-      <div className={styles.content}>
-        <p dangerouslySetInnerHTML={{__html: description}}></p>
-        <div className={styles.techGrid}>
-          {list && list.length && list.map((l: any, idx: number) => 
-            <SquareLogo
-              className={styles.heroTabs}
-              url={l.url}
-              image={l.image}
-              tech={l.tech}
-            />
-          )}
+    <div>
+      <div className={styles.tabBox}>
+        <div className={styles.heading}>
+          {icon && <Icon className={styles.leftIcon} btn="left" icon={icon} size='inherit' color='var(--teal-600)' /> }
+          <span>{label}</span>
+        </div>
+        <div className={styles.content}>
+          <p dangerouslySetInnerHTML={{__html: description}}></p>
+          <div className={styles.techGrid}>
+            {list && list.length && list.map((l: any, idx: number) => 
+              <SquareLogo
+                className={styles.heroTabs}
+                url={l.url}
+                image={l.image}
+                tech={l.tech}
+              />
+            )}
+          </div>
         </div>
       </div>
+      <a href={link.url}>
+        <Icon icon={link.icon} size="inherit" color="inherit" btn="left"/>
+        <span>{link.label}</span>
+        <Icon icon={"fa-regular fa-arrow-right"} size="inherit" color="inherit" btn="right"/>
+        </a>
     </div>
   )
 }

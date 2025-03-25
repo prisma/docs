@@ -53,7 +53,6 @@ export const CommunityLinksData = [
   {
     id: "X",
     title: "X",
-    description: "Stay up-to-date, join the discussion, and connect with the community on X.",
     icon: "fa-brands fa-x-twitter",
     link: "https://pris.ly/x?utm_source=docs&utm_medium=community_links",
     linkText: "Follow us on X",
@@ -68,8 +67,6 @@ export const CommunityLinksData = [
   {
     id: "discord",
     title: "Discord",
-    description:
-      "Chat in real-time, hang out, and share ideas with community members and our team.",
     icon: "fa-brands fa-discord",
     link: "https://pris.ly/discord?utm_source=docs&utm_medium=community_links",
     linkText: "Join our server",
@@ -77,8 +74,6 @@ export const CommunityLinksData = [
   {
     id: "github",
     title: "GitHub",
-    description:
-      "Browse the Prisma ORM source code, send feedback, or join the discussion on GitHub.",
     icon: "fa-brands fa-github",
     link: "https://pris.ly/github?utm_source=docs&utm_medium=community_links",
     linkText: "Contribute in GitHub",
@@ -159,7 +154,12 @@ export const tabs = [
         image: "/img/technologies/sveltekit.svg",
         tech: "Sveltekit"
       },
-    ]
+    ],
+    link: {
+      url: "/",
+      label: "How to migrate to Prisma Postgres",
+      icon: "fa-regular fa-book-open"
+    }
   },
   {
     icon: "fa-solid fa-database",
@@ -191,7 +191,12 @@ export const tabs = [
         image: "/img/technologies/sveltekit.svg",
         tech: "Sveltekit"
       },
-    ]
+    ],
+    link: {
+      url: "/",
+      label: "How to migrate to Prisma ORM",
+      icon: "fa-regular fa-book-open"
+    }
   }
 ];
 
