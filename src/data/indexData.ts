@@ -229,28 +229,42 @@ export const how_do_i = [
     time: 15
   },
   {
+    title: "Make CRUD routes?",
+    description: "This page describes how to perform CRUD operations with your generated Prisma Client API. CRUD is an acronym that stands for: Create Read Update Delete",
+    tags: ["guides", "schema", "orm"],
+    url: "/orm/prisma-client/queries/crud",
+    time: 15
+  },
+  {
+    title: "Get started with models?",
+    description: "The data model definition part of the Prisma schema defines your application models (also called Prisma models). Models: Represent the entities",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+  },
+  {
+    title: "Filter and sort?",
+    description: "Prisma Client supports filtering with the where query option, and sorting with the orderBy query option.",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
+  },
+  {
+    title: "Query relations?",
+    description: "A key feature of Prisma Client is the ability to query relations between two or more models. Relation queries include: Nested reads",
+    tags: ["guides", "schema", "orm"],
+    url: "/",
+    time: 15
+  },
+  {
     title: "Migrate my schema?",
-    description: "Prisma's metrics feature gives you detailed insights into how Prisma interacts with your database. In this tutorial, you will learn how to use metrics to monitor your database using Prisma, Prometheus and Grafana.",
+    description: "When working in a team, managing database schema changes can be challenging. This guide shows you how to effectively collaborate on schema changes",
     tags: ["guides", "schema", "orm"],
     url: "/",
     time: 15
   },
   {
-    title: "Cache my queries?",
-    description: "Prisma Postgres comes with a built-in global cache (enabled by Prisma Accelerate) that helps you speed up your database queries. You can cache results on a per-query level",
-    tags: ["guides", "schema", "orm"],
-    url: "/",
-  },
-  {
-    title: "Integrate with an existing DB?",
-    description: "Baselining is the process of initializing a migration history for a database that existed before you started using Prisma Migrate and contains data",
-    tags: ["guides", "schema", "orm"],
-    url: "/",
-    time: 15
-  },
-  {
-    title: "Integrate with an existing DB?",
-    description: "Baselining is the process of initializing a migration history for a database that existed before you started using Prisma Migrate and contains data",
+    title: "Generate Prisma Client?",
+    description: "Prisma Client is an auto-generated database client that's tailored to your database schema. By default, Prisma Client is generated into the",
     tags: ["guides", "schema", "orm"],
     url: "/",
     time: 15
