@@ -233,7 +233,6 @@ const TabBox = ({icon, label, description, list, link}: any) => {
 
 function HomepageHeroSection() {
   const { colorMode }  = useColorMode();
-
   return (
     <div className={styles.heroWrapper}>
       <div className={styles.hero}>
