@@ -168,28 +168,34 @@ export const tabs = [
     list: [
       {
         url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        image: "/img/technologies/postgresqlsimple.svg",
+        tech: "PostgreSQL"
+      },
+      {
+        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
         image: "/img/technologies/nextjs.svg",
         tech: "Nextjs"
       },
       {
         url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/nuxtjs.svg",
-        tech: "Nuxtjs"
+        image: "/img/technologies/planetscale.svg",
+        imageDark: "/img/technologies/planetscaledark.svg",
+        tech: "Planetscale"
       },
       {
         url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/reactrouter.svg",
-        tech: "React Router"
+        image: "/img/technologies/sqlite.svg",
+        tech: "SQLite"
       },
       {
         url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/redwood.svg",
-        tech: "Redwood"
+        image: "/img/technologies/sqlserver.svg",
+        tech: "SQL Server"
       },
       {
         url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/sveltekit.svg",
-        tech: "Sveltekit"
+        image: "/img/technologies/mysqlsimple.svg",
+        tech: "MySQL"
       },
     ],
     link: {

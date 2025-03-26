@@ -196,6 +196,7 @@ const TabBox = ({icon, label, description, list, link}: any) => {
                 url={l.url}
                 image={l.image}
                 tech={l.tech}
+                {... l.imageDark && { imageDark: l.imageDark }}
               />
             )}
           </div>
