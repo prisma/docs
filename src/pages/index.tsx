@@ -90,14 +90,34 @@ function HomepageProductCards() {
 function HomepageHowDoISection() {
   const [seeMore, setSeeMore] = useState<boolean>(false);
   const howRef = useRef<any>(null);
+
+  const visibleCards = how_do_i.slice(0, 3);
+  const hiddenCards = how_do_i.slice(3);
   return (
     <div className={styles.howDoISection} ref={howRef}>
       <Heading as="h3" className={styles.h3}>
         How do I...
       </Heading>
       <div className={styles.howGrid}>
-        {(seeMore ? how_do_i : how_do_i.slice(0, 3)).map((e: any) => (
+        {visibleCards.map((e: any) => (
           <div className={styles.howItem}>
+            <Link to={e.url}>
+              <h4>{e.title}</h4>
+              <p>{e.description}</p>
+            </Link>
+            {(e.tags.length || e.time) && <div className={styles.footer}>
+              {e.tags.length && <div className={styles.tags}>
+                {e.tags.map((tag: any) => <Badge variant="primary" key={tag} color="gray" size="sm" label={tag} />)}
+              </div>}
+              {e.time && <div className={styles.readTime}>
+                <Icon size="24px" color="var(--gray-500)" icon="fa-regular fa-clock" btn="left"/>
+                <span>{e.time} min. read</span>
+              </div>}
+            </div>}
+          </div>
+        ))}
+        {seeMore && hiddenCards.map((e: any, idx: number) => (
+          <div className={clsx(styles.howItem, styles.fadeIn)} style={{ animationDelay: `${100 * idx}ms` }}>
             <Link to={e.url}>
               <h4>{e.title}</h4>
               <p>{e.description}</p>
