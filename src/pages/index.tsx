@@ -225,13 +225,13 @@ function HomepageHeroSection() {
             npx prisma init --db
           </CodeBlock>
         </div>
-        <Badge
+        {/* <Badge
           link="/"
           className={styles.heroBadge}
           leftIcon="fa-solid fa-stars"
           variant="secondary"
           label="Start with an AI prompt →" color="teal"
-        />
+        /> */}
         <div className={styles.tabBoxes}>
           {tabs && tabs.map((tab: any, idx: number) => 
             <TabBox {...tab} key={idx} />
