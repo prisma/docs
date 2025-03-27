@@ -6,19 +6,15 @@ tocDepth: 3
 preview: true
 ---
 
-<TopBlock>
-
-This guide discusses the concepts behind using Prisma ORM and Cloudflare D1, explains the commonalities and differences between Cloudflare D1 and other database providers, and leads you through the process for configuring your application to integrate with Cloudflare D1.
+This page discusses the concepts behind using Prisma ORM and Cloudflare D1, explains the commonalities and differences between Cloudflare D1 and other database providers, and leads you through the process for configuring your application to integrate with Cloudflare D1.
 
 Prisma ORM support for Cloudflare D1 is currently in [Preview](/orm/more/releases#preview). We would appreciate your feedback [on GitHub](https://github.com/prisma/prisma/discussions/23646).
 
 If you want to deploy a Cloudflare Worker with D1 and Prisma ORM, follow this [tutorial](/guides/cloudflare-d1).
 
-</TopBlock>
-
 ## What is Cloudflare D1?
 
-D1 is Cloudflare's native serverless database and was initially [launched in 2022](https://blog.cloudflare.com/introducing-d1/). It's based on SQLite and can be used when deploying applications with Cloudflare.
+D1 is Cloudflare's native serverless database and was initially [launched in 2022](https://blog.cloudflare.com/introducing-d1/). It's based on SQLite and can be used when deploying applications with Cloudflare Workers.
 
 Following Cloudflare's principles of geographic distribution and bringing compute and data closer to application users, D1 supports automatic read-replication. It dynamically manages the number of database instances and locations of read-only replicas based on how many queries a database is getting, and from where.
 
@@ -39,7 +35,7 @@ Many aspects of using Prisma ORM with D1 are just like using Prisma ORM with any
 There are a number of differences between D1 and SQLite to consider. You should be aware of the following when deciding to use D1 and Prisma ORM:
 
 - **Local and remote D1 (SQLite) databases**. Cloudflare provides local and remote versions of D1. The [local](https://developers.cloudflare.com/d1/build-with-d1/local-development/) version is managed using the `--local` option of the `wrangler d1` CLI and is located in `.wrangler/state`. The [remote](https://developers.cloudflare.com/d1/build-with-d1/remote-development/) version is managed by Cloudflare and is accessed via HTTP.
-- **Making schema changes**. Since D1 uses HTTP to connect to the remote database, this makes it incompatible with some commands of Prisma Migrate, like `prisma migrate dev`. However, you can use D1's [migration system](https://developers.cloudflare.com/d1/reference/migrations/) and the [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) command for your migration workflows. See the [Migration workflows](#migration-workflows) below for more information.
+- **Making schema changes**. With a `prisma.config.ts` file and a defined schema engine adapter, you can use Prisma Migrate's normal commands, like `prisma migrate dev`. However, if you would prefer a Cloudflare first approach, you can use D1's [migration system](https://developers.cloudflare.com/d1/reference/migrations/) and the [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) command for your migration workflows. See the [Migration workflow](#migration-workflow) and [Alternative migration workflow](#alternative-migration-workflow) sections below for more information.
 
 ## How to connect to D1 in Cloudflare Workers or Cloudflare Pages
 
@@ -47,9 +43,37 @@ When using Prisma ORM with D1, you need to use the `sqlite` database provider an
 
 If you want to deploy a Cloudflare Worker with D1 and Prisma ORM, follow these [step-by-step instructions](/guides/cloudflare-d1).
 
-## Migration workflows
+## Migration workflow
 
-Cloudflare D1 comes with its own [migration system](https://developers.cloudflare.com/d1/reference/migrations/). We recommend that you use this migration system via the `wrangler d1 migrations` command to create and manage migration files on your file system.
+Our recommended migration workflow is to use a `prisma.config.ts` file to define a schema engine adapter and to use standard `prisma migrate` commands.
+
+### Setting up Prisma config
+
+First, make sure that you have [a `prisma.config.ts` file](/orm/reference/prisma-config-reference) for your project. 
+
+Then, set up a [schema driver adapter](/orm/reference/prisma-config-reference#schemaadapter) to reference D1.
+
+```ts
+import type { PrismaConfig } from 'prisma'
+
+export default {
+  earlyAccess: true,
+  schema: {
+    adapter: async (env: Env) => {
+      await import { PrismaD1 } from '@prisma/adapter-d1'
+      return new PrismaD1(env.DB)
+    },
+  },
+} satisfies PrismaConfig
+```
+
+### Migrate your database
+
+You should now be able to take advantage of `prisma migrate`. Use `prisma migrate dev --name init` in order to create your first migration and apply it to your D1 database.
+
+## Alternative migration workflow
+
+Cloudflare D1 comes with its own [migration system](https://developers.cloudflare.com/d1/reference/migrations/). While we recommend that you use [the prisma migrate workflow](#migration-workflow), this migration system via the `wrangler d1 migrations` command is available.
 
 This command doesn't help you in figuring out the SQL statements for creating your database schema that need to be put _inside_ of these migration files though. If you want to query your database using Prisma Client, it's important that your database schema maps to your Prisma schema, this is why it's recommended to generate the SQL statements from your Prisma schema.
 
