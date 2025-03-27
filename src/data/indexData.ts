@@ -130,33 +130,33 @@ export const tabs = [
     description: "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres you'll</b> get a hosted database immediately that comes standard with caching, connection pooling, real-time events, and access control all with a generous free tier.",
     list: [
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        url: "/guides/nextjs",
         image: "/img/technologies/nextjs.svg",
         tech: "Nextjs"
       },
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        url: "/guides/nuxt",
         image: "/img/technologies/nuxtjs.svg",
         tech: "Nuxtjs"
       },
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        url: "/guides/react-router-7",
         image: "/img/technologies/reactrouter.svg",
         tech: "React Router"
       },
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/redwood.svg",
-        tech: "Redwood"
+        url: "/guides/solid-start",
+        image: "/img/technologies/solidstart.svg",
+        tech: "SolidStart"
       },
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/sveltekit.svg",
-        tech: "Sveltekit"
+        url: "/guides/tanstack-start",
+        image: "/img/technologies/tanstack.png",
+        tech: "TanStack"
       },
     ],
     link: {
-      url: "/",
+      url: "https://www.prisma.io/docs/getting-started/prisma-postgres/import-from-existing-database-postgresql",
       label: "How to migrate to Prisma Postgres",
       icon: "fa-regular fa-book-open"
     }
@@ -167,39 +167,35 @@ export const tabs = [
     description: "<b>Already have a database?</b> With Prisma ORM and Prisma Data Platform, you can supercharge your existing stack. Add connection pooling and caching with generous free tiers.",
     list: [
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql",
         image: "/img/technologies/postgresqlsimple.svg",
         tech: "PostgreSQL"
       },
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/nextjs.svg",
-        tech: "Nextjs"
-      },
-      {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale",
         image: "/img/technologies/planetscale.svg",
         imageDark: "/img/technologies/planetscaledark.svg",
         tech: "Planetscale"
       },
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-        image: "/img/technologies/sqlite.svg",
-        tech: "SQLite"
-      },
-      {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-sqlserver",
         image: "/img/technologies/sqlserver.svg",
         tech: "SQL Server"
       },
       {
-        url: "/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
+        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-mysql",
         image: "/img/technologies/mysqlsimple.svg",
         tech: "MySQL"
       },
+      {
+        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb",
+        image: "/img/technologies/cockroachdb.svg",
+        imageDark: "/img/technologies/cockroachdbdark.svg",
+        tech: "CockroachDB"
+      }
     ],
     link: {
-      url: "/",
+      url: "/getting-started/setup-prisma/add-to-existing-project",
       label: "How to migrate to Prisma ORM",
       icon: "fa-regular fa-book-open"
     }
