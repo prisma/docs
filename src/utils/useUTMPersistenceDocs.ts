@@ -32,8 +32,9 @@ const useUTMPersistenceDocs = () => {
   useEffect(() => {
     const currentParams = new URLSearchParams(location.search);
     const isDirectEntry = !document.referrer;
+    const isManualRemoval = !hasUTMParams(currentParams) && document.referrer?.includes(window.location.hostname);
 
-    if (isDirectEntry) {
+    if (isDirectEntry || isManualRemoval) {
       sessionStorage.removeItem("utm_params");
       localStorage.removeItem("utm_params");
     }
@@ -52,7 +53,7 @@ const useUTMPersistenceDocs = () => {
     clearSessionStorageAfterInactivity();
 
 
-  }, [location]);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (utmParams && !location.search.includes("utm_source")) {
