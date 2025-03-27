@@ -208,24 +208,24 @@ export const tabs = [
 
 export const how_do_i = [
   {
-    title: "Migrate my schema?",
+    title: "Model my schema?",
     description: "Prisma's metrics feature gives you detailed insights into how Prisma interacts with your database. In this tutorial, you will learn how to use metrics to monitor your database using Prisma, Prometheus and Grafana.",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/orm/prisma-schema/overview",
     time: 15
   },
   {
     title: "Cache my queries?",
     description: "Prisma Postgres comes with a built-in global cache (enabled by Prisma Accelerate) that helps you speed up your database queries. You can cache results on a per-query level",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/postgres/caching",
     time: 15
   },
   {
     title: "Integrate with an existing DB?",
     description: "Baselining is the process of initializing a migration history for a database that existed before you started using Prisma Migrate and contains data",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/orm/prisma-migrate/workflows/baselining",
     time: 15
   },
   {
@@ -239,34 +239,34 @@ export const how_do_i = [
     title: "Get started with models?",
     description: "The data model definition part of the Prisma schema defines your application models (also called Prisma models). Models: Represent the entities",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/orm/prisma-schema/data-model/models",
   },
   {
     title: "Filter and sort?",
     description: "Prisma Client supports filtering with the where query option, and sorting with the orderBy query option.",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/orm/prisma-client/queries/filtering-and-sorting",
     time: 15
   },
   {
     title: "Query relations?",
     description: "A key feature of Prisma Client is the ability to query relations between two or more models. Relation queries include: Nested reads",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/orm/prisma-client/queries/relation-queries",
     time: 15
   },
   {
     title: "Migrate my schema?",
     description: "When working in a team, managing database schema changes can be challenging. This guide shows you how to effectively collaborate on schema changes",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/guides/implementing-schema-changes",
     time: 15
   },
   {
     title: "Generate Prisma Client?",
     description: "Prisma Client is an auto-generated database client that's tailored to your database schema. By default, Prisma Client is generated into the",
     tags: ["guides", "schema", "orm"],
-    url: "/",
+    url: "/orm/prisma-client/setup-and-configuration/generating-prisma-client",
     time: 15
   }
 ];
