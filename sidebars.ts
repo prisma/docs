@@ -420,7 +420,7 @@ const sidebars: SidebarsConfig = {
             "guides/tanstack-start",
             "guides/react-router-7",
             "guides/solid-start",
-          ],
+          ].sort(),
         },
         {
           type: "category",
