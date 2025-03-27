@@ -88,12 +88,12 @@ export const get_help = [
     links: [
       {
         icon: "fa-brands fa-github",
-        link: "/",
+        link: "https://github.com/prisma/prisma/issues/new?assignees=&labels=kind/bug&projects=&template=bug_report.yml",
         label: "Report a bug"
       },
       {
         icon: "fa-brands fa-github",
-        link: "/",
+        link: "https://github.com/prisma/prisma/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=",
         label: "Request a new feature"
       }
     ]      
@@ -116,7 +116,7 @@ export const get_help = [
     description: "Support for customers in our <b>Pro</b> or <b>Business</b> plan is provided by the Platform Console.",
     links: [
       {
-        link: "pris.ly/discord",
+        link: "https://console.prisma.io/login?utm_source=website&utm_medium=default&utm_campaign=login",
         label: "Submit a ticket"
       }
     ]      
