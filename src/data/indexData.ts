@@ -156,7 +156,7 @@ export const tabs = [
       },
     ],
     link: {
-      url: "https://www.prisma.io/docs/getting-started/prisma-postgres/import-from-existing-database-postgresql",
+      url: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
       label: "How to migrate to Prisma Postgres",
       icon: "fa-regular fa-book-open"
     }
