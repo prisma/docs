@@ -48,35 +48,50 @@ const kapaStyles = `
 .kapa-ai-button {
   display: flex;
   align-items: center;
-  justify-content: center;
   width: 100%;
-  margin: 8px 0;
-  padding: 16px;
-  background-color: rgba(91, 76, 254, 0.15);
-  border: 1px solid rgba(91, 76, 254, 0.4);
+  margin: 0;
+  padding: 12px 16px 10px;
+  background-color: var(--docsearch-hit-background);
+  border: 1px solid transparent;
   border-radius: 8px;
   font-size: 14px;
-  color: #5b4cfe;
+  color: var(--docsearch-text-color);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
+.kapa-ai-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  padding: 2px;
+  background: linear-gradient(90deg, rgba(113,232,223,.4), rgba(102,126,234,.4));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
 .kapa-ai-button:hover {
-  background-color: rgba(91, 76, 254, 0.25);
-  border-color: rgba(91, 76, 254, 0.5);
+  background-color: rgba(113,232,223,.1);
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(91, 76, 254, 0.2);
+  box-shadow: 0 2px 4px rgba(0,0,0,.05);
 }
 
 .kapa-ai-button:active {
-  background-color: rgba(91, 76, 254, 0.3);
   transform: translateY(0);
+  box-shadow: none;
 }
 
 .kapa-ai-text {
-  font-weight: 600;
+  font-weight: 500;
   display: flex;
   align-items: center;
   margin-left: 8px;
@@ -85,19 +100,31 @@ const kapaStyles = `
 /* Override any external styles */
 .DocSearch-KapaWrapper .kapa-ai-icon {
   flex-shrink: 0;
-  width: 40px !important;
-  height: 40px !important;
-  max-width: 40px !important;
-  max-height: 40px !important;
-  object-fit: contain !important;
+  width: 32px !important;
+  height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  object-fit: cover !important;
+  object-position: 0 0 !important;
   display: inline-block !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
+/* Light mode logo */
+[data-theme='light'] .kapa-ai-icon {
+  content: url('https://www.prisma.io/docs/img/logo-dark.svg');
+  width: 32px !important;
+  height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  object-fit: cover !important;
+  object-position: 0 0 !important;
+}
+
 .DocSearch-KapaWrapper {
-  padding: 0 20px;
-  margin-top: 12px;
+  padding: 0;
+  margin: 12px 0;
   position: relative;
   order: -1;
   z-index: 10;
@@ -306,9 +333,9 @@ function DocSearch({ externalUrlRegex, ...props }: DocSearchProps) {
         button.innerHTML = `
         <img
           class="kapa-ai-icon"
-          width="40"
-          height="40"
-          src="https://www.prisma.io/docs/ai_button.svg"
+          width="32"
+          height="32"
+          src="https://www.prisma.io/docs/img/logo-white.svg"
           alt="Prisma AI"
         />
         <span class="kapa-ai-text">Ask AI about "${query}"</span>
