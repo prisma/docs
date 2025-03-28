@@ -129,7 +129,7 @@ export const Tab = ({ children, ...props }) => (
   </div>
 );
 
-export const SquareLogo = ({ image, tech, url, imageDark }: any) => {
+export const SquareLogo = ({ className, image, tech, url, imageDark }: any) => {
   const squareCardRef = useRef(null);
   const imgUrl = useBaseUrl(image);
   const imgDarkUrl = useBaseUrl(imageDark);
@@ -137,7 +137,7 @@ export const SquareLogo = ({ image, tech, url, imageDark }: any) => {
   return (
     <>
       <Link
-        className={styles.squareWrapper}
+        className={clsx(className, styles.squareWrapper)}
         to={url}
         ref={squareCardRef}
         onMouseMove={() => setVisibleTooltip(true)}
