@@ -47,24 +47,62 @@ If you want to deploy a Cloudflare Worker with D1 and Prisma ORM, follow these [
 
 Our recommended migration workflow is to use a `prisma.config.ts` file to define a schema engine adapter and to use standard `prisma migrate` commands.
 
+### Add needed environment variables
+
+In order to set up the D1 adapter, you'll need to add a few secrets to a `.env` file:
+- `DATABASE_URL`: A path to a SQLite database, used in local development
+- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare account ID, fetched via `npx wrangler whoami`
+- `CLOUDFLARE_DATABASE_ID`: Retrieved during D1 database creation. If you have an existing D1 database, you can use `npx wrangler d1 list` and `npx wrangler d1 info <database_name>` to get the ID.
+- `CLOUDFLARE_D1_TOKEN`: This API token is used by Prisma ORM to communicate with your D1 instance directly. To create this, follow these steps:
+  1. Visit https://dash.cloudflare.com/profile/api-tokens
+  2. Click "Create Token"
+  3. Click "Custom token" template
+  4. Fill out the template: Make sure you use a recognizable name and add the `Account / D1 / Edit` permission.
+  5. Click "Continue to summary" and then "Create Token".
+
+You can then add these to your `.env` file or use them directly if they are stored in a different secret store.
+
+```bash file=.env
+DATABASE_URL="file:./prisma/db.sqlite"
+
+CLOUDFLARE_ACCOUNT_ID="0773..."
+CLOUDFLARE_DATABASE_ID="01f30366-..."
+CLOUDFLARE_D1_TOKEN="F8Cg..."
+```
+
 ### Setting up Prisma config
 
 First, make sure that you have [a `prisma.config.ts` file](/orm/reference/prisma-config-reference) for your project. 
 
-Then, set up a [schema driver adapter](/orm/reference/prisma-config-reference#schemaadapter) to reference D1.
+Then, set up a [migration driver adapter](/orm/reference/prisma-config-reference#migrationadapter) to reference D1.
 
 ```ts
-import type { PrismaConfig } from 'prisma'
+import path from 'node:path'
+import { defineConfig } from 'prisma/config'
+import { PrismaD1HTTP } from '@prisma/adapter-d1'
 
-export default {
+// import your .env file
+import 'dotenv/config'
+
+type Env = {
+  CLOUDFLARE_D1_TOKEN: string
+  CLOUDFLARE_ACCOUNT_ID: string
+  CLOUDFLARE_DATABASE_ID: string
+}
+
+export default defineConfig<Env>({
   earlyAccess: true,
-  schema: {
-    adapter: async (env: Env) => {
-      await import { PrismaD1 } from '@prisma/adapter-d1'
-      return new PrismaD1(env.DB)
+  schema: path.join('prisma', 'schema.prisma'),
+  migrate: {
+    async adapter(env: Env) {
+      return new PrismaD1HTTP({
+        CLOUDFLARE_D1_TOKEN: env.CLOUDFLARE_D1_TOKEN,
+        CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_DATABASE_ID: env.CLOUDFLARE_DATABASE_ID,
+      })
     },
-  },
-} satisfies PrismaConfig
+  }
+})
 ```
 
 ### Migrate your database
