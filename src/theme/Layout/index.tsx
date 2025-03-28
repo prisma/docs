@@ -16,6 +16,7 @@ import ErrorPageContent from '@theme/ErrorPageContent';
 import type {Props} from '@theme/Layout';
 import styles from './styles.module.css';
 import { useHistory, useLocation } from '@docusaurus/router';
+import useUTMPersistenceDocs from '@site/src/utils/useUTMPersistenceDocs';
 
 export default function Layout(props: Props): ReactNode {
   const {
@@ -28,26 +29,7 @@ export default function Layout(props: Props): ReactNode {
   } = props;
 
   useKeyboardNavigation();
-  const location = useLocation(); // Get current URL
-  const history = useHistory(); // Router navigation
-
-  useEffect(() => {
-    const currentParams = new URLSearchParams(location.search);
-    const hasUTMParams =
-      currentParams.has("utm_source") ||
-      currentParams.has("utm_medium") ||
-      currentParams.has("utm_campaign");
-
-    if (!hasUTMParams) {
-      const storedParams = localStorage.getItem("utm_params");
-
-      if (storedParams) {
-        history.replace(`${location.pathname}?${storedParams}`);
-      }
-    } else {
-      localStorage.setItem("utm_params", currentParams.toString());
-    }
-  }, [location, history]);
+  useUTMPersistenceDocs();
   
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
