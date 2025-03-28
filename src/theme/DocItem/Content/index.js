@@ -43,17 +43,72 @@ export default function DocItemContent({ children }) {
               />
             </section>
           )}
-          {
-            frontMatter.completion_time &&
+          {frontMatter.completion_time && (
             <div className="completion-time-wrapper">
-              <div className="completion-time-container">
-                {frontMatter.completion_time}
-              </div>
+              <div className="completion-time-container">{frontMatter.completion_time}</div>
             </div>
-          }
+          )}
         </header>
       )}
-      <MDXContent>{children}</MDXContent>
+      <MDXContent>
+        {children}{" "}
+        {frontMatter.community_section && (
+          <div>
+            <br />
+            <h2>Stay connected with Prisma</h2>
+            <p>
+              Continue your Prisma journey by connecting with{" "}
+              <a href="https://www.prisma.io/community" target="_blank">
+                {" "}
+                our active community
+              </a>
+              . Stay informed, get involved, and collaborate with other developers:
+              <br />
+              <ul>
+                <li>
+                  <a
+                    href="https://pris.ly/x?utm_source=docs&utm_medium=generated_text_cta"
+                    target="_blank"
+                  >
+                    Follow us on X
+                  </a>{" "}
+                  for announcements, live events and useful tips.
+                </li>
+                <li>
+                  <a
+                    href="https://pris.ly/discord?utm_source=docs&utm_medium=generated_text_cta"
+                    target="_blank"
+                  >
+                    Join our Discord
+                  </a>{" "}
+                  to ask questions, talk to the community, and get active support through
+                  conversations.
+                </li>
+                <li>
+                  <a
+                    href="https://pris.ly/youtube?utm_source=docs&utm_medium=generated_text_cta"
+                    target="_blank"
+                  >
+                    Subscribe on YouTube
+                  </a>{" "}
+                  for tutorials, demos, and streams.
+                </li>
+                <li>
+                  <a
+                    href="https://pris.ly/github?utm_source=docs&utm_medium=generated_text_cta"
+                    target="_blank"
+                  >
+                    Engage on GitHub
+                  </a>{" "}
+                  by starring the repository, reporting issues, or contributing to an issue.
+                </li>
+              </ul>
+              We genuinely value your involvement and look forward to having you as part of our
+              community!
+            </p>
+          </div>
+        )}
+      </MDXContent>
     </div>
   );
 }
