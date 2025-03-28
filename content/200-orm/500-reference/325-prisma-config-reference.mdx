@@ -48,6 +48,11 @@ export default {
 interface PrismaConfig {
   // Required while in Early Access
   earlyAccess: boolean
+
+  // Optional: Configure Prisma Migrate behavior
+  migrate?: {
+    adapter?: (env: Env) => Promise<PrismaAdapter>
+  }
   
   // Optional: Configure schema location (default: ./prisma/schema.prisma)
   schema?: {
@@ -72,14 +77,14 @@ interface PrismaConfig {
 
 Controls whether the config file is enabled. Must be set to `true` during Early Access.
 
-### `schema`
+### `migration`
 - Type: `object`
 - Required: No
-- Default: `{ kind: 'single', filePath: './prisma/schema.prisma' }`
+- Default: `{}`
 
-Configures how Prisma locates and loads your schema file(s). See sub-options below for details.
+Configures how Prisma Migrate communicates with your underlying database. See sub-options below for details.
 
-#### `schema.adapter`
+#### `migration.adapter`
 - Type: `(env: Env) => Promise<PrismaAdapter>`
 - Required: No
 - Default: none
@@ -90,17 +95,36 @@ Example using the Prisma ORM D1 driver adapter:
 
 ```ts
 import type { PrismaConfig } from 'prisma'
+import path from 'node:path'
+import { PrismaD1HTTP } from '@prisma/adapter-d1'
+import 'dotenv/config'
+
+type Env = {
+  CLOUDFLARE_D1_TOKEN: string
+  CLOUDFLARE_ACCOUNT_ID: string
+  CLOUDFLARE_DATABASE_ID: string
+}
 
 export default {
   earlyAccess: true,
-  schema: {
-    adapter: async (env: Env) => {
-      await import { PrismaD1 } from '@prisma/adapter-d1'
-      return new PrismaD1(env.DB)
+  migration: {
+    async adapter(env) {
+      return new PrismaD1HTTP({
+        CLOUDFLARE_D1_TOKEN: env.CLOUDFLARE_D1_TOKEN,
+        CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_DATABASE_ID: env.CLOUDFLARE_DATABASE_ID,
+      })
     },
   },
-} satisfies PrismaConfig
+} satisfies PrismaConfig<Env>
 ```
+
+### `schema`
+- Type: `object`
+- Required: No
+- Default: `{ kind: 'single', filePath: './prisma/schema.prisma' }`
+
+Configures how Prisma ORM locates and loads your schema file(s). See sub-options below for details.
 
 #### `schema.filePath`
 - Type: `string`
