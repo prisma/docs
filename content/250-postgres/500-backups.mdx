@@ -12,3 +12,133 @@ Please note that any database changes or events that occurred after the most rec
 
 In the future, Prisma Postgres will provide more fine-grained backup mechanisms based on user specific configurations and with point-in-time restore functionality.
 
+## Creating Backup file via `@prisma/ppg-tunnel`
+
+If you would like to create a backup file of your database, you can use the `@prisma/ppg-tunnel` CLI. This is useful for migrating data between databases or creating a local copy of your database.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Node.js** installed (version 16 or higher).
+- **PostgreSQL CLI Tools** (`pg_dump`) for creating backups. Use Postgres version 17 as Prisma Postgres is based on this version.
+- A **Database connection string** for your Prisma Postgres database.
+
+To create backups, ensure you have the PostgreSQL command-line tools installed. Run the following commands based on your operating system:
+
+<TabbedContent code>
+
+<TabItem value="macOS">
+
+```terminal
+brew install postgresql@17
+which pg_dump
+which pg_restore
+```
+
+</TabItem>
+
+<TabItem value="Windows">
+
+```terminal
+# Download from the official PostgreSQL website:
+# https://www.postgresql.org/download/windows/
+# During installation, select "Command Line Tools".
+# Then verify with:
+
+where pg_dump
+where pg_restore
+```
+</TabItem>
+
+<TabItem value="Linux">
+
+```terminal
+sudo apt-get update
+sudo apt-get install postgresql-client-17
+which pg_dump
+which pg_restore
+```
+
+</TabItem>
+
+</TabbedContent>
+
+:::tip
+If you installed PostgreSQL but still see a “command not found” error for pg_dump or pg_restore, ensure your installation directory is in your system’s PATH environment variable.
+:::
+
+:::note
+Please make sure that you are installing Postgresql version 17. Other versions may cause errors during the backup process.
+:::
+
+### 1. Connecting to the database directly with `@prisma/ppg-tunnel`
+
+In your terminal, run `npx @prisma/ppg-tunnel` to establish a secure tunnel to your database.
+
+If you already have a `.env` file in your current directory with `DATABASE_URL` set, the tunnel CLI will automatically pick it up—no need to manually export it. However, if you haven't set up a `.env` file, you'll need to set the `DATABASE_URL` environment variable explicitly.
+
+To set environment variable (with your actual database URL):
+```bash
+export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."
+```
+:::note
+If you explicitly set `DATABASE_URL` in your terminal, that value will take precedence over the one in your `.env` file.
+:::
+
+Run the tunnel:
+```bash
+npx @prisma/ppg-tunnel --host 127.0.0.1  --port 5432
+```
+
+You can provide any other port if you wish. A random port is assigned if no port value is provided.
+You should see output similar to:
+
+```cmd
+Prisma Postgres auth proxy listening on 127.0.0.1:5432 🚀
+
+Your connection is authenticated using your Prisma Postgres API key.
+...
+
+==============================
+hostname:  127.0.0.1
+port:      5432
+username:  <anything>
+password:  <none>
+==============================
+```
+
+:::note
+Please note that the port you will see in your output will be a randomly assigned port which may be different from the one mentioned here.
+Also, Keep this terminal window open so the tunnel remains active! If you close it, the tunnel disconnects.
+:::
+
+Copy the port number from the terminal output, you’ll need it in the next step for the `pg_dump` command.
+
+### 2. Creating the Backup with `pg_dump`
+
+With the tunnel running, you can now dump the database by running the following command:
+```bash
+PGSSLMODE=disable \
+pg_dump \
+  -h 127.0.0.1 \
+  -p 5432 \
+  -Fc \
+  -v \
+  -d postgres \
+  -f ./mydatabase.bak \
+&& echo "-complete-"
+```
+
+`PGSSLMODE=disable` indicates SSL is not required locally because the tunnel already encrypts the connection.
+
+```
+`-h` is the host (127.0.0.1)
+`-p` is the port, which should match the one from the tunnel output.
+`-Fc` uses the custom format for backups, recommended for pg_restore.
+`-d` postgres is the default database name used in Prisma Postgres.
+`-f` ./mydatabase.bak specifies the backup file name and location.
+`-v` runs pg_dump in verbose mode.
+```
+
+This should create your backup file named `mydatabase.bak` in the current directory.
