@@ -7,6 +7,7 @@ import React from "react";
 
 import type { Props } from "@theme/NavbarItem/NavbarNavLink";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import { hasUTMParams } from "@site/src/utils/useUTMPersistenceDocs";
 
 export default function NavbarNavLink({
   activeBasePath,
@@ -57,10 +58,9 @@ export default function NavbarNavLink({
   }
 
   const isRoot = toUrl === "/docs" || toUrl === "/docs/";
-
   return (
     <Link
-      to={isRoot ? "/docs" : toUrl}
+      to={hasUTMParams(window.location.search) ? "/docs/" : isRoot ? "/docs" : toUrl}
       autoAddBaseUrl={isRoot ? false : undefined}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {

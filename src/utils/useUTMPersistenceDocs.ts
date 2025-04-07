@@ -1,16 +1,16 @@
 import { useHistory, useLocation } from '@docusaurus/router';
 import { useEffect, useRef } from 'react';
 
+export const hasUTMParams = (search: string) => {
+  const params = new URLSearchParams(search);
+  return ['utm_source', 'utm_medium', 'utm_campaign'].some(p => params.has(p));
+};
+
 export const useUTMPersistenceDocs = () => {
   const location = useLocation();
   const history = useHistory();
   const isManualRemoval = useRef(false);
   const previousSearch = useRef('');
-
-  const hasUTMParams = (search: string) => {
-    const params = new URLSearchParams(search);
-    return ['utm_source', 'utm_medium', 'utm_campaign'].some(p => params.has(p));
-  };
 
   const getUTMParams = (search: string) => {
     const params = new URLSearchParams(search);
