@@ -1,19 +1,19 @@
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
+import { useColorMode } from '@docusaurus/theme-common';
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { Icon } from "@site/src/components/Icon";
 import { CommunityLinksData, get_help, how_do_i, ProductLinkData, tabs } from "@site/src/data/indexData";
 import Heading from "@theme/Heading";
 import Layout from "@theme/Layout";
 import clsx from "clsx";
-import {useColorMode} from '@docusaurus/theme-common';
+import { useEffect, useRef, useState } from "react";
 
 import Badge from "../components/button/Badge";
+import { SquareLogo } from "../components/GettingStarted";
+import { Tooltip } from "../components/tooltip/Tooltip";
 import CodeBlock from "../theme/CodeBlock";
 import styles from "./index.module.scss";
-import { SquareLogo } from "../components/GettingStarted";
-import { useEffect, useRef, useState } from "react";
-import { Tooltip } from "../components/tooltip/Tooltip";
 
 function HomepageCard({
   className,
@@ -105,7 +105,7 @@ function HomepageHowDoISection() {
               <h4>{e.title}</h4>
               <p>{e.description}</p>
             </Link>
-            {(e.tags.length || e.time) && <div className={styles.footer}>
+            {((e.tags && e.tags.length) || e.time) && <div className={styles.footer}>
               {e.tags.length && <div className={styles.tags}>
                 {e.tags.map((tag: any) => <Badge variant="primary" key={tag} color="gray" size="sm" label={tag} />)}
               </div>}
@@ -122,7 +122,7 @@ function HomepageHowDoISection() {
               <h4>{e.title}</h4>
               <p>{e.description}</p>
             </Link>
-            {(e.tags.length || e.time) && <div className={styles.footer}>
+            {((e.tags && e.tags.length) || e.time) && <div className={styles.footer}>
               {e.tags.length && <div className={styles.tags}>
                 {e.tags.map((tag: any) => <Badge variant="primary" key={tag} color="gray" size="sm" label={tag} />)}
               </div>}
