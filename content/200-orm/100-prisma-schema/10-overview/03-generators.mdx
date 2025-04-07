@@ -15,7 +15,7 @@ generator client {
 
 A generator determines which assets are created when you run the `prisma generate` command. The main property `provider` defines which **Prisma Client (language specific)** is created.
 
-Currently, `prisma-client-js` is generally available, while [`prisma-client-ts` is in preview](/orm/prisma-client/setup-and-configuration/ts-only-client). Be sure to define a custom output folder for the generated assets using the output property.
+Currently, `prisma-client-js` is generally available, while the `prisma-client` generator is in preview. Be sure to define a custom output folder for the generated assets using the output property. 
 
 Alternatively, you can configure any npm package that complies with our generator specification.
 
@@ -34,23 +34,6 @@ generator client {
 }
 ```
 
-## Prisma Client: `prisma-client-ts` (`Preview`)
-
-The generator for Prisma's Typescript Client accepts multiple additional properties:
-
-- `previewFeatures`: [Preview features](/orm/reference/preview-features) to include
-- `binaryTargets`: Engine binary targets for `prisma-client-ts` (for example, `debian-openssl-1.1.x` if you are deploying to Ubuntu 18+, or `native` if you are working locally)
-- `output`: The directory where Prisma ORM will generate all the type definitions. *This field is required*.
-
-```prisma
-generator client {
-  provider        = "prisma-client-ts"
-  previewFeatures = ["sample-preview-feature"]
-  binaryTargets   = ["linux-musl"]
-  output          = "./generated/prisma-client-ts"
-}
-```
-
 ### Binary targets
 
 Prisma Client JS (`prisma-client-js`) and TS (`prisma-client-ts`) uses several [engines](https://github.com/prisma/prisma-engines). Engines are implemented in Rust and are used by Prisma Client in the form of executable, platform dependent engine files. Depending on which platform you are executing your code on, you need the correct file. "Binary targets" are used to define which files should be present for the target platform(s).
@@ -63,7 +46,7 @@ The `native` binary target is special. It doesn't map to a concrete operating sy
 
 As an example, assume you're running **macOS** and you specify the following generator:
 
-```prisma
+```prisma file=prisma/schema.prisma
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native"]
@@ -75,6 +58,125 @@ If you use macOS Intel x86 (`darwin`), then the binary file that was compiled fo
 If you use macOS ARM64 (`darwin-arm64`), then the binary file that was compiled for `darwin-arm64` will be selected.
 
 > **Note**: The `native` binary target is the default. You can set it explicitly if you wish to include additional [binary targets](/orm/reference/prisma-schema-reference#binarytargets-options) for deployment to different environments.
+
+
+## New `prisma-client` generator (Preview)
+
+The new `prisma-client` generator offers greater control and flexibility when using Prisma ORM across different Node.js environments (including ECMAScript modules). 
+
+The  `prisma-client` generator generates the client **outside** of `node_modules` and inside your application code, allowing you to maintain full visibility over the generated code, including the query engine.
+
+Currently in [Preview](/orm/more/releases#preview), this generator ensures you can bundle your application code exactly the way you want, without relying on hidden or automatic behaviors.
+
+### Getting started
+
+Follow these steps to use the new `prisma-client` generator in your project.
+
+#### 1. Configure the `prisma-client` generator in `schema.prisma`
+
+Update your [`generator`](/orm/prisma-schema/overview/generators) block:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  //add-start
+  provider = "prisma-client"            // Required
+  output   = "../src/generated/prisma/client"  // Required path
+  //add-end
+}
+```
+
+The **`output` option is required** and tells Prisma where to generate the client. You can choose any location suitable for your project structure. For instance, if you have the following layout:
+
+```txt
+.
+├── package.json
+├── prisma
+│   └── schema.prisma
+├── src
+│   └── index.ts
+└── tsconfig.json
+```
+
+Then `../src/generated/prisma/client` places the generated code in `src/generated/prisma/client` relative to `schema.prisma`.
+
+#### 2. Generate the Prisma Client
+
+Generate the `PrismaClient` by running:
+
+```bash
+npx prisma generate
+```
+
+This compiles the necessary TypeScript definitions and includes the query engine in the configured `output` folder.
+
+#### 3. Exclude the generated directory from version control
+
+The new generator includes both the TypeScript client code **and** the [query engine](/orm/more/under-the-hood/engines#the-query-engine-file). Including the query engine in version control can cause compatibility issues on different machines. To avoid this, add the generated directory to `.gitignore`:
+
+```bash file=".gitignore"
+# Recommended:
+prisma/generated/prisma/client
+```
+
+:::note
+
+In the future, you can safely include the generated directory in version control when [Prisma ORM is fully transitioned from Rust to TypeScript](https://www.prisma.io/blog/rust-to-typescript-update-boosting-prisma-orm-performance?utm_source=docs&utm_medium=inline_text).
+
+:::
+
+#### 4. Use the Generated Client in Your Application
+
+After generating the Prisma Client, import the types from the path you specified:
+
+```ts file="src/index.ts"
+import { PrismaClient } from "./generated/prisma/client"
+
+const prisma = new PrismaClient()
+```
+
+Your Prisma Client is now ready to use in your Node.js project.
+
+### Generator options reference
+
+Use the following options in the `generator client { ... }` block. Only `output` is required. The other fields have defaults or are inferred from your environment and `tsconfig.json`.
+
+```prisma file="schema.prisma"
+generator client {
+  // Required
+  provider = "prisma-client"
+  output   = "../src/generated/prisma/client"
+
+  // Optional
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+}
+```
+
+Below are the options for the `prisma-client` generator:
+
+
+| **Option**                | **Default**                  | **Description**                                                                                                                                          |
+|---------------------------|------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `provider`               | `prisma-client-js`                          | It can be `prisma-client-js` or `prisma-client`.                                                                                                                          |
+| `output`                 | `../src/generated/prisma` (**required**)           | Directory where the Prisma Client is generated.                                                                                                          |
+| `runtime`                | `nodejs`                     | Target runtime environment. <br />Supported values: <br />`nodejs` (alias `node`), `deno`, `bun`, `deno-deploy`, `workerd` (alias `cloudflare`), `edge-light` (alias `vercel`), `react-native`. |
+| `moduleFormat`           | Inferred from environment    | Module format (`esm` or `cjs`). Determines whether `import.meta.url` or `__dirname` is used.                                                             |
+| `generatedFileExtension` | `ts`                         | File extension for generated TypeScript files (`ts`, `mts`, `cts`).                                                                                      |
+| `importFileExtension`    | `ts`                         | File extension used in **import statements**. Can be `ts`, `mts`, `cts`, `js`, `mjs`, `cjs`, or empty (for bare imports).                                                                      |
+
+
+### Limitations
+
+1. **Namespace usage**: The generated code still relies on TypeScript features like `namespace`, which may cause incompatibility with certain runtime-only setups (e.g., Node.js 22+ without `--experimental-transform-types`). It remains fully compatible with standard runtimes, `tsx`, `ts-node`, and most bundlers.
+2. **No browser bundle**: There is currently no official browser build, and importing types or enums in frontend code is not supported.
+
+:::note 
+
+Both limitations will be resolved soon in a future release.
+
+:::
 
 ## Community generators
 
