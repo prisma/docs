@@ -15,8 +15,7 @@ import LayoutProvider from '@theme/Layout/Provider';
 import ErrorPageContent from '@theme/ErrorPageContent';
 import type {Props} from '@theme/Layout';
 import styles from './styles.module.css';
-import { useHistory, useLocation } from '@docusaurus/router';
-import useUTMPersistenceDocs from '@site/src/utils/useUTMPersistenceDocs';
+import { useUTMPersistenceDocs } from '@site/src/utils/useUTMPersistenceDocs';
 
 export default function Layout(props: Props): ReactNode {
   const {

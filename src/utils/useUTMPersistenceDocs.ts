@@ -1,67 +1,65 @@
-import { useEffect, useState } from "react";
-import { useHistory, useLocation } from "react-router-dom";
+import { useHistory, useLocation } from '@docusaurus/router';
+import { useEffect, useRef } from 'react';
 
-const useUTMPersistenceDocs = () => {
+export const useUTMPersistenceDocs = () => {
   const location = useLocation();
   const history = useHistory();
-  const [utmParams, setUtmParams] = useState("");
+  const isManualRemoval = useRef(false);
+  const previousSearch = useRef('');
 
-  const hasUTMParams = (params) => {
-    return params.has("utm_source") || params.has("utm_medium") || params.has("utm_campaign");
+  const hasUTMParams = (search: string) => {
+    const params = new URLSearchParams(search);
+    return ['utm_source', 'utm_medium', 'utm_campaign'].some(p => params.has(p));
   };
 
-  // Clears session storage after 30 minutes of inactivity
-  const clearSessionStorageAfterInactivity = () => {
-    const inactivityTimeout = 30 * 60 * 1000; // 30 minutes
-    let inactivityTimer;
-
-    const resetTimer = () => {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(() => {
-        sessionStorage.removeItem("utm_params");
-        localStorage.removeItem("utm_params");
-      }, inactivityTimeout);
-    };
-
-    window.addEventListener("mousemove", resetTimer);
-    window.addEventListener("keypress", resetTimer);
-
-    resetTimer();
+  const getUTMParams = (search: string) => {
+    const params = new URLSearchParams(search);
+    const utmParams = new URLSearchParams();
+    ['utm_source', 'utm_medium', 'utm_campaign'].forEach(param => {
+      const value = params.get(param);
+      if (value) utmParams.set(param, value);
+    });
+    return utmParams.toString();
   };
 
   useEffect(() => {
-    const currentParams = new URLSearchParams(location.search);
-    const isDirectEntry = !document.referrer;
-    const isManualRemoval = !hasUTMParams(currentParams) && document.referrer?.includes(window.location.hostname);
-
-    if (isDirectEntry || isManualRemoval) {
-      sessionStorage.removeItem("utm_params");
-      localStorage.removeItem("utm_params");
+    // Skip initial render
+    if (previousSearch.current === '') {
+      previousSearch.current = location.search;
+      if (hasUTMParams(location.search)) {
+        sessionStorage.setItem('utm_params', getUTMParams(location.search));
+      }
+      return;
     }
 
-    let storedUTM = sessionStorage.getItem("utm_params") || localStorage.getItem("utm_params");
+    const hadUTMs = hasUTMParams(previousSearch.current);
+    const hasUTMs = hasUTMParams(location.search);
 
-    if (hasUTMParams(currentParams)) {
-      const utmParamsString = currentParams.toString();
-      sessionStorage.setItem("utm_params", utmParamsString);
-      localStorage.setItem("utm_params", utmParamsString);
-      setUtmParams(utmParamsString);
-    } else if (storedUTM) {
-      setUtmParams(storedUTM);
+    // Detect manual removal
+    if (hadUTMs && !hasUTMs && location.pathname === previousSearch.current.split('?')[0]) {
+      isManualRemoval.current = true;
+      sessionStorage.removeItem('utm_params');
+      console.log('Manual removal detected - UTMs cleared');
+    }
+    // Save new UTMs if they exist
+    else if (hasUTMs) {
+      isManualRemoval.current = false;
+      sessionStorage.setItem('utm_params', getUTMParams(location.search));
+    }
+    // Restore UTMs if they're missing and weren't manually removed
+    else if (!isManualRemoval.current) {
+      const storedParams = sessionStorage.getItem('utm_params');
+      if (storedParams) {
+        const newSearch = storedParams ? `?${storedParams}` : '';
+        if (location.search !== newSearch) {
+          history.replace({
+            pathname: location.pathname,
+            search: newSearch,
+          });
+        }
+      }
     }
 
-    clearSessionStorageAfterInactivity();
-
-
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (utmParams && !location.search.includes("utm_source")) {
-      history.replace(`${location.pathname}?${utmParams}`);
-    }
-  }, [utmParams, location.pathname, history]);
-
-  return { getStoredUTMParams: () => localStorage.getItem("utm_params") };
+    previousSearch.current = location.search;
+  }, [location, history]);
 };
-
-export default useUTMPersistenceDocs;

@@ -21,20 +21,22 @@ function HomepageCard({
   body,
   link,
   links,
+  key,
 }: {
   className: string;
   heading: JSX.Element;
   body: JSX.Element;
   links?: JSX.Element;
   link?: string;
+  key?: string | number;
 }): JSX.Element {
   return (
     link
-      ? <Link className={className} to={link}>
+      ? <Link key={key} className={className} to={link}>
         {heading}
         {body}
       </Link>
-      : <div className={className}>
+      : <div key={key} className={className}>
         {heading}
         {body}
         <div className={styles.linkGrid}>{links}</div>
