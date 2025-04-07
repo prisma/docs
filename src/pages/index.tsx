@@ -222,11 +222,11 @@ const TabBox = ({icon, label, description, list, link}: any) => {
           </div>
         </div>
       </div>
-      <a href={link.url}>
+      <Link to={link.url}>
         <Icon icon={link.icon} size="inherit" color="inherit" btn="left"/>
         <span>{link.label}</span>
         <Icon icon={"fa-regular fa-arrow-right"} size="inherit" color="inherit" btn="right"/>
-        </a>
+      </Link>
     </div>
   )
 }
