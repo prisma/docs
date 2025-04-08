@@ -236,9 +236,9 @@ function HomepageHeroSection() {
   return (
     <div className={styles.heroWrapper}>
       <div className={styles.hero}>
-        <h1>Prisma Documentation</h1>
-        <p>Working with Prisma gives you a best-in-class TypeScript ORM, a declarative database migration system, and a database with everything you need to get started.
-          <br/> Try out everything Prisma has to offer with one command:</p>
+        <h1>Prisma Doc<span className={styles.h1Content} /></h1>
+        <p>Working with Prisma gives you a best-in-class TypeScript ORM, a declarative database migration system, and a database with everything you need to get started.</p>
+        <p className={styles.subline}>Try out what Prisma has to offer with one command:</p>
         <div className={styles[`hero-code-wrapper`]} data-theme={colorMode}>
           <CodeBlock className={clsx("language-terminal", styles["hero-code"])}>
             npx prisma init --db
