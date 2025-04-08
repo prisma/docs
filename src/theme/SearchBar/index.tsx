@@ -314,7 +314,7 @@ function DocSearch({ externalUrlRegex, ...props }: DocSearchProps) {
         // Add the icon
         button.innerHTML = `
         <i class="fa-solid fa-robot"></i>
-        <span class="kapa-ai-text">Ask AI about this topic"</span>
+        <span class="kapa-ai-text">Ask AI about this topic</span>
         <i class="fa-solid fa-arrow-right"></i>
       `;
 
@@ -326,7 +326,7 @@ function DocSearch({ externalUrlRegex, ...props }: DocSearchProps) {
         // Update the query text
         const textSpan = kapaWrapper.querySelector(".kapa-ai-text");
         if (textSpan) {
-          textSpan.textContent = `Ask AI about this topic"`;
+          textSpan.textContent = `Ask AI about this topic`;
         }
       }
     },
