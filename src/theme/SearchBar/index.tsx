@@ -49,51 +49,33 @@ const kapaStyles = `
   display: flex;
   align-items: center;
   width: 100%;
-  margin: 0;
-  padding: 12px 16px 10px;
-  background-color: var(--docsearch-hit-background);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  font-size: 14px;
-  color: var(--docsearch-text-color);
+  margin: 0 0 0 auto;
+  width: fit-content;
+  border: none;
+  background: transparent;    font-size: 14px;
+  color: var(--docsearch-highlight-color);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  border: transparent;
 }
 
-.kapa-ai-button::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  padding: 2px;
-  background: linear-gradient(90deg, rgba(113,232,223,.4), rgba(102,126,234,.4));
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+.kapa-ai-button > i {
+  transition: transform 150ms ease-in-out;
 }
 
-.kapa-ai-button:hover {
-  background-color: rgba(113,232,223,.1);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,.05);
-}
-
-.kapa-ai-button:active {
-  transform: translateY(0);
-  box-shadow: none;
+.kapa-ai-button:hover > i:last-child {
+  transform: translateX(4px);
 }
 
 .kapa-ai-text {
-  font-weight: 500;
+  font-weight: 700;
   display: flex;
+  margin-right: 8px;
   align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 4px;
   margin-left: 8px;
 }
 
@@ -124,7 +106,7 @@ const kapaStyles = `
 
 .DocSearch-KapaWrapper {
   padding: 0;
-  margin: 12px 0;
+  margin: 12px 0 0 0;
   position: relative;
   order: -1;
   z-index: 10;
@@ -331,14 +313,9 @@ function DocSearch({ externalUrlRegex, ...props }: DocSearchProps) {
 
         // Add the icon
         button.innerHTML = `
-        <img
-          class="kapa-ai-icon"
-          width="32"
-          height="32"
-          src="https://www.prisma.io/docs/img/logo-white.svg"
-          alt="Prisma AI"
-        />
-        <span class="kapa-ai-text">Ask AI about "${query}"</span>
+        <i class="fa-solid fa-robot"></i>
+        <span class="kapa-ai-text">Ask AI about this topic"</span>
+        <i class="fa-solid fa-arrow-right"></i>
       `;
 
         kapaWrapper.appendChild(button);
@@ -349,7 +326,7 @@ function DocSearch({ externalUrlRegex, ...props }: DocSearchProps) {
         // Update the query text
         const textSpan = kapaWrapper.querySelector(".kapa-ai-text");
         if (textSpan) {
-          textSpan.textContent = `Ask AI about "${query}"`;
+          textSpan.textContent = `Ask AI about this topic"`;
         }
       }
     },
