@@ -11,7 +11,7 @@ export const ProductLinkData = {
     title: "A DB with next-gen performance",
     eyebrow: "Postgres",
     description:
-      "Prisma Postgres is a PostgreSQL database with maximum performance and minimum wait time",
+      "Prisma Postgres is a PostgreSQL database deployed on bare metal infrastructure, featuring built-in caching and connection pooling for high performance and reliability — all with zero cold starts",
     link: "/postgres",
     icon: "fa-regular fa-chart-pyramid",
   },
@@ -32,7 +32,7 @@ export const ProductLinkData = {
     icon: "fa-regular fa-bolt",
   },
   t_optimize: {
-    title: "Your queries, smarter.",
+    title: "Your queries, smarter",
     eyebrow: "Optimize",
     description:
       "Prisma Optimize gives you AI-powered insights on potential issues in your code",
@@ -127,7 +127,7 @@ export const tabs = [
   {
     icon: "fa-solid fa-chart-pyramid",
     label: "Use Prisma Postgres",
-    description: "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres</b> you'll get a hosted database immediately that comes standard with caching, connection pooling, events, and access control all with a generous free tier.",
+    description: "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres</b> you'll get a hosted database immediately that comes standard with caching, connection pooling, and works seemsly with Prisma ORM and Prisma Studio all with a generous free tier.",
     list: [
       {
         url: "/guides/nextjs",
