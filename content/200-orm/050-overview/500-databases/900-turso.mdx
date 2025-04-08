@@ -13,11 +13,9 @@ Prisma ORM support for Turso is currently in [Early Access](/orm/more/releases#e
 
 [Turso](https://turso.tech/) is an edge-hosted, distributed database that's based on [libSQL](https://turso.tech/libsql), an open-source and open-contribution fork of [SQLite](https://sqlite.org/), enabling you to bring data closer to your application and minimize query latency. Turso can also be hosted on a remote server.
 
-<Admonition type="warning">
-
+:::warning
 Support for Turso is available in [Early Access](/orm/more/releases#early-access) from Prisma ORM versions 5.4.2 and later.
-
-</Admonition>
+:::
 
 ## Commonalities with other database providers
 
@@ -78,7 +76,7 @@ turso db tokens create turso-prisma-db
 
 Update your `.env` file with the authentication token and connection string:
 
-```text file=.env
+```bash file=.env
 TURSO_AUTH_TOKEN="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9..."
 TURSO_DATABASE_URL="libsql://turso-prisma-db-user.turso.io"
 ```
@@ -130,31 +128,73 @@ const prisma = new PrismaClient({ adapter })
 
 You can use Prisma Client as you normally would with full type-safety in your project.
 
-## How to manage schema changes
+## Using Prisma Migrate via a driver adapter in `prisma.config.ts` (Early Access)
 
-Prisma Migrate and Introspection workflows are currently not supported when working with Turso. This is because Turso uses HTTP to connect to your database, which Prisma Migrate doesn't support.
+As of [v6.6.0](https://pris.ly/release/6.6.0) and with a `prisma.config.ts` file, you can use `prisma db push` to make changes to your database schema.  This is currently in [Early Access](/orm/more/releases#early-access).
 
-To update your database schema:
+### 1. Install the LibSQL driver adapter
 
-1. Generate a migration file using `prisma migrate dev` against a local SQLite database:
+Run this command in your terminal:
 
-   ```terminal
-   npx prisma migrate dev --name init
-   ```
+```termina
+npm install @prisma/adapter-libsql
+```
 
-2. Apply the migration using Turso's CLI:
+### 2. Set environment variables
 
-   ```terminal
-   turso db shell turso-prisma-db < ./prisma/migrations/20230922132717_init/migration.sql
-   ```
+In order to set up the LibSQL adapter, you'll need to add a few secrets to a `.env` file:
 
-   :::info
+- `LIBSQL_DATABASE_URL`: The connection URL of your Turso database instance.
+- `LIBSQL_DATABASE_TOKEN`: The token of your Turso database instance.
 
-   Replace `20230922132717_init` with the name of your migration.
+You can then add these to your `.env` file or use them directly if they are stored in a different secret store:
 
-   :::
+```bash file=.env
+LIBSQL_DATABASE_URL="..."
+LIBSQL_DATABASE_TOKEN="..."
+```
 
-For subsequent migrations, repeat the above steps to apply changes to your database. This workflow does not support track the history of applied migrations to your remote database.
+### 3. Set up Prisma Config file
+
+Make sure that you have a [`prisma.config.ts`](/orm/reference/prisma-config-reference)  file for your project. Then, set up the [migration driver adapter](/orm/reference/prisma-config-reference#migrationadapter) to use `PrismaLibSQL`:
+
+```ts file=prisma.config.ts
+import path from 'node:path'
+import { defineConfig } from 'prisma/config'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
+
+// import your .env file
+import 'dotenv/config'
+
+type Env = {
+  LIBSQL_DATABASE_URL: string
+  LIBSQL_DATABASE_TOKEN: string
+}
+
+export default defineConfig<Env>({
+  earlyAccess: true,
+  schema: path.join('prisma', 'schema.prisma'),
+
+  migrate: {
+    async adapter(env) {
+      return new PrismaLibSQL({
+        url: env.LIBSQL_DATABASE_URL,
+        authToken: env.LIBSQL_DATABASE_TOKEN,
+      })
+    }
+  }
+})
+```
+
+### 4. Migrate your database
+
+Prisma Migrate now will run migrations against your remote Turso database based on the configuration provided in `prisma.config.ts`.
+
+To create your first migration with this workflow, run the following command:
+
+```terminal
+npx prisma migrate dev --name init
+```
 
 ## Embedded Turso database replicas
 
