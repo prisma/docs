@@ -155,12 +155,12 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
   const location = useLocation();
   const url = props.href;
   if (url?.includes(".prisma.io") || url?.startsWith("/") || url?.startsWith("#"))
-    return <DocsLink {...props}>{children}</DocsLink>;
+    return <DocsLink {...props} href={`${props.href}${location.search}`}>{children}</DocsLink>;
   else
     return (
       <a
         {...props}
-        href={`${url}${location.search}`}
+        href={url}
         target="_blank"
         rel="openeer noreferrer"
         className={clsx(props.className, styles.externalLink)}
