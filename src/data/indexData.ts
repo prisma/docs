@@ -11,7 +11,7 @@ export const ProductLinkData = {
     title: "A DB with next-gen performance",
     eyebrow: "Postgres",
     description:
-      "Prisma Postgres is a PostgreSQL database deployed on bare metal infrastructure, featuring built-in caching and connection pooling for high performance and reliability — all with zero cold starts",
+      "Prisma Postgres has bare-metal performance, with the ease of a serverless database — without cold starts.",
     link: "/postgres",
     icon: "fa-regular fa-chart-pyramid",
   },
