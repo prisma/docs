@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 
 import type { Props } from "@theme/NavbarItem/NavbarNavLink";
 import { useLocation } from "@docusaurus/router";
+import BrowserOnly from "@docusaurus/BrowserOnly";
 
 export default function NavbarNavLink({
   activeBasePath,
@@ -23,7 +24,7 @@ export default function NavbarNavLink({
   // {to: 'version'} should probably be forbidden, in favor of {to: '/version'}
   const toUrl = useBaseUrl(to);
   const activeBaseUrl = useBaseUrl(activeBasePath);
-  const isExternalLink = !isInternalUrl(href ? href : to) && label;
+  const isExternalLink = label && (href || to) && !isInternalUrl(href ? href : to) && label;
   const location = useLocation();
 
   const isRoot = toUrl === "/docs" || toUrl === "/docs/";
@@ -38,6 +39,22 @@ export default function NavbarNavLink({
           </>
         ),
       };
+    
+  if (href) {
+    return (
+      <BrowserOnly>
+        {() => {
+          const queryParams = window.location.href.split("?")[1] ?? "";
+          if (queryParams.includes("utm_")) {
+            sessionStorage.setItem("prismaUTM", queryParams);
+          }
+          const utmParams = sessionStorage.getItem("prismaUTM");
+          const modifiedHref = `${href.split("?")[0]}?${utmParams ?? href.split("?")[1]}`;
+          return <Link {...props} {...linkContentProps} href={modifiedHref} />;
+        }}
+      </BrowserOnly>
+    );
+  }
 
   return (
     <Link
