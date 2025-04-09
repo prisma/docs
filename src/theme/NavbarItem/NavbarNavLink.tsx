@@ -3,11 +3,11 @@ import Link from "@docusaurus/Link";
 import { isRegexpStringMatch } from "@docusaurus/theme-common";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import IconExternalLink from "@theme/Icon/ExternalLink";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import type { Props } from "@theme/NavbarItem/NavbarNavLink";
 import BrowserOnly from "@docusaurus/BrowserOnly";
-import { hasUTMParams } from "@site/src/utils/useUTMPersistenceDocs";
+import { useLocation } from "@docusaurus/router";
 
 export default function NavbarNavLink({
   activeBasePath,
@@ -26,6 +26,10 @@ export default function NavbarNavLink({
   const activeBaseUrl = useBaseUrl(activeBasePath);
   const normalizedHref = useBaseUrl(href, { forcePrependBaseUrl: true });
   const isExternalLink = label && href && !isInternalUrl(href);
+  const location = useLocation();
+
+  const [final_link, setLink] = useState<string>("")
+  const isRoot = toUrl === "/docs" || toUrl === "/docs/";
 
   // Link content is set through html XOR label
   const linkContentProps = html
@@ -57,10 +61,9 @@ export default function NavbarNavLink({
     );
   }
 
-  const isRoot = toUrl === "/docs" || toUrl === "/docs/";
   return (
     <Link
-      to={hasUTMParams(window.location.search) ? "/docs/" : isRoot ? "/docs" : toUrl}
+      to={Boolean(location.search) ? `/docs/${location.search}` : isRoot ? "/docs" : toUrl}
       autoAddBaseUrl={isRoot ? false : undefined}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {

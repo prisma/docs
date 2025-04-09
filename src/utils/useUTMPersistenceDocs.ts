@@ -1,7 +1,7 @@
 import { useHistory, useLocation } from '@docusaurus/router';
 import { useEffect, useRef } from 'react';
 
-export const hasUTMParams = (search: string) => {
+const hasUTMParams = (search: string) => {
   const params = new URLSearchParams(search);
   return ['utm_source', 'utm_medium', 'utm_campaign'].some(p => params.has(p));
 };
