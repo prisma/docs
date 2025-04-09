@@ -6,7 +6,6 @@ import IconExternalLink from "@theme/Icon/ExternalLink";
 import React, { useEffect, useState } from "react";
 
 import type { Props } from "@theme/NavbarItem/NavbarNavLink";
-import BrowserOnly from "@docusaurus/BrowserOnly";
 import { useLocation } from "@docusaurus/router";
 
 export default function NavbarNavLink({
@@ -24,7 +23,7 @@ export default function NavbarNavLink({
   // {to: 'version'} should probably be forbidden, in favor of {to: '/version'}
   const toUrl = useBaseUrl(to);
   const activeBaseUrl = useBaseUrl(activeBasePath);
-  const isExternalLink = label && href && !isInternalUrl(href);
+  const isExternalLink = !isInternalUrl(href ? href : to) && label;
   const location = useLocation();
 
   const isRoot = toUrl === "/docs" || toUrl === "/docs/";
@@ -36,16 +35,13 @@ export default function NavbarNavLink({
         children: (
           <>
             {label}
-            {isExternalLink && (
-              <IconExternalLink {...(isDropdownLink && { width: 12, height: 12 })} />
-            )}
           </>
         ),
       };
 
   return (
     <Link
-      to={isRoot ? `/docs${location.search}` : `${toUrl}${location.search}`}
+      to={isRoot ? `/docs${!isExternalLink ? location.search : ""}` : `${toUrl}${!isExternalLink ? location.search : ""}`}
       autoAddBaseUrl={isRoot ? false : undefined}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {
