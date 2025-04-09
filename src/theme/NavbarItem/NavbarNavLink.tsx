@@ -24,7 +24,6 @@ export default function NavbarNavLink({
   // {to: 'version'} should probably be forbidden, in favor of {to: '/version'}
   const toUrl = useBaseUrl(to);
   const activeBaseUrl = useBaseUrl(activeBasePath);
-  const normalizedHref = useBaseUrl(href, { forcePrependBaseUrl: true });
   const isExternalLink = label && href && !isInternalUrl(href);
   const location = useLocation();
 
@@ -43,22 +42,6 @@ export default function NavbarNavLink({
           </>
         ),
       };
-
-  if (href) {
-    return (
-      <BrowserOnly>
-        {() => {
-          const queryParams = window.location.href.split("?")[1] ?? "";
-          if (queryParams.includes("utm_")) {
-            sessionStorage.setItem("prismaUTM", queryParams);
-          }
-          const utmParams = sessionStorage.getItem("prismaUTM");
-          const modifiedHref = `${href.split("?")[0]}?${utmParams ?? href.split("?")[1]}`;
-          return <Link {...props} {...linkContentProps} href={modifiedHref} />;
-        }}
-      </BrowserOnly>
-    );
-  }
 
   return (
     <Link
