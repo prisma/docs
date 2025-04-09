@@ -63,7 +63,7 @@ export default function NavbarNavLink({
 
   return (
     <Link
-      to={Boolean(location.search) ? `/docs/${location.search}` : isRoot ? "/docs" : toUrl}
+      to={isRoot ? `/docs${location.search && `/${location.search}`}` : `${toUrl}${location.search && `/${location.search}`}`}
       autoAddBaseUrl={isRoot ? false : undefined}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {
