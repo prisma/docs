@@ -1,5 +1,6 @@
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
+import { useLocation } from "@docusaurus/router";
 import { useColorMode } from '@docusaurus/theme-common';
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { Icon } from "@site/src/components/Icon";
@@ -29,9 +30,10 @@ function HomepageCard({
   links?: JSX.Element;
   link?: string;
 }): JSX.Element {
+  const location = useLocation();
   return (
     link
-      ? <Link {...rest} className={className} to={link}>
+      ? <Link {...rest} className={className} to={`${link}${location.search}`}>
         {heading}
         {body}
       </Link>
@@ -94,6 +96,9 @@ function HomepageHowDoISection() {
 
   const visibleCards = how_do_i.slice(0, 3);
   const hiddenCards = how_do_i.slice(3);
+
+  const location = useLocation();
+  
   return (
     <div className={styles.howDoISection} ref={howRef}>
       <Heading as="h3" className={styles.h3}>
@@ -102,7 +107,7 @@ function HomepageHowDoISection() {
       <div className={styles.howGrid}>
         {visibleCards.map((e: any) => (
           <div className={styles.howItem}>
-            <Link to={e.url}>
+            <Link to={`${e.url}${location.search}`}>
               <h4>{e.title}</h4>
               <p>{e.description}</p>
             </Link>
@@ -119,7 +124,7 @@ function HomepageHowDoISection() {
         ))}
         {seeMore && hiddenCards.map((e: any, idx: number) => (
           <div className={clsx(styles.howItem, styles.fadeIn)} style={{ animationDelay: `${100 * idx}ms` }}>
-            <Link to={e.url}>
+            <Link to={`${e.url}${location.search}`}>
               <h4>{e.title}</h4>
               <p>{e.description}</p>
             </Link>
@@ -201,6 +206,7 @@ function HomepageCommunitySection() {
 }
 
 const TabBox = ({icon, label, description, list, link}: any) => {
+  const location = useLocation();
   return (
     <div>
       <div className={styles.tabBox}>
@@ -214,7 +220,7 @@ const TabBox = ({icon, label, description, list, link}: any) => {
             {list && list.length && list.map((l: any, idx: number) => 
               <SquareLogo
                 className={styles.heroTabs}
-                url={l.url}
+                url={`${l.url}${location.search}`}
                 image={l.image}
                 tech={l.tech}
                 {... l.imageDark && { imageDark: l.imageDark }}
@@ -223,7 +229,7 @@ const TabBox = ({icon, label, description, list, link}: any) => {
           </div>
         </div>
       </div>
-      <Link to={link.url}>
+      <Link to={`${link.url}${location.search}`}>
         <Icon icon={link.icon} size="inherit" color="inherit" btn="left"/>
         <span>{link.label}</span>
         <Icon icon={"fa-regular fa-arrow-right"} size="inherit" color="inherit" btn="right"/>
@@ -262,6 +268,7 @@ function HomepageHeroSection() {
   )
 }
 function HomepageGetHelpSection() {
+  const location = useLocation();
   return (
     <div className={styles.getHelpSection}>
       <Heading as="h3" className={styles.h3}>
@@ -280,7 +287,7 @@ function HomepageGetHelpSection() {
               <p dangerouslySetInnerHTML={{__html: e.description}}/>
               <div className={styles.links}>
                 {e.links.map((link: any) => 
-                  <a href={link.link} className={styles.link}>
+                  <a href={`${link.link}${location.search}`} className={styles.link}>
                     <Icon icon={link.icon} size="inherit" btn="left" color="inherit" />
                     <span>{link.label}</span>
                     <Icon icon={"fa-regular fa-arrow-up-right"} size="inherit" btn="right" color="inherit" />

@@ -28,7 +28,6 @@ export default function NavbarNavLink({
   const isExternalLink = label && href && !isInternalUrl(href);
   const location = useLocation();
 
-  const [final_link, setLink] = useState<string>("")
   const isRoot = toUrl === "/docs" || toUrl === "/docs/";
 
   // Link content is set through html XOR label
@@ -63,7 +62,7 @@ export default function NavbarNavLink({
 
   return (
     <Link
-      to={isRoot ? `/docs${location.search && `${location.search}`}` : `${toUrl}${location.search && `${location.search}`}`}
+      to={isRoot ? `/docs${location.search}` : `${toUrl}${location.search}`}
       autoAddBaseUrl={isRoot ? false : undefined}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {
