@@ -417,9 +417,10 @@ const sidebars: SidebarsConfig = {
             "guides/turborepo",
             "guides/nextjs",
             "guides/nuxt",
-            "guides/tanstack-start",
-            "guides/react-router-7",
-            "guides/solid-start",
+            // Temporarily hidden until we fix the guides. Vite doesn't do too well with the custom output paths. Errors out with `exports not defined`
+            // "guides/tanstack-start",
+            // "guides/react-router-7",
+            // "guides/solid-start",
           ].sort(),
         },
         {
