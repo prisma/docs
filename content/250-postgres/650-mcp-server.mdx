@@ -1,0 +1,213 @@
+---
+title: 'MCP Server'
+metaTitle: 'Prisma MCP Server'
+metaDescription: 'Manage Prisma Postgres databases using LLMs with the Prisma Model-Context-Protocol (MCP) Server'
+tocDepth: 3
+toc: true
+---
+
+The [Model-Context-Protocol](https://modelcontextprotocol.io/introduction) (MCP) gives LLMs a way to call APIs and thus access external systems in a well-defined manner. Prisma's MCP server gives LLMs the ability to manage Prisma Postgres databases (e.g. spin up new database instances or run schema migrations).
+
+:::note
+
+The Prisma MCP server is available via the Prisma CLI command `prisma platform mcp --early-access` and is currently available in Early Access. See below for how to integrate it in your favorite AI tool. It uses the `stdio` transport mechanism.
+
+:::
+
+## Usage
+
+The Prisma MCP server follows the standard JSON-based configuration for MCP servers. Here's what it looks like:
+
+```json
+{
+  "mcpServers": {
+    "Prisma": {
+      "command": "npx",
+      "args": ["-y", "prisma", "mcp"]
+    }
+  }
+}
+```
+
+## Sample prompts
+
+Here are some sample prompts you can use when the MCP server is running:
+- Log me into the Prisma Console.
+- Create a database in the US region.
+- Create a new `Product` table in my database.
+
+## Integrating in AI tools
+
+AI tools have different ways of integrating MCP servers. In most cases, there are dedicated configuration files in which you add the JSON configuration from above. The configuration contains a command for starting the server that'll be executed by the respective tool so that the server is available to its LLM.
+
+In this section, we're covering the config formats of the most popular AI tools.
+
+### Cursor
+
+To learn more about Cursor's MCP integration, check out the [Cursor MCP docs](https://docs.cursor.com/context/model-context-protocol#configuration-locations).
+
+#### Add via Cursor Settings UI
+
+When opening the **Cursor Settings**, you can add the Prisma MCP Server as follows:
+1. Select **MCP** in the settings sidenav
+1. Click **+ Add new global MCP server**
+1. Add the `Prisma` snippet to the `mcpServers` JSON object:
+    ```json
+    {
+      "mcpServers": {
+        "Prisma": {
+          "command": "npx",
+          "args": ["-y", "prisma", "mcp"]
+        }
+      }
+    }
+    ```
+
+#### Global configuration
+
+Adding it via the  **Cursor Settings** settings will modify the global `~/.cursor/mcp.json` config file. In this case, the Prisma MCP server will be available in _all_ your Cursor projects:
+
+```json file=\~/.cursor/mcp.json
+{
+  "mcpServers": {
+    "Prisma": {
+      "command": "npx",
+      "args": ["-y", "prisma", "mcp"]
+    },
+    // other MCP servers
+  }
+}
+```
+
+#### Project configuration
+
+If you want the Prisma MCP server to be available only in specific Cursor projects, add it to the Cursor config of the respective project inside the `.cursor` directory in the project's root:
+
+```json file=.cursor/mcp.json
+{
+  "mcpServers": {
+    "Prisma": {
+      "command": "npx",
+      "args": ["-y", "prisma", "mcp"]
+    },
+    // other MCP servers
+  }
+}
+```
+
+### Windsurf
+
+To learn more about Windsurf's MCP integration, check out the [Windsurf MCP docs](https://docs.codeium.com/windsurf/mcp).
+
+#### Add via Windsurf Settings UI
+
+When opening the **Windsurf Settings** (via **Windsurf - Settings** > **Advanced Settings or Command Palette** > **Open Windsurf Settings Page**), you can add the Prisma MCP Server as follows:
+1. Select **Cascade** in the settings sidenav
+1. Click **Add Server**
+1. Add the `Prisma` snippet to the `mcpServers` JSON object:
+    ```json
+    {
+      "mcpServers": {
+        "Prisma": {
+          "command": "npx",
+          "args": ["-y", "prisma", "mcp"]
+        }
+      }
+    }
+    ```
+
+#### Global configuration
+
+Adding it via the  **Windsurf Settings** will modify the global `~/.codeium/windsurf/mcp_config.json` config file. Alternatively, you can also manually add it to that file:
+
+```json file=~/.codeium/windsurf/mcp_config.json
+{
+  "mcpServers": {
+    "Prisma": {
+      "command": "npx",
+      "args": ["-y", "prisma", "mcp"]
+    },
+    // other MCP servers
+  }
+}
+```
+
+
+### Claude Code
+
+Claude Code is a terminal-based AI tool where you can add MCP server using the `claud mcp add` command:
+
+```terminal
+claude mcp add prisma npx prisma mcp
+```
+
+Learn more in the [Claude Code MCP docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials#configure-mcp-servers).
+
+### Claude Desktop
+
+Follow the instructions in the [Claude Desktop MCP docs](https://modelcontextprotocol.io/quickstart/user#2-add-the-filesystem-mcp-server) to create the required configuration file:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Then add the JSON snippet to that configuration file:
+
+```json
+{
+  "mcpServers": {
+    "Prisma": {
+      "command": "npx",
+      "args": ["-y", "prisma", "mcp"]
+    },
+    // other MCP servers
+  }
+}
+```
+
+### OpenAI Agents SDK
+
+Here's an example for using the Prisma MCP server in a Python script via the OpenAI Agents SDK:
+
+```python
+from openai import AsyncOpenAI
+from openai.types.beta import Assistant
+from openai.beta import AsyncAssistantExecutor
+from openai.experimental.mcp import MCPServerStdio
+from openai.types.beta.threads import Message, Thread
+from openai.types.beta.tools import ToolCall
+
+# Async context required for MCPServerStdio
+import asyncio
+
+async def main():
+    # Start the Prisma MCP server using stdio
+    async with MCPServerStdio(
+        params={
+            "command": "npx",
+            "args": ["-y", "prisma", "mcp"]
+        }
+    ) as prisma_server:
+        # Optional: view available tools
+        tools = await prisma_server.list_tools()
+        print("Available tools:", [tool.name for tool in tools])
+
+        # Set up the agent with MCP server
+        agent = Assistant(
+            name="Prisma Assistant",
+            instructions="Use the Prisma tools to help the user with database tasks.",
+            mcp_servers=[prisma_server],
+        )
+
+        executor = AsyncAssistantExecutor(agent=agent)
+
+        # Create a thread and send a message
+        thread = Thread(messages=[Message(role="user", content="Create a new user in the database")])
+        response = await executor.run(thread=thread)
+
+        print("Agent response:")
+        for message in response.thread.messages:
+            print(f"{message.role}: {message.content}")
+
+# Run the async main function
+asyncio.run(main())
+```
