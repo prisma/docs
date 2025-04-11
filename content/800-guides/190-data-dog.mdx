@@ -1,0 +1,315 @@
+---
+title: 'How to set up Datadog tracing with Prisma ORM'
+metaTitle: 'Datadog tracing with Prisma ORM'
+description: 'Learn how to configure Datadog tracing for a Prisma ORM project. Capture spans for every query using the @prisma/instrumentation package, dd-trace, and view them in Datadog.'
+sidebar_label: 'Use Datadog with Prisma'
+image: '/img/guides/datadog-tracing-prisma.png'
+completion_time: '15 min'
+tags:
+  - Tracing
+  - Spans
+  - Datadog
+  - Application Performance Monitoring
+  - APM
+community_section: true
+---
+
+## Introduction
+
+In this guide, you will learn how to configure **Datadog** tracing for a new Prisma project. You will capture spans for every database query using the [`@prisma/instrumentation`](https://www.npmjs.com/package/@prisma/instrumentation) package and send those spans to Datadog with [`dd-trace`](https://www.npmjs.com/package/dd-trace).
+
+### What are spans and tracing?
+
+- **Spans** are the individual operations or units of work within a distributed system or complex application. Each database query, service call, or external request is represented by a span.
+  
+- **Tracing** ties these spans together to form a complete, end-to-end picture of a request’s lifecycle. With tracing, you can visualize bottlenecks, identify problematic queries, and pinpoint where errors occur from your queries.
+
+### Why use Datadog?
+
+[Datadog](https://www.datadoghq.com/) is a robust monitoring and analytics platform that provides application performance monitoring, logs management, metrics collection, and more. By sending your trace data to Datadog, you gain real-time visibility into how your application interacts with its databases and external services—all in one convenient, centralized platform.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+- **Node.js** installed (v18+ recommended).
+- A local or hosted **PostgreSQL** database.
+- A **Datadog** account. If you do not have one, [sign up here](https://www.datadoghq.com/).
+- The **Datadog Agent** installed and running on your machine or server where this application will run. You can follow the [Datadog Agent installation docs](https://docs.datadoghq.com/agent/) to set it up.
+
+## 1. Create a new project
+
+To get started, create a new folder and initialize a fresh `package.json`:
+
+```terminal
+mkdir prisma-datadog-tracing
+cd prisma-datadog-tracing
+npm init -y
+```
+
+## 2. Set up Prisma ORM
+
+In this section, you will install Prisma, create your schema, and generate the Prisma Client. This prepares your application to run database queries—queries that you will trace with Datadog.
+
+### 2.1. Install Prisma ORM and create your first models
+
+Run the following commands to install Prisma and a minimal TypeScript runner:
+
+```terminal
+npm install -D prisma tsx
+```
+
+Next, initialize Prisma and create a Prisma Postgres database instance. Use the `--db` flag to create a [new Prisma Postgres](/postgres) project:
+
+```terminal
+npx prisma init --db --output ../src/generated/prisma
+```
+
+:::note
+You will be prompted to name your database and select the closest region. For clarity, choose a memorable name (e.g., `My Datadog Project`).
+:::
+
+This command does the following:
+
+1. Creates a `prisma` directory with a `schema.prisma` file.  
+2. Creates a `.env` file at the project root with your database connection string (`DATABASE_URL`).  
+3. Generates the Prisma Client in the `/src/generated/prisma` directory (as specified in the `--output` flag).
+
+Now, open `prisma/schema.prisma` and update your generator block and models. Replace the `generator` block with the following, and add a `User` and a `Post` model:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//add-start
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  Int
+  author    User    @relation(fields: [authorId], references: [id])
+}
+//add-end
+```
+
+### 2.2. Generate the Prisma Client and run migrations
+
+Generate the Prisma Client and apply your schema to your database:
+
+```terminal
+npx prisma generate
+npx prisma migrate dev --name "init"
+```
+
+This creates the tables according to your schema in the Postgres database and generates a client for you to interact with the database.
+
+## 3. Install required dependencies for tracing
+
+In addition to Prisma, you will need the following packages for Datadog tracing:
+
+```terminal
+npm install @prisma/instrumentation \
+  dd-trace
+```
+
+Also ensure you have development dependencies for TypeScript:
+
+```terminal
+npm install -D typescript
+```
+
+Here’s a quick overview:
+
+- **`@prisma/instrumentation`**: Instruments Prisma queries so they appear as spans in your tracer.
+- **`dd-trace`**: Official Node.js tracing library from Datadog.
+
+## 4. Set up Datadog tracing
+
+Create a `tracer.ts` file in the `src` folder to instantiate your tracing logic:
+
+```terminal
+touch src/tracer.ts
+```
+
+### 4.1. Configure the tracer
+
+Open `src/tracer.ts` and add the following code:
+
+```ts file=src/tracer.ts
+import Tracer from "dd-trace";
+import {
+  PrismaInstrumentation,
+  registerInstrumentations,
+} from "@prisma/instrumentation";
+
+const tracer = Tracer.init({
+  apmTracingEnabled: true,
+  service: "datadog-prisma-experiment",
+  version: "1.0.0",
+});
+
+const provider = new tracer.TracerProvider();
+
+// Register the provider globally
+provider.register();
+
+registerInstrumentations({
+  tracerProvider: provider,
+  instrumentations: [
+    new PrismaInstrumentation({
+      middleware: true,
+      enabled: true,
+      ignoreSpanTypes: [],
+    }),
+  ],
+});
+
+export { tracer };
+```
+
+#### Explanation
+
+- **`Tracer.init`** configures `dd-trace` with a `service` name. This name appears in Datadog under your `APM` > `Services` list.
+- **`@prisma/instrumentation`** automatically logs each Prisma query as a Datadog span.
+- The `middleware: true` option ensures that each query is intercepted for instrumentation.
+
+## 5. Instantiate Prisma and run queries
+
+### 5.1. Create the Prisma Client instance
+
+Create a `src/client.ts` to hold your Prisma Client instantiation:
+
+```ts file=src/client.ts
+import "./tracer";
+import { PrismaClient } from "../app/generated/prisma";
+
+const prisma = new PrismaClient();
+
+export { prisma };
+```
+
+Here, simply importing `tracer` ensures that tracing is set up before any database queries execute.
+
+### 5.2. Add a script that performs queries
+
+Create a `src/index.ts` file and add code to perform queries to your database and send traces to Datadog:
+
+```ts file=src/index.ts
+import { prisma } from "./client";
+
+async function main() {
+  // 1) Create a user (with a published post)
+  const user = await prisma.user.create({
+    data: {
+      email: `alice${Date.now()}@prisma.io`,
+      name: "Alice",
+      posts: {
+        create: {
+          title: "Join the Prisma community on Discord",
+          content: "https://pris.ly/discord",
+          published: true,
+        },
+      },
+    },
+    include: { posts: true },
+  });
+  console.log(`Created user "${user.name}" with ${user.posts.length} post(s).`);
+
+  // 2) Retrieve all published posts
+  const publishedPosts = await prisma.post.findMany({
+    where: { published: true },
+  });
+  console.log(`Found ${publishedPosts.length} published post(s).`);
+
+  // 3) Create an unpublished post for Alice
+  const unpublishedPost = await prisma.post.create({
+    data: {
+      title: "Unpublished Post",
+      content: "This is a draft post.",
+      published: false,
+      author: { connect: { id: user.id } },
+    },
+  });
+  console.log(`Created an unpublished post (ID: ${unpublishedPost.id}).`);
+
+  // 4) Publish the newly created post
+  const updatedPost = await prisma.post.update({
+    where: { id: unpublishedPost.id },
+    data: { published: true },
+  });
+  console.log(`Published post (ID: ${updatedPost.id}).`);
+
+  // 5) Retrieve all of Alice’s posts
+  const alicesPosts = await prisma.post.findMany({
+    where: { authorId: user.id },
+  });
+  console.log(`Alice has ${alicesPosts.length} post(s) in total.`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+```
+
+## 6. Run your queries and see the traces
+
+Run the queries:
+
+```terminal
+npx tsx src/index.ts
+```
+
+This executes your script, which:
+
+- Registers the Datadog tracer.
+- Performs multiple Prisma queries.
+- Logs the result of each operation.
+
+Then, confirm the traces in Datadog:
+
+- Open your [Datadog APM page](https://docs.datadoghq.com/tracing/).
+- Navigate to **APM > Services** in the side panel.
+- Look for your service name (e.g., `datadog-prisma-experiment`).
+- Explore the list of traces and spans, each representing a Prisma query (e.g. `prisma:query`).
+
+:::info
+Depending on your Datadog setup, it may take a minute or two for new data to appear. Refresh or wait briefly if you do not see traces right away.
+:::
+
+## Next steps
+
+You have successfully:
+
+- Created a Prisma ORM project with PostgreSQL.
+- Set up Datadog tracing using `@prisma/instrumentation` and `dd-trace`.
+- Verified that database operations show up as spans in Datadog.
+
+To enhance your observability further:
+
+- Customize the **service name**, **version**, and **environment** in `dd-trace` to organize multiple applications in Datadog.
+- Add more instrumentation for your HTTP server or other services (e.g., Express, Fastify).
+- Deploy this project to a production environment with the **Datadog Agent** running, so you can capture real-world traffic and performance data.
+
+For additional guidance, check out:
+- [Datadog APM documentation](https://docs.datadoghq.com/tracing/)
+- [Prisma instrumentation docs](/) for more advanced configurations.
