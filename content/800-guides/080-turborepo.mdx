@@ -73,11 +73,13 @@ touch package.json
 
 Define the `package.json` file as follows:
 
-```json file=packages/database/package.json
+```json file=packages/database/package.json showLineNumbers
+//add-start
 {
   "name": "@repo/db",
   "version": "0.0.0"
 }
+//add-end
 ```
 
 Next, install the required dependencies to use Prisma ORM. Use your preferred package manager:
@@ -150,7 +152,7 @@ This should create several files inside `packages/database`:
 
 Add a model to your Prisma schema in `packages/database/prisma/schema.prisma`:
 
-```prisma file=packages/database/prisma/schema.prisma
+```prisma file=packages/database/prisma/schema.prisma showLineNumbers
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -161,12 +163,14 @@ generator client {
   output   = "../generated/prisma"
 }
 
+//add-start
 model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   email     String   @unique
   name      String?
 }
+//add-end
 ```
 
 :::warning
@@ -185,32 +189,61 @@ In the `schema.prisma` file, we specify a custom `output` path where Prisma will
 
 Let's add some scripts to the `package.json` inside `packages/database`:
 
-```json file=packages/database/package.json
+```json file=packages/database/package.json showLineNumbers
 {
+  "name": "@repo/db",
+  "version": "0.0.0",
+  //add-start
   "scripts": {
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --skip-generate",
     "db:deploy": "prisma migrate deploy"
+  },
+  //add-end
+  "devDependencies": {
+    "prisma": "^6.6.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0"
   }
 }
+
 ```
 
 Let's also add these scripts to `turbo.json` in the root:
 
-```json file=turbo.json
+```json file=turbo.json showLineNumbers
 {
-  "tasks": {
-    "db:generate": {
-      "cache": false
-    },
-    "db:migrate": {
-      "cache": false,
-      "persistent": true // This is necessary to interact with the CLI and assign names to your database migrations.
-    },
-    "db:deploy": {
-      "cache": false
-    }
+"$schema": "https://turbo.build/schema.json",
+"ui": "tui",
+"tasks": {
+  "build": {
+    "dependsOn": ["^build"],
+    "inputs": ["$TURBO_DEFAULT$", ".env*"],
+    "outputs": [".next/**", "!.next/cache/**"]
+  },
+  "lint": {
+    "dependsOn": ["^lint"]
+  },
+  "check-types": {
+    "dependsOn": ["^check-types"]
+  },
+  "dev": {
+    "cache": false,
+    "persistent": true
+  },
+  //add-start
+  "db:generate": {
+    "cache": false
+  },
+  "db:migrate": {
+    "cache": false,
+    "persistent": true // This is necessary to interact with the CLI and assign names to your database migrations.
+  },
+  "db:deploy": {
+    "cache": false
   }
+  //add-end
 }
 ```
 
@@ -285,32 +318,55 @@ Next, export the generated types and an instance of `PrismaClient` so it can use
 
 In the `packages/database` directory, create a `src` folder and add a `client.ts` file. This file will define an instance of `PrismaClient`:
 
-```ts file=packages/database/src/client.ts
+```ts file=packages/database/src/client.ts showLineNumbers
+//add-next-line
 import { PrismaClient } from "../generated/prisma";
 
+//add-next-line
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
+//add-start
 export const prisma =
   globalForPrisma.prisma || new PrismaClient();
+//add-end
 
+//add-next-line
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
 
 Then create an `index.ts` file in the `src` folder to re-export the generated prisma types and the `PrismaClient` instance:
 
-```ts file=packages/database/src/index.ts
+```ts file=packages/database/src/index.ts showLineNumbers
+//add-start
 export { prisma } from './client' // exports instance of prisma 
 export * from "../generated/prisma" // exports generated types from prisma
+//add-end
 ```
 
 Follow the [Just-in-Time packaging pattern](https://turbo.build/repo/docs/core-concepts/internal-packages#just-in-time-packages) and create an entrypoint to the package inside `packages/database/package.json`:
 
-```json file=packages/database/package.json
+```json file=packages/database/package.json showLineNumbers
 {
+  "name": "@repo/db",
+  "version": "0.0.0",
+  "scripts": {
+    "db:generate": "npx prisma generate",
+    "db:migrate": "npx prisma migrate dev --skip-generate",
+    "db:deploy": "npx prisma migrate deploy"
+  },
+  "devDependencies": {
+    "prisma": "^6.6.0"
+  },
+  //add-start
   "exports": {
     ".": "./src/index.ts"
-  } 
+  },
+  //add-end
+  "dependencies": {
+    "@prisma/client": "^6.6.0"
+  }
 }
+
 ```
 
 By completing these steps, you'll make the Prisma types and `PrismaClient` instance accessible throughout the monorepo.
@@ -326,6 +382,7 @@ The `turborepo-prisma` project should have an app called `web` at `apps/web`. Ad
   ```json
   {
     "dependencies": {
+      //add-next-line
       "@repo/db": "*"
     }
   } 
@@ -338,6 +395,7 @@ The `turborepo-prisma` project should have an app called `web` at `apps/web`. Ad
   ```json
   {
     "dependencies": {
+      //add-next-line
       "@repo/db": "*"
     }
   } 
@@ -350,6 +408,7 @@ The `turborepo-prisma` project should have an app called `web` at `apps/web`. Ad
   ```json
   {
     "dependencies": {
+      //add-next-line
       "@repo/db": "workspace:*"
     }
   } 
@@ -395,10 +454,13 @@ Let's import the intantiated `prisma` client from the `database` package in the 
 
 In the `apps/web/app` directory, open the `page.tsx` file and add the following code:
 
-```tsx file=apps/web/app/page.tsx
+```tsx file=apps/web/app/page.tsx showLineNumbers
+//add-start
 import styles from "./page.module.css";
 import { prisma } from "@repo/db";
+//add-end
 
+//add-start
 export default async function Home() {
   const user = await prisma.user.findFirst() 
   return (
@@ -407,11 +469,13 @@ export default async function Home() {
     </div>
   );
 }
+//add-end
 ```
 
 Then, create a `.env` file in the `web` directory and copy into it the contents of the `.env` file from the `/database` directory containing the `DATABASE_URL`:
 
 ```env file=apps/web/.env
+//add-next-line
 DATABASE_URL="Same database url as used in the database directory"
 ```
 
@@ -434,23 +498,42 @@ If a new developer runs `turbo dev` on an application without first running `db:
 
 To prevent this, ensure that `db:generate` is always executed before running `dev` or `build`. Additionally, make sure both `db:deploy` and `db:generate` are executed before `db:build`. Here's how to configure this in your `turbo.json` file:
 
-```json file=turbo.json
+```json file=turbo.json showLineNumbers
 {
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
   "tasks": {
     "build": {
       //add-next-line
-        "dependsOn": ["^build", "^db:generate"],
-        "inputs": ["$TURBO_DEFAULT$", ".env*"],
-        "outputs": [".next/**", "!.next/cache/**"]
-      },
+      "dependsOn": ["^build", "^db:generate"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
     "dev": {
       //add-next-line
       "dependsOn": ["^db:generate"],
       "cache": false,
       "persistent": true
     },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:deploy": {
+      "cache": false
+    }
   }
 }
+
 ```
 
 ## 8. Run the project in development
@@ -460,12 +543,10 @@ To prevent this, ensure that `db:generate` is always executed before running `de
 Before starting the development server, note that if you are using Next.js v15.2.0, do not use Turbopack as there is a known [issue](https://github.com/vercel/next.js/issues/76497). Remove Turbopack from your dev script by updating your `apps/web/package.json`
 ```json file=apps/web/package.json
 "script":{
-    //delete-start
+    //delete-next-line
     "dev": "next dev --turbopack --port 3000",
-    //delete-end
-    //add-start
+    //add-next-line
     "dev": "next dev --port 3000",
-    //add-end
 }
 ```
 
