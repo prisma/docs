@@ -2,12 +2,13 @@
 title: 'How to use Prisma ORM with Next.js'
 metaTitle: 'How to use Prisma ORM and Prisma Postgres with Next.js 15 and Vercel'
 description: 'Learn how to use Prisma ORM in a Next.js app and deploy it to Vercel'
-sidebar_label: 'Set up Next.js with Prisma ORM'
+sidebar_label: 'Next.js with Prisma'
 image: '/img/guides/prisma-nextjs-cover.png'
 completion_time: '20 min'
 tags:
   - Next.js
   - Vercel
+community_section: true
 ---
 
 ## Introduction
@@ -73,18 +74,19 @@ If you're not using a Prisma Postgres database, you won't need the `@prisma/exte
 Then, run `prisma init` to initialize Prisma ORM in your project.
 
 ```terminal
-npx prisma init
+npx prisma init --output ../src/app/generated/prisma
 ```
 
 This will create a new `prisma` directory in your project, with a `schema.prisma` file inside of it. The `schema.prisma` file is where you will define your database models.
 
-The `prisma init` command also creates a `.env` file in your project root. This file is used to store your database connection string.
+The `prisma init` command also creates a `.env` file in your project root to store your database connection string and outputs the generated client into `/app/generated/prisma`.
 
 Next, let's add two models to your `schema.prisma` file. A `User` model and a `Post` model.
 
 ```prisma file=prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/app/generated/prisma"
 }
 
 datasource db {
@@ -154,7 +156,7 @@ Now, let's add some initial data to our database.
 Prisma ORM has built-in support for seeding your database with initial data. To do this, you can create a new file called `seed.ts` in the `prisma` directory.
 
 ```ts file=prisma/seed.ts
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient, Prisma } from '../src/app/generated/prisma'
 
 const prisma = new PrismaClient()
 
@@ -241,6 +243,22 @@ Now, add the `prisma.seed` configuration to your `package.json` file.
 }
 ```
 
+:::warning
+
+Before starting the development server, note that if you are using Next.js v15.2.0, do not use Turbopack as there is a known [issue](https://github.com/vercel/next.js/issues/76497). Remove Turbopack from your dev script by updating your `package.json`
+```json file=package.json
+"script":{
+    //delete-start
+    "dev": "next dev --turbopack",
+    //delete-end
+    //add-start
+    "dev": "next dev",
+    //add-end
+}
+```
+
+:::
+
 Finally, run `prisma db seed` to seed your database with the initial data we defined in the `seed.ts` file.
 
 ```terminal
@@ -260,18 +278,20 @@ Now that we have a database with some initial data, we can set up Prisma Client 
 At the root of your project, create a new `lib` directory and add a `prisma.ts` file to it.
 
 ```terminal
-mkdir -p lib && touch lib/prisma.ts
+mkdir -p src/lib && touch src/lib/prisma.ts
 ```
 
 Now, add the following code to your `lib/prisma.ts` file:
 
 ```ts file=lib/prisma.ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../src/app/generated/prisma'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
-const prisma = new PrismaClient().$extends(withAccelerate())
+const globalForPrisma = global as unknown as { 
+    prisma: PrismaClient
+}
 
-const globalForPrisma = global as unknown as { prisma: typeof prisma }
+const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate())
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
@@ -284,11 +304,11 @@ This file creates a Prisma Client and attaches it to the global object so that o
 
 If you're not using Prisma Postgres, replace the line
 ```ts
-const prisma = new PrismaClient().$extends(withAccelerate())
+const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate())
 ```
 with
 ```ts
-const prisma = new PrismaClient()
+const prisma = globalForPrisma.prisma || new PrismaClient()
 ```
 and remove the `@prisma/extension-accelerate` import.
 
@@ -372,7 +392,7 @@ We have our home page working, but we should add a new page that displays all of
 First create a new `posts` directory in the `app` directory and create a new `page.tsx` file inside of it.
 
 ```terminal
-mkdir -p app/posts && touch app/posts/page.tsx
+mkdir -p src/app/posts && touch src/app/posts/page.tsx
 ```
 
 Second, add the following code to the `app/posts/page.tsx` file:
@@ -444,7 +464,7 @@ To complement the Posts list page, we'll add a Posts detail page.
 In the `posts` directory, create a new `[id]` directory and a new `page.tsx` file inside of that.
 
 ```terminal
-mkdir -p app/posts/[id] && touch app/posts/[id]/page.tsx
+mkdir -p src/app/posts/[id] && touch src/app/posts/[id]/page.tsx
 ```
 
 This page will display a single post's title, content, and author. Just like our other pages, add the following code to the `app/posts/new/page.tsx` file:
@@ -528,7 +548,7 @@ To round out our application, we'll add a "create" page for posts. This will let
 As with the other pages, we'll start with a static page and then update it to be dynamic.
 
 ```terminal
-mkdir -p app/posts/new && touch app/posts/new/page.tsx
+mkdir -p src/app/posts/new && touch src/app/posts/new/page.tsx
 ```
 
 Now, add the following code to the `app/posts/new/page.tsx` file:
@@ -735,9 +755,7 @@ Now that you have a working Next.js application with Prisma ORM, here are some w
 - Add comments to posts
 - Use [Prisma Studio](/orm/tools/prisma-studio) for visual database management
 
-For more information and updates:
+For more information:
 - [Prisma ORM documentation](/orm)
 - [Prisma Client API reference](/orm/prisma-client)
 - [Next.js documentation](https://nextjs.org/docs)
-- Join our [Discord community](https://discord.com/invite/prisma)
-- Follow us on [Twitter](https://twitter.com/prisma)

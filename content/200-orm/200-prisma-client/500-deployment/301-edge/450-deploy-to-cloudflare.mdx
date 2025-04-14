@@ -13,6 +13,61 @@ This page covers everything you need to know to deploy an app with Prisma ORM to
 
 This section covers _general_ things you need to be aware of when deploying to Cloudflare Workers or Pages and are using Prisma ORM, regardless of the database provider you use.
 
+### Using Prisma Postgres
+
+You can use Prisma Postgres and deploy to Cloudflare Workers. 
+
+After you create a Worker, run:
+
+```terminal
+npx prisma@latest init --db
+```
+
+Enter a name for your project and choose a database region.
+
+This command:
+
+- Connects your CLI to your [Prisma Data Platform](https://console.prisma.io) account. If you're not logged in or don't have an account, your browser will open to guide you through creating a new account or signing into your existing one.
+- Creates a `prisma` directory containing a `schema.prisma` file for your database models.
+- Creates a `.env` file with your `DATABASE_URL` (e.g., for Prisma Postgres it should have something similar to `DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."`).
+
+You'll need to install the Client extension required to use Prisma Postgres:
+
+```terminal
+npm i @prisma/extension-accelerate
+```
+
+And extend `PrismaClient` with the extension in your application code:
+
+```typescript
+import { PrismaClient } from "@prisma/client/edge";
+import { withAccelerate } from "@prisma/extension-accelerate";
+
+export interface Env {
+  DATABASE_URL: string;
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const prisma = new PrismaClient({
+      datasourceUrl: env.DATABASE_URL,
+    }).$extends(withAccelerate());
+
+    const users = await prisma.user.findMany();
+    const result = JSON.stringify(users);
+    return new Response(result);
+  },
+} satisfies ExportedHandler<Env>;
+```
+
+Then setup helper scripts to perform migrations and generate `PrismaClient` as [shown in this section](/orm/prisma-client/deployment/edge/deploy-to-cloudflare#development).
+
+:::note
+
+You need to have the `dotenv-cli` package installed as Cloudflare Workers does not support `.env` files. You can do this by running the following command to install the package locally in your project: `npm install -D dotenv-cli`.
+
+:::
+
 ### Using an edge-compatible driver
 
 When deploying a Cloudflare Worker that uses Prisma ORM, you need to use an [edge-compatible driver](/orm/prisma-client/deployment/edge/overview#edge-compatibility-of-database-drivers) and its respective [driver adapter](/orm/overview/databases/database-drivers#driver-adapters) for Prisma ORM.
@@ -27,7 +82,11 @@ The edge-compatible drivers for Cloudflare Workers and Pages are:
 
 There's [also work being done](https://github.com/sidorares/node-mysql2/pull/2289) on the `node-mysql2` driver which will enable access to traditional MySQL databases from Cloudflare Workers and Pages in the future as well.
 
-> **Note**: [Prisma Accelerate](/accelerate) enables you to access _any_ database from _any_ edge function provider. No edge-compatible driver is necessary.
+:::note
+
+If your application uses PostgreSQL, we recommend using [Prisma Postgres](/postgres). It is fully supported on edge runtimes and does not require a specialized edge-compatible driver. For other databases, [Prisma Accelerate](/accelerate) extends edge compatibility so you can connect to _any_ database from _any_ edge function provider.
+
+:::
 
 ### Setting your database connection URL as an environment variable
 
@@ -72,7 +131,11 @@ There are several options for achieving this:
   ```
 - Duplicate the `DATABASE_URL` and any other relevant env vars into a new file called `.env` which can then be used by Prisma ORM.
 
-> **Note**: If you're using an approach that requires `dotenv`, you need to have the [`dotenv-cli`](https://www.npmjs.com/package/dotenv-cli) package installed. You can do this e.g. by using this command to install the package locally in your project: `npm install -D dotenv-cli`.
+:::note
+
+If you're using an approach that requires `dotenv`, you need to have the [`dotenv-cli`](https://www.npmjs.com/package/dotenv-cli) package installed. You can do this e.g. by using this command to install the package locally in your project: `npm install -D dotenv-cli`.
+
+:::
 
 #### Production
 
@@ -84,7 +147,11 @@ npx wrangler secret put DATABASE_URL
 
 The command is interactive and will ask you to enter the value for the `DATABASE_URL` env var as the next step in the terminal.
 
-> **Note**: This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+:::note
+
+This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+
+:::
 
 ### Size limits on free accounts
 
@@ -103,7 +170,7 @@ Based on some testing, we found the following:
 - You can deploy using the PlanetScale or Neon Serverless Driver.
 - Traditional PostgreSQL deployments using `pg` don't work because `pg` itself currently does not work with `@cloudflare/next-on-pages` (see [here](https://github.com/cloudflare/next-on-pages/issues/605)).
 
-Feel free to reach out to us on [Discord](https://pris.ly/discord) if you find that anything has changed about this.
+Feel free to reach out to us on [Discord](https://pris.ly/discord?utm_source=docs&utm_medium=inline_text) if you find that anything has changed about this.
 
 ### Set `PRISMA_CLIENT_FORCE_WASM=1` when running locally with `node`
 
@@ -127,7 +194,7 @@ If you don't have that yet, you can run these commands:
 npm create cloudflare@latest prisma-cloudflare-worker-example -- --type hello-world
 cd prisma-cloudflare-worker-example
 npm install prisma --save-dev
-npx prisma init
+npx prisma init --output ../generated/prisma
 ```
 
 You'll further need a database instance of your database provider of choice available. Refer to the respective documentation of the provider for setting up that instance.
@@ -155,7 +222,11 @@ If you are running into a size issue and can't deploy your application because o
 
 #### 1. Configure Prisma schema & database connection
 
-> **Note**: If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Cloudflare Worker with Prisma ORM in it.
+:::note
+
+If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Cloudflare Worker with Prisma ORM in it.
+
+:::
 
 First, ensure that the database connection is configured properly. In your Prisma schema, set the `url` of the `datasource` block to the `DATABASE_URL` environment variable. You also need to enable the `driverAdapters` feature flag:
 
@@ -204,8 +275,6 @@ Next, install the required packages:
 
 ```terminal
 npm install @prisma/adapter-pg
-npm install pg
-npm install @types/pg --save-dev # if you're using TypeScript
 ```
 
 #### 3. Set `node_compat = true` in `wrangler.toml`
@@ -216,7 +285,11 @@ In your `wrangler.toml` file, add the following line:
 node_compat = true
 ```
 
-> **Note**: For Cloudflare Pages, using `node_compat` is not officially supported. If you want to use `pg` in Cloudflare Pages, you can find a workaround [here](https://github.com/cloudflare/workers-sdk/pull/2541#issuecomment-1954209855).
+:::note
+
+For Cloudflare Pages, using `node_compat` is not officially supported. If you want to use `pg` in Cloudflare Pages, you can find a workaround [here](https://github.com/cloudflare/workers-sdk/pull/2541#issuecomment-1954209855).
+
+:::
 
 #### 4. Migrate your database schema (if applicable)
 
@@ -233,12 +306,10 @@ Here is a sample code snippet that you can use to instantiate `PrismaClient` and
 ```ts
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 
 export default {
   async fetch(request, env, ctx) {
-    const pool = new Pool({ connectionString: env.DATABASE_URL })
-    const adapter = new PrismaPg(pool)
+    const adapter = new PrismaPg({ connectionString: env.DATABASE_URL })
     const prisma = new PrismaClient({ adapter })
 
     const users = await prisma.user.findMany()
@@ -266,7 +337,11 @@ npx wrangler secret put DATABASE_URL
 
 The command is interactive and will ask you to enter the value for the `DATABASE_URL` env var as the next step in the terminal.
 
-> **Note**: This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+:::note
+
+This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+
+:::
 
 Then you can go ahead then deploy the Worker:
 
@@ -286,7 +361,7 @@ If you are using a PlanetScale database, you need to:
   ```ts
   export default {
     async fetch(request, env, ctx) {
-      const client = new Client({
+      const adapter = new PrismaPlanetScale({
         url: env.DATABASE_URL,
         // see https://github.com/cloudflare/workerd/issues/698
         fetch(url, init) {
@@ -294,7 +369,6 @@ If you are using a PlanetScale database, you need to:
           return fetch(url, init)
         },
       })
-      const adapter = new PrismaPlanetScale(client)
       const prisma = new PrismaClient({ adapter })
 
       // ...
@@ -304,7 +378,11 @@ If you are using a PlanetScale database, you need to:
 
 #### 1. Configure Prisma schema & database connection
 
-> **Note**: If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Cloudflare Worker with Prisma ORM in it.
+:::note
+
+If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Cloudflare Worker with Prisma ORM in it.
+
+:::
 
 First, ensure that the database connection is configured properly. In your Prisma schema, set the `url` of the `datasource` block to the `DATABASE_URL` environment variable. You also need to enable the `driverAdapters` feature flag:
 
@@ -354,7 +432,6 @@ Next, install the required packages:
 
 ```terminal
 npm install @prisma/adapter-planetscale
-npm install @planetscale/database
 ```
 
 #### 3. Migrate your database schema (if applicable)
@@ -372,11 +449,10 @@ Here is a sample code snippet that you can use to instantiate `PrismaClient` and
 ```ts
 import { PrismaClient } from '@prisma/client'
 import { PrismaPlanetScale } from '@prisma/adapter-planetscale'
-import { Client } from '@planetscale/database'
 
 export default {
   async fetch(request, env, ctx) {
-    const client = new Client({
+    const adapter = new PrismaPlanetScale({
       url: env.DATABASE_URL,
       // see https://github.com/cloudflare/workerd/issues/698
       fetch(url, init) {
@@ -384,7 +460,6 @@ export default {
         return fetch(url, init)
       },
     })
-    const adapter = new PrismaPlanetScale(client)
     const prisma = new PrismaClient({ adapter })
 
     const users = await prisma.user.findMany()
@@ -412,7 +487,11 @@ npx wrangler secret put DATABASE_URL
 
 The command is interactive and will ask you to enter the value for the `DATABASE_URL` env var as the next step in the terminal.
 
-> **Note**: This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+:::note
+
+This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+
+:::
 
 Then you can go ahead then deploy the Worker:
 
@@ -430,7 +509,11 @@ If you are using a Neon database, you need to:
 
 #### 1. Configure Prisma schema & database connection
 
-> **Note**: If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Cloudflare Worker with Prisma ORM in it.
+:::note
+
+If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Cloudflare Worker with Prisma ORM in it.
+
+:::
 
 First, ensure that the database connection is configured properly. In your Prisma schema, set the `url` of the `datasource` block to the `DATABASE_URL` environment variable. You also need to enable the `driverAdapters` feature flag:
 
@@ -479,7 +562,6 @@ Next, install the required packages:
 
 ```terminal
 npm install @prisma/adapter-neon
-npm install @neondatabase/serverless
 ```
 
 #### 3. Migrate your database schema (if applicable)
@@ -497,12 +579,10 @@ Here is a sample code snippet that you can use to instantiate `PrismaClient` and
 ```ts
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { Pool } from '@neondatabase/serverless'
 
 export default {
   async fetch(request, env, ctx) {
-    const neon = new Pool({ connectionString: env.DATABASE_URL })
-    const adapter = new PrismaNeon(neon)
+    const adapter = new PrismaNeon({ connectionString: env.DATABASE_URL })
     const prisma = new PrismaClient({ adapter })
 
     const users = await prisma.user.findMany()
@@ -530,7 +610,11 @@ npx wrangler secret put DATABASE_URL
 
 The command is interactive and will ask you to enter the value for the `DATABASE_URL` env var as the next step in the terminal.
 
-> **Note**: This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+:::note
+
+This command requires you to be authenticated, and will ask you to log in to your Cloudflare account in case you are not.
+
+:::
 
 Then you can go ahead then deploy the Worker:
 

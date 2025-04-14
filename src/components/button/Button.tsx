@@ -11,7 +11,7 @@ type Button = {
     // The default value is 'primary'.
     variant: 'primary' | 'secondary' | 'link';
     
-    color: 'indigo' | 'teal' | null;
+    color: 'indigo' | 'teal' | 'body' | null;
     // The disabled prop is a boolean that determines if the button should be disabled.
     disabled?: boolean;
     leftIcon?: string;

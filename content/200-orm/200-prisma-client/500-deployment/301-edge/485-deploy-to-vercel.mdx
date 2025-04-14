@@ -17,6 +17,10 @@ To deploy a Vercel Function to the Vercel Edge Runtime, you can set `export cons
 
 ## General considerations when deploying to Vercel Edge Functions & Edge Middleware
 
+### Using Prisma Postgres
+
+You can use Prisma Postgres in Vercel's edge runtime. Follow this guide for an end-to-end tutorial on [deploying an application to Vercel using Prisma Postgres](/guides/nextjs).
+
 ### Using an edge-compatible driver
 
 Vercel's Edge Runtime currently only supports a limited set of database drivers:
@@ -29,7 +33,11 @@ Note that [`node-postgres`](https://node-postgres.com/) (`pg`) is currently _not
 
 When deploying a Vercel Edge Function that uses Prisma ORM, you need to use one of these [edge-compatible drivers](/orm/prisma-client/deployment/edge/overview#edge-compatibility-of-database-drivers) and its respective [driver adapter](/orm/overview/databases/database-drivers#driver-adapters) for Prisma ORM.
 
-> **Note**: [Prisma Accelerate](/accelerate) enables you to access _any_ database from _any_ edge function provider. No edge-compatible driver is necessary.
+:::note
+
+If your application uses PostgreSQL, we recommend using [Prisma Postgres](/postgres). It is fully supported on edge runtimes and does not require a specialized edge-compatible driver. For other databases, [Prisma Accelerate](/accelerate) extends edge compatibility so you can connect to _any_ database from _any_ edge function provider.
+
+:::
 
 ### Setting your database connection URL as an environment variable
 
@@ -87,7 +95,7 @@ If you don't have that yet, you can run these commands to set up a Next.js app f
 npm install -g vercel
 npx create-next-app@latest
 npm install prisma --save-dev
-npx prisma init
+npx prisma init --output ../app/generated/prisma
 ```
 
 We'll use the default `User` model for the example below:
@@ -109,14 +117,18 @@ If you are using Vercel Postgres, you need to:
   ```prisma
   datasource db {
     provider  = "postgresql"
-    url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+    url       = env("POSTGRES_PRISMA_URL")      // uses connection pooling
     directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
   }
   ```
 
 #### 1. Configure Prisma schema & database connection
 
-> **Note**: If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Next.js app with Prisma ORM in it.
+:::note
+
+If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Next.js app with Prisma ORM in it.
+
+:::
 
 First, ensure that the database connection is configured properly. In your Prisma schema, set the `url` of the `datasource` block to the `POSTGRES_PRISMA_URL` and the `directUrl` to the `POSTGRES_URL_NON_POOLING` environment variable. You also need to enable the `driverAdapters` feature flag:
 
@@ -128,7 +140,7 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  url       = env("POSTGRES_PRISMA_URL")      // uses connection pooling
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 ```
@@ -148,14 +160,13 @@ Next, install the required packages:
 
 ```terminal
 npm install @prisma/adapter-neon
-npm install @neondatabase/serverless
 ```
 
 #### 3. Configure `postinstall` hook
 
 Next, add a new key to the `scripts` section in your `package.json`:
 
-```js file=package.json highlight=5;add showLineNumbers
+```js file=package.json
 {
   // ...
   "scripts": {
@@ -192,13 +203,11 @@ Here is a sample code snippet that you can use to instantiate `PrismaClient` and
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { Pool } from '@neondatabase/serverless'
 
 export const runtime = 'edge'
 
 export async function GET(request: Request) {
-  const neon = new Pool({ connectionString: process.env.POSTGRES_PRISMA_URL })
-  const adapter = new PrismaNeon(neon)
+  const adapter = new PrismaNeon({ connectionString: process.env.POSTGRES_PRISMA_URL })
   const prisma = new PrismaClient({ adapter })
 
   const users = await prisma.user.findMany()
@@ -241,7 +250,11 @@ If you are using a PlanetScale database, you need to:
 
 #### 1. Configure Prisma schema & database connection
 
-> **Note**: If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Next.js app with Prisma ORM in it.
+:::note
+
+If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Next.js app with Prisma ORM in it.
+
+:::
 
 First, ensure that the database connection is configured properly. In your Prisma schema, set the `url` of the `datasource` block to the `DATABASE_URL` environment variable. You also need to enable the `driverAdapters` feature flag:
 
@@ -260,7 +273,7 @@ datasource db {
 
 Next, you need to set the `DATABASE_URL` environment variable in your `.env` file that's used both by Prisma and Next.js to read your env vars:
 
-```bash file=.env showLineNumbers
+```bash file=.env
 DATABASE_URL="mysql://32qxa2r7hfl3102wrccj:password@us-east.connect.psdb.cloud/demo-cf-worker-ps?sslaccept=strict"
 ```
 
@@ -270,14 +283,13 @@ Next, install the required packages:
 
 ```terminal
 npm install @prisma/adapter-planetscale
-npm install @planetscale/database
 ```
 
 #### 3. Configure `postinstall` hook
 
 Next, add a new key to the `scripts` section in your `package.json`:
 
-```js file=package.json highlight=5;add showLineNumbers
+```js file=package.json
 {
   // ...
   "scripts": {
@@ -314,13 +326,11 @@ Here is a sample code snippet that you can use to instantiate `PrismaClient` and
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPlanetScale } from '@prisma/adapter-planetscale'
-import { Client } from '@planetscale/database'
 
 export const runtime = 'edge'
 
 export async function GET(request: Request) {
-  const client = new Client({ url: process.env.DATABASE_URL })
-  const adapter = new PrismaPlanetScale(client)
+  const adapter = new PrismaPlanetScale({ url: process.env.DATABASE_URL })
   const prisma = new PrismaClient({ adapter })
 
   const users = await prisma.user.findMany()
@@ -363,7 +373,11 @@ If you are using a Neon database, you need to:
 
 #### 1. Configure Prisma schema & database connection
 
-> **Note**: If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Next.js app with Prisma ORM in it.
+:::note
+
+If you don't have a project to deploy, follow the instructions in the [Prerequisites](#prerequisites) to bootstrap a basic Next.js app with Prisma ORM in it.
+
+:::
 
 First, ensure that the database connection is configured properly. In your Prisma schema, set the `url` of the `datasource` block to the `DATABASE_URL` environment variable. You also need to enable the `driverAdapters` feature flag:
 
@@ -391,14 +405,13 @@ Next, install the required packages:
 
 ```terminal
 npm install @prisma/adapter-neon
-npm install @neondatabase/serverless
 ```
 
 #### 3. Configure `postinstall` hook
 
 Next, add a new key to the `scripts` section in your `package.json`:
 
-```js file=package.json highlight=5;add showLineNumbers
+```js file=package.json
 {
   // ...
   "scripts": {
@@ -435,13 +448,11 @@ Here is a sample code snippet that you can use to instantiate `PrismaClient` and
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { Pool } from '@neondatabase/serverless'
 
 export const runtime = 'edge'
 
 export async function GET(request: Request) {
-  const neon = new Pool({ connectionString: process.env.DATABASE_URL })
-  const adapter = new PrismaNeon(neon)
+  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL })
   const prisma = new PrismaClient({ adapter })
 
   const users = await prisma.user.findMany()

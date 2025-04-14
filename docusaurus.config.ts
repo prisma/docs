@@ -48,7 +48,7 @@ const config: Config = {
       "data-project-logo": "https://www.prisma.io/docs/ai_logo.png",
       "data-button-text": "Ask AI",
       "data-modal-example-questions":
-        "How can I setup relations in my Prisma Schema?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?,How can I subscribe to database events with Prisma Pulse?",
+        "How can I setup relations in my Prisma Schema?,What is the difference between the 'migrate dev' and 'db push' commands?,Which cache strategy should I use for my query with Prisma Accelerate?",
       "data-button-image": "https://www.prisma.io/docs/ai_button.svg",
       "data-button-width": "64px",
       "data-button-height": "64px",
@@ -117,12 +117,26 @@ const config: Config = {
                 );
                 const title = titleMatch ? titleMatch[1] : "";
 
+                // Get the relative path for URL construction
+                const relativePath = path.relative(contentDir, fullPath);
+
+                // Convert file path to URL path by:
+                // 1. Removing numeric prefixes (like 100-, 01-, etc.)
+                // 2. Removing the .mdx extension
+                let urlPath = relativePath
+                  .replace(/^\d+-/, "")
+                  .replace(/\/\d+-/g, "/")
+                  .replace(/\.mdx$/, "");
+
+                // Construct the full URL
+                const fullUrl = `https://www.prisma.io/docs/${urlPath}`;
+
                 // strip frontmatter
                 const contentWithoutFrontmatter = content.replace(/^---\n[\s\S]*?\n---\n/, "");
 
-                // combine title and content
+                // combine title and content with URL
                 const contentWithTitle = title
-                  ? `# ${title}\n${contentWithoutFrontmatter}`
+                  ? `# ${title}\n\nURL: ${fullUrl}\n${contentWithoutFrontmatter}`
                   : contentWithoutFrontmatter;
 
                 allMdx.push(contentWithTitle);
@@ -148,7 +162,7 @@ const config: Config = {
 
           // docsPluginRouteConfig has a routes property has a record with the path "/" that contains all docs routes.
           const allDocsRouteConfig = docsPluginRouteConfig.routes?.filter(
-            (route) => route.path === "/"
+            (route) => route.path === DOCUSAURUS_BASE_URL
           )[0];
 
           // A little type checking first
@@ -171,11 +185,7 @@ const config: Config = {
 
           // Write llms.txt file
           const llmsTxtPath = path.join(outDir, "llms.txt");
-          try {
-            fs.writeFileSync(llmsTxtPath, llmsTxt);
-          } catch (err) {
-            throw err;
-          }
+          await fs.promises.writeFile(llmsTxtPath, llmsTxt);
         },
       };
     },
@@ -296,12 +306,6 @@ const config: Config = {
               className: "teal",
               label: "Accelerate",
             },
-            {
-              type: "docSidebar",
-              sidebarId: "pulseSidebar",
-              className: "teal",
-              label: "Pulse",
-            },
           ],
         },
         {
@@ -318,7 +322,7 @@ const config: Config = {
           className: "indigo external__link",
         },
         {
-          href: "https://github.com/prisma/",
+          href: "https://pris.ly/github?utm_source=docs&utm_medium=navbar",
           position: "right",
           className: "header-github-link",
           "aria-label": "GitHub repository",
@@ -333,7 +337,7 @@ const config: Config = {
     },
     algolia: {
       appId: "MF58UJZ648",
-      apiKey: "fd3d0a05bfe5d280348060ca5ea416be",
+      apiKey: "aae3f55d59a198896509e9fbb30618e7",
       indexName: "prisma",
       contextualSearch: true,
       replaceSearchResultPathname: {
@@ -349,7 +353,7 @@ const config: Config = {
           items: [
             {
               label: " ",
-              href: "https://discord.com/invite/KQyTW2H5ca",
+              href: "https://pris.ly/discord?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-discord",
                 internal: true,
@@ -357,7 +361,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://x.com/prisma",
+              href: "https://pris.ly/x?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-x-twitter",
                 internal: true,
@@ -365,7 +369,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://www.youtube.com/prismadata",
+              href: "https://pris.ly/youtube?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-youtube",
                 internal: true,
@@ -373,7 +377,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://pris.ly/whatsapp",
+              href: "https://pris.ly/whatsapp?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-whatsapp",
                 internal: true,
@@ -381,7 +385,7 @@ const config: Config = {
             },
             {
               label: " ",
-              href: "https://github.com/prisma",
+              href: "https://pris.ly/github?utm_source=docs&utm_medium=footer",
               customProps: {
                 icon: "fa-brands fa-github",
                 internal: true,
@@ -425,8 +429,8 @@ const config: Config = {
               },
             },
             {
-              label: "Pulse",
-              href: "https://www.prisma.io/pulse",
+              label: "Postgres",
+              href: "https://www.prisma.io/postgres",
               target: "_self",
               customProps: {
                 internal: true,
