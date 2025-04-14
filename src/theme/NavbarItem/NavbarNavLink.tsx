@@ -3,9 +3,10 @@ import Link from "@docusaurus/Link";
 import { isRegexpStringMatch } from "@docusaurus/theme-common";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import IconExternalLink from "@theme/Icon/ExternalLink";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import type { Props } from "@theme/NavbarItem/NavbarNavLink";
+import { useLocation } from "@docusaurus/router";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 
 export default function NavbarNavLink({
@@ -23,8 +24,10 @@ export default function NavbarNavLink({
   // {to: 'version'} should probably be forbidden, in favor of {to: '/version'}
   const toUrl = useBaseUrl(to);
   const activeBaseUrl = useBaseUrl(activeBasePath);
-  const normalizedHref = useBaseUrl(href, { forcePrependBaseUrl: true });
-  const isExternalLink = label && href && !isInternalUrl(href);
+  const isExternalLink = label && (href || to) && !isInternalUrl(href ? href : to) && label;
+  const location = useLocation();
+
+  const isRoot = toUrl === "/docs" || toUrl === "/docs/";
 
   // Link content is set through html XOR label
   const linkContentProps = html
@@ -33,13 +36,10 @@ export default function NavbarNavLink({
         children: (
           <>
             {label}
-            {isExternalLink && (
-              <IconExternalLink {...(isDropdownLink && { width: 12, height: 12 })} />
-            )}
           </>
         ),
       };
-
+    
   if (href) {
     return (
       <BrowserOnly>
@@ -56,11 +56,9 @@ export default function NavbarNavLink({
     );
   }
 
-  const isRoot = toUrl === "/docs" || toUrl === "/docs/";
-
   return (
     <Link
-      to={isRoot ? "/docs" : toUrl}
+      to={isRoot ? `/docs${!isExternalLink ? location.search : ""}` : `${toUrl}${!isExternalLink ? location.search : ""}`}
       autoAddBaseUrl={isRoot ? false : undefined}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {
