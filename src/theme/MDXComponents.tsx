@@ -98,16 +98,12 @@ const DocsLink: React.FC<React.PropsWithChildren<ComponentProps<typeof Link>>> =
   children,
   ...props
 }) => {
+  const location = useLocation();
   if (props.href?.includes("console.prisma.io")) {
     return (
       <BrowserOnly>
         {() => {
-          const queryParams = window.location.href.split("?")[1] ?? "";
-          if (queryParams.includes("utm_")) {
-            sessionStorage.setItem("prismaUTM", queryParams);
-          }
-          const utmParams = sessionStorage.getItem("prismaUTM");
-          const modifiedHref = `${props.href?.split("?")[0]}?${utmParams ?? props.href?.split("?")[1] ?? ""}`;
+          const modifiedHref = `${props.href?.split("?")[0]}?${location.search}`;
           return (
             <Link {...props} href={modifiedHref}>
               {children}
@@ -156,9 +152,10 @@ const StyledLink: React.FC<React.PropsWithChildren<ComponentProps<"a">>> = ({
   children,
   ...props
 }) => {
+  const location = useLocation();
   const url = props.href;
   if (url?.includes(".prisma.io") || url?.startsWith("/") || url?.startsWith("#"))
-    return <DocsLink {...props}>{children}</DocsLink>;
+    return <DocsLink {...props} href={`${props.href}${location.search ? location.search : ""}`}>{children}</DocsLink>;
   else
     return (
       <a
