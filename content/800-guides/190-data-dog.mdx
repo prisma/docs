@@ -2,7 +2,7 @@
 title: 'How to set up Datadog tracing with Prisma ORM'
 metaTitle: 'Datadog tracing with Prisma ORM'
 description: 'Learn how to configure Datadog tracing for a Prisma ORM project. Capture spans for every query using the @prisma/instrumentation package, dd-trace, and view them in Datadog.'
-sidebar_label: 'Use Datadog with Prisma'
+sidebar_label: 'Setup Datadog tracing with Prisma ORM'
 image: '/img/guides/datadog-tracing-prisma.png'
 completion_time: '15 min'
 tags:
@@ -16,7 +16,7 @@ community_section: true
 
 ## Introduction
 
-In this guide, you will learn how to configure **Datadog** tracing for a new Prisma project. You will capture spans for every database query using the [`@prisma/instrumentation`](https://www.npmjs.com/package/@prisma/instrumentation) package and send those spans to Datadog with [`dd-trace`](https://www.npmjs.com/package/dd-trace).
+In this guide, you'll learn how to set up Datadog tracing for a new Prisma project. By combining the `@prisma/instrumentation` package with Prisma Client extensions, you'll capture detailed spans for every database query. These spans are then sent to Datadog using dd-trace, enabling you to monitor and analyze your application's database activity.
 
 ### What are spans and tracing?
 
@@ -26,7 +26,7 @@ In this guide, you will learn how to configure **Datadog** tracing for a new Pri
 
 ### Why use Datadog?
 
-[Datadog](https://www.datadoghq.com/) is a robust monitoring and analytics platform that provides application performance monitoring, logs management, metrics collection, and more. By sending your trace data to Datadog, you gain real-time visibility into how your application interacts with its databases and external services—all in one convenient, centralized platform.
+[Datadog](https://www.datadoghq.com/) is a robust monitoring and analytics platform that provides application performance monitoring, logs management, metrics collection, and more. By sending your trace data to Datadog, you gain real-time visibility into how your application interacts with its databases and external services, all in one convenient, centralized platform.
 
 ## Prerequisites
 
@@ -67,6 +67,9 @@ npx prisma init --db --output ../src/generated/prisma
 
 :::note
 You will be prompted to name your database and select the closest region. For clarity, choose a memorable name (e.g., `My Datadog Project`).
+
+If you're not using Prisma Postgres, you donot need to add the `--db` flag. However, in that case, you need to add the connection url to your own database in the `.env` file.
+
 :::
 
 This command does the following:
@@ -80,7 +83,7 @@ Now, open `prisma/schema.prisma` and update your generator block and models. Rep
 ```prisma file=prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
+  output = "../src/generated/prisma"
 }
 
 datasource db {
@@ -124,8 +127,15 @@ In addition to Prisma, you will need the following packages for Datadog tracing:
 
 ```terminal
 npm install @prisma/instrumentation \
-  dd-trace
+  dd-trace \
+  @prisma/extension-accelerate
 ```
+
+:::note
+
+If you're not using Prisma Postgres, you donot need to install the `@prisma/extension-accelerate` extension.
+
+:::
 
 Also ensure you have development dependencies for TypeScript:
 
@@ -159,8 +169,9 @@ import {
 
 const tracer = Tracer.init({
   apmTracingEnabled: true,
-  service: "datadog-prisma-experiment",
+  service: "prisma-datadog-tracing",
   version: "1.0.0",
+  profiling: true
 });
 
 const provider = new tracer.TracerProvider();
@@ -169,18 +180,38 @@ const provider = new tracer.TracerProvider();
 provider.register();
 
 registerInstrumentations({
-  tracerProvider: provider,
   instrumentations: [
     new PrismaInstrumentation({
-      middleware: true,
       enabled: true,
-      ignoreSpanTypes: [],
     }),
   ],
+  tracerProvider: provider,
 });
 
 export { tracer };
 ```
+
+:::note 
+
+If you recieve a linting error in the line `traceprovider:provider` due to types being incompatible you have to add the following line to the `package.json`:
+
+```json
+//add-start
+"overrides": {
+  "@opentelemetry/api": "1.8.0"
+}
+//add-end
+```
+
+Then re-install the dependencies:
+
+```terminal
+npm i
+```
+
+Then the linting error should be gone.
+
+:::
 
 #### Explanation
 
@@ -195,70 +226,151 @@ export { tracer };
 Create a `src/client.ts` to hold your Prisma Client instantiation:
 
 ```ts file=src/client.ts
-import "./tracer";
-import { PrismaClient } from "../app/generated/prisma";
+import { tracer } from "./tracer";
+import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaClient } from "./generated/prisma";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: [{ emit: "event", level: "query" }],
+})
+  .$on("query", (e) => {
+    const span = tracer.startSpan(`prisma_raw_query`, {
+      childOf: tracer.scope().active() || undefined,
+      tags: {
+        "prisma.rawquery": e.query,
+      },
+    });
+    span.finish();
+  })
+  .$extends({
+    query: {
+      async $allOperations({ operation, model, args, query }) {
+        const span = tracer.startSpan(
+          `prisma_query_${model?.toLowerCase()}_${operation}`,
+          {
+            tags: {
+              "prisma.operation": operation,
+              "prisma.model": model,
+              "prisma.args": JSON.stringify(args),
+              "prisma.rawQuery": query,
+            },
+            childOf: tracer.scope().active() || undefined,
+          }
+        );
+
+        try {
+          const result = await query(args);
+          span.finish();
+          return result;
+        } catch (error) {
+          span.setTag("error", error);
+          span.finish();
+          throw error;
+        }
+      },
+    },
+  })
+  .$extends(withAccelerate());
 
 export { prisma };
 ```
 
-Here, simply importing `tracer` ensures that tracing is set up before any database queries execute.
+:::note
+
+If you’re not using Prisma Postgres just remove the `.$extends(withAccelerate())` line from the code.
+
+:::
+
+The setup above gives you more control over how queries are traced:
+
+- Tracing is initialized as early as possible by importing the `tracer` before creating the Prisma Client.
+- The `$on("query")` hook captures raw SQL queries and sends them as standalone spans.
+- The `$allOperations` extension wraps all Prisma operations in custom spans, allowing you to tag them with metadata like the model, operation type, and arguments.
+
+Unlike the `@prisma/instrumentation` package, which offers automatic tracing out of the box, this manual setup gives you full control over how each span is structured and tagged. It's helpful when you need custom span names, additional metadata, a simpler setup, or when working around limitations or compatibility issues in the OpenTelemetry ecosystem. It also allows you to adapt tracing behavior based on query context, which can be especially useful in complex applications.
+
+
 
 ### 5.2. Add a script that performs queries
 
 Create a `src/index.ts` file and add code to perform queries to your database and send traces to Datadog:
 
-```ts file=src/index.ts
+```typescript file=src/index.ts
 import { prisma } from "./client";
 
 async function main() {
-  // 1) Create a user (with a published post)
-  const user = await prisma.user.create({
-    data: {
-      email: `alice${Date.now()}@prisma.io`,
-      name: "Alice",
-      posts: {
-        create: {
-          title: "Join the Prisma community on Discord",
-          content: "https://pris.ly/discord",
-          published: true,
+  // Create unique emails
+  const user1Email = `alice${Date.now()}@prisma.io`;
+  const user2Email = `bob${Date.now()}@prisma.io`;
+
+  // Create both users concurrently with their posts
+  const [alice, bob] = await Promise.all([
+    prisma.user.create({
+      data: {
+        email: user1Email,
+        name: "Alice",
+        posts: {
+          create: {
+            title: "Join the Prisma community on Discord",
+            content: "https://pris.ly/discord",
+            published: true,
+          },
         },
       },
-    },
-    include: { posts: true },
-  });
-  console.log(`Created user "${user.name}" with ${user.posts.length} post(s).`);
+      include: { posts: true },
+    }),
+    prisma.user.create({
+      data: {
+        email: user2Email,
+        name: "Bob",
+        posts: {
+          create: [
+            {
+              title: "Check out Prisma on YouTube",
+              content: "https://pris.ly/youtube",
+              published: true,
+            },
+            {
+              title: "Follow Prisma on Twitter",
+              content: "https://twitter.com/prisma/",
+              published: false,
+            },
+          ],
+        },
+      },
+      include: { posts: true },
+    }),
+  ]);
 
-  // 2) Retrieve all published posts
+  console.log(
+    `Created users: ${alice.name} (${alice.posts.length} post) and ${bob.name} (${bob.posts.length} posts)`
+  );
+
+  // Retrieve all published posts
   const publishedPosts = await prisma.post.findMany({
     where: { published: true },
   });
-  console.log(`Found ${publishedPosts.length} published post(s).`);
 
-  // 3) Create an unpublished post for Alice
-  const unpublishedPost = await prisma.post.create({
+  // Create an unpublished post for Alice then publish it
+  let post = await prisma.post.create({
     data: {
-      title: "Unpublished Post",
-      content: "This is a draft post.",
+      title: "Join the Prisma Discord community",
+      content: "https://pris.ly/discord",
       published: false,
-      author: { connect: { id: user.id } },
+      author: { connect: { email: user1Email } },
     },
   });
-  console.log(`Created an unpublished post (ID: ${unpublishedPost.id}).`);
-
-  // 4) Publish the newly created post
-  const updatedPost = await prisma.post.update({
-    where: { id: unpublishedPost.id },
+  post = await prisma.post.update({
+    where: { id: post.id },
     data: { published: true },
   });
-  console.log(`Published post (ID: ${updatedPost.id}).`);
+  console.log("Newly published post:", post);
 
-  // 5) Retrieve all of Alice’s posts
-  const alicesPosts = await prisma.post.findMany({
-    where: { authorId: user.id },
+  // Retrieve all posts by Alice
+  const alicePosts = await prisma.post.findMany({
+    where: { author: { email: user1Email } },
   });
-  console.log(`Alice has ${alicesPosts.length} post(s) in total.`);
+  console.log("Alice's posts:", alicePosts);
 }
 
 main()
@@ -288,8 +400,7 @@ This executes your script, which:
 Then, confirm the traces in Datadog:
 
 - Open your [Datadog APM page](https://docs.datadoghq.com/tracing/).
-- Navigate to **APM > Services** in the side panel.
-- Look for your service name (e.g., `datadog-prisma-experiment`).
+- Navigate to **APM > Traces > Explorer** in the side panel.
 - Explore the list of traces and spans, each representing a Prisma query (e.g. `prisma:query`).
 
 :::info
@@ -300,16 +411,16 @@ Depending on your Datadog setup, it may take a minute or two for new data to app
 
 You have successfully:
 
-- Created a Prisma ORM project with PostgreSQL.
+- Created a Prisma ORM project with [Prisma Postgres](/postgres).
 - Set up Datadog tracing using `@prisma/instrumentation` and `dd-trace`.
 - Verified that database operations show up as spans in Datadog.
 
-To enhance your observability further:
+To improve your observability further:
 
-- Customize the **service name**, **version**, and **environment** in `dd-trace` to organize multiple applications in Datadog.
 - Add more instrumentation for your HTTP server or other services (e.g., Express, Fastify).
-- Deploy this project to a production environment with the **Datadog Agent** running, so you can capture real-world traffic and performance data.
+- [Create Dashboards to view](https://docs.datadoghq.com/dashboards/) key metrics from your data.
 
 For additional guidance, check out:
+
 - [Datadog APM documentation](https://docs.datadoghq.com/tracing/)
-- [Prisma instrumentation docs](/) for more advanced configurations.
+- [Prisma tracing docs](/orm/prisma-client/observability-and-logging/opentelemetry-tracing).
