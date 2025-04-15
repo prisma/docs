@@ -32,7 +32,7 @@ There are two different types of driver adapters:
 You can connect to your database using a Node.js-based driver from Prisma Client using a database driver adapter. Prisma maintains the following database driver adapters:
 
 - [PostgreSQL](/orm/overview/databases/postgresql#using-the-node-postgres-driver)
-- [Turso](/orm/overview/databases/turso#how-to-connect-and-query-a-turso-database)
+- [Turso / LibSQL](/orm/overview/databases/turso#how-to-connect-and-query-a-turso-database)
 
 ### Serverless driver adapters
 
@@ -80,19 +80,58 @@ To use this feature:
 
 ## Notes about using driver adapters
 
+### New driver adapters API in v6.6.0
+
+In [v6.6.0](https://github.com/prisma/prisma/releases/tag/6.6.0), we introduced a simplified version for instantiating Prisma Client when using driver adapters. You now don't need to create an instance of the driver/client to pass to a driver adapter, instead you can just create the driver adapter directly (and pass the driver's options to it if needed).
+
+Here is an example using the `@prisma/adapter-libsql` adapter:
+
+#### Before 6.6.0
+
+Earlier versions of Prisma ORM required you to first instantiate the driver itself, and then use that instance to create the Prisma driver adapter. Here is an example using the `@libsql/client` driver for LibSQL:
+
+```typescript
+import { createClient } from '@libsql/client'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { PrismaClient } from '@prisma/client'
+
+// Old way of using driver adapters (before 6.6.0)
+const driver = createClient({
+  url: env.LIBSQL_DATABASE_URL,
+  authToken: env.LIBSQL_DATABASE_TOKEN,
+})
+const adapter = new PrismaLibSQL(driver)
+
+const prisma = new PrismaClient({ adapter })
+```
+
+#### 6.6.0 and later
+
+As of the 6.6.0 release, you instantiate the driver adapter _directly_ with the options of your preferred JS-native driver.:
+
+```typescript
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { PrismaClient } from '../prisma/prisma-client'
+
+const adapter = new PrismaLibSQL({
+  url: env.LIBSQL_DATABASE_URL,
+  authToken: env.LIBSQL_DATABASE_TOKEN,
+})
+
+const prisma = new PrismaClient({ adapter })
+```
+
 ### Driver adapters don't read the connection string from the Prisma schema
 
 When using Prisma ORM's built-in drivers, the connection string is read from the `url` field of the `datasource` block in your Prisma schema.
 
 On the other hand, when using a driver adapter, the connection string needs to be provided in your _application code_ when the driver adapter is set up initially. Here is how this is done for the `pg` driver and the `@prisma/adapter-pg` adapter:
 
-```ts highlight=5,normal
+```ts
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 
-const pool = new Pool({ connectionString: env.DATABASE_URL })
-const adapter = new PrismaPg(pool)
+const adapter = new PrismaPg({ connectionString: env.DATABASE_URL })
 const prisma = new PrismaClient({ adapter })
 ```
 
@@ -111,7 +150,7 @@ generator client {
 }
 ```
 
-What you should **not** do is reference that path relatively:
+What you should _not_ do is reference that path relatively:
 
 ```ts no-copy
 // what not to do!
@@ -176,5 +215,3 @@ export default defineNuxtConfig({
   // ...
 })
 ```
-
-See [this example project](https://github.com/prisma/ecosystem-tests/tree/dev/driver-adapters-wasm/d1-cfpages-nuxt) for a full example that can be deployed to Cloudflare Pages.
