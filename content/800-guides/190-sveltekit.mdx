@@ -1,4 +1,5 @@
 ---
+
 title: 'How to use Prisma ORM with SvelteKit'
 metaTitle: 'How to use Prisma ORM and Prisma Postgres with SvelteKit'
 description: 'Learn how to use Prisma ORM in a SvelteKit app'
@@ -6,21 +7,20 @@ sidebar_label: 'SvelteKit with Prisma'
 image: '/img/guides/prisma-sveltekit-cover.png'
 completion_time: '15 min'
 community_section: true
+
 ---
 
 ## Introduction
 
-Prisma ORM streamlines database access with type-safe queries, and when paired with [SvelteKit](https://svelte.dev/docs/kit), it creates a robust and scalable full-stack architecture.
+Prisma ORM simplifies database access with type-safe queries, and when paired with [SvelteKit](https://svelte.dev/docs/kit), it creates a robust and scalable full-stack architecture.
 
 In this guide, you'll learn to integrate Prisma ORM with a Prisma Postgres database in a SvelteKit project from scratch. You can find a complete example of this guide on [GitHub](https://github.com/prisma/prisma-examples/tree/latest/orm/sveltekit).
 
----
 
 ## Prerequisites
 - [Node.js 18+](https://nodejs.org)
 - [Svelte VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) (Recommended by Svelte)
 
----
 
 ## 1. Set up your project
 
@@ -54,7 +54,6 @@ npm run dev
 
 That's it! Svelte makes it a very simple process to get up and running. At this point, your project is ready to integrate Prisma and connect to a Prisma Postgres database.
 
----
 
 ## 2. Install and Configure Prisma
 
@@ -78,12 +77,14 @@ Once installed, initialize Prisma in your project:
 npx prisma init --db --output ../src/generated/prisma
 ```
 :::info
+If you're not using a Prisma Postgres database, you can skip the `--db` flag.
+
 You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My SvelteKit Project"
 :::
 This will create:
 
 - A `prisma/` directory with a `schema.prisma` file
-- A `.env` file with a `DATABASE_URL` already set
+- A `.env` file with a `DATABASE_URL` already set *(if you're using Prisma Postgres)*
 
 ### 2.2. Define your Prisma Schema
 
@@ -124,24 +125,27 @@ model Post {
 
 This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-### 2.3. Configure the Prisma Client Generator
+### 2.3. Configure the Prisma Client generator
 
 Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
-### 2.4. Seed the Database
+### 2.4. Seed the database
 
 Let's add some seed data to populate the database with sample users and posts.
 
 Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts showLineNumbers
+//add-next-line
 import { PrismaClient, Prisma } from "../src/generated/prisma";
 
+//add-next-line
 const prisma = new PrismaClient();
 
+//add-start
 const userData: Prisma.UserCreateInput[] = [
   {
     name: "Alice",
@@ -174,13 +178,17 @@ const userData: Prisma.UserCreateInput[] = [
     },
   },
 ];
+//add-end
 
+//add-start
 export async function main() {
   for (const u of userData) {
     await prisma.user.create({ data: u });
   }
 }
+//add-end
 
+//add-next-line
 main();
 ```
 
@@ -204,13 +212,12 @@ And open Prisma Studio to inspect your data:
 npx prisma studio
 ```
 
----
 
 ## 3. Integrate Prisma into SvelteKit
 
 ### 3.1. Create a Prisma Client
 
-Inside your `/src/lib` directory, rename index.ts to prisma.ts. This file will be used to create and export your Prisma Client instance.
+Inside your `/src/lib` directory, rename `index.ts` to `prisma.ts`. This file will be used to create and export your Prisma Client instance.
 
 :::tip
 Files in `src/lib` can be accessed from anywhere using the `$lib` alias.
@@ -218,7 +225,9 @@ Files in `src/lib` can be accessed from anywhere using the `$lib` alias.
 
 Set up the Prisma client like this:
 
-```typescript file=src/lib/prisma.ts showLineNumbers
+<TabbedContent code>
+<TabItem value="Prisma Postgres (recommended)">
+```tsx file=src/lib/prisma.ts showLineNumbers
 import { PrismaClient } from "../generated/prisma";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
@@ -226,12 +235,26 @@ const prisma = new PrismaClient().$extends(withAccelerate());
 
 export default prisma;
 ```
+</TabItem>
 
-:::info
-If you're not using Prisma Postgres, remove `.$extends(withAccelerate())`.
+<TabItem value="Other databases">
+```tsx file=src/lib/prisma.ts showLineNumbers
+import { PrismaClient } from "../generated/prisma";
+
+const prisma = new PrismaClient();
+
+export default prisma;
+```
+</TabItem>
+</TabbedContent>
+
+:::warning
+We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.
+
+If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
 :::
 
-### 3.2. Create a Server Route
+### 3.2. Create a server route
 
 To fetch data from the database on the server side, create a `+page.server.ts` file in your routes directory. This file should export a `load` function, which runs on the server before your page renders.
 
@@ -262,7 +285,7 @@ export async function load() {
 
 ```
 
-At this point, you're only getting data directly on the User model — no relations like posts are included yet.
+At this point, you're only getting data directly on the `User` model — no relations like posts are included yet.
 
 To also fetch each user's posts, we can expand the query using the `include` option. This tells Prisma to join the related `Posts` table in the result.
 
@@ -340,7 +363,6 @@ Now that we have the data, let's map through the users and their posts with Svel
 
 You're done! You've just created a SvelteKit app with Prisma ORM. Below are some next steps to explore, as well as some more resources to help you get started expanding your project.
 
----
 
 ## Next Steps
 
@@ -349,6 +371,7 @@ Now that you have a working SvelteKit app connected to a Prisma Postgres databas
 - Extend your Prisma schema with more models and relationships
 - Add create/update/delete routes and forms
 - Explore authentication and validation
+- Enable query caching with Prisma Postgres for better performance
 
 ### More Info
 
