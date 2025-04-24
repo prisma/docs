@@ -392,18 +392,14 @@ This is available from version 5.4.0 and newer behind the `driverAdapters` featu
 The example below uses the [Neon driver adapter](/orm/overview/databases/neon#how-to-use-neons-serverless-driver-with-prisma-orm-preview)
 
 ```ts
-import { Pool, neonConfig } from '@neondatabase/serverless';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
-import ws from 'ws';
 
 dotenv.config();
-neonConfig.webSocketConstructor = ws;
 const connectionString = `${process.env.DATABASE_URL}`;
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaNeon(pool);
+const adapter = new PrismaNeon({ connectionString });
 const prisma = new PrismaClient({ adapter });
 ```
 
@@ -1274,6 +1270,7 @@ This feature is available in Prisma ORM version 5.14.0 and later for PostgreSQL,
 #### Remarks
 
 - The `skipDuplicates` option is not supported by SQLite.
+- Note that the order of elements returned by `createManyAndReturn` is not guaranteed.
 - You **cannot** create or connect relations by using nested `create`, `createMany`, `connect`, `connectOrCreate` queries inside a top-level `createManyAndReturn()` query. See here for a [workaround](/orm/prisma-client/queries/relation-queries#using-nested-createmany).
 - When relations are included via `include`, a separate query is generated per relation.
 - `relationLoadStrategy: join` is not supported.
@@ -2164,7 +2161,7 @@ generator client {
 }
 ```
 
-After adding this flag, you need to run `prisma generate` again to re-generate Prisma Client. This feature is currently available on PostgreSQL, CockroachDB and MySQL.
+After adding this flag, you need to run `prisma generate` again to re-generate Prisma Client. The `relationJoins` feature is currently available on PostgreSQL, CockroachDB and MySQL.
 
 #### Remarks
 
@@ -3606,20 +3603,13 @@ const result = await prisma.user.update({
 
 ## Filter conditions and operators
 
-<Admonition type="info">
-
-- From version 4.3.0, you can also use these operators to compare _fields_ in the same model [with the `<model>.fields` property](#compare-columns-in-the-same-table).
-- In versions before 4.3.0, you can compare fields in the same model [with raw queries](/orm/more/help-and-troubleshooting/comparing-columns-through-raw-queries).
-
-</Admonition>
-
 ### `equals`
 
 Value equals `n`.
 
 #### Examples
 
-##### Return all users where `name` equals `"Eleanor"`
+**Return all users where `name` equals `"Eleanor"`**
 
 ```ts
 const result = await prisma.user.findMany({
@@ -3641,7 +3631,7 @@ const result = await prisma.user.findMany({
 });
 ```
 
-##### Return all products with a quantity lower than the "warn quantity" threshold
+**Return all products with a quantity lower than the "warn quantity" threshold**
 
 This example compares fields of the same model which is available as of version 4.3.0.
 
@@ -3650,7 +3640,23 @@ const productsWithLowQuantity = await prisma.product.findMany({
   where: {
     quantity: {
       lte: prisma.product.fields.warnQuantity
-    }
+    },
+  },
+});
+```
+
+**Return all users that have blue and green as their favorite colors**
+
+This example finds users that have set their `favoriteColors` field to `['blue', 'green']`.
+
+Note that when using `equals`, order of elements matters. That is to say `['blue', 'green']` is **not** equal to `['green', 'blue']`
+
+```ts
+const favoriteColorFriends = await prisma.user.findMany({
+  where: {
+    favoriteColors: {
+      equals: ['blue', 'green'],
+    },
   },
 });
 ```

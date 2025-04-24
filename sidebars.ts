@@ -419,7 +419,9 @@ const sidebars: SidebarsConfig = {
             "guides/nuxt",
             "guides/tanstack-start",
             "guides/react-router-7",
-          ],
+            "guides/solid-start",
+            "guides/sveltekit",
+          ].sort(),
         },
         {
           type: "category",
@@ -438,7 +440,7 @@ const sidebars: SidebarsConfig = {
           label: "Tool Guides",
           collapsed: false,
           collapsible: false,
-          items: ["guides/docker", "guides/use-prisma-in-pnpm-workspaces"],
+          items: ["guides/docker", "guides/use-prisma-in-pnpm-workspaces", "guides/data-dog"],
         },
         {
           type: "category",

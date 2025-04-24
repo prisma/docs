@@ -1,6 +1,8 @@
 import * as React from "react";
 import Select, { components } from "react-select";
 
+import CodeBlock from "@site/src/theme/CodeBlock";
+
 interface SelectProps {
   items: any[];
   onChange: (item: any) => void;
