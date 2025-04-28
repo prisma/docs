@@ -1,0 +1,1654 @@
+---
+title: 'How to use Prisma ORM with Shopify'
+metaTitle: 'How to use Prisma ORM with Shopify'
+description: 'Learn how to use Prisma ORM with Shopify'
+sidebar_label: 'Shopify with Prisma'
+image: '/img/guides/prisma-shopify-cover.png'
+completion_time: '30 min'
+community_section: true
+---
+
+:::warning
+DEVELOPER CHECKLIST - Remove upon completion
+
+- [ ] `CTRL or CMD + F` to find 10 `_`'s and replace them with the framework name.
+
+- [ ] Provide a brief overview of the guide's purpose and the benefits of integrating Prisma ORM with the specified framework.
+
+- [ ] Link to the official documentation of the framework upon its first mention in the Introduction section.
+
+- [ ] List all necessary or recommended prerequisites, including specific software versions and any required accounts or services.
+
+- [ ] Name project *<u>framework</u>*-prisma (ie. *<u>sveltekit</u>*-prisma)
+
+- [ ] Project creation options should be detailed in an info admonition in this format:
+markdown
+markdown - *Which package manager would you like to use?* npm 
+- [ ] Ensure the appropriate admonitions (note, warning, tip) are used for important information.
+
+- [ ] Include links to related guides and resources throughout the content.
+
+- [ ] Instead of using `we, we'll, ours, etc.` use `you, you'll, yours, etc.`
+
+- [ ] All lines ending before a code block should end with a colon (This one -> `:`)
+
+:::
+
+## Introduction
+
+[Shopify](https://shopify.dev/) is a popular platform for building online stores. When paired with Prisma ORM, it creates a powerful foundation for building Shopify applications.
+
+In this guide, you'll create a Shopify app that generates QR codes for products stored inside a [Prisma Postgres](https://prisma.io/postgres) database. When customers scan these QR codes, they'll be directed to either the product page or checkout with the product already in their cart.
+
+## Prerequisites
+- [Node.js 18+](https://nodejs.org)
+- A [Shopify Partner account](https://www.shopify.com/partners)
+- A [Development Store](https://shopify.dev/docs/api/development-stores#create-a-development-store-to-test-your-app)
+
+## 1. Setting up your project
+
+First, you'll set up the project infrastructure:
+
+The Shopify CLI provides tools for creating and managing Shopify apps:
+
+```terminal
+npm install -g @shopify/cli@latest
+```
+
+Create a new Shopify app project using the CLI:
+
+```terminal
+shopify app init
+```
+
+You'll be prompted to answer a few questions. Here are the selections you'll need to make:
+
+:::info
+- ***Template:*** `Build a Remix app (recommended)`
+- ***Language:*** `JavaScript`
+- ***App Name:*** `prisma-store` *(note: name cannot contain "shopify")*
+- ***Create as new app:*** `Yes, create it as a new app`
+:::
+
+Now, move into your newly created project folder:
+
+```terminal
+cd prisma-store
+```
+
+Install the required dependencies for your project:
+
+- **`tiny-invariant`** - A tiny library for invariant checks
+- **`qrcode`** - A library for generating QR codes
+- **`@shopify/polaris-icons`** - A library of icons for Shopify apps
+
+```terminal
+npm install tiny-invariant qrcode @shopify/polaris-icons
+```
+
+## 2. Install and configure Prisma
+
+Prisma provides an ORM that makes database operations type-safe and intuitive. You'll set up Prisma with a PostgreSQL database.
+
+:::warning
+You'll need to remove the existing Prisma directory and start fresh. Remove the existing Prisma directory:
+```terminal
+rm -rf prisma
+```
+:::
+
+### 2.1. Update Prisma
+
+
+Install the latest version of Prisma along with the `@prisma/extension-accelerate` package (if you're using Prisma Postgres) to your project:
+
+<TabbedContent code>
+<TabItem value="Prisma Postgres (recommended)">
+```terminal
+npm install prisma @prisma/client --save-dev
+npm install @prisma/extension-accelerate
+```
+</TabItem>
+<TabItem value="Other databases">
+```terminal
+npm install prisma @prisma/client --save-dev
+```
+</TabItem>
+</TabbedContent>
+
+
+Once installed, initialize Prisma in your project:
+
+<TabbedContent code>
+<TabItem value="Prisma Postgres (recommended)">
+```terminal
+npx prisma init --db --output ../app/generated/prisma
+```
+</TabItem>
+<TabItem value="Other Databases">
+```terminal
+npx prisma init --output ../app/generated/prisma
+```
+</TabItem>
+</TabbedContent>
+
+This will create:
+
+- A `prisma/` directory with a `schema.prisma` file
+- A `.env` file with a `DATABASE_URL` already set *(if you're using Prisma Postgres)*
+
+### 2.2. Define your Prisma schema
+
+In the `prisma/schema.prisma` file, add the following models:
+- `Session`: To store user session data
+- `QRCode`: To store QR code information and track scans
+
+Create or update the schema in `prisma/schema.prisma`:
+
+```prisma file=prisma/schema.prisma showLineNumbers
+generator client {
+  //delete-next-line
+  provider = "prisma-client-js"
+  //add-next-line
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//add-start
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+model QRCode {
+  id               Int      @id @default(autoincrement())
+  title            String
+  shop             String
+  productId        String
+  productHandle    String
+  productVariantId String
+  destination      String
+  scans            Int      @default(0)
+  createdAt        DateTime @default(now())
+}
+//add-end
+```
+
+Now, run the following command to create the database tables and generate the Prisma Client:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+## 3. Build the QR-code model
+
+### 3.1. Create the model directory and file
+
+The model layer lives in `app/models/` and is responsible for reading and writing QR-codes in your database, enriching them with Shopify product data, and performing a tiny bit of validation.  
+
+Create the `app/models/` directory and add the `QRCode.server.js` file:
+
+```terminal
+mkdir -p app/models
+touch app/models/QRCode.server.js
+```
+
+Start by adding the imports:
+
+```javascript file=app/models/QRCode.server.js showLineNumbers
+//add-start
+import qrcode from "qrcode";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+//add-end
+```
+
+### 3.2. Retrieve QR-code records
+
+Now, let's create a fucntion to get a single specific QR-code record from the database using `prisma.qRCode.findFirst`:
+
+```javascript file=app/models/QRCode.server.js showLineNumbers
+import qrcode from "qrcode";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+
+//add-start
+export async function getQRCode(id, graphql) {
+  const qrCode = await db.qRCode.findFirst({ where: { id } });
+
+  if (!qrCode) {
+    return null;
+  }
+
+  return supplementQRCode(qrCode, graphql);
+}
+//add-end
+```
+
+Create a function to get all QR-code records in the database using `prisma.qRCode.findMany`:
+
+```javascript file=app/models/QRCode.server.js showLineNumbers
+import qrcode from "qrcode";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+
+export async function getQRCode(id, graphql) {
+  // ... existing code
+}
+
+//add-start
+export async function getQRCodes(shop, graphql) {
+  const qrCodes = await db.qRCode.findMany({
+    where: { shop },
+    orderBy: { id: "desc" },
+  });
+
+  if (qrCodes.length === 0) return [];
+
+  return Promise.all(
+    qrCodes.map((qrCode) => supplementQRCode(qrCode, graphql))
+  );
+}
+//add-end
+```
+
+### 3.3. QR code image and destination URL
+
+Create a function to generate an image URL for a QR-code using `qrcode.toDataURL`:
+
+```javascript file=app/models/QRCode.server.js showLineNumbers
+import qrcode from "qrcode";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+
+export async function getQRCode(id, graphql) {
+  // ... existing code
+}
+
+export async function getQRCodes(shop, graphql) {
+  // ... existing code
+}
+
+//add-start
+export function getQRCodeImage(id) {
+  const url = new URL(`/qrcodes/${id}/scan`, process.env.SHOPIFY_APP_URL);
+  return qrcode.toDataURL(url.href);
+}
+//add-end
+```
+
+Next, you need to get the destination URL and return it to the product details page, or the cart.
+
+```javascript file=app/models/QRCode.server.js showLineNumbers
+import qrcode from "qrcode";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+
+export async function getQRCode(id, graphql) {
+  // ... existing code
+}
+
+export async function getQRCodes(shop, graphql) {
+  // ... existing code
+}
+
+export function getQRCodeImage(id) {
+  // ... existing code
+}
+
+//add-start
+export function getDestinationUrl(qrCode) {
+  if (qrCode.destination === "product") {
+    return `https://${qrCode.shop}/products/${qrCode.productHandle}`;
+  }
+
+  const match = /gid:\/\/shopify\/ProductVariant\/([0-9]+)/.exec(qrCode.productVariantId);
+  invariant(match, "Unrecognized product variant ID");
+
+  return `https://${qrCode.shop}/cart/${match[1]}:1`;
+}
+//add-end
+```
+
+### 3.4. Add product details to QR-code data
+
+When a QR code is scanned, it needs to return the proper data as well as the image and destination URL. Create a function to do just that:
+
+```javascript file=app/models/QRCode.server.js showLineNumbers
+import qrcode from "qrcode";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+
+export async function getQRCode(id, graphql) {
+  // ... existing code
+}
+
+export async function getQRCodes(shop, graphql) {
+  // ... existing code
+}
+
+export function getQRCodeImage(id) {
+  // ... existing code
+}
+
+export function getDestinationUrl(qrCode) {
+  // ... existing code
+}
+
+//add-start
+async function supplementQRCode(qrCode, graphql) {
+  const qrCodeImagePromise = getQRCodeImage(qrCode.id);
+
+  const response = await graphql(
+    `
+      query supplementQRCode($id: ID!) {
+        product(id: $id) {
+          title
+          images(first: 1) {
+            nodes {
+              altText
+              url
+            }
+          }
+        }
+      }
+    `,
+    {
+      variables: {
+        id: qrCode.productId,
+      },
+    }
+  );
+
+  const {
+    data: { product },
+  } = await response.json();
+
+  return {
+    ...qrCode,
+    productDeleted: !product?.title,
+    productTitle: product?.title,
+    productImage: product?.images?.nodes[0]?.url,
+    productAlt: product?.images?.nodes[0]?.altText,
+    destinationUrl: getDestinationUrl(qrCode),
+    image: await qrCodeImagePromise,
+  };
+}
+//add-end
+```
+
+### 3.5. Validate QR code data
+
+Lastly, validate the QR code data by checking if the title, product ID, and destination are present:
+
+```javascript file=app/models/QRCode.server.js showLineNumbers
+import qrcode from "qrcode";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+
+export async function getQRCode(id, graphql) {
+  // ... existing code
+}
+
+export async function getQRCodes(shop, graphql) {
+  // ... existing code
+}
+
+export function getQRCodeImage(id) {
+  // ... existing code
+}
+
+export function getDestinationUrl(qrCode) {
+  // ... existing code
+}
+
+async function supplementQRCode(qrCode, graphql) {
+  // ... existing code
+}
+
+//add-start
+export function validateQRCode(data) {
+  const errors = {};
+
+  if (!data.title) {
+    errors.title = "Title is required";
+  }
+
+  if (!data.productId) {
+    errors.productId = "Product is required";
+  }
+
+  if (!data.destination) {
+    errors.destination = "Destination is required";
+  }
+
+  if (Object.keys(errors).length) {
+    return errors;
+  }
+}
+//add-end
+```
+
+Your model layer is complete—next you'll wire it to a Remix route so merchants can create and edit QR-codes.
+
+
+## 4.  QR Code form
+
+Next, you'll build the form layer that lets merchants create and edit QR codes, including product selection, destination choice, and validation errors.
+
+To do this, create the `app/routes/app.qrcodes.$id.js` file:
+
+```terminal
+touch app/routes/app.qrcodes.$id.js
+```
+
+### 4.1. Imports and authentication
+
+The `app.qrcodes.$id.js` file is the main route for the QR code form. In addition to holding the `QRCodeForm` component, it handles the authentication of the user, the loading of the QR code data, and the submission of the form.
+
+Add the following imports to the file:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+//add-start
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+//add-end
+```
+
+Create a loader function that authenticates the user and returns the QR code data:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+//add-start
+export async function loader({ request, params }) {
+  const { admin } = await authenticate.admin(request);
+
+    if (params.id === "new") {
+    return json({
+      destination: "product",
+      title: "",
+    });
+  }
+
+  return json(await getQRCode(Number(params.id), admin.graphql));
+}
+//add-end
+```
+
+### 4.2. Form state
+
+To manage the form state, you need to maintain the state of the QR code. This is done using the following variables:
+
+- `errors`: Validation errors from `validateQRCode`.
+- `formState`: Updated on user input.
+- `cleanFormState`: Initial state, updated on submission.
+- `isDirty`: Indicates form changes.
+- `isSaving` and `isDeleting`: Track network state.
+
+Create a form component function called `QRCodeForm` that uses the above variables to manage the form state:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+//add-start
+export default function QRCodeForm() {
+  const errors = useActionData()?.errors || {};
+
+  const qrCode = useLoaderData();
+  const [formState, setFormState] = useState(qrCode);
+  const [cleanFormState, setCleanFormState] = useState(qrCode);
+  const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
+
+  const nav = useNavigation();
+  const isSaving =
+    nav.state === "submitting" && nav.formData?.get("action") !== "delete";
+  const isDeleting =
+    nav.state === "submitting" && nav.formData?.get("action") === "delete";
+}
+//add-end
+```
+
+To select a product, add a product selector using App Bridge's `ResourcePicker` action. This adds a modal for selecting the product and will save it to the form state:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+export default function QRCodeForm() {
+  const errors = useActionData()?.errors || {};
+
+  const qrCode = useLoaderData();
+  const [formState, setFormState] = useState(qrCode);
+  const [cleanFormState, setCleanFormState] = useState(qrCode);
+  const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
+
+  const nav = useNavigation();
+  const isSaving =
+    nav.state === "submitting" && nav.formData?.get("action") !== "delete";
+  const isDeleting =
+    nav.state === "submitting" && nav.formData?.get("action") === "delete";
+
+  //add-start
+  const navigate = useNavigate();
+
+  async function selectProduct() {
+    const products = await window.shopify.resourcePicker({
+      type: "product",
+      action: "select",
+    });
+
+    if (products) {
+      const { images, id, variants, title, handle } = products[0];
+
+      setFormState({
+        ...formState,
+        productId: id,
+        productVariantId: variants[0].id,
+        productTitle: title,
+        productHandle: handle,
+        productAlt: images[0]?.altText,
+        productImage: images[0]?.originalSrc,
+      });
+    }
+  }
+//add-end
+}
+```
+
+The form needs to be submitted to the server to save the QR code. Add a submit button to the form:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+export default function QRCodeForm() {
+  const errors = useActionData()?.errors || {};
+
+  const qrCode = useLoaderData();
+  const [formState, setFormState] = useState(qrCode);
+  const [cleanFormState, setCleanFormState] = useState(qrCode);
+  const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
+
+  const nav = useNavigation();
+  const isSaving =
+    nav.state === "submitting" && nav.formData?.get("action") !== "delete";
+  const isDeleting =
+    nav.state === "submitting" && nav.formData?.get("action") === "delete";
+
+
+  const navigate = useNavigate();
+
+  async function selectProduct() {
+    const products = await window.shopify.resourcePicker({
+      type: "product",
+      action: "select",
+    });
+
+    if (products) {
+      const { images, id, variants, title, handle } = products[0];
+
+      setFormState({
+        ...formState,
+        productId: id,
+        productVariantId: variants[0].id,
+        productTitle: title,
+        productHandle: handle,
+        productAlt: images[0]?.altText,
+        productImage: images[0]?.originalSrc,
+      });
+    }
+  }
+
+//add-start
+  const submit = useSubmit();
+  function handleSave() {
+    const data = {
+      title: formState.title,
+      productId: formState.productId || "",
+      productVariantId: formState.productVariantId || "",
+      productHandle: formState.productHandle || "",
+      destination: formState.destination,
+    };
+
+    setCleanFormState({ ...formState });
+    submit(data, { method: "post" });
+//add-end
+}
+```
+
+### 4.3. Building the form UI
+
+Now that you have the form state and handlers set up, let's build the UI piece by piece. The form will have several sections:
+
+- Title
+- Product
+- Scan destination
+- QR code preview
+
+First, add the page layout and title:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+export default function QRCodeForm() {
+  // ... existing code
+
+  //add-start
+  return (
+    <Page>
+      <ui-title-bar title={qrCode.id ? "Edit QR code" : "Create new QR code"}>
+        <button variant="breadcrumb" onClick={() => navigate("/app")}>
+          QR codes
+        </button>
+      </ui-title-bar>
+      <Layout></Layout>
+    </Page>
+  );
+  //add-end
+}
+```
+
+Next, create a layout section which will hold both the title card:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+export default function QRCodeForm() {
+  // ... existing code
+  return (
+    <Page>
+      <ui-title-bar title={qrCode.id ? "Edit QR code" : "Create new QR code"}>
+        <button variant="breadcrumb" onClick={() => navigate("/app")}>
+          QR codes
+        </button>
+      </ui-title-bar>
+      <Layout>
+        //add-start
+        <Layout.Section>
+          <BlockStack gap="500">
+            <Card>
+              <BlockStack gap="500">
+                <Text as={"h2"} variant="headingLg">
+                  Title
+                </Text>
+                <TextField
+                  id="title"
+                  helpText="Only store staff can see this title"
+                  label="title"
+                  labelHidden
+                  autoComplete="off"
+                  value={formState.title}
+                  onChange={(title) => setFormState({ ...formState, title })}
+                  error={errors.title}
+                />
+              </BlockStack>
+            </Card>
+          </BlockStack>
+        </Layout.Section>
+        //add-end
+      </Layout>
+    </Page>
+  );
+}
+```
+
+Add the product card to the layout section:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+export default function QRCodeForm() {
+  // ... existing code
+  return (
+    <Page>
+      <ui-title-bar title={qrCode.id ? "Edit QR code" : "Create new QR code"}>
+        <button variant="breadcrumb" onClick={() => navigate("/app")}>
+          QR codes
+        </button>
+      </ui-title-bar>
+      <Layout>
+        <Layout.Section>
+          <BlockStack gap="500">
+            <Card>
+              {/* ... existing code */}
+            </Card>
+            //add-start
+            <Card>
+              <BlockStack gap="500">
+                <InlineStack align="space-between">
+                  <Text as={"h2"} variant="headingLg">
+                    Product
+                  </Text>
+                  {formState.productId ? (
+                    <Button variant="plain" onClick={selectProduct}>
+                      Change product
+                    </Button>
+                  ) : null}
+                </InlineStack>
+                {formState.productId ? (
+                  <InlineStack blockAlign="center" gap="500">
+                    <Thumbnail
+                      source={formState.productImage || ImageIcon}
+                      alt={formState.productAlt}
+                    />
+                    <Text as="span" variant="headingMd" fontWeight="semibold">
+                      {formState.productTitle}
+                    </Text>
+                  </InlineStack>
+                ) : (
+                  <BlockStack gap="200">
+                    <Button onClick={selectProduct} id="select-product">
+                      Select product
+                    </Button>
+                    {errors.productId ? (
+                      <InlineError
+                        message={errors.productId}
+                        fieldID="myFieldID"
+                      />
+                    ) : null}
+                  </BlockStack>
+                )}
+                <Bleed marginInlineStart="200" marginInlineEnd="200">
+                  <Divider />
+                </Bleed>
+                <InlineStack gap="500" align="space-between" blockAlign="start">
+                  <ChoiceList
+                    title="Scan destination"
+                    choices={[
+                      { label: "Link to product page", value: "product" },
+                      {
+                        label: "Link to checkout page with product in the cart",
+                        value: "cart",
+                      },
+                    ]}
+                    selected={[formState.destination]}
+                    onChange={(destination) =>
+                      setFormState({
+                        ...formState,
+                        destination: destination[0],
+                      })
+                    }
+                    error={errors.destination}
+                  />
+                  {qrCode.destinationUrl ? (
+                    <Button
+                      variant="plain"
+                      url={qrCode.destinationUrl}
+                      target="_blank"
+                    >
+                      Go to destination URL
+                    </Button>
+                  ) : null}
+                </InlineStack>
+              </BlockStack>
+            </Card>
+            //add-end
+          </BlockStack>
+        </Layout.Section>
+      </Layout>
+    </Page>
+  );
+}
+```
+
+Add the QR code preview card to the layout section:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+export default function QRCodeForm() {
+  // ... existing code
+  return (
+    <Page>
+      <ui-title-bar title={qrCode.id ? "Edit QR code" : "Create new QR code"}>
+        <button variant="breadcrumb" onClick={() => navigate("/app")}>
+          QR codes
+        </button>
+      </ui-title-bar>
+      <Layout>
+        <Layout.Section>
+          {/* ... existing code */}
+        </Layout.Section>
+        //add-start
+        <Layout.Section variant="oneThird">
+          <Card>
+            <Text as={"h2"} variant="headingLg">
+              QR code
+            </Text>
+            {qrCode ? (
+              <EmptyState image={qrCode.image} imageContained={true} />
+            ) : (
+              <EmptyState image="">
+                Your QR code will appear here after you save
+              </EmptyState>
+            )}
+            <BlockStack gap="300">
+              <Button
+                disabled={!qrCode?.image}
+                url={qrCode?.image}
+                download
+                variant="primary"
+              >
+                Download
+              </Button>
+              <Button
+                disabled={!qrCode.id}
+                url={`/qrcodes/${qrCode.id}`}
+                target="_blank"
+              >
+                Go to public URL
+              </Button>
+            </BlockStack>
+          </Card>
+        </Layout.Section>
+        //add-end
+      </Layout>
+    </Page>
+  );
+}
+```
+
+Create save and delete actions with the `Page.Actions` component:
+
+```javascript file=app/routes/app.qrcodes.$id.js showLineNumbers
+import { useState } from "react";
+import { json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useNavigate,
+} from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, Bleed, Button, ChoiceList, Divider, EmptyState,
+  InlineStack, InlineError, Layout, Page, Text, TextField,
+  Thumbnail, BlockStack, PageActions,
+} from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
+
+import db from "../db.server";
+import { getQRCode, validateQRCode } from "../models/QRCode.server";
+
+export async function loader({ request, params }) {
+  // ... existing code
+}
+
+export default function QRCodeForm() {
+  // ... existing code
+  return (
+    <Page>
+      <ui-title-bar title={qrCode.id ? "Edit QR code" : "Create new QR code"}>
+        <button variant="breadcrumb" onClick={() => navigate("/app")}>
+          QR codes
+        </button>
+      </ui-title-bar>
+      <Layout>
+        <Layout.Section>
+          {/* ... existing code */}
+        </Layout.Section>
+        <Layout.Section>
+          {/* ... existing code */}
+        </Layout.Section>
+        //add-start
+        <Layout.Section>
+          <PageActions
+            secondaryActions={[
+              {
+                content: "Delete",
+                loading: isDeleting,
+                disabled: !qrCode.id || !qrCode || isSaving || isDeleting,
+                destructive: true,
+                outline: true,
+                onAction: () =>
+                  submit({ action: "delete" }, { method: "post" }),
+              },
+            ]}
+            primaryAction={{
+              content: "Save",
+              loading: isSaving,
+              disabled: !isDirty || isSaving || isDeleting,
+              onAction: handleSave,
+            }}
+          />
+        </Layout.Section>
+        //add-end
+      </Layout>
+    </Page>
+  );
+}
+```
+
+Each section of the form serves a specific purpose:
+- The title section lets merchants add a descriptive name
+- The product selector uses Shopify's App Bridge to pick products
+- The destination selector determines where customers go when scanning
+- The preview section shows the QR code and provides download options
+- The action buttons let merchants save or delete the QR code
+
+## 5.  QR Code dashboard (list view)
+
+### 5.1. Create the dashboard route and import dependencies
+
+Create the `app/_index.js` file:
+
+```terminal
+touch app/routes/app._index.js
+```
+
+Add the dependencies:
+
+```javascript file=app/routes/app._index.js
+//add-start
+import { json } from "@remix-run/node";
+import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, EmptyState, Layout, Page, IndexTable, Thumbnail,
+  Text, Icon, InlineStack,
+} from "@shopify/polaris";
+import { AlertDiamondIcon, ImageIcon } from "@shopify/polaris-icons";
+import { getQRCodes } from "../models/QRCode.server";
+//add-end
+```
+
+Create the `loader` function:
+
+```javascript file=app/routes/app._index.js
+import { json } from "@remix-run/node";
+import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, EmptyState, Layout, Page, IndexTable, Thumbnail,
+  Text, Icon, InlineStack,
+} from "@shopify/polaris";
+import { AlertDiamondIcon, ImageIcon } from "@shopify/polaris-icons";
+import { getQRCodes } from "../models/QRCode.server";
+
+//add-start
+export async function loader({ request }) {
+  const { admin, session } = await authenticate.admin(request);
+  const qrCodes = await getQRCodes(session.shop, admin.graphql);
+
+  return json({
+    qrCodes,
+  });
+}
+//add-end
+```
+
+Create the empty state component called `EmptyQRCodeState`:
+
+```javascript file=app/routes/app._index.js
+import { json } from "@remix-run/node";
+import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, EmptyState, Layout, Page, IndexTable, Thumbnail,
+  Text, Icon, InlineStack,
+} from "@shopify/polaris";
+import { AlertDiamondIcon, ImageIcon } from "@shopify/polaris-icons";
+import { getQRCodes } from "../models/QRCode.server";
+
+export async function loader({ request }) {
+  // ... existing code
+}
+
+//add-start
+const EmptyQRCodeState = ({ onAction }) => (
+  <EmptyState
+    heading="Create unique QR codes for your product"
+    action={{
+      content: "Create QR code",
+      onAction,
+    }}
+    image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+  >
+    <p>Allow customers to scan codes and buy products using their phones.</p>
+  </EmptyState>
+);
+//add-end
+```
+
+Create the `QRTable` component:
+
+```javascript file=app/routes/app._index.js
+import { json } from "@remix-run/node";
+import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, EmptyState, Layout, Page, IndexTable, Thumbnail,
+  Text, Icon, InlineStack,
+} from "@shopify/polaris";
+import { AlertDiamondIcon, ImageIcon } from "@shopify/polaris-icons";
+import { getQRCodes } from "../models/QRCode.server";
+
+export async function loader({ request }) {
+  // ... existing code
+}
+
+const EmptyQRCodeState = ({ onAction }) => (
+  // ... existing code
+);
+
+//add-start
+const QRTable = ({ qrCodes }) => (
+  <IndexTable
+    resourceName={{
+      singular: "QR code",
+      plural: "QR codes",
+    }}
+    itemCount={qrCodes.length}
+    headings={[
+      { title: "Thumbnail", hidden: true },
+      { title: "Title" },
+      { title: "Product" },
+      { title: "Date created" },
+      { title: "Scans" },
+    ]}
+    selectable={false}
+  >
+    {qrCodes.map((qrCode) => (
+      <QRTableRow key={qrCode.id} qrCode={qrCode} />
+    ))}
+  </IndexTable>
+);
+//add-end
+```
+
+Create the `QRTableRow` component:
+
+```javascript file=app/routes/app._index.js
+import { json } from "@remix-run/node";
+import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, EmptyState, Layout, Page, IndexTable, Thumbnail,
+  Text, Icon, InlineStack,
+} from "@shopify/polaris";
+import { AlertDiamondIcon, ImageIcon } from "@shopify/polaris-icons";
+import { getQRCodes } from "../models/QRCode.server";
+
+export async function loader({ request }) {
+  // ... existing code
+}
+
+const EmptyQRCodeState = ({ onAction }) => (
+  // ... existing code
+);
+
+const QRTable = ({ qrCodes }) => (
+  // ... existing code
+);
+
+//add-start
+const QRTableRow = ({ qrCode }) => (
+  <IndexTable.Row id={qrCode.id} position={qrCode.id}>
+    <IndexTable.Cell>
+      <Thumbnail
+        source={qrCode.productImage || ImageIcon}
+        alt={qrCode.productTitle}
+        size="small"
+      />
+    </IndexTable.Cell>
+    <IndexTable.Cell>
+      <Link to={`qrcodes/${qrCode.id}`}>{truncate(qrCode.title)}</Link>
+    </IndexTable.Cell>
+    <IndexTable.Cell>
+      {qrCode.productDeleted ? (
+        <InlineStack align="start" gap="200">
+          <span style={{ width: "20px" }}>
+            <Icon source={AlertDiamondIcon} tone="critical" />
+          </span>
+          <Text tone="critical" as="span">
+            product has been deleted
+          </Text>
+        </InlineStack>
+      ) : (
+        truncate(qrCode.productTitle)
+      )}
+    </IndexTable.Cell>
+    <IndexTable.Cell>
+      {new Date(qrCode.createdAt).toDateString()}
+    </IndexTable.Cell>
+    <IndexTable.Cell>{qrCode.scans}</IndexTable.Cell>
+  </IndexTable.Row>
+);
+//add-end
+```
+
+Layout the page:
+
+```javascript file=app/routes/app._index.js
+import { json } from "@remix-run/node";
+import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card, EmptyState, Layout, Page, IndexTable, Thumbnail,
+  Text, Icon, InlineStack,
+} from "@shopify/polaris";
+import { AlertDiamondIcon, ImageIcon } from "@shopify/polaris-icons";
+import { getQRCodes } from "../models/QRCode.server";
+
+export async function loader({ request }) {
+  // ... existing code
+}
+
+const EmptyQRCodeState = ({ onAction }) => (
+  // ... existing code
+);
+
+const QRTable = ({ qrCodes }) => (
+  // ... existing code
+);
+
+const QRTableRow = ({ qrCode }) => (
+  // ... existing code
+);
+
+//add-start
+export default function Index() {
+  const { qrCodes } = useLoaderData();
+  const navigate = useNavigate();
+
+  return (
+    <Page>
+      <ui-title-bar title="QR codes">
+        <button variant="primary" onClick={() => navigate("/app/qrcodes/new")}>
+          Create QR code
+        </button>
+      </ui-title-bar>
+      <Layout>
+        <Layout.Section>
+          <Card padding="0">
+            {qrCodes.length === 0 ? (
+              <EmptyQRCodeState onAction={() => navigate("qrcodes/new")} />
+            ) : (
+              <QRTable qrCodes={qrCodes} />
+            )}
+          </Card>
+        </Layout.Section>
+      </Layout>
+    </Page>
+  );
+}
+//add-end
+```
+
+<details>
+<summary>
+Full code
+</summary>
+```javascript file=app/routes/app._index.js showLineNumbers
+import { json } from "@remix-run/node";
+import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import {
+  Card,
+  EmptyState,
+  Layout,
+  Page,
+  IndexTable,
+  Thumbnail,
+  Text,
+  Icon,
+  InlineStack,
+} from "@shopify/polaris";
+
+import { getQRCodes } from "../models/QRCode.server";
+import { AlertDiamondIcon, ImageIcon } from "@shopify/polaris-icons";
+
+export async function loader({ request }) {
+  const { admin, session } = await authenticate.admin(request);
+  const qrCodes = await getQRCodes(session.shop, admin.graphql);
+
+  return json({
+    qrCodes,
+  });
+}
+
+const EmptyQRCodeState = ({ onAction }) => (
+  <EmptyState
+    heading="Create unique QR codes for your product"
+    action={{
+      content: "Create QR code",
+      onAction,
+    }}
+    image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+  >
+    <p>Allow customers to scan codes and buy products using their phones.</p>
+  </EmptyState>
+);
+
+function truncate(str, { length = 25 } = {}) {
+  if (!str) return "";
+  if (str.length <= length) return str;
+  return str.slice(0, length) + "…";
+}
+
+const QRTable = ({ qrCodes }) => (
+  <IndexTable
+    resourceName={{
+      singular: "QR code",
+      plural: "QR codes",
+    }}
+    itemCount={qrCodes.length}
+    headings={[
+      { title: "Thumbnail", hidden: true },
+      { title: "Title" },
+      { title: "Product" },
+      { title: "Date created" },
+      { title: "Scans" },
+    ]}
+    selectable={false}
+  >
+    {qrCodes.map((qrCode) => (
+      <QRTableRow key={qrCode.id} qrCode={qrCode} />
+    ))}
+  </IndexTable>
+);
+
+const QRTableRow = ({ qrCode }) => (
+  <IndexTable.Row id={qrCode.id} position={qrCode.id}>
+    <IndexTable.Cell>
+      <Thumbnail
+        source={qrCode.productImage || ImageIcon}
+        alt={qrCode.productTitle}
+        size="small"
+      />
+    </IndexTable.Cell>
+    <IndexTable.Cell>
+      <Link to={`qrcodes/${qrCode.id}`}>{truncate(qrCode.title)}</Link>
+    </IndexTable.Cell>
+    <IndexTable.Cell>
+      {qrCode.productDeleted ? (
+        <InlineStack align="start" gap="200">
+          <span style={{ width: "20px" }}>
+            <Icon source={AlertDiamondIcon} tone="critical" />
+          </span>
+          <Text tone="critical" as="span">
+            product has been deleted
+          </Text>
+        </InlineStack>
+      ) : (
+        truncate(qrCode.productTitle)
+      )}
+    </IndexTable.Cell>
+    <IndexTable.Cell>
+      {new Date(qrCode.createdAt).toDateString()}
+    </IndexTable.Cell>
+    <IndexTable.Cell>{qrCode.scans}</IndexTable.Cell>
+  </IndexTable.Row>
+);
+
+export default function Index() {
+  const { qrCodes } = useLoaderData();
+  const navigate = useNavigate();
+
+  return (
+    <Page>
+      <ui-title-bar title="QR codes">
+        <button variant="primary" onClick={() => navigate("/app/qrcodes/new")}>
+          Create QR code
+        </button>
+      </ui-title-bar>
+      <Layout>
+        <Layout.Section>
+          <Card padding="0">
+            {qrCodes.length === 0 ? (
+              <EmptyQRCodeState onAction={() => navigate("qrcodes/new")} />
+            ) : (
+              <QRTable qrCodes={qrCodes} />
+            )}
+          </Card>
+        </Layout.Section>
+      </Layout>
+    </Page>
+  );
+}
+
+```
+</details>
+
+## 6.  Public QR routes
+
+### 6.1. Display `/qrcodes/$id`
+
+Create the `qrcodes.$id` route:
+
+```terminal
+touch app/routes/qrcodes.$id.js
+```
+
+Add the dependencies:
+```javascript file=app/routes/qrcodes.$id.js
+//add-start
+import { json } from "@remix-run/node";
+import invariant from "tiny-invariant";
+import { useLoaderData } from "@remix-run/react";
+
+import db from "../db.server";
+import { getQRCodeImage } from "../models/QRCode.server";
+//add-end
+```
+
+Add the `loader` function:
+
+```javascript file=app/routes/qrcodes.$id.js
+import { json } from "@remix-run/node";
+import invariant from "tiny-invariant";
+import { useLoaderData } from "@remix-run/react";
+
+import db from "../db.server";
+import { getQRCodeImage } from "../models/QRCode.server";
+
+//add-start
+export const loader = async ({ params }) => {
+  invariant(params.id, "Missing ID");
+  const qr = await db.qRCode.findFirst({ where: { id: Number(params.id) } });
+  invariant(qr, "QR code not found");
+  return json({ title: qr.title, image: await getQRCodeImage(qr.id) });
+};
+//add-end
+```
+
+Add the `QRCode` component:
+
+```javascript file=app/routes/qrcodes.$id.js
+import { json } from "@remix-run/node";
+import invariant from "tiny-invariant";
+import { useLoaderData } from "@remix-run/react";
+
+import db from "../db.server";
+import { getQRCodeImage } from "../models/QRCode.server";
+
+export const loader = async ({ params }) => {
+  // ... existing code
+};
+
+//add-start
+export default function QRCode() {
+  const { image, title } = useLoaderData();
+  return (
+    <>
+      <h1>{title}</h1>
+      <img src={image} alt={`QR for ${title}`} />
+    </>
+  );
+}
+//add-end
+```
+
+### 6.2. Scan handler `/qrcodes/$id/scan`
+
+Create the `app/routes/qrcodes.$id.scan.js` file:
+
+```terminal
+touch app/routes/qrcodes.$id.scan.js
+```
+
+Add the dependencies:
+
+```javascript file=app/routes/qrcodes.$id.scan.js
+//add-start
+import { redirect } from "@remix-run/node";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+import { getDestinationUrl } from "../models/QRCode.server";
+//add-end
+```
+
+Add the `loader` function:
+
+```javascript file=app/routes/qrcodes.$id.scan.js
+import { redirect } from "@remix-run/node";
+import invariant from "tiny-invariant";
+import db from "../db.server";
+import { getDestinationUrl } from "../models/QRCode.server";
+
+//add-start
+export const loader = async ({ params }) => {
+  invariant(params.id, "Missing ID");
+  const qr = await db.qRCode.findFirst({ where: { id: Number(params.id) } });
+  invariant(qr, "QR code not found");
+
+  await db.qRCode.update({
+    where: { id: qr.id },
+    data: { scans: { increment: 1 } },
+  });
+
+  return redirect(getDestinationUrl(qr));
+};
+//add-end
+```
+
+## 7.  Testing your app
+
+Start the dev server using the Shopify CLI you installed earlier:
+
+```terminal
+shopify app dev
+```
+
+Once the dev server is running, open the preview link
+
+1. Hit the install button and install the dev app.
+2. Create, edit, delete QR codes and observe changes in the dashboard as well as Prisma Studio.  
+3. Visit `/qrcodes/<id>` on a phone, scan, confirm redirect and scan counter.  
+4. Submit invalid forms or hit codes for deleted products to confirm error states.
+
+If everything is working, you're done! Below are some ideas for next steps, and some useful resources.
+
+## Next steps
+
+- Add analytics to track QR code scans
+- Add a landing page with products
+- Implement a more sophisticated QR code generator
+- Add a feature to let merchants customize QR code appearance

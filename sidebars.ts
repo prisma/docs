@@ -440,7 +440,12 @@ const sidebars: SidebarsConfig = {
           label: "Tool Guides",
           collapsed: false,
           collapsible: false,
-          items: ["guides/docker", "guides/use-prisma-in-pnpm-workspaces", "guides/data-dog"],
+          items: [
+            "guides/docker",
+            "guides/use-prisma-in-pnpm-workspaces",
+            "guides/data-dog",
+            "guides/shopify",
+          ],
         },
         {
           type: "category",
