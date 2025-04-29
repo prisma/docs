@@ -43,6 +43,24 @@ generator client {
 
 ### Binary targets
 
+:::
+
+As of [v6.7.0](https://pris.ly/release/6.7.0), Prisma ORM has the `queryCompiler` Preview feature. When enabled, your Prisma Client will be generated without a query engine binary:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["queryCompiler", "driverAdapters"] 
+}
+```
+
+Note that the [driver adapters](/orm/overview/databases/database-drivers#driver-adapters) Preview feature is required alongside `queryCompiler`.
+
+When using the `queryCompiler` Preview feature, the `binaryTargets` field is obsolete and not needed.
+
+:::
+
+
 The  `prisma-client-js` generator uses several [engines](https://github.com/prisma/prisma-engines). Engines are implemented in Rust and are used by Prisma Client in the form of executable, platform-dependent engine files. Depending on which platform you are executing your code on, you need the correct file. "Binary targets" are used to define which files should be present for the target platform(s).
 
 The correct file is particularly important when [deploying](/orm/prisma-client/deployment/deploy-prisma) your application to production, which often differs from your local development environment.
@@ -70,7 +88,7 @@ If you use macOS ARM64 (`darwin-arm64`), then the binary file that was compiled 
 
 The new `prisma-client` generator offers greater control and flexibility when using Prisma ORM across different JavaScript environments (such as ESM, Bun, Deno, ...).
 
-It generates Prisma Client into a custom directory in your application's codebase that's specified via the `output` field on the `generator` block. This gives you full visibility and control over the generated code, including the query engine.
+It generates Prisma Client into a custom directory in your application's codebase that's specified via the `output` field on the `generator` block. This gives you full visibility and control over the generated code. It also [splits](#output-splitting-and-importing-types) the generated Prisma Client library into multiple files.
 
 Currently in [Early Access](/orm/more/releases#early-access), this generator ensures you can bundle your application code exactly the way you want, without relying on hidden or automatic behaviors.
 
@@ -179,6 +197,42 @@ Below are the options for the `prisma-client` generator:
 | `generatedFileExtension` | `ts`                      | File extension for generated TypeScript files (`ts`, `mts`, `cts`).                                                                                                                             |
 | `importFileExtension`    | Inferred from environment | File extension used in **import statements**. Can be `ts`, `mts`, `cts`, `js`, `mjs`, `cjs`, or empty (for bare imports).                                                                       |
 
+### Output splitting and importing types
+
+The `prisma-client-js` generator used to generate all typings into a single `index.d.ts` file, which could lead to [slowing down editors](https://github.com/prisma/prisma/issues/4807) (e.g. breaking auto-complete) with large schemas. 
+
+The new `prisma-client` generator now splits the generated Prisma Client library into multiple files and thus avoids the problems of a single, large output file.
+
+**Before** (`prisma-client-js`)
+
+```
+generated/
+└── prisma
+    ├── client.ts
+    ├── index.ts # -> this is split into multiple files in 6.7.0
+    └── libquery_engine-darwin.dylib.node
+```
+
+**After**  (`prisma-client`)
+
+```
+generated/
+└── prisma
+    ├── client.ts
+    ├── commonInputTypes.ts
+    ├── enums.ts
+    ├── index.ts
+    ├── internal
+    │   ├── class.ts
+    │   └── prismaNamespace.ts
+    ├── libquery_engine-darwin.dylib.node
+    ├── models
+    │   ├── Post.ts
+    │   └── User.ts
+    └── models.ts
+```
+
+
 ### Limitations
 
 - **Namespace usage**: The generated code still relies on TypeScript features like `namespace`, which may cause incompatibility with certain runtime-only setups (e.g., Node.js 22+ without `--experimental-transform-types`). It remains fully compatible with standard runtimes, `tsx`, `ts-node`, and most bundlers.
@@ -194,7 +248,7 @@ Both limitations will be resolved soon in a future release.
 
 :::note
 
-Existing generators or new ones should not be affected if you are using the [`prismaSchemaFolder`](/orm/reference/preview-features/client-preview-features#currently-active-preview-features) preview feature to manage multiple schema files, unless a generator reads the schema manually.
+Existing generators or new ones should not be affected if you are using a [multi-file Prisma schema](/orm/prisma-schema/overview/location#multi-file-prisma-schema), unless a generator reads the schema manually.
 
 :::
 
