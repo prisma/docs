@@ -273,22 +273,25 @@ const config: Config = {
           className: "indigo first-item",
         },
         {
+          type: "docSidebar",
+          sidebarId: "ormSidebar",
+          position: "left",
+          className: "indigo",
+          label: "ORM",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "prismaPostgresSidebar",
+          className: "teal",
+          position: "left",
+          label: "Postgres",
+        },
+        {
           type: "dropdown",
-          label: "Products",
+          label: "More",
+          className: "teal",
           position: "left",
           items: [
-            {
-              type: "docSidebar",
-              sidebarId: "ormSidebar",
-              className: "indigo",
-              label: "ORM",
-            },
-            {
-              type: "docSidebar",
-              sidebarId: "prismaPostgresSidebar",
-              className: "teal",
-              label: "Postgres",
-            },
             {
               className: "indigo",
               to: "/orm/tools/prisma-studio",
