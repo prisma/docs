@@ -1,0 +1,453 @@
+---
+title: 'How to use Prisma with Shopify'
+metaTitle: 'How to use Prisma with Shopify'
+description: 'Learn how to use Prisma with Shopify'
+sidebar_label: 'Prisma with Shopify'
+image: '/img/guides/prisma-shopify-cover.png'
+completion_time: '25 min'
+community_section: true
+---
+
+## Introduction
+
+Introduction
+
+## Prerequisites
+- [Node.js](https://nodejs.org/en/download/)
+- [Shopify CLI](https://shopify.dev/docs/apps/build/cli-usage)
+- [Shopify Partner Account](https://www.shopify.com/partners) and a [development store](https://shopify.dev/docs/api/development-stores#create-a-development-store-to-test-your-app)
+
+## 1. Set up your project
+
+:::note
+If you do not have the Shopify CLI installed, you can install it with `npm install -g @shopify/cli`.
+:::
+
+Run `shopify app init` to create a new Shopify app.
+
+It will prompt you to customize your setup. Here are the options you'll choose:
+
+:::info
+
+- *Get started building your app:* `Build a Remix app (recommended)`
+- *For your Remix template, which language do you want?* `JavaScript`
+- *App Name:* `prisma-store` *(name cannot contain `shopify`)*
+
+:::
+
+cd `prisma-store`
+
+## 2. Set up Prisma
+
+In `prisma/` please delete the `migrations` folder along with the `dev.sqlite` file.
+
+Make some changes to the `schema.prisma` file.
+
+```prisma file=prisma/schema.prisma showLineNumbers
+generator client {
+	//delete-next-line
+  provider = "prisma-client-js"
+  //add-next-line
+  provider = "prisma-client"
+  //add-next-line
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+	//delete-next-line
+  provider = "sqlite"
+	//add-next-line
+  provider = "postgresql"
+  //delete-next-line
+  url      = "file:../dev.db"
+  //add-next-line
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+//add-start
+model ProductNote {
+  id         String   @id @default(uuid())
+  productGid String
+  body       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+//add-end
+```
+
+Install the latest version of Prisma:
+
+```terminal
+npm install prisma --save-dev && npm install @prisma/client
+```
+
+To create a new Prisma database, run:
+
+```terminal
+npx prisma init --db
+```
+
+Fill out the prompts, then head over to [console.prisma.io](https://console.prisma.io) and navigate to your new database.
+
+On the sidebar, click Database, then Setup.
+
+Hit existing project, and then generate database credentials.
+
+Create a new `.env` file in the root of your project and paste the `DATABASE_URL` into it.
+
+```env file=prisma-store/.env showLineNumbers
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=..."
+```
+
+Migrate the database:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+Before doing anything else, we need to update the db.server.ts to use the new generated Prisma client.
+
+```tsx file=app/db.server.ts showLineNumbers
+//delete-next-line
+import { PrismaClient } from "@prisma/client";
+//add-next-line
+import { PrismaClient } from "./generated/prisma";
+
+if (process.env.NODE_ENV !== "production") {
+  if (!global.prismaGlobal) {
+    global.prismaGlobal = new PrismaClient();
+  }
+}
+
+const prisma = global.prismaGlobal ?? new PrismaClient();
+
+export default prisma;
+```
+
+Add `app/generated/prisma` to your `.gitignore` file.
+
+```git file=.gitignore showLineNumbers
+//add-next-line
+app/generated/prisma
+```
+
+## 3. Create your model
+
+
+Create a new `models/` folder and inside of it create `notes.server.js`.
+
+This will contain two functions:
+- `getNotes` - This will get all the notes for a given product.
+- `createNote` - This will create a new note for a given product.
+
+```js file=models/notes.server.js showLineNumbers
+//add-start
+import prisma from "../db.server";
+
+export const getNotes = async (productGid) => {
+  const notes = await prisma.productNote.findMany({
+    where: { productGid: productGid.toString() },
+    orderBy: { createdAt: "desc" },
+  });
+  return notes;
+};
+//add-end
+```
+
+In order to create a new note, we need to create a new function in `notes.server.js` using `prisma.productNote.create`:
+
+```js file=models/notes.server.js showLineNumbers
+import prisma from "../db.server";
+
+export const getNotes = async (productGid) => {
+  const notes = await prisma.productNote.findMany({
+    where: { productGid: productGid.toString() },
+    orderBy: { createdAt: "desc" },
+  });
+  return notes;
+};
+
+//add-start
+export const createNote = async (note) => {
+  const newNote = await prisma.productNote.create({
+    data: {
+      body: note.body,
+      productGid: note.productGid,
+    },
+  });
+  return newNote;
+};
+//add-end
+```
+
+## 4. Create your layout route
+
+
+These functions need somewhere to be called from, create a new `routes/app.notes.jsx` file.
+
+This will be a layout route that will contain a button to select a product, and will parent the `ProductNotes` route.
+
+Start by creating the `ProductNotesLayout` layout:
+
+```jsx file=app/routes/app.notes.jsx showLineNumbers
+//add-start
+import { Page, Layout } from "@shopify/polaris";
+
+export default function ProductNotesLayout() {
+  return (
+    <Page title="Product Notes">
+      <Layout>
+        <Layout.Section></Layout.Section>
+      </Layout>
+    </Page>
+  );
+}
+//add-end
+```
+
+Next, create the `selectProduct` function and `Button`:
+
+```jsx file=app/routes/app.notes.jsx showLineNumbers
+import { useNavigate } from "@remix-run/react";
+//delete-next-line
+import { Page, Layout } from "@shopify/polaris";
+//add-next-line
+import { Button, Page, Layout } from "@shopify/polaris";
+
+export default function ProductNotesLayout() {
+  //add-next-line
+  const navigate = useNavigate();
+
+  //add-start
+  async function selectProduct() {
+    const products = await window.shopify.resourcePicker({
+      type: "product",
+      action: "select",
+    });
+    const selectedGid = products[0].id;
+    navigate(`/app/product-notes/${encodeURIComponent(selectedGid)}`);
+  }
+  //add-end
+
+  return (
+    <Page title="Product Notes">
+      <Layout>
+        <Layout.Section>
+          //add-start
+          <Button onClick={selectProduct} fullWidth size="large">
+            Select Product
+          </Button>
+          //add-end
+        </Layout.Section>
+      </Layout>
+    </Page>
+  );
+}
+```
+
+Now add an `<Outlet />` to the `routes/app.notes.jsx` file where the `ProductNotes` route will be rendered:
+
+```jsx file=app/routes/app.notes.jsx showLineNumbers
+//delete-next-line
+import { useNavigate } from "@remix-run/react";
+//add-next-line
+import { Outlet, useNavigate } from "@remix-run/react";
+import { Page, Button, Layout } from "@shopify/polaris";
+
+export default function ProductNotesLayout() {
+  const navigate = useNavigate();
+
+  async function selectProduct() {
+    const products = await window.shopify.resourcePicker({
+      type: "product",
+      action: "select",
+    });
+    const selectedGid = products[0].id;
+    navigate(`/app/product-notes/${encodeURIComponent(selectedGid)}`);
+  }
+
+  return (
+    <Page title="Product Notes">
+      <Layout>
+        <Layout.Section>
+          <Button onClick={selectProduct} fullWidth size="large">
+            Select Product
+          </Button>
+        </Layout.Section>
+        //add-next-line
+        <Outlet />
+      </Layout>
+    </Page>
+  );
+}
+```
+
+This needs to be added to the `app.jsx` file so it shows up in the sidebar:
+
+```jsx file=app/routes/app.jsx showLineNumbers
+import { Link, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
+import { boundary } from "@shopify/shopify-app-remix/server";
+import { AppProvider } from "@shopify/shopify-app-remix/react";
+import { NavMenu } from "@shopify/app-bridge-react";
+import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
+import { authenticate } from "../shopify.server";
+
+export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
+
+export const loader = async ({ request }) => {
+  await authenticate.admin(request);
+
+  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+};
+
+export default function App() {
+  const { apiKey } = useLoaderData();
+
+  return (
+    <AppProvider isEmbeddedApp apiKey={apiKey}>
+      <NavMenu>
+        <Link to="/app" rel="home">
+          Home
+        </Link>
+        //add-next-line
+        <Link to="/app/product-notes">Product Notes</Link>
+      </NavMenu>
+      <Outlet />
+    </AppProvider>
+  );
+}
+
+// Shopify needs Remix to catch some thrown responses, so that their headers are included in the response.
+export function ErrorBoundary() {
+  return boundary.error(useRouteError());
+}
+
+export const headers = (headersArgs) => {
+  return boundary.headers(headersArgs);
+};
+```
+
+## 5. Create your Notes route
+
+Currently, if you run `npm run dev` and navigate to the `Product Notes` route, you will see nothing once selecting a product.
+
+Create a new `routes/app/app.notes.$productGid.jsx` file which will take in the productGid as a parameter, and return the product notes associated with the product as well as a form to create a new note:
+
+```jsx file=app/routes/app/app.notes.$productGid.jsx showLineNumbers
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, Form, useActionData } from "@remix-run/react";
+import { useAppBridge } from "@shopify/app-bridge-react";
+import { useEffect, useState } from "react";
+import { getNotes, createNote } from "../models/note.server";
+import {
+  Card,
+  TextField,
+  Button,
+  Layout,
+  FormLayout,
+  Text,
+  BlockStack,
+} from "@shopify/polaris";
+
+export const loader = async ({ params }) => {
+  const { productGid } = params;
+  const notes = await getNotes(productGid);
+  return json({ notes, productGid });
+};
+
+export const action = async ({ request, params }) => {
+  const formData = await request.formData();
+  const body = formData.get("body")?.toString() || null;
+  const { productGid } = params;
+
+  await createNote({ productGid, body });
+  return redirect(`/app/product-notes/${encodeURIComponent(productGid)}`);
+};
+
+export default function ProductNotes() {
+  const { notes, productGid } = useLoaderData();
+  const actionData = useActionData();
+  const app = useAppBridge();
+  const [body, setBody] = useState("");
+
+  useEffect(() => {
+    if (actionData?.ok) {
+      app.toast.show("Note saved", { duration: 3000 });
+      setBody("");
+    }
+  }, [actionData, app]);
+
+  return (
+    <>
+      <Layout.Section>
+        <Card sectioned>
+          <Form method="post">
+            <FormLayout>
+              <BlockStack gap="200">
+                <input type="hidden" name="productGid" value={productGid} />
+                <TextField
+                  label="Note"
+                  value={body}
+                  onChange={setBody}
+                  name="body"
+                  autoComplete="off"
+                  multiline={4}
+                />
+                <Button submit primary>
+                  Add Note
+                </Button>
+              </BlockStack>
+            </FormLayout>
+          </Form>
+        </Card>
+      </Layout.Section>
+      <Layout.Section>
+        <BlockStack gap="200">
+          {notes.length === 0 ? (
+            <Text as="p" variant="bodyMd" color="subdued">
+              No notes yet.
+            </Text>
+          ) : (
+            notes.map((note) => (
+              <Card key={note.id} sectioned>
+                <BlockStack gap="100">
+                  {note.body && (
+                    <Text as="p" variant="bodyMd">
+                      {note.body}
+                    </Text>
+                  )}
+                  <Text as="p" variant="bodySm" color="subdued">
+                    Added: {new Date(note.createdAt).toLocaleString()}
+                  </Text>
+                </BlockStack>
+              </Card>
+            ))
+          )}
+        </BlockStack>
+      </Layout.Section>
+    </>
+  );
+}
+```
+
+Run `npm run dev` and navigate to the `Product Notes` route.
+
+You should see a button to select a product, and when a product is selected, you should see a form to create a new note as well as a list of existing notes. Your database is now connected to Shopify and working!
