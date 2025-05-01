@@ -2,7 +2,7 @@
 title: 'How to use Prisma with Shopify'
 metaTitle: 'How to use Prisma with Shopify'
 description: 'Learn how to use Prisma with Shopify'
-sidebar_label: 'Prisma with Shopify'
+sidebar_label: 'Shopify with Prisma'
 image: '/img/guides/prisma-shopify-cover.png'
 completion_time: '25 min'
 community_section: true
@@ -205,6 +205,8 @@ These functions need somewhere to be called from, create a new `routes/app.notes
 
 This will be a layout route that will contain a button to select a product, and will parent the `ProductNotes` route.
 
+### 4.1. Create the ProductNotesLayout component
+
 Start by creating the `ProductNotesLayout` layout:
 
 ```jsx file=app/routes/app.notes.jsx showLineNumbers
@@ -300,6 +302,8 @@ export default function ProductNotesLayout() {
 }
 ```
 
+### 4.2. Add the ProductNotesLayout to the sidebar
+
 This needs to be added to the `app.jsx` file so it shows up in the sidebar:
 
 ```jsx file=app/routes/app.jsx showLineNumbers
@@ -345,27 +349,63 @@ export const headers = (headersArgs) => {
 };
 ```
 
-## 5. Create your Notes route
+## 5. Create your product notes route
 
 Currently, if you run `npm run dev` and navigate to the `Product Notes` route, you will see nothing once selecting a product.
+
+Follow these steps to create the product notes route:
 
 Create a new `routes/app/app.notes.$productGid.jsx` file which will take in the productGid as a parameter, and return the product notes associated with the product as well as a form to create a new note:
 
 ```jsx file=app/routes/app/app.notes.$productGid.jsx showLineNumbers
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useActionData } from "@remix-run/react";
-import { useAppBridge } from "@shopify/app-bridge-react";
-import { useEffect, useState } from "react";
-import { getNotes, createNote } from "../models/note.server";
-import {
-  Card,
-  TextField,
-  Button,
-  Layout,
-  FormLayout,
-  Text,
-  BlockStack,
-} from "@shopify/polaris";
+//add-start
+export default function ProductNotes() {
+  return (
+    <></>
+  );
+}
+//add-end
+```
+
+### 5.1. Render the notes
+
+On load, the route will need to fetch the notes for the product and display them.
+
+Add a `loader` function to the route:
+
+```jsx file=app/routes/app/app.notes.$productGid.jsx showLineNumbers
+//add-start
+import { json } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { getNotes } from "../models/note.server";
+//add-end
+
+//add-start
+export const loader = async ({ params }) => {
+  const { productGid } = params;
+  const notes = await getNotes(productGid);
+  return json({ notes, productGid });
+};
+//add-end
+
+export default function ProductNotes() {
+  //add-next-line
+  const { notes, productGid } = useLoaderData();
+
+  return (
+    <></>
+  );
+}
+```
+
+Map out the notes in the `ProductNotes` component, using Polaris components:
+
+```jsx file=app/routes/app/app.notes.$productGid.jsx showLineNumbers
+import { json } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { getNotes } from "../models/note.server";
+//add-next-line
+import { Card, Layout, Text, BlockStack } from "@shopify/polaris";
 
 export const loader = async ({ params }) => {
   const { productGid } = params;
@@ -373,6 +413,68 @@ export const loader = async ({ params }) => {
   return json({ notes, productGid });
 };
 
+export default function ProductNotes() {
+  const { notes, productGid } = useLoaderData();
+  return (
+    <>
+      //add-start
+      <Layout.Section>
+        <BlockStack gap="200">
+          {notes.length === 0 ? (
+            <Text as="p" variant="bodyMd" color="subdued">
+              No notes yet.
+            </Text>
+          ) : (
+            notes.map((note) => (
+              <Card key={note.id} sectioned>
+                <BlockStack gap="100">
+                  {note.body && (
+                    <Text as="p" variant="bodyMd">
+                      {note.body}
+                    </Text>
+                  )}
+                  <Text as="p" variant="bodySm" color="subdued">
+                    Added: {new Date(note.createdAt).toLocaleString()}
+                  </Text>
+                </BlockStack>
+              </Card>
+            ))
+          )}
+        </BlockStack>
+      </Layout.Section>
+      //add-end
+    </>
+  );
+}
+```
+
+You should be seeing "No notes yet.". If so, you're on the right track.
+
+### 5.2. Add the form
+
+Add an `action` function to the route as well as a `Toast` to display a message when a note is created alongside importing the `createNote` function you created earlier in `models/note.server.js` and the `useActionData` hook and `useAppBridge` hook assigned to a new variable called `app`:
+
+```jsx file=app/routes/app/app.notes.$productGid.jsx showLineNumbers
+import { json, redirect } from "@remix-run/node";
+//delete-next-line
+import { useLoaderData } from "@remix-run/react";
+//add-next-line
+import { useLoaderData, useActionData } from "@remix-run/react";
+//delete-next-line
+import { getNotes } from "../models/note.server";
+//add-next-line
+import { getNotes, createNote } from "../models/note.server";
+import { Card, Layout, Text, BlockStack } from "@shopify/polaris";
+//add-next-line
+import { useAppBridge } from "@shopify/app-bridge-react";
+
+export const loader = async ({ params }) => {
+  const { productGid } = params;
+  const notes = await getNotes(productGid);
+  return json({ notes, productGid });
+};
+
+//add-start
 export const action = async ({ request, params }) => {
   const formData = await request.formData();
   const body = formData.get("body")?.toString() || null;
@@ -381,44 +483,26 @@ export const action = async ({ request, params }) => {
   await createNote({ productGid, body });
   return redirect(`/app/product-notes/${encodeURIComponent(productGid)}`);
 };
+//add-end
 
 export default function ProductNotes() {
   const { notes, productGid } = useLoaderData();
+  //add-start
   const actionData = useActionData();
   const app = useAppBridge();
-  const [body, setBody] = useState("");
+  //add-end
 
+  //add-start
   useEffect(() => {
     if (actionData?.ok) {
       app.toast.show("Note saved", { duration: 3000 });
       setBody("");
     }
   }, [actionData, app]);
+  //add-end
 
   return (
     <>
-      <Layout.Section>
-        <Card sectioned>
-          <Form method="post">
-            <FormLayout>
-              <BlockStack gap="200">
-                <input type="hidden" name="productGid" value={productGid} />
-                <TextField
-                  label="Note"
-                  value={body}
-                  onChange={setBody}
-                  name="body"
-                  autoComplete="off"
-                  multiline={4}
-                />
-                <Button submit primary>
-                  Add Note
-                </Button>
-              </BlockStack>
-            </FormLayout>
-          </Form>
-        </Card>
-      </Layout.Section>
       <Layout.Section>
         <BlockStack gap="200">
           {notes.length === 0 ? (
@@ -448,6 +532,114 @@ export default function ProductNotes() {
 }
 ```
 
-Run `npm run dev` and navigate to the `Product Notes` route.
+Next, add the form that will call the `action` function to the `ProductNotes` component:
 
-You should see a button to select a product, and when a product is selected, you should see a form to create a new note as well as a list of existing notes. Your database is now connected to Shopify and working!
+```jsx file=app/routes/app/app.notes.$productGid.jsx showLineNumbers
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, useActionData } from "@remix-run/react";
+import { getNotes, createNote } from "../models/note.server";
+//delete-next-line
+import { Card, Layout, Text, BlockStack } from "@shopify/polaris";
+//add-next-line
+import { Card, Layout, Text, BlockStack, Form, FormLayout, TextField, Button } from "@shopify/polaris";
+import { useAppBridge } from "@shopify/app-bridge-react";
+
+export const loader = async ({ params }) => {
+  const { productGid } = params;
+  const notes = await getNotes(productGid);
+  return json({ notes, productGid });
+};
+
+export const action = async ({ request, params }) => {
+  const formData = await request.formData();
+  const body = formData.get("body")?.toString() || null;
+  const { productGid } = params;
+
+  await createNote({ productGid, body });
+  return redirect(`/app/product-notes/${encodeURIComponent(productGid)}`);
+};
+
+export default function ProductNotes() {
+  const { notes, productGid } = useLoaderData();
+  const actionData = useActionData();
+  const app = useAppBridge();
+  //add-next-line
+  const [body, setBody] = useState("");
+
+  useEffect(() => {
+    if (actionData?.ok) {
+      app.toast.show("Note saved", { duration: 3000 });
+      setBody("");
+    }
+  }, [actionData, app]);
+
+  return (
+    <>
+      //add-start
+      <Layout.Section>
+        <Card sectioned>
+          <Form method="post">
+            <FormLayout>
+              <BlockStack gap="200">
+                <input type="hidden" name="productGid" value={productGid} />
+                <TextField
+                  label="Note"
+                  value={body}
+                  onChange={setBody}
+                  name="body"
+                  autoComplete="off"
+                  multiline={4}
+                />
+                <Button submit primary>
+                  Add Note
+                </Button>
+              </BlockStack>
+            </FormLayout>
+          </Form>
+        </Card>
+      </Layout.Section>
+      //add-end
+      <Layout.Section>
+        <BlockStack gap="200">
+          {notes.length === 0 ? (
+            <Text as="p" variant="bodyMd" color="subdued">
+              No notes yet.
+            </Text>
+          ) : (
+            notes.map((note) => (
+              <Card key={note.id} sectioned>
+                <BlockStack gap="100">
+                  {note.body && (
+                    <Text as="p" variant="bodyMd">
+                      {note.body}
+                    </Text>
+                  )}
+                  <Text as="p" variant="bodySm" color="subdued">
+                    Added: {new Date(note.createdAt).toLocaleString()}
+                  </Text>
+                </BlockStack>
+              </Card>
+            ))
+          )}
+        </BlockStack>
+      </Layout.Section>
+    </>
+  );
+}
+```
+
+### 6. Test your route
+
+Run `npm run dev` and navigate to the `Product Notes` route. Select a product, add a note, and verify that notes are displayed and saved correctly.
+
+## Next Steps
+
+Now that you have a working Shopify app connected to a Prisma Postgres database, you can:
+- Extend your Prisma schema with more models and relationships
+- Add create/update/delete routes and forms
+- Enable query caching with [Prisma Postgres](/postgres/database/caching) for better performance
+
+### More Info
+
+- [Prisma Documentation](/orm/overview/introduction)
+- [Shopify Dev Documentation](https://shopify.dev/docs/)
