@@ -46,7 +46,7 @@ First, we need to install a few dependencies. At the root of your project in you
 
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/client
+npm install @prisma/client @prisma/extension-accelerate
 ```
 
 Then, run `prisma init --db` to create a Prisma Postgres database and initialize Prisma ORM for your project:
@@ -120,8 +120,9 @@ Prisma ORM has built-in support for seeding your database with initial data. To 
 
 ```ts file=prisma/seed.ts
 import { PrismaClient, Prisma } from '../app/generated/prisma'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient().$extends(withAccelerate())
 
 const userData: Prisma.UserCreateInput[] = [
   {
@@ -234,17 +235,17 @@ Now, add the following code to your `app/lib/prisma.ts` file:
 
 ```ts file=app/lib/prisma.ts
 import { PrismaClient } from "../generated/prisma";
+import { withAccelerate } from '@prisma/extension-accelerate'
 
-declare global {
-  // avoid multiple instances when hot-reloading
-  var prismaClient: PrismaClient;
+const globalForPrisma = global as unknown as { 
+    prisma: PrismaClient
 }
 
-globalThis.prismaClient ??= new PrismaClient();
+const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate())
 
-const prisma = globalThis.prismaClient;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
-export default prisma;
+export default prisma
 ```
 
 This file creates a Prisma Client and attaches it to the global object so that only one instance of the client is created in your application. This helps resolve issues with hot reloading that can occur when using Prisma ORM in development.
