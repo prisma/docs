@@ -260,42 +260,56 @@ We recommend using a connection pooler (like [Prisma Accelerate](https://www.pri
 If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
 :::
 
-### 3.2. Fetch the data
+### 3.2. Create an API route
 
-Next, bring the Prisma Client into your `index.astro` file by importing it from the `prisma.ts` file you just created:
+An API route is the best way to fetch data from your database in an Astro app.
 
-```html file=src/pages/index.astro showLineNumbers
----
-//add-next-line
-import prisma from "../lib/prisma";
----
+Create a new file called `api/users.ts` in the `src/pages` directory:
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+```terminal
+mkdir src/pages/api
+touch src/pages/api/users.ts
 ```
 
-Now, let's fetch the `Users` data from your database, making sure to include each user's `Posts` by adding them to the `include` field:
+Next, bring the Prisma Client into the `api/users.ts` file by importing it from the `prisma.ts` file you just created along with the `APIRoute` type:
+
+```ts file=src/pages/api/users.ts showLineNumbers
+//add-start
+import type { APIRoute } from "astro";
+import prisma from "../../lib/prisma";
+//add-end
+```
+
+Now, create a GET route that fetches the `Users` data from your database, making sure to include each user's `Posts` by adding them to the `include` field:
+
+```ts file=src/pages/api/users.ts showLineNumbers
+import type { APIRoute } from "astro";
+import prisma from "../../lib/prisma";
+
+//add-start
+export const GET: APIRoute = async () => {
+  const users = await prisma.user.findMany({
+    include: { posts: true },
+  });
+
+  return new Response(JSON.stringify(users), {
+    headers: { "Content-Type": "application/json" },
+  });
+};
+//add-end
+```
+
+Next, you'll call this route from the `index.astro` file and display it.
+
+### 3.3. Fetch the data from the API route
+
+Start by create a new type that combines the `User` and `Post` models called `UserWithPosts`:
 
 ```html file=src/pages/index.astro showLineNumbers
 ---
-import prisma from "../lib/prisma";
-
 //add-start
-const users = await prisma.user.findMany({
-  include: {
-    posts: true,
-  },
-});
+import type { User, Post } from "../generated/prisma";
+type UserWithPosts = User & { posts: Post[] };
 //add-end
 ---
 
@@ -313,19 +327,45 @@ const users = await prisma.user.findMany({
 </html>
 ```
 
-### 3.3. Display the data
-
-With the variables from the frontmatter now available throughout your file, you can display the list of users just below the `<h1>` tag:
+Fetch the data from the API route and set it's type to the `UserWithPosts` type you just created:
 
 ```html file=src/pages/index.astro showLineNumbers
 ---
-import prisma from "../lib/prisma";
+import type { User, Post } from "../generated/prisma";
+type UserWithPosts = User & { posts: Post[] };
+//add-start
+const response = await fetch("http://localhost:4321/api/users");
+const users: UserWithPosts[] = await response.json();
+//add-end
+---
 
-const users = await prisma.user.findMany({
-  include: {
-    posts: true,
-  },
-});
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro</title>
+	</head>
+	<body>
+		<h1>Astro</h1>
+	</body>
+</html>
+```
+
+
+### 3.4. Display the data
+
+With the variables from the frontmatter now available throughout your file, you can display the list of users.
+
+Just below the `<h1>` tag, map through the `users` array, add the `UserWithPosts` type to the users, and display the names of the users:
+
+```html file=src/pages/index.astro showLineNumbers
+---
+import type { User, Post } from "../generated/prisma";
+type UserWithPosts = User & { posts: Post[] };
+const response = await fetch("http://localhost:4321/api/users");
+const users: UserWithPosts[] = await response.json();
 ---
 
 <html lang="en">
@@ -340,29 +380,24 @@ const users = await prisma.user.findMany({
     //edit-next-line
 		<h1>Astro + Prisma</h1>
     //add-start
-		<ul>
-			{users.map((user) => (
+      {users.map((user: UserWithPosts) => (
 				<li>
 					<h2>{user.name}</h2>
 				</li>
 			))}
-		</ul>
     //add-end
 	</body>
 </html>
 ```
 
-Finally, display the `Posts` below the respective `User`:
+Finally, display the `Posts` below the respective `User` and set the `Post` type:
 
 ```html file=src/pages/index.astro showLineNumbers
 ---
-import prisma from "../lib/prisma";
-
-const users = await prisma.user.findMany({
-  include: {
-    posts: true,
-  },
-});
+import type { User, Post } from "../generated/prisma";
+type UserWithPosts = User & { posts: Post[] };
+const response = await fetch("http://localhost:4321/api/users");
+const users: UserWithPosts[] = await response.json();
 ---
 
 <html lang="en">
@@ -376,12 +411,12 @@ const users = await prisma.user.findMany({
 	<body>
 		<h1>Astro + Prisma</h1>
 		<ul>
-			{users.map((user) => (
+			{users.map((user: UserWithPosts) => (
 				<li>
 					<h2>{user.name}</h2>
           //add-start
 					<ul>
-						{user.posts.map((post) => (
+						{user.posts.map((post: Post) => (
 							<li>{post.title}</li>
 						))}
 					</ul>
