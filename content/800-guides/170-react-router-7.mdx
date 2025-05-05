@@ -21,7 +21,6 @@ You'll learn how to set up Prisma ORM and Prisma Postgres with React Router and 
 Before starting this guide, make sure you have:
 
 - Node.js 20+ installed
-- A [Prisma Data Platform](https://console.prisma.io) account
 
 ## 1. Set up your project
 
@@ -31,7 +30,7 @@ From the directory where you want to create your project, run `create-react-rout
 npx create-react-router@latest my-app
 ```
 
-You will be prompted if you want to initalize a new git repository and install dependencies with npm. Select yes for both.
+You will be prompted to initalize a new git repository and install dependencies with npm. Select **Yes** for both.
 
 Now, navigate to the project directory:
 
@@ -49,7 +48,7 @@ First, we need to install a few dependencies. At the root of your project in you
 <TabItem value="Prisma Postgres (recommended)">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install @prisma/client @prisma/extension-accelerate
 ```
 </TabItem>
 <TabItem value="Other databases">
@@ -60,30 +59,28 @@ npm install @prisma/client
 </TabItem>
 </TabbedContent>
 
-Then, run `prisma init --db` to initialize Prisma ORM and a Prisma Postgres database for your project.
+Then, run `prisma init --db` to create a Prisma Postgres database and initialize Prisma ORM for your project:
 
 ```terminal
 npx prisma init --db --output ../app/generated/prisma
 ```
 
-:::note
+> If you don't have a [Prisma Data Platform](https://console.prisma.io/) account yet, or if you are not logged in, the command will prompt you to log in using one of the available authentication providers. A browser window will open so you can log in or create an account. Return to the CLI after you have completed this step.
 
-You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My React Router Project"
+Once logged in (or if you were already logged in), the CLI will prompt you to:
+1. Select a **region** (e.g. `us-east-1`)
+1. Enter a **project name**
 
-:::
-
-This will create a new `prisma` directory in your project, with a `schema.prisma` file inside of it. The `schema.prisma` file is where you will define your database models.
+This will then create a new `prisma` directory in your project, with a `schema.prisma` file inside of it. The `schema.prisma` file is where you will define your database models.
 
 The `prisma init` command also creates a `.env` file in your project root, which is used to store your database connection string, and outputs the generated Prisma Client into the `/app/generated/prisma` directory.
 
-Next, let's change the generator to use the `prisma-client` provider and add two models to your `schema.prisma` file. A `User` model and a `Post` model.
+Next, change the generator to use the [`prisma-client`](/orm/prisma-schema/overview/generators#prisma-client-early-access) provider and add two models to your `schema.prisma` file, a `User` model and a `Post` model:
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  //add-next-line
+  //edit-next-line
   provider = "prisma-client"
-  //delete-next-line
-  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
 
@@ -117,12 +114,6 @@ Now that we have a Prisma Schema and a model, let's migrate our Prisma Postgres 
 
 ### 2.2 Update your database schema
 
-:::warning
-
-If you're connecting to a database with existing data, use the `prisma db pull` command and then skip to [Set up Prisma Client](#24-set-up-prisma-client).
-
-:::
-
 We can apply your new schema to your database using the `prisma migrate dev` command.
 
 ```terminal
@@ -139,8 +130,9 @@ Prisma ORM has built-in support for seeding your database with initial data. To 
 
 ```ts file=prisma/seed.ts
 import { PrismaClient, Prisma } from '../app/generated/prisma'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient().$extends(withAccelerate())
 
 const userData: Prisma.UserCreateInput[] = [
   {
@@ -256,18 +248,17 @@ Now, add the following code to your `app/lib/prisma.ts` file:
 ```typescript file=app/lib/prisma.ts showLineNumbers
 //add-start
 import { PrismaClient } from "../generated/prisma";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { withAccelerate } from '@prisma/extension-accelerate'
 
-declare global {
-  // avoid multiple instances when hot-reloading
-  var prismaClient: PrismaClient;
+const globalForPrisma = global as unknown as { 
+    prisma: PrismaClient
 }
 
-globalThis.prismaClient ??= new PrismaClient().$extends(withAccelerate());
+const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate())
 
-const prisma = globalThis.prismaClient;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
-export default prisma;
+export default prisma
 //add-end
 ```
 </TabItem>
@@ -277,16 +268,15 @@ export default prisma;
 //add-start
 import { PrismaClient } from "../generated/prisma";
 
-declare global {
-  // avoid multiple instances when hot-reloading
-  var prismaClient: PrismaClient;
+const globalForPrisma = global as unknown as { 
+    prisma: PrismaClient
 }
 
-globalThis.prismaClient ??= new PrismaClient();
+const prisma = globalForPrisma.prisma || new PrismaClient()
 
-const prisma = globalThis.prismaClient;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
-export default prisma;
+export default prisma
 //add-end
 ```
 </TabItem>
@@ -428,6 +418,10 @@ export default function Home() {
 Second, update the `app/routes.ts` file so when you visit the `/posts` route, the `posts/home.tsx` page is shown:
 
 ```tsx file=app/routes.ts
+// edit-start
+import { type RouteConfig, index, route } from "@react-router/dev/routes";
+// edit-end
+
 export default [
   index("routes/home.tsx"),
   //add-start
@@ -463,9 +457,6 @@ export default function Posts({ loaderData }: Route.ComponentProps) {
         Posts
       </h1>
       <ul className="font-[family-name:var(--font-geist-sans)] max-w-2xl space-y-4">
-        //delete-start
-        <li>My first post</li>
-        //delete-end
         //add-start
         {posts.map((post) => (
           <li key={post.id}>
@@ -562,13 +553,6 @@ export default function Post({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center -mt-16">
       <article className="max-w-2xl space-y-4 font-[family-name:var(--font-geist-sans)]">
-        //delete-start
-        <h1 className="text-4xl font-bold mb-8">My first post</h1>
-        <p className="text-gray-600 text-center">by Anonymous</p>
-        <div className="prose prose-gray mt-8">
-          No content available.
-        </div>
-        //delete-end
         //add-start
         <h1 className="text-4xl font-bold mb-8">{post.title}</h1>
         <p className="text-gray-600 text-center">by {post.author.name}</p>
@@ -653,7 +637,20 @@ export default function NewPost() {
 }
 ```
 
-This form looks good, but it doesn't do anything yet. Let's update the `action` to save the post to the database:
+You can't open the `posts/new` page in your app yet. To do that, you need to add it to `routes.tsx` again:
+
+```tsx file=app/routes.ts
+export default [
+  index("routes/home.tsx"),
+  route("posts", "routes/posts/home.tsx"),
+  route("posts/:postId", "routes/posts/post.tsx"),
+  //add-start
+  route("posts/new", "routes/posts/new.tsx"),
+  //add-end
+] satisfies RouteConfig;
+```
+
+Now you can view the form at the new URL. It looks good, but it doesn't do anything yet. Let's update the `action` to save the post to the database:
 
 ```tsx file=app/routes/posts/new.tsx
 import type { Route } from "./+types/new";
@@ -724,19 +721,6 @@ export default function NewPost() {
     </div>
   );
 }
-```
-
-Now, add a new route for this page:
-
-```tsx file=app/routes.ts
-export default [
-  index("routes/home.tsx"),
-  route("posts", "routes/posts/home.tsx"),
-  route("posts/:postId", "routes/posts/post.tsx"),
-  //add-start
-  route("posts/new", "routes/posts/new.tsx"),
-  //add-end
-] satisfies RouteConfig;
 ```
 
 This page now has a functional form! When you submit the form, it will create a new post in the database and redirect you to the posts list page. 
