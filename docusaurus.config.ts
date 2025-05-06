@@ -296,18 +296,24 @@ const config: Config = {
               className: "indigo",
               to: "/orm/tools/prisma-studio",
               label: "Studio",
+              sub: "Explore and manipulate your data",
+              icon: "fa-regular fa-table"
             },
             {
               type: "docSidebar",
               sidebarId: "optimizeSidebar",
               className: "teal",
               label: "Optimize",
+              sub: "AI-driven query analysis",
+              icon: "fa-regular fa-magnifying-glass-chart"
             },
             {
               type: "docSidebar",
               sidebarId: "accelerateSidebar",
               className: "teal",
               label: "Accelerate",
+              sub: "Make your database global",
+              icon: "fa-regular fa-bolt"
             },
           ],
         },

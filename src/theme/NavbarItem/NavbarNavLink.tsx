@@ -1,13 +1,17 @@
-import isInternalUrl from "@docusaurus/isInternalUrl";
-import Link from "@docusaurus/Link";
-import { isRegexpStringMatch } from "@docusaurus/theme-common";
-import useBaseUrl from "@docusaurus/useBaseUrl";
-import IconExternalLink from "@theme/Icon/ExternalLink";
-import React, { useEffect, useState } from "react";
+import React, {type ReactNode} from 'react';
+import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import isInternalUrl from '@docusaurus/isInternalUrl';
+import {isRegexpStringMatch} from '@docusaurus/theme-common';
+import IconExternalLink from '@theme/Icon/ExternalLink';
+import type {Props} from '@theme/NavbarItem/NavbarNavLink';
+import { Icon } from '@site/src/components/Icon';
 
-import type { Props } from "@theme/NavbarItem/NavbarNavLink";
-import { useLocation } from "@docusaurus/router";
-import BrowserOnly from "@docusaurus/BrowserOnly";
+
+type CustomProps = Props & {
+  sub?: string,
+  icon?: string
+}
 
 export default function NavbarNavLink({
   activeBasePath,
@@ -19,47 +23,49 @@ export default function NavbarNavLink({
   isDropdownLink,
   prependBaseUrlToHref,
   ...props
-}: Props): JSX.Element {
+}: CustomProps): ReactNode {
   // TODO all this seems hacky
   // {to: 'version'} should probably be forbidden, in favor of {to: '/version'}
   const toUrl = useBaseUrl(to);
   const activeBaseUrl = useBaseUrl(activeBasePath);
-  const isExternalLink = label && (href || to) && !isInternalUrl(href ? href : to) && label;
-  const location = useLocation();
-
-  const isRoot = toUrl === "/docs" || toUrl === "/docs/";
+  const normalizedHref = useBaseUrl(href, {forcePrependBaseUrl: true});
+  const isExternalLink = label && href && !isInternalUrl(href);
 
   // Link content is set through html XOR label
   const linkContentProps = html
-    ? { dangerouslySetInnerHTML: { __html: html } }
+    ? {dangerouslySetInnerHTML: {__html: html}}
     : {
         children: (
           <>
-            {label}
+            {props.icon && <div className="dropdown__icon">
+              <Icon icon={props.icon} size="24px" color="var(--navbar-teal-color)" />
+            </div>}
+            <span className="dropdown__table">
+              {label}
+              {props.sub && <span>{props.sub}</span>}
+            </span>
+            {isExternalLink && (
+              <IconExternalLink
+                {...(isDropdownLink && {width: 12, height: 12})}
+              />
+            )}
           </>
         ),
       };
-    
+
   if (href) {
     return (
-      <BrowserOnly>
-        {() => {
-          const queryParams = window.location.href.split("?")[1] ?? "";
-          if (queryParams.includes("utm_")) {
-            sessionStorage.setItem("prismaUTM", queryParams);
-          }
-          const utmParams = sessionStorage.getItem("prismaUTM");
-          const modifiedHref = `${href.split("?")[0]}?${utmParams ?? href.split("?")[1]}`;
-          return <Link {...props} {...linkContentProps} href={modifiedHref} />;
-        }}
-      </BrowserOnly>
+      <Link
+        href={prependBaseUrlToHref ? normalizedHref : href}
+        {...props}
+        {...linkContentProps}
+      />
     );
   }
 
   return (
     <Link
-      to={isRoot ? `/docs${!isExternalLink ? location.search : ""}` : `${toUrl}${!isExternalLink ? location.search : ""}`}
-      autoAddBaseUrl={isRoot ? false : undefined}
+      to={toUrl}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {
         isActive: (_match, location) =>
