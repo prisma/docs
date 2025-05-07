@@ -1,6 +1,6 @@
 import { useThemeConfig } from '@docusaurus/theme-common';
 import { useNavbarMobileSidebar } from '@docusaurus/theme-common/internal';
-import NavbarItem, { Props as NavbarItemConfig, type } from '@theme/NavbarItem';
+import NavbarItem, { type Props as NavbarItemConfig } from '@theme/NavbarItem';
 import React, { JSX } from 'react';
 
 function useNavbarItems() {
