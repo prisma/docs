@@ -421,6 +421,7 @@ const sidebars: SidebarsConfig = {
             "guides/react-router-7",
             "guides/solid-start",
             "guides/sveltekit",
+            "guides/astro",
           ].sort(),
         },
         {
