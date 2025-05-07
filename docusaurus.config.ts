@@ -274,6 +274,13 @@ const config: Config = {
         },
         {
           type: "docSidebar",
+          sidebarId: "prismaPostgresSidebar",
+          className: "teal",
+          position: "left",
+          label: "Postgres",
+        },
+        {
+          type: "docSidebar",
           sidebarId: "ormSidebar",
           position: "left",
           className: "indigo",
@@ -281,10 +288,10 @@ const config: Config = {
         },
         {
           type: "docSidebar",
-          sidebarId: "prismaPostgresSidebar",
+          sidebarId: "guidesSidebar",
           className: "teal",
           position: "left",
-          label: "Postgres",
+          label: "Guides",
         },
         {
           type: "dropdown",
@@ -316,13 +323,6 @@ const config: Config = {
               icon: "fa-regular fa-bolt"
             },
           ],
-        },
-        {
-          to: "https://www.github.com/prisma/prisma-examples",
-          external: true,
-          position: "left",
-          label: "Examples",
-          className: "indigo external__link",
         },
         {
           href: "https://pris.ly/github?utm_source=docs&utm_medium=navbar",

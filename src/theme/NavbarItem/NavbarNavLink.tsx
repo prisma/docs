@@ -38,7 +38,7 @@ export default function NavbarNavLink({
         children: (
           <>
             {props.icon && <div className="dropdown__icon">
-              <Icon icon={props.icon} size="24px" color="var(--navbar-teal-color)" />
+              <Icon icon={props.icon} size="24px" color="var(--surface-brand-default)" />
             </div>}
             <span className="dropdown__table">
               {label}
