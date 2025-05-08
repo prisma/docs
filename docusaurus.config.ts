@@ -260,12 +260,6 @@ const config: Config = {
       },
       items: [
         {
-          to: DOCUSAURUS_BASE_URL,
-          position: "left",
-          label: "/docs",
-          className: "logo-link",
-        },
-        {
           type: "docSidebar",
           sidebarId: "gettingStarted",
           position: "left",

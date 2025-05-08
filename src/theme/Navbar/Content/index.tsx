@@ -4,9 +4,9 @@ import NavbarColorModeToggle from '@theme/Navbar/ColorModeToggle';
 import NavbarLogo from '@theme/Navbar/Logo';
 import NavbarMobileSidebarToggle from '@theme/Navbar/MobileSidebar/Toggle';
 import NavbarSearch from '@theme/Navbar/Search';
-import NavbarItem, { type Props as NavbarItemConfig } from '@theme/NavbarItem';
+import NavbarItem, { Props as NavbarItemConfig, type } from '@theme/NavbarItem';
 import SearchBar from '@theme/SearchBar';
-import React, { type ReactNode } from 'react';
+import React, { ReactNode, type } from 'react';
 
 import styles from './styles.module.css';
 
@@ -69,6 +69,7 @@ export default function NavbarContent(): ReactNode {
         <>
           {!mobileSidebar.disabled && <NavbarMobileSidebarToggle />}
           <NavbarLogo />
+          <a className="logo-link">/docs</a>
         </>
       }
       middle={
