@@ -1,0 +1,125 @@
+---
+title: 'Local development'
+metaTitle: 'Using Prisma Postgres in a development environment'
+metaDescription: 'Guide to setting up local development using Prisma Postgres with PGlite'
+tocDepth: 3
+toc: true
+---
+
+[Prisma Postgres](/postgres) is our production-grade cloud offering, and it is recommended for production and staging setups. 
+
+To simplify your development workflow and make transitioning to production effortless, we've created a local database server compatible with Prisma Postgres, [powered by PGlite](https://pglite.dev/).
+
+PGlite is a lightweight, in-memory PostgreSQL compatible database packaged as a TypeScript/JavaScript library using WebAssembly ([WASM](https://webassembly.org/)). Learn more in the [PGlite documentation](https://pglite.dev/).
+
+This guide provides instructions for setting up and running your local Prisma Postgres development environment using the PGlite server.
+
+## Setting up local development with PGlite
+
+Follow these steps to integrate PGlite into your local development workflow.
+
+### 1. Launching the local PGlite server
+
+Navigate into your project and start the PGlite server using the following command:
+
+```terminal
+npx prisma@latest dev
+```
+
+This starts a local PGlite server that you can connect to using Prisma Client. The server will run in the background and will be available at `localhost:5433` by default.
+
+This should give you an output with `DATABASE_URL` that looks like this:
+
+```bash
+Starting Prisma Dev...
+
+
+Great Success!
+
+To connect to your local Prisma Postgres database via Prisma ORM, use the following connection string:
+
+    DATABASE_URL="prisma+postgres://localhost:5433/?dbname=default&dbport=5432&dbuser=postgres"
+
+```
+
+Copy the `DATABASE_URL` and  store it in your `.env` file. This will be used to connect to the PGlite server:
+
+```bash file=.env
+DATABASE_URL="prisma+postgres://localhost:5433/?dbname=default&dbport=5432&dbuser=postgres"
+```
+
+The `DATABASE_URL` is a connection string that Prisma uses to connect to the PGlite server and is compatible with the [Prisma Postgres extension](https://www.npmjs.com/package/@prisma/extension-accelerate):
+
+```ts
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+const prisma = new PrismaClient().$extends(withAccelerate())
+```
+
+This ensures no additional code changes are needed when switching from PGlite to Prisma Postgres in production.
+
+### 2. Applying migrations and seed data
+
+Then run the `prisma migrate dev` command to create the database and run the migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+This will create the database and run the migrations. 
+
+If you have a seeder script to seed the database, you should also run it in this step.
+
+:::note
+
+Currently, our PGlite server does not persist data. This means that if you stop the server, all data will be lost. Hence have to run the migrations and seeds every time you start the PGlite server by using the npx prisma@latest dev command. See the [limitation section below](#no-data-persistence-between-restarts).
+
+:::
+
+### 3. Running your application locally
+
+Start your application's development server. You can now perform queries against the local PGlite database using Prisma ORM. 
+
+To transition to production, you only need to update the database URL in the `.env` file with a Prisma Postgres connection url without additional application logic changes.
+
+## Known limitations
+
+### No data persistence between restarts
+
+Currently in the local PGlite server, data does not persist after server restart the server. Each time you restart the server (`npx prisma@latest dev`), reapply migrations and seeds:
+
+```terminal
+npx prisma migrate dev
+npm run seed
+```
+
+Persistent storage will be supported in the future.
+
+### Caching is mocked locally
+
+[Prisma Postgres caching](/postgres/database/caching) is simulated locally. Queries always directly interact with the PGlite database, bypassing cache configurations:
+
+```typescript
+const users = await prisma.user.findMany({
+  cache: { ttl: 60 },
+});
+```
+
+Caching works normally in staging and production when you're using Prisma Postgres.
+
+### Cache invalidation not supported locally
+
+[Cache invalidation (`$accelerate.invalidate()`)](/postgres/database/api-reference#accelerateinvalidate) is unsupported locally and throws an error. To safely handle this you can use a `try-catch` block:
+
+```typescript
+try {
+  await prisma.$accelerate.invalidate();
+} catch (e) {
+  console.error(e);
+}
+```
+
+### Prisma Postgres limitations apply locally
+
+All Prisma Postgres limitations also apply to local development with PGlite. Refer to the [Prisma Postgres limitations documentation](/postgres/more/known-limitations) for detailed information.
+
