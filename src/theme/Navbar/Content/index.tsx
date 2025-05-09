@@ -4,11 +4,13 @@ import NavbarColorModeToggle from '@theme/Navbar/ColorModeToggle';
 import NavbarLogo from '@theme/Navbar/Logo';
 import NavbarMobileSidebarToggle from '@theme/Navbar/MobileSidebar/Toggle';
 import NavbarSearch from '@theme/Navbar/Search';
-import NavbarItem, { Props as NavbarItemConfig, type } from '@theme/NavbarItem';
+import NavbarItem, { type Props as NavbarItemConfig  } from '@theme/NavbarItem';
 import SearchBar from '@theme/SearchBar';
-import React, { ReactNode, type } from 'react';
+import React, { type ReactNode } from 'react';
 
 import styles from './styles.module.css';
+import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 function useNavbarItems() {
   // TODO temporary casting until ThemeConfig type is improved
@@ -61,6 +63,7 @@ export default function NavbarContent(): ReactNode {
   const [leftItems, rightItems] = splitNavbarItems(items);
 
   const searchBarItem = items.find((item) => item.type === 'search');
+  const baseUrl = useBaseUrl("/");
 
   return (
     <NavbarContentLayout
@@ -69,7 +72,7 @@ export default function NavbarContent(): ReactNode {
         <>
           {!mobileSidebar.disabled && <NavbarMobileSidebarToggle />}
           <NavbarLogo />
-          <a className="logo-link">/docs</a>
+          <Link to={baseUrl} className="logo-link">/docs</Link>
         </>
       }
       middle={
