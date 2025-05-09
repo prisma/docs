@@ -446,6 +446,7 @@ const sidebars: SidebarsConfig = {
             "guides/use-prisma-in-pnpm-workspaces",
             "guides/clerk-nextjs",
             "guides/data-dog",
+            "guides/shopify",
           ].sort(),
         },
         {
