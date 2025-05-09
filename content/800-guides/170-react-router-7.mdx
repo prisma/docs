@@ -2,7 +2,7 @@
 title: 'How to use Prisma ORM with React Router 7'
 metaTitle: 'How to use Prisma ORM and Prisma Postgres with React Router 7'
 description: 'Learn how to use Prisma ORM and Prisma Postgres in a React Router 7 app.'
-sidebar_label: 'React Router with Prisma'
+sidebar_label: 'React Router 7 with Prisma'
 image: '/img/guides/prisma-react-router-7-cover.png'
 completion_time: '10 min'
 tags:
@@ -12,43 +12,45 @@ tags:
 
 ## Introduction
 
-This guide shows you how to use Prisma ORM with React Router 7, a multi-strategy router that can be as minimal as declarative routing or as full-featured as a fullstack framework.
+This guide shows you how to use Prisma ORM with [React Router 7](https://reactrouter.com/), a multi-strategy router that can be as minimal as declarative routing or as full-featured as a fullstack framework.
 
-You'll learn how to set up Prisma ORM and Prisma Postgres with React Router and handle migrations. You can find a [deployment-ready example on GitHub](https://github.com/prisma/prisma-examples/blob/latest/orm/react-router-7).
+You'll learn how to set up Prisma ORM and Prisma Postgres with React Router 7 and handle migrations. You can find a [deployment-ready example on GitHub](https://github.com/prisma/prisma-examples/blob/latest/orm/react-router-7).
 
 ## Prerequisites
-
-Before starting this guide, make sure you have:
-
-- Node.js 20+ installed
+- [Node.js 20+](https://nodejs.org)
 
 ## 1. Set up your project
 
-From the directory where you want to create your project, run `create-react-router` to create a new React Router app that we will be using for this guide.
+From the directory where you want to create your project, run `create-react-router` to create a new React Router app that you will be using for this guide.
 
 ```terminal
-npx create-react-router@latest my-app
+npx create-react-router@latest react-router-7-prisma
 ```
 
-You will be prompted to initalize a new git repository and install dependencies with npm. Select **Yes** for both.
+You'll be prompted to select the following, select `Yes` for both:
+
+:::info
+- *Initialize a new git repository?* `Yes`
+- *Install dependencies with npm?* `Yes`
+:::
 
 Now, navigate to the project directory:
 
 ```terminal
-cd my-app
+cd react-router-7-prisma
 ```
 
-## 2. Set up Prisma ORM
+## 2. Install and Configure Prisma
 
-### 2.1 Install Prisma ORM and create your first models
+### 2.1. Install dependencies
 
-First, we need to install a few dependencies. At the root of your project in your terminal, run:
+To get started with Prisma, you'll need to install a few dependencies:
 
 <TabbedContent code>
 <TabItem value="Prisma Postgres (recommended)">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/client @prisma/extension-accelerate
+npm install @prisma/extension-accelerate @prisma/client
 ```
 </TabItem>
 <TabItem value="Other databases">
@@ -59,27 +61,29 @@ npm install @prisma/client
 </TabItem>
 </TabbedContent>
 
-Then, run `prisma init --db` to create a Prisma Postgres database and initialize Prisma ORM for your project:
+Once installed, initialize Prisma in your project:
 
 ```terminal
 npx prisma init --db --output ../app/generated/prisma
 ```
+:::info
+You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My React Router 7 Project"
+:::
 
-> If you don't have a [Prisma Data Platform](https://console.prisma.io/) account yet, or if you are not logged in, the command will prompt you to log in using one of the available authentication providers. A browser window will open so you can log in or create an account. Return to the CLI after you have completed this step.
+This will create:
 
-Once logged in (or if you were already logged in), the CLI will prompt you to:
-1. Select a **region** (e.g. `us-east-1`)
-1. Enter a **project name**
+- A `prisma` directory with a `schema.prisma` file.
+- A Prisma Postgres database.
+- A `.env` file containing the `DATABASE_URL` at the project root.
+- An `output` directory for the generated Prisma Client as `app/generated/prisma`.
 
-This will then create a new `prisma` directory in your project, with a `schema.prisma` file inside of it. The `schema.prisma` file is where you will define your database models.
+### 2.2. Define your Prisma Schema
 
-The `prisma init` command also creates a `.env` file in your project root, which is used to store your database connection string, and outputs the generated Prisma Client into the `/app/generated/prisma` directory.
-
-Next, change the generator to use the [`prisma-client`](/orm/prisma-schema/overview/generators#prisma-client-early-access) provider and add two models to your `schema.prisma` file, a `User` model and a `Post` model:
+In the `prisma/schema.prisma` file, add the following models and change the generator to use the `prisma-client` provider:
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  //edit-next-line
+	//edit-next-line
   provider = "prisma-client"
   output   = "../app/generated/prisma"
 }
@@ -108,79 +112,73 @@ model Post {
 //add-end
 ```
 
-This represents a simple blog with users and posts. Each `Post` can have a `User` as an author and each `User` can have many `Post`s.
+This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-Now that we have a Prisma Schema and a model, let's migrate our Prisma Postgres database.
+### 2.3. Configure the Prisma Client generator
 
-### 2.2 Update your database schema
-
-We can apply your new schema to your database using the `prisma migrate dev` command.
+Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
+### 2.4. Seed the database
 
-This creates an initial migration creating the `User` and `Post` tables and applies that migration to your database. 
+Add some seed data to populate the database with sample users and posts.
 
-Now, let's add some initial data to our database.
+Create a new file called `seed.ts` in the `prisma/` directory:
 
-### 2.3 Seed your database
+```typescript file=prisma/seed.ts
+import { PrismaClient, Prisma } from "../app/generated/prisma";
 
-Prisma ORM has built-in support for seeding your database with initial data. To do this, you can create a new file called `seed.ts` in the `prisma` directory.
-
-```ts file=prisma/seed.ts
-import { PrismaClient, Prisma } from '../app/generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-const prisma = new PrismaClient().$extends(withAccelerate())
+const prisma = new PrismaClient();
 
 const userData: Prisma.UserCreateInput[] = [
   {
-    name: 'Alice',
-    email: 'alice@prisma.io',
+    name: "Alice",
+    email: "alice@prisma.io",
     posts: {
       create: [
         {
-          title: 'Join the Prisma Discord',
-          content: 'https://pris.ly/discord',
+          title: "Join the Prisma Discord",
+          content: "https://pris.ly/discord",
           published: true,
         },
         {
-          title: 'Prisma on YouTube',
-          content: 'https://pris.ly/youtube',
+          title: "Prisma on YouTube",
+          content: "https://pris.ly/youtube",
         },
       ],
     },
   },
   {
-    name: 'Bob',
-    email: 'bob@prisma.io',
+    name: "Bob",
+    email: "bob@prisma.io",
     posts: {
       create: [
         {
-          title: 'Follow Prisma on Twitter',
-          content: 'https://www.twitter.com/prisma',
+          title: "Follow Prisma on Twitter",
+          content: "https://www.twitter.com/prisma",
           published: true,
         },
       ],
     },
-  }
-]
+  },
+];
 
 export async function main() {
   for (const u of userData) {
-    await prisma.user.create({ data: u })
+    await prisma.user.create({ data: u });
   }
 }
 
-main()
+main();
 ```
 
-Now, add the `prisma.seed` configuration to your `package.json` file.
+Now, tell Prisma how to run this script by updating your `package.json`:
 
 ```json file=package.json
 {
-  "name": "my-app",
+  "name": "react-router-7-prisma",
   "private": true,
   "type": "module",
   "scripts": {
@@ -219,34 +217,29 @@ Now, add the `prisma.seed` configuration to your `package.json` file.
 }
 ```
 
-Finally, run `prisma db seed` to seed your database with the initial data we defined in the `seed.ts` file.
+Run the seed script:
 
 ```terminal
 npx prisma db seed
 ```
 
-We now have a database with some initial data! You can check out the data in your database by running `prisma studio`.
+And open Prisma Studio to inspect your data:
 
 ```terminal
 npx prisma studio
 ```
 
-### 2.4 Set up Prisma Client
+## 3. Integrate Prisma into React Router 7
 
-Now that we have a database with some initial data, we can set up Prisma Client and connect it to our database.
+### 3.1. Create a Prisma Client
 
-Inside of your `app` directory, create a new `lib` directory and add a `prisma.ts` file to it.
+Inside of your `app` directory, create a new `lib` directory and add a `prisma.ts` file to it. This file will be used to create and export your Prisma Client instance.
 
-```terminal
-mkdir -p app/lib && touch app/lib/prisma.ts
-```
-
-Now, add the following code to your `app/lib/prisma.ts` file:
+Set up the Prisma client like this:
 
 <TabbedContent code>
 <TabItem value="Prisma Postgres (recommended)">
 ```typescript file=app/lib/prisma.ts showLineNumbers
-//add-start
 import { PrismaClient } from "../generated/prisma";
 import { withAccelerate } from '@prisma/extension-accelerate'
 
@@ -259,13 +252,11 @@ const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAcceler
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export default prisma
-//add-end
 ```
 </TabItem>
 
 <TabItem value="Other databases">
 ```typescript file=app/lib/prisma.ts showLineNumbers
-//add-start
 import { PrismaClient } from "../generated/prisma";
 
 const globalForPrisma = global as unknown as { 
@@ -277,20 +268,23 @@ const prisma = globalForPrisma.prisma || new PrismaClient()
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export default prisma
-//add-end
 ```
 </TabItem>
 </TabbedContent>
 
-This file creates a Prisma Client and attaches it to the global object so that only one instance of the client is created in your application. This helps resolve issues with hot reloading that can occur when using Prisma ORM in development.
+:::warning
+We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.
 
-We'll use this client in the next section to run your first queries.
+If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
+:::
 
-## 3. Query your database with Prisma ORM
+You'll use this client in the next section to run your first queries.
 
-Now that we have an initialized Prisma Client, a connection to our database, and some initial data, we can start querying our data with Prisma ORM.
+### 3.2. Query your database with Prisma
 
-In our example, we'll be making the "home" page of our application display all of our users.
+Now that you have an initialized Prisma Client, a connection to your database, and some initial data, you can start querying your data with Prisma ORM.
+
+In this example, you'll be making the "home" page of your application display all of your users.
 
 Open the `app/routes/home.tsx` file and replace the existing code with the following:
 
@@ -325,7 +319,7 @@ If you see an error on the first line, `import type { Route } from "./+types/hom
 
 :::
 
-This gives us a basic page with a title and a list of users. However, the list of users is static. Let's update the page to fetch the users from our database and make it dynamic.
+This gives you a basic page with a title and a list of users. However, the list of users is static. Update the page to fetch the users from your database and make it dynamic.
 
 ```tsx file=app/routes/home.tsx
 import type { Route } from "./+types/home";
@@ -368,18 +362,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     </div>
   );
 }
-
 ```
 
-We are now importing our client, using [a React Router loader](https://reactrouter.com/start/framework/data-loading#server-data-loading) to query the `User` model for all users, and then displaying them in a list.
+You are now importing your client, using [a React Router loader](https://reactrouter.com/start/framework/data-loading#server-data-loading) to query the `User` model for all users, and then displaying them in a list.
 
 Now your home page is dynamic and will display the users from your database.
 
-### 3.1 Update your data (optional)
+### 3.4 Update your data (optional)
 
 If you want to see what happens when data is updated, you could:
 
-- update your `User` table via a SQL browser of your choice
+- update your `User` table via an SQL browser of your choice
 - change your `seed.ts` file to add more users
 - change the call to `prisma.user.findMany` to re-order the users, filter the users, or similar.
 
@@ -387,7 +380,7 @@ Just reload the page and you'll see the changes.
 
 ## 4. Add a new Posts list page
 
-We have our home page working, but we should add a new page that displays all of our posts. 
+You have your home page working, but you should add a new page that displays all of your posts. 
 
 First, create a new `posts` directory under the `app/routes` directory and add a `home.tsx` file:
 
@@ -430,7 +423,7 @@ export default [
 ] satisfies RouteConfig;
 ```
 
-Now `localhost:5173/posts` will load, but the content is static. Let's update it to be dynamic, similarly to the home page:
+Now `localhost:5173/posts` will load, but the content is static. Update it to be dynamic, similarly to the home page:
 
 ```tsx file=app/routes/posts/home.tsx
 import type { Route } from "./+types/home";
@@ -473,13 +466,13 @@ export default function Posts({ loaderData }: Route.ComponentProps) {
 }
 ```
 
-This works similarly to the home page, but instead of displaying users, it displays posts. You can also see that we've used `include` in our Prisma Client query to fetch the author of each post so we can display the author's name.
+This works similarly to the home page, but instead of displaying users, it displays posts. You can also see that you've used `include` in your Prisma Client query to fetch the author of each post so you can display the author's name.
 
-This "list view" is one of the most common patterns in web applications. We're going to add two more pages to our application which you'll also commonly need: a "detail view" and a "create view".
+This "list view" is one of the most common patterns in web applications. You're going to add two more pages to your application which you'll also commonly need: a "detail view" and a "create view".
 
 ## 5. Add a new Posts detail page
 
-To complement the Posts list page, we'll add a Posts detail page.
+To complement the Posts list page, you'll add a Posts detail page.
 
 In the `routes/posts` directory, create a new `post.tsx` file.
 
@@ -487,7 +480,7 @@ In the `routes/posts` directory, create a new `post.tsx` file.
 touch app/routes/posts/post.tsx
 ```
 
-This page will display a single post's title, content, and author. Just like our other pages, add the following code to the `app/routes/posts/post.tsx` file:
+This page will display a single post's title, content, and author. Just like your other pages, add the following code to the `app/routes/posts/post.tsx` file:
 
 ```tsx file=app/routes/posts/post.tsx
 import type { Route } from "./+types/post";
@@ -520,7 +513,7 @@ export default [
 ] satisfies RouteConfig;
 ```
 
-As before, this page is static. Let's update it to be dynamic based on the `params` passed to the page:
+As before, this page is static. Update it to be dynamic based on the `params` passed to the page:
 
 ```tsx file=app/routes/posts/post.tsx
 //add-start
@@ -566,19 +559,19 @@ export default function Post({ loaderData }: Route.ComponentProps) {
 }
 ```
 
-There's a lot of changes here, so let's break it down:
+There's a lot of changes here, so break it down:
 
-- We're using Prisma Client to fetch the post by its `id`, which we get from the `params` object.
-- In case the post doesn't exist (maybe it was deleted or maybe you typed a wrong ID), we throw an error to display a 404 page.
-- We then display the post's title, content, and author. If the post doesn't have content, we display a placeholder message.
+- You're using Prisma Client to fetch the post by its `id`, which you get from the `params` object.
+- In case the post doesn't exist (maybe it was deleted or maybe you typed a wrong ID), you throw an error to display a 404 page.
+- You then display the post's title, content, and author. If the post doesn't have content, you display a placeholder message.
 
 It's not the prettiest page, but it's a good start. Try it out by navigating to `localhost:5173/posts/1` and `localhost:5173/posts/2`. You can also test the 404 page by navigating to `localhost:5173/posts/999`.
 
 ## 6. Add a new Posts create page
 
-To round out our application, we'll add a "create" page for posts. This will let you write your own posts and save them to the database. 
+To round out your application, you'll add a "create" page for posts. This will allow you to write your own posts and save them to the database. 
 
-As with the other pages, we'll start with a static page and then update it to be dynamic.
+As with the other pages, you'll start with a static page and then update it to be dynamic.
 
 ```terminal
 touch app/routes/posts/new.tsx
@@ -650,7 +643,7 @@ export default [
 ] satisfies RouteConfig;
 ```
 
-Now you can view the form at the new URL. It looks good, but it doesn't do anything yet. Let's update the `action` to save the post to the database:
+Now you can view the form at the new URL. It looks good, but it doesn't do anything yet. Update the `action` to save the post to the database:
 
 ```tsx file=app/routes/posts/new.tsx
 import type { Route } from "./+types/new";

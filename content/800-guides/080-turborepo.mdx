@@ -16,11 +16,14 @@ Prisma is a powerful ORM for managing databases, and [Turborepo](https://turbo.b
 
 This guide will show you how to set up Prisma as a standalone package in a Turborepo monorepo, enabling efficient configuration, type sharing, and database management across multiple apps.
 
-### What you'll learn:
+#### What you'll learn:
 
 - How to set up Prisma in a Turborepo monorepo.
 - Steps to generate and reuse PrismaClient across packages.
 - Integrating the Prisma package into other applications in the monorepo.
+
+### Prerequisites
+- [Node.js 18+](https://nodejs.org/)
 
 ## 1. Create your monorepo using turborepo
 
@@ -30,23 +33,31 @@ To set up a Turborepo monorepo named `turborepo-prisma`, run the following comma
 npx create-turbo@latest turborepo-prisma
 ```
 
+You'll be prompted to select your package manager, this guide will use `npm`:
+
+:::info
+
+- *Which package manager do you want to use?* `npm`
+
+:::
+
 After the setup, choose a package manager for the project. Navigate to the project root directory and install Turborepo as a development dependency:
 <TabbedContent code groupId="packageManager">
   <TabItem value="npm">
   ```terminal
-  cd ./turborepo-prisma
+  cd turborepo-prisma
   npm install turbo --save-dev
   ```
   </TabItem>
   <TabItem value="yarn">
   ```terminal
-  cd ./turborepo-prisma
+  cd turborepo-prisma
   yarn add turbo --dev --ignore-workspace-root-check
   ```
   </TabItem>
   <TabItem value="pnpm">
   ```terminal
-  cd ./turborepo-prisma
+  cd turborepo-prisma
   pnpm add turbo --save-dev --ignore-workspace-root-check
   ```
   </TabItem>
@@ -67,13 +78,11 @@ touch package.json
 
 Define the `package.json` file as follows:
 
-```json file=packages/database/package.json showLineNumbers
-//add-start
+```json file=packages/database/package.json
 {
   "name": "@repo/db",
   "version": "0.0.0"
 }
-//add-end
 ```
 
 Next, install the required dependencies to use Prisma ORM. Use your preferred package manager:
@@ -83,7 +92,8 @@ Next, install the required dependencies to use Prisma ORM. Use your preferred pa
 <TabItem value="npm">
 
 ```terminal
-npm install prisma --save-dev && npm install @prisma/client
+npm install prisma --save-dev
+npm install @prisma/client
 ```
 
 </TabItem>
@@ -91,7 +101,8 @@ npm install prisma --save-dev && npm install @prisma/client
 <TabItem value="yarn">
 
 ```terminal
-yarn add prisma --dev && yarn add @prisma/client
+yarn add prisma --dev
+yarn add @prisma/client
 ```
 
 </TabItem>
@@ -99,7 +110,8 @@ yarn add prisma --dev && yarn add @prisma/client
 <TabItem value="pnpm">
 
 ```terminal
-pnpm add prisma --save-dev && pnpm add @prisma/client
+pnpm add prisma --save-dev
+pnpm add @prisma/client
 ```
 
 </TabItem>
@@ -138,31 +150,41 @@ Inside the `database` directory, initialize prisma by running:
 
 </TabbedContent>
 
-This should create several files inside `packages/database`:
+This will create several files inside `packages/database`:
 
-- `prisma/schema.prisma` is where your [Prisma schema](/orm/prisma-schema/overview) lives. Here, you'll be able to modify the shape of your database. The `prisma init` command by default will create a configuration for `PostgreSQL` to be used. You can modify the schema to use any other [supported database](/orm/reference/supported-databases) by Prisma ORM.
-- `.gitignore` adds some ignored files to git
-- `.env` lets you manually specify your `DATABASE_URL` for prisma.
+- A `prisma` directory with a `schema.prisma` file.
+- A Prisma Postgres database.
+- A `.env` file containing the `DATABASE_URL` at the project root.
+- An `output` directory for the generated Prisma Client as `generated/prisma`.
 
-Add a model to your Prisma schema in `packages/database/prisma/schema.prisma`:
+In the `packages/database/prisma/schema.prisma` file, add the following models:
 
-```prisma file=packages/database/prisma/schema.prisma showLineNumbers
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
+```prisma file=packages/database/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 //add-start
 model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  email     String   @unique
-  name      String?
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  Int
+  author    User    @relation(fields: [authorId], references: [id])
 }
 //add-end
 ```
@@ -177,13 +199,17 @@ It is recommended to add `../generated/prisma` to the `.gitignore` file because 
 
 In the `schema.prisma` file, we specify a custom `output` path where Prisma will generate its types. This ensures Prisma's types are resolved correctly across different package managers.
 
-> In this guide, the types will be generated in the `database/generated/prisma` directory.
+:::info
+
+In this guide, the types will be generated in the `database/generated/prisma` directory.
+
+:::
 
 ## 4. Create scripts to execute Prisma CLI commands
 
 Let's add some scripts to the `package.json` inside `packages/database`:
 
-```json file=packages/database/package.json showLineNumbers
+```json file=packages/database/package.json
 {
   "name": "@repo/db",
   "version": "0.0.0",
@@ -206,7 +232,7 @@ Let's add some scripts to the `package.json` inside `packages/database`:
 
 Let's also add these scripts to `turbo.json` in the root:
 
-```json file=turbo.json showLineNumbers
+```json file=turbo.json
 {
 "$schema": "https://turbo.build/schema.json",
 "ui": "tui",
@@ -312,34 +338,33 @@ Next, export the generated types and an instance of `PrismaClient` so it can use
 
 In the `packages/database` directory, create a `src` folder and add a `client.ts` file. This file will define an instance of `PrismaClient`:
 
-```ts file=packages/database/src/client.ts showLineNumbers
-//add-next-line
+```ts file=packages/database/src/client.ts
 import { PrismaClient } from "../generated/prisma";
 
-//add-next-line
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-//add-start
 export const prisma =
   globalForPrisma.prisma || new PrismaClient();
-//add-end
 
-//add-next-line
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
 
 Then create an `index.ts` file in the `src` folder to re-export the generated prisma types and the `PrismaClient` instance:
 
-```ts file=packages/database/src/index.ts showLineNumbers
-//add-start
+```ts file=packages/database/src/index.ts
 export { prisma } from './client' // exports instance of prisma 
 export * from "../generated/prisma" // exports generated types from prisma
-//add-end
 ```
 
 Follow the [Just-in-Time packaging pattern](https://turbo.build/repo/docs/core-concepts/internal-packages#just-in-time-packages) and create an entrypoint to the package inside `packages/database/package.json`:
 
-```json file=packages/database/package.json showLineNumbers
+:::warning
+
+If you're not using a bundler, use the [Compiled Packages](https://turborepo.com/docs/core-concepts/internal-packages#compiled-packages) strategy instead.
+
+:::
+
+```json file=packages/database/package.json
 {
   "name": "@repo/db",
   "version": "0.0.0",
@@ -353,11 +378,11 @@ Follow the [Just-in-Time packaging pattern](https://turbo.build/repo/docs/core-c
   },
   "dependencies": {
     "@prisma/client": "^6.6.0"
-  }
+  },
   //add-start
   "exports": {
     ".": "./src/index.ts"
-  },
+  }
   //add-end
 }
 
@@ -375,10 +400,13 @@ The `turborepo-prisma` project should have an app called `web` at `apps/web`. Ad
 
   ```json
   {
+    // ...
     "dependencies": {
       //add-next-line
       "@repo/db": "*"
+      // ...
     }
+    // ...
   } 
   ```
 
@@ -388,10 +416,13 @@ The `turborepo-prisma` project should have an app called `web` at `apps/web`. Ad
 
   ```json
   {
+    // ...
     "dependencies": {
       //add-next-line
       "@repo/db": "*"
+      // ...
     }
+    // ...
   } 
   ```
 
@@ -401,10 +432,13 @@ The `turborepo-prisma` project should have an app called `web` at `apps/web`. Ad
 
   ```json
   {
+    // ...
     "dependencies": {
       //add-next-line
       "@repo/db": "workspace:*"
+      // ...
     }
+    // ...
   } 
   ```
 
@@ -448,13 +482,10 @@ Let's import the intantiated `prisma` client from the `database` package in the 
 
 In the `apps/web/app` directory, open the `page.tsx` file and add the following code:
 
-```tsx file=apps/web/app/page.tsx showLineNumbers
-//add-start
+```tsx file=apps/web/app/page.tsx
 import styles from "./page.module.css";
 import { prisma } from "@repo/db";
-//add-end
 
-//add-start
 export default async function Home() {
   const user = await prisma.user.findFirst() 
   return (
@@ -463,7 +494,6 @@ export default async function Home() {
     </div>
   );
 }
-//add-end
 ```
 
 Then, create a `.env` file in the `web` directory and copy into it the contents of the `.env` file from the `/database` directory containing the `DATABASE_URL`:
@@ -492,13 +522,13 @@ If a new developer runs `turbo dev` on an application without first running `db:
 
 To prevent this, ensure that `db:generate` is always executed before running `dev` or `build`. Additionally, make sure both `db:deploy` and `db:generate` are executed before `db:build`. Here's how to configure this in your `turbo.json` file:
 
-```json file=turbo.json showLineNumbers
+```json file=turbo.json
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "tasks": {
     "build": {
-      //add-next-line
+      //edit-next-line
       "dependsOn": ["^build", "^db:generate"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
@@ -537,9 +567,7 @@ To prevent this, ensure that `db:generate` is always executed before running `de
 Before starting the development server, note that if you are using Next.js v15.2.0, do not use Turbopack as there is a known [issue](https://github.com/vercel/next.js/issues/76497). Remove Turbopack from your dev script by updating your `apps/web/package.json`
 ```json file=apps/web/package.json
 "script":{
-    //delete-next-line
-    "dev": "next dev --turbopack --port 3000",
-    //add-next-line
+    //edit-next-line
     "dev": "next dev --port 3000",
 }
 ```
