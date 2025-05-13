@@ -451,6 +451,15 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
+          label: "Connection Pooling Guides",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            "guides/supabase-accelerate",
+          ].sort(),
+        },
+        {
+          type: "category",
           label: "Migration Guides",
           collapsed: false,
           collapsible: false,
