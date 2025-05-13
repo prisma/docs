@@ -421,6 +421,7 @@ const sidebars: SidebarsConfig = {
             "guides/react-router-7",
             "guides/solid-start",
             "guides/sveltekit",
+            "guides/astro",
           ].sort(),
         },
         {
@@ -445,6 +446,7 @@ const sidebars: SidebarsConfig = {
             "guides/use-prisma-in-pnpm-workspaces",
             "guides/clerk-nextjs",
             "guides/data-dog",
+            "guides/shopify",
           ].sort(),
         },
         {
