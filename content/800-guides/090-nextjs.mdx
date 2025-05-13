@@ -13,29 +13,27 @@ community_section: true
 
 ## Introduction
 
-This guide shows you how to use Prisma ORM with Next.js 15, a fullstack React framework. You'll learn how to set up Prisma ORM with Next.js, handle migrations, and deploy your application to Vercel. You can find a [deployment-ready example on GitHub](https://github.com/prisma/prisma-examples/blob/latest/orm/nextjs).
+This guide shows you how to use Prisma with Next.js 15, a fullstack React framework. You'll learn how to create a [Prisma Postgres](/postgres/) instance, set up Prisma ORM with Next.js, handle migrations, and deploy your application to Vercel. 
+
+You can find a [deployment-ready example on GitHub](https://github.com/prisma/prisma-examples/blob/latest/orm/nextjs).
 
 ## Prerequisites
-
-Before starting this guide, make sure you have:
-
-- Node.js 18+ installed
-- A [Prisma Postgres](https://www.prisma.io/postgres) database (or any PostgreSQL database)
+- [Node.js 18+](https://nodejs.org)
 - A Vercel account (if you want to deploy your application)
 
 ## 1. Set up your project
 
-From the directory where you want to create your project, run `create-next-app` to create a new Next.js app that we will be using for this guide.
+From the directory where you want to create your project, run `create-next-app` to create a new Next.js app that you will be using for this guide.
 
 ```terminal
-npx create-next-app@latest my-app
+npx create-next-app@latest nextjs-prisma
 ```
 
 You will be prompted to answer a few questions about your project. Select all of the defaults.
 
 :::info
 
-For completeness, those are:
+For reference, those are:
 
 - TypeScript
 - ESLint
@@ -50,43 +48,54 @@ For completeness, those are:
 Then, navigate to the project directory:
 
 ```terminal
-cd my-app
+cd nextjs-prisma
 ```
 
-## 2. Set up Prisma ORM
+## 2. Install and Configure Prisma
 
-### 2.1 Install Prisma ORM and create your first models
+### 2.1. Install dependencies
 
-First, we need to install a few dependencies. At the root of your project in your terminal, run:
+To get started with Prisma, you'll need to install a few dependencies:
+
+<TabbedContent code>
+<TabItem value="Prisma Postgres (recommended)">
+```terminal
+npm install prisma tsx --save-dev
+npm install @prisma/extension-accelerate @prisma/client
+```
+</TabItem>
+<TabItem value="Other databases">
+```terminal
+npm install prisma tsx --save-dev
+npm install @prisma/client
+```
+</TabItem>
+</TabbedContent>
+
+Once installed, initialize Prisma in your project:
 
 ```terminal
-npm install prisma --save-dev
-npm install tsx --save-dev
-npm install @prisma/extension-accelerate
+npx prisma init --db --output ../app/generated/prisma
 ```
-
 :::info
-
-If you're not using a Prisma Postgres database, you won't need the `@prisma/extension-accelerate` package.
-
+You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My __________ Project"
 :::
 
-Then, run `prisma init` to initialize Prisma ORM in your project.
+This will create:
 
-```terminal
-npx prisma init --output ../src/app/generated/prisma
-```
+- A `prisma` directory with a `schema.prisma` file.
+- A Prisma Postgres database.
+- A `.env` file containing the `DATABASE_URL` at the project root.
+- An `output` directory for the generated Prisma Client as `app/generated/prisma`.
 
-This will create a new `prisma` directory in your project, with a `schema.prisma` file inside of it. The `schema.prisma` file is where you will define your database models.
+### 2.2. Define your Prisma Schema
 
-The `prisma init` command also creates a `.env` file in your project root to store your database connection string and outputs the generated client into `/app/generated/prisma`.
-
-Next, let's add two models to your `schema.prisma` file. A `User` model and a `Post` model.
+In the `prisma/schema.prisma` file, add the following models:
 
 ```prisma file=prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/app/generated/prisma"
+  output   = "../app/generated/prisma"
 }
 
 datasource db {
@@ -113,100 +122,73 @@ model Post {
 //add-end
 ```
 
-This represents a simple blog with users and posts. Each `Post` can have a `User` as an author and each `User` can have many `Post`s.
+This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-Now that we have a Prisma Schema and a model, let's connect to our Prisma Postgres database.
+### 2.3. Configure the Prisma Client generator
 
-### 2.2 Save your database connection string
-
-Now that you have your Prisma schema, you will need a database to apply your schema to.
-
-:::note[I don't have a database yet]
-
-If you don't have a database yet, you can create a new one through the [Prisma Console](https://console.prisma.io/). Step-by-step instructions are available in our [getting started guide](/getting-started/quickstart-prismaPostgres#1-set-up-a-prisma-postgres-database-in-the-platform-console).
-
-:::
-
-When you have created your Prisma Postgres project, you'll get a `DATABASE_URL`. Store it in your `.env` file.
-
-```env file=.env
-DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIU...""
-```
-
-### 2.3 Update your database schema
-
-:::warning
-
-If you're connecting to a database with existing data, use the `prisma db pull` command and then skip to [Set up Prisma Client](#25-set-up-prisma-client).
-
-:::
-
-Now that you've saved your database connection string, we can apply your schema to your database using the `prisma migrate dev` command.
+Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
+### 2.4. Seed the database
 
-This creates an initial migration creating the `User` and `Post` tables and applies that migration to your database. 
+Add some seed data to populate the database with sample users and posts.
 
-Now, let's add some initial data to our database.
+Create a new file called `seed.ts` in the `prisma/` directory:
 
-### 2.4 Seed your database
+```typescript file=prisma/seed.ts
+import { PrismaClient, Prisma } from "../app/generated/prisma";
 
-Prisma ORM has built-in support for seeding your database with initial data. To do this, you can create a new file called `seed.ts` in the `prisma` directory.
-
-```ts file=prisma/seed.ts
-import { PrismaClient, Prisma } from '../src/app/generated/prisma'
-
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 const userData: Prisma.UserCreateInput[] = [
   {
-    name: 'Alice',
-    email: 'alice@prisma.io',
+    name: "Alice",
+    email: "alice@prisma.io",
     posts: {
       create: [
         {
-          title: 'Join the Prisma Discord',
-          content: 'https://pris.ly/discord',
+          title: "Join the Prisma Discord",
+          content: "https://pris.ly/discord",
           published: true,
         },
         {
-          title: 'Prisma on YouTube',
-          content: 'https://pris.ly/youtube',
+          title: "Prisma on YouTube",
+          content: "https://pris.ly/youtube",
         },
       ],
     },
   },
   {
-    name: 'Bob',
-    email: 'bob@prisma.io',
+    name: "Bob",
+    email: "bob@prisma.io",
     posts: {
       create: [
         {
-          title: 'Follow Prisma on Twitter',
-          content: 'https://www.twitter.com/prisma',
+          title: "Follow Prisma on Twitter",
+          content: "https://www.twitter.com/prisma",
           published: true,
         },
       ],
     },
-  }
-]
+  },
+];
 
 export async function main() {
   for (const u of userData) {
-    await prisma.user.create({ data: u })
+    await prisma.user.create({ data: u });
   }
 }
 
-main()
+main();
 ```
 
-Now, add the `prisma.seed` configuration to your `package.json` file.
+Now, tell Prisma how to run this script by updating your `package.json`:
 
 ```json file=package.json
 {
-  "name": "my-app",
+  "name": "nextjs-prisma",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -215,33 +197,34 @@ Now, add the `prisma.seed` configuration to your `package.json` file.
     "start": "next start",
     "lint": "next lint"
   },
-  //add-start
+  // add-start
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  //add-end
+  // add-end
   "dependencies": {
-    "@prisma/client": "^6.2.1",
-    "@prisma/extension-accelerate": "^1.2.1",
-    "next": "15.1.4",
+    "@prisma/client": "^6.7.0",
+    "@prisma/extension-accelerate": "^1.3.0",
+    "next": "15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.1.4",
-    "postcss": "^8",
-    "prisma": "^6.2.1",
-    "tailwindcss": "^3.4.1",
-    "tsx": "^4.19.2",
+    "eslint-config-next": "15.3.1",
+    "prisma": "^6.7.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.19.4",
     "typescript": "^5"
   }
 }
 ```
+
 
 :::warning
 
@@ -257,15 +240,18 @@ Before starting the development server, note that if you are using Next.js v15.2
 }
 ```
 This change is not needed on any versions before or after.
+
 :::
 
 Finally, run `prisma db seed` to seed your database with the initial data we defined in the `seed.ts` file.
+
+Run the seed script:
 
 ```terminal
 npx prisma db seed
 ```
 
-We now have a database with some initial data! You can check out the data in your database by running `prisma studio`.
+And open Prisma Studio to inspect your data:
 
 ```terminal
 npx prisma studio
@@ -273,18 +259,21 @@ npx prisma studio
 
 ### 2.5 Set up Prisma Client
 
-Now that we have a database with some initial data, we can set up Prisma Client and connect it to our database.
+Now that you have a database with some initial data, you can set up Prisma Client and connect it to your database.
 
 At the root of your project, create a new `lib` directory and add a `prisma.ts` file to it.
 
 ```terminal
-mkdir -p src/lib && touch src/lib/prisma.ts
+mkdir -p lib && touch lib/prisma.ts
 ```
 
 Now, add the following code to your `lib/prisma.ts` file:
 
-```ts file=lib/prisma.ts
-import { PrismaClient } from '../src/app/generated/prisma'
+<TabbedContent code>
+<TabItem value="Prisma Postgres (recommended)">
+```typescript file=lib/prisma.ts showLineNumbers
+//add-start
+import { PrismaClient } from '../app/generated/prisma'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
 const globalForPrisma = global as unknown as { 
@@ -296,31 +285,38 @@ const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAcceler
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export default prisma
+//add-end
 ```
+</TabItem>
+
+<TabItem value="Other databases">
+```typescript file=lib/prisma.ts showLineNumbers
+//add-start
+import { PrismaClient } from '../src/app/generated/prisma'
+
+const globalForPrisma = global as unknown as { 
+    prisma: PrismaClient
+}
+
+const prisma = globalForPrisma.prisma || new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+export default prisma
+//add-end
+```
+</TabItem>
+</TabbedContent>
 
 This file creates a Prisma Client and attaches it to the global object so that only one instance of the client is created in your application. This helps resolve issues with hot reloading that can occur when using Prisma ORM with Next.js in development mode.
 
-:::note
-
-If you're not using Prisma Postgres, replace the line
-```ts
-const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate())
-```
-with
-```ts
-const prisma = globalForPrisma.prisma || new PrismaClient()
-```
-and remove the `@prisma/extension-accelerate` import.
-
-:::
-
-We'll use this client in the next section to run your first queries.
+You'll use this client in the next section to run your first queries.
 
 ## 3. Query your database with Prisma ORM
 
-Now that we have an initialized Prisma Client, a connection to our database, and some initial data, we can start querying our data with Prisma ORM.
+Now that you have an initialized Prisma Client, a connection to your database, and some initial data, you can start querying your data with Prisma ORM.
 
-In our example, we'll be making the "home" page of our application display all of our users.
+In this example, you'll make the "home" page of your application display all of your users.
 
 Open the `app/page.tsx` file and replace the existing code with the following:
 
@@ -340,38 +336,31 @@ export default async function Home() {
 }
 ```
 
-This gives us a basic page with a title and a list of users. However, that list is static and doesn't change. Let's update the page to fetch the users from our database and make it dynamic.
+This gives you a basic page with a title and a list of users. However, that list is static with hardcoded values. Let's update the page to fetch the users from your database and make it dynamic.
 
 ```tsx file=app/page.tsx
-//add-start
 import prisma from '@/lib/prisma'
-//add-end
 
 export default async function Home() {
-  //add-start
   const users = await prisma.user.findMany();
-  //add-end
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center -mt-16">
       <h1 className="text-4xl font-bold mb-8 font-[family-name:var(--font-geist-sans)] text-[#333333]">
         Superblog
       </h1>
       <ol className="list-decimal list-inside font-[family-name:var(--font-geist-sans)]">
-        //add-start
         {users.map((user) => (
           <li key={user.id} className="mb-2">
             {user.name}
           </li>
         ))}
-        //add-end
       </ol>
     </div>
   );
 }
-
 ```
 
-We are now importing our client, querying the `User` model for all users, and then displaying them in a list.
+You are now importing your client, querying the `User` model for all users, and then displaying them in a list.
 
 Now your home page is dynamic and will display the users from your database.
 
@@ -387,12 +376,12 @@ Just reload the page and you'll see the changes.
 
 ## 4. Add a new Posts list page
 
-We have our home page working, but we should add a new page that displays all of our posts. 
+You have your home page working, but you should add a new page that displays all of your posts. 
 
 First create a new `posts` directory in the `app` directory and create a new `page.tsx` file inside of it.
 
 ```terminal
-mkdir -p src/app/posts && touch src/app/posts/page.tsx
+mkdir -p app/posts && touch app/posts/page.tsx
 ```
 
 Second, add the following code to the `app/posts/page.tsx` file:
@@ -414,19 +403,17 @@ export default async function Posts() {
 }
 ```
 
-Now `localhost:3000/posts` will load, but the content is static. Let's update it to be dynamic, similarly to the home page:
+Now `localhost:3000/posts` will load, but the content is hardcoded again. Let's update it to be dynamic, similarly to the home page:
 
 ```tsx file=app/posts/page.tsx
 import prisma from "@/lib/prisma";
 
 export default async function Posts() {
-  //add-start
   const posts = await prisma.post.findMany({
     include: {
       author: true,
     },
   });
-  //add-end
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center -mt-16">
@@ -434,10 +421,6 @@ export default async function Posts() {
         Posts
       </h1>
       <ul className="font-[family-name:var(--font-geist-sans)] max-w-2xl space-y-4">
-        //delete-start
-        <li>My first post</li>
-        //delete-end
-        //add-start
         {posts.map((post) => (
           <li key={post.id}>
             <span className="font-semibold">{post.title}</span>
@@ -446,28 +429,27 @@ export default async function Posts() {
             </span>
           </li>
         ))}
-        //add-end
       </ul>
     </div>
   );
 }
 ```
 
-This works similarly to the home page, but instead of displaying users, it displays posts. You can also see that we've used `include` in our Prisma Client query to fetch the author of each post so we can display the author's name.
+This works similarly to the home page, but instead of displaying users, it displays posts. You can also see that you've used `include` in your Prisma Client query to fetch the author of each post so you can display the author's name.
 
-This "list view" is one of the most common patterns in web applications. We're going to add two more pages to our application which you'll also commonly need: a "detail view" and a "create view".
+This "list view" is one of the most common patterns in web applications. You're going to add two more pages to your application which you'll also commonly need: a "detail view" and a "create view".
 
 ## 5. Add a new Posts detail page
 
-To complement the Posts list page, we'll add a Posts detail page.
+To complement the Posts list page, you'll add a Posts detail page.
 
 In the `posts` directory, create a new `[id]` directory and a new `page.tsx` file inside of that.
 
 ```terminal
-mkdir -p src/app/posts/[id] && touch src/app/posts/[id]/page.tsx
+mkdir -p app/posts/[id] && touch app/posts/[id]/page.tsx
 ```
 
-This page will display a single post's title, content, and author. Just like our other pages, add the following code to the `app/posts/new/page.tsx` file:
+This page will display a single post's title, content, and author. Just like your other pages, add the following code to the `app/posts/new/page.tsx` file:
 
 ```tsx file=app/posts/[id]/page.tsx
 import prisma from "@/lib/prisma";
@@ -487,16 +469,13 @@ export default async function Post({ params }: { params: Promise<{ id: string }>
 }
 ```
 
-As before, this page is static. Let's update it to be dynamic based on the `params` passed to the page:
+As before, this page is static with hardcoded content. Let's update it to be dynamic based on the `params` passed to the page:
 
 ```tsx file=app/posts/[id]/page.tsx
 import prisma from "@/lib/prisma";
-//add-start
 import { notFound } from "next/navigation";
-//add-end
 
 export default async function Post({ params }: { params: Promise<{ id: string }> }) {
-  //add-start
   const { id } = await params;
   const post = await prisma.post.findUnique({
     where: { id: parseInt(id) },
@@ -508,25 +487,15 @@ export default async function Post({ params }: { params: Promise<{ id: string }>
   if (!post) {
     notFound();
   }
-  //add-end
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center -mt-16">
       <article className="max-w-2xl space-y-4 font-[family-name:var(--font-geist-sans)]">
-        //delete-start
-        <h1 className="text-4xl font-bold mb-8 text-[#333333]">My first post</h1>
-        <p className="text-gray-600 text-center">by Anonymous</p>
-        <div className="prose prose-gray mt-8">
-          No content available.
-        </div>
-        //delete-end
-        //add-start
         <h1 className="text-4xl font-bold mb-8 text-[#333333]">{post.title}</h1>
         <p className="text-gray-600 text-center">by {post.author.name}</p>
         <div className="prose prose-gray mt-8">
           {post.content || "No content available."}
         </div>
-        //add-end
       </article>
     </div>
   );
@@ -535,20 +504,20 @@ export default async function Post({ params }: { params: Promise<{ id: string }>
 
 There's a lot of changes here, so let's break it down:
 
-- We're using Prisma Client to fetch the post by its `id`, which we get from the `params` object.
-- In case the post doesn't exist (maybe it was deleted or maybe you typed a wrong ID), we call `notFound()` to display a 404 page.
-- We then display the post's title, content, and author. If the post doesn't have content, we display a placeholder message.
+- You're using Prisma Client to fetch the post by its `id`, which you get from the `params` object.
+- In case the post doesn't exist (maybe it was deleted or maybe you typed a wrong ID), you call `notFound()` to display a 404 page.
+- You then display the post's title, content, and author. If the post doesn't have content, you display a placeholder message.
 
 It's not the prettiest page, but it's a good start. Try it out by navigating to `localhost:3000/posts/1` and `localhost:3000/posts/2`. You can also test the 404 page by navigating to `localhost:3000/posts/999`.
 
 ## 6. Add a new Posts create page
 
-To round out our application, we'll add a "create" page for posts. This will let you write your own posts and save them to the database. 
+To round out your application, you'll add a "create" page for posts. This will let you write your own posts and save them to the database. 
 
-As with the other pages, we'll start with a static page and then update it to be dynamic.
+As with the other pages, you'll start with a static page and then update it to be dynamic.
 
 ```terminal
-mkdir -p src/app/posts/new && touch src/app/posts/new/page.tsx
+mkdir -p app/posts/new && touch app/posts/new/page.tsx
 ```
 
 Now, add the following code to the `app/posts/new/page.tsx` file:
@@ -608,11 +577,9 @@ This form looks good, but it doesn't do anything yet. Let's update the `createPo
 
 ```tsx file=app/posts/new/page.tsx
 import Form from "next/form";
-//add-start
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-//add-end
 
 export default function NewPost() {
   async function createPost(formData: FormData) {
@@ -621,7 +588,6 @@ export default function NewPost() {
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
 
-    //add-start
     await prisma.post.create({
       data: {
         title,
@@ -632,7 +598,6 @@ export default function NewPost() {
 
     revalidatePath("/posts");
     redirect("/posts");
-    //add-end
   }
 
   return (
@@ -677,7 +642,7 @@ export default function NewPost() {
 
 This page now has a functional form! When you submit the form, it will create a new post in the database and redirect you to the posts list page. 
 
-We also added a `revalidatePath` call to revalidate the posts list page so that it will be updated with the new post. That way everyone can read the new post immediately.
+You also added a `revalidatePath` call to revalidate the posts list page so that it will be updated with the new post. That way everyone can read the new post immediately.
 
 Try it out by navigating to `localhost:3000/posts/new` and submitting the form.
 
@@ -697,18 +662,17 @@ Then, run `vercel login` to log in to your Vercel account.
 vercel login
 ```
 
-Before we deploy, we also need to tell Vercel to make sure that the Prisma Client is generated. You can do this by adding a `postinstall` script to your `package.json` file.
+Before you deploy, you also need to tell Vercel to make sure that the Prisma Client is generated. You can do this by adding a `postinstall` script to your `package.json` file.
 
 ```json file=package.json
 {
-  "name": "my-app",
+  "name": "nextjs-prisma",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    //add-next-line
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate --no-engine",
     "start": "next start",
     "lint": "next lint"
   },
@@ -737,6 +701,10 @@ Before we deploy, we also need to tell Vercel to make sure that the Prisma Clien
   }
 }
 ```
+
+:::note
+If you're not using Prisma Postgres, you need to remove the `--no-engine` flag from the command.
+:::
 
 After this change, you can deploy your application to Vercel by running `vercel`.
 
