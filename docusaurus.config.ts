@@ -260,12 +260,6 @@ const config: Config = {
       },
       items: [
         {
-          to: DOCUSAURUS_BASE_URL,
-          position: "left",
-          label: "/docs",
-          className: "logo-link",
-        },
-        {
           type: "docSidebar",
           sidebarId: "gettingStarted",
           position: "left",
@@ -273,53 +267,56 @@ const config: Config = {
           className: "indigo first-item",
         },
         {
+          type: "docSidebar",
+          sidebarId: "prismaPostgresSidebar",
+          className: "teal",
+          position: "left",
+          label: "Postgres",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "ormSidebar",
+          position: "left",
+          className: "indigo",
+          label: "ORM",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "guidesSidebar",
+          className: "teal",
+          position: "left",
+          label: "Guides",
+        },
+        {
           type: "dropdown",
-          label: "Products",
+          label: "More",
+          className: "teal",
           position: "left",
           items: [
-            {
-              type: "docSidebar",
-              sidebarId: "ormSidebar",
-              className: "indigo",
-              label: "ORM",
-            },
-            {
-              type: "docSidebar",
-              sidebarId: "prismaPostgresSidebar",
-              className: "teal",
-              label: "Postgres",
-            },
             {
               className: "indigo",
               to: "/orm/tools/prisma-studio",
               label: "Studio",
+              sub: "Explore and manipulate your data",
+              icon: "fa-regular fa-table"
             },
             {
               type: "docSidebar",
               sidebarId: "optimizeSidebar",
               className: "teal",
               label: "Optimize",
+              sub: "AI-driven query analysis",
+              icon: "fa-regular fa-magnifying-glass-chart"
             },
             {
               type: "docSidebar",
               sidebarId: "accelerateSidebar",
               className: "teal",
               label: "Accelerate",
+              sub: "Make your database global",
+              icon: "fa-regular fa-bolt"
             },
           ],
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "guidesSidebar",
-          className: "teal",
-          label: "Guides",
-        },
-        {
-          to: "https://www.github.com/prisma/prisma-examples",
-          external: true,
-          position: "left",
-          label: "Examples",
-          className: "indigo external__link",
         },
         {
           href: "https://pris.ly/github?utm_source=docs&utm_medium=navbar",
