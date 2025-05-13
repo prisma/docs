@@ -2,8 +2,7 @@ export const ProductLinkData = {
   t_orm: {
     title: "Talk to your database, seamlessly",
     eyebrow: "ORM",
-    description:
-      "Prisma ORM lets you query your database with an ergonomic TypeScript client",
+    description: "Prisma ORM lets you query your database with an ergonomic TypeScript client",
     link: "/orm",
     icon: "fa-regular fa-database",
   },
@@ -18,8 +17,7 @@ export const ProductLinkData = {
   t_studio: {
     title: "See your data in style",
     eyebrow: "Studio",
-    description:
-      "Prisma Studio makes it easy to explore your data visually",
+    description: "Prisma Studio makes it easy to explore your data visually",
     link: "/orm/tools/prisma-studio",
     icon: "fa-regular fa-table",
   },
@@ -34,8 +32,7 @@ export const ProductLinkData = {
   t_optimize: {
     title: "Your queries, smarter",
     eyebrow: "Optimize",
-    description:
-      "Prisma Optimize gives you AI-powered insights on potential issues in your code",
+    description: "Prisma Optimize gives you AI-powered insights on potential issues in your code",
     link: "/optimize",
     icon: "fa-regular fa-magnifying-glass-chart",
   },
@@ -89,180 +86,193 @@ export const get_help = [
       {
         icon: "fa-brands fa-github",
         link: "https://github.com/prisma/prisma/issues/new?assignees=&labels=kind/bug&projects=&template=bug_report.yml",
-        label: "Report a bug"
+        label: "Report a bug",
       },
       {
         icon: "fa-brands fa-github",
         link: "https://github.com/prisma/prisma/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=",
-        label: "Request a new feature"
-      }
-    ]      
+        label: "Request a new feature",
+      },
+    ],
   },
   {
     icon: "fa-regular fa-comments-question-check",
     title: "Community Support",
-    description: "Support for customers on our <b>Starter plan</b> is provided through our <b>community channels.</b>",
+    description:
+      "Support for customers on our <b>Starter plan</b> is provided through our <b>community channels.</b>",
     links: [
       {
         icon: "fa-brands fa-discord",
         link: "https://pris.ly/discord",
-        label: "Join our Discord"
-      }
-    ]      
+        label: "Join our Discord",
+      },
+    ],
   },
   {
     icon: "fa-regular fa-headset",
     title: "Prisma Support",
-    description: "Support for customers in our <b>Pro</b> or <b>Business</b> plan is provided by the Platform Console.",
+    description:
+      "Support for customers in our <b>Pro</b> or <b>Business</b> plan is provided by the Platform Console.",
     links: [
       {
         link: "https://console.prisma.io/login?utm_source=website&utm_medium=default&utm_campaign=login",
-        label: "Submit a ticket"
-      }
-    ]      
-  }
-]
+        label: "Submit a ticket",
+      },
+    ],
+  },
+];
 
 export const tabs = [
   {
     icon: "fa-solid fa-chart-pyramid",
     label: "Use Prisma Postgres",
-    description: "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres</b> you get an instant, fully hosted high-performance database that includes built-in caching, scales to zero, and integrates deeply with Prisma ORM and Prisma Studio—all backed by a generous free tier.",
+    description:
+      "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres</b> you get an instant, fully hosted high-performance database that includes built-in caching, scales to zero, and integrates deeply with Prisma ORM and Prisma Studio—all backed by a generous free tier.",
     list: [
       {
         url: "/guides/nextjs",
         image: "/img/technologies/nextjs.svg",
-        tech: "Nextjs"
+        tech: "Nextjs",
       },
       {
         url: "/guides/nuxt",
         image: "/img/technologies/nuxtjs.svg",
-        tech: "Nuxtjs"
+        tech: "Nuxtjs",
       },
       {
         url: "/guides/react-router-7",
         image: "/img/technologies/reactrouter.svg",
-        tech: "React Router"
+        tech: "React Router",
       },
       {
         url: "/guides/solid-start",
         image: "/img/technologies/solidstart.svg",
-        tech: "SolidStart"
+        tech: "SolidStart",
       },
       {
         url: "/guides/tanstack-start",
         image: "/img/technologies/tanstack.png",
-        tech: "TanStack"
+        tech: "TanStack",
       },
     ],
     link: {
       url: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
       label: "How to migrate to Prisma Postgres",
-      icon: "fa-regular fa-book-open"
-    }
+      icon: "fa-regular fa-book-open",
+    },
   },
   {
     icon: "fa-solid fa-database",
     label: "Bring your own database",
-    description: "<b>Already have a database?</b> With Prisma ORM and Prisma Data Platform, you can supercharge your existing stack. Add connection pooling and caching with generous free tiers.",
+    description:
+      "<b>Already have a database?</b> With Prisma ORM and Prisma Data Platform, you can supercharge your existing stack. Add connection pooling and caching with generous free tiers.",
     list: [
       {
         url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql",
         image: "/img/technologies/postgresqlsimple.svg",
-        tech: "PostgreSQL"
+        tech: "PostgreSQL",
       },
       {
         url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale",
         image: "/img/technologies/planetscale.svg",
         imageDark: "/img/technologies/planetscaledark.svg",
-        tech: "Planetscale"
+        tech: "Planetscale",
       },
       {
         url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-sqlserver",
         image: "/img/technologies/sqlserver.svg",
-        tech: "SQL Server"
+        tech: "SQL Server",
       },
       {
         url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-mysql",
         image: "/img/technologies/mysqlsimple.svg",
-        tech: "MySQL"
+        tech: "MySQL",
       },
       {
         url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb",
         image: "/img/technologies/cockroachdb.svg",
         imageDark: "/img/technologies/cockroachdbdark.svg",
-        tech: "CockroachDB"
-      }
+        tech: "CockroachDB",
+      },
     ],
     link: {
       url: "/getting-started/setup-prisma/add-to-existing-project",
       label: "How to migrate to Prisma ORM",
-      icon: "fa-regular fa-book-open"
-    }
-  }
+      icon: "fa-regular fa-book-open",
+    },
+  },
 ];
 
 export const how_do_i = [
   {
     title: "model my schema?",
-    description: "The Prisma Schema (or schema for short) is the main method of configuration for your Prisma ORM setup. It consists of the following parts: Data sources: Specify the details of the data sources Prisma ORM should connect to (e.g. a PostgreSQL database) Generators: Specifies what clients should be generated based on the data model (e.g. Prisma Client)",
+    description:
+      "The Prisma Schema (or schema for short) is the main method of configuration for your Prisma ORM setup. It consists of the following parts: Data sources: Specify the details of the data sources Prisma ORM should connect to (e.g. a PostgreSQL database) Generators: Specifies what clients should be generated based on the data model (e.g. Prisma Client)",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-schema/overview",
     // time: 15
   },
   {
     title: "cache my queries?",
-    description: "Prisma Postgres comes with a built-in global cache (enabled by Prisma Accelerate) that helps you speed up your database queries. You can cache results on a per-query level using the cacheStrategy option in any Prisma ORM query, e.g.:",
+    description:
+      "Prisma Postgres comes with a built-in global cache (enabled by Prisma Accelerate) that helps you speed up your database queries. You can cache results on a per-query level using the cacheStrategy option in any Prisma ORM query, e.g.:",
     // tags: ["guides", "schema", "orm"],
-    url: "/postgres/caching",
+    url: "/postgres/database/caching",
     // time: 15
   },
   {
     title: "integrate with an existing DB?",
-    description: "Baselining is the process of initializing a migration history for a database that: ✔ Existed before you started using Prisma Migrate ✔ Contains data that must be maintained (like production), which means that the database cannot be reset. Baselining tells Prisma Migrate to assume that one or more migrations have already been applied. This prevents generated migrations from failing when they try to create tables and fields that already exist.",
+    description:
+      "Baselining is the process of initializing a migration history for a database that: ✔ Existed before you started using Prisma Migrate ✔ Contains data that must be maintained (like production), which means that the database cannot be reset. Baselining tells Prisma Migrate to assume that one or more migrations have already been applied. This prevents generated migrations from failing when they try to create tables and fields that already exist.",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-migrate/workflows/baselining",
     // time: 15
   },
   {
     title: "make CRUD routes?",
-    description: "This page describes how to perform CRUD operations with your generated Prisma Client API. CRUD is an acronym that stands for: Create Read Update Delete Refer to the Prisma Client API reference documentation for detailed explanations of each method.",
+    description:
+      "This page describes how to perform CRUD operations with your generated Prisma Client API. CRUD is an acronym that stands for: Create Read Update Delete Refer to the Prisma Client API reference documentation for detailed explanations of each method.",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-client/queries/crud",
     // time: 15
   },
   {
     title: "get started with models?",
-    description: "The data model definition part of the Prisma schema defines your application models (also called Prisma models). Models: Represent the entities of your application domain Map to the tables (relational databases like PostgreSQL) or collections (MongoDB) in your database Form the foundation of the queries available in the generated Prisma Client API",
+    description:
+      "The data model definition part of the Prisma schema defines your application models (also called Prisma models). Models: Represent the entities of your application domain Map to the tables (relational databases like PostgreSQL) or collections (MongoDB) in your database Form the foundation of the queries available in the generated Prisma Client API",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-schema/data-model/models",
   },
   {
     title: "filter and sort?",
-    description: "Prisma Client supports filtering with the where query option, and sorting with the orderBy query option. Filtering Prisma Client allows you to filter records on any combination of model fields, including related models, and supports a variety of filter conditions.",
+    description:
+      "Prisma Client supports filtering with the where query option, and sorting with the orderBy query option. Filtering Prisma Client allows you to filter records on any combination of model fields, including related models, and supports a variety of filter conditions.",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-client/queries/filtering-and-sorting",
     // time: 15
   },
   {
     title: "query relations?",
-    description: "A key feature of Prisma Client is the ability to query relations between two or more models. Relation queries include: Nested reads (sometimes referred to as eager loading) via select and include Nested writes with transactional guarantees Filtering on related records Prisma Client also has a fluent API for traversing relations.",
+    description:
+      "A key feature of Prisma Client is the ability to query relations between two or more models. Relation queries include: Nested reads (sometimes referred to as eager loading) via select and include Nested writes with transactional guarantees Filtering on related records Prisma Client also has a fluent API for traversing relations.",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-client/queries/relation-queries",
     // time: 15
   },
   {
     title: "migrate my schema?",
-    description: "When working in a team, managing database schema changes can be challenging. This guide shows you how to effectively collaborate on schema changes using Prisma Migrate, ensuring that all team members can safely contribute to and incorporate schema changes.",
+    description:
+      "When working in a team, managing database schema changes can be challenging. This guide shows you how to effectively collaborate on schema changes using Prisma Migrate, ensuring that all team members can safely contribute to and incorporate schema changes.",
     // tags: ["guides", "schema", "orm"],
     url: "/guides/implementing-schema-changes",
     // time: 15
   },
   {
     title: "generate Prisma Client?",
-    description: "Prisma Client is a generated database client that's tailored to your database schema. By default, Prisma Client is generated into the node_modules/.prisma/client folder, but we highly recommend you specify an output location.",
+    description:
+      "Prisma Client is a generated database client that's tailored to your database schema. By default, Prisma Client is generated into the node_modules/.prisma/client folder, but we highly recommend you specify an output location.",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-client/setup-and-configuration/generating-prisma-client",
     // time: 15
-  }
+  },
 ];
