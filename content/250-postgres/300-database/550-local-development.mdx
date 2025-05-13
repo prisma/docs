@@ -1,54 +1,46 @@
 ---
 title: 'Local development'
-metaTitle: 'Local development with Prisma Postgres'
+metaTitle: 'Local development for Prisma Postgres'
 metaDescription: 'Guide to setting up local development using Prisma Postgres'
 tocDepth: 3
 toc: true
 ---
 
-[Prisma Postgres](/postgres) is our production-grade cloud offering, and it is recommended for production and staging setups. 
 
-To simplify your development workflow and make transitioning to production effortless, we've created a local database server compatible with Prisma Postgres, [powered by PGlite](https://pglite.dev/).
+[Prisma Postgres](/postgres) is our production-grade, cloud-native database and is ideal for staging and production environments. For rapid iteration and isolated testing, you can run a local Prisma Postgres instance powered by [PG Lite](https://pglite.dev). This guide shows you how to install and launch a local Prisma Postgres database.
 
-PGlite is a lightweight, in-memory PostgreSQL compatible database packaged as a TypeScript/JavaScript library using WebAssembly ([WASM](https://webassembly.org/)). Learn more in the [PGlite documentation](https://pglite.dev/).
 
-This guide provides instructions for setting up and running your local Prisma Postgres development environment using the PGlite server.
+## Setting up local development for Prisma Postgres
 
-## Setting up local development with Prisma Postgres
+Follow these steps to set up local Prisma Postgres for development.
 
-Follow these steps to locally set up Prisma Postgres for development.
+### 1. Launching local Prisma Postgres
 
-### 1. Launching the local PGlite server
-
-Navigate into your project and start the PGlite server using the following command:
+Navigate into your project and start the local Prisma Postgres server using the following command:
 
 ```terminal
-npx prisma@latest dev
+npx prisma dev
 ```
 
-This starts a local PGlite server that you can connect to using Prisma Client. The server will run in the background and will be available at `localhost:5433` by default.
+This starts a local Prisma Postgres server that you can connect to using Prisma Client. The server will run in the background and will be available at `localhost:51213` by default and will also contain an auto-generated API key.
 
 This should give you an output with `DATABASE_URL` that looks like this:
 
 ```
-Starting Prisma Dev...
-
-
 Great Success!
 
 To connect to your local Prisma Postgres database via Prisma ORM, use the following connection string:
-
-    DATABASE_URL="prisma+postgres://localhost:5433/?dbname=default&dbport=5432&dbuser=postgres"
-
+  
+      DATABASE_URL="prisma+postgres://localhost:51213/?api_key=__API_KEY__"
 ```
 
-Copy the `DATABASE_URL` and  store it in your `.env` file. This will be used to connect to the PGlite server:
+Copy the `DATABASE_URL` and  store it in your `.env` file. This will be used to connect to the local Prisma Postgres server:
 
 ```bash file=.env
-DATABASE_URL="prisma+postgres://localhost:5433/?dbname=default&dbport=5432&dbuser=postgres"
+DATABASE_URL="prisma+postgres://localhost:51213/?api_key=__API_KEY__"
 ```
 
-The `DATABASE_URL` is a connection string that Prisma uses to connect to the PGlite server and is compatible with the [Prisma Postgres extension](https://www.npmjs.com/package/@prisma/extension-accelerate):
+The `DATABASE_URL` is a connection string that Prisma uses to connect to the local Prisma Postgres server and is compatible with the [Prisma Postgres extension](https://www.npmjs.com/package/@prisma/extension-accelerate):
 
 ```ts
 import { withAccelerate } from '@prisma/extension-accelerate'
@@ -56,15 +48,23 @@ import { withAccelerate } from '@prisma/extension-accelerate'
 const prisma = new PrismaClient().$extends(withAccelerate())
 ```
 
-This ensures no additional code changes are needed when switching from PGlite to Prisma Postgres in production.
+This ensures no additional code changes are needed when switching from local Prisma Postgres to Prisma Postgres in production.
+
+Keep the local Prisma Postgres server running in the background while you work on your application. 
 
 ### 2. Applying migrations and seed data
 
-Then run the `prisma migrate dev` command to create the database and run the migrations:
+Then in a separate terminal tab, run the `prisma migrate dev` command to create the database and run the migrations:
 
 ```bash
 npx prisma migrate dev
 ```
+
+:::note
+
+Make sure the local Prisma Postgres server is running before running the `prisma migrate dev` command.
+
+:::
 
 This will create the database and run the migrations. 
 
@@ -72,13 +72,13 @@ If you have a seeder script to seed the database, you should also run it in this
 
 :::note
 
-Currently, our PGlite server does not persist data. This means that if you stop the server, all data will be lost. Hence have to run the migrations and seeds every time you start the PGlite server by using the npx prisma@latest dev command. See the [limitation section below](#no-data-persistence-between-restarts).
+Currently, our local Prisma Postgres server does not persist data. This means that if you stop the server, all data will be lost. Hence have to run the migrations and seeds every time you start the server by using the `npx prisma dev` command. See the [limitation section below](#no-data-persistence-between-restarts).
 
 :::
 
 ### 3. Running your application locally
 
-Start your application's development server. You can now perform queries against the local PGlite database using Prisma ORM. 
+Start your application's development server. You can now perform queries against the local Prisma Postgres instance using Prisma ORM. 
 
 To transition to production, you only need to update the database URL in the `.env` file with a Prisma Postgres connection url without additional application logic changes.
 
@@ -86,7 +86,7 @@ To transition to production, you only need to update the database URL in the `.e
 
 ### No data persistence between restarts
 
-Currently in the local PGlite server, data does not persist after server restart the server. Each time you restart the server (`npx prisma@latest dev`), reapply migrations and seeds:
+Currently in the local Prisma Postgres server, data does not persist after server restart the server. Each time you restart the server (`npx prisma dev`), reapply migrations and seeds:
 
 ```terminal
 npx prisma migrate dev
@@ -97,7 +97,7 @@ Persistent storage will be supported soon.
 
 ### Caching is mocked locally
 
-[Prisma Postgres caching](/postgres/database/caching) is simulated locally. Queries always directly interact with the PGlite database, bypassing cache configurations:
+[Prisma Postgres caching](/postgres/database/caching) is simulated locally. Queries always directly interact with the local Prisma Postgres instance, bypassing cache configurations:
 
 ```typescript
 const users = await prisma.user.findMany({
@@ -105,7 +105,7 @@ const users = await prisma.user.findMany({
 });
 ```
 
-Caching works normally in staging and production when you're using Prisma Postgres.
+Caching works normally when you're using Prisma Postgres in staging and production.
 
 ### Cache invalidation not supported locally
 
@@ -121,5 +121,5 @@ try {
 
 ### Prisma Postgres limitations apply locally
 
-All Prisma Postgres limitations also apply to local development with PGlite. Refer to the [Prisma Postgres limitations documentation](/postgres/more/known-limitations) for detailed information.
+All Prisma Postgres limitations also apply to local development for Prisma Postgres. Refer to the [Prisma Postgres limitations documentation](/postgres/more/known-limitations) for detailed information.
 
