@@ -456,6 +456,7 @@ const sidebars: SidebarsConfig = {
           collapsible: false,
           items: [
             "guides/supabase-accelerate",
+            "guides/neon-accelerate",
           ].sort(),
         },
         {
