@@ -22,11 +22,6 @@ export const Promo = () => {
       color: "teal",
     },
     {
-      text: `Want to react to database changes in your app, as they happen?`,
-      link: "https://pris.ly/sidebar-promo/react-to-database-changes",
-      color: "teal",
-    },
-    {
       text: `Need your database queries to be 1000x faster?`,
       link: "https://pris.ly/sidebar-promo/queries-1000x-faster",
       color: "teal",
