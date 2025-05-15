@@ -7,11 +7,6 @@ export const Promo = () => {
 
   const promoOptions: PromoOptions = [
     {
-      text: `Need to sync data instantly to your applications?`,
-      link: "https://pris.ly/sidebar-promo/sync-data-to-apps",
-      color: "indigo",
-    },
-    {
       text: `Running a serverless backend? You need a managed connection pool.`,
       link: "https://pris.ly/sidebar-promo/managed-connection-pool",
       color: "teal",
@@ -19,11 +14,6 @@ export const Promo = () => {
     {
       text: `Want to make your database perform globally?`,
       link: "https://pris.ly/sidebar-promo/make-your-db-global",
-      color: "teal",
-    },
-    {
-      text: `Want to react to database changes in your app, as they happen?`,
-      link: "https://pris.ly/sidebar-promo/react-to-database-changes",
       color: "teal",
     },
     {

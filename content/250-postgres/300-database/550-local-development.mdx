@@ -1,0 +1,137 @@
+---
+title: 'Local development'
+metaTitle: 'Local development with Prisma Postgres (Early Access)'
+metaDescription: 'Guide to setting up local development using Prisma Postgres (Early Access)'
+tocDepth: 3
+toc: true
+sidebar_class_name: early-access-badge
+---
+
+
+[Prisma Postgres](/postgres) is our production-grade, cloud-native database and is ideal for staging and production environments. For rapid iteration and isolated testing, you can run a local Prisma Postgres instance (powered by [PG Lite](https://pglite.dev)). This guide shows you how to install and launch a local Prisma Postgres database.
+
+:::note
+
+Local Prisma Postgres is in [Early Access](/orm/more/releases#early-access) and is being actively developed.
+
+:::
+
+## Setting up local development for Prisma Postgres
+
+Follow these steps to set up local Prisma Postgres for development.
+
+:::note
+
+Please ensure you're running Node.js 20 or later, as it's required for local Prisma Postgres.
+
+:::
+
+### 1. Launching local Prisma Postgres
+
+Navigate into your project and start the local Prisma Postgres server using the following command:
+
+```terminal
+npx prisma dev
+```
+
+This starts a local Prisma Postgres server that you can connect to using Prisma ORM. 
+
+The output of the command contains a `DATABASE_URL` and looks like this:
+
+```
+Great Success!
+
+To connect to your local Prisma Postgres database via Prisma ORM, use the following connection string:
+  
+      DATABASE_URL="prisma+postgres://localhost:51213/?api_key=__API_KEY__"
+```
+
+Copy the `DATABASE_URL` and  store it in your `.env` file. This will be used to connect to the local Prisma Postgres server:
+
+```bash file=.env
+DATABASE_URL="prisma+postgres://localhost:51213/?api_key=__API_KEY__"
+```
+
+The `DATABASE_URL` is a connection string that Prisma uses to connect to the local Prisma Postgres server and is compatible with the [Prisma Postgres extension](https://www.npmjs.com/package/@prisma/extension-accelerate):
+
+```ts
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+const prisma = new PrismaClient().$extends(withAccelerate())
+```
+
+This ensures no additional code changes are needed when switching from local Prisma Postgres to Prisma Postgres in production.
+
+Keep the local Prisma Postgres server running in the background while you work on your application. 
+
+### 2. Applying migrations and seeding data
+
+Then in a separate terminal tab, run the `prisma migrate dev` command to create the database and run the migrations:
+
+```terminal
+npx prisma migrate dev
+```
+
+:::note
+
+Make sure the local Prisma Postgres server is running before running the `prisma migrate dev` command.
+
+:::
+
+This will create the database and run the migrations. 
+
+If you have a seeder script to seed the database, you should also run it in this step.
+
+:::note
+
+Currently, the local Prisma Postgres server does not persist data. This means that if you stop the server, all data will be lost. Hence have to run the migrations and seeds every time you start the server by using the `npx prisma dev` command. See the [limitation section below](#no-data-persistence-between-restarts).
+
+:::
+
+### 3. Running your application locally
+
+Start your application's development server. You can now perform queries against the local Prisma Postgres instance using Prisma ORM. 
+
+To transition to production, you only need to update the database URL in the `.env` file with a Prisma Postgres connection url without additional application logic changes.
+
+## Known limitations
+
+### No data persistence between restarts
+
+Currently in the local Prisma Postgres server, data does not persist after server restart the server. Each time you restart the server (`npx prisma dev`), reapply migrations and seeds:
+
+```terminal
+npx prisma migrate dev
+npx prisma db seed
+```
+
+Persistent storage will be supported when local Prisma Postgres is [Generally Available](/orm/more/releases#generally-available-ga).
+
+### Caching is mocked locally
+
+[Prisma Postgres caching](/postgres/database/caching) is simulated locally. Queries always directly interact with the local Prisma Postgres instance, bypassing cache configurations:
+
+```typescript
+const users = await prisma.user.findMany({
+  cache: { ttl: 60 },
+});
+```
+
+Caching works normally when you're using Prisma Postgres in staging and production.
+
+### Cache invalidation not supported locally
+
+[Cache invalidation (`$accelerate.invalidate()`)](/postgres/database/api-reference#accelerateinvalidate) is unsupported locally and throws an error. To safely handle this you can use a `try-catch` block:
+
+```typescript
+try {
+  await prisma.$accelerate.invalidate();
+} catch (e) {
+  console.error(e);
+}
+```
+
+### Prisma Postgres limitations apply to the local Prisma Postgres database
+
+All Prisma Postgres limitations also apply to local development for Prisma Postgres. Refer to the [Prisma Postgres limitations documentation](/postgres/more/known-limitations) for detailed information.
+
