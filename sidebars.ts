@@ -410,43 +410,48 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: "category",
-          label: "Framework Guides",
+          label: "Web Frameworks",
           collapsed: false,
           collapsible: false,
           items: [
-            "guides/turborepo",
             "guides/nextjs",
             "guides/nuxt",
-            "guides/tanstack-start",
-            "guides/react-router-7",
-            "guides/solid-start",
             "guides/sveltekit",
             "guides/astro",
+            "guides/solid-start",
+            "guides/react-router-7",
+            "guides/tanstack-start",
+            "guides/turborepo",
           ].sort(),
         },
         {
           type: "category",
-          label: "Database Guides",
-          collapsed: false,
-          collapsible: false,
-          items: [
-            "guides/cloudflare-d1",
-            "guides/data-migration",
-            "guides/implementing-schema-changes",
-            "guides/multiple-databases",
-          ].sort(),
-        },
-        {
-          type: "category",
-          label: "Tool Guides",
+          label: "Development Tools",
           collapsed: false,
           collapsible: false,
           items: [
             "guides/docker",
             "guides/use-prisma-in-pnpm-workspaces",
-            "guides/clerk-nextjs",
             "guides/data-dog",
-            "guides/shopify",
+          ].sort(),
+        },
+        {
+          type: "category",
+          label: "Integration Solutions",
+          collapsed: false,
+          collapsible: false,
+          items: ["guides/clerk-nextjs", "guides/shopify"].sort(),
+        },
+        {
+          type: "category",
+          label: "Database Management",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            "guides/implementing-schema-changes",
+            "guides/multiple-databases",
+            "guides/cloudflare-d1",
+            "guides/data-migration",
           ].sort(),
         },
         {
@@ -461,7 +466,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Migration Guides",
+          label: "ORM Migration",
           collapsed: false,
           collapsible: false,
           items: [
