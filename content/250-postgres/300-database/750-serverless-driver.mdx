@@ -24,10 +24,18 @@ The recommended API for most users is the `ppg` function, which returns a high-l
 ```ts
 import { ppg } from "@prisma/ppg";
 
+type Post = {
+  id: number;
+  title: string;
+  content: string | null;
+  published: boolean;
+  authorId: number | null;
+}
+
 const sql = ppg("prisma+postgres://accelerate.prisma-data.net/?api_key=...");
 
 const authorId = 1;
-const posts = await sql`SELECT * FROM "Post" WHERE "authorId" = ${authorId}`;
+const posts = await sql<Post>`SELECT * FROM "Post" WHERE "authorId" = ${authorId}`;
 ```
 
 ## API reference
@@ -38,12 +46,29 @@ The `ppg` function returns a high-level SQL client implemented as a template lit
 
 ```ts
 function ppg(connectionString: string, deserialize?: Deserialize): Sql;
+
+interface Sql {
+    <Record = unknown>(strings: TemplateStringsArray, ...values: unknown[]): Promise<Record[]>;
+    /**
+     * Executes a raw query defined as a string with placeholders and the list
+     * of parameters.
+     *
+     * ```ts
+     * const [user] = await sql.query<User>("SELECT * FROM users WHERE id = $1", [id]);
+     * ```
+     */
+    query<Record>(query: string, ...params: unknown[]): Promise<Record[]>;
+}
+type Deserialize = (value: unknown, oid: unknown) => unknown;
 ```
 
-The returned `Sql` function:
+The returned `Sql` object:
 
 - Accepts a SQL statement as a template literal. If this contains any interpolated values, these are automatically converted to SQL parameters in order to prevent SQL injection attacks (see below for an example).
 - Returns the data as an array of objects mirroring the structure of your Prisma models.
+- Provides a `query` function which:
+  - Takes a raw string and a list of params separately, allowing you to control the SQL parameters yourself or concatenate the query unsafely if needed.
+  - Returns column types and raw data without converting the rows into an array of objects.
 
 #### Arguments
 
@@ -56,17 +81,46 @@ The `ppg` function accepts the following arguments:
 
 #### Usage
 
+##### With manual type definitions
+
+```ts
+import { ppg } from "@prisma/ppg";
+
+type Post = {
+  id: number;
+  title: string;
+  content: string | null;
+  published: boolean;
+  authorId: number | null;
+}
+
+type User = {
+  id: number;
+  email: string
+}
+
+const sql = ppg("prisma+postgres://accelerate.prisma-data.net/?api_key=...");
+
+const posts: Post[] = await sql<Post>`SELECT * FROM "Post"`
+
+const userId = 42;
+const user: User[] = await sql<User>`SELECT * FROM "User" WHERE "id" = ${userId}`
+```
+
+##### With generated Prisma Client types
+
 ```ts
 import { ppg } from "@prisma/ppg";
 import type { User, Post } from "@prisma/client";
 
 const sql = ppg("prisma+postgres://accelerate.prisma-data.net/?api_key=...");
 
-const posts: Post[] = (await sql`SELECT * FROM "Post"`) as Post[];
+const posts: Post[] = await sql<Post>`SELECT * FROM "Post"`
 
 const userId = 42;
-const user: User = (await sql`SELECT * FROM "User" WHERE "id" = ${userId}`) as User;
+const user: User[] = await sql<User>`SELECT * FROM "User" WHERE "id" = ${userId}`
 ```
+
 
 ### `Client`
 
@@ -97,7 +151,7 @@ const client = new Client({
   connectionString: "prisma+postgres://accelerate.prisma-data.net/?api_key=...",
 });
 
-const posts = await client.query('SELECT * FROM "Post" WHERE "userId" = $1', [1]);
+const posts = await client.query('SELECT * FROM "Post" WHERE "authorId" = $1', [1]);
 ```
 
 ## Limitations
