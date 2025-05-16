@@ -1,0 +1,100 @@
+---
+title: "Serverless driver"
+metaTitle: "Serverless driver"
+metaDescription: "The Prisma serverless driver enables direct access to Prisma Postgres via HTTP."
+tocDepth: 3
+toc: true
+sidebar_class_name: early-access-badge
+---
+
+The serverless driver for Prisma Postgres is a lightweight and minimal client library that can talk to Prisma Postgres using raw SQL. You can use it via the [`@prisma/ppg`](https://github.com/prisma/ppg-client/tree/main) npm package.
+
+## Overview
+
+### Installation
+
+Install the serverless driver via npm:
+
+```terminal
+npm install @prisma/ppg
+```
+
+### Usage
+
+The recommended API for most users is the `ppg` function, which returns a high-level SQL client implemented as a template literal tag function:
+
+```ts
+import { ppg } from "@prisma/ppg";
+
+const sql = ppg("prisma+postgres://accelerate.prisma-data.net/?api_key=...");
+
+const userId = 1;
+const posts = await sql`SELECT * FROM "Post" WHERE "userId" = ${userId}`;
+```
+
+## API reference
+
+### `ppg`
+
+The `ppg` function returns a high-level SQL client implemented as a template literal tag function:
+
+```ts
+function ppg(connectionString: string, deserialize?: Deserialize): Sql;
+```
+
+The returned `Sql` function:
+
+- Accepts a SQL statement as a template literal. If this contains any interpolated values, these are automatically converted to SQL parameters in order to prevent SQL injection attacks (see below for an example).
+- Returns the data as an array of objects mirroring the structure of your Prisma models.
+
+#### Arguments
+
+The `ppg` function accepts the following arguments:
+
+| Name               | Type          | Required | Description                                                                                                                                                                                   |
+| :----------------- | :------------ | :------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connectionString` | `string`      | **Yes**  | The connection string for your Prisma Postgres instance.                                                                                                                                      |
+| `deserialize`      | `Deserialize` | No       | Custom deserializer function which takes a column type OID and a raw value and returns a mapped value. It's type is defined as `type Deserialize = (value: unknown, oid: unknown) => unknown` |
+
+#### Usage
+
+```ts
+import { ppg } from "@prisma/ppg";
+import type { User, Post } from "@prisma/client";
+
+const sql = ppg("prisma+postgres://accelerate.prisma-data.net/?api_key=...");
+
+const posts: Post[] = (await sql`SELECT * FROM "Post"`) as Post[];
+
+const userId = 42;
+const user: User = (await sql`SELECT * FROM "User" WHERE "id" = ${userId}`) as User;
+```
+
+### `Client`
+
+The `Client` class provides more low-level control and should be used with more care. It aims to be a drop-in replacement for the [`pg`](https://node-postgres.com/) driver.
+
+The `query` function it exposes:
+
+- Takes a raw string and a list of params separately, allowing you to control the SQL parameters yourself or concatenate the query unsafely if needed.
+- Returns column types and raw data without converting the rows into an array of objects.
+
+#### Usage
+
+```ts
+import { Client } from "@prisma/ppg";
+
+const client = new Client({
+  connectionString: "prisma+postgres://accelerate.prisma-data.net/?api_key=...",
+});
+
+const posts = await client.query('SELECT * FROM "Post" WHERE "userId" = $1', [1]);
+```
+
+## Limitations
+
+- No transaction support.
+- No DDL support.
+- No [local Prisma Postgres](/postgres/local-development) support.
+- Requires ESM.
+
