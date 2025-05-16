@@ -456,6 +456,16 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
+          label: "Connection Pooling Guides",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            "guides/supabase-accelerate",
+            "guides/neon-accelerate",
+          ].sort(),
+        },
+        {
+          type: "category",
           label: "ORM Migration",
           collapsed: false,
           collapsible: false,
