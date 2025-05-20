@@ -59,6 +59,8 @@ VS Code should now recognize the `$extends` method.
 
 ## Pricing
 
+Prisma Postgres bills based on operations and storage consumed. Visit the [pricing page](https://www.prisma.io/pricing) for rates and the [operations-based billing](https://www.prisma.io/blog/operations-based-billing) blog post for a detailed explanation on operations-based pricing.
+
 ### Does query execution time affect pricing in Prisma Postgres?
 
 No, cost for Prisma Postgres is based solely on the _number of operations_ (i.e. Prisma ORM queries), not the amount of compute required to execute them. 
@@ -72,6 +74,123 @@ Yes, read and write queries are counted equally as _operations_ and are billed t
 ### Does a `SELECT 1` query count as a billable operation?
 
 Yes, if submitted via Prisma ORM, a query like `SELECT 1` counts as an operation and will be billed accordingly (even if no actual data is accessed in the query).
+
+### How do I monitor my Prisma Postgres operation usage?
+
+You can monitor your operation usage by integrating an application performance monitoring tool like Prometheus with Prisma ORM's [`metrics` preview feature](/orm/prisma-client/observability-and-logging/metrics). Once you enable the `metrics` preview feature, you can look at the `prisma_client_queries_total` metric. 
+
+Prisma Postgres uses the `prisma_client_queries_total` counter, which tracks every client operation sent to your database to calculate your billing. For a detailed, step-by-step walkthrough on configuring Prometheus and monitor your application, [see our full guide](https://www.prisma.io/blog/metrics-tutorial-prisma-pmoldgq10kz).
+
+### What strategies can I use to optimize cost per operation?
+
+Prisma Postgres bills by operation. The more you can perform using a single operation, the lower your bill. Some suggestions to reduce the number of operations:
+
+- [**Batch your writes**](/orm/prisma-client/queries/transactions#batchbulk-operations) with `createMany`, `updateMany`, or `deleteMany` instead of looping over single-row calls.
+
+  ```ts
+  // One operation, three users
+  await prisma.user.createMany({
+    data: [
+      { name: 'Alice' },
+      { name: 'Bob'   },
+      { name: 'Carol' },
+    ],
+  })
+  ```
+
+- **Use nested-relation helpers** such as [`connectOrCreate`](/orm/reference/prisma-client-reference#connectorcreate) or [`set`](/orm/reference/prisma-client-reference#set) to create or link related records in a single operation.
+
+  ```ts
+  // Post and (if needed) its author, all in one request
+  await prisma.post.create({
+    data: {
+      title: 'Hello World',
+      author: {
+        connectOrCreate: {
+          where:  { email: 'alice@example.com' },
+          create: { name: 'Alice', email: 'alice@example.com' },
+        },
+      },
+    },
+  })
+  ```
+
+- **Prefer regular (array) [transactions](/orm/prisma-client/queries/transactions#transaction-api) over [interactive transactions](/orm/prisma-client/queries/transactions#interactive-transactions)** when the individual queries don't depend on each other.
+
+  ```ts
+  // Interactive transaction: counted as 2 operations
+  await prisma.$transaction(async (tx) => {
+    await tx.user.create({ data: { name: 'Alice' } })
+    await tx.post.create({ data: { title: 'Hello', authorId: 1 } })
+  })
+
+  // Array transaction: counted as 1 operation
+  await prisma.$transaction([
+    prisma.user.create({ data: { name: 'Alice' } }),
+    prisma.post.create({ data: { title: 'Hello', authorId: 1 } }),
+  ])
+  ```
+
+If a later query needs the result of an earlier one (for example, you need the user ID you just created), stick with an interactive transaction for correctness. Otherwise, batching and array transactions let you collapse multiple queries into a single billed operation, keeping both your operation count, and your cost down.
+
+### Is there a sample workload to estimate my expected charges?
+
+You can use the three example scenarios and estimate bills for small, medium, and large apps. Each combines a realistic number of monthly active users (MAUs), a typical level of daily activity per user, and a rounded storage footprint:
+
+- **Small**: A hobby or early-stage side-project with ≈`500` MAUs. Each user clicks around `10` times a day, and the entire database uses about `0.5` GB of storage.
+- **Medium**: A growing SaaS product serving ≈ `5000` MAUs. Power users average `40` actions per day, and the app stores roughly `6` GB of data.
+- **Large**: A production-grade, consumer-facing application handling ≈ `50000` MAUs. Heavy usage with `60` actions per user per day drives significant traffic, and the dataset reaches ≈ `40` GB.
+
+All three examples assume the standard allowances (`100000` free operations and `1` GB of free storage each month) plus the published rates:
+
+- **Starter plan** - \$18 per million operations
+  - Storage - 1 GB free then \$2 per additional GB
+- **Pro plan** - \$8 per million operations
+  - Storage - 5 GB free then \$1.5 per additional GB
+- **Business plan** - \$6 per million operations
+  - Storage - 10 GB free then \$1 per additional GB
+
+
+The workloads above translate into monthly charges with the same set of equations; just drop in your own MAUs, activity, and storage.
+
+```
+total_ops            = MAUs x actions_per_user_per_day x 30      
+billable_ops         = MAX(total_ops - 100_000, 0)
+ops_cost             = (billable_ops ÷ 1_000_000) x plan_rate
+
+billable_storage_GB  = MAX(storage_used_GB - free_storage_for_plan, 0)
+storage_cost         = billable_storage_GB x storage_rate_for_plan
+
+total_monthly_cost   = ops_cost + storage_cost
+```
+
+Applying those formulas to the three sample workloads:
+
+Small app on the Starter plan:
+- `total_ops` = `500` x `10` x `30` = `150000`
+- `billable_ops` = `50000`
+- `ops_cost` = (`50000` ÷ `1000000`) x $`18` ≈ $ `0.90`
+- `storage_cost` = 0 GB (0.5 GB is below the 1 GB free tier)
+
+`total_monthly_cost` ≈ $ 0.90 per month
+
+Medium app on the Pro plan:
+- `total_ops` = `5000` x `40` x `30` = `6000000`
+- `billable_ops` = `5900000`
+- `ops_cost` = (`5900000` ÷ `100000`) = `5.9` x $`8` ≈ $ `47.20`
+- `storage_cost` = (`6` GB - `5` GB) x $`1.50` = $ `1.50`
+
+`total_monthly_cost` ≈ $ 48.70 per month
+
+Large app on the Business plan:
+- total_ops = `50000` x `60` x `30` = `90000000`
+- billable_ops = `89900000`
+- ops_cost = (`89900000` ÷ `100000`) = `89.9` x $`6` ≈ $ `539.40`
+- storage_cost = (`40` GB - `10` GB) x $1 = $ `30.00`
+
+`total_monthly_cost` ≈ $ 569.40 per month
+
+Swap in your own MAU count, activity level, and storage footprint to project costs on any plan.
 
 ## Caching 
 
