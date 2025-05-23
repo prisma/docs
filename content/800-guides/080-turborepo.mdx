@@ -25,7 +25,7 @@ This guide will show you how to set up Prisma as a standalone package in a Turbo
 ### Prerequisites
 - [Node.js 18+](https://nodejs.org/)
 
-## 1. Create your monorepo using turborepo
+## 1. Set up your project
 
 To set up a Turborepo monorepo named `turborepo-prisma`, run the following command:
 
@@ -65,7 +65,9 @@ After the setup, choose a package manager for the project. Navigate to the proje
 
 For more information about installing Turborepo, refer to the [official Turborepo guide](https://turbo.build/repo/docs/getting-started/installation).
 
-## 2. Add a new `database` package to the `turborepo-prisma` monorepo
+## 2. Add a new `database` package to the monorepo
+
+### 2.1 Create the package and install Prisma
 
 Create a `database` package within the `packages` directory. Then, create a `package.json` file for the package by running:
 
@@ -88,7 +90,6 @@ Define the `package.json` file as follows:
 Next, install the required dependencies to use Prisma ORM. Use your preferred package manager:
 
 <TabbedContent code groupId="packageManager">
-
 <TabItem value="npm">
 
 ```terminal
@@ -115,10 +116,41 @@ pnpm add @prisma/client
 ```
 
 </TabItem>
-
 </TabbedContent>
 
-## 3. Initialize prisma by running `prisma init`
+:::note
+
+If using [Prisma Postgres](https://prisma.io/postgres), install the `@prisma/extension-accelerate` package:
+
+<TabbedContent code groupId="packageManager">
+<TabItem value="npm">
+
+```terminal
+npm install @prisma/extension-accelerate
+```
+
+</TabItem>
+
+<TabItem value="yarn">
+
+```terminal
+yarn add @prisma/extension-accelerate
+```
+
+</TabItem>
+
+<TabItem value="pnpm">
+
+```terminal
+pnpm add @prisma/extension-accelerate
+```
+
+</TabItem>
+</TabbedContent>
+
+:::
+
+### 2.2. Initialize Prisma and define models
 
 Inside the `database` directory, initialize prisma by running:
 
@@ -195,7 +227,7 @@ It is recommended to add `../generated/prisma` to the `.gitignore` file because 
 
 :::
 
-### The importance of generating Prisma types in a [custom directory](/orm/prisma-client/setup-and-configuration/generating-prisma-client#using-a-custom-output-path)
+#### The importance of generating Prisma types in a [custom directory](/orm/prisma-client/setup-and-configuration/generating-prisma-client#using-a-custom-output-path)
 
 In the `schema.prisma` file, we specify a custom `output` path where Prisma will generate its types. This ensures Prisma's types are resolved correctly across different package managers.
 
@@ -205,7 +237,7 @@ In this guide, the types will be generated in the `database/generated/prisma` di
 
 :::
 
-## 4. Create scripts to execute Prisma CLI commands
+### 2.3. Add scripts and run migrations
 
 Let's add some scripts to the `package.json` inside `packages/database`:
 
@@ -267,7 +299,7 @@ Let's also add these scripts to `turbo.json` in the root:
 }
 ```
 
-#### 1. Migrate your `prisma.schema` and generate types
+Migrate your `prisma.schema` and generate types
 
 Navigate to the project root and run the following command to automatically migrate our database:
 
@@ -300,7 +332,7 @@ Navigate to the project root and run the following command to automatically migr
 </TabbedContent>
 
 
-#### 2. Generate your `prisma.schema`
+Generate your `prisma.schema`
 
 To generate the types from Prisma schema, from the project root run:
 
@@ -332,11 +364,30 @@ To generate the types from Prisma schema, from the project root run:
 
 </TabbedContent>
 
-## 5. Export prisma types and an instance of `PrismaClient` to be used across the monorepo
+### 2.4. Export the Prisma client and types
 
 Next, export the generated types and an instance of `PrismaClient` so it can used in your applications. 
 
 In the `packages/database` directory, create a `src` folder and add a `client.ts` file. This file will define an instance of `PrismaClient`:
+
+<TabbedContent code>
+<TabItem value="Prisma Postgres (recommended)">
+
+```ts file=packages/database/src/client.ts
+import { PrismaClient } from "../generated/prisma";
+import { withAccelerate } from "@prisma/extension-accelerate";
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+export const prisma =
+  globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate());
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+```
+
+</TabItem>
+
+<TabItem value="Other databases">
 
 ```ts file=packages/database/src/client.ts
 import { PrismaClient } from "../generated/prisma";
@@ -348,6 +399,9 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
+
+</TabItem>
+</TabbedContent>
 
 Then create an `index.ts` file in the `src` folder to re-export the generated prisma types and the `PrismaClient` instance:
 
@@ -390,8 +444,7 @@ If you're not using a bundler, use the [Compiled Packages](https://turborepo.com
 
 By completing these steps, you'll make the Prisma types and `PrismaClient` instance accessible throughout the monorepo.
 
-## 6. Importing the `database` package into the `web` app in the monorepo
-
+## 3. Import the `database` package in the web app
 The `turborepo-prisma` project should have an app called `web` at `apps/web`. Add the `database` dependency to `apps/web/package.json`:
 
 <TabbedContent code>
@@ -514,7 +567,7 @@ Keep in mind that Turborepo [recommends using separate `.env` files for each pac
 
 :::
 
-## 7. Setup dependent tasks
+## 4. Configure task dependencies in Turborepo
 
 The `db:generate` and `db:deploy` scripts are not yet optimized for the monorepo setup but are essential for the `dev` and `build` tasks. 
 
@@ -560,7 +613,7 @@ To prevent this, ensure that `db:generate` is always executed before running `de
 
 ```
 
-## 8. Run the project in development
+## 5. Run the project in development
 
 :::warning
 
