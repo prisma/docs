@@ -476,6 +476,24 @@ const sidebars: SidebarsConfig = {
             "guides/migrate-from-drizzle",
           ].sort(),
         },
+        {
+          type: "category",
+          label: "DB Migration",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            {
+              type: "link",
+              label: "From Neon",
+              href: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
+            },
+            {
+              type: "link",
+              label: "From Supabase",
+              href: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
+            }
+          ],
+        },
       ],
     },
   ],
