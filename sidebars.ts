@@ -484,12 +484,12 @@ const sidebars: SidebarsConfig = {
           items: [
             {
               type: "link",
-              label: "From Neon",
+              label: "Neon",
               href: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
             },
             {
               type: "link",
-              label: "From Supabase",
+              label: "Supabase",
               href: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
             }
           ],
