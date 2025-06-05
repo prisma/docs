@@ -241,46 +241,47 @@ The following example sends output tracing to the console with `ConsoleSpanExpor
 
 ```ts
 // Imports
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import * as api from '@opentelemetry/api';
 import {
-  BasicTracerProvider,
-  ConsoleSpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base'
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks'
-import * as api from '@opentelemetry/api'
-import { PrismaInstrumentation, registerInstrumentations } from '@prisma/instrumentation'
-import { Resource } from '@opentelemetry/resources'
+  PrismaInstrumentation,
+  registerInstrumentations,
+} from '@prisma/instrumentation';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 
 // Export the tracing
 export function otelSetup() {
-  const contextManager = new AsyncHooksContextManager().enable()
+  const contextManager = new AsyncHooksContextManager().enable();
 
-  api.context.setGlobalContextManager(contextManager)
+  api.context.setGlobalContextManager(contextManager);
 
   //Configure the console exporter
-  const consoleExporter = new ConsoleSpanExporter()
+  const consoleExporter = new ConsoleSpanExporter();
 
   // Configure the trace provider
-  const provider = new BasicTracerProvider({
-    resource: new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: 'test-tracing-service',
-      [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+  const provider = new NodeTracerProvider({
+    resource: resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'example application', // Replace with your service name
+      [ATTR_SERVICE_VERSION]: '0.0.1', // Replace with your service version
     }),
-  })
-
-  // Configure how spans are processed and exported. In this case we're sending spans
-  // as we receive them to the console
-  provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter))
+    spanProcessors: [
+      // Configure how spans are processed and exported. In this case, we're sending spans
+      // as we receive them to the console
+      new SimpleSpanProcessor(consoleExporter),
+    ],
+  });
 
   // Register your auto-instrumentors
   registerInstrumentations({
     tracerProvider: provider,
     instrumentations: [new PrismaInstrumentation()],
-  })
+  });
 
   // Register the provider
-  provider.register()
+  provider.register();
 }
 ```
 
@@ -403,8 +404,8 @@ You can adjust how your application's traces are grouped by changing the resourc
 ```js
 const provider = new NodeTracerProvider({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'weblog',
-    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+    [ATTR_SERVICE_NAME]: 'weblog',
+    [ATTR_SERVICE_VERSION]: '1.0.0',
   }),
 })
 ```
@@ -428,13 +429,20 @@ You can configure your tracing configuration to use the appropriate span process
 import {
   SimpleSpanProcessor,
   BatchSpanProcessor,
-} from '@opentelemetry/sdk-trace-base'
+} from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
+const spanProcessors = [];
 if (process.env.NODE_ENV === 'production') {
-  provider.addSpanProcessor(new BatchSpanProcessor(otlpTraceExporter))
+  spanProcessors.push(new BatchSpanProcessor(otlpTraceExporter));
 } else {
-  provider.addSpanProcessor(new SimpleSpanProcessor(otlpTraceExporter))
+  spanProcessors.push(new SimpleSpanProcessor(otlpTraceExporter));
 }
+
+const provider = new NodeTracerProvider({
+  spanProcessors,
+  // ...other configurations
+});
 ```
 
 #### Send fewer spans to the collector with sampling
@@ -444,21 +452,21 @@ Another way to reduce the performance impact is to [use probability sampling](ht
 An example implementation looks like this:
 
 ```ts highlight=3,7;add
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
-//add-next-line
-import { TraceIdRatioBasedSampler } from '@opentelemetry/core'
-import { Resource } from '@opentelemetry/resources'
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { TraceIdRatioBasedSampler } from '@opentelemetry/core';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 
 const provider = new NodeTracerProvider({
   //add-next-line
   sampler: new TraceIdRatioBasedSampler(0.1),
-  resource: new Resource({
+  resource: resourceFromAttributes({
     // we can define some metadata about the trace resource
-    [SemanticResourceAttributes.SERVICE_NAME]: 'test-tracing-service',
-    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+    [ATTR_SERVICE_NAME]: 'test-tracing-service',
+    [ATTR_SERVICE_VERSION]: '1.0.0',
   }),
-})
+});
+
 ```
 
 ## Troubleshoot tracing
