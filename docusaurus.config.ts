@@ -9,8 +9,7 @@ const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
 
 const config: Config = {
   future: {
-    // See https://github.com/facebook/docusaurus/issues/10556
-    experimental_faster: true,
+    v4: true,
   },
   title: "Prisma Documentation",
   tagline:

@@ -15,7 +15,7 @@ This guide provides step-by-step instructions for importing data from an existin
 You can accomplish this migration in four steps:
 
 1. Create a new Prisma Postgres database.
-1. Connect directly to a Prisma Postgres instance using the [`@prisma/ppg-tunnel` package](https://www.npmjs.com/package/@prisma/ppg-tunnel).
+1. Connect directly to a Prisma Postgres instance using a [direct connection](/postgres/database/direct-connections).
 1. Migrate your MySQL data to Prisma Postgres using [pgloader](https://pgloader.io/).
 1. Configure your Prisma project for Prisma Postgres.
 
@@ -39,75 +39,30 @@ Follow these steps to create a new Prisma Postgres database:
 1. In the **Region** dropdown, select the region that's closest to your current location, e.g. **US East (N. Virginia)**.
 1. Click the **Create project** button.
 
-Once your database was provisioned, find your Prisma Postgres connection URL in the **Set up database access** section and save it for later, you'll need it in the next step.
+Once your database was provisioned, find your direct Prisma Postgres connection string:  
+
+1. Navigate to your active Prisma Postgres instance.
+1. Click the **API Keys** tab in the project's sidenav.
+1. Click the **Create API key** button.
+1. In the popup, provide a **Name** for the API key and click **Create**.
+1. Copy the connection string starting with `postgres://`, this is your direct connection string.
+
+Save the connection string, you'll need it in the next step.
 
 ## 2. Connect directly to a Prisma Postgres instance
 
-In this step, you'll use a secure [TCP tunnel](/postgres/database/tcp-tunnel) to connect to your Prisma Postgres instance.
+In this step, you'll use a [direct connection](/postgres/database/direct-connections) to connect to your Prisma Postgres instance.
 
 You'll need the Prisma Postgres connection URL from [step 1](/getting-started/prisma-postgres/import-from-existing-database-mysql#1-create-a-new-prisma-postgres-database):
 
 ```no-copy
 prisma+postgres://accelerate.prisma-data.net/?api_key=ey...
 ```
-If you already have a `.env` file in your current directory with `DATABASE_URL` set, the tunnel CLI will automatically pick it up, no need to manually export it. However, if you haven't set up a `.env` file, you'll need to set the `DATABASE_URL` environment variable explicitly.
 
-To set the environment variable, open your terminal and set the `DATABASE_URL` environment variable to the value of your Prisma Postgres database URL (replace the `__API_KEY__` placeholder with the API key of your actual database connection URL):
-
-```terminal
-export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
-```
-
-:::note
-If you explicitly set `DATABASE_URL` in your terminal, that value will take precedence over the one in your `.env` file.
-:::
-
-Next, start the TCP tunnel using the `@prisma/ppg-tunnel` package, by executing the following command:
-
-<CodeWithResult outputResultText="" expanded={true}>
-<cmd>
-
-```terminal
-npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5433 
-```
-
-:::note
-
-You can [specify a different host and port](/postgres/database/tcp-tunnel#customizing-host-and-port) by providing your own host and port values using the `--port` and `--host` flags. Just be sure to use the same host and port values consistently throughout the guide.
-
-:::
-
-</cmd>
-
-<cmdResult>
-
-```code no-copy wrap
-Prisma Postgres auth proxy listening on 127.0.0.1:5433 🚀
-
-Your connection is authenticated using your Prisma Postgres API key.
-...
-
-==============================
-hostname:  127.0.0.1
-port:      5433
-username:  <anything>
-password:  <none>
-==============================
-```
-
-</cmdResult>
-
-</CodeWithResult>
-
-:::note
-
-*Keep your current terminal window or tab open* so that the tunnel process continues running and the connection remains open.
-
-:::
 
 ## 3. Migrate your MySQL data to Prisma Postgres using pgloader
 
-Now that you have an active connection to your Prisma Postgres instance, you'll use pgloader to export data from your MySQL database to Prisma Postgres.
+Now that you have an active connection to your Prisma Postgres instance, you'll use [pgloader](https://pgloader.io/) to export data from your MySQL database to Prisma Postgres.
 
 Open a separate terminal window and create a `config.load` file:
 
@@ -120,7 +75,7 @@ Open the `config.load` file in your preferred text editor and copy-paste the fol
 ```text file=config.load
 LOAD DATABASE
     FROM mysql://username:password@host:PORT/database_name
-    INTO postgresql://user:password@127.0.0.1:5433/postgres
+    INTO postgres://__USER__:__PASSWORD__@postgres.prisma-data.net:5432/?sslmode=require
 
 WITH quote identifiers,    -- preserve table/column name case by quoting them
      include drop,
@@ -137,7 +92,7 @@ Make sure to update the following details in the `config.load` file:
   - Replace `username`, `password`, `host`, `PORT`, and `database_name` with the actual connection details for your MySQL database.
   - Ensure that your connection string includes `useSSL=true` if SSL is required, for example: `mysql://username:password@host:PORT/database_name?useSSL=true`. Note that when using PlanetScale, appending `sslaccept=strict` will not work.
 - `INTO` url (Postgres database URL): 
-  - Update this with your TCP tunnel details if you’re using a custom `host` and `port` (in this example, it’s `127.0.0.1` and port `5433` for consistency).
+  - Update this with your direct connection string from above, replacing the `__USER__` and `__PASSWORD__` placeholders.
 - Update the `database_name` in `ALTER SCHEMA 'database_name' RENAME TO 'public';` to exactly match the `database_name` in your MySQL connection string. 
 
 After saving the configuration file with your updated credentials, in the same terminal window, execute the following command:

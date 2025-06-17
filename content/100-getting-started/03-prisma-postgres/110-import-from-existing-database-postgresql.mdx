@@ -18,7 +18,7 @@ You can accomplish this migration in three steps:
 1. Export your existing data via `pg_dump`.
 1. Import the previously exported data into Prisma Postgres via `pg_restore`.
 
-In the third step, you will be using the [TCP tunnel](/postgres/database/tcp-tunnel) to securely connect to your Prisma Postgres database during to run `pg_restore`.
+In the third step, you will be using a [direct connection](/postgres/database/direct-connections) to securely connect to your Prisma Postgres database during to run `pg_restore`.
 
 ## Prerequisites
 
@@ -26,50 +26,6 @@ In the third step, you will be using the [TCP tunnel](/postgres/database/tcp-tun
 - A [Prisma Data Platform](https://console.prisma.io) account
 - Node.js 18+ installed
 - PostgreSQL CLI Tools (`pg_dump`, `pg_restore`) for creating and restoring backups
-
-<!-- ### Installing PostgreSQL 16 utilities
-
-To create and restore backups, ensure you have the PostgreSQL 16 command-line tools installed. Run the following commands based on your operating system:
-
-<TabbedContent code>
-
-<TabItem value="macOS">
-
-```terminal
-brew install postgresql@16
-which pg_dump
-which pg_restore
-```
-
-</TabItem>
-
-<TabItem value="Windows">
-```terminal
-# Download from the official PostgreSQL website:
-# https://www.postgresql.org/download/windows/
-# During installation, select "Command Line Tools".
-# Then verify with:
-
-where pg_dump
-where pg_restore
-```
-</TabItem>
-
-<TabItem value="Linux">
-```terminal
-sudo apt-get update
-sudo apt-get install postgresql-client-16
-which pg_dump
-which pg_restore
-```
-</TabItem>
-
-</TabbedContent>
-
-:::tip
-If you installed PostgreSQL but still see a “command not found” error for pg_dump or pg_restore, ensure your installation directory is in your system’s PATH environment variable.
-::: -->
-
 
 ## 1. Create a new Prisma Postgres database
 
@@ -82,7 +38,7 @@ Follow these steps to create a new Prisma Postgres database:
 1. In the **Region** dropdown, select the region that's closest to your current location, e.g. **US East (N. Virginia)**.
 1. Click the **Create project** button.
 
-Once your database was provisioned, find your Prisma Postgres connection URL in the **Set up database access** section and save it for later, you'll need it in step 3.
+With your Prisma Postgres instance being created, you can move to the next step.
 
 ## 2. Export data from your existing database
 
@@ -118,18 +74,6 @@ Expand below for provider-specific instructions that help you determine the righ
     ```no-copy
     postgres://postgres.apbkobhfnmcqqzqeeqss:[YOUR-PASSWORD]@aws-0-ca-central-1.pooler.supabase.com:5432/postgres
     ```
-<!-- - Include the argument `-n public` to only dump the public schema.
-
-Your command would look like: -->
-
-<!-- ```
-pg_dump \                                           
-  -Fc \
-  -v \
-  -d "postgresql://user:password@host:port/db" \
-  -n public \
-  -f db_dump.bak
-``` -->
 
 </details>
 
@@ -156,81 +100,58 @@ Running this command will create a backup file named `db_dump.bak` which you wil
 
 ## 3. Import data into Prisma Postgres
 
-In this step, you'll use the [TCP tunnel](/postgres/database/tcp-tunnel) to connect to your Prisma Postgres instance and import data via `pg_restore`.
+In this section, you'll use a [TCP Tunnel](/postgres/database/direct-connections#tcp-tunnel) in order to connect to your Prisma Postgres instance and import data via `pg_restore`.
 
-You'll also need the Prisma Postgres connection URL from step 1, it should look similar to this:
+### 3.1. Connecting to the Prisma Postgres Database with `@prisma/ppg-tunnel`
 
-```no-copy
-prisma+postgres://accelerate.prisma-data.net/?api_key=ey...
+Open a new terminal and set the environment variable for your Prisma Postgres database connection URL. 
+
+```bash
+export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."
 ```
 
-If you already have a `.env` file in your current directory with `DATABASE_URL` set, the tunnel CLI will automatically pick it up, no need to manually export it. However, if you haven't set up a `.env` file, you'll need to set the `DATABASE_URL` environment variable explicitly.
-
-To set the environment variable, open your terminal and set the `DATABASE_URL` environment variable to the value of your Prisma Postgres database URL (replace the `__API_KEY__` placeholder with the API key of your actual database connection URL):
-
-```terminal
-export DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=__API_KEY__"
-```
-:::note
-If you explicitly set `DATABASE_URL` in your terminal, that value will take precedence over the one in your `.env` file.
-:::
-
-Next, start the TCP tunnel:
-
-<CodeWithResult outputResultText="" expanded={true}>
-
-<cmd>
-
-```terminal
-npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5433 
+Run the tunnel:
+```bash
+npx @prisma/ppg-tunnel --host 127.0.0.1 --port 5432
 ```
 
-</cmd>
+You should see output similar to:
 
-<cmdResult>
-
-```code no-copy wrap
-Prisma Postgres auth proxy listening on 127.0.0.1:5433 🚀
+```cmd
+Prisma Postgres auth proxy listening on 127.0.0.1:52604 🚀
 
 Your connection is authenticated using your Prisma Postgres API key.
 ...
 
 ==============================
 hostname:  127.0.0.1
-port:      5433
+port:      52604
 username:  <anything>
 password:  <none>
 ==============================
 ```
 
-</cmdResult>
-
-</CodeWithResult>
 
 :::note
-
-Keep your current terminal window or tab open so that the tunnel process continues running and the connection remains open.
-
+Keep this tunnel process running to maintain the connection!
 :::
 
-Now, use the `db_dump.bak` backup file from the previous step to restore data into your Prisma Postgres database with the `pg_restore` command:
+### 3.2. Restoring the Backup with `pg_restore`
 
-```terminal
+Use the backup file from **Step 2** to restore data into Prisma Postgres database with `pg_restore` by running this command:
+
+```bash
 PGSSLMODE=disable \
 pg_restore \
   -h 127.0.0.1 \
-  -p 5433 \
+  -p 5432 \
   -v \
   -d postgres \
   ./db_dump.bak \
 && echo "-complete-"
 ```
 
-:::note
-You don't need to provide username and password credentials to this command because the TCP tunnel already authenticated you via the API key in your Prisma Postgres connection URL.
-:::
-
-You now successfully imported the data from your your existing PostgreSQL database into Prisma Postgres 🎉 
+Once the command completes execution, you will have successfully imported the data from your your existing PostgreSQL database into Prisma Postgres 🎉
 
 To validate that the import worked, you can use [Prisma Studio](/postgres/database/tooling#viewing-and-editing-data-in-prisma-studio). Either open it in the [Platform Console](https://console.prisma.io) by clicking the **Studio** tab in the left-hand sidenav in your project or run this command to launch Prisma Studio locally:
 
