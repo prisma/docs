@@ -6,29 +6,103 @@ tocDepth: 3
 toc: true
 ---
 
-The [Model-Context-Protocol](https://modelcontextprotocol.io/introduction) (MCP) gives LLMs a way to call APIs and thus access external systems in a well-defined manner. Prisma's MCP server gives LLMs the ability to manage Prisma Postgres databases (e.g. spin up new database instances or run schema migrations).
+## Overview
 
-:::note
+The [Model-Context-Protocol](https://modelcontextprotocol.io/introduction) (MCP) gives LLMs a way to call APIs and thus access external systems in a well-defined manner. 
 
-The Prisma MCP server is available via the Prisma CLI command `prisma platform mcp --early-access` and is currently available in Early Access. See below for how to integrate it in your favorite AI tool. It uses the `stdio` transport mechanism.
+Prisma's provides two MCP servers: a _local_ and a _remote_ one. See below for specific information on each.
 
-:::
+If you're a developer working on a local machine and want your AI agent to help with your database workflows, use the local MCP server.
 
-:::tip
+If you're building an "AI platform" and want to give the ability to manage database to your users, use the remote MCP server.
 
-If you're using VS Code, you can use [VS Code agent mode](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode) to enter prompts such as “create Postgres database” or “apply schema migration” directly in the chat. The VS code agent handles all underlying Prisma CLI invocations and API calls automatically. See our [VS Code Agent documentation](/postgres/integrations/vscode-extension#agent-mode) for more details.
+## Remote MCP server
 
-:::
+You can start the remote MCP server as follows:
 
+```terminal
+npx -y mcp-remote https://mcp.prisma.io/mcp
+```
 
-## Usage
+### Tools
 
-The Prisma MCP server follows the standard JSON-based configuration for MCP servers. Here's what it looks like:
+[Tools](https://modelcontextprotocol.io/docs/concepts/tools) represent the _capabilities_ of an MCP server. Here's the list of tools exposed by the remote MCP server:
+
+- `CreateBackupTool`: Create a new managed Prisma Postgres Backup.
+- `CreateConnectionStringTool`: Create a new Connection String for a Prisma Postgres database with the given id.
+- `CreateRecoveryTool`: Restore a Prisma Postgres Database to a new database with the given Backup id.
+- `DeleteConnectionStringTool`: Delete a Connection String with the given connection string id.
+- `DeleteDatabaseTool`: Delete a Prisma Postgres database with the given id.
+- `ListBackupsTool`: Fetch a list of available Prisma Postgres Backups for the given database id and environment id.
+- `ListConnectionStringsTool`: Fetch a list of available Prisma Postgres Database Connection Strings for the given database id and environment id.
+- `ListDatabasesTool`: Fetch a list of available Prisma Postgres Databases for user's workspace.
+- `ExecuteSqlQueryTool`: Execute a SQL query on a Prisma Postgres database with the given id.
+- `IntrospectSchemaTool`: Introspect the schema of a Prisma Postgres database with the given id.
+
+Once you're connected to the remote MCP server, you can also always prompt your AI agent to "List the Prisma tools" to get a full overview of the latest supported tools.
+
+### Usage
+
+The remote Prisma MCP server follows the standard JSON-based configuration for MCP servers. Here's what it looks like:
 
 ```json
 {
   "mcpServers": {
-    "Prisma": {
+    "Prisma-Remote": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
+    }
+  }
+}
+```
+
+
+:::tip
+If you want to try it the remote MCP server and explore it's capabilities, we recommend [Cloudflare's AI Playground](https://playground.ai.cloudflare.com/) for that. Add the `https://mcp.prisma.io/mcp` URL into the text field with the **Enter MCP server URL** placeholder, click **Connect**, and then authenticate with the [Prisma Console](https://console.prisma.io) in the popup window. Once connected, you can send prompts to the Playground and see what MCP tools the LLM chooses based on your prompts.
+:::
+
+### Sample prompts
+
+- "Show me a list of all the databases in my account."
+- "Create a new database in the US region for me."
+- "Seed my database with real-looking data but create a backup beforehand."
+- "Show me all available backups of my database."
+- "Show me all customers and run an analysis over their orders."
+
+## Local MCP server
+
+You can start the local MCP server as follows:
+
+```terminal
+npx -y prisma mcp
+```
+
+:::tip
+
+If you're using VS Code, you can use [VS Code agent mode](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode) to enter prompts such as "create Postgres database" or "apply schema migration" directly in the chat. The VS code agent handles all underlying Prisma CLI invocations and API calls automatically. See our [VS Code Agent documentation](/postgres/integrations/vscode-extension#agent-mode) for more details.
+
+:::
+
+### Tools
+
+[Tools](https://modelcontextprotocol.io/docs/concepts/tools) represent the _capabilities_ of an MCP server. Here's the list of tools exposed by the local MCP server:
+
+- `migrate-status`: Checks your migration status via the `prisma migrate status` command.
+- `migrate-dev`: Creates and executes a migration via the `prisma migrate dev --name <name>` command. The LLM will provide the `<name>` option.
+- `migrate-reset`: Resets your database via the `prisma migrate reset --force` command.
+- `Prisma-Postgres-account-status`: Checks your authentication status with [Prisma Console](https://console.prisma.io) via the `platform auth show --early-access` command.
+- `Create-Prisma-Postgres-Database`: Creates a new Prisma Postgres database via the `'init --db --name' <name> '--region' <region> '--non-interactive'` command.  The LLM will provide the `<name>` and `<region>` options.
+- `Prisma-Login`: Authenticates with [Prisma Console](https://console.prisma.io) via the `platform auth login --early-access` command.
+- `Prisma-Studio`: Open Prisma Studio via the `prisma studio` command. 
+
+### Usage
+
+The local Prisma MCP server follows the standard JSON-based configuration for MCP servers. Here's what it looks like:
+
+```json
+{
+  "mcpServers": {
+    "Prisma-Local": {
       "command": "npx",
       "args": ["-y", "prisma", "mcp"]
     }
@@ -36,12 +110,12 @@ The Prisma MCP server follows the standard JSON-based configuration for MCP serv
 }
 ```
 
-## Sample prompts
+### Sample prompts
 
 Here are some sample prompts you can use when the MCP server is running:
-- Log me into the Prisma Console.
-- Create a database in the US region.
-- Create a new `Product` table in my database.
+- "Log me into the Prisma Console."
+- "Create a database in the US region."
+- "Create a new `Product` table in my database."
 
 ## Integrating in AI tools
 
@@ -53,6 +127,16 @@ In this section, we're covering the config formats of the most popular AI tools.
 
 To learn more about Cursor's MCP integration, check out the [Cursor MCP docs](https://docs.cursor.com/context/model-context-protocol#configuration-locations).
 
+#### Add via one-click installation
+
+You can add the Prisma MCP server to Cursor using the [one-click installation](https://docs.cursor.com/context/model-context-protocol#one-click-installation) by clicking on the following link:
+
+<a href="https://cursor.com/install-mcp?name=Prisma&config=eyJjb21tYW5kIjoibnB4IC15IHByaXNtYSBtY3AifQ%3D%3D" target="_blank" rel="noopener noreferrer">
+  <img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install MCP Server" />
+</a>
+
+This will prompt you to open the Cursor app in your browser. Once opened, you'll be guided to install the Prisma MCP server directly into your Cursor configuration.
+
 #### Add via Cursor Settings UI
 
 When opening the **Cursor Settings**, you can add the Prisma MCP Server as follows:
@@ -62,9 +146,13 @@ When opening the **Cursor Settings**, you can add the Prisma MCP Server as follo
     ```json
     {
       "mcpServers": {
-        "Prisma": {
+        "Prisma-Local": {
           "command": "npx",
           "args": ["-y", "prisma", "mcp"]
+        },
+        "Prisma-Remote": {
+          "command": "npx",
+          "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
         }
       }
     }
@@ -77,9 +165,13 @@ Adding it via the  **Cursor Settings** settings will modify the global `~/.curso
 ```json file=\~/.cursor/mcp.json
 {
   "mcpServers": {
-    "Prisma": {
+    "Prisma-Local": {
       "command": "npx",
       "args": ["-y", "prisma", "mcp"]
+    },
+    "Prisma-Remote": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
     },
     // other MCP servers
   }
@@ -93,10 +185,14 @@ If you want the Prisma MCP server to be available only in specific Cursor projec
 ```json file=.cursor/mcp.json
 {
   "mcpServers": {
-    "Prisma": {
+    "Prisma-Local": {
       "command": "npx",
       "args": ["-y", "prisma", "mcp"]
     },
+    "Prisma-Remote": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
+    }
     // other MCP servers
   }
 }
@@ -115,13 +211,17 @@ Use the Prisma MCP plugin from the [Windsurf MCP Plugin Store](https://docs.wind
 When opening the **Windsurf Settings** (via **Windsurf - Settings** > **Advanced Settings or Command Palette** > **Open Windsurf Settings Page**), you can add the Prisma MCP Server as follows:
 1. Select **Cascade** in the settings sidenav
 1. Click **Add Server**
-1. Add the `Prisma` snippet to the `mcpServers` JSON object:
+1. Add the `Prisma-Local` and/or `Prisma-Remote` snippets to the `mcpServers` JSON object:
     ```json
     {
       "mcpServers": {
-        "Prisma": {
+        "Prisma-Local": {
           "command": "npx",
           "args": ["-y", "prisma", "mcp"]
+        },
+        "Prisma-Remote": {
+          "command": "npx",
+          "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
         }
       }
     }
@@ -134,22 +234,55 @@ Adding it via the  **Windsurf Settings** will modify the global `~/.codeium/wind
 ```json file=~/.codeium/windsurf/mcp_config.json
 {
   "mcpServers": {
-    "Prisma": {
+    "Prisma-Local": {
       "command": "npx",
       "args": ["-y", "prisma", "mcp"]
+    },
+    "Prisma-Remote": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
     },
     // other MCP servers
   }
 }
 ```
 
+### Warp
+
+You can add the Prisma MCP to Warp as a globally available tool. First, [visit your MCP settings](https://docs.warp.dev/knowledge-and-collaboration/mcp#how-to-access-mcp-server-settings) and click **+ Add**. From here, you can configure the Prisma MCP server as JSON. Use the `command` and `args` properties to start the Prisma MCP server as a setup command. You can optionally configure Prisma to activate on startup using the `start_on_launch` flag:
+
+```json
+{
+  "Prisma": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "prisma",
+      "mcp"
+    ],
+    "env": {},
+    "working_directory": null,
+    "start_on_launch": true
+  }
+}
+```
+
+Hit **Save** and ensure the MCP server is running from your MCP settings panel. Then, open a new terminal window and ask Warp to manage your Prisma database. It should reach for the Prisma MCP server automatically.
+
+To learn more about Warp's MCP integration, visit the [Warp MCP docs](https://docs.warp.dev/knowledge-and-collaboration/mcp).
 
 ### Claude Code
 
-Claude Code is a terminal-based AI tool where you can add MCP server using the `claud mcp add` command:
+Claude Code is a terminal-based AI tool where you can add MCP server using the `claud mcp add` command for the local MCP server:
 
 ```terminal
-claude mcp add prisma npx prisma mcp
+claude mcp add prisma-local npx prisma mcp
+```
+
+or for the remote MCP server:
+
+```terminal
+claude mcp add prisma-remote npx mcp-remote https://mcp.prisma.io/mcp
 ```
 
 Learn more in the [Claude Code MCP docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials#configure-mcp-servers).
@@ -166,9 +299,13 @@ Then add the JSON snippet to that configuration file:
 ```json
 {
   "mcpServers": {
-    "Prisma": {
+    "Prisma-Local": {
       "command": "npx",
       "args": ["-y", "prisma", "mcp"]
+    },
+    "Prisma-Remote": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
     },
     // other MCP servers
   }
@@ -177,7 +314,7 @@ Then add the JSON snippet to that configuration file:
 
 ### OpenAI Agents SDK
 
-Here's an example for using the Prisma MCP server in a Python script via the OpenAI Agents SDK:
+Here's an example for using the Prisma MCP servers in a Python script via the OpenAI Agents SDK:
 
 ```python
 from openai import AsyncOpenAI
@@ -187,26 +324,33 @@ from openai.experimental.mcp import MCPServerStdio
 from openai.types.beta.threads import Message, Thread
 from openai.types.beta.tools import ToolCall
 
-# Async context required for MCPServerStdio
 import asyncio
 
 async def main():
-    # Start the Prisma MCP server using stdio
+    # Launch both MCP servers concurrently
     async with MCPServerStdio(
         params={
             "command": "npx",
             "args": ["-y", "prisma", "mcp"]
         }
-    ) as prisma_server:
-        # Optional: view available tools
-        tools = await prisma_server.list_tools()
-        print("Available tools:", [tool.name for tool in tools])
+    ) as local_server, MCPServerStdio(
+        params={
+            "command": "npx",
+            "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
+        }
+    ) as remote_server:
+        
+        # Optional: list tools from both servers
+        local_tools = await local_server.list_tools()
+        remote_tools = await remote_server.list_tools()
+        print("Local server tools:", [tool.name for tool in local_tools])
+        print("Remote server tools:", [tool.name for tool in remote_tools])
 
-        # Set up the agent with MCP server
+        # Set up the assistant with both MCP servers
         agent = Assistant(
             name="Prisma Assistant",
             instructions="Use the Prisma tools to help the user with database tasks.",
-            mcp_servers=[prisma_server],
+            mcp_servers=[local_server, remote_server],
         )
 
         executor = AsyncAssistantExecutor(agent=agent)

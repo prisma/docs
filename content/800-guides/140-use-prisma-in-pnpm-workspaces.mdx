@@ -198,15 +198,24 @@ Once the migration is successful, create a `client.ts` file to initialize Prisma
 ```ts file=database/client.ts
 // add-start
 import { PrismaClient } from "./generated/client";
-import { withAccelerate } from '@prisma/extension-accelerate'
+import { withAccelerate } from "@prisma/extension-accelerate";
 
-const prisma = new PrismaClient().$extends(withAccelerate())
+// Instantiate the extended Prisma client to infer its type
+const extendedPrisma = new PrismaClient().$extends(withAccelerate());
+type ExtendedPrismaClient = typeof extendedPrisma;
 
-const globalForPrisma = global as unknown as { prisma: typeof prisma }
+// Use globalThis for broader environment compatibility
+const globalForPrisma = globalThis as typeof globalThis & {
+  prisma?: ExtendedPrismaClient;
+};
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Named export with global memoization
+export const prisma: ExtendedPrismaClient =
+  globalForPrisma.prisma ?? extendedPrisma;
 
-export { prisma };
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
 // add-end
 ```
 
