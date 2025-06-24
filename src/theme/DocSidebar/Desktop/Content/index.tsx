@@ -23,7 +23,7 @@ function useShowAnnouncementBar() {
   return isActive && showAnnouncementBar;
 }
 
-export default function DocSidebarDesktopContent({ path, sidebar, className }: Props): JSX.Element {
+export default function DocSidebarDesktopContent({ path, sidebar, className, promo }: Props & { promo: boolean }): JSX.Element {
   const showAnnouncementBar = useShowAnnouncementBar();
 
   return (
@@ -36,6 +36,7 @@ export default function DocSidebarDesktopContent({ path, sidebar, className }: P
       className={clsx(
         "menu thin-scrollbar",
         styles.menu,
+        promo && styles.hasPromo,
         showAnnouncementBar && styles.menuWithAnnouncementBar,
         className
       )}
