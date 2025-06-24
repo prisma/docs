@@ -11,11 +11,11 @@ Database operations often require careful control over who can access or modify 
 
 Fine-grained authorization (FGA) provides detailed and precise control over what data users can access or modify at a granular level. Without proper authorization, your application might expose sensitive data or allow unauthorized modifications, creating security vulnerabilities.
 
-## Access Control Models
+## Access control models
 
 This extension supports three access control models from Permit.io:
 
-### Role-Based Access Control (RBAC)
+### Role-based Access Control (RBAC)
 
 **What it is**: Users are assigned roles (Admin, Editor, Viewer) with predefined permissions to perform actions on resource types.
 
@@ -49,13 +49,15 @@ This extension supports three access control models from Permit.io:
 
 **Best for**: Collaborative applications where users need different permissions on different instances of the same resource type.
 
-### Choosing the Right Model
+### Choosing the right model
 
 - **RBAC**: When you need simple, role-based access control
 - **ABAC**: When decisions depend on data properties or contextual information
 - **ReBAC**: When users need different permissions on different instances
 
-## Prerequisites
+## Usage
+
+### Prerequisites
 
 Before implementing fine-grained authorization with Prisma, make sure you have:
 
@@ -63,19 +65,20 @@ Before implementing fine-grained authorization with Prisma, make sure you have:
 - Basic understanding of authorization concepts
 - Node.js and npm installed
 
-## Installation
+### Installation
 
 Install the extension alongside Prisma Client:
 
-```bash
+```terminal
 npm install @permitio/permit-prisma @prisma/client
 ```
+
 You'll also need to sign up for a [Permit account](https://app.permit.io) to define your authorization policies.
 
 > **Note:**  
 > Ensure that the Permit PDP container is running. It is recommended to run it using Docker for better performance, security, and availability. For instructions, refer to the Permit documentation: [Deploy Permit to Production](https://docs.permit.io/how-to/deploy/deploy-to-production/) and [PDP Overview](https://docs.permit.io/concepts/pdp/overview/).
 
-## Basic Setup
+## Basic setup
 
 First, extend your Prisma Client with the Permit extension:
 
@@ -102,80 +105,73 @@ RBAC uses roles to determine access permissions. For example, "Admin" roles can 
    - Create resources matching your Prisma models (e.g., "document")
    - Define actions (e.g., "create", "read", "update", "delete")
    - Create roles with permission sets (e.g., "admin", "editor", "viewer")
-
 2. **Set the active user in your code**:
+  ```typescript
+  // Set the current user context before performing operations
+  prisma.$permit.setUser("john@example.com");
 
-```typescript
-// Set the current user context before performing operations
-prisma.$permit.setUser("john@example.com");
-
-// All subsequent operations will be checked against this user's permissions
-const documents = await prisma.document.findMany();
-```
+  // All subsequent operations will be checked against this user's permissions
+  const documents = await prisma.document.findMany();
+  ```
 
 ## Implementing ABAC (Attribute-Based Access Control)
 
 ABAC extends access control by considering user attributes, resource attributes, and context.
 
 1. **Configure the extension for ABAC**:
-
-```typescript!
-const prisma = new PrismaClient().$extends(
-  createPermitClientExtension({
-    permitConfig: { token: process.env.PERMIT_API_KEY, pdp: "http://localhost:7766" },
-    enableAutomaticChecks: true,
-  })
-);
-```
-
+  ```typescript
+  const prisma = new PrismaClient().$extends(
+    createPermitClientExtension({
+      permitConfig: { token: process.env.PERMIT_API_KEY, pdp: "http://localhost:7766" },
+      enableAutomaticChecks: true,
+    })
+  );
+  ```
 2. **Set user with attributes:**
+  ```typescript
+  prisma.$permit.setUser({
+    key: "doctor@hospital.com",
+    attributes: { department: "cardiology" }
+  });
 
-```typescript!
-prisma.$permit.setUser({
-  key: "doctor@hospital.com",
-  attributes: { department: "cardiology" }
-});
-
-// Will succeed only if user department matches record department (per policy)
-const records = await prisma.medicalRecord.findMany({
-  where: { department: "cardiology" }
-});
-```
+  // Will succeed only if user department matches record department (per policy)
+  const records = await prisma.medicalRecord.findMany({
+    where: { department: "cardiology" }
+  });
+  ```
 
 ## Implementing ReBAC (Relationship-Based Access Control)
 
 ReBAC models permissions based on relationships between users and specific resource instances.
 
 1. **Configure the extension for ReBAC**:
-
-```typescript!
-const prisma = new PrismaClient().$extends(
-  createPermitClientExtension({
-    permitConfig: { token: process.env.PERMIT_API_KEY, pdp: "http://localhost:7766" },
-    accessControlModel: "rebac",
-    enableAutomaticChecks: true,
-    enableResourceSync: true, // Sync resource instances with Permit.io
-    enableDataFiltering: true  // Filter queries by permissions
-  })
-);
-```
+  ```typescript
+  const prisma = new PrismaClient().$extends(
+    createPermitClientExtension({
+      permitConfig: { token: process.env.PERMIT_API_KEY, pdp: "http://localhost:7766" },
+      accessControlModel: "rebac",
+      enableAutomaticChecks: true,
+      enableResourceSync: true, // Sync resource instances with Permit.io
+      enableDataFiltering: true  // Filter queries by permissions
+    })
+  );
+  ```
 
 2. ** Access instance-specific resources:**
+  ```typescript
+  prisma.$permit.setUser("owner@example.com");
 
-```typescript!
-prisma.$permit.setUser("owner@example.com");
+  // Will only succeed if the user has permission on this specific file
+  const file = await prisma.file.findUnique({
+    where: { id: "file-123" }
+  });
+  ```
 
-// Will only succeed if the user has permission on this specific file
-const file = await prisma.file.findUnique({
-  where: { id: "file-123" }
-});
-```
-
-## Manual Permission Checks
+## Manual permission checks
 
 For more control, you can perform explicit permission checks:
 
-```typescript!
+```typescript
 // Check if user can update a document
 const canUpdate = await prisma.$permit.check(
   "john@example.com",  // user
@@ -198,7 +194,7 @@ await prisma.$permit.enforceCheck(
 );
 ```
 
-## Common Use Cases
+## Common use cases
 
 Here are some common scenarios where fine-grained authorization is valuable:
 
@@ -211,7 +207,7 @@ Here are some common scenarios where fine-grained authorization is valuable:
 
 By integrating the `@permitio/permit-prisma` extension with your Prisma ORM application, you can implement sophisticated authorization policies that protect your data and ensure users only access what they're permitted to see. The extension supports all major authorization models (RBAC, ABAC, ReBAC) and provides both automatic and manual permission enforcement.
 
-## Next Steps
+## Next steps
 
 - [Create a free Permit.io account](https://app.permit.io)
 - [View the full extension documentation](https://github.com/permitio/permit-prisma)
