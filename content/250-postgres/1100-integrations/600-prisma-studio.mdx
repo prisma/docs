@@ -16,9 +16,13 @@ Prisma Postgres comes with [Prisma Studio](/orm/tools/prisma-studio) built-in. Y
 
 ## Embed Prisma Studio in your own application
 
-Prisma Studio can be embedded in your own application via the [`@prisma/studio-core`](https://www.npmjs.com/package/@prisma/studio-core) package. 
+Prisma Studio can be embedded in your own application via the [`@prisma/studio-core`](https://www.npmjs.com/package/@prisma/studio-core) package.
 
 It gives you `Studio` a React component which renders Prisma Studio for your database. The `Studio` component accepts an _executor_ which accesses a `/studio` endpoint in your backend. The backend uses your API key to identify the correct Prisma Postgres instance and sends the SQL query to it.
+
+:::tip
+If you want to see what embedded Studio looks like, **[check out the demo](https://github.com/prisma/studio-core-demo) on GitHub**!
+:::
 
 ### Prerequisites
 
@@ -78,13 +82,16 @@ Here's an overview of the key concepts in your frontend:
 - **Custom headers**: Pass authentication tokens, user info, etc.
 - **Custom payload**: Send additional context/data with each request
 
+> Check out the [demo](https://github.com/prisma/studio-core-demo/blob/main/frontend/index.tsx) on GitHub for a full reference implementation.
+
 ### Backend setup
 
 Your backend needs to expose a `/studio` endpoint, that's where the frontend sends its requests. The implementation of this endpoint uses the `createAccelerateHttpClient` function that can be imported from the `@prisma/studio-core`.
 
-The backend also needs to have access to the Prisma Postgres API key, we recommend setting it as an environment variable as a best practice. 
+The backend also needs to have access to the Prisma Postgres API key, we recommend setting it as an environment variable as a best practice.
 
 Here's what a minimal implementation for the `/studio` endpoint looks like with [Hono](https://hono.dev/):
+
 ```ts
 // server/index.ts
 import { Hono } from "hono";
@@ -97,17 +104,17 @@ const app = new Hono().use("*", cors());
 app.post("/studio", async (c) => {
   // 1. Extract the query and custom data from the request
   const { query, customPayload } = await c.req.json();
-  
+
   // 2. Access custom headers (great for auth!)
   const customHeader = c.req.header("X-Custom-Header");
   console.log("Received headers:", { customHeader });
-  
+
   // 3. Use custom payload data
   console.log("Received value:", customPayload.customValue);
-  
+
   // 4. Determine the API key (this is where you'd implement your auth logic)
   const apiKey = determineApiKeyFromContext(customHeader, customPayload);
-  
+
   // 5. Execute the query using Prisma Postgres or Prisma Accelerate
   const [error, results] = await createAccelerateHttpClient({
     apiKey,
@@ -115,15 +122,17 @@ app.post("/studio", async (c) => {
     clientVersion: "6.10.1",
     engineHash: "9b628578b3b7cae625e8c927178f15a170e74a9c",
   }).execute(query);
-  
+
   // 6. Return results or errors
   if (error) {
     return c.json([serializeError(error)]);
   }
-  
+
   return c.json([null, results]);
 });
 ```
+
+> Check out the [demo](https://github.com/prisma/studio-core-demo/blob/main/server/index.ts) on GitHub for a full reference implementation.
 
 ### Execution flow
 
@@ -131,7 +140,7 @@ Here's an overview of the execution flow in your embedded Prisma Studio version:
 
 ![](/img/studio/embedded-flow.png)
 
-<!-- 
+<!--
 ```mermaid
 sequenceDiagram
     participant User
@@ -158,7 +167,6 @@ When you want to authenticate the users of your app against Prisma Studio, you c
 On the frontend, you xan ensure yo pass the `Authorization` header and other data (e.g. a user ID) when creating the executor:
 
 ```tsx
-// Frontend - Pass user info
 const executor = createStudioBFFClient({
   url: "http://localhost:4242/studio",
   customHeaders: {
@@ -168,13 +176,11 @@ const executor = createStudioBFFClient({
 });
 ```
 
-In your server-side implementation, you can then retrieve these values from the incoming request and identify the API key that's needed for this query:
+In your server-side implementation, you can then retrieve these values from the incoming request and extract the Prisma Postgres API key that's needed for this user's query:
 
 ```typescript
-// Backend - Extract user info from headers
 const userId = c.req.header("X-User-ID");
 const token = c.req.header("Authorization");
 
-// Validate and get user's database credentials
 const userApiKey = await getUserApiKey(userId, token);
 ```
