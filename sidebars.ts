@@ -459,10 +459,7 @@ const sidebars: SidebarsConfig = {
           label: "Connection Pooling Guides",
           collapsed: false,
           collapsible: false,
-          items: [
-            "guides/supabase-accelerate",
-            "guides/neon-accelerate",
-          ].sort(),
+          items: ["guides/supabase-accelerate", "guides/neon-accelerate"].sort(),
         },
         {
           type: "category",
@@ -491,7 +488,7 @@ const sidebars: SidebarsConfig = {
               type: "link",
               label: "Supabase",
               href: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
-            }
+            },
           ],
         },
       ],
