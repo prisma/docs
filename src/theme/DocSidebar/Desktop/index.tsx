@@ -19,7 +19,7 @@ function DocSidebarDesktop({ path, sidebar, onCollapse, isHidden }: Props) {
   } = useThemeConfig();
 
   let location = useLocation();
-
+  const hasPromo = (location.pathname.split("/")[1] == "orm" || location.pathname.split("/")[2] == "orm");
   return (
     <div
       className={clsx(
@@ -29,10 +29,10 @@ function DocSidebarDesktop({ path, sidebar, onCollapse, isHidden }: Props) {
       )}
     >
       {hideOnScroll && <Logo tabIndex={-1} className={styles.sidebarLogo} />}
-      {(location.pathname.split("/")[1] == "orm" || location.pathname.split("/")[2] == "orm") && (
+      {hasPromo && (
         <Promo />
       )}
-      <Content path={path} sidebar={sidebar} />
+      <Content path={path} sidebar={sidebar} promo={hasPromo} />
       {hideable && <CollapseButton onClick={onCollapse} />}
     </div>
   );
