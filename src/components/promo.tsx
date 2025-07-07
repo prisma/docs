@@ -7,12 +7,32 @@ export const Promo = () => {
 
   const promoOptions: PromoOptions = [
     {
+      text: `Get a Postgres db in 3 clicks →`,
+      link: "https://pris.ly/sidebar-promo/pg-3-clicks",
+      color: "teal",
+    },
+    {
+      text: `Try Prisma Postgres, our serverless db`,
+      link: "https://pris.ly/sidebar-promo/pg-from-prisma",
+      color: "indigo",
+    },
+    {
+      text: `Try Prisma Postgres. No cold starts, just hot queries.`,
+      link: "https://pris.ly/sidebar-promo/hot-queries",
+      color: "teal",
+    },
+    {
+      text: `Yes, we have a database! Try Prisma Postgres →`,
+      link: "https://pris.ly/sidebar-promo/yes-ppg",
+      color: "indigo",
+    },
+    {
       text: `Running a serverless backend? You need a managed connection pool.`,
       link: "https://pris.ly/sidebar-promo/managed-connection-pool",
       color: "teal",
     },
     {
-      text: `Want to make your database perform globally?`,
+      text: `Want to decrease global latency for your db queries?`,
       link: "https://pris.ly/sidebar-promo/make-your-db-global",
       color: "teal",
     },
@@ -22,38 +42,18 @@ export const Promo = () => {
       color: "teal",
     },
     {
-      text: `Interested in query caching in just a few lines of code?`,
+      text: `Implement query caching in just a few lines of code →`,
       link: "https://pris.ly/sidebar-promo/caching-few-lines-of-code",
-      color: "teal",
-    },
-    {
-      text: `Easily identify and fix slow SQL queries in your app.`,
-      link: "https://pris.ly/sidebar-promo/identify-fix-sql-queries",
-      color: "teal",
-    },
-    {
-      text: `Looking to uncover inefficient database operations?`,
-      link: "https://pris.ly/sidebar-promo/inefficient-db-operations",
-      color: "indigo",
-    },
-    {
-      text: `Curious about the SQL queries Prisma ORM generates?`,
-      link: "https://pris.ly/sidebar-promo/sql-queries-in-orm",
-      color: "teal",
-    },
-    {
-      text: `Need to improve app performance? Get tailored recommendations.`,
-      link: "https://pris.ly/sidebar-promo/tailored-recommendations",
-      color: "teal",
-    },
-    {
-      text: `Your db queries could be faster? Let Optimize figure out why. `,
-      link: "https://pris.ly/sidebar-promo/faster-db-queries",
       color: "teal",
     },
     {
       text: `Using Raycast? Try our "docs search" extension. `,
       link: "https://pris.ly/sidebar-promo/raycast-extension",
+      color: "indigo",
+    },
+    {
+      text: `Try the MCP server with your favorite AI tool →`,
+      link: "https://pris.ly/sidebar-promo/mcp",
       color: "indigo",
     },
   ];
