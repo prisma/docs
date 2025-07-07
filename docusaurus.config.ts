@@ -9,8 +9,7 @@ const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
 
 const config: Config = {
   future: {
-    // See https://github.com/facebook/docusaurus/issues/10556
-    experimental_faster: true,
+    v4: true,
   },
   title: "Prisma Documentation",
   tagline:
@@ -295,7 +294,7 @@ const config: Config = {
           items: [
             {
               className: "indigo",
-              to: "/orm/tools/prisma-studio",
+              to: "/postgres/database/prisma-studio",
               label: "Studio",
               sub: "Explore and manipulate your data",
               icon: "fa-regular fa-table"

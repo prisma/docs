@@ -440,7 +440,12 @@ const sidebars: SidebarsConfig = {
           label: "Integration Solutions",
           collapsed: false,
           collapsible: false,
-          items: ["guides/clerk-nextjs", "guides/shopify"].sort(),
+          items: [
+            "guides/clerk-nextjs",
+            "guides/shopify",
+            "guides/permit-io-access-control",
+            "guides/betterauth-nextjs",
+          ].sort(),
         },
         {
           type: "category",
@@ -459,10 +464,7 @@ const sidebars: SidebarsConfig = {
           label: "Connection Pooling Guides",
           collapsed: false,
           collapsible: false,
-          items: [
-            "guides/supabase-accelerate",
-            "guides/neon-accelerate",
-          ].sort(),
+          items: ["guides/supabase-accelerate", "guides/neon-accelerate"].sort(),
         },
         {
           type: "category",
@@ -475,6 +477,24 @@ const sidebars: SidebarsConfig = {
             "guides/migrate-from-mongoose",
             "guides/migrate-from-drizzle",
           ].sort(),
+        },
+        {
+          type: "category",
+          label: "DB Migration",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            {
+              type: "link",
+              label: "Neon",
+              href: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
+            },
+            {
+              type: "link",
+              label: "Supabase",
+              href: "/getting-started/prisma-postgres/import-from-existing-database-postgresql",
+            },
+          ],
         },
       ],
     },
