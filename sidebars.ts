@@ -499,6 +499,19 @@ const sidebars: SidebarsConfig = {
       ],
     },
   ],
+  "management-api": [
+    {
+      type: "category",
+      label: "Management API",
+      link: {
+        type: "generated-index",
+        title: "Management API",
+        slug: "/management-api", // Matches your desired route
+      },
+      // @ts-ignore
+      items: require("./content/management-api/sidebar.js"),
+    },
+  ],
 };
 
 export default sidebars;
