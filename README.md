@@ -14,21 +14,21 @@ New contributors are welcome! Read through the [contributing guide](CONTRIBUTING
 2. On your computer, open a terminal window in the repository's directory.
 3. Run the following commands:
 
-```
+```bash
 npm install
 npm run start
 ```
 
 Be sure to also test building the static site:
 
-```
+```bash
 npm run clean && npm run build
 npm run serve
 ```
 
 To prettify or format the code, run:
 
-```
+```bash
 npm run format
 ```
 
@@ -67,7 +67,7 @@ chmod +x /usr/local/bin/mdtool
 
 #### Overview
 
-```
+```bash
 mdtool insert 3
 mdtool swap A B
 mdtool move A B
@@ -78,7 +78,7 @@ mdtool remove 4
 
 Make place for a new file at given index and increment all numbers by one after that index:
 
-```
+```bash
 $ mdtool insert INDEX
 
 # e.g.:
@@ -91,7 +91,7 @@ $ mdtool insert 2
 
 Swap two files; specify both filenames (prefix numbers get automatically adjusted):
 
-```
+```bash
 $ mdtool swap FILENAME1 FILENAME2
 
 # e.g.:
@@ -104,7 +104,7 @@ $ mdtool swap 03-file1.mdx 07-file2.mdx
 
 Move a given file to another given index
 
-```
+```bash
 $ mdtool move FILENAME INDEX
 
 # e.g.:
@@ -117,7 +117,7 @@ $ mdtool move 05-file.mdx 2
 
 Shift all other items by -1 at a given index:
 
-```
+```bash
 $ mdtool remove INDEX
 
 # e.g.:
@@ -128,4 +128,4 @@ $ mdtool remove 2
 
 #### Thanks Luca
 
-![](https://res.cloudinary.com/prismaio/image/upload/v1628765536/docs/LJ0FGHk_u2jjxv.png)
+![Nikolas & Luka](https://res.cloudinary.com/prismaio/image/upload/v1628765536/docs/LJ0FGHk_u2jjxv.png)
