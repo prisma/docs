@@ -196,7 +196,7 @@ const config: Config = {
         route: "/scalar",
         showNavLink: true, // optional, default is true
         configuration: {
-          url: "http://localhost:3000/spec.json",
+          url: "/spec.json",
         },
       } as ScalarOptions,
     ],
