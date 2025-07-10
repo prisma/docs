@@ -4,6 +4,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 import type { Config, RouteConfig } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs"; // 👈 Import the plugin type
 
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
 
@@ -89,6 +90,26 @@ const config: Config = {
         appUrl: "https://proxyhog.prisma-data.net",
         person_profiles: "identified_only",
         enableInDevelopment: false,
+      },
+    ],
+    [
+      "docusaurus-plugin-openapi-docs",
+      {
+        id: "management-api", // Unique plugin id
+        docsPluginId: "classic", // The id of the docs plugin
+        config: {
+          "management-api-spec": {
+            // Unique spec id
+            specPath: "https://api.prisma.io/v0/doc", // Your spec URL
+            downloadUrl: "https://api.prisma.io/v0/doc",
+            outputDir: "content/management-api", // Output directory
+            sidebarOptions: {
+              groupPathsBy: "tag", // Group by tags
+              sidebarCollapsible: true, // Make sidebar categories collapsible
+              sidebarCollapsed: true, // Collapse sidebar categories by default
+            },
+          } satisfies OpenApiPlugin.Options,
+        },
       },
     ],
     async function pluginLlmsTxt(context) {
@@ -222,6 +243,8 @@ const config: Config = {
         docs: {
           routeBasePath: "/",
           path: "content",
+          docItemComponent: "@theme/ApiItem",
+
           sidebarPath: "./sidebars.ts",
           // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/prisma/docs/tree/main",
@@ -239,6 +262,7 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
+  themes: ["docusaurus-theme-openapi-docs"],
   themeConfig: {
     colorMode: {
       respectPrefersColorScheme: true,
@@ -297,7 +321,7 @@ const config: Config = {
               to: "/postgres/database/prisma-studio",
               label: "Studio",
               sub: "Explore and manipulate your data",
-              icon: "fa-regular fa-table"
+              icon: "fa-regular fa-table",
             },
             {
               type: "docSidebar",
@@ -305,7 +329,7 @@ const config: Config = {
               className: "teal",
               label: "Optimize",
               sub: "AI-driven query analysis",
-              icon: "fa-regular fa-magnifying-glass-chart"
+              icon: "fa-regular fa-magnifying-glass-chart",
             },
             {
               type: "docSidebar",
@@ -313,7 +337,7 @@ const config: Config = {
               className: "teal",
               label: "Accelerate",
               sub: "Make your database global",
-              icon: "fa-regular fa-bolt"
+              icon: "fa-regular fa-bolt",
             },
           ],
         },
