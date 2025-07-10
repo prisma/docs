@@ -14,72 +14,84 @@ The Prisma Config file is currently in [Early Access](/orm/more/releases#early-a
 
 :::
 
-The `prisma.config.ts` file configures the Prisma CLI, including subcommands like `migrate` and `studio`, using TypeScript. 
+The `prisma.config.ts` file configures the Prisma CLI, including subcommands like `migrate` and `studio`, using TypeScript.
 
 You can define your config in either of two ways:
 
 - Using the `defineConfig` helper:
   ```ts
-  import path from 'node:path';
-  import { defineConfig } from 'prisma/config';
+  import path from "node:path";
+  import { defineConfig } from "prisma/config";
 
   export default defineConfig({
     earlyAccess: true,
-    schema: path.join('prisma', 'schema.prisma'),
+    schema: path.join("prisma", "schema.prisma"),
+    migrations: {
+      path: path.join("db", "migrations"),
+    },
+    views: {
+      path: path.join("db", "views"),
+    },
+    typedSql: {
+      path: path.join("db", "queries"),
+    }
   });
   ```
+
 - Using TypeScript's `satisfies` operator with the `PrismaConfig` type:
   ```ts
-  import path from 'node:path';
-  import type { PrismaConfig } from 'prisma'
+  import path from "node:path";
+  import type { PrismaConfig } from "prisma";
 
   export default {
     earlyAccess: true,
-    schema: path.join('prisma', 'schema.prisma'),
-  } satisfies PrismaConfig
+    schema: path.join("db", "schema.prisma"),
+    migrations: {
+      path: path.join("db", "migrations"),
+    },
+    views: {
+      path: path.join("db", "views"),
+    },
+    typedSql: {
+      path: path.join("db", "queries"),
+    }
+  } satisfies PrismaConfig;
   ```
 
 ## Configuration interface
 
+Here is a simplified version of the `PrismaConfig` type:
+
 ```ts
-export declare type PrismaConfig<Env extends EnvVars = never> = {
-  /**
-   * Whether features with an unstable API are enabled.
-   */
+export declare type PrismaConfig = {
+  // Whether features with an unstable API are enabled.
   earlyAccess: true;
-  /**
-   * The path to the schema file or path to a folder that shall be recursively searched for .prisma files.
-   */
+
+  // The path to the schema file, or path to a folder that shall be recursively searched for *.prisma files.
   schema?: string;
-  /**
-   * The configuration for Prisma Studio.
-   */
-  studio?: PrismaStudioConfigShape<Env>;
-  /**
-   * The configuration for Prisma Migrate + Introspect
-   */
-  migrate?: PrismaMigrateConfigShape<Env>;
 
-  /**
-   * Configuration for Prisma migrations.
-   */
+  // The Driver Adapter used for Prisma CLI.
+  adapter?: () => Promise<SqlMigrationAwareDriverAdapterFactory>;
+
+  // The configuration for Prisma Studio.
+  studio?: {
+    adapter: () => Promise<SqlMigrationAwareDriverAdapterFactory>;
+  };
+
+  // Configuration for Prisma migrations.
   migrations?: {
-    /**
-	   * The path to the directory where Prisma should store migration files, and look for them.
-	   */
-    path: string,
+    path: string;
   };
 
-    /**
-   * Configuration for the database view entities.
-   */
+  // Configuration for the database view entities.
   views?: {
-    /**
-     * The path to the directory where Prisma should look for the view definitions, where *.sql files will be loaded.
-     */  
-    path: string,
+    path: string;
   };
-  
+
+  // Configuration for the `typedSql` preview feature.
+  typedSql?: {
+    path: string;
+  };
 };
 ```
 
@@ -87,47 +99,55 @@ export declare type PrismaConfig<Env extends EnvVars = never> = {
 
 ### `earlyAccess`
 
-- Type: `boolean`
-- Required: Yes (during Early Access)
-- Default: none
+Controls whether the config file is enabled. Must be set to `true` during [Early Access](/orm/more/releases#early-access).
 
-Controls whether the config file is enabled. Must be set to `true` during Early Access.
+| Property      | Type      | Required                  | Default |
+| ------------- | --------- | ------------------------- | ------- |
+| `earlyAccess` | `boolean` | Yes (during Early Access) | none    |
+
+### `schema`
+
+Configures how Prisma ORM locates and loads your schema file(s). Can be a file or folder path. Relative paths are resolved relative to the `prisma.config.ts` file location. See [here](/orm/prisma-schema/overview/location#multi-file-prisma-schema) for more info about schema location options.
+
+| Property | Type     | Required | Default                                        |
+| -------- | -------- | -------- | ---------------------------------------------- |
+| `schema` | `string` | No       | `./prisma/schema.prisma` and `./schema.prisma` |
 
 ### `migrate`
 
-- Type: `object`
-- Required: No
-- Default: `{}`
-
 Configures how Prisma Migrate communicates with your underlying database. See sub-options below for details.
+
+| Property  | Type     | Required | Default |
+| --------- | -------- | -------- | ------- |
+| `migrate` | `object` | No       | `{}`    |
 
 #### `migrate.adapter`
 
-- Type: `(env: Env) => Promise<SqlMigrationAwareDriverAdapterFactory>`
-- Required: No
-- Default: none
-
 A function that returns a Prisma driver adapter instance which is used by the Prisma CLI to run migrations. The function receives an `env` parameter containing environment variables and should return a `Promise` that resolves to a valid Prisma driver adapter.
+
+| Property          | Type                                                           | Required | Default |
+| ----------------- | -------------------------------------------------------------- | -------- | ------- |
+| `migrate.adapter` | `(env: Env) => Promise<SqlMigrationAwareDriverAdapterFactory>` | No       | none    |
 
 Example using the Prisma ORM D1 driver adapter:
 
 ```ts
-import path from 'node:path'
-import type { PrismaConfig } from 'prisma'
-import { PrismaD1 } from '@prisma/adapter-d1'
+import path from "node:path";
+import type { PrismaConfig } from "prisma";
+import { PrismaD1 } from "@prisma/adapter-d1";
 
 // import your .env file
-import 'dotenv/config'
+import "dotenv/config";
 
 type Env = {
-  CLOUDFLARE_D1_TOKEN: string
-  CLOUDFLARE_ACCOUNT_ID: string
-  CLOUDFLARE_DATABASE_ID: string
-}
+  CLOUDFLARE_D1_TOKEN: string;
+  CLOUDFLARE_ACCOUNT_ID: string;
+  CLOUDFLARE_DATABASE_ID: string;
+};
 
 export default {
   earlyAccess: true,
-  schema: path.join('prisma', 'schema.prisma'),
+  schema: path.join("prisma", "schema.prisma"),
 
   migrate: {
     async adapter(env) {
@@ -135,80 +155,74 @@ export default {
         CLOUDFLARE_D1_TOKEN: env.CLOUDFLARE_D1_TOKEN,
         CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID,
         CLOUDFLARE_DATABASE_ID: env.CLOUDFLARE_DATABASE_ID,
-      })
+      });
     },
   },
-} satisfies PrismaConfig<Env>
+} satisfies PrismaConfig<Env>;
 ```
 
 > **Note**: As of [Prisma ORM v6.11.0](https://github.com/prisma/prisma/releases/tag/6.11.0), the D1 adapter has been renamed from `PrismaD1HTTP` to `PrismaD1`.
 
-#### `migrate.path`
-
-- Type: `String`
-- Required: No
-- Default: none
-
-### `schema`
-
-- Type: `string`
-- Required: No
-- Default: `./prisma/schema.prisma` and `./schema.prisma`
-
-Configures how Prisma ORM locates and loads your schema file(s). Can be a file or folder path. Relative paths are resolved relative to the `prisma.config.ts` file location. See [here](/orm/prisma-schema/overview/location#multi-file-prisma-schema) for more info about schema location options.
-
 ### `studio`
 
-- Type: `object`
-- Required: No
-- Default: none
+Configures how Prisma Studio connects to your database. See sub-options below for details.
 
-Configures how Prisma Studio connects to your database.
+| Property | Type     | Required | Default |
+| -------- | -------- | -------- | ------- |
+| `studio` | `object` | No       | none    |
 
 #### `studio.adapter`
 
-- Type: `(env: Env) => Promise<SqlMigrationAwareDriverAdapterFactory>`
-- Required: No
-- Default: none
-
 A function that returns a Prisma driver adapter instance. The function receives an `env` parameter containing environment variables and should return a `Promise` that resolves to a valid Prisma driver adapter.
+
+| Property          | Type                                                           | Required | Default |
+| ----------------- | -------------------------------------------------------------- | -------- | ------- |
+| `studio.adapter ` | `(env: Env) => Promise<SqlMigrationAwareDriverAdapterFactory>` | No       | none    |
 
 Example using the Prisma ORM LibSQL driver adapter:
 
 ```ts
-import type { PrismaConfig } from 'prisma'
+import type { PrismaConfig } from "prisma";
 
 export default {
   earlyAccess: true,
   studio: {
     adapter: async (env: Env) => {
-      const { PrismaLibSQL } = await import('@prisma/adapter-libsql')
-      const { createClient } = await import('@libsql/client')
+      const { PrismaLibSQL } = await import("@prisma/adapter-libsql");
+      const { createClient } = await import("@libsql/client");
 
       const libsql = createClient({
         url: env.DOTENV_PRISMA_STUDIO_LIBSQL_DATABASE_URL,
-      })
-      return new PrismaLibSQL(libsql)
+      });
+      return new PrismaLibSQL(libsql);
     },
   },
-} satisfies PrismaConfig
+} satisfies PrismaConfig;
 ```
 
 ### `migrations.path`
 
-- Type: `string`
-- Required: No
-- Default: none
-
 The path to the directory where Prisma should store migration files, and look for them.
+
+| Property          | Type     | Required | Default |
+| ----------------- | -------- | -------- | ------- |
+| `migrations.path` | `string` | No       | none    |
 
 ### `views.path`
 
-- Type: `string`
-- Required: No
-- Default: none
+The path to the directory where Prisma should look for the SQL view definitions.
 
-The path to the directory where Prisma should look for the view definitions, where *.sql files will be loaded.
+| Property     | Type     | Required | Default |
+| ------------ | -------- | -------- | ------- |
+| `views.path` | `string` | No       | none    |
+
+### `typedSql.path`
+
+The path to the directory where Prisma should look for the SQL files used for generating typings via [`typedSql`](/orm/prisma-client/using-raw-sql/typedsql).
+
+| Property        | Type     | Required | Default |
+| --------------- | -------- | -------- | ------- |
+| `typedSql.path` | `string` | No       | none    |
 
 ## Common patterns
 
@@ -219,21 +233,21 @@ To get started with Prisma Config, create a `prisma.config.ts` file in your proj
 Using `defineConfig`:
 
 ```ts
-import { defineConfig } from 'prisma/config'
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
-  earlyAccess: true
-})
+  earlyAccess: true,
+});
 ```
 
 Using TypeScript types:
 
 ```ts
-import type { PrismaConfig } from 'prisma'
+import type { PrismaConfig } from "prisma";
 
 export default {
-  earlyAccess: true
-} satisfies PrismaConfig
+  earlyAccess: true,
+} satisfies PrismaConfig;
 ```
 
 ### Using environment variables
@@ -241,32 +255,35 @@ export default {
 When using `prisma.config.ts`, environment variables from `.env` files are not automatically loaded. You'll need to:
 
 1. Install the `dotenv` package:
-  ```terminal
-  npm install dotenv
-  ```
-2. Import `dotenv/config` in your config file:
-  ```ts
-  import 'dotenv/config'
-  import type { PrismaConfig } from 'prisma'
 
-  export default {
-    earlyAccess: true,
-    // now you can use process.env variables
-  } satisfies PrismaConfig
-  ```
+```terminal
+npm install dotenv
+```
+
+2. Import `dotenv/config` in your config file:
+
+```ts
+import "dotenv/config";
+import type { PrismaConfig } from "prisma";
+
+export default {
+  earlyAccess: true,
+  // now you can use process.env variables
+} satisfies PrismaConfig;
+```
 
 ### Using multi-file schemas
 
 If you want to split your Prisma schema into multiple files, you need to specify the path to your Prisma schema folder via the `schema` property:
 
 ```ts
-import path from 'node:path';
-import type { PrismaConfig } from 'prisma'
+import path from "node:path";
+import type { PrismaConfig } from "prisma";
 
 export default {
   earlyAccess: true,
-  schema: path.join('prisma', 'schema'),
-} satisfies PrismaConfig
+  schema: path.join("prisma", "schema"),
+} satisfies PrismaConfig;
 ```
 
 In that case, your `migrations` directory must be located next to the `.prisma` file that defines the `datasource` block.
