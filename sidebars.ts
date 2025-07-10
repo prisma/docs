@@ -440,7 +440,12 @@ const sidebars: SidebarsConfig = {
           label: "Integration Solutions",
           collapsed: false,
           collapsible: false,
-          items: ["guides/clerk-nextjs", "guides/shopify", "guides/permit-io-access-control"].sort(),
+          items: [
+            "guides/clerk-nextjs",
+            "guides/shopify",
+            "guides/permit-io-access-control",
+            "guides/betterauth-nextjs",
+          ].sort(),
         },
         {
           type: "category",
