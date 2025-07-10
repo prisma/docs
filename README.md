@@ -26,8 +26,6 @@ npm run clean && npm run build
 npm run serve
 ```
 
-To prettify or format the code, run:
-
 ```
 npm run format
 ```
