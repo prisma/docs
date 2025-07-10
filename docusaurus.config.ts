@@ -4,6 +4,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 import type { Config, RouteConfig } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import type { ScalarOptions } from "@scalar/docusaurus";
 
 const DOCUSAURUS_BASE_URL = process.env.DOCUSAURUS_BASE_URL ?? "/";
 
@@ -188,6 +189,17 @@ const config: Config = {
         },
       };
     },
+    [
+      "@scalar/docusaurus",
+      {
+        label: "Scalar",
+        route: "/scalar",
+        showNavLink: true, // optional, default is true
+        configuration: {
+          url: "http://localhost:3000/spec.json",
+        },
+      } as ScalarOptions,
+    ],
   ],
   presets: [
     [
@@ -297,7 +309,7 @@ const config: Config = {
               to: "/postgres/database/prisma-studio",
               label: "Studio",
               sub: "Explore and manipulate your data",
-              icon: "fa-regular fa-table"
+              icon: "fa-regular fa-table",
             },
             {
               type: "docSidebar",
@@ -305,7 +317,7 @@ const config: Config = {
               className: "teal",
               label: "Optimize",
               sub: "AI-driven query analysis",
-              icon: "fa-regular fa-magnifying-glass-chart"
+              icon: "fa-regular fa-magnifying-glass-chart",
             },
             {
               type: "docSidebar",
@@ -313,7 +325,7 @@ const config: Config = {
               className: "teal",
               label: "Accelerate",
               sub: "Make your database global",
-              icon: "fa-regular fa-bolt"
+              icon: "fa-regular fa-bolt",
             },
           ],
         },
