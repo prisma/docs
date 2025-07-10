@@ -294,7 +294,7 @@ const config: Config = {
           items: [
             {
               className: "indigo",
-              to: "/orm/tools/prisma-studio",
+              to: "/postgres/database/prisma-studio",
               label: "Studio",
               sub: "Explore and manipulate your data",
               icon: "fa-regular fa-table"
