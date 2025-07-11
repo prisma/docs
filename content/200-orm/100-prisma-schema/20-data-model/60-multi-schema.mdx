@@ -1,53 +1,43 @@
 ---
-title: How to use Prisma ORM with multiple database schemas
+title: Multi-schema
 metaTitle: How to use Prisma ORM with multiple database schemas
 metaDescription: How to use Prisma ORM with multiple database schemas
-tocDepth: 3
+sidebar_class_name: preview-badge
 ---
 
-<TopBlock>
+## Overview
 
-<Admonition type="warning">
+PostgreSQL, CockroachDB, and SQL Server allow you to organize database tables into named groups. These groups are known as _schemas_ and act as a _namespace_ for logically grouping tables (e.g. to avoid name collisions or to have clearer domain separation) and let you define foreign key constraints across them. To avoid ambiguity, this page will refer to these namespaces as _database schemas_.
 
-Multiple database schema support is currently available with the PostgreSQL, CockroachDB, and SQL Server connectors.
-
-</Admonition>
-
-Many database providers allow you to organize database tables into named groups. You can use this to make the logical structure of the data model easier to understand, or to avoid naming collisions between tables.
-
-In PostgreSQL, CockroachDB, and SQL Server, these groups are known as schemas. We will refer to them as _database schemas_ to distinguish them from Prisma ORM's own schema.
-
-This guide explains how to:
-
+This page explains how to:
 - include multiple database schemas in your Prisma schema
-- apply your schema changes to your database with Prisma Migrate and `db push`
+- apply your schema changes to your database with Prisma Migrate
 - introspect an existing database with multiple database schemas
 - query across multiple database schemas with Prisma Client
 
-</TopBlock>
+:::note
 
-## How to enable the `multiSchema` preview feature
+Multi-schema support is currently in [Preview](/orm/more/releases#preview) and has been available since [v4.3.0](https://github.com/prisma/prisma/releases/tag/4.3.0) for PostgreSQL, CockroachDB, and SQL Server. It is not available for SQLite and MySQL because these databases don't have the same concept of _schemas as namespaces_.
 
-Multi-schema support is currently in preview. To enable the `multiSchema` preview feature, add the `multiSchema` feature flag to the `previewFeatures` field of the `generator` block in your Prisma Schema:
+:::
 
-```prisma file=schema.prisma highlight=3;add showLineNumbers
+## How to enable the `multiSchema` Preview feature
+
+Multi-schema support is currently in Preview. To enable the `multiSchema` Preview feature, add the `multiSchema` feature flag to the `previewFeatures` field of the `generator` block in your Prisma Schema:
+
+```prisma file=schema.prisma
 generator client {
   provider        = "prisma-client-js"
   //add-next-line
   previewFeatures = ["multiSchema"]
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 ```
 
 ## How to include multiple database schemas in your Prisma schema
 
-To use multiple database schemas in your Prisma schema file, add the names of your database schemas to an array in the `schemas` field, in the `datasource` block. The following example adds a `"base"` and a `"transactional"` schema:
+To use multiple database schemas in your Prisma schema file, add the names of your database schemas to an array in the `schemas` field, in the `datasource` block. The following example adds a `"base"` and a `"shop"` schema:
 
-```prisma file=schema.prisma highlight=9;add showLineNumbers
+```prisma file=schema.prisma
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
@@ -57,15 +47,15 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
   //add-next-line
-  schemas  = ["base", "transactional"]
+  schemas  = ["base", "shop"]
 }
 ```
 
 You do not need to change your connection string. The `schema` value of your connection string is the default database schema that Prisma Client connects to and uses for raw queries. All other Prisma Client queries use the schema of the model or enum that you are querying.
 
-To designate that a model or enum belongs to a specific database schema, add the `@@schema` attribute with the name of the database schema as a parameter. In the following example, the `User` model is part of the `"base"` schema, and the `Order` model and `Size` enum are part of the `"transactional"` schema:
+To designate that a model or enum belongs to a specific database schema, add the `@@schema` attribute with the name of the database schema as a parameter. In the following example, the `User` model is part of the `"base"` schema, and the `Order` model and `Size` enum are part of the `"shop"` schema:
 
-```prisma file=schema.prisma highlight=5,13;add showLineNumbers
+```prisma file=schema.prisma
 model User {
   id     Int     @id
   orders Order[]
@@ -76,11 +66,11 @@ model User {
 
 model Order {
   id      Int  @id
-  user    User @relation(fields: [id], references: [id])
-  user_id Int
+  user    User @relation(fields: [userId], references: [id])
+  userId  Int
 
   //add-next-line
-  @@schema("transactional")
+  @@schema("shop")
 }
 
 enum Size {
@@ -88,7 +78,8 @@ enum Size {
   Medium
   Large
 
-  @@schema("transactional")
+  //add-next-line
+  @@schema("shop")
 }
 ```
 
@@ -96,31 +87,31 @@ enum Size {
 
 If you have tables with the same name in different database schemas, you will need to map the table names to unique model names in your Prisma schema. This avoids name conflicts when you query models in Prisma Client.
 
-For example, consider a situation where the `config` table in the `base` database schema has the same name as the `config` table in the `users` database schema. To avoid name conflicts, give the models in your Prisma schema unique names (`BaseConfig` and `UserConfig`) and use the `@@map` attribute to map each model to the corresponding table name:
+For example, consider a situation where the `Config` table in the `base` database schema has the same name as the `Config` table in the `users` database schema. To avoid name conflicts, give the models in your Prisma schema unique names (`BaseConfig` and `UserConfig`) and use the `@@map` attribute to map each model to the corresponding table name:
 
-```prisma file=schema.prisma showLineNumbers
+```prisma file=schema.prisma
 model BaseConfig {
   id Int @id
 
-  @@map("config")
+  @@map("Config")
   @@schema("base")
 }
 
 model UserConfig {
   id Int @id
 
-  @@map("config")
+  @@map("Config")
   @@schema("users")
 }
 ```
 
-## How to apply your schema changes with Prisma Migrate and `db push`
+## How to apply your schema changes with Prisma Migrate
 
-You can use Prisma Migrate or `db push` to apply changes to a Prisma schema with multiple database schemas.
+You can use Prisma Migrate (or `prisma db push`) to apply changes to a Prisma schema with multiple database schemas.
 
-As an example, add a `Profile` model to the `base` schema of the blog post model above:
+As an example, add a `Profile` model to the `base` schema above:
 
-```prisma file=schema.prisma highlight=4,9-16;add showLineNumbers
+```prisma file=schema.prisma
 model User {
   id      Int      @id
   orders  Order[]
@@ -143,10 +134,10 @@ model Profile {
 
 model Order {
   id      Int  @id
-  user    User @relation(fields: [id], references: [id])
-  user_id Int
+  user    User @relation(fields: [userId], references: [id])
+  userId  Int
 
-  @@schema("transactional")
+  @@schema("shop")
 }
 
 enum Size {
@@ -154,7 +145,7 @@ enum Size {
   Medium
   Large
 
-  @@schema("transactional")
+  @@schema("shop")
 }
 ```
 
@@ -168,7 +159,7 @@ Note that if you move a model or enum from one schema to another, Prisma ORM del
 
 ## How to introspect an existing database with multiple database schemas
 
-You can introspect an existing database that has multiple database schemas in the same way that you introspect a database that has a single database schema, using `db pull`:
+You can introspect an existing database that has multiple database schemas in the same way that you introspect a database that has a single database schema, using `prisma db pull`:
 
 ```terminal
 npx prisma db pull
@@ -186,7 +177,7 @@ You can query models in multiple database schemas without any change to your Pri
 const orders = await prisma.order.findMany({
   where: {
     user: {
-      id: 1,
+      id: 42,
     },
   },
 })
