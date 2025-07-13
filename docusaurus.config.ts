@@ -238,6 +238,31 @@ const config: Config = {
         },
       } satisfies Preset.Options,
     ],
+    [
+      "redocusaurus",
+      {
+        // You can leave this out unless you want to use it in addition to `specs`
+        // openapi: { ... }
+
+        // The `specs` option is perfect for loading a remote URL
+        specs: [
+          {
+            id: "management-api",
+            // Your spec URL
+            spec: "./static/openapi/management-api.json",
+            url: "/openapi/management-api.json",
+            // The route where the API docs will be available
+            route: "/management-api/",
+          },
+        ],
+        // Optional theme options
+        theme: {
+          primaryColor: "#2D3748", // A color that matches Prisma's theme
+          tryItOutEnabled: true,
+          downloadDefinitionUrl: "/management-api.json",
+        },
+      },
+    ],
   ],
   themeConfig: {
     colorMode: {
@@ -297,7 +322,7 @@ const config: Config = {
               to: "/postgres/database/prisma-studio",
               label: "Studio",
               sub: "Explore and manipulate your data",
-              icon: "fa-regular fa-table"
+              icon: "fa-regular fa-table",
             },
             {
               type: "docSidebar",
@@ -305,7 +330,7 @@ const config: Config = {
               className: "teal",
               label: "Optimize",
               sub: "AI-driven query analysis",
-              icon: "fa-regular fa-magnifying-glass-chart"
+              icon: "fa-regular fa-magnifying-glass-chart",
             },
             {
               type: "docSidebar",
@@ -313,7 +338,7 @@ const config: Config = {
               className: "teal",
               label: "Accelerate",
               sub: "Make your database global",
-              icon: "fa-regular fa-bolt"
+              icon: "fa-regular fa-bolt",
             },
           ],
         },
