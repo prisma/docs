@@ -1,6 +1,6 @@
 ---
-title: 'How to manage Prisma Postgres with GitHub Actions'
-metaTitle: 'How to manage Prisma Postgres with GitHub Actions'
+title: 'How to provision preview databases with GitHub Actions and Prisma Postgres'
+metaTitle: 'How to provision preview databases with GitHub Actions and Prisma Postgres'
 description: 'Provision and manage Prisma Postgres databases per pull request using GitHub Actions and Prisma Management API'
 sidebar_label: 'GitHub Actions'
 image: '/img/guides/prisma-postgres-github-actions-cover.png'
@@ -32,6 +32,10 @@ npm init -y
 ```
 
 ## 2. Install and Configure Prisma
+
+In this section, you'll set up Prisma in your project and verify that it works locally before integrating it into GitHub Actions. This involves installing Prisma's dependencies, connecting to a Prisma Postgres database, defining your data models, applying your schema, and seeding the database with sample data.
+
+By the end of this section, your project will be fully prepared to use Prisma both locally and in a CI workflow.
 
 ### 2.1. Install dependencies
 
@@ -232,12 +236,7 @@ concurrency:
   cancel-in-progress: true
 ```
 
-This configuration:
-
-* Runs the workflow for PR open, reopen, and close events
-* Supports manual runs using the GitHub UI
-* Dynamically generates a sanitized database name per PR or manual run
-* Prevents concurrent runs for the same PR
+Now you will be adding the provision and cleanup jobs to this workflow. These jobs will handle the creation and deletion of Prisma Postgres databases based on the pull request events.
 
 ### 3.3. Add a provision job to the workflow
 
@@ -494,45 +493,111 @@ Replace `<your-username>` and `<repository-name>` with your GitHub username and 
 
 ## 5. Retrieve the secrets for the workflow
 
-### 5.1 Retrieve the project ID where you want to provision Prisma Postgres databases
-
-As you ran the `npx prisma init --db` command earlier, you should have a Prisma Postgres project created in Prisma Data Platform. If you want to use a different project for the CI workflow, you can create a new one or use an existing project.
-
-You can create a new project in the Prisma Data Platform by following these steps:
-
-1. Go to the [Prisma Console](https://console.prisma.io).
-2. Select your workspace.
-3. Click on **New project**.
-4. Then follow the prompts in the UI to create a new project.
-
-Once the project is created, you will be using the [Platform CLI](/platform/platform-cli/commands#project-show) to retrieve your project ID. Head into your CLI and login to Prisma Data Platform using the CLI so that the CLI can access your project and workspace:
-
-```terminal
-npx prisma platform auth login --early-access
-```
-
-Then run the following command to retrieve your workspace ID:
-
-```terminal
-npx prisma platform workspace show --early-access
-```
-
-Then use the workspace ID to retreive your desired project ID where you want to automatically provision Prisma Postgres databases from the CI workflow:
-
-```terminal
-npx prisma platform project show --workspace $INSERT_WORKSPACE_ID --early-access 
-```
-
-Copy the Project `id` from the CLI output and store it somewhere securely. You will use this project ID in the GitHub Actions workflow as `PRISMA_PROJECT_ID`.
-
-### 5.2. Retrieve your Prisma Postgres service token
+### 5.1. Retrieve your Prisma Postgres service token
 
 To manage Prisma Postgres databases, you also need a service token. Follow these steps to retrieve it:
 
 1. Make sure you are in the same workspace where you created your project in the last step.
 2. Click on **Integrations** in the left sidebar.
 4. Under the **Netlify** section, click the **Generate integration token** button.
-5. Copy the generated token and store it securely. You will use this token in the GitHub Actions workflow as `PRISMA_POSTGRES_SERVICE_TOKEN`.
+5. Copy the generated token and save it in your `.env` file as `PRISMA_POSTGRES_SERVICE_TOKEN`. This token is required for the next step's script and must also be added to your GitHub Actions secrets.
+
+### 5.2 Retrieve the project ID where you want to provision Prisma Postgres databases
+
+To avoid conflicts with your development databases, you'll now create a dedicated project specifically for CI workflows. Use the following script to provision a new Prisma Postgres project via the Prisma Management API. Save it as `create-prisma-project.sh` at the root of your repository:
+
+:::note 
+
+Make sure your `.env` file has the `PRISMA_POSTGRES_SERVICE_TOKEN` set to the token you generated in the previous step.
+
+:::
+
+
+```bash file="create-prisma-project.sh"
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# -------- Load environment variables from .env file if it exists --------
+if [[ -f .env ]]; then
+  echo "📦 Loading environment variables from .env"
+  set -o allexport
+  source .env
+  set +o allexport
+fi
+
+# -------- Check for required token --------
+if [[ -z "${PRISMA_POSTGRES_SERVICE_TOKEN:-}" ]]; then
+  echo "❌ Please set the PRISMA_POSTGRES_SERVICE_TOKEN environment variable."
+  echo "   Example: export PRISMA_POSTGRES_SERVICE_TOKEN=your-token"
+  exit 1
+fi
+
+# -------- Read input args --------
+REGION="${1:-}"
+NAME="${2:-}"
+
+if [[ -z "$REGION" || -z "$NAME" ]]; then
+  echo "Usage: ./create-prisma-project.sh <region> <project-name>"
+  echo "Example: ./create-prisma-project.sh us-east-1 my-gha-preview"
+  exit 1
+fi
+
+# -------- Make request --------
+echo "🚀 Creating Prisma project '$NAME' in region '$REGION'..."
+
+API_URL="https://api.prisma.io/v1/projects"
+RESPONSE_FILE=$(mktemp)
+HTTP_STATUS=$(curl --silent --output "$RESPONSE_FILE" --write-out "%{http_code}" \
+  -X POST "$API_URL" \
+  -H "Authorization: Bearer $PRISMA_POSTGRES_SERVICE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"region\": \"$REGION\", \"name\": \"$NAME\"}")
+
+RESPONSE_BODY=$(cat "$RESPONSE_FILE")
+rm "$RESPONSE_FILE"
+
+# -------- Handle errors --------
+if [[ "$HTTP_STATUS" -ne 201 ]]; then
+  echo "❌ Failed to create project (HTTP $HTTP_STATUS)"
+  echo "Response body:"
+  echo "$RESPONSE_BODY"
+  exit 1
+fi
+
+# -------- Extract project ID from response --------
+PROJECT_ID=$(echo "$RESPONSE_BODY" | grep -oE '"id":"[^"]+"' | head -n1 | cut -d':' -f2 | tr -d '"')
+
+if [[ -z "$PROJECT_ID" ]]; then
+  echo "❌ Project creation returned 201 but no project ID found."
+  echo "Raw response:"
+  echo "$RESPONSE_BODY"
+  exit 1
+fi
+
+echo "✅ Project created successfully!"
+echo "📦 Project ID: $PROJECT_ID"
+```
+
+Then execute the script in your terminal to create a new Prisma Postgres project:
+
+```bash
+bash create-prisma-project.sh $REGION $PROJECT_NAME
+```
+
+
+Replace `$REGION` with your desired region (e.g., `us-east-1`) and `$PROJECT_NAME` with a name for your project (e.g., `my-gha-preview`). The script will create a new Prisma Postgres project in the specified region.
+
+The CLI output will then look like this:
+
+```bash
+📦 Loading environment variables from .env
+🚀 Creating Prisma project $PROJECT_NAME in region $REGION...
+✅ Project created successfully!
+📦 Project ID: $PRISMA_PROJECT_ID  
+```
+
+Copy and store the `$PRISMA_PROJECT_ID` from the output. This is your Prisma project ID, which you will use in the next step.
 
 ## 6. Add secrets in GitHub
 

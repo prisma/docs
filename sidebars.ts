@@ -433,6 +433,7 @@ const sidebars: SidebarsConfig = {
             "guides/docker",
             "guides/use-prisma-in-pnpm-workspaces",
             "guides/data-dog",
+            "guides/github-actions",
           ].sort(),
         },
         {
@@ -444,7 +445,6 @@ const sidebars: SidebarsConfig = {
             "guides/clerk-nextjs",
             "guides/shopify",
             "guides/permit-io-access-control",
-            "guides/github-actions",
             "guides/betterauth-nextjs",
           ].sort(),
         },
