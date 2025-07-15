@@ -204,11 +204,17 @@ This file will contain the logic to manage databases on a per-PR basis. This Git
 - Cleans up the database when the PR is closed
 - Supports manual execution for both provisioning and cleanup
 
+:::note
+
+This workflow uses `us-east-1` as the default region for Prisma Postgres. You can change this to your preferred region by modifying the `region` parameter in the API calls, or even by adding a `region` input to the workflow.
+
+:::
+
 ### 3.2. Add the base configuration
 
 Paste the following into `.github/workflows/prisma-postgres-management.yml`. This sets up when the workflow runs and provides required environment variables.
 
-```yaml
+```yaml file=.github/workflows/prisma-postgres-management.yml
 name: Prisma Postgres Management API Workflow
 
 on:
@@ -255,8 +261,7 @@ Now add a job to provision the database when the PR is opened or when triggered 
 
 Append the following under the `jobs:` key in your workflow file:
 
-```yaml
-
+```yaml file=.github/workflows/prisma-postgres-management.yml
 jobs:
   provision-database:
     if: (github.event_name == 'pull_request' && github.event.action != 'closed') || (github.event_name == 'workflow_dispatch' && inputs.action == 'provision')
@@ -300,7 +305,7 @@ jobs:
           RESPONSE=$(curl -s -X GET \
             -H "Authorization: Bearer ${{ env.PRISMA_POSTGRES_SERVICE_TOKEN }}" \
             -H "Content-Type: application/json" \
-            "https://api.prisma.io/projects/${{ env.PRISMA_PROJECT_ID }}/databases")
+            "https://api.prisma.io/v1/projects/${{ env.PRISMA_PROJECT_ID }}/databases")
 
           echo "Looking for database with name: ${{ env.DB_NAME }}"
 
@@ -325,12 +330,12 @@ jobs:
             -H "Authorization: Bearer ${{ env.PRISMA_POSTGRES_SERVICE_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"name\": \"${{ env.DB_NAME }}\", \"region\": \"us-east-1\"}" \
-            "https://api.prisma.io/projects/${{ env.PRISMA_PROJECT_ID }}/databases")
+            "https://api.prisma.io/v1/projects/${{ env.PRISMA_PROJECT_ID }}/databases")
 
           # Check if response contains an id (success case)
           if echo "$RESPONSE" | grep -q '"id":'; then
             echo "Database created successfully"
-            CONNECTION_STRING=$(echo "$RESPONSE" | jq -r '.connectionString')
+            CONNECTION_STRING=$(echo "$RESPONSE" | jq -r '.data.connectionString')
             echo "connection-string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
           else
             echo "Failed to create database"
@@ -347,9 +352,9 @@ jobs:
             -H "Authorization: Bearer ${{ env.PRISMA_POSTGRES_SERVICE_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{"name":"read_write_key"}' \
-            "https://api.prisma.io/projects/${{ env.PRISMA_PROJECT_ID }}/databases/${{ steps.check-db.outputs.db-id }}/connections")
+            "https://api.prisma.io/v1/databases/${{ steps.check-db.outputs.db-id }}/connections")
 
-          CONNECTION_STRING=$(echo "$CONNECTION_RESPONSE" | jq -r '.connectionString')
+          CONNECTION_STRING=$(echo "$CONNECTION_RESPONSE" | jq -r '.data.connectionString')
           echo "connection-string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
       - name: Setup Database Schema
@@ -419,7 +424,7 @@ When a pull request is closed, you can automatically remove the associated datab
 
 Append the following to your `jobs:` section, after the `provision-database` job:
 
-```yaml
+```yaml file=.github/workflows/prisma-postgres-management.yml
   cleanup-database:
     if: (github.event_name == 'pull_request' && github.event.action == 'closed') || (github.event_name == 'workflow_dispatch' && inputs.action == 'cleanup')
     runs-on: ubuntu-latest
@@ -451,7 +456,7 @@ Append the following to your `jobs:` section, after the `provision-database` job
           RESPONSE=$(curl -s -X GET \
             -H "Authorization: Bearer ${{ env.PRISMA_POSTGRES_SERVICE_TOKEN }}" \
             -H "Content-Type: application/json" \
-            "https://api.prisma.io/projects/${{ env.PRISMA_PROJECT_ID }}/databases")
+            "https://api.prisma.io/v1/projects/${{ env.PRISMA_PROJECT_ID }}/databases")
 
           echo "Looking for database with name: ${{ env.DB_NAME }}"
 
@@ -463,7 +468,7 @@ Append the following to your `jobs:` section, after the `provision-database` job
             DELETE_RESPONSE=$(curl -s -X DELETE \
               -H "Authorization: Bearer ${{ env.PRISMA_POSTGRES_SERVICE_TOKEN }}" \
               -H "Content-Type: application/json" \
-              "https://api.prisma.io/projects/${{ env.PRISMA_PROJECT_ID }}/databases/$DB_EXISTS")
+              "https://api.prisma.io/v1/databases/$DB_EXISTS")
             
             echo "Delete API Response: $DELETE_RESPONSE"
             
