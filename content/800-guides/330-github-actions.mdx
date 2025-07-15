@@ -10,9 +10,11 @@ community_section: true
 
 ## Overview
 
-This guide shows you how to automatically create and delete [Prisma Postgres](https://www.prisma.io/postgres) databases using GitHub Actions and [the Prisma Postgres management API](https://api.prisma.io/v1/swagger-editor). The setup provisions a new database for every pull request, seeds it with sample data, and deletes it once the PR is closed.
+This guide shows you how to automatically create and delete [Prisma Postgres](https://www.prisma.io/postgres) databases using GitHub Actions and [the Prisma Postgres management API](https://api.prisma.io/v1/swagger-editor). The setup provisions a new database for every pull request, seeds it with sample data, and the `github-actions` bot leaves a comment with the database name and the status.
 
-This is useful when testing database changes in isolation or when each feature branch needs its own temporary environment.
+![GitHub Actions comment](/img/guides/github-comment.png)
+
+After the PR is closed, the database is automatically deleted. This allows you to test changes in isolation without affecting the main development database. 
 
 ## Prerequisites
 
@@ -518,97 +520,39 @@ To manage Prisma Postgres databases, you also need a service token. Follow these
 
 ### 5.2 Retrieve the project ID where you want to provision Prisma Postgres databases
 
-To avoid conflicts with your development databases, you'll now create a dedicated project specifically for CI workflows. Use the following script to provision a new Prisma Postgres project via the Prisma Management API. Save it as `create-prisma-project.sh` at the root of your repository:
+To avoid conflicts with your development databases, you'll now create a dedicated project specifically for CI workflows. Use the following curl command to create a new Prisma Postgres project using the Prisma Postgres Management API:
+
+```terminal
+curl -X POST https://api.prisma.io/v1/projects \
+  -H "Authorization: Bearer $PRISMA_POSTGRES_SERVICE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"region\": \"us-east-1\", \"name\": \"$PROJECT_NAME\"}"
+```
 
 :::note 
 
-Make sure your `.env` file has the `PRISMA_POSTGRES_SERVICE_TOKEN` set to the token you generated in the previous step.
+Make sure to replace the `$PRISMA_POSTGRES_SERVICE_TOKEN` variable with the service token you stored earlier.
 
 :::
 
 
-```bash file="create-prisma-project.sh"
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-# -------- Load environment variables from .env file if it exists --------
-if [[ -f .env ]]; then
-  echo "📦 Loading environment variables from .env"
-  set -o allexport
-  source .env
-  set +o allexport
-fi
-
-# -------- Check for required token --------
-if [[ -z "${PRISMA_POSTGRES_SERVICE_TOKEN:-}" ]]; then
-  echo "❌ Please set the PRISMA_POSTGRES_SERVICE_TOKEN environment variable."
-  echo "   Example: export PRISMA_POSTGRES_SERVICE_TOKEN=your-token"
-  exit 1
-fi
-
-# -------- Read input args --------
-REGION="${1:-}"
-NAME="${2:-}"
-
-if [[ -z "$REGION" || -z "$NAME" ]]; then
-  echo "Usage: ./create-prisma-project.sh <region> <project-name>"
-  echo "Example: ./create-prisma-project.sh us-east-1 my-gha-preview"
-  exit 1
-fi
-
-# -------- Make request --------
-echo "🚀 Creating Prisma project '$NAME' in region '$REGION'..."
-
-API_URL="https://api.prisma.io/v1/projects"
-RESPONSE_FILE=$(mktemp)
-HTTP_STATUS=$(curl --silent --output "$RESPONSE_FILE" --write-out "%{http_code}" \
-  -X POST "$API_URL" \
-  -H "Authorization: Bearer $PRISMA_POSTGRES_SERVICE_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"region\": \"$REGION\", \"name\": \"$NAME\"}")
-
-RESPONSE_BODY=$(cat "$RESPONSE_FILE")
-rm "$RESPONSE_FILE"
-
-# -------- Handle errors --------
-if [[ "$HTTP_STATUS" -ne 201 ]]; then
-  echo "❌ Failed to create project (HTTP $HTTP_STATUS)"
-  echo "Response body:"
-  echo "$RESPONSE_BODY"
-  exit 1
-fi
-
-# -------- Extract project ID from response --------
-PROJECT_ID=$(echo "$RESPONSE_BODY" | grep -oE '"id":"[^"]+"' | head -n1 | cut -d':' -f2 | tr -d '"')
-
-if [[ -z "$PROJECT_ID" ]]; then
-  echo "❌ Project creation returned 201 but no project ID found."
-  echo "Raw response:"
-  echo "$RESPONSE_BODY"
-  exit 1
-fi
-
-echo "✅ Project created successfully!"
-echo "📦 Project ID: $PROJECT_ID"
-```
-
-Then execute the script in your terminal to create a new Prisma Postgres project:
-
-```bash
-bash create-prisma-project.sh $REGION $PROJECT_NAME
-```
-
-
-Replace `$REGION` with your desired region (e.g., `us-east-1`) and `$PROJECT_NAME` with a name for your project (e.g., `my-gha-preview`). The script will create a new Prisma Postgres project in the specified region.
+Replace the $PRISMA_POSTGRES_SERVICE_TOKEN with the service token and the `$PROJECT_NAME` with a name for your project (e.g., `my-gha-preview`). The script will create a new Prisma Postgres project in the `us-east-1` region.
 
 The CLI output will then look like this:
 
 ```bash
-📦 Loading environment variables from .env
-🚀 Creating Prisma project $PROJECT_NAME in region $REGION...
-✅ Project created successfully!
-📦 Project ID: $PRISMA_PROJECT_ID  
+{
+  "data": {
+    "id": "$PRISMA_PROJECT_ID",
+    "type": "project",
+    "name": "$PROJECT_NAME",
+    "createdAt": "2025-07-15T08:35:10.546Z",
+    "workspace": {
+      "id": "$PRISMA_WORKSPACE_ID",
+      "name": "$PRISMA_WORKSPACE_NAME"
+    }
+  }
+}
 ```
 
 Copy and store the `$PRISMA_PROJECT_ID` from the output. This is your Prisma project ID, which you will use in the next step.
