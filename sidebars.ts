@@ -459,6 +459,15 @@ const sidebars: SidebarsConfig = {
             "guides/data-migration",
           ].sort(),
         },
+                {
+        type: "category",
+          label: "Prisma Postgres",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            "guides/management-api-basic",
+          ].sort(),
+        },
         {
           type: "category",
           label: "Connection Pooling Guides",
