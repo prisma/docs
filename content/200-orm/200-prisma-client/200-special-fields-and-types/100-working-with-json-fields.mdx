@@ -976,46 +976,72 @@ These _null enums_ do not apply to MongoDB because MongoDB does not differentiat
 
 </Admonition>
 
-## Typed `Json`
+## Typed `Json` Fields
 
-By default, `Json` fields are not typed in Prisma models. To accomplish strong typing inside of these fields, you will need to use an external package like [prisma-json-types-generator](https://www.npmjs.com/package/prisma-json-types-generator) to accomplish this.
+Prisma's `Json` fields are untyped by default. To add strong typing, you can use the external package [prisma-json-types-generator](https://www.npmjs.com/package/prisma-json-types-generator).
 
-### Using `prisma-json-types-generator`
+1.  First, install the package and add the generator to your `schema.prisma`:
 
-First, install and configure `prisma-json-types-generator` [according to the package's instructions](https://www.npmjs.com/package/prisma-json-types-generator#using-it).
+    ```bash
+    npm install -D prisma-json-types-generator
+    ```
 
-Then, assuming you have a model like the following:
+    ```prisma file=schema.prisma
+    generator client {
+      provider = "prisma-client-js"
+    }
 
-```prisma no-copy
-model Log {
-  id   Int  @id
-  meta Json
-}
-```
+    generator json {
+      provider = "prisma-json-types-generator"
+    }
+    ```
 
-You can update it and type it by using [abstract syntax tree comments](/orm/prisma-schema/overview#comments)
+2.  Next, link a field to a TypeScript type using an [AST comment](/orm/prisma-schema/overview#comments).
 
-```prisma highlight=4;normal file=schema.prisma showLineNumbers
-model Log {
-  id Int @id
+    ```prisma highlight=4;normal file=schema.prisma showLineNumbers
+    model Log {
+      id   Int @id
 
-  //highlight-next-line
+      //highlight-next-line
+      /// [LogMetaType]
+      meta Json
+    }
+    ```
+
+3.  Then, define `LogMetaType` in a type declaration file (e.g., `types.ts`) that is included in your `tsconfig.json`.
+
+    ```ts file=types.ts showLineNumbers
+    declare global {
+      namespace PrismaJson {
+        type LogMetaType = { timestamp: number; host: string };
+      }
+    }
+
+    // This file must be a module.
+    export {};
+    ```
+
+Now, `Log.meta` will be strongly typed as `{ timestamp: number; host: string }`.
+
+### Typing `String` Fields and Advanced Features
+
+You can also apply these techniques to `String` fields. This is especially useful for creating string-based enums directly in your schema when your database does not support enum types.
+
+```prisma
+model Post {
+  id     Int    @id
+
+  /// !['draft' | 'published']
+  status String
+
   /// [LogMetaType]
-  meta Json
+  meta   Json[]
 }
 ```
 
-Then, make sure you define the above type in a type declaration file included in your `tsconfig.json`
+This results in `post.status` being strongly typed as `'draft' | 'published'` and `post.meta` as `LogMetaType[]`.
 
-```ts file=types.ts showLineNumbers
-declare global {
-  namespace PrismaJson {
-    type LogMetaType = { timestamp: number; host: string }
-  }
-}
-```
-
-Now, when working with `Log.meta` it will be strongly typed!
+For a complete guide on configuration, monorepo setup, and other advanced features, please refer to the [official `prisma-json-types-generator` documentation](https://github.com/arthurfiorette/prisma-json-types-generator#readme).
 
 ## `Json` FAQs
 
