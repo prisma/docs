@@ -1,0 +1,126 @@
+---
+title: "Postgres extensions"
+metaTitle: "Postgres extensions"
+metaDescription: "Learn about using Postgres extensions with Prisma Postgres"
+tocDepth: 3
+toc: true
+---
+
+## Overview
+
+Prisma Postgres supports the following [PostgreSQL extensions](https://www.postgresql.org/docs/current/sql-createextension.html):
+
+- [`pgvector`](https://github.com/pgvector/pgvector) (not yet supported in Prisma Studio)
+
+Support for the following extensions is going to follow soon:
+- [`pgcrypto`](https://www.postgresql.org/docs/current/pgcrypto.html)
+- [`postgis`](https://postgis.net/)
+- [`pg_search`](https://www.paradedb.com/blog/introducing_search)
+- [`contrib`](https://www.postgresql.org/docs/current/contrib.html) extensions
+
+## Using extensions with Prisma ORM
+
+An extension may be supported by Prisma Postgres but not yet by Prisma ORM. In that case, you can still use the extension with Prisma ORM by using [customized migrations](/orm/prisma-migrate/workflows/customizing-migrations) and [TypedSQL](/orm/prisma-client/using-raw-sql/typedsql) (or another mechanism to send [raw SQL](/orm/prisma-client/using-raw-sql) via in Prisma ORM).
+
+Let's walk through an example with `pgvector`.
+
+### 1. Create an empty migration file
+
+To customize a migration, first create an empty migration file:
+
+```terminal
+npx prisma migrate dev --name add-pgvector --create-only
+```
+
+Notice the `--create-only` flag which will create an empty migration file in your migrations directory.
+
+### 2. Create and use the extension in your migration file
+
+In the empty migration file, you can write any custom SQL to be executed in the database:
+
+```sql
+-- prisma/migrations/<timestamp>-add-pgvector
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE "Document" (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  embedding VECTOR(4) -- use 4 for demo purposes; real-world values are much bigger
+);
+```
+
+In this case, you:
+- install the `pgvector` extension in your database using the `CREATE EXTENSION` statement
+- create a `Document` table that uses the `VECTOR` type from that extension
+
+### 3. Execute the migration against the database
+
+Run the following command to execute the migration and apply its changes in your database:
+
+```terminal
+npx prisma migrate deploy
+```
+
+This command will apply the pending `prisma/migrations/<timestamp>-add-pgvector` migration and create the `Document` table in your database.
+
+### 4. Pull the document table into your Prisma schema
+
+Introspect the database schema with the new `Document` table and update your Prisma schema with it:
+
+
+
+<CodeWithResult>
+<cmd>
+
+```terminal
+npx prisma db pull
+```
+
+</cmd>
+<cmdResult>
+
+```
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "postgres", schema "public" at "accelerate.prisma-data.net"
+
+✔ Introspected 3 models and wrote them into prisma/schema.prisma in 3.23s
+      
+*** WARNING ***
+
+These fields are not supported by Prisma Client, because Prisma currently does not support their types:
+  - Model: "Document", field: "embedding", original data type: "vector"
+
+Run prisma generate to generate Prisma Client.
+```
+
+</cmdResult>
+</CodeWithResult>
+
+This will update your Prisma schema as follows:
+
+
+You Prisma schema will now contain the `Document` model:
+
+```prisma
+model Document {
+  id        Int                    @id @default(autoincrement())
+  title     String
+  embedding Unsupported("vector")?
+}
+```
+
+Note that because the `VECTOR` type is not yet natively supported by Prisma ORM, it's represented as an [`Unsupported`](/orm/prisma-schema/data-model/models#unsupported-types) type.
+
+### 4. Query with raw SQL
+
+Here's an example query for inserting a new row into the `Document` table:
+
+```ts
+await prisma.$executeRaw`
+  INSERT INTO "Document" (title, embedding)
+  VALUES ('My Title', '[1,22,1,42]'::vector)
+`;
+```
+
+You can also use [TypedSQL](/orm/prisma-client/using-raw-sql/typedsql) for type-safe SQL queries against your database.
