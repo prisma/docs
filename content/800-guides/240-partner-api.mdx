@@ -1,0 +1,193 @@
+---
+title: 'How to use the Prisma Postgres Partner API'
+metaTitle: 'How to use the Prisma Postgres Partner API'
+description: 'Learn how to use the Prisma Postgres Partner API'
+sidebar_label: 'Partner API'
+image: '/img/guides/prisma-partner-api-cover.png'
+community_section: true
+---
+
+## Introduction
+
+This guide walks you through how to use the Prisma Postgres Partner API, which powers the [`npx create-db`](https://create-db.prisma.io/) command.
+
+You'll learn how a Prisma Postgres database is provisioned, how you can transfer it to a specific workspace, and how the process is secured using OAuth2. By the end, you'll understand the full flow and how to leverage it in your own projects.
+
+This guide references the actual implementation in the `npx create-db` CLI and Cloudflare Workers for a real world example. The repo for the `npx create-db` is [here](https://github.com/prisma/create-db) which can be used as a reference for how to use the Partner API in your own projects.
+
+## Overview
+
+The `npx create-db` CLI command provisions a temporary Prisma Postgres database using the Prisma Postgres Partner API. The process is handled by two Cloudflare Workers, [create-db-worker](https://github.com/prisma/create-db/tree/main/create-db-worker) and [claim-db-worker](https://github.com/prisma/create-db/tree/main/claim-db-worker), with the [create-db CLI](https://github.com/prisma/create-db/tree/main/create-db) acting as the entry point:
+
+- **`create-db-worker`**: Provisions the database and schedules deletion.
+- **`claim-db-worker`**: Handles the claim and transfer process, including OAuth2 authentication.
+- **`create-db` CLI**: The entry point for the CLI command.
+
+## 1. Creating a database
+
+Start by running the following command:
+
+```terminal
+npx create-db
+```
+
+This triggers the CLI logic, which:
+
+1. Parses the command-line arguments *(such as region or interactive mode)*.
+2. If interactive mode is enabled, prompts the user to select a region from the available options.
+3. Provisions a temporary Prisma Postgres database in the selected region.
+4. Schedules the database for automatic deletion in 24 hours via a [Cloudflare Workflow](https://developers.cloudflare.com/workflows/).
+5. Displays the connection strings and a claim link for the next step.
+
+:::note Endpoints used
+- Fetches available regions: `GET https://api.prisma.io/v1/regions`
+- Creates a new project: `POST https://api.prisma.io/v1/projects`
+- Deletes a project: `POST https://api.prisma.io/v1/projects/{projectID}/delete`
+:::
+
+#### Request from CLI to create worker
+
+```ts file=create-db
+await fetch(`${CREATE_DB_WORKER_URL}/create`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
+});
+```
+
+#### Create worker endpoint
+
+```ts file=create-db-worker
+const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${env.INTEGRATION_TOKEN}`,
+  },
+  body: payload,
+});
+```
+
+If successful, the worker returns the new project details, including the `projectID` and connection strings. The worker also triggers a [workflow](https://github.com/prisma/create-db/blob/main/create-db-worker/src/delete-workflow.ts) to schedule deletion of the database in 24 hours.
+
+The CLI displays the connection strings and a claim link:
+
+```txt
+┌  🚀 Creating a Prisma Postgres database
+│
+│  Provisioning a temporary database in us-east-1...
+│
+│  It will be automatically deleted in 24 hours, but you can claim it.
+│
+◇  Database created successfully!
+│
+│
+●  Connect to your database →
+│
+│    Use this connection string optimized for Prisma ORM:
+│
+│    prisma+postgres://accelerate.prisma-data.net/?api_key=<api_key>
+│
+│
+│    Use this connection string for everything else:
+│
+│    postgresql://<user>:<password>@db.prisma.io:5432/postgres
+│
+│
+◆  Claim your database →
+│
+│    Want to keep your database? Claim for free via this link:
+│
+│    https://create-db.prisma.io?projectID=<projectID>&utm_source=create-db&utm_medium=cli
+│
+│    Your database will be deleted on DD/MM/YYYY, HH:MM:SS if not claimed.
+│
+└
+```
+
+The claim link points to the claim worker, passing the `projectID` and UTM parameters.
+
+## 2. Beginning the claim flow
+
+When you open the claim link, you'll be taken to a web page served by the claim worker. Here, you'll see a **Claim Database** button:
+
+![Claim Button UI](/img/guides/partner-api/claim.png)
+
+Click the **Claim Database** button to start the claim process. You'll be redirected to Prisma Auth, where you'll be prompted to log in (if needed) and then select the workspace where you want to transfer the database:
+
+Behind the scenes, the claim worker constructs an OAuth2 authorization URL for Prisma Auth:
+
+```ts
+const authParams = new URLSearchParams({
+  client_id: env.CLIENT_ID,
+  redirect_uri: 'https://create-db.prisma.io/auth/callback',
+  response_type: 'code',
+  scope: 'workspace:admin',
+  state: generateState(),
+  utm_source: url.searchParams.get('utm_source') || 'unknown',
+  utm_medium: 'cli',
+});
+const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
+```
+
+![Workspace selection](/img/guides/partner-api/workspace-selection.png)
+
+## 3. Authenticating the user
+
+After selecting a workspace, Prisma Auth redirects back to the claim worker's `/auth/callback` endpoint with a `code` and `state`:
+
+That url will look like this:
+```txt
+https://create-db.prisma.io/auth/callback?code=...&state=...&projectID=...
+```
+
+The claim worker exchanges the `code` for an access token using the token endpoint of `https://auth.prisma.io/token`:
+
+```ts
+const tokenResponse = await fetch('https://auth.prisma.io/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: code,
+    redirect_uri: 'https://create-db.prisma.io/auth/callback',
+    client_id: env.CLIENT_ID,
+    client_secret: env.CLIENT_SECRET,
+  }).toString(),
+});
+```
+
+If successful, the worker receives an access token for the user.
+
+## 4. Finishing the claim flow
+
+The claim worker then transfers the project to your workspace by calling the transfer endpoint of `https://api.prisma.io/v1/projects/{projectID}/transfer` with the `recipientAccessToken` as the body:
+
+```ts
+const transferResponse = await fetch(`https://api.prisma.io/v1/projects/${projectID}/transfer`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${env.INTEGRATION_TOKEN}`,
+  },
+  body: JSON.stringify({ recipientAccessToken: tokenData.access_token }),
+});
+```
+
+Once the transfer is successful, you'll be redirected to the success page:
+
+![Transfer Success](/img/guides/partner-api/congrats.png)
+
+## Summary
+
+- The [CLI](https://github.com/prisma/create-db/tree/main/create-db), [create worker](https://github.com/prisma/create-db/tree/main/create-db-worker), and [claim worker](https://github.com/prisma/create-db/tree/main/claim-db-worker) work together to provision, claim, and transfer temporary databases.
+- All API calls, redirects, and error handling are implemented as shown in the code above.
+- OAuth2 is used to securely transfer ownership of the database to your workspace.
+- The [create-db](https://github.com/prisma/create-db) repo is a reference for how to use the Partner API in your own projects.
+
+## Next Steps
+
+- Explore [Prisma ORM documentation](/orm/overview/introduction) to learn more about working with your new database.
+- Try connecting your application to the database using the provided connection strings.
+- Learn about [Prisma Accelerate](/postgres/database/caching) for improved performance.
+- Join the [Prisma community on Discord](https://pris.ly/discord) for support and tips.
