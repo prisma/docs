@@ -1,0 +1,138 @@
+---
+title: External tables
+metaTitle: Externally managed tables
+metaDescription: How to declare and use externally managed tables in Prisma ORM
+sidebar_class_name: preview-badge
+---
+
+## Overview
+
+Sometimes, you might not want Prisma ORM to manage specific tables—such as ones handled by another team or service.
+
+Some concrete use cases for this are:
+- auth services like Clerk or Auth0 that manage specific tables with user and session data
+- storage services like Supabase Storage with tables for storing metadata about buckets and objects
+- a microservice-based organization where specific teams own specific tables in the database
+
+There may be many other scenarios based on custom organizational constraints or preferences where you may not want Prisma ORM to manage specific tables.
+
+_Externally managed tables_ (or _external tables_ for short) in Prisma ORM are tables that can be **queried via Prisma Client** but are **ignored by Prisma Migrate**.
+
+:::note
+Externally managed tables are frequently used in combination with [multi-schema](/orm/prisma-schema/data-model/multi-schema) database setups. However, this is not a hard requirement. You can have only a single schema in your database and also declare externally managed tables within it.
+:::
+
+:::warning
+Exrernally managed tables are currently in [Preview](/orm/more/releases#preview).
+:::
+
+## Workflow
+
+If you want to use external tables, here's the main workflow:
+1. Declare the name of the external tables in your Prisma Config file
+1. Introspect your database using `npx prisma db pull` so that the table is part of your Prisma schema
+1. Re-generate Prisma Client with `npx prisma generate`
+1. You can now query the external table using Prisma Client but it will be ignore by Prisma Migrate
+1. When the table gets changed (by whoever owns it):
+    1. Re-introspect your database using `npx prisma db pull`
+    1. Re-generate Prisma Client with `npx prisma generate`
+
+## Example
+
+Assume you have the following database schema:
+
+```sql
+-- Users table
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Posts table
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  title VARCHAR(200) NOT NULL,
+  content TEXT,
+);
+```
+
+The Prisma schema only contains the `posts` table at this point:
+
+```prisma
+model posts {
+  id          Int       @id @default(autoincrement())
+  created_at  DateTime  @default(now())
+  title       String
+  content     String?
+}
+```
+
+### 1. Declaring externally managed tables in Prisma Config
+
+You can specify externally managed tables in your [Prisma Config](/orm/reference/prisma-config-reference) file via the `tables.external` property:
+
+```ts
+// prisma.config.ts
+export default defineConfig({
+  // required during Early Access
+  experimental: {
+    // add-next-line
+    externalTables: true
+  },
+  // declare a `users` table
+  // add-start
+  tables: {
+    external: [
+      "users",
+    ]
+  },
+  // add-end
+})
+```
+
+### 2. Introspect the database
+
+Next, you need to update your Prisma schema using [introspection](/orm/prisma-schema/introspection):
+
+```terminal
+npx prisma db pull
+```
+
+The `users` table is now in your Prisma schema:
+
+```prisma
+model posts {
+  id         Int       @id @default(autoincrement())
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  title      String    @db.VarChar(200)
+  content    String?
+}
+
+// highlight-start
+model users {
+  id         Int       @id @default(autoincrement())
+  username   String    @unique @db.VarChar(50)
+  email      String    @unique @db.VarChar(100)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+// highlight-end
+```
+
+### 3. Re-generate Prisma Client
+
+In order to be able to query the `users` table, you need to re-generate Prisma Client:
+
+```terminal
+npx prisma generate
+```
+
+### 4. Query the `users` table using Prisma Client
+
+You can now query the external `users` table with Prisma Client:
+
+```ts
+await prisma.users.findMany()
+```
