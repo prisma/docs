@@ -24,6 +24,12 @@ Externally managed tables are frequently used in combination with [multi-schema]
 :::
 
 :::warning
+Prisma ORM will not verify that the names of the tables/columns in the database and the names of the Prisma models/fields actually match.
+On the one hand, it requires the developer to be thorough when updating the Prisma schema (the safest way to do it is by using `prisma db pull`).
+On the other hand, this flexibility enables to only represent a part of the underlying table in the database (and e.g. not expose _all_ its columns).
+:::
+
+:::warning
 Externally managed tables are currently in [Preview](/orm/more/releases#preview).
 :::
 
@@ -38,25 +44,92 @@ If you want to use external tables, here's the main workflow:
     1. Re-introspect your database using `npx prisma db pull` or manually update the models in your prisma file
     1. Re-generate Prisma Client with `npx prisma generate`
 
-## Notes
+## Prisma Config Syntax
 
-- Prisma ORM will not verify that the names of the tables/columns in the database and the names of the Prisma models/fields actually match. On the one hand, it requires the developer to be thorough when updating the Prisma schema (the safest way to do it is by using `prisma db pull`). On the other hand, this flexibility enables to only represent a part of the underlying table in the database (and e.g. not expose _all_ its columns).
+In your Prisma Config this looks like this:
+
+```ts
+// prisma.config.ts
+export default defineConfig({
+  // required during Early Access
+  experimental: {
+    // add-next-line
+    externalTables: true
+  },
+  // declare a `users` table
+  // add-start
+  tables: {
+    external: [
+      "public.users",
+    ]
+  },
+  enums: {
+    external: [
+      "public.role",
+    ]
+  },
+  // add-end
+})
+```
+
 - Analoguous to tables, you can also have externally managed _enums_.
-- An externally managed table requires a _full_ qualifier for the table:
-    - On PostgreSQL and SQL server, this includes the _schema_ name. For example: `public.products` or `auth.users`.
-    - On MySQL and SQLite, this is just the table name.
+- On PostgreSQL and SQL server you have to specify the fully qualified table/enum name including the schema name. For example: `public.products` or `auth.users`.
+- On MySQL and SQLite, you just specify the table name.
+
+## Relationships
+
+Prisma can create and update relationships from tables it manages to externally managed tables.
+
+However, for this Prisma needs to be aware of the structure of those externally managed tables during migration creation.
+You can provide a SQL script that Prisma will run on its [shadow database](orm/prisma-migrate/understanding-prisma-migrate/shadow-database) ahead of all migrations to emulate the external tables and enums during migration creation.
+
+The created placeholder table does not need to have the full structure of the actual table but primary keys need to be present.
+
+If the external table is not referenced by any managed table - that is no managed table contains a foreign key constraint on the external table - you do NOT need to provide any SQL for it in `setupExternalTables`.
+
+
+```ts
+// prisma.config.ts
+export default defineConfig({
+  // required during Early Access
+  experimental: {
+    // add-next-line
+    externalTables: true
+  },
+  // add-start
+  // declare a `users` table
+  tables: {
+    external: [
+      "public.users",
+    ]
+  },
+  migrations: {
+    // setup the users table for the shadow database
+    setupExternalTables: `
+      CREATE TABLE public.users (id SERIAL PRIMARY KEY);
+    `
+  },
+  // add-end
+})
+```
+
+Relationships from an external table to a managed table - where the external table contains the foreign key constraint on the managed table - are NOT managed by Prisma as that would modify the external table.
 
 ## Example
 
 Assume you have the following tables in a PostgreSQL database in the default `public` schema:
 
 ```sql
+-- Enum used by users table
+CREATE TYPE role AS ENUM ('customer', 'support', 'admin');
+
 -- Users table
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   email VARCHAR(100) NOT NULL UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  role role
 );
 
 -- Posts table
@@ -98,6 +171,11 @@ export default defineConfig({
       "public.users",
     ]
   },
+  enums: {
+    external: [
+      "public.role",
+    ]
+  },
   // add-end
 })
 ```
@@ -128,6 +206,13 @@ model users {
   username   String    @unique @db.VarChar(50)
   email      String    @unique @db.VarChar(100)
   created_at DateTime? @default(now()) @db.Timestamp(6)
+  role       role
+}
+
+enum role {
+  customer
+  support
+  admin
 }
 // highlight-end
 ```
@@ -147,3 +232,58 @@ You can now query the external `users` table with Prisma Client:
 ```ts
 await prisma.users.findMany()
 ```
+
+### 5. Add a relationship
+
+Let's say you now want to add an author relationship from `posts` onto `users`.
+
+First update your Prisma schema.
+
+```prisma
+model posts {
+  id         Int       @id @default(autoincrement())
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  title      String    @db.VarChar(200)
+  content    String?
+  // add-start
+  author     user @relation(fields: [authorId], references: [id])
+  author_id  Int
+  // add-end
+}
+
+model users {
+  id         Int       @id @default(autoincrement())
+  username   String    @unique @db.VarChar(50)
+  email      String    @unique @db.VarChar(100)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  role       role
+  // add-start
+  posts Post[]
+  // add-end
+}
+
+enum role {
+  customer
+  support
+  admin
+}
+```
+
+Then add a `setupExternalTables` script so Prisma knows about the `users` table during migrations.
+
+```ts
+// prisma.config.ts
+export default defineConfig({
+  // ...
+  // add-start
+  migrations: {
+    // setup the users table for the shadow database
+    setupExternalTables: `
+      CREATE TABLE public.users (id SERIAL PRIMARY KEY);
+    `
+  },
+  // add-end
+})
+```
+
+Now you can run `prisma migrate dev` as usual.
