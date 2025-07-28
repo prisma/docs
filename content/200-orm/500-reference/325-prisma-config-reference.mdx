@@ -3,16 +3,9 @@ title: "Prisma Config reference"
 metaTitle: "Reference documentation for the prisma config file"
 metaDescription: "This page gives an overview of all Prisma config options available for use."
 sidebar_label: "Prisma Config"
-sidebar_class_name: early-access-badge
 ---
 
 ## Overview
-
-:::warning
-
-The Prisma Config file is currently in [Early Access](/orm/more/releases#early-access) and still subject to change.
-
-:::
 
 The `prisma.config.ts` file configures the Prisma CLI, including subcommands like `migrate` and `studio`, using TypeScript.
 
@@ -24,7 +17,6 @@ You can define your config in either of two ways:
   import { defineConfig } from "prisma/config";
 
   export default defineConfig({
-    earlyAccess: true,
     schema: path.join("prisma", "schema.prisma"),
     migrations: {
       path: path.join("db", "migrations"),
@@ -44,7 +36,6 @@ You can define your config in either of two ways:
   import type { PrismaConfig } from "prisma";
 
   export default {
-    earlyAccess: true,
     schema: path.join("db", "schema.prisma"),
     migrations: {
       path: path.join("db", "migrations"),
@@ -65,7 +56,11 @@ Here is a simplified version of the `PrismaConfig` type:
 ```ts
 export declare type PrismaConfig = {
   // Whether features with an unstable API are enabled.
-  earlyAccess: true;
+  experimental: {
+    adapter: true,
+    externalTables: true,
+    studio: true,
+  },
 
   // The path to the schema file, or path to a folder that shall be recursively searched for *.prisma files.
   schema?: string;
@@ -97,13 +92,6 @@ export declare type PrismaConfig = {
 
 ## Options reference
 
-### `earlyAccess`
-
-Controls whether the config file is enabled. Must be set to `true` during [Early Access](/orm/more/releases#early-access).
-
-| Property      | Type      | Required                  | Default |
-| ------------- | --------- | ------------------------- | ------- |
-| `earlyAccess` | `boolean` | Yes (during Early Access) | none    |
 
 ### `schema`
 
@@ -146,7 +134,9 @@ type Env = {
 };
 
 export default {
-  earlyAccess: true,
+  experimental: {
+    adapter: true
+  },
   schema: path.join("prisma", "schema.prisma"),
 
   migrate: {
@@ -161,7 +151,11 @@ export default {
 } satisfies PrismaConfig<Env>;
 ```
 
-> **Note**: As of [Prisma ORM v6.11.0](https://github.com/prisma/prisma/releases/tag/6.11.0), the D1 adapter has been renamed from `PrismaD1HTTP` to `PrismaD1`.
+:::note
+
+As of [Prisma ORM v6.11.0](https://github.com/prisma/prisma/releases/tag/6.11.0), the D1 adapter has been renamed from `PrismaD1HTTP` to `PrismaD1`.
+
+:::
 
 ### `studio`
 
@@ -185,7 +179,9 @@ Example using the Prisma ORM LibSQL driver adapter:
 import type { PrismaConfig } from "prisma";
 
 export default {
-  earlyAccess: true,
+  experimental: {
+    studio: true
+  },
   studio: {
     adapter: async (env: Env) => {
       const { PrismaLibSQL } = await import("@prisma/adapter-libsql");
@@ -199,6 +195,35 @@ export default {
   },
 } satisfies PrismaConfig;
 ```
+
+### `tables.external` and `enums.external`
+
+These options declare tables and enums in your database that are **managed externally** (not by Prisma Migrate). You can still query them with Prisma Client, but they will be ignored by migrations.
+
+| Property          | Type       | Required | Default |
+| ----------------- | ---------- | -------- | ------- |
+| `tables.external` | `string[]` | No       | `[]`    |
+| `enums.external`  | `string[]` | No       | `[]`    |
+
+**Example:**
+
+```ts
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  experimental: {
+    externalTables: true,
+  },
+  tables: {
+    external: ["public.users"],
+  },
+  enums: {
+    external: ["public.role"],
+  },
+});
+```
+
+Learn more about the [`externalTables` feature here](/orm/prisma-schema/data-model/externally-managed-tables). 
 
 ### `migrations.path`
 
@@ -224,6 +249,41 @@ The path to the directory where Prisma should look for the SQL files used for ge
 | --------------- | -------- | -------- | ------- |
 | `typedSql.path` | `string` | No       | none    |
 
+### `experimental`
+
+Enables specific experimental features in the Prisma CLI.
+
+| Property         | Type      | Required | Default |
+| ---------------- | --------- | -------- | ------- |
+| `adapter`        | `boolean` | No       | `false` |
+| `externalTables` | `boolean` | No       | `false` |
+| `studio`         | `boolean` | No       | `false` |
+
+Example:
+
+```ts
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  experimental: {
+    adapter: true,
+    externalTables: true,
+    studio: true,
+  },
+  schema: "prisma/schema.prisma",
+});
+```
+
+:::note
+
+If you use features like `adapter`, `studio` or `externalTables` without enabling the corresponding experimental flag, Prisma will throw an error:
+
+```terminal
+Failed to load config file "~" as a TypeScript/JavaScript module. Error: Error: The `studio` configuration requires `experimental.studio` to be set to `true`.
+```
+
+:::
+
 ## Common patterns
 
 ### Setting up your project
@@ -235,9 +295,7 @@ Using `defineConfig`:
 ```ts
 import { defineConfig } from "prisma/config";
 
-export default defineConfig({
-  earlyAccess: true,
-});
+export default defineConfig({});
 ```
 
 Using TypeScript types:
@@ -245,9 +303,7 @@ Using TypeScript types:
 ```ts
 import type { PrismaConfig } from "prisma";
 
-export default {
-  earlyAccess: true,
-} satisfies PrismaConfig;
+export default {} satisfies PrismaConfig;
 ```
 
 ### Using environment variables
@@ -267,7 +323,6 @@ import "dotenv/config";
 import type { PrismaConfig } from "prisma";
 
 export default {
-  earlyAccess: true,
   // now you can use process.env variables
 } satisfies PrismaConfig;
 ```
@@ -281,7 +336,6 @@ import path from "node:path";
 import type { PrismaConfig } from "prisma";
 
 export default {
-  earlyAccess: true,
   schema: path.join("prisma", "schema"),
 } satisfies PrismaConfig;
 ```
@@ -299,6 +353,90 @@ For example, assuming `schema.prisma` defines the `datasource`, here's how how n
 │   └── users.prisma
 └── schema.prisma
 ```
+
+### Supported file extensions
+
+Prisma Config files can be named as `prisma.config.*` or `.config/prisma.*` with the extensions `js`, `ts`, `mjs`, `cjs`, `mts`, or `cts`.
+
+## Path resolution
+
+Prisma CLI commands such as `prisma validate` or `prisma migrate` use `prisma.config.ts` (or `.config/prisma.ts`) to locate your Prisma schema and other resources.
+
+**Key rules:**
+
+- Paths defined in the config file (e.g., `schema`, `migrations`) are always resolved **relative to the location of the config file**, not where you run the CLI command from.
+- The CLI must first **find the config file** itself, which depends on how Prisma is installed and the package manager used.
+
+
+### Behavior with `pnpm prisma`
+
+When Prisma is installed locally and run via `pnpm prisma`, the config file is detected automatically whether you run the command from the project root or a subdirectory.
+
+Example project tree:
+
+```
+.
+├── node_modules
+├── package.json
+├── prisma-custom
+│   └── schema.prisma
+├── prisma.config.ts
+└── src
+```
+
+Example run from the project root:
+
+```bash
+pnpm prisma validate
+# → Loaded Prisma config from ./prisma.config.ts
+# → Prisma schema loaded from prisma-custom/schema.prisma
+```
+
+Example run from a subdirectory:
+
+```bash
+cd src
+pnpm prisma validate
+# → Still finds prisma.config.ts and resolves schema correctly
+```
+
+### Behavior with `npm exec prisma` or `bun prisma`
+
+When running via `npm exec prisma` or `bun prisma`, the CLI only detects the config file if the command is run from the **project root** (where `package.json` declares Prisma).
+
+Example run from the project root:
+
+```bash
+npm exec prisma validate
+# → Works as expected
+```
+
+Run from a subdirectory (fails):
+
+```bash
+cd src
+npm exec prisma validate
+# → Error: Could not find Prisma Schema...
+```
+
+To fix this, you can use the `--config` flag:
+
+```bash
+npm exec prisma -- --config ../prisma.config.ts validate
+```
+
+### Global Prisma installations
+
+If Prisma is installed globally (`npm i -g prisma`), it may not find your `prisma.config.ts` or `prisma/config` module by default.
+To avoid issues:
+
+- Prefer local Prisma installations in your project.
+- Or use `@prisma/config` locally and pass `--config` to point to your config file.
+
+### Monorepos
+
+- If Prisma is installed in the **workspace root**, `pnpm prisma` will detect the config file from subdirectories.
+- If Prisma is installed in a **subpackage** (e.g., `./packages/db`), run commands from that package directory or deeper.
 
 ### Custom config location
 
