@@ -7,13 +7,6 @@ sidebar_class_name: preview-badge
 tocDepth: 3
 ---
 
-<TopBlock>
-
-<Admonition type="warning">
-
-Support for views is currently a very early [Preview](/orm/more/releases#preview) feature. You can add a view to your Prisma schema with the `view` keyword or introspect the views in your database schema with `db pull`. You cannot yet apply views in your schema to your database with Prisma Migrate and `db push` unless the changes are added manually to your migration file using the `--create-only` flag. <br /><br />For updates on progress with this feature, follow [our GitHub issue](https://github.com/prisma/prisma/issues/17335).
-
-</Admonition>
 
 Database views allow you to name and store queries. In relational databases, views are [stored SQL queries](https://www.postgresql.org/docs/current/sql-createview.html) that might include columns in multiple tables, or calculated values such as aggregates. In MongoDB, views are queryable objects where the contents are defined by an [aggregation pipeline](https://www.mongodb.com/docs/manual/core/aggregation-pipeline) on other collections.
 
@@ -24,7 +17,13 @@ The `views` preview feature allows you to represent views in your Prisma schema 
 - [Represent the view in your Prisma schema](#add-views-to-your-prisma-schema)
 - [Query the view in Prisma Client](#query-views-in-prisma-client)
 
-</TopBlock>
+
+:::warning
+
+Support for views is currently a [Preview](/orm/more/releases#preview) feature. You can add a view to your Prisma schema with the `view` keyword or introspect the views in your database schema with `db pull`. You cannot yet apply views in your schema to your database with Prisma Migrate and `db push` unless the changes are added manually to your migration file using the `--create-only` flag. <br /><br />For updates on progress with this feature, follow [our GitHub issue](https://github.com/prisma/prisma/issues/17335).
+
+
+:::
 
 ## Enable the `views` preview feature
 
@@ -32,7 +31,7 @@ Support for views is currently in an early preview. To enable the `views` previe
 
 ```prisma file=schema.prisma highlight=3;add showLineNumbers
 generator client {
-  provider        = "prisma-client-js"
+  provider        = "prisma-client"
   //add-next-line
   previewFeatures = ["views"]
 }
@@ -139,7 +138,7 @@ You can represent the `UserInfo` view from the example above in your Prisma sche
 
 ```prisma
 view UserInfo {
-  id    Int    @unique
+  id    Int
   email String
   name  String
   bio   String
@@ -151,7 +150,7 @@ view UserInfo {
 
 ```prisma
 view UserInfo {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  id    String
   email String
   name  String
   bio   String
@@ -195,7 +194,7 @@ The fields of the `UserInfo` example view can be defined as follows:
 ```prisma highlight=2-5;normal
 view UserInfo {
   //highlight-start
-  id    Int    @unique
+  id    Int
   email String
   name  String
   bio   String
@@ -209,7 +208,7 @@ view UserInfo {
 ```prisma highlight=2-5;normal
 view UserInfo {
   //highlight-start
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  id    String
   email String
   name  String
   bio   String
@@ -239,7 +238,6 @@ npx prisma db pull
 The resulting `view` block will be defined as follows:
 
 ```prisma
-/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 view UserInfo {
   id    Int?
   email String?
@@ -250,47 +248,13 @@ view UserInfo {
 }
 ```
 
-The `view` block is generated initially with a `@@ignore` attribute because [there is no unique identifier defined](#unique-identifier) (which is currently a [limitation](#unique-identifier) of the views preview feature).
+The `view` block may be generated with a `@@ignore` attribute if Prisma cannot fully support the view.
 
-<Admonition type="warning">
+:::warning
 
 Please note for now `db pull` will only introspect views in your schema when using PostgreSQL, MySQL, SQL Server or CockroachDB. Support for this workflow will be extended to other database providers.
 
-</Admonition>
-
-#### Adding a unique identifier to an introspected view
-
-To be able to use the introspected view in Prisma Client, you will need to select and define one or multiple of the fields as the unique identifier.
-
-In the above view's case, the `id` column refers to a uniquely identifiable field in the underlying `User` table so that field can also be used as the uniquely identifiable field in the `view` block.
-
-In order to make this `view` block valid you will need to:
-
-- Remove the _optional_ flag `?` from the `id` field
-- Add the `@unique` attribute to the `id` field
-- Remove the `@@ignore` attribute
-- Remove the generated comment warning about an invalid view
-
-
-```prisma highlight=4;add|1,3,8,9;delete
-//delete-next-line
-/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-view UserInfo {
-  //delete-next-line
-  id    Int?
-  //add-next-line
-  id    Int    @unique
-  email String?
-  name  String?
-  bio   String?
-  //delete-start
-  
-  @@ignore
-  //delete-end
-}
-```
-
-When re-introspecting your database, any custom changes to your view definitions will be preserved.
+:::
 
 #### The `views` directory
 
@@ -313,21 +277,6 @@ FROM
 
 ### Limitations
 
-#### Unique Identifier
-
-Currently, Prisma ORM treats views in the same way as models. This means that a view needs to have at least one _unique identifier_, which can be represented by any of the following:
-
-- A unique constraint denoted with [`@unique`](/orm/prisma-schema/data-model/models#defining-a-unique-field)
-- A composite unique constraint denoted with [`@@unique`](/orm/prisma-schema/data-model/models#defining-a-unique-field)
-- An [`@id`](/orm/prisma-schema/data-model/models#defining-an-id-field) field
-- A composite identifier denoted with [`@@id`](/orm/prisma-schema/data-model/models#composite-ids)
-
-In relational databases, a view's unique identifier can be defined as a `@unique` attribute on one field, or a `@@unique` attribute on multiple fields. When possible, it is preferable to use a `@unique` or `@@unique` constraint over an `@id` or `@@id` field.
-
-In MongoDB, however, the unique identifier must be an `@id` attribute that maps to the `_id` field in the underlying database with `@map("_id")`.
-
-In the example above, the `id` field has a `@unique` attribute. If another column in the underlying `User` table had been defined as uniquely identifiable and made available in the view's query results, that column could have been used as the unique identifier instead.
-
 #### Introspection
 
 Currently, introspection of views is only available for PostgreSQL, MySQL, SQL Server and CockroachDB. If you are using another database provider, your views must be added manually.
@@ -346,7 +295,12 @@ const userinfo = await prisma.userInfo.findMany({
 })
 ```
 
-Currently, Prisma Client allows you to update a view if the underlying database allows it, without any additional validation.
+:::note
+
+`findUnique`, cursor-based pagination, and writes (create/update/delete) are not supported on `views`.
+
+:::
+
 
 ## Special types of views
 
@@ -354,11 +308,11 @@ This section describes how to use Prisma ORM with updatable and materialized vie
 
 ### Updatable views
 
-Some databases support updatable views (e.g. [PostgreSQL](https://www.postgresql.org/docs/current/sql-createview.html#SQL-CREATEVIEW-UPDATABLE-VIEWS), [MySQL](https://dev.mysql.com/doc/refman/8.0/en/view-updatability.html) and [SQL Server](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-view-transact-sql?view=sql-server-ver16#updatable-views)). Updatable views allow you to create, update or delete entries.
+Some databases support *updatable views* (e.g. [PostgreSQL](https://www.postgresql.org/docs/current/sql-createview.html#SQL-CREATEVIEW-UPDATABLE-VIEWS), [MySQL](https://dev.mysql.com/doc/refman/8.0/en/view-updatability.html), and [SQL Server](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-view-transact-sql?view=sql-server-ver16#updatable-views)). Updatable views allow creating, updating, or deleting entries if the underlying database supports such operations.
 
-Currently Prisma ORM treats all `view`s as updatable views. If the underlying database supports this functionality for the view, the operation should succeed. If the view is not marked as updatable, the database will return an error, and Prisma Client will then throw this error.
+Prisma ORM does not allow any mutations (create, update, delete) on views, regardless of the database's capabilities. This change provides guardrails to ensure that views are treated consistently as read-only entities within Prisma Client. As a result, methods to perform writes such as `create`, `update`, `delete`, or `upsert` are not generated for `view` blocks in your Prisma Client API.
 
-In the future, Prisma Client might support marking individual views as updatable or not updatable. Please comment on our [`views` feedback issue](https://github.com/prisma/prisma/issues/17335) with your use case.
+If you need to modify data represented by a view, you must perform the write operations directly on the underlying tables or use raw SQL queries.
 
 ### Materialized views
 
@@ -369,3 +323,30 @@ Materialized views persist the result of the view query for faster access and on
 Currently, Prisma ORM does not support materialized views. However, when you [manually create a view](#create-a-view-in-the-underlying-database), you can also create a materialized view with the corresponding command in the underlying database. You can then use Prisma Client's [TypedSQL functionality](/orm/prisma-client/using-raw-sql) to execute the command and refresh the view manually.
 
 In the future Prisma Client might support marking individual views as materialized and add a Prisma Client method to refresh the materialized view. Please comment on our [`views` feedback issue](https://github.com/prisma/prisma/issues/17335) with your use case.
+
+Here's a **revised `## Restrictions` section** with **clarity on *why*** these limitations exist:
+
+## Restrictions
+
+Prisma ORM treats all `view` blocks as **read-only representations of database queries** rather than true tables. Because of this, several restrictions apply to ensure Prisma Client remains consistent with the behavior of the underlying database:
+
+### No identifiers or constraints
+
+Views are virtual tables and do not have inherent primary keys or unique constraints. Adding artificial constraints would create invalid assumptions for Prisma Client and break queries like `findUnique`. Hence, you cannot define `@id`, `@unique`, `@@id`, `@@unique`, or `@index` attributes on a `view` block.
+
+### No relationships
+
+Relationships in Prisma rely on foreign keys and referential integrity, which views do not enforce. Defining relationships on a view could mislead developers into thinking data integrity is guaranteed. Hence, the `@relation` attributes are not supported for views.
+
+### Limited Prisma Client API
+
+Views do not store data themselves, so writes and operations requiring unique identifiers cannot be supported. Also:
+
+- Only `findMany` (with filters, ordering, and skip/take pagination) is available.
+- `findUnique`, cursor-based pagination, and aggregate queries that depend on unique identifiers are **not supported**.
+- All write operations (`create`, `update`, `delete`, `upsert`) are disabled and not generated in the Prisma Client.
+    
+
+### Introspection behavior
+
+- Introspected views may include a `@@ignore` attribute if Prisma cannot safely query them. This prevents Prisma from generating invalid or partially supported queries on views.
