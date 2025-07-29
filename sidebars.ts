@@ -464,7 +464,7 @@ const sidebars: SidebarsConfig = {
           label: "Prisma Postgres",
           collapsed: false,
           collapsible: false,
-          items: ["guides/management-api-basic", "guides/partner-api"].sort(),
+          items: ["guides/management-api-basic", "guides/management-api"].sort(),
         },
         {
           type: "category",
