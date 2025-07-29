@@ -7,7 +7,7 @@ import React, { ReactNode } from 'react';
 import type {Props} from '@theme/TOC';
 
 import styles from './styles.module.css';
-import { anthropic, cursor, openai } from '../TOCItems/icons';
+import { anthropic, cursor, openai, t3 } from '../TOCItems/icons';
 
 // Using a custom className
 // This prevents TOCInline/TOCCollapsible getting highlighted by mistake
@@ -45,7 +45,13 @@ export default function TOC({className, metadata, ...props}: Props & {metadata: 
           <Icon btn="left" icon="fa-brands fa-github" size='16px'/>
           Edit in GitHub
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
+        </a>,
+        <a href={`https://www.t3.chat/new?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
+          <Icon btn="left" customicon={t3} size='16px'/>
+          Open in T3.chat
+          <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
         </a>
+        
       ]} />
       <div className={clsx(styles.tableOfContents, 'thin-scrollbar', className)}>
         <TOCItems
