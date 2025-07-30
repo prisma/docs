@@ -36,22 +36,21 @@ export default function TOC({className, metadata, ...props}: Props & {metadata: 
           Open in Claude
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
         </a>,
-        <a href={`https://chat.openai.com/?q=Read%20${url}%20and%20clear%20confusion`} {...externalProps}>
+        <a href={`https://chat.openai.com/?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
           <Icon btn="left" customicon={openai} size='16px'/>
           Open in ChatGPT
-          <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
-        </a>,
-        <a href={metadata.editUrl} {...externalProps}>
-          <Icon btn="left" icon="fa-brands fa-github" size='16px'/>
-          Edit in GitHub
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
         </a>,
         <a href={`https://www.t3.chat/new?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
           <Icon btn="left" customicon={t3} size='16px'/>
           Open in T3.chat
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
+        </a>,
+        <a href={metadata.editUrl} {...externalProps}>
+          <Icon btn="left" icon="fa-brands fa-github" size='16px'/>
+          Edit in GitHub
+          <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
         </a>
-        
       ]} />
       <div className={clsx(styles.tableOfContents, 'thin-scrollbar', className)}>
         <TOCItems
