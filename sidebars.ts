@@ -433,6 +433,7 @@ const sidebars: SidebarsConfig = {
             "guides/docker",
             "guides/use-prisma-in-pnpm-workspaces",
             "guides/data-dog",
+            "guides/github-actions",
           ].sort(),
         },
         {
@@ -458,6 +459,13 @@ const sidebars: SidebarsConfig = {
             "guides/cloudflare-d1",
             "guides/data-migration",
           ].sort(),
+        },
+        {
+          type: "category",
+          label: "Prisma Postgres",
+          collapsed: false,
+          collapsible: false,
+          items: ["guides/management-api-basic", "guides/management-api"].sort(),
         },
         {
           type: "category",
