@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import clsx from "clsx";
 import { ThemeClassNames } from "@docusaurus/theme-common";
 import { useHomePageRoute } from "@docusaurus/theme-common/internal";

@@ -93,7 +93,6 @@ function TabContent({
     }
     return cloneElement(selectedTabItem, { className: "margin-top--md" });
   }
-  console.log("code: " + code)
 
   return (
     <div
@@ -118,7 +117,6 @@ function TabContent({
 
 function TabsComponent(props) {
   const tabs = useTabs(props);
-  console.log(props)
   return (
     <div className={clsx("tabs-container", styles.tabList)}>
       <TabList {...props} {...tabs} />

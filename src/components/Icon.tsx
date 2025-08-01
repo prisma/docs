@@ -2,7 +2,8 @@ import clsx from "clsx";
 import React, { useEffect, useRef, useState } from "react";
 
 interface IconProps {
-  icon: string;
+  icon?: string;
+  customicon?: any;
   color?: string;
   className?: string;
   size?: string;
@@ -10,7 +11,7 @@ interface IconProps {
   fit?: "width" | "height";
 }
 
-export const Icon = ({ icon, color, className, size, btn, fit }: IconProps) => {
+export const Icon = ({ customicon, icon, color, className, size, btn, fit }: IconProps) => {
   const iconRef = useRef<any>(null);
   const [font, setFontSize] = useState<number>(0);
   const [measure, setMeasure] = useState<string>("vw");
@@ -34,8 +35,15 @@ export const Icon = ({ icon, color, className, size, btn, fit }: IconProps) => {
     window.addEventListener("resize", setFont);
     return () => window.removeEventListener("resize", setFont);
   }, []);
+
   return (
-    <i
+    customicon ? <span 
+      style={{
+        textAlign: "center",
+        fontSize: size ? size : `${font}${measure}`,
+        color: color ? color : "currentcolor",
+        margin: btn?.length ? (btn === "right" ? "0 0 0 8px" : "0 8px 0 0") : "",
+      }}>{customicon}</span> : <i
       ref={iconRef}
       className={clsx(icon, className)}
       style={{
