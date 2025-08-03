@@ -35,7 +35,7 @@ It will prompt you to customize your setup. Choose the defaults:
 - *Would you like to use TypeScript?* `Yes`
 - *Would you like to use ESLint?* `Yes`
 - *Would you like to use Tailwind CSS?* `Yes`
-- *Would you like your code inside a `src/` directory?* `Yes`
+- *Would you like your code inside a `src/` directory?* `No`
 - *Would you like to use App Router?* (recommended) `Yes`
 - *Would you like to use Turbopack for `next dev`?* `Yes`
 - *Would you like to customize the import alias (`@/*` by default)?* `No`
@@ -80,9 +80,9 @@ CLERK_SECRET_KEY=<your-secret-key>
 
 The `clerkMiddleware` helper enables authentication and is where you'll configure your protected routes.
 
-Create a `middleware.ts` file in the `/src` directory of your project:
+Create a `middleware.ts` file in the root directory of your project:
 
-```tsx file=src/middleware.ts showLineNumbers
+```tsx file=middleware.ts showLineNumbers
 //add-start
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
@@ -103,7 +103,7 @@ Next, you'll need to wrap your app in the `ClerkProvider` component to make auth
 
 In your `layout.tsx` file, add the `ClerkProvider` component:
 
-```tsx file=src/app/layout.tsx showLineNumbers
+```tsx file=app/layout.tsx showLineNumbers
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -147,7 +147,7 @@ export default function RootLayout({
 
 Create a `Navbar` component which will be used to display the Sign In and Sign Up buttons as well as the User Button once a user is signed in:
 
-```tsx file=src/app/layout.tsx showLineNumbers
+```tsx file=app/layout.tsx showLineNumbers
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -238,7 +238,7 @@ npm install tsx --save-dev
 Once installed, initialize Prisma in your project:
 
 ```terminal
-npx prisma init --db --output ../src/app/generated/prisma
+npx prisma init --db --output ../app/generated/prisma
 ```
 :::info
 You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for the database like "My Clerk NextJS Project"
@@ -255,7 +255,7 @@ In the `prisma/schema.prisma` file, add the following models:
 ```prisma file=prisma/schema.prisma showLineNumbers
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/app/generated/prisma"
+  output   = "../app/generated/prisma"
 }
 
 datasource db {
@@ -294,16 +294,16 @@ npx prisma migrate dev --name init
 
 :::warning
 
-It is recommended that you add `/src/app/generated/prisma` to your `.gitignore` file.
+It is recommended that you add `/app/generated/prisma` to your `.gitignore` file.
 
 :::
 
 ### 3.3. Create a reusable Prisma Client
 
-In the `src/` directory, create `/lib` and a `prisma.ts` file inside it:
+In the `/app` directory, create `/lib` and a `prisma.ts` file inside it:
 <TabbedContent code>
 <TabItem value="Prisma Postgres (recommended)">
-```tsx file=src/lib/prisma.ts showLineNumbers
+```tsx file=app/lib/prisma.ts showLineNumbers
 //add-start
 import { PrismaClient } from "@/app/generated/prisma";
 import { withAccelerate } from "@prisma/extension-accelerate";
@@ -322,7 +322,7 @@ export default prisma;
 ```
 </TabItem>
 <TabItem value="Other databases">
-```tsx file=src/lib/prisma.ts showLineNumbers
+```tsx file=app/lib/prisma.ts showLineNumbers
 //add-start
 import { PrismaClient } from "@/app/generated/prisma";
 
@@ -344,154 +344,116 @@ export default prisma;
 
 ### 4.1. Create a Clerk webhook endpoint
 
-You'll use [Svix](https://svix.com/) to ensure the request is secure. Svix signs each webhook request so you can verify that it's legitimate and hasn't been tampered with during delivery.
-
-Install the `svix` package:
-
-```terminal
-npm install svix
-``` 
-
-Create a new API route at `src/app/api/webhooks/clerk/route.ts`:
+Create a new API route at `app/api/webhooks/clerk/route.ts`:
 
 Import the necessary dependencies:
 
-```tsx file=src/app/api/webhooks/clerk/route.ts showLineNumbers
+```tsx file=app/api/webhooks/clerk/route.ts showLineNumbers
 //add-start
-import { Webhook } from "svix";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
+import { verifyWebhook } from "@clerk/nextjs/webhooks";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 //add-end
 ```
 
-Create the `POST` method that Clerk will call and verify the payload.
+Create the `POST` method that Clerk will call and verify the webhook:
 
-First, it will check that the Signing Secret is set:
-
-```tsx file=src/app/api/webhooks/clerk/route.ts showLineNumbers
-import { Webhook } from "svix";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
+```tsx file=app/api/webhooks/clerk/route.ts showLineNumbers
+import { verifyWebhook } from "@clerk/nextjs/webhooks";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 
 //add-start
-export async function POST(req: Request) {
-  const secret = process.env.SIGNING_SECRET;
-  if (!secret) return new Response("Missing secret", { status: 500 });
+export async function POST(req: NextRequest) {
+  try {
+    const evt = await verifyWebhook(req);
+    const { id } = evt.data;
+    const eventType = evt.type;
+    console.log(
+      `Received webhook with ID ${id} and event type of ${eventType}`
+    );
+  } catch (err) {
+    console.error("Error verifying webhook:", err);
+    return new Response("Error verifying webhook", { status: 400 });
+  }
 }
 //add-end
-```
-:::note
-
-The Signing Secret is available in the **Webhooks** section of your Clerk application. You are not expected to have this yet, you'll set it in the next few steps.
-
-:::
-
-Now, create the `POST` method that Clerk will call and verify the payload:
-
-```tsx file=src/app/api/webhooks/clerk/route.ts showLineNumbers
-import { Webhook } from "svix";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
-import prisma from "@/lib/prisma";
-
-export async function POST(req: Request) {
-  const secret = process.env.SIGNING_SECRET;
-  if (!secret) return new Response("Missing secret", { status: 500 });
-
-  //add-start
-  const wh = new Webhook(secret);
-  const body = await req.text();
-  const headerPayload = await headers();
-
-  const event = wh.verify(body, {
-    "svix-id": headerPayload.get("svix-id")!,
-    "svix-timestamp": headerPayload.get("svix-timestamp")!,
-    "svix-signature": headerPayload.get("svix-signature")!,
-  }) as WebhookEvent;
-  //add-end
-}
 ```
 
 When a new user is created, they need to be stored in the database.
 
 You'll do that by checking if the event type is `user.created` and then using Prisma's `upsert` method to create a new user if they don't exist:
 
-```tsx file=src/app/api/webhooks/clerk/route.ts showLineNumbers
-import { Webhook } from "svix";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
+```tsx file=app/api/webhooks/clerk/route.ts showLineNumbers
+import { verifyWebhook } from "@clerk/nextjs/webhooks";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 
-export async function POST(req: Request) {
-  const secret = process.env.SIGNING_SECRET;
-  if (!secret) return new Response("Missing secret", { status: 500 });
+export async function POST(req: NextRequest) {
+  try {
+    const evt = await verifyWebhook(req);
+    const { id } = evt.data;
+    const eventType = evt.type;
+    console.log(
+      `Received webhook with ID ${id} and event type of ${eventType}`
+    );
 
-  const wh = new Webhook(secret);
-  const body = await req.text();
-  const headerPayload = await headers();
-
-  const event = wh.verify(body, {
-    "svix-id": headerPayload.get("svix-id")!,
-    "svix-timestamp": headerPayload.get("svix-timestamp")!,
-    "svix-signature": headerPayload.get("svix-signature")!,
-  }) as WebhookEvent;
-
-  //add-start
-  if (event.type === "user.created") {
-    const { id, email_addresses, first_name, last_name } = event.data;
-    await prisma.user.upsert({
-      where: { clerkId: id },
-      update: {},
-      create: {
-        clerkId: id,
-        email: email_addresses[0].email_address,
-        name: `${first_name} ${last_name}`,
-      },
-    });
+    //add-start
+    if (eventType === "user.created") {
+      const { id, email_addresses, first_name, last_name } = evt.data;
+      await prisma.user.upsert({
+        where: { clerkId: id },
+        update: {},
+        create: {
+          clerkId: id,
+          email: email_addresses[0].email_address,
+          name: `${first_name} ${last_name}`,
+        },
+      });
+    }
+    //add-end
+  } catch (err) {
+    console.error("Error verifying webhook:", err);
+    return new Response("Error verifying webhook", { status: 400 });
   }
-  //add-end
 }
 ```
 
 Finally, return a response to Clerk to confirm the webhook was received:
 
-```tsx file=src/app/api/webhooks/clerk/route.ts showLineNumbers
-import { Webhook } from "svix";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
+```tsx file=app/api/webhooks/clerk/route.ts showLineNumbers
+import { verifyWebhook } from "@clerk/nextjs/webhooks";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 
-export async function POST(req: Request) {
-  const secret = process.env.SIGNING_SECRET;
-  if (!secret) return new Response("Missing secret", { status: 500 });
+export async function POST(req: NextRequest) {
+  try {
+    const evt = await verifyWebhook(req);
+    const { id } = evt.data;
+    const eventType = evt.type;
+    console.log(
+      `Received webhook with ID ${id} and event type of ${eventType}`
+    );
 
-  const wh = new Webhook(secret);
-  const body = await req.text();
-  const headerPayload = await headers();
+    if (eventType === "user.created") {
+      const { id, email_addresses, first_name, last_name } = evt.data;
+      await prisma.user.upsert({
+        where: { clerkId: id },
+        update: {},
+        create: {
+          clerkId: id,
+          email: email_addresses[0].email_address,
+          name: `${first_name} ${last_name}`,
+        },
+      });
+    }
 
-  const event = wh.verify(body, {
-    "svix-id": headerPayload.get("svix-id")!,
-    "svix-timestamp": headerPayload.get("svix-timestamp")!,
-    "svix-signature": headerPayload.get("svix-signature")!,
-  }) as WebhookEvent;
-
-  if (event.type === "user.created") {
-    const { id, email_addresses, first_name, last_name } = event.data;
-    await prisma.user.upsert({
-      where: { clerkId: id },
-      update: {},
-      create: {
-        clerkId: id,
-        email: email_addresses[0].email_address,
-        name: `${first_name} ${last_name}`,
-      },
-    });
+    //add-next-line
+    return new Response("Webhook received", { status: 200 });
+  } catch (err) {
+    console.error("Error verifying webhook:", err);
+    return new Response("Error verifying webhook", { status: 400 });
   }
-
-  //add-next-line
-  return new Response("OK");
 }
 ```
 
@@ -526,7 +488,7 @@ DATABASE_URL=<your-database-url>
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<your-publishable-key>
 CLERK_SECRET_KEY=<your-secret-key>
 //add-next-line
-SIGNING_SECRET=<your-signing-secret>
+CLERK_WEBHOOK_SIGNING_SECRET=<your-signing-secret>
 ```
 
 On the home page, press Sign Up and create an account using any of the sign-up options
@@ -549,11 +511,11 @@ If you don't see a user record, there are a few things to check:
 
 ## 5. Build a posts API
 
-To create posts under a user, you'll need to create a new API route at `src/app/api/posts/route.ts`:
+To create posts under a user, you'll need to create a new API route at `app/api/posts/route.ts`:
 
 Start by importing the necessary dependencies:
 
-```tsx file=src/app/api/posts/route.ts showLineNumbers
+```tsx file=app/api/posts/route.ts showLineNumbers
 //add-start
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
@@ -562,7 +524,7 @@ import prisma from "@/lib/prisma";
 
 Get the `clerkId` of the authenticated user. If there's no user, return a `401` Unauthorized response:
 
-```tsx file=src/app/api/posts/route.ts showLineNumbers
+```tsx file=app/api/posts/route.ts showLineNumbers
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -576,7 +538,7 @@ export async function POST(req: Request) {
 
 Match the Clerk user to a user in the database. If none is found, return a `404` Not Found response:
 
-```tsx file=src/app/api/posts/route.ts showLineNumbers
+```tsx file=app/api/posts/route.ts showLineNumbers
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -596,7 +558,7 @@ export async function POST(req: Request) {
 
 Destructure the title and content from the incoming request and create a post. Once done, return a `201` Created response:
 
-```tsx file=src/app/api/posts/route.ts showLineNumbers
+```tsx file=app/api/posts/route.ts showLineNumbers
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -632,7 +594,7 @@ export async function POST(req: Request) {
 
 In `/app`, create a `/components` directory and a `PostInputs.tsx` file inside it:
 
-```tsx file=src/app/components/PostInputs.tsx showLineNumbers
+```tsx file=app/components/PostInputs.tsx showLineNumbers
 //add-next-line
 "use client";
 
@@ -651,7 +613,7 @@ This component uses `"use client"` to ensure the component is rendered on the cl
 
 Create a function that will be called when a form is submitted:
 
-```tsx file=src/app/components/PostInputs.tsx showLineNumbers
+```tsx file=app/components/PostInputs.tsx showLineNumbers
 "use client";
 
 import { useState } from "react";
@@ -681,7 +643,7 @@ export default function PostInputs() {
 
 You'll be using a form to create a post and call the `POST` route you created earlier:
 
-```tsx file=src/app/page.tsx showLineNumbers
+```tsx file=app/page.tsx showLineNumbers
 "use client";
 
 import { useState } from "react";
@@ -741,7 +703,7 @@ Now, update the `page.tsx` file to fetch posts, show the form, and render the li
 
 Delete everything within `page.tsx`, leaving only the following:
 
-```tsx file=src/app/page.tsx showLineNumbers
+```tsx file=app/page.tsx showLineNumbers
 export default function Home() {
   return ()
 }
@@ -749,7 +711,7 @@ export default function Home() {
 
 Import the necessary dependencies:
 
-```tsx file=src/app/page.tsx showLineNumbers
+```tsx file=app/page.tsx showLineNumbers
 //add-start
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
@@ -763,7 +725,7 @@ export default function Home() {
 
 To ensure only signed-in users can access the post functionality, update the `Home` component to check for a user:
 
-```tsx file=src/app/page.tsx showLineNumbers
+```tsx file=app/page.tsx showLineNumbers
 //add-start
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
@@ -782,7 +744,7 @@ export default async function Home() {
 
 Once a user is found, fetch that user's posts from the database:
 
-```tsx file=src/app/page.tsx showLineNumbers
+```tsx file=app/page.tsx showLineNumbers
 //add-start
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
@@ -806,7 +768,7 @@ export default async function Home() {
 
 Finally, render the form and post list:
 
-```tsx file=src/app/page.tsx showLineNumbers
+```tsx file=app/page.tsx showLineNumbers
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import PostInputs from "@/app/components/PostInputs";
