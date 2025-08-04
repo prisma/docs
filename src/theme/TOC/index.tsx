@@ -23,30 +23,30 @@ const getMarkdown = async (link: string) => {
 export default function TOC({className, metadata, ...props}: Props & {metadata: any }): ReactNode {
   const url = `https://prisma.io/docs${metadata.slug}`;
   const externalProps = {
-     target:'__blank',
-     rel:'openeer noreferrer'
+    target: '_blank',
+    rel: 'opener noreferrer'
   }
   const markdown = metadata.editUrl.replace("github", "raw.githubusercontent").replace("/blob", "").replace("/tree", "");
   return (
     <div className={styles.tableOfContentsWrapper}>
       <Dropdown anchorText="Open in" items={[
-        <div onClick={() => getMarkdown(markdown)}><Icon btn="left" icon="fa-brands fa-markdown" size='16px'/>Copy as Markdown</div>,
-        <a href={`https://claude.ai/new?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
+        <div key="cp-markdown" onClick={() => getMarkdown(markdown)}><Icon btn="left" icon="fa-brands fa-markdown" size='16px'/>Copy as Markdown</div>,
+        <a key="open-claude" href={`https://claude.ai/new?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
           <Icon btn="left" customicon={anthropic} size='16px'/>
           Open in Claude
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
         </a>,
-        <a href={`https://chat.openai.com/?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
+        <a key="open-chatgpt" href={`https://chat.openai.com/?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
           <Icon btn="left" customicon={openai} size='16px'/>
           Open in ChatGPT
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
         </a>,
-        <a href={`https://www.t3.chat/new?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
+        <a key="open-t3chat" href={`https://www.t3.chat/new?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
           <Icon btn="left" customicon={t3} size='16px'/>
           Open in T3.chat
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
         </a>,
-        <a href={metadata.editUrl} {...externalProps}>
+        <a key="open-github" href={metadata.editUrl} {...externalProps}>
           <Icon btn="left" icon="fa-brands fa-github" size='16px'/>
           Edit in GitHub
           <Icon icon="fa-regular fa-arrow-up-right" size="inherit" btn="right"/>
