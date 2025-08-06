@@ -15,7 +15,6 @@ type DropdownType = {
 const Dropdown = ({
   anchorText,
   items,
-  dark = false,
   rightClick = false,
   pos = "bottom",
 }: DropdownType) => {
