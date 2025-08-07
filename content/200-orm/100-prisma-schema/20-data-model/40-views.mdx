@@ -12,16 +12,15 @@ Database views allow you to name and store queries. In relational databases, vie
 
 The `views` preview feature allows you to represent views in your Prisma schema with the `view` keyword. To use views in Prisma ORM, follow these steps:
 
-- [Enable the `views` preview feature](#enable-the-views-preview-feature)
-- [Create a view in the underlying database](#create-a-view-in-the-underlying-database), either directly or as a [manual addition to a Prisma Migrate migration file](#use-views-with-prisma-migrate-and-db-push), or use an existing view
-- [Represent the view in your Prisma schema](#add-views-to-your-prisma-schema)
-- [Query the view in Prisma Client](#query-views-in-prisma-client)
+1. [Enable the `views` preview feature](#enable-the-views-preview-feature)
+1. [Create a view in the underlying database](#create-a-view-in-the-underlying-database), either directly or as a [manual addition to a Prisma Migrate migration file](#use-views-with-prisma-migrate-and-db-push), or use an existing view
+1. [Represent the view in your Prisma schema](#add-views-to-your-prisma-schema)
+1. [Query the view in Prisma Client](#query-views-in-prisma-client)
 
 
 :::warning
 
 Support for views is currently a [Preview](/orm/more/releases#preview) feature. You can add a view to your Prisma schema with the `view` keyword or introspect the views in your database schema with `db pull`. You cannot yet apply views in your schema to your database with Prisma Migrate and `db push` unless the changes are added manually to your migration file using the `--create-only` flag. <br /><br />For updates on progress with this feature, follow [our GitHub issue](https://github.com/prisma/prisma/issues/17335).
-
 
 :::
 
@@ -37,11 +36,11 @@ generator client {
 }
 ```
 
-Please leave feedback about this preview feature in our dedicated [preview feature feedback issue for `views`](https://github.com/prisma/prisma/issues/17335).
+Please leave feedback about this preview feature in our dedicated preview feature [feedback issue](https://github.com/prisma/prisma/issues/17335) for `views`.
 
 ## Create a view in the underlying database
 
-Currently, you cannot apply views that you define in your Prisma schema to your database with Prisma Migrate and `db push`. Instead, you must first create the view in the underlying database, either manually or [as part of a migration](#use-views-with-prisma-migrate-and-db-push).
+Currently, you cannot apply views that you define in your Prisma schema to your database with Prisma Migrate or `db push`. Instead, you must first create the view in the underlying database, either manually or [as part of a migration](#use-views-with-prisma-migrate-and-db-push).
 
 For example, take the following Prisma schema with a `User` model and a related `Profile` model:
 
@@ -293,7 +292,7 @@ const userinfo = await prisma.userInfo.findMany({
 
 :::note
 
-`findUnique`, cursor-based pagination, and writes (create/update/delete) are not supported on `views`.
+Write queries (create/update/delete) are not supported on `views`.
 
 :::
 
@@ -320,24 +319,27 @@ Currently, Prisma ORM does not support materialized views. However, when you [ma
 
 In the future Prisma Client might support marking individual views as materialized and add a Prisma Client method to refresh the materialized view. Please comment on our [`views` feedback issue](https://github.com/prisma/prisma/issues/17335) with your use case.
 
-Here's a **revised `## Restrictions` section** with **clarity on *why*** these limitations exist:
-
 ## Restrictions
 
-Prisma ORM treats all `view` blocks as **read-only representations of database queries** rather than true tables. Because of this, several restrictions apply to ensure Prisma Client remains consistent with the behavior of the underlying database:
+Prisma ORM treats all `view` blocks as _read-only_ representations of database queries rather than true tables. Because of this, several restrictions apply to ensure Prisma Client remains consistent with the behavior of the underlying database:
 
-### No identifiers or constraints
+### No identifiers
 
-Views are virtual tables and do not have inherent primary keys or unique constraints. Adding artificial constraints would create invalid assumptions for Prisma Client and break queries like `findUnique`. Hence, you cannot define `@id`, `@unique`, `@@id`, `@@unique`, or `@index` attributes on a `view` block.
+Views are virtual tables and do not have inherent primary keys. Hence, you cannot define `@id`, `@@id` attributes on a `view` block.
 
-### No relationships
+### No indexes
 
-Relationships in Prisma rely on foreign keys and referential integrity, which views do not enforce. Defining relationships on a view could mislead developers into thinking data integrity is guaranteed. Hence, the `@relation` attributes are not supported for views.
+Because views are virtual tables, they also can't have indexes. Therefore, , `@index` and `@@index` are disallowed to be define don `view` blocks.
+
+### Unsafe `@unique` attributes
+
+While Prisma ORM does allow you to define `@unique` and `@@unique` attributes on views, the correctness of these unique contraints actually isn't enforced. This means that if you define a `@unique` attribute on a field on a view, there may be multiple records with the same values for that field in the underlying database.
+
+Neither the database nor Prisma ORM enforces the unique constraint expressed by that attributre. The purpose of the `@unique` attribute in this case is only to enable relationships across views as well as `findUnique` queries and cursor-based pagination in Prisma Client.
 
 ### Limited Prisma Client API
 
 Views do not store data themselves, so writes and operations requiring unique identifiers cannot be supported. Also:
 
 - Only `findMany` (with filters, ordering, and skip/take pagination) is available.
-- `findUnique`, cursor-based pagination, and aggregate queries that depend on unique identifiers are **not supported**.
 - All write operations (`create`, `update`, `delete`, `upsert`) are disabled and not generated in the Prisma Client.
