@@ -2,7 +2,7 @@ import Dropdown from '@site/src/components/content-dropdown';
 import { Icon } from '@site/src/components/Icon';
 import TOCItems from '@theme/TOCItems';
 import clsx from 'clsx';
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 
 import type {Props} from '@theme/TOC';
 
@@ -26,11 +26,19 @@ export default function TOC({className, metadata, ...props}: Props & {metadata: 
     target: '_blank',
     rel: 'opener noreferrer'
   }
+  const [text, setText] = useState<string>("Open in")
   const markdown = metadata.editUrl.replace("github", "raw.githubusercontent").replace("/blob", "").replace("/tree", "");
+  const getMDX = () => {
+    getMarkdown(markdown);
+    setText("Copied!");
+    setTimeout(() => {
+      setText("Open in")
+    }, 1200)
+  }
   return (
     <div className={styles.tableOfContentsWrapper}>
-      <Dropdown anchorText="Open in" items={[
-        <div key="cp-markdown" onClick={() => getMarkdown(markdown)}><Icon btn="left" icon="fa-brands fa-markdown" size='16px'/>Copy as Markdown</div>,
+      <Dropdown anchorText={text} items={[
+        <div key="cp-markdown" onClick={() => getMDX()}><Icon btn="left" icon="fa-brands fa-markdown" size='16px'/>Copy as Markdown</div>,
         <a key="open-claude" href={`https://claude.ai/new?q=Read%20${url}%20so%20I%20can%20ask%20questions%20about%20it.`} {...externalProps}>
           <Icon btn="left" customicon={anthropic} size='16px'/>
           Open in Claude
