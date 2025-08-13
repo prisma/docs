@@ -446,6 +446,7 @@ const sidebars: SidebarsConfig = {
             "guides/shopify",
             "guides/permit-io-access-control",
             "guides/betterauth-nextjs",
+            "guides/ai-sdk-nextjs",
             "guides/authjs-nextjs",
           ].sort(),
         },
