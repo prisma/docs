@@ -16,7 +16,7 @@ Prisma Studio can be embedded directly into your Next.js application using the [
 
 After completing the guide, you'll have a Next.js app with Prisma Studio embedded, allowing you to browse and edit your database directly from your application interface:
 
-![Prisma Studio embedded in Next.js app](https://www.prisma.io/img/guides/prisma-studio-embedded-in-nextjs.png)
+![Prisma Studio embedded in Next.js app](/img/guides/embedded-studio.gif)
 
 Embedding Prisma Studio can be useful in scenarios such as:
 
@@ -26,11 +26,13 @@ Embedding Prisma Studio can be useful in scenarios such as:
 
 :::note
 
-Embeddable Prisma Studio (Free) is licensed under Apache 2.0.
+[**Embeddable Prisma Studio**](/postgres/database/prisma-studio/embedding-studio) is *free* and licensed under Apache 2.0.
 
-✔️ Free for production use  
-⚠️ Prisma branding must remain visible and unaltered  
-🔐 To remove our branding or to inquire about upcoming partner-only features, ping us here: [partnerships@prisma.io](mailto:partnerships@prisma.io)
+✔️ Free to use in production
+⚠️ Prisma branding must remain visible and unchanged
+🔐 To remove branding or learn about upcoming partner-only features, reach out at [partnerships@prisma.io](mailto:partnerships@prisma.io)
+
+Currently, Embedded Prisma Studio supports [**Prisma Postgres**](/postgres), with additional databases coming soon.
 
 :::
 
@@ -243,7 +245,7 @@ Install the [`@prisma/studio-core` package](https://www.npmjs.com/package/@prism
 npm install @prisma/studio-core
 ```
 
-The `@prisma/studio-core` provides `Studio`, a React component which renders Prisma Studio for your database. The `Studio` component accepts an _executor_ which accesses a `/studio` endpoint in your backend. The backend uses your API key to identify the correct Prisma Postgres instance and sends the SQL query to it.
+The `@prisma/studio-core` provides `Studio`, a React component which renders Prisma Studio for your database. The `Studio` component accepts an _executor_ which accesses a custom endpoint in your backend. The backend uses your API key to identify the correct Prisma Postgres instance and sends the SQL query to it.
 
 ### 3.2. Create a Studio wrapper component
 
@@ -287,7 +289,7 @@ export default function StudioWrapper({ children }: StudioWrapperProps) {
 
 Next, set up a backend endpoint that Prisma Studio can communicate with. This endpoint receives SQL queries from the embedded Studio UI, forwards them to your Prisma Postgres database, and then returns the results (or errors) back to the frontend.
 
-To do this, create a new folder called `api` inside the `app` directory. Inside it, add a `studio` folder with a `route.ts` file. This file will handle all requests sent to `/studio` and act as the bridge between the Studio component in your frontend and the database in your backend:
+To do this, create a new folder called `api` inside the `app` directory. Inside it, add a `studio` folder with a `route.ts` file. This file will handle all requests sent to `/api/studio` and act as the bridge between the Studio component in your frontend and the database in your backend:
 
 ```typescript file=app/api/studio/route.ts
 import { createPrismaPostgresHttpClient } from "@prisma/studio-core/data/ppg";
@@ -365,30 +367,30 @@ Open the `app/page.tsx` file and replace the existing code to render the embedde
 import dynamic from "next/dynamic";
 import { createPostgresAdapter } from "@prisma/studio-core/data/postgres-core";
 import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 import StudioWrapper from "@/components/StudioWrapper";
 
 // Dynamically import Studio with no SSR to avoid hydration issues
 const Studio = dynamic(
   () => import("@prisma/studio-core/ui").then(mod => mod.Studio),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading Studio...</p>
-        </div>
-      </div>
-    )
+  {
+    ssr: false
   }
 );
 
-export default function App() {
-  const adapter = useMemo(() => {
-    // Only create adapter in browser to avoid SSR issues
-    if (typeof window === 'undefined') return null;
+// Loading component
+const StudioLoading = () => (
+  <div className="flex items-center justify-center h-full">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">Loading Studio...</p>
+    </div>
+  </div>
+);
 
+// Client-only Studio component
+const ClientOnlyStudio = () => {
+  const adapter = useMemo(() => {
     // Create the HTTP client that communicates with our API endpoint
     const executor = createStudioBFFClient({
       url: "/api/studio",
@@ -398,9 +400,15 @@ export default function App() {
     return createPostgresAdapter({ executor });
   }, []);
 
+  return <Studio adapter={adapter} />;
+};
+
+export default function App() {
   return (
     <StudioWrapper>
-      {adapter && <Studio adapter={adapter} />}
+      <Suspense fallback={<StudioLoading />}>
+        <ClientOnlyStudio />
+      </Suspense>
     </StudioWrapper>
   );
 }
@@ -414,7 +422,9 @@ Start your Next.js development server:
 npm run dev
 ```
 
-Open your browser and go to `http://localhost:3000`. You should now see Prisma Studio running inside your application.
+Open your browser and go to `http://localhost:3000`. You should now see Prisma Studio running inside your application:
+
+![Prisma Studio embedded in Next.js app](/img/guides/embedded-studio.gif)
 
 Here's what to look for:
 
