@@ -448,6 +448,7 @@ const sidebars: SidebarsConfig = {
             "guides/betterauth-nextjs",
             "guides/ai-sdk-nextjs",
             "guides/authjs-nextjs",
+            "guides/embed-studio-nextjs",
           ].sort(),
         },
         {
