@@ -315,6 +315,14 @@ const config: Config = {
               sub: "Make your database global",
               icon: "fa-regular fa-bolt"
             },
+            {
+              type: "docSidebar",
+              className: "teal",
+              sidebarId: "aiSidebar",
+              label: "Prisma + AI",
+              sub: "Make your database global",
+              icon: "fa-regular fa-robot"
+            },
           ],
         },
         {
