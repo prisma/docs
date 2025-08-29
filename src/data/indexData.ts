@@ -189,12 +189,6 @@ export const tabs = [
         tech: "MySQL",
       },
       {
-        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb",
-        image: "/img/technologies/cockroachdb.svg",
-        imageDark: "/img/technologies/cockroachdbdark.svg",
-        tech: "CockroachDB",
-      },
-      {
         url: "/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb",
         image: "/img/technologies/mongodbsimple.svg",
         imageDark: "/img/technologies/mongodbsimple.svg",
