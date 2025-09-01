@@ -31,7 +31,7 @@ export function HomepageCard({
   }
 }): JSX.Element {
   const location = useLocation();
-  const f_class = clsx(className, styles.indigo ? styles.productCardIndigo : styles.productCardTeal, light && styles.light);
+  const f_class = clsx(className, styles.productCardTeal, light && styles.light);
   return (
     link
       ? <Link {...rest} className={f_class} to={`${link}${location.search}`}>

@@ -320,7 +320,7 @@ const config: Config = {
               className: "teal",
               sidebarId: "aiSidebar",
               label: "Prisma + AI",
-              sub: "Make your database global",
+              sub: "Build faster with Prisma + AI",
               icon: "fa-regular fa-robot"
             },
           ],
