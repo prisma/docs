@@ -65,7 +65,7 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
           onClick={handleTabChange}
           {...attributes}
           className={clsx("tabs__item", styles.tabItem, attributes?.className, {
-            "tabs__item--active": selectedValue === value,
+            [`tabs__item--active ${styles.activeTab}`]: selectedValue === value,
           })}
         >
           {label ?? value}
@@ -81,7 +81,6 @@ function TabContent({
   transparent,
   code,
   terminal,
-  fullWidth,
   customStyles,
 }) {
   const childTabs = (Array.isArray(children) ? children : [children]).filter(Boolean);
@@ -99,7 +98,7 @@ function TabContent({
       className={clsx(
         transparent && styles.transparent,
         code && styles.code,
-        fullWidth && styles[`full-width`]
+        styles[`full-width`]
       )}
       style={customStyles ? customStyles : {}}
     >
