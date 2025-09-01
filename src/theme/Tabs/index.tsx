@@ -81,7 +81,6 @@ function TabContent({
   transparent,
   code,
   terminal,
-  fullWidth,
   customStyles,
 }) {
   const childTabs = (Array.isArray(children) ? children : [children]).filter(Boolean);
@@ -99,7 +98,7 @@ function TabContent({
       className={clsx(
         transparent && styles.transparent,
         code && styles.code,
-        fullWidth && styles[`full-width`]
+        styles[`full-width`]
       )}
       style={customStyles ? customStyles : {}}
     >
