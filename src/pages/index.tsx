@@ -8,43 +8,14 @@ import { CommunityLinksData, get_help, how_do_i, ProductLinkData, tabs } from "@
 import Heading from "@theme/Heading";
 import Layout from "@theme/Layout";
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import Badge from "../components/button/Badge";
 import { SquareLogo } from "../components/GettingStarted";
 import { Tooltip } from "../components/tooltip/Tooltip";
 import CodeBlock from "../theme/CodeBlock";
 import styles from "./index.module.scss";
-
-function HomepageCard({
-  className,
-  heading,
-  body,
-  link,
-  links,
-  ...rest
-}: {
-  className: string;
-  heading: JSX.Element;
-  body: JSX.Element;
-  links?: JSX.Element;
-  link?: string;
-}): JSX.Element {
-  const location = useLocation();
-  return (
-    link
-      ? <Link {...rest} className={className} to={`${link}${location.search}`}>
-        {heading}
-        {body}
-      </Link>
-      : <div {...rest} className={className}>
-        {heading}
-        {body}
-        <div className={styles.linkGrid}>{links}</div>
-      </div>
-
-  );
-}
+import { CardHeading, HomepageCard } from "../components/ProductBlock";
 
 function HomepageProductCards() {
   return (
@@ -53,33 +24,17 @@ function HomepageProductCards() {
         <Heading as="h3" className={styles.h3}>Products</Heading>
         <div className={styles.productCards}>
           {Object.keys(ProductLinkData).map((e: keyof typeof ProductLinkData) => {
-            const cardHeader = (
-              <div className={styles.cardHeader}>
-                <div className={styles.iconWrapper}>
-                  <Icon icon={ProductLinkData[e].icon} color="#fff" size="32px" />
-                </div>
-                <div className={styles.cardHeaderContent}>
-                  <h5 className={styles.eyebrow}>{ProductLinkData[e].eyebrow}</h5>
-                  <Heading as="h4" className={styles.h4}>
-                    <div
-                      className={styles.h4}
-                      dangerouslySetInnerHTML={{ __html: ProductLinkData[e].title }}
-                    ></div>
-                  </Heading>
-                </div>
-              </div>
-            );
-            const cardBody = (
-              <div
-                className={styles.body}
-                dangerouslySetInnerHTML={{ __html: ProductLinkData[e].description }}
-              ></div>
-            );
+            const cardHeader =
+              <CardHeading
+                eyebrow={ProductLinkData[e].eyebrow}
+                title={ProductLinkData[e].title}
+                icon={ProductLinkData[e].icon}
+              />;
             return (
               <HomepageCard
-                className={e.startsWith("i_") ? styles.productCardIndigo : styles.productCardTeal}
+                indigo={e.startsWith("i_")}
                 heading={cardHeader}
-                body={cardBody}
+                body={ProductLinkData[e].description}
                 link={ProductLinkData[e].link}
               />
             );
