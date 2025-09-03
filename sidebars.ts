@@ -434,6 +434,7 @@ const sidebars: SidebarsConfig = {
             "guides/use-prisma-in-pnpm-workspaces",
             "guides/data-dog",
             "guides/github-actions",
+            "guides/bun",
           ].sort(),
         },
         {
