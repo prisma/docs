@@ -78,7 +78,6 @@ export default function DocSidebarItemLink({
       >
         {label}
         {badgeContent && <span className={styles.badge}>{badgeContent}</span>}
-        {!isInternalLink && <Icon icon="fa-solid fa-arrow-up-right" size="1rem" />}
       </Link>
     </li>
   );
