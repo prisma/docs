@@ -60,7 +60,9 @@ interface CardHeadingProps {
     light?: boolean;
 }
 
-export const Grid = () => <div className={styles.grid} />
+export const Grid = ({ children, className }: { children?: React.ReactNode; className?: string }) => (
+  <div className={clsx(styles.grid, className)}>{children}</div>
+)
 
 export const CardHeading = ({ eyebrow, icon, title, light }: CardHeadingProps) => {
     return (
