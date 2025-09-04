@@ -566,7 +566,7 @@ const sidebars: SidebarsConfig = {
           items: [
             {
               type: "link",
-              label: "Vibe Coding with Limits — How to Build Apps in the Age of AI",
+              label: "How to Build Apps in the Age of AI",
               href: "https://www.prisma.io/blog/vibe-coding-with-limits-how-to-build-apps-in-the-age-of-ai"
             },
             {

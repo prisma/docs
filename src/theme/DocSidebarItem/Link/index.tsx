@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
-import clsx from "clsx";
-import { isActiveSidebarItem } from "@docusaurus/plugin-content-docs/client";
-import { ThemeClassNames } from "@docusaurus/theme-common";
-import Link from "@docusaurus/Link";
 import isInternalUrl from "@docusaurus/isInternalUrl";
-import styles from "./styles.module.css";
+import Link from "@docusaurus/Link";
+import { isActiveSidebarItem } from "@docusaurus/plugin-content-docs/client";
 import { useLocation } from "@docusaurus/router";
+import { ThemeClassNames } from "@docusaurus/theme-common";
 import { Icon } from "@site/src/components/Icon";
+import clsx from "clsx";
+import React, { useEffect, useState } from "react";
+
+import styles from "./styles.module.css";
+
 export default function DocSidebarItemLink({
   item,
   onItemClick,
@@ -77,6 +79,7 @@ export default function DocSidebarItemLink({
         {...props}
       >
         {label}
+        {!isInternalLink && " ↗"}
         {badgeContent && <span className={styles.badge}>{badgeContent}</span>}
       </Link>
     </li>
