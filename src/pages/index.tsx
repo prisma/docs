@@ -11,6 +11,7 @@ import clsx from "clsx";
 import { useRef, useState } from "react";
 
 import Badge from "../components/button/Badge";
+import Button from "../components/button/Button";
 import { SquareLogo } from "../components/GettingStarted";
 import { Tooltip } from "../components/tooltip/Tooltip";
 import CodeBlock from "../theme/CodeBlock";
@@ -205,6 +206,7 @@ function HomepageHeroSection() {
           <CodeBlock className={clsx("language-terminal", styles["hero-code"])}>
             npx prisma init --db
           </CodeBlock>
+          <Button variant="link" color="teal" leftIcon="fa-regular fa-robot" label={"Get Started with Prisma & AI"} link="/ai" style={{ fontSize: `18px` }} />
         </div>
         {/* <Badge
           link="/"
