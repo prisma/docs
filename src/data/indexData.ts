@@ -205,6 +205,12 @@ export const tabs = [
 
 export const how_do_i = [
   {
+    title: "Get started with Prisma & AI?",
+    description:
+      "Learn how to get started with Prisma and AI, from setting up Prisma ORM in tools like ChatGPT, Cursor, Windsurf, GitHub Copilot, and Tabnine to using the Prisma MCP server for database automation. Explore step-by-step guides, real-world examples with Next.js, and integrations with Vercel AI SDK and Firebase Studio. Build faster, stay type-safe, and connect Prisma Postgres with thousands of apps to power your AI-driven workflows.",
+      url: "/ai"
+  },
+  {
     title: "Model my schema?",
     description:
       "The Prisma Schema (or schema for short) is the main method of configuration for your Prisma ORM setup. It consists of the following parts: Data sources: Specify the details of the data sources Prisma ORM should connect to (e.g. a PostgreSQL database) Generators: Specifies what clients should be generated based on the data model (e.g. Prisma Client)",
@@ -274,5 +280,5 @@ export const how_do_i = [
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-client/setup-and-configuration/generating-prisma-client",
     // time: 15
-  },
+  }
 ];
