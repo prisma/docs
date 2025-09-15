@@ -1,15 +1,15 @@
-import React, { cloneElement, useEffect } from "react";
-import clsx from "clsx";
-import {
-  useScrollPositionBlocker,
-  useTabs,
-  sanitizeTabsChildren,
-} from "@docusaurus/theme-common/internal";
+import { sanitizeTabsChildren, useScrollPositionBlocker, useTabs } from "@docusaurus/theme-common/internal";
 import useIsBrowser from "@docusaurus/useIsBrowser";
+import clsx from "clsx";
+import React, { cloneElement, useState } from "react";
+
 import styles from "./styles.module.scss";
+import { Icon } from "@site/src/components/Icon";
+
 function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const tabRefs = [];
   const { blockElementScrollPositionUntilNextRender } = useScrollPositionBlocker();
+  const [open, setOpen] = useState<boolean>(false);
   const handleTabChange = (event) => {
     const newTab = event.currentTarget;
     const newTabIndex = tabRefs.indexOf(newTab);
@@ -18,6 +18,7 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
       blockElementScrollPositionUntilNextRender(newTab);
       selectValue(newTabValue);
     }
+    setOpen(false);
   };
   const handleKeydown = (event) => {
     let focusElement = null;
@@ -53,24 +54,30 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
         className
       )}
     >
-      {tabValues.map(({ value, label, attributes }) => (
-        <li
-          // TODO extract TabListItem
-          role="tab"
-          tabIndex={selectedValue === value ? 0 : -1}
-          aria-selected={selectedValue === value}
-          key={value}
-          ref={(tabControl) => tabRefs.push(tabControl)}
-          onKeyDown={handleKeydown}
-          onClick={handleTabChange}
-          {...attributes}
-          className={clsx("tabs__item", styles.tabItem, attributes?.className, {
-            [`tabs__item--active ${styles.activeTab}`]: selectedValue === value,
-          })}
-        >
-          {label ?? value}
-        </li>
-      ))}
+      <span className={styles.display} onClick={() => setOpen(!open)}>
+        <span>{selectedValue}</span>
+        <Icon icon={`fa-regular fa-chevron-${open ? "down" : "up"}`} size="inherit" />
+      </span>
+      <div className={clsx(styles.ulContent, open && styles.open)}>
+        {tabValues.map(({ value, label, attributes }) => (
+          <li
+            // TODO extract TabListItem
+            role="tab"
+            tabIndex={selectedValue === value ? 0 : -1}
+            aria-selected={selectedValue === value}
+            key={value}
+            ref={(tabControl) => tabRefs.push(tabControl)}
+            onKeyDown={handleKeydown}
+            onClick={handleTabChange}
+            {...attributes}
+            className={clsx("tabs__item", styles.tabItem, attributes?.className, {
+              [`tabs__item--active ${styles.activeTab}`]: selectedValue === value,
+            })}
+          >
+            {label ?? value}
+          </li>
+        ))}
+      </div>
     </ul>
   );
 }
