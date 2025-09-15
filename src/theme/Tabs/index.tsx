@@ -28,7 +28,6 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const checkForOverflow = () => {
     if (ulvalues.current.getBoundingClientRect().width > width) setOverflowing(true)
     else setOverflowing(false);
-    console.log(width - ulvalues.current.getBoundingClientRect().width);
   }
   useEffect(() => {
     checkForOverflow();
