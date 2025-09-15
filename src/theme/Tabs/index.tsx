@@ -9,11 +9,38 @@ import { Icon } from "@site/src/components/Icon";
 function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const tabRefs = [];
   const { blockElementScrollPositionUntilNextRender } = useScrollPositionBlocker();
-  const [open, setOpen] = useState<boolean>(false);
-  const [overflowing, setOverflowing] = useState<boolean>(false);
-  const windowWidth = ((document?.body?.getBoundingClientRect().width - 300) * 0.75) - 48;
-  const [width, setWidth] = useState<number>(windowWidth);
-  const ulvalues = useRef<any>(null)
+  const [open, setOpen] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const [width, setWidth] = useState(0);
+  const ulvalues = useRef(null);
+
+  const calculateWidth = () => {
+    if (typeof document === "undefined") return 0;
+    return ((document.body.getBoundingClientRect().width - 300) * 0.75) - 48; // 48 is padding, 0.75 is 75% of content
+  };
+
+  useEffect(() => {
+    setWidth(calculateWidth());
+    checkForOverflow();
+  }, [width]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const newWidth = calculateWidth();
+      setWidth(newWidth);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const checkForOverflow = () => {
+    if (ulvalues.current && width > 0) {
+      const contentWidth = ulvalues.current.getBoundingClientRect().width;
+      console.log(width - contentWidth, contentWidth, width);
+      setOverflowing(contentWidth > width);
+    }
+  };
+
 
   const handleTabChange = (event) => {
     const newTab = event.currentTarget;
@@ -25,13 +52,6 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     }
     setOpen(false);
   };
-  const checkForOverflow = () => {
-    if (ulvalues.current.getBoundingClientRect().width > width) setOverflowing(true)
-    else setOverflowing(false);
-  }
-  useEffect(() => {
-    checkForOverflow();
-  }, [])
   const handleKeydown = (event) => {
     let focusElement = null;
     switch (event.key) {
@@ -60,16 +80,6 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     blockElementScrollPositionUntilNextRender(list);
   }
 
-  const checkForResize = () => {
-    setWidth(((document?.body?.getBoundingClientRect().width - 300) * 0.75) - 48);
-  }
-
-  useEffect(() => {
-    window.addEventListener("resize", checkForResize);
-    return () => {
-      window.removeEventListener("resize", checkForResize);
-    };
-  }, []);
   return (
     <ul
       role="tablist"
