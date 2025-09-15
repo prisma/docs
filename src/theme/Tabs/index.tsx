@@ -1,7 +1,7 @@
 import { sanitizeTabsChildren, useScrollPositionBlocker, useTabs } from "@docusaurus/theme-common/internal";
 import useIsBrowser from "@docusaurus/useIsBrowser";
 import clsx from "clsx";
-import React, { cloneElement, useState } from "react";
+import React, { cloneElement, useEffect, useState } from "react";
 
 import styles from "./styles.module.scss";
 import { Icon } from "@site/src/components/Icon";
@@ -20,6 +20,8 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     }
     setOpen(false);
   };
+  useEffect(() => {
+  }, [open])
   const handleKeydown = (event) => {
     let focusElement = null;
     switch (event.key) {
@@ -42,6 +44,11 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     }
     focusElement?.focus();
   };
+  const handleOpen = (event) => {
+    const list = event.currentTarget;
+    setOpen(!open);
+    blockElementScrollPositionUntilNextRender(list);
+  }
   return (
     <ul
       role="tablist"
@@ -54,7 +61,7 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
         className
       )}
     >
-      <span className={styles.display} onClick={() => setOpen(!open)}>
+      <span className={styles.display} onClick={(e) => handleOpen(e)}>
         <span>{selectedValue}</span>
         <Icon icon={`fa-regular fa-chevron-${open ? "down" : "up"}`} size="inherit" />
       </span>
