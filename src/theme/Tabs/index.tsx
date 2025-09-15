@@ -1,7 +1,7 @@
 import { sanitizeTabsChildren, useScrollPositionBlocker, useTabs } from "@docusaurus/theme-common/internal";
 import useIsBrowser from "@docusaurus/useIsBrowser";
 import clsx from "clsx";
-import React, { cloneElement, useEffect, useState } from "react";
+import React, { cloneElement, useEffect, useRef, useState } from "react";
 
 import styles from "./styles.module.scss";
 import { Icon } from "@site/src/components/Icon";
@@ -10,6 +10,11 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const tabRefs = [];
   const { blockElementScrollPositionUntilNextRender } = useScrollPositionBlocker();
   const [open, setOpen] = useState<boolean>(false);
+  const [overflowing, setOverflowing] = useState<boolean>(false);
+  const windowWidth = ((document?.body?.getBoundingClientRect().width - 300) * 0.75) - 48;
+  const [width, setWidth] = useState<number>(windowWidth);
+  const ulvalues = useRef<any>(null)
+
   const handleTabChange = (event) => {
     const newTab = event.currentTarget;
     const newTabIndex = tabRefs.indexOf(newTab);
@@ -20,8 +25,14 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     }
     setOpen(false);
   };
+  const checkForOverflow = () => {
+    if (ulvalues.current.getBoundingClientRect().width > width) setOverflowing(true)
+    else setOverflowing(false);
+    console.log(width - ulvalues.current.getBoundingClientRect().width);
+  }
   useEffect(() => {
-  }, [open])
+    checkForOverflow();
+  }, [])
   const handleKeydown = (event) => {
     let focusElement = null;
     switch (event.key) {
@@ -49,6 +60,17 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     setOpen(!open);
     blockElementScrollPositionUntilNextRender(list);
   }
+
+  const checkForResize = () => {
+    setWidth(((document?.body?.getBoundingClientRect().width - 300) * 0.75) - 48);
+  }
+
+  useEffect(() => {
+    window.addEventListener("resize", checkForResize);
+    return () => {
+      window.removeEventListener("resize", checkForResize);
+    };
+  }, []);
   return (
     <ul
       role="tablist"
@@ -61,11 +83,11 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
         className
       )}
     >
-      <span className={styles.display} onClick={(e) => handleOpen(e)}>
+      <span className={clsx(styles.display, overflowing && styles.overflow)} onClick={(e) => handleOpen(e)}>
         <span>{selectedValue}</span>
         <Icon icon={`fa-regular fa-chevron-${open ? "down" : "up"}`} size="inherit" />
       </span>
-      <div className={clsx(styles.ulContent, open && styles.open)}>
+      <div ref={ulvalues} className={clsx(styles.ulContent, overflowing && styles.overflow, open && styles.open)}>
         {tabValues.map(({ value, label, attributes }) => (
           <li
             // TODO extract TabListItem
