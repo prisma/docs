@@ -36,7 +36,6 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
   const checkForOverflow = () => {
     if (ulvalues.current && width > 0) {
       const contentWidth = ulvalues.current.getBoundingClientRect().width;
-      console.log(width - contentWidth, contentWidth, width);
       setOverflowing(contentWidth > width);
     }
   };
@@ -92,11 +91,22 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
         className
       )}
     >
-      <span className={clsx(styles.display, overflowing && styles.overflow)} onClick={(e) => handleOpen(e)}>
+      <button 
+        className={clsx(styles.display, overflowing && styles.overflow)} 
+        onClick={(e) => handleOpen(e)}
+        aria-expanded={open}
+        aria-controls="tab-list-content"
+        type="button"
+      >
         <span>{selectedValue}</span>
         <Icon icon={`fa-regular fa-chevron-${open ? "up" : "down"}`} size="inherit" />
-      </span>
-      <div ref={ulvalues} className={clsx(styles.ulContent, overflowing && styles.overflow, open && styles.open)}>
+      </button>
+      <div 
+        id="tab-list-content"
+        ref={ulvalues} 
+        className={clsx(styles.ulContent, overflowing && styles.overflow, open && styles.open)}
+        aria-hidden={!open && overflowing}
+      >
         {tabValues.map(({ value, label, attributes }) => (
           <li
             // TODO extract TabListItem
