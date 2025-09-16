@@ -1,0 +1,544 @@
+---
+title: 'Instant app deployment with Vercel and Prisma Postgres'
+metaTitle: 'Instant app deployment with Vercel and Prisma Postgres'
+description: 'Learn how to programmatically deploy applications with Vercel and Prisma Postgres using the instant deployment API'
+sidebar_label: 'Vercel app deployment'
+image: '/img/guides/vercel_app_deployments.png'
+community_section: true
+---
+
+## Introduction
+
+This guide shows you how to implement instant app deployment using Vercel's API with integrated Prisma Postgres databases. You'll learn to programmatically create, deploy, and transfer full-stack applications with a single API call.
+
+Instant app deployment solves a critical problem for AI coding platforms, no-code tools, and educational platforms: getting from generated code to a live, production-ready application. Instead of requiring users to manually set up hosting infrastructure, you can offer one-click deployments that include both the application and a connected database.
+
+By the end of this guide, you'll understand how to integrate Vercel's deployment API with Prisma Postgres to create a seamless deployment experience for your users.
+
+## Who is this for
+
+This guide is designed for developers building:
+
+- **AI-powered development platforms** that generate full applications and need instant deployment
+- **No-code/low-code tools** that want to offer hosting without managing infrastructure
+- **Educational platforms** where students need to deploy projects quickly
+- **CI/CD systems** that need programmatic deployment capabilities
+- **Rapid prototyping tools** that transform ideas into deployed applications
+
+## Core concepts
+
+Before implementing the deployment flow, let's understand the key concepts:
+
+### Vercel deployment architecture
+
+- **Projects**: Containers that hold your application code and configuration
+- **Deployments**: Specific instances of your project deployed to Vercel's edge network
+- **Teams**: Organizational units that own projects and manage billing
+- **Integrations**: Third-party services (like Prisma) that connect to your projects
+
+### Prisma integration components
+
+- **Integration configuration**: Your team's connection to the Prisma service
+- **Authorization**: Permission to create resources on behalf of your team
+- **Database stores**: Individual Prisma Postgres instances
+- **Resource connections**: Links between databases and Vercel projects
+
+### API endpoints overview
+
+The deployment process uses several key Vercel API endpoints:
+
+- `POST /v10/projects` - Create a new Vercel project
+- `POST /v1/integrations/billing/authorization` - Authorize Prisma integration
+- `POST /v1/storage/stores/integration` - Create Prisma Postgres database
+- `POST /v13/deployments` - Deploy application code
+- `POST /v9/projects/{id}/transfer-request` - Generate claim code for user transfer
+
+## Required API keys and environment variables
+
+### Vercel access token
+
+Your primary authentication token for Vercel API calls.
+
+**Where to get it:**
+1. Go to [Vercel Account Settings](https://vercel.com/account/tokens)
+2. Click **Create Token**
+3. Name it (e.g., "Instant Deployment API")
+4. Set scope to your **team** (not personal account)
+5. Copy the token immediately (you won't see it again)
+
+```bash
+ACCESS_TOKEN="vercel_token_here"
+```
+
+### Team ID
+
+Your Vercel team identifier for API requests.
+
+**Where to get it:**
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+2. Switch to your **Team** (not personal account)
+3. Go to **Team Settings**
+4. Copy the Team ID displayed at the top (format: `team_abc123xyz`)
+
+```bash
+TEAM_ID="team_abc123xyz"
+```
+
+### Prisma integration config ID
+
+Your team's Prisma integration configuration identifier.
+
+**Where to get it:**
+1. In Vercel Dashboard, go to your **Team**
+2. Click **Integrations** tab
+3. Find **Prisma** and click **Configure** (install it first if needed)
+4. In the URL, copy the config ID: `https://vercel.com/teams/your-team/integrations/icfg_abc123xyz`
+5. Copy the `icfg_abc123xyz` part
+
+```bash
+INTEGRATION_CONFIG_ID="icfg_abc123xyz"
+```
+
+### Configuration constants
+
+```typescript
+const CONFIG = {
+  ACCESS_TOKEN: process.env.ACCESS_TOKEN,
+  TEAM_ID: process.env.TEAM_ID,
+  INTEGRATION_CONFIG_ID: process.env.INTEGRATION_CONFIG_ID,
+  VERCEL_API_URL: "https://api.vercel.com",
+  PRISMA_PRODUCT_ID: "iap_yVdbiKqs5fLkYDAB", // Prisma Postgres product ID
+};
+```
+
+## Step-by-step deployment process
+
+### Step 1: Create a Vercel project
+
+Every deployment starts with creating a project container.
+
+```typescript
+async function createProject(): Promise<{ id: string; name: string }> {
+  const projectName = `demo-project-${Date.now()}`;
+  
+  const response = await fetch(
+    `${CONFIG.VERCEL_API_URL}/v10/projects?teamId=${CONFIG.TEAM_ID}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONFIG.ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: projectName }),
+    }
+  );
+
+  const project = await response.json();
+  console.log(`✅ Project created: ${project.name} (${project.id})`);
+  
+  return { id: project.id, name: project.name };
+}
+```
+
+**Key parameters:**
+- `name`: Unique project identifier (auto-generated with timestamp)
+- `teamId`: Your team ID for proper project ownership
+
+> **Learn more:** [Vercel Projects API](https://vercel.com/docs/rest-api/reference/endpoints/projects/create-a-new-project)
+
+### Step 2: Authorize Prisma integration
+
+Before creating databases, you need authorization to use Prisma on behalf of your team.
+
+```typescript
+async function createPrismaAuthorization(): Promise<{
+  id: string;
+  configId: string;
+}> {
+  const response = await fetch(
+    `${CONFIG.VERCEL_API_URL}/v1/integrations/billing/authorization?teamId=${CONFIG.TEAM_ID}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONFIG.ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        integrationIdOrSlug: "prisma",
+        productId: CONFIG.PRISMA_PRODUCT_ID,
+        billingPlanId: "pro",
+        metadata: JSON.stringify({ region: "iad1" }),
+        integrationConfigurationId: CONFIG.INTEGRATION_CONFIG_ID,
+      }),
+    }
+  );
+
+  const authData = await response.json();
+  
+  return {
+    id: authData.authorization.id,
+    configId: authData.authorization.integrationConfigurationId,
+  };
+}
+```
+
+**Key parameters:**
+- `billingPlanId`: "pro" for production databases with full features
+- `region`: "iad1" (US East), "fra1" (Europe), or "sfo1" (US West)
+- `metadata`: JSON string containing region and other configuration
+
+> **Learn more:** [Vercel Integrations API](https://vercel.com/docs/rest-api/reference/endpoints/integrations)
+
+### Step 3: Provision Prisma Postgres database
+
+Create a new database instance with automatic connection pooling and caching.
+
+```typescript
+async function createPrismaDatabase(
+  projectName: string,
+  authId: string,
+  configId: string
+): Promise<{ id: string; connectionString?: string }> {
+  const response = await fetch(
+    `${CONFIG.VERCEL_API_URL}/v1/storage/stores/integration?teamId=${CONFIG.TEAM_ID}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONFIG.ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        metadata: { region: "iad1" },
+        billingPlanId: "pro",
+        name: `postgres-${projectName}`,
+        integrationConfigurationId: configId,
+        integrationProductIdOrSlug: CONFIG.PRISMA_PRODUCT_ID,
+        authorizationId: authId,
+        source: "marketplace",
+      }),
+    }
+  );
+
+  const storageData = await response.json();
+  
+  return {
+    id: storageData.store.id,
+    connectionString: storageData.store.connectionString,
+  };
+}
+```
+
+**Key parameters:**
+- `name`: Database identifier (typically matches project name)
+- `source`: "marketplace" for Vercel marketplace integrations
+- `billingPlanId`: "pro" includes connection pooling and global caching
+
+> **Learn more:** [Vercel Storage API](https://vercel.com/docs/rest-api/reference/endpoints/integrations/create-integration-store-free-and-paid-plans)
+
+### Step 4: Connect database to project
+
+Link the database to your Vercel project for automatic environment variable injection.
+
+```typescript
+async function connectDatabaseToProject(
+  projectId: string,
+  storeId: string,
+  configId: string
+): Promise<void> {
+  await fetch(
+    `${CONFIG.VERCEL_API_URL}/v1/integrations/installations/${configId}/products/${CONFIG.PRISMA_PRODUCT_ID}/resources/${storeId}/connections?teamId=${CONFIG.TEAM_ID}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONFIG.ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ projectId }),
+    }
+  );
+
+  console.log("✅ Database connected to project");
+}
+```
+
+This connection automatically adds `DATABASE_URL` and other environment variables to your project.
+
+> **Learn more:** [Vercel Integration Resources](https://vercel.com/docs/rest-api/reference/endpoints/integrations/connect-integration-resource-to-project)
+
+### Step 5: Deploy the application
+
+Deploy your application code to Vercel's global edge network.
+
+```typescript
+async function deployApplication(
+  projectName: string,
+  fileSha: string
+): Promise<{ id: string; url: string }> {
+  const response = await fetch(
+    `${CONFIG.VERCEL_API_URL}/v13/deployments?teamId=${CONFIG.TEAM_ID}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONFIG.ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        files: [{ file: ".vercel/source.tgz", sha: fileSha }],
+        name: `deployment-${Date.now()}`,
+        projectSettings: { framework: "nextjs" },
+        project: projectName,
+      }),
+    }
+  );
+
+  const deploymentData = await response.json();
+  
+  return {
+    id: deploymentData.id,
+    url: deploymentData.alias?.[0] || deploymentData.url,
+  };
+}
+```
+
+**Key parameters:**
+- `files`: Array of uploaded files (requires prior file upload)
+- `framework`: "nextjs", "react", "vue", etc. for automatic configuration
+- `projectSettings`: Framework-specific build and runtime settings
+
+> **Learn more:** [Vercel Deployments API](https://vercel.com/docs/rest-api/reference/endpoints/deployments/create-a-new-deployment)
+
+### Step 6: Generate claim code for user transfer
+
+Create a transfer code that allows users to claim ownership of the deployed project.
+
+```typescript
+async function createProjectTransfer(
+  projectId: string
+): Promise<{ code: string; claimUrl: string }> {
+  const response = await fetch(
+    `${CONFIG.VERCEL_API_URL}/v9/projects/${projectId}/transfer-request?teamId=${CONFIG.TEAM_ID}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONFIG.ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    }
+  );
+
+  const transferData = await response.json();
+  const claimUrl = `https://vercel.com/claim-deployment?code=${transferData.code}&returnUrl=https://your-app.com`;
+
+  return {
+    code: transferData.code,
+    claimUrl,
+  };
+}
+```
+
+**Key details:**
+- Transfer codes are valid for **24 hours**
+- Users can claim projects to any team in their Vercel account
+- The `returnUrl` redirects users back to your application after claiming
+
+> **Learn more:** [Vercel Claim Deployments](https://vercel.com/docs/deployments/claim-deployments)
+
+## Complete deployment example
+
+Here's a simplified version that combines all steps:
+
+```typescript
+async function deployApp() {
+  console.log("🚀 Starting instant deployment...");
+
+  // 1. Create project
+  const project = await createProject();
+
+  // 2. Authorize Prisma integration
+  const auth = await createPrismaAuthorization();
+
+  // 3. Create database
+  const database = await createPrismaDatabase(
+    project.name,
+    auth.id,
+    auth.configId
+  );
+
+  // 4. Connect database to project
+  await connectDatabaseToProject(project.id, database.id, auth.configId);
+
+  // 5. Deploy application (assumes files already uploaded)
+  const deployment = await deployApplication(project.name, fileSha);
+
+  // 6. Generate claim code
+  const transfer = await createProjectTransfer(project.id);
+
+  console.log("🎉 Deployment completed!");
+  console.log(`Live URL: https://${deployment.url}`);
+  console.log(`Claim URL: ${transfer.claimUrl}`);
+
+  return {
+    projectId: project.id,
+    deploymentUrl: `https://${deployment.url}`,
+    claimCode: transfer.code,
+    claimUrl: transfer.claimUrl,
+  };
+}
+```
+
+> **Learn more:** [Complete API Reference](https://vercel.com/docs/rest-api/reference)
+
+## User claim flow
+
+After deployment, users can claim ownership through a secure transfer process:
+
+### How claiming works
+
+1. **User receives claim URL**: Your platform provides the generated claim URL
+2. **User authentication**: Vercel prompts for login if not authenticated
+3. **Team selection**: User chooses which Vercel team should own the project
+4. **Transfer completion**: Project and database transfer to user's selected team
+5. **Billing transfer**: User's team becomes responsible for hosting costs
+
+### Claim URL structure
+
+```
+https://vercel.com/claim-deployment?code=xxx&returnUrl=https://your-app.com
+```
+
+**Parameters:**
+- `code`: The transfer code from Step 6 (valid 24 hours)
+- `returnUrl`: Where to redirect after successful claim
+
+### What gets transferred
+
+When a user claims a deployment, they receive:
+- **Full project ownership** with all source code and configuration
+- **Database ownership** including all data and connection strings
+- **Environment variables** automatically updated for the new team
+- **Domain management** and SSL certificates
+- **Deployment history** and build logs
+
+> **Learn more:** [Claim Deployments Documentation](https://vercel.com/docs/deployments/claim-deployments)
+
+## Error handling and best practices
+
+### Common error scenarios
+
+```typescript
+async function handleApiErrors(response: Response, operation: string) {
+  if (!response.ok) {
+    const errorData = await response.text();
+    
+    // Handle specific error cases
+    switch (response.status) {
+      case 401:
+        throw new Error(`Authentication failed: Check your ACCESS_TOKEN`);
+      case 403:
+        throw new Error(`Permission denied: Verify team access and scopes`);
+      case 429:
+        throw new Error(`Rate limit exceeded: Implement retry logic`);
+      case 404:
+        throw new Error(`Resource not found: Check IDs and configuration`);
+      default:
+        throw new Error(`${operation} failed: ${response.status} - ${errorData}`);
+    }
+  }
+}
+```
+
+### Rate limiting considerations
+
+Vercel enforces rate limits on API endpoints. Implement exponential backoff:
+
+```typescript
+async function apiCallWithRetry(url: string, options: RequestInit, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      if (response.status === 429) {
+        const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+    }
+  }
+}
+```
+
+> **Learn more:** [Vercel API Limits](https://vercel.com/docs/limits)
+
+### Security best practices
+
+- **Store tokens securely**: Never expose API tokens in client-side code
+- **Validate inputs**: Sanitize project names and user-provided data
+- **Monitor usage**: Track API calls to prevent abuse
+- **Implement timeouts**: Set reasonable request timeouts for reliability
+
+## Production considerations
+
+### Scaling deployment volume
+
+For high-volume deployment scenarios:
+
+- **Batch operations**: Group multiple deployments when possible
+- **Queue management**: Use job queues for deployment requests
+- **Resource monitoring**: Track database and project creation limits
+- **Cost optimization**: Monitor Prisma Postgres usage and billing
+
+### Integration with existing platforms
+
+```typescript
+// Example integration with an AI coding platform
+class DeploymentService {
+  async deployGeneratedApp(code: string, userId: string) {
+    // 1. Package generated code
+    const packagedCode = await this.packageCode(code);
+    
+    // 2. Deploy with Vercel + Prisma
+    const deployment = await this.deployApp(packagedCode);
+    
+    // 3. Store deployment info
+    await this.storeDeployment(userId, deployment);
+    
+    // 4. Notify user
+    await this.notifyUser(userId, deployment.claimUrl);
+    
+    return deployment;
+  }
+}
+```
+
+### Monitoring and analytics
+
+Track key metrics for your deployment service:
+
+- **Deployment success rate**: Monitor API failures and timeouts
+- **Claim conversion rate**: Track how many users claim their deployments
+- **Performance metrics**: Measure deployment time and user experience
+- **Cost analysis**: Monitor Vercel and Prisma usage costs
+
+## Next steps
+
+Now that you understand instant app deployment with Vercel and Prisma Postgres, you can:
+
+- **Integrate into your platform**: Add deployment capabilities to your existing application
+- **Customize the flow**: Adapt the process for your specific use case and user experience
+- **Scale your implementation**: Handle high-volume deployments with proper queuing and error handling
+- **Monitor and optimize**: Track performance and user adoption metrics
+
+### Additional resources
+
+- [Vercel REST API Documentation](https://vercel.com/docs/rest-api)
+- [Vercel Claim Deployments Guide](https://vercel.com/docs/deployments/claim-deployments)
+- [Vercel Integration API Reference](https://vercel.com/docs/rest-api/reference/endpoints/integrations)
+- [Prisma Postgres Documentation](/postgres)
+- [Vercel Limits and Quotas](https://vercel.com/docs/limits)
+
+For questions or support with your integration, reach out through the [Prisma Community Discord](https://pris.ly/discord) or [Vercel Support](https://vercel.com/help).
