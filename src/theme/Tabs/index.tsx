@@ -94,7 +94,7 @@ function TabList({ className, block, selectedValue, selectValue, tabValues }) {
     >
       <span className={clsx(styles.display, overflowing && styles.overflow)} onClick={(e) => handleOpen(e)}>
         <span>{selectedValue}</span>
-        <Icon icon={`fa-regular fa-chevron-${open ? "down" : "up"}`} size="inherit" />
+        <Icon icon={`fa-regular fa-chevron-${open ? "up" : "down"}`} size="inherit" />
       </span>
       <div ref={ulvalues} className={clsx(styles.ulContent, overflowing && styles.overflow, open && styles.open)}>
         {tabValues.map(({ value, label, attributes }) => (
