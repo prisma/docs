@@ -166,11 +166,11 @@ const TabBox = ({icon, label, description, list, link}: any) => {
   return (
     <div>
       <div className={styles.tabBox}>
-        <div className={styles.heading}>
-          {icon && <Icon className={styles.leftIcon} btn="left" icon={icon} size='inherit' color='var(--teal-600)' /> }
-          <span>{label}</span>
-        </div>
         <div className={styles.content}>
+          <div className={styles.heading}>
+            {icon && <Icon className={styles.leftIcon} btn="left" icon={icon} size='inherit' color='var(--teal-600)' /> }
+            <span>{label}</span>
+          </div>
           <p dangerouslySetInnerHTML={{__html: description}}></p>
           <div className={styles.techGrid}>
             {list && list.length && list.map((l: any, idx: number) => 
