@@ -450,7 +450,6 @@ const sidebars: SidebarsConfig = {
             "guides/ai-sdk-nextjs",
             "guides/authjs-nextjs",
             "guides/embed-studio-nextjs",
-            "guides/vercel-app-deployment",
           ].sort(),
         },
         {
@@ -467,10 +466,14 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Prisma Postgres",
+          label: "Prisma Postgres for Platforms",
           collapsed: false,
           collapsible: false,
-          items: ["guides/management-api-basic", "guides/management-api"].sort(),
+          items: [
+            "guides/management-api-basic",
+            "guides/management-api",
+            "guides/vercel-app-deployment",
+          ].sort(),
         },
         {
           type: "category",
