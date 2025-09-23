@@ -14,24 +14,29 @@ While our examples use Next.js, you can deploy other applications to Vercel. See
 
 :::tip Use Prisma ORM without Rust binaries
 
-If Prisma’s Rust engine binaries cause large bundle sizes, slow builds, or deployment issues (for example, in serverless or edge environments), you can switch to the [`queryCompiler`](/orm/prisma-client/setup-and-configuration/no-rust-engine) Preview feature introduced in [v6.7.0](https://pris.ly/release/6.7.0).
-
-**When enabled, Prisma Client is generated without a Rust-based query engine binary**, reducing build artifacts and removing native binary dependencies:
+If Prisma ORM's Rust engine binaries cause large bundle sizes, slow builds, or deployment issues (for example, in serverless or edge environments), you can use it without them using this configuration of your `generator` block:
 
 ```prisma
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["queryCompiler", "driverAdapters"]
+  provider   = "prisma-client-js" // or "prisma-client"
+  engineType = "client"
 }
-```
+``` 
 
-Note that the [`driverAdapters`](/orm/overview/databases/database-drivers#driver-adapters) Preview feature is **required** alongside `queryCompiler`.
+Prisma ORM without Rust binaries has been [Generally Available](/orm/more/releases#generally-available-ga) since [v6.16.0](https://pris.ly/release/6.16.0).
+
+Note that you need to use a [driver adapter](/orm/overview/databases/database-drivers#driver-adapters) in this case.
+
 When using this architecture:
 
-* No Rust query engine binary is downloaded or shipped.
-* The database connection pool is maintained by the native JS database driver you install (e.g., `@prisma/adapter-pg` for PostgreSQL).
+- No Rust query engine binary is downloaded or shipped.
+- The database connection pool is maintained by the native JS database driver you install (e.g., `@prisma/adapter-pg` for PostgreSQL).
 
-This setup can simplify deployments in serverless or edge runtimes. Learn more in the [docs here](/orm/prisma-client/setup-and-configuration/no-rust-engine). Curious why we're moving away from the Rust engine? Take a look at why we're transitioning from Rust binary engines to an all-TypeScript approach for a faster, lighter Prisma ORM in our [blog post](https://www.prisma.io/blog/try-the-new-rust-free-version-of-prisma-orm-early-access).
+This setup can simplify deployments in serverless or edge runtimes. Learn more in the [docs here](/orm/prisma-client/setup-and-configuration/no-rust-engine). 
+
+Curious why we moved away from the Rust engine? Take a look at why we transitioned from Rust binary engines to an all-TypeScript approach for a faster, lighter Prisma ORM in this [blog post](https://www.prisma.io/blog/prisma-orm-without-rust-latest-performance-benchmarks).
+
+
 :::
 
 ## Build configuration
@@ -75,8 +80,8 @@ If you are using Prisma inside a monorepo (e.g., with TurboRepo) and deploying t
 For more details on how Prisma interacts with different bundlers like Webpack and Parcel, see our [Module bundlers](/orm/prisma-client/deployment/module-bundlers#overview) page.
 
 The usage of this plugin becomes obsolet if:
-- you are using [Prisma ORM without Rust engines](/orm/prisma-client/setup-and-configuration/no-rust-engine) (via the `queryCompiler` feature flag)
-- you are using the [new `prisma-client` generator](/orm/prisma-schema/overview/generators#prisma-client-preview)
+- you are using [Prisma ORM without Rust engines](/orm/prisma-client/setup-and-configuration/no-rust-engine) (via `engineType = "client` on your `generator` block)
+- you are using the [new `prisma-client` generator](/orm/prisma-schema/overview/generators#prisma-client)
 
 ### CI/CD workflows
 
@@ -132,3 +137,24 @@ When you use a Function-as-a-Service provider, like Vercel Serverless functions,
 You can use [Accelerate](/accelerate) for connection pooling or [Prisma Postgres](/postgres), which has built-in connection pooling, to reduce your Prisma Client bundle size, and to avoid cold starts.
 
 For more information on connection management for serverless environments, refer to our [connection management guide](/orm/prisma-client/setup-and-configuration/databases-connections#serverless-environments-faas).
+
+## Using Prisma ORM with Vercel Fluid
+
+[Fluid compute](https://vercel.com/fluid) is a compute model from Vercel that combines the flexibility of serverless with the stability of servers, making it ideal for dynamic workloads such as streaming data and AI APIs. Vercel's Fluid compute [supports both edge and Node.js runtimes](https://vercel.com/docs/fluid-compute#available-runtime-support). A common challenge in traditional serverless platforms is leaked database connections when functions are suspended and pools can't close idle connections. Fluid provides [`attachDatabasePool`](https://vercel.com/blog/the-real-serverless-compute-to-database-connection-problem-solved) to ensure idle connections are released before a function is suspended.
+
+Use `attachDatabasePool` together with [Prisma's driver adapters](/orm/overview/databases/database-drivers) to safely manage connections in Fluid:
+
+```ts 
+import { Pool } from 'pg'
+import { attachDatabasePool } from '@vercel/functions'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
+
+const pool = new Pool({ connectionString: process.env.POSTGRES_URL })
+
+attachDatabasePool(pool)
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(pool),
+})
+```

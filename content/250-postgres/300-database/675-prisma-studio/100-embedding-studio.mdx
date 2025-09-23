@@ -10,7 +10,7 @@ toc: true
 
 Prisma Studio can be embedded in your own application via the [`@prisma/studio-core`](https://www.npmjs.com/package/@prisma/studio-core) package.
 
-It gives you `Studio` a React component which renders Prisma Studio for your database. The `Studio` component accepts an _executor_ which accesses a `/studio` endpoint in your backend. The backend uses your API key to identify the correct Prisma Postgres instance and sends the SQL query to it.
+It provides `Studio`, a React component which renders Prisma Studio for your database. The `Studio` component accepts an executor that calls a `/studio` endpoint in your backend. The backend uses your `DATABASE_URL` (connection string) to connect to the correct Prisma Postgres instance and execute the SQL query.
 
 :::tip
 If you want to see what embedded Studio looks like, **[check out the demo](https://github.com/prisma/studio-core-demo) on GitHub**!
@@ -57,6 +57,7 @@ Here's what a minimal implementation looks like:
 import { Studio } from "@prisma/studio-core/ui";
 import { createPostgresAdapter } from "@prisma/studio-core/data/postgres-core";
 import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import "@prisma/studio-core/ui/index.css"
 
 function App() {
   const adapter = useMemo(() => {
@@ -86,6 +87,7 @@ Here's what an implementation with custom headers/payload looks like:
 import { Studio } from "@prisma/studio-core/ui";
 import { createPostgresAdapter } from "@prisma/studio-core/data/postgres-core";
 import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import "@prisma/studio-core/ui/index.css"
 
 function App() {
   const adapter = useMemo(() => {
@@ -113,6 +115,61 @@ function App() {
 }
 ```
 
+### Custom styling
+
+You can customize the look and feel of Prisma Studio so that it matches your application’s design. This is done by passing a custom theme to the `Studio` component. A theme is simply a set of CSS variables that define colors, spacing, and other style properties for both light and dark modes.
+
+Here's an example of applying a custom theme:
+
+```tsx
+import { Studio } from "@prisma/studio-core/ui";
+import { createPostgresAdapter } from "@prisma/studio-core/data/postgres-core";
+import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import "@prisma/studio-core/ui/index.css";
+
+const customTheme = `
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --primary: 47.9 95.8% 53.1%;
+    --primary-foreground: 26 83.3% 14.1%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 20 14.3% 4.1%;
+    --radius: 0rem;
+  }
+
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --primary: 47.9 95.8% 53.1%;
+    --primary-foreground: 26 83.3% 14.1%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --ring: 35.5 91.7% 32.9%;
+  }
+}
+`;
+
+function App() {
+  const adapter = useMemo(() => {
+    const executor = createStudioBFFClient({
+      url: "http://localhost:4242/studio",
+    });
+    return createPostgresAdapter({ executor });
+  }, []);
+
+  return (
+    <Layout>
+      <Studio theme={customTheme} adapter={adapter} />
+    </Layout>
+  );
+}
+```
+
+With this setup, Studio inherits your custom colors, borders, and typography rules, making it feel like a natural part of your app rather than a separate tool. You can define as many or as few variables as you need depending on the level of customization you want.
+
 ### Concepts
 
 Here's an overview of the key concepts in your frontend:
@@ -123,7 +180,7 @@ Here's an overview of the key concepts in your frontend:
 
 ## Backend setup
 
-Your backend needs to expose a `/studio` endpoint, that's where the frontend sends its requests. The implementation of this endpoint uses the `createAccelerateHttpClient` function that can be imported from the `@prisma/studio-core`.
+Your backend needs to expose a `/studio` endpoint where the frontend sends its requests. The implementation below uses `createPrismaPostgresHttpClient` from `@prisma/studio-core`. 
 
 The backend also needs to have access to the Prisma Postgres API key, we recommend setting it as an environment variable as a best practice.
 
@@ -234,7 +291,7 @@ sequenceDiagram
 
 When you want to authenticate the users of your app against Prisma Studio, you can do that by adding custom logic around your embedded Prisma Studio version.
 
-On the frontend, you xan ensure yo pass the `Authorization` header and other data (e.g. a user ID) when creating the executor:
+On the frontend, you can ensure to pass the `Authorization` header and other data (e.g. a user ID) when creating the executor:
 
 ```tsx
 const executor = createStudioBFFClient({

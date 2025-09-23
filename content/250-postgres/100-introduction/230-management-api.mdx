@@ -2,14 +2,13 @@
 title: 'Management API'
 metaTitle: 'Prisma Postgres: Management API Reference'
 metaDescription: 'Management API reference documentation for Prisma Postgres.'
-sidebar_class_name: early-access-badge
 ---
 
 ## Overview
 
 This page covers the Prisma Management API which enables you to programmatically manage [platform](/platform/about) resources (e.g. projects or Prisma Postgres instances) in [Prisma Console](https://console.prisma.io). 
 
-:::tip OpenApi
+:::tip OpenAPI
 An interactive [**OpenAPI 3.1 specification** is available here](https://api.prisma.io/v1/swagger-editor), where you can explore endpoints, request/response bodies, and detailed examples.
 :::
 
@@ -50,6 +49,8 @@ To adhere to the Bearer Token Authentication, you need to format your `Authoriza
 Authorization: Bearer $TOKEN
 ```
 
+#### Creating a service token
+
 You can create a service token to use the Management API like this:
 
 1. Open the [Prisma Console](https://console.prisma.io/).
@@ -57,6 +58,18 @@ You can create a service token to use the Management API like this:
 3. Navigate to the **Settings** page of your workspace and select **Service Tokens**.
 4. Click **New Service Token**.
 5. Copy the generated token and store it in a safe location for future use. 
+
+#### Creating OAuth credentials
+
+To obtain a client ID and client secret, go through this flow:
+
+1. Open the [Prisma Console](https://console.prisma.io).
+1. Click the 🧩 **Integrations** tab in the sidenav.
+1. In the **Published Applications** section, click the **New Application** button to start creating a new OAuth app.
+1. Enter a **Name**, **Description**, and **Callback URL** for your OAuth app.
+1. Click **Continue**.
+
+On the next screen, copy and store the client ID and client secret for your OAuth app in a secure location.
 
 ### Example
 
@@ -228,9 +241,16 @@ Create a new database.
   {
     "region": "us-east-1",
     "name": "My Database",
-    "isDefault": false
+    "isDefault": false,
+    "fromDatabase": { 
+      "id": "databaseId", 
+      "backupId": "string"
+    }
   }
   ```
+  :::note
+   Use `fromDatabase` only when creating the database from an existing one or a backup.
+  :::
 - **Responses**:
   - `201 Created`
   - `400 Default database already exists`
@@ -293,7 +313,7 @@ Create a new connection string.
   - `401 Unauthorized`
   - `404 Not Found`
 
-#### `/connections/{id}`
+#### `DELETE /connections/{id}`
 
 Delete a connection string.
 
@@ -319,23 +339,39 @@ Retrieve database backups.
   - `401 Unauthorized`
   - `404 Not Found`
 
-#### `POST /databases/{databaseId}/backups/{backupId}/restore`
+### Integrations
 
-Restore a backup to a new database.
+#### `GET /workspaces/{workspaceId}/integrations`
+
+Retrieve integrations for the given workspace.
 
 - **Path parameters**:
-  - `databaseId`: Database ID
-  - `backupId`: Database backup ID
-- **Request body**:
-  ```json
-  {
-    "targetDatabaseName": "New DB Name"
-  }
-  ```
+  - `workspaceId`: Workspace ID
+- **Query parameters**:
+  - `cursor` (optional): Cursor for pagination
+  - `limit` (optional, default: 100): Limit number of results
 - **Responses**:
-  - `202 Accepted`: Restore initiated
-  - `401 Unauthorized`
-  - `409 Conflict`
+  - `200 OK`: List of integrations with details:
+    - `id`: Integration ID
+    - `createdAt`: Creation timestamp
+    - `scopes`: Array of granted scopes
+    - `client`: Object containing `id`, `name`, `createdAt`
+    - `createdByUser`: Object containing `id`, `email`, `displayName`
+  - `401 Unauthorized`: Missing or invalid authentication token
+  - `404 Not Found`: Workspace not found
+
+
+#### `DELETE /workspaces/{workspaceId}/integrations/{clientId}`
+
+Revokes the integration tokens with the given client ID.
+
+- **Path parameters**:
+  - `workspaceId`: Workspace ID (e.g. `wksp_1234`)
+  - `clientId`: Integration client ID (e.g. `itgr_5678`)
+- **Responses**:
+  - `204 No Content`: Integration tokens revoked successfully
+  - `401 Unauthorized`: Missing or invalid authentication token
+  - `404 Not Found`: Workspace or integration not found
 
 ### Misc
 
