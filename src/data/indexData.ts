@@ -205,7 +205,13 @@ export const tabs = [
 
 export const how_do_i = [
   {
-    title: "model my schema?",
+    title: "Get started with Prisma & AI?",
+    description:
+      "Learn how to get started with Prisma and AI, from setting up Prisma ORM in tools like ChatGPT, Cursor, Windsurf, GitHub Copilot, and Tabnine to using the Prisma MCP server for database automation. Explore step-by-step guides, real-world examples with Next.js, and integrations with Vercel AI SDK and Firebase Studio. Build faster, stay type-safe, and connect Prisma Postgres with thousands of apps to power your AI-driven workflows.",
+      url: "/ai"
+  },
+  {
+    title: "Model my schema?",
     description:
       "The Prisma Schema (or schema for short) is the main method of configuration for your Prisma ORM setup. It consists of the following parts: Data sources: Specify the details of the data sources Prisma ORM should connect to (e.g. a PostgreSQL database) Generators: Specifies what clients should be generated based on the data model (e.g. Prisma Client)",
     // tags: ["guides", "schema", "orm"],
@@ -213,7 +219,7 @@ export const how_do_i = [
     // time: 15
   },
   {
-    title: "cache my queries?",
+    title: "Cache my queries?",
     description:
       "Prisma Postgres comes with a built-in global cache (enabled by Prisma Accelerate) that helps you speed up your database queries. You can cache results on a per-query level using the cacheStrategy option in any Prisma ORM query, e.g.:",
     // tags: ["guides", "schema", "orm"],
@@ -221,7 +227,7 @@ export const how_do_i = [
     // time: 15
   },
   {
-    title: "integrate with an existing DB?",
+    title: "Integrate with an existing DB?",
     description:
       "Baselining is the process of initializing a migration history for a database that: ✔ Existed before you started using Prisma Migrate ✔ Contains data that must be maintained (like production), which means that the database cannot be reset. Baselining tells Prisma Migrate to assume that one or more migrations have already been applied. This prevents generated migrations from failing when they try to create tables and fields that already exist.",
     // tags: ["guides", "schema", "orm"],
@@ -229,7 +235,7 @@ export const how_do_i = [
     // time: 15
   },
   {
-    title: "make CRUD routes?",
+    title: "Make CRUD routes?",
     description:
       "This page describes how to perform CRUD operations with your generated Prisma Client API. CRUD is an acronym that stands for: Create Read Update Delete Refer to the Prisma Client API reference documentation for detailed explanations of each method.",
     // tags: ["guides", "schema", "orm"],
@@ -237,14 +243,14 @@ export const how_do_i = [
     // time: 15
   },
   {
-    title: "get started with models?",
+    title: "Get started with models?",
     description:
       "The data model definition part of the Prisma schema defines your application models (also called Prisma models). Models: Represent the entities of your application domain Map to the tables (relational databases like PostgreSQL) or collections (MongoDB) in your database Form the foundation of the queries available in the generated Prisma Client API",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-schema/data-model/models",
   },
   {
-    title: "filter and sort?",
+    title: "Filter and sort?",
     description:
       "Prisma Client supports filtering with the where query option, and sorting with the orderBy query option. Filtering Prisma Client allows you to filter records on any combination of model fields, including related models, and supports a variety of filter conditions.",
     // tags: ["guides", "schema", "orm"],
@@ -252,7 +258,7 @@ export const how_do_i = [
     // time: 15
   },
   {
-    title: "query relations?",
+    title: "Query relations?",
     description:
       "A key feature of Prisma Client is the ability to query relations between two or more models. Relation queries include: Nested reads (sometimes referred to as eager loading) via select and include Nested writes with transactional guarantees Filtering on related records Prisma Client also has a fluent API for traversing relations.",
     // tags: ["guides", "schema", "orm"],
@@ -260,7 +266,7 @@ export const how_do_i = [
     // time: 15
   },
   {
-    title: "migrate my schema?",
+    title: "Migrate my schema?",
     description:
       "When working in a team, managing database schema changes can be challenging. This guide shows you how to effectively collaborate on schema changes using Prisma Migrate, ensuring that all team members can safely contribute to and incorporate schema changes.",
     // tags: ["guides", "schema", "orm"],
@@ -268,11 +274,11 @@ export const how_do_i = [
     // time: 15
   },
   {
-    title: "generate Prisma Client?",
+    title: "Generate Prisma Client?",
     description:
       "Prisma Client is a generated database client that's tailored to your database schema. By default, Prisma Client is generated into the node_modules/.prisma/client folder, but we highly recommend you specify an output location.",
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-client/setup-and-configuration/generating-prisma-client",
     // time: 15
-  },
+  }
 ];
