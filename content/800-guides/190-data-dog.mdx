@@ -226,66 +226,27 @@ touch src/tracer.ts
 Open `src/tracer.ts` and add the following code:
 
 ```ts file=src/tracer.ts
-import Tracer from "dd-trace";
-import {
-  PrismaInstrumentation,
-  registerInstrumentations,
-} from "@prisma/instrumentation";
+import tracer from "dd-trace";
 
-const tracer = Tracer.init({
-  apmTracingEnabled: true,
+tracer.init({
+  profiling: true,
+  logInjection: true,
+  runtimeMetrics: true,
+  dbmPropagationMode: "full",
+  env: "dev",
+  sampleRate: 1,
   service: "prisma-datadog-tracing",
-  version: "1.0.0",
-  profiling: true
-});
-
-const provider = new tracer.TracerProvider();
-
-// Register the provider globally
-provider.register();
-
-registerInstrumentations({
-  instrumentations: [
-    new PrismaInstrumentation({
-      enabled: true,
-    }),
-  ],
-  tracerProvider: provider,
+  version: "1.0.0"
 });
 
 export { tracer };
 ```
 
-:::note 
-
-If you encounter a linting error on the line `traceProvider: provider` due to incompatible types, it's likely caused by a version mismatch in the `@opentelemetry/api` package.
-
-To resolve this, add the following override to your package.json:
-```json
-//add-start
-"overrides": {
-  "@opentelemetry/api": "1.8.0"
-}
-//add-end
-```
-
-This is necessary because [`dd-trace` does not yet support version `1.9.0` or above of `@opentelemetry/api`](https://github.com/DataDog/dd-trace-js#datadog-with-opentelemetery).
-
-After updating the `package.json`, reinstall your dependencies:
-
-```terminal
-npm i
-```
-
-This should resolve the linting error.
-
-:::
 
 #### Explanation
 
-- **`Tracer.init`** configures `dd-trace` with a `service` name. This name appears in Datadog under your `APM` > `Services` list.
+- **`tracer.init`** configures `dd-trace` with a `service` name. This name appears in Datadog under your `APM` > `Services` list.
 - **`@prisma/instrumentation`** automatically logs each Prisma query as a Datadog span.
-- The `middleware: true` option ensures that each query is intercepted for instrumentation.
 
 ## 5. Instantiate Prisma and run queries
 
@@ -350,7 +311,7 @@ export { prisma };
 
 ```ts file=src/client.ts
 import { tracer } from "./tracer";
-import { withAccelerate } from "@prisma/extension-accelerate";
+
 import { PrismaClient } from "./generated/prisma";
 
 const prisma = new PrismaClient({
@@ -412,7 +373,21 @@ Unlike the `@prisma/instrumentation` package, which offers automatic tracing out
 Create a `src/index.ts` file and add code to perform queries to your database and send traces to Datadog:
 
 ```typescript file=src/index.ts
+import { tracer } from "./tracer";
+import {
+  PrismaInstrumentation,
+  registerInstrumentations,
+} from "@prisma/instrumentation";
 import { prisma } from "./client";
+
+const provider = new tracer.TracerProvider();
+
+registerInstrumentations({
+  instrumentations: [new PrismaInstrumentation()],
+  tracerProvider: provider,
+});
+
+provider.register();
 
 async function main() {
   const user1Email = `alice${Date.now()}@prisma.io`;
@@ -529,6 +504,31 @@ main()
     console.log("🔌 Disconnected from database.");
   });
 ```
+
+:::note 
+
+If you encounter a linting error on the line `tracerProvider: provider` due to incompatible types, it's likely caused by a version mismatch in the `@opentelemetry/api` package.
+
+To resolve this, add the following override to your package.json:
+```json
+//add-start
+"overrides": {
+  "@opentelemetry/api": "1.8.0"
+}
+//add-end
+```
+
+This is necessary because [`dd-trace` does not yet support version `1.9.0` or above of `@opentelemetry/api`](https://github.com/DataDog/dd-trace-js#datadog-with-opentelemetery).
+
+After updating the `package.json`, reinstall your dependencies:
+
+```terminal
+npm i
+```
+
+This should resolve the linting error.
+
+:::
 
 ## 6. Run your queries and see the traces
 
