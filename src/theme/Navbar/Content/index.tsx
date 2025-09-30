@@ -72,7 +72,8 @@ export default function NavbarContent(): ReactNode {
         <>
           {!mobileSidebar.disabled && <NavbarMobileSidebarToggle />}
           <NavbarLogo />
-          <Link to={baseUrl} className="logo-link">/docs</Link>
+          <span className={styles.separator}>/</span>
+          <Link to={baseUrl} className="logo-link">docs</Link>
         </>
       }
       middle={
