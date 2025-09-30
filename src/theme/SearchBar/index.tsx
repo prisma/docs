@@ -127,7 +127,11 @@ const kapaStyles = `
 .DocSearch-Modal {
   --docsearch-highlight-color: var(--surface-brand-default) !important;
   --docsearch-soft-primary-color: transparent !important;
-  --docsearch-hit-highlight-color: #0096881a !important;
+  --docsearch-hit-highlight-color:rgba(0, 150, 136, 0.1) !important;
+  background: var(--surface-primary);
+}
+.DocSearch-Hit-source {
+  background: var(--surface-primary);
 }
 .DocSearch-Dropdown {
   display: flex;
