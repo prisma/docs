@@ -54,7 +54,7 @@ const kapaStyles = `
   width: fit-content;
   border: none;
   background: transparent;    font-size: 14px;
-  color: var(--docsearch-highlight-color);
+  color: var(--surface-brand-default);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -146,8 +146,12 @@ const kapaStyles = `
   padding: 0 8px;
   -webkit-user-select: none;
   user-select: none;
+  &:hover {
+    background: var(--surface-primary);
+    outline: 1px solid var(--border-color);
+  }
   kbd {
-  background: var(--white-color);
+    background: var(--white-color);
     color: var(--gray-800);
     box-shadow: 0px 1px 1px rgba(47, 55, 71, 0.6), 0px 1px 4px rgba(47, 55, 71, 0.2);
     border-bottom: 1px solid rgba(47, 55, 71, 0.2);
@@ -156,7 +160,7 @@ const kapaStyles = `
     vertical-align: baseline;
     font-size: 14px !important;
     font-family: "JetBrainsMono" !important;
-    }
+  }
 }
 `;
 
