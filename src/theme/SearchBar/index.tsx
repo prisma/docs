@@ -189,6 +189,9 @@ const kapaStyles = `
   .DocSearch-LoadingIndicator svg, .DocSearch-MagnifierLabel svg {
     color: var(--surface-brand-default);
   }
+  .DocSearch-Hit-path  {
+    color: var(--tertiary-font-color);
+  }
 `;
 
 let DocSearchModal: typeof DocSearchModalType | null = null;
