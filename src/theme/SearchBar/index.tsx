@@ -7,7 +7,7 @@ import { useAlgoliaContextualFacetFilters, useSearchResultUrlProcessor } from "@
 import Translate from "@docusaurus/Translate";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import translations from "@theme/SearchTranslations";
-import React, { ReactNode, type, useCallback, useMemo, useRef, useState } from "react";
+import React, { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import type {
@@ -165,21 +165,21 @@ const kapaStyles = `
   padding: 0 8px;
   -webkit-user-select: none;
   user-select: none;
-  &:hover {
-    background: var(--surface-primary);
-    outline: 1px solid var(--border-color);
-  }
-  kbd {
-    background: var(--white-color);
-    color: var(--gray-800);
-    box-shadow: 0px 1px 1px rgba(47, 55, 71, 0.6), 0px 1px 4px rgba(47, 55, 71, 0.2);
-    border-bottom: 1px solid rgba(47, 55, 71, 0.2);
-    border-radius: 4px;
-    padding: 0;
-    vertical-align: baseline;
-    font-size: 14px !important;
-    font-family: "JetBrainsMono" !important;
-  }
+}
+.DocSearch-Button:hover {
+  background: var(--surface-primary);
+  outline: 1px solid var(--border-color);
+}
+.DocSearch-Button kbd {
+  background: var(--white-color);
+  color: var(--gray-800);
+  box-shadow: 0px 1px 1px rgba(47, 55, 71, 0.6), 0px 1px 4px rgba(47, 55, 71, 0.2);
+  border-bottom: 1px solid rgba(47, 55, 71, 0.2);
+  border-radius: 4px;
+  padding: 0;
+  vertical-align: baseline;
+  font-size: 14px !important;
+  font-family: "JetBrainsMono" !important;
 }
   .DocSearch-Form {
     border: 2px solid var(--surface-brand-default);
