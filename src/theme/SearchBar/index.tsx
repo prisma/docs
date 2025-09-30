@@ -7,7 +7,8 @@ import { useAlgoliaContextualFacetFilters, useSearchResultUrlProcessor } from "@
 import Translate from "@docusaurus/Translate";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import translations from "@theme/SearchTranslations";
-import React, { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import type {
@@ -115,14 +116,14 @@ const kapaStyles = `
 .DocSearch-Modal:not(:has(.DocSearch-Dropdown)) .DocSearch-Footer {
   margin-top: 200px;
   position: relative;
-  &:before {
-    content: "No recent searches";
-    position: absolute;
-    top: -100px;
-    color: var(--tertiary-font-color);
-    left: 50%;
-    transform: translateX(-50%);
-  }
+}
+.DocSearch-Modal:not(:has(.DocSearch-Dropdown)) .DocSearch-Footer::before {
+  content: "No recent searches";
+  position: absolute;
+  top: -100px;
+  color: var(--tertiary-font-color);
+  left: 50%;
+  transform: translateX(-50%);
 }
 .DocSearch-Modal {
   --docsearch-highlight-color: var(--surface-brand-default) !important;
