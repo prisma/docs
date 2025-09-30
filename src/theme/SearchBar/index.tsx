@@ -124,12 +124,14 @@ const kapaStyles = `
     transform: translateX(-50%);
   }
 }
-.DocSearch-Dropdown {
-  display: flex;
-  flex-direction: column;
+.DocSearch-Modal {
   --docsearch-highlight-color: var(--surface-brand-default) !important;
   --docsearch-soft-primary-color: transparent !important;
   --docsearch-hit-highlight-color: #0096881a !important;
+}
+.DocSearch-Dropdown {
+  display: flex;
+  flex-direction: column;
 }
 
 .DocSearch-Dropdown-Container {
