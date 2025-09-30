@@ -127,6 +127,9 @@ const kapaStyles = `
 .DocSearch-Dropdown {
   display: flex;
   flex-direction: column;
+  --docsearch-highlight-color: var(--surface-brand-default) !important;
+  --docsearch-soft-primary-color: transparent !important;
+  --docsearch-hit-highlight-color: #0096881a !important;
 }
 
 .DocSearch-Dropdown-Container {
