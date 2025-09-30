@@ -12,6 +12,7 @@ import {
 import Translate from "@docusaurus/Translate";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import translations from "@theme/SearchTranslations";
+
 import type {
   InternalDocSearchHit,
   DocSearchModal as DocSearchModalType,
@@ -126,6 +127,36 @@ const kapaStyles = `
   display: flex;
   flex-direction: column;
   padding: 0 1rem 1rem;
+}
+.DocSearch-SearchBar {
+  padding: var(--docsearch-spacing) var(--docsearch-spacing) 0;
+}
+.DocSearch-Button {
+  align-items: center;
+  background: var(--docsearch-searchbox-background);
+  border: 0;
+  border-radius: 40px;
+  color: var(--docsearch-muted-color);
+  cursor: pointer;
+  display: flex;
+  font-weight: 500;
+  height: 36px;
+  justify-content: space-between;
+  margin: 0 0 0 16px;
+  padding: 0 8px;
+  -webkit-user-select: none;
+  user-select: none;
+  kbd {
+  background: var(--white-color);
+    color: var(--gray-800);
+    box-shadow: 0px 1px 1px rgba(47, 55, 71, 0.6), 0px 1px 4px rgba(47, 55, 71, 0.2);
+    border-bottom: 1px solid rgba(47, 55, 71, 0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    vertical-align: baseline;
+    font-size: 14px !important;
+    font-family: "JetBrainsMono" !important;
+    }
 }
 `;
 
