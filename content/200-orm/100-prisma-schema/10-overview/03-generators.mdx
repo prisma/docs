@@ -237,23 +237,12 @@ Below are the options for the `prisma-client` generator:
 
 :::
 
-### Output splitting and importing types
+### Importing Types
 
-The `prisma-client-js` generator used to generate all typings into a single `index.d.ts` file, which could lead to [slowing down editors](https://github.com/prisma/prisma/issues/4807) (e.g. breaking auto-complete) with large schemas.
+The new `prisma-client` generator creates individual `.ts` files which allow for a more fine granular import of types. This can improve compile and typecheck performance and be useful for tree-shacking, too. 
+You can still use the top level barrel files that export all types through a single import.
 
-The new `prisma-client` generator now splits the generated Prisma Client library into multiple files and thus avoids the problems of a single, large output file.
-
-**Before** (`prisma-client-js`)
-
-```
-generated/
-└── prisma
-    ├── client.ts
-    ├── index.ts # -> this is split into multiple files in 6.7.0
-    └── libquery_engine-darwin.dylib.node
-```
-
-**After** (`prisma-client`)
+The overall structure of the generated output looks like this:
 
 ```
 generated/
@@ -263,14 +252,118 @@ generated/
     ├── commonInputTypes.ts
     ├── enums.ts
     ├── internal
-    │   ├── class.ts
-    │   ├── prismaNamespace.ts
-    │   └── prismaNamespaceBrowser.ts
+    │   ├── ...
     ├── models
     │   ├── Post.ts
     │   └── User.ts
     └── models.ts
 ```
+
+#### `client.ts`
+
+For use in your server code. 
+
+- Provides access to the `PrismaClient` instance and all model and utility types. 
+- Provides best compatibility with the `prisma-client-js` generated output.
+- Contains transitive dependencies on server only packages so cannot be used in browser contexts.
+
+Example:
+```
+import { Prisma, type Post, PrismaClient } from `./generated/prisma/client`
+```
+
+#### `browser.ts`
+
+For using types in your frontend aka browser code. 
+
+- Contains no transitive dependencies on node.js or other server only packages. 
+- Contains no real `PrismaClient`.
+- Contains all model and enum types and values.
+- Provides access to various utilities like `Prisma.JsonNull` and `Prisma.Decimal`.
+
+:::note
+
+The old `prisma-client-js` generator created a node_modules package and used export maps to dynamically provide a browser compatible export of the generated prisma client.
+As the new `prisma-client` generator creates direct TypeScript source code and no package.json anymore, this approach is not possible. 
+Hence you need to be explicit about your imports and whether things run on server or client! 
+
+You can still wrap the generated code in a package and use a similar approach on your own.
+
+:::
+
+Example:
+```
+import { Prisma, type Post } from `./generated/prisma/browser`
+```
+
+#### `enums.ts`
+
+Isolated access to user defined enum types and values.
+
+- Contains no transitive dependencies and is very slim.
+- Can be used on backend and frontend.
+- Prefer this for optimal tree shacking and typecheck performance when accessing enums.
+
+Example:
+```
+import { MyEnum } from `./generated/prisma/enums`
+```
+
+#### `models.ts`
+
+Isolated access to all model types.
+
+- Can be used on backend and frontend.
+- Contains all models including their derived utility types like `<ModelName>WhereInput` or `<ModelName>UpdateInput>.
+
+:::note
+
+Plain model types are exposed here as `<ModelName>Model` (e.g. `PostModel`). This is in contrast to the exposed name in `client.ts` and `browser.ts` which is simply `<ModelName>` (e.g. `Post`).
+
+This is necessary due to internal constraints to avoid potential naming conflicts with internal types.
+
+:::
+
+Example:
+```
+import type { UserModel, PostModel, PostWhereInput, UserUpdateInput } from `./generated/prisma/models`
+```
+
+
+#### `models/<ModelName>.ts
+
+Isolated access to the types for an individual model.
+
+- Can be used on backend and frontend.
+- Contains the models including its derived utility types like `<ModelName>WhereInput` or `<ModelName>UpdateInput>.
+
+:::note
+
+The plain model type is exposed here as `<ModelName>Model` (e.g. `PostModel`).
+
+:::
+
+Example:
+```
+import type { UserModel, UserWhereInput, UserUpdateInput } from `./generated/prisma/models/User`
+```
+
+
+#### `commonInputTypes.ts`
+
+Provides shared utility types that you should rarely directly need.
+
+Example: 
+```
+import type { IntFilter } from `./generated/prisma/commonInputTypes`
+```
+
+#### `internal/*`
+
+:warning: Do not directly import from these files! They are not part of the stable API of the generated code and can change at any time in breaking ways.
+
+Usually anything you might need from there is exposed via `browser.ts` or `client.ts` under the `Prisma` namespace.
+
 
 ### Breaking changes from `prisma-client-js`
 
