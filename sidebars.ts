@@ -473,6 +473,7 @@ const sidebars: SidebarsConfig = {
             "guides/management-api-basic",
             "guides/management-api",
             "guides/vercel-app-deployment",
+            "guides/deno-integration",
           ].sort(),
         },
         {
