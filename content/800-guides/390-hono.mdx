@@ -42,23 +42,16 @@ To get started with Prisma, you'll need to install a few dependencies:
 <TabbedContent code>
 <TabItem value="Prisma Postgres (recommended)">
 ```terminal
-npm install prisma dotenv --save-dev
-npm install @prisma/extension-accelerate @prisma/client
-```
-</TabItem>
-<TabItem value="Other databases">
-```terminal
-npm install prisma dotenv --save-dev
-npm install @prisma/client
-```
+npm install prisma --save-dev
+npm install @prisma/extension-accelerate @prisma/client dotenv
+
+npm install prisma --save-dev
+npm install @prisma/client dotenv
 </TabItem>
 </TabbedContent>
 
 Once installed, initialize Prisma in your project:
 
-```terminal
-npx prisma init --db --output ../src/generated/prisma
-```
 :::info
 You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My Hono Project"
 :::
@@ -248,32 +241,30 @@ export default withPrisma;
 </TabItem>
 
 <TabItem value="Other databases">
-```tsx file=src/lib/prisma.ts
 import type { Context, Next } from 'hono';
 import { PrismaClient } from '../generated/prisma/client.js';
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is not set');
+}
+const prisma = new PrismaClient({ datasourceUrl: databaseUrl });
+
 function withPrisma(c: Context, next: Next) {
   if (!c.get('prisma')) {
-    const databaseUrl = process.env.DATABASE_URL;
-
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL is not set');
-    }
-    const prisma = new PrismaClient({ datasourceUrl: databaseUrl })
-
     c.set('prisma', prisma);
   }
   return next();
 }
+
 export default withPrisma;
-```
 </TabItem>
 </TabbedContent>
 
 :::warning
 We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.
 
-If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
+If you choose not to use one, in long-lived environments (for example, a Node.js server) instantiate a single `PrismaClient` and reuse it across requests to avoid exhausting database connections. In serverless environments or when using a pooler (for example, Accelerate), creating a client per request is acceptable.
 :::
 
 ### 3.2 Environment Variables & Types
