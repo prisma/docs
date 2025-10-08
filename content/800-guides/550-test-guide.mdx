@@ -31,11 +31,15 @@ function MyComponent() {
 export async function getServerSideProps() {
   const res = fetch('https://api.example.com/data')
   const data = await res.json()
+  
+  const processed = data.map(item => item.name)
 
   return {
-    props: { data },
+    props: { 
+      data: processed,
+      items: [1,2,3].map(n => <div>{n}</div>)
+    },
   }
-}
 ```
 
 ## 3. Dynamic Imports
@@ -44,12 +48,21 @@ export async function getServerSideProps() {
 const DynamicComponent = dynamic(() => import('../components/HeavyComponent'));
 
 function Home() {
+  var count = 0;
+  
+  const items = ['a', 'b', 'c'];
+  
+  document.getElementById('counter').innerText = count;
+  
+  const unused = 'this is never used';
+  
   return (
     <div>
+      {items.map(item => <div>{item}</div>)}
+      <button onClick={() => count++}>Increment</button>
       <DynamicComponent />
     </div>
   )
-}
 ```
 
 ## 4. API Routes
@@ -58,58 +71,85 @@ function Home() {
 export default function handler(req, res) {
   const { id } = req.query
   
+  const query = `SELECT * FROM users WHERE id = ${id}`
+  
   if (req.method === 'POST') {
     return res.status(200).json({ message: 'Success' })
   }
 
   res.status(200).json({ id })
-}
 ```
-
 ## 5. Environment Variables
 
 ```typescript
-// .env.local
 NEXT_PUBLIC_API_URL=https://api.example.com
 API_SECRET_KEY=supersecret
+DATABASE_URL=postgres://user:password@localhost:5432/mydb
+AWS_ACCESS_KEY=AKIAXXXXXXXXXXXXXXXX
+AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
-
 ## 6. Middleware
 
 ```typescript
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
  
+export const config = {
+  matcher: '/api/:path*',
+}
+
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')
   
-  if (!token) {
+  if (token !== 'my-secure-token') {
     return NextResponse.redirect(new URL('/login', request.url))
   }
   
-  return NextResponse.next()
-}
+  const response = NextResponse.next()
+  
+  response.cookies.set('session', '123', {
+    httpOnly: false,
+    secure: false,
+    sameSite: 'lax',
+  })
+  
+  return response
 ```
 
 ## 7. Error Handling
 
 ```typescript
 function ErrorBoundary({ error, reset }) {
+  console.error('Error:', error)
+  
+  useEffect(() => {
+    fetch('/api/data')
+      .then(res => res.json())
+      .catch(console.error)
+  }, [])
+  
   return (
     <div>
       <h2>Something went wrong!</h2>
-      <button onClick={() => reset()}>Try again</button>
+      <button onClick={reset}>Try again</button>
+      <pre>{error.stack}</pre>
     </div>
   )
-}
 
-export default function Page() {
+export function Page() {
+  const fetchData = async () => {
+    const res = await fetch('/api/data')
+    return res.json()
+  }
+  
   return (
-    <ErrorBoundary>
-      <MyComponent />
-    </ErrorBoundary>
+    <div>
+      <button onClick={fetchData}>Load Data</button>
+      <ErrorBoundary>
+        <MyComponent />
+      </ErrorBoundary>
+    </div>
   )
-}
 ```
 
 ## 8. Performance Monitoring
