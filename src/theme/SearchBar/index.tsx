@@ -1,17 +1,16 @@
-import React, { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { DocSearchButton, useDocSearchKeyboardEvents } from "@docsearch/react";
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
 import { useHistory } from "@docusaurus/router";
 import { isRegexpStringMatch, useSearchLinkCreator } from "@docusaurus/theme-common";
-import {
-  useAlgoliaContextualFacetFilters,
-  useSearchResultUrlProcessor,
-} from "@docusaurus/theme-search-algolia/client";
+import { useAlgoliaContextualFacetFilters, useSearchResultUrlProcessor } from "@docusaurus/theme-search-algolia/client";
 import Translate from "@docusaurus/Translate";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import translations from "@theme/SearchTranslations";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+
 import type {
   InternalDocSearchHit,
   DocSearchModal as DocSearchModalType,
@@ -53,7 +52,7 @@ const kapaStyles = `
   width: fit-content;
   border: none;
   background: transparent;    font-size: 14px;
-  color: var(--docsearch-highlight-color);
+  color: var(--surface-brand-default);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -113,6 +112,28 @@ const kapaStyles = `
 }
 
 /* Make sure the Kapa wrapper appears at the top of the dropdown */
+
+.DocSearch-Modal:not(:has(.DocSearch-Dropdown)) .DocSearch-Footer {
+  margin-top: 200px;
+  position: relative;
+}
+.DocSearch-Modal:not(:has(.DocSearch-Dropdown)) .DocSearch-Footer::before {
+  content: "No recent searches";
+  position: absolute;
+  top: -100px;
+  color: var(--tertiary-font-color);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.DocSearch-Modal {
+  --docsearch-highlight-color: var(--surface-brand-default) !important;
+  --docsearch-soft-primary-color: transparent !important;
+  --docsearch-hit-highlight-color:rgba(0, 150, 136, 0.1) !important;
+  background: var(--surface-primary);
+}
+.DocSearch-Hit-source {
+  background: var(--surface-primary);
+}
 .DocSearch-Dropdown {
   display: flex;
   flex-direction: column;
@@ -127,6 +148,50 @@ const kapaStyles = `
   flex-direction: column;
   padding: 0 1rem 1rem;
 }
+.DocSearch-SearchBar {
+  padding: var(--docsearch-spacing) var(--docsearch-spacing) 0;
+}
+.DocSearch-Button {
+  align-items: center;
+  background: var(--docsearch-searchbox-background);
+  border: 0;
+  border-radius: 40px;
+  color: var(--tertiary-font-color);
+  cursor: pointer;
+  display: flex;
+  font-weight: 500;
+  height: 36px;
+  justify-content: space-between;
+  margin: 0 0 0 16px;
+  padding: 0 8px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.DocSearch-Button:hover {
+  background: var(--surface-primary);
+  outline: 1px solid var(--border-color);
+}
+.DocSearch-Button kbd {
+  background: var(--white-color);
+  color: var(--gray-800);
+  box-shadow: 0px 1px 1px rgba(47, 55, 71, 0.6), 0px 1px 4px rgba(47, 55, 71, 0.2);
+  border-bottom: 1px solid rgba(47, 55, 71, 0.2);
+  border-radius: 4px;
+  padding: 0;
+  vertical-align: baseline;
+  font-size: 14px !important;
+  font-family: "JetBrainsMono" !important;
+}
+  .DocSearch-Form {
+    border: 2px solid var(--surface-brand-default);
+    border-radius: 4px;
+  }
+  .DocSearch-LoadingIndicator svg, .DocSearch-MagnifierLabel svg {
+    color: var(--surface-brand-default);
+  }
+  .DocSearch-Hit-path  {
+    color: var(--tertiary-font-color);
+  }
 `;
 
 let DocSearchModal: typeof DocSearchModalType | null = null;
