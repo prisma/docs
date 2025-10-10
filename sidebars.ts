@@ -530,6 +530,13 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: "category",
+          label: "Prompts",
+          collapsed: false,
+          collapsible: false,
+          items: ["ai/prompts/astro"],
+        },
+        {
+          type: "category",
           label: "Coding Tools",
           collapsed: false,
           collapsible: false,
