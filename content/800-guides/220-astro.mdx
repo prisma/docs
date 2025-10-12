@@ -58,7 +58,7 @@ npm install @prisma/client
 Once installed, initialize Prisma in your project:
 
 ```terminal
-npx prisma init --db --output ../src/generated/prisma
+npx prisma init --db --output ../prisma/generated
 ```
 :::info
 You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My Astro Project"
@@ -74,9 +74,9 @@ In the `prisma/schema.prisma` file, add the following models and change the gene
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  //edit-next-line
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider   = "prisma-client"
+  engineType = "client"
+  output     = "../prisma/generated"
 }
 
 datasource db {
@@ -119,7 +119,7 @@ Let's add some seed data to populate the database with sample users and posts.
 Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts
-import { PrismaClient, Prisma } from "../src/generated/prisma/client.js";
+import { PrismaClient, Prisma } from "../prisma/generated/client.js";
 
 const prisma = new PrismaClient();
 
@@ -157,19 +157,34 @@ const userData: Prisma.UserCreateInput[] = [
 ];
 
 export async function main() {
+  console.log("Starting to seed...");
+  
   for (const u of userData) {
-    await prisma.user.create({ data: u });
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: {},
+      create: u,
+    });
   }
+  
+  console.log("Seeding finished.");
 }
 
-main();
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
 ```
 
 Now, tell Prisma how to run this script by updating your `package.json`:
 
 ```json file=package.json
 {
-  "name": "extinct-eclipse-minimal",
+  "name": "astro-prisma",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -184,13 +199,13 @@ Now, tell Prisma how to run this script by updating your `package.json`:
   },
   //add-end
   "dependencies": {
-    "@prisma/client": "^6.7.0",
-    "@prisma/extension-accelerate": "^1.3.0",
-    "astro": "^5.7.10"
+    "@prisma/client": "^6.17.1",
+    "@prisma/extension-accelerate": "^2.0.2",
+    "astro": "^5.14.4"
   },
   "devDependencies": {
-    "prisma": "^6.7.0",
-    "tsx": "^4.19.4"
+    "prisma": "^6.17.1",
+    "tsx": "^4.20.6"
   }
 }
 ```
@@ -209,7 +224,21 @@ npx prisma studio
 
 ## 3. Integrate Prisma into Astro
 
-### 3.1. Create a Prisma Client
+### 3.1. Create TypeScript environment definitions
+
+First, create an `env.d.ts` file in your `src` directory to provide TypeScript definitions for environment variables:
+
+```typescript file=src/env.d.ts
+interface ImportMetaEnv {
+  readonly DATABASE_URL: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+### 3.2. Create a Prisma Client
 
 Inside of `/src`, create a `lib` directory and a `prisma.ts` file inside it. This file will be used to create and export your Prisma Client instance.
 
@@ -218,13 +247,12 @@ mkdir src/lib
 touch src/lib/prisma.ts
 ```
 
-
 Set up the Prisma client like this:
 
 <TabbedContent code>
 <TabItem value="Prisma Postgres (recommended)">
-```tsx file=src/lib/prisma.ts
-import { PrismaClient } from "../generated/prisma/client.js";
+```typescript file=src/lib/prisma.ts
+import { PrismaClient } from "../../prisma/generated/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
 const prisma = new PrismaClient({
@@ -236,12 +264,12 @@ export default prisma;
 </TabItem>
 
 <TabItem value="Other databases">
-```tsx file=src/lib/prisma.ts
-import { PrismaClient } from "../generated/prisma/client.js";
+```typescript file=src/lib/prisma.ts
+import { PrismaClient } from "../../prisma/generated/client";
 
 const prisma = new PrismaClient({
   datasourceUrl: import.meta.env.DATABASE_URL,
-})
+});
 
 export default prisma;
 ```
@@ -254,7 +282,7 @@ We recommend using a connection pooler (like [Prisma Accelerate](https://www.pri
 If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
 :::
 
-### 3.2. Create an API route
+### 3.3. Create an API route
 
 An API route is the best way to fetch data from your database in an Astro app.
 
@@ -267,7 +295,7 @@ touch src/pages/api/users.ts
 
 Now, create a GET route that fetches the `Users` data from your database, making sure to include each user's `Posts` by adding them to the `include` field:
 
-```ts file=src/pages/api/users.ts
+```typescript file=src/pages/api/users.ts
 import type { APIRoute } from "astro";
 import prisma from "../../lib/prisma";
 
@@ -282,42 +310,21 @@ export const GET: APIRoute = async () => {
 };
 ```
 
-Next, you'll call this route from the `index.astro` file and display it.
+### 3.4. Fetch the data from the API route (Recommended Method)
 
-### 3.3. Fetch the data from the API route
+Instead of using `fetch()` with HTTP requests, Astro recommends importing endpoint functions directly. This approach is more efficient and avoids URL parsing issues.
 
-Start by create a new type that combines the `User` and `Post` models called `UserWithPosts`:
+Start by creating a new type that combines the `User` and `Post` models called `UserWithPosts`:
 
 ```tsx file=src/pages/index.astro
 ---
 //add-start
-import type { User, Post } from "../generated/prisma/client.js";
+import type { User, Post } from "../../prisma/generated/client";
+import { GET } from "./api/users.ts";
+
 type UserWithPosts = User & { posts: Post[] };
-//add-end
----
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
-  </head>
-  <body>
-    <h1>Astro</h1>
-  </body>
-</html>
-```
-
-Fetch the data from the API route and set it's type to the `UserWithPosts` type you just created:
-
-```tsx file=src/pages/index.astro
----
-import type { User, Post } from "../generated/prisma/client.js";
-type UserWithPosts = User & { posts: Post[] };
-//add-start
-const response = await fetch("http://localhost:4321/api/users");
+const response = await GET(Astro);
 const users: UserWithPosts[] = await response.json();
 //add-end
 ---
@@ -328,85 +335,24 @@ const users: UserWithPosts[] = await response.json();
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
+    <title>Astro + Prisma</title>
   </head>
   <body>
-    <h1>Astro</h1>
-  </body>
-</html>
-```
-
-
-### 3.4. Display the data
-
-With the variables from the frontmatter now available throughout your file, you can display the list of users.
-
-Just below the `<h1>` tag, map through the `users` array, add the `UserWithPosts` type to the users, and display the names of the users:
-
-```tsx file=src/pages/index.astro
----
-import type { User, Post } from "../generated/prisma/client.js";
-type UserWithPosts = User & { posts: Post[] };
-const response = await fetch("http://localhost:4321/api/users");
-const users: UserWithPosts[] = await response.json();
----
-
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
-  </head>
-  <body>
-    //edit-next-line
     <h1>Astro + Prisma</h1>
     //add-start
-      {users.map((user: UserWithPosts) => (
-        <li>
-          <h2>{user.name}</h2>
-        </li>
-      ))}
-    //add-end
-  </body>
-</html>
-```
-
-Finally, display the `Posts` below the respective `User` and set the `Post` type:
-
-```tsx file=src/pages/index.astro
----
-import type { User, Post } from "../generated/prisma/client.js";
-type UserWithPosts = User & { posts: Post[] };
-const response = await fetch("http://localhost:4321/api/users");
-const users: UserWithPosts[] = await response.json();
----
-
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
-  </head>
-  <body>
-  <h1>Astro + Prisma</h1>
     <ul>
       {users.map((user: UserWithPosts) => (
         <li>
-        <h2>{user.name}</h2>
-          //add-start
+          <h2>{user.name}</h2>
           <ul>
             {user.posts.map((post: Post) => (
               <li>{post.title}</li>
             ))}
           </ul>
-          //add-end
         </li>
       ))}
     </ul>
+    //add-end
   </body>
 </html>
 ```
