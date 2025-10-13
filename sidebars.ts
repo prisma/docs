@@ -418,6 +418,7 @@ const sidebars: SidebarsConfig = {
             "guides/nuxt",
             "guides/sveltekit",
             "guides/astro",
+            "guides/hono",
             "guides/solid-start",
             "guides/react-router-7",
             "guides/tanstack-start",
@@ -527,6 +528,13 @@ const sidebars: SidebarsConfig = {
       },
       className: "firstTitle",
       items: [
+        {
+          type: "category",
+          label: "Prompts",
+          collapsed: false,
+          collapsible: false,
+          items: ["ai/prompts/astro"],
+        },
         {
           type: "category",
           label: "Coding Tools",
