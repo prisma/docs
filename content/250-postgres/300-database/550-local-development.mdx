@@ -161,6 +161,49 @@ To use it, install the VS Code extension and find the **Prisma logo** in the act
 - starting and stopping the server for a particular database
 - "push to cloud": move a database from local to remote
 
+## Mange local Prisma Postgres programmatically
+
+You can start and stop a local Prisma Postgres server from Node.js without invoking the CLI. This uses undocumented, unstable APIs from `@prisma/dev` and may change without notice. Use it at your own risk. It’s especially useful for integration tests that need an ephemeral local database per test or suite.
+
+This is a complete runable example that will print `[{abba: 1}]` when run:
+
+```ts
+import { Client } from 'pg'
+import { unstable_startServer } from '@prisma/dev'
+import { getPort } from 'get-port-please'
+
+async function startLocalPrisma(name: string) {
+    const port = await getPort()
+
+    return await unstable_startServer({
+        name, // use a unique name if running tests in parallel
+        port,
+        databasePort: port + 1,
+        shadowDatabasePort: port + 2,
+        persistenceMode: 'stateless'
+    })
+}
+
+// Usage in tests
+const server = await startLocalPrisma(`my-tests-${Date.now()}`)
+try {
+    const client = new Client({ connectionString: server.database.connectionString })
+    await client.connect()
+
+    const res = await client.query(`SELECT 1 as "abba"`)
+    console.log(res.rows)
+
+    client.end()
+} finally {
+    await server.close!()
+}
+```
+
+Notes:
+- Allocate unique ports and `name` values when running tests concurrently.
+- Use `server.database.connectionString` to connect with Postgres clients or ORMs.
+- This pattern is great for running tests that require a local database.
+
 ## Known limitations
 
 ### Caching is mocked locally
