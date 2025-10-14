@@ -17,7 +17,6 @@ export default function DocCardList(props: Props): JSX.Element {
   if (!items) {
     return <DocCardListForCurrentSidebarCategory {...props} />;
   }
-  console.log(items)
   const [filteredItems, setFilteredItems] = useState<any>(filterDocCardListItems(items));
   useEffect(() => {
     setFilteredItems(filteredItems.filter((e: any) => e?.href?.slice(0, -1) !== location.pathname));
