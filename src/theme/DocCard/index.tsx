@@ -70,7 +70,6 @@ function CardCategory({ item }: { item: PropSidebarItemCategory }): JSX.Element 
   if (!href) {
     return null;
   }
-
   return (
     <CardLayout
       href={href}
