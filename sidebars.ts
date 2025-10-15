@@ -544,7 +544,7 @@ const sidebars: SidebarsConfig = {
             "orm/more/ai-tools/cursor",
             "orm/more/ai-tools/windsurf",
             "orm/more/ai-tools/github-copilot",
-            "orm/more/ai-tools/tabnine",
+            "orm/more/ai-tools/chatgpt",
           ],
         },
         {

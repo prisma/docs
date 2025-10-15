@@ -207,8 +207,8 @@ export const how_do_i = [
   {
     title: "Get started with Prisma & AI?",
     description:
-      "Learn how to get started with Prisma and AI, from setting up Prisma ORM in tools like ChatGPT, Cursor, Windsurf, GitHub Copilot, and Tabnine to using the Prisma MCP server for database automation. Explore step-by-step guides, real-world examples with Next.js, and integrations with Vercel AI SDK and Firebase Studio. Build faster, stay type-safe, and connect Prisma Postgres with thousands of apps to power your AI-driven workflows.",
-      url: "/ai"
+      "Learn how to get started with Prisma and AI, from setting up Prisma ORM in tools like ChatGPT, Cursor, Windsurf, GitHub Copilot and Tabnine to using the Prisma MCP server for database automation. Explore step-by-step guides, real-world examples with Next.js, and integrations with Vercel AI SDK and Firebase Studio. Build faster, stay type-safe, and connect Prisma Postgres with thousands of apps to power your AI-driven workflows.",
+    url: "/ai",
   },
   {
     title: "Model my schema?",
@@ -280,5 +280,5 @@ export const how_do_i = [
     // tags: ["guides", "schema", "orm"],
     url: "/orm/prisma-client/setup-and-configuration/generating-prisma-client",
     // time: 15
-  }
+  },
 ];
