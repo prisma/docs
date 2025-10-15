@@ -72,7 +72,22 @@ function CardCategory({ item }: { item: PropSidebarItemCategory }): JSX.Element 
   }
 
   return (
-    <CardLayout href={href} icon="🗃️" title={item.label} description={item.description ?? ""} />
+    <CardLayout
+      href={href}
+      icon="🗃️"
+      title={item.label}
+      description={
+        item.description ??
+        (item.label === "Dataguide"
+          ? translate({
+              message:
+                "Learn how databases work, how to choose the right one, and how to use databases with your applications to their full potential.",
+              id: "theme.docs.DocCard.dataguide.description",
+              description: "The default description for the Dataguide category card",
+            })
+          : "")
+      }
+    />
   );
 }
 
