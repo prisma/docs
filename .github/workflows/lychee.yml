@@ -39,12 +39,37 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.github_token }}
 
+      - name: 📝 Clean up Lychee Report
+        if: always()
+        run: |
+          if [ -f "lychee/out.md" ]; then
+            # Read the original output
+            ORIGINAL=$(cat lychee/out.md)
+            
+            # Create formatted output
+            cat > lychee/formatted.md << 'EOF'
+          ## 🍈 Lychee Link Check Report
+
+          > **Automated link validation** — All links in documentation have been checked for availability.
+
+          > **Note:** Links are cached for 6 hours to avoid unnecessary requests.
+
+          ### 📊 Results Overview
+
+          EOF
+            
+            # Append the original content with title replacement
+            echo "$ORIGINAL" | sed 's/^# Summary$//' | sed 's/^## Summary$//' >> lychee/formatted.md
+
+          EOF
+          fi
+
       - name: 📝 Comment Broken Links
         if: always()
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body-path: lychee/out.md
+          body-path: lychee/formatted.md
 
       - name: 🚫 Fail if broken links found
         if: steps.lychee.outputs.exit_code != 0
