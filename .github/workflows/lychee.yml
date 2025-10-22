@@ -32,13 +32,49 @@ jobs:
             --retry-wait-time 5
             --exclude 'http://localhost.*'
             --exclude 'https://localhost.*'
+            --exclude 'https://cockroachlabs.com'
             --exclude '^/.*'
             './**/*.md' './**/*.mdx'
           workingDirectory: "content"
         env:
           GITHUB_TOKEN: ${{ secrets.github_token }}
 
-      - name: 📝 Clean up Lychee Report
+      - name: 🔄 Retry on Timeout
+        id: lychee-retry
+        if: ${{ always() }}
+        run: |
+          if [ -f "lychee/out.md" ] && grep -q "Timeout" lychee/out.md; then
+            echo "Timeout detected, retrying link check once..."
+            echo "retry=true" >> $GITHUB_OUTPUT
+          else
+            echo "retry=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🍈 Lychee Link Checker (Retry)
+        if: ${{ steps.lychee-retry.outputs.retry == 'true' }}
+        uses: lycheeverse/lychee-action@v2
+        with:
+          fail: false
+          output: ../lychee/out.md
+          args: >
+            --cache
+            --max-cache-age 5m
+            --verbose
+            --no-progress
+            --accept 200,201,204,304,403,429
+            --timeout 20
+            --max-retries 8
+            --retry-wait-time 5
+            --exclude 'http://localhost.*'
+            --exclude 'https://localhost.*'
+            --exclude 'https://cockroachlabs.com'
+            --exclude '^/.*'
+            './**/*.md' './**/*.mdx'
+          workingDirectory: "content"
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+
+      - name: �📝 Clean up Lychee Report
         if: ${{ always() && github.event.pull_request.head.repo.fork == false }}
         run: |
           if [ -f "lychee/out.md" ]; then
