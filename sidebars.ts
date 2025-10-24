@@ -533,7 +533,7 @@ const sidebars: SidebarsConfig = {
           label: "Prompts",
           collapsed: false,
           collapsible: false,
-          items: ["ai/prompts/astro"],
+          items: ["ai/prompts/astro", "ai/prompts/nextjs"],
         },
         {
           type: "category",
