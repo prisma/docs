@@ -106,7 +106,7 @@ export const Grid = ({ children, ...props }) => (
   </div>
 );
 
-export const LinkCard = ({ icon, title, desc, link, highlight }: any) => {
+export const LinkCard = ({ icon, title, desc, link, highlight, }: any) => {
   const linkCardRef = useRef(null);
   return (
     <Link
@@ -119,6 +119,23 @@ export const LinkCard = ({ icon, title, desc, link, highlight }: any) => {
         <h6>{title}</h6>
       </div>
       <p>{desc}</p>
+    </Link>
+  );
+};
+
+export const QuickstartLinkCard = ({ icon, title, desc, link, highlight, children }: any) => {
+  const linkCardRef = useRef(null);
+  return (
+    <Link
+      to={link}
+      ref={linkCardRef}
+      className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}
+    >
+      <div className={styles.title}>
+        {icon && <Icon icon={icon} btn="left" size="18px" />}
+        <h2>{title}</h2>
+      </div>
+      {children ?? <p>{desc}</p>}
     </Link>
   );
 };
