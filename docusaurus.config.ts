@@ -82,7 +82,7 @@ const config: Config = {
   plugins: [
     "docusaurus-plugin-sass",
     [
-      path.resolve(__dirname, "client-plugins", "posthog-docusaurus"),
+      "posthog-docusaurus",
       {
         // these are safe to have in version control
         apiKey: "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs",
