@@ -20,7 +20,6 @@ We have three guides to help you use the Management API for common scenarios:
 - [Partner database provisioning & user claim flow](/guides/management-api)
 :::
 
-
 ## Base URL
 
 The base URL for a Prisma Postgres API request is:
@@ -37,13 +36,16 @@ https://api.prisma.io/v1/projects/{projectId}
 
 ## Authentication
 
-### Bearer tokens
+The Prisma Postgres API supports two authentication methods:
 
-The Prisma Postgres API uses _Bearer Token Authentication_ and supports two kinds of tokens:
-- Service tokens (manually created in your [Prisma Console](https://console.prisma.io) workspace)
-- OAuth 2 access tokens
+- **Service tokens** — for accessing resources in your own workspace  
+- **OAuth 2.0 access tokens** — for accessing or managing resources on behalf of users
 
-To adhere to the Bearer Token Authentication, you need to format your `Authorization` header like this:
+### Service tokens
+
+Service tokens are manually created in your [Prisma Console](https://console.prisma.io) workspace. They're ideal for server-to-server integrations or provisioning databases in your own workspace.
+
+To authenticate with a service token, include it in the `Authorization` header:
 
 ```
 Authorization: Bearer $TOKEN
@@ -51,38 +53,66 @@ Authorization: Bearer $TOKEN
 
 #### Creating a service token
 
-You can create a service token to use the Management API like this:
-
 1. Open the [Prisma Console](https://console.prisma.io/).
 2. Navigate to your workspace.
-3. Navigate to the **Settings** page of your workspace and select **Service Tokens**.
-4. Click **New Service Token**.
-5. Copy the generated token and store it in a safe location for future use. 
+3. Go to the **Settings** page of your workspace and select **Service Tokens**.
+4. Click **New Service Token** and copy the generated token for future use.
+
+### OAuth 2.0 authentication
+
+Use OAuth 2.0 if you want to act on behalf of users and create or manage databases directly in their workspaces.
 
 #### Creating OAuth credentials
 
-To obtain a client ID and client secret, go through this flow:
+To obtain a client ID and client secret:
 
 1. Open the [Prisma Console](https://console.prisma.io).
-1. Click the 🧩 **Integrations** tab in the sidenav.
-1. In the **Published Applications** section, click the **New Application** button to start creating a new OAuth app.
-1. Enter a **Name**, **Description**, and **Callback URL** for your OAuth app.
-1. Click **Continue**.
+2. Click the 🧩 **Integrations** tab.
+3. Under **Published Applications**, click **New Application**.
+4. Enter a **Name**, **Description**, and **Redirect URI** (the URL where users will be redirected after authorization).
+5. Click **Continue**, then copy and store your **Client ID** and **Client Secret** to a secure location.
 
-On the next screen, copy and store the client ID and client secret for your OAuth app in a secure location.
+#### OAuth authorization flow
 
-### Example
+To use OAuth 2.0, your application must:
 
-```terminal
+1. **Redirect users to the authorization URL** with your client ID and redirect URI:
+    ```
+    https://auth.prisma.io/authorize?client_id=$CLIENT_ID&redirect_uri=$REDIRECT_URI&response_type=code&scope=workspace:admin
+    ```
+
+2. **Receive the authorization code**: After the user authorizes your application, they'll be redirected to your redirect URI with a `code` parameter:
+    ```
+    https://your-app.com/callback?code=abc123...
+    ```
+
+3. **Exchange the code for an access token**: Use the code from step 2 in the following request
+
+```bash
+curl -X POST https://auth.prisma.io/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=$CLIENT_ID" \
+  -d "client_secret=$CLIENT_SECRET" \
+  -d "code=$CODE" \
+  -d "grant_type=authorization_code" \
+  -d "redirect_uri=$REDIRECT_URI"
+```
+
+:::note
+The `$CODE` is the authorization code received in step 2 above. The `$REDIRECT_URI` must match exactly what you configured when creating your OAuth credentials.
+:::
+
+Once you have an access token from the response, include it in requests to the Management API:
+
+```bash
 curl --location "https://api.prisma.io/v1/projects" \
   -H "Accept: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  --data \
-  "{ 
-    \"name\": \"my_project\", 
-    \"region\": \"us-east-1\" 
-  }"
+  --data '{
+    "name": "my_project",
+    "region": "us-east-1"
+  }'
 ```
 
 ### Instructions
@@ -101,13 +131,13 @@ curl --location "https://api.prisma.io/v1/projects" \
 
 1. In the **Authorization** tab, set type to **OAuth 2.0**.
 2. Click **Get New Access Token** and fill in the details:
-    - **Token Name**: Any name
-    - **Grant Type**: Authorization Code
-    - **Callback URL**: `http://localhost:8789/swagger/oauth2-redirect.html`
-    - **Auth URL** / **Access Token URL**: Your local OAuth URLs
-    - **Client ID / Secret**: From the script output
-    - **Scope**: (as needed)
-1. After completing the flow, use the token in your requests.
+   - **Token Name**: Any name  
+   - **Grant Type**: Authorization Code  
+   - **Redirect URI**: Your app's redirect URI (must match what you configured in OAuth credentials)  
+   - **Auth URL**: `https://auth.prisma.io/authorize`  
+   - **Client ID / Secret**: From your OAuth app  
+   - **Scope**: `workspace:admin offline_access` (as needed)
+3. Complete the flow and use the token in your requests.
 
 </details>
 
@@ -360,7 +390,6 @@ Retrieve integrations for the given workspace.
   - `401 Unauthorized`: Missing or invalid authentication token
   - `404 Not Found`: Workspace not found
 
-
 #### `DELETE /workspaces/{workspaceId}/integrations/{clientId}`
 
 Revokes the integration tokens with the given client ID.
@@ -383,7 +412,7 @@ Retrieve all available regions.
   - `200 OK`: Returns list of available/unsupported regions
   - `401 Unauthorized`
 
-<!-- ## Management API playground
+{/* ## Management API playground
 
 You can explore and interact with all endpoints in a live Swagger UI playground.
 
@@ -401,4 +430,4 @@ Use your service token or OAuth 2.0 access token to authorize requests in the UI
     overflow: 'hidden'
   }}
   title="Prisma API Swagger Editor"
-></iframe> -->
+></iframe> */}

@@ -64,13 +64,13 @@ To get started with Prisma, you'll need to install a few dependencies:
 <TabItem value="Prisma Postgres (recommended)">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install @prisma/extension-accelerate @prisma/client dotenv
 ```
 </TabItem>
 <TabItem value="Other databases">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/client
+npm install @prisma/client dotenv
 ```
 </TabItem>
 </TabbedContent>
@@ -87,6 +87,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 This will create:
 
 - A `prisma` directory with a `schema.prisma` file.
+- A `prisma.config.ts` file for configuring Prisma
 - A Prisma Postgres database.
 - A `.env` file containing the `DATABASE_URL` at the project root.
 - An `output` directory for the generated Prisma Client as `src/generated/prisma`.
@@ -97,7 +98,6 @@ In the `prisma/schema.prisma` file, add the following models and change the gene
 
 ```prisma file=prisma/schema.prisma
 generator client {
-	//edit-next-line
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
@@ -128,14 +128,36 @@ model Post {
 
 This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-### 2.3. Configure the Prisma Client generator
+### 2.3 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+### 2.4. Configure the Prisma Client generator
 
 Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
-### 2.4. Seed the database
+### 2.5. Seed the database
 
 Add some seed data to populate the database with sample users and posts.
 
@@ -188,29 +210,24 @@ export async function main() {
 main();
 ```
 
-Now, tell Prisma how to run this script by updating your `package.json`:
+Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```json file=package.json
-{
-	"name": "sveltekit-prisma",
-	"private": true,
-	"version": "0.0.1",
-	"type": "module",
-	"scripts": {
-    // ...
-	},
-  //add-start
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  }
-  //add-end
-	"devDependencies": {
-    // ...
-	},
-	"dependencies": {
-    // ...
-	}
-}
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+//add-start
+    seed: `tsx prisma/seed.ts`,
+//add-end
+  },
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
 ```
 
 Run the seed script:

@@ -10,7 +10,7 @@ community_section: true
 
 ## Introduction
 
-Prisma ORM simplifies database interactions, and [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/overview) offers a robust framework for building modern React applications. Together with [Prisma Postgres](https://www.prisma.io/postgres), they provide a seamless full-stack development experience with type-safe queries and efficient data management.
+Prisma ORM simplifies database interactions, and [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/guide/server-functions) offers a robust framework for building modern React applications. Together with [Prisma Postgres](https://www.prisma.io/postgres), they provide a seamless full-stack development experience with type-safe queries and efficient data management.
 
 This guide will walk you through integrating Prisma ORM with a Prisma Postgres database in a TanStack Start project from scratch.
 
@@ -310,13 +310,13 @@ To get started with Prisma, you'll need to install a few dependencies:
 <TabItem value="Prisma Postgres (recommended)">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install @prisma/extension-accelerate @prisma/client dotenv
 ```
 </TabItem>
 <TabItem value="Other databases">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/client
+npm install @prisma/client dotenv
 ```
 </TabItem>
 </TabbedContent>
@@ -334,6 +334,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 This will create:
 
 - A `prisma` directory with a `schema.prisma` file.
+- A `prisma.config.ts` file for configuring Prisma
 - A Prisma Postgres database.
 - A `.env` file containing the `DATABASE_URL` at the project root.
 - An `output` directory for the generated Prisma Client as `app/generated/prisma`.
@@ -344,7 +345,6 @@ In `schema.prisma`, create a model for our posts and change the generator to use
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  //edit-next-line
   provider = "prisma-client"
   output   = "../app/generated/prisma"
 }
@@ -375,27 +375,46 @@ model Post {
 
 This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-### 2.3. Configure the Prisma Client generator
+### 2.3 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+### 2.4. Configure the Prisma Client generator
 
 Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
-### 2.4. Seed the database
+### 2.5. Seed the database
 
 Let's add some seed data to populate the database with sample users and posts.
 
 Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts
-//add-next-line
-import { PrismaClient, Prisma } from "../src/generated/prisma/client.js";
+import { PrismaClient, Prisma } from "../app/generated/prisma/client.js";
 
-//add-next-line
 const prisma = new PrismaClient();
 
-//add-start
 const userData: Prisma.UserCreateInput[] = [
   {
     name: "Alice",
@@ -428,28 +447,32 @@ const userData: Prisma.UserCreateInput[] = [
     },
   },
 ];
-//add-end
-
-//add-start
 export async function main() {
   for (const u of userData) {
     await prisma.user.create({ data: u });
   }
 }
-//add-end
-
-//add-next-line
 main();
 ```
 
-Now, tell Prisma how to run this script by updating your `package.json`:
+Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```json file=package.json
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
 //add-start
-"prisma": {
-  "seed": "tsx prisma/seed.ts"
-}
+    seed: `tsx prisma/seed.ts`,
 //add-end
+  },
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
 ```
 
 Run the seed script:
@@ -504,7 +527,7 @@ If you choose not to use one, **avoid** instantiating `PrismaClient` globally in
 
 ### 3.2 Fetch users and posts on load
 
-First, import the necessary modules. Then, create a server function using the [`createServerFn`](https://tanstack.com/start/latest/docs/framework/react/server-functions#defining-server-functions) function. This function will fetch the users from the database using the `.findMany()` method. Use the [`include`](/orm/prisma-client/queries/relation-queries#include-a-relation) option to fetch the related posts:
+First, import the necessary modules. Then, create a server function using the [`createServerFn`](https://tanstack.com/start/latest/docs/framework/react/guide/server-functions) function. This function will fetch the users from the database using the `.findMany()` method. Use the [`include`](/orm/prisma-client/queries/relation-queries#include-a-relation) option to fetch the related posts:
 
 ```typescript file=app/routes/index.tsx
 // add-start

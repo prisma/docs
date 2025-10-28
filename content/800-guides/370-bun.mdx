@@ -1,7 +1,7 @@
 ---
 title: 'How to use Prisma in Bun'
 metaTitle: 'How to use Prisma ORM and Prisma Postgres with Bun'
-description: 'Learn how to use Prisma ORM in a Bun application with driver adapters and Prisma Postgres'
+description: 'Learn how to use Prisma ORM in a Bun application with Prisma Postgres'
 sidebar_label: 'Bun'
 image: '/img/guides/prisma-bun-cover-image.png'
 completion_time: '10 min'
@@ -10,7 +10,7 @@ community_section: true
 
 ## Introduction
 
-[Bun](https://bun.sh) is a fast JavaScript runtime that includes a bundler, test runner, and package manager. In this guide, you will set up a Bun project with Prisma ORM and a Prisma Postgres database. You will configure Prisma driver adapters, create a simple HTTP server, and build a Bun executable for deployment.
+[Bun](https://bun.sh) is a fast JavaScript runtime that includes a bundler, test runner, and package manager. In this guide, you will set up a Bun project with Prisma ORM and a Prisma Postgres database. You will create a simple HTTP server and build a Bun executable for deployment.
 
 ## Prerequisites
 
@@ -43,7 +43,7 @@ Install the required Prisma packages and other dependencies:
 
 ```terminal
 bun add -d prisma
-bun add @prisma/client @prisma/adapter-pg dotenv
+bun add @prisma/client
 ```
 
 ### 2.2. Initialize Prisma ORM with Prisma Postgres
@@ -64,15 +64,12 @@ This command creates:
 
 - A `prisma/` directory with your `schema.prisma` file
 - A new Prisma Postgres database
+- A `prisma.config.ts` file
 - A `.env` file with your `DATABASE_URL`
 
-### 2.3. Configure environment variables for driver adapters
+### 2.3. Configure environment variables for direct connection
 
-We are going to use the [`node-postgres` driver adapter](/orm/overview/databases/postgresql#using-the-node-postgres-driver) to perform queries to our database. 
-
-When using the `node-postgres` driver adapter with Prisma Postgres, you need to add a `DIRECT_URL` environment variable. This provides a direct connection to your PostgreSQL database.
-
-To get your [direct connection string](/postgres/database/direct-connections#how-to-connect-to-prisma-postgres-via-direct-tcp):
+We're going to use a direct connection string for connecting to Prisma Postgres. To get your [direct connection string](/postgres/database/direct-connections#how-to-connect-to-prisma-postgres-via-direct-tcp):
 
 1. Navigate to your recently created Prisma Postgres project dashboard (e.g. "My Bun Project")
 2. Click the **API Keys** tab in the project's sidebar
@@ -80,32 +77,25 @@ To get your [direct connection string](/postgres/database/direct-connections#how
 4. Provide a name for the API key and click **Create**
 5. Copy the connection string starting with `postgres://`
 
-Update your `.env` file to include both URLs:
+Update your `.env` file to replace the `DATABASE_URL` with the new connection string:
 
 ```env file=.env
+//delete-start  
 DATABASE_URL="your_database_url_here"
+//delete-end
 //add-start
-DIRECT_URL="your_direct_connection_string_here"
+DATABASE_URL="your_direct_connection_string_here"
 //add-end
 ```
 
 ### 2.4. Update your Prisma schema
 
-Open `prisma/schema.prisma` and update it to use driver adapters with Bun runtime:
+Open `prisma/schema.prisma` and update it to include your data model:
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  //delete-start  
-  provider = "prisma-client-js"
-  //delete-end
-  //add-start  
   provider = "prisma-client"
-  //add-end
   output   = "../generated/prisma"
-  //add-start 
-  previewFeatures = ["driverAdapters", "queryCompiler"]
-  runtime = "bun"
-  //add-end 
 }
 
 datasource db {
@@ -126,18 +116,12 @@ model User {
 
 ### 3.1. Create a database utility file
 
-Create a `db.ts` file in your project root to configure `PrismaClient` with the `node-postgres` adapter:
+Create a `db.ts` file in your project root to configure `PrismaClient`:
 
 ```typescript file=db.ts
-import "dotenv/config";
 import { PrismaClient } from "./generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString = `${process.env.DIRECT_URL}`;
-
-const adapter = new PrismaPg({ connectionString });
-
-export const prisma = new PrismaClient({ adapter });
+export const prisma = new PrismaClient();
 ```
 
 ### 3.2. Create a seed script
@@ -180,25 +164,25 @@ main()
   });
 ```
 
-### 3.3. Create Prisma Config file to run the seed script
+### 3.3. Add the seed script to Prisma Config
 
-Create a [`prisma.config.ts` file](/orm/reference/prisma-config-reference#migrationsseed) to configure Prisma's seed command:
-
-```terminal
-touch prisma.config.ts
-```
-
-Then add the following content to the file:
+Add the following content to the file:
 
 ```typescript file=prisma.config.ts
-import 'dotenv/config'
-import { defineConfig } from 'prisma/config'
-
+import { defineConfig, env } from 'prisma/config';
 export default defineConfig({
-  migrations: {
-    seed: `bun run prisma/seed.ts`,
+  schema: 'prisma/schema.prisma',
+  migrations: { 
+    path: 'prisma/migrations', 
+    // add-start
+    seed: `bun run prisma/seed.ts` 
+    //add-end
   },
-})
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
 ```
 
 ## 4. Generate Prisma client and run migrations
@@ -206,7 +190,7 @@ export default defineConfig({
 Generate the Prisma client and apply your schema to the database:
 
 ```terminal
-bun prisma migrate dev --name init
+bunx --bun prisma migrate dev --name init
 ```
 
 This command:
@@ -214,16 +198,10 @@ This command:
 - Creates the database tables based on your schema
 - Generates the Prisma client in the `generated/prisma` directory
 
-Because you are using the `node-postgres` driver adapter, you will need to generate the `PrismaClient` again. The client automatically produced by `migrate dev` is optimized for Prisma Postgres, but the adapter requires a client built specifically for the driver:
-
-```terminal
-bun prisma generate
-```
-
 Run the seed script to populate your database:
 
 ```terminal
-bun prisma db seed
+bunx --bun prisma db seed
 ```
 
 ## 5. Creating your Bun server
@@ -323,8 +301,6 @@ Now that you have a Bun application connected to a Prisma Postgres database, you
 ### More info
 
 - [Bun Documentation](https://bun.sh/docs)
-- [Prisma Driver Adapters](/orm/overview/databases/database-drivers)
 - [Prisma Config File](/orm/reference/prisma-config-reference)
 - [Prisma Client without the Rust engine](/orm/prisma-client/setup-and-configuration/no-rust-engine)
 - [Prisma Postgres](/postgres)
-
