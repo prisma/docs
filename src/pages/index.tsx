@@ -54,7 +54,7 @@ function HomepageHowDoISection() {
   const hiddenCards = how_do_i.slice(3);
 
   const location = useLocation();
-  
+
   return (
     <div className={styles.howDoISection} ref={howRef}>
       <Heading as="h3" className={styles.h3}>
@@ -72,7 +72,7 @@ function HomepageHowDoISection() {
                 {e.tags.map((tag: any) => <Badge variant="primary" key={tag} color="gray" size="sm" label={tag} />)}
               </div>}
               {e.time && <div className={styles.readTime}>
-                <Icon size="24px" color="var(--gray-500)" icon="fa-regular fa-clock" btn="left"/>
+                <Icon size="24px" color="var(--gray-500)" icon="fa-regular fa-clock" btn="left" />
                 <span>{e.time} min. read</span>
               </div>}
             </div>}
@@ -89,7 +89,7 @@ function HomepageHowDoISection() {
                 {e.tags.map((tag: any) => <Badge variant="primary" key={tag} color="gray" size="sm" label={tag} />)}
               </div>}
               {e.time && <div className={styles.readTime}>
-                <Icon size="24px" color="var(--gray-500)" icon="fa-regular fa-clock" btn="left"/>
+                <Icon size="24px" color="var(--gray-500)" icon="fa-regular fa-clock" btn="left" />
                 <span>{e.time} min. read</span>
               </div>}
             </div>}
@@ -100,7 +100,7 @@ function HomepageHowDoISection() {
         className={clsx(styles.seeMore, seeMore && styles.clicked)}
         onClick={() => {
           setSeeMore(!seeMore)
-          howRef.current.scrollIntoView({behavior: "smooth", offset: 80});
+          howRef.current.scrollIntoView({ behavior: "smooth", offset: 80 });
         }}
       >
         <span>See {seeMore ? `less` : `more`}</span>
@@ -110,7 +110,7 @@ function HomepageHowDoISection() {
   );
 }
 
-const CommunityIcon = ({icon, link, label}: any) => {
+const CommunityIcon = ({ icon, link, label }: any) => {
   const [visibleTooltip, setVisibleTooltip] = useState<boolean>(false);
   const iconRef = useRef(null);
 
@@ -161,41 +161,41 @@ function HomepageCommunitySection() {
   );
 }
 
-const TabBox = ({icon, label, description, list, link}: any) => {
+const TabBox = ({ icon, label, description, list, link }: any) => {
   const location = useLocation();
   return (
     <div>
       <div className={styles.tabBox}>
         <div className={styles.content}>
           <div className={styles.heading}>
-            {icon && <Icon className={styles.leftIcon} btn="left" icon={icon} size='inherit' color='var(--teal-600)' /> }
+            {icon && <Icon className={styles.leftIcon} btn="left" icon={icon} size='inherit' color='var(--teal-600)' />}
             <span>{label}</span>
           </div>
-          <p dangerouslySetInnerHTML={{__html: description}}></p>
+          <p dangerouslySetInnerHTML={{ __html: description }}></p>
           <div className={styles.techGrid}>
-            {list && list.length && list.map((l: any, idx: number) => 
+            {list && list.length && list.map((l: any, idx: number) =>
               <SquareLogo
                 className={styles.heroTabs}
                 url={`${l.url}${location.search}`}
                 image={l.image}
                 tech={l.tech}
-                {... l.imageDark && { imageDark: l.imageDark }}
+                {...l.imageDark && { imageDark: l.imageDark }}
               />
             )}
           </div>
         </div>
       </div>
       <Link to={`${link.url}${location.search}`}>
-        <Icon icon={link.icon} size="inherit" color="inherit" btn="left"/>
+        <Icon icon={link.icon} size="inherit" color="inherit" btn="left" />
         <span>{link.label}</span>
-        <Icon icon={"fa-regular fa-arrow-right"} size="inherit" color="inherit" btn="right"/>
+        <Icon icon={"fa-regular fa-arrow-right"} size="inherit" color="inherit" btn="right" />
       </Link>
     </div>
   )
 }
 
 function HomepageHeroSection() {
-  const { colorMode }  = useColorMode();
+  const { colorMode } = useColorMode();
   return (
     <div className={styles.heroWrapper}>
       <div className={styles.hero}>
@@ -216,7 +216,7 @@ function HomepageHeroSection() {
           label="Start with an AI prompt →" color="teal"
         /> */}
         <div className={styles.tabBoxes}>
-          {tabs && tabs.map((tab: any, idx: number) => 
+          {tabs && tabs.map((tab: any, idx: number) =>
             <TabBox {...tab} key={idx} />
           )}
         </div>
@@ -241,9 +241,9 @@ function HomepageGetHelpSection() {
               <h4>{e.title}</h4>
             </div>
             <div className={styles.content}>
-              <p dangerouslySetInnerHTML={{__html: e.description}}/>
+              <p dangerouslySetInnerHTML={{ __html: e.description }} />
               <div className={styles.links}>
-                {e.links.map((link: any) => 
+                {e.links.map((link: any) =>
                   <a href={`${link.link}${location.search}`} className={styles.link}>
                     <Icon icon={link.icon} size="inherit" btn="left" color="inherit" />
                     <span>{link.label}</span>
@@ -272,7 +272,7 @@ export default function Home(): JSX.Element {
         <HomepageHeroSection />
         <HomepageHowDoISection />
         <HomepageProductCards />
-        <HomepageGetHelpSection /> 
+        <HomepageGetHelpSection />
         <HomepageCommunitySection />
       </main>
     </Layout>
