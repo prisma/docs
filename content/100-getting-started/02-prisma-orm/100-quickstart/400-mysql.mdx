@@ -1,0 +1,177 @@
+---
+title: 'MySQL'
+metaTitle: 'Quickstart: Prisma ORM with MySQL (5 min)'
+metaDescription: 'Create a new TypeScript project from scratch by connecting Prisma ORM to your MySQL database and generating a Prisma Client for database access.'
+sidebar_custom_props: { badge: '5 min' }
+---
+
+import Prerequisites from '../../_components/_prerequisites.mdx'
+import CreateProject from '../../_components/_create-project.mdx'
+import InstallPrismaClient from '../../_components/_install-prisma-client.mdx'
+import CreatePrismaClient from '../../_components/_create-prisma-client.mdx'
+import ExploreData from '../../_components/_explore-data.mdx'
+import NextSteps from '../../_components/_next-steps.mdx'
+
+Learn how to create a new TypeScript project from scratch by connecting Prisma ORM to your MySQL database and generating a Prisma Client for database access.
+
+<Prerequisites 
+  database="[MySQL](https://www.mysql.com/) database server running and accessible"
+  connectionDetails="Database connection details (host, port, username, password, database name)"
+/>
+
+:::tip Need a MySQL database?
+
+If you don't have a MySQL database, consider using:
+- [Prisma Postgres](/getting-started/prisma-orm/quickstart/prisma-postgres) (recommended - managed database)
+- [PlanetScale](/getting-started/prisma-orm/quickstart/planetscale) (serverless MySQL)
+- Local MySQL installation
+- [MySQL on Railway](https://railway.app)
+
+:::
+
+<CreateProject />
+
+## Install and configure Prisma ORM
+
+Install Prisma CLI and required packages:
+
+```terminal
+npm install prisma --save-dev
+npm install @prisma/client @prisma/adapter-mariadb
+```
+
+Initialize Prisma:
+
+```terminal
+npx prisma init --output ../generated/prisma
+```
+
+## 3. Configure your database connection
+
+Update your `.env` file with your MySQL connection string:
+
+```env file=.env
+DATABASE_URL="mysql://username:password@localhost:3306/mydb"
+```
+
+Replace the placeholders with your actual database credentials.
+
+## 4. Configure your schema for MySQL
+
+Open `prisma/schema.prisma` and update it:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//add-start
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String? @db.Text
+  published Boolean @default(false)
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+//add-end
+```
+
+## 5. Create your database tables
+
+Create your first migration:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+<InstallPrismaClient />
+
+## 6. Create a Prisma Client instance
+
+Create a `lib/prisma.ts` file:
+
+```typescript file=lib/prisma.ts
+import { PrismaClient } from '../generated/prisma'
+import { PrismaMariaDb } from '@prisma/adapter-mariadb'
+
+const adapter = new PrismaMariaDb({
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '3306'),
+  connectionLimit: 5
+})
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+```
+
+## 7. Write your first query
+
+Create and run a test script:
+
+```typescript file=script.ts
+import { prisma } from './lib/prisma'
+
+async function main() {
+  const user = await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@prisma.io',
+      posts: {
+        create: {
+          title: 'Hello MySQL!',
+          content: 'This is my first post with MySQL and Prisma ORM!',
+          published: true,
+        },
+      },
+    },
+    include: { posts: true },
+  })
+  console.log('Created user:', user)
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+```terminal
+npx tsx script.ts
+```
+
+You should see the created user and all users printed to the console!
+
+<ExploreData />
+
+<NextSteps />
+
+### More info
+
+- [MySQL database connector](/orm/overview/databases/mysql)
+- [Prisma Client without Rust engines](/orm/prisma-client/setup-and-configuration/no-rust-engine)
+- [MySQL connection management](/orm/prisma-client/setup-and-configuration/databases-connections)

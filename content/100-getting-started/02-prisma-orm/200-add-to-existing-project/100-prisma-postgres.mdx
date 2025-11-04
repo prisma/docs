@@ -1,0 +1,316 @@
+---
+title: 'Prisma Postgres'
+metaTitle: 'Add Prisma ORM with Prisma Postgres to an existing project (15 min)'
+metaDescription: 'Learn how to add Prisma ORM with Prisma Postgres to an existing Node.js or TypeScript project and start querying your database.'
+sidebar_custom_props: { badge: '15 min' }
+---
+
+import InstallPrismaClient from '../../_components/_install-prisma-client.mdx'
+
+# Add Prisma ORM to existing project with Prisma Postgres
+
+Learn how to integrate Prisma ORM with Prisma Postgres into your existing Node.js or TypeScript project. This guide will help you set up a managed database and start querying it with type safety.
+
+## Prerequisites
+
+- An existing Node.js or TypeScript project
+- [Node.js](https://nodejs.org/en/) installed on your machine (see [system requirements](/orm/reference/system-requirements) for officially supported versions)
+- Basic knowledge of JavaScript or TypeScript
+
+## 1. Install Prisma ORM
+
+Navigate to your existing project directory and install Prisma CLI and Prisma Client:
+
+```terminal
+npm install prisma --save-dev
+npm install @prisma/client @prisma/extension-accelerate
+```
+
+## 2. Initialize Prisma ORM with Prisma Postgres
+
+Initialize Prisma ORM and create a Prisma Postgres database:
+
+```terminal
+npx prisma init --db --output ../generated/prisma
+```
+
+:::info
+You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database.
+:::
+
+This command creates:
+- A `prisma/` directory with a `schema.prisma` file
+- A new Prisma Postgres database
+- A `.env` file with your `DATABASE_URL` (if it doesn't exist already)
+- A `generated/prisma/` directory for the generated Prisma Client
+
+## 3. Define your data model
+
+Open `prisma/schema.prisma` and add your data models. Here's an example schema:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//add-start
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  posts     Post[]
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+//add-end
+```
+
+:::tip Existing database?
+
+If you already have a database with data, you can use `npx prisma db pull` to introspect your existing database and generate the Prisma schema automatically.
+
+:::
+
+## 4. Create and apply migration
+
+Create your first migration to set up the database tables:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+This command:
+- Creates the database tables based on your schema
+- Generates the Prisma Client in the `generated/prisma` directory
+
+<InstallPrismaClient />
+
+## 5. Create a Prisma Client instance
+
+Create a utility file to instantiate and export Prisma Client. Create a `lib/` directory (if it doesn't exist) and add a `prisma.ts` file:
+
+```typescript file=lib/prisma.ts
+import { PrismaClient } from '../generated/prisma'
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+export const prisma = globalForPrisma.prisma ?? 
+  new PrismaClient().$extends(withAccelerate())
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+```
+
+:::note
+
+The global pattern prevents multiple instances of Prisma Client in development due to hot reloading.
+
+:::
+
+## 6. Start using Prisma Client in your application
+
+Now you can import and use Prisma Client throughout your application. Here are some examples:
+
+### Express.js route example
+
+```typescript file=routes/users.ts
+import express from 'express'
+import { prisma } from '../lib/prisma'
+
+const router = express.Router()
+
+// Get all users
+router.get('/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      include: {
+        posts: true,
+      },
+    })
+    res.json(users)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' })
+  }
+})
+
+// Create a new user
+router.post('/users', async (req, res) => {
+  try {
+    const { name, email } = req.body
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+      },
+    })
+    res.json(user)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create user' })
+  }
+})
+
+export default router
+```
+
+### Next.js API route example
+
+```typescript file=pages/api/users.ts
+import { NextApiRequest, NextApiResponse } from 'next'
+import { prisma } from '../../lib/prisma'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === 'GET') {
+    const users = await prisma.user.findMany({
+      include: {
+        posts: true,
+      },
+    })
+    res.json(users)
+  } else if (req.method === 'POST') {
+    const { name, email } = req.body
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+      },
+    })
+    res.json(user)
+  } else {
+    res.setHeader('Allow', ['GET', 'POST'])
+    res.status(405).end(`Method ${req.method} Not Allowed`)
+  }
+}
+```
+
+### Standalone script example
+
+```typescript file=scripts/seed.ts
+import { prisma } from '../lib/prisma'
+
+async function main() {
+  // Create sample users
+  const users = await prisma.user.createMany({
+    data: [
+      { name: 'Alice', email: 'alice@example.com' },
+      { name: 'Bob', email: 'bob@example.com' },
+      { name: 'Charlie', email: 'charlie@example.com' },
+    ],
+  })
+
+  console.log(`Created ${users.count} users`)
+
+  // Create sample posts
+  const alice = await prisma.user.findUnique({
+    where: { email: 'alice@example.com' },
+  })
+
+  if (alice) {
+    await prisma.post.create({
+      data: {
+        title: 'Hello World',
+        content: 'This is my first post!',
+        published: true,
+        authorId: alice.id,
+      },
+    })
+  }
+
+  console.log('Seed data created successfully')
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+## 7. Test your integration
+
+Create a simple test script to verify everything is working:
+
+```typescript file=test-prisma.ts
+import { prisma } from './lib/prisma'
+
+async function testPrisma() {
+  try {
+    // Test database connection
+    await prisma.$connect()
+    console.log('✅ Database connection successful')
+
+    // Test a simple query
+    const userCount = await prisma.user.count()
+    console.log(`📊 Found ${userCount} users in the database`)
+
+    // Test creating and querying data
+    const testUser = await prisma.user.upsert({
+      where: { email: 'test@example.com' },
+      update: {},
+      create: {
+        name: 'Test User',
+        email: 'test@example.com',
+      },
+    })
+    console.log('👤 Test user:', testUser)
+
+  } catch (error) {
+    console.error('❌ Error testing Prisma:', error)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+testPrisma()
+```
+
+Run the test:
+
+```terminal
+npx tsx test-prisma.ts
+```
+
+## 8. Explore your data with Prisma Studio
+
+Launch Prisma Studio to visually explore and edit your data:
+
+```terminal
+npx prisma studio
+```
+
+## Next steps
+
+Congratulations! You've successfully integrated Prisma ORM with Prisma Postgres into your existing project. Here's what you can do next:
+
+- **Gradually migrate existing queries**: Replace your existing database queries with Prisma Client calls for better type safety
+- **Learn advanced Prisma Client features**: Explore [relations](/orm/prisma-client/queries/relation-queries), [filtering](/orm/prisma-client/queries/filtering-and-sorting), and [aggregations](/orm/prisma-client/queries/aggregation-grouping-summarizing)
+- **Set up database migrations**: Use [Prisma Migrate](/orm/prisma-migrate) for future schema changes
+- **Optimize performance**: Learn about [query optimization](/orm/prisma-client/queries/query-optimization-performance) and [caching with Prisma Postgres](/postgres/database/caching)
+- **Add authentication**: Integrate with authentication providers using our [framework guides](/guides)
+
+### More info
+
+- [Prisma Postgres documentation](/postgres)
+- [Prisma Client API reference](/orm/reference/prisma-client-reference)
+- [Database introspection](/orm/prisma-schema/introspection)
+- [Prisma Migrate](/orm/prisma-migrate)

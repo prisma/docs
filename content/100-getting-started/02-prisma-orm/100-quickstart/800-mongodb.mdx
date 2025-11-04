@@ -1,0 +1,207 @@
+---
+title: 'MongoDB'
+metaTitle: 'Quickstart: Prisma ORM with MongoDB (15 min)'
+metaDescription: 'Create a new TypeScript project from scratch by connecting Prisma ORM to your MongoDB database and generating a Prisma Client for database access.'
+sidebar_custom_props: { badge: '15 min' }
+---
+
+import Prerequisites from '../../_components/_prerequisites.mdx'
+import CreateProject from '../../_components/_create-project.mdx'
+import ExploreData from '../../_components/_explore-data.mdx'
+import NextSteps from '../../_components/_next-steps.mdx'
+
+Learn how to create a new TypeScript project from scratch by connecting Prisma ORM to your MongoDB database and generating a Prisma Client for database access.
+
+<Prerequisites />
+
+You also need:
+
+- A [MongoDB](https://www.mongodb.com/) database accessible via connection string
+
+:::tip Need a MongoDB database?
+
+If you don't have a MongoDB database, consider using:
+- [MongoDB Atlas](https://www.mongodb.com/atlas) (managed MongoDB)
+- [Prisma Postgres](/getting-started/prisma-orm/quickstart/prisma-postgres) (recommended alternative)
+- Local MongoDB installation
+
+:::
+
+<CreateProject />
+
+## Install Prisma ORM
+
+Install Prisma CLI and Prisma Client:
+
+```terminal
+npm install prisma --save-dev
+npm install @prisma/client
+```
+
+Initialize Prisma:
+
+```terminal
+npx prisma init --output ../generated/prisma
+```
+
+This creates:
+- A `prisma/` directory with a `schema.prisma` file
+- A `.env` file for environment variables
+- A `generated/prisma/` directory for the generated Prisma Client
+
+## Configure your database connection
+
+Update your `.env` file with your MongoDB connection string:
+
+```env file=.env
+DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/mydb"
+```
+
+Replace with your actual MongoDB connection string.
+
+## Configure your schema for MongoDB
+
+Open `prisma/schema.prisma` and update it:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+//add-start
+model User {
+  id    String  @id @default(auto()) @map("_id") @db.ObjectId
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  content   String?
+  published Boolean @default(false)
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String  @db.ObjectId
+}
+//add-end
+```
+
+## Push your schema to MongoDB
+
+Since MongoDB doesn't use migrations, push your schema directly:
+
+```terminal
+npx prisma db push
+```
+
+This command:
+- Creates the collections based on your schema
+- Generates the Prisma Client
+
+## Install and generate Prisma Client
+
+Install the Prisma Client package:
+
+```terminal
+npm install @prisma/client
+```
+
+Generate Prisma Client:
+
+```terminal
+npx prisma generate
+```
+
+## Create a Prisma Client instance
+
+Create a `lib/` directory and a `prisma.ts` file:
+
+```typescript file=lib/prisma.ts
+import { PrismaClient } from '../generated/prisma'
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+```
+
+:::note
+
+MongoDB doesn't require driver adapters since Prisma ORM connects directly to MongoDB.
+
+:::
+
+## Write your first query
+
+Create a `script.ts` file to test your setup:
+
+```typescript file=script.ts
+import { prisma } from './lib/prisma'
+
+async function main() {
+  // Create a new user with a post
+  const user = await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@prisma.io',
+      posts: {
+        create: {
+          title: 'Hello MongoDB!',
+          content: 'This is my first post with MongoDB and Prisma ORM!',
+          published: true,
+        },
+      },
+    },
+    include: {
+      posts: true,
+    },
+  })
+  console.log('Created user:', user)
+
+  // Fetch all users with their posts
+  const allUsers = await prisma.user.findMany({
+    include: {
+      posts: true,
+    },
+  })
+  console.log('All users:', JSON.stringify(allUsers, null, 2))
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+Run the script:
+
+```terminal
+npx tsx script.ts
+```
+
+You should see the created user and all users printed to the console!
+
+<ExploreData />
+
+<NextSteps />
+
+### More info
+
+- [MongoDB database connector](/orm/overview/databases/mongodb)
+- [MongoDB data modeling patterns](/orm/overview/databases/mongodb#data-modeling)
+- [MongoDB deployment considerations](/orm/overview/databases/mongodb#deployment)

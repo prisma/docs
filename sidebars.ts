@@ -44,241 +44,183 @@ const sidebars: SidebarsConfig = {
       className: "firstTitle",
       items: [
         "getting-started/index",
-        {
-          type: "doc",
-          id: "getting-started/quickstart-prismaPostgres",
-          label: "Quickstart",
-        },
-        {
-          type: "doc",
-          id: "getting-started/quickstart-sqlite",
-          label: "Quickstart",
-          className: "hidden-sidebar",
-        },
+        // {
+        //   type: "doc",
+        //   id: "getting-started/quickstart-prismaPostgres",
+        //   label: "Quickstart",
+        //   customProps: {
+        //     badge: "5 Min",
+        //   },
+        // },
+        // {
+        //   type: "doc",
+        //   id: "getting-started/quickstart-sqlite",
+        //   label: "Quickstart",
+        //   className: "hidden-sidebar",
+        // },
         {
           type: "category",
           label: "Prisma ORM",
           collapsed: false,
           collapsible: false,
-          link: {
-            type: "doc",
-            id: "getting-started/setup-prisma/index",
-          },
           items: [
             {
               type: "category",
-              label: "Start from scratch",
+              label: "Quickstart",
+              collapsed: true,
+              collapsible: true,
+              className: "hide-category-badge",
               link: {
                 type: "doc",
-                id: "getting-started/setup-prisma/start-from-scratch/index",
+                id: "getting-started/prisma-orm/quickstart/prisma-postgres",
+              },
+              customProps: {
+                hideBadge: true,
               },
               items: [
                 {
-                  type: "category",
-                  label: "Relational databases",
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/prisma-postgres",
+                  label: "Prisma Postgres",
                   customProps: {
-                    badge: "15 Min",
+                    badge: "5 Min",
                   },
-                  link: {
-                    type: "doc",
-                    id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-prismaPostgres",
-                  },
-                  items: [
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-prismaPostgres",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-mysql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-planetscale",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-sqlserver",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-cockroachdb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-node-postgresql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-node-mysql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-node-planetscale",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-node-sqlserver",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/relational-databases-node-cockroachdb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "autogenerated",
-                      dirName:
-                        "100-getting-started/02-setup-prisma/100-start-from-scratch/110-relational-databases",
-                    },
-                  ],
                 },
                 {
-                  type: "category",
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/mysql",
+                  label: "MySQL",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/postgresql",
+                  label: "PostgreSQL",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/sqlite",
+                  label: "SQLite",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/sql-server",
+                  label: "SQL Server",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/planetscale",
+                  label: "PlanetScale",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/cockroachdb",
+                  label: "CockroachDB",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/mongodb",
                   label: "MongoDB",
                   customProps: {
-                    badge: "15 Min",
+                    badge: "5 Min",
                   },
-                  link: {
-                    type: "doc",
-                    id: "getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb",
-                  },
-                  items: [
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/mongodb-node-mongodb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/start-from-scratch/mongodb-typescript-mongodb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "autogenerated",
-                      dirName:
-                        "100-getting-started/02-setup-prisma/100-start-from-scratch/120-mongodb",
-                    },
-                  ],
                 },
               ],
             },
             {
               type: "category",
               label: "Add to existing project",
+              collapsed: true,
+              collapsible: true,
+              className: "hide-category-badge",
               link: {
                 type: "doc",
-                id: "getting-started/setup-prisma/add-to-existing-project/index",
+                id: "getting-started/prisma-orm/add-to-existing-project/prisma-postgres",
+              },
+              customProps: {
+                hideBadge: true,
               },
               items: [
                 {
-                  type: "category",
-                  label: "Relational databases",
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/prisma-postgres",
+                  label: "Prisma Postgres",
                   customProps: {
-                    badge: "15 Min",
+                    badge: "5 Min",
                   },
-                  link: {
-                    type: "doc",
-                    id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql",
-                  },
-                  items: [
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-mysql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-sqlserver",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-cockroachdb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-node-postgresql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-node-mysql",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-node-planetscale",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-node-sqlserver",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/relational-databases-node-cockroachdb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "autogenerated",
-                      dirName:
-                        "100-getting-started/02-setup-prisma/200-add-to-existing-project/110-relational-databases",
-                    },
-                  ],
                 },
                 {
-                  type: "category",
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/mysql",
+                  label: "MySQL",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/postgresql",
+                  label: "PostgreSQL",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/sqlite",
+                  label: "SQLite",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/sql-server",
+                  label: "SQL Server",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/planetscale",
+                  label: "PlanetScale",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/cockroachdb",
+                  label: "CockroachDB",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/mongodb",
                   label: "MongoDB",
                   customProps: {
-                    badge: "15 Min",
+                    badge: "5 Min",
                   },
-                  link: {
-                    type: "doc",
-                    id: "getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb",
-                  },
-                  items: [
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/mongodb-node-mongodb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "doc",
-                      id: "getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb",
-                      className: "hidden-sidebar",
-                    },
-                    {
-                      type: "autogenerated",
-                      dirName:
-                        "100-getting-started/02-setup-prisma/200-add-to-existing-project/120-mongodb",
-                    },
-                  ],
                 },
               ],
             },
@@ -619,5 +561,3 @@ const sidebars: SidebarsConfig = {
 };
 
 export default sidebars;
-
-

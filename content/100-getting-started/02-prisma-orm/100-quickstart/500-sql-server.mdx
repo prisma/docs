@@ -1,0 +1,177 @@
+---
+title: 'SQL Server'
+metaTitle: 'Quickstart: Prisma ORM with SQL Server (15 min)'
+metaDescription: 'Create a new TypeScript project from scratch by connecting Prisma ORM to your SQL Server database and generating a Prisma Client for database access.'
+sidebar_custom_props: { badge: '15 min' }
+---
+
+import Prerequisites from '../../_components/_prerequisites.mdx'
+import CreateProject from '../../_components/_create-project.mdx'
+import InstallPrismaClient from '../../_components/_install-prisma-client.mdx'
+import CreatePrismaClient from '../../_components/_create-prisma-client.mdx'
+import ExploreData from '../../_components/_explore-data.mdx'
+import NextSteps from '../../_components/_next-steps.mdx'
+
+Learn how to create a new TypeScript project from scratch by connecting Prisma ORM to your SQL Server database and generating a Prisma Client for database access.
+
+<Prerequisites />
+
+You also need:
+
+- A [Microsoft SQL Server](https://learn.microsoft.com/en-us/sql/?view=sql-server-ver16) database
+  - [Microsoft SQL Server on Linux for Docker](/orm/overview/databases/sql-server/sql-server-docker)
+  - [Microsoft SQL Server on Windows (local)](/orm/overview/databases/sql-server/sql-server-local)
+
+Make sure you have your database [connection URL](/orm/reference/connection-urls) at hand. If you don't have a database server running and just want to explore Prisma ORM, check out the [Quickstart with Prisma Postgres](/getting-started/prisma-orm/quickstart/prisma-postgres).
+
+<CreateProject />
+
+## Install Prisma ORM
+
+Install Prisma CLI:
+
+```terminal
+npm install prisma --save-dev
+```
+
+Initialize Prisma ORM:
+
+```terminal
+npx prisma init --output ../generated/prisma
+```
+
+This creates:
+- A `prisma/` directory with a `schema.prisma` file
+- A `.env` file for environment variables
+- A `generated/prisma/` directory for the generated Prisma Client
+
+## Configure your database connection
+
+Set the `DATABASE_URL` in the `.env` file to point to your existing database. If your database has no tables yet, read https://pris.ly/d/getting-started
+
+```env file=.env
+DATABASE_URL="sqlserver://localhost:1433;database=mydb;user=username;password=password;encrypt=true"
+```
+
+Replace the placeholders with your actual database credentials:
+- `localhost:1433`: Your SQL Server host and port
+- `mydb`: Your database name
+- `username`: Your SQL Server username
+- `password`: Your SQL Server password
+
+## Configure your schema for SQL Server
+
+Open `prisma/schema.prisma` and update it with the modern generator:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+//add-start
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+//add-end
+```
+
+## Create your database tables
+
+Run the following command to create your database tables with Prisma Migrate:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+This command:
+- Creates a new SQL migration file for this migration
+- Executes the SQL migration file against the database
+- Generates Prisma Client
+
+<InstallPrismaClient />
+
+<CreatePrismaClient />
+
+## Write your first query
+
+Create a `script.ts` file to test your setup:
+
+```typescript file=script.ts
+import { prisma } from './lib/prisma'
+
+async function main() {
+  // Create a new user with a post
+  const user = await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@prisma.io',
+      posts: {
+        create: {
+          title: 'Hello SQL Server!',
+          content: 'This is my first post with SQL Server and Prisma ORM!',
+          published: true,
+        },
+      },
+    },
+    include: {
+      posts: true,
+    },
+  })
+  console.log('Created user:', user)
+
+  // Fetch all users with their posts
+  const allUsers = await prisma.user.findMany({
+    include: {
+      posts: true,
+    },
+  })
+  console.log('All users:', JSON.stringify(allUsers, null, 2))
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+Run the script:
+
+```terminal
+npx tsx script.ts
+```
+
+You should see the created user and all users printed to the console!
+
+<ExploreData />
+
+<NextSteps />
+
+### More info
+
+- [SQL Server database connector](/orm/overview/databases/sql-server)
+- [Prisma Client without Rust engines](/orm/prisma-client/setup-and-configuration/no-rust-engine)
+- [SQL Server connection management](/orm/prisma-client/setup-and-configuration/databases-connections)
