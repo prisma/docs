@@ -447,6 +447,7 @@ const sidebars: SidebarsConfig = {
             "guides/clerk-nextjs",
             "guides/shopify",
             "guides/permit-io-access-control",
+            "guides/betterauth-astro",
             "guides/betterauth-nextjs",
             "guides/ai-sdk-nextjs",
             "guides/authjs-nextjs",
@@ -474,6 +475,7 @@ const sidebars: SidebarsConfig = {
             "guides/management-api-basic",
             "guides/management-api",
             "guides/vercel-app-deployment",
+            "guides/deno-integration",
           ].sort(),
         },
         {
