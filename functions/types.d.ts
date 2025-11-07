@@ -1,12 +1,4 @@
 // TypeScript definitions for Cloudflare Pages Functions
-
-interface Env {
-  DOCUSAURUS_BASE_URL?: string;
-  ASSETS: {
-    fetch: typeof fetch;
-  };
-}
-
 interface EventContext<Env = unknown> {
   request: Request;
   env: Env;
