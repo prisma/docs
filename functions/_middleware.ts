@@ -8,7 +8,9 @@ const AI_CRAWLER_PATTERNS = [
   "GPTBot",
   "OAI-SearchBot",
   "ChatGPT-User",
+  "ChatGPT-User 2.0",
   "anthropic-ai",
+  "OpenAI",
   "ClaudeBot",
   "claude-web",
   "PerplexityBot",
@@ -26,11 +28,15 @@ const AI_CRAWLER_PATTERNS = [
   "CCBot",
   "Diffbot",
   "DuckAssistBot",
+  "DuckDuckGo",
+  "DeepSeekBot",
   "cohere-ai",
   "omgili",
   "TimpiBot",
   "YouBot",
   "MistralAI-User",
+  "ImagesiftBot",
+  "Scrapy",
 ];
 
 function isAICrawler(userAgent: string | null): boolean {
@@ -58,6 +64,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const response = await context.env.ASSETS.fetch(markdownRequest);
 
     if (response.ok) {
+      // Check what content type we actually got
+      const actualContentType = response.headers.get("content-type");
+      console.log(`Fetched ${markdownPath}, got content-type: ${actualContentType}`);
+
       return new Response(response.body, {
         status: 200,
         headers: {
