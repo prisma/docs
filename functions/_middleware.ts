@@ -13,6 +13,7 @@ const AI_CRAWLER_PATTERNS = [
   "OpenAI",
   "ClaudeBot",
   "claude-web",
+  "anthropic",
   "PerplexityBot",
   "Perplexity-User",
   "Google-Extended",
