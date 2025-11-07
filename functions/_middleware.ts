@@ -45,7 +45,29 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const userAgent = request.headers.get("user-agent");
 
   if (isAICrawler(userAgent)) {
-    return Response.redirect("https://test.com", 302);
+    const url = new URL(request.url);
+    const urlPath = url.pathname;
+
+    const markdownPath = `${urlPath}.md`;
+
+    const markdownRequest = new Request(new URL(markdownPath, url.origin), {
+      method: request.method,
+      headers: request.headers,
+    });
+
+    const response = await context.env.ASSETS.fetch(markdownRequest);
+
+    if (response.ok) {
+      return new Response(response.body, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/markdown; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
+    }
+
+    return next();
   }
 
   return next();
