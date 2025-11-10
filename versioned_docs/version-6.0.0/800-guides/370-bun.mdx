@@ -1,0 +1,306 @@
+---
+title: 'How to use Prisma in Bun'
+metaTitle: 'How to use Prisma ORM and Prisma Postgres with Bun'
+description: 'Learn how to use Prisma ORM in a Bun application with Prisma Postgres'
+sidebar_label: 'Bun'
+image: '/img/guides/prisma-bun-cover-image.png'
+completion_time: '10 min'
+community_section: true
+---
+
+## Introduction
+
+[Bun](https://bun.sh) is a fast JavaScript runtime that includes a bundler, test runner, and package manager. In this guide, you will set up a Bun project with Prisma ORM and a Prisma Postgres database. You will create a simple HTTP server and build a Bun executable for deployment.
+
+## Prerequisites
+
+- [Bun](https://bun.sh/docs/installation) installed in your system
+- A [Prisma Postgres database](/postgres) (created during setup)
+- Basic knowledge of JavaScript/TypeScript
+
+## 1. Setting up your Bun project
+
+First, create a directory for your project and navigate to it:
+
+```terminal
+mkdir bun-prisma
+cd bun-prisma
+```
+
+Then, initialise a new Bun project:
+
+```terminal
+bun init -y
+```
+
+This creates a basic Bun project that includes a `package.json` file and an `index.ts` file.
+
+## 2. Installing and configuring Prisma
+
+### 2.1. Install dependencies
+
+Install the required Prisma packages and other dependencies:
+
+```terminal
+bun add -d prisma
+bun add @prisma/client
+```
+
+### 2.2. Initialize Prisma ORM with Prisma Postgres
+
+Initialize Prisma ORM with Prisma Postgres in your project:
+
+```terminal
+bun prisma init --db
+```
+
+:::info
+
+You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My Bun Project"
+
+:::
+
+This command creates:
+
+- A `prisma/` directory with your `schema.prisma` file
+- A new Prisma Postgres database
+- A `prisma.config.ts` file
+- A `.env` file with your `DATABASE_URL`
+
+### 2.3. Configure environment variables for direct connection
+
+We're going to use a direct connection string for connecting to Prisma Postgres. To get your [direct connection string](/postgres/database/direct-connections#how-to-connect-to-prisma-postgres-via-direct-tcp):
+
+1. Navigate to your recently created Prisma Postgres project dashboard (e.g. "My Bun Project")
+2. Click the **API Keys** tab in the project's sidebar
+3. Click the **Create API key** button
+4. Provide a name for the API key and click **Create**
+5. Copy the connection string starting with `postgres://`
+
+Update your `.env` file to replace the `DATABASE_URL` with the new connection string:
+
+```env file=.env
+//delete-start  
+DATABASE_URL="your_database_url_here"
+//delete-end
+//add-start
+DATABASE_URL="your_direct_connection_string_here"
+//add-end
+```
+
+### 2.4. Update your Prisma schema
+
+Open `prisma/schema.prisma` and update it to include your data model:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//add-start  
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+//add-end  
+```
+
+## 3. Setting up database configuration and creating a seed script
+
+### 3.1. Create a database utility file
+
+Create a `db.ts` file in your project root to configure `PrismaClient`:
+
+```typescript file=db.ts
+import { PrismaClient } from "./generated/prisma/client";
+
+export const prisma = new PrismaClient();
+```
+
+### 3.2. Create a seed script
+
+Create a seed script in the `prisma` folder to populate your database with sample data:
+
+```typescript file=prisma/seed.ts
+import { PrismaClient } from "../generated/prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Create multiple users
+  await prisma.user.createMany({
+    data: [
+      { email: "alice@example.com", name: "Alice" },
+      { email: "bob@example.com", name: "Bob" },
+      { email: "charlie@example.com", name: "Charlie" },
+      { email: "diana@example.com", name: "Diana" },
+      { email: "eve@example.com", name: "Eve" },
+      { email: "frank@example.com", name: "Frank" },
+      { email: "grace@example.com", name: "Grace" },
+      { email: "henry@example.com", name: "Henry" },
+      { email: "isabella@example.com", name: "Isabella" },
+      { email: "jack@example.com", name: "Jack" },
+    ],
+    skipDuplicates: true, // prevents errors if you run the seed multiple times
+  });
+
+  console.log("Seed data inserted!");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+```
+
+### 3.3. Add the seed script to Prisma Config
+
+Add the following content to the file:
+
+```typescript file=prisma.config.ts
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: { 
+    path: 'prisma/migrations', 
+    // add-start
+    seed: `bun run prisma/seed.ts` 
+    //add-end
+  },
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+## 4. Generate Prisma client and run migrations
+
+Generate the Prisma client and apply your schema to the database:
+
+```terminal
+bunx --bun prisma migrate dev --name init
+```
+
+This command:
+
+- Creates the database tables based on your schema
+- Generates the Prisma client in the `generated/prisma` directory
+
+Run the seed script to populate your database:
+
+```terminal
+bunx --bun prisma db seed
+```
+
+## 5. Creating your Bun server
+
+Replace the `index.ts` file contents with the following code to build a simple HTTP server that uses Prisma ORM to fetch and display users:
+
+```typescript file=index.ts
+import { prisma } from './db'
+
+const server = Bun.serve({
+  port: 3000,
+  async fetch(req) {
+    const { pathname } = new URL(req.url)
+
+    // Skip favicon route
+    if (pathname === '/favicon.ico') {
+      return new Response(null, { status: 204 }) // or serve an icon if you have one
+    }
+
+    // Return all users
+    const users = await prisma.user.findMany()
+
+    // Count all users
+    const count = await prisma.user.count()
+
+    // Format the response with JSON
+    return new Response(
+      JSON.stringify({
+        users: users,
+        totalUsers: count,
+      }),
+      { headers: { 'Content-Type': 'application/json' } },
+    )
+  },
+})
+
+console.log(`Listening on http://localhost:${server.port}`)
+```
+
+## 6. Running your application
+
+Start your Bun server:
+
+```terminal
+bun run index.ts
+```
+
+You should see `Listening on http://localhost:3000` in the console. When you visit `http://localhost:3000` in your browser, you'll see a JSON response with all the users in your database and the total count.
+
+## 7. Building and running a Bun executable
+
+Bun can compile your [TypeScript application into a single executable file](https://bun.com/docs/bundler/executables), which is useful for deployment and distribution.
+
+### 7.1. Build the executable
+
+Build your application into an executable:
+
+```terminal
+bun build --compile index.ts
+```
+
+This creates an executable file named `index` (or `index.exe` on Windows) in your project directory.
+
+### 7.2. Run the executable
+
+Run the compiled executable:
+
+```terminal
+./index
+```
+
+You should see the same `Listening on http://localhost:3000` message, and your application will work exactly the same as before. The executable includes all dependencies and can be deployed to any compatible system without requiring Bun or Node.js to be installed.
+
+:::note
+
+Bun executables are useful for:
+
+- **Deployment**: Ship a single file instead of managing dependencies
+- **Distribution**: Share your application without requiring users to install Bun
+- **Performance**: Faster startup times compared to running TypeScript files
+- **Security**: Your source code is compiled and not easily readable
+
+:::
+
+## Next steps
+
+You can explore the [sample app here](https://pris.ly/bun-guide-example) to see what you will build by following this guide. If you would like to add caching to your application, check out [this example](https://pris.ly/bun_ppg_example).
+
+Now that you have a Bun application connected to a Prisma Postgres database, you can continue by:
+
+- Extending your Prisma schema with additional models and relationships
+- Implementing authentication and authorization
+- Adding input validation and error handling
+- Exploring Bun's built-in testing tools
+- Deploying your executable to production servers
+
+### More info
+
+- [Bun Documentation](https://bun.sh/docs)
+- [Prisma Config File](/orm/reference/prisma-config-reference)
+- [Prisma Client without the Rust engine](/orm/prisma-client/setup-and-configuration/no-rust-engine)
+- [Prisma Postgres](/postgres)

@@ -225,6 +225,17 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/prisma/docs/tree/main",
+          lastVersion: "current",
+          versions: {
+            current: {
+              label: "7.0",
+              path: "",
+            },
+            "6.0.0": {
+              label: "6.0",
+              path: "6.0",
+            },
+          },
         },
         blog: false,
         theme: {
@@ -324,6 +335,12 @@ const config: Config = {
               icon: "fa-regular fa-robot"
             },
           ],
+        },
+        {
+          type: "docsVersionDropdown",
+          position: "right",
+          // Only show v7 (current) and v6
+          versions: ["current", "6.0.0"],
         },
         {
           href: "https://pris.ly/github?utm_source=docs&utm_medium=navbar",

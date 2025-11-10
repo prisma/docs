@@ -1,0 +1,85 @@
+---
+title: 'Baseline with Prisma ORM, JavaScript, and CockroachDB'
+sidebar_label: 'Baseline your database'
+metaTitle: 'Baseline with Prisma ORM, JavaScript, and CockroachDB'
+metaDescription: 'Baseline your database with Prisma ORM, JavaScript, and CockroachDB'
+langSwitcher: ['typescript', 'node']
+dbSwitcher: ['postgresql', 'mysql', 'sqlserver', 'cockroachdb']
+hide_table_of_contents: true
+sidebar_class_name: hidden-sidebar
+pagination_prev: getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-node-cockroachdb
+pagination_next: getting-started/setup-prisma/add-to-existing-project/relational-databases/install-prisma-client-node-cockroachdb
+slugSwitch: /getting-started/setup-prisma/add-to-existing-project/relational-databases/baseline-your-database-
+---
+ 
+
+## Create an initial migration
+
+To use Prisma Migrate with the database you introspected in the last section, you will need to [baseline your database](/orm/prisma-migrate/getting-started).
+
+Baselining refers to initializing your migration history for a database that might already contain data and **cannot be reset**, such as your production database. Baselining tells Prisma Migrate to assume that one or more migrations have already been applied to your database.
+
+To baseline your database, use [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) to compare your schema and database, and save the output into a SQL file.
+
+First, create a `migrations` directory and add a directory inside with your preferred name for the migration. In this example, we will use `0_init` as the migration name:
+
+```terminal
+mkdir -p prisma/migrations/0_init
+```
+
+<Admonition type="info">
+
+`-p` will recursively create any missing folders in the path you provide.
+
+</Admonition>
+
+Next, generate the migration file with `prisma migrate diff`. Use the following arguments:
+
+- `--from-empty`: assumes the data model you're migrating from is empty
+- `--to-schema-datamodel`: the current database state using the URL in the `datasource` block
+- `--script`: output a SQL script
+
+```terminal wrap
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+```
+
+## Review the migration
+
+The command will generate a migration that should resemble the following script:
+
+```sql file=prisma/migrations/0_init/migration.sql
+CREATE TABLE "User" (
+  id INT8 PRIMARY KEY DEFAULT unique_rowid(),
+  name STRING(255),
+  email STRING(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE "Post" (
+  id INT8 PRIMARY KEY DEFAULT unique_rowid(),
+  title STRING(255) UNIQUE NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+  content STRING,
+  published BOOLEAN NOT NULL DEFAULT false,
+  "authorId" INT8 NOT NULL,
+  FOREIGN KEY ("authorId") REFERENCES "User"(id)
+);
+
+CREATE TABLE "Profile" (
+  id INT8 PRIMARY KEY DEFAULT unique_rowid(),
+  bio STRING,
+  "userId" INT8 UNIQUE NOT NULL,
+  FOREIGN KEY ("userId") REFERENCES "User"(id)
+);
+```
+
+Review the SQL migration file to ensure everything is correct.
+
+Next, mark the migration as applied using `prisma migrate resolve` with the `--applied` argument.
+
+```terminal
+npx prisma migrate resolve --applied 0_init
+```
+
+The command will mark `0_init` as applied by adding it to the `_prisma_migrations` table.
+
+You now have a baseline for your current database schema. To make further changes to your database schema, you can update your Prisma schema and use `prisma migrate dev` to apply the changes to your database.

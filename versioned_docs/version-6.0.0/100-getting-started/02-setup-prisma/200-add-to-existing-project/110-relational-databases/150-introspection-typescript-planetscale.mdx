@@ -1,0 +1,237 @@
+---
+title: 'Introspection for PlanetScale in a TypeScript project'
+sidebar_label:  'Introspection'
+metaTitle: 'Introspection with Prisma ORM, TypeScript, and PlanetScale'
+metaDescription: 'Introspect your existing project with Prisma ORM, TypeScript, and PlanetScale'
+langSwitcher: ['typescript', 'node']
+dbSwitcher: ['postgresql', 'mysql', 'sqlserver', 'planetscale', 'cockroachdb']
+hide_table_of_contents: true
+sidebar_class_name: hidden-sidebar
+pagination_prev: getting-started/setup-prisma/add-to-existing-project/relational-databases/connect-your-database-typescript-planetscale
+pagination_next: getting-started/setup-prisma/add-to-existing-project/relational-databases/install-prisma-client-typescript-planetscale
+slugSwitch: /getting-started/setup-prisma/add-to-existing-project/relational-databases/introspection-
+---
+
+
+## Introspect your database with Prisma ORM
+
+For the purpose of this guide, we'll use a demo SQL schema with three tables:
+
+```sql no-lines
+CREATE TABLE `Post` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `createdAt` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updatedAt` datetime(3) NOT NULL,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `published` tinyint(1) NOT NULL DEFAULT '0',
+  `authorId` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `Post_authorId_idx` (`authorId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Profile` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `bio` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `userId` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `Profile_userId_key` (`userId`),
+  KEY `Profile_userId_idx` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `User` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `User_email_key` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+<details>
+<summary>Expand for a graphical overview of the tables</summary>
+
+**Post**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `int`          | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `createdAt` | `datetime(3)`  | No          | No          | **✔️**   | `now()`            |
+| `updatedAt` | `datetime(3)`  | No          | No          | **✔️**   |                    |
+| `title`     | `varchar(255)` | No          | No          | **✔️**   | -                  |
+| `content`   | `varchar(191)` | No          | No          | No       | -                  |
+| `published` | `tinyint(1)`   | No          | No          | **✔️**   | `false`            |
+| `authorId`  | `int`          | No          | No          | **✔️**   | -                  |
+
+**Profile**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `int`          | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `bio`       | `varchar(191)` | No          | No          | No       | -                  |
+| `userId`    | `int`          | No          | No          | **✔️**   | -                  |
+
+**User**
+
+| Column name | Type           | Primary key | Foreign key | Required | Default            |
+| :---------- | :------------- | :---------- | :---------- | :------- | :----------------- |
+| `id`        | `int`          | **✔️**      | No          | **✔️**   | _autoincrementing_ |
+| `name`      | `varchar(191)` | No          | No          | No       | -                  |
+| `email`     | `varchar(191)` | No          | No          | **✔️**   | -                  |
+
+</details>
+
+As a next step, you will introspect your database. The result of the introspection will be a [data model](/orm/prisma-schema/data-model/models) inside your Prisma schema.
+
+Run the following command to introspect your database:
+
+```terminal copy
+npx prisma db pull
+```
+
+This command reads the `DATABASE_URL` environment variable that's defined in `.env` and connects to your database. Once the connection is established, it introspects the database (i.e. it _reads the database schema_). It then translates the database schema from SQL into a Prisma data model.
+
+After the introspection is complete, your Prisma schema is updated:
+
+![Introspect your database](/img/getting-started/prisma-db-pull-generate-schema.png)
+
+The data model now looks similar to this:
+
+```prisma file=prisma/schema.prisma showLineNumbers
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  title     String   @db.VarChar(255)
+  content   String?
+  published Boolean  @default(false)
+  authorId  Int
+
+  @@index([authorId])
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  userId Int     @unique
+
+  @@index([userId])
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+```
+
+:::info
+
+Refer to the [Prisma schema reference](/orm/reference/prisma-schema-reference) for detailed information about the schema definition.
+
+:::
+
+Prisma's data model is a declarative representation of your database schema and serves as the foundation for the generated Prisma Client library. Your Prisma Client instance will expose queries that are _tailored_ to these models.
+
+You will then need to add in any missing relations between your data using [relation fields](/orm/prisma-schema/data-model/relations#relation-fields):
+
+```prisma file=prisma/schema.prisma highlight=8,17,27,28;add showLineNumbers
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  title     String   @db.VarChar(255)
+  content   String?
+  published Boolean  @default(false)
+  //add-next-line
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+
+  @@index([authorId])
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  //add-next-line
+  user   User    @relation(fields: [userId], references: [id])
+  userId Int     @unique
+
+  @@index([userId])
+}
+
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  //add-start
+  posts   Post[]
+  profile Profile?
+  //add-end
+}
+```
+
+After this, run introspection on your database for a second time:
+
+```terminal copy
+npx prisma db pull
+```
+
+Prisma Migrate will now keep the manually added relation fields.
+
+Because relation fields are _virtual_ (i.e. they _do not directly manifest in the database_), you can manually rename them in your Prisma schema without touching the database.
+
+In this example, the database schema follows the [naming conventions](/orm/reference/prisma-schema-reference#naming-conventions) for Prisma ORM models. This optimizes the ergonomics of the generated Prisma Client API.
+
+<details>
+<summary> Using custom model and field names </summary>
+
+Sometimes though, you may want to make additional changes to the names of the columns and tables that are exposed in the Prisma Client API. A common example is to translate _snake_case_ notation which is often used in database schemas into _PascalCase_ and _camelCase_ notations which feel more natural for JavaScript/TypeScript developers.
+
+Assume you obtained the following model from introspection that's based on _snake_case_ notation:
+
+```prisma no-lines
+model my_user {
+  user_id    Int     @id @default(autoincrement())
+  first_name String?
+  last_name  String  @unique
+}
+```
+
+If you generated a Prisma Client API for this model, it would pick up the _snake_case_ notation in its API:
+
+```ts no-lines
+const user = await prisma.my_user.create({
+  data: {
+    first_name: 'Alice',
+    last_name: 'Smith',
+  },
+})
+```
+
+If you don't want to use the table and column names from your database in your Prisma Client API, you can configure them with [`@map` and `@@map`](/orm/prisma-schema/data-model/models#mapping-model-names-to-tables-or-collections):
+
+```prisma no-lines
+model MyUser {
+  userId    Int     @id @default(autoincrement()) @map("user_id")
+  firstName String? @map("first_name")
+  lastName  String  @unique @map("last_name")
+
+  @@map("my_user")
+}
+```
+
+With this approach, you can name your model and its fields whatever you like and use the `@map` (for field names) and `@@map` (for models names) to point to the underlying tables and columns. Your Prisma Client API now looks as follows:
+
+```ts no-lines
+const user = await prisma.myUser.create({
+  data: {
+    firstName: 'Alice',
+    lastName: 'Smith',
+  },
+})
+```
+
+Learn more about this on the [Configuring your Prisma Client API](/orm/prisma-client/setup-and-configuration/custom-model-and-field-names) page.
+
+</details>

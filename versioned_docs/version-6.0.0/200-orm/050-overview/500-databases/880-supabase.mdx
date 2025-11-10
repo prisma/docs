@@ -1,0 +1,85 @@
+---
+title: 'Supabase'
+metaTitle: 'Supabase'
+metaDescription: 'Guide to Supabase'
+tocDepth: 2
+toc: true
+---
+
+This guide discusses the concepts behind using Prisma ORM and Supabase, explains the commonalities and differences between Supabase and other database providers, and leads you through the process for configuring your application to integrate with Supabase.
+
+## What is Supabase?
+
+[Supabase](https://supabase.com/) is a PostgreSQL hosting service and open source Firebase alternative providing all the backend features you need to build a product. Unlike Firebase, Supabase is backed by PostgreSQL which can be accessed directly using Prisma ORM.
+
+To learn more about Supabase, you can check out their architecture [here](https://supabase.com/docs/guides/getting-started/architecture) and features [here](https://supabase.com/docs/guides/getting-started/features)
+
+## Commonalities with other database providers
+
+Many aspects of using Prisma ORM with Supabase are just like using Prisma ORM with any other relational database. You can still:
+
+- Model your database with the [Prisma Schema Language](/orm/prisma-schema)
+- Use Prisma ORM's existing [`postgresql` database connector](/orm/overview/databases/postgresql) in your schema, along with the [connection string Supabase provides you](https://supabase.com/docs/guides/database/connecting-to-postgres#connecting-to-external-libraries-and-tools)
+- Use [Introspection](/orm/prisma-schema/introspection) for existing projects if you already have a database schema in Supabase
+- Use [`db push`](/orm/prisma-migrate/workflows/prototyping-your-schema) to push changes in your schema to Supabase
+- Use [Prisma Client](/orm/prisma-client) in your application to talk to the database server at Supabase
+
+## Specific considerations
+
+If you'd like to use the [connection pooling feature](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooling-in-depth) available with Supabase, you will need to use the connection pooling connection string available via your [Supabase database settings](https://supabase.com/dashboard/project/_/settings/database) with `?pgbouncer=true` appended to the end of your `DATABASE_URL` environment variable:
+
+```env file=.env
+# Connect to Supabase via connection pooling with Supavisor.
+DATABASE_URL="postgres://postgres.[your-supabase-project]:[password]@aws-0-[aws-region].pooler.supabase.com:6543/postgres?pgbouncer=true"
+```
+
+Supabase provides three types of connection strings for each database:
+
+1. **Direct Database Connection string** – `postgresql://postgres:password@db.[your-project-ref].supabase.co:5432/postgres`
+
+2. **Transaction Pooler Connection string** – `postgresql://postgres.[your-project-ref]:password@aws-0-[region].pooler.supabase.com:6543/postgres`
+
+3. **Session Pooler Connection string** – `postgresql://postgres.[your-project-ref]:password@aws-0-[region].pooler.supabase.com:5432/postgres`
+
+If you would like to use the Prisma CLI in order to perform other actions on your database (e.g. migrations), your setup depends on the connection string used:
+
+- If your `DATABASE_URL` uses the Transaction Pooler (connection string 2), you must provide a `DIRECT_URL` with either the Direct Database (1) or Session Pooler (3) connection string in order for Prisma Migrate to work.
+
+- If your `DATABASE_URL` already uses the Session Pooler (connection string 3), you do not need to provide a `DIRECT_URL`. Prisma Migrate will work without it.
+
+```env file=.env highlight=4-5;add showLineNumbers
+# Connect to Supabase via connection pooling with Supavisor.
+DATABASE_URL="postgres://postgres.[your-supabase-project]:[password]@aws-0-[aws-region].pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+//add-start
+# Direct connection to the database. Used for migrations.
+DIRECT_URL="postgres://postgres.[your-supabase-project]:[password]@aws-0-[aws-region].pooler.supabase.com:5432/postgres"
+# or
+DIRECT_URL="postgresql://postgres:password@db.[your-project-ref].supabase.co:5432/postgres"
+//add-end
+```
+
+You can then update your `schema.prisma` to use the new direct URL:
+
+```prisma file=schema.prisma highlight=4;add showLineNumbers
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  //add-next-line
+  directUrl = env("DIRECT_URL")
+}
+```
+
+More information about the `directUrl` field can be found [here](/orm/reference/prisma-schema-reference#fields).
+
+<Admonition type="info">
+
+We strongly recommend using connection pooling with Supavisor in addition to `DIRECT_URL`. You will gain the great developer experience of the Prisma CLI while also allowing for connections to be pooled regardless of your deployment strategy. While this is not strictly necessary for every app, serverless solutions will inevitably require connection pooling.
+
+</Admonition>
+
+## Getting started with Supabase
+
+If you're interested in learning more, Supabase has a great guide for connecting a database provided by Supabase to your Prisma project available [here](https://supabase.com/partners/integrations/prisma).
+
+If you're running into issues integrating with Supabase, check out these [specific troubleshooting tips](https://supabase.com/partners/integrations/prisma) or [Prisma's GitHub Discussions](https://github.com/prisma/prisma/discussions) for more help.

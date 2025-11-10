@@ -1,0 +1,35 @@
+---
+title: 'Docs example data model'
+metaTitle: 'Prisma docs style guide: example data model'
+metaDescription: 'This page describes the data models we use in our documentation examples.'
+tocDepth: 3
+search: false
+---
+
+<TopBlock>
+
+`User` and `Post` are the canonical models that we use in our examples throughout the Prisma docs.
+
+</TopBlock>
+
+## The `User` and `Post` data model
+
+We chose the `User` and `Post` models for the following reasons:
+
+- They do not require domain-specific knowledge.
+- They are commonly used as an example in the ORM space. This makes them familiar for users coming from other tools.
+- Consistent models make it easier for the reader when learning about different concepts, because there will be less context switching.
+- Less decision making and cognitive overhead for the docs authors. Using the same models reduces decision fatigue and is one less thing to worry about when trying to explain concepts.
+
+## Naming conventions
+
+See the [naming conventions](/orm/reference/prisma-schema-reference#naming-conventions) for Prisma schemas.
+
+Use the following for table and column names:
+
+- Format table names in [PascalCase](https://en.wikipedia.org/wiki/PascalCase).
+- Format column names in [camelCase](https://en.wikipedia.org/wiki/Camel_case).
+
+## Standard SQL Dialect
+
+Throughout the Prisma docs, PostgreSQL's dialect of SQL is used as the standard. If the context of a particular section requires specifying multiple dialects, those may be made available via the technology switcher component (`SwitchTech`) or tabbed code blocks (`TabbedContent`).

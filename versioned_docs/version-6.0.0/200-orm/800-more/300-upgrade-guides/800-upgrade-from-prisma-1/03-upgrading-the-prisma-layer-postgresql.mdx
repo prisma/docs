@@ -1,0 +1,1331 @@
+---
+title: 'Upgrading the Prisma ORM layer (PostgreSQL)'
+sidebar_label: 'Upgrading the Prisma ORM layer'
+metaTitle: 'Upgrading the Prisma ORM layer to Prisma ORM 2 | PostgreSQL'
+metaDescription: 'Learn how to upgrade the Prisma ORM layer to Prisma ORM 2 and create your Prisma schema with PostgreSQL'
+dbSwitcher: ['postgresql', 'mysql']
+pagination_next: orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-nexus-prisma-to-nexus
+slugSwitch: /orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-
+---
+ 
+## Overview
+
+This page explains the first step of your upgrade process: Taking your Prisma 1 configuration and upgrading it to Prisma ORM 2. Concretely, you will learn how to:
+
+<details>
+<summary>Questions answered in this page</summary>
+
+- What are Prisma 1 → 2 schema incompatibilities?
+- How to resolve Postgres-specific differences?
+- How to use the upgrade CLI safely?
+
+</details>
+
+1. Add the Prisma ORM 2 CLI as a development dependency
+1. Create your Prisma ORM 2 schema
+1. Determine your connection URL and connect to your database
+1. Introspect your database (that was so far managed with Prisma 1)
+1. Use the [Prisma 1 Upgrade CLI](/orm/more/upgrade-guides/upgrade-from-prisma-1/how-to-upgrade#prisma-1-upgrade-cli) to resolve the [schema incompatibilities](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql) in the new Prisma ORM 2 data model
+1. Install and generate Prisma Client
+
+Once done with these steps, you can move on to the next guide that explains how you can upgrade the application layer to use Prisma Client for your database queries.
+
+> **Note**: During the upgrade process it can be helpful to get a graphical view on your database. It is therefore recommended to use a graphical database client to connect to your database, such as [TablePlus](https://tableplus.com/) or [Postico](https://eggerapps.at/postico/).
+
+## 1. Install Prisma ORM 2 CLI
+
+The Prisma ORM 2 CLI is available as the [`prisma`](https://www.npmjs.com/package/prisma) package on npm and is invoked via the `prisma` command.
+
+Note that the former `prisma` command for Prisma 1 has been renamed to `prisma1`. You can learn more about this [here](https://www.prisma.io/blog/prisma-2-beta-b7bcl0gd8d8e#renaming-the-prisma2-cli).
+
+You can install the Prisma ORM 2 CLI in your Node.js project as follows (be sure to invoke this command in the directory where your `package.json` is located):
+
+```terminal copy
+npm install prisma --save-dev
+```
+
+> **Note**: With Prisma 1, it was usually recommended to install the CLI globally. We now recommend to [install the Prisma CLI locally](/orm/tools/prisma-cli#installation) to prevent version conflicts.
+
+You can now use the local installation of the `prisma` CLI by prefixing it with `npx`:
+
+```terminal
+npx prisma
+```
+
+If you're upgrading your entire project [all at once](/orm/more/upgrade-guides/upgrade-from-prisma-1/how-to-upgrade#upgrade-strategies), you can now also uninstall the Prisma 1 CLI (otherwise expand below):
+
+```terminal
+# remove global installation
+npm uninstall -g prisma1
+
+# remove local installation
+npm uninstall prisma1
+```
+
+<br />
+
+<details>
+
+<summary>Expand if you want to keep using your Prisma 1 CLI side-by-side</summary>
+
+If you want to keep using the Prisma 1 CLI, it is recommend to remove your global installation of it and add the `prisma1` CLI as a development dependency:
+
+```terminal
+# installs v1.34 of the Prisma 1 CLI
+npm uninstall -g prisma
+npm install prisma1 --save-dev
+```
+
+You can now invoke it as follows:
+
+```terminal
+npx prisma1
+```
+
+Note that if you need a CLI version smaller than 1.34 (e.g. 1.30), you can install it as follows:
+
+```terminal
+# installs v1.30 of the Prisma 1 CLI
+npm uninstall -g prisma@1.30
+npm install prisma@1.30 --save-dev
+```
+
+You can now invoke it as follows:
+
+```terminal
+npx prisma
+```
+
+</details>
+
+## 2. Create your Prisma ORM 2 schema
+
+For this guide, you'll first create a new Prisma schema using the `prisma init` command and then "fill" it with a data model using [introspection](/orm/prisma-schema/introspection).
+
+Run the following command to create your Prisma schema (note that this throws an error if you already have a folder called `prisma`):
+
+```terminal copy
+npx prisma init
+```
+
+If you're seeing the following error, you need to rename your current `prisma` directory:
+
+```no-lines
+ERROR  A folder called prisma already exists in your project.
+       Please try again in a project that is not yet using Prisma.
+```
+
+You can rename the current `prisma` directory to `prisma1` to make it clear that this holds the former Prisma 1 configuration:
+
+```terminal copy
+mv prisma prisma1
+```
+
+Now you can run `init` and it will succeed:
+
+```terminal copy
+npx prisma init
+```
+
+It should print the following output:
+
+```no-lines wrap
+✔ Your Prisma schema was created at prisma/schema.prisma.
+  You can now open it in your favorite editor.
+
+Next steps:
+1. Set the `DATABASE_URL` in the `.env` file to point to your existing database. If your database has no tables yet, read https://pris.ly/d/getting-started
+2. Set the `provider` of your `datasource` block in `schema.prisma` to match your database: `postgresql`, `mysql` or `sqlite`.
+3. Run `prisma db pull` to turn your database schema into a Prisma data model.
+4. Run `prisma generate` to install Prisma Client. You can then start querying your database.
+
+More information in our documentation:
+https://pris.ly/d/getting-started
+```
+
+The command created a new folder called `prisma`, and two files:
+
+- `prisma/schema.prisma`: Your Prisma schema that specifies the [data source](/orm/prisma-schema/overview/data-sources), [generator](/orm/prisma-schema/overview/generators) and [data model](/orm/prisma-schema/data-model/models) (note that the data model doesn't exist yet, it will be generated via introspection).
+- `.env`: A [dotenv](https://github.com/motdotla/dotenv) file to configure your database [connection URL](/orm/reference/connection-urls).
+
+Your initial Prisma schema looks as follows:
+
+```prisma file=schema.prisma showLineNumbers
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+With Prisma 1, you specify which language variant of Prisma Client you wanted to use in your `prisma.yml`. With Prisma ORM 2, this information is now specified inside the Prisma schema via a `generator` block.
+
+> **Note**: Unlike Prisma 1, the TypeScript and JavaScript variants of Prisma Client 2.0 use the _same_ generator called `prisma-client-js`. The generated types in `index.d.ts` are _always_ included, even in plain JavaScript projects. This enables feature like autocompletion in VS Code even when not using TypeScript.
+
+## 3. Determine your connection URL and connect to your database
+
+With Prisma 1, the database connection is configured in the Docker Compose file that's used to launch the Prisma ORM server. The Prisma ORM server then exposes a GraphQL endpoint (via HTTP) that proxies all database requests from the Prisma Client application code. That HTTP endpoint is specified in your `prisma.yml`.
+
+With Prisma ORM 2, the HTTP layer isn't exposed any more and Prisma Client 2.0 is configured to run requests "directly" against the database (that is, requests are proxied by Prisma ORM's [query engine](/orm/more/under-the-hood/engines), but there isn't an extra server any more).
+
+So, as a next step you'll need to tell Prisma ORM 2 _what_ kind of database you use (MySQL or PostgreSQL) and _where_ it is located.
+
+First, you need to ensure that that `provider` field on the `datasource` block inside `schema.prisma` is configured to use the right database:
+
+- If you're using PostgreSQL, it needs to define the value `"postgresql"` in the `provider` field.
+- If you're using MySQL, it needs to define the value `"mysql"` in the `provider` field.
+
+Switch around with the tabs in the code block to see examples of both:
+
+<TabbedContent code>
+<TabItem value="PostgreSQL">
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+</TabItem>
+<TabItem value="MySQL">
+
+```prisma
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+```
+
+</TabItem>
+</TabbedContent>
+
+With the `provider` field set, you can go ahead and configure the connection URL inside the `.env` file.
+
+Assume the database configuration in your Docker Compose file that you used to deploy your Prisma ORM server looks as follows:
+
+```yml file=docker-compose.yml showLineNumbers
+PRISMA_CONFIG: |
+  port: 4466
+  databases:
+    default:
+      connector: postgres
+      host: postgres
+      port: 5432
+      user: prisma
+      password: prisma
+```
+
+Also assume your `endpoint` in `prisma.yml` is configured as follows:
+
+```yml file=prisma.yml
+endpoint: http://localhost:4466/myproject/dev
+```
+
+Based on these connection details, you need to configure the `DATABASE_URL` environment variable inside your `.env` file as follows:
+
+```bash file=.env
+DATABASE_URL="postgresql://janedoe:randompassword@localhost:5432/prisma?schema=myproject$dev"
+```
+
+Note that the `schema` argument is typically composed of your _service name_ and _service stage_ (which are part of the `endpoint` in `prisma.yml`), separated by the `$` character.
+
+Sometimes no service name and stage are specified in `prisma.yml`:
+
+```yml file=prisma.yml
+endpoint: http://localhost:4466/
+```
+
+In that case, the `schema` must be specified as follows:
+
+```bash file=.env
+DATABASE_URL="postgresql://janedoe:randompassword@localhost:5432/prisma?schema=default$default"
+```
+
+Learn more on the [Connection URLs](/orm/reference/connection-urls) page.
+
+## 4. Introspect your database
+
+For the purpose of this guide, we'll use the following Prisma 1 data model (select the **SQL** tab below to see what the data model maps to in SQL):
+
+<TabbedContent code>
+<TabItem value="Prisma 1 Data Model">
+
+```graphql
+type User {
+  id: ID! @id
+  email: String @unique
+  name: String!
+  role: Role! @default(value: CUSTOMER)
+  jsonData: Json
+  profile: Profile
+  posts: [Post!]!
+}
+
+type Post {
+  id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+  title: String!
+  content: String
+  published: Boolean! @default(value: false)
+  author: User @relation(link: TABLE)
+  categories: [Category!]!
+}
+
+type Profile {
+  id: ID! @id
+  bio: String
+  user: User! @relation(link: INLINE)
+}
+
+type Category {
+  id: ID! @id
+  name: String!
+  posts: [Post!]!
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+```
+
+</TabItem>
+<TabItem value="SQL">
+
+```sql
+CREATE TABLE"User" (
+    id character varying(25) PRIMARY KEY,
+    email text,
+    name text NOT NULL,
+    role text NOT NULL,
+    "jsonData" text
+);
+CREATE UNIQUE INDEX "User_pkey" ON"User"(id text_ops);
+CREATE UNIQUE INDEX "default$default.User.email._UNIQUE" ON"User"(email text_ops);
+
+CREATE TABLE"Post" (
+    id character varying(25) PRIMARY KEY,
+    title text NOT NULL,
+    published boolean NOT NULL,
+    "createdAt" timestamp(3) without time zone NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    content text
+);
+CREATE UNIQUE INDEX "Post_pkey" ON"Post"(id text_ops);
+
+CREATE TABLE"Profile" (
+    id character varying(25) PRIMARY KEY,
+    bio text,
+    user character varying(25) REFERENCES"User"(id) ON DELETE SET NULL
+);
+CREATE UNIQUE INDEX "Profile_pkey" ON"Profile"(id text_ops);
+
+CREATE TABLE"Category" (
+    id character varying(25) PRIMARY KEY,
+    name text NOT NULL
+);
+CREATE UNIQUE INDEX "Category_pkey" ON"Category"(id text_ops);
+
+CREATE TABLE"_PostToUser" (
+    "A" character varying(25) NOT NULL REFERENCES"Post"(id) ON DELETE CASCADE,
+    "B" character varying(25) NOT NULL REFERENCES"User"(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX "_PostToUser_AB_unique" ON"_PostToUser"("A" text_ops,"B" text_ops);
+CREATE INDEX "_PostToUser_B" ON"_PostToUser"("B" text_ops);
+
+CREATE TABLE"_CategoryToPost" (
+    "A" character varying(25) NOT NULL REFERENCES"Category"(id) ON DELETE CASCADE,
+    "B" character varying(25) NOT NULL REFERENCES"Post"(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX "_CategoryToPost_AB_unique" ON"_CategoryToPost"("A" text_ops,"B" text_ops);
+CREATE INDEX "_CategoryToPost_B" ON"_CategoryToPost"("B" text_ops);
+```
+
+</TabItem>
+</TabbedContent>
+
+Note that this data model has three [relations](/orm/prisma-schema/data-model/relations):
+
+- 1-1: `User` ↔ `Profile`
+- 1-n: `User` ↔ `Post` (maintained via the `_PostToUser` relation table)
+- m-n: `Post` ↔ `Category` (maintained via the `_CategoryToPost` relation table)
+
+Now you can run Prisma ORM's introspection against your database with the following command:
+
+```terminal copy
+npx prisma db pull
+```
+
+Here's a graphical illustration for what happens when `db pull` is invoked:
+
+![Introspect your database](/img/orm/prisma-db-pull-generate-schema.png)
+
+For the above Prisma 1 datamodel, this results in the following Prisma ORM 2 schema (note that the models have been reordered to match the initial order of the Prisma 1 datamodel):
+
+```prisma file=schema.prisma showLineNumbers
+model User {
+  id       String    @id @default(cuid())
+  email    String?   @unique
+  name     String
+  role     String
+  jsonData String?
+  Profile  Profile[]
+  Post     Post[]
+}
+
+model Post {
+  id        String     @id @default(cuid())
+  createdAt DateTime
+  updatedAt DateTime
+  title     String
+  content   String?
+  published Boolean
+  Category  Category[]
+  User      User[]
+}
+
+model Profile {
+  id   String  @id @default(cuid())
+  bio  String?
+  user String? @unique
+  User User?   @relation(fields: [user], references: [id])
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String
+  Post Post[]
+}
+```
+
+While this is already a valid Prisma ORM 2 schema, it lacks a number of _features_ that were part of its Prisma 1 equivalent:
+
+- no auto-generated date values for the `createdAt` and `updatedAt` fields on `Post`
+- no default value for the `role` field on `User`
+- no default value for the `published` field on `Post`
+
+There further are a number of inconsistencies which result in a less idiomatic/ergonomic Prisma Client API:
+
+- `User` ↔ `Profile` is a 1-n instead of 1-1 relation
+- `User` ↔ `Post` is a m-n instead of 1-n relation
+- relation fields are uppercased (e.g. `Profile` and `Post` on `User`)
+- the `jsonData` field on `User` is of type `String` instead of `Json`
+- the `role` field on `User` is of type `String` instead of `Role`, the `enum` definition for role is missing altogether
+
+While these inconsistencies don't actually impact the "feature set" you'll have available in your Prisma Client API, they make you lose certain constraints/guarantees that were present before.
+
+For example, Prisma ORM now won't guarantee that a `User` is connected to _at most_ one `Profile` because the relation between the tables was recognized as 1-n during introspection, so one `User` record _could_ now get connected to multiple `Profile` records.
+
+Another issue is that you can store whatever text for the `jsonData` and `role` fields, regardless of whether it's valid JSON or represents a value of the `Role` enum.
+
+To learn more about these inconsistencies check out the [Schema incompatibilities](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql) page.
+
+In the following, we'll go through these incompatibilities and fix them one by one using the Prisma schema upgrade CLI.
+
+## 5. Use the Prisma schema upgrade CLI to resolve schema incompatibilities
+
+The [Prisma 1 Upgrade CLI](/orm/more/upgrade-guides/upgrade-from-prisma-1/how-to-upgrade#prisma-1-upgrade-cli) is an interactive tool that helps you upgrading your Prisma schema and ironing out most of the inconsistencies listed above.
+
+The Prisma 1 Upgrade CLI works in two major phases:
+
+1. Fix the database schema via plain SQL
+1. Add missing attributes to the Prisma ORM 2 schema and other schema fixes
+
+During the first phase, it will generate and print a number of SQL statements that you should run against your database to adjust the database schema. You can either run all of the statements or a subset of them before continuing to the second phase.
+
+During the second phase, you don't need to do anything manually. The Upgrade CLI will make changes to your Prisma schema by adding certain Prisma ORM-level attributes (like `@default(cuid))` or `@updatedAt`), adjusting the names of relation fields to match the ones from your Prisma 1 datamodel and ensure 1-1-relations that were required on both sides in your Prisma 1 datamodel are also required in the Prisma ORM 2 schema.
+
+Note that **you can start over at any time during the process** and go back from the second to the first phase.
+
+In this illustration, the green area shows the first phase, the blue area shows the second phase. Note that you can optionally run `prisma db pull` in between the phases to update your Prisma ORM data model:
+
+![Fixing the schema incompatibilities](./images/fix-schema-incompatibilities.png)
+
+To use the Upgrade CLI, you can either install it locally in your project, or invoke it once without installation using `npx` as done here:
+
+```terminal copy
+npx prisma-upgrade prisma1/prisma.yml prisma/schema.prisma
+```
+
+The CLI will greet you with the following message:
+
+```no-lines wrap
+◮ Welcome to the interactive Prisma Upgrade CLI that helps with the
+upgrade process from Prisma 1 to Prisma ORM 2.
+
+Please read the docs to learn more about the upgrade process:
+https://pris.ly/d/how-to-upgrade
+
+➤ Goal
+The Upgrade CLI helps you resolve the schema incompatibilities
+between Prisma 1 and Prisma ORM 2. Learn more in the docs:
+https://pris.ly/d/schema-incompatibilities
+
+➤ How it works
+Throughout the process, you'll need to adjust your database schema by sending
+SQL statements to it. The SQL statements are provided by the Upgrade CLI.
+
+Note that the Upgrade CLI never makes changes to your database,
+you are in full control over any operations that are executed against it.
+
+You can stop and re-run the Upgrade CLI at any time.
+
+These are the different steps of the upgrade process:
+
+  1. The Upgrade CLI generates SQL commands for you to run on your database.
+  2. You run the SQL commands against your database.
+  3. You run the `npx prisma db pull` command again.
+  4. You run the `npx prisma-upgrade` command again.
+  5. The Upgrade CLI adjusts the Prisma ORM 2 schema by adding missing attributes.
+
+➤ Note
+It is recommended that you make a full backup of your existing data before starting
+the upgrade process. If possible, the migration should be performed in a staging
+environment before executed against a production environment.
+
+➤ Help
+If you have any questions or run into any problems along the way,
+please create an issue at:
+https://github.com/prisma/prisma1-upgrade/issues
+
+Are you ready? [Y/n]
+```
+
+Press the <kbd>Y</kbd> button, then confirm by hitting <kbd>RETURN</kbd> on your keyboard to continue.
+
+Once you confirmed, the CLI outputs the SQL statements you should be running against your database:
+
+```no-lines wrap
+➤ Adjust your database schema
+Run the following SQL statements against your database:
+
+  Fix columns with ENUM data types
+  https://pris.ly/d/schema-incompatibilities#enums-are-represented-as-text-in-database
+
+    CREATE TYPE "default$default"."Role" AS ENUM ('ADMIN', 'CUSTOMER');
+    ALTER TABLE "default$default"."User" ALTER COLUMN "role" SET DATA TYPE "default$default"."Role" using "role"::"default$default"."Role";
+
+
+  Add missing `DEFAULT` constraints to the database
+  https://pris.ly/d/schema-incompatibilities#default-values-arent-represented-in-database
+
+    ALTER TABLE "default$default"."User" ALTER COLUMN "role" SET DEFAULT 'CUSTOMER';
+    ALTER TABLE "default$default"."Post" ALTER COLUMN "published" SET DEFAULT false;
+
+
+  Fix columns with JSON data types
+  https://pris.ly/d/schema-incompatibilities#json-type-is-represented-as-text-in-database
+
+    ALTER TABLE "default$default"."User" ALTER COLUMN "jsonData" SET DATA TYPE JSONB USING "jsonData"::TEXT::JSONB;
+
+
+  Replicate `@createdAt` behavior in Prisma ORM 2
+  https://pris.ly/d/schema-incompatibilities#createdat-isnt-represented-in-database
+
+    ALTER TABLE "default$default"."Post" ALTER COLUMN "createdAt" SET DEFAULT CURRENT_TIMESTAMP;
+
+
+  Fix 1-1 relations by adding `UNIQUE` constraints
+  https://pris.ly/d/schema-incompatibilities#inline-1-1-relations-are-recognized-as-1-n-missing-unique-constraint
+
+    ALTER TABLE "default$default"."Profile" ADD UNIQUE ("user");
+
+
+  Migrate IDs from varchar(25) to varchar(30)
+  https://pris.ly/d/schema-incompatibilities#mismatching-cuid-length
+
+    ALTER TABLE "default$default"."Category" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+    ALTER TABLE "default$default"."Post" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+    ALTER TABLE "default$default"."Profile" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+    ALTER TABLE "default$default"."Profile" ALTER COLUMN "user" SET DATA TYPE character varying(30);
+    ALTER TABLE "default$default"."User" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+
+➤ Breaking changes detected
+
+In order to fully optimize your database schema, you'll need to run a few SQL
+statements that can break your Prisma 1 setup. Note that these changes are optional
+and if you are upgrading gradually and running Prisma 1 and Prisma ORM 2 side-by-side,
+you should not perform these changes yet. Instead, you can perform them whenever
+you are ready to completely remove Prisma 1 from your project.
+If you are upgrading all at once, you can safely perform these changes now.
+
+Learn more in the docs:
+https://pris.ly/d/how-to-upgrade'
+```
+
+> **Note**: If you're seeing the note about breaking changes, you can ignore it for now. We'll discuss it later.
+
+The shown SQL statements are categorized into a number of "buckets", all aiming to resolve a certain [schema incompatibility](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql):
+
+- Fix columns with ENUM data types
+- Add missing `DEFAULT` constraints to the database
+- Fix columns with JSON data types
+- Replicate `@createdAt` behavior in Prisma 2
+- Fix 1-1 relations by adding `UNIQUE` constraints
+
+As a next step, you can start sending the SQL statements to your database. Note that all of these changes are non-breaking and you'll be able to continue using Prisma 1 side-by-side with Prisma ORM 2.
+
+The next sections cover the different kinds of SQL statements to be sent to your database individually.
+
+### 5.1. Fix the database schema via plain SQL (non-breaking)
+
+In this section, we'll walk through the printed SQL statements and run them against the database one by one.
+
+### 5.1.1. Fix columns with ENUM data types
+
+The first thing the tool does is help you ensure that `enum` definitions in your Prisma 1 datamodel will be represented as actual `ENUM` types in the underlying database, right now they are represented as plain strings (e.g. as `MEDIUMTEXT` in MySQL).
+
+The CLI currently shows the following output:
+
+```no-lines wrap
+Fix columns with ENUM data types
+https://pris.ly/d/schema-incompatibilities#enums-are-represented-as-text-in-database
+
+  CREATE TYPE "default$default"."Role" AS ENUM ('ADMIN', 'CUSTOMER');
+  ALTER TABLE "default$default"."User" ALTER COLUMN "role" SET DATA TYPE "default$default"."Role" using "role"::"default$default"."Role";
+```
+
+> **⚠️ Warning**: If you are running Prisma 1 and Prisma ORM 2 [side-by-side](/orm/more/upgrade-guides/upgrade-from-prisma-1/how-to-upgrade#upgrade-strategies), these [SQL statements will break your Prisma 1 setup](https://github.com/prisma/prisma1-upgrade/issues/74). The docs will be updated to reflect this soon.
+
+Go ahead and run these statements against your database now.
+
+![Altering columns to use ENUM with SQL](./images/altering-columns-to-use-enum.png)
+
+### 5.1.2. Add missing `DEFAULT` constraints to the database
+
+Next, the Upgrade CLI helps you resolve the issue that [default values aren't represented in the database](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql#default-values-arent-represented-in-database) by generating SQL statements that add the respective `DEFAULT` constraints directly to the database.
+
+In this case, two `DEFAULT` constraints are missing which are suggested by the tool:
+
+```no-lines wrap
+Add missing `DEFAULT` constraints to the database
+https://pris.ly/d/schema-incompatibilities#default-values-arent-represented-in-database
+
+  ALTER TABLE "default$default"."User" ALTER COLUMN "role" SET DEFAULT 'CUSTOMER';
+  ALTER TABLE "default$default"."Post" ALTER COLUMN "published" SET DEFAULT false;
+```
+
+You can now run these SQL statements against your database either using a command line client or a GUI like Postico:
+
+![Adding missing `DEFAULT` constraints to columns](./images/add-missing-default-constraints-to-columns.png)
+
+### 5.1.3. Fix columns with JSON data types
+
+Next, the tool helps you ensure that `Json` fields in your Prisma 1 datamodel will be represented as `JSON` columns in the underlying database, right now they are represented as plain strings (e.g. as `MEDIUMTEXT` in MySQL).
+
+Changing the column type to `JSON` will ensure that the field is properly recognized as `Json` during Prisma ORM 2 introspection.
+
+The CLI currently shows the following output:
+
+```no-lines wrap
+Fix columns with JSON data types
+https://pris.ly/d/schema-incompatibilities#json-type-is-represented-as-text-in-database
+
+  ALTER TABLE "default$default"."User" ALTER COLUMN "jsonData" TYPE JSON  USING "jsonData"::json;
+```
+
+> **⚠️ Warning**: If you are running Prisma 1 and Prisma ORM 2 [side-by-side](/orm/more/upgrade-guides/upgrade-from-prisma-1/how-to-upgrade#upgrade-strategies), these [SQL statements will break your Prisma 1 setup](https://github.com/prisma/prisma1-upgrade/issues/73). The docs will be updated to reflect this soon.
+
+You can now run these SQL statements against your database either using a command line client or a GUI like Postico:
+
+![Adding missing `DEFAULT` constraints to columns](./images/fix-columns-with-json-data-types.png)
+
+
+### 5.1.4. Replicate `@createdAt` behavior in Prisma ORM 2
+
+The next thing the tools does is help you resolve the issue that the behavior of [`@createdAt` isn't represented in database](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql#default-values-arent-represented-in-database)
+
+The CLI currently shows the following output:
+
+```no-lines wrap
+Replicate `@createdAt` behavior in Prisma ORM 2.0
+https://pris.ly/d/schema-incompatibilities#createdat-isnt-represented-in-database
+
+  ALTER TABLE "default$default"."Post" ALTER COLUMN "createdAt" SET DEFAULT CURRENT_TIMESTAMP;
+```
+
+You can now run these SQL statements against your database either using a command line client or a GUI like Postico:
+
+![Running an SQL command to alter a column](./images/run-sql-command-to-alter-column.png)
+
+### 5.1.5. Fix 1-1 relations by adding `UNIQUE` constraints
+
+Now, the tool will help you [turn the current 1-n relation between `User` ↔ `Profile` back into a 1-1 relation](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql#inline-1-1-relations-are-recognized-as-1-n-missing-unique-constraint) by adding a `UNIQUE` constraint to the foreign key column called `user` (named after the relation field in the Prisma 1 datamodel) in the database.
+
+The CLI currently shows the following output:
+
+```no-lines wrap
+Fix 1-1 relations by adding `UNIQUE` constraints
+https://pris.ly/d/schema-incompatibilities#inline-1-1-relations-are-recognized-as-1-n-missing-unique-constraint
+
+  ALTER TABLE "default$default"."Profile" ADD UNIQUE ("user");
+```
+
+You can now run these SQL statements against your database either using a command line client or a GUI like Postico:
+
+![Running an SQL command to alter a column](./images/run-sql-command-to-alter-column.png)
+
+### 5.1.6. Fix mismatch of CUID length
+
+> **Note**: These SQL statements will keep appearing in the Upgrade CLI even after you have changed the column types in the underlying database. This is a currently a limitation in the Upgrade CLI.
+
+Finally, the tool will help you [turn the current ID columns of type `VARCHAR(25)` into `VARCHAR(30)`](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql#mismatching-cuid-length) by adding a `UNIQUE` constraint to the foreign key column called `user` (named after the relation field in the Prisma 1 datamodel) in the database.
+
+The CLI currently shows the following output:
+
+```no-lines wrap wrap
+Migrate IDs from varchar(25) to varchar(30)
+https://pris.ly/d/schema-incompatibilities#mismatching-cuid-length
+
+  ALTER TABLE "default$default"."Category" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+  ALTER TABLE "default$default"."Post" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+  ALTER TABLE "default$default"."Profile" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+  ALTER TABLE "default$default"."Profile" ALTER COLUMN "user" SET DATA TYPE character varying(30);
+  ALTER TABLE "default$default"."User" ALTER COLUMN "id" SET DATA TYPE character varying(30);
+```
+
+You can now run these SQL statements against your database either using a command line client or a GUI like Postico:
+
+![Running an SQL command to alter a column](./images/run-sql-command-to-alter-column.png)
+
+### 5.1.7. Breaking changes detected
+
+In case the Upgrade CLI has printed a note about breaking changes, your database schema needs some adjustments that will break Prisma 1 compatibility in order to be fully optimized.
+
+If there are no breaking changes detected, you can [skip forward to section 5.2](#52-re-introspect-your-database-to-update-your-prisma-schema)
+
+Depending on your [upgrade strategy](/orm/more/upgrade-guides/upgrade-from-prisma-1/how-to-upgrade#upgrade-strategies), you can either perform these changes now or skip to the next phase of the Upgrade CLI:
+
+- If you are following the gradual side-by-side upgrade strategy, do not perform these changes yet since they will break your Prisma 1 setup. In that case, you can continue to the next phase of the Upgrade CLI by typing <kbd>n</kbd> and hitting <kbd>RETURN</kbd>.
+- If you are following the all at once upgrade strategy, you can perform these changes now. In that case, continue by typing <kbd>Y</kbd> and hitting <kbd>RETURN</kbd>.
+
+### 5.2. Fix the database schema via plain SQL (breaking)
+
+In this section, you'll resolve the schema incompatibilities that are breaking your Prisma 1 setup. Do not perform these changes if you are still running Prisma 1 in your project!
+
+### 5.2.1. Fix incorrect m-n relations
+
+Now, the Upgrade CLI helps you fix all 1-1 and 1-n relations that Prisma 1 represents with relation tables and that [currently only exist as m-n relations](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql#all-non-inline-relations-are-recognized-as-m-n) in your new Prisma ORM 2 schema. Concretely, this is the case for the `User` ↔ `Post` relation which currently is defined as m-n but _should_ really be a 1-n relation.
+
+To fix this, you'll need to perform the following migration:
+
+1. Create a new foreign key column on `Post` to link directly to the `User` table.
+1. Migrate the foreign key values from the relation table into the new foreign key column on `Post`.
+1. Delete the relation table.
+
+These instructions are now printed by the CLI:
+
+```no-lines wrap
+➤ Adjust your database schema
+Run the following SQL statements against your database:
+
+  Fix one-to-many table relations
+  https://pris.ly/d/schema-incompatibilities#all-non-inline-relations-are-recognized-as-m-n
+
+    ALTER TABLE "default$default"."Post" ADD COLUMN "authorId" character varying(25) ;
+    ALTER TABLE "default$default"."Post" ADD CONSTRAINT "author" FOREIGN KEY ("authorId") REFERENCES "default$default"."User"("id");
+    UPDATE "default$default"."Post" SET "authorId" = "default$default"."_PostToUser"."B" FROM "default$default"."_PostToUser" WHERE "default$default"."_PostToUser"."A" = "default$default"."Post"."id";
+    DROP TABLE "default$default"."_PostToUser";
+
+
+➤ Next Steps
+
+After you executed one or more of the previous SQL statements against your database,
+please run the following two commands to refresh your Prisma ORM 2 schema and check
+the changes.
+
+  1. Run `npx prisma db pull` again to refresh your Prisma ORM 2 schema.
+  2. Run `npx prisma-upgrade` again.
+
+If you can't or don't want to execute the remaining SQL statements right now, you can
+skip to the last step where the Upgrade CLI adds missing attributes to your Prisma ORM 2
+schema that are not picked up by introspection.
+
+Skip to the last step? [Y/n]?
+```
+
+For this fix, you'll need to run three SQL statements:
+
+1. Create new column `authorId` on the `Post` table. This column should be a _foreign key_ that references the `id` field of the `User` table:
+   ```sql no-lines
+   ALTER TABLE `Post` ADD COLUMN `authorId` VARCHAR(25);
+   ALTER TABLE `Post` ADD FOREIGN KEY (`authorId`) REFERENCES `User` (`id`);
+   ```
+1. Write a SQL query that reads all the rows from the `_PostToUser` relation table and for each row:
+   1. Finds the respective `Post` record by looking up the value from column `A`
+   1. Inserts the value from column `B` as the value for `authorId` into that `Post` record
+   ```sql no-lines
+   UPDATE Post, _PostToUser
+   SET Post.authorId = _PostToUser.B
+   WHERE Post.id = _PostToUser.A
+   ```
+1. Delete the `_PostToUser` relation table
+   ```sql no-lines
+   DROP TABLE `_PostToUser`;
+   ```
+
+![Fixing incorrect m-n relations with SQL](./images/fix-incorrect-m-n-relations-sql.png)
+
+After these commands, the user ID values of the records from column `B` of the relation table are migrated to the new `authorId` column.
+
+### 5.2. Re-introspect your database to update your Prisma schema
+
+At this point, you've resolved the schema incompatibilities with the Upgrade CLI. You can now exit the Upgrade CLI for now by typing <kbd>n</kbd> and hitting <kbd>RETURN</kbd>.
+
+In this section, you'll update your Prisma schema with another introspection round. This time, the previous flaws of the Prisma schema will be resolved because the database schema has been adjusted:
+
+```terminal copy
+npx prisma db pull
+```
+
+This time, the resulting Prisma schema looks as follows:
+
+```prisma file=schema.prisma showLineNumbers
+model User {
+  id       String   @id
+  name     String
+  email    String?  @unique
+  jsonData Json?
+  role     Role     @default(CUSTOMER)
+  Post     Post[]
+  Profile  Profile?
+}
+
+model Post {
+  id        String     @id
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  title     String
+  content   String?
+  published Boolean    @default(false)
+  authorId  String?
+  User      User?      @relation(fields: [authorId], references: [id])
+  Category  Category[] @relation(references: [id])
+}
+
+model Category {
+  id   String @id
+  name String
+  Post Post[] @relation(references: [id])
+}
+
+model Profile {
+  bio  String?
+  id   String  @id
+  user String? @unique
+  User User?   @relation(fields: [user], references: [id])
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+```
+
+This schema has most issues resolved, but it still lacks the following:
+
+### 5.2. Add missing attributes to the Prisma 2 schema and other schema fixes
+
+The CLI now prints the following:
+
+``` wrap
+➤ What happens next
+As a last step, some final adjustments will be made to your Prisma ORM 2 schema
+to carry over some Prisma ORM-level attributes that aren't picked up by introspection.
+
+As a last step, some final adjustments will be made to your Prisma ORM 2.0
+schema to carry over some Prisma ORM-level attributes that aren't picked
+up by introspection.
+
+Warning
+Your current Prisma ORM 2.0 schema will be overwritten, so please
+make sure you have a backup!
+
+Are you ready? [Y/n]
+```
+
+At this point, you either ran all the SQL statement that were printed by the CLI or you skipped some of them. Either way, you can now move on the last step and let the Upgrade CLI add the missing Prisma ORM 2 attributes. Typically these are the following:
+
+- `@default(cuid())` for your `@id` fields
+- `@updatedAt` for any fields that were using this attribute in Prisma 1
+- `@map` and `@@map` as replacements for `@db` and `@@db` from Prisma 1
+
+In that step, the Upgrade CLI also fixes other issues that occurred in the transition to Prisma ORM 2:
+
+- it makes sure that 1-1-relations that were required on both sides in Prisma 1 are also required in your Prisma ORM 2 schema
+- it renames relation fields to the same names they had in your Prisma 1 datamodel ([coming soon](https://github.com/prisma/prisma1-upgrade/issues/25))
+
+To apply these changes, you can re-run the Upgrade CLI:
+
+```terminal copy
+npx prisma-upgrade prisma1/prisma.yml prisma/schema.prisma
+```
+
+If you did not resolve all schema incompatibilities, the Upgrade CLI now prints the remaining SQL statements (as well as the ones for migrating IDs). You can just ignore them at this point and continue to the last step by continuously typing <kbd>Y</kbd> and hitting <kbd>RETURN</kbd> when prompted.
+
+If you did resolve all schema incompatibilities, no SQL statements will be printed and the Upgrade CLI only outputs the following:
+
+```no-lines wrap
+$ npx prisma-upgrade prisma1/prisma.yml prisma/schema.prisma
+
+➤ Next Steps
+
+After you executed one or more of the previous SQL statements against your database,
+please run the following two commands to refresh your Prisma ORM 2 schema and check
+the changes.
+
+  1. Run `npx prisma db pull` again to refresh your Prisma ORM 2 schema.
+  2. Run `npx prisma-upgrade` again.
+
+If you can't or don't want to execute the remaining SQL statements right now, you can
+skip to the last step where the Upgrade CLI adds missing attributes to your Prisma ORM 2
+schema that are not picked up by introspection.
+
+Skip to the last step? [Y/n]?
+```
+
+One more time, type <kbd>Y</kbd> and hit <kbd>RETURN</kbd> to confirm.
+
+The final prompt of the Upgrade CLI now asks you to confirm the above mentioned changes it will make to your Prisma schema:
+
+```no-lines wrap
+➤ What happens next
+As a last step, some final adjustments will be made to your Prisma ORM 2 schema
+to carry over some Prisma ORM-level attributes that aren't picked up by introspection.
+
+As a last step, some final adjustments will be made to your Prisma ORM 2.0
+schema to carry over some Prisma ORM-level attributes that aren't picked
+up by introspection.
+
+Warning
+Your current Prisma ORM 2.0 schema will be overwritten, so please
+make sure you have a backup!
+
+Are you ready? [Y/n]
+```
+
+One last time, type <kbd>Y</kbd> and hit <kbd>RETURN</kbd> to confirm.
+
+This is the final output of the Upgrade CLI:
+
+```no-lines
+Updating prisma/schema.prisma...
+Done updating prisma/schema.prisma!
+
+✔ Congratulations, you're all set!
+
+➤ Note
+If you didn't execute all generated SQL commands against your database,
+you can re-run the Upgrade CLI at any time.
+
+Note that the Upgrade CLI doesn't resolve all of the schema incompatibilities
+between Prisma 1 and Prisma ORM 2. If you want to resolve the remaining ones,
+you can do so manually by following this guide:
+https://pris.ly/d/upgrading-the-prisma-layer
+
+➤ Next steps
+Otherwise you can continue your upgrade process by installing Prisma Client 2:
+npm install @prisma/client
+
+You can find guides for different upgrade scenarios in the docs:
+https://pris.ly/d/upgrade-from-prisma-1
+```
+
+### 5.3. Final result
+
+The final version of the Prisma schema should look as follows:
+
+```prisma file=schema.prisma showLineNumbers
+model User {
+  id       String   @id @default(cuid())
+  name     String
+  email    String?  @unique
+  jsonData Json?
+  role     Role     @default(CUSTOMER)
+  Post     Post[]
+  Profile  Profile?
+}
+
+model Post {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  title     String
+  content   String?
+  published Boolean    @default(false)
+  authorId  String?
+  User      User?      @relation(fields: [authorId], references: [id])
+  Category  Category[] @relation(references: [id])
+}
+
+model Profile {
+  id   String  @id @default(cuid())
+  bio  String?
+  user String? @unique
+  User User?   @relation(fields: [user], references: [id])
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String
+  Post Post[] @relation(references: [id])
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+```
+
+### 5.4. Rename relation fields
+
+One thing you'll notice with this version of the Prisma ORM 2 schema is that all [relation fields](/orm/prisma-schema/data-model/relations#relation-fields) are named after their respective models, e.g:
+
+```prisma file=schema.prisma showLineNumbers
+model User {
+  Post    Post[]
+  Profile Profile?
+}
+
+model Post {
+  User     User?      @relation(fields: [authorId], references: [id])
+  Category Category[] @relation(references: [id])
+}
+
+model Profile {
+  User User? @relation(fields: [user], references: [id])
+}
+
+model Category {
+  Post Post[] @relation(references: [id])
+}
+```
+
+This is not ideal and you can in fact manually rename all of them to their previous versions!
+
+Because all relation fields are _virtual_, meaning they don't _manifest_ in the database, you can name them whatever you like. In this case, all relation fields are lowercased and sometimes pluralized.
+
+Here's what they look like after the rename:
+
+```prisma file=schema.prisma showLineNumbers
+model User {
+  posts   Post[]
+  profile Profile?
+}
+
+model Post {
+  author     User?      @relation(fields: [authorId], references: [id])
+  categories Category[] @relation(references: [id])
+}
+
+model Profile {
+  user  String? @unique
+  owner User?   @relation(fields: [user], references: [id])
+}
+
+model Category {
+  posts Post[] @relation(references: [id])
+}
+```
+
+> **Note**: For the 1-1-relation between `User` and `Profile` it was not possible to set the old name `user` for the relation field. This is because there'd be a naming conflict with the already existing [relation scalar](/orm/prisma-schema/data-model/relations#annotated-relation-fields) field that holds the foreign key. In that case, you can choose a different name or alternatively rename the foreign key column directly in the database via SQL.
+
+### 5.5. Resolving remaining schema incompatibilities
+
+There are a few schema incompatibilities that were not yet resolved by the Upgrade CLI. At this point you still haven't fixed [scalar lists](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql#scalar-lists-arrays-are-maintained-with-extra-table). You can find the recommended workarounds for this and others on the [Schema incompatibilities](/orm/more/upgrade-guides/upgrade-from-prisma-1/schema-incompatibilities-postgresql) page.
+
+## 6. Install and generate Prisma Client
+
+Now that you have your Prisma ORM 2 schema ready, you can install Prisma Client with the following command:
+
+```terminal copy
+npm install @prisma/client
+```
+
+## 7. Next steps
+
+Congratulations, you have now upgraded your Prisma ORM layer to Prisma ORM 2! From here on, you can move on to update your application code using one of the following guides:
+
+- [Old to new Nexus](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-nexus-prisma-to-nexus): Choose this guide if you're currently running Prisma 1 with GraphQL Nexus.
+- [prisma-binding to Nexus](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-prisma-binding-to-nexus): Choose this guide if you're currently running Prisma 1 with `prisma-binding` and want to upgrade to [Nexus](https://nexusjs.org/) (and TypeScript).
+- [prisma-binding to SDL-first](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-prisma-binding-to-sdl-first): Choose this guide if you're currently running Prisma 1 with `prisma-binding` and want to upgrade to an [SDL-first](https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3) GraphQL server.
+- [REST API](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-a-rest-api): Choose this guide if you're currently running Prisma 1 using Prisma Client 1 and are building a REST API.
+
+## Bonus: Prisma Client API comparison
+
+This section contains a high-level and side-by-side comparison of the Prisma Client APIs of Prisma 1 and Prisma ORM 2. For more details about the new Prisma Client API, you can explore the [Prisma Client](/orm/prisma-client) docs.
+
+### Reading single records
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts 
+const user = await prisma.user({ id: 1 })
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.findUnique({
+  where: { id: 1 },
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Reading lists of records
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+const user = await prisma.users()
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.findMany()
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Filtering lists
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+const users = await prisma.users({
+  where: {
+    name: 'Alice',
+  },
+})
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.findMany({
+  where: {
+    name: 'Alice',
+  },
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Paginating lists
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+const posts = await prisma.posts({
+  skip: 5,
+  first: 10,
+})
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.findMany({
+  skip: 5,
+  take: 10,
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+> **Note**: You can learn more about the new pagination API in the respective [release notes](https://github.com/prisma/prisma/releases/tag/2.0.0-beta.7) or the [Pagination](/orm/prisma-client/queries/pagination) page in the docs.
+
+### Sorting lists
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+await prisma.posts({
+  orderBy: 'title_ASC',
+})
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.posts({
+  orderBy: {
+    title: 'asc',
+  },
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Creating records
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+await prisma.createUser({
+  name: 'Alice',
+})
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.create({
+  data: {
+    name: 'Alice',
+  },
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Updating records
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+await prisma.updateUser({
+  where: { id: 1 },
+  data: {
+    name: 'James',
+    email: 'james@prisma.io',
+  },
+})
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.update({
+  where: { id: 1 },
+  data: {
+    name: 'James',
+    email: 'james@prisma.io',
+  },
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Deleting records
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+await prisma.deleteUser({ id: 1 })
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.delete({
+  where: { id: 1 },
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+### Selecting fields & loading relations
+
+In Prisma 1, the only ways to select specific fields and/or load relations of an object was by using the string-based `$fragment` and `$graphql` functions. With Prisma ORM 2, this is now done in a clean and type-safe manner using [`select`](/orm/prisma-client/queries/select-fields#select-specific-fields) and [`include`](/orm/prisma-client/queries/select-fields#return-nested-objects-by-selecting-relation-fields).
+
+Another benefit of this approach is that you can use `select` and `include` on _any_ Prisma Client query, e.g. `findUnique()`, `findMany`, `create`, `update`, `delete`, ...
+
+<ParallelBlocks>
+
+<block content="Prisma Client (v1)">
+
+```ts
+await prisma.user({ id: 1 }).$fragment(`
+  fragment NameAndEmail on User { id email }`
+`)
+```
+
+</block>
+
+<block content="Prisma Client (v2)">
+
+```ts
+await prisma.user.findUnique({
+  where: { id: 1 },
+  select: {
+    id: true,
+    email: true,
+  },
+})
+```
+
+</block>
+
+</ParallelBlocks>
+
+As an example, creating a new record and only retrieving the `id` in the returned object was not possible in Prisma 1. With Prisma ORM 2 you can achieve this as follows:
+
+```ts
+await prisma.user.create({
+  data: {
+    name: 'Alice',
+  },
+  select: {
+    id: true,
+  },
+})
+```

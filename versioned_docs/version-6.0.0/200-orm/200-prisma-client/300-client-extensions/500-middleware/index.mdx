@@ -1,0 +1,193 @@
+---
+title: 'Middleware'
+metaTitle: 'Middleware (Reference)'
+metaDescription: 'Prisma Client middleware allows you to perform actions before or after any query on any model with the prisma.$use method.'
+---
+
+<TopBlock>
+
+<Admonition type="warning">
+
+**Middleware has been removed in [v6.14.0](https://pris.ly/release/6.14.0)** and had been deprecated since [v4.16.0](https://github.com/prisma/prisma/releases/tag/4.16.0).
+
+We recommend using the [Prisma Client extensions `query` component type](/orm/prisma-client/client-extensions/query) as an alternative to middleware. Prisma Client extensions were first introduced into Preview in version 4.7.0 and made Generally Available in 4.16.0.
+
+Prisma Client extensions allow you to create independent Prisma Client instances and bind each client to a specific filter or user. For example, you could bind clients to specific users to provide user isolation. Prisma Client extensions also provide end-to-end type safety.
+
+</Admonition>
+
+Middlewares act as query-level lifecycle hooks, which allow you to perform an action before or after a query runs. Use the [`prisma.$use`](/orm/reference/prisma-client-reference#use) method to add middleware, as follows:
+
+```ts highlight=4-9,12-17;normal
+const prisma = new PrismaClient()
+
+// Middleware 1
+//highlight-start
+prisma.$use(async (params, next) => {
+  // Manipulate params here
+  const result = await next(params)
+  // See results here
+  return result
+})
+//highlight-end
+
+// Middleware 2
+//highlight-start
+prisma.$use(async (params, next) => {
+  // Manipulate params here
+  const result = await next(params)
+  // See results here
+  return result
+})
+//highlight-end
+
+// Queries here
+```
+
+<Admonition type="warning">
+
+Do not invoke `next` multiple times within a middleware when using [batch transactions](/orm/prisma-client/queries/transactions#sequential-prisma-client-operations). This will cause you to break out of the transaction and lead to unexpected results.
+
+</Admonition>
+
+[`params`](/orm/reference/prisma-client-reference#params) represent parameters available in the middleware, such as the name of the query, and [`next`](/orm/reference/prisma-client-reference#next) represents [the next middleware in the stack _or_ the original Prisma Client query](#running-order-and-the-middleware-stack).
+
+Possible use cases for middleware include:
+
+- Setting or overwriting a field value - for example, [setting the context language of a blog post comment](/orm/prisma-client/client-extensions/middleware/session-data-middleware)
+- Validating input data - for example, check user input for inappropriate language via an external service
+- Intercept a `delete` query and change it to an `update` in order to perform a [soft delete](/orm/prisma-client/client-extensions/middleware/soft-delete-middleware)
+- [Log the time taken to perform a query](/orm/prisma-client/client-extensions/middleware/logging-middleware)
+
+There are many more use cases for middleware - this list serves as inspiration for the types of problems that middleware is designed to address.
+
+</TopBlock>
+
+## Samples
+
+The following sample scenarios show how to use middleware in practice:
+
+<Subsections />
+
+## Where to add middleware
+
+Add Prisma Client middleware **outside the context of the request handler**, otherwise each request adds a new _instance_ of the middleware to the stack. The following example demonstrates where to add Prisma Client middleware in the context of an Express app:
+
+```ts highlight=6-11;normal
+import express from 'express'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+//highlight-start
+prisma.$use(async (params, next) => {
+  // Manipulate params here
+  const result = await next(params)
+  // See results here
+  return result
+})
+//highlight-end
+
+const app = express()
+app.get('/feed', async (req, res) => {
+  // NO MIDDLEWARE HERE
+  const posts = await prisma.post.findMany({
+    where: { published: true },
+    include: { author: true },
+  })
+  res.json(posts)
+})
+```
+
+## Running order and the middleware stack
+
+If you have multiple middlewares, the running order for **each separate query** is:
+
+1. All logic **before** `await next(params)` in each middleware, in descending order
+2. All logic **after** `await next(params)` in each middleware, in ascending order
+
+Depending on where you are in the stack, `await next(params)` either:
+
+- Runs the next middleware (in middlewares #1 and #2 in the example) _or_
+- Runs the original Prisma Client query (in middleware #3)
+
+```ts
+const prisma = new PrismaClient()
+
+// Middleware 1
+prisma.$use(async (params, next) => {
+  console.log(params.args.data.title)
+  console.log('1')
+  const result = await next(params)
+  console.log('6')
+  return result
+})
+
+// Middleware 2
+prisma.$use(async (params, next) => {
+  console.log('2')
+  const result = await next(params)
+  console.log('5')
+  return result
+})
+
+// Middleware 3
+prisma.$use(async (params, next) => {
+  console.log('3')
+  const result = await next(params)
+  console.log('4')
+  return result
+})
+
+const create = await prisma.post.create({
+  data: {
+    title: 'Welcome to Prisma Day 2020',
+  },
+})
+
+const create2 = await prisma.post.create({
+  data: {
+    title: 'How to Prisma!',
+  },
+})
+```
+
+Output:
+
+```no-lines
+Welcome to Prisma Day 2020
+1
+2
+3
+4
+5
+6
+How to Prisma!
+1
+2
+3
+4
+5
+6
+```
+
+## Performance and appropriate use cases
+
+Middleware executes for **every** query, which means that overuse has the potential to negatively impact performance. To avoid adding performance overheads:
+
+- Check the `params.model` and `params.action` properties early in your middleware to avoid running logic unnecessarily:
+
+  ```ts
+  prisma.$use(async (params, next) => {
+    if (params.model == 'Post' && params.action == 'delete') {
+      // Logic only runs for delete action and Post model
+    }
+    return next(params)
+  })
+  ```
+
+- Consider whether middleware is the appropriate solution for your scenario. For example:
+
+  - If you need to populate a field, can you use the [`@default`](/orm/reference/prisma-schema-reference#default) attribute?
+  - If you need to set the value of a `DateTime` field, can you use the `now()` function or the `@updatedAt` attribute?
+  - If you need to perform more complex validation, can you use a `CHECK` constraint in the database itself?

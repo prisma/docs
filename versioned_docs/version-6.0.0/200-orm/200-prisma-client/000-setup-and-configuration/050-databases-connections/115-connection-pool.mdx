@@ -1,0 +1,244 @@
+---
+title: Connection pool
+metaDescription: Prisma ORM's query engine creates a connection pool to store and manage database connections.
+tocDepth: 4
+toc_max_heading_level: 4
+---
+
+The query engine manages a **connection pool** of database connections. The pool is created when Prisma Client opens the _first_ connection to the database, which can happen in one of two ways:
+
+- By [explicitly calling `$connect()`](/orm/prisma-client/setup-and-configuration/databases-connections/connection-management#connect) _or_
+- By running the first query, which calls `$connect()` under the hood
+
+Relational database connectors use Prisma ORM's own connection pool, and the MongoDB connectors uses the [MongoDB driver connection pool](https://github.com/mongodb/specifications/blob/master/source/connection-monitoring-and-pooling/connection-monitoring-and-pooling.rst).
+
+<details>
+<summary>Questions answered in this page</summary>
+
+- How do I size Prisma's connection pool?
+- How do I set pool timeouts and limits?
+- When should I use PgBouncer with Prisma?
+
+</details>
+
+:::note
+
+As of [v6.16.0](https://pris.ly/release/6.16.0), Prisma ORM can be used without Rust engines in production applications. Learn more [here](/orm/prisma-client/setup-and-configuration/no-rust-engine).
+
+**When enabled, your Prisma Client will be generated without a Rust-based query engine binary**:
+
+```prisma
+generator client {
+  provider   = "prisma-client-js" // or "prisma-client"
+  output     = "../src/generated/prisma"
+  engineType = "client"           // no Rust engine
+}
+```
+
+Note that [driver adapters](/orm/overview/databases/database-drivers#driver-adapters) are required if you want to use Prisma ORM without Rust engines. In this scenario, the connection pool is maintained by the native JS database driver you're using.
+
+You can [read about the performance and DX improvements](https://www.prisma.io/blog/prisma-orm-without-rust-latest-performance-benchmarks) of this change on our blog.
+
+:::
+
+
+## Relational databases
+
+The relational database connectors use Prisma ORM's connection pool. The connection pool has a **connection limit** and a **pool timeout**, which are controlled by connection URL parameters.
+
+### How the connection pool works
+
+The following steps describe how the query engine uses the connection pool:
+
+1. The query engine instantiates a connection pool with a [configurable pool size](#setting-the-connection-pool-size) and [pool timeout](#setting-the-connection-pool-timeout).
+1. The query engine creates one connection and adds it to the connection pool.
+1. When a query comes in, the query engine reserves a connection from the pool to process query.
+1. If there are no idle connections available in the connection pool, the query engine opens additional database connections and adds them to the connection pool until the number of database connections reaches the limit defined by `connection_limit`.
+1. If the query engine cannot reserve a connection from the pool, queries are added to a FIFO (First In First Out) queue in memory. FIFO means that queries are processed in the order they enter the queue.
+1. If the query engine cannot process a query in the queue for **before the [time limit](#default-pool-timeout)**, it throws an exception with error code `P2024` for that query and moves on to the next one in the queue.
+
+If you consistently experience pool timeout errors, you need to [optimize the connection pool](/orm/prisma-client/setup-and-configuration/databases-connections#optimizing-the-connection-pool) .
+
+### Connection pool size
+
+#### Default connection pool size
+
+The default number of connections (pool size) is calculated with the following formula:
+
+```bash
+num_physical_cpus * 2 + 1
+```
+
+`num_physical_cpus` represents the number of physical CPUs on the machine your application is running on. If your machine has **four** physical CPUs, your connection pool will contain **nine** connections (`4 * 2 + 1 = 9`).
+
+Although the formula represents a good starting point, the [recommended connection limit](/orm/prisma-client/setup-and-configuration/databases-connections#recommended-connection-pool-size) also depends on your deployment paradigm - particularly if you are using serverless.
+
+#### Setting the connection pool size
+
+You can specify the number of connections by explicitly setting the `connection_limit` parameter in your database connection URL. For example, with the following `datasource` configuration in your [Prisma schema](/orm/prisma-schema) the connection pool will have exactly five connections:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5"
+}
+```
+
+#### Viewing the connection pool size
+
+The number of connections Prisma Client uses can be viewed using [logging](/orm/prisma-client/observability-and-logging/logging) and [metrics](/orm/prisma-client/observability-and-logging/metrics).
+
+Using the `info` [logging level](/orm/reference/prisma-client-reference#log-levels), you can log the number of connections in a connection pool that are opened when Prisma Client is instantiated.
+
+For example, consider the following Prisma Client instance and invocation:
+
+<CodeWithResult expanded="{true}">
+<cmd>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({
+  log: ['info'],
+})
+
+async function main() {
+  await prisma.user.findMany()
+}
+
+main()
+```
+
+</cmd>
+<cmdResult>
+
+```text no-copy
+prisma:info Starting a postgresql pool with 21 connections.
+```
+
+</cmdResult>
+</CodeWithResult>
+
+When the `PrismaClient` class was instantiated, the logging notified `stdout` that a connection pool with 21 connections was started.
+
+<Admonition type="warning">
+
+Note that the output generated by `log: ['info']` can change in any release without notice. Be aware of this in case you are relying on the output in your application or a tool that you're building.
+
+</Admonition>
+
+If you need even more insights into the size of your connection pool and the amount of in-use and idle connection, you can use the [metrics](/orm/prisma-client/observability-and-logging/metrics) feature (which is currently in Preview).
+
+Consider the following example:
+
+<CodeWithResult expanded="{true}">
+<cmd>
+
+```ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  await Promise.all([prisma.user.findMany(), prisma.post.findMany()])
+
+  const metrics = await prisma.$metrics.json()
+  console.dir(metrics, { depth: Infinity })
+}
+
+main()
+```
+
+</cmd>
+<cmdResult>
+
+```json no-copy
+{
+  "counters": [
+    // ...
+    {
+      "key": "prisma_pool_connections_open",
+      "labels": {},
+      "value": 2,
+      "description": "Number of currently open Pool Connections"
+    }
+  ],
+  "gauges": [
+    // ...
+    {
+      "key": "prisma_pool_connections_busy",
+      "labels": {},
+      "value": 0,
+      "description": "Number of currently busy Pool Connections (executing a datasource query)"
+    },
+    {
+      "key": "prisma_pool_connections_idle",
+      "labels": {},
+      "value": 21,
+      "description": "Number of currently unused Pool Connections (waiting for the next datasource query to run)"
+    },
+    {
+      "key": "prisma_pool_connections_opened_total",
+      "labels": {},
+      "value": 2,
+      "description": "Total number of Pool Connections opened"
+    }
+  ],
+  "histograms": [
+    /** ... **/
+  ]
+}
+```
+
+</cmdResult>
+</CodeWithResult>
+
+<Admonition type="info">
+
+For more details on what is available in the metrics output, see the [About metrics](/orm/prisma-client/observability-and-logging/metrics#about-metrics) section.
+
+</Admonition>
+
+### Connection pool timeout
+
+#### Default pool timeout
+
+The default connection pool timeout is 10 seconds. If the Query Engine does not get a connection from the database connection pool within that time, it throws an exception and moves on to the next query in the queue.
+
+#### Setting the connection pool timeout
+
+You can specify the pool timeout by explicitly setting the `pool_timeout` parameter in your database connection URL. In the following example, the pool times out after `2` seconds:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5&pool_timeout=2"
+}
+```
+
+#### Disabling the connection pool timeout
+
+You disable the connection pool timeout by setting the `pool_timeout` parameter to `0`:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?connection_limit=5&pool_timeout=0"
+}
+```
+
+You can choose to [disable the connection pool timeout if queries **must** remain in the queue](/orm/prisma-client/setup-and-configuration/databases-connections#disabling-the-pool-timeout) - for example, if you are importing a large number of records in parallel and are confident that the queue will not use up all available RAM before the job is complete.
+
+## MongoDB
+
+The MongoDB connector does not use the Prisma ORM connection pool. The connection pool is managed internally by the MongoDB driver and [configured via connection string parameters](https://www.mongodb.com/docs/manual/reference/connection-string-options/#connection-pool-options).
+
+## External connection poolers
+
+You cannot increase the `connection_limit` beyond what the underlying database can support. This is a particular challenge in serverless environments, where each function manages an instance of `PrismaClient` - and its own connection pool.
+
+Consider introducing [an external connection pooler like PgBouncer](/orm/prisma-client/setup-and-configuration/databases-connections#pgbouncer) to prevent your application or functions from exhausting the database connection limit.
+
+## Manual database connection handling
+
+When using Prisma ORM, the database connections are handled on an [engine](https://github.com/prisma/prisma-engines)-level. This means they're not exposed to the developer and it's not possible to manually access them.

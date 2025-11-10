@@ -1,0 +1,91 @@
+---
+title: ''
+metaTitle: 'Prisma Optimize'
+metaDescription: 'Prisma Optimize is a tool that helps you generate insights on your queries and recommends performance optimizations.'
+sidebar_label: 'Optimize'
+sidebar_position: 0
+hide_table_of_contents: false
+pagination_next: 'optimize/getting-started'
+---
+
+import {
+  Bolt,
+  BorderBox,
+  BoxTitle,
+  Database,
+  Grid,
+  LinkCard,
+  List,
+  SignalStream,
+  SquareLogo,
+} from '@site/src/components/GettingStarted';
+
+import {
+    IconTitle
+} from '@site/src/components/shortcodes/index';
+
+
+<IconTitle heading="h1" icon="fa-solid fa-magnifying-glass-chart" iconColor="#16A394" >Prisma Optimize</IconTitle>
+
+[Prisma Optimize](https://www.prisma.io/optimize?utm_source=docs). helps you generate insights and provides recommendations that can help you make your database queries faster. 
+
+This helps you to:
+
+- Generate insights about your database queries
+- Identify errors to help debug your database queries
+- Receive recommendations and discuss them with an AI assistant to enhance query performance.
+
+Optimize aims to help developers of all skill levels write efficient database queries, reducing database load and making applications more responsive.
+
+<Grid>
+  <LinkCard
+    icon="fa-solid fa-arrow-right"
+    title="Get started"
+    desc="Start analyzing the prisma queries in your app in 5 minutes."
+    link="/optimize/getting-started"
+  />
+  <LinkCard
+    icon="fa-brands fa-github"
+    title="Examples"
+    desc="Explore our ready-to-run examples using Optimize."
+    link="https://github.com/prisma/prisma-examples?tab=readme-ov-file#prisma-optimize"
+  />
+</Grid>
+
+
+## Supported databases
+
+Optimize works with the database you already have.
+
+<List framed>
+    <SquareLogo
+        url="/optimize/getting-started"
+        image={'/img/technologies/postgresqlsimple.svg'}
+        tech="PostgreSQL"
+    />
+    <SquareLogo
+        url="/optimize/getting-started"
+        image={'/img/technologies/mysqlsimple.svg'}
+        tech="MySQL"
+    />
+    <SquareLogo
+        url="/optimize/getting-started"
+        image={'/img/technologies/mariadb.svg'}
+        imageDark={'/img/technologies/mariadbdark.svg'}
+        tech="MariaDB"
+    />
+    <SquareLogo
+        url="/optimize/getting-started"
+        image={'/img/technologies/cockroachdbdark.svg'}
+        tech="CockroachDB"
+    />
+    <SquareLogo
+        url="/optimize/getting-started"
+        image={'/img/technologies/sqlserver.svg'}
+        tech="MS SQL Server"
+    />
+</List>
+
+## In this section
+
+<Subsections depth="3" />

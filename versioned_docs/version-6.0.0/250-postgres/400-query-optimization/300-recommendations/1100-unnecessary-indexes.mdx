@@ -1,0 +1,19 @@
+---
+title: 'Unnecessary indexes'
+metaTitle: 'Optimize Recommendations: Unnecessary indexes'
+metaDescription: "Learn about the recommendation provided by Optimize for using Unnecessary indexes"
+tocDepth: 3
+toc: true
+---
+
+Optimize detects unnecessary indexes and recommends removing them to improve database performance.
+
+### Why this is a problem
+
+Indexes enhance database query performance but can harm efficiency when overused. They consume storage and add overhead to `INSERT`, `UPDATE`, and `DELETE` operations. Unnecessary indexes can result in:
+
+- **Increased write costs:** Extra indexes slow down write operations.
+- **Higher storage use:** Unused indexes waste storage space.
+- **Query optimizer confusion:** Redundant indexes may cause inefficient query plans.
+
+Removing unnecessary indexes improves performance and simplifies maintenance.

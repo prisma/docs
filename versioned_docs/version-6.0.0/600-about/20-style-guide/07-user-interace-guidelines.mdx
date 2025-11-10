@@ -1,0 +1,259 @@
+---
+title: 'User interface (GUI) guidelines'
+metaTitle: 'Prisma docs style guide: GUI guidelines'
+metaDescription: 'On this page you can find information about the Prisma guidelines for documenting UI elements and steps to walk users through interfaces.'
+tocDepth: 3
+search: false
+---
+
+## Use numbered lists to document UI steps
+
+To document a complete task (such as _Create a new project_), use numbered lists to organize separate steps into a sequence of steps.
+
+- Use indented numbered lists to document substeps.
+- Avoid numbered lists that comprise more than 10 steps or steps that comprise more than 10 substeps.
+- If you have more than 10 steps or steps with more than 5-10 substeps, consider separating into multiple tasks.
+
+## Write each step as a single action with a clear verb
+
+Each step (numbered item) must include a verb that guides the completion of the step.
+
+```md
+<!-- Bad -->
+
+The status changes to **Completed**.
+
+<!-- Good -->
+
+From **Status**, select **Completed**.
+```
+
+Make sure that steps are discrete and that their related verbs sound instructive. Do not put more than one action in a single step unless the step finishes with the action to confirm or cancel that involves the click of a specific button or UI control.
+
+```md
+<!-- Bad -->
+
+When you click **Invite Member** and the **Add member** pop-up opens, select the role for the new team member.
+
+<!-- Good -->
+
+1. Click **Invite Member**.
+2. In the **Add member** pop-up, select the role for the new team member and click **Invite**.
+```
+
+## Document step results only for important outcomes
+
+If you need to describe the results of a step, separate them with a line break so that they appear indented on a new line under the step.
+
+```md
+<!-- Good -->
+
+1. Click **Invite Member**.<br />
+   Your team member receives an email with a link to join the project.
+```
+
+Avoid the description of obvious results that happen when a user carries out a step.
+
+```md
+<!-- Bad -->
+
+1. From the **Edit** menu, select **Copy**.<br />
+   The text is copied to the clipboard.
+```
+
+## Format the names of UI elements with bold
+
+Use bold for the names of all UI controls.
+
+| UI element                      | Example                                                                                                                                                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| buttons                         | Click **Next**.<br />Click **Cancel**.                                                                                                                                                                    |
+| radio buttons                   | Under **Payment method**, select **Wire transfer**.                                                                                                                                                       |
+| checkboxes                      | • Select **Include sample data**.<br />• Clear **Include sample data**.                                                                                                                                   |
+| drop-down menus                 | • From **GitHub Accounts & Organizations**, select an account or organization.<br />• From **Static IPs**, select **Enabled**.<br />• From **Branch**, select the repository branch for this environment. |
+| links                           | Click **Learn more**.                                                                                                                                                                                     |
+| menu names                      | Click **File**.                                                                                                                                                                                           |
+| menu items                      | Select **Open**.                                                                                                                                                                                          |
+| menu cascades                   | Select **File** > **Save**.                                                                                                                                                                               |
+| hamburger menu / three-dot menu | • Click the three-dot menu and select **Make default**.<br />• Click the hamburger menu and select **Make default**.                                                                                      |
+| tab                             | • Select the **macOS** tab.<br />• Click the **Network** tab.                                                                                                                                             |
+| page                            | On the **Configure project** page, …                                                                                                                                                                      |
+| window                          | In the **Payment information** pop-up window, enter the details for your payment method.                                                                                                                  |
+| screen/tab                      | On the **Data Browser** screen, select a record.                                                                                                                                                          |
+| pane/panel                      | In the **Configuration** panel, click **Network**.                                                                                                                                                        |
+| section                         | Under **Accelerate**, select **Enabled** from **Static IPs**.                                                                                                                                             |
+
+## Identify UI elements at the beginning of steps
+
+When you document an interaction with a UI element, begin steps with a reference to the name of the UI element to help readers navigate and scan the listed steps more easily.
+
+```md
+<!-- Bad -->
+
+1. Enter a name for your project in **Display Name**.
+2. Select a GitHub account or an organization from **GitHub Accounts & Organizations**.
+3. Select **Create a repository**.
+4. (Optional) Enter a name for the repository in **Repository Name**.
+
+<!-- Good -->
+
+1. In **Display Name**, enter a name for your project.
+2. From the **GitHub Accounts & Organizations** drop-down menu, select a GitHub account or an organization.
+3. Select **Create a repository**.
+4. (Optional) In **Repository Name**, enter a name for the repository.
+```
+
+## Identify optional steps
+
+Add the text (Optional) at the beginning of optional steps. Do so even when they are written with an “If…” statement.
+
+```md
+<!-- Good -->
+
+1. (Optional) From **Static IPs**, select **Enabled** if your database is behind a firewall and you can only configure external access from specific IP addresses. Copy the IP addresses and add them to the allowlist of your database.
+2. (Optional) If your database is behind a firewall and you can only configure external access from specific IP addresses, then from **Static IPs**, select **Enabled**.
+
+<!-- Bad -->
+
+1. If your database is behind a firewall and you can only configure external access from specific IP addresses, then from **Static IPs**, select **Enabled**.
+```
+
+## Avoid excessive use of UI terminology
+
+It can feel excessive to include the UI term for each UI element when you write steps for interacting with UI.
+
+To make UI steps easier to read, in most cases you can omit the UI term for each UI element.
+
+### Example 1: drop-down menu
+```md
+<!-- Bad -->
+
+From the **GitHub Accounts & Organizations** drop-down menu, select a GitHub account or an organization.
+
+<!-- Good -->
+
+From **GitHub Accounts & Organizations**, select a GitHub account or an organization.
+```
+
+### Example 2: text box
+```md
+<!-- Bad -->
+
+In the **Display Name** text box, enter a name for your project.
+
+<!-- Good -->
+
+In **Display Name**, enter a name for your project.
+```
+
+### Example 3: select the option
+```md
+<!-- Bad -->
+
+Select the **Create a repository** option.
+
+<!-- Good -->
+
+Select **Create a repository**.
+```
+
+### Example 4: clear the checkbox
+```md
+<!-- Bad -->
+
+Deselect the **Include sample data** check box to skip seeding the database with sample data.
+
+<!-- Good -->
+
+Clear **Include sample data** to skip seeding the database with sample data.
+```
+
+In specific cases, calling out the UI control name brings clarity and makes it easy to document a more complex step. Use your judgement and avoid this rule in such cases.
+
+```md
+<!-- Bad -->
+
+- Under _Accelerate_, from **Location**, select the geographic location for Prisma Accelerate.
+- Under _Accelerate_ and from **Location**, select the geographic location for Prisma Accelerate.
+
+<!-- Good -->
+
+Under _Accelerate_, from the **Location** drop-down menu, select the geographic location for Prisma Accelerate.
+```
+
+## Short and obvious steps
+
+In the middle or at the end of a procedure, the final step is sometimes very short and obvious for readers.
+
+- Click **Next**.
+- Click **OK**.
+- Click **Save**.
+- Click **Done**.
+
+Even if developer audiences do not need a reminder to save their files, specific cases exist in which omitting a short step can cause confusion.
+
+1. Click **Delete** for the item you want to delete.
+2. In the confirmation popup, enter the name of the item and click **Delete**.
+
+In other cases, short steps are not really necessary but still complete a valid procedure.
+
+One such example can be a **Done** button at the end of a wizard.
+
+Decide based on context if a short step adds noise or if it is a must to have it.
+
+## Do not document requirements for input fields (text boxes)
+
+Text boxes or input fields in modern UIs typically provide immediate validation and feedback when users type in forbidden characters. Because of this, it is not necessary to list:
+
+- allowed characters
+- allowed text length
+
+```md
+<!-- Bad -->
+
+In **Display Name**, enter a name for your project.
+
+:::info
+
+**💡 Note**<br /><br />
+
+Follow the rules below when you enter a display name for your project.<br /><br />
+
+• Include at least one letter<br />
+• Keep the length up to 40 characters~~
+:::
+
+<!-- Good -->
+
+In **Display Name**, enter a name for your project.
+```
+
+## Fall back to passive voice when the doer is difficult to identify
+
+In some cases, it is very difficult to identify the doer in a sentence or the doer sounds awkward to name.
+
+```md
+<!-- Bad -->
+
+The form automatically pre-fills the GitHub repository based on the project name you provide. In the repository name, the form replaces each space with a hyphen.
+
+<!-- Good -->
+
+The GitHub repository name is pre-filled based on the display name and each space is replaced with a hyphen.
+```
+
+## Match capitalization of UI controls
+
+Document the user interface as it appears and do not alter UI text in the documentation to meet style guide or other requirements.
+
+For example, if a button has the text CANCEL, match the all-caps in the documentation.
+
+```md
+<!-- Good -->
+
+Click **CANCEL**.
+
+<!-- Bad -->
+
+Click **Cancel**.
+```
