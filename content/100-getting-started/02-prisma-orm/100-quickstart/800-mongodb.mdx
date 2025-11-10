@@ -1,8 +1,8 @@
 ---
 title: 'MongoDB'
-metaTitle: 'Quickstart: Prisma ORM with MongoDB (15 min)'
-metaDescription: 'Create a new TypeScript project from scratch by connecting Prisma ORM to your MongoDB database and generating a Prisma Client for database access.'
-sidebar_custom_props: { badge: '15 min' }
+metaTitle: 'Quickstart: Prisma ORM with MongoDB (5 min)'
+metaDescription: 'Create a new TypeScript project from scratch by connecting Prisma ORM to MongoDB and generating a Prisma Client for database access.'
+sidebar_custom_props: { badge: '5 min' }
 ---
 
 import Prerequisites from '../../_components/_prerequisites.mdx'
@@ -10,7 +10,15 @@ import CreateProject from '../../_components/_create-project.mdx'
 import ExploreData from '../../_components/_explore-data.mdx'
 import NextSteps from '../../_components/_next-steps.mdx'
 
-Learn how to create a new TypeScript project from scratch by connecting Prisma ORM to your MongoDB database and generating a Prisma Client for database access.
+MongoDB is a popular NoSQL document database. In this guide, you will learn how to set up a new TypeScript project from scratch, connect it to MongoDB using Prisma ORM, and generate a Prisma Client for easy, type-safe access to your database.
+
+:::warning[Do not upgrade to Prisma ORM v7 if you are using MongoDB]
+
+Prisma ORM v7 is not yet compatible with MongoDB. Please use Prisma ORM v6 instead. Support for MongoDB is coming in a future release.
+
+:::
+
+## Prerequisites
 
 <Prerequisites />
 
@@ -18,50 +26,97 @@ You also need:
 
 - A [MongoDB](https://www.mongodb.com/) database accessible via connection string
 
-:::tip Need a MongoDB database?
-
-If you don't have a MongoDB database, consider using:
-- [MongoDB Atlas](https://www.mongodb.com/atlas) (managed MongoDB)
-- [Prisma Postgres](/getting-started/prisma-orm/quickstart/prisma-postgres) (recommended alternative)
-- Local MongoDB installation
-
-:::
+## 1. Create a new project
 
 <CreateProject />
 
-## Install Prisma ORM
+## 2. Install required dependencies
 
-Install Prisma CLI and Prisma Client:
-
-```terminal
-npm install prisma --save-dev
-npm install @prisma/client
-```
-
-Initialize Prisma:
+Install the packages needed for this quickstart:
 
 ```terminal
-npx prisma init --output ../generated/prisma
+npm install prisma @types/node --save-dev 
+npm install @prisma/client dotenv
 ```
 
-This creates:
-- A `prisma/` directory with a `schema.prisma` file
-- A `.env` file for environment variables
-- A `generated/prisma/` directory for the generated Prisma Client
+Here's what each package does:
 
-## Configure your database connection
+- **`prisma`** - The Prisma CLI for running commands like `prisma init`, `prisma db push`, and `prisma generate`
+- **`@prisma/client`** - The Prisma Client library for querying your database
+- **`dotenv`** - Loads environment variables from your `.env` file
 
-Update your `.env` file with your MongoDB connection string:
+:::note
 
-```env file=.env
-DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/mydb"
+MongoDB doesn't require driver adapters since Prisma ORM connects directly to MongoDB.
+
+:::
+
+## 3. Configure ESM Support
+
+Update `tsconfig.json` for ESM compatibility:
+
+```json file=tsconfig.json
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2023",
+    "strict": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0"
+  }
+}
 ```
 
-Replace with your actual MongoDB connection string.
+Update `package.json` to enable ESM:
 
-## Configure your schema for MongoDB
+```json file=package.json
+{
+  // add-start
+  "type": "module",
+  // add-end
+}
+```
 
-Open `prisma/schema.prisma` and update it:
+## 4. Initialize Prisma ORM
+
+You can now invoke the Prisma CLI by prefixing it with `npx`:
+
+```terminal
+npx prisma
+```
+
+Next, set up your Prisma ORM project by creating your [Prisma Schema](/orm/prisma-schema) file with the following command:
+
+```terminal
+npx prisma init --datasource-provider mongodb --output ../generated/prisma
+```
+
+This command does a few things:
+
+- Creates a `prisma/` directory with a `schema.prisma` file containing your database connection and schema models
+- Creates a `.env` file in the root directory for environment variables
+- Generates the Prisma Client in the `generated/prisma/` directory
+- Creates a `prisma.config.ts` file for Prisma configuration
+
+The generated `prisma.config.ts` file looks like this:
+
+```typescript file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+The generated schema uses [the ESM-first `prisma-client` generator](/orm/prisma-schema/overview/generators#prisma-client) with a custom output path:
 
 ```prisma file=prisma/schema.prisma
 generator client {
@@ -71,7 +126,31 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
+}
+```
+
+Update your `.env` file with your MongoDB connection string:
+
+```env file=.env
+DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/mydb"
+```
+
+Replace with your actual MongoDB connection string.
+
+## 5. Define your data model
+
+Open `prisma/schema.prisma` and add the following models:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url = env("DATABASE_URL")
 }
 
 //add-start
@@ -93,7 +172,7 @@ model Post {
 //add-end
 ```
 
-## Push your schema to MongoDB
+## 6. Push your schema to MongoDB
 
 Since MongoDB doesn't use migrations, push your schema directly:
 
@@ -103,45 +182,22 @@ npx prisma db push
 
 This command:
 - Creates the collections based on your schema
-- Generates the Prisma Client
+- Generates the Prisma Client in the `generated/prisma` directory
 
-## Install and generate Prisma Client
+## 7. Instantiate Prisma Client
 
-Install the Prisma Client package:
-
-```terminal
-npm install @prisma/client
-```
-
-Generate Prisma Client:
-
-```terminal
-npx prisma generate
-```
-
-## Create a Prisma Client instance
-
-Create a `lib/` directory and a `prisma.ts` file:
+Now that you have all the dependencies installed, you can instantiate Prisma Client:
 
 ```typescript file=lib/prisma.ts
-import { PrismaClient } from '../generated/prisma'
+import "dotenv/config";
+import { PrismaClient } from '../generated/prisma/client'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+const prisma = new PrismaClient()
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+export { prisma }
 ```
 
-:::note
-
-MongoDB doesn't require driver adapters since Prisma ORM connects directly to MongoDB.
-
-:::
-
-## Write your first query
+## 8. Write your first query
 
 Create a `script.ts` file to test your setup:
 
@@ -156,8 +212,8 @@ async function main() {
       email: 'alice@prisma.io',
       posts: {
         create: {
-          title: 'Hello MongoDB!',
-          content: 'This is my first post with MongoDB and Prisma ORM!',
+          title: 'Hello World',
+          content: 'This is my first post!',
           published: true,
         },
       },
@@ -196,11 +252,25 @@ npx tsx script.ts
 
 You should see the created user and all users printed to the console!
 
+## 9. Explore your data with Prisma Studio
+
 <ExploreData />
+
+## Next steps
 
 <NextSteps />
 
-### More info
+## Troubleshooting
+
+### `Error in connector: SCRAM failure: Authentication failed.`
+
+If you see the `Error in connector: SCRAM failure: Authentication failed.` error message, you can specify the source database for the authentication by [adding](https://github.com/prisma/prisma/discussions/9994#discussioncomment-1562283) `?authSource=admin` to the end of the connection string.
+
+### `Raw query failed. Error code 8000 (AtlasError): empty database name not allowed.`
+
+If you see the `Raw query failed. Code: unknown. Message: Kind: Command failed: Error code 8000 (AtlasError): empty database name not allowed.` error message, be sure to append the database name to the database URL. You can find more info in this [GitHub issue](https://github.com/prisma/docs/issues/5562).
+
+## More info
 
 - [MongoDB database connector](/orm/overview/databases/mongodb)
 - [MongoDB data modeling patterns](/orm/overview/databases/mongodb#data-modeling)
