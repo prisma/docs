@@ -260,7 +260,7 @@ const sidebars: SidebarsConfig = {
                 },
                 {
                   type: "doc",
-                  id: "getting-started/prisma-postgres/quickstart/kysely-orm",
+                  id: "getting-started/prisma-postgres/quickstart/kysely",
                   label: "Kysely",
                   customProps: {
                     badge: "10 Min",
@@ -276,37 +276,44 @@ const sidebars: SidebarsConfig = {
                 },
                 {
                   type: "doc",
-                  id: "getting-started/prisma-postgres/quickstart/psql",
-                  label: "psql",
+                  id: "getting-started/prisma-postgres/quickstart/typeorm",
+                  label: "TypeORM",
                   customProps: {
-                    badge: "5 Min",
+                    badge: "10 Min",
                   },
                 },
               ],
             },
-            "getting-started/prisma-postgres/from-the-cli",
-            "getting-started/prisma-postgres/upgrade-from-early-access",
             {
               type: "category",
-              collapsible: false,
+              collapsed: true,
+              collapsible: true,
+              className: "hide-category-badge",
               label: "Import from existing database",
               link: {
                 type: "doc",
                 id: "getting-started/prisma-postgres/import-from-existing-database-postgresql",
               },
+              customProps: {
+                hideBadge: true,
+              },
               items: [
                 {
                   type: "doc",
                   id: "getting-started/prisma-postgres/import-from-existing-database-postgresql",
-                  className: "hidden-sidebar",
+                  label: "PostgreSQL",
+                  className: "sidebar-item-normal-weight",
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-postgres/import-from-existing-database-mysql",
-                  className: "hidden-sidebar",
+                  label: "MySQL",
+                  className: "sidebar-item-normal-weight",
                 },
               ],
             },
+            "getting-started/prisma-postgres/from-the-cli",
+            "getting-started/prisma-postgres/upgrade-from-early-access",
           ],
         },
       ],

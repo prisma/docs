@@ -113,16 +113,65 @@ Next, initialize TypeScript with a `tsconfig.json` file in the project:
 npx tsc --init
 ```
 
-### 2.2. Set up Prisma ORM
+### 2.2. Configure ESM support
+
+Update `tsconfig.json` for ESM compatibility:
+
+```json file=tsconfig.json
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2023",
+    "strict": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0"
+  }
+}
+```
+
+Update `package.json` to enable ESM:
+
+```json file=package.json
+{
+  // add-start
+  "type": "module",
+  // add-end
+}
+```
+
+### 2.3. Set up Prisma ORM
 
 Install the required dependencies to use Prisma Postgres:
 
 ```terminal
 npm install prisma --save-dev
-npm install @prisma/extension-accelerate
+npm install @prisma/client @prisma/adapter-pg dotenv
 ```
 
-### 2.3. Create a TypeScript script
+Here's what each package does:
+
+- **`prisma`** - The Prisma CLI for running commands like `prisma migrate` and `prisma generate`
+- **`@prisma/client`** - The Prisma Client library for querying your database
+- **`@prisma/adapter-pg`** - The [`node-postgres` driver adapter](/orm/overview/databases/postgresql#using-the-node-postgres-driver) that connects Prisma Client to your database
+- **`dotenv`** - Loads environment variables from your `.env` file
+
+### 2.4. Update Prisma schema for ESM
+
+Update your `prisma/schema.prisma` file to use the ESM-first `prisma-client` generator with a custom output path:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+```
+
+### 2.5. Create a TypeScript script
 
 Create an `index.ts` file in the root directory, this will be used to query your application with Prisma ORM: 
 
@@ -132,9 +181,18 @@ touch index.ts
 
 ## 3. Migrate the database schema
 
-Update your `prisma/schema.prisma` file to include a simple `User` model:
+Update your `prisma/schema.prisma` file to include the `User` and `Post` models:
 
 ```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
 model User {
   id    Int     @id @default(autoincrement())
   email String  @unique
@@ -158,15 +216,35 @@ After adding the models, migrate your database using [Prisma Migrate](/orm/prism
 npx prisma migrate dev --name init
 ```
 
+This command:
+- Creates the database tables based on your schema
+- Generates the Prisma Client in the `generated/prisma` directory
+
 ## 4. Send queries with Prisma ORM
+
+### 4.1. Instantiate Prisma Client
+
+Create a `lib/prisma.ts` file to instantiate Prisma Client with the driver adapter:
+
+```typescript file=lib/prisma.ts
+import "dotenv/config";
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '../generated/prisma/client'
+
+const connectionString = `${process.env.DATABASE_URL}`
+
+const adapter = new PrismaPg({ connectionString })
+const prisma = new PrismaClient({ adapter })
+
+export { prisma }
+```
+
+### 4.2. Write your first query
 
 Paste the following boilerplate into `index.ts`:
 
 ```ts file=index.ts
-import { PrismaClient } from './generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-const prisma = new PrismaClient().$extends(withAccelerate())
+import { prisma } from './lib/prisma'
 
 async function main() {
   // ... you will write your Prisma ORM queries here
@@ -185,15 +263,12 @@ main()
 
 This code contains a `main` function that's invoked at the end of the script. It also instantiates `PrismaClient` which you'll use to send queries to your database.
 
-### 4.1. Create a new `User` record
+### 4.3. Create a new `User` record
 
 Let's start with a small query to create a new `User` record in the database and log the resulting object to the console. Add the following code to your `index.ts` file:
 
 ```ts file=index.ts
-import { PrismaClient } from './generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-const prisma = new PrismaClient().$extends(withAccelerate())
+import { prisma } from './lib/prisma'
 
 async function main() {
   // add-start
@@ -241,17 +316,14 @@ npx tsx index.ts
 
 Great job, you just created your first database record with Prisma Postgres! 🎉
 
-### 4.2. Retrieve all `User` records
+### 4.4. Retrieve all `User` records
 
 Prisma ORM offers various queries to read data from your database. In this section, you'll use the `findMany` query that returns _all_ the records in the database for a given model.
 
 Delete the previous Prisma ORM query and add the new `findMany` query instead:
 
 ```ts file=index.ts
-import { PrismaClient } from './generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-const prisma = new PrismaClient().$extends(withAccelerate())
+import { prisma } from './lib/prisma'
 
 async function main() {
   // add-start
@@ -295,17 +367,14 @@ npx tsx index.ts
 
 Notice how the single `User` object is now enclosed with square brackets in the console. That's because the `findMany` returned an array with a single object inside.
 
-### 4.3. Explore relation queries
+### 4.5. Explore relation queries
 
 One of the main features of Prisma ORM is the ease of working with [relations](/orm/prisma-schema/data-model/relations). In this section, you'll learn how to create a `User` and a `Post` record in a nested write query. Afterwards, you'll see how you can retrieve the relation from the database using the `include` option.
 
 First, adjust your script to include the nested query:
 
 ```ts file=index.ts
-import { PrismaClient } from './generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-const prisma = new PrismaClient().$extends(withAccelerate())
+import { prisma } from './lib/prisma'
 
 async function main() {
   // add-start
@@ -367,10 +436,7 @@ npx tsx index.ts
 In order to also retrieve the `Post` records that belong to a `User`, you can use the `include` option via the `posts` relation field:
 
 ```ts file=index.ts
-import { PrismaClient } from './generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-const prisma = new PrismaClient().$extends(withAccelerate())
+import { prisma } from './lib/prisma'
 
 async function main() {
 // add-start

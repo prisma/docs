@@ -1,0 +1,190 @@
+---
+title: 'Use Prisma Postgres with TypeORM'
+sidebar_label: 'TypeORM'
+metaTitle: 'Quickstart: TypeORM with Prisma Postgres (10 min)'
+metaDescription: 'Get started with TypeORM and Prisma Postgres by connecting your TypeScript ORM to a managed PostgreSQL database.'
+sidebar_custom_props: { badge: '10 min' }
+---
+
+[TypeORM](https://typeorm.io) is a feature-rich ORM that supports both Active Record and Data Mapper patterns, providing flexibility in how you structure your database code. In this guide, you'll learn how to connect TypeORM to [Prisma Postgres](/postgres) and start building type-safe database applications.
+
+## Prerequisites
+
+- **Node.js** - Version 16 or higher
+- **TypeScript** - Version 4.5 or higher
+- A [Prisma Data Platform](https://console.prisma.io) account
+- (Optional) **TypeORM setup** - If you already have TypeORM configured in your project, skip to [step 2](#2-get-your-direct-connection-string)
+
+For detailed TypeORM installation and configuration, see the [TypeORM Getting Started guide](https://typeorm.io/docs/getting-started/).
+
+## 1. Create a Prisma Postgres database
+
+Follow these steps to create your Prisma Postgres database:
+
+1. Log in to [Prisma Data Platform](https://console.prisma.io) and open the Console.
+2. In a workspace of your choice, click the **New project** button.
+3. Type a name for your project in the **Name** field, e.g. `typeorm-quickstart`.
+4. In the **Prisma Postgres** section, click the **Get started** button.
+5. In the **Region** dropdown, select the region that's closest to your current location, e.g. US East (N. Virginia).
+6. Click the **Create project** button.
+
+At this point, you'll be redirected to the Database page where you will need to wait for a few seconds while the status of your database changes from **PROVISIONING** to **CONNECTED**.
+
+Once the green **CONNECTED** label appears, your database is ready to use!
+
+## 2. Get your direct connection string
+
+To connect to Prisma Postgres via direct TCP, you need to:
+
+1. Open your project in the Prisma Console.
+2. Navigate to your active Prisma Postgres instance.
+3. Click the **API Keys** tab in the project's sidenav.
+4. Click the **Create API key** button.
+5. In the popup, provide a **Name** for the API key and click **Create**.
+6. Copy the connection string starting with `postgres://`, this is your direct connection string.
+
+## 3. Configure TypeORM with Prisma Postgres
+
+Update your TypeORM DataSource configuration to use your Prisma Postgres connection string. In your `data-source.ts` (or equivalent configuration file):
+
+```typescript file=data-source.ts
+import "reflect-metadata"
+import { DataSource } from "typeorm"
+import { User } from "./entity/User"
+import { Post } from "./entity/Post"
+
+export const AppDataSource = new DataSource({
+  type: "postgres",
+  url: process.env.DATABASE_URL, // Your Prisma Postgres connection string
+  synchronize: true, // Set to false in production
+  logging: false,
+  entities: [User, Post],
+  migrations: [],
+  subscribers: [],
+})
+```
+
+Create a `.env` file and add your Prisma Postgres connection string:
+
+```env file=.env
+DATABASE_URL="postgres://USER:PASSWORD@db.prisma.io:5432/?sslmode=require"
+```
+
+:::tip
+
+For production applications, set `synchronize: false` and use [TypeORM migrations](https://typeorm.io/docs/migrations/) to manage schema changes safely.
+
+:::
+
+## 4. Define your entities
+
+Create your TypeORM entities as usual. Here's an example with User and Post entities:
+
+```typescript file=entity/User.ts
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
+import { Post } from "./Post"
+
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column({ unique: true })
+  email: string
+
+  @Column({ nullable: true })
+  name: string
+
+  @OneToMany(() => Post, (post) => post.author)
+  posts: Post[]
+}
+```
+
+```typescript file=entity/Post.ts
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm"
+import { User } from "./User"
+
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  title: string
+
+  @Column({ type: "text", nullable: true })
+  content: string
+
+  @Column({ default: false })
+  published: boolean
+
+  @ManyToOne(() => User, (user) => user.posts)
+  author: User
+}
+```
+
+For more information on defining entities, see the [TypeORM Entities documentation](https://typeorm.io/docs/entity/entities).
+
+## 5. Initialize and use TypeORM
+
+Initialize your DataSource and start querying:
+
+```typescript file=index.ts
+import "reflect-metadata"
+import { AppDataSource } from "./data-source"
+import { User } from "./entity/User"
+import { Post } from "./entity/Post"
+
+AppDataSource.initialize()
+  .then(async () => {
+    console.log("Connected to Prisma Postgres!")
+
+    // Create a user with a post
+    const user = new User()
+    user.email = "alice@prisma.io"
+    user.name = "Alice"
+    await AppDataSource.manager.save(user)
+
+    const post = new Post()
+    post.title = "Hello World"
+    post.content = "This is my first post!"
+    post.published = true
+    post.author = user
+    await AppDataSource.manager.save(post)
+
+    console.log("Created user and post!")
+
+    // Query users with their posts
+    const users = await AppDataSource.getRepository(User).find({
+      relations: {
+        posts: true,
+      },
+    })
+
+    console.log("Users with posts:", JSON.stringify(users, null, 2))
+  })
+  .catch((error) => console.log("Error:", error))
+```
+
+Run your application:
+
+```terminal
+npx tsx index.ts
+```
+
+## Next steps
+
+Now that you have TypeORM connected to Prisma Postgres, you can:
+
+- **Learn more about TypeORM** - Check out the [TypeORM documentation](https://typeorm.io/docs/) for comprehensive guides
+- **Explore relations** - Learn about [relations](https://typeorm.io/docs/entity/relations) and [eager/lazy loading](https://typeorm.io/docs/entity/eager-and-lazy-relations)
+- **Use the Query Builder** - Explore [TypeORM's Query Builder](https://typeorm.io/docs/query-builder/select-query-builder/) for complex queries
+- **Manage migrations** - Set up [TypeORM migrations](https://typeorm.io/docs/migrations/) for production schema management
+- **Add repositories** - Use [custom repositories](https://typeorm.io/docs/custom-repository/) to organize your data access logic
+
+## More info
+
+- [TypeORM documentation](https://typeorm.io)
+- [TypeORM GitHub repository](https://github.com/typeorm/typeorm)
+- [Prisma Postgres documentation](/postgres)
+- [TypeORM PostgreSQL driver documentation](https://typeorm.io/docs/drivers/postgres/)

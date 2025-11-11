@@ -1,5 +1,6 @@
 ---
-title: 'Drizzle ORM'
+title: 'Use Prisma Postgres with Drizzle ORM'
+sidebar_label: 'Drizzle ORM'
 metaTitle: 'Quickstart: Drizzle ORM with Prisma Postgres (10 min)'
 metaDescription: 'Get started with Drizzle ORM and Prisma Postgres by creating a lightweight, performant TypeScript ORM for your database.'
 sidebar_custom_props: { badge: '10 min' }
@@ -12,6 +13,9 @@ sidebar_custom_props: { badge: '10 min' }
 - **Node.js** - Version 16 or higher
 - **TypeScript** - Version 5.0 or higher
 - A [Prisma Data Platform](https://console.prisma.io) account
+- (Optional) **Drizzle ORM setup** - If you already have Drizzle configured in your project, skip to [step 2](#2-get-your-direct-connection-string)
+
+For detailed Drizzle ORM installation and configuration, see the [Drizzle ORM Getting Started guide](https://orm.drizzle.team/docs/get-started-postgresql).
 
 ## 1. Create a Prisma Postgres database
 
@@ -49,52 +53,10 @@ cd drizzle-quickstart
 npm init -y
 ```
 
-## 4. Install dependencies
+## 3. Configure Drizzle ORM with Prisma Postgres
 
-Install Drizzle ORM and the PostgreSQL driver:
+Define your database schema using Drizzle's schema definition:
 
-```terminal
-npm install drizzle-orm pg
-npm install --save-dev drizzle-kit @types/pg typescript tsx
-```
-
-Here's what each package does:
-
-- **`drizzle-orm`** - The Drizzle ORM library for querying your database
-- **`pg`** - The node-postgres driver for connecting to PostgreSQL
-- **`drizzle-kit`** - CLI tool for managing migrations and generating SQL
-- **`@types/pg`** - TypeScript type definitions for node-postgres
-- **`typescript`** - The TypeScript compiler
-- **`tsx`** - TypeScript execution engine for running TypeScript files
-
-## 5. Configure TypeScript
-
-Create a `tsconfig.json` file:
-
-```json file=tsconfig.json
-{
-  "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "target": "ES2023",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
-  }
-}
-```
-
-Update `package.json` to enable ESM:
-
-```json file=package.json
-{
-  "type": "module"
-}
-```
-
-## 6. Define your database schema
-
-Create a `schema.ts` file to define your database schema:
 
 ```typescript file=schema.ts
 import { pgTable, serial, text, varchar, boolean, timestamp, integer } from 'drizzle-orm/pg-core'
@@ -131,9 +93,7 @@ export const postsRelations = relations(posts, ({ one }) => ({
 }))
 ```
 
-## 7. Configure Drizzle
-
-Create a `drizzle.config.ts` file:
+Configure Drizzle Kit with your Prisma Postgres connection string:
 
 ```typescript file=drizzle.config.ts
 import { defineConfig } from 'drizzle-kit'
@@ -151,12 +111,10 @@ export default defineConfig({
 Create a `.env` file and add your Prisma Postgres connection string:
 
 ```env file=.env
-DATABASE_URL="postgres://your-connection-string"
+DATABASE_URL="postgres://USER:PASSWORD@db.prisma.io:5432/?sslmode=require"
 ```
 
-## 8. Create database connection
-
-Create a `db.ts` file to set up your Drizzle instance:
+Create a database connection file:
 
 ```typescript file=db.ts
 import { drizzle } from 'drizzle-orm/node-postgres'
@@ -170,23 +128,15 @@ const pool = new Pool({
 export const db = drizzle({ client: pool, schema })
 ```
 
-## 9. Generate and run migrations
+## 4. Use Drizzle ORM with Prisma Postgres
 
-Generate a migration from your schema:
-
-```terminal
-npx drizzle-kit generate
-```
-
-This creates SQL migration files in the `drizzle` directory. Now push the migration to your database:
+Generate and push your schema to the database:
 
 ```terminal
 npx drizzle-kit push
 ```
 
-## 10. Write your first queries
-
-Create a `script.ts` file to test your setup:
+Now you can use Drizzle ORM to query your Prisma Postgres database:
 
 ```typescript file=script.ts
 import { db } from './db'
@@ -194,7 +144,7 @@ import { users, posts } from './schema'
 import { eq } from 'drizzle-orm'
 
 async function main() {
-  // Insert a user with a post
+  // Insert a user
   const [user] = await db
     .insert(users)
     .values({
@@ -205,19 +155,7 @@ async function main() {
 
   console.log('Created user:', user)
 
-  const [post] = await db
-    .insert(posts)
-    .values({
-      title: 'Hello World',
-      content: 'This is my first post!',
-      published: true,
-      authorId: user.id,
-    })
-    .returning()
-
-  console.log('Created post:', post)
-
-  // Query users with their posts using relations
+  // Query users with their posts
   const usersWithPosts = await db.query.users.findMany({
     with: {
       posts: true,
@@ -225,28 +163,6 @@ async function main() {
   })
 
   console.log('Users with posts:', JSON.stringify(usersWithPosts, null, 2))
-
-  // Find a specific user
-  const foundUser = await db.query.users.findFirst({
-    where: eq(users.email, 'alice@prisma.io'),
-    with: {
-      posts: true,
-    },
-  })
-
-  console.log('Found user:', foundUser)
-
-  // Update a post
-  await db
-    .update(posts)
-    .set({ published: false })
-    .where(eq(posts.id, post.id))
-
-  console.log('Updated post')
-
-  // Query with SQL-like syntax
-  const allUsers = await db.select().from(users)
-  console.log('All users:', allUsers)
 }
 
 main()
@@ -259,24 +175,6 @@ main()
     process.exit(1)
   })
 ```
-
-Run the script:
-
-```terminal
-tsx script.ts
-```
-
-You should see the created user, post, and query results printed to the console!
-
-## 11. Explore Drizzle Studio (Optional)
-
-Drizzle Kit comes with a built-in database browser called Drizzle Studio:
-
-```terminal
-npx drizzle-kit studio
-```
-
-This opens a web interface where you can browse and edit your database data visually.
 
 ## Next steps
 
