@@ -168,35 +168,35 @@ export const tabs = [
       "<b>Already have a database?</b> With Prisma ORM and Prisma Data Platform, you can supercharge your existing stack. Add connection pooling and caching with generous free tiers.",
     list: [
       {
-        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql",
+        url: "/getting-started/prisma-orm/add-to-existing-project/postgresql",
         image: "/img/technologies/postgresqlsimple.svg",
         tech: "PostgreSQL",
       },
       {
-        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-planetscale",
+        url: "/getting-started/prisma-orm/add-to-existing-project/planetscale",
         image: "/img/technologies/planetscale.svg",
         imageDark: "/img/technologies/planetscaledark.svg",
         tech: "Planetscale",
       },
       {
-        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-sqlserver",
+        url: "/getting-started/prisma-orm/add-to-existing-project/sql-server",
         image: "/img/technologies/sqlserver.svg",
         tech: "SQL Server",
       },
       {
-        url: "/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-mysql",
+        url: "/getting-started/prisma-orm/add-to-existing-project/mysql",
         image: "/img/technologies/mysqlsimple.svg",
         tech: "MySQL",
       },
       {
-        url: "/getting-started/setup-prisma/add-to-existing-project/mongodb-typescript-mongodb",
+        url: "/getting-started/prisma-orm/add-to-existing-project/mongodb",
         image: "/img/technologies/mongodbsimple.svg",
         imageDark: "/img/technologies/mongodbsimple.svg",
         tech: "MongoDB",
       },
     ],
     link: {
-      url: "/getting-started/setup-prisma/add-to-existing-project",
+      url: "/getting-started/prisma-orm/add-to-existing-project/postgresql",
       label: "How to migrate to Prisma ORM",
       icon: "fa-regular fa-book-open",
     },
