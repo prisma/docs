@@ -313,7 +313,6 @@ const sidebars: SidebarsConfig = {
               ],
             },
             "getting-started/prisma-postgres/from-the-cli",
-            "getting-started/prisma-postgres/upgrade-from-early-access",
           ],
         },
       ],
