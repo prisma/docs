@@ -236,6 +236,54 @@ const sidebars: SidebarsConfig = {
             id: "getting-started/prisma-postgres/index",
           },
           items: [
+            {
+              type: "category",
+              label: "Quickstart",
+              collapsed: true,
+              collapsible: true,
+              className: "hide-category-badge",
+              link: {
+                type: "doc",
+                id: "getting-started/prisma-postgres/quickstart/prisma-orm",
+              },
+              customProps: {
+                hideBadge: true,
+              },
+              items: [
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-postgres/quickstart/prisma-orm",
+                  label: "Prisma ORM",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-postgres/quickstart/kysely-orm",
+                  label: "Kysely",
+                  customProps: {
+                    badge: "10 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-postgres/quickstart/drizzle-orm",
+                  label: "Drizzle ORM",
+                  customProps: {
+                    badge: "10 Min",
+                  },
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-postgres/quickstart/psql",
+                  label: "psql",
+                  customProps: {
+                    badge: "5 Min",
+                  },
+                },
+              ],
+            },
             "getting-started/prisma-postgres/from-the-cli",
             "getting-started/prisma-postgres/upgrade-from-early-access",
             {

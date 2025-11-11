@@ -1,0 +1,318 @@
+---
+title: 'Kysely ORM'
+metaTitle: 'Quickstart: Kysely with Prisma Postgres (10 min)'
+metaDescription: 'Get started with Kysely and Prisma Postgres by creating a type-safe SQL query builder for your database.'
+sidebar_custom_props: { badge: '10 min' }
+---
+
+[Kysely](https://kysely.dev) is a type-safe TypeScript SQL query builder that provides excellent TypeScript support and a fluent API for building SQL queries. In this guide, you'll learn how to connect Kysely to [Prisma Postgres](/postgres) and start querying your database with full type safety.
+
+## Prerequisites
+
+- **Node.js** - Version 14 or higher
+- **TypeScript** - Version 4.6 or higher (5.4+ recommended for better type inference)
+- A [Prisma Data Platform](https://console.prisma.io) account
+
+You must enable strict mode in your `tsconfig.json` file's `compilerOptions`:
+
+```json file=tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
+
+## 1. Create a Prisma Postgres database
+
+Follow these steps to create your Prisma Postgres database:
+
+1. Log in to [Prisma Data Platform](https://console.prisma.io) and open the Console.
+2. In a workspace of your choice, click the **New project** button.
+3. Type a name for your project in the **Name** field, e.g. `kysely-quickstart`.
+4. In the **Prisma Postgres** section, click the **Get started** button.
+5. In the **Region** dropdown, select the region that's closest to your current location, e.g. US East (N. Virginia).
+6. Click the **Create project** button.
+
+At this point, you'll be redirected to the Database page where you will need to wait for a few seconds while the status of your database changes from **PROVISIONING** to **CONNECTED**.
+
+Once the green **CONNECTED** label appears, your database is ready to use!
+
+## 2. Get your direct connection string
+
+To connect to Prisma Postgres via direct TCP, you need to:
+
+1. Open your project in the Prisma Console.
+2. Navigate to your active Prisma Postgres instance.
+3. Click the **API Keys** tab in the project's sidenav.
+4. Click the **Create API key** button.
+5. In the popup, provide a **Name** for the API key and click **Create**.
+6. Copy the connection string starting with `postgres://`, this is your direct connection string.
+
+## 3. Create a new project
+
+Create a new directory for your project and initialize it:
+
+```terminal
+mkdir kysely-quickstart
+cd kysely-quickstart
+npm init -y
+```
+
+## 4. Install dependencies
+
+Install Kysely and the PostgreSQL driver:
+
+```terminal
+npm install kysely pg
+npm install --save-dev @types/pg typescript tsx
+```
+
+Here's what each package does:
+
+- **`kysely`** - The Kysely query builder library
+- **`pg`** - The node-postgres driver for connecting to PostgreSQL
+- **`@types/pg`** - TypeScript type definitions for node-postgres
+- **`typescript`** - The TypeScript compiler
+- **`tsx`** - TypeScript execution engine for running TypeScript files
+
+## 5. Configure TypeScript
+
+Create a `tsconfig.json` file:
+
+```json file=tsconfig.json
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2023",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+Update `package.json` to enable ESM:
+
+```json file=package.json
+{
+  "type": "module"
+}
+```
+
+## 6. Define your database types
+
+Create a `types.ts` file to define your database schema types:
+
+```typescript file=types.ts
+import { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
+
+export interface Database {
+  person: PersonTable
+  pet: PetTable
+}
+
+export interface PersonTable {
+  id: Generated<number>
+  first_name: string
+  last_name: string | null
+  gender: 'man' | 'woman' | 'other'
+  created_at: ColumnType<Date, string | undefined, never>
+}
+
+export interface PetTable {
+  id: Generated<number>
+  name: string
+  owner_id: number
+  species: 'dog' | 'cat'
+}
+
+export type Person = Selectable<PersonTable>
+export type NewPerson = Insertable<PersonTable>
+export type PersonUpdate = Updateable<PersonTable>
+
+export type Pet = Selectable<PetTable>
+export type NewPet = Insertable<PetTable>
+export type PetUpdate = Updateable<PetTable>
+```
+
+## 7. Create database connection
+
+Create a `database.ts` file to set up your Kysely instance:
+
+```typescript file=database.ts
+import { Database } from './types'
+import { Pool } from 'pg'
+import { Kysely, PostgresDialect } from 'kysely'
+
+const dialect = new PostgresDialect({
+  pool: new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 10,
+  })
+})
+
+export const db = new Kysely<Database>({
+  dialect,
+})
+```
+
+Create a `.env` file and add your Prisma Postgres connection string:
+
+```env file=.env
+DATABASE_URL="postgres://your-connection-string"
+```
+
+## 8. Create database tables
+
+Create a `setup.ts` file to set up your database schema:
+
+```typescript file=setup.ts
+import { db } from './database'
+import { sql } from 'kysely'
+
+async function setup() {
+  // Create person table
+  await db.schema
+    .createTable('person')
+    .addColumn('id', 'serial', (col) => col.primaryKey())
+    .addColumn('first_name', 'varchar', (col) => col.notNull())
+    .addColumn('last_name', 'varchar')
+    .addColumn('gender', 'varchar', (col) => col.notNull())
+    .addColumn('created_at', 'timestamp', (col) =>
+      col.defaultTo(sql`now()`).notNull()
+    )
+    .execute()
+
+  // Create pet table
+  await db.schema
+    .createTable('pet')
+    .addColumn('id', 'serial', (col) => col.primaryKey())
+    .addColumn('name', 'varchar', (col) => col.notNull())
+    .addColumn('owner_id', 'integer', (col) =>
+      col.references('person.id').onDelete('cascade').notNull()
+    )
+    .addColumn('species', 'varchar', (col) => col.notNull())
+    .execute()
+
+  console.log('Tables created successfully!')
+}
+
+setup()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error('Setup failed:', error)
+    process.exit(1)
+  })
+```
+
+Run the setup script:
+
+```terminal
+tsx setup.ts
+```
+
+## 9. Write your first queries
+
+Create a `script.ts` file to test your setup:
+
+```typescript file=script.ts
+import { db } from './database'
+import { NewPerson, NewPet } from './types'
+
+async function main() {
+  // Insert a person
+  const person = await db
+    .insertInto('person')
+    .values({
+      first_name: 'Alice',
+      last_name: 'Smith',
+      gender: 'woman',
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
+
+  console.log('Created person:', person)
+
+  // Insert a pet for the person
+  const pet = await db
+    .insertInto('pet')
+    .values({
+      name: 'Fluffy',
+      owner_id: person.id,
+      species: 'cat',
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
+
+  console.log('Created pet:', pet)
+
+  // Query people with their pets
+  const peopleWithPets = await db
+    .selectFrom('person')
+    .leftJoin('pet', 'pet.owner_id', 'person.id')
+    .select([
+      'person.id',
+      'person.first_name',
+      'person.last_name',
+      'pet.name as pet_name',
+      'pet.species',
+    ])
+    .execute()
+
+  console.log('People with pets:', peopleWithPets)
+
+  // Update a person
+  await db
+    .updateTable('person')
+    .set({ last_name: 'Johnson' })
+    .where('id', '=', person.id)
+    .execute()
+
+  console.log('Updated person')
+
+  // Find people by criteria
+  const women = await db
+    .selectFrom('person')
+    .selectAll()
+    .where('gender', '=', 'woman')
+    .execute()
+
+  console.log('Women:', women)
+}
+
+main()
+  .then(async () => {
+    await db.destroy()
+  })
+  .catch(async (error) => {
+    console.error('Error:', error)
+    await db.destroy()
+    process.exit(1)
+  })
+```
+
+Run the script:
+
+```terminal
+tsx script.ts
+```
+
+You should see the created person, pet, and query results printed to the console!
+
+## Next steps
+
+Now that you have Kysely connected to Prisma Postgres, you can:
+
+- **Learn more about Kysely** - Check out the [Kysely documentation](https://kysely.dev/docs/intro) for advanced query patterns
+- **Generate types from your database** - Use [kysely-codegen](https://github.com/RobinBlomberg/kysely-codegen) to automatically generate TypeScript types from your database schema
+- **Explore migrations** - Learn about [Kysely migrations](https://kysely.dev/docs/migrations) for managing schema changes
+- **Add more complex queries** - Explore [joins](https://kysely.dev/docs/examples/joins), [subqueries](https://kysely.dev/docs/examples/subqueries), and [transactions](https://kysely.dev/docs/examples/transactions)
+
+## More info
+
+- [Kysely documentation](https://kysely.dev)
+- [Kysely GitHub repository](https://github.com/kysely-org/kysely)
+- [Prisma Postgres documentation](/postgres)
+- [PostgreSQL driver documentation](https://node-postgres.com)

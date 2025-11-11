@@ -1,0 +1,295 @@
+---
+title: 'Drizzle ORM'
+metaTitle: 'Quickstart: Drizzle ORM with Prisma Postgres (10 min)'
+metaDescription: 'Get started with Drizzle ORM and Prisma Postgres by creating a lightweight, performant TypeScript ORM for your database.'
+sidebar_custom_props: { badge: '10 min' }
+---
+
+[Drizzle ORM](https://orm.drizzle.team) is a lightweight and performant TypeScript ORM with developer experience in mind. It provides a SQL-like syntax with full TypeScript support and excellent performance. In this guide, you'll learn how to connect Drizzle ORM to [Prisma Postgres](/postgres) and start building type-safe database queries.
+
+## Prerequisites
+
+- **Node.js** - Version 16 or higher
+- **TypeScript** - Version 5.0 or higher
+- A [Prisma Data Platform](https://console.prisma.io) account
+
+## 1. Create a Prisma Postgres database
+
+Follow these steps to create your Prisma Postgres database:
+
+1. Log in to [Prisma Data Platform](https://console.prisma.io) and open the Console.
+2. In a workspace of your choice, click the **New project** button.
+3. Type a name for your project in the **Name** field, e.g. `drizzle-quickstart`.
+4. In the **Prisma Postgres** section, click the **Get started** button.
+5. In the **Region** dropdown, select the region that's closest to your current location, e.g. US East (N. Virginia).
+6. Click the **Create project** button.
+
+At this point, you'll be redirected to the Database page where you will need to wait for a few seconds while the status of your database changes from **PROVISIONING** to **CONNECTED**.
+
+Once the green **CONNECTED** label appears, your database is ready to use!
+
+## 2. Get your direct connection string
+
+To connect to Prisma Postgres via direct TCP, you need to:
+
+1. Open your project in the Prisma Console.
+2. Navigate to your active Prisma Postgres instance.
+3. Click the **API Keys** tab in the project's sidenav.
+4. Click the **Create API key** button.
+5. In the popup, provide a **Name** for the API key and click **Create**.
+6. Copy the connection string starting with `postgres://`, this is your direct connection string.
+
+## 3. Create a new project
+
+Create a new directory for your project and initialize it:
+
+```terminal
+mkdir drizzle-quickstart
+cd drizzle-quickstart
+npm init -y
+```
+
+## 4. Install dependencies
+
+Install Drizzle ORM and the PostgreSQL driver:
+
+```terminal
+npm install drizzle-orm pg
+npm install --save-dev drizzle-kit @types/pg typescript tsx
+```
+
+Here's what each package does:
+
+- **`drizzle-orm`** - The Drizzle ORM library for querying your database
+- **`pg`** - The node-postgres driver for connecting to PostgreSQL
+- **`drizzle-kit`** - CLI tool for managing migrations and generating SQL
+- **`@types/pg`** - TypeScript type definitions for node-postgres
+- **`typescript`** - The TypeScript compiler
+- **`tsx`** - TypeScript execution engine for running TypeScript files
+
+## 5. Configure TypeScript
+
+Create a `tsconfig.json` file:
+
+```json file=tsconfig.json
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2023",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+Update `package.json` to enable ESM:
+
+```json file=package.json
+{
+  "type": "module"
+}
+```
+
+## 6. Define your database schema
+
+Create a `schema.ts` file to define your database schema:
+
+```typescript file=schema.ts
+import { pgTable, serial, text, varchar, boolean, timestamp, integer } from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  name: text('name'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content'),
+  published: boolean('published').default(false).notNull(),
+  authorId: integer('author_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Define relations
+export const usersRelations = relations(users, ({ many }) => ({
+  posts: many(posts),
+}))
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  author: one(users, {
+    fields: [posts.authorId],
+    references: [users.id],
+  }),
+}))
+```
+
+## 7. Configure Drizzle
+
+Create a `drizzle.config.ts` file:
+
+```typescript file=drizzle.config.ts
+import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  schema: './schema.ts',
+  out: './drizzle',
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
+})
+```
+
+Create a `.env` file and add your Prisma Postgres connection string:
+
+```env file=.env
+DATABASE_URL="postgres://your-connection-string"
+```
+
+## 8. Create database connection
+
+Create a `db.ts` file to set up your Drizzle instance:
+
+```typescript file=db.ts
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
+import * as schema from './schema'
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+})
+
+export const db = drizzle({ client: pool, schema })
+```
+
+## 9. Generate and run migrations
+
+Generate a migration from your schema:
+
+```terminal
+npx drizzle-kit generate
+```
+
+This creates SQL migration files in the `drizzle` directory. Now push the migration to your database:
+
+```terminal
+npx drizzle-kit push
+```
+
+## 10. Write your first queries
+
+Create a `script.ts` file to test your setup:
+
+```typescript file=script.ts
+import { db } from './db'
+import { users, posts } from './schema'
+import { eq } from 'drizzle-orm'
+
+async function main() {
+  // Insert a user with a post
+  const [user] = await db
+    .insert(users)
+    .values({
+      name: 'Alice',
+      email: 'alice@prisma.io',
+    })
+    .returning()
+
+  console.log('Created user:', user)
+
+  const [post] = await db
+    .insert(posts)
+    .values({
+      title: 'Hello World',
+      content: 'This is my first post!',
+      published: true,
+      authorId: user.id,
+    })
+    .returning()
+
+  console.log('Created post:', post)
+
+  // Query users with their posts using relations
+  const usersWithPosts = await db.query.users.findMany({
+    with: {
+      posts: true,
+    },
+  })
+
+  console.log('Users with posts:', JSON.stringify(usersWithPosts, null, 2))
+
+  // Find a specific user
+  const foundUser = await db.query.users.findFirst({
+    where: eq(users.email, 'alice@prisma.io'),
+    with: {
+      posts: true,
+    },
+  })
+
+  console.log('Found user:', foundUser)
+
+  // Update a post
+  await db
+    .update(posts)
+    .set({ published: false })
+    .where(eq(posts.id, post.id))
+
+  console.log('Updated post')
+
+  // Query with SQL-like syntax
+  const allUsers = await db.select().from(users)
+  console.log('All users:', allUsers)
+}
+
+main()
+  .then(() => {
+    console.log('Done!')
+    process.exit(0)
+  })
+  .catch((error) => {
+    console.error('Error:', error)
+    process.exit(1)
+  })
+```
+
+Run the script:
+
+```terminal
+tsx script.ts
+```
+
+You should see the created user, post, and query results printed to the console!
+
+## 11. Explore Drizzle Studio (Optional)
+
+Drizzle Kit comes with a built-in database browser called Drizzle Studio:
+
+```terminal
+npx drizzle-kit studio
+```
+
+This opens a web interface where you can browse and edit your database data visually.
+
+## Next steps
+
+Now that you have Drizzle ORM connected to Prisma Postgres, you can:
+
+- **Learn more about Drizzle** - Check out the [Drizzle ORM documentation](https://orm.drizzle.team/docs/overview) for advanced features
+- **Explore queries** - Learn about [select queries](https://orm.drizzle.team/docs/select), [joins](https://orm.drizzle.team/docs/joins), and [transactions](https://orm.drizzle.team/docs/transactions)
+- **Manage migrations** - Explore [Drizzle Kit migrations](https://orm.drizzle.team/docs/migrations) for schema management
+- **Use relational queries** - Take advantage of [Drizzle's relational query API](https://orm.drizzle.team/docs/rqb) for cleaner code
+
+## More info
+
+- [Drizzle ORM documentation](https://orm.drizzle.team)
+- [Drizzle ORM GitHub repository](https://github.com/drizzle-team/drizzle-orm)
+- [Prisma Postgres documentation](/postgres)
+- [Drizzle Kit documentation](https://orm.drizzle.team/kit-docs/overview)
