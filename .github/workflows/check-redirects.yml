@@ -1,0 +1,39 @@
+name: Check Redirect Loops
+
+on:
+  pull_request:
+    paths:
+      - "static/_redirects"
+  push:
+    branches:
+      - main
+    paths:
+      - "static/_redirects"
+
+jobs:
+  check-redirects:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Check for redirect loops
+        run: node scripts/check-redirect-loops.js
+
+      - name: Comment on PR (if loops found)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Redirect Loop Detected**\n\nThe `_redirects` file contains one or more redirect loops. Please check the workflow logs for details and fix the loops before merging.'
+            })
