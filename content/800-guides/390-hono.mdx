@@ -65,6 +65,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 This will create:
 
 - A `prisma/` directory with a `schema.prisma` file
+- A `prisma.config.ts` with your Prisma configuration
 - A `.env` file with a `DATABASE_URL` already set
 
 ### 2.2. Define your Prisma Schema
@@ -73,9 +74,7 @@ In the `prisma/schema.prisma` file, add the following models and change the gene
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  //edit-next-line
   provider = "prisma-client"
-  engineType = "client"
   output   = "../src/generated/prisma"
 }
 
@@ -104,6 +103,25 @@ model Post {
 ```
 
 This creates two models: `User` and `Post`, with a one-to-many relationship between them.
+
+In `prisma.config.ts`, import `dotenv` at the top of the file
+
+```ts
+import { defineConfig, env } from "prisma/config";
+// add-start
+import "dotenv/config";
+// add-end
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  engine: "classic",
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+});
+```
 
 ### 2.3. Configure the Prisma Client generator
 
@@ -172,36 +190,24 @@ main()
   });
 ```
 
-Now, tell Prisma how to run this script by updating your `package.json`:
+Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```json file=package.json
-{
-  "name": "my-app",
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+```ts file=prisma.config.ts
+import { defineConfig, env } from "prisma/config";
+import "dotenv/config";
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+//add-start
+    seed: "tsx prisma/seed.ts"
+//add-end
   },
-  //add-start
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+  engine: "classic",
+  datasource: {
+    url: env("DATABASE_URL"),
   },
-  //add-end
-  "dependencies": {
-    "@hono/node-server": "^1.19.5",
-    "@prisma/client": "^6.16.3",
-    "@prisma/extension-accelerate": "^2.0.2",
-    "dotenv": "^17.2.3",
-    "hono": "^4.9.9"
-  },
-  "devDependencies": {
-    "@types/node": "^20.11.17",
-    "prisma": "^6.16.3",
-    "tsx": "^4.20.6",
-    "typescript": "^5.8.3"
-  }
-}
+});
 ```
 
 Run the seed script:
@@ -229,6 +235,7 @@ Inside of `/src`, create a `lib` directory and a `prisma.ts` file inside it. Thi
 import type { Context, Next } from 'hono';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { withAccelerate } from '@prisma/extension-accelerate';
+import "dotenv/config";
 
 function withPrisma(c: Context, next: Next) {
   if (!c.get('prisma')) {
@@ -254,6 +261,7 @@ export default withPrisma;
 ```tsx file=src/lib/prisma.ts
 import type { Context, Next } from 'hono';
 import { PrismaClient } from '../generated/prisma/client.js';
+import "dotenv/config";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -281,30 +289,14 @@ If you choose not to use one, in long-lived environments (for example, a Node.js
 
 ### 3.2 Environment Variables & Types
 
-By default, Hono does not load any environment variables from a `.env`. `dotenv` handles this and will be read that file and expose them via `process.env`.
-
-Edit the `src/index.ts` to import `dotenv` and call the `config` method on it.
-
-```ts file=src/index.ts
-import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-
-// Read .env and set variables to process.env
-import * as dotenv from 'dotenv';
-dotenv.config();
-```
-
-Next, Hono needs additional types to to know that the `withPrisma` middleware will set a `prisma`
-key on the Hono Context
+By default, Hono does not load any environment variables from a `.env`. `dotenv` handles this and will be read that file and expose them via `process.env`. Hono can get additional types to know that the `withPrisma` middleware will set a `prisma`
+key on the Hono context
 
 ```ts file=src/index.ts 
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 // add-next-line
 import type { PrismaClient } from "./generated/prisma/client.js";
-
-import * as dotenv from "dotenv";
-dotenv.config();
 
 // add-start
 type ContextWithPrisma = {
@@ -332,8 +324,7 @@ serve(
 );
 ```
 
-If using Cloudflare Workers, the environment variables will automatically be set to Hono's contenxt,
-so `dotenv` can be skipped.
+If using Cloudflare Workers, the environment variables will automatically be set to Hono's contenxt, so `dotenv` can be skipped.
 
 
 ### 3.3. Create A GET Route

@@ -10,6 +10,15 @@ community_section: true
 
 ## Introduction
 
+<details>
+<summary>Questions answered in this page</summary>
+
+- How to integrate Prisma with Astro?
+- How to set up Prisma Postgres in Astro?
+- How to query data in Astro pages?
+
+</details>
+
 Prisma ORM offers type-safe database access, and [Astro](https://astro.build/) is built for performance. Together with [Prisma Postgres](https://www.prisma.io/postgres), you get a fast, content-first stack with zero cold starts and end-to-end speed.
 
 In this guide, you'll learn to integrate Prisma ORM with a Prisma Postgres database in an Astro project from scratch. You can find a complete example of this guide on [GitHub](https://github.com/prisma/prisma-examples/tree/latest/orm/astro).
@@ -44,13 +53,13 @@ To get started with Prisma, you'll need to install a few dependencies:
 <TabItem value="Prisma Postgres (recommended)">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install @prisma/extension-accelerate @prisma/client dotenv
 ```
 </TabItem>
 <TabItem value="Other databases">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/client
+npm install @prisma/client dotenv
 ```
 </TabItem>
 </TabbedContent>
@@ -66,6 +75,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 This will create:
 
 - A `prisma/` directory with a `schema.prisma` file
+- A `prisma.config.ts` file for configuring Prisma
 - A `.env` file with a `DATABASE_URL` already set
 
 ### 2.2. Define your Prisma Schema
@@ -75,7 +85,6 @@ In the `prisma/schema.prisma` file, add the following models and change the gene
 ```prisma file=prisma/schema.prisma
 generator client {
   provider   = "prisma-client"
-  engineType = "client"
   output     = "../prisma/generated"
 }
 
@@ -105,14 +114,37 @@ model Post {
 
 This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-### 2.3. Configure the Prisma Client generator
+
+### 2.3 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+### 2.4. Configure the Prisma Client generator
 
 Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
-### 2.4. Seed the database
+### 2.5. Seed the database
 
 Let's add some seed data to populate the database with sample users and posts.
 
@@ -180,34 +212,22 @@ main()
   });
 ```
 
-Now, tell Prisma how to run this script by updating your `package.json`:
+Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```json file=package.json
-{
-  "name": "astro-prisma",
-  "type": "module",
-  "version": "0.0.1",
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: `tsx prisma/seed.ts`,
   },
-  //add-start
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+  engine: 'classic',
+  datasource: {
+    url: env('DATABASE_URL'),
   },
-  //add-end
-  "dependencies": {
-    "@prisma/client": "^6.17.1",
-    "@prisma/extension-accelerate": "^2.0.2",
-    "astro": "^5.14.4"
-  },
-  "devDependencies": {
-    "prisma": "^6.17.1",
-    "tsx": "^4.20.6"
-  }
-}
+});
 ```
 
 Run the seed script:
