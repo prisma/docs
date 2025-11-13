@@ -125,9 +125,9 @@ export const get_help = [
 export const tabs = [
   {
     icon: "fa-solid fa-chart-pyramid",
-    label: "Use Prisma Postgres",
+    label: "Use Prisma's managed Postgres",
     description:
-      "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres</b> you get an instant, fully hosted high-performance database that includes built-in caching, scales to zero, and integrates deeply with Prisma ORM and Prisma Studio—all backed by a generous free tier.",
+      "Get started with your favorite framework and Prisma Postgres. <b>With Prisma Postgres</b> you get an instant, fully hosted high-performance database that scales to zero and integrates deeply with Prisma ORM and Prisma Studio—all backed by a generous free tier.",
     list: [
       {
         url: "/guides/nextjs",
