@@ -14,18 +14,22 @@ You can define your config in either of two ways:
 - Using the `defineConfig` helper:
   ```ts
   import path from "node:path";
-  import { defineConfig } from "prisma/config";
+  import { defineConfig, env } from "prisma/config";
 
   export default defineConfig({
     schema: path.join("prisma", "schema.prisma"),
-    migrations: {
+    migrations: { 
       path: path.join("db", "migrations"),
     },
-    views: {
+    views: { 
       path: path.join("db", "views"),
     },
-    typedSql: {
-      path: path.join("db", "queries"),
+    typedSql: { 
+    path: path.join("db", "queries"),
+    },
+    engine: "classic",
+    datasource: { 
+      url: env("DATABASE_URL") 
     }
   });
   ```
@@ -45,6 +49,10 @@ You can define your config in either of two ways:
     },
     typedSql: {
       path: path.join("db", "queries"),
+    },
+    engine: "classic",
+    datasource: { 
+      url: env("DATABASE_URL") 
     }
   } satisfies PrismaConfig;
   ```
@@ -90,6 +98,15 @@ export declare type PrismaConfig = {
   typedSql?: {
     path: string;
   };
+  // Depending on the choice, you must provide either a `datasource` object or driver adapter
+  engine: 'classic' | 'js'
+  
+  // If using the classic engine, datasource sets the database url, shadowDatabaseUrl, or directURL
+  datasource?: {
+    url: string;
+    directUrl?: string;
+    shadowDatabaseUrl?: string;
+  }
   
 };
 ```
@@ -130,9 +147,6 @@ Example using the Prisma ORM D1 driver adapter:
 import path from "node:path";
 import type { PrismaConfig } from "prisma";
 import { PrismaD1 } from "@prisma/adapter-d1";
-
-// import your .env file
-import "dotenv/config";
 
 export default {
   experimental: {
@@ -332,6 +346,63 @@ Failed to load config file "~" as a TypeScript/JavaScript module. Error: Error: 
 
 :::
 
+
+### `engine`
+
+Configure the schema engine your project should use.
+
+| Property | Type               | Required | Default           |
+| -------- | ------------------ | -------- | ----------------- |
+| `engine` | `classic` or `js`  | No       | `classic`         |
+
+ By default it is set to use the classic engine, which requires that `datasource` be set
+ in your `prisma.config.ts`. 
+
+```ts
+import path from "node:path";
+import { defineConfig, env } from "prisma/config";
+export default defineConfig({
+  engine: "classic",
+  datasource: {
+      url: env('DATABASE_URL'),
+  },
+  schema: path.join("prisma", "schema.prisma"),
+});
+```
+
+### `datasource.url`
+
+Connection URL including authentication info. Most connectors use [the syntax provided by the database](/orm/reference/connection-urls#format).
+
+| Property         | Type               | Required | Default           |
+| --------         | ------------------ | -------- | ----------------- |
+| `datasource.url` | `string`           | Yes       | `''`              |
+
+
+### `datasource.shadowDatabaseUrl`
+
+
+Connection URL to the shadow database used by Prisma Migrate. Allows you to use a cloud-hosted database as the shadow database
+
+| Property                       | Type               | Required | Default           |
+| --------                       | ------------------ | -------- | ----------------- |
+| `datasource.shadowDatabaseUrl` | `string`           | No       | `''`              |
+
+
+### `datasource.directUrl`
+
+
+Connection URL for direct connection to the database.
+
+If you use a connection pooler URL in the `url` argument (for example, if you use [Prisma Accelerate](/accelerate) or pgBouncer), Prisma CLI commands that require a direct connection to the database use the URL in the `directUrl` argument. <br/> <br/> The `directUrl` property is supported by Prisma Studio from version 5.1.0 upwards. <br/> <br/> The `directUrl` property is not needed when using [Prisma Postgres](/postgres) database.
+
+| Property               | Type               | Required | Default           |
+| --------               | ------------------ | -------- | ----------------- |
+| `datasource.directUrl` | `string`           | No       | `''`              |
+
+
+
+
 ## Common patterns
 
 ### Setting up your project
@@ -356,7 +427,38 @@ export default {} satisfies PrismaConfig;
 
 ### Using environment variables
 
-When using `prisma.config.ts`, environment variables from `.env` files are not automatically loaded. You'll need to:
+When using `prisma.config.ts`, environment variables from `.env` files are not automatically loaded. Using `tsx`, you can pass a `--env-file` flag and that will automatically add those values to `process.env` 
+
+If using Node or Deno: 
+
+```terminal
+tsx --env-file=.env src/index.ts
+tsx watch --env-file=.env --env-file=.local.env src/index.ts
+tsx --env-file=.env ./prisma/seed.ts
+```
+
+For Bun, `.env` files are automatically loaded.
+
+For accessing environment variables within `prisma.config.ts`, use the `env()` helper function to
+provide a type-safe way of accessing that variable:
+
+```tsx
+import path from "node:path";
+import { defineConfig, env } from "prisma/config";
+
+type Env = {
+  DATABASE_URL: string
+}
+export default defineConfig({
+  engine: "classic",
+  datasource: {
+      url: env<Env>('DATABASE_URL'),
+  },
+  schema: path.join("prisma", "schema.prisma"),
+});
+```
+
+For releases of Node before v20, you'll need to: 
 
 1. Install the `dotenv` package:
 
@@ -368,11 +470,18 @@ npm install dotenv
 
 ```ts
 import "dotenv/config";
-import type { PrismaConfig } from "prisma";
+import { defineConfig, env } from "prisma/config";
 
-export default {
-  // now you can use process.env variables
-} satisfies PrismaConfig;
+type Env = {
+  DATABASE_URL: string
+}
+export default defineConfig({
+  engine: "classic",
+  datasource: {
+      url: env<Env>('DATABASE_URL'),
+  },
+  schema: path.join("prisma", "schema.prisma"),
+});
 ```
 
 ### Using multi-file schemas
@@ -475,7 +584,7 @@ If Prisma is installed globally (`npm i -g prisma`), it may not find your `prism
 To avoid issues:
 
 - Prefer local Prisma installations in your project.
-- Or use `@prisma/config` locally and pass `--config` to point to your config file.
+- Or use `prisma/config` locally and pass `--config` to point to your config file.
 
 ### Monorepos
 

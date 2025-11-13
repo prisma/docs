@@ -161,6 +161,68 @@ To use it, install the VS Code extension and find the **Prisma logo** in the act
 - starting and stopping the server for a particular database
 - "push to cloud": move a database from local to remote
 
+## Manage local Prisma Postgres programmatically
+
+You can start and stop a local Prisma Postgres server from Node.js without invoking the CLI. This uses undocumented, unstable APIs from `@prisma/dev` and may change without notice. Use it at your own risk. It’s especially useful for integration tests that need an ephemeral local database per test or suite.
+
+This is a complete runnable example that will print `[{abba: 1}]` when run:
+
+```ts
+import { Client } from 'pg'
+import { unstable_startServer } from '@prisma/dev'
+import { getPort } from 'get-port-please'
+
+async function startLocalPrisma(name: string) {
+    const port = await getPort()
+
+    return await unstable_startServer({
+        name, // required, use a unique name if running tests in parallel
+        port, //optional, defaults to 51213
+        databasePort: port + 1, // optional, defaults to 51214
+        shadowDatabasePort: port + 2, // optional, defaults to 51215
+        persistenceMode: 'stateless' // optional, defaults to 'stateless'. Use 'stateful' to persist data between runs
+    })
+}
+
+// Usage in tests
+const server = await startLocalPrisma(`my-tests-${Date.now()}`)
+try {
+    const client = new Client({ connectionString: server.database.connectionString })
+    await client.connect()
+
+    const res = await client.query(`SELECT 1 as "abba"`)
+    console.log(res.rows)
+
+    client.end()
+} finally {
+    await server.close!()
+}
+```
+
+### API Arguments
+
+The `unstable_startServer()` function accepts the following options:
+
+| **Argument**             | **Required** | **Description**                                                                                                                | **Default**   |
+| ------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| **`name`**               | ✅            | Unique identifier for the local Prisma Postgres instance. Use distinct names if running multiple servers in parallel.          | —             |
+| **`port`**               | ❌            | Port for the Prisma engine server. Throws an error if the port is already in use.                                              | `51213`       |
+| **`databasePort`**       | ❌            | Port for the embedded PostgreSQL database. Used for all Prisma ORM connections.                                                | `51214`       |
+| **`shadowDatabasePort`** | ❌            | Port for the shadow database used during migrations.                                                                           | `51215`       |
+| **`persistenceMode`**    | ❌            | Defines how data is persisted:<br />• `'stateless'` — no data is retained between runs<br />• `'stateful'` — data persists locally | `'stateless'` |
+
+:::tip
+
+You can dynamically choose available ports using libraries like [`get-port-please`](https://www.npmjs.com/package/get-port-please) to avoid conflicts when running multiple instances.
+
+:::
+
+Notes:
+
+- Allocate unique ports and `name` values when running tests concurrently.
+- Use `server.database.connectionString` to connect with Postgres clients or ORMs.
+- This pattern is great for running tests that require a local database.
+
 ## Known limitations
 
 ### Caching is mocked locally

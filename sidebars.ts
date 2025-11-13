@@ -418,6 +418,7 @@ const sidebars: SidebarsConfig = {
             "guides/nuxt",
             "guides/sveltekit",
             "guides/astro",
+            "guides/hono",
             "guides/solid-start",
             "guides/react-router-7",
             "guides/tanstack-start",
@@ -446,6 +447,7 @@ const sidebars: SidebarsConfig = {
             "guides/clerk-nextjs",
             "guides/shopify",
             "guides/permit-io-access-control",
+            "guides/betterauth-astro",
             "guides/betterauth-nextjs",
             "guides/ai-sdk-nextjs",
             "guides/authjs-nextjs",
@@ -473,6 +475,7 @@ const sidebars: SidebarsConfig = {
             "guides/management-api-basic",
             "guides/management-api",
             "guides/vercel-app-deployment",
+            "guides/deno-integration",
           ].sort(),
         },
         {
@@ -529,6 +532,13 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: "category",
+          label: "Prompts",
+          collapsed: false,
+          collapsible: false,
+          items: ["ai/prompts/astro", "ai/prompts/nextjs"],
+        },
+        {
+          type: "category",
           label: "Coding Tools",
           collapsed: false,
           collapsible: false,
@@ -536,7 +546,7 @@ const sidebars: SidebarsConfig = {
             "orm/more/ai-tools/cursor",
             "orm/more/ai-tools/windsurf",
             "orm/more/ai-tools/github-copilot",
-            "orm/more/ai-tools/tabnine",
+            "orm/more/ai-tools/chatgpt",
           ],
         },
         {
@@ -610,3 +620,5 @@ const sidebars: SidebarsConfig = {
 };
 
 export default sidebars;
+
+
