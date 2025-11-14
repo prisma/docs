@@ -159,7 +159,11 @@ export const QuickstartLinkCard = ({ icon, title, desc, link, highlight, childre
     <Link
       to={link}
       ref={linkCardRef}
-      className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}
+      className={clsx(
+        styles.linkCardWrapper,
+        highlight && styles.linkCardHighlight,
+        styles.quickstartCard
+      )}
     >
       <div className={styles.title}>
         {icon && <Icon icon={icon} btn="left" size="18px" />}
