@@ -215,3 +215,5 @@ export const List = ({ children, framed, split, ...props }) => (
     {children}
   </div>
 );
+
+export const Spacer = ({ size }: { size: string }) => <div style={{ height: size }} />;
