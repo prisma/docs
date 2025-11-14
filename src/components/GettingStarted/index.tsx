@@ -164,6 +164,7 @@ export const QuickstartLinkCard = ({ icon, title, desc, link, highlight, childre
       <div className={styles.title}>
         {icon && <Icon icon={icon} btn="left" size="18px" />}
         <h2>{title}</h2>
+        <Icon icon="fa-regular fa-arrow-right" size="18px" />
       </div>
       {children ?? <p>{desc}</p>}
     </Link>
