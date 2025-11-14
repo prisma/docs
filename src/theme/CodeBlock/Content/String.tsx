@@ -97,7 +97,11 @@ export default function CodeBlockString({
             />
           )}
           {!metastring?.includes("no-copy") && (
-            <CopyButton className={styles.codeButton} code={code} />
+            <CopyButton
+              className={styles.codeButton}
+              code={code}
+              alwaysVisible={metastring?.includes("always-copy")}
+            />
           )}
         </div>
       </div>
