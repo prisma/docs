@@ -46,6 +46,33 @@ Update the file and set the `DATABASE_URL` to your Neon connection string:
 DATABASE_URL="postgresql://neondb_owner:[YOUR-PASSWORD]@ep-lingering-hat-a2e7tkt3.eu-central-1.aws.neon.tech/neondb?sslmode=require"
 ```
 
+Create a `prisma.config.ts` file to configure Prisma:
+
+```typescript file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+:::note
+
+You'll need to install the `dotenv` package to load environment variables:
+
+```bash
+npm install dotenv
+```
+
+:::
+
 ## 2. Introspect your database
 
 Next, run the following command to introspect your database and create your data model:
@@ -58,7 +85,7 @@ This command reads your database schema and creates new models in your `schema.p
 
 :::note
 
-If you want to use Prisma Migrate in the future, you also need to [baseline your database](/orm/prisma-migrate/workflows/baselining). 
+If you want to use Prisma Migrate in the future, you also need to [baseline your database](/orm/prisma-migrate/workflows/baselining).
 
 :::
 
@@ -95,16 +122,26 @@ DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=ey..."
 
 :::note
 
-If you want to use Prisma Migrate with Prisma Accelerate, you can set the `directUrl` field on the `datasource` block:
+If you want to use Prisma Migrate with Prisma Accelerate, you need to provide a direct database URL in your `prisma.config.ts` file. The Accelerate URL (starting with `prisma://`) is used for queries via PrismaClient, while the direct database URL is used for migrations.
 
-```prisma file=schema.prisma
-datasource db {
-  url       = env("DATABASE_URL") // points to the connection pool for queries
-  directUrl = env("DIRECT_URL")   // points to the database for migrations
-}
+Update your `prisma.config.ts`:
+
+```typescript file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DIRECT_URL'), // Direct database URL for migrations
+  },
+});
 ```
 
-Accordingly, you'll need to set the `DIRECT_URL` in your `.env` file:
+And add the `DIRECT_URL` to your `.env` file:
 
 ```bash file=.env
 DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=ey..."
@@ -118,10 +155,14 @@ DIRECT_URL="postgresql://neondb_owner:[YOUR-PASSWORD]@ep-lingering-hat-a2e7tkt3.
 With your Prisma schema in place, you can go ahead and generate Prisma Client:
 
 ```
-npx prisma generate --no-engine
+npx prisma generate
 ```
 
-The `--no-engine` option is used to omit the [query engine](/orm/more/under-the-hood/engines) in the generated Prisma Client library. The query engine manages Prisma ORM's internal connection pool and is not needed when using Prisma Accelerate.
+:::info
+
+In Prisma 7, the `--no-engine` flag is no longer required when using Prisma Accelerate. Previously, you would run `prisma generate --no-engine`, but now the standard `prisma generate` command works for all use cases.
+
+:::
 
 ## 6. Send queries through the connection pool
 
@@ -131,7 +172,9 @@ In your application code, you now need to apply the Accelerate extension to your
 import { PrismaClient } from "./generated/prisma"
 import { withAccelerate } from "@prisma/extension-accelerate"
 
-const prisma = new PrismaClient().$extends(withAccelerate())
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate())
 ```
 
 At this point, you can now start sending queries which will be routed through the connection pool to your database.

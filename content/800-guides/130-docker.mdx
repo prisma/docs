@@ -100,11 +100,10 @@ Add a `User` model to the `schema.prisma` file located in the `prisma/schema.pri
 ```prisma file=prisma/schema.prisma
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   //add-start
   output = "../generated/prisma_client"
   //add-end
@@ -126,6 +125,33 @@ In the `schema.prisma` file, we specify a [custom `output` path](/orm/prisma-cli
 
 :::
 
+Now, create a `prisma.config.ts` file in the root of your project:
+
+```typescript file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+:::note
+
+You'll need to install the `dotenv` package to load environment variables:
+
+```bash
+npm install dotenv
+```
+
+:::
+
 ### 1.4. Create an Express.js server
 
 With the Prisma schema in place, let's create an Express.js server to interact with the database. Start by creating an `index.js` file:
@@ -140,9 +166,16 @@ Add the following code to set up a basic Express server:
 //add-start
 const express = require("express");
 const { PrismaClient } = require("./generated/prisma_client");
+const { PrismaPg } = require("@prisma/adapter-pg");
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
 
 const app = express();
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter,
+});
 app.use(express.json());
 
 // Get all users

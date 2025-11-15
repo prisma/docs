@@ -62,7 +62,7 @@ npm install @prisma/extension-accelerate @prisma/client dotenv
 <TabItem value="Other databases">
 ```terminal
 npm install prisma tsx --save-dev
-npm install @prisma/client dotenv
+npm install @prisma/client @prisma/adapter-pg dotenv
 ```
 </TabItem>
 </TabbedContent>
@@ -90,13 +90,12 @@ In the `prisma/schema.prisma` file, add the following models:
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -140,7 +139,6 @@ export default defineConfig({
   migrations: {
     path: 'prisma/migrations',
   },
-  engine: 'classic',
   datasource: {
     url: env('DATABASE_URL'),
   },
@@ -176,7 +174,9 @@ const globalForPrisma = global as unknown as {
   prisma: PrismaClient;
 };
 
-const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate());
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate());
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
@@ -187,12 +187,19 @@ export default prisma;
 <TabItem value="Other databases">
 ```tsx file=lib/prisma.ts
 import { PrismaClient } from "../app/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
 
 const globalForPrisma = global as unknown as {
   prisma: PrismaClient;
 };
 
-const prisma = globalForPrisma.prisma || new PrismaClient();
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  adapter,
+});
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 

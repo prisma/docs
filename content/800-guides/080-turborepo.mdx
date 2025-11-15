@@ -94,7 +94,7 @@ Next, install the required dependencies to use Prisma ORM. Use your preferred pa
 
 ```terminal
 npm install prisma --save-dev
-npm install @prisma/client
+npm install @prisma/client dotenv
 ```
 
 </TabItem>
@@ -103,7 +103,7 @@ npm install @prisma/client
 
 ```terminal
 yarn add prisma --dev
-yarn add @prisma/client
+yarn add @prisma/client dotenv
 ```
 
 </TabItem>
@@ -112,7 +112,7 @@ yarn add @prisma/client
 
 ```terminal
 pnpm add prisma --save-dev
-pnpm add @prisma/client
+pnpm add @prisma/client dotenv
 ```
 
 </TabItem>
@@ -200,7 +200,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -220,6 +219,23 @@ model Post {
   author    User    @relation(fields: [authorId], references: [id])
 }
 //add-end
+```
+
+The `prisma.config.ts` file created in the `packages/database` directory should look like this:
+
+```typescript file=packages/database/prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
 ```
 
 :::warning
@@ -335,7 +351,7 @@ Navigate to the project root and run the following command to automatically migr
 </TabbedContent>
 
 
-Generate your `prisma.schema`
+Generate your `schema.prisma`
 
 To generate the types from Prisma schema, from the project root run:
 
@@ -383,7 +399,9 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 export const prisma =
-  globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate());
+  globalForPrisma.prisma || new PrismaClient({
+    accelerateUrl: process.env.DATABASE_URL,
+  }).$extends(withAccelerate());
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
@@ -394,11 +412,18 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 ```ts file=packages/database/src/client.ts
 import { PrismaClient } from "../generated/prisma";
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 export const prisma =
-  globalForPrisma.prisma || new PrismaClient();
+  globalForPrisma.prisma || new PrismaClient({
+    adapter,
+  });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```

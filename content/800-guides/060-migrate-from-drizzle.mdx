@@ -82,11 +82,11 @@ The Prisma schema currently looks as follows:
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/prisma"
 }
 ```
 
@@ -107,7 +107,6 @@ If you're not using PostgreSQL, you need to adjust the `provider` field on the `
 ```prisma file=schema.prisma showLineNumbers
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 ```
 
@@ -118,7 +117,6 @@ datasource db {
 ```prisma file=schema.prisma showLineNumbers
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 ```
 
@@ -129,7 +127,6 @@ datasource db {
 ```prisma file=schema.prisma showLineNumbers
 datasource db {
   provider = "sqlserver"
-  url      = env("DATABASE_URL")
 }
 ```
 
@@ -140,7 +137,6 @@ datasource db {
 ```prisma file=schema.prisma showLineNumbers
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 ```
 
@@ -150,7 +146,36 @@ datasource db {
 
 Once that's done, you can configure your [database connection URL](/orm/reference/connection-urls) in the `.env` file. Drizzle and Prisma ORM use the same format for connection URLs, so your existing connection URL should work fine.
 
-### 2.3. Introspect your database using Prisma ORM
+### 2.3. Configure Prisma
+
+Create a `prisma.config.ts` file in the root of your project with the following content:
+
+```typescript file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+:::note
+
+You'll need to install the `dotenv` package to load environment variables. If you haven't already, install it using your package manager:
+
+```bash
+npm install dotenv
+```
+
+:::
+
+### 2.4. Introspect your database using Prisma ORM
 
 With your connection URL in place, you can [introspect](/orm/prisma-schema/introspection) your database to generate your Prisma models:
 
@@ -170,7 +195,7 @@ model todo {
 
 The generated Prisma model represents a database table. Prisma models are the foundation for your programmatic Prisma Client API which allows you to send queries to your database.
 
-### 2.4. Create a baseline migration
+### 2.5. Create a baseline migration
 
 To continue using Prisma Migrate to evolve your database schema, you will need to [baseline your database](/orm/prisma-migrate/getting-started).
 
@@ -202,7 +227,7 @@ The command will mark `0_init` as applied by adding it to the `_prisma_migration
 
 You now have a baseline for your current database schema. To make further changes to your database schema, you can update your Prisma schema and use `prisma migrate dev` to apply the changes to your database.
 
-### 2.5. Adjust the Prisma schema (optional)
+### 2.6. Adjust the Prisma schema (optional)
 
 Models that are generated via introspection currently _exactly_ map to your database tables. In this section, you'll learn how you can adjust the naming of the Prisma models to adhere to [Prisma ORM's naming conventions](/orm/reference/prisma-schema-reference#naming-conventions).
 
@@ -254,9 +279,17 @@ touch db/prisma.ts
 Now, instantiate `PrismaClient` and export it from the file so you can use it in your route handlers later:
 
 ```ts copy file=db/prisma.ts showLineNumbers
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import 'dotenv/config'
 
-export const prisma = new PrismaClient()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+})
+
+export const prisma = new PrismaClient({
+  adapter,
+})
 ```
 
 ### 4.1. Replacing `getData` queries
