@@ -1,0 +1,465 @@
+---
+title: 'Quickstart with SQLite'
+sidebar_label: 'Quickstart'
+metaTitle: 'Quickstart with TypeScript & SQLite'
+metaDescription: 'Get started with Prisma ORM in 5 minutes. You will learn how to send queries to a SQLite database in a plain TypeScript script using Prisma Client.'
+search: true
+sidebar_class_name: hidden-sidebar
+dbSwitcher: ['prismaPostgres', 'sqlite']
+slugSwitch: /getting-started/quickstart-
+sidebar_custom_props: { badge: '5 min' }
+community_section: true
+---
+
+In this Quickstart guide, you'll learn how to get started with Prisma ORM from scratch using a plain **TypeScript** project and a local **SQLite** database file. It covers **data modeling**, **migrations** and **querying** a database.
+
+If you want to use Prisma ORM with your own PostgreSQL, MySQL, MongoDB or any other supported database, go here instead:
+
+- [Start with Prisma ORM from scratch](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql)
+- [Add Prisma ORM to an existing project](/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgresql)
+
+## Prerequisites
+
+You need [Node.js](https://nodejs.org/en/) installed on your machine (see [system requirements](/orm/reference/system-requirements) for officially supported versions).
+
+## 1. Create TypeScript project and set up Prisma ORM
+
+As a first step, create a project directory and navigate into it:
+
+```terminal
+mkdir hello-prisma
+cd hello-prisma
+```
+
+Next, initialize a TypeScript project using npm:
+
+```terminal
+npm init -y
+npm install typescript tsx @types/node --save-dev
+```
+
+This creates a `package.json` with an initial setup for your TypeScript app.
+
+:::info
+
+See [installation instructions](/orm/tools/prisma-cli#installation) to learn how to install Prisma using a different package manager.
+
+:::
+
+Now, initialize TypeScript:
+
+```terminal
+npx tsc --init
+```
+
+Then, install the Prisma CLI as a development dependency in the project:
+
+```terminal
+npm install prisma --save-dev
+```
+
+Finally, set up Prisma ORM with the `init` command of the Prisma CLI:
+
+```terminal
+npx prisma init --datasource-provider sqlite --output ../generated/prisma
+```
+
+This creates a new `prisma` directory with a `schema.prisma` file and configures SQLite as your database. You're now ready to model your data and create your database with some tables.
+
+## 2. Model your data in the Prisma schema
+
+The Prisma schema provides an intuitive way to model data. Add the following models to your `schema.prisma` file:
+
+```prisma file=prisma/schema.prisma showLineNumbers
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+```
+
+Models in the Prisma schema have two main purposes:
+
+- Represent the tables in the underlying database
+- Serve as foundation for the generated Prisma Client API
+
+In the next section, you will map these models to database tables using Prisma Migrate.
+
+## 3. Run a migration to create your database tables with Prisma Migrate
+
+At this point, you have a Prisma schema but no database yet. Run the following command in your terminal to create the SQLite database and the `User` and `Post` tables represented by your models:
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+This command did three things:
+
+1. It created a new SQL migration file for this migration in the `prisma/migrations` directory.
+2. It executed the SQL migration file against the database.
+3. It ran `prisma generate` under the hood (which installed the `@prisma/client` package and generated a tailored Prisma Client API based on your models).
+
+Because the SQLite database file didn't exist before, the command also created it inside the `prisma` directory with the name `dev.db` as defined via the environment variable in the `.env` file.
+
+Congratulations, you now have your database and tables ready. Let's go and learn how you can send some queries to read and write data!
+
+## 4. Explore how to send queries to your database with Prisma Client
+
+To get started with Prisma Client, you need to install the `@prisma/client` package:
+
+```terminal copy
+npm install @prisma/client
+```
+
+The install command invokes `prisma generate` for you which reads your Prisma schema and generates a version of Prisma Client that is _tailored_ to your models.
+
+To send queries to the database, you will need a TypeScript file to execute your Prisma Client queries. Create a new file called `script.ts` for this purpose:
+
+```terminal
+touch script.ts
+```
+
+Then, paste the following boilerplate into it:
+
+```ts file=script.ts showLineNumbers
+import { PrismaClient } from './generated/prisma'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // ... you will write your Prisma Client queries here
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+This code contains a `main` function that's invoked at the end of the script. It also instantiates `PrismaClient` which represents the query interface to your database.
+
+### 4.1. Create a new `User` record
+
+Let's start with a small query to create a new `User` record in the database and log the resulting object to the console. Add the following code to your `script.ts` file:
+
+```ts file=script.ts highlight=6-12;add showLineNumbers
+import { PrismaClient } from './generated/prisma'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // add-start
+  const user = await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@prisma.io',
+    },
+  })
+  console.log(user)
+  // add-end
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+Instead of copying the code, you can type it out in your editor to experience the autocompletion Prisma Client provides. You can also actively invoke the autocompletion by pressing the <kbd>CTRL</kbd>+<kbd>SPACE</kbd> keys on your keyboard.
+
+Next, execute the script with the following command:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```terminal
+npx tsx script.ts
+```
+</cmd>
+
+<cmdResult>
+
+```code no-copy
+{ id: 1, email: 'alice@prisma.io', name: 'Alice' }
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+Great job, you just created your first database record with Prisma Client! 🎉
+
+In the next section, you'll learn how to read data from the database.
+
+### 4.2. Retrieve all `User` records
+
+Prisma Client offers various queries to read data from your database. In this section, you'll use the `findMany` query that returns _all_ the records in the database for a given model.
+
+Delete the previous Prisma Client query and add the new `findMany` query instead:
+
+```ts file=script.ts highlight=6-7;add showLineNumbers
+import { PrismaClient } from './generated/prisma'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // add-start
+  const users = await prisma.user.findMany()
+  console.log(users)
+  // add-end
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+Execute the script again:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```terminal
+npx tsx script.ts
+```
+
+</cmd>
+
+<cmdResult>
+
+```code no-copy
+[{ id: 1, email: 'alice@prisma.io', name: 'Alice' }]
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+Notice how the single `User` object is now enclosed with square brackets in the console. That's because the `findMany` returned an array with a single object inside.
+
+### 4.3. Explore relation queries with Prisma Client
+
+One of the main features of Prisma Client is the ease of working with [relations](/orm/prisma-schema/data-model/relations). In this section, you'll learn how to create a `User` and a `Post` record in a nested write query. Afterwards, you'll see how you can retrieve the relation from the database using the `include` option.
+
+First, adjust your script to include the nested query:
+
+```ts file=script.ts highlight=6-24;add showLineNumbers
+import { PrismaClient } from './generated/prisma'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // add-start
+  const user = await prisma.user.create({
+    data: {
+      name: 'Bob',
+      email: 'bob@prisma.io',
+      posts: {
+        create: [
+          {
+            title: 'Hello World',
+            published: true
+          },
+          {
+            title: 'My second post',
+            content: 'This is still a draft'
+          }
+        ],
+      },
+    },
+  })
+  console.log(user)
+  // add-end
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+Run the query by executing the script again:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```terminal
+npx tsx script.ts
+```
+
+</cmd>
+
+<cmdResult>
+
+```code no-copy
+{ id: 2, email: 'bob@prisma.io', name: 'Bob' }
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+By default, Prisma Client only returns _scalar_ fields in the result objects of a query. That's why, even though you also created a new `Post` record for the new `User` record, the console only printed an object with three scalar fields: `id`, `email` and `name`.
+
+In order to also retrieve the `Post` records that belong to a `User`, you can use the `include` option via the `posts` relation field:
+
+```ts file=script.ts highlight=6-11;add showLineNumbers
+import { PrismaClient } from './generated/prisma'
+
+const prisma = new PrismaClient()
+
+async function main() {
+// add-start
+  const usersWithPosts = await prisma.user.findMany({
+    include: {
+      posts: true,
+    },
+  })
+  console.dir(usersWithPosts, { depth: null })
+  // add-end
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+Run the script again to see the results of the nested read query:
+
+<CodeWithResult expanded={true}>
+
+<cmd>
+
+```terminal
+npx tsx script.ts
+```
+
+</cmd>
+
+<cmdResult>
+
+```code no-copy
+[
+  { id: 1, email: 'alice@prisma.io', name: 'Alice', posts: [] },
+  {
+    id: 2,
+    email: 'bob@prisma.io',
+    name: 'Bob',
+    posts: [
+      {
+        id: 1,
+        title: 'Hello World',
+        content: null,
+        published: true,
+        authorId: 2
+      },
+      {
+        id: 2,
+        title: 'My second post',
+        content: 'This is still a draft',
+        published: false,
+        authorId: 2
+      }
+    ]
+  }
+]
+```
+
+</cmdResult>
+
+</CodeWithResult>
+
+This time, you're seeing two `User` objects being printed. Both of them have a `posts` field (which is empty for `"Alice"` and populated with two `Post` objects for `"Bob"`) that represents the `Post` records associated with them.
+
+Notice that the objects in the `usersWithPosts` array are fully typed as well. This means you will get autocompletion and the TypeScript compiler will prevent you from accidentally typing them.
+
+## 5. Next steps
+
+In this Quickstart guide, you have learned how to get started with Prisma ORM in a plain TypeScript project. Feel free to explore the Prisma Client API a bit more on your own, e.g. by including filtering, sorting, and pagination options in the `findMany` query or exploring more operations like `update` and `delete` queries.
+
+### Explore the data in Prisma Studio
+
+Prisma ORM comes with a built-in GUI to view and edit the data in your database. You can open it using the following command:
+
+```terminal
+npx prisma studio
+```
+
+### Set up Prisma ORM with your own database
+
+If you want to move forward with Prisma ORM using your own PostgreSQL, MySQL, MongoDB or any other supported database, follow the Set Up Prisma ORM guides:
+
+- [Start with Prisma ORM from scratch](/getting-started/setup-prisma/start-from-scratch/relational-databases-typescript-postgresql)
+- [Add Prisma ORM to an existing project](/getting-started/setup-prisma/add-to-existing-project)
+
+### Get query insights and analytics with Prisma Optimize
+
+[Prisma Optimize](/optimize) helps you generate insights and provides recommendations that can help you make your database queries faster.
+
+Optimize aims to help developers of all skill levels write efficient database queries, reducing database load and making applications more responsive.
+
+### Explore ready-to-run Prisma ORM examples
+
+Check out the [`prisma-examples`](https://github.com/prisma/prisma-examples/) repository on GitHub to see how Prisma ORM can be used with your favorite library. The repo contains examples with Express, NestJS, GraphQL as well as fullstack examples with Next.js and Vue.js, and a lot more.
+
+### Speed up your database queries with Prisma Accelerate
+
+[Prisma Accelerate](/accelerate) is a connection pooler and global database cache that can drastically speed up your database queries. Check out the [Speed Test](https://accelerate-speed-test.prisma.io/) or try Accelerate with your favorite framework:
+
+| Demo                                            | Description                                                                |
+| ----------------------------------------------- | -------------------------------------------------------------------------- |
+| [`nextjs-starter`](https://github.com/prisma/prisma-examples/tree/latest/accelerate/nextjs-starter) | A Next.js project using Prisma Accelerate's caching and connection pooling |
+| [`svelte-starter`](https://github.com/prisma/prisma-examples/tree/latest/accelerate/svelte-starter) | A SvelteKit project using Prisma Accelerate's caching and connection pooling |
+| [`solidstart-starter`](https://github.com/prisma/prisma-examples/tree/latest/accelerate/solidstart-starter) | A Solidstart project using Prisma Accelerate's caching and connection pooling |
+| [`remix-starter`](https://github.com/prisma/prisma-examples/tree/latest/accelerate/remix-starter) | A Remix project using Prisma Accelerate's caching and connection pooling |
+| [`nuxt-starter`](https://github.com/prisma/prisma-examples/tree/latest/accelerate/nuxtjs-starter) | A Nuxt.js project using Prisma Accelerate's caching and connection pooling |
+| [`astro-starter`](https://github.com/prisma/prisma-examples/tree/latest/accelerate/astro-starter) | An Astro project using Prisma Accelerate's caching and connection pooling |
+
+
+### Build an app with Prisma ORM
+
+The Prisma blog features comprehensive tutorials about Prisma ORM, check out our latest ones:
+
+- [Build a fullstack app with Next.js](https://www.youtube.com/watch?v=QXxy8Uv1LnQ&ab_channel=ByteGrad)
+- [Build a fullstack app with Remix](https://www.prisma.io/blog/fullstack-remix-prisma-mongodb-1-7D0BfTXBmB6r) (5 parts, including videos)
+- [Build a REST API with NestJS](https://www.prisma.io/blog/nestjs-prisma-rest-api-7D056s1BmOL0)

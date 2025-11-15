@@ -1,0 +1,289 @@
+---
+title: 'Mongoose'
+metaTitle: 'Prisma ORM vs Mongoose'
+metaDescription: 'Learn how Prisma ORM compares to Mongoose.'
+community_section: true
+---
+
+<TopBlock>
+
+This page compares the Prisma ORM and [Mongoose](https://mongoosejs.com/docs/guide.html) APIs. If you want to learn how to migrate from Mongoose to Prisma, check out this [guide](/guides/migrate-from-mongoose).
+
+</TopBlock>
+
+## Fetching single objects
+
+**Prisma ORM**
+
+```ts
+const user = await prisma.user.findUnique({
+  where: {
+    id: 1,
+  },
+})
+```
+
+**Mongoose**
+
+```ts
+const result = await User.findById(1)
+```
+
+## Fetching selected scalars of single objects
+
+**Prisma ORM**
+
+```ts
+const user = await prisma.user.findUnique({
+  where: {
+    id: 1,
+  },
+  select: {
+    name: true,
+  },
+})
+```
+
+**Mongoose**
+
+```ts
+const user = await User.findById(1).select(['name'])
+```
+
+## Fetching relations
+
+**Prisma ORM**
+
+<TabbedContent code>
+<TabItem value="Using `include`">
+```ts
+const userWithPost = await prisma.user.findUnique({
+  where: {
+    id: 2,
+  },
+  include: {
+    post: true,
+  },
+})
+```
+</TabItem>
+<TabItem value="Fluent API">
+```ts
+const userWithPost = await prisma.user
+  .findUnique({
+    where: {
+      id: 2,
+    },
+  })
+  .post()
+```
+</TabItem>
+</TabbedContent>
+
+**Mongoose**
+
+```ts
+const userWithPost = await User.findById(2).populate('post')
+```
+
+## Filtering for concrete values
+
+**Prisma ORM**
+
+```ts
+const posts = await prisma.post.findMany({
+  where: {
+    title: {
+      contains: 'Hello World',
+    },
+  },
+})
+```
+
+**Mongoose**
+
+```ts
+const posts = await Post.find({
+  title: 'Hello World',
+})
+```
+
+## Other filter criteria
+
+**Prisma ORM**
+
+Prisma ORM generates many [additional filters](/orm/prisma-client/queries/filtering-and-sorting) that are commonly used in modern application development.
+
+**Mongoose**
+
+Mongoose exposes the [MongoDB query selectors](https://www.mongodb.com/docs/manual/reference/operator/query/#query-selectors) as filter criteria.
+
+## Relation filters
+
+**Prisma ORM**
+
+Prisma ORM lets you filter a list based on a criteria that applies not only to the models of the list being retrieved, but to a _relation_ of that model.
+
+For example, the following query returns users with one or more posts with "Hello" in the title:
+
+```ts
+const posts = await prisma.user.findMany({
+  where: {
+    Post: {
+      some: {
+        title: {
+          contains: 'Hello',
+        },
+      },
+    },
+  },
+})
+```
+
+**Mongoose**
+
+Mongoose doesn't offer a dedicated API for relation filters. You can get similar functionality by adding an additional step to filter the results returned by the query.
+
+## Pagination
+
+**Prisma ORM**
+
+Cursor-style pagination:
+
+```ts
+const page = prisma.post.findMany({
+  before: {
+    id: 242,
+  },
+  last: 20,
+})
+```
+
+Offset pagination:
+
+```ts
+const cc = prisma.post.findMany({
+  skip: 200,
+  first: 20,
+})
+```
+
+**Mongoose**
+
+```ts
+const posts = await Post.find({
+  skip: 200,
+  limit: 20,
+})
+```
+
+## Creating objects
+
+**Prisma ORM**
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    name: 'Alice',
+    email: 'alice@prisma.io',
+  },
+})
+```
+
+**Mongoose**
+
+<TabbedContent code>
+<TabItem value="Using `create`">
+```ts
+const user = await User.create({
+  name: 'Alice',
+  email: 'alice@prisma.io',
+})
+```
+</TabItem>
+<TabItem value="Using `save`">
+```ts
+const user = new User({
+  name: 'Alice',
+  email: 'alice@prisma.io',
+})
+await user.save()
+```
+</TabItem>
+</TabbedContent>
+
+## Updating objects
+
+**Prisma ORM**
+
+```ts
+const user = await prisma.user.update({
+  data: {
+    name: 'Alicia',
+  },
+  where: {
+    id: 2,
+  },
+})
+```
+
+**Mongoose**
+
+<TabbedContent code>
+<TabItem value="Using `findOneAndUpdate`">
+```ts
+const updatedUser = await User.findOneAndUpdate(
+  { _id: 2 },
+  {
+    $set: {
+      name: 'Alicia',
+    },
+  }
+)
+```
+</TabItem>
+<TabItem value="Using `save`">
+```ts
+user.name = 'Alicia'
+await user.save()
+```
+</TabItem>
+</TabbedContent>
+
+## Deleting objects
+
+**Prisma ORM**
+
+```ts
+const user = prisma.user.delete({
+  where: {
+    id: 10,
+  },
+})
+```
+
+**Mongoose**
+
+```ts
+await User.deleteOne({ _id: 10 })
+```
+
+## Batch deletes
+
+**Prisma ORM**
+
+```ts
+const users = await prisma.user.deleteMany({
+  where: {
+    id: {
+      in: [1, 2, 6, 6, 22, 21, 25],
+    },
+  },
+})
+```
+
+**Mongoose**
+
+```ts
+await User.deleteMany({ id: { $in: [1, 2, 6, 6, 22, 21, 25] } })
+```

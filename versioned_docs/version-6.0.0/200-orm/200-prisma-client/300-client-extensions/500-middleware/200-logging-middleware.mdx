@@ -1,0 +1,90 @@
+---
+title: 'Middleware sample: logging'
+metaTitle: 'Middleware sample: logging (Reference)'
+metaDescription: 'How to use middleware to log the time taken to perform any query.'
+---
+
+<TopBlock>
+
+The following example logs the time taken for a Prisma Client query to run:
+
+```ts
+const prisma = new PrismaClient()
+
+prisma.$use(async (params, next) => {
+  const before = Date.now()
+
+  const result = await next(params)
+
+  const after = Date.now()
+
+  console.log(`Query ${params.model}.${params.action} took ${after - before}ms`)
+
+  return result
+})
+
+const create = await prisma.post.create({
+  data: {
+    title: 'Welcome to Prisma Day 2020',
+  },
+})
+
+const createAgain = await prisma.post.create({
+  data: {
+    title: 'All about database collation',
+  },
+})
+```
+
+Example output:
+
+```no-lines
+Query Post.create took 92ms
+Query Post.create took 15ms
+```
+
+The example is based on the following sample schema:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  authorId  Int?
+  content   String?
+  id        Int     @id @default(autoincrement())
+  published Boolean @default(false)
+  title     String
+  user      User?   @relation(fields: [authorId], references: [id])
+  language  String?
+
+  @@index([authorId], name: "authorId")
+}
+
+model User {
+  email           String  @unique
+  id              Int     @id @default(autoincrement())
+  name            String?
+  posts           Post[]
+  extendedProfile Json?
+  role            Role    @default(USER)
+}
+
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}
+```
+
+</TopBlock>
+
+## Going further
+
+You can also use [Prisma Client extensions](/orm/prisma-client/client-extensions) to log the time it takes to perform a query. A functional example can be found in [this GitHub repository](https://github.com/prisma/prisma-client-extensions/tree/main/query-logging).

@@ -1,0 +1,130 @@
+---
+title: 'Introspection for MongoDB in a JavaScript project'
+sidebar_label:  'Introspection'
+metaTitle: 'Introspection: MongoDB and JavaScript'
+metaDescription: 'Introspect your MongoDB database with Prisma ORM'
+langSwitcher: ['typescript', 'node']
+dbSwitcher: ['mongodb']
+hide_table_of_contents: true
+sidebar_class_name: hidden-sidebar
+pagination_prev: getting-started/setup-prisma/add-to-existing-project/mongodb/connect-your-database-node-mongodb
+pagination_next: getting-started/setup-prisma/add-to-existing-project/mongodb/install-prisma-client-node-mongodb
+slugSwitch: /getting-started/setup-prisma/add-to-existing-project/mongodb/introspection-
+---
+ 
+
+Prisma ORM introspects a MongoDB schema by sampling the data stored in the given database and inferring the schema of that data.
+
+For the purposes of illustrating introspection, this guide will help you setup a MongoDB from scratch. But if you have a MongoDB database already, feel free to jump to [Initializing Prisma ORM](#initializing-prisma-orm) in your project.
+
+## Setting up your Database
+
+To see this in action, first create a `blog` database with 2 collections: `User` and `Post`. We recommend [MongoDB Compass](https://www.mongodb.com/products/tools/compass) for setting this up:
+
+![Create a blog database using Compass](/img/getting-started/1-create-database.jpg)
+
+First, add a user to our `User` collection:
+
+![Create a user within the User collection](/img/getting-started/2-create-user.jpg)
+
+Next, add some posts to our `Post` collection. It's important that the ObjectID in `userId` matches the user you created above.
+
+![Create some posts within the Post collection](/img/getting-started/3-create-posts.jpg)
+
+## Initializing Prisma ORM
+
+Now that you have a MongoDB database, the next step is to create a new project and initialize Prisma ORM:
+
+```terminal copy
+mkdir blog
+cd blog
+npm init -y
+npm install -D prisma
+npx prisma init --datasource-provider mongodb --output ../generated/prisma
+```
+
+Initializing Prisma ORM will create a `prisma/schema.prisma` file like the following:
+
+```prisma file=prisma/schema.prisma showLineNumbers
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+Next you'll need to adjust your `.env` file to point the `DATABASE_URL` to your MongoDB database
+
+## Introspecting MongoDB with Prisma ORM
+
+You're now ready to introspect. Run the following command to introspect your database:
+
+```terminal copy
+npx prisma db pull
+```
+
+This command introspects our database and writes the inferred schema into your `prisma/schema.prisma` file:
+
+```prisma file=prisma/schema.prisma showLineNumbers
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Post {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
+}
+
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+}
+```
+
+## Tweaking the Schema
+
+To be able to join data using Prisma Client, you can add the [`@relation`](/orm/reference/prisma-schema-reference#relation) attributes to our models:
+
+```prisma file=prisma/schema.prisma highlight=14;add|20;add showLineNumbers
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Post {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  title  String
+  userId String @db.ObjectId
+  //add-next-line
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+  //add-next-line
+  posts Post[]
+}
+```
+
+:::tip
+
+We're actively working on MongoDB introspection. Provide feedback for this feature in [this issue](https://github.com/prisma/prisma/issues/8241).
+
+:::
+
+And with that, you're ready to generate Prisma Client.
+

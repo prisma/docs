@@ -1,0 +1,30 @@
+---
+title: 'Storing large objects or BLOBs in the database'
+metaTitle: 'Optimize recommendations: Avoid storing large objects or BLOBs in the database'
+metaDescription: "Learn about the recommendations for avoiding the storage of large objects or BLOBs in the database."
+tocDepth: 3
+toc: true
+---
+
+Optimize provides recommendations to help identify and resolve performance issues caused by storing large objects in the database. It also suggests alternative approaches to mitigate these challenges.
+
+The following model uses the `Bytes` type:
+
+```prisma
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String?
+  // Storing raw image data directly in the database
+  avatarBytes Bytes?
+}
+```
+
+## What is the problem?
+
+Storing large binary objects (such as images) in the database can lead to several challenges:
+
+- **Excessive storage usage**: Large objects occupy significant space in the database, complicating management.
+- **Increased I/O load**: Handling large objects adds strain to the database's input/output operations.
+- **Slower query performance**: Most traditional databases are not optimized for efficiently serving large binary content, resulting in performance degradation during queries or updates.
+
+Moreover, storing large objects directly in the database can cause backups to become disproportionately large, increasing the time required for restoration processes. Serving these files through the database also creates a performance bottleneck, particularly under high traffic or frequent access scenarios.

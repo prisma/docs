@@ -82,6 +82,36 @@ export const PrismaPostgres = ({ color, height, width }: any) => (
   </svg>
 );
 
+export const Plus = ({ color, width, height }: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    height={height ? height : "16"}
+    width={width ? width : "14"}
+    viewBox="0 0 448 512"
+    style={{ marginRight: `4px`, transform: `translateY(2px)` }}
+  >
+    <path
+      fill={color ? color : "currentColor"}
+      d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"
+    />
+  </svg>
+);
+
+export const Plug = ({ color, width, height }: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    height={height ? height : "16"}
+    width={width ? width : "14"}
+    viewBox="0 0 384 512"
+    style={{ marginRight: `4px`, transform: `translateY(2px)` }}
+  >
+    <path
+      fill={color ? color : "currentColor"}
+      d="M96 0C78.3 0 64 14.3 64 32v96h64V32c0-17.7-14.3-32-32-32zM288 0c-17.7 0-32 14.3-32 32v96h64V32c0-17.7-14.3-32-32-32zM32 160c-17.7 0-32 14.3-32 32s14.3 32 32 32v32c0 77.4 55 142 128 156.8V480c0 17.7 14.3 32 32 32s32-14.3 32-32V412.8C297 398 352 333.4 352 256V224c17.7 0 32-14.3 32-32s-14.3-32-32-32H32z"
+    />
+  </svg>
+);
+
 export const BorderBoxWrapper = ({ children, ...props }) => (
   <div {...props} className={styles.borderBox}>
     {children}
@@ -119,6 +149,21 @@ export const LinkCard = ({ icon, title, desc, link, highlight }: any) => {
         <h6>{title}</h6>
       </div>
       <p>{desc}</p>
+    </Link>
+  );
+};
+
+export const QuickstartLinkCard = ({ title, highlight, link, children }: any) => {
+  return (
+    <Link
+      to={link}
+      className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}
+      style={highlight ? { borderColor: highlight } : {}}
+    >
+      <div className={styles.title}>
+        <h6>{title}</h6>
+      </div>
+      <div>{children}</div>
     </Link>
   );
 };

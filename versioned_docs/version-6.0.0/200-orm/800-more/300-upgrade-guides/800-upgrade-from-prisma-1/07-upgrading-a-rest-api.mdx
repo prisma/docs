@@ -1,0 +1,251 @@
+---
+title: 'REST API'
+metaTitle: 'Upgrading a REST API from Prisma 1 to Prisma ORM 2'
+metaDescription: 'Learn how to upgrade a REST API from Prisma 1 to Prisma ORM 2.'
+---
+
+## Overview
+
+This upgrade guide describes how to migrate a Node.js project that's based on [Prisma 1](https://github.com/prisma/prisma1) and uses the [Prisma 1 client](https://v1.prisma.io/docs/1.34/prisma-client/) to implement a REST API.
+
+The guide assumes that you already went through the [guide for upgrading the Prisma ORM layer](/orm/more/upgrade-guides/upgrade-from-prisma-1/upgrading-the-prisma-layer-postgresql). This means you already:
+
+- installed the Prisma ORM 2 CLI
+- created your Prisma ORM 2 schema
+- introspected your database and resolved potential schema incompatibilities
+- installed and generated Prisma Client
+
+The guide further assumes that you have a file setup that looks similar to this:
+
+```
+.
+├── README.md
+├── package-lock.json
+├── package.json
+├── prisma
+│   ├── datamodel.prisma
+│   ├── docker-compose-mysql.yml
+│   ├── docker-compose.yml
+│   ├── prisma.yml
+│   └── seed.graphql
+├── src
+│   ├── generated
+│   │   └── prisma-client
+│   │       ├── index.ts
+│   │       └── prisma-schema.ts
+│   └── index.ts
+└── tsconfig.json
+```
+
+The important parts are:
+
+- A folder called with `prisma` with your Prisma ORM 2 schema
+- A folder called `src` with your application code
+
+If this is not what your project structure looks like, you'll need to adjust the instructions in the guide to match your own setup.
+
+## 1. Adjust the application to use Prisma Client 2
+
+For the purpose of this guide, we'll use the sample API calls from the [`express`](https://github.com/prisma/prisma1-examples/tree/master/typescript/rest-express) example in the [`prisma1-examples`](https://github.com/prisma/prisma1-examples/) repository.
+
+The application code in our example is located in a single file and looks as follows:
+
+```ts
+import * as express from 'express'
+import * as bodyParser from 'body-parser'
+import { prisma } from './generated/prisma-client'
+
+const app = express()
+
+app.$use(bodyParser.json())
+
+app.post(`/user`, async (req, res) => {
+  const result = await prisma.createUser({
+    ...req.body,
+  })
+  res.json(result)
+})
+
+app.post(`/post`, async (req, res) => {
+  const { title, content, authorEmail } = req.body
+  const result = await prisma.createPost({
+    title: title,
+    content: content,
+    author: { connect: { email: authorEmail } },
+  })
+  res.json(result)
+})
+
+app.put('/publish/:id', async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.updatePost({
+    where: { id },
+    data: { published: true },
+  })
+  res.json(post)
+})
+
+app.delete(`/post/:id`, async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.deletePost({ id })
+  res.json(post)
+})
+
+app.get(`/post/:id`, async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.post({ id })
+  res.json(post)
+})
+
+app.get('/feed', async (req, res) => {
+  const posts = await prisma.post({ where: { published: true } })
+  res.json(posts)
+})
+
+app.get('/filterPosts', async (req, res) => {
+  const { searchString } = req.query
+  const draftPosts = await prisma.post({
+    where: {
+      OR: [
+        {
+          title_contains: searchString,
+        },
+        {
+          content_contains: searchString,
+        },
+      ],
+    },
+  })
+  res.json(draftPosts)
+})
+
+app.listen(3000, () =>
+  console.log('Server is running on http://localhost:3000')
+)
+```
+
+Consider each occurrence of the Prisma Client instance `prisma` and replacing with the respective usage of Prisma Client 2. You can learn more in the [API Reference](/orm/prisma-client).
+
+### 1.1. Adjusting the import
+
+Import the generated `@prisma/client` node module as shown:
+
+```ts
+import { PrismaClient } from '@prisma/client'
+```
+
+Note that this only imports the `PrismaClient` constructor, so you also need to instantiate a Prisma Client 2 instance:
+
+```ts
+const prisma = new PrismaClient()
+```
+
+### 1.2. Adjusting the `/user` route (`POST`)
+
+With the Prisma Client 2 API, the `/user` route for `POST` requests has to be changed to:
+
+```ts
+app.post(`/user`, async (req, res) => {
+  const result = await prisma.user.create({
+    data: {
+      ...req.body,
+    },
+  })
+  res.json(result)
+})
+```
+
+### 1.3. Adjusting the `/post` route (`POST`)
+
+With the Prisma Client 2 API, the `/post` route for `POST` requests has to be changed to:
+
+```ts
+app.post(`/post`, async (req, res) => {
+  const { title, content, authorEmail } = req.body
+  const result = await prisma.post.create({
+    data: {
+      title: title,
+      content: content,
+      author: { connect: { email: authorEmail } },
+    },
+  })
+  res.json(result)
+})
+```
+
+### 1.4. Adjusting the `/publish/:id` route (`PUT`)
+
+With the Prisma Client 2 API, the `/publish/:id` route for `PUT` requests has to be changed to:
+
+```ts
+app.put('/publish/:id', async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.post.update({
+    where: { id },
+    data: { published: true },
+  })
+  res.json(post)
+})
+```
+
+### 1.5. Adjusting the `/post/:id` route (`DELETE`)
+
+With the Prisma Client 2 API, the `//post/:id` route for `DELETE` requests has to be changed to:
+
+```ts
+app.delete(`/post/:id`, async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.post.delete({
+    where: { id },
+  })
+  res.json(post)
+})
+```
+
+### 1.6. Adjusting the `/post/:id` route (`GET`)
+
+With the Prisma Client 2 API, the `/post/:id` route for `GET` requests has to be changed to:
+
+```ts
+app.get(`/post/:id`, async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.post.findUnique({
+    where: { id },
+  })
+  res.json(post)
+})
+```
+
+### 1.7. Adjusting the `/feed` route (`GET`)
+
+With the Prisma Client 2 API, the `/feed` route for `GET` requests has to be changed to:
+
+```ts
+app.get('/feed', async (req, res) => {
+  const posts = await prisma.post.findMany({ where: { published: true } })
+  res.json(posts)
+})
+```
+
+### 1.8. Adjusting the `/filterPosts` route (`GET`)
+
+With the Prisma Client 2 API, the `/user` route for `POST` requests has to be changed to:
+
+```ts
+app.get('/filterPosts', async (req, res) => {
+  const { searchString } = req.query
+  const filteredPosts = await prisma.post.findMany({
+    where: {
+      OR: [
+        {
+          title: { contains: searchString },
+        },
+        {
+          content: { contains: searchString },
+        },
+      ],
+    },
+  })
+  res.json(filteredPosts)
+})
+```
