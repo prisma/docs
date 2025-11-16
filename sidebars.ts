@@ -254,33 +254,21 @@ const sidebars: SidebarsConfig = {
                   type: "doc",
                   id: "getting-started/prisma-postgres/quickstart/prisma-orm",
                   label: "Prisma ORM",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-postgres/quickstart/kysely",
                   label: "Kysely",
-                  customProps: {
-                    badge: "10 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-postgres/quickstart/drizzle-orm",
                   label: "Drizzle ORM",
-                  customProps: {
-                    badge: "10 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-postgres/quickstart/typeorm",
                   label: "TypeORM",
-                  customProps: {
-                    badge: "10 Min",
-                  },
                 },
               ],
             },
