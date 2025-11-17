@@ -41,14 +41,7 @@ DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
 # DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
 ```
 
-Your updated connection string will be used as the datasource `url` in your Prisma schema file;
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
+Prisma Client reads the `prisma://` URL from `DATABASE_URL` at runtime, while Prisma CLI commands use the connection string defined in `prisma.config.ts`.
 
 Prisma Migrate and Introspection do not work with a `prisma://` connection string. In order to continue using these features add a new variable to the `.env` file named `DIRECT_DATABASE_URL` whose value is the direct database connection string:
 
@@ -57,15 +50,18 @@ DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=__API_KEY__"
 DIRECT_DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
 ```
 
-Then in your Prisma schema's `datasource` block add a field named `directUrl` with the following:
+Then point `prisma.config.ts` to the direct connection string:
 
-```prisma
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-//add-next-line
-  directUrl = env("DIRECT_DATABASE_URL")
-}
+```ts file=prisma.config.ts showLineNumbers
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DIRECT_DATABASE_URL'),
+  },
+})
 ```
 
 Migrations and introspections will use the `directUrl` connection string rather than the one defined in `url` when this configuration is provided.
@@ -134,7 +130,9 @@ Add the following to extend your existing Prisma Client instance with the Accele
 import { PrismaClient } from '@prisma/client'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
-const prisma = new PrismaClient().$extends(withAccelerate())
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate())
 ```
 
 If you are going to deploy to an edge runtime (like Cloudflare Workers, Vercel Edge Functions, Deno Deploy, or Supabase Edge Functions), use our edge client instead:
@@ -143,7 +141,9 @@ If you are going to deploy to an edge runtime (like Cloudflare Workers, Vercel E
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
-const prisma = new PrismaClient().$extends(withAccelerate())
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate())
 ```
 
 If VS Code does not recognize the `$extends` method, refer to [this section](/accelerate/faq#vs-code-does-not-recognize-the-extends-method) on how to resolve the issue.
@@ -155,7 +155,11 @@ Since [extensions are applied one after another](/orm/prisma-client/client-exten
 If you are using [Prisma Optimize](/optimize) in your application, make sure you apply it _before_ the Accelerate extension. For example:
 
 ```ts
-const prisma = new PrismaClient().$extends(withOptimize()).$extends(withAccelerate())
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+})
+  .$extends(withOptimize())
+  .$extends(withAccelerate())
 ```
 
 ### 2.5. Use Accelerate in your database queries
