@@ -141,7 +141,7 @@ Edit the `schema.prisma` file to define a `User` model in your database and spec
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   //add-start
   output = "../generated/client"
   //add-end
@@ -149,7 +149,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -161,6 +160,35 @@ model User {
 //add-end
 ```
 
+Now, create a `prisma.config.ts` file in the `database` package to configure Prisma:
+
+```typescript file=database/prisma.config.ts
+// add-start
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+// add-end
+```
+
+:::note
+
+You'll need to install the `dotenv` package to load environment variables from the `.env` file:
+
+```terminal
+pnpm add dotenv
+```
+
+:::
+
 Next, add helper scripts to your `package.json` to simplify Prisma commands:
 
 ```json file=database/package.json
@@ -170,7 +198,7 @@ Next, add helper scripts to your `package.json` to simplify Prisma commands:
     "test": "echo \"Error: no test specified\" && exit 1",
     // delete-end
     // add-start
-    "db:generate": "prisma generate --no-engine",
+    "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio"
@@ -178,12 +206,6 @@ Next, add helper scripts to your `package.json` to simplify Prisma commands:
   }
 }
 ```
-
-:::info
-
-If you're not using [Prisma Postgres](/postgres/getting-started) for your database, exclude the `--no-engine` flag from the `db:generate` script.
-
-:::
 
 Use [Prisma Migrate](/orm/prisma-migrate) to migrate your database changes:
 
@@ -201,7 +223,9 @@ import { PrismaClient } from "./generated/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
 // Instantiate the extended Prisma client to infer its type
-const extendedPrisma = new PrismaClient().$extends(withAccelerate());
+const extendedPrisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate());
 type ExtendedPrismaClient = typeof extendedPrisma;
 
 // Use globalThis for broader environment compatibility
