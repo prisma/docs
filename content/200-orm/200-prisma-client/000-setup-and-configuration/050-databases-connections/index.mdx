@@ -336,29 +336,39 @@ datasource db {
 
 Connection poolers like [Prisma Accelerate](/accelerate) and PgBouncer prevent your application from exhausting the database's connection limit.
 
-If you would like to use the Prisma CLI in order to perform other actions on your database ,e.g. migrations and introspection, you will need to add an environment variable that provides a direct connection to your database in the `datasource.directUrl` property in your Prisma schema:
+To keep Prisma Client on the pooled connection while allowing Prisma CLI commands (for example, migrations or introspection) to connect directly, define two environment variables:
 
-```env file=.env highlight=4,5;add showLineNumbers
+```env file=.env highlight=4-6;add showLineNumbers
 # Connection URL to your database using PgBouncer.
 DATABASE_URL="postgres://root:password@127.0.0.1:54321/postgres?pgbouncer=true"
 
-//add-start
-# Direct connection URL to the database used for migrations
+# Direct connection URL to the database used for Prisma CLI commands.
 DIRECT_URL="postgres://root:password@127.0.0.1:5432/postgres"
-//add-end
 ```
 
-You can then update your `schema.prisma` to use the new direct URL:
+Configure `prisma.config.ts` to point to the direct connection string. Prisma CLI commands always read from this configuration.
 
-```prisma file=schema.prisma highlight=4;add showLineNumbers
-datasource db {
-  provider  = "postgresql"
-  //add-next-line
-  directUrl = env("DIRECT_URL")
-}
+```ts file=prisma.config.ts showLineNumbers
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DIRECT_URL'),
+  },
+})
 ```
 
-More information about the `directUrl` field can be found [here](/orm/reference/prisma-schema-reference#fields).
+At runtime, instantiate Prisma Client with a driver adapter (for example, `@prisma/adapter-pg`) that uses the pooled connection string:
+
+```ts file=src/db/client.ts showLineNumbers
+import { PrismaClient } from '../prisma/generated/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+export const prisma = new PrismaClient({ adapter })
+```
 
 ### Prisma Accelerate
 
