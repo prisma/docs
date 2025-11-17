@@ -11,6 +11,14 @@ import NextSteps from '../../_components/_next-steps.mdx'
 
 [MongoDB](https://www.mongodb.com/) is a popular document-based NoSQL database known for its flexibility, scalability, and developer-friendly features. In this guide, you will learn how to add Prisma ORM to an existing TypeScript project, connect it to MongoDB, introspect your existing database schema, and start querying with type-safe Prisma Client.
 
+:::warning[MongoDB support for Prisma ORM v7]
+
+**MongoDB support for Prisma ORM v7 is coming in the near future.** In the meantime, please use **Prisma ORM v6.19** (the latest v6 release) when working with MongoDB.
+
+This guide uses Prisma ORM v6.19 to ensure full compatibility with MongoDB.
+
+:::
+
 :::tip
 
 If you're migrating to Prisma ORM from Mongoose, see our [Migrate from Mongoose guide](/guides/migrate-from-mongoose).
@@ -21,7 +29,7 @@ If you're migrating to Prisma ORM from Mongoose, see our [Migrate from Mongoose 
 
 In order to successfully complete this guide, you need:
 
-- [Node.js](https://nodejs.org/en/) installed on your machine (see [system requirements](/orm/reference/system-requirements) for officially supported versions)
+- [Node.js](https://nodejs.org/en/) installed on your machine (see [system requirements](/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-6#minimum-supported-nodejs-versions) for officially supported versions)
 - An existing TypeScript project with a `package.json` file
 - Access to a MongoDB 4.2+ server with a replica set deployment. We recommend using [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
 
@@ -44,8 +52,8 @@ If your project contains multiple directories with `package.json` files (e.g., `
 Navigate to your existing project directory and install the required dependencies:
 
 ```terminal
-npm install prisma @types/node --save-dev
-npm install @prisma/client dotenv
+npm install prisma@6.19 @types/node --save-dev
+npm install @prisma/client@6.19 dotenv
 ```
 
 Here's what each package does:
@@ -54,9 +62,11 @@ Here's what each package does:
 - **`@prisma/client`** - The Prisma Client library for querying your database
 - **`dotenv`** - Loads environment variables from your `.env` file
 
-:::info
+:::info[Why Prisma v6.19?]
 
-MongoDB does not require a driver adapter like relational databases. Prisma Client connects directly to MongoDB.
+This is the latest stable version of Prisma ORM v6 that fully supports MongoDB. MongoDB support for Prisma ORM v7 is coming soon.
+
+You can also install `prisma@6` and `@prisma/client@6` to automatically get the latest v6 release.
 
 :::
 
@@ -121,6 +131,7 @@ generator client {
 
 datasource db {
   provider = "mongodb"
+  url = env("DATABASE_URL")
 }
 ```
 
@@ -138,23 +149,23 @@ For MongoDB Atlas, the connection URL format is:
 mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE
 ```
 
-The [format of the connection URL](/orm/reference/connection-urls) for MongoDB looks as follows (the parts spelled all-uppercased are _placeholders_ for your specific connection details):
+Self-hosted MongoDB connection URL format:
 
 ```
 mongodb://USERNAME:PASSWORD@HOST:PORT/DATABASE
 ```
 
-Here's a short explanation of each component:
+Connection URL components:
 
-- **`USERNAME`**: The name of your database user
-- **`PASSWORD`**: The password for your database user
-- **`HOST`**: The host where a [`mongod`](https://www.mongodb.com/docs/manual/reference/program/mongod/#mongodb-binary-bin.mongod) (or [`mongos`](https://www.mongodb.com/docs/manual/reference/program/mongos/#mongodb-binary-bin.mongos)) instance is running
-- **`PORT`**: The port where your database server is running (typically `27017` for MongoDB)
-- **`DATABASE`**: The name of the database
+- **`USERNAME`**: Your database user name
+- **`PASSWORD`**: Your database user password
+- **`HOST`**: The host where [`mongod`](https://www.mongodb.com/docs/manual/reference/program/mongod/#mongodb-binary-bin.mongod) or [`mongos`](https://www.mongodb.com/docs/manual/reference/program/mongos/#mongodb-binary-bin.mongos) is running
+- **`PORT`**: The port where your database server is running (typically `27017`)
+- **`DATABASE`**: The name of your database
 
 :::tip
 
-If you're using MongoDB Atlas, you need to manually append the database name to the connection URL because the environment link from MongoDB Atlas doesn't contain it.
+For MongoDB Atlas, you can manually append the database name to the connection URL, as Atlas doesn't include it by default.
 
 :::
 
@@ -176,15 +187,20 @@ Run the following command to introspect your existing database:
 npx prisma db pull
 ```
 
-This command reads the `DATABASE_URL` environment variable, connects to your database, and introspects the database schema. Prisma ORM introspects a MongoDB schema by sampling the data stored in the database and inferring the schema.
+This command:
+- Reads the `DATABASE_URL` from your `.env` file
+- Connects to your MongoDB database
+- Samples documents in your collections to infer the schema
+- Generates Prisma models in your `schema.prisma` file
 
 ![Introspect your database with Prisma ORM](/img/getting-started/prisma-db-pull-generate-schema.png)
 
-After introspection, your Prisma schema will contain models that represent your existing MongoDB collections.
-
 :::info
 
-MongoDB introspection works by sampling documents in your collections. You may need to manually add relation fields using the `@relation` attribute to enable relational queries.
+**MongoDB introspection limitations:** Prisma introspects MongoDB by sampling documents. You may need to manually:
+- Add relation fields using the `@relation` attribute
+- Adjust field types if the sampling didn't capture all variations
+- Add indexes and constraints not detected during introspection
 
 :::
 
@@ -244,11 +260,11 @@ npx tsx script.ts
 
 ## 8. Evolve your schema
 
-MongoDB does not use migrations. To make changes to your database schema:
+MongoDB doesn't support migrations like relational databases. Instead, use `db push` to sync schema changes:
 
 ### 8.1. Update your Prisma schema file
 
-Update your Prisma schema file to reflect the changes you want to make to your database schema. For example, add a new model:
+Modify your Prisma schema file with the changes you want. For example, add a new model:
 
 ```prisma file=prisma/schema.prisma
 // add-start
@@ -276,19 +292,19 @@ In MongoDB, the `id` field is mapped to `_id` and uses `@db.ObjectId` type. Rela
 
 :::
 
-### 8.2. Push the changes to your database:
+### 8.2. Push the changes to your database
 
 ```terminal
 npx prisma db push
 ```
 
-This command will:
-- Apply the schema changes to your MongoDB database
-- Regenerate Prisma Client
+This command:
+- Applies schema changes to your MongoDB database
+- Automatically regenerates Prisma Client
 
-:::info
+:::info[Why `db push` instead of migrations?]
 
-Prisma Migrate is not supported for MongoDB. Use `prisma db push` to sync your schema changes.
+MongoDB uses a flexible schema model. Prisma Migrate (which creates migration files) is not supported for MongoDB. Always use `prisma db push` to sync your schema changes.
 
 :::
 
