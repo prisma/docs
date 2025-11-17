@@ -58,21 +58,16 @@ cd my-multi-client-app
 
 In this section, you will create two separate Prisma Postgres instances—one for user data and one for post data. You will also configure the Prisma schema and environment variables for each.
 
-First, install Prisma as a development dependency:
+First, install Prisma and the required dependencies:
 
 ```terminal
-npm install -D prisma
-```
-
-Install the [Prisma Client extension](https://www.npmjs.com/package/@prisma/extension-accelerate) that is required to use Prisma Postgres:
-
-```terminal
-npm install @prisma/extension-accelerate
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
 ```
 
 :::info
 
-If you are not using a Prisma Postgres database, you won't need the `@prisma/extension-accelerate` package.
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
 
 :::
 
@@ -293,11 +288,15 @@ In `lib/user-prisma-client.ts`, add the following code:
 ```ts file=lib/user-prisma-client.ts
 //add-start
 import { PrismaClient } from "../prisma-user-database/user-database-client-types";
-import { withAccelerate } from "@prisma/extension-accelerate"
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.PPG_USER_DATABASE_URL,
+});
 
 const getPrisma = () => new PrismaClient({
-  accelerateUrl: process.env.PPG_USER_DATABASE_URL,
-}).$extends(withAccelerate());
+  adapter,
+});
 
 const globalForUserDBPrismaClient = global as unknown as {
   userDBPrismaClient: ReturnType<typeof getPrisma>;
@@ -311,12 +310,6 @@ if (process.env.NODE_ENV !== "production")
 //add-end
 ```
 
-:::info
-
-If you are not using a Prisma Postgres database, do not extend `PrismaClient` with the `withAccelerate` client extension.
-
-:::
-
 ### 3.2. Instantiate and export the Prisma Client for the post database
 
 In `lib/post-prisma-client.ts`, add this code:
@@ -324,11 +317,15 @@ In `lib/post-prisma-client.ts`, add this code:
 ```ts file=lib/post-prisma-client.ts
 //add-start
 import { PrismaClient } from "../prisma-post-database/post-database-client-types";
-import { withAccelerate } from "@prisma/extension-accelerate"
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.PPG_POST_DATABASE_URL,
+});
 
 const getPrisma = () => new PrismaClient({
-  accelerateUrl: process.env.PPG_POST_DATABASE_URL,
-}).$extends(withAccelerate());
+  adapter,
+});
 
 const globalForPostDBPrismaClient = global as unknown as {
   postDBPrismaClient: ReturnType<typeof getPrisma>;
@@ -341,12 +338,6 @@ if (process.env.NODE_ENV !== "production")
   globalForPostDBPrismaClient.postDBPrismaClient = postDBPrismaClient;
 //add-end
 ```
-
-:::info
-
-If you are not using a Prisma Postgres database, do not extend `PrismaClient` with the `withAccelerate` client extension.
-
-:::
 
 ## 4. Integrate multiple Prisma Clients in your Next.js app
 

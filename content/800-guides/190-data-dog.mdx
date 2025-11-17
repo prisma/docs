@@ -139,13 +139,18 @@ DATABASE_URL="postgresql://janedoe:mypassword@localhost:5432/mydb?schema=sample"
 </TabItem>
 </TabbedContent>
 
-If you're using Prisma Postgres, also install:
+Install the driver adapter for PostgreSQL:
 
 ```terminal
-npm i @prisma/extension-accelerate
+npm i @prisma/adapter-pg pg
+npm i -D @types/pg
 ```
 
-This extension enables you to [cache your Prisma queries](/postgres/database/caching).
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 
 ### 2.2. Define models
@@ -282,67 +287,17 @@ export { tracer };
 
 Create a `src/client.ts` to hold your Prisma Client instantiation:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```ts file=src/client.ts
 import { tracer } from "./tracer";
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { PrismaClient } from "./generated/prisma";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
 
 const prisma = new PrismaClient({
-  log: [{ emit: "event", level: "query" }],
-})
-  .$on("query", (e) => {
-    const span = tracer.startSpan(`prisma_raw_query`, {
-      childOf: tracer.scope().active() || undefined,
-      tags: {
-        "prisma.rawquery": e.query,
-      },
-    });
-    span.finish();
-  })
-  .$extends({
-    query: {
-      async $allOperations({ operation, model, args, query }) {
-        const span = tracer.startSpan(
-          `prisma_query_${model?.toLowerCase()}_${operation}`,
-          {
-            tags: {
-              "prisma.operation": operation,
-              "prisma.model": model,
-              "prisma.args": JSON.stringify(args),
-              "prisma.rawQuery": query,
-            },
-            childOf: tracer.scope().active() || undefined,
-          }
-        );
-
-        try {
-          const result = await query(args);
-          span.finish();
-          return result;
-        } catch (error) {
-          span.setTag("error", error);
-          span.finish();
-          throw error;
-        }
-      },
-    },
-  })
-  .$extends(withAccelerate());
-
-export { prisma };
-```
-
-</TabItem>
-<TabItem value="Your own database">
-
-```ts file=src/client.ts
-import { tracer } from "./tracer";
-
-import { PrismaClient } from "./generated/prisma";
-
-const prisma = new PrismaClient({
+  adapter,
   log: [{ emit: "event", level: "query" }],
 })
   .$on("query", (e) => {
@@ -382,11 +337,9 @@ const prisma = new PrismaClient({
       },
     },
   });
+
 export { prisma };
 ```
-
-</TabItem>
-</TabbedContent>
 
 The setup above gives you more control over how queries are traced:
 
