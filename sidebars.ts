@@ -256,19 +256,28 @@ const sidebars: SidebarsConfig = {
                   label: "Prisma ORM",
                 },
                 {
-                  type: "doc",
-                  id: "getting-started/prisma-postgres/quickstart/kysely",
-                  label: "Kysely",
-                },
-                {
-                  type: "doc",
-                  id: "getting-started/prisma-postgres/quickstart/drizzle-orm",
-                  label: "Drizzle ORM",
-                },
-                {
-                  type: "doc",
-                  id: "getting-started/prisma-postgres/quickstart/typeorm",
-                  label: "TypeORM",
+                  type: "category",
+                  label: "Other tools",
+                  collapsed: false,
+                  collapsible: false,
+                  className: "sidebar-item-normal-weight",
+                  items: [
+                    {
+                      type: "doc",
+                      id: "getting-started/prisma-postgres/quickstart/kysely",
+                      label: "Kysely",
+                    },
+                    {
+                      type: "doc",
+                      id: "getting-started/prisma-postgres/quickstart/drizzle-orm",
+                      label: "Drizzle ORM",
+                    },
+                    {
+                      type: "doc",
+                      id: "getting-started/prisma-postgres/quickstart/typeorm",
+                      label: "TypeORM",
+                    },
+                  ],
                 },
               ],
             },
