@@ -1,7 +1,7 @@
 ---
 title: 'Upgrade to Prisma ORM 7'
 metaTitle: 'Upgrade to Prisma ORM 7'
-metaDescription: 'Guides on how to upgrade to Prisma ORM 7'
+metaDescription: 'Guide on how to upgrade to Prisma ORM 7'
 tocDepth: 3
 toc: true
 ---
@@ -16,6 +16,9 @@ Prisma ORM v7 introduces **breaking changes** when you upgrade from an earlier P
 - Which breaking changes affect my app?
 
 </details>
+
+For developers using AI Agents, we have a [migration prompt](/docs/ai/prompts/prisma-7) that you can
+add to your project for automatic migrations. 
 
 ## Upgrade the `prisma` and `@prisma/client` packages to v7
 
@@ -77,7 +80,7 @@ This section gives an overview of breaking changes in Prisma ORM v7.
 | TypeScript | 5.4.0           | 5.9.x       |
 
 ### ESM Support 
-Prisma ORM now ships as an ES module, module format supported in Bun, Deno, and Node. Set the
+Prisma ORM now ships as an ES module, the module format supported in Bun, Deno, and Node. Set the
 `type` field in your `package.json` to `module`
 
 ```json
@@ -126,6 +129,19 @@ generator client {
 
 Additionally other fields such as `url`, `directUrl`, and `shadowDatabaseUrl` in the `datasource` block are deprecated and now part of the [Prisma Config](/orm/reference/prisma-config-reference)
 
+```ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  datasource: {
+    url: env('DATABASE_URL'),
+    directUrl: env('DIRECT_URL')
+    shadowDatabaseUrl: env('SHADOW_DATABASE_URL')
+  },
+})
+```
+
 
 ### Driver Adapters and Client Instantiation
 The way to create a new Prisma Client has changed to require a driver adapter for all databases.
@@ -148,7 +164,7 @@ const prisma = new PrismaClient({
 #### After
 
 ```ts
-import { PrismaClient } from './generated/prisma/client.js';
+import { PrismaClient } from './generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const adapter = new PrismaPg({ 
@@ -160,7 +176,7 @@ const prisma = new PrismaClient({ adapter });
 If you are using SQLite, you can use the `@prisma/adapter-better-sqlite3`:
 
 ```ts
-import { PrismaClient } from './generated/prisma/client.js';
+import { PrismaClient } from './generated/prisma/client';
 import { PrismaBetterSQLite3 } from '@prisma/adapter-better-sqlite3';
 
 const adapter = new PrismaBetterSQLite3({
@@ -238,13 +254,37 @@ export default defineConfig({
 ### Metrics has been removed from the Client extensions
 
 The Metrics preview feature was deprecated in [Prisma ORM 6.14.0](https://github.com/prisma/prisma/releases/tag/6.14.0) and has been removed for Prisma ORM 7.0.0. 
-If you need this feature, use the underlying driver adapter for the database you are using and
-incorporate Client extensions to expose that information.
+If you need this feature, you can use the underlying driver adapter for you database, or Client Extensions to make this information available.
+
+For example, a basic `totalQueries` counter: 
+
+```ts
+const total = 0
+const prisma = new PrismaClient().$extends({
+  client: {
+    $log: (s: string) => console.log(s),
+    async $totalQueries() { return total; },
+  },
+  query: {
+      $allModels: {
+        async $allOperations({ query, args }) {
+          total += 1;
+          return query(args);
+        },
+      },
+    },
+})
+
+async function main() {
+  prisma.$log('Hello world')
+  const totalQueries = await prisma.$totalQueries()
+  console.log(totalQueries)
+}
+```
 
 ### Client Middleware has been removed
 
-The client middleware API has been removed in favor of using
-[Extensions](orm/prisma-client/client-extensions). 
+The client middleware API has been removed. If possible, use [Client Extensions](orm/prisma-client/client-extensions). 
 
 ```ts
 // ❌ Old (removed)
@@ -264,3 +304,20 @@ const prisma = new PrismaClient().$extends({
   }
 })
 ```
+
+### Various environment Variables have been removed
+
+We've removed a small selection of Prisma-specific environment variables. 
+
+- `PRISMA_CLI_QUERY_ENGINE_TYPE`
+- `PRISMA_CLIENT_ENGINE_TYPE`
+- `PRISMA_QUERY_ENGINE_BINARY`
+- `PRISMA_QUERY_ENGINE_LIBRARY`
+- `PRISMA_GENERATE_SKIP_AUTOINSTALL`
+- `PRISMA_SKIP_POSTINSTALL_GENERATE`
+- `PRISMA_GENERATE_IN_POSTINSTALL`
+- `PRISMA_GENERATE_DATAPROXY`
+- `PRISMA_GENERATE_NO_ENGINE`
+- `PRISMA_CLIENT_NO_RETRY`
+- `PRISMA_MIGRATE_SKIP_GENERATE`
+- `PRISMA_MIGRATE_SKIP_SEED`
