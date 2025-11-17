@@ -82,65 +82,41 @@ const sidebars: SidebarsConfig = {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/prisma-postgres",
                   label: "Prisma Postgres",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/mysql",
                   label: "MySQL",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/postgresql",
                   label: "PostgreSQL",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/sqlite",
                   label: "SQLite",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/sql-server",
                   label: "SQL Server",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/planetscale",
                   label: "PlanetScale",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/cockroachdb",
                   label: "CockroachDB",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/mongodb",
                   label: "MongoDB",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
               ],
             },
@@ -162,65 +138,41 @@ const sidebars: SidebarsConfig = {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/prisma-postgres",
                   label: "Prisma Postgres",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/mysql",
                   label: "MySQL",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/postgresql",
                   label: "PostgreSQL",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/sqlite",
                   label: "SQLite",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/sql-server",
                   label: "SQL Server",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/planetscale",
                   label: "PlanetScale",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/cockroachdb",
                   label: "CockroachDB",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/mongodb",
                   label: "MongoDB",
-                  customProps: {
-                    badge: "5 Min",
-                  },
                 },
               ],
             },
