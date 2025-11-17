@@ -26,7 +26,7 @@ Many aspects of using Prisma ORM with Supabase are just like using Prisma ORM wi
 
 ## Specific considerations
 
-If you'd like to use the [connection pooling feature](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooling-in-depth) available with Supabase, you will need to use the connection pooling connection string available via your [Supabase database settings](https://supabase.com/dashboard/project/_/settings/database) with `?pgbouncer=true` appended to the end of your `DATABASE_URL` environment variable:
+If you'd like to use the [connection pooling feature](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooling-in-depth) available with Supabase, you will need to use the connection pooling connection string available via your [Supabase database settings](https://supabase.com/dashboard/project/_/settings/database) with `?pgbouncer=true` appended to the end of the environment variable that Prisma Client reads when you instantiate it with a driver adapter:
 
 ```env file=.env
 # Connect to Supabase via connection pooling with Supavisor.
@@ -41,33 +41,41 @@ Supabase provides three types of connection strings for each database:
 
 3. **Session Pooler Connection string** – `postgresql://postgres.[your-project-ref]:password@aws-0-[region].pooler.supabase.com:5432/postgres`
 
-If you would like to use the Prisma CLI in order to perform other actions on your database (e.g. migrations), your setup depends on the connection string used:
+Prisma CLI commands (for example, migrations and introspection) now read the direct, non-pooled connection string from `prisma.config.ts`. Configure two environment variables — the pooled connection string for Prisma Client (`DATABASE_URL`) and a direct connection string for the Prisma CLI (`DIRECT_URL`):
 
-- If your `DATABASE_URL` uses the Transaction Pooler (connection string 2), you must provide a `DIRECT_URL` with either the Direct Database (1) or Session Pooler (3) connection string in order for Prisma Migrate to work.
-
-- If your `DATABASE_URL` already uses the Session Pooler (connection string 3), you do not need to provide a `DIRECT_URL`. Prisma Migrate will work without it.
-
-```env file=.env highlight=4-5;add showLineNumbers
+```env file=.env highlight=5-7;add showLineNumbers
 # Connect to Supabase via connection pooling with Supavisor.
 DATABASE_URL="postgres://postgres.[your-supabase-project]:[password]@aws-0-[aws-region].pooler.supabase.com:6543/postgres?pgbouncer=true"
 
-//add-start
-# Direct connection to the database. Used for migrations.
+# Direct connection to the database used by the Prisma CLI.
 DIRECT_URL="postgres://postgres.[your-supabase-project]:[password]@aws-0-[aws-region].pooler.supabase.com:5432/postgres"
 # or
 DIRECT_URL="postgresql://postgres:password@db.[your-project-ref].supabase.co:5432/postgres"
-//add-end
 ```
 
-You can then update your `schema.prisma` to use the new direct URL:
+Point `prisma.config.ts` to the direct connection string:
 
-```prisma file=schema.prisma highlight=4;add showLineNumbers
-datasource db {
-  provider  = "postgresql"
-}
+```ts file=prisma.config.ts showLineNumbers
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DIRECT_URL'),
+  },
+})
 ```
 
-More information about the `directUrl` field can be found [here](/orm/reference/prisma-schema-reference#fields).
+At runtime, instantiate Prisma Client with a driver adapter using the pooled `DATABASE_URL`. This keeps the direct connection string scoped to Prisma CLI workflows while your application connections continue to flow through Supavisor.
+
+```ts file=src/db/client.ts showLineNumbers
+import { PrismaClient } from '../prisma/generated/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+export const prisma = new PrismaClient({ adapter })
+```
 
 :::info
 
