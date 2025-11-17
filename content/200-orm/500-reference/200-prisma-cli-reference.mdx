@@ -155,17 +155,27 @@ prisma init
 <cmdResult>
 
 ```code no-copy wrap
-✔ Your Prisma schema was created at prisma/schema.prisma.
-  You can now open it in your favorite editor.
+npx prisma init
 
-Next steps:
-1. Set the DATABASE_URL in the .env file to point to your existing database. If your database has no tables yet, read https://pris.ly/d/getting-started
-2. Set the provider of the datasource block in schema.prisma to match your database: postgresql, mysql, sqlite, sqlserver, mongodb or cockroachdb.
-3. Run prisma db pull to turn your database schema into a Prisma schema.
-4. Run prisma generate to generate Prisma Client. You can then start querying your database.
+Initialized Prisma in your project
 
-More information in our documentation:
-https://pris.ly/d/getting-started
+  prisma/
+    schema.prisma
+  prisma.config.ts
+
+Next, choose how you want to set up your database:
+
+CONNECT EXISTING DATABASE:
+  1. Configure your DATABASE_URL in `prisma.config.ts` 
+  2. Run `npx prisma db pull` to introspect your database.
+
+CREATE NEW DATABASE:
+  Local: npx prisma dev (runs Postgres locally in your terminal)
+  Cloud: npx create-db (creates a free Prisma Postgres database)
+
+  Then, define your models in `prisma/schema.prisma` and run `npx prisma migrate dev` to apply your schema.
+
+Learn more: https://pris.ly/getting-started
 ```
 
 </cmdResult>
@@ -184,9 +194,75 @@ The command output contains helpful information on how to use the generated file
 
 **Run `prisma init --db`**
 
+<CodeWithResult expanded={true}>
+
+<cmd>
+
 ```terminal
 prisma init --db
 ```
+
+</cmd>
+
+<cmdResult>
+
+```code no-copy wrap
+✓ Select an authentication method Google
+Authenticating to Prisma Platform via browser.
+
+Visit the following URL in your browser to authenticate:
+https://console.prisma.io/auth/cli?state=eyJjb6ll...
+
+Successfully authenticated as amanyoyoyo@gmail.com.
+Let's set up your Prisma Postgres database!
+✓ Select your region: ap-southeast-1 - Asia Pacific (Singapore)
+✓ Enter a project name: My Prisma Project
+✓ Success! Your Prisma Postgres database is ready ✅
+
+We found an existing schema.prisma file in your current project directory.
+
+--- Database URL ---
+
+Connect Prisma ORM to your Prisma Postgres database with this URL:
+
+--- Next steps ---
+
+Go to https://pris.ly/ppg-init for detailed instructions.
+
+1. Install the Postgres adapter
+npm install @prisma/adapter-pg
+
+...and add it to your Prisma Client instance:
+
+import { PrismaClient } from "./generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const connectionString = `${process.env.DATABASE_URL}`;
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
+
+2. Apply migrations
+Run the following command to create and apply a migration:
+npx prisma migrate dev
+
+3. Manage your data
+View and edit your data locally by running this command:
+npx prisma studio
+
+...or online in Console:
+https://console.prisma.io/cmhyn0uwl0q6903foel16ff31/cmhyn143t074tyLfoezs684ag/cmhyn143t074uylfon8hfre5z/studio
+
+4. Send queries from your app
+If you already have an existing app with Prisma ORM, you can now run it and it will send queries against your newly created Prisma Postgres instance.
+
+5. Learn more
+For more info, visit the Prisma Postgres docs: https://pris.ly/ppg-docs
+```
+
+</cmdResult>
+
+</CodeWithResult>
 
 The command creates a new [Prisma Postgres](https://www.prisma.io/postgres) instance. Note that it requires you to be authenticated with the [PDP Console](https://console.prisma.io), If you run it for the first time without being authenticated, the command will open the browser for you to log into Console.
 
@@ -219,7 +295,6 @@ datasource db {
 
 generator client {
   provider        = "prisma-client"
-  output          = "./generated"
   previewFeatures = ["metrics"]
 }
 ```
@@ -247,7 +322,6 @@ datasource db {
 
 generator client {
   provider        = "prisma-client"
-  output          = "./generated"
   previewFeatures = ["views", "metrics"]
 }
 ```
@@ -276,6 +350,26 @@ datasource db {
 }
 ```
 
+**`prisma.config.ts`**
+
+A TypeScript configuration file for Prisma that defines your datasource URL and other settings:
+
+```typescript
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+See the [Prisma Config reference](/orm/reference/prisma-config-reference) for more details.
+
 **`.env`**
 
 A file to define environment variables for your project:
@@ -287,7 +381,7 @@ A file to define environment variables for your project:
 # Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
 # See the documentation for all the connection string options: https://pris.ly/d/connection-strings
 
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
 ```
 
 **`.gitignore`**
@@ -326,8 +420,26 @@ datasource db {
 
 generator client {
   provider = "prisma-client"
-  output   = "./generated"
+  output   = "../generated/prisma"
 }
+```
+
+**`prisma.config.ts`**
+
+A TypeScript configuration file for Prisma with the custom URL:
+
+```typescript
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
 ```
 
 **`.env`**
@@ -828,16 +940,36 @@ Introspection with the `db pull` command on the [MongoDB connector](/orm/overvie
 
 #### Prerequisites
 
-Before using the `db pull` command, you must define a valid [`datasource`](/orm/prisma-schema/overview/data-sources) within your `schema.prisma` file.
+Before using the `db pull` command, you must configure your database connection in your `prisma.config.ts` file.
 
-For example, the following `datasource` defines a SQLite database file within the current directory:
+For example:
 
-```prisma
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
 datasource db {
   provider = "sqlite"
-  url      = "file:my-database.db"
 }
 ```
+
+```typescript file=prisma.config.ts
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+
 
 #### Options
 
@@ -972,15 +1104,33 @@ See also:
 
 #### Prerequisites
 
-Before using the `db push` command, you must define a valid [datasource](/orm/prisma-schema/overview/data-sources) within your `schema.prisma` file.
+Before using the `db push` command, you must configure your database connection in your `prisma.config.ts` file.
 
-For example, the following `datasource` defines a SQLite database file within the current directory:
+For example:
 
-```prisma
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
 datasource db {
   provider = "sqlite"
-  url      = "file:my-database.db"
 }
+```
+
+```typescript file=prisma.config.ts
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
 ```
 
 #### Options
@@ -1066,15 +1216,35 @@ See also:
 
 #### Prerequisites
 
-Before using the `db execute` command, if you do not use the `--url` option you must define a valid [`datasource`](/orm/prisma-schema/overview/data-sources) within your `schema.prisma` file.
+Before using the `db execute` command, if you do not use the `--url` option you must configure your database connection in your `prisma.config.ts` file.
 
-For example, the following `datasource` defines a SQLite database file within the current directory:
+For example:
 
-```prisma
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
 datasource db {
   provider = "sqlite"
-  url      = "file:my-database.db"
 }
+```
+
+This how your `prisma.config.ts` file should look like:
+
+```typescript file=prisma.config.ts
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
 ```
 
 #### Options
@@ -1414,15 +1584,33 @@ See also:
 
 #### Prerequisites
 
-Before using the `migrate diff` command, if you are using the `--from-schema-datasource` or `--to-schema-datasource` you must define a valid [`datasource`](/orm/prisma-schema/overview/data-sources) within your `schema.prisma` file.
+Before using the `migrate diff` command, if you are using the `--from-schema-datasource` or `--to-schema-datasource` you must configure your database connection in your `prisma.config.ts` file.
 
-For example, the following `datasource` defines a SQLite database file within the current directory:
+For example:
 
-```prisma
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
 datasource db {
   provider = "sqlite"
-  url      = "file:my-database.db"
 }
+```
+
+```typescript file=prisma.config.ts
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
 ```
 
 #### Options
@@ -1521,15 +1709,33 @@ The `studio` command allows you to interact with and manage your data interactiv
 
 #### Prerequisites
 
-Before using the `studio` command, you must define a valid [`datasource`](/orm/prisma-schema/overview/data-sources) within your `schema.prisma` file.
+Before using the `studio` command, you must configure your database connection in your `prisma.config.ts` file.
 
-For example, the following `datasource` defines a SQLite database file within the current directory:
+For example:
 
-```prisma
+```prisma file=schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
 datasource db {
   provider = "sqlite"
-  url      = "file:my-database.db"
 }
+```
+
+```typescript file=prisma.config.ts
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
 ```
 
 #### Options
