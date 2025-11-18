@@ -93,18 +93,13 @@ pnpm install
 Then, add additional dependencies:
 
 ```terminal
-pnpm add typescript tsx @types/node -D
-```
-
-Then install the Prisma Client extension required to use Prisma Postgres:
-
-```terminal
-pnpm add @prisma/extension-accelerate
+pnpm add typescript tsx @types/node @types/pg -D
+pnpm add @prisma/adapter-pg pg
 ```
 
 :::info
 
-This guide uses [Prisma Postgres](/postgres/getting-started). If you plan to use a different database, you can omit the [@prisma/extension-accelerate package](https://www.npmjs.com/package/@prisma/extension-accelerate/).
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
 
 :::
 
@@ -215,39 +210,33 @@ pnpm run db:migrate
 
 When prompted by the CLI, enter a descriptive name for your migration.
 
-Once the migration is successful, create a `client.ts` file to initialize Prisma Client with the Accelerate extension:
+Once the migration is successful, create a `client.ts` file to initialize Prisma Client with a driver adapter:
 
 ```ts file=database/client.ts
 // add-start
 import { PrismaClient } from "./generated/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// Instantiate the extended Prisma client to infer its type
-const extendedPrisma = new PrismaClient({
-  accelerateUrl: process.env.DATABASE_URL,
-}).$extends(withAccelerate());
-type ExtendedPrismaClient = typeof extendedPrisma;
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
 
 // Use globalThis for broader environment compatibility
 const globalForPrisma = globalThis as typeof globalThis & {
-  prisma?: ExtendedPrismaClient;
+  prisma?: PrismaClient;
 };
 
 // Named export with global memoization
-export const prisma: ExtendedPrismaClient =
-  globalForPrisma.prisma ?? extendedPrisma;
+export const prisma: PrismaClient =
+  globalForPrisma.prisma ?? new PrismaClient({
+    adapter,
+  });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 // add-end
 ```
-
-:::info
-
-If you're not using [Prisma Postgres](/postgres/getting-started) for your database, exclude the `import { withAccelerate }` line and `.$extends(withAccelerate())` from the line following it.
-
-:::
 
 Then, create an `index.ts` file to re-export the instance of Prisma Client and all generated types:
 
