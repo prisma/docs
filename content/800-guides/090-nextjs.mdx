@@ -110,7 +110,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -139,17 +138,17 @@ This creates two models: `User` and `Post`, with a one-to-many relationship betw
 To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
 Include an import for `dotenv` at the top of the `prisma.config.ts`
 
-```ts
+```typescript file=prisma.config.ts
 //add-start
 import 'dotenv/config'
 //add-end
 import { defineConfig, env } from 'prisma/config';
+
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations'
   },
-  engine: 'classic',
   datasource: {
     url: env('DATABASE_URL'),
   },
@@ -171,8 +170,16 @@ Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts
 import { PrismaClient, Prisma } from "../app/generated/prisma";
+import { PrismaPg } from '@prisma/adapter-pg'
+import 'dotenv/config'
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+})
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const userData: Prisma.UserCreateInput[] = [
   {
@@ -218,9 +225,10 @@ main();
 
 Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```ts file=prisma.config.ts
+```typescript file=prisma.config.ts
 import 'dotenv/config'
 import { defineConfig, env } from 'prisma/config';
+
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
@@ -229,7 +237,6 @@ export default defineConfig({
     seed: `tsx prisma/seed.ts`,
   //add-end
   },
-  engine: 'classic',
   datasource: {
     url: env('DATABASE_URL'),
   },
@@ -287,11 +294,13 @@ Now, add the following code to your `lib/prisma.ts` file:
 import { PrismaClient } from '../app/generated/prisma'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
-const globalForPrisma = global as unknown as { 
+const globalForPrisma = global as unknown as {
     prisma: PrismaClient
 }
 
-const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate())
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate())
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
@@ -304,12 +313,19 @@ export default prisma
 ```typescript file=lib/prisma.ts showLineNumbers
 //add-start
 import { PrismaClient } from '../src/app/generated/prisma'
+import { PrismaPg } from '@prisma/adapter-pg'
 
-const globalForPrisma = global as unknown as { 
+const globalForPrisma = global as unknown as {
     prisma: PrismaClient
 }
 
-const prisma = globalForPrisma.prisma || new PrismaClient()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+})
+
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  adapter,
+})
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
@@ -683,7 +699,7 @@ Before you deploy, you also need to tell Vercel to make sure that the Prisma Cli
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "postinstall": "prisma generate --no-engine",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "next lint"
   },
@@ -713,9 +729,6 @@ Before you deploy, you also need to tell Vercel to make sure that the Prisma Cli
 }
 ```
 
-:::note
-If you're not using Prisma Postgres, you need to remove the `--no-engine` flag from the command.
-:::
 
 After this change, you can deploy your application to Vercel by running `vercel`.
 

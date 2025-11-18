@@ -1,0 +1,309 @@
+---
+title: 'Quickstart with Prisma ORM and PlanetScale'
+sidebar_label: 'PlanetScale'
+metaTitle: 'Quickstart: Prisma ORM with PlanetScale MySQL (10 min)'
+metaDescription: 'Create a new TypeScript project from scratch by connecting Prisma ORM to PlanetScale MySQL and generating a Prisma Client for database access.'
+---
+
+import Prerequisites from '../../_components/_prerequisites.mdx'
+import CreateProject from '../../_components/_create-project.mdx'
+import ExploreData from '../../_components/_explore-data.mdx'
+import NextSteps from '../../_components/_next-steps.mdx'
+
+[PlanetScale](https://planetscale.com) is a serverless database platform. This guide covers **PlanetScale MySQL**. In this guide, you will learn how to set up a new TypeScript project from scratch, connect it to PlanetScale MySQL using Prisma ORM, and generate a Prisma Client for easy, type-safe access to your database.
+
+:::note
+
+PlanetScale also offers PostgreSQL databases. If you're using **PlanetScale PostgreSQL**, follow the [PostgreSQL quickstart guide](/getting-started/prisma-orm/quickstart/postgresql) instead.
+
+:::
+
+## Prerequisites
+
+<Prerequisites />
+
+You also need:
+
+- A [PlanetScale](https://planetscale.com) database
+- Database connection string from PlanetScale
+
+## 1. Create a new project
+
+<CreateProject />
+
+## 2. Install required dependencies
+
+Install the packages needed for this quickstart:
+
+```terminal
+npm install prisma @types/node --save-dev 
+npm install @prisma/client @prisma/adapter-planetscale undici dotenv
+```
+
+Here's what each package does:
+
+- **`prisma`** - The Prisma CLI for running commands like `prisma init`, `prisma migrate`, and `prisma generate`
+- **`@prisma/client`** - The Prisma Client library for querying your database
+- **`@prisma/adapter-planetscale`** - The PlanetScale driver adapter that connects Prisma Client to your database
+- **`undici`** - A fast HTTP/1.1 client required by the PlanetScale adapter
+- **`dotenv`** - Loads environment variables from your `.env` file
+
+## 3. Configure ESM support
+
+Update `tsconfig.json` for ESM compatibility:
+
+```json file=tsconfig.json
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2023",
+    "strict": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0"
+  }
+}
+```
+
+Update `package.json` to enable ESM:
+
+```json file=package.json
+{
+  // add-start
+  "type": "module",
+  // add-end
+}
+```
+
+## 4. Initialize Prisma ORM
+
+You can now invoke the Prisma CLI by prefixing it with `npx`:
+
+```terminal
+npx prisma
+```
+
+Next, set up your Prisma ORM project by creating your [Prisma Schema](/orm/prisma-schema) file with the following command:
+
+```terminal
+npx prisma init --datasource-provider mysql --output ../generated/prisma
+```
+
+This command does a few things:
+
+- Creates a `prisma/` directory with a `schema.prisma` file containing your database connection and schema models
+- Creates a `.env` file in the root directory for environment variables
+- Creates a `prisma.config.ts` file for Prisma configuration
+
+The generated `prisma.config.ts` file looks like this:
+
+```typescript file=prisma.config.ts
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+Add `dotenv` to `prisma.config.ts` so that Prisma can load environment variables from your `.env` file:
+
+```typescript file=prisma.config.ts
+// add-start
+import 'dotenv/config'
+// add-end
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+The generated schema uses [the ESM-first `prisma-client` generator](/orm/prisma-schema/overview/generators#prisma-client) with a custom output path:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+```
+
+Update your schema to include `relationMode = "prisma"` for PlanetScale:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider     = "mysql"
+  relationMode = "prisma"
+}
+```
+
+Update your `.env` file with your PlanetScale connection string:
+
+```env file=.env
+DATABASE_URL="mysql://username:password@host.connect.psdb.cloud/mydb?sslaccept=strict"
+```
+
+Replace with your actual PlanetScale connection string from your database dashboard.
+
+## 5. Define your data model
+
+Open `prisma/schema.prisma` and add the following models:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider     = "mysql"
+  relationMode = "prisma"
+}
+
+//add-start
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String? @db.Text
+  published Boolean @default(false)
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  Int
+
+  @@index([authorId])
+}
+//add-end
+```
+
+:::note
+
+Note the `@@index([authorId])` on the `Post` model. PlanetScale requires indexes on foreign keys when using `relationMode = "prisma"`.
+
+:::
+
+## 6. Push your schema to PlanetScale
+
+PlanetScale uses a branching workflow instead of traditional migrations. Push your schema directly:
+
+```terminal
+npx prisma db push
+```
+
+This command creates the database tables based on your schema.
+
+Now run the following command to generate the Prisma Client:
+
+```terminal
+npx prisma generate
+```
+
+## 7. Instantiate Prisma Client
+
+Now that you have all the dependencies installed, you can instantiate Prisma Client. You need to pass an instance of Prisma ORM's driver adapter to the `PrismaClient` constructor:
+
+```typescript file=lib/prisma.ts
+import "dotenv/config";
+import { PrismaPlanetScale } from '@prisma/adapter-planetscale'
+import { PrismaClient } from '../generated/prisma/client'
+import { fetch as undiciFetch } from 'undici'
+
+const adapter = new PrismaPlanetScale({ url: process.env.DATABASE_URL, fetch: undiciFetch })
+const prisma = new PrismaClient({ adapter })
+
+export { prisma }
+```
+
+## 8. Write your first query
+
+Create a `script.ts` file to test your setup:
+
+```typescript file=script.ts
+import { prisma } from './lib/prisma'
+
+async function main() {
+  // Create a new user with a post
+  const user = await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@prisma.io',
+      posts: {
+        create: {
+          title: 'Hello World',
+          content: 'This is my first post!',
+          published: true,
+        },
+      },
+    },
+    include: {
+      posts: true,
+    },
+  })
+  console.log('Created user:', user)
+
+  // Fetch all users with their posts
+  const allUsers = await prisma.user.findMany({
+    include: {
+      posts: true,
+    },
+  })
+  console.log('All users:', JSON.stringify(allUsers, null, 2))
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
+```
+
+Run the script:
+
+```terminal
+npx tsx script.ts
+```
+
+You should see the created user and all users printed to the console!
+
+## 9. Explore your data with Prisma Studio
+
+<ExploreData />
+
+## Next steps
+
+<NextSteps />
+
+## More info
+
+- [PlanetScale database connector](/orm/overview/databases/planetscale)
+- [Prisma Config reference](/orm/reference/prisma-config-reference)
+- [Database connection management](/orm/prisma-client/setup-and-configuration/databases-connections)

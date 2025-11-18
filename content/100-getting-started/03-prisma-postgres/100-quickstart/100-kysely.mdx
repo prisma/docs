@@ -1,0 +1,269 @@
+---
+title: 'Use Prisma Postgres with Kysely'
+sidebar_label: 'Kysely'
+metaTitle: 'Quickstart: Kysely with Prisma Postgres (10 min)'
+metaDescription: 'Get started with Kysely and Prisma Postgres by creating a type-safe SQL query builder for your database.'
+---
+
+[Kysely](https://kysely.dev) is a type-safe TypeScript SQL query builder that provides TypeScript support and a fluent API for building SQL queries. In this guide, you'll learn how to connect Kysely to [Prisma Postgres](/postgres) and start querying your database with full type safety.
+
+## Prerequisites
+
+- Node.js version 14 or higher
+- TypeScript version 4.6 or higher (5.4+ recommended for improved type inference, 5.9+ for better compilation performance)
+- Strict mode enabled in your `tsconfig.json` for Kysely's type safety
+
+## 1. Create a new project
+
+Create a new directory for your project and initialize it with npm:
+
+```terminal
+mkdir kysely-quickstart
+cd kysely-quickstart
+npm init -y
+```
+
+Install TypeScript and initialize it:
+
+```terminal
+npm install --save-dev typescript
+npx tsc --init
+```
+
+## 2. Configure TypeScript
+
+Kysely requires TypeScript's strict mode for proper type safety. Update your `tsconfig.json` file:
+
+```json file=tsconfig.json
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    // add-start
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+    // add-end
+    // ...
+  }
+  // ...
+}
+```
+
+:::note
+
+The `strict: true` setting is **required** for Kysely's type safety to work correctly.
+
+:::
+
+In your `package.json`, set the `type` to `module`:
+
+```json
+{
+// ...
+// add-start
+"type": "module"
+// add-end
+// ...
+}
+```
+
+## 3. Create a Prisma Postgres database
+
+You can create a Prisma Postgres database using the `create-db` CLI tool. Follow these steps to create your Prisma Postgres database:
+
+```terminal
+npx create-db
+```
+
+Then the CLI tool should output:
+
+```terminal
+┌  🚀 Creating a Prisma Postgres database
+│
+│  Provisioning a temporary database in us-east-1...
+│
+│  It will be automatically deleted in 24 hours, but you can claim it.
+│
+◇  Database created successfully!
+│
+│
+●  Database Connection
+│
+│
+│    Connection String:
+│
+│    postgresql://hostname:password@db.prisma.io:5432/postgres?sslmode=require
+│
+│
+◆  Claim Your Database
+│
+│    Keep your database for free:
+│
+│    https://create-db.prisma.io/claim?CLAIM_CODE
+│
+│    Database will be deleted on 11/18/2025, 1:55:39 AM if not claimed.
+│
+└  
+```
+
+Create a `.env` file and add the connection string from the output:
+
+```env file=.env
+DATABASE_URL="postgresql://hostname:password@db.prisma.io:5432/postgres?sslmode=require"
+```
+
+:::warning
+
+**Never commit `.env` files to version control.** Add `.env` to your `.gitignore` file to keep credentials secure.
+
+:::
+
+The database created is temporary and will be deleted in 24 hours unless claimed. Claiming moves the database into your [Prisma Data Platform](https://console.prisma.io) account. Visit the claim URL from the output to keep your database.
+
+:::note
+
+To learn more about the `create-db` CLI tool, see the [create-db documentation](/postgres/introduction/npx-create-db).
+
+:::
+
+## 4. Install dependencies
+
+Install Kysely and the PostgreSQL driver:
+
+```terminal
+npm install kysely pg dotenv
+npm install --save-dev @types/pg tsx
+```
+
+**Package breakdown:**
+- `kysely`: The type-safe SQL query builder
+- `pg`: PostgreSQL driver for Node.js (required by Kysely's PostgresDialect)
+- `dotenv`: Loads environment variables from `.env` file
+- `@types/pg`: TypeScript type definitions for the pg driver
+- `tsx`: TypeScript execution engine for running `.ts` files directly
+
+## 5. Define database types
+
+Create a `src/types.ts` file to define your database schema types:
+
+```typescript file=src/types.ts
+import type { Generated } from "kysely";
+
+export interface Database {
+  users: UsersTable;
+}
+
+export interface UsersTable {
+  id: Generated<number>;
+  email: string;
+  name: string | null;
+}
+```
+
+## 6. Configure database connection
+
+Create a `src/database.ts` file to instantiate Kysely with your Prisma Postgres connection:
+
+```typescript file=src/database.ts
+import 'dotenv/config'
+import type { Database } from './types.ts'
+import { Pool } from 'pg'
+import { Kysely, PostgresDialect } from 'kysely'
+
+// Parse DATABASE_URL into connection parameters
+function parseConnectionString(url: string) {
+  const parsed = new URL(url)
+  return {
+    host: parsed.hostname,
+    port: parseInt(parsed.port),
+    user: parsed.username,
+    password: parsed.password,
+    database: parsed.pathname.slice(1), // Remove leading '/'
+  }
+}
+
+const connectionParams = parseConnectionString(process.env.DATABASE_URL!)
+
+const dialect = new PostgresDialect({
+  pool: new Pool({
+    ...connectionParams,
+    ssl: true,
+    max: 10,
+  })
+})
+
+// Database interface is passed to Kysely's constructor, and from now on, Kysely 
+// knows your database structure.
+// Dialect is passed to Kysely's constructor, and from now on, Kysely knows how 
+// to communicate with your database.
+export const db = new Kysely<Database>({
+  dialect,
+})
+```
+
+## 7. Run queries
+
+Create a `src/script.ts` file:
+
+```typescript file=src/script.ts
+import { db } from './database.ts'
+
+async function main() {
+  // Create the users table
+  await db.schema
+    .createTable('users')
+    .ifNotExists()
+    .addColumn('id', 'serial', (col) => col.primaryKey())
+    .addColumn('email', 'varchar(255)', (col) => col.notNull().unique())
+    .addColumn('name', 'varchar(255)')
+    .execute()
+
+  // Insert a user
+  const user = await db
+    .insertInto('users')
+    .values({
+      email: 'alice@prisma.io',
+      name: 'Alice',
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
+
+  console.log('Created user:', user)
+
+  // Query all users
+  const users = await db
+    .selectFrom('users')
+    .selectAll()
+    .execute()
+
+  console.log('All users:', users)
+}
+
+main()
+  .then(async () => {
+    await db.destroy()
+  })
+  .catch(async (error) => {
+    console.error('Error:', error)
+    await db.destroy()
+    process.exit(1)
+  })
+```
+
+Run the script:
+
+```terminal
+npx tsx src/script.ts
+```
+
+You should receive the following output:
+
+```terminal
+Created user: { id: 1, email: 'alice@prisma.io', name: 'Alice' }
+All users: [ { id: 1, email: 'alice@prisma.io', name: 'Alice' } ]
+```
+
+## Next steps
+
+You've successfully connected Kysely to Prisma Postgres! For more advanced features like schemas, migrations, and complex queries, see the [Kysely documentation](https://kysely.dev/docs/intro).

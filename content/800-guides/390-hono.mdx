@@ -48,7 +48,7 @@ npm install @prisma/extension-accelerate @prisma/client dotenv
 <TabItem value="Other databases">
 ```terminal
 npm install prisma --save-dev
-npm install @prisma/client dotenv
+npm install @prisma/client @prisma/adapter-pg dotenv
 ```
 </TabItem>
 </TabbedContent>
@@ -80,7 +80,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -106,17 +105,17 @@ This creates two models: `User` and `Post`, with a one-to-many relationship betw
 
 In `prisma.config.ts`, import `dotenv` at the top of the file
 
-```ts
+```typescript file=prisma.config.ts
 import { defineConfig, env } from "prisma/config";
 // add-start
 import "dotenv/config";
 // add-end
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
-  engine: "classic",
   datasource: {
     url: env("DATABASE_URL"),
   },
@@ -138,8 +137,15 @@ Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts
 import { PrismaClient, Prisma } from "../src/generated/prisma/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const userData: Prisma.UserCreateInput[] = [
   {
@@ -192,9 +198,10 @@ main()
 
 Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```ts file=prisma.config.ts
+```typescript file=prisma.config.ts
 import { defineConfig, env } from "prisma/config";
 import "dotenv/config";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -203,7 +210,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts"
 //add-end
   },
-  engine: "classic",
   datasource: {
     url: env("DATABASE_URL"),
   },
@@ -244,7 +250,7 @@ function withPrisma(c: Context, next: Next) {
     if (!databaseUrl) {
       throw new Error('DATABASE_URL is not set');
     }
-    const prisma = new PrismaClient({ datasourceUrl: databaseUrl })
+    const prisma = new PrismaClient({ accelerateUrl: databaseUrl })
     .$extends(withAccelerate());
 
     c.set('prisma', prisma);
@@ -261,13 +267,19 @@ export default withPrisma;
 ```tsx file=src/lib/prisma.ts
 import type { Context, Next } from 'hono';
 import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 import "dotenv/config";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error('DATABASE_URL is not set');
 }
-const prisma = new PrismaClient({ datasourceUrl: databaseUrl });
+
+const adapter = new PrismaPg({
+  connectionString: databaseUrl,
+});
+
+const prisma = new PrismaClient({ adapter });
 
 function withPrisma(c: Context, next: Next) {
   if (!c.get('prisma')) {
