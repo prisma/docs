@@ -1,0 +1,323 @@
+---
+title: 'Upgrade to Prisma ORM 7'
+metaTitle: 'Upgrade to Prisma ORM 7'
+metaDescription: 'Guide on how to upgrade to Prisma ORM 7'
+tocDepth: 3
+toc: true
+---
+
+Prisma ORM v7 introduces **breaking changes** when you upgrade from an earlier Prisma ORM version. This guide explains how this upgrade might affect your application and gives instructions on how to handle any changes.
+
+<details>
+<summary>Questions answered in this page</summary>
+
+- What changed in Prisma 7?
+- How do I upgrade safely?
+- Which breaking changes affect my app?
+
+</details>
+
+For developers using AI Agents, we have a [migration prompt](/docs/ai/prompts/prisma-7) that you can
+add to your project for automatic migrations. 
+
+## Upgrade the `prisma` and `@prisma/client` packages to v7
+
+To upgrade to Prisma ORM v7 from an earlier version, you need to update both the `prisma` and `@prisma/client` packages:
+
+<TabbedContent code>
+
+<TabItem value="npm">
+
+```terminal
+npm install @prisma/client@7
+npm install -D prisma@7
+```
+
+</TabItem>
+
+<TabItem value="yarn">
+
+```terminal
+yarn up prisma@7 @prisma/client@7
+```
+
+</TabItem>
+
+<TabItem value="pnpm">
+
+```terminal
+pnpm upgrade prisma@7 @prisma/client@7
+```
+
+</TabItem>
+
+<TabItem value="bun">
+
+```terminal
+bun add @prisma/client@7
+bun add prisma@7 --dev
+```
+
+</TabItem>
+
+</TabbedContent>
+
+:::danger
+
+Before you upgrade, check each breaking change below to see how the upgrade might affect your application.
+
+:::
+
+## Breaking changes
+
+This section gives an overview of breaking changes in Prisma ORM v7.
+
+### Minimum supported Node.js & TypeScript versions
+
+|            | Minimum Version | Recommended |
+|------------|-----------------|-------------|
+| Node       | 20.19.0         | 22.x        |
+| TypeScript | 5.4.0           | 5.9.x       |
+
+### ESM support 
+Prisma ORM now ships as an ES module, the module format supported in Bun, Deno, and Node. Set the
+`type` field in your `package.json` to `module`
+
+```json
+{
+  "type": "module",
+  "scripts": {...},
+}
+```
+
+If you are using TypeScript, you need to configure your `tsconfig.json` to be able to consume ES modules
+
+```json
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2023",
+    "strict": true,
+    "esModuleInterop": true
+  }
+}
+```
+
+
+### Prisma schema changes
+
+The older `prisma-client-js` provider will be removed in future releases of Prisma ORM. Upgrade to
+the new `prisma-client` provider which uses the new Rust-free client. This will give you faster
+queries, smaller bundle size, and require less system resources when deployed to your server.
+
+
+#### Before
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+```
+
+#### After
+```prisma
+generator client {
+  provider = "prisma-client"
+}
+```
+
+Additionally other fields such as `url`, `directUrl`, and `shadowDatabaseUrl` in the `datasource` block are deprecated and now part of the [Prisma Config](/orm/reference/prisma-config-reference)
+
+```ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  datasource: {
+    url: env('DATABASE_URL'),
+    directUrl: env('DIRECT_URL'),
+    shadowDatabaseUrl: env('SHADOW_DATABASE_URL')
+  },
+})
+```
+
+
+### Driver adapters and client instantiation
+The way to create a new Prisma Client has changed to require a driver adapter for all databases.
+This change aligns with the move to make the main Prisma Client as lean and open as possible. For
+instance, if you are using Prisma Postgres, you now need the `@prisma/adapter-pg` adapter. This also
+means the signature for creating a new Prisma Client has changed slightly:
+
+#### Before
+
+```ts
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient({
+  datasources: {
+    db: { url: process.env.DATABASE_URL },
+  },
+  datasourceUrl: process.env.DATABASE_URL,
+});
+```
+
+#### After
+
+```ts
+import { PrismaClient } from './generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const adapter = new PrismaPg({ 
+  connectionString: process.env.DATABASE_URL 
+});
+const prisma = new PrismaClient({ adapter });
+```
+
+If you are using SQLite, you can use the `@prisma/adapter-better-sqlite3`:
+
+```ts
+import { PrismaClient } from './generated/prisma/client';
+import { PrismaBetterSQLite3 } from '@prisma/adapter-better-sqlite3';
+
+const adapter = new PrismaBetterSQLite3({
+  url: process.env.DATABASE_URL || 'file:./dev.db'
+})
+
+export const prisma = new PrismaClient({ adapter })
+```
+
+### Explicit loading of environment variables
+In Prisma ORM 7.0.0, environment variables are not loaded by default. Instead developers need to
+explicitly load the variables when calling the `prisma` CLI. Libraries like [`dotenv`](https://github.com/motdotla/dotenv) can be used to manage loading environment variables by reading the appropriate `.env` file.
+
+
+<TabbedContent code>
+
+<TabItem value="npm">
+
+```terminal
+npm install dotenv
+```
+
+</TabItem>
+
+<TabItem value="yarn">
+
+```terminal
+yarn add dotenv
+```
+
+</TabItem>
+
+<TabItem value="pnpm">
+
+```terminal
+pnpm add dotenv
+```
+
+</TabItem>
+
+</TabbedContent>
+
+For bun users, no action is required as bun will automatically load `.env` files. 
+
+### Prisma config is now used to configure the Prisma CLI
+
+Prisma Config is now the default place for configuring how the Prisma CLI interacts with your
+database. You now configure your database URL, schema location, migration output, and custom seed
+scripts. 
+
+```ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  // the main entry for your schema
+  schema: 'prisma/schema.prisma',
+  // where migrations should be generated
+  // what script to run for "prisma db seed"
+  migrations: {
+    path: 'prisma/migrations',
+    seed: 'tsx prisma/seed.ts',
+  },
+  // The database URL 
+  datasource: {
+    // Type Safe env() helper 
+    // Does not replace the need for dotenv
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+
+
+### Metrics has been removed from the Client extensions
+
+The Metrics preview feature was deprecated in [Prisma ORM 6.14.0](https://github.com/prisma/prisma/releases/tag/6.14.0) and has been removed for Prisma ORM 7.0.0. 
+If you need this feature, you can use the underlying driver adapter for your database, or Client Extensions to make this information available.
+
+For example, a basic `totalQueries` counter: 
+
+```ts
+const total = 0
+const prisma = new PrismaClient().$extends({
+  client: {
+    $log: (s: string) => console.log(s),
+    async $totalQueries() { return total; },
+  },
+  query: {
+      $allModels: {
+        async $allOperations({ query, args }) {
+          total += 1;
+          return query(args);
+        },
+      },
+    },
+})
+
+async function main() {
+  prisma.$log('Hello world')
+  const totalQueries = await prisma.$totalQueries()
+  console.log(totalQueries)
+}
+```
+
+### Client middleware has been removed
+
+The client middleware API has been removed. If possible, use [Client Extensions](orm/prisma-client/client-extensions). 
+
+```ts
+// ❌ Old (removed)
+prisma.$use(async (params, next) => {
+  // middleware logic
+  return next(params)
+})
+// ✅ New (use extensions)
+const prisma = new PrismaClient().$extends({
+  query: {
+    user: {
+      async findMany({ args, query }) {
+        // extension logic
+        return query(args)
+      }
+    }
+  }
+})
+```
+
+### Various environment variables have been removed
+
+We've removed a small selection of Prisma-specific environment variables. 
+
+- `PRISMA_CLI_QUERY_ENGINE_TYPE`
+- `PRISMA_CLIENT_ENGINE_TYPE`
+- `PRISMA_QUERY_ENGINE_BINARY`
+- `PRISMA_QUERY_ENGINE_LIBRARY`
+- `PRISMA_GENERATE_SKIP_AUTOINSTALL`
+- `PRISMA_SKIP_POSTINSTALL_GENERATE`
+- `PRISMA_GENERATE_IN_POSTINSTALL`
+- `PRISMA_GENERATE_DATAPROXY`
+- `PRISMA_GENERATE_NO_ENGINE`
+- `PRISMA_CLIENT_NO_RETRY`
+- `PRISMA_MIGRATE_SKIP_GENERATE`
+- `PRISMA_MIGRATE_SKIP_SEED`
