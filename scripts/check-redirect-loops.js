@@ -18,7 +18,7 @@ function parseRedirects(content) {
 
   for (const line of lines) {
     // Skip comments, empty lines, and the footer
-    if (line.trim().startsWith('#') || line.trim() === '' || line.includes('NO REDIRECTS BELOW')) {
+		if (line.trim().startsWith('#') || line.trim() === '' || line.trim().includes('# NO REDIRECTS BELOW')) {
       continue;
     }
 
