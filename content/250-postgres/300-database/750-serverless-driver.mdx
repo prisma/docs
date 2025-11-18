@@ -150,17 +150,38 @@ With 100ms network latency, 3 sequential queries take 300ms (3 x RTT), but pipel
 
 ### Parameter streaming
 
-Parameters over 1KB are automatically streamed without buffering in memory:
+Parameters over 1KB are automatically streamed without buffering in memory. For large binary parameters, you must use `boundedByteStreamParameter()` which creates a `BoundedByteStreamParameter` object that carries the total byte size, required by the PostgreSQL protocol:
 
 ```ts
-// Large text content (e.g., 10MB document)
-const largeDocument = generateLargeText()
+import { client, defaultClientConfig, boundedByteStreamParameter, BINARY } from "@prisma/ppg"
+
+const cl = client(defaultClientConfig(process.env.PRISMA_DIRECT_TCP_URL!))
+
+// Large binary data (e.g., file content)
+const stream = getReadableStream() // Your ReadableStream source
+const totalSize = 1024 * 1024 // Total size must be known in advance
+
+// Create a bounded byte stream parameter
+const streamParam = boundedByteStreamParameter(stream, BINARY, totalSize)
 
 // Automatically streamed - constant memory usage
-await ppg.sql.exec`
-  INSERT INTO documents (content) VALUES (${largeDocument})
-`
+await cl.query("INSERT INTO files (data) VALUES ($1)", streamParam)
 ```
+
+For `Uint8Array` data, use `byteArrayParameter()`:
+
+```ts
+import { client, defaultClientConfig, byteArrayParameter, BINARY } from "@prisma/ppg"
+
+const cl = client(defaultClientConfig(process.env.PRISMA_DIRECT_TCP_URL!))
+
+const bytes = new Uint8Array([1, 2, 3, 4])
+const param = byteArrayParameter(bytes, BINARY)
+
+await cl.query("INSERT INTO files (data) VALUES ($1)", param)
+```
+
+The `boundedByteStreamParameter()` function is provided by the `@prisma/ppg` library and requires the total byte size to be known in advance due to PostgreSQL protocol requirements.
 
 ### Transactions and batch operations
 
