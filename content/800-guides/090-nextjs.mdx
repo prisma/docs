@@ -66,20 +66,16 @@ cd nextjs-prisma
 
 To get started with Prisma, you'll need to install a few dependencies:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client dotenv
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
 ```
-</TabItem>
-<TabItem value="Other databases">
-```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/client dotenv
-```
-</TabItem>
-</TabbedContent>
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Once installed, initialize Prisma in your project:
 
@@ -155,13 +151,20 @@ export default defineConfig({
 });
 ```
 
-### 2.4. Configure the Prisma Client generator
+### 2.4. Run migrations and generate Prisma Client
 
-Now, run the following command to create the database tables and generate the Prisma Client:
+Now, run the following command to create the database tables:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
+
+Then generate Prisma Client:
+
+```terminal
+npx prisma generate
+```
+
 ### 2.5. Seed the database
 
 Add some seed data to populate the database with sample users and posts.
@@ -169,7 +172,7 @@ Add some seed data to populate the database with sample users and posts.
 Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts
-import { PrismaClient, Prisma } from "../app/generated/prisma";
+import { PrismaClient, Prisma } from "../app/generated/prisma/client";
 import { PrismaPg } from '@prisma/adapter-pg'
 import 'dotenv/config'
 
@@ -287,32 +290,9 @@ mkdir -p lib && touch lib/prisma.ts
 
 Now, add the following code to your `lib/prisma.ts` file:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```typescript file=lib/prisma.ts showLineNumbers
 //add-start
-import { PrismaClient } from '../app/generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-const globalForPrisma = global as unknown as {
-    prisma: PrismaClient
-}
-
-const prisma = globalForPrisma.prisma || new PrismaClient({
-  accelerateUrl: process.env.DATABASE_URL,
-}).$extends(withAccelerate())
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-
-export default prisma
-//add-end
-```
-</TabItem>
-
-<TabItem value="Other databases">
-```typescript file=lib/prisma.ts showLineNumbers
-//add-start
-import { PrismaClient } from '../src/app/generated/prisma'
+import { PrismaClient } from '../app/generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
 const globalForPrisma = global as unknown as {
@@ -332,8 +312,6 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 export default prisma
 //add-end
 ```
-</TabItem>
-</TabbedContent>
 
 This file creates a Prisma Client and attaches it to the global object so that only one instance of the client is created in your application. This helps resolve issues with hot reloading that can occur when using Prisma ORM with Next.js in development mode.
 
@@ -707,9 +685,10 @@ Before you deploy, you also need to tell Vercel to make sure that the Prisma Cli
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^6.2.1",
     "@prisma/client": "^6.2.1",
-    "@prisma/extension-accelerate": "^1.2.1",
     "next": "15.1.4",
+    "pg": "^8.13.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
