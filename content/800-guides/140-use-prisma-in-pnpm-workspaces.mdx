@@ -93,18 +93,13 @@ pnpm install
 Then, add additional dependencies:
 
 ```terminal
-pnpm add typescript tsx @types/node -D
-```
-
-Then install the Prisma Client extension required to use Prisma Postgres:
-
-```terminal
-pnpm add @prisma/extension-accelerate
+pnpm add typescript tsx @types/node @types/pg -D
+pnpm add @prisma/adapter-pg pg
 ```
 
 :::info
 
-This guide uses [Prisma Postgres](/postgres/introduction/getting-started). If you plan to use a different database, you can omit the [@prisma/extension-accelerate package](https://www.npmjs.com/package/@prisma/extension-accelerate/).
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
 
 :::
 
@@ -126,7 +121,7 @@ Enter a name for your project and choose a database region.
 
 :::info
 
-We're going to be using [Prisma Postgres](/postgres/introduction/getting-started) in this guide. If you're not using a Prisma Postgres database, you won't need to add the `--db` flag.
+We're going to be using [Prisma Postgres](/postgres/getting-started) in this guide. If you're not using a Prisma Postgres database, you won't need to add the `--db` flag.
 
 :::
 
@@ -141,7 +136,7 @@ Edit the `schema.prisma` file to define a `User` model in your database and spec
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   //add-start
   output = "../generated/client"
   //add-end
@@ -149,7 +144,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -161,6 +155,35 @@ model User {
 //add-end
 ```
 
+Now, create a `prisma.config.ts` file in the `database` package to configure Prisma:
+
+```typescript file=database/prisma.config.ts
+// add-start
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+// add-end
+```
+
+:::note
+
+You'll need to install the `dotenv` package to load environment variables from the `.env` file:
+
+```terminal
+pnpm add dotenv
+```
+
+:::
+
 Next, add helper scripts to your `package.json` to simplify Prisma commands:
 
 ```json file=database/package.json
@@ -170,7 +193,7 @@ Next, add helper scripts to your `package.json` to simplify Prisma commands:
     "test": "echo \"Error: no test specified\" && exit 1",
     // delete-end
     // add-start
-    "db:generate": "prisma generate --no-engine",
+    "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio"
@@ -178,12 +201,6 @@ Next, add helper scripts to your `package.json` to simplify Prisma commands:
   }
 }
 ```
-
-:::info
-
-If you're not using [Prisma Postgres](/postgres/introduction/getting-started) for your database, exclude the `--no-engine` flag from the `db:generate` script.
-
-:::
 
 Use [Prisma Migrate](/orm/prisma-migrate) to migrate your database changes:
 
@@ -193,37 +210,33 @@ pnpm run db:migrate
 
 When prompted by the CLI, enter a descriptive name for your migration.
 
-Once the migration is successful, create a `client.ts` file to initialize Prisma Client with the Accelerate extension:
+Once the migration is successful, create a `client.ts` file to initialize Prisma Client with a driver adapter:
 
 ```ts file=database/client.ts
 // add-start
 import { PrismaClient } from "./generated/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// Instantiate the extended Prisma client to infer its type
-const extendedPrisma = new PrismaClient().$extends(withAccelerate());
-type ExtendedPrismaClient = typeof extendedPrisma;
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
 
 // Use globalThis for broader environment compatibility
 const globalForPrisma = globalThis as typeof globalThis & {
-  prisma?: ExtendedPrismaClient;
+  prisma?: PrismaClient;
 };
 
 // Named export with global memoization
-export const prisma: ExtendedPrismaClient =
-  globalForPrisma.prisma ?? extendedPrisma;
+export const prisma: PrismaClient =
+  globalForPrisma.prisma ?? new PrismaClient({
+    adapter,
+  });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 // add-end
 ```
-
-:::info
-
-If you're not using [Prisma Postgres](/postgres/introduction/getting-started) for your database, exclude the `import { withAccelerate }` line and `.$extends(withAccelerate())` from the line following it.
-
-:::
 
 Then, create an `index.ts` file to re-export the instance of Prisma Client and all generated types:
 
