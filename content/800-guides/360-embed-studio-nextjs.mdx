@@ -79,9 +79,15 @@ cd nextjs-studio-embed
 Install the required Prisma packages:
 
 ```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client dotenv
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/extension-accelerate @prisma/client @prisma/adapter-pg dotenv pg
 ```
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 ### 2.2. Initialize Prisma with Prisma Postgres
 
@@ -117,7 +123,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -157,7 +162,6 @@ export default defineConfig({
   migrations: {
     path: 'prisma/migrations',
   },
-  engine: 'classic',
   datasource: {
     url: env('DATABASE_URL'),
   },
@@ -171,6 +175,7 @@ Generate the Prisma Client and apply the schema:
 
 ```terminal
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 This creates the tables in your Prisma Postgres database and generates the Prisma Client.
@@ -180,9 +185,16 @@ This creates the tables in your Prisma Postgres database and generates the Prism
 Create a seed file to add some sample data. Create a `seed.ts` file in the `prisma` folder and add the following code:
 
 ```typescript file=prisma/seed.ts
-import { PrismaClient } from '../app/generated/prisma'
+import { PrismaClient } from '../app/generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 
-const prisma = new PrismaClient()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
+
+const prisma = new PrismaClient({
+  adapter,
+})
 
 async function main() {
   // Create users
@@ -243,7 +255,6 @@ export default defineConfig({
     path: 'prisma/migrations',
     seed: `tsx prisma/seed.ts`,
   },
-  engine: 'classic',
   datasource: {
     url: env('DIRECT_URL'),
   },

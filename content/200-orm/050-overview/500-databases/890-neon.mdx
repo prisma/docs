@@ -39,43 +39,52 @@ There are a few differences between Neon and PostgreSQL you should be aware of t
 ## How to use Neon's connection pooling
 
 If you would like to use the [connection pooling](https://neon.tech/docs/guides/prisma#use-connection-pooling-with-prisma) available in Neon, you will
-need to add `-pooler` in the hostname of your `DATABASE_URL` environment variable used in the `url` property of the `datasource` block of your Prisma schema:
+need to add `-pooler` in the hostname of the connection string that Prisma Client uses via a driver adapter:
 
 ```bash file=.env
 # Connect to Neon with Pooling.
 DATABASE_URL=postgres://daniel:<password>@ep-mute-rain-952417-pooler.us-east-2.aws.neon.tech:5432/neondb?sslmode=require
 ```
 
-If you would like to use Prisma CLI in order to perform other actions on your database (e.g. for migrations) you will need to add a `DIRECT_URL` environment variable to use in the `directUrl` property of the `datasource` block of your Prisma schema so that the CLI will use a direct connection string (without PgBouncer):
+Prisma CLI commands (for example, `prisma migrate` or `prisma db pull`) now read the direct connection string from `prisma.config.ts`. Configure both a pooled and non-pooled environment variable:
 
-```env file=.env highlight=4-5;add showLineNumbers
-# Connect to Neon with Pooling.
+```env file=.env highlight=5-6;add showLineNumbers
+# Connect to Neon with pooling (used by Prisma Client via the adapter).
 DATABASE_URL=postgres://daniel:<password>@ep-mute-rain-952417-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
 
-//add-start
-# Direct connection to the database used by Prisma CLI for e.g. migrations.
+# Direct connection to the database used by the Prisma CLI.
 DIRECT_URL="postgres://daniel:<password>@ep-mute-rain-952417.us-east-2.aws.neon.tech/neondb"
-//add-end
 ```
 
-You can then update your `schema.prisma` to use the new direct URL:
+Point `prisma.config.ts` to the direct connection string:
 
-```prisma file=schema.prisma highlight=4;add showLineNumbers
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  //add-next-line
-  directUrl = env("DIRECT_URL")
-}
+```ts file=prisma.config.ts showLineNumbers
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DIRECT_URL'),
+  },
+})
 ```
 
-More information about the `directUrl` field can be found [here](/orm/reference/prisma-schema-reference#fields).
+At runtime, instantiate Prisma Client with the pooled connection string using `@prisma/adapter-neon`:
 
-<Admonition type="info">
+```ts file=src/db/client.ts showLineNumbers
+import { PrismaClient } from '../prisma/generated/client'
+import { PrismaNeon } from '@prisma/adapter-neon'
+
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL })
+export const prisma = new PrismaClient({ adapter })
+```
+
+:::info
 
 We strongly recommend using the pooled connection string in your `DATABASE_URL` environment variable. You will gain the great developer experience of the Prisma CLI while also allowing for connections to be pooled regardless of deployment strategy. While this is not strictly necessary for every app, serverless solutions will inevitably require connection pooling.
 
-</Admonition>
+:::
 
 ## Resolving connection timeouts
 
@@ -129,7 +138,7 @@ npm install @prisma/adapter-neon
 Update your Prisma Client instance:
 
 ```ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../prisma/generated/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import dotenv from 'dotenv'
 

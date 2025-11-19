@@ -9,25 +9,25 @@ sidebar_label: "Prisma Config"
 
 The Prisma Config file configures the Prisma CLI, including subcommands like `migrate` and `studio`, using TypeScript.
 
+:::info[Prisma ORM v7 changes]
+
+Starting with Prisma ORM v7, when you run `prisma init`, a `prisma.config.ts` file is automatically created. The database connection URL is now configured in this file instead of in the `schema.prisma` file. See [Using environment variables](#using-environment-variables) for setup details.
+
+:::
+
 You can define your config in either of two ways:
 
 - Using the `defineConfig` helper:
   ```ts
-  import path from "node:path";
+  import 'dotenv/config'
   import { defineConfig, env } from "prisma/config";
 
   export default defineConfig({
-    schema: path.join("prisma", "schema.prisma"),
+    schema: 'prisma/schema.prisma',
     migrations: { 
-      path: path.join("db", "migrations"),
+      path: 'prisma/migrations',
+      seed: 'tsx prisma/seed.ts',
     },
-    views: { 
-      path: path.join("db", "views"),
-    },
-    typedSql: { 
-    path: path.join("db", "queries"),
-    },
-    engine: "classic",
     datasource: { 
       url: env("DATABASE_URL") 
     }
@@ -36,21 +36,16 @@ You can define your config in either of two ways:
 
 - Using TypeScript's `satisfies` operator with the `PrismaConfig` type:
   ```ts
-  import path from "node:path";
+  import 'dotenv/config'
   import type { PrismaConfig } from "prisma";
+  import { env } from "prisma/config";
 
   export default {
-    schema: path.join("db", "schema.prisma"),
+    schema: "prisma/schema.prisma",
     migrations: {
-      path: path.join("db", "migrations"),
+      path: "prisma/migrations",
+      seed: 'tsx prisma/seed.ts',
     },
-    views: {
-      path: path.join("db", "views"),
-    },
-    typedSql: {
-      path: path.join("db", "queries"),
-    },
-    engine: "classic",
     datasource: { 
       url: env("DATABASE_URL") 
     }
@@ -66,21 +61,11 @@ export declare type PrismaConfig = {
 
   // Whether features with an unstable API are enabled.
   experimental: {
-    adapter: boolean;
     externalTables: boolean;
-    studio: boolean;
   },
 
   // The path to the schema file, or path to a folder that shall be recursively searched for *.prisma files.
   schema?: string;
-
-  // The Driver Adapter used for Prisma CLI.
-  adapter?: () => Promise<SqlMigrationAwareDriverAdapterFactory>;
-
-  // Configuration for Prisma Studio.
-  studio?: {
-    adapter: () => Promise<SqlMigrationAwareDriverAdapterFactory>;
-  };
 
   // Configuration for Prisma migrations.
   migrations?: {
@@ -98,18 +83,28 @@ export declare type PrismaConfig = {
   typedSql?: {
     path: string;
   };
-  // Depending on the choice, you must provide either a `datasource` object or driver adapter
-  engine: 'classic' | 'js'
   
-  // If using the classic engine, datasource sets the database url, shadowDatabaseUrl, or directURL
+  // Database connection configuration
   datasource?: {
     url: string;
-    directUrl?: string;
     shadowDatabaseUrl?: string;
   }
   
 };
 ```
+
+:::note[Prisma ORM v6.19 and earlier]
+
+In Prisma ORM v6.19 and earlier, the configuration interface also included:
+- `experimental.adapter` and `experimental.studio` flags
+- `adapter` property for configuring driver adapters
+- `studio` property for Prisma Studio configuration
+- `datasource.directUrl` property for direct database connections
+- `engine` property for choosing between `classic` and `js` engines
+
+These have been removed in Prisma ORM v7. See the individual property sections below for migration guidance.
+
+:::
 
 ## Supported file extensions
 
@@ -133,80 +128,6 @@ Configures how Prisma ORM locates and loads your schema file(s). Can be a file o
 | -------- | -------- | -------- | ---------------------------------------------- |
 | `schema` | `string` | No       | `./prisma/schema.prisma` and `./schema.prisma` |
 
-### `adapter`
-
-A function that returns a Prisma driver adapter instance which is used by the Prisma CLI to run migrations. The function should return a `Promise` that resolves to a valid Prisma driver adapter.
-
-| Property          | Type                                                           | Required | Default |
-| ----------------- | -------------------------------------------------------------- | -------- | ------- |
-| `adapter` | `() => Promise<SqlMigrationAwareDriverAdapterFactory>` | No       | none    |
-
-Example using the Prisma ORM D1 driver adapter:
-
-```ts
-import path from "node:path";
-import type { PrismaConfig } from "prisma";
-import { PrismaD1 } from "@prisma/adapter-d1";
-
-export default {
-  experimental: {
-    adapter: true
-  },
-  schema: path.join("prisma", "schema.prisma"),
-  async adapter() {
-    return new PrismaD1({
-      CLOUDFLARE_D1_TOKEN: process.env.CLOUDFLARE_D1_TOKEN,
-      CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
-      CLOUDFLARE_DATABASE_ID: process.env.CLOUDFLARE_DATABASE_ID,
-    });
-  },
-} satisfies PrismaConfig;
-```
-
-:::note
-
-As of [Prisma ORM v6.11.0](https://github.com/prisma/prisma/releases/tag/6.11.0), the D1 adapter has been renamed from `PrismaD1HTTP` to `PrismaD1`.
-
-:::
-
-### `studio`
-
-Configures how Prisma Studio connects to your database. See sub-options below for details.
-
-| Property | Type     | Required | Default |
-| -------- | -------- | -------- | ------- |
-| `studio` | `object` | No       | none    |
-
-#### `studio.adapter`
-
-A function that returns a Prisma driver adapter instance. The function receives an `env` parameter containing environment variables and should return a `Promise` that resolves to a valid Prisma driver adapter.
-
-| Property          | Type                                                           | Required | Default |
-| ----------------- | -------------------------------------------------------------- | -------- | ------- |
-| `studio.adapter ` | `(env: Env) => Promise<SqlMigrationAwareDriverAdapterFactory>` | No       | none    |
-
-Example using the Prisma ORM LibSQL driver adapter:
-
-```ts
-import type { PrismaConfig } from "prisma";
-
-export default {
-  experimental: {
-    studio: true
-  },
-  studio: {
-    adapter: async (env: Env) => {
-      const { PrismaLibSQL } = await import("@prisma/adapter-libsql");
-      const { createClient } = await import("@libsql/client");
-
-      const libsql = createClient({
-        url: env.DOTENV_PRISMA_STUDIO_LIBSQL_DATABASE_URL,
-      });
-      return new PrismaLibSQL(libsql);
-    },
-  },
-} satisfies PrismaConfig;
-```
 
 ### `tables.external` and `enums.external`
 
@@ -220,9 +141,17 @@ These options declare tables and enums in your database that are **managed exter
 **Example:**
 
 ```ts
-import { defineConfig } from "prisma/config";
+import 'dotenv/config'
+import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
   experimental: {
     externalTables: true,
   },
@@ -256,11 +185,17 @@ This option allows you to define a script that Prisma runs to seed your database
 **Example:**
 
 ```ts
-import { defineConfig } from "prisma/config";
+import 'dotenv/config'
+import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
+  schema: 'prisma/schema.prisma',
   migrations: {
-    seed: `tsx db/seed.ts`,
+    path: 'prisma/migrations',
+    seed: 'tsx db/seed.ts',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
   },
 });
 ```
@@ -276,19 +211,25 @@ This option allows you to define SQL statements that Prisma runs on the **shadow
 **Example:**
 
 ```ts
-import { defineConfig } from "prisma/config";
+import 'dotenv/config'
+import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    initShadowDb: `
+      CREATE TABLE public.users (id SERIAL PRIMARY KEY);
+    `,
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
   experimental: {
     externalTables: true,
   },
   tables: {
     external: ["public.users"],
-  },
-  migrations: {
-    initShadowDb: `
-      CREATE TABLE public.users (id SERIAL PRIMARY KEY);
-    `,
   },
 });
 ```
@@ -317,37 +258,178 @@ Enables specific experimental features in the Prisma CLI.
 
 | Property         | Type      | Required | Default |
 | ---------------- | --------- | -------- | ------- |
-| `adapter`        | `boolean` | No       | `false` |
 | `externalTables` | `boolean` | No       | `false` |
-| `studio`         | `boolean` | No       | `false` |
 
 Example:
 
 ```ts
-import { defineConfig } from "prisma/config";
+import 'dotenv/config'
+import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
-  experimental: {
-    adapter: true,
-    externalTables: true,
-    studio: true,
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
   },
-  schema: "prisma/schema.prisma",
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+  experimental: {
+    externalTables: true,
+  },
 });
 ```
 
 :::note
 
-If you use features like `adapter`, `studio` or `externalTables` without enabling the corresponding experimental flag, Prisma will throw an error:
+If you use the `externalTables` feature without enabling the experimental flag, Prisma will throw an error:
 
 ```terminal
-Failed to load config file "~" as a TypeScript/JavaScript module. Error: Error: The `studio` configuration requires `experimental.studio` to be set to `true`.
+Failed to load config file "~" as a TypeScript/JavaScript module. Error: Error: The `externalTables` configuration requires `experimental.externalTables` to be set to `true`.
 ```
 
 :::
 
+:::info[Prisma ORM v6.19 and earlier]
 
-### `engine`
+In Prisma ORM v6.19 and earlier, the `experimental` object also included `adapter` and `studio` flags. These have been removed in Prisma ORM v7. See the [`adapter`](#adapter-removed) and [`studio`](#studio-removed) sections for details.
+
+:::
+
+
+### `datasource.url`
+
+Connection URL including authentication info. Most connectors use [the syntax provided by the database](/orm/reference/connection-urls#format).
+
+:::info[Prisma ORM v7 changes]
+
+In Prisma ORM v7, the `url` field is configured in `prisma.config.ts` instead of in [the `datasource` block of your `schema.prisma`](/orm/prisma-schema/overview/data-sources) file. When you run `prisma init`, the generated `schema.prisma` file will not include a `url` property in the `datasource` block.
+
+For Prisma ORM v6.19 and earlier, the `url` field remains in the `schema.prisma` file's `datasource` block.
+
+::: 
+
+| Property         | Type               | Required | Default           |
+| --------         | ------------------ | -------- | ----------------- |
+| `datasource.url` | `string`           | Yes       | `''`              |
+
+**Example:**
+
+```ts
+import 'dotenv/config'
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+
+### `datasource.shadowDatabaseUrl`
+
+Connection URL to the shadow database used by Prisma Migrate. Allows you to use a cloud-hosted database as the shadow database.
+
+:::info[Prisma ORM v7 changes]
+
+In Prisma ORM v7, the `shadowDatabaseUrl` field is configured in `prisma.config.ts` instead of in the `datasource` block of your `schema.prisma` file.
+
+For Prisma ORM v6.19 and earlier, the `shadowDatabaseUrl` field remains in the `schema.prisma` file's `datasource` block.
+
+:::
+
+| Property                       | Type               | Required | Default           |
+| --------                       | ------------------ | -------- | ----------------- |
+| `datasource.shadowDatabaseUrl` | `string`           | No       | `''`              |
+
+
+### `datasource.directUrl` (Removed)
+
+:::warning[Removed in Prisma ORM v7]
+
+The `datasource.directUrl` property has been removed in Prisma ORM v7 in favor of the [`url` property](#datasourceurl).
+
+:::
+
+<details>
+<summary>For Prisma ORM v6.19 and earlier</summary>
+
+Connection URL for direct connection to the database.
+
+If you use a connection pooler URL in the `url` argument (for example, pgBouncer), Prisma CLI commands that require a direct connection to the database use the URL in the `directUrl` argument. 
+
+The `directUrl` property is supported by Prisma Studio from version 5.1.0 upwards. The `directUrl` property is not needed when using [Prisma Postgres](/postgres) database.
+
+| Property               | Type               | Required | Default           |
+| --------               | ------------------ | -------- | ----------------- |
+| `datasource.directUrl` | `string`           | No       | `''`              |
+
+</details>
+
+
+### `adapter` (Removed)
+
+:::warning[Removed in Prisma ORM v7]
+
+The `adapter` property has been removed in Prisma ORM v7. Migrations for driver adapters work automatically without additional configuration in `prisma.config.ts` as of Prisma ORM v7.
+
+:::
+
+<details>
+<summary>For Prisma ORM v6.19 and earlier</summary>
+
+A function that returns a Prisma driver adapter instance which is used by the Prisma CLI to run migrations. The function should return a `Promise` that resolves to a valid Prisma driver adapter.
+
+| Property          | Type                                                           | Required | Default |
+| ----------------- | -------------------------------------------------------------- | -------- | ------- |
+| `adapter` | `() => Promise<SqlMigrationAwareDriverAdapterFactory>` | No       | none    |
+
+Example using the Prisma ORM D1 driver adapter:
+
+```ts
+import path from "node:path";
+import type { PrismaConfig } from "prisma";
+import { PrismaD1 } from "@prisma/adapter-d1";
+
+export default {
+  experimental: {
+    adapter: true
+  },
+  engine: "js",
+  schema: path.join("prisma", "schema.prisma"),
+  async adapter() {
+    return new PrismaD1({
+      CLOUDFLARE_D1_TOKEN: process.env.CLOUDFLARE_D1_TOKEN,
+      CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
+      CLOUDFLARE_DATABASE_ID: process.env.CLOUDFLARE_DATABASE_ID,
+    });
+  },
+} satisfies PrismaConfig;
+```
+
+:::note
+
+As of [Prisma ORM v6.11.0](https://github.com/prisma/prisma/releases/tag/6.11.0), the D1 adapter has been renamed from `PrismaD1HTTP` to `PrismaD1`.
+
+:::
+
+</details>
+
+### `engine` (Removed)
+
+:::warning[Removed in Prisma ORM v7]
+
+The `engine` property has been removed in Prisma ORM v7.
+
+:::
+
+<details>
+<summary>For Prisma ORM v6.19 and earlier</summary>
 
 Configure the schema engine your project should use.
 
@@ -355,10 +437,10 @@ Configure the schema engine your project should use.
 | -------- | ------------------ | -------- | ----------------- |
 | `engine` | `classic` or `js`  | No       | `classic`         |
 
- By default it is set to use the classic engine, which requires that `datasource` be set
- in your `prisma.config.ts`. 
+By default it is set to use the classic engine, which requires that `datasource` be set in your `prisma.config.ts`. 
 
 ```ts
+import 'dotenv/config'
 import path from "node:path";
 import { defineConfig, env } from "prisma/config";
 export default defineConfig({
@@ -370,38 +452,65 @@ export default defineConfig({
 });
 ```
 
-### `datasource.url`
-
-Connection URL including authentication info. Most connectors use [the syntax provided by the database](/orm/reference/connection-urls#format).
-
-| Property         | Type               | Required | Default           |
-| --------         | ------------------ | -------- | ----------------- |
-| `datasource.url` | `string`           | Yes       | `''`              |
+</details>
 
 
-### `datasource.shadowDatabaseUrl`
+### `studio` (Removed)
 
+:::warning[Removed in Prisma ORM v7]
 
-Connection URL to the shadow database used by Prisma Migrate. Allows you to use a cloud-hosted database as the shadow database
+The `studio` property has been removed in Prisma ORM v7. To run Prisma Studio, use:
 
-| Property                       | Type               | Required | Default           |
-| --------                       | ------------------ | -------- | ----------------- |
-| `datasource.shadowDatabaseUrl` | `string`           | No       | `''`              |
+```terminal
+npx prisma studio --config ./prisma.config.ts
+```
 
+Prisma Studio now uses the connection configuration from the `datasource` property automatically. See the [Prisma Studio documentation](/orm/reference/prisma-cli-reference#studio) for more details.
 
-### `datasource.directUrl`
+:::
 
+<details>
+<summary>For Prisma ORM v6.19 and earlier</summary>
 
-Connection URL for direct connection to the database.
+Configures how Prisma Studio connects to your database. See sub-options below for details.
 
-If you use a connection pooler URL in the `url` argument (for example, if you use [Prisma Accelerate](/accelerate) or pgBouncer), Prisma CLI commands that require a direct connection to the database use the URL in the `directUrl` argument. <br/> <br/> The `directUrl` property is supported by Prisma Studio from version 5.1.0 upwards. <br/> <br/> The `directUrl` property is not needed when using [Prisma Postgres](/postgres) database.
+| Property | Type     | Required | Default |
+| -------- | -------- | -------- | ------- |
+| `studio` | `object` | No       | none    |
 
-| Property               | Type               | Required | Default           |
-| --------               | ------------------ | -------- | ----------------- |
-| `datasource.directUrl` | `string`           | No       | `''`              |
+#### `studio.adapter` (Removed)
 
+A function that returns a Prisma driver adapter instance. The function receives an `env` parameter containing environment variables and should return a `Promise` that resolves to a valid Prisma driver adapter.
 
+| Property          | Type                                                           | Required | Default |
+| ----------------- | -------------------------------------------------------------- | -------- | ------- |
+| `studio.adapter ` | `(env: Env) => Promise<SqlMigrationAwareDriverAdapterFactory>` | No       | none    |
 
+Example using the Prisma ORM LibSQL driver adapter:
+
+```ts
+import type { PrismaConfig } from "prisma";
+
+export default {
+  experimental: {
+    studio: true
+  },
+  engine: "js",
+  studio: {
+    adapter: async (env: Env) => {
+      const { PrismaLibSQL } = await import("@prisma/adapter-libsql");
+      const { createClient } = await import("@libsql/client");
+
+      const libsql = createClient({
+        url: env.DOTENV_PRISMA_STUDIO_LIBSQL_DATABASE_URL,
+      });
+      return new PrismaLibSQL(libsql);
+    },
+  },
+} satisfies PrismaConfig;
+```
+
+</details>
 
 ## Common patterns
 
@@ -412,53 +521,49 @@ To get started with Prisma Config, create a `prisma.config.ts` file in your proj
 Using `defineConfig`:
 
 ```ts
-import { defineConfig } from "prisma/config";
+import 'dotenv/config'
+import { defineConfig, env } from "prisma/config";
 
-export default defineConfig({});
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
 ```
 
 Using TypeScript types:
 
 ```ts
+import 'dotenv/config'
 import type { PrismaConfig } from "prisma";
+import { env } from "prisma/config";
 
-export default {} satisfies PrismaConfig;
+export default {
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+} satisfies PrismaConfig;
 ```
 
 ### Using environment variables
 
-When using `prisma.config.ts`, environment variables from `.env` files are not automatically loaded. Using `tsx`, you can pass a `--env-file` flag and that will automatically add those values to `process.env` 
+:::info[Prisma ORM v7 changes]
 
-If using Node or Deno: 
+In Prisma ORM v7, when you run `prisma init`, the generated `prisma.config.ts` file includes `import 'dotenv/config'` by default. You must install the `dotenv` package to use environment variables.
 
-```terminal
-tsx --env-file=.env src/index.ts
-tsx watch --env-file=.env --env-file=.local.env src/index.ts
-tsx --env-file=.env ./prisma/seed.ts
-```
+:::
 
-For Bun, `.env` files are automatically loaded.
+When using `prisma.config.ts`, environment variables from `.env` files need to be loaded explicitly. There are several approaches depending on your runtime and Node version:
 
-For accessing environment variables within `prisma.config.ts`, use the `env()` helper function to
-provide a type-safe way of accessing that variable:
-
-```tsx
-import path from "node:path";
-import { defineConfig, env } from "prisma/config";
-
-type Env = {
-  DATABASE_URL: string
-}
-export default defineConfig({
-  engine: "classic",
-  datasource: {
-      url: env<Env>('DATABASE_URL'),
-  },
-  schema: path.join("prisma", "schema.prisma"),
-});
-```
-
-For releases of Node before v20, you'll need to: 
+#### Using dotenv (Recommended for Prisma ORM v7)
 
 1. Install the `dotenv` package:
 
@@ -466,21 +571,58 @@ For releases of Node before v20, you'll need to:
 npm install dotenv
 ```
 
-2. Import `dotenv/config` in your config file:
+2. Import `dotenv/config` at the top of your `prisma.config.ts` file:
 
 ```ts
-import "dotenv/config";
+import 'dotenv/config'
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: 'tsx prisma/seed.ts',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+#### Using Node.js v20+ or tsx with --env-file flag
+
+If using Node.js v20+ or `tsx`, you can pass a `--env-file` flag to automatically load environment variables:
+
+```terminal
+tsx --env-file=.env src/index.ts
+tsx watch --env-file=.env --env-file=.local.env src/index.ts
+tsx --env-file=.env ./prisma/seed.ts
+```
+
+#### Using Bun
+
+For Bun, `.env` files are automatically loaded without additional configuration.
+
+#### Type-safe environment variables
+
+Use the `env()` helper function to provide type-safe access to environment variables:
+
+```ts
+import 'dotenv/config'
 import { defineConfig, env } from "prisma/config";
 
 type Env = {
   DATABASE_URL: string
 }
+
 export default defineConfig({
-  engine: "classic",
-  datasource: {
-      url: env<Env>('DATABASE_URL'),
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
   },
-  schema: path.join("prisma", "schema.prisma"),
+  datasource: {
+    url: env<Env>('DATABASE_URL'),
+  },
 });
 ```
 
@@ -598,3 +740,51 @@ You can specify a custom location for your config file when running Prisma CLI c
 ```terminal
 prisma validate --config ./path/to/myconfig.ts
 ```
+
+## Loading environment variables
+
+:::info[Prisma ORM v7 changes]
+
+
+In Prisma ORM v7, `prisma init` generates a `prisma.config.ts` file automatically. To load environment variables with `dotenv`, do the following:
+
+1. Install the `dotenv` package.
+2. Add `import 'dotenv/config'` at the top of your `prisma.config.ts` file.
+
+This is required for Prisma to read values from your `.env` file.
+:::
+
+To load environment variables in your Prisma application, you can use the `prisma.config.ts` file along with the `env` helper from `prisma/config`. This approach provides better type safety and configuration management.
+
+1. Install the `dotenv` package:
+
+    ```bash
+    npm install dotenv
+    ```
+
+2. Create a `.env` file in your project root (if it doesn't exist) and add your database connection string:
+
+    ```env
+    DATABASE_URL="your_database_connection_string_here"
+    ```
+
+3. Ensure your `prisma.config.ts` file imports `dotenv/config` at the top:
+
+    ```ts file=prisma.config.ts
+    // add-start
+    import 'dotenv/config'
+    // add-end
+    import { defineConfig, env } from "prisma/config";
+
+    export default defineConfig({
+      schema: 'prisma/schema.prisma',
+      migrations: {
+        path: 'prisma/migrations',
+        seed: 'tsx prisma/seed.ts',
+      },
+      datasource: {
+        url: env("DATABASE_URL"),
+      },
+    });
+    ```
+

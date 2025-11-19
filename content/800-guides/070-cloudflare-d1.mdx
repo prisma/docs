@@ -49,17 +49,17 @@ npm install --save-dev prisma
 
 ## 2. Configure Prisma schema
 
-In your Prisma schema, set the `provider` of the `datasource` to `sqlite`. If you just bootstrapped the Prisma schema with `prisma init`, also be sure to add the following `User` model to it:
+In your Prisma schema, set the `provider` of the `datasource` to `sqlite`. If you just bootstrapped the Prisma schema with `prisma init`, also be sure to add the `runtime = "cloudflare"` to the generator block and the following `User` model:
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../src/generated/prisma"
+  runtime  = "cloudflare"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -76,7 +76,7 @@ model User {
 Next, install the required packages:
 
 ```terminal
-npm install @prisma/adapter-d1 dotenv
+npm install @prisma/client @prisma/adapter-d1 dotenv
 ```
 
 Also, be sure to use a version of the Wrangler CLI that's above [`wrangler@^3.39.0`](https://github.com/cloudflare/workers-sdk/releases/tag/wrangler%403.39.0), otherwise the `--remote` flag that's used in the next sections won't be available.
@@ -144,92 +144,98 @@ If you weren't able to grab the database ID from the terminal output, you can al
 
 ## 5. Set up database migrations
 
-:::note
+For Cloudflare D1, you'll use Prisma's migration workflow combined with Wrangler CLI to manage your database schema. Since D1 is a serverless SQLite database, we'll use `prisma migrate diff` to generate migration SQL and then apply it using Wrangler.
 
-We recommend using `prisma migrate` in order to keep your data in D1 migrated. However, if you would prefer to use Cloudflare's migration system, [that workflow is also available](/orm/overview/databases/cloudflare-d1#using-the-wrangler-cli)
+### 5.1 Set up environment variables
 
-:::
-
-### 5.1 Add needed environment variables
-
-In order to use the Prisma D1 adapter, you'll need to add a few secrets to a `.env` file:
-- `DATABASE_URL`: A path to your local D1 instance. Usually `"file:./prisma/db.sqlite"`.
-- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare account ID, fetched via `npx wrangler whoami`
-- `CLOUDFLARE_DATABASE_ID`: The ID of your database, retrieved [during D1 database creation](#4-create-a-d1-database).
-- `CLOUDFLARE_D1_TOKEN`: This API token is used by Prisma ORM to communicate with your D1 instance directly. To create this, follow these steps:
-  1. Visit https://dash.cloudflare.com/profile/api-tokens
-  2. Click "Create Token"
-  3. On the *Custom token* section click on  "Get started".
-  4. Fill out the template: Make sure you use a recognizable name
-  5. For the Permissions, add the `Account / D1 / Edit` permission.
-  6. Click "Continue to summary" and then "Create Token".
-  7. Click on "Copy" and store the token in a safe place.
-
-You can now store these secrets to be used by Prisma ORM. We recommend a `.env` file for local development, but any secret store will work.
+Add a `.env` file in the root of your project with your local database URL:
 
 ```bash file=.env
 DATABASE_URL="file:./prisma/db.sqlite"
-
-CLOUDFLARE_ACCOUNT_ID="0773..."
-CLOUDFLARE_DATABASE_ID="01f30366-..."
-CLOUDFLARE_D1_TOKEN="F8Cg..."
 ```
 
-### 5.2 Configure Prisma Config
+Also create a `prisma.config.ts` file in the root of your project:
 
-Ensure that you have a `prisma.config.ts` file set up in the root of your project with a [driver adapter](/orm/reference/prisma-config-reference#adapter) defined.
-
-```ts
-import type { PrismaConfig } from 'prisma';
-import { PrismaD1 } from '@prisma/adapter-d1';
-
-// import your .env file
+```typescript file=prisma.config.ts
 import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
 
-export default {
-	experimental: {
-		adapter: true,
-	},
-	schema: 'prisma/schema.prisma',
-	async adapter() {
-		return new PrismaD1({
-			CLOUDFLARE_D1_TOKEN: process.env.CLOUDFLARE_D1_TOKEN!,
-			CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID!,
-			CLOUDFLARE_DATABASE_ID: process.env.CLOUDFLARE_DATABASE_ID!,
-		});
-	},
-} satisfies PrismaConfig;
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+### 5.2 Generate migration SQL
+
+First, create a migrations directory inside the `prisma` folder and create a file named `0001_init.sql`:
+
+```terminal
+mkdir -p prisma/migrations
+```
+
+Now use `prisma migrate diff` to generate the SQL needed to create your database schema:
+
+```terminal
+npx prisma migrate diff \
+  --from-empty \
+  --to-schema prisma/schema.prisma \
+  --script > prisma/migrations/0001_init.sql
+```
+
+This command generates a SQL file that contains the statements needed to create your database tables. You can inspect the generated SQL in `prisma/migrations/0001_init.sql`.
+
+### 5.3 Apply migrations to D1
+
+Now apply the migration to both your local and remote D1 databases using Wrangler:
+
+```terminal
+# Apply to local database
+npx wrangler d1 execute __YOUR_D1_DATABASE_NAME__ --local --file=./prisma/migrations/0001_init.sql
+
+# Apply to remote database
+npx wrangler d1 execute __YOUR_D1_DATABASE_NAME__ --remote --file=./prisma/migrations/0001_init.sql
 ```
 
 :::note
 
-As of [Prisma ORM v6.11.0](https://github.com/prisma/prisma/releases/tag/6.11.0), the D1 adapter has been renamed from `PrismaD1HTTP` to `PrismaD1`.
+Replace `__YOUR_D1_DATABASE_NAME__` with the actual name of your D1 database that you created in step 4.
 
 :::
 
-This will allow `prisma migrate` to interact with your D1 database. 
+### 5.4 Add sample data
 
-### 4.3 Run your first migration
-
-You can now run `prisma migrate dev` to migrate your database to match your local schema:
-
-```terminal
-npx prisma migrate dev --name init
-```
-
-Let's also create some dummy data that we can query once the Worker is running. This time, we'll use wrangler to run a SQL statement without storing it in a file:
+Let's create some dummy data that we can query once the Worker is running:
 
 ```terminal
 # For the local database
-npx wrangler d1 execute __YOUR_D1_DATABASE_NAME__ --command "INSERT INTO  \"User\" (\"email\", \"name\") VALUES
-('jane@prisma.io', 'Jane Doe (Local)');" --local
+npx wrangler d1 execute __YOUR_D1_DATABASE_NAME__ --command "INSERT INTO \"User\" (\"email\", \"name\") VALUES ('jane@prisma.io', 'Jane Doe (Local)');" --local
 
 # For the remote database
-npx wrangler d1 execute __YOUR_D1_DATABASE_NAME__ --command "INSERT INTO  \"User\" (\"email\", \"name\") VALUES
-('jane@prisma.io', 'Jane Doe (Remote)');" --remote
+npx wrangler d1 execute __YOUR_D1_DATABASE_NAME__ --command "INSERT INTO \"User\" (\"email\", \"name\") VALUES ('jane@prisma.io', 'Jane Doe (Remote)');" --remote
 ```
 
-## 5. Implement the Worker
+:::info
+
+For future schema changes, you can generate new migration files using:
+
+```terminal
+npx prisma migrate diff \
+  --from-local-d1 \
+  --to-schema-datamodel prisma/schema.prisma \
+  --script > migrations/0002_add_new_field.sql
+```
+
+Then apply them using the same `wrangler d1 execute` commands as shown above.
+
+:::
+
+## 6. Implement the Worker
 
 Before adding a Prisma Client query to your Worker, you need to generate Prisma Client with the following command:
 
@@ -239,8 +245,8 @@ npx prisma generate
 
 In order to query your database from the Worker using Prisma ORM, you need to:
 
-1. Add the `DB` binding to the `Env` interface. (Alternatively, you can run [`npx wrangler types`](https://developers.cloudflare.com/workers/wrangler/commands/#types) to generate the `Env` type from the binding in a separate file called `worker-configuration.d.ts`.)
-2. Instantiate `PrismaClient` using the `PrismaD1` driver adapter.
+1. Add the `DB` binding to the `Env` interface. This `DB` name matches the binding name you configured in `wrangler.jsonc`. (Alternatively, you can run [`npx wrangler types`](https://developers.cloudflare.com/workers/wrangler/commands/#types) to generate the `Env` type from the binding in a separate file called `worker-configuration.d.ts`.)
+2. Instantiate `PrismaClient` using the `PrismaD1` driver adapter, passing `env.DB` which accesses your D1 database binding.
 3. Send a query using Prisma Client and return the result.
 
 Open `src/index.ts` and replace the entire content with the following:
@@ -265,15 +271,13 @@ export default {
 };
 ```
 
-## 6. Run the Worker locally
+## 7. Run the Worker locally
 
-First copy the contents of your `.env` file to a new file called `.dev.vars` in the root of your project. This file will be used to set environment variables when running the Worker locally.
+With the database query in place and Prisma Client generated, you can run the Worker locally.
 
-```bash
-cp .env .dev.vars
-```
+If your Worker needs any environment variables, create a `.dev.vars` file in the root of your project. For this example, we don't need any additional environment variables since the D1 binding is already configured in `wrangler.jsonc`.
 
-With the database query in place and Prisma Client generated, you can go ahead and run the Worker locally:
+Now run the Worker locally:
 
 ```
 npm run dev
@@ -285,21 +289,15 @@ Now you can open your browser at [`http://localhost:8787`](http://localhost:8787
 ;[{ id: 1, email: 'jane@prisma.io', name: 'Jane Doe (Local)' }]
 ```
 
-## 7. Set the `DATABASE_URL` environment variable and deploy the Worker
+## 8. Deploy the Worker
 
-To deploy the Worker, run the the following command:
+To deploy the Worker, run the following command:
 
 ```
 npm run deploy
 ```
 
-:::note
-
-Make sure to [upload the `.dev.vars` file to your Cloudflare Worker environment](https://developers.cloudflare.com/workers/configuration/secrets/#adding-secrets-to-your-project). This file contains the `DATABASE_URL` and other environment variables needed for the Worker to connect to the D1 database.
-
-:::
-
-Your deployed Worker is accessible via `https://prisma-d1-example.USERNAME.workers.dev`. If you navigate your browser to that URL, you should see the following data that's queried from your remote D1 database:
+Your deployed Worker is accessible via `https://d1-tutorial.USERNAME.workers.dev` (replace `USERNAME` with your Cloudflare account username). If you navigate your browser to that URL, you should see the following data that's queried from your remote D1 database:
 
 ```js no-copy
 ;[{ id: 1, email: 'jane@prisma.io', name: 'Jane Doe (Remote)' }]
