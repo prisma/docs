@@ -76,8 +76,6 @@ datasource db {
   provider = "postgresql"
   //delete-next-line
   url      = "file:../dev.db"
-  //add-next-line
-  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -126,7 +124,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -146,8 +143,15 @@ model ProductNote {
 Next, Prisma will need to be updated to the latest version. Run:
 
 ```terminal
-npm install prisma --save-dev && npm install @prisma/client
+npm install prisma @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg pg
 ```
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Prisma Postgres allows you to create a new database on the fly, you can create a new database at the same time you initialize your project by adding the `--db` flag:
 
@@ -158,37 +162,55 @@ npx prisma init --db
 Once you've completed the prompts, it's time to access your new database:
 
 1. **Open the [Prisma Console](https://console.prisma.io):**
-   - Log in and find your newly created database project.
-2. **Set up your database credentials:**
-   - In the sidebar, click **Database**, then select **Setup**.
-   - Choose **Existing project** and press **Generate database credentials**.
+   - Log in and select your newly created database project.
+2. **Get your database connection string:**
+   - Click the **Connect** button.
+   - Copy the connection string that appears. It should look similar to this:
+   ```env
+   DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
+   ```
 3. **Configure your environment:**
    - Create a new `.env` file in the root of your project.
-   - Copy and paste the `DATABASE_URL` you just generated into this file. It should look similar to this:
-   ```env
-   DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=..."
-   ```
+   - Paste the `DATABASE_URL` you just copied into this file.
 4. **Apply your database schema:**
    - Run the following command to create your tables and get your database ready:
    ```terminal
    npx prisma migrate dev --name init
    ```
 
-Now, before moving on, let's update your `db.server.ts` file to use the newly generated Prisma client.
+   Then generate Prisma Client:
+   ```terminal
+   npx prisma generate
+   ```
+
+Now, before moving on, let's update your `db.server.ts` file to use the newly generated Prisma client with the driver adapter:
 
 ```tsx file=app/db.server.ts
-//delete-next-line
+//delete-start
 import { PrismaClient } from "@prisma/client";
-//add-next-line
+//delete-end
+//add-start
 import { PrismaClient } from "./generated/prisma/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+//add-end
 
 if (process.env.NODE_ENV !== "production") {
   if (!global.prismaGlobal) {
+    //delete-next-line
     global.prismaGlobal = new PrismaClient();
+    //add-next-line
+    global.prismaGlobal = new PrismaClient({ adapter });
   }
 }
 
+//delete-next-line
 const prisma = global.prismaGlobal ?? new PrismaClient();
+//add-next-line
+const prisma = global.prismaGlobal ?? new PrismaClient({ adapter });
 
 export default prisma;
 ```
