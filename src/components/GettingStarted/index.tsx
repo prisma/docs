@@ -159,11 +159,16 @@ export const QuickstartLinkCard = ({ icon, title, desc, link, highlight, childre
     <Link
       to={link}
       ref={linkCardRef}
-      className={clsx(styles.linkCardWrapper, highlight && styles.linkCardHighlight)}
+      className={clsx(
+        styles.linkCardWrapper,
+        highlight && styles.linkCardHighlight,
+        styles.quickstartCard
+      )}
     >
       <div className={styles.title}>
         {icon && <Icon icon={icon} btn="left" size="18px" />}
         <h2>{title}</h2>
+        <Icon icon="fa-regular fa-arrow-right" size="18px" />
       </div>
       {children ?? <p>{desc}</p>}
     </Link>
@@ -210,3 +215,5 @@ export const List = ({ children, framed, split, ...props }) => (
     {children}
   </div>
 );
+
+export const Spacer = ({ size }: { size: string }) => <div style={{ height: size }} />;

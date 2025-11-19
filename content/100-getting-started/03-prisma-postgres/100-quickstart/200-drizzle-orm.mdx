@@ -1,0 +1,188 @@
+---
+title: 'Use Prisma Postgres with Drizzle ORM'
+sidebar_label: 'Drizzle ORM'
+metaTitle: 'Quickstart: Drizzle ORM with Prisma Postgres (10 min)'
+metaDescription: 'Get started with Drizzle ORM and Prisma Postgres.'
+---
+
+[Drizzle ORM](https://orm.drizzle.team) is a TypeScript ORM. In this guide, you'll learn how to connect Drizzle ORM to [Prisma Postgres](/postgres).
+
+## Prerequisites
+
+- Node.js version 16 or higher
+- TypeScript version 5.0 or higher
+
+## 1. Create a new project
+
+Create a new directory for your project and initialize it with npm:
+
+```terminal
+mkdir drizzle-quickstart
+cd drizzle-quickstart
+npm init -y
+```
+
+Install TypeScript and initialize it:
+
+```terminal
+npm install --save-dev typescript
+npx tsc --init
+```
+
+In your `package.json`, set the `type` to `module`:
+
+```json file=package.json
+{
+  // ...
+  // add-start
+  "type": "module"
+  // add-end
+  // ...
+}
+```
+
+## 2. Create a Prisma Postgres database
+
+You can create a Prisma Postgres database using the `create-db` CLI tool. Follow these steps to create your Prisma Postgres database:
+
+```terminal
+npx create-db
+```
+
+Then the CLI tool should output:
+
+```terminal
+┌  🚀 Creating a Prisma Postgres database
+│
+│  Provisioning a temporary database in us-east-1...
+│
+│  It will be automatically deleted in 24 hours, but you can claim it.
+│
+◇  Database created successfully!
+│
+│
+●  Database Connection
+│
+│
+│    Connection String:
+│
+│    postgresql://hostname:password@db.prisma.io:5432/postgres?sslmode=require
+│
+│
+◆  Claim Your Database
+│
+│    Keep your database for free:
+│
+│    https://create-db.prisma.io/claim?CLAIM_CODE
+│
+│    Database will be deleted on 11/18/2025, 1:55:39 AM if not claimed.
+│
+└  
+```
+
+Create a `.env` file and add the connection string from the output:
+
+```env file=.env
+DATABASE_URL="postgresql://hostname:password@db.prisma.io:5432/postgres?sslmode=require"
+```
+
+:::warning
+
+**Never commit `.env` files to version control.** Add `.env` to your `.gitignore` file to keep credentials secure.
+
+:::
+
+The database created is temporary and will be deleted in 24 hours unless claimed. Claiming moves the database into your [Prisma Data Platform](https://console.prisma.io) account. Visit the claim URL from the output to keep your database.
+
+:::note
+
+To learn more about the `create-db` CLI tool, see the [create-db documentation](/postgres/introduction/npx-create-db).
+
+:::
+
+## 3. Install dependencies
+
+Install Drizzle ORM and the PostgreSQL driver:
+
+```terminal
+npm install drizzle-orm pg dotenv
+npm install --save-dev drizzle-kit @types/pg tsx
+```
+
+**Package breakdown:**
+- `drizzle-orm`: The lightweight TypeScript ORM
+- `pg`: PostgreSQL driver for Node.js
+- `dotenv`: Loads environment variables from `.env` file
+- `drizzle-kit`: CLI tool for migrations and schema management
+- `@types/pg`: TypeScript type definitions for the pg driver
+- `tsx`: TypeScript execution engine for running `.ts` files directly
+
+## 4. Run a query
+
+Create a `src/script.ts` file:
+
+```typescript file=src/script.ts
+import 'dotenv/config'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+})
+
+const db = drizzle({ client: pool })
+
+async function main() {
+  const result = await db.execute('select 1')
+  console.log('Query result:', result)
+}
+
+main()
+  .then(async () => {
+    await pool.end()
+    console.log('Connection closed')
+  })
+  .catch(async (error) => {
+    console.error('Error:', error)
+    await pool.end()
+    process.exit(1)
+  })
+```
+
+Run the script:
+
+```terminal
+npx tsx src/script.ts
+```
+
+You should receive output similar to:
+
+```terminal
+Query result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { '?column?': 1 } ],
+  fields: [
+    Field {
+      name: '?column?',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 23,
+      dataTypeSize: 4,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseInteger] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false,
+  _prebuiltEmptyResultObject: { '?column?': null }
+}
+Connection closed
+```
+
+## Next steps
+
+You've successfully connected Drizzle ORM to Prisma Postgres! For more advanced features like schemas, migrations, and queries, see the [Drizzle ORM documentation](https://orm.drizzle.team/docs/get-started).

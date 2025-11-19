@@ -25,7 +25,6 @@ jobs:
             --cache
             --cache-exclude-status 429,500,502,503,504
             --max-cache-age 5m
-            --verbose
             --no-progress
             --accept 200,201,204,304,403,429
             --timeout 20
@@ -51,7 +50,6 @@ jobs:
           args: >
             --cache
             --max-cache-age 5m
-            --verbose
             --no-progress
             --accept 200,201,204,304,403,429
             --cache-exclude-status 429,500,502,503,504
@@ -81,8 +79,8 @@ jobs:
           fi
 
           if [ -n "$REPORT_FILE" ]; then
-            # Read the original output
-            ORIGINAL=$(cat "$REPORT_FILE")
+            # Read the original output and remove everything after 'Redirects per input'
+            ORIGINAL=$(cat "$REPORT_FILE" | sed '/^##* Redirects per input/,$d')
 
             # Create formatted output
             cat > lychee/formatted.md << EOF
@@ -94,13 +92,13 @@ jobs:
 
           EOF
 
-            # Append the original content with title replacement
+            # Append the cleaned content with title replacement
             echo "$ORIGINAL" | sed 's/^# Summary$//' | sed 's/^## Summary$//' >> lychee/formatted.md
           fi
 
       - name: 📝 Comment Broken Links
         if: ${{ always() && github.event.pull_request.head.repo.fork == false && (steps.lychee.outputs.exit_code != 0 || (steps.lychee-retry.conclusion != 'skipped' && steps.lychee-retry.outputs.exit_code != 0)) }}
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: lychee/formatted.md
