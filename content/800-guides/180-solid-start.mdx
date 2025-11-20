@@ -66,20 +66,16 @@ export default function App() {
 
 To get started with Prisma, you'll need to install a few dependencies:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
 ```
-</TabItem>
-<TabItem value="Other databases">
-```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/client
-```
-</TabItem>
-</TabbedContent>
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Once installed, initialize Prisma in your project:
 
@@ -93,6 +89,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 This will create:
 
 - A `prisma` directory with a `schema.prisma` file.
+- A `prisma.config.ts` file for configuring Prisma
 - A Prisma Postgres database.
 - A `.env` file containing the `DATABASE_URL` at the project root.
 - An `output` directory for the generated Prisma Client as `src/generated/prisma`.
@@ -103,14 +100,12 @@ In the `prisma/schema.prisma` file, add the following models and change the gene
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  //edit-next-line
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -134,14 +129,37 @@ model Post {
 
 This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-### 2.3. Configure the Prisma Client generator
+### 2.3 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+
+### 2.4. Configure the Prisma Client generator
 
 Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
+npx prisma generate
 ```
-### 2.4. Seed the database
+### 2.5. Seed the database
 
 Let's add some seed data to populate the database with sample users and posts.
 
@@ -149,8 +167,15 @@ Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts
 import { PrismaClient, Prisma } from "../src/generated/prisma/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const userData: Prisma.UserCreateInput[] = [
   {
@@ -194,38 +219,23 @@ export async function main() {
 main();
 ```
 
-Now, tell Prisma how to run this script by updating your `package.json`:
+Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```json file=package.json
-{
-  "name": "prisma-solid",
-  "type": "module",
-  "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "start": "vinxi start"
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+//add-start
+    seed: `tsx prisma/seed.ts`,
+//add-end
   },
-  //add-start
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  }
-  //add-end
-  "dependencies": {
-    "@prisma/client": "^6.5.0",
-    "@prisma/extension-accelerate": "^1.3.0",
-    "@solidjs/start": "^1.1.0",
-    "solid-js": "^1.9.5",
-    "vinxi": "^0.5.3"
+  datasource: {
+    url: env('DATABASE_URL'),
   },
-  "engines": {
-    "node": ">=22"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.11",
-    "prisma": "^6.5.0",
-    "tsx": "^4.19.3"
-  }
-}
+});
 ```
 
 Run the seed script:
@@ -252,28 +262,20 @@ mkdir -p lib && touch lib/prisma.ts
 
 Add the following code to create a Prisma Client instance:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```typescript file=lib/prisma.ts
 import { PrismaClient } from "../src/generated/prisma/client.js";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 export default prisma;
 ```
-</TabItem>
-
-<TabItem value="Other databases">
-```typescript file=lib/prisma.ts
-import { PrismaClient } from "../src/generated/prisma/client.js";
-
-const prisma = new PrismaClient();
-
-export default prisma;
-```
-</TabItem>
-</TabbedContent>
 
 :::warning
 We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.

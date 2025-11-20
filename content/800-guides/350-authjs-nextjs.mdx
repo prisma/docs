@@ -53,20 +53,16 @@ cd authjs-prisma
 
 To get started with Prisma, you'll need to install a few dependencies:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
 ```
-</TabItem>
-<TabItem value="Other databases">
-```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/client
-```
-</TabItem>
-</TabbedContent>
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Once installed, initialize Prisma in your project:
 
@@ -81,6 +77,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 This will create:
 
 - A `prisma` directory with a `schema.prisma` file.
+- A `prisma.config.ts` file for configuring Prisma 
 - A Prisma Postgres database.
 - A `.env` file containing the `DATABASE_URL` at the project root.
 - A schema configuration that specifies where the Prisma Client will be generated (`../app/generated/prisma`).
@@ -91,7 +88,6 @@ In the `prisma/schema.prisma` file, swap the provider to `prisma-client` and add
 
 ```prisma file=prisma/schema.prisma
 generator client {
-	//edit-next-line
   provider = "prisma-client"
   output   = "../app/generated/prisma"
   //add-next-line
@@ -100,7 +96,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 ```
 
@@ -171,56 +166,63 @@ This creates the following models:
 
 - **`VerificationToken`**: Stores temporary tokens for email verification, password reset, and other security operations with expiration times.
 
-### 2.3. Configure the Prisma Client generator
+
+### 2.3 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+### 2.4. Configure the Prisma Client generator
 
 Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
-### 2.4 Create a Prisma Client
+### 2.5 Create a Prisma Client
 
 Create a new folder in the root called `lib` and create a new file called `prisma.ts` in it. This file will contain the Prisma Client:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```typescript file=lib/prisma.ts showLineNumbers
 //add-start
-import { PrismaClient } from '../app/generated/prisma'
-import { withAccelerate } from '@prisma/extension-accelerate'
+import { PrismaClient } from '../app/generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 
-const globalForPrisma = global as unknown as { 
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
+
+const globalForPrisma = global as unknown as {
     prisma: PrismaClient
 }
 
-const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate())
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  adapter,
+})
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export default prisma
 //add-end
 ```
-</TabItem>
-
-<TabItem value="Other databases">
-```typescript file=lib/prisma.ts showLineNumbers
-//add-start
-import { PrismaClient } from '../app/generated/prisma'
-
-const globalForPrisma = global as unknown as { 
-    prisma: PrismaClient
-}
-
-const prisma = globalForPrisma.prisma || new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-
-export default prisma
-//add-end
-```
-</TabItem>
-</TabbedContent>
 
 ## 3. Set up Auth.js credentials
 

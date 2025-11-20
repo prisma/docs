@@ -47,9 +47,15 @@ npm init -y
 Install application and development dependencies:
 
 ```terminal
-npm install express cors dotenv @prisma/client
-npm install -D prisma typescript tsx
+npm install express cors dotenv @prisma/client @prisma/adapter-pg pg
+npm install -D prisma typescript tsx @types/pg
 ```
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Then, initialize your Prisma setup:
 
@@ -57,7 +63,11 @@ Then, initialize your Prisma setup:
 npx prisma init
 ```
 
-This creates a `prisma/` directory with a default `schema.prisma` file and a `.env` file at the root.
+This creates:
+
+- A `prisma/` directory with a default `schema.prisma` file
+- A `prisma.config.ts` file for configuring Prisma
+- A `.env` file at the root.
 
 ### 1.3 Set up your TypeScript config
 
@@ -165,12 +175,11 @@ Open `prisma/schema.prisma` and replace the contents with the following:
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Project {
@@ -192,12 +201,35 @@ model Task {
 }
 ```
 
-### 3.2 Run your first migration
+### 3.2 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+
+### 3.3 Run your first migration
 
 To create the database schema:
 
 ```terminal
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 This will:
@@ -225,9 +257,16 @@ To test your data filtering logic, you'll create two projects, each with its own
 Create a new file at `scripts/seed.ts` and add the following:
 
 ```ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../src/generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 async function main() {
   console.log('🌱 Seeding test data...');
@@ -310,7 +349,6 @@ npx tsx scripts/seed.ts
 If successful, you'll see:
 
 ✅ Seeded 2 projects and 4 tasks with distinct ownership
-```
 
 At this point, if you run a query like `prisma.task.findMany()`, it will return all tasks. In the next steps, you'll connect Permit.io to filter these results automatically based on the user's access rights.
 
@@ -428,12 +466,19 @@ Create a new file: `src/middleware/auth.middleware.ts`
 
 ```ts
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 import createPermitClientExtension from '@permitio/permit-prisma';
 import { clientExtensionConfig } from '../config/permit-config';
 
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
 // Extend PrismaClient with Permit
-const prisma = new PrismaClient().$extends(
+const prisma = new PrismaClient({
+  adapter,
+}).$extends(
   createPermitClientExtension(clientExtensionConfig)
 );
 

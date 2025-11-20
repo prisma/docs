@@ -16,14 +16,25 @@ To connect to a SQLite database file, you need to configure a [`datasource`](/or
 ```prisma file=schema.prisma
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
 }
 ```
 
-The fields passed to the `datasource` block are:
+The `datasource` block specifies the `sqlite` data source connector.
 
-- `provider`: Specifies the `sqlite` data source connector.
-- `url`: Specifies the [connection URL](/orm/reference/connection-urls) for the SQLite database. The connection URL always starts with the prefix `file:` and then contains a file path pointing to the SQLite database file. In this case, the file is located in the same directory and called `dev.db`.
+In Prisma ORM 7, the database connection URL is configured in [`prisma.config.ts`](/orm/reference/prisma-config-reference):
+
+```typescript file=prisma.config.ts
+import { defineConfig } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: 'file:./dev.db',
+  },
+})
+```
+
+The connection URL always starts with the prefix `file:` and then contains a file path pointing to the SQLite database file. In this example, the file is located in the same directory and called `dev.db`.
 
 ## Using the `better-sqlite3` driver
 
@@ -46,14 +57,31 @@ npm install @prisma/adapter-better-sqlite3
 Now, when you instantiate Prisma Client, you need to pass an instance of Prisma ORM's driver adapter to the `PrismaClient` constructor:
 
 ```ts
-import { PrismaBetterSQLite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from './generated/prisma';
 
-const adapter = new PrismaBetterSQLite3({
+const adapter = new PrismaBetterSqlite3({
   url: "file:./prisma/dev.db"
-});
-const prisma = new PrismaClient({ adapter });
+})
+const prisma = new PrismaClient({ adapter })
 ```
+
+:::tip Using SQLite with Bun
+When running Prisma Client on Bun, use the `@prisma/adapter-libsql` driver adapter. Bun doesn't support the native SQLite driver that `better-sqlite3` relies on (see the [`node:sqlite` reference](https://bun.com/reference/node/sqlite)). Instantiate the adapter and pass it to `PrismaClient`:
+
+```ts
+import { PrismaClient } from '../prisma/generated/client';
+import { PrismaLibSql } from '@prisma/adapter-libsql';
+
+const adapter = new PrismaLibSql({
+  url: process.env.DATABASE_URL ?? '',
+});
+
+const prisma = new PrismaClient({ adapter });
+
+export default prisma;
+```
+:::
 
 ### 3. Configure timestamp format for backward compatibility
 
@@ -64,15 +92,15 @@ By default, driver adapters store `DateTime` values as **ISO 8601 strings**, whi
 However, if you need **100% backward compatibility** with Prisma ORM's native SQLite driver (for example, when migrating an existing database), you should use the `unixepoch-ms` format, which stores timestamps as the number of milliseconds since the Unix epoch:
 
 ```ts
-import { PrismaBetterSQLite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from './generated/prisma';
 
-const adapter = new PrismaBetterSQLite3({
+const adapter = new PrismaBetterSqlite3({
   url: "file:./prisma/dev.db"
 }, {
   timestampFormat: 'unixepoch-ms'
-});
-const prisma = new PrismaClient({ adapter });
+})
+const prisma = new PrismaClient({ adapter })
 ```
 
 :::info
@@ -138,29 +166,26 @@ try migrating the 'int' column type to BIGINT
 
 ### Connection URL
 
-The connection URL of a SQLite connector points to a file on your file system. For example, the following two paths are equivalent because the `.db` is in the same directory:
+The connection URL of a SQLite connector points to a file on your file system and is configured in `prisma.config.ts`. For example, the following two paths are equivalent because the `.db` is in the same directory:
 
-```prisma file=schema.prisma
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+```typescript file=prisma.config.ts
+datasource: {
+  url: 'file:./dev.db',
 }
 ```
 
 is the same as:
 
-```prisma file=schema.prisma
-datasource db {
-  provider = "sqlite"
-  url      = "file:dev.db"
+```typescript file=prisma.config.ts
+datasource: {
+  url: 'file:dev.db',
 }
 ```
 
 You can also target files from the root or any other place in your file system:
 
-```prisma file=schema.prisma
-datasource db {
-  provider = "sqlite"
-  url      = "file:/Users/janedoe/dev.db"
+```typescript file=prisma.config.ts
+datasource: {
+  url: 'file:/Users/janedoe/dev.db',
 }
 ```

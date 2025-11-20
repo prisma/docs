@@ -80,18 +80,7 @@ Run the following commands to install Prisma and a minimal TypeScript runner:
 npm install -D prisma tsx
 ```
 
-Then initialize Prisma:
-
-:::note
-
-You can use the `--db` flag to create a [new Prisma Postgres](/postgres) instance when initializing Prisma in your project.
-
-:::
-
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
-
-<br />
+Then initialize Prisma with the `--db` flag to create a [new Prisma Postgres](/postgres) instance:
 
 ```terminal
 npx prisma init --db --output ../src/generated/prisma
@@ -102,50 +91,32 @@ npx prisma init --db --output ../src/generated/prisma
 You will be prompted to name your database and select the closest region. For clarity, choose a memorable name (e.g., `My Datadog Project`).
 
 :::
-</TabItem>
-<TabItem value="Your own database">
-
-```terminal
-npx prisma init --output ../src/generated/prisma
-```
-
-</TabItem>
-</TabbedContent>
-
 
 This command does the following:
 
-- Creates a `prisma` directory with a `schema.prisma` file.  
+- Creates a `prisma` directory with a `schema.prisma` file.
 - Generates the Prisma Client in the `/src/generated/prisma` directory (as specified in the `--output` flag).
-- Creates a `.env` file at the project root with your database connection string (`DATABASE_URL`). 
+- Creates a `.env` file at the project root with your database connection string (`DATABASE_URL`).
 
-If you did not use the `--db` flag, replace the placeholder database URL in the `.env` file:
-
-<TabbedContent code>
-<TabItem value="Prisma Postgres">
+The `.env` file should contain a standard connection string:
 
 ```bash file=.env
-DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=..." 
+# Placeholder url you have to replace
+DATABASE_URL="postgresql://janedoe:mypassword@localhost:5432/mydb?schema=sample"
 ```
 
-</TabItem>
-<TabItem value="Your own database">
-
-```bash file=.env
-# Placeholder url you have to replace 
-DATABASE_URL="postgresql://janedoe:mypassword@localhost:5432/mydb?schema=sample" 
-```
-
-</TabItem>
-</TabbedContent>
-
-If you're using Prisma Postgres, also install:
+Install the driver adapter for PostgreSQL:
 
 ```terminal
-npm i @prisma/extension-accelerate
+npm i @prisma/adapter-pg pg
+npm i -D @types/pg
 ```
 
-This extension enables you to [cache your Prisma queries](/postgres/database/caching).
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 
 ### 2.2. Define models
@@ -154,13 +125,12 @@ Now, open `prisma/schema.prisma` and update your generator block and models. Rep
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -181,6 +151,35 @@ model Post {
 }
 //add-end
 ```
+
+Create a `prisma.config.ts` file to configure Prisma:
+
+```typescript file=prisma.config.ts
+//add-start
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+//add-end
+```
+
+:::note
+
+You'll need to install the `dotenv` package if you haven't already:
+
+```terminal
+npm install dotenv
+```
+
+:::
 
 ### 2.3. Generate the Prisma Client and run migrations
 
@@ -254,67 +253,17 @@ export { tracer };
 
 Create a `src/client.ts` to hold your Prisma Client instantiation:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```ts file=src/client.ts
 import { tracer } from "./tracer";
-import { withAccelerate } from "@prisma/extension-accelerate";
-import { PrismaClient } from "./generated/prisma";
+import { PrismaClient } from "./generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
 
 const prisma = new PrismaClient({
-  log: [{ emit: "event", level: "query" }],
-})
-  .$on("query", (e) => {
-    const span = tracer.startSpan(`prisma_raw_query`, {
-      childOf: tracer.scope().active() || undefined,
-      tags: {
-        "prisma.rawquery": e.query,
-      },
-    });
-    span.finish();
-  })
-  .$extends({
-    query: {
-      async $allOperations({ operation, model, args, query }) {
-        const span = tracer.startSpan(
-          `prisma_query_${model?.toLowerCase()}_${operation}`,
-          {
-            tags: {
-              "prisma.operation": operation,
-              "prisma.model": model,
-              "prisma.args": JSON.stringify(args),
-              "prisma.rawQuery": query,
-            },
-            childOf: tracer.scope().active() || undefined,
-          }
-        );
-
-        try {
-          const result = await query(args);
-          span.finish();
-          return result;
-        } catch (error) {
-          span.setTag("error", error);
-          span.finish();
-          throw error;
-        }
-      },
-    },
-  })
-  .$extends(withAccelerate());
-
-export { prisma };
-```
-
-</TabItem>
-<TabItem value="Your own database">
-
-```ts file=src/client.ts
-import { tracer } from "./tracer";
-
-import { PrismaClient } from "./generated/prisma";
-
-const prisma = new PrismaClient({
+  adapter,
   log: [{ emit: "event", level: "query" }],
 })
   .$on("query", (e) => {
@@ -354,11 +303,9 @@ const prisma = new PrismaClient({
       },
     },
   });
+
 export { prisma };
 ```
-
-</TabItem>
-</TabbedContent>
 
 The setup above gives you more control over how queries are traced:
 

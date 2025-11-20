@@ -43,26 +43,28 @@ npx create-astro@latest
 
 :::
 
+Navigate into the newly created project directory:
+
+```terminal
+cd astro-prisma
+```
+
 ## 2. Install and Configure Prisma
 
 ### 2.1. Install dependencies
 
 To get started with Prisma, you'll need to install a few dependencies:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
 ```
-</TabItem>
-<TabItem value="Other databases">
-```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/client
-```
-</TabItem>
-</TabbedContent>
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Once installed, initialize Prisma in your project:
 
@@ -75,6 +77,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 This will create:
 
 - A `prisma/` directory with a `schema.prisma` file
+- A `prisma.config.ts` file for configuring Prisma
 - A `.env` file with a `DATABASE_URL` already set
 
 ### 2.2. Define your Prisma Schema
@@ -84,13 +87,11 @@ In the `prisma/schema.prisma` file, add the following models and change the gene
 ```prisma file=prisma/schema.prisma
 generator client {
   provider   = "prisma-client"
-  engineType = "client"
   output     = "../prisma/generated"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -114,23 +115,59 @@ model Post {
 
 This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-### 2.3. Configure the Prisma Client generator
 
-Now, run the following command to create the database tables and generate the Prisma Client:
+### 2.3 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+### 2.4. Run migrations and generate Prisma Client
+
+Now, run the following command to create the database tables:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
-### 2.4. Seed the database
+
+Then generate Prisma Client:
+
+```terminal
+npx prisma generate
+```
+
+### 2.5. Seed the database
 
 Let's add some seed data to populate the database with sample users and posts.
 
 Create a new file called `seed.ts` in the `prisma/` directory:
 
 ```typescript file=prisma/seed.ts
-import { PrismaClient, Prisma } from "../prisma/generated/client.js";
+import { PrismaClient, Prisma } from "../prisma/generated/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const userData: Prisma.UserCreateInput[] = [
   {
@@ -189,34 +226,21 @@ main()
   });
 ```
 
-Now, tell Prisma how to run this script by updating your `package.json`:
+Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
 
-```json file=package.json
-{
-  "name": "astro-prisma",
-  "type": "module",
-  "version": "0.0.1",
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: `tsx prisma/seed.ts`,
   },
-  //add-start
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+  datasource: {
+    url: env('DATABASE_URL'),
   },
-  //add-end
-  "dependencies": {
-    "@prisma/client": "^6.17.1",
-    "@prisma/extension-accelerate": "^2.0.2",
-    "astro": "^5.14.4"
-  },
-  "devDependencies": {
-    "prisma": "^6.17.1",
-    "tsx": "^4.20.6"
-  }
-}
+});
 ```
 
 Run the seed script:
@@ -258,32 +282,20 @@ touch src/lib/prisma.ts
 
 Set up the Prisma client like this:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```typescript file=src/lib/prisma.ts
 import { PrismaClient } from "../../prisma/generated/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: import.meta.env.DATABASE_URL,
+});
 
 const prisma = new PrismaClient({
-  datasourceUrl: import.meta.env.DATABASE_URL,
-}).$extends(withAccelerate());
-
-export default prisma;
-```
-</TabItem>
-
-<TabItem value="Other databases">
-```typescript file=src/lib/prisma.ts
-import { PrismaClient } from "../../prisma/generated/client";
-
-const prisma = new PrismaClient({
-  datasourceUrl: import.meta.env.DATABASE_URL,
+  adapter,
 });
 
 export default prisma;
 ```
-</TabItem>
-</TabbedContent>
 
 :::warning
 We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.
@@ -365,6 +377,18 @@ const users: UserWithPosts[] = await response.json();
   </body>
 </html>
 ```
+
+### 3.5. Run your app
+
+Now start your development server to see your Astro app in action:
+
+```terminal
+npm run dev
+```
+
+Open your browser at [`http://localhost:4321`](http://localhost:4321) to see the users and their posts displayed on the page.
+
+## Summary
 
 You're done! You've just created an Astro app with Prisma that's connected to a Prisma Postgres database. Below are some next steps to explore, as well as some more resources to help you get started expanding your project.
 

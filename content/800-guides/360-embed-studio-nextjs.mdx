@@ -79,9 +79,15 @@ cd nextjs-studio-embed
 Install the required Prisma packages:
 
 ```terminal
-npm install prisma tsx --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/extension-accelerate @prisma/client @prisma/adapter-pg dotenv pg
 ```
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 ### 2.2. Initialize Prisma with Prisma Postgres
 
@@ -100,6 +106,7 @@ You'll need to answer a few questions while setting up your Prisma Postgres data
 The `prisma init --db` command creates:
 
 - A `prisma/` directory with your `schema.prisma` file
+- A `prisma.config.ts` file for configuring Prisma 
 - A new Prisma Postgres database
 - A `.env` file with your `DATABASE_URL`
 - An output directory at `app/generated/prisma` for the Prisma Client
@@ -110,13 +117,12 @@ Open `prisma/schema.prisma` and replace the content with:
 
 ```prisma file=prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -141,24 +147,54 @@ model Post {
 //add-end
 ```
 
-### 2.4. Apply the schema to your database
+### 2.4 Add `dotenv` to `prisma.config.ts`
+
+To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
+Include an import for `dotenv` at the top of the `prisma.config.ts`
+
+```ts
+//add-start
+import 'dotenv/config'
+//add-end
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+
+### 2.5. Apply the schema to your database
 
 Generate the Prisma Client and apply the schema:
 
 ```terminal
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 This creates the tables in your Prisma Postgres database and generates the Prisma Client.
 
-### 2.5. Seed your database (optional)
+### 2.6. Seed your database (optional)
 
 Create a seed file to add some sample data. Create a `seed.ts` file in the `prisma` folder and add the following code:
 
 ```typescript file=prisma/seed.ts
-import { PrismaClient } from '../app/generated/prisma'
+import { PrismaClient } from '../app/generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 
-const prisma = new PrismaClient()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
+
+const prisma = new PrismaClient({
+  adapter,
+})
 
 async function main() {
   // Create users
@@ -208,23 +244,21 @@ main()
   })
 ```
 
-Add a seed script to your `package.json`:
+Add a seed script to your `prisma.config.ts`:
 
-```json file=package.json
-{
-  "name": "nextjs-studio-embed",
-  "version": "0.1.0",
-  "private": true,
-  // add-start
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+```ts file=prisma.config.ts
+import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: `tsx prisma/seed.ts`,
   },
-  // add-end
-  "scripts": {
-    // ... existing scripts
-  }
-  // ... rest of package.json
-}
+  datasource: {
+    url: env('DIRECT_URL'),
+  },
+});
 ```
 
 Run the seed script:
@@ -303,6 +337,7 @@ Next, set up a backend endpoint that Prisma Studio can communicate with. This en
 To do this, create a new folder called `api` inside the `app` directory. Inside it, add a `studio` folder with a `route.ts` file. This file will handle all requests sent to `/api/studio` and act as the bridge between the Studio component in your frontend and the database in your backend:
 
 ```typescript file=app/api/studio/route.ts
+import "dotenv/config"
 import { createPrismaPostgresHttpClient } from "@prisma/studio-core/data/ppg";
 import { serializeError } from "@prisma/studio-core/data/bff";
 

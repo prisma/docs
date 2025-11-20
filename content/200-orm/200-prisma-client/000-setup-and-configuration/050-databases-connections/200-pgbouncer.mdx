@@ -1,6 +1,7 @@
 ---
 title: Configure Prisma Client with PgBouncer
 metaTitle: Configure Prisma Client with PgBouncer
+metaDescription: 'Configure Prisma Client with PgBouncer and other poolers: when to use pgbouncer=true, required transaction mode, prepared statements, and Prisma Migrate workarounds.'
 ---
 
 An external connection pooler like PgBouncer holds a connection pool to the database, and proxies incoming client connections by sitting between Prisma Client and the database. This reduces the number of processes a database has to handle at any given time.
@@ -65,21 +66,37 @@ Error: undefined: Database error
 Error querying the database: db error: ERROR: prepared statement "s0" already exists
 ```
 
-To work around this issue, you must connect directly to the database rather than going through PgBouncer. To achieve this, you can use the [`directUrl`](/orm/reference/prisma-schema-reference#fields) field in your [`datasource`](/orm/reference/prisma-schema-reference#datasource) block.
+To work around this issue, configure a **direct** connection for Prisma CLI commands in `prisma.config.ts`, while Prisma Client continues to use the PgBouncer URL via a driver adapter.
 
-For example, consider the following `datasource` block:
+```env file=.env highlight=4-6;add showLineNumbers
+# PgBouncer (pooled) connection string used by Prisma Client.
+DATABASE_URL="postgres://USER:PASSWORD@HOST:PORT/DATABASE?pgbouncer=true"
 
-```prisma
-datasource db {
-  provider  = "postgresql"
-  url       = "postgres://USER:PASSWORD@HOST:PORT/DATABASE?pgbouncer=true"
-  directUrl = "postgres://USER:PASSWORD@HOST:PORT/DATABASE"
-}
+# Direct database connection string used by Prisma CLI.
+DIRECT_URL="postgres://USER:PASSWORD@HOST:PORT/DATABASE"
 ```
 
-The block above uses a PgBouncer connection string as the primary URL using `url`, allowing Prisma Client to take advantage of the PgBouncer connection pooler.
+```ts file=prisma.config.ts showLineNumbers
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
 
-It also provides a connection string directly to the database, without PgBouncer, using the `directUrl` field. This connection string will be used when commands that require a single connection to the database, such as `prisma migrate dev` or `prisma db push`, are invoked.
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DIRECT_URL'),
+  },
+})
+```
+
+```ts file=src/db/client.ts showLineNumbers
+import { PrismaClient } from '../prisma/generated/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+export const prisma = new PrismaClient({ adapter })
+```
+
+With this setup, PgBouncer stays in the path for runtime traffic, while Prisma CLI commands (`prisma migrate dev`, `prisma db push`, `prisma db pull`, and so on) always use the direct connection string defined in `prisma.config.ts`.
 
 ### PgBouncer with different database providers
 

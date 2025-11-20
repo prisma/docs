@@ -1,8 +1,8 @@
 ---
-title: 'How to use Prisma ORM with Better-Auth and Next.js'
-metaTitle: 'How to use Prisma ORM and Prisma Postgres with Better-Auth and Next.js'
-description: 'Learn how to use Prisma ORM in a Next.js app with Better-Auth'
-sidebar_label: 'Better-Auth (with Next.js)'
+title: 'How to use Prisma ORM with Better Auth and Next.js'
+metaTitle: 'How to use Prisma ORM and Prisma Postgres with Better Auth and Next.js'
+description: 'Learn how to use Prisma ORM in a Next.js app with Better Auth'
+sidebar_label: 'Better Auth (with Next.js)'
 image: '/img/guides/prisma-betterauth-nextjs-cover.png'
 completion_time: '25 min'
 community_section: true
@@ -10,9 +10,9 @@ community_section: true
 
 ## Introduction
 
-[Better-Auth](https://better-auth.com/) is a modern, open-source authentication solution for web applications. It's built with TypeScript, React, and Prisma to provide a simple and extensible auth experience.
+[Better Auth](https://better-auth.com/) is a modern, open-source authentication solution for web applications. It's built with TypeScript and provides a simple and extensible auth experience with support for multiple database adapters, including Prisma.
 
-In this guide, you'll wire Better-Auth into a brand-new [Next.js](https://nextjs.org/) app and persist users in a [Prisma Postgres](https://prisma.io/postgres) database. You can find a complete example of this guide on [GitHub](https://github.com/prisma/prisma-examples/tree/latest/orm/betterauth-nextjs).
+In this guide, you'll wire Better Auth into a brand-new [Next.js](https://nextjs.org/) app and persist users in a [Prisma Postgres](https://prisma.io/postgres) database. You can find a complete example of this guide on [GitHub](https://github.com/prisma/prisma-examples/tree/latest/orm/betterauth-nextjs).
 
 ## Prerequisites
 
@@ -57,20 +57,16 @@ Next, you'll add Prisma to your project to manage your database.
 
 Install the necessary Prisma packages. The dependencies differ slightly depending on whether you use Prisma Postgres with Accelerate or another database.
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```terminal
-npm install prisma --save-dev
-npm install @prisma/extension-accelerate @prisma/client
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
 ```
-</TabItem>
-<TabItem value="Other databases">
-```terminal
-npm install prisma --save-dev
-npm install @prisma/client
-```
-</TabItem>
-</TabbedContent>
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Once installed, initialize Prisma in your project:
 
@@ -78,17 +74,46 @@ Once installed, initialize Prisma in your project:
 npx prisma init --db --output ../src/generated/prisma
 ```
 :::info
-You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My Better-Auth Project"
+You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My Better Auth Project"
 :::
 
 This will create:
 
-- A `prisma` directory with a `schema.prisma` file.
-- A Prisma Postgres database.
-- A `.env` file containing the `DATABASE_URL` at the project root.
-- An `output` directory for the generated Prisma Client as `better-auth/generated/prisma`.
+- A `prisma` directory with a `schema.prisma` file
+- A Prisma Postgres database
+- A `.env` file containing the `DATABASE_URL` at the project root
+- An `output` directory for the generated Prisma Client as `better-auth/generated/prisma`
 
-### 2.2. Configure the Prisma client generator
+### 2.2. Configure Prisma
+
+Create a `prisma.config.ts` file in the root of your project with the following content:
+
+```typescript file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+:::note
+
+The `dotenv` package should already be installed as it's a Next.js dependency. If not, install it using:
+
+```bash
+npm install dotenv
+```
+
+:::
+
+### 2.3. Generate the Prisma client
 
 Run the following command to create the database tables and generate the Prisma Client:
 
@@ -96,9 +121,9 @@ Run the following command to create the database tables and generate the Prisma 
 npx prisma generate
 ```
 
-### 2.3. Set up a global Prisma client
+### 2.4. Set up a global Prisma client
 
-Create a `/lib` directory and a `prisma.ts` file inside it. This file will be used to create and export your Prisma Client instance.
+In the `src` directory, create a `lib` folder and a `prisma.ts` file inside it. This file will be used to create and export your Prisma Client instance.
 
 ```terminal
 mkdir -p src/lib
@@ -107,41 +132,27 @@ touch src/lib/prisma.ts
 
 Set up the Prisma client like this:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```tsx file=src/lib/prisma.ts
-import { PrismaClient } from "@/generated/prisma";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
 
 const globalForPrisma = global as unknown as {
   prisma: PrismaClient;
 };
 
 const prisma =
-  globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate());
+  globalForPrisma.prisma || new PrismaClient({
+    adapter,
+  });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export default prisma;
 ```
-</TabItem>
-<TabItem value="Other databases">
-```tsx file=src/lib/prisma.ts
-import { PrismaClient } from "@/generated/prisma";
-
-const globalForPrisma = global as unknown as {
-  prisma: PrismaClient;
-};
-
-const prisma =
-  globalForPrisma.prisma || new PrismaClient()
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
-export default prisma;
-```
-</TabItem>
-</TabbedContent>
 
 :::warning
 We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.
@@ -149,19 +160,19 @@ We recommend using a connection pooler (like [Prisma Accelerate](https://www.pri
 If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
 :::
 
-## 3. Set up Better-Auth
+## 3. Set up Better Auth
 
-Now it's time to integrate Better-Auth for authentication.
+Now it's time to integrate Better Auth for authentication.
 
-### 3.1. Install and configure Better-Auth
+### 3.1. Install and configure Better Auth
 
-First, install the Better-Auth core package:
+First, install the Better Auth core package:
 
 ```terminal
 npm install better-auth
 ```
 
-Next, generate a secure secret that Better-Auth will use to sign authentication tokens. This ensures your tokens cannot be messed with.
+Next, generate a secure secret that Better Auth will use to sign authentication tokens. This ensures your tokens cannot be messed with.
 
 ```terminal
 npx @better-auth/cli@latest secret
@@ -170,7 +181,7 @@ npx @better-auth/cli@latest secret
 Copy the generated secret and add it, along with your application's URL, to your `.env` file:
 
 ```dotenv file=.env showLineNumbers
-# Better-Auth
+# Better Auth
 //add-start
 BETTER_AUTH_SECRET=your-generated-secret
 BETTER_AUTH_URL=http://localhost:3000
@@ -180,13 +191,13 @@ BETTER_AUTH_URL=http://localhost:3000
 DATABASE_URL="your-database-url"
 ```
 
-Now, create a configuration file for Better-Auth at `src/lib/auth.ts`:
+Now, create a configuration file for Better Auth. In the `src/lib` directory, create an `auth.ts` file:
 
 ```terminal
 touch src/lib/auth.ts
 ```
 
-In this file, you'll configure Better-Auth to use the Prisma adapter, which allows it to persist user and session data in your database. You will also enable email and password authentication.
+In this file, you'll configure Better Auth to use the Prisma adapter, which allows it to persist user and session data in your database. You will also enable email and password authentication.
 
 ```ts file=src/lib/auth.ts
 import { betterAuth } from 'better-auth'
@@ -200,7 +211,7 @@ export const auth = betterAuth({
 })
 ```
 
-Better-Auth also supports other sign-in methods like social logins (Google, GitHub, etc.), which you can explore in their [documentation](https://www.better-auth.com/docs/authentication/email-password).
+Better Auth also supports other sign-in methods like social logins (Google, GitHub, etc.), which you can explore in their [documentation](https://www.better-auth.com/docs/authentication/email-password).
 
 ```ts file=src/lib/auth.ts
 import { betterAuth } from 'better-auth'
@@ -240,9 +251,9 @@ export const auth = betterAuth({
 ```
 :::
 
-### 3.2. Add Better-Auth models to your schema
+### 3.2. Add Better Auth models to your schema
 
-Better-Auth provides a CLI command to automatically add the necessary authentication models (`User`, `Session`, `Account`, and `Verification`) to your `schema.prisma` file.
+Better Auth provides a CLI command to automatically add the necessary authentication models (`User`, `Session`, `Account`, and `Verification`) to your `schema.prisma` file.
 
 Run the following command:
 
@@ -323,22 +334,21 @@ With the new models in your schema, you need to update your database. Run a migr
 
 ```terminal
 npx prisma migrate dev --name add-auth-models
+npx prisma generate
 ```
-
-<br />
 
 ## 4. Set up the API routes
 
-Better-Auth needs an API endpoint to handle authentication requests like sign-in, sign-up, and sign-out. You'll create a catch-all API route in Next.js to handle all requests sent to `/api/auth/[...all]`.
+Better Auth needs an API endpoint to handle authentication requests like sign-in, sign-up, and sign-out. You'll create a catch-all API route in Next.js to handle all requests sent to `/api/auth/[...all]`.
 
-First, create the necessary directory and file:
+In the `src/app/api` directory, create an `auth/[...all]` folder structure and a `route.ts` file inside it:
 
 ```terminal
 mkdir -p "src/app/api/auth/[...all]"
 touch "src/app/api/auth/[...all]/route.ts"
 ```
 
-Add the following code to the newly created `route.ts` file. This code uses a helper from Better-Auth to create Next.js-compatible `GET` and `POST` request handlers.
+Add the following code to the newly created `route.ts` file. This code uses a helper from Better Auth to create Next.js-compatible `GET` and `POST` request handlers.
 
 ```ts
 import { auth } from "@/lib/auth";
@@ -347,7 +357,7 @@ import { toNextJsHandler } from "better-auth/next-js";
 export const { POST, GET } = toNextJsHandler(auth);
 ```
 
-Next, you'll need a client-side utility to interact with these endpoints from your React components. Create a new file `src/lib/auth-client.ts`:
+Next, you'll need a client-side utility to interact with these endpoints from your React components. In the `src/lib` directory, create an `auth-client.ts` file:
 
 ```terminal
 touch src/lib/auth-client.ts
@@ -363,7 +373,11 @@ export const { signIn, signUp, signOut, useSession } = createAuthClient()
 
 ## 5. Set up your pages
 
-Now, let's build the user interface for authentication. Create the pages for signing up, signing in, and a protected dashboard:
+Now, let's build the user interface for authentication. In the `src/app` directory, create the following folder structure:
+
+- `sign-up/page.tsx`
+- `sign-in/page.tsx`
+- `dashboard/page.tsx`
 
 ```terminal
 mkdir -p src/app/{sign-up,sign-in,dashboard}
@@ -410,7 +424,7 @@ export default function SignUpPage() {
 }
 ```
 
-Now, import the `signUp` function from your Better-Auth client and add the `handleSubmit` function. This function is triggered on form submission and calls the `signUp.email` method provided by Better-Auth, passing the user's name, email, and password.
+Now, import the `signUp` function from your Better Auth client and add the `handleSubmit` function. This function is triggered on form submission and calls the `signUp.email` method provided by Better Auth, passing the user's name, email, and password.
 
 ```tsx file=src/app/sign-up/page.tsx
 "use client";
@@ -611,7 +625,7 @@ export default function SignInPage() {
 }
 ```
 
-Add the `handleSubmit` function, this time importing and using the `signIn.email` method from Better-Auth.
+Add the `handleSubmit` function, this time importing and using the `signIn.email` method from Better Auth.
 
 ```tsx file=src/app/sign-in/page.tsx
 "use client";
@@ -778,7 +792,7 @@ export default function DashboardPage() {
 }
 ```
 
-Import the `useSession` hook from your Better-Auth client. This hook is the key to managing authentication state on the client side. It provides the session data and a pending status.
+Import the `useSession` hook from your Better Auth client. This hook is the key to managing authentication state on the client side. It provides the session data and a pending status.
 
 ```tsx file=src/app/dashboard/page.tsx
 "use client";
@@ -816,7 +830,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
-  //add-start: redirect if not signed in
+  //add-start
   useEffect(() => {
     if (!isPending && !session?.user) {
       router.push("/sign-in");
@@ -851,7 +865,7 @@ export default function DashboardPage() {
     }
   }, [isPending, session, router]);
 
-  //add-start: loading and redirect states
+  //add-start
   if (isPending)
     return <p className="text-center mt-8 text-white">Loading...</p>;
   if (!session?.user)
@@ -890,7 +904,7 @@ export default function DashboardPage() {
   if (!session?.user)
     return <p className="text-center mt-8 text-white">Redirecting...</p>;
 
-  //add-start: destructure user from session
+  //add-start
   const { user } = session;
   //add-end
 
@@ -899,7 +913,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
       <p>Welcome, {user.name || "User"}!</p>
       <p>Email: {user.email}</p>
-      {/* add-start: sign out button */}
+      {/* add-start */}
       <button
         onClick={() => signOut()}
         className="w-full bg-white text-black font-medium rounded-md px-4 py-2 hover:bg-gray-200"
@@ -967,7 +981,7 @@ npx prisma studio
 
 :::success
 
-Congratulations! You now have a fully functional authentication system built with Better-Auth, Prisma, and Next.js.
+Congratulations! You now have a fully functional authentication system built with Better Auth, Prisma, and Next.js.
 
 :::
 
@@ -981,6 +995,6 @@ Congratulations! You now have a fully functional authentication system built wit
 
 ## Further reading
 
-- [Better-Auth documentation](https://www.better-auth.com/docs)
+- [Better Auth documentation](https://www.better-auth.com/docs)
 - [Prisma documentation](/orm/overview/introduction)
 - [Next.js App Router](https://nextjs.org/docs/app)

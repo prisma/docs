@@ -1,0 +1,115 @@
+name: 🍈 Lychee
+
+on: [pull_request]
+
+concurrency:
+  group: lychee-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-links:
+    name: Check links
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🍈 Lychee Link Checker (First Run)
+        id: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          fail: false
+          output: ../lychee/out.md
+          args: >
+            --cache
+            --cache-exclude-status 429,500,502,503,504
+            --max-cache-age 5m
+            --no-progress
+            --accept 200,201,204,304,403,429
+            --timeout 20
+            --max-retries 8
+            --retry-wait-time 5
+            --exclude 'http://localhost.*'
+            --exclude 'https://localhost.*'
+            --exclude 'https://cockroachlabs.com'
+            --exclude 'https://www.gnu.org'
+            --exclude '^/.*'
+            './**/*.md' './**/*.mdx'
+          workingDirectory: "content"
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+
+      - name: 🔄 Retry Lychee Link Checker (Second Run for Timeouts)
+        id: lychee-retry
+        if: ${{ always() && steps.lychee.outputs.exit_code != 0 }}
+        uses: lycheeverse/lychee-action@v2
+        with:
+          fail: false
+          output: ../lychee/out-retry.md
+          args: >
+            --cache
+            --max-cache-age 5m
+            --no-progress
+            --accept 200,201,204,304,403,429
+            --cache-exclude-status 429,500,502,503,504
+            --timeout 30
+            --max-retries 10
+            --retry-wait-time 10
+            --exclude 'http://localhost.*'
+            --exclude 'https://localhost.*'
+            --exclude 'https://cockroachlabs.com'
+            --exclude 'https://www.gnu.org'
+            --exclude '^/.*'
+            './**/*.md' './**/*.mdx'
+          workingDirectory: "content"
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+
+      - name: 📝 Clean up Lychee Report
+        if: ${{ always() && github.event.pull_request.head.repo.fork == false }}
+        run: |
+          # Use retry results if available, otherwise use first run results
+          if [ -f "lychee/out-retry.md" ]; then
+            REPORT_FILE="lychee/out-retry.md"
+            NOTE="Links are cached for 5 minutes. Failed links (timeouts, rate limits) are retried in a second run with longer timeout."
+          elif [ -f "lychee/out.md" ]; then
+            REPORT_FILE="lychee/out.md"
+            NOTE="Links are cached for 5 minutes to avoid unnecessary requests, and speed up consecutive runs."
+          fi
+
+          if [ -n "$REPORT_FILE" ]; then
+            # Read the original output and remove everything after 'Redirects per input'
+            ORIGINAL=$(cat "$REPORT_FILE" | sed '/^##* Redirects per input/,$d')
+
+            # Create formatted output
+            cat > lychee/formatted.md << EOF
+          ## 🍈 Lychee Link Check Report
+
+          > **Note:** $NOTE
+
+          ### 📊 Results Overview
+
+          EOF
+
+            # Append the cleaned content with title replacement
+            echo "$ORIGINAL" | sed 's/^# Summary$//' | sed 's/^## Summary$//' >> lychee/formatted.md
+          fi
+
+      - name: 📝 Comment Broken Links
+        if: ${{ always() && github.event.pull_request.head.repo.fork == false && (steps.lychee.outputs.exit_code != 0 || (steps.lychee-retry.conclusion != 'skipped' && steps.lychee-retry.outputs.exit_code != 0)) }}
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: lychee/formatted.md
+
+      - name: 🚫 Fail if broken links found
+        if: ${{ steps.lychee-retry.conclusion == 'success' && steps.lychee-retry.outputs.exit_code != 0 || steps.lychee-retry.conclusion == 'failure' }}
+        run: |
+          if [ "${{ steps.lychee-retry.conclusion }}" == "success" ]; then
+            echo "Failing based on retry run results"
+            exit ${{ steps.lychee-retry.outputs.exit_code }}
+          else
+            echo "Failing based on first run results"
+            exit ${{ steps.lychee.outputs.exit_code }}
+          fi

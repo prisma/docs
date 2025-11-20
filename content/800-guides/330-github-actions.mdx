@@ -44,14 +44,15 @@ By the end of this section, your project will be fully prepared to use Prisma bo
 To get started with Prisma, install the required dependencies:
 
 ```terminal
-npm install @prisma/extension-accelerate @prisma/client
+npm install prisma tsx @types/pg dotenv --save-dev
+npm install @prisma/client @prisma/adapter-pg pg
 ```
 
-Install the development dependencies:
+:::info
 
-```terminal
-npm install prisma tsx dotenv --save-dev
-```
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Once installed, initialize Prisma:
 
@@ -77,7 +78,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -97,10 +97,46 @@ model Post {
 }
 ```
 
+Create a `prisma.config.ts` file to configure Prisma with seeding:
+
+```typescript file=prisma.config.ts
+//add-start
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: `tsx src/seed.ts`,
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+//add-end
+```
+
+:::note
+
+You'll need to install the `dotenv` package:
+
+```terminal
+npm install dotenv
+```
+
+:::
+
 ### 2.3. Run initial migration and generate client
 
 ```terminal
 npx prisma migrate dev --name init
+```
+
+Then generate Prisma Client:
+
+```terminal
+npx prisma generate
 ```
 
 This pushes your schema and prepares the client.
@@ -110,11 +146,17 @@ This pushes your schema and prepares the client.
 Create a file at `src/seed.ts`:
 
 ```tsx file=src/seed.ts
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const userData = [
   {
