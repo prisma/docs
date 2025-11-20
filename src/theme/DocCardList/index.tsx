@@ -19,7 +19,13 @@ export default function DocCardList(props: Props): JSX.Element {
   }
   const [filteredItems, setFilteredItems] = useState<any>(filterDocCardListItems(items));
   useEffect(() => {
-    setFilteredItems(filteredItems.filter((e: any) => e?.href?.slice(0, -1) !== location.pathname));
+    setFilteredItems(
+      filteredItems.filter((e: any) => {
+        if (e?.href?.slice(0, -1) === location.pathname) return false;
+        if (e?.className === "hidden-sidebar") return false;
+        return true;
+      })
+    );
   }, [items]);
   return (
     <section className={clsx("row", className)}>
