@@ -48,7 +48,7 @@ Run prisma generate to generate Prisma Client.
 If you prefer splitting your Prisma schema into multiple files, you can have a setup that looks as follows:
 
 ```
-.
+prisma/
 ├── migrations
 ├── models
 │   ├── posts.prisma
@@ -65,7 +65,7 @@ Multi-file Prisma schemas are Generally Available since [v6.7.0](https://pris.ly
 
 ### Usage
 
-When using a multi-file Prisma schema, you must always explicitly specify the location of the directory that contains the `.prisma` file with your `datasource` block. 
+When using a multi-file Prisma schema, you must always explicitly specify the location of the directory that contains your schema files (including the main `schema.prisma` file with your `generator` block).
 
 You can do this in either of three ways:
 
@@ -79,14 +79,21 @@ You can do this in either of three ways:
     }
   }
   ```
-- set the `schema` property in [`prisma.config.ts`](/orm/reference/prisma-config-reference#schema):
+- set the `schema` property in [`prisma.config.ts`](/orm/reference/prisma-config-reference#schema) ( for Prisma ORM v7):
   ```ts
-  import path from 'node:path'
-  import type { PrismaConfig } from 'prisma'
-  
-  export default {
-    schema: path.join('prisma'),
-  } satisfies PrismaConfig
+  import { defineConfig, env } from 'prisma/config'
+  import 'dotenv/config'
+
+  export default defineConfig({
+    schema: 'prisma/schema.prisma',
+    migrations: {
+      path: 'prisma/migrations',
+      seed: 'tsx prisma/seed.ts',
+    },
+    datasource: {
+      url: env('DATABASE_URL'),
+    },
+  })
   ```
 
   :::note
@@ -95,21 +102,32 @@ You can do this in either of three ways:
 
   :::
 
-All examples above assume that your `datasource` block is defined in a `.prisma` file inside the `prisma` directory.
+:::warning
 
-You also must place the `migrations` directory next to the `.prisma` file that defines the `datasource` block.
+The `schema.prisma` file (which contains your `generator` block) must be located in the same directory that you specify in your schema configuration. For example, if you configure `schema: 'prisma'`, your `schema.prisma` file must be at `prisma/schema.prisma`, not in a subdirectory like `prisma/models/schema.prisma`.
 
-For example, assuming `schema.prisma` defines the `datasource`, here's how how need to place the migrations folder:
+:::
+
+You also must place the `migrations` directory at the same level as your `schema.prisma` file.
+
+For example, assuming `schema.prisma` defines the `generator` block, here's the correct directory structure:
 
 ```
-# `migrations` and `schema.prisma` must be on the same level
-.
+# All files must be inside the `prisma/` directory
+# `migrations` and `schema.prisma` must be at the same level
+prisma/
 ├── migrations
 ├── models
 │   ├── posts.prisma
 │   └── users.prisma
-└── schema.prisma
+└── schema.prisma  # Contains generator block
 ```
+
+:::info
+
+If your schema files are in a `prisma/` directory (as shown above), the Prisma CLI commands like `prisma generate` and `prisma migrate dev` will work without additional configuration, as `./prisma/schema.prisma` is a default location.
+
+:::
 
 ### Tips for multi-file Prisma Schema
 
@@ -117,7 +135,7 @@ We've found that a few patterns work well with this feature and will help you ge
 
 - Organize your files by domain: group related models into the same file. For example, keep all user-related models in `user.prisma` while post-related models go in `post.prisma`. 
 - Use clear naming conventions: schema files should be named clearly and succinctly. Use names like `user.prisma` and `post.prisma` and not `myModels.prisma` or `CommentFeaturesSchema.prisma`.
-- Have an obvious "main" schema file: while you can now have as many schema files as you want, you'll still need a place where you define `datasource` and `generator` blocks. We recommend having a single schema file that's obviously the "main" file so that these blocks are easy to find. `main.prisma`, `schema.prisma`, and `base.prisma` are a few we've seen that work well.
+- Have an obvious "main" schema file: while you can now have as many schema files as you want, you'll still need a place where you define your `generator` block. We recommend having a single schema file that's obviously the "main" file so that this block is easy to find. `main.prisma`, `schema.prisma`, and `base.prisma` are a few we've seen that work well.
 
 ### Examples
 

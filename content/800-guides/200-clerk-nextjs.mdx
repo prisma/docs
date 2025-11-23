@@ -219,21 +219,16 @@ const Navbar = () => {
 
 To get started with Prisma, you'll need to install a few dependencies:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```terminal
-npm install prisma --save-dev
-npm install tsx --save-dev
-npm install @prisma/extension-accelerate
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
 ```
-</TabItem>
-<TabItem value="Other databases">
-```terminal
-npm install prisma --save-dev
-npm install tsx --save-dev
-```
-</TabItem>
-</TabbedContent>
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Once installed, initialize Prisma in your project:
 
@@ -260,7 +255,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -286,10 +280,40 @@ model Post {
 
 This will create two models: `User` and `Post`, with a one-to-many relationship between them.
 
+Create a `prisma.config.ts` file to configure Prisma:
+
+```typescript file=prisma.config.ts showLineNumbers
+//add-start
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+//add-end
+```
+
+:::note
+
+You'll need to install the `dotenv` package:
+
+```terminal
+npm install dotenv
+```
+
+:::
+
 Now, run the following command to create the database tables and generate the Prisma Client:
 
 ```terminal
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 :::warning
@@ -302,44 +326,28 @@ It is recommended that you add `/app/generated/prisma` to your `.gitignore` file
 
 In the root directory, create a `lib` directory and a `prisma.ts` file inside it:
 
-<TabbedContent code>
-<TabItem value="Prisma Postgres (recommended)">
 ```tsx file=lib/prisma.ts showLineNumbers
 //add-start
-import { PrismaClient } from "../app/generated/prisma";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaClient } from "../app/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
 
 const globalForPrisma = global as unknown as {
   prisma: PrismaClient;
 };
 
-const prisma =
-  globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate());
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  adapter,
+});
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export default prisma;
 //add-end
 ```
-</TabItem>
-<TabItem value="Other databases">
-```tsx file=lib/prisma.ts showLineNumbers
-//add-start
-import { PrismaClient } from "../app/generated/prisma";
-
-const globalForPrisma = global as unknown as {
-  prisma: PrismaClient;
-};
-
-const prisma = globalForPrisma.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
-export default prisma;
-//add-end
-```
-</TabItem>
-</TabbedContent>
 
 ## 4. Wire Clerk to the database
 

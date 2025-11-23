@@ -41,11 +41,11 @@ Every project that uses a tool from the Prisma ORM toolkit starts with a [Prisma
 ```prisma
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated"
 }
 
 model Post {
@@ -101,9 +101,35 @@ model User {
 
 In this schema, you configure three things:
 
-- **Data source**: Specifies your database connection (via an environment variable)
+- **Data source**: Specifies your database connection. Database connection URLs are configured in `prisma.config.ts`.
 - **Generator**: Indicates that you want to generate Prisma Client
 - **Data model**: Defines your application models
+
+### Configuring database connections
+
+Database connection URLs are configured in a `prisma.config.ts` file. Create a `prisma.config.ts` file in your project root:
+
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: 'tsx ./prisma/seed.ts',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+:::info
+
+When using Prisma CLI commands, environment variables are not automatically loaded. You'll need to use a package like `dotenv` to load environment variables from a `.env` file, or ensure your environment variables are set in your shell.
+
+:::
 
 ### The Prisma schema data model
 
@@ -142,9 +168,9 @@ Then, you can run `prisma generate`:
 npx prisma generate
 ```
 
-The `prisma generate` command reads your Prisma schema and _generates_ Prisma Client code. The code is [generated into the `node_modules/.prisma/client` folder by default](/orm/prisma-client/setup-and-configuration/generating-prisma-client#the-prismaclient-npm-package).
+The `prisma generate` command reads your Prisma schema and _generates_ Prisma Client code. The code is generated into the path specified in the `output` field of your generator block (e.g., `./generated` as shown in the schema example above).
 
-After you change your data model, you'll need to manually re-generate Prisma Client by running `prisma generate` to ensure the code inside `node_modules/.prisma/client` gets updated.
+After you change your data model, you'll need to manually re-generate Prisma Client by running `prisma generate` to ensure the generated code gets updated.
 
 #### Using Prisma Client to send queries to your database
 
@@ -156,7 +182,7 @@ Once Prisma Client has been generated, you can import it in your code and send q
 <TabItem value="import">
 
 ```ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from './generated/client'
 
 const prisma = new PrismaClient()
 ```
@@ -165,7 +191,7 @@ const prisma = new PrismaClient()
 <TabItem value="require">
 
 ```js
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('./generated/client')
 
 const prisma = new PrismaClient()
 ```

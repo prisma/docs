@@ -47,9 +47,15 @@ npm init -y
 Install application and development dependencies:
 
 ```terminal
-npm install express cors dotenv @prisma/client
-npm install -D prisma typescript tsx
+npm install express cors dotenv @prisma/client @prisma/adapter-pg pg
+npm install -D prisma typescript tsx @types/pg
 ```
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
 
 Then, initialize your Prisma setup:
 
@@ -174,7 +180,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Project {
@@ -211,7 +216,6 @@ export default defineConfig({
   migrations: {
     path: 'prisma/migrations',
   },
-  engine: 'classic',
   datasource: {
     url: env('DATABASE_URL'),
   },
@@ -225,6 +229,7 @@ To create the database schema:
 
 ```terminal
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 This will:
@@ -253,8 +258,15 @@ Create a new file at `scripts/seed.ts` and add the following:
 
 ```ts
 import { PrismaClient } from '../src/generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 async function main() {
   console.log('🌱 Seeding test data...');
@@ -455,11 +467,18 @@ Create a new file: `src/middleware/auth.middleware.ts`
 ```ts
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 import createPermitClientExtension from '@permitio/permit-prisma';
 import { clientExtensionConfig } from '../config/permit-config';
 
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
 // Extend PrismaClient with Permit
-const prisma = new PrismaClient().$extends(
+const prisma = new PrismaClient({
+  adapter,
+}).$extends(
   createPermitClientExtension(clientExtensionConfig)
 );
 

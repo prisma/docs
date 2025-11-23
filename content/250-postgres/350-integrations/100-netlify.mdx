@@ -47,18 +47,18 @@ Perform the following steps _for every Netlify site_ in which you want to use Pr
 
 ### Ensure your project uses the `DATABASE_URL` environment variable
 
-Ensure that the data source in your `schema.prisma` file is configured to use the `DATABASE_URL` environment variable:
+Ensure that the data source in your `prisma.config.ts` file is configured to use the `DATABASE_URL` environment variable:
 
-```prisma
-// schema.prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+```typescript 
+// prisma.config.ts
+import 'dotenv/config';
+import { defineConfig, env } from '@prisma/config';
+export default defineConfig({
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+  schema: './prisma/schema.prisma',
+});
 ```
 
 ### Generate Prisma Client in a `postinstall` script in `package.json`
@@ -71,13 +71,12 @@ To ensure the generated Prisma Client library is available on your deployed Netl
   "scripts": {
     // ...
     // add-next-line
-    "postinstall": "prisma generate --no-engine"
+    "postinstall": "prisma generate"
   }
   //
 }
 ```
 
-The `--no-engine` flag ensures that the query engine binary is kept out of the generated Prisma Client library. It's not needed when using Prisma Postgres.
 
 ## Example: Deploy a Next.js template with Prisma Postgres
 
@@ -100,12 +99,13 @@ Once you're done with this, you'll be able to access the deployed version of thi
 
 Next, set up a Prisma Postgres instance:
 
-1. Log in to [Prisma Data Platform](https://console.prisma.io/) and open the Console.
+1. Log in to [Prisma Platform](https://console.prisma.io/) and open the Console.
 1. In a [workspace](/platform/about#workspace) of your choice, click the **New project** button.
 1. Type a name for your project in the **Name** field, e.g. **hello-ppg**.
 1. In the **Prisma Postgres** section, click the **Get started** button.
 1. In the **Region** dropdown, select the region that's closest to your current location, e.g. **US East (N. Virginia)**.
 1. Click the **Create project** button.
+1. Click the **Connect to your Database** button
 1. Save the `DATABASE_URL` environment variable, you'll need it in the next section.
 
 ### 3. Locally add Prisma Postgres to the project
@@ -120,7 +120,7 @@ In this section, you are going to add Prisma Postgres to the starter project _on
     ```terminal
     npm install prisma --save-dev
     ```
-1. Initialize Prisma ORM to create Prisma schema and `.env` file:
+1. Initialize Prisma ORM to create Prisma schema, config and `.env` file:
     ```terminal
     npx prisma init
     ```
@@ -130,12 +130,12 @@ In this section, you are going to add Prisma Postgres to the starter project _on
 1. Open the newly created `schema.prisma` file and add the following model to it:
     ```prisma file=schema.prisma
     generator client {
-      provider = "prisma-client-js"
+      provider = "prisma-client"
+      output   = "../src/generated/prisma"
     }
 
     datasource db {
       provider = "postgresql"
-      url      = env("DATABASE_URL")
     }
 
     // add-start
@@ -160,10 +160,14 @@ In this section, you are going to add Prisma Postgres to the starter project _on
 
 Open the `app/page.jsx` file and replace the entire contents with this code:
 
-```js file=app/page.jsx
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient();
+```tsx file=app/page.jsx
+import 'dotenv/config';
+import { PrismaClient } from '../path/to/generated/prisma/client';
+import { withAccelerate } from '@prisam/extension-accelerate';
+const databaseUrl = process.env.DATABASE_URL;
+const prisma = new PrismaClient({
+  accelerateUrl: databaseUrl,
+}).$extends(withAccelerate());
 
 export default async function Page() {
   const users = await prisma.user.findMany();
@@ -173,11 +177,17 @@ export default async function Page() {
       <h1 className="text-2xl font-bold mb-4">Users</h1>
       <ul className="space-y-2">
         {users.length > 0 ? (
-          users.map(user => (
+          users.map((user) => (
             <li key={user.id} className="p-4 border rounded shadow-sm">
-              <p><strong>ID:</strong> {user.id}</p>
-              <p><strong>Name:</strong> {user.name || 'N/A'}</p>
-              <p><strong>Email:</strong> {user.email}</p>
+              <p>
+                <strong>ID:</strong> {user.id}
+              </p>
+              <p>
+                <strong>Name:</strong> {user.name || 'N/A'}
+              </p>
+              <p>
+                <strong>Email:</strong> {user.email}
+              </p>
             </li>
           ))
         ) : (
@@ -212,11 +222,11 @@ As mentioned [above](#generate-prisma-client-in-a-postinstall-script-in-packagej
         "start": "next start",
         "lint": "next lint",
         // add-next-line
-        "postinstall": "prisma generate --no-engine"
+        "postinstall": "prisma generate"
     },
     "dependencies": {
         "@netlify/blobs": "^8.1.0",
-        "@prisma/client": "^6.3.0",
+        "@prisma/client": "^7.0.0",
         "@prisma/extension-accelerate": "^1.2.1",
         "blobshape": "^1.0.0",
         "bright": "^0.8.5",
@@ -232,7 +242,7 @@ As mentioned [above](#generate-prisma-client-in-a-postinstall-script-in-packagej
         "eslint": "8.57.1",
         "eslint-config-next": "15.1.6",
         "postcss": "^8.4.36",
-        "prisma": "^6.3.0",
+        "prisma": "^7.0.0",
         "tailwindcss": "^3.4.1"
     }
 }

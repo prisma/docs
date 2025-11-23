@@ -10,12 +10,6 @@ With this guide, you can learn how to build and deploy a simple application to [
 
 This guide covers the use of Prisma CLI with Deno CLI, Deno Deploy, Prisma Client, and Prisma Postgres.
 
-:::info 
-
-This guide demonstrates how to deploy an application to Deno Deploy with a Prisma Postgres database, but you can also use [your own database with Prisma Accelerate](/accelerate/getting-started#prerequisites).
-
-:::
-
 :::tip Use Prisma ORM without Rust binaries
 
 If Prisma ORM's Rust engine binaries cause large bundle sizes, slow builds, or deployment issues (for example, in serverless or edge environments), you can use it without them using this configuration of your `generator` block:
@@ -70,7 +64,7 @@ This command:
 
 - Connects your CLI to your [Prisma Data Platform](https://console.prisma.io) account. If you're not logged in or don't have an account, your browser will open to guide you through creating a new account or signing into your existing one.
 - Creates a `prisma` directory containing a `schema.prisma` file for your database models.
-- Creates a `.env` file with your `DATABASE_URL` (e.g., for Prisma Postgres it should have something similar to `DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."`).
+- Creates a `.env` file with your `DATABASE_URL` (e.g., `DATABASE_URL="postgresql://user:password@host:5432/database"`).
 
 Edit the `prisma/schema.prisma` file to define a `Log` model, add a custom `output` path and [the `prisma-client` generator](/orm/prisma-schema/overview/generators#prisma-client) with `deno` as the `runtime`:
 
@@ -88,7 +82,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //add-start
@@ -107,16 +100,11 @@ enum Level {
 //add-end
 ```
 
-Then, install Prisma Client:
+Then, install Prisma Client and the Postgres adapter:
 
 ```terminal
 deno install npm:@prisma/client
-```
-
-Then, install [the Client extension](https://www.npmjs.com/package/@prisma/extension-accelerate) required to use Prisma Postgres:
-
-```terminal
-deno install npm:@prisma/extension-accelerate
+deno install npm:@prisma/adapter-pg
 ```
 
 Prisma Client does not read `.env` files by default on Deno, so you must also install `dotenv-cli` locally:
@@ -146,10 +134,12 @@ You can now create a local Deno application. Create `index.ts` in the root folde
 
 ```ts file=index.ts
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
-import { withAccelerate } from "npm:@prisma/extension-accelerate";
-import { PrismaClient } from "./generated/prisma/client.ts";
+import { PrismaPg } from "npm:@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client.ts";
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+const connectionString = `${Deno.env.get("DATABASE_URL")}`;
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 async function handler(request: Request) {
   // Ignore /favicon.ico requests:
@@ -253,10 +243,12 @@ Add the following code in your `index.ts` file:
 
 ```ts file=index.ts
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
-import { withAccelerate } from "npm:@prisma/extension-accelerate";
-import { PrismaClient } from "./generated/prisma/client.ts";
+import { PrismaPg } from "npm:@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client.ts";
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+const connectionString = `${Deno.env.get("DATABASE_URL")}`;
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 async function handler(request: Request) {
   // Ignore /favicon.ico requests:
@@ -310,4 +302,4 @@ This rebuilds the deployment, which now works because the environment variable h
 
 ## Summary
 
-You successfully deployed a Deno application that you created in TypeScript, which uses Prisma Client connecting to a Prisma Postgres database.
+You successfully deployed a Deno application that you created in TypeScript, which uses Prisma Client with the Postgres adapter to connect to a Postgres database.

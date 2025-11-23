@@ -5,7 +5,7 @@ import { translate } from "@docusaurus/Translate";
 import IconCopy from "@theme/Icon/Copy";
 import IconSuccess from "@theme/Icon/Success";
 import styles from "./styles.module.css";
-export default function CopyButton({ code, className }) {
+export default function CopyButton({ code, className, alwaysVisible = false }) {
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeout = useRef(undefined);
   const handleCopyCode = useCallback(() => {
@@ -41,7 +41,8 @@ export default function CopyButton({ code, className }) {
         "clean-btn",
         className,
         styles.copyButton,
-        isCopied && styles.copyButtonCopied
+        isCopied && styles.copyButtonCopied,
+        alwaysVisible && styles.copyButtonAlwaysVisible
       )}
       onClick={handleCopyCode}
     >

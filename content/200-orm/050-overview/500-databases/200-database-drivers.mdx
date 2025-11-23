@@ -12,19 +12,18 @@ One of Prisma Client's components is the [Query Engine](/orm/more/under-the-hood
 
 :::note
 
-As of [v6.15.0](https://pris.ly/release/6.16.0), Prisma ORM can be used without Rust engines in production applications. Learn more [here](/orm/prisma-client/setup-and-configuration/no-rust-engine).
+As of Prisma ORM 7, the query compiler (client engine) is the default, which means Prisma Client is generated without a Rust-based query engine binary. This provides better performance and developer experience. Learn more [here](/orm/prisma-client/setup-and-configuration/no-rust-engine).
 
-**When enabled, your Prisma Client will be generated without a Rust-based query engine binary**:
+In Prisma ORM 7, the default generator configuration is:
 
 ```prisma
 generator client {
-  provider   = "prisma-client-js" // or "prisma-client"
-  output     = "../src/generated/prisma"
-  engineType = "client"           // no Rust engine
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 ```
 
-Note that [driver adapters](/orm/overview/databases/database-drivers#driver-adapters) are required if you want to use Prisma ORM without Rust engines.
+Note that [driver adapters](/orm/overview/databases/database-drivers#driver-adapters) are required when using the query compiler.
 
 You can [read about the performance and DX improvements](https://www.prisma.io/blog/prisma-orm-without-rust-latest-performance-benchmarks) of this change on our blog.
 
@@ -53,6 +52,8 @@ You can connect to your database using a Node.js-based driver from Prisma Client
 
 - PostgreSQL
   - [`pg`](/orm/overview/databases/postgresql#using-the-node-postgres-driver)
+- Prisma Postgres
+  - [`@prisma/adapter-ppg`](/postgres/database/serverless-driver#use-with-prisma-orm)
 - MySQL/MariaDB
   - [`mariadb`](/orm/overview/databases/mysql#using-the-mariadb-driver)
 - SQLite
@@ -66,6 +67,7 @@ You can connect to your database using a Node.js-based driver from Prisma Client
 Database providers, such as Neon and PlanetScale, allow you to connect to your database using other protocols besides TCP, such as HTTP and WebSockets. These database drivers are optimized for connecting to your database in serverless and edge environments.
 
 Prisma ORM maintains the following serverless driver adapters:
+- [Prisma Postgres](/postgres/database/serverless-driver#use-with-prisma-orm)
 - [Neon](/orm/overview/databases/neon#how-to-use-neons-serverless-driver-with-prisma-orm) (and Vercel Postgres)
 - [PlanetScale](/orm/overview/databases/planetscale#how-to-use-the-planetscale-serverless-driver-with-prisma-orm-preview)
 - [Cloudflare D1](/orm/overview/databases/cloudflare-d1)
@@ -80,6 +82,7 @@ You can also build your own driver adapter for the database you're using. The fo
 
 Refer to the following pages to learn more about how to use the specific driver adapters with the specific database providers:
 - [PostgreSQL](/orm/overview/databases/postgresql#using-the-node-postgres-driver)
+- [Prisma Postgres](/postgres/database/serverless-driver#use-with-prisma-orm)
 - [MySQL/MariaDB](/orm/overview/databases/mysql#using-the-mariadb-driver)
 - [MS SQL Server](/orm/overview/databases/sql-server#using-the-node-mssql-driver)
 - [Neon](/orm/overview/databases/neon#how-to-use-neons-serverless-driver-with-prisma-orm)
@@ -102,7 +105,7 @@ Earlier versions of Prisma ORM required you to first instantiate the driver itse
 ```typescript
 import { createClient } from '@libsql/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../prisma/generated/client'
 
 // Old way of using driver adapters (before 6.6.0)
 const driver = createClient({
@@ -120,7 +123,7 @@ As of the 6.6.0 release, you instantiate the driver adapter _directly_ with the 
 
 ```typescript
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
-import { PrismaClient } from '../prisma/prisma-client'
+import { PrismaClient } from '../generated/prisma/client'
 
 const adapter = new PrismaLibSQL({
   url: env.LIBSQL_DATABASE_URL,
@@ -130,52 +133,65 @@ const adapter = new PrismaLibSQL({
 const prisma = new PrismaClient({ adapter })
 ```
 
-### Driver adapters don't read the connection string from the Prisma schema
+### Driver adapters and database connection configuration
 
-When using Prisma ORM's built-in drivers, the connection string is read from the `url` field of the `datasource` block in your Prisma schema.
+In Prisma ORM 7, the database connection URL is configured in [`prisma.config.ts`](/orm/reference/prisma-config-reference). However, when using a driver adapter, the connection string needs to be provided in your _application code_ when the driver adapter is set up initially.
 
-On the other hand, when using a driver adapter, the connection string needs to be provided in your _application code_ when the driver adapter is set up initially. Here is how this is done for the `pg` driver and the `@prisma/adapter-pg` adapter:
+Here is how this is done for the `pg` driver and the `@prisma/adapter-pg` adapter:
 
 ```ts
-import { PrismaClient } from '@prisma/client'
+import 'dotenv/config'
+import { PrismaClient } from '../generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
-const adapter = new PrismaPg({ connectionString: env.DATABASE_URL })
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
 const prisma = new PrismaClient({ adapter })
 ```
 
 See the docs for the driver adapter you're using for concrete setup instructions.
 
+:::tip[Tuning pool sizes, timeouts, or other connection parameters] 
+
+See the [connection pool guide](/orm/prisma-client/setup-and-configuration/databases-connections/connection-pool) for the Prisma ORM v7 driver adapter defaults and how they map from Prisma ORM v6 URL parameters. 
+
+:::
+
+:::tip[Prisma timeouts]
+
+Prisma ORM also has its own configurable timeouts that are separate from the database driver timeouts. If you see a timeout error and are unsure whether it comes from the driver or from Prisma Client, see the [Prisma Client timeouts and transaction options documentation](/orm/prisma-client/queries/transactions#transaction-options).
+
+:::
+
+
 ### Driver adapters and custom output paths
 
-Since Prisma 5.9.0, when using the driver adapters Preview feature along with a [custom output path for Prisma Client](/orm/prisma-client/setup-and-configuration/generating-prisma-client#using-a-custom-output-path), you cannot reference Prisma Client using a relative path.
+In Prisma ORM 7, the recommended approach is to use a custom output path for Prisma Client. The default output path is `../generated/prisma`.
 
-Let's assume you had `output` in your Prisma schema set to `../src/generated/client`:
+Let's assume you have `output` in your Prisma schema set to `../generated/prisma`:
 
 ```prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../src/generated/client"
 }
 ```
 
-What you should _not_ do is reference that path relatively:
+You can reference Prisma Client using a relative path from your application code:
 
-```ts no-copy
-// what not to do!
-import { PrismaClient } from './src/generated/client'
+```ts
+import { PrismaClient } from '../generated/prisma/client'
 
 const client = new PrismaClient()
 ```
 
-Instead, you will need to use a linked dependency.
+Alternatively, you can use a linked dependency for cleaner imports.
 
 <TabbedContent code>
 
 <TabItem value="npm">
 
 ```terminal
-npm add db@./src/generated/client
+npm add db@./generated/prisma
 ```
 
 </TabItem>
@@ -183,7 +199,7 @@ npm add db@./src/generated/client
 <TabItem value="pnpm">
 
 ```terminal
-pnpm add db@link:./src/generated/client
+pnpm add db@link:./generated/prisma
 ```
 
 </TabItem>
@@ -191,7 +207,7 @@ pnpm add db@link:./src/generated/client
 <TabItem value="yarn">
 
 ```terminal
-yarn add db@link:./src/generated/client
+yarn add db@link:./generated/prisma
 ```
 
 </TabItem>

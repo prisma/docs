@@ -45,12 +45,12 @@ Start with a basic schema containing a Post model:
 
 ```prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Post {
@@ -61,7 +61,43 @@ model Post {
 }
 ```
 
-### 1.2. Create a development branch
+### 1.2. Configure Prisma
+
+Create a `prisma.config.ts` file in the root of your project with the following content:
+
+```typescript file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+:::note
+
+You'll need to install the required packages. If you haven't already, install them using your package manager:
+
+```bash
+npm install prisma @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg pg dotenv
+```
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
+
+:::
+
+### 1.3. Create a development branch
 
 Create a new branch for your changes:
 
@@ -101,6 +137,12 @@ Generate the migration:
 npx prisma migrate dev --name add-status-column
 ```
 
+Then generate Prisma Client:
+
+```bash
+npx prisma generate
+```
+
 ## 3. Migrate the data
 
 ### 3.1. Create migration script
@@ -108,9 +150,17 @@ npx prisma migrate dev --name add-status-column
 Create a new TypeScript file for the data migration:
 
 ```typescript
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import 'dotenv/config'
 
-const prisma = new PrismaClient()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+})
+
+const prisma = new PrismaClient({
+  adapter,
+})
 
 async function main() {
   await prisma.$transaction(async (tx) => {
@@ -191,6 +241,12 @@ Create and run the final migration:
 
 ```bash
 npx prisma migrate dev --name drop-published-column
+```
+
+Then generate Prisma Client:
+
+```bash
+npx prisma generate
 ```
 
 ## 5. Deploy to production

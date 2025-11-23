@@ -34,7 +34,7 @@ Many aspects of using Prisma ORM with D1 are just like using Prisma ORM with any
 
 There are a number of differences between D1 and SQLite to consider. You should be aware of the following when deciding to use D1 and Prisma ORM:
 
-- **Making schema changes**. As of [v6.6.0](https://pris.ly/release/6.6.0) and with a `prisma.config.ts` file, you can use `prisma db push`. However, if you prefer a Cloudflare first approach, you can use D1's [migration system](https://developers.cloudflare.com/d1/reference/migrations/) and the [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) command for your migration workflows. See the [Schema migrations with Prisma ORM on D1](#schema-migrations-with-prisma-orm-on-d1) section below for more information.
+- **Making schema changes**. With Prisma ORM 7, you need to use D1's [migration system](https://developers.cloudflare.com/d1/reference/migrations/) via the Wrangler CLI combined with the [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) command for your migration workflows. See the [Schema migrations with Prisma ORM on D1](#schema-migrations-with-prisma-orm-on-d1) section below for more information.
 - **Local and remote D1 (SQLite) databases**. Cloudflare provides local and remote versions of D1. The [local](https://developers.cloudflare.com/d1/build-with-d1/local-development/) version is managed using the `--local` option of the `wrangler d1` CLI and is located in `.wrangler/state`. The [remote](https://developers.cloudflare.com/d1/build-with-d1/remote-development/) version is managed by Cloudflare and is accessed via HTTP.
 
 ## How to connect to D1 in Cloudflare Workers or Cloudflare Pages
@@ -45,106 +45,13 @@ If you want to deploy a Cloudflare Worker with D1 and Prisma ORM, follow these [
 
 ## Schema migrations with Prisma ORM on D1
 
-You can use two approaches for migrating your database schema with Prisma ORM and D1:
-- Using `prisma db push` via a driver adapter in `prisma.config.ts`
-- Using the Wrangler CLI
+With Prisma ORM 7, the recommended approach for managing database schema migrations with Cloudflare D1 is to use the Wrangler CLI combined with `prisma migrate diff`.
 
-### Using Prisma Migrate via a driver adapter in Prisma Config
+### Using the Wrangler CLI with `prisma migrate diff`
 
-As of [Prisma v6.6.0](https://github.com/prisma/prisma/releases/tag/6.6.0) we added support for the Prisma Config file. You can use the Prisma Config file to perform `prisma db push` and make changes to your database schema. You can learn more about [the Prisma Config file in our reference page](/orm/reference/prisma-config-reference).
+Cloudflare D1 comes with its own [migration system](https://developers.cloudflare.com/d1/reference/migrations/) that works via the `wrangler d1` CLI commands.
 
-#### 1. Install the Prisma D1 driver adapter
-
-Run this command in your terminal:
-
-```terminal
-npm install @prisma/adapter-d1
-```
-
-#### 2. Set environment variables
-
-In order to set up the D1 adapter, you'll need to add a few secrets to a `.env` file:
-
-- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare account ID, fetched via `npx wrangler whoami`.
-- `CLOUDFLARE_DATABASE_ID`: Retrieved during D1 database creation. If you have an existing D1 database, you can use `npx wrangler d1 list` and `npx wrangler d1 info <database_name>` to get the ID.
-- `CLOUDFLARE_D1_TOKEN`: This API token is used by Prisma ORM to communicate with your D1 instance directly. To create it, follow these steps:
-  1. Visit https://dash.cloudflare.com/profile/api-tokens
-  2. Click **Create Token**
-  3. Click **Custom token** template
-  4. Fill out the template: Make sure you use a recognizable name and add the **Account / D1 / Edit** permission.
-  5. Click **Continue to summary** and then **Create Token**.
-
-You can then add these to your `.env` file or use them directly if they are stored in a different secret store:
-
-```bash file=.env
-CLOUDFLARE_ACCOUNT_ID="0773..."
-CLOUDFLARE_DATABASE_ID="01f30366-..."
-CLOUDFLARE_D1_TOKEN="F8Cg..."
-```
-
-#### 3. Set up Prisma Config file
-
-Make sure that you have a [`prisma.config.ts`](/orm/reference/prisma-config-reference)  file for your project. Then, set up the [migration driver adapter](/orm/reference/prisma-config-reference#adapter) to reference D1:
-
-```ts file=prisma.config.ts
-import type { PrismaConfig } from 'prisma';
-import { PrismaD1 } from '@prisma/adapter-d1';
-
-// import your .env file
-import 'dotenv/config';
-
-export default {
-  // add-start
-	experimental: {
-		adapter: true,
-	},
-  // add-end
-	schema: 'prisma/schema.prisma',
-  // add-start
-	async adapter() {
-		return new PrismaD1({
-			CLOUDFLARE_D1_TOKEN: process.env.CLOUDFLARE_D1_TOKEN!,
-			CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID!,
-			CLOUDFLARE_DATABASE_ID: process.env.CLOUDFLARE_DATABASE_ID!,
-		});
-	},
-  // add-end
-} satisfies PrismaConfig;
-```
-
-:::note
-
-As of [Prisma ORM v6.11.0](https://github.com/prisma/prisma/releases/tag/6.11.0), the D1 adapter has been renamed from `PrismaD1HTTP` to `PrismaD1`.
-
-:::
-
-#### 4. Migrate your database
-
-Prisma Migrate now will run migrations against your remote D1 database based on the configuration provided in `prisma.config.ts`.
-
-To update the remote schema with this workflow, run the following command:
-
-```terminal
-npx prisma db push
-```
-
-:::note
-
-Note that for querying the database, you keep using the `PrismaD1` driver adapter from the `@prisma/adapter-d1` package:
-
-```ts
-import { PrismaD1 } from '@prisma/adapter-d1'
-```
-
-:::
-
-### Using the Wrangler CLI 
-
-Cloudflare D1 comes with its own [migration system](https://developers.cloudflare.com/d1/reference/migrations/). While we recommend that you use the [native Prisma Migrate workflow](#using-prisma-migrate-via-a-driver-adapter-in-prisma-config), this migration system via the `wrangler d1 migrations` command is available.
-
-This command doesn't help you in figuring out the SQL statements for creating your database schema that need to be put _inside_ of these migration files though. If you want to query your database using Prisma Client, it's important that your database schema maps to your Prisma schema, this is why it's recommended to generate the SQL statements from your Prisma schema.
-
-When using D1, you can use the [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) command for that purpose.
+The Wrangler CLI provides the structure for migrations, but you need to generate the SQL statements from your Prisma schema. This is where [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) comes in - it generates SQL statements based on your Prisma schema that you can then apply using Wrangler.
 
 #### Creating an initial migration
 
@@ -190,7 +97,7 @@ For the initial migration, you can use the special `--from-empty` option though:
 ```terminal
 npx prisma migrate diff \
   --from-empty \
-  --to-schema-datamodel ./prisma/schema.prisma \
+  --to-schema ./prisma/schema.prisma \
   --script \
   --output migrations/0001_create_user_table.sql
 ```
@@ -198,7 +105,7 @@ npx prisma migrate diff \
 The command above uses the following options:
 
 - `--from-empty`: The source for the SQL statement is an empty schema.
-- `--to-schema-datamodel ./prisma/schema.prisma`: The target for the SQL statement is the data model in `./prisma/schema.prisma`.
+- `--to-schema ./prisma/schema.prisma`: The target for the SQL statement is the schema in `./prisma/schema.prisma`.
 - `--script`: Output the result as SQL. If you omit this option, the "migration steps" will be generated in plain English.
 - `--output migrations/0001_create_user_table.sql`: Store the result in `migrations/0001_create_user_table.sql`.
 
@@ -281,7 +188,7 @@ As explained above, you now need to use `--from-local-d1` instead of `--from-emp
 ```terminal
 npx prisma migrate diff \
   --from-local-d1 \
-  --to-schema-datamodel ./prisma/schema.prisma \
+  --to-schema ./prisma/schema.prisma \
   --script \
   --output migrations/0002_create_post_table.sql
 ```
@@ -289,7 +196,7 @@ npx prisma migrate diff \
 The command above uses the following options:
 
 - `--from-local-d1`: The source for the SQL statement is the local D1 database file.
-- `--to-schema-datamodel ./prisma/schema.prisma`: The target for the SQL statement is the data model in `./prisma/schema.prisma`.
+- `--to-schema ./prisma/schema.prisma`: The target for the SQL statement is the schema in `./prisma/schema.prisma`.
 - `--script`: Output the result as SQL. If you omit this option, the "migration steps" will be generated in plain English.
 - `--output migrations/0002_create_post_table.sql`: Store the result in `migrations/0002_create_post_table.sql`.
 
@@ -326,7 +233,3 @@ npx wrangler d1 migrations apply __YOUR_DATABASE_NAME__ --remote
 ### Transactions not supported
 
 Cloudflare D1 currently does not support transactions (see the [open feature request](https://github.com/cloudflare/workers-sdk/issues/2733)). As a result, Prisma ORM does not support transactions for Cloudflare D1. When using Prisma's D1 adapter, implicit & explicit transactions will be ignored and run as individual queries, which breaks the guarantees of the ACID properties of transactions.
-
-### Prisma Migrate only supports remote D1 databases
-
-The Wrangler CLI can distinguish between local and remote D1 (i.e. SQLite) database instances via the `--local` and `--remote` options. This distinction is currently not available with the [native Prisma Migrate workflow](#using-prisma-migrate-via-a-driver-adapter-in-prisma-config).
