@@ -16,6 +16,7 @@ import ErrorPageContent from '@theme/ErrorPageContent';
 import type {Props} from '@theme/Layout';
 import styles from './styles.module.css';
 import { useUTMPersistenceDocs } from '@site/src/utils/useUTMPersistenceDocs';
+import Head from '@docusaurus/Head';
 
 export default function Layout(props: Props): ReactNode {
   const {
@@ -45,6 +46,18 @@ export default function Layout(props: Props): ReactNode {
 
   return (
     <LayoutProvider>
+      <Head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+              const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+              if (prefersDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+              }
+            })();`,
+          }}
+        />
+      </Head>
       <PageMetadata title={title} description={description} />
 
       <SkipToContent />
