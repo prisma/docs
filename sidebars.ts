@@ -489,6 +489,7 @@ const sidebars: SidebarsConfig = {
             "ai/prompts/astro",
             "ai/prompts/nextjs",
             "ai/prompts/prisma-7",
+            "ai/prompts/turborepo",
           ],
         },
         {
