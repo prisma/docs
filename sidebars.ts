@@ -392,6 +392,7 @@ const sidebars: SidebarsConfig = {
           collapsible: false,
           items: [
             "guides/clerk-nextjs",
+            "guides/clerk-astro",
             "guides/shopify",
             "guides/permit-io-access-control",
             "guides/betterauth-astro",
