@@ -4,7 +4,7 @@ metaTitle: 'How to use Prisma ORM and Prisma Postgres with TanStack Start'
 description: 'Learn how to use Prisma ORM in a TanStack Start app'
 sidebar_label: 'TanStack Start'
 image: '/img/guides/prisma-tanstack-start-cover.png'
-completion_time: '10 min'
+completion_time: '5 min'
 community_section: true
 ---
 
@@ -21,323 +21,44 @@ This guide will walk you through integrating Prisma ORM with a Prisma Postgres d
 
 To begin, create a new TanStack Start project. 
 
-:::note
-
-For the purpose of this guide, we're using the same setup instructions that you can find in the [TanStart Start docs](https://tanstack.com/start/latest/docs/framework/react/build-from-scratch).
-
-:::
-
-In the directory where you'd like to create your project, run the following commands:
-
 ```terminal
-mkdir tanstack-start-prisma
-cd tanstack-start-prisma
-npm init -y
-```
-
-This will create a new folder called `tanstack-start-prisma`, navigate into it, and initialize a new Node.js project.
-
-Open the directory in your IDE and create a `tsconfig.json` file with the following configuration:
-
-```json file=tsconfig.json
-{
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "moduleResolution": "Bundler",
-    "module": "ESNext",
-    "target": "ES2022",
-    "skipLibCheck": true,
-    "strictNullChecks": true
-  }
-}
-```
-
-We also need a `.gitignore` file, so let's set that up now:
-
-```txt file=.gitignore
-node_modules
-.env
-app/generated
-```
-
-Next, install TanStack Router and Vinxi, as TanStack Start currently requires them:
-
-```terminal
-npm install @tanstack/react-start @tanstack/react-router vinxi
-```
-
-We also need React, the Vite React plugin, and TypeScript:
-
-```terminal
-npm install react react-dom
-npm install --save-dev @vitejs/plugin-react vite-tsconfig-paths
-npm install --save-dev typescript @types/react @types/react-dom
-```
-
-Update your `package.json` to use Vinxi's CLI. Add `"type": "module"` and modify the scripts to use Vinxi's CLI:
-
-```json file=package.json
-{
-  "name": "tanstack-start-prisma",
-  "version": "1.0.0",
-  "main": "index.js",
-  // add-start
-  "type": "module",
-  "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "start": "vinxi start"
-  },
-  // add-end
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@tanstack/react-router": "^1.119.0",
-    "@tanstack/react-start": "^1.119.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "vinxi": "^0.5.6"
-  },
-  "devDependencies": {
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.3",
-    "@vitejs/plugin-react": "^4.4.1",
-    "typescript": "^5.8.3",
-    "vite-tsconfig-paths": "^5.1.4"
-  }
-}
-```
-
-Then, create and configure TanStack Start's `app.config.ts` file:
-
-```typescript file=app.config.ts
-import { defineConfig } from '@tanstack/react-start/config'
-import tsConfigPaths from 'vite-tsconfig-paths'
-
-export default defineConfig({
-  vite: {
-    plugins: [
-      tsConfigPaths({
-        projects: ['./tsconfig.json'],
-      }),
-    ],
-  },
-})
-```
-
-For TanStack Start to function, we need 5 files in `~/app/`:
-
-- `router.tsx` (The router configuration)
-- `ssr.tsx` (The server entry point)
-- `client.tsx` (The client entry point)
-- `routes/__root.tsx` (The root of the app)
-- `routes/index.tsx` (The home page)
-
-You can create them with these commands:
-
-```terminal
-mkdir app
-touch app/router.tsx
-touch app/ssr.tsx
-touch app/client.tsx
-mkdir app/routes
-touch app/routes/__root.tsx
-touch app/routes/index.tsx
-```
-
-`router.tsx` configures the application's main router with route definitions and settings:
-
-```typescript file=app/router.tsx
-import { createRouter as createTanStackRouter } from '@tanstack/react-router'
-import { routeTree } from './routeTree.gen'
-
-export function createRouter() {
-  const router = createTanStackRouter({
-    routeTree,
-    scrollRestoration: true,
-  })
-
-  return router
-}
-
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: ReturnType<typeof createRouter>
-  }
-}
-```
-
-:::note
-
-You should be seeing an error about `routeTree.gen.ts` not existing. This is expected. It will be generated when you run TanStack Start for the first time.
-
-:::
-
-`ssr.tsx` allows us to know what routes and loaders we need to execute when the user hits a given route:
-
-```typescript file=app/ssr.tsx
-import {
-  createStartHandler,
-  defaultStreamHandler,
-} from '@tanstack/react-start/server'
-import { getRouterManifest } from '@tanstack/react-start/router-manifest'
-
-import { createRouter } from './router'
-
-export default createStartHandler({
-  createRouter,
-  getRouterManifest,
-})(defaultStreamHandler)
-```
-
-`client.tsx` initializes the client-side logic to handle routes in the browser:
-
-```typescript file=app/client.tsx
-import { hydrateRoot } from "react-dom/client";
-import { StartClient } from "@tanstack/react-start/client";
-import { createRouter } from "./router";
-
-const router = createRouter();
-
-hydrateRoot(document, <StartClient router={router} />);
-```
-
-`routes/__root.tsx` defines the root route and global HTML layout for the entire application:
-
-```typescript file=app/routes/__root.tsx
-import type { ReactNode } from "react";
-import {
-  Outlet,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-} from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "Prisma TanStack Start Demo",
-      },
-    ],
-  }),
-  component: RootComponent,
-});
-
-function RootComponent() {
-  return (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
-  );
-}
-
-function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
-  return (
-    <html>
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-```
-
-`routes/index.tsx` is the home page of the application:
-
-```typescript file=app/routes/index.tsx
-import { createFileRoute } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/")({
-  component: Home,
-});
-
-function Home() {
-  return (
-    <div>
-      <h1>Posts</h1>
-    </div>
-  );
-}
-```
-
-Now, run:
-
-```terminal
-npm run dev
-```
-
-This will generate the `routeTree.gen.ts` file and resolve any routing errors.
-
-Your file tree should look like this (without `node_modules`):
-
-```
-.
-├── app
-│   ├── client.tsx
-│   ├── routeTree.gen.ts
-│   ├── router.tsx
-│   ├── routes
-│   │   ├── __root.tsx
-│   │   └── index.tsx
-│   └── ssr.tsx
-├── app.config.ts
-├── package-lock.json
-├── package.json
-└── tsconfig.json
-```
-
-## 2. Install and Configure Prisma
-
-### 2.1. Install dependencies
-
-To get started with Prisma, you'll need to install a few dependencies:
-
-```terminal
-npm install prisma tsx @types/pg --save-dev
-npm install @prisma/client @prisma/adapter-pg dotenv pg
+npm create @tanstack/start@latest
 ```
 
 :::info
-
-If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
-
+- *What would you like to name your project?* tanstack-start-prisma
+- *Would you like to use Tailwind CSS?* No
+- *Select Toolchain* None 
+- *Select deployment adapter* Nitro 
+- *What add-ons would you like for your project?* Prisma 
+- *Would you like any examples?* No
+- *Prisma: Database Provider* Prisma PostgresSQL
 :::
 
-Once installed, initialize Prisma in your project:
+This will create a new folder called `tanstack-start-prisma` and create a new Prisma Postgres
+Database for you. The final database connection string will be printed out.
 
-```terminal
-npx prisma init --db --output ../app/generated/prisma
+```shell
+●  Database Connection
+│
+│    Connection String:
+│
+│    postgresql://b4889.....
+│
 ```
 
-:::info
-You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My __________ Project"
-:::
+Copy this connection string and set the `DATABASE_URL` variable in `.env.local`:
 
-This will create:
+``` 
+# Database URL for PostgreSQL
+DATABASE_URL="postgresql://b4889....."
+```
 
-- A `prisma` directory with a `schema.prisma` file.
-- A `prisma.config.ts` file for configuring Prisma
-- A Prisma Postgres database.
-- A `.env` file containing the `DATABASE_URL` at the project root.
-- An `output` directory for the generated Prisma Client as `app/generated/prisma`.
+## 2. Configure Prisma
 
-### 2.2. Define your Prisma Schema
+### 2.1. Define your Prisma Schema
 
-In `schema.prisma`, create a model for our posts and change the generator to use the [`prisma-client`](/orm/prisma-schema/overview/generators#prisma-client) provider:
+In `schema.prisma`, the model for our todos is defined below the generator and datasource blocks:
 
 ```prisma file=prisma/schema.prisma
 generator client {
@@ -349,205 +70,94 @@ datasource db {
   provider = "postgresql"
 }
 
-//add-start
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
-}
-
-model Post {
-  id        Int     @id @default(autoincrement())
+model Todo {
+  id        Int      @id @default(autoincrement())
   title     String
-  content   String?
-  published Boolean @default(false)
-  authorId  Int
-  author    User    @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
 }
-//add-end
 ```
 
-This creates two models: `User` and `Post`, with a one-to-many relationship between them.
+This creates a `Todo` model that will be pushed to the database
 
-### 2.3 Add `dotenv` to `prisma.config.ts`
+### 2.2. Configure the Prisma Client generator
 
-To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
-Include an import for `dotenv` at the top of the `prisma.config.ts`
-
-```ts
-//add-start
-import 'dotenv/config'
-//add-end
-import { defineConfig, env } from 'prisma/config';
-export default defineConfig({
-  schema: 'prisma/schema.prisma',
-  migrations: {
-    path: 'prisma/migrations',
-  },
-  datasource: {
-    url: env('DATABASE_URL'),
-  },
-});
-```
-
-### 2.4. Configure the Prisma Client generator
-
-Now, run the following command to create the database tables and generate the Prisma Client:
+Now, run the following command to create the database tables:
 
 ```terminal
-npx prisma migrate dev --name init
-npx prisma generate
+npm run db:seed -- --name init
 ```
-### 2.5. Seed the database
+### 2.3. Seed the database
 
-Let's add some seed data to populate the database with sample users and posts.
-
-Create a new file called `seed.ts` in the `prisma/` directory:
-
-```typescript file=prisma/seed.ts
-import { PrismaClient, Prisma } from "../app/generated/prisma/client.js";
-import { PrismaPg } from "@prisma/adapter-pg";
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-const prisma = new PrismaClient({
-  adapter,
-});
-
-const userData: Prisma.UserCreateInput[] = [
-  {
-    name: "Alice",
-    email: "alice@prisma.io",
-    posts: {
-      create: [
-        {
-          title: "Join the Prisma Discord",
-          content: "https://pris.ly/discord",
-          published: true,
-        },
-        {
-          title: "Prisma on YouTube",
-          content: "https://pris.ly/youtube",
-        },
-      ],
-    },
-  },
-  {
-    name: "Bob",
-    email: "bob@prisma.io",
-    posts: {
-      create: [
-        {
-          title: "Follow Prisma on Twitter",
-          content: "https://www.twitter.com/prisma",
-          published: true,
-        },
-      ],
-    },
-  },
-];
-export async function main() {
-  for (const u of userData) {
-    await prisma.user.create({ data: u });
-  }
-}
-main();
-```
-
-Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
-
-```ts file=prisma.config.ts
-import 'dotenv/config'
-import { defineConfig, env } from 'prisma/config';
-export default defineConfig({
-  schema: 'prisma/schema.prisma',
-  migrations: {
-    path: 'prisma/migrations',
-//add-start
-    seed: `tsx prisma/seed.ts`,
-//add-end
-  },
-  datasource: {
-    url: env('DATABASE_URL'),
-  },
-});
-```
-
-Run the seed script:
+Generate the Prisma Client needed for the project;
 
 ```terminal
-npx prisma db seed
+npm run db:generate
+```
+
+Then seed the project with the `seed.ts` file in the `prisma/` directory: 
+
+```terminal
+npm run db:seed
 ```
 
 And open Prisma Studio to inspect your data:
 
 ```terminal
-npx prisma studio
+npm run db:studio
 ```
 
 ## 3. Integrate Prisma into TanStack Start
 
-### 3.1 Create a Prisma Client
+### 3.1 The Prisma Client
 
-Instead of creating a new Prisma Client instance in each file, create a single instance in a shared file to be used globally.
+Instead of creating a new Prisma Client instance in each file, TanStack Start has a `db.ts` that
+creates a single instance that can be shared globally 
 
-Create a `/lib` directory and a `prisma.ts` file inside it. This file will be used to create and export your Prisma Client instance.
+```tsx file=src/db.ts
+import { PrismaClient } from './generated/prisma/client.js'
 
-Set up the Prisma client like this:
-
-```tsx file=src/lib/prisma.ts
-import { PrismaClient } from "../generated/prisma/client.js";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaPg } from '@prisma/adapter-pg'
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
-});
+})
 
-const prisma = new PrismaClient({
-  adapter,
-});
+declare global {
+  var __prisma: PrismaClient | undefined
+}
 
-export default prisma;
+export const prisma = globalThis.__prisma || new PrismaClient({ adapter })
+
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.__prisma = prisma
+}
 ```
 
-:::warning
-We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.
 
-If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
-:::
+### 3.2 Fetch data on load
 
-### 3.2 Fetch users and posts on load
+First, import the necessary modules. Then, create a server function using the [`createServerFn`](https://tanstack.com/start/latest/docs/framework/react/guide/server-functions) function. This function will fetch the data from the database using the `.findMany()` method
 
-First, import the necessary modules. Then, create a server function using the [`createServerFn`](https://tanstack.com/start/latest/docs/framework/react/guide/server-functions) function. This function will fetch the users from the database using the `.findMany()` method. Use the [`include`](/orm/prisma-client/queries/relation-queries#include-a-relation) option to fetch the related posts:
-
-```typescript file=app/routes/index.tsx
-// add-start
-import { prisma } from "../lib/prisma";
-import { createServerFn } from "@tanstack/react-start";
-// add-end
+```typescript file=src/routes/index.tsx
 import { createFileRoute } from "@tanstack/react-router";
+// add-start
+import { createServerFn } from "@tanstack/react-start";
+import { prisma } from '../db';
+// add-end
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
 
 // add-start
-const getUsers = createServerFn({ method: "GET" }).handler(async () => {
-  return prisma.user.findMany({
-    include: {
-      posts: true,
-    },
-  });
+const getTodos = createServerFn({ method: "GET" }).handler(async () => {
+  return prisma.todo.findMany();
 });
 // add-end
 
 function Home() {
   return (
     <div>
-      <h1>Posts</h1>
     </div>
   );
 }
@@ -556,31 +166,27 @@ function Home() {
 TanStack Start allows functions to run on load with loader functions in the [`createFileRoute`](https://tanstack.com/router/latest/docs/framework/react/api/router/createFileRouteFunction) function. Fetch the users and their posts on load with this code:
 
 ```typescript file=app/routes/index.tsx
-import { prisma } from "../lib/prisma";
-import { createServerFn } from "@tanstack/react-start";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { prisma } from '../db';
 
 export const Route = createFileRoute("/")({
   component: Home,
   // add-start
   loader: () => {
-    return getUsers();
+    return getTodos();
   },
   // add-end
 });
 
-const getUsers = createServerFn({ method: "GET" }).handler(async () => {
-  return prisma.user.findMany({
-    include: {
-      posts: true,
-    },
-  });
+const getTodos = createServerFn({ method: "GET" }).handler(async () => {
+  return prisma.todo.findMany();
 });
 
 function Home() {
   return (
     <div>
-      <h1>Posts</h1>
+      <h1>Todos</h1>
     </div>
   );
 }
@@ -589,90 +195,70 @@ function Home() {
 Store the response from the loader in the main component using [`Route.useLoaderData()`](https://tanstack.com/router/latest/docs/framework/react/api/router/useLoaderDataHook):
 
 ```typescript file=app/routes/index.tsx
-import { prisma } from "../lib/prisma";
 import { createServerFn } from "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
+import { prisma } from '../db';
 
 export const Route = createFileRoute("/")({
   component: Home,
   loader: () => {
-    return getUsers();
+    return getTodos();
   },
 });
 
-const getUsers = createServerFn({ method: "GET" }).handler(async () => {
-  return prisma.user.findMany({
-    include: {
-      posts: true,
-    },
-  });
+const getTodos = createServerFn({ method: "GET" }).handler(async () => {
+  return prisma.todo.findMany();
 });
 
 function Home() {
   // add-start
-  const users = Route.useLoaderData();
+  const todos = Route.useLoaderData();
   // add-end
 
   return (
     <div>
-      <h1>Posts</h1>
+      <h1>Todos</h1>
     </div>
   );
 }
 ```
 
-### 3.3 Display the users and posts
+### 3.3 Display the todos
 
-Next, you'll update the home page to display the users and posts retrieved from your database.
+Next, you'll update the home page to display the data retrieved from your database.
 
-Map over the `users` and display them in a list along with their `posts`:
+Map over the `todos` and display them in a list:
 
 ```typescript file=app/routes/index.tsx
-import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import prisma from "../../lib/prisma";
+import { createFileRoute } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { prisma } from '../db';
 
-export const Route = createFileRoute("/")({
-  component: Home,
-  loader: () => {
-    return getUsers();
-  },
+export const Route = createFileRoute('/')({
+  component: App,
+  loader: () => getTodos(),
 });
 
-const getUsers = createServerFn({ method: "GET" }).handler(async () => {
-  return prisma.user.findMany({
-    include: {
-      posts: true,
-    },
-  });
+const getTodos = createServerFn({ method: 'GET' }).handler(async () => {
+  return prisma.todo.findMany();
 });
 
-function Home() {
-  const users = Route.useLoaderData();
-
+function App() {
+  const todos = Route.useLoaderData();
+  
   return (
     <div>
-      <h1>Posts</h1>
-      // add-start
       <ul>
-        {users.map((user) => (
-          <li key={user.id}>
-            {user.name}
-            <ul>
-              {user.posts.map((post) => (
-                <li key={post.id}>{post.title}</li>
-              ))}
-            </ul>
-          </li>
+        {todos.map(todo => (
+          <li key={todo.id}>{todo.title}</li>
         ))}
       </ul>
-      // add-end
     </div>
   );
 }
 ```
 
-This setup will display the posts on your page, fetched directly from your database.
+This setup will display the todos on your page, fetched directly from your database.
 
 ## Next steps
 
