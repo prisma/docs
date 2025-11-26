@@ -360,6 +360,7 @@ const sidebars: SidebarsConfig = {
           collapsible: false,
           items: [
             "guides/nextjs",
+            "guides/nestjs",
             "guides/nuxt",
             "guides/sveltekit",
             "guides/astro",
