@@ -626,6 +626,43 @@ export default defineConfig({
 });
 ```
 
+#### Handling optional environment variables
+
+The `env()` helper function from `prisma/config` **throws an error** if the specified environment variable is not defined. This is important to understand because:
+
+- Every Prisma CLI command loads the `prisma.config.ts` file
+- Only **some** commands actually need the `datasource.url` value (e.g., `prisma db *`, `prisma migrate *`, `prisma generate --sql`)
+- Commands like `prisma generate` don't need a database URL, but will still fail if `env()` throws an error when loading the config file
+
+For example, if you run `prisma generate` without `DATABASE_URL` set, and your config uses `env('DATABASE_URL')`, you'll see:
+
+```terminal
+Error: PrismaConfigEnvError: Missing required environment variable: DATABASE_URL
+```
+
+**Solution:** If your environment variable isn't guaranteed to exist (e.g., in CI/CD pipelines where you only run `prisma generate` for type-checking), don't use the `env()` helper. Instead, access the environment variable directly:
+
+```ts
+import 'dotenv/config'
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: process.env.DATABASE_URL!, // Or use: process.env.DATABASE_URL ?? '' to provide a fallback value
+  },
+});
+```
+
+:::note
+
+Use the `env()` helper when you want to **enforce** that an environment variable exists. Use `process.env` directly when the variable may be optional depending on the command being run.
+
+:::
+
 ### Using multi-file schemas
 
 If you want to split your Prisma schema into multiple files, you need to specify the path to your Prisma schema folder via the `schema` property:
