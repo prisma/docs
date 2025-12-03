@@ -7,7 +7,7 @@ tocDepth: 3
 
 Read replicas enable you to distribute workloads across database replicas for high-traffic workloads. The [read replicas extension](https://github.com/prisma/extension-read-replicas), `@prisma/extension-read-replicas`, adds support for read-only database replicas to Prisma Client.
 
-The read replicas extension supports Prisma ORM versions [5.2.0](https://github.com/prisma/prisma/releases/tag/5.2.0) and higher. If you run into a bug or have feedback, create a GitHub issue [here](https://github.com/prisma/extension-read-replicas/issues/new).
+The read replicas extension supports Prisma ORM versions [5.2.0](https://github.com/prisma/prisma/releases/tag/5.2.0) and higher. For Prisma 7.0+, the extension requires passing full PrismaClient instances instead of connection URLs. If you run into a bug or have feedback, create a GitHub issue [here](https://github.com/prisma/extension-read-replicas/issues/new).
 
 
 ## Setup the read replicas extension
@@ -18,23 +18,38 @@ Install the extension:
 npm install @prisma/extension-read-replicas@latest
 ```
 
-Initialize the extension by extending your Prisma Client instance and provide the extension a connection string that points to your read replica in the `url` option of the extension.
+:::note[Prisma 7 compatibility]
 
+The latest version of `@prisma/extension-read-replicas` requires **Prisma 7.0+** and uses a new API that requires passing full `PrismaClient` instances instead of connection URLs. This change is necessary due to Prisma 7's architectural changes.
 
+If you're using Prisma 6.x or earlier, see the [Prisma v6 section](#for-prisma-v6-users) below.
+
+:::
+
+Initialize the extension by extending your Prisma Client instance and provide the extension with full `PrismaClient` instances for your read replicas. The default approach is to use driver adapters:
 
 ```ts
-import { PrismaClient } from '../prisma/generated/client'
-import { PrismaPg } from '@prisma/adapter-pg'
 import { readReplicas } from '@prisma/extension-read-replicas'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from './generated/prisma/client'
 
-const connectionString = `${process.env.DATABASE_URL}`
+// Create main client with adapter
+const mainAdapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
 
-const adapter = new PrismaPg({ connectionString })
+const mainClient = new PrismaClient({ adapter: mainAdapter })
 
-const prisma = new PrismaClient({ adapter }).$extends(
-  readReplicas({
-    url: process.env.DATABASE_URL_REPLICA,
-  })
+// Create replica client with adapter
+const replicaAdapter = new PrismaPg({
+  connectionString: process.env.REPLICA_URL!,
+})
+
+const replicaClient = new PrismaClient({ adapter: replicaAdapter })
+
+// Extend main client with read replicas
+const prisma = mainClient.$extends(
+  readReplicas({ replicas: [replicaClient] })
 )
 
 // Query is run against the database replica
@@ -83,15 +98,34 @@ If you run into a bug or have feedback, create a GitHub issue [here](https://git
 
 ## Configure multiple database replicas
 
-The `url` property also accepts an array of values, i.e. an array of all your database replicas you would like to configure:
+The `replicas` property accepts an array of `PrismaClient` instances for all your database replicas:
 
 ```ts
-const prisma = new PrismaClient({ adapter }).$extends(
+import { readReplicas } from '@prisma/extension-read-replicas'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from './generated/prisma/client'
+
+// Create main client
+const mainAdapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
+const mainClient = new PrismaClient({ adapter: mainAdapter })
+
+// Create multiple replica clients
+const replicaAdapter1 = new PrismaPg({
+  connectionString: process.env.DATABASE_URL_REPLICA_1!,
+})
+const replicaClient1 = new PrismaClient({ adapter: replicaAdapter1 })
+
+const replicaAdapter2 = new PrismaPg({
+  connectionString: process.env.DATABASE_URL_REPLICA_2!,
+})
+const replicaClient2 = new PrismaClient({ adapter: replicaAdapter2 })
+
+// Configure multiple replicas
+const prisma = mainClient.$extends(
   readReplicas({
-    url: [
-      process.env.DATABASE_URL_REPLICA_1,
-      process.env.DATABASE_URL_REPLICA_2,
-    ],
+    replicas: [replicaClient1, replicaClient2],
   })
 )
 ```
