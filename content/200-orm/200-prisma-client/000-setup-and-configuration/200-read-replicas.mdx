@@ -5,20 +5,17 @@ metaDescription: 'Learn how to set up and use read replicas with Prisma Client'
 tocDepth: 3
 ---
 
-<TopBlock>
-
 Read replicas enable you to distribute workloads across database replicas for high-traffic workloads. The [read replicas extension](https://github.com/prisma/extension-read-replicas), `@prisma/extension-read-replicas`, adds support for read-only database replicas to Prisma Client.
 
 The read replicas extension supports Prisma ORM versions [5.2.0](https://github.com/prisma/prisma/releases/tag/5.2.0) and higher. If you run into a bug or have feedback, create a GitHub issue [here](https://github.com/prisma/extension-read-replicas/issues/new).
 
-</TopBlock>
 
 ## Setup the read replicas extension
 
 Install the extension:
 
 ```terminal
-npm install @prisma/extension-read-replicas
+npm install @prisma/extension-read-replicas@latest
 ```
 
 Initialize the extension by extending your Prisma Client instance and provide the extension a connection string that points to your read replica in the `url` option of the extension.
@@ -27,9 +24,14 @@ Initialize the extension by extending your Prisma Client instance and provide th
 
 ```ts
 import { PrismaClient } from '../prisma/generated/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { readReplicas } from '@prisma/extension-read-replicas'
 
-const prisma = new PrismaClient().$extends(
+const connectionString = `${process.env.DATABASE_URL}`
+
+const adapter = new PrismaPg({ connectionString })
+
+const prisma = new PrismaClient({ adapter }).$extends(
   readReplicas({
     url: process.env.DATABASE_URL_REPLICA,
   })
@@ -44,6 +46,36 @@ await prisma.post.create({
 })
 ```
 
+:::note[For Prisma v6 users]
+
+For Prisma v6 users, install version `0.4.1` of the Read Replicas extension:
+
+```bash
+npm install @prisma/extension-read-replicas@0.4.1
+```
+
+After installing, configure your replica like this:
+
+```ts
+import { PrismaClient } from '../prisma/generated/client'
+import { readReplicas } from '@prisma/extension-read-replicas'
+
+const prisma = new PrismaClient().$extends(
+  readReplicas({
+    url: process.env.DATABASE_URL_REPLICA,
+  })
+)
+
+// This query runs against the read replica
+await prisma.post.findMany()
+
+// This query runs against the primary database
+await prisma.post.create({
+  data: { /* ... */ },
+})
+```
+
+:::
 
 All read operations, e.g. `findMany`, will be executed against the database replica with the above setup. All write operations — e.g. `create`, `update` — and `$transaction` queries, will be executed against your primary database.
 
@@ -54,7 +86,7 @@ If you run into a bug or have feedback, create a GitHub issue [here](https://git
 The `url` property also accepts an array of values, i.e. an array of all your database replicas you would like to configure:
 
 ```ts
-const prisma = new PrismaClient().$extends(
+const prisma = new PrismaClient({ adapter }).$extends(
   readReplicas({
     url: [
       process.env.DATABASE_URL_REPLICA_1,
