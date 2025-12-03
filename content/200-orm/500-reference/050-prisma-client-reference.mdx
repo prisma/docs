@@ -425,6 +425,71 @@ const adapter = new PrismaNeon({ connectionString });
 const prisma = new PrismaClient({ adapter });
 ```
 
+### `comments`
+
+Defines an array of [SQL commenter plugins](/orm/prisma-client/observability-and-logging/sql-comments) that add metadata to your SQL queries as comments. This is useful for observability, debugging, and correlating queries with application traces.
+
+#### Options
+
+| Option                      | Description                                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `SqlCommenterPlugin[]`      | An array of SQL commenter plugin functions. Each plugin receives query context and returns key-value pairs.     |
+
+#### First-party plugins
+
+| Package                                | Description                                                                 |
+| -------------------------------------- | --------------------------------------------------------------------------- |
+| `@prisma/sqlcommenter-query-tags`      | Adds arbitrary tags to queries within an async context using `AsyncLocalStorage` |
+| `@prisma/sqlcommenter-trace-context`   | Adds W3C Trace Context (`traceparent`) headers for distributed tracing      |
+
+#### Examples
+
+##### Using first-party plugins
+
+```ts
+import { PrismaClient } from '../prisma/generated/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { queryTags } from '@prisma/sqlcommenter-query-tags';
+import { traceContext } from '@prisma/sqlcommenter-trace-context';
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+
+const prisma = new PrismaClient({
+  adapter,
+  comments: [queryTags(), traceContext()],
+});
+```
+
+##### Creating a custom plugin
+
+```ts
+import { PrismaClient } from '../prisma/generated/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import type { SqlCommenterPlugin } from '@prisma/sqlcommenter';
+
+const appPlugin: SqlCommenterPlugin = (context) => ({
+  application: 'my-app',
+  environment: process.env.NODE_ENV ?? 'development',
+  model: context.query.modelName,
+  action: context.query.action,
+});
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+
+const prisma = new PrismaClient({
+  adapter,
+  comments: [appPlugin],
+});
+```
+
+This produces SQL queries with comments like:
+
+```sql
+SELECT "id", "name" FROM "User" /*action='findMany',application='my-app',environment='production',model='User'*/
+```
+
+For more details, see [SQL comments](/orm/prisma-client/observability-and-logging/sql-comments).
+
 ### `rejectOnNotFound`
 
 :::info
