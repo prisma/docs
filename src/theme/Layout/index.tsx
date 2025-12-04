@@ -29,7 +29,24 @@ export default function Layout(props: Props): ReactNode {
 
   useKeyboardNavigation();
   useUTMPersistenceDocs();
-  
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const utms = sessionStorage.getItem('utm_params');
+      if (!utms) return;
+
+      document.querySelectorAll('a[href*="console.prisma.io"]').forEach((a) => {
+        const href = a.getAttribute('href');
+        if (!href) return;
+        const [base, query] = href.split('?');
+        const params = new URLSearchParams(query);
+        new URLSearchParams(utms).forEach((v, k) => params.set(k, v));
+        a.setAttribute('href', `${base}?${params}`);
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isKapaModalOpen = document.querySelector('#__docusaurus[aria-hidden="true"]');
