@@ -29,7 +29,47 @@ export default function Layout(props: Props): ReactNode {
 
   useKeyboardNavigation();
   useUTMPersistenceDocs();
-  
+
+  useEffect(() => {
+    const utms = sessionStorage.getItem('utm_params');
+    if (!utms) return;
+
+    const updateLinks = (links: NodeListOf<Element>) => {
+      links.forEach((a) => {
+        const href = a.getAttribute('href');
+        if (!href) return;
+        try {
+          const url = new URL(href, window.location.origin);
+          new URLSearchParams(utms).forEach((v, k) => url.searchParams.set(k, v));
+          a.setAttribute('href', url.toString());
+        } catch (e) {
+          // Handle invalid URLs
+        }
+      });
+    };
+
+    // Initial update
+    updateLinks(document.querySelectorAll('a[href*="console.prisma.io"]'));
+
+    // Watch for new links
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof Element) {
+            const links = node.querySelectorAll('a[href*="console.prisma.io"]');
+            updateLinks(links);
+            if (node.matches('a[href*="console.prisma.io"]')) {
+              updateLinks([node] as any);
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isKapaModalOpen = document.querySelector('#__docusaurus[aria-hidden="true"]');
