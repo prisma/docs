@@ -31,20 +31,43 @@ export default function Layout(props: Props): ReactNode {
   useUTMPersistenceDocs();
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const utms = sessionStorage.getItem('utm_params');
-      if (!utms) return;
+    const utms = sessionStorage.getItem('utm_params');
+    if (!utms) return;
 
-      document.querySelectorAll('a[href*="console.prisma.io"]').forEach((a) => {
+    const updateLinks = (links: NodeListOf<Element>) => {
+      links.forEach((a) => {
         const href = a.getAttribute('href');
         if (!href) return;
-        const [base, query] = href.split('?');
-        const params = new URLSearchParams(query);
-        new URLSearchParams(utms).forEach((v, k) => params.set(k, v));
-        a.setAttribute('href', `${base}?${params}`);
+        try {
+          const url = new URL(href, window.location.origin);
+          new URLSearchParams(utms).forEach((v, k) => url.searchParams.set(k, v));
+          a.setAttribute('href', url.toString());
+        } catch (e) {
+          // Handle invalid URLs
+        }
       });
-    }, 100);
-    return () => clearInterval(interval);
+    };
+
+    // Initial update
+    updateLinks(document.querySelectorAll('a[href*="console.prisma.io"]'));
+
+    // Watch for new links
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof Element) {
+            const links = node.querySelectorAll('a[href*="console.prisma.io"]');
+            updateLinks(links);
+            if (node.matches('a[href*="console.prisma.io"]')) {
+              updateLinks([node] as any);
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
