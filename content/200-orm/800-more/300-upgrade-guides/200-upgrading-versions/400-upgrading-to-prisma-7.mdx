@@ -212,6 +212,34 @@ const adapter = new PrismaBetterSqlite3({
 export const prisma = new PrismaClient({ adapter })
 ```
 
+### Prisma Accelerate users upgrading from v6
+If you used Prisma Accelerate (including Prisma Postgres' `prisma+postgres://` URLs) in v6, keep using the Accelerate URL with the Accelerate extension. Do **not** pass the Accelerate URL to a driver adapter—`PrismaPg` expects a direct database connection string and will fail with `prisma://` or `prisma+postgres://`.
+
+1. Keep your Accelerate URL in `.env` (for example `DATABASE_URL="prisma://..."` or `prisma+postgres://...`).
+2. You can point `prisma.config.ts` directly to that same Accelerate URL for CLI operations:
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+   - If you prefer a separate direct URL for migrations, you can still use `DIRECT_DATABASE_URL` as above—but it's optional for Accelerate users.
+3. Instantiate Prisma Client with the Accelerate URL and extension (no adapter):
+```ts
+import { PrismaClient } from './generated/prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+export const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate())
+```
+If you later switch away from Accelerate to direct TCP, provide the direct URL to the appropriate driver adapter (for example `PrismaPg`) instead of `accelerateUrl`.
+
 ### Explicit loading of environment variables
 In Prisma ORM 7.0.0, environment variables are not loaded by default. Instead developers need to
 explicitly load the variables when calling the `prisma` CLI. Libraries like [`dotenv`](https://github.com/motdotla/dotenv) can be used to manage loading environment variables by reading the appropriate `.env` file.
