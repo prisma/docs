@@ -5,6 +5,26 @@ description: 'Step-by-step guide for integrating Prisma ORM and Prisma Postgres 
 sidebar_label: 'NextJS + Prisma'
 ---
 
+## Prerequisites
+
+Before using this prompt, you need to create a new Next.js project:
+
+```terminal
+npx create-next-app@latest my-app
+cd my-app
+```
+
+When prompted, select the following recommended options:
+- **TypeScript**: Yes
+- **ESLint**: Yes
+- **Tailwind CSS**: Yes (optional)
+- **`src/` directory**: No
+- **App Router**: Yes
+- **Turbopack**: Yes (optional)
+- **Import alias**: Use default (`@/*`)
+
+Once your Next.js project is created, you can use the prompt below with your AI assistant to add Prisma and Prisma Postgres.
+
 ## How to use
 
 Include this prompt in your AI assistant to guide consistent code generation for NextJS + Prisma + Prisma Postgres projects.  
@@ -39,14 +59,21 @@ description: Guidelines for writing Next.js apps with Prisma Postgres
 alwaysApply: false
 ---
 
-# Bootstrap Next.js app with Prisma Postgres
+# Bootstrap Next.js app with Prisma Postgres (Prisma 7)
+
+> **Note**: This guide is updated for **Prisma ORM 7**. Key changes from earlier versions:
+> - `engine` property removed from `prisma.config.ts`
+> - `url` removed from datasource in `schema.prisma` (now only in `prisma.config.ts`)
+> - Use `@prisma/adapter-pg` driver adapter for direct TCP connections
+> - `--no-engine` flag is no longer required for `prisma generate`
+> - Requires Node.js 20.19+ and TypeScript 5.4.0+
 
 ## Overview of implementing Prisma with Next.js
 
 1. Install Prisma and required dependencies (including dotenv)
 2. Initialize Prisma and configure schema
 3. Configure dotenv for environment variables
-4. Create global Prisma client instance with Accelerate
+4. Create global Prisma client instance with Pg Adapter
 5. Add npm scripts for testing and database management
 6. Create test script to verify setup
 7. Use Prisma client in API routes and pages with proper error handling
@@ -67,9 +94,29 @@ import { PrismaClient } from '@prisma/client'  // ❌ BREAKS APPLICATION
 // ❌ WRONG IMPORT PATH - MISSING /client - IT WILL BREAK THE APPLICATION
 import { PrismaClient } from "../app/generated/prisma"  // ❌ BREAKS APPLICATION
 
-// ❌ NEVER CREATE CLIENT WITHOUT ACCELERATE - IT WILL BREAK IN PRODUCTION
-const prisma = new PrismaClient()  // ❌ BREAKS APPLICATION
+// ❌ NEVER USE ACCELERATE - IT IS NOT USED IN THIS WORKFLOW
+import { withAccelerate } from "@prisma/extension-accelerate" // ❌ BREAKS APPLICATION
 
+// ❌ NEVER USE accelerateUrl - IT WILL BREAK THE APPLICATION
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,  // ❌ BREAKS APPLICATION - use adapter
+})
+
+// ❌ NEVER include url in datasource block - IT WILL BREAK THE APPLICATION
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")  // ❌ BREAKS APPLICATION - moved to prisma.config.ts
+}
+
+// ❌ NEVER include engine property - IT WILL BREAK THE APPLICATION
+export default defineConfig({
+  engine: "classic",  // ❌ BREAKS APPLICATION - removed in Prisma 7
+})
+
+// ❌ NEVER use Prisma Postgres HTTP URLs - ONLY use TCP URLs
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/..."  // ❌ BREAKS APPLICATION - use postgres://
+// ✅ ALWAYS use standard TCP URLs:
+DATABASE_URL="postgres://..."  // ✅ CORRECT
 ```
 
 Instead, you MUST ALWAYS generate ONLY this pattern:
@@ -83,13 +130,17 @@ generator client {
 
 // ✅ CRITICAL: MUST include /client at the end of import path
 import { PrismaClient } from "../app/generated/prisma/client"
-import { withAccelerate } from "@prisma/extension-accelerate"
+import { PrismaPg } from "@prisma/adapter-pg"
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 const prisma = globalForPrisma.prisma || new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
-}).$extends(withAccelerate())
+  adapter,
+})
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
@@ -100,14 +151,25 @@ export default prisma
 
 1. You MUST use `provider = "prisma-client"` (not "prisma-client-js")
 2. You MUST use custom output: `output = "../app/generated/prisma"`
-3. You MUST use Accelerate extension with `withAccelerate()` when using Prisma Postgres
+3. You MUST use `@prisma/adapter-pg` driver adapter
 4. You MUST create `lib/prisma.ts` as a global singleton instance
 5. You MUST wrap all database calls in try-catch blocks
 6. You MUST import from `'../app/generated/prisma/client'` (not `'@prisma/client'` or `'../app/generated/prisma'`)
-7. You MUST use `process.env.DATABASE_URL` in Next.js
+7. You MUST use `adapter` property in PrismaClient constructor
 8. You MUST install `dotenv` and add `import "dotenv/config"` to `prisma.config.ts`
 9. You MUST add npm scripts for `db:test` and `db:studio` to package.json
 10. You MUST create a test script at `scripts/test-database.ts` to verify setup
+11. You MUST NOT include `url` in the datasource block of `schema.prisma`
+12. You MUST NOT include `engine` property in `prisma.config.ts`
+13. You MUST use `npx prisma init --db --output ../app/generated/prisma` to create a real cloud database
+14. You MUST use standard TCP URLs (`postgres://...`) in .env
+15. You MUST NOT use `accelerateUrl` or `withAccelerate`
+
+## VERSION REQUIREMENTS
+
+- **Node.js**: 20.19 or higher (Node.js 18 is NOT supported)
+- **TypeScript**: 5.4.0 or higher (5.9.x recommended)
+- **Prisma**: 7.0.0 or higher
 
 ## CORRECT INSTALLATION
 
@@ -115,25 +177,42 @@ export default prisma
 # Dev dependencies
 npm install prisma tsx --save-dev
 
-# Production dependencies  
-npm install @prisma/extension-accelerate @prisma/client dotenv
+# Production dependencies
+npm install @prisma/adapter-pg @prisma/client dotenv
 ```
 
 ## CORRECT PRISMA INITIALIZATION
 
+> **FOR AI ASSISTANTS**: This command is **interactive** and requires user input. You **MUST ask the user to run this command manually** in their own terminal, then **wait for them to confirm completion** before proceeding with the next steps. Do NOT attempt to run this command yourself.
+
 ```bash
-# Initialize Prisma (creates prisma/schema.prisma and prisma.config.ts)
-npx prisma init
+# Initialize Prisma AND create a real Prisma Postgres cloud database
+npx prisma init --db --output ../app/generated/prisma
 ```
 
-**IMPORTANT**: The init command will create `prisma.config.ts`. You MUST update it to load environment variables.
+This command:
+- Authenticates you with Prisma Console (if needed)
+- Prompts for **region** and **project name**
+- **Creates a cloud Prisma Postgres database**
+- Generates:
+  - `prisma/schema.prisma` (with correct output path)
+  - `prisma.config.ts` (with dotenv import)
+  - **`.env` with a `DATABASE_URL`**
+
+**IMPORTANT**: Ensure the generated `.env` uses a `postgres://` URL scheme. If it generates `prisma+postgres://`, replace it with the standard TCP connection string available in the Prisma Console.
+
+```env
+DATABASE_URL="postgres://..."
+```
+
+**IMPORTANT**: Do NOT use `npx prisma init` without `--db` as this only creates local files without a database.
 
 ## CORRECT PRISMA CONFIG (prisma.config.ts)
 
-**CRITICAL**: After running `npx prisma init`, update the generated `prisma.config.ts`:
+When using `npx prisma init --db`, the `prisma.config.ts` is **auto-generated** with the correct configuration:
 
 ```typescript
-import "dotenv/config"  // ✅ CRITICAL: Add this line at the top
+import "dotenv/config"  // ✅ Auto-included by prisma init --db
 import { defineConfig, env } from "prisma/config"
 
 export default defineConfig({
@@ -141,12 +220,14 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  engine: "classic",
+  // ✅ NO engine property - removed in Prisma 7
   datasource: {
     url: env("DATABASE_URL"),
   },
 })
 ```
+
+**Note**: If you need to manually create this file, ensure `import "dotenv/config"` is at the top.
 
 ## CORRECT SCHEMA CONFIGURATION (prisma/schema.prisma)
 
@@ -160,7 +241,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // ✅ NO url here - now configured in prisma.config.ts
 }
 
 // Example User model for testing
@@ -179,13 +260,17 @@ Create `lib/prisma.ts` file:
 
 ```typescript
 import { PrismaClient } from "../app/generated/prisma/client"  // ✅ CRITICAL: Include /client
-import { withAccelerate } from "@prisma/extension-accelerate"
+import { PrismaPg } from "@prisma/adapter-pg"
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 const prisma = globalForPrisma.prisma || new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
-}).$extends(withAccelerate())
+  adapter,
+})
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
@@ -350,30 +435,58 @@ User should follow these steps (AI should provide these instructions):
 1. **Install dependencies**:
    ```bash
    npm install prisma tsx --save-dev
-   npm install @prisma/extension-accelerate @prisma/client dotenv
+   npm install @prisma/adapter-pg @prisma/client dotenv
    ```
 
-2. **Initialize Prisma**:
+2. **Initialize Prisma AND create Prisma Postgres database** (⚠️ USER MUST RUN MANUALLY):
+   
+   > **AI ASSISTANT**: Ask the user to run this command in their own terminal. This is interactive and requires user input. Wait for the user to confirm completion before continuing.
+   
    ```bash
-   npx prisma init
+   npx prisma init --db --output ../app/generated/prisma
+   ```
+   
+   The user should follow the terminal prompts to:
+   - Authenticate with Prisma Console (if needed)
+   - Choose a region (e.g., us-east-1)
+   - Name your project
+   
+   Once complete, this creates `prisma/schema.prisma`, `prisma.config.ts`, AND `.env` with the `DATABASE_URL`.
+   
+   **User should confirm when done** so the AI can proceed with the next steps.
+
+3. **Verify `.env` was created** - Ensure `DATABASE_URL` uses `postgres://`. If it uses `prisma+postgres://`, change it to the TCP connection string.
+   ```env
+   DATABASE_URL="postgres://..."
+   ```
+   **Do NOT invent or manually change this URL. Use the one from Prisma Console.**
+
+4. **Update `prisma/schema.prisma`** - Add the User model (generator and datasource are already configured):
+   ```prisma
+   model User {
+     id        Int      @id @default(autoincrement())
+     email     String   @unique
+     name      String?
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+   }
    ```
 
-3. **Update `prisma.config.ts`** - Add `import "dotenv/config"` at the top
-
-4. **Update `prisma/schema.prisma`** - Set provider to "prisma-client" and output path
-
-5. **Create `lib/prisma.ts`** with correct import path including `/client`
+5. **Create `lib/prisma.ts`** with correct import path including `/client` and using `@prisma/adapter-pg`.
 
 6. **Add npm scripts** to `package.json` for `db:test` and `db:studio`
 
 7. **Create `scripts/test-database.ts`** test script
 
-8. **Create `.env`** file with DATABASE_URL (user provides this from Prisma Console)
-
-9. **Push schema to database**:
+8. **Push schema to database**:
    ```bash
    npx prisma db push
    ```
+
+9. **Generate Prisma Client**:
+    ```bash
+    npx prisma generate
+    ```
 
 10. **Test the setup**:
     ```bash
@@ -394,10 +507,16 @@ Before generating any code, you MUST verify:
 3. Are you importing from `'../app/generated/prisma/client'` (with `/client`)? If not, STOP and FIX.
 4. Did you add `import "dotenv/config"` to `prisma.config.ts`? If not, STOP and FIX.
 5. Did you add `import "dotenv/config"` to `scripts/test-database.ts`? If not, STOP and FIX.
-6. Are you using `withAccelerate()` extension? If not, STOP and FIX.
-7. Are you wrapping database operations in try-catch? If not, STOP and FIX.
-8. Did you create the test script at `scripts/test-database.ts`? If not, STOP and FIX.
-9. Did you add `db:test` and `db:studio` scripts to package.json? If not, STOP and FIX.
+6. Are you using `@prisma/adapter-pg`? If not, STOP and FIX.
+7. Are you using `adapter` property in PrismaClient constructor? If not, STOP and FIX.
+8. Are you wrapping database operations in try-catch? If not, STOP and FIX.
+9. Did you create the test script at `scripts/test-database.ts`? If not, STOP and FIX.
+10. Did you add `db:test` and `db:studio` scripts to package.json? If not, STOP and FIX.
+11. Did you remove `url` from the datasource block in `schema.prisma`? If not, STOP and FIX.
+12. Did you remove `engine` property from `prisma.config.ts`? If not, STOP and FIX.
+13. Are you using `npx prisma init --db` (not just `npx prisma init`)? If not, STOP and FIX.
+14. Is the DATABASE_URL a TCP URL (`postgres://...`)? If it's a `prisma+postgres://` URL, STOP and FIX.
+15. Did Prisma generate the `.env` file? If you invented the URL manually, STOP and FIX.
 
 ## CONSEQUENCES OF INCORRECT IMPLEMENTATION
 
@@ -408,8 +527,13 @@ If you generate code using:
 - Missing `import "dotenv/config"` in prisma.config.ts → **DATABASE_URL NOT FOUND ERROR**
 - Missing `import "dotenv/config"` in test scripts → **ENVIRONMENT VARIABLE ERROR**
 - Default import from `@prisma/client` → **IMPORT ERROR**
-- PrismaClient without Accelerate extension → **PRODUCTION CONNECTION FAILURES**
+- Using `accelerateUrl` or `withAccelerate` → **UNNECESSARY ACCELERATE DEPENDENCY / CONFIG ERROR**
 - Missing custom output path → **WRONG CLIENT GENERATED**
+- Including `url` in datasource block → **DEPRECATED CONFIGURATION ERROR**
+- Including `engine` property → **DEPRECATED CONFIGURATION ERROR**
+- Using local URL (`postgres://localhost:...`) → **VERSION INCOMPATIBILITY ERRORS WITH PRISMA 7**
+- Using `npx prisma init` without `--db` → **NO DATABASE CREATED, ONLY LOCAL FILES**
+- Manually inventing DATABASE_URL → **INVALID CONNECTION STRING ERRORS**
 
 The implementation will:
 
@@ -418,12 +542,13 @@ The implementation will:
 3. Cause connection pool exhaustion in production
 4. Result in import errors that prevent compilation
 5. Cause performance issues and connection failures
+6. Fail with "HTTP connection string is not supported" errors when using local URLs
 
 ## USEFUL COMMANDS
 
 ```bash
 # After changing schema
-npx prisma generate              # Regenerate client
+npx prisma generate              # Regenerate client (--no-engine flag no longer needed)
 
 # Push schema to database (no migrations)
 npx prisma db push              
@@ -482,35 +607,15 @@ When asked about Prisma + Next.js implementation, you MUST:
 8. ALWAYS add npm scripts for `db:test` and `db:studio`
 9. ALWAYS include error handling in API routes and server components
 10. ALWAYS use the global prisma instance from `lib/prisma.ts`
-11. VERIFY your response against ALL the patterns shown here before responding
+11. ALWAYS use `@prisma/adapter-pg` and `adapter` property
+12. NEVER include `url` in the datasource block of schema.prisma
+13. NEVER include `engine` property in prisma.config.ts
+14. ALWAYS ask the user to run `npx prisma init --db --output ../app/generated/prisma` **manually in their own terminal** (this command is interactive and requires user input for region and project name)
+15. ALWAYS wait for user confirmation after they run the interactive `prisma init --db` command before proceeding
+16. NEVER attempt to run interactive commands yourself - ask the user to do it
+17. NEVER use `prisma+postgres://` URLs - ONLY `postgres://` TCP URLs
+18. NEVER manually invent or fabricate DATABASE_URL values
+19. ALWAYS let Prisma generate the `.env` file with the real DATABASE_URL (and ensure it's correct type)
+20. VERIFY your response against ALL the patterns shown here before responding
 
 Remember: There are NO EXCEPTIONS to these rules. Every requirement is MANDATORY for the setup to work.
-
-
-````
-
-## Running the application
-
-Get your application running locally in three quick steps:
-
-**1. Generate the Prisma Client:**
-
-```terminal
-npx prisma generate --no-engine
-```
-
-**2. View your database in Prisma Studio:**
-
-```terminal
-npm run db:studio
-```
-
-Prisma Studio opens at `localhost:5555` where you can inspect your `User` table and see the test user stored in your database.
-
-**3. Start your Next.js development server:**
-
-```terminal
-npm run dev
-```
-
-Visit `http://localhost:3000` to see your Next.js application live, displaying your first user fetched directly from your Prisma Postgres database!
