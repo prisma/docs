@@ -365,6 +365,7 @@ const sidebars: SidebarsConfig = {
             "guides/sveltekit",
             "guides/astro",
             "guides/hono",
+            "guides/elysia",
             "guides/solid-start",
             "guides/react-router-7",
             "guides/tanstack-start",
