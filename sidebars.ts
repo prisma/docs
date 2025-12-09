@@ -496,6 +496,15 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
+          label: "Vibe Coding Tutorials",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            "ai/tutorials/linktree-clone",
+          ],
+        },
+        {
+          type: "category",
           label: "Coding Tools",
           collapsed: false,
           collapsible: false,
