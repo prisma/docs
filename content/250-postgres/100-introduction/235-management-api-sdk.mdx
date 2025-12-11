@@ -1,12 +1,14 @@
 ---
 title: 'Management API SDK'
 metaTitle: 'Prisma Postgres: Management API SDK'
-metaDescription: 'A TypeScript SDK for the Prisma Data Platform Management API with built-in OAuth authentication and automatic token refresh.'
+metaDescription: 'A TypeScript SDK for the Prisma Data Platform Management API. Use the simple client for direct API access, or the full SDK with built-in OAuth authentication and automatic token refresh.'
 ---
 
 ## Overview
 
-The [`@prisma/management-api-sdk`](https://www.npmjs.com/package/@prisma/management-api-sdk) is a TypeScript SDK for the [Prisma Data Platform Management API](/postgres/introduction/management-api) with built-in OAuth authentication and automatic token refresh.
+The [`@prisma/management-api-sdk`](https://www.npmjs.com/package/@prisma/management-api-sdk) is a TypeScript SDK for the [Prisma Data Platform Management API](/postgres/introduction/management-api). Use the simple client for direct API access, or the full SDK with built-in OAuth authentication and automatic token refresh.
+
+Based on the [public OpenAPI 3.1 specification](https://api.prisma.io/v1/swagger-editor).
 
 ## Installation
 
@@ -14,10 +16,86 @@ The [`@prisma/management-api-sdk`](https://www.npmjs.com/package/@prisma/managem
 npm install @prisma/management-api-sdk
 ```
 
-## Quick start
+## Basic usage
+
+For usage with an existing access or [service token](/postgres/introduction/management-api#service-tokens).
+
+### Making API calls
+
+The client provides fully typed methods for all API endpoints:
 
 ```typescript
-import { createManagementAPI, type TokenStorage } from '@prisma/management-api-sdk'
+import { createManagementApiClient } from '@prisma/management-api-sdk'
+
+const client = createManagementApiClient({
+  token: 'your-access-token',
+})
+
+// List workspaces
+const { data: workspaces, error } = await client.GET('/v1/workspaces')
+
+// Get a specific project
+const { data: project } = await client.GET('/v1/projects/{id}', {
+  params: { path: { id: 'project-id' } },
+})
+
+// Create a new project
+const { data: newProject } = await client.POST('/v1/workspaces/{workspaceId}/projects', {
+  params: { path: { workspaceId: 'workspace-id' } },
+  body: { name: 'My New Project' },
+})
+
+// Create a new database
+const { data: newDatabase } = await client.POST('/v1/projects/{projectId}/databases', {
+  params: { path: { projectId: 'project-id' } },
+  body: {
+    name: 'my-new-db-instance',
+    region: 'us-east-1',
+    isDefault: true,
+  },
+})
+
+// Delete a database
+const { error: deleteError } = await client.DELETE('/v1/databases/{databaseId}', {
+  params: { path: { databaseId: 'database-id' } },
+})
+```
+
+### Customizing the client
+
+You can override any `ClientOptions` from `openapi-fetch`, including `baseUrl`, `headers`, and other fetch options:
+
+```typescript
+import { createManagementApiClient } from '@prisma/management-api-sdk'
+
+// Override baseUrl and add custom headers
+const client = createManagementApiClient({
+  token: 'your-access-token',
+  baseUrl: 'https://api.example.com',
+  headers: {
+    'X-Custom-Header': 'value',
+  },
+})
+```
+
+:::note
+
+If you provide both `token` and `headers.Authorization`, the `headers.Authorization` takes precedence. The `baseUrl` defaults to `https://api.prisma.io` if not provided.
+
+:::
+
+## Advanced usage
+
+For applications that need [OAuth authentication](/postgres/introduction/management-api#oauth-20-authentication), automatic token refresh, and token storage management, use the full SDK.
+
+### OAuth authentication flow
+
+The SDK uses OAuth 2.0 with PKCE for secure authentication. The flow is stateless - you're responsible for storing the `state` and `verifier` between the login URL generation and callback handling.
+
+#### 1. Create the SDK instance
+
+```typescript
+import { createManagementApiSdk, type TokenStorage } from '@prisma/management-api-sdk'
 
 // Implement token storage for your environment
 const tokenStorage: TokenStorage = {
@@ -33,22 +111,15 @@ const tokenStorage: TokenStorage = {
   },
 }
 
-// Create the API instance
-const api = createManagementAPI({
+// Create the SDK instance
+const api = createManagementApiSdk({
   clientId: 'your-oauth-client-id',
   redirectUri: 'https://your-app.com/auth/callback',
   tokenStorage,
 })
-
-// Use the typed API client
-const { data, error } = await api.client.GET('/v1/workspaces')
 ```
 
-## Authentication flow
-
-The SDK uses OAuth 2.0 with PKCE for secure authentication. The flow is stateless - you're responsible for storing the state and verifier between the login URL generation and callback handling.
-
-### 1. Initiate login
+#### 2. Initiate login
 
 Generate the OAuth login URL. The returned `state` and `verifier` must be stored (e.g., in a session or cookie) for use when handling the callback:
 
@@ -69,9 +140,9 @@ sessionStorage.setItem('oauth-verifier', verifier)
 window.location.href = url
 ```
 
-### 2. Handle the callback
+#### 3. Handle the callback
 
-When the user is redirected back to your app, retrieve the stored state and verifier and pass them to `handleCallback`. On success, tokens are automatically stored via your `tokenStorage` implementation:
+When the user is redirected back to your app, retrieve the stored `state` and `verifier` and pass them to `handleCallback`. On success, tokens are automatically stored via your `tokenStorage` implementation:
 
 ```typescript
 // In your callback route handler
@@ -101,7 +172,7 @@ try {
 }
 ```
 
-### 3. Make API calls
+#### 4. Make API calls
 
 The client automatically includes authentication headers and refreshes tokens when they expire:
 
@@ -119,71 +190,27 @@ const { data: newProject } = await api.client.POST('/v1/workspaces/{workspaceId}
   params: { path: { workspaceId: 'workspace-id' } },
   body: { name: 'My Project' },
 })
-```
 
-### 4. Logout
-
-```typescript
-await api.logout() // Clears stored tokens
-```
-
-## API reference
-
-### `createManagementAPI(config)`
-
-Creates a Management API instance with authentication handling.
-
-```typescript
-import { createManagementAPI } from '@prisma/management-api-sdk'
-
-const api = createManagementAPI({
-  clientId: 'your-oauth-client-id',
-  redirectUri: 'https://your-app.com/auth/callback',
-  tokenStorage,
-  apiBaseUrl: 'https://api.prisma.io', // optional
-  authBaseUrl: 'https://auth.prisma.io', // optional
-})
-```
-
-Returns an object with:
-
-| Property | Description |
-|----------|-------------|
-| `client` | The typed API client for making requests |
-| `getLoginUrl(options)` | Generate OAuth login URL with specified scope |
-| `handleCallback(options)` | Handle OAuth callback and store tokens via tokenStorage |
-| `logout()` | Clear stored tokens |
-
-### `createManagementAPIClient(options)`
-
-Creates a raw API client without authentication handling. Useful if you want to manage authentication yourself.
-
-```typescript
-import { createManagementAPIClient } from '@prisma/management-api-sdk'
-
-const client = createManagementAPIClient({
-  baseUrl: 'https://api.prisma.io',
-  headers: {
-    Authorization: `Bearer ${myToken}`,
+// Create a new database
+const { data: newDatabase } = await api.client.POST('/v1/projects/{projectId}/databases', {
+  params: { path: { projectId: 'project-id' } },
+  body: {
+    name: 'production',
+    region: 'us-east-1',
+    isDefault: true,
   },
 })
 
-const { data } = await client.GET('/v1/workspaces')
+// Delete a database
+const { error: deleteError } = await api.client.DELETE('/v1/databases/{databaseId}', {
+  params: { path: { databaseId: 'database-id' } },
+})
 ```
 
-### Configuration options
+#### 5. Logout
 
 ```typescript
-type ManagementAPIClientConfig = {
-  // Required
-  clientId: string           // OAuth client ID
-  redirectUri: string        // OAuth redirect URI
-  tokenStorage: TokenStorage
-
-  // Optional (with defaults)
-  apiBaseUrl?: string        // Default: 'https://api.prisma.io'
-  authBaseUrl?: string       // Default: 'https://auth.prisma.io'
-}
+await api.logout() // Clears stored tokens
 ```
 
 ### Token storage interface
@@ -210,9 +237,7 @@ type Tokens = {
 }
 ```
 
-## Examples
-
-### VS Code extension
+#### Example: VS Code Extension
 
 ```typescript
 const tokenStorage: TokenStorage = {
@@ -240,7 +265,7 @@ const tokenStorage: TokenStorage = {
 }
 ```
 
-### Node.js CLI
+#### Example: Node.js CLI
 
 ```typescript
 import { readFile, writeFile, unlink } from 'node:fs/promises'
@@ -267,7 +292,7 @@ const tokenStorage: TokenStorage = {
 }
 ```
 
-### Stateless web server
+#### Example: Stateless Web Server
 
 For stateless web servers (serverless, load-balanced), store the PKCE state in an encrypted cookie or database:
 
@@ -301,17 +326,55 @@ app.get('/callback', async (req, res) => {
 })
 ```
 
-## TypeScript types
+### Automatic token refresh
 
-The SDK exports all API types generated from the OpenAPI spec:
+The SDK automatically handles token refresh when a refresh token is available (requires `offline_access` scope):
+
+- When a request returns 401, the SDK refreshes the access token using the refresh token
+- Concurrent requests during refresh are queued and resolved once refresh completes
+- If refresh fails due to an invalid refresh token, tokens are cleared and `AuthError` is thrown with `refreshTokenInvalid: true`
+- If no refresh token is available, an `AuthError` is thrown with the message "No refresh token available. Please log in again."
+
+## API reference
+
+### `createManagementApiClient(options)`
+
+Creates a raw API client without authentication handling. Useful if you want to manage authentication yourself or use a service token.
+
+**Parameters:**
+
+- `options.token?: string` - Access token (automatically converted to `Authorization: Bearer ${token}` header)
+- `options.baseUrl?: string` - Base URL for API requests (defaults to `https://api.prisma.io`)
+- `options.headers?: Record<string, string>` - Additional headers
+- Other `ClientOptions` from `openapi-fetch` are also supported
+
+**Returns:** A typed API client for making requests.
+
+### `createManagementApiSdk(config)`
+
+Creates a Management API SDK instance with OAuth authentication and automatic token refresh.
+
+**Parameters:**
 
 ```typescript
-import type { paths, components } from '@prisma/management-api-sdk'
+type ManagementApiClientConfig = {
+  // Required
+  clientId: string // OAuth client ID
+  redirectUri: string // OAuth redirect URI
+  tokenStorage: TokenStorage
 
-// Access response types
-type Workspace = components['schemas']['Workspace']
-type Project = components['schemas']['Project']
+  // Optional (with defaults)
+  apiBaseUrl?: string // Default: 'https://api.prisma.io'
+  authBaseUrl?: string // Default: 'https://auth.prisma.io'
+}
 ```
+
+**Returns:** An object with:
+
+- `client` - The typed API client for making requests
+- `getLoginUrl(options)` - Generate OAuth login URL with specified scope
+- `handleCallback(options)` - Handle OAuth callback and store tokens via `tokenStorage`
+- `logout()` - Clear stored tokens
 
 ## Error handling
 
@@ -352,7 +415,7 @@ Thrown for network-related errors. Includes the original error as `cause` for de
 import { FetchError } from '@prisma/management-api-sdk'
 
 try {
-  const { data } = await api.client.GET('/v1/workspaces')
+  const { data } = await client.GET('/v1/workspaces')
 } catch (error) {
   if (error instanceof FetchError) {
     console.error('Network error:', error.message)
@@ -361,11 +424,14 @@ try {
 }
 ```
 
-## Automatic token refresh
+## TypeScript types
 
-The SDK automatically handles token refresh when a refresh token is available (requires `offline_access` scope):
+The SDK exports all API types generated from the OpenAPI spec:
 
-- When a request returns `401`, the SDK refreshes the access token using the refresh token
-- Concurrent requests during refresh are queued and resolved once refresh completes
-- If refresh fails due to an invalid refresh token, tokens are cleared and `AuthError` is thrown with `refreshTokenInvalid: true`
-- If no refresh token is available, an `AuthError` is thrown with the message `"No refresh token available. Please log in again."`
+```typescript
+import type { paths, components } from '@prisma/management-api-sdk'
+
+// Access response types
+type Workspace = components['schemas']['Workspace']
+type Project = components['schemas']['Project']
+```
