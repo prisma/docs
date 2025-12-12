@@ -6,6 +6,7 @@ import {isRegexpStringMatch} from '@docusaurus/theme-common';
 import IconExternalLink from '@theme/Icon/ExternalLink';
 import type {Props} from '@theme/NavbarItem/NavbarNavLink';
 import { Icon } from '@site/src/components/Icon';
+import { useUTMParams } from '@site/src/hooks/useUTMParams';
 
 
 type CustomProps = Props & {
@@ -31,6 +32,28 @@ export default function NavbarNavLink({
   const normalizedHref = useBaseUrl(href, {forcePrependBaseUrl: true});
   const isExternalLink = label && href && !isInternalUrl(href);
 
+  // Get UTM parameters from sessionStorage using custom hook
+  const utmParams = useUTMParams();
+
+  // Helper function to append UTM params to URL
+  const appendUtmParams = (url: string): string => {
+    if (!utmParams) {
+      console.log('NavbarNavLink: No UTM params for URL:', url);
+      return url;
+    }
+    
+    const [baseUrl, existingQuery] = url.split('?');
+    if (existingQuery) {
+      const result = `${baseUrl}?${existingQuery}&${utmParams}`;
+      console.log('NavbarNavLink: Adding UTM params to existing query:', url, '->', result);
+      return result;
+    } else {
+      const result = `${baseUrl}?${utmParams}`;
+      console.log('NavbarNavLink: Adding UTM params to URL:', url, '->', result);
+      return result;
+    }
+  };
+
   // Link content is set through html XOR label
   const linkContentProps = html
     ? {dangerouslySetInnerHTML: {__html: html}}
@@ -54,18 +77,35 @@ export default function NavbarNavLink({
       };
 
   if (href) {
+    // For external links, return as-is
+    if (isExternalLink) {
+      return (
+        <Link
+          href={prependBaseUrlToHref ? normalizedHref : href}
+          {...props}
+          {...linkContentProps}
+        />
+      );
+    }
+
+    // For internal links, append UTM parameters if available
+    const finalHref = prependBaseUrlToHref ? normalizedHref : href;
+    const urlWithUtms = appendUtmParams(finalHref);
+    
     return (
       <Link
-        href={prependBaseUrlToHref ? normalizedHref : href}
+        href={urlWithUtms}
         {...props}
         {...linkContentProps}
       />
     );
   }
 
+  const urlWithUtms = appendUtmParams(toUrl);
+  
   return (
     <Link
-      to={toUrl}
+      to={urlWithUtms}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {
         isActive: (_match, location) =>
