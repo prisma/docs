@@ -38,18 +38,15 @@ export default function NavbarNavLink({
   // Helper function to append UTM params to URL
   const appendUtmParams = (url: string): string => {
     if (!utmParams) {
-      console.log('NavbarNavLink: No UTM params for URL:', url);
       return url;
     }
     
     const [baseUrl, existingQuery] = url.split('?');
     if (existingQuery) {
       const result = `${baseUrl}?${existingQuery}&${utmParams}`;
-      console.log('NavbarNavLink: Adding UTM params to existing query:', url, '->', result);
       return result;
     } else {
       const result = `${baseUrl}?${utmParams}`;
-      console.log('NavbarNavLink: Adding UTM params to URL:', url, '->', result);
       return result;
     }
   };

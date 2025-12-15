@@ -8,7 +8,6 @@ export const useUTMParams = (): string => {
     if (typeof window !== 'undefined') {
       const updateUTMParams = () => {
         const storedParams = sessionStorage.getItem('utm_params');
-        console.log('useUTMParams - stored params from sessionStorage:', storedParams);
         setUTMParams(storedParams || '');
       };
 

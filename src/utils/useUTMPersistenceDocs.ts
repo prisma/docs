@@ -40,7 +40,6 @@ export const useUTMPersistenceDocs = () => {
     if (hadUTMs && !hasUTMs && location.pathname === previousSearch.current.split('?')[0]) {
       isManualRemoval.current = true;
       sessionStorage.removeItem('utm_params');
-      console.log('Manual removal detected - UTMs cleared');
     }
     // Save new UTMs if they exist
     else if (hasUTMs) {
