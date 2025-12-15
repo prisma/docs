@@ -27,7 +27,8 @@ export const useUTMPersistenceDocs = () => {
     if (previousSearch.current === '') {
       previousSearch.current = location.search;
       if (hasUTMParams(location.search)) {
-        sessionStorage.setItem('utm_params', getUTMParams(location.search));
+        const utms = getUTMParams(location.search);
+        sessionStorage.setItem('utm_params', utms);
       }
       return;
     }

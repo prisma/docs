@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export const useUTMParams = (): string => {
   const [utmParams, setUTMParams] = useState('');
@@ -6,8 +6,36 @@ export const useUTMParams = (): string => {
   useEffect(() => {
     // Check if we're on the client side
     if (typeof window !== 'undefined') {
-      const storedParams = sessionStorage.getItem('utm_params');
-      setUTMParams(storedParams || '');
+      const updateUTMParams = () => {
+        const storedParams = sessionStorage.getItem('utm_params');
+        console.log('useUTMParams - stored params from sessionStorage:', storedParams);
+        setUTMParams(storedParams || '');
+      };
+
+      // Initial load
+      updateUTMParams();
+
+      // Listen for storage changes (in case UTM params are set after initial load)
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'utm_params') {
+          updateUTMParams();
+        }
+      };
+
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Also check periodically in case the storage was updated in the same tab
+      const interval = setInterval(updateUTMParams, 100);
+      
+      // Clean up after a short time to avoid infinite checking
+      setTimeout(() => {
+        clearInterval(interval);
+      }, 2000);
+
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
     }
   }, []);
 
