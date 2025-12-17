@@ -32,10 +32,8 @@ export default function NavbarNavLink({
   const normalizedHref = useBaseUrl(href, {forcePrependBaseUrl: true});
   const isExternalLink = label && href && !isInternalUrl(href);
 
-  // Get UTM parameters from sessionStorage using custom hook
   const utmParams = useUTMParams();
 
-  // Helper function to append UTM params to URL
   const appendUtmParams = (url: string): string => {
     if (!utmParams) {
       return url;
@@ -51,7 +49,6 @@ export default function NavbarNavLink({
     }
   };
 
-  // Link content is set through html XOR label
   const linkContentProps = html
     ? {dangerouslySetInnerHTML: {__html: html}}
     : {
@@ -74,7 +71,6 @@ export default function NavbarNavLink({
       };
 
   if (href) {
-    // For external links, return as-is
     if (isExternalLink) {
       return (
         <Link
@@ -85,7 +81,6 @@ export default function NavbarNavLink({
       );
     }
 
-    // For internal links, append UTM parameters if available
     const finalHref = prependBaseUrlToHref ? normalizedHref : href;
     const urlWithUtms = appendUtmParams(finalHref);
     

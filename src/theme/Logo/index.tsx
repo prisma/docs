@@ -31,8 +31,6 @@ function LogoThemedImage({
     />
   );
 
-  // Is this extra div really necessary?
-  // introduced in https://github.com/facebook/docusaurus/pull/5666
   return imageClassName ? (
     <div className={imageClassName}>{themedImage}</div>
   ) : (
@@ -52,7 +50,6 @@ export default function Logo(props: Props): ReactNode {
   const logoLink = useBaseUrl(logo?.href || '/');
   const utmParams = useUTMParams();
 
-  // Helper function to append UTM params to URL
   const appendUtmParams = (url: string): string => {
     if (!utmParams) {
       return url;
@@ -61,13 +58,8 @@ export default function Logo(props: Props): ReactNode {
     const result = `${url}${separator}${utmParams}`;
     return result;
   };
-
-  // If visible title is shown, fallback alt text should be
-  // an empty string to mark the logo as decorative.
   const fallbackAlt = navbarTitle ? '' : title;
 
-  // Use logo alt text if provided (including empty string),
-  // and provide a sensible fallback otherwise.
   const alt = logo?.alt ?? fallbackAlt;
 
   return (

@@ -23,12 +23,10 @@ export const useUTMPersistenceDocs = () => {
   };
 
   useEffect(() => {
-    // Skip initial render
     if (previousSearch.current === '') {
       previousSearch.current = location.search;
       if (hasUTMParams(location.search)) {
-        const utms = getUTMParams(location.search);
-        sessionStorage.setItem('utm_params', utms);
+        sessionStorage.setItem('utm_params', getUTMParams(location.search));
       }
       return;
     }
@@ -36,21 +34,18 @@ export const useUTMPersistenceDocs = () => {
     const hadUTMs = hasUTMParams(previousSearch.current);
     const hasUTMs = hasUTMParams(location.search);
 
-    // Detect manual removal
-    if (hadUTMs && !hasUTMs && location.pathname === previousSearch.current.split('?')[0]) {
+    if (hadUTMs && !hasUTMs) {
       isManualRemoval.current = true;
       sessionStorage.removeItem('utm_params');
     }
-    // Save new UTMs if they exist
     else if (hasUTMs) {
       isManualRemoval.current = false;
       sessionStorage.setItem('utm_params', getUTMParams(location.search));
     }
-    // Restore UTMs if they're missing and weren't manually removed
     else if (!isManualRemoval.current) {
       const storedParams = sessionStorage.getItem('utm_params');
       if (storedParams) {
-        const newSearch = storedParams ? `?${storedParams}` : '';
+        const newSearch = `?${storedParams}`;
         if (location.search !== newSearch) {
           history.replace({
             pathname: location.pathname,
@@ -62,4 +57,47 @@ export const useUTMPersistenceDocs = () => {
 
     previousSearch.current = location.search;
   }, [location, history]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setTimeout(() => {
+        const currentHasUTMs = hasUTMParams(window.location.search);
+        const storedParams = sessionStorage.getItem('utm_params');
+        
+        if (!currentHasUTMs && storedParams) {
+          sessionStorage.removeItem('utm_params');
+          isManualRemoval.current = true;
+        }
+      }, 50);
+    };
+
+    const handleHashChange = () => {
+      const currentHasUTMs = hasUTMParams(window.location.search);
+      const storedParams = sessionStorage.getItem('utm_params');
+      
+      if (!currentHasUTMs && storedParams) {
+        sessionStorage.removeItem('utm_params');
+        isManualRemoval.current = true;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handleHashChange);
+    
+    const intervalId = setInterval(() => {
+      const currentHasUTMs = hasUTMParams(window.location.search);
+      const storedParams = sessionStorage.getItem('utm_params');
+      
+      if (!currentHasUTMs && storedParams && !isManualRemoval.current) {
+        sessionStorage.removeItem('utm_params');
+        isManualRemoval.current = true;
+      }
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHashChange);
+      clearInterval(intervalId);
+    };
+  }, []);
 };
