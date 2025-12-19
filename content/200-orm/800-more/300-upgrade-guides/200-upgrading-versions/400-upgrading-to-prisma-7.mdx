@@ -342,6 +342,71 @@ async function main() {
 }
 ```
 
+### Mapped enum values in generated TypeScript
+
+:::warning
+
+There is currently a known bug where using mapped enum values with Prisma Client operations (like `create`, `update`, etc.) causes runtime errors. The generated TypeScript types expect the mapped values, but the Prisma Client engine expects the schema names. This issue is being tracked in [GitHub issue #28591](https://github.com/prisma/prisma/issues/28591). Until this is fixed, you may need to use workarounds described below.
+
+:::
+
+In Prisma ORM v7, the generated TypeScript enum values now use the `@map` values instead of the schema names. This is a breaking change from v6.
+
+#### Before (v6)
+
+Given this Prisma schema:
+
+```prisma
+enum SuggestionStatus {
+  PENDING  @map("pending")
+  ACCEPTED @map("accepted")
+  REJECTED @map("rejected")
+}
+```
+
+In v6, the generated TypeScript enum would be:
+
+```ts
+export const SuggestionStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
+} as const
+```
+
+#### After (v7)
+
+In v7, the same schema generates:
+
+```ts
+export const SuggestionStatus = {
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected'
+} as const
+```
+
+This means that `SuggestionStatus.PENDING` now evaluates to `"pending"` instead of `"PENDING"`.
+
+#### Migration steps
+
+If you're using mapped enums, you'll need to update any code that relies on the enum values being the schema names rather than the mapped values.
+
+**Temporary workaround** (until the bug is fixed):
+
+Due to the current bug, you may need to use the schema name as a string literal instead of the generated enum value:
+
+```ts
+// This may cause a TypeScript error but works at runtime
+await prisma.suggestion.create({
+  data: {
+    status: "PENDING" as any, // Use schema name, not mapped value
+  },
+});
+```
+
+Alternatively, you can temporarily remove the `@map` directives from your enum values if you don't strictly need the database values to differ from the schema names.
+
 ### Client middleware has been removed
 
 The client middleware API has been removed. If possible, use [Client Extensions](/orm/prisma-client/client-extensions). 
