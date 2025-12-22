@@ -22,7 +22,6 @@ export default function Layout(props: Props): ReactNode {
     children,
     noFooter,
     wrapperClassName,
-    // Not really layout-related, but kept for convenience/retro-compatibility
     title,
     description,
   } = props;
@@ -43,15 +42,12 @@ export default function Layout(props: Props): ReactNode {
           new URLSearchParams(utms).forEach((v, k) => url.searchParams.set(k, v));
           a.setAttribute('href', url.toString());
         } catch (e) {
-          // Handle invalid URLs
         }
       });
     };
 
-    // Initial update
     updateLinks(document.querySelectorAll('a[href*="console.prisma.io"]'));
 
-    // Watch for new links
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {

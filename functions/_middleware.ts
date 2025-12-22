@@ -95,7 +95,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (response.ok) {
       // Check what content type we actually got
       const actualContentType = response.headers.get('content-type');
-      console.log(`Fetched ${markdownPath}, got content-type: ${actualContentType}`);
 
       return new Response(response.body, {
         status: 200,
