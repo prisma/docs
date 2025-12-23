@@ -123,6 +123,12 @@ The following example demonstrates how to manually complete the steps of a migra
 
 ## Fixing failed migrations with `migrate diff` and `db execute`
 
+:::info
+
+**Prisma 7 note**: The `--url` flag has been removed from `prisma db execute`. To run these commands against a production database, you'll need to configure the production database URL in your `prisma.config.ts` file before running `db execute`. You can create a separate config file for production (e.g., `prisma.config.prod.ts`) and use `--config prisma.config.prod.ts` to specify it.
+
+:::
+
 To help with fixing a failed migration, Prisma ORM provides the following commands for creating and executing a migration file:
 
 - [`prisma migrate diff`](/orm/reference/prisma-cli-reference#migrate-diff) which diffs two database schema sources to create a migration taking one to the state of the second. You can output either a summary of the difference or a sql script. The script can be output into a file via `> file_name.sql` or be piped to the `db execute --stdin` command.
@@ -187,20 +193,31 @@ In this case, you need to create a migration that takes your production database
   - Run the following `prisma migrate diff` command:
 
     ```terminal wrap
-     npx prisma migrate diff \
+    # Prisma 6
+    npx prisma migrate diff \
       --from-url "$DATABASE_URL_PROD" \
       --to-migrations ./prisma/migrations \
       --shadow-database-url $SHADOW_DATABASE_URL \
       --script > backward.sql
+
+    # Prisma 7 (with production config)
+    npx prisma migrate diff \
+      --from-config-datasource \
+      --to-migrations ./prisma/migrations \
+      --config prisma.config.prod.ts \
+      --script > backward.sql
     ```
 
     This will create a SQL script file containing all changes necessary to take your production environment from its current failed state to the target state defined by your migrations history.
-    Note that because we're using `--to-migrations`, the command requires a [shadow database](/orm/prisma-migrate/understanding-prisma-migrate/shadow-database).
 
   - Run the following `prisma db execute` command:
 
     ```bash
-     npx prisma db execute --url "$DATABASE_URL_PROD" --file backward.sql
+    # Prisma 6
+    npx prisma db execute --url "$DATABASE_URL_PROD" --file backward.sql
+
+    # Prisma 7 (with production config)
+    npx prisma db execute --config prisma.config.prod.ts --file backward.sql
     ```
 
     This applies the changes in the SQL script against the target database without interacting with the migrations table.
@@ -225,9 +242,11 @@ In this case, you need to fix the non-unique data and then go ahead with the res
   - Run the following `prisma migrate diff` command:
 
     ```bash
-
+    # Prisma 6
     npx prisma migrate diff --from-url "$DATABASE_URL_PROD" --to-schema schema.prisma --script > forward.sql
 
+    # Prisma 7 (with production config)
+    npx prisma migrate diff --from-config-datasource --to-schema schema.prisma --config prisma.config.prod.ts --script > forward.sql
     ```
 
     This will create a SQL script file containing all changes necessary to take your production environment from its current failed state to the target state defined in your `schema.prisma` file.
@@ -235,7 +254,11 @@ In this case, you need to fix the non-unique data and then go ahead with the res
   - Run the following `prisma db execute` command:
 
     ```bash
+    # Prisma 6
     npx prisma db execute --url "$DATABASE_URL_PROD" --file forward.sql
+
+    # Prisma 7 (with production config)
+    npx prisma db execute --config prisma.config.prod.ts --file forward.sql
     ```
 
     This applies the changes in the SQL script against the target database without interacting with the migrations table.
