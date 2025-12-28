@@ -365,6 +365,7 @@ const sidebars: SidebarsConfig = {
             "guides/sveltekit",
             "guides/astro",
             "guides/hono",
+            "guides/elysia",
             "guides/solid-start",
             "guides/react-router-7",
             "guides/tanstack-start",
@@ -491,6 +492,15 @@ const sidebars: SidebarsConfig = {
             "ai/prompts/nextjs",
             "ai/prompts/prisma-7",
             "ai/prompts/turborepo",
+          ],
+        },
+        {
+          type: "category",
+          label: "Vibe Coding Tutorials",
+          collapsed: false,
+          collapsible: false,
+          items: [
+            "ai/tutorials/linktree-clone",
           ],
         },
         {

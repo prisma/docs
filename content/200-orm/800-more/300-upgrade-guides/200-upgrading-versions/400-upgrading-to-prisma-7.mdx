@@ -175,6 +175,14 @@ This change aligns with the move to make the main Prisma Client as lean and open
 instance, if you are using Prisma Postgres, you now need the `@prisma/adapter-pg` adapter. This also
 means the signature for creating a new Prisma Client has changed slightly:
 
+:::warning[Connection pool defaults have changed]
+
+Driver adapters use the connection pool settings from the underlying Node.js database driver, which may differ significantly from Prisma ORM v6 defaults. For example, the `pg` driver has no connection timeout by default (`0`), while Prisma ORM v6 used a 5-second timeout.
+
+**If you experience timeout issues after upgrading**, configure your driver adapter to match v6 behavior. See the [connection pool guide](/orm/prisma-client/setup-and-configuration/databases-connections/connection-pool#prisma-orm-v7-driver-adapter-defaults) for detailed configuration examples for each database.
+
+:::
+
 #### Before
 
 ```ts
@@ -211,6 +219,34 @@ const adapter = new PrismaBetterSqlite3({
 
 export const prisma = new PrismaClient({ adapter })
 ```
+
+### Prisma Accelerate users upgrading from v6
+If you used Prisma Accelerate (including Prisma Postgres' `prisma+postgres://` URLs) in v6, keep using the Accelerate URL with the Accelerate extension. Do **not** pass the Accelerate URL to a driver adapter—`PrismaPg` expects a direct database connection string and will fail with `prisma://` or `prisma+postgres://`.
+
+1. Keep your Accelerate URL in `.env` (for example `DATABASE_URL="prisma://..."` or `prisma+postgres://...`).
+2. You can point `prisma.config.ts` directly to that same Accelerate URL for CLI operations:
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+   - If you prefer a separate direct URL for migrations, you can still use `DIRECT_DATABASE_URL` as above—but it's optional for Accelerate users.
+3. Instantiate Prisma Client with the Accelerate URL and extension (no adapter):
+```ts
+import { PrismaClient } from './generated/prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+export const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+}).$extends(withAccelerate())
+```
+If you later switch away from Accelerate to direct TCP, provide the direct URL to the appropriate driver adapter (for example `PrismaPg`) instead of `accelerateUrl`.
 
 ### Explicit loading of environment variables
 In Prisma ORM 7.0.0, environment variables are not loaded by default. Instead developers need to
@@ -314,6 +350,89 @@ async function main() {
 }
 ```
 
+### Mapped enum values in generated TypeScript
+
+:::warning
+
+There is currently a known bug where using mapped enum values with Prisma Client operations (like `create`, `update`, etc.) causes runtime errors. The generated TypeScript types expect the mapped values, but the Prisma Client engine expects the schema names. This issue is being tracked in [GitHub issue #28591](https://github.com/prisma/prisma/issues/28591). Until this is fixed, you need to use workarounds described below.
+
+:::
+
+In Prisma ORM v7, the generated TypeScript enum values now use the `@map` values instead of the schema names. This is a breaking change from v6.
+
+#### Before Prisma ORM v6
+
+Given this Prisma schema:
+
+```prisma
+enum SuggestionStatus {
+  PENDING  @map("pending")
+  ACCEPTED @map("accepted")
+  REJECTED @map("rejected")
+}
+```
+
+In v6, the generated TypeScript enum would be:
+
+```ts
+export const SuggestionStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
+} as const
+```
+
+#### After Prisma ORM v7
+
+In v7, the same schema generates:
+
+```ts
+export const SuggestionStatus = {
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected'
+} as const
+```
+
+This means that `SuggestionStatus.PENDING` now evaluates to `"pending"` instead of `"PENDING"`.
+
+#### Migration steps
+
+If you're using mapped enums, you'll need to update any code that relies on the enum values being the schema names rather than the mapped values.
+
+##### Temporary workaround
+
+Until we resolve [the open issue](https://github.com/prisma/prisma/issues/28591), you need to use the schema name as a string literal instead of the generated enum value:
+
+```ts
+// This may cause a TypeScript error but works at runtime
+await prisma.suggestion.create({
+  data: {
+    status: "PENDING" as any, // Use schema name, not mapped value
+  },
+});
+```
+
+Alternatively, you can temporarily remove the `@map` directives from your enum values if you don't strictly need the database values to differ from the schema names:
+
+```prisma
+// Before: with @map directives
+enum SuggestionStatus {
+  PENDING  @map("pending")
+  ACCEPTED @map("accepted")
+  REJECTED @map("rejected")
+}
+
+// After: without @map directives
+enum SuggestionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+```
+
+With this change, both the schema names and the database values will be `PENDING`, `ACCEPTED`, and `REJECTED`, and the generated TypeScript enum will work correctly with Prisma Client operations.
+
 ### Client middleware has been removed
 
 The client middleware API has been removed. If possible, use [Client Extensions](/orm/prisma-client/client-extensions). 
@@ -345,6 +464,80 @@ To seed your database in v7, you must explicitly run:
 
 ```terminal
 npx prisma db seed
+```
+
+### CLI flags `--skip-generate` and `--skip-seed` removed
+
+The `--skip-generate` flag was removed from `prisma migrate dev` and `prisma db push`. The `--skip-seed` flag was removed from `prisma migrate dev`. 
+
+`migrate dev` and `db push` no longer run `prisma generate` automatically. You must run `prisma generate` explicitly to generate Prisma Client.
+
+### `--schema` and `--url` flags removed from `prisma db execute`
+
+The `--schema` and `--url` flags have been removed from the `prisma db execute` command. Previously, you could use `--schema` to specify the path to your Prisma schema file, or `--url` to specify the database URL directly. Now, the database connection must be configured in `prisma.config.ts`.
+
+#### Before (v6)
+
+```terminal
+# Using --schema
+prisma db execute --file ./script.sql --schema prisma/schema.prisma
+
+# Using --url
+prisma db execute --file ./script.sql --url "$DATABASE_URL"
+```
+
+#### After (v7)
+
+Configure your database connection in `prisma.config.ts` instead:
+
+```ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+Then run the command without `--schema` or `--url`:
+
+```terminal
+prisma db execute --file ./script.sql
+```
+
+### `prisma migrate diff` CLI options changed
+
+Several options have been removed from `prisma migrate diff` and replaced with new options that use `prisma.config.ts`:
+
+| Removed Option             | Replacement                  |
+|---------------------------|------------------------------|
+| `--from-url`              | `--from-config-datasource`   |
+| `--to-url`                | `--to-config-datasource`     |
+| `--from-schema-datasource`| `--from-config-datasource`   |
+| `--to-schema-datasource`  | `--to-config-datasource`     |
+| `--shadow-database-url`   | Configure in `prisma.config.ts` |
+
+#### Before (v6)
+
+```terminal
+prisma migrate diff \
+  --from-url "$DATABASE_URL" \
+  --to-schema schema.prisma \
+  --script
+```
+
+#### After (v7)
+
+Configure your database connection in `prisma.config.ts`, then use `--from-config-datasource` or `--to-config-datasource`:
+
+```terminal
+prisma migrate diff \
+  --from-config-datasource \
+  --to-schema schema.prisma \
+  --script
 ```
 
 ### Various environment variables have been removed
