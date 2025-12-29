@@ -501,6 +501,7 @@ const sidebars: SidebarsConfig = {
           collapsible: false,
           items: [
             "ai/tutorials/linktree-clone",
+            "ai/tutorials/typefully-clone",
           ],
         },
         {
