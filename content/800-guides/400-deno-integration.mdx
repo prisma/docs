@@ -15,7 +15,7 @@ By the end of this guide, you will have a deployed Deno app that writes to and r
 ## Prerequisites
 
 - A [Deno Deploy](https://deno.com/deploy) account
-- Deno runtime installed ([installation guide](https://docs.deno.com/runtime/#install-deno))
+- Deno v2.0 or later installed ([installation guide](https://docs.deno.com/runtime/#install-deno))
 - [Deno extension for VS Code](https://docs.deno.com/runtime/reference/vscode/)
 
 ## 1. Create and set up a new Deno project
@@ -39,7 +39,7 @@ Install the [Deno extension for VS Code](https://docs.deno.com/runtime/reference
 
 Update the `main.ts` file to create a simple HTTP server that responds with "Hello, World!", establishing the foundation for your application before adding database functionality.
 
-```tsx file=main.ts
+```ts file=main.ts
 function handler(_req: Request): Response {
   return new Response("Hello, World!");
 }
@@ -50,7 +50,7 @@ Deno.serve(handler);
 You can test the server locally by running:
 
 ```terminal
-deno run dev
+deno task dev
 ```
 
 Visit `localhost:8000` in your browser to see the application running.
@@ -87,46 +87,58 @@ DATABASE_URL="postgresql://<username>:<password>@db.prisma.io:5432/<database_nam
 
 ## 4. Configure Prisma ORM
 
-### 4.1 Enable environment variables
+### 4.1 Configure Deno for Prisma
 
-To access the database connection string during local development, configure Deno to load environment variables from your `.env` file using the `--env-file` flag.
-
-Update the `dev` task in `deno.json`:
+Create or update your `deno.json` with the following configuration:
 
 ```json file=deno.json
 {
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "types": ["node"]
+  },
+  "imports": {
+    "@prisma/adapter-pg": "npm:@prisma/adapter-pg@^7.0.0",
+    "@prisma/client": "npm:@prisma/client@^7.0.0",
+    "prisma": "npm:prisma@^7.0.0"
+  },
   "tasks": {
-    // edit-next-line
-    "dev": "deno run --watch --env-file main.ts"
+    "dev": "deno run -A --env=.env --watch main.ts",
+    "db:generate": "deno run -A --env=.env npm:prisma generate",
+    "db:push": "deno run -A --env=.env npm:prisma db push",
+    "db:migrate": "deno run -A --env=.env npm:prisma migrate dev"
   }
 }
 ```
 
-### 4.2 Initialize Prisma and create schema
+:::note
+The `nodeModulesDir: "auto"` setting is required for Prisma to work correctly with Deno. The `compilerOptions` ensure TypeScript understands Deno globals and npm packages.
+:::
 
-Install the Prisma Client, PostgreSQL adapter, and development dependencies:
+Install the dependencies:
 
 ```terminal
-deno install npm:@prisma/client npm:@prisma/adapter-pg npm:pg npm:prisma npm:@types/pg
+deno install
+deno install --allow-scripts
 ```
 
-Initialize Prisma in your project, which creates the necessary configuration files and folder structure for defining your database models.
+### 4.2 Initialize Prisma and create schema
+
+Initialize Prisma in your project:
 
 ```terminal
-npx prisma init
+deno run -A npm:prisma init
 ```
 
 Update the Prisma schema with these changes:
-1. Change the client output from `prisma-client-js` to `prisma-client`.
-2. Add the Deno runtime configuration. *(This is required for Deno to run properly)*
-3. Add the Log model for storing request information.
+1. Add the Deno runtime configuration _(required for Deno to work properly)_
+2. Add the `Log` model for storing request information
 
-```prisma file=prisma/schema.prisma
+```prisma file=prisma/schema.prisma highlight=4;add
 generator client {
-  // edit-next-line
   provider = "prisma-client"
   output   = "../generated/prisma"
-  // add-next-line
   runtime  = "deno"
 }
 
@@ -134,7 +146,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// add-start
 model Log {
   id      Int    @id @default(autoincrement())
   level   Level
@@ -147,7 +158,6 @@ enum Level {
   Warn
   Error
 }
-// add-end
 ```
 
 ### 4.3 Generate and apply migrations
@@ -155,28 +165,28 @@ enum Level {
 Migrations create the actual database tables based on your Prisma schema. This command generates SQL migration files and executes them against your database, creating the `Log` table with the specified fields.
 
 ```terminal
-deno run -A npm:prisma migrate dev --name init
-deno run -A npm:prisma generate
+deno task db:migrate --name init
+```
+
+Or use `db:push` for rapid prototyping:
+
+```terminal
+deno task db:push
 ```
 
 ## 5. Update the application to use Prisma
 
 Now that the database is configured, update your application to interact with it. This implementation creates a logging system that captures every HTTP request, stores it in the database, and returns the logged entry as JSON.
 
-```tsx file=main.ts
+```ts file=main.ts
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./generated/prisma/client.ts";
-import { PrismaPg } from "npm:@prisma/adapter-pg";
-import process from "node:process";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
+const connectionString = Deno.env.get("DATABASE_URL")!;
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
-const prisma = new PrismaClient({
-  adapter,
-});
-
-async function handler(request: Request) {
+async function handler(request: Request): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname === "/favicon.ico") {
     return new Response(null, { status: 204 });
@@ -191,9 +201,9 @@ async function handler(request: Request) {
       },
     },
   });
-  const body = JSON.stringify(log, null, 2);
-  return new Response(body, {
-    headers: { "content-type": "application/json; charset=utf-8" },
+  
+  return new Response(JSON.stringify(log, null, 2), {
+    headers: { "Content-Type": "application/json" },
   });
 }
 
@@ -203,14 +213,8 @@ Deno.serve(handler);
 Test the application locally by running:
 
 ```terminal
-deno run dev
+deno task dev
 ```
-
-:::note
-
-It may ask you for access to your environment variables. Select **Allow** to grant access.
-
-:::
 
 Visit `localhost:8000` in your browser to see the application running. You should see a JSON response containing the log entry:
 
@@ -229,10 +233,12 @@ Visit `localhost:8000` in your browser to see the application running. You shoul
 
 The build command must generate the Prisma Client code to ensure it is available in production.
 
-### 6.1 Update build command in Deno Deploy
+### 6.1 Update build configuration in Deno Deploy
 
 1. Go to the application in Deno Deploy and click **Settings**
-2. Under **Build configuration**, hit **Edit** and add `deno run -A npm:prisma generate` to the build command
+2. Under **Build configuration**, click **Edit** and configure:
+   - **Install command**: `deno install`
+   - **Pre-deploy command**: `deno run -A npm:prisma generate`
 3. Click **Save**
 
 ### 6.2 Push changes to GitHub
@@ -271,6 +277,7 @@ Now that you have a working Deno app connected to a Prisma Postgres database, yo
 - **Enhance your data model** - Add relationships, validations, and indexes to your Prisma schema
 - **Secure your API** - Implement authentication, rate limiting, and proper error handling
 - **Improve deployment** - Set up CI/CD, monitoring, and database backups for production
+- **Deploy to Deno Deploy** - Check out the full [Deploy to Deno Deploy guide](/orm/prisma-client/deployment/edge/deploy-to-deno-deploy) for a more comprehensive example
 
 ## More info
 
