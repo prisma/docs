@@ -384,6 +384,7 @@ const sidebars: SidebarsConfig = {
             "guides/data-dog",
             "guides/github-actions",
             "guides/bun",
+            "guides/management-api-api-clients",
           ].sort(),
         },
         {
@@ -432,10 +433,7 @@ const sidebars: SidebarsConfig = {
           label: "Connection Pooling Guides",
           collapsed: false,
           collapsible: false,
-          items: [
-            "guides/supabase-accelerate",
-            "guides/neon-accelerate",
-          ].sort(),
+          items: ["guides/supabase-accelerate", "guides/neon-accelerate"].sort(),
         },
         {
           type: "category",
@@ -499,9 +497,7 @@ const sidebars: SidebarsConfig = {
           label: "Vibe Coding Tutorials",
           collapsed: false,
           collapsible: false,
-          items: [
-            "ai/tutorials/linktree-clone",
-          ],
+          items: ["ai/tutorials/linktree-clone"],
         },
         {
           type: "category",
@@ -551,8 +547,7 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: "link",
-              label:
-                "Vibe Coding an E-commerce App with Prisma MCP and Next.js",
+              label: "Vibe Coding an E-commerce App with Prisma MCP and Next.js",
               href: "https://www.prisma.io/blog/vibe-coding-with-prisma-mcp-and-nextjs",
             },
             {
@@ -570,14 +565,12 @@ const sidebars: SidebarsConfig = {
           items: [
             {
               type: "link",
-              label:
-                "Automate your workflows with Prisma Postgres and 2,800+ apps",
+              label: "Automate your workflows with Prisma Postgres and 2,800+ apps",
               href: "https://pipedream.com/apps/prisma-management-api",
             },
             {
               type: "link",
-              label:
-                "Prompt your application with Firebase Studio & Prisma Postgres",
+              label: "Prompt your application with Firebase Studio & Prisma Postgres",
               href: "/postgres/integrations/idx",
             },
           ],
