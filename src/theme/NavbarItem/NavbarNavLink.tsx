@@ -6,6 +6,7 @@ import {isRegexpStringMatch} from '@docusaurus/theme-common';
 import IconExternalLink from '@theme/Icon/ExternalLink';
 import type {Props} from '@theme/NavbarItem/NavbarNavLink';
 import { Icon } from '@site/src/components/Icon';
+import { useUTMParams } from '@site/src/hooks/useUTMParams';
 
 
 type CustomProps = Props & {
@@ -31,7 +32,23 @@ export default function NavbarNavLink({
   const normalizedHref = useBaseUrl(href, {forcePrependBaseUrl: true});
   const isExternalLink = label && href && !isInternalUrl(href);
 
-  // Link content is set through html XOR label
+  const utmParams = useUTMParams();
+
+  const appendUtmParams = (url: string): string => {
+    if (!utmParams) {
+      return url;
+    }
+    
+    const [baseUrl, existingQuery] = url.split('?');
+    if (existingQuery) {
+      const result = `${baseUrl}?${existingQuery}&${utmParams}`;
+      return result;
+    } else {
+      const result = `${baseUrl}?${utmParams}`;
+      return result;
+    }
+  };
+
   const linkContentProps = html
     ? {dangerouslySetInnerHTML: {__html: html}}
     : {
@@ -54,18 +71,33 @@ export default function NavbarNavLink({
       };
 
   if (href) {
+    if (isExternalLink) {
+      return (
+        <Link
+          href={prependBaseUrlToHref ? normalizedHref : href}
+          {...props}
+          {...linkContentProps}
+        />
+      );
+    }
+
+    const finalHref = prependBaseUrlToHref ? normalizedHref : href;
+    const urlWithUtms = appendUtmParams(finalHref);
+    
     return (
       <Link
-        href={prependBaseUrlToHref ? normalizedHref : href}
+        href={urlWithUtms}
         {...props}
         {...linkContentProps}
       />
     );
   }
 
+  const urlWithUtms = appendUtmParams(toUrl);
+  
   return (
     <Link
-      to={toUrl}
+      to={urlWithUtms}
       isNavLink
       {...((activeBasePath || activeBaseRegex) && {
         isActive: (_match, location) =>

@@ -11,6 +11,7 @@ import React, { type ReactNode } from 'react';
 import styles from './styles.module.css';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import { useUTMParams } from '@site/src/hooks/useUTMParams';
 
 function useNavbarItems() {
   // TODO temporary casting until ThemeConfig type is improved
@@ -58,12 +59,20 @@ function NavbarContentLayout({
 
 export default function NavbarContent(): ReactNode {
   const mobileSidebar = useNavbarMobileSidebar();
+  const utmParams = useUTMParams();
 
   const items = useNavbarItems();
   const [leftItems, rightItems] = splitNavbarItems(items);
 
   const searchBarItem = items.find((item) => item.type === 'search');
   const baseUrl = useBaseUrl("/");
+  
+  // Helper function to append UTM params to URL
+  const appendUtmParams = (url: string): string => {
+    if (!utmParams) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}${utmParams}`;
+  };
 
   return (
     <NavbarContentLayout
@@ -73,7 +82,7 @@ export default function NavbarContent(): ReactNode {
           {!mobileSidebar.disabled && <NavbarMobileSidebarToggle />}
           <NavbarLogo />
           <span className={styles.separator}>/</span>
-          <Link to={baseUrl} className="logo-link">docs</Link>
+          <Link to={appendUtmParams(baseUrl)} className="logo-link">docs</Link>
         </>
       }
       middle={
