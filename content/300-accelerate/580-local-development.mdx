@@ -27,6 +27,12 @@ Accelerate does not work with a local database. However, in a development enviro
 
 The following steps outline how to use Prisma ORM and Prisma Accelerate with a local PostgreSQL database.
 
+### Prisma 7
+
+**Note:** In Prisma 7, the Accelerate extension requires a connection string starting with `prisma://` or `prisma+postgres://`. Using a local database connection string with the Accelerate extension will cause an error.
+
+To use a local database in development with Prisma 7, use the `@prisma/adapter-pg` adapter conditionally:
+
 1. Update the `DATABASE_URL` environment variable with your local database's connection string:
 
    ```.env
@@ -41,16 +47,24 @@ The following steps outline how to use Prisma ORM and Prisma Accelerate with a l
 
    > Note: The `--no-engine` flag should only be used in preview and production environments. The command generates Prisma Client artifacts without a [Query Engine](/orm/more/under-the-hood/engines) file, which requires an Accelerate connection string.
 
-3. Set up Prisma Client with the Accelerate client extension:
+3. Set up Prisma Client with conditional logic for development and production:
 
    ```typescript
    import { PrismaClient } from '@prisma/client'
    import { withAccelerate } from '@prisma/extension-accelerate'
+   import { PrismaPg } from '@prisma/adapter-pg'
+   import { Pool } from 'pg'
 
-   const prisma = new PrismaClient().$extends(withAccelerate())
+   const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+
+   const adapter = process.env.ACCELERATE_URL
+     ? withAccelerate() // Production: Use Accelerate
+     : new PrismaPg(pool) // Development: Use pg adapter
+
+   const prisma = new PrismaClient().$extends(adapter)
    ```
 
-   > The extended instance of Prisma Client will use the local database. Hence, Prisma Accelerate will not be used in your development environment to respond to your Prisma Client queries.
+   > In production, set `ACCELERATE_URL` to your Prisma Accelerate connection string. In development, omit this environment variable to use the local database via the pg adapter.
 
 ![Using Prisma Accelerate client extension in production](/img/accelerate/accelerate-in-prod.png)
 
