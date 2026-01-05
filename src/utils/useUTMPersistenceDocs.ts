@@ -1,65 +1,41 @@
 import { useHistory, useLocation } from '@docusaurus/router';
 import { useEffect, useRef } from 'react';
 
-const hasUTMParams = (search: string) => {
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign'] as const;
+const STORAGE_KEY = 'utm_params';
+
+const extractUTMParams = (search: string): string => {
   const params = new URLSearchParams(search);
-  return ['utm_source', 'utm_medium', 'utm_campaign'].some(p => params.has(p));
+  const utmParams = new URLSearchParams();
+  UTM_KEYS.forEach(key => {
+    const value = params.get(key);
+    if (value) utmParams.set(key, value);
+  });
+  return utmParams.toString();
 };
 
 export const useUTMPersistenceDocs = () => {
   const location = useLocation();
   const history = useHistory();
-  const isManualRemoval = useRef(false);
-  const previousSearch = useRef('');
-
-  const getUTMParams = (search: string) => {
-    const params = new URLSearchParams(search);
-    const utmParams = new URLSearchParams();
-    ['utm_source', 'utm_medium', 'utm_campaign'].forEach(param => {
-      const value = params.get(param);
-      if (value) utmParams.set(param, value);
-    });
-    return utmParams.toString();
-  };
+  const prevPathname = useRef(location.pathname);
 
   useEffect(() => {
-    // Skip initial render
-    if (previousSearch.current === '') {
-      previousSearch.current = location.search;
-      if (hasUTMParams(location.search)) {
-        sessionStorage.setItem('utm_params', getUTMParams(location.search));
-      }
-      return;
+    const currentUTMs = extractUTMParams(location.search);
+    const storedUTMs = sessionStorage.getItem(STORAGE_KEY);
+    const isNavigation = prevPathname.current !== location.pathname;
+
+    if (currentUTMs) {
+      sessionStorage.setItem(STORAGE_KEY, currentUTMs);
+    } else if (storedUTMs && isNavigation) {
+      history.replace({
+        pathname: location.pathname,
+        search: `?${storedUTMs}`,
+        hash: location.hash,
+      });
+    } else if (!currentUTMs && storedUTMs && !isNavigation) {
+      sessionStorage.removeItem(STORAGE_KEY);
     }
 
-    const hadUTMs = hasUTMParams(previousSearch.current);
-    const hasUTMs = hasUTMParams(location.search);
-
-    // Detect manual removal
-    if (hadUTMs && !hasUTMs && location.pathname === previousSearch.current.split('?')[0]) {
-      isManualRemoval.current = true;
-      sessionStorage.removeItem('utm_params');
-      console.log('Manual removal detected - UTMs cleared');
-    }
-    // Save new UTMs if they exist
-    else if (hasUTMs) {
-      isManualRemoval.current = false;
-      sessionStorage.setItem('utm_params', getUTMParams(location.search));
-    }
-    // Restore UTMs if they're missing and weren't manually removed
-    else if (!isManualRemoval.current) {
-      const storedParams = sessionStorage.getItem('utm_params');
-      if (storedParams) {
-        const newSearch = storedParams ? `?${storedParams}` : '';
-        if (location.search !== newSearch) {
-          history.replace({
-            pathname: location.pathname,
-            search: newSearch,
-          });
-        }
-      }
-    }
-
-    previousSearch.current = location.search;
-  }, [location, history]);
+    prevPathname.current = location.pathname;
+  }, [location.pathname, location.search, location.hash]);
 };
