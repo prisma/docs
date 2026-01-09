@@ -10,7 +10,7 @@ toc: true
 
 Prisma Studio can be embedded in your own application via the [`@prisma/studio-core`](https://www.npmjs.com/package/@prisma/studio-core) package.
 
-It provides `Studio`, a React component which renders Prisma Studio for your database. The `Studio` component accepts an executor that calls a `/studio` endpoint in your backend. The backend uses your `DATABASE_URL` (connection string) to connect to the correct Prisma Postgres instance and execute the SQL query.
+It provides `Studio`, a React component which renders Prisma Studio for your database. The `Studio` component accepts an executor that calls a `/studio` endpoint in your backend. The backend uses your `DATABASE_URL` (connection string) to connect to the correct database instance (PostgreSQL, SQLite, or MySQL) and execute the SQL query.
 
 :::tip
 If you want to see what embedded Studio looks like, **[check out the demo](https://github.com/prisma/studio-core-demo) on GitHub**!
@@ -29,29 +29,53 @@ You can embed Prisma Studio in your own app in various scenarios:
 - Frontend: A React application
 - Backend:
   - A server-side application to expose the `/studio` endpoint (e.g. with Express or Hono)
-  - A Prisma Postgres instance (you can create one with `npx prisma init --db`)
+  - A database instance (PostgreSQL, SQLite, or MySQL)
+
+## Database support
+
+Embedded Prisma Studio supports the following databases:
+
+- **PostgreSQL**: Full support with Prisma Postgres or any PostgreSQL instance
+- **SQLite**: Full support with local SQLite database files
+- **MySQL**: Full support with MySQL instances
 
 :::note
-The embeddable version of Prisma Studio will be available for other databases in combination with Prisma ORM soon.
+The implementation pattern is similar across all databases - you just need to use the appropriate executor and adapter for your database type.
 :::
 
 ## Installation
 
 Install the npm package:
 
-```terminal
+```bash
 npm install @prisma/studio-core
 ```
+
+### Additional dependencies
+
+Depending on your database type, you may need additional packages:
+
+```bash
+# For SQLite support
+npm install better-sqlite3
+
+# For MySQL support  
+npm install mysql2
+```
+
+PostgreSQL support is included with `@prisma/studio-core` and requires no additional dependencies.
 
 ## Frontend setup
 
 In your React app, you can use the `Studio` component to render the tables in your database via Prisma Studio. It receives an _executor_ which is responsible for packaging the current SQL query in an HTTP request (also allowing for custom headers/payloads) and sending it to the `/studio` endpoint in your backend.
 
+The implementation varies slightly depending on your database type. Choose the appropriate section below:
+
 > Check out the [demo](https://github.com/prisma/studio-core-demo/blob/main/frontend/index.tsx) on GitHub for a full reference implementation.
 
-### Minimal implementation
+### PostgreSQL implementation
 
-Here's what a minimal implementation looks like:
+Here's what a minimal implementation looks like for PostgreSQL:
 
 ```tsx
 import { Studio } from "@prisma/studio-core/ui";
@@ -79,9 +103,69 @@ function App() {
 }
 ```
 
+### SQLite implementation
+
+Here's what a minimal implementation looks like for SQLite:
+
+```tsx
+import { Studio } from "@prisma/studio-core/ui";
+import { createSQLiteAdapter } from "@prisma/studio-core/data/sqlite-core";
+import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import "@prisma/studio-core/ui/index.css"
+
+function App() {
+  const adapter = useMemo(() => {
+    // 1. Create a client that points to your backend endpoint
+    const executor = createStudioBFFClient({
+      url: "http://localhost:4242/studio",
+    });
+
+    // 2. Create a SQLite adapter with the executor
+    const adapter = createSQLiteAdapter({ executor });
+    return adapter;
+  }, []);
+
+  return (
+    <Layout>
+      <Studio adapter={adapter} />
+    </Layout>
+  );
+}
+```
+
+### MySQL implementation
+
+Here's what a minimal implementation looks like for MySQL:
+
+```tsx
+import { Studio } from "@prisma/studio-core/ui";
+import { createMySQLAdapter } from "@prisma/studio-core/data/mysql-core";
+import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import "@prisma/studio-core/ui/index.css"
+
+function App() {
+  const adapter = useMemo(() => {
+    // 1. Create a client that points to your backend endpoint
+    const executor = createStudioBFFClient({
+      url: "http://localhost:4242/studio",
+    });
+
+    // 2. Create a MySQL adapter with the executor
+    const adapter = createMySQLAdapter({ executor });
+    return adapter;
+  }, []);
+
+  return (
+    <Layout>
+      <Studio adapter={adapter} />
+    </Layout>
+  );
+}
+```
+
 ### Custom headers/payload implementation
 
-Here's what an implementation with custom headers/payload looks like:
+Here's what an implementation with custom headers/payload looks like (works for all database types):
 
 ```tsx
 import { Studio } from "@prisma/studio-core/ui";
@@ -102,8 +186,10 @@ function App() {
       }
     });
 
-    // 2. Create a Postgres adapter with the executor
-    const adapter = createPostgresAdapter({ executor });
+    // 2. Create a database adapter with the executor
+    const adapter = createPostgresAdapter({ executor }); // PostgreSQL
+    // const adapter = createSQLiteAdapter({ executor }); // SQLite
+    // const adapter = createMySQLAdapter({ executor }); // MySQL
     return adapter;
   }, []);
 
@@ -174,15 +260,17 @@ With this setup, Studio inherits your custom colors, borders, and typography rul
 
 Here's an overview of the key concepts in your frontend:
 - **Executor**: The bridge between Studio and your backend, it's created using the `createStudioBFFClient` function
-- **Adapter**: Handles Postgres-specific query formatting
+- **Adapter**: Handles database-specific query formatting (PostgreSQL, SQLite, or MySQL)
 - **Custom headers**: Pass authentication tokens, user info, etc.
 - **Custom payload**: Send additional context/data with each request
 
 ## Backend setup
 
-Your backend needs to expose a `/studio` endpoint where the frontend sends its requests. The implementation below uses `createPrismaPostgresHttpClient` from `@prisma/studio-core`. 
+Your backend needs to expose a `/studio` endpoint where the frontend sends its requests. The implementation varies depending on your database type. Choose the appropriate section below:
 
-The backend also needs to have access to the Prisma Postgres API key, we recommend setting it as an environment variable as a best practice.
+### PostgreSQL backend implementation
+
+The PostgreSQL implementation uses `createPrismaPostgresHttpClient` from `@prisma/studio-core`. This works with Prisma Postgres or any PostgreSQL instance.
 
 > Check out the [demo](https://github.com/prisma/studio-core-demo/blob/main/server/index.ts) on GitHub for a full reference implementation.
 
@@ -216,9 +304,94 @@ app.post("/studio", async (c) => {
 });
 ```
 
+### SQLite backend implementation
+
+The SQLite implementation uses `createNodeSQLiteExecutor` from `@prisma/studio-core` and requires the `better-sqlite3` package. This works with local SQLite database files.
+
+```ts
+import { Hono } from "hono";
+import { createNodeSQLiteExecutor } from "@prisma/studio-core/data/node-sqlite";
+import { serializeError } from "@prisma/studio-core/data/bff";
+import DatabaseSync from "better-sqlite3";
+
+const app = new Hono().use("*", cors());
+
+app.post("/studio", async (c) => {
+  try {
+    // 1. Extract the query from the request
+    const { query } = await c.req.json();
+    
+    // 2. Read DB URL from env vars (should be a file path)
+    const url = process.env.DATABASE_URL;
+    
+    if (!url) {
+      return c.json([serializeError(new Error("DATABASE_URL is missing"))], 500);
+    }
+    
+    // 3. Extract file path from URL and create database connection
+    const dbPath = url.replace("file:", "");
+    const database = new DatabaseSync(dbPath);
+    
+    // 4. Execute the query against SQLite
+    const [error, results] = await createNodeSQLiteExecutor(database).execute(query);
+    
+    // 5. Return results or errors
+    if (error) {
+      return c.json([serializeError(error)]);
+    }
+    
+    return c.json([null, results]);
+  } catch (err) {
+    return c.json([serializeError(err)], 400);
+  }
+});
+```
+
+### MySQL backend implementation
+
+The MySQL implementation uses `createMySQL2Executor` from `@prisma/studio-core` and requires the `mysql2` package. This works with MySQL instances.
+
+```ts
+import { Hono } from "hono";
+import { createMySQL2Executor } from "@prisma/studio-core/data/mysql2";
+import { serializeError } from "@prisma/studio-core/data/bff";
+import mysql from "mysql2/promise";
+
+const app = new Hono().use("*", cors());
+
+app.post("/studio", async (c) => {
+  try {
+    // 1. Extract the query from the request
+    const { query } = await c.req.json();
+    
+    // 2. Read DB URL from env vars
+    const url = process.env.DATABASE_URL;
+    
+    if (!url) {
+      return c.json([serializeError(new Error("DATABASE_URL is missing"))], 500);
+    }
+    
+    // 3. Create MySQL connection pool
+    const pool = mysql.createPool(url);
+    
+    // 4. Execute the query against MySQL
+    const [error, results] = await createMySQL2Executor(pool).execute(query);
+    
+    // 5. Return results or errors
+    if (error) {
+      return c.json([serializeError(error)]);
+    }
+    
+    return c.json([null, results]);
+  } catch (err) {
+    return c.json([serializeError(err)], 400);
+  }
+});
+```
+
 ### Custom headers/payload implementation
 
-Here's what a slightly more advanced implementation for the `/studio` endpoint looks like with [Hono](https://hono.dev/). In this case, a multi-tenant scenario is assumed where the frontend sends over a user ID and authentication token which is used on the backend to determine the Prisma Postgres instance that belongs to that user via a hypothetical `determineUrlFromContext` function:
+Here's what a slightly more advanced implementation for the `/studio` endpoint looks like with [Hono](https://hono.dev/). In this case, a multi-tenant scenario is assumed where the frontend sends over a user ID and authentication token which is used on the backend to determine the database instance that belongs to that user via a hypothetical `determineUrlFromContext` function:
 
 ```ts
 // server/index.ts
@@ -242,8 +415,11 @@ app.post("/studio", async (c) => {
   // 4. Determine the URL (this is where you'd implement your auth logic)
   const url = determineUrlFromContext(customHeader, customPayload);
   
-  // 5. Execute the query using Prisma Postgres or Prisma Accelerate
+  // 5. Execute the query using the appropriate database client
+  // PostgreSQL:
   const [error, results] = await createPrismaPostgresHttpClient({ url }).execute(query);
+  // SQLite: (requires additional setup with better-sqlite3)
+  // MySQL: (requires additional setup with mysql2)
   
   // 6. Return results or errors
   if (error) {
@@ -258,7 +434,7 @@ app.post("/studio", async (c) => {
 
 - Query object: Contains the SQL query and parameters from Studio
 - Custom payload: Additional data sent with each request
-- Prisma Postgres client: Executes queries against your database
+- Database client: Executes queries against your database (PostgreSQL, SQLite, or MySQL)
 - Error handling: Properly serialize errors for Studio to display
 
 ## Execution flow
