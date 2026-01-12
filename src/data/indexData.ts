@@ -176,7 +176,7 @@ export const tabs = [
         url: "/getting-started/prisma-orm/add-to-existing-project/planetscale",
         image: "/img/technologies/planetscale.svg",
         imageDark: "/img/technologies/planetscaledark.svg",
-        tech: "Planetscale",
+        tech: "PlanetScale",
       },
       {
         url: "/getting-started/prisma-orm/add-to-existing-project/sql-server",

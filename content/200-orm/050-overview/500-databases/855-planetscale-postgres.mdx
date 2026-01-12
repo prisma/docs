@@ -1,0 +1,141 @@
+---
+title: 'PlanetScale Postgres'
+metaTitle: 'PlanetScale Postgres'
+metaDescription: 'Guide to PlanetScale Postgres'
+tocDepth: 3
+toc: true
+---
+
+Prisma ORM and [PlanetScale Postgres](https://planetscale.com/) work together seamlessly, combining Prisma's type-safe database access with PlanetScale's fully managed, high-availability PostgreSQL platform.
+
+This document discusses the concepts behind using Prisma ORM with PlanetScale Postgres, explains the commonalities and differences compared to other PostgreSQL providers, and guides you through configuring your application.
+
+:::note
+
+This guide covers **PlanetScale Postgres**. If you're using **PlanetScale MySQL** (powered by Vitess), see the [PlanetScale MySQL guide](/orm/overview/databases/planetscale) instead.
+
+:::
+
+## What is PlanetScale Postgres?
+
+[PlanetScale Postgres](https://planetscale.com/docs/postgres) is a managed PostgreSQL service built on modern cloud infrastructure, designed for high availability and operational simplicity. Key features include:
+
+- **High availability by default.** Production clusters run on a [primary-replica architecture](https://planetscale.com/docs/postgres/postgres-architecture#cluster-design) with one primary and two replicas distributed across availability zones, providing zone-level fault tolerance with automated failover.
+- **Database branching.** Create [isolated database environments](https://planetscale.com/docs/postgres/branching) from production data for development and testing, with cost-optimized single-instance architecture for development branches.
+- **Built-in connection pooling.** [PgBouncer](https://planetscale.com/docs/postgres/connecting/pgbouncer) is available on port `6432` for efficient connection management, particularly useful for serverless deployments.
+- **Automatic backups and point-in-time recovery.** PlanetScale handles [backups automatically](https://planetscale.com/docs/postgres/backups) with configurable retention periods and point-in-time recovery capabilities.
+- **Query insights.** Built-in [query performance analysis](https://planetscale.com/docs/postgres/postgres-architecture#insights-and-query-analysis) with automatic detection of slow queries, execution plan analysis, and optimization recommendations.
+- **Flexible infrastructure options.** Choose between [ARM64 (Graviton) or x86-64 CPU architectures](https://planetscale.com/docs/postgres/cluster-configuration/cpu-architectures), and between direct-attached NVMe storage (PlanetScale Metal) or network-attached storage with configurable IOPS.
+
+## Commonalities with other database providers
+
+PlanetScale Postgres is fully PostgreSQL-compatible, so using it with Prisma ORM works the same as any other PostgreSQL database. You can:
+
+- Model your database with the [Prisma Schema Language](/orm/prisma-schema)
+- Use Prisma ORM's [`postgresql` database connector](/orm/overview/databases/postgresql) in your schema
+- Use [Introspection](/orm/prisma-schema/introspection) for existing projects if you already have a database schema
+- Use [`prisma migrate dev`](/orm/prisma-migrate/workflows/development-and-production) to manage schema migrations
+- Use [`prisma db push`](/orm/prisma-migrate/workflows/prototyping-your-schema) to push changes to your schema
+- Use [Prisma Client](/orm/prisma-client) in your application to query your database
+- Use foreign key constraints and all standard PostgreSQL features
+
+## Differences to consider
+
+While PlanetScale Postgres is fully PostgreSQL-compatible, there are some platform-specific considerations:
+
+- **Connection pooling.** PlanetScale provides [PgBouncer](https://planetscale.com/docs/postgres/connecting/pgbouncer) for connection pooling on port `6432`. For serverless or high-concurrency applications, use the pooled connection. For migrations and Prisma CLI commands, use the direct connection on port `5432`.
+- **Branching model.** PlanetScale Postgres provides [development and production branches](https://planetscale.com/docs/postgres/branching). Unlike PlanetScale MySQL (Vitess), there are no deploy requests — schema changes are applied directly to each branch.
+- **Querying replicas.** PlanetScale Postgres allows you to [query replicas directly](https://planetscale.com/docs/postgres/scaling/replicas) for read-heavy workloads, which can help distribute load from your primary.
+- **SSL required.** All connections require SSL/TLS encryption (`sslmode=verify-full`).
+
+## How to connect to PlanetScale Postgres
+
+### Connection string format
+
+Your PlanetScale Postgres connection string follows the standard PostgreSQL format:
+
+```bash
+postgresql://{username}:{password}@{host}:{port}/{database}?sslmode=verify-full
+```
+
+You can find your connection credentials in the [PlanetScale dashboard](https://app.planetscale.com) by navigating to your database and clicking **Connect**. We recommend [creating a dedicated role](https://planetscale.com/docs/postgres/connecting/roles) for your application.
+
+### Connection types: Direct vs PgBouncer
+
+PlanetScale Postgres offers two connection types:
+
+| Type | Port | Use case |
+|------|------|----------|
+| **Direct** | `5432` | Prisma CLI commands (`migrate`, `db push`, `db pull`), Prisma Studio |
+| **PgBouncer** | `6432` | Application connections, serverless environments, high-concurrency workloads |
+
+## Using connection pooling with PgBouncer
+
+For production applications, especially serverless deployments, we recommend using PgBouncer for your application connections while keeping a direct connection for Prisma CLI commands.
+
+Configure your `.env` file with your PlanetScale connection string using the PgBouncer port:
+
+```env file=.env
+DATABASE_URL="postgresql://{username}:{password}@{host}:6432/{database}?sslmode=verify-full"
+```
+
+Your `prisma.config.ts` reads the connection string from the environment:
+
+```ts file=prisma.config.ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+Your Prisma schema uses the PostgreSQL provider:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+```
+
+Instantiate Prisma Client with the pooled connection using `@prisma/adapter-pg`:
+
+```ts file=src/db/client.ts
+import { PrismaClient } from '../generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+export const prisma = new PrismaClient({ adapter })
+```
+
+:::info
+
+Using a driver adapter like `@prisma/adapter-pg` is recommended for serverless environments. For traditional server-based deployments, you can use Prisma Client without an adapter and it will connect using the `DATABASE_URL` from your schema.
+
+:::
+
+## Querying replicas
+
+PlanetScale Postgres production clusters include two read replicas distributed across availability zones. You can [query replicas directly](https://planetscale.com/docs/postgres/scaling/replicas) for read-heavy workloads to distribute load from your primary database.
+
+Consult the [PlanetScale documentation on replicas](https://planetscale.com/docs/postgres/scaling/replicas) for details on connecting to replicas.
+
+## More on using PlanetScale Postgres with Prisma ORM
+
+The fastest way to start using PlanetScale Postgres with Prisma ORM is to refer to our Getting Started documentation:
+
+- [Start from scratch](/getting-started/prisma-orm/quickstart/planetscale-postgres)
+- [Add to existing project](/getting-started/prisma-orm/add-to-existing-project/planetscale-postgres)
+
+These tutorials will take you through the process of connecting to PlanetScale Postgres, running migrations, and using Prisma Client.

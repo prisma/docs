@@ -106,7 +106,12 @@ const sidebars: SidebarsConfig = {
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/planetscale",
-                  label: "PlanetScale",
+                  label: "PlanetScale MySQL",
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/planetscale-postgres",
+                  label: "PlanetScale Postgres",
                 },
                 {
                   type: "doc",
@@ -162,7 +167,12 @@ const sidebars: SidebarsConfig = {
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/planetscale",
-                  label: "PlanetScale",
+                  label: "PlanetScale MySQL",
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/planetscale-postgres",
+                  label: "PlanetScale Postgres",
                 },
                 {
                   type: "doc",
@@ -497,10 +507,7 @@ const sidebars: SidebarsConfig = {
           label: "Vibe Coding Tutorials",
           collapsed: false,
           collapsible: false,
-          items: [
-            "ai/tutorials/linktree-clone",
-            "ai/tutorials/typefully-clone",
-          ],
+          items: ["ai/tutorials/linktree-clone", "ai/tutorials/typefully-clone"],
         },
         {
           type: "category",
