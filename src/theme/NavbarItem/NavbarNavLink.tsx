@@ -35,7 +35,7 @@ export default function NavbarNavLink({
   const utmParams = useUTMParams();
 
   const appendUtmParams = (url: string): string => {
-    if (!utmParams) {
+    if (!utmParams || !url) {
       return url;
     }
     
