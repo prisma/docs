@@ -162,6 +162,42 @@ In your code, you can call any of these clients separately, for example `prismaA
 
 When you combine two or more extensions into a single extended client, then the _last_ extension that you declare takes precedence in any conflict. In the example in option 1 above, suppose there is a method called `myExtensionMethod()` defined in `extensionA` and a method called `myExtensionMethod()` in `extensionB`. When you call `prismaAB.myExtensionMethod()`, then Prisma Client uses `myExtensionMethod()` as defined in `extensionB`.
 
+### Middleware chaining with query extensions
+
+Chain [`query`](/orm/prisma-client/client-extensions/query) extensions to compose middleware. Extensions execute in order—first in, first out:
+
+```ts
+import { PrismaClient } from './generated/prisma'
+
+const prisma = new PrismaClient()
+  // Extension 1: Logging - measures query execution time
+  .$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          const start = Date.now()
+          const result = await query(args)
+          console.log(`[LOGGING] ${model}.${operation}: ${Date.now() - start}ms`)
+          return result
+        },
+      },
+    },
+  })
+  // Extension 2: Audit - logs write operations
+  .$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          if (['create', 'update', 'delete'].includes(operation)) {
+            console.log(`[AUDIT] ${operation} on ${model}:`, JSON.stringify(args))
+          }
+          return query(args)
+        },
+      },
+    },
+  })
+```
+
 ## Type of an extended client
 
 You can infer the type of an extended Prisma Client instance using the [`typeof`](https://www.typescriptlang.org/docs/handbook/2/typeof-types.html) utility as follows:
