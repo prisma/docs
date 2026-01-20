@@ -1,0 +1,662 @@
+---
+title: "Relation queries"
+description: "Prisma Client provides convenient queries for working with relations, such as a fluent API, nested writes (transactions), nested reads and relation filters."
+---
+
+Prisma Client provides powerful ways to query [relations](/docs/v7/orm/prisma-schema/data-model/relations):
+
+- [Nested reads](#nested-reads) via `select` and `include`
+- [Nested writes](#nested-writes) with transactional guarantees
+- [Relation filters](#relation-filters)
+- [Fluent API](#fluent-api) for traversing relations
+
+## Nested reads
+
+Nested reads allow you to load related data from multiple tables. Use:
+
+- `include` to include all fields of related records
+- `select` to choose specific fields from related records
+
+### Relation load strategies (Preview)
+
+Since v5.8.0 (PostgreSQL) and v5.10.0 (MySQL), you can specify how relations are loaded:
+
+```prisma
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = ["relationJoins"]
+}
+```
+
+Strategies:
+
+- `join` (default): Single query using `LATERAL JOIN` (PostgreSQL) or correlated subqueries (MySQL)
+- `query`: Multiple queries joined at application level
+
+```ts
+const users = await prisma.user.findMany({
+  relationLoadStrategy: "join",
+  include: { posts: true },
+});
+```
+
+### Include a relation
+
+```ts
+const user = await prisma.user.findFirst({
+  include: { posts: true },
+});
+// Returns user with all posts
+```
+
+### Include deeply nested relations
+
+```ts
+const user = await prisma.user.findFirst({
+  include: {
+    posts: {
+      include: { categories: true },
+    },
+  },
+});
+```
+
+### Select specific fields of relations
+
+```ts
+// Select only specific fields
+const user = await prisma.user.findFirst({
+  select: {
+    name: true,
+    posts: { select: { title: true } },
+  },
+});
+
+// Use select inside include (returns all user fields + post titles)
+const user = await prisma.user.findFirst({
+  include: {
+    posts: { select: { title: true } },
+  },
+});
+```
+
+:::warning
+You cannot use `select` and `include` on the same level. Use nested `select` instead.
+:::
+
+## Relation count
+
+```ts
+const users = await prisma.user.findMany({
+  include: { _count: { select: { posts: true } } },
+});
+// Returns: [{ id: 1, _count: { posts: 3 } }, ...]
+```
+
+## Filter a list of relations
+
+```ts
+const user = await prisma.user.findFirst({
+  select: {
+    posts: {
+      where: { published: false },
+      orderBy: { title: "asc" },
+      select: { title: true },
+    },
+  },
+});
+```
+
+## Nested writes
+
+Nested writes create/update/delete relational data in a **single transaction** with rollback on failure.
+
+### Create related records
+
+```ts
+// Create user with posts
+const user = await prisma.user.create({
+  data: {
+    email: "alice@prisma.io",
+    posts: {
+      create: [{ title: "Post 1" }, { title: "Post 2" }],
+    },
+  },
+  include: { posts: true },
+});
+```
+
+### `create` vs `createMany`
+
+| Feature                      | `create` | `createMany` |
+| :--------------------------- | :------- | :----------- |
+| Nesting additional relations | ✔        | ✘            |
+| 1-n relations                | ✔        | ✔            |
+| m-n relations                | ✔        | ✘            |
+| Skip duplicates              | ✘        | ✔            |
+
+```ts
+// Nested create with categories
+const user = await prisma.user.create({
+  data: {
+    email: "yvette@prisma.io",
+    posts: {
+      create: [
+        {
+          title: "My post",
+          categories: { create: { name: "Cooking" } },
+        },
+      ],
+    },
+  },
+});
+
+// Using createMany (no nesting)
+const user = await prisma.user.create({
+  data: {
+    email: "saanvi@prisma.io",
+    posts: {
+      createMany: {
+        data: [{ title: "Post 1" }, { title: "Post 2" }],
+      },
+    },
+  },
+});
+```
+
+### Connect records
+
+```ts
+// Connect existing posts to new user
+const user = await prisma.user.create({
+  data: {
+    email: "vlad@prisma.io",
+    posts: { connect: [{ id: 8 }, { id: 9 }] },
+  },
+});
+
+// Connect single post to existing user
+await prisma.user.update({
+  where: { id: 9 },
+  data: { posts: { connect: { id: 11 } } },
+});
+```
+
+### Connect or create
+
+```ts
+const post = await prisma.post.create({
+  data: {
+    title: "My post",
+    author: {
+      connectOrCreate: {
+        where: { email: "viola@prisma.io" },
+        create: { email: "viola@prisma.io", name: "Viola" },
+      },
+    },
+  },
+});
+```
+
+### Disconnect a related record
+
+To `disconnect` one out of a list of records (for example, a specific blog post) provide the ID or unique identifier of the record(s) to disconnect:
+
+```ts highlight=6-8;normal
+const result = await prisma.user.update({
+  where: {
+    id: 16,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      disconnect: [{ id: 12 }, { id: 19 }], // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+```js no-copy
+{
+  id: 16,
+  name: null,
+  email: 'orla@prisma.io',
+  profileViews: 0,
+  role: 'USER',
+  coinflips: [],
+  posts: []
+}
+```
+
+To `disconnect` _one_ record (for example, a post's author), use `disconnect: true`:
+
+```ts highlight=6-8;normal
+const result = await prisma.post.update({
+  where: {
+    id: 23,
+  },
+  data: {
+    author: {
+      // [!code highlight]
+      disconnect: true, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    author: true,
+  },
+});
+```
+
+```js no-copy
+{
+  id: 23,
+  title: 'How to eat an omelette',
+  published: true,
+  authorId: null,
+  comments: null,
+  views: 0,
+  likes: 0,
+  author: null
+}
+```
+
+### Disconnect all related records
+
+To [`disconnect`](/docs/v7/orm/reference/prisma-client-reference#disconnect) _all_ related records in a one-to-many relation (a user has many posts), `set` the relation to an empty list as shown:
+
+```ts highlight=6-8;normal
+const result = await prisma.user.update({
+  where: {
+    id: 16,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      set: [], // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+```js no-copy
+{
+  id: 16,
+  name: null,
+  email: 'orla@prisma.io',
+  profileViews: 0,
+  role: 'USER',
+  coinflips: [],
+  posts: []
+}
+```
+
+### Delete all related records
+
+Delete all related `Post` records:
+
+```ts highlight=6-8;normal
+const result = await prisma.user.update({
+  where: {
+    id: 11,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      deleteMany: {}, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+### Delete specific related records
+
+Update a user by deleting all unpublished posts:
+
+```ts highlight=6-10;normal
+const result = await prisma.user.update({
+  where: {
+    id: 11,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      deleteMany: {
+        // [!code highlight]
+        published: false, // [!code highlight]
+      }, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+Update a user by deleting specific posts:
+
+```ts highlight=6-8;normal
+const result = await prisma.user.update({
+  where: {
+    id: 6,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      deleteMany: [{ id: 7 }], // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+### Update all related records (or filter)
+
+You can use a nested `updateMany` to update _all_ related records for a particular user. The following query unpublishes all posts for a specific user:
+
+```ts highlight=6-15;normal
+const result = await prisma.user.update({
+  where: {
+    id: 6,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      updateMany: {
+        // [!code highlight]
+        where: {
+          // [!code highlight]
+          published: true, // [!code highlight]
+        }, // [!code highlight]
+        data: {
+          // [!code highlight]
+          published: false, // [!code highlight]
+        }, // [!code highlight]
+      }, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+### Update a specific related record
+
+```ts highlight=6-15;normal
+const result = await prisma.user.update({
+  where: {
+    id: 6,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      update: {
+        // [!code highlight]
+        where: {
+          // [!code highlight]
+          id: 9, // [!code highlight]
+        }, // [!code highlight]
+        data: {
+          // [!code highlight]
+          title: "My updated title", // [!code highlight]
+        }, // [!code highlight]
+      }, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+### Update _or_ create a related record
+
+The following query uses a nested `upsert` to update `"bob@prisma.io"` if that user exists, or create the user if they do not exist:
+
+```ts highlight=6-17;normal
+const result = await prisma.post.update({
+  where: {
+    id: 6,
+  },
+  data: {
+    author: {
+      // [!code highlight]
+      upsert: {
+        // [!code highlight]
+        create: {
+          // [!code highlight]
+          email: "bob@prisma.io", // [!code highlight]
+          name: "Bob the New User", // [!code highlight]
+        }, // [!code highlight]
+        update: {
+          // [!code highlight]
+          email: "bob@prisma.io", // [!code highlight]
+          name: "Bob the existing user", // [!code highlight]
+        }, // [!code highlight]
+      }, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    author: true,
+  },
+});
+```
+
+### Add new related records to an existing record
+
+You can nest `create` or `createMany` inside an `update` to add new related records to an existing record. The following query adds two posts to a user with an `id` of 9:
+
+```ts highlight=6-10;normal
+const result = await prisma.user.update({
+  where: {
+    id: 9,
+  },
+  data: {
+    posts: {
+      // [!code highlight]
+      createMany: {
+        // [!code highlight]
+        data: [{ title: "My first post" }, { title: "My second post" }], // [!code highlight]
+      }, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+## Relation filters
+
+### Filter on "-to-many" relations
+
+Prisma Client provides the [`some`](/docs/v7/orm/reference/prisma-client-reference#some), [`every`](/docs/v7/orm/reference/prisma-client-reference#every), and [`none`](/docs/v7/orm/reference/prisma-client-reference#none) options to filter records by the properties of related records on the "-to-many" side of the relation. For example, filtering users based on properties of their posts.
+
+For example:
+
+| Requirement                                                                       | Query option to use                 |
+| --------------------------------------------------------------------------------- | ----------------------------------- |
+| "I want a list of every `User` that has _at least one_ unpublished `Post` record" | `some` posts are unpublished        |
+| "I want a list of every `User` that has _no_ unpublished `Post` records"          | `none` of the posts are unpublished |
+| "I want a list of every `User` that has _only_ unpublished `Post` records"        | `every` post is unpublished         |
+
+For example, the following query returns `User` that meet the following criteria:
+
+- No posts with more than 100 views
+- All posts have less than, or equal to 50 likes
+
+```ts
+const users = await prisma.user.findMany({
+  where: {
+    posts: {
+      // [!code highlight]
+      none: {
+        // [!code highlight]
+        views: {
+          // [!code highlight]
+          gt: 100, // [!code highlight]
+        }, // [!code highlight]
+      }, // [!code highlight]
+      every: {
+        // [!code highlight]
+        likes: {
+          // [!code highlight]
+          lte: 50, // [!code highlight]
+        }, // [!code highlight]
+      }, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+### Filter on "-to-one" relations
+
+Prisma Client provides the [`is`](/docs/v7/orm/reference/prisma-client-reference#is) and [`isNot`](/docs/v7/orm/reference/prisma-client-reference#isnot) options to filter records by the properties of related records on the "-to-one" side of the relation. For example, filtering posts based on properties of their author.
+
+For example, the following query returns `Post` records that meet the following criteria:
+
+- Author's name is not Bob
+- Author is older than 40
+
+```ts highlight=3-13;normal
+const users = await prisma.post.findMany({
+  where: {
+    author: {
+      // [!code highlight]
+      isNot: {
+        // [!code highlight]
+        name: "Bob", // [!code highlight]
+      }, // [!code highlight]
+      is: {
+        // [!code highlight]
+        age: {
+          // [!code highlight]
+          gt: 40, // [!code highlight]
+        }, // [!code highlight]
+      }, // [!code highlight]
+    }, // [!code highlight]
+  }, // [!code highlight]
+  include: {
+    author: true,
+  },
+});
+```
+
+### Filter on absence of "-to-many" records
+
+For example, the following query uses `none` to return all users that have zero posts:
+
+```ts highlight=3-5;normal
+const usersWithZeroPosts = await prisma.user.findMany({
+  where: {
+    posts: {
+      // [!code highlight]
+      none: {}, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+### Filter on absence of "-to-one" relations
+
+The following query returns all posts that don't have an author relation:
+
+```js highlight=3;normal
+const postsWithNoAuthor = await prisma.post.findMany({
+  where: {
+    author: null, // or author: { } // [!code highlight]
+  },
+  include: {
+    author: true,
+  },
+});
+```
+
+### Filter on presence of related records
+
+The following query returns all users with at least one post:
+
+```ts highlight=3-5;normal
+const usersWithSomePosts = await prisma.user.findMany({
+  where: {
+    posts: {
+      // [!code highlight]
+      some: {}, // [!code highlight]
+    }, // [!code highlight]
+  },
+  include: {
+    posts: true,
+  },
+});
+```
+
+## Fluent API
+
+The fluent API lets you _fluently_ traverse the [relations](/docs/v7/orm/prisma-schema/data-model/relations) of your models via function calls. Note that the _last_ function call determines the return type of the entire query (the respective type annotations are added in the code snippets below to make that explicit).
+
+This query returns all `Post` records by a specific `User`:
+
+```ts
+const postsByUser: Post[] = await prisma.user
+  .findUnique({ where: { email: "alice@prisma.io" } })
+  .posts();
+```
+
+This is equivalent to the following `findMany` query:
+
+```ts
+const postsByUser = await prisma.post.findMany({
+  where: {
+    author: {
+      email: "alice@prisma.io",
+    },
+  },
+});
+```
+
+The main difference between the queries is that the fluent API call is translated into two separate database queries while the other one only generates a single query (see this [GitHub issue](https://github.com/prisma/prisma/issues/1984))
+
+> **Note**: You can use the fact that `.findUnique({ where: { email: 'alice@prisma.io' } }).posts()` queries are automatically batched by the Prisma dataloader in Prisma Client to [avoid the n+1 problem in GraphQL resolvers](/docs/v7/orm/prisma-client/queries/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prisma-clients-dataloader).
+
+This request returns all categories by a specific post:
+
+```ts
+const categoriesOfPost: Category[] = await prisma.post
+  .findUnique({ where: { id: 1 } })
+  .categories();
+```
+
+Note that you can chain as many queries as you like. In this example, the chaining starts at `Profile` and goes over `User` to `Post`:
+
+```ts
+const posts: Post[] = await prisma.profile
+  .findUnique({ where: { id: 1 } })
+  .user()
+  .posts();
+```
+
+The only requirement for chaining is that the previous function call must return only a _single object_ (e.g. as returned by a `findUnique` query or a "to-one relation" like `profile.user()`).
+
+The following query is **not possible** because `findMany` does not return a single object but a _list_:
+
+```ts
+// This query is illegal
+const posts = await prisma.user.findMany().posts();
+```

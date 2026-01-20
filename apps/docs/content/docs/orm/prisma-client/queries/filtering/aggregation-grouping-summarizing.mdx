@@ -1,0 +1,124 @@
+---
+title: "Aggregation, grouping, and summarizing"
+description: "Use Prisma Client to aggregate, group by, count, and select distinct."
+---
+
+Prisma Client allows you to count records, aggregate number fields, and select distinct field values.
+
+## Aggregate
+
+```ts
+// Average age
+const aggregations = await prisma.user.aggregate({
+  _avg: { age: true },
+});
+
+// With filtering
+const aggregations = await prisma.user.aggregate({
+  _avg: { age: true },
+  where: { email: { contains: "prisma.io" } },
+  orderBy: { age: "asc" },
+  take: 10,
+});
+```
+
+:::note
+Aggregations on nullable fields return `number | null`. `count` always returns 0 if no records found.
+:::
+
+## Group by
+
+[`groupBy()`](/docs/v7/orm/reference/prisma-client-reference#groupby) groups records by field values and performs aggregations on each group:
+
+```ts
+const groupUsers = await prisma.user.groupBy({
+  by: ["country"],
+  _sum: { profileViews: true },
+});
+// Returns: [{ country: "Germany", _sum: { profileViews: 126 } }, ...]
+```
+
+### Filtering with `where` and `having`
+
+```ts
+const groupUsers = await prisma.user.groupBy({
+  by: ["country"],
+  where: { email: { contains: "prisma.io" } }, // Filter before grouping
+  _sum: { profileViews: true },
+  having: { profileViews: { _avg: { gt: 100 } } }, // Filter groups by aggregate
+});
+```
+
+:::tip
+Use `where` to reduce data before grouping (uses indices). Use `having` only for aggregate-based filtering.
+:::
+
+### Ordering groups
+
+```ts
+const groupBy = await prisma.user.groupBy({
+  by: ["city"],
+  _count: { city: true },
+  orderBy: { _count: { city: "desc" } },
+});
+```
+
+## Count
+
+```ts
+const userCount = await prisma.user.count();
+
+// With filter
+const activeUsers = await prisma.user.count({
+  where: { profileViews: { gte: 100 } },
+});
+```
+
+### Count relations
+
+```ts
+const usersWithCount = await prisma.user.findMany({
+  include: { _count: { select: { posts: true } } },
+});
+// Returns: [{ id: 1, _count: { posts: 3 } }, ...]
+
+// Filter relation count
+await prisma.user.findMany({
+  select: {
+    _count: {
+      select: { posts: { where: { title: "Hello!" } } },
+    },
+  },
+});
+```
+
+### Count non-null values
+
+```ts
+const userCount = await prisma.user.count({
+  select: { _all: true, name: true },
+});
+// Returns: { _all: 30, name: 10 }
+```
+
+## Select distinct
+
+Use `distinct` to filter duplicate rows:
+
+```ts
+// All users with distinct names
+const result = await prisma.user.findMany({
+  distinct: ["name"],
+});
+
+// Distinct role values only
+const distinctRoles = await prisma.user.findMany({
+  distinct: ["role"],
+  select: { role: true },
+});
+// Returns: [{ role: "USER" }, { role: "ADMIN" }]
+```
+
+:::note
+`distinct` uses in-memory post-processing (not SQL `SELECT DISTINCT`) to support `select` and `include`.
+:::
