@@ -1,0 +1,175 @@
+---
+title: 'Northflank'
+metaTitle: 'Deploy Prisma Postgres apps to Northflank'
+metaDescription: 'Learn how to deploy applications using Prisma Postgres to Northflank.'
+tocDepth: 3
+toc: true
+---
+
+[Northflank](https://northflank.com/) is a cloud platform for building, deploying, and scaling applications with built-in CI/CD and support for modern application architectures. This guide shows you how to deploy a Node.js application using Prisma Postgres to Northflank.
+
+## Prerequisites
+
+- A [Northflank account](https://app.northflank.com/signup)
+- An existing application using [Prisma Postgres](/postgres) (see [Quickstart](/getting-started/prisma-postgres/quickstart/prisma-orm))
+- Your application code in a Git repository (GitHub, GitLab, or Bitbucket)
+- The [Northflank CLI](https://northflank.com/docs/v1/api/use-the-cli) installed (Optional)
+
+## Deploy your application
+
+### 1. Generate Prisma Client in `postinstall`
+
+Ensure your `package.json` includes a `postinstall` script to generate Prisma Client during deployment:
+
+~~~json file=package.json
+{
+  // ...
+  "scripts": {
+    // ...
+    // add-next-line
+    "postinstall": "prisma generate"
+  }
+}
+~~~
+
+### 2. Create a new service in Northflank
+
+1. Log in to your [Northflank dashboard](https://app.northflank.com/)
+2. Select your project or create a new one
+3. Click **Create service** and select **Combined service**
+4. Connect your Git repository and select the branch to deploy
+
+### 3. Configure build settings
+
+In the service configuration:
+
+1. Set the Build type to `Buildpack` or `Dockerfile` if you have a custom Dockerfile
+2. If using buildpack, Northflank will automatically detect and run your build process and start command from `package.json`
+3. If using a Dockerfile, ensure your `CMD` instruction specifies the start command (e.g., `CMD ["npm", "start"]`)
+
+### 4. Set your database connection string
+
+Add your Prisma Postgres `DATABASE_URL` as an environment variable:
+
+1. In your service settings, navigate to **Environment variables**
+2. Click **Add variable**
+3. Set the key as `DATABASE_URL`
+4. Paste your Prisma Postgres connection string as the value
+
+:::tip
+You can find your `DATABASE_URL` in your `.env` file or in the Prisma Console.
+:::
+
+### 5. Deploy your service
+
+Click **Deploy** to start your service
+
+Once deployment completes, your service status will change to **Running**, and you can access your application at the provided URL.
+
+:::note
+The initial deployment may take a few minutes as Northflank builds and starts your application. You can monitor progress in the **Logs**.
+:::
+
+## Additional considerations
+
+### Ensure your project uses the correct environment variable
+
+Ensure that the data source in your `prisma.config.ts` file is configured to use the `DATABASE_URL` environment variable:
+
+~~~ts file=prisma.config.ts
+import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+  schema: './prisma/schema.prisma',
+});
+~~~
+
+### Running migrations in production
+
+To run migrations on your deployed Northflank service, you have several options:
+
+#### Option 1: Use the Northflank CLI
+
+~~~terminal
+northflank exec service --cmd "npx prisma migrate deploy"
+~~~
+
+#### Option 2: Use command override
+
+Configure a command override to run migrations before starting your app:
+
+1. Go to your service → Advanced → CMD override
+2. Select Custom command as the Docker runtime mode
+3. Add a command that chains the migration and app start:
+
+~~~terminal
+sh -c "npx prisma migrate deploy && npm start"
+~~~
+
+This will run migrations automatically whenever your service redeploys.
+
+#### Option 3: Use a Job
+
+1. Create a new **Job** in your project
+2. Connect the same repository
+3. Set the command to `npx prisma migrate deploy`
+4. Run manually or on a schedule
+
+### Scaling and performance
+
+You can scale your service vertically and horizontally on Northflank:
+
+1. Scale CPU and memory: Go to your service's Resources page and select a compute plan with the desired vCPU and memory allocation
+2. Scale instances (horizontal scaling): Use the scaling button in the service overview header or adjust from the Resources page
+
+For optimal performance, deploy your service in a region close to your Prisma Postgres database region.
+
+### Health checks
+
+Configure health checks to ensure your application is running correctly:
+
+1. Go to your service's Health checks page
+2. Click Add health check and select the probe type (liveness, readiness, or startup)
+3. Choose the protocol (HTTP, TCP, or CMD) and configure the endpoint or command
+4. Northflank will automatically restart unhealthy instances or remove them from the load balancer
+
+## Troubleshooting
+
+### Prisma schema not found or Client not generated correctly
+
+If the Prisma Client cannot be found:
+
+1. Ensure the `prisma/` directory is committed
+2. Ensure `postinstall` is configured correctly
+3. Ensure dependencies install before build
+
+For custom Dockerfiles, copy the `prisma/` directory before running `npm install`:
+
+~~~dockerfile
+COPY package*.json ./
+COPY prisma ./prisma
+RUN npm install
+COPY . .
+~~~
+
+### Environment variable not being read
+
+1. Verify `DATABASE_URL` exists in **Environment variables**
+2. Ensure it’s available at build time
+3. Check logs for errors
+4. Restart the service
+
+### Build timeouts
+
+1. Inspect build logs
+2. Optimize dependencies or build steps
+3. Increase build resources
+
+## More information
+
+- [Northflank documentation](https://northflank.com/docs)
+- [Prisma Postgres documentation](/postgres)
