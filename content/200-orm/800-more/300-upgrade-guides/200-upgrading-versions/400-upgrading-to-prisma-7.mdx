@@ -103,7 +103,7 @@ If you are using TypeScript, you need to configure your `tsconfig.json` to be ab
 {
   "compilerOptions": {
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "target": "ES2023",
     "strict": true,
     "esModuleInterop": true
@@ -219,6 +219,24 @@ const adapter = new PrismaBetterSqlite3({
 
 export const prisma = new PrismaClient({ adapter })
 ```
+
+:::note
+
+The `@prisma/adapter-better-sqlite3` package has been pinned to version 12.4.1 to resolve known issues with the underlying better-sqlite3 library. This should work for most users. 
+
+If you need a different version of better-sqlite3 (for example, for Node.js 25 compatibility), you can override the version using npm/pnpm overrides in your `package.json`:
+
+```json
+{
+  "pnpm": {
+    "overrides": {
+      "better-sqlite3": "9.6.0"
+    }
+  }
+}
+```
+
+:::
 
 ### Prisma Accelerate users upgrading from v6
 If you used Prisma Accelerate (including Prisma Postgres' `prisma+postgres://` URLs) in v6, keep using the Accelerate URL with the Accelerate extension. Do **not** pass the Accelerate URL to a driver adapter—`PrismaPg` expects a direct database connection string and will fail with `prisma://` or `prisma+postgres://`.
@@ -373,13 +391,13 @@ async function main() {
 
 ### Mapped enum values in generated TypeScript
 
-:::warning
+:::note Reversion to Prisma 6 behavior
 
-There is currently a known bug where using mapped enum values with Prisma Client operations (like `create`, `update`, etc.) causes runtime errors. The generated TypeScript types expect the mapped values, but the Prisma Client engine expects the schema names. This issue is being tracked in [GitHub issue #28591](https://github.com/prisma/prisma/issues/28591). Until this is fixed, you need to use workarounds described below.
+The mapped enum implementation that was initially planned for Prisma ORM v7 has been reverted. Mapped enum behavior now matches Prisma ORM v6 to avoid breaking changes. We plan to implement a similar feature in the future with different syntax.
 
 :::
 
-In Prisma ORM v7, the generated TypeScript enum values now use the `@map` values instead of the schema names. This is a breaking change from v6.
+In Prisma ORM v7, the generated TypeScript enum values use the **schema names**, not the mapped values. This maintains compatibility with Prisma ORM v6 behavior.
 
 #### Before Prisma ORM v6
 
@@ -393,7 +411,7 @@ enum SuggestionStatus {
 }
 ```
 
-In v6, the generated TypeScript enum would be:
+In v6, the generated TypeScript enum was:
 
 ```ts
 export const SuggestionStatus = {
@@ -403,56 +421,23 @@ export const SuggestionStatus = {
 } as const
 ```
 
-#### After Prisma ORM v7
+#### After Prisma ORM v7 (reverted behavior)
 
-In v7, the same schema generates:
+In v7, the same schema generates the same TypeScript as v6:
 
 ```ts
 export const SuggestionStatus = {
-  PENDING: 'pending',
-  ACCEPTED: 'accepted',
-  REJECTED: 'rejected'
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
 } as const
 ```
 
-This means that `SuggestionStatus.PENDING` now evaluates to `"pending"` instead of `"PENDING"`.
+This means that `SuggestionStatus.PENDING` evaluates to `"PENDING"`, not `"pending"`. The mapping is handled at the database level only.
 
 #### Migration steps
 
-If you're using mapped enums, you'll need to update any code that relies on the enum values being the schema names rather than the mapped values.
-
-##### Temporary workaround
-
-Until we resolve [the open issue](https://github.com/prisma/prisma/issues/28591), you need to use the schema name as a string literal instead of the generated enum value:
-
-```ts
-// This may cause a TypeScript error but works at runtime
-await prisma.suggestion.create({
-  data: {
-    status: "PENDING" as any, // Use schema name, not mapped value
-  },
-});
-```
-
-Alternatively, you can temporarily remove the `@map` directives from your enum values if you don't strictly need the database values to differ from the schema names:
-
-```prisma
-// Before: with @map directives
-enum SuggestionStatus {
-  PENDING  @map("pending")
-  ACCEPTED @map("accepted")
-  REJECTED @map("rejected")
-}
-
-// After: without @map directives
-enum SuggestionStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-```
-
-With this change, both the schema names and the database values will be `PENDING`, `ACCEPTED`, and `REJECTED`, and the generated TypeScript enum will work correctly with Prisma Client operations.
+No migration is required for this change. The behavior now matches Prisma ORM v6, so existing code will continue to work as expected.
 
 ### Client middleware has been removed
 
