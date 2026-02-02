@@ -1,0 +1,251 @@
+---
+title: 'How to use Prisma ORM with Encore'
+metaTitle: 'How to use Prisma ORM with Encore'
+description: 'Learn how to use Prisma ORM in an Encore app'
+sidebar_label: 'Encore'
+image: '/img/guides/prisma-encore-cover.png'
+completion_time: '15 min'
+community_section: true
+---
+
+## Introduction
+
+Prisma ORM provides type-safe database access, and [Encore](https://encore.dev) is an open source backend framework with built-in infrastructure automation and observability. Together, you get type-safe database queries with automatic database provisioning and migrations.
+
+In this guide, you'll learn to integrate Prisma ORM with Encore. Prisma generates migrations and the TypeScript client, while Encore handles database provisioning and applies migrations automatically.
+
+## Prerequisites
+- [Node.js 18+](https://nodejs.org)
+- [Encore CLI](https://encore.dev/docs/ts/install)
+- [Docker](https://docker.com) (for local database)
+
+## 1. Set up your project
+
+Create a new Encore project:
+
+```terminal
+encore app create my-app --example=ts/hello-world
+cd my-app
+```
+
+## 2. Install and configure Prisma
+
+### 2.1. Install dependencies
+
+```terminal
+npm install prisma --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv
+```
+
+Initialize Prisma:
+
+```terminal
+npx prisma init
+```
+
+### 2.2. Define your Encore database
+
+Create a `database.ts` file that sets up the Encore database with Prisma migrations:
+
+```typescript file=database.ts
+import { SQLDatabase } from "encore.dev/storage/sqldb";
+
+export const DB = new SQLDatabase("mydb", {
+  migrations: {
+    path: "./prisma/migrations",
+    source: "prisma",
+  },
+});
+```
+
+Setting `source: "prisma"` tells Encore to use Prisma's migration format.
+
+### 2.3. Configure connection strings
+
+Get your database connection URIs:
+
+```terminal
+encore db conn-uri my-app
+encore db conn-uri my-app --shadow
+```
+
+Add them to your `.env` file:
+
+```bash file=.env
+DB_URL=<main-connection-string>
+SHADOW_DB_URL=<shadow-connection-string>
+```
+
+:::info
+The shadow database is used by Prisma during migration development to detect schema drift.
+:::
+
+### 2.4. Define your Prisma schema
+
+Update `prisma/schema.prisma`:
+
+```prisma file=prisma/schema.prisma
+generator client {
+  provider        = "prisma-client"
+  output          = "./generated"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("SHADOW_DB_URL")
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  Int
+  author    User    @relation(fields: [authorId], references: [id])
+}
+```
+
+### 2.5. Create a Prisma client wrapper
+
+Create `prisma/client.ts` to initialize the client with Encore's connection string:
+
+```typescript file=prisma/client.ts
+import { PrismaClient } from "./generated/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { DB } from "../database";
+
+export const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: DB.connectionString }),
+});
+
+export * from "./generated/client";
+```
+
+### 2.6. Generate the initial migration
+
+```terminal
+npx prisma migrate dev --name init
+```
+
+This creates migration files in `prisma/migrations/`.
+
+## 3. Integrate Prisma into Encore
+
+### 3.1. Create API endpoints
+
+Create `users.ts` with endpoints using Prisma:
+
+```typescript file=users.ts
+import { api } from "encore.dev/api";
+import { prisma } from "./prisma/client";
+
+interface User {
+  id: number;
+  email: string;
+  name: string | null;
+}
+
+interface CreateUserRequest {
+  email: string;
+  name?: string;
+}
+
+export const list = api(
+  { expose: true, method: "GET", path: "/users" },
+  async (): Promise<{ users: User[] }> => {
+    const users = await prisma.user.findMany();
+    return { users };
+  }
+);
+
+export const create = api(
+  { expose: true, method: "POST", path: "/users" },
+  async (req: CreateUserRequest): Promise<User> => {
+    const user = await prisma.user.create({
+      data: {
+        email: req.email,
+        name: req.name,
+      },
+    });
+    return user;
+  }
+);
+
+export const get = api(
+  { expose: true, method: "GET", path: "/users/:id" },
+  async ({ id }: { id: number }): Promise<User> => {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id },
+    });
+    return user;
+  }
+);
+```
+
+### 3.2. Run your application
+
+```terminal
+encore run
+```
+
+Encore automatically applies migrations when starting. Open [localhost:9400](http://localhost:9400) to see the local dashboard with API docs, database explorer, and tracing.
+
+### 3.3. Test your endpoints
+
+```terminal
+# Create a user
+curl -X POST http://localhost:4000/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "alice@example.com", "name": "Alice"}'
+
+# List users
+curl http://localhost:4000/users
+```
+
+## 4. Making schema changes
+
+When you need to update your schema:
+
+1. Modify `prisma/schema.prisma`
+2. Generate a new migration:
+   ```terminal
+   npx prisma migrate dev --name add-field
+   ```
+3. Restart your app - Encore applies migrations automatically
+
+## 5. Deployment
+
+Add this to your `package.json` to generate the Prisma client during deployment:
+
+```json file=package.json
+{
+  "scripts": {
+    "postinstall": "npx prisma generate"
+  }
+}
+```
+
+When deploying to Encore Cloud, connection strings are provided automatically - no environment configuration needed.
+
+## Next steps
+
+Now that you have Prisma working with Encore, you can:
+
+- Extend your schema with more models and relationships
+- Add validation and error handling
+- Explore Encore's other infrastructure primitives (pub/sub, caching, cron jobs)
+- Deploy to [Encore Cloud](https://encore.cloud) for automatic infrastructure provisioning
+
+### More info
+
+- [Prisma Documentation](/orm/overview/introduction)
+- [Encore Documentation](https://encore.dev/docs)
+- [Encore Prisma Guide](https://encore.dev/docs/ts/develop/orms/prisma)
