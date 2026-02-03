@@ -391,6 +391,7 @@ const sidebars: SidebarsConfig = {
             "guides/cloudflare-workers",
             "guides/docker",
             "guides/use-prisma-in-pnpm-workspaces",
+            "guides/bun-workspaces",
             "guides/data-dog",
             "guides/github-actions",
             "guides/bun",
