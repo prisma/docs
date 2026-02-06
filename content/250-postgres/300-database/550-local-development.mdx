@@ -50,7 +50,15 @@ If you want to connect via Prisma ORM, hit <kbd>h</kbd> on your keyboard, copy t
 DATABASE_URL="prisma+postgres://localhost:51213/?api_key=__API_KEY__"
 ```
 
-Keep the local Prisma Postgres server running in the background while you work on your application. 
+Keep the local Prisma Postgres server running in the background while you work on your application.
+
+Alternatively, you can run the server in detached mode to free up your terminal:
+
+```terminal
+npx prisma dev --detach
+```
+
+This starts the server in the background. Use `prisma dev ls` to see running servers and `prisma dev stop` to stop them.
 
 ### 2. Applying migrations and seeding data
 
@@ -83,10 +91,48 @@ To transition to production, you only need to update the database URL in the `.e
 You can target a specific, local Prisma Postgres instance via the `--name` (`-n`) option of the `prisma dev` command, for example:
 
 ```terminal
-npx prisma dev --name mydb1
+npx prisma dev --name="mydb1"
 ```
 
-Whenever you pass the `--name mydb1` to `prisma dev`, the command will return the same connection string pointing to a local instance called `mydb1`.
+Whenever you pass the `--name="mydb1"` to `prisma dev`, the command will return the same connection string pointing to a local instance called `mydb1`. This creates a named instance that you can later manage using the instance management commands.
+
+## Starting existing Prisma Postgres instances in the background
+
+You can start existing Prisma Postgres instances in the background using:
+
+```terminal
+npx prisma dev start <glob>
+```
+
+:::note
+
+The `dev start` command only works with instances that already exist.
+
+:::
+
+`<glob>` is a placeholder for a glob pattern to specify which local Prisma Postgres instances should be started, for example:
+
+```terminal
+npx prisma dev start mydb # starts a DB called `mydb` in the background (only if it already exists)
+```
+
+To start all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), you can use a glob:
+
+```terminal
+npx prisma dev start mydb* # starts all existing DBs starting with `mydb`
+```
+
+This command enables you to manage Prisma Postgres instances outside of the VS Code extension, allowing for background instance management in your development workflow.
+
+## Listing Prisma Postgres instances
+
+You can view all your local Prisma Postgres instances using:
+
+```terminal
+npx prisma dev ls
+```
+
+This command lists all available instances on your system, showing their current status and configuration.
 
 ## Stopping Prisma Postgres instances
 
@@ -108,6 +154,12 @@ To stop all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), 
 npx prisma dev stop mydb* # stops all DBs starting with `mydb`
 ```
 
+:::note
+
+The `stop` command is interactive and includes safety prompts to prevent accidental operations. You'll be asked to confirm the action by typing a confirmation phrase.
+
+:::
+
 ## Removing Prisma Postgres instances
 
 Prisma Postgres saves the information and data from your local Prisma Postgres instances on your file system. To remove any trace from a database that's not in use any more, you can run the following command:
@@ -122,11 +174,25 @@ npx prisma dev rm <glob>
 npx prisma dev rm mydb # removes a DB called `mydb`
 ```
 
-To stop all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), you can use a glob:
+To remove all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), you can use a glob:
 
-```
+```terminal
 npx prisma dev rm mydb* # removes all DBs starting with `mydb`
 ```
+
+You can use the `--force` flag to stop any running servers before removing them:
+
+```terminal
+npx prisma dev rm mydb --force
+```
+
+Without `--force`, the command will fail if any server is still running.
+
+:::note
+
+The `rm` command is interactive and includes safety prompts to prevent accidental data loss. You'll be asked to confirm the action by typing a confirmation phrase that hints at the risks involved.
+
+:::
 
 ## Using local Prisma Postgres with any ORM
 
@@ -151,17 +217,14 @@ This is a complete runnable example that will print `[{abba: 1}]` when run:
 
 ```ts
 import { Client } from 'pg'
-import { unstable_startServer } from '@prisma/dev'
-import { getPort } from 'get-port-please'
+import { startPrismaDevServer } from '@prisma/dev'
 
 async function startLocalPrisma(name: string) {
-    const port = await getPort()
-
-    return await unstable_startServer({
+    return await startPrismaDevServer({
         name, // required, use a unique name if running tests in parallel
-        port, //optional, defaults to 51213
-        databasePort: port + 1, // optional, defaults to 51214
-        shadowDatabasePort: port + 2, // optional, defaults to 51215
+        port: 51213, // optional, defaults to 51213
+        databasePort: 51214, // optional, defaults to 51214
+        shadowDatabasePort: 51215, // optional, defaults to 51215
         persistenceMode: 'stateless' // optional, defaults to 'stateless'. Use 'stateful' to persist data between runs
     })
 }
@@ -183,19 +246,29 @@ try {
 
 ### API Arguments
 
-The `unstable_startServer()` function accepts the following options:
+The `startPrismaDevServer()` function accepts the following options:
 
 | **Argument**             | **Required** | **Description**                                                                                                                | **Default**   |
 | ------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------- |
-| **`name`**               | ✅            | Unique identifier for the local Prisma Postgres instance. Use distinct names if running multiple servers in parallel.          | —             |
+| **`name`**               | ❌            | Unique identifier for the local Prisma Postgres instance. Use distinct names if running multiple servers in parallel.          | `'default'`   |
 | **`port`**               | ❌            | Port for the Prisma engine server. Throws an error if the port is already in use.                                              | `51213`       |
 | **`databasePort`**       | ❌            | Port for the embedded PostgreSQL database. Used for all Prisma ORM connections.                                                | `51214`       |
 | **`shadowDatabasePort`** | ❌            | Port for the shadow database used during migrations.                                                                           | `51215`       |
 | **`persistenceMode`**    | ❌            | Defines how data is persisted:<br />• `'stateless'` — no data is retained between runs<br />• `'stateful'` — data persists locally | `'stateless'` |
+| **`debug`**              | ❌            | Whether to enable debug logging.                                                                                               | `false`       |
+| **`dryRun`**             | ❌            | Whether to run the server in dry run mode.                                                                                     | `false`       |
+| **`databaseConnectTimeoutMillis`** | ❌ | Connection timeout in milliseconds for pending database connections. Starts ticking for every new client that attempts to connect. When exceeded, the pending client connection is evicted and closed. Use with caution, as it may lead to unexpected behavior. Best used with a pool client that retries connections. | `60000` (1 minute) |
+| **`databaseIdleTimeoutMillis`** | ❌ | Idle timeout in milliseconds for active database connections. Re-starts ticking after each message received on the active connection. When exceeded, the active client connection is closed, and a pending connection is promoted to active. Use with caution, as it may lead to unexpected disconnections. Best used with a pool client that can handle disconnections gracefully. Set it if you suffer from client hanging indefinitely. | Not applied by default |
+| **`shadowDatabaseConnectTimeoutMillis`** | ❌ | Connection timeout in milliseconds for pending shadow database connections. | Defaults to `databaseConnectTimeoutMillis` |
+| **`shadowDatabaseIdleTimeoutMillis`** | ❌ | Idle timeout in milliseconds for active shadow database connections. | Defaults to `databaseIdleTimeoutMillis` |
 
 :::tip
 
-You can dynamically choose available ports using libraries like [`get-port-please`](https://www.npmjs.com/package/get-port-please) to avoid conflicts when running multiple instances.
+You can import the type definition for better TypeScript support:
+
+```ts
+import { type ServerOptions } from '@prisma/dev'
+```
 
 :::
 

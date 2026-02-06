@@ -839,13 +839,14 @@ The `dev` command starts a [local Prisma Postgres](/postgres/database/local-deve
 
 ### Arguments
 
-| Argument              | Required | Description                                                                                                                                        | Default |
-| --------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `--name` (or `-n`)    | No       | Enables targeting a specific database instance. [Learn more](/postgres/database/local-development#using-different-local-prisma-postgres-instances). |         |
-| `--port` (or `-p`)    | No       | Main port number the local Prisma Postgres HTTP server will listen on.                                                                              | `51213` |
-| `--db-port` (or `-P`) | No       | Port number the local Prisma Postgres database server will listen on.                                                                               | `51214` |
-| `--shadow-db-port`    | No       | Port number the shadow database server will listen on.                                                                                              | `51215` |
-| `--debug`             | No       | Enable debug logging.                                                                                                                               | `false` |
+| Argument              | Required | Description                                                                                                                                        | Default   |
+| --------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `--name` (or `-n`)    | No       | Enables targeting a specific database instance. [Learn more](/postgres/database/local-development#using-different-local-prisma-postgres-instances). | `default` |
+| `--port` (or `-p`)    | No       | Main port number the local Prisma Postgres HTTP server will listen on.                                                                              | `51213`   |
+| `--db-port` (or `-P`) | No       | Port number the local Prisma Postgres database server will listen on.                                                                               | `51214`   |
+| `--shadow-db-port`    | No       | Port number the shadow database server will listen on.                                                                                              | `51215`   |
+| `--detach` (or `-d`)  | No       | Run the server in the background.                                                                                                                   | `false`   |
+| `--debug`             | No       | Enable debug logging.                                                                                                                               | `false`   |
 
 ### Examples
 
@@ -879,6 +880,60 @@ Fetching latest updates for this subcommand...
 
 </CodeWithResult>
 
+**Run `prisma dev` with a specific name**
+
+```terminal
+npx prisma dev --name="mydbname"
+```
+
+This creates a named instance called `mydbname` that you can later start, stop, or manage using the instance management commands.
+
+**Run `prisma dev` in detached mode**
+
+```terminal
+npx prisma dev --detach
+```
+
+This runs the server in the background, freeing up your terminal for other commands. Use `prisma dev ls` to see running servers and `prisma dev stop` to stop them.
+
+### `dev start`
+
+Starts existing [local Prisma Postgres](/postgres/database/local-development) instances in the background. 
+
+:::note
+
+This command only works with instances that already exist.
+
+:::
+
+```terminal
+npx prisma dev start <glob>
+```
+
+`<glob>` is a placeholder for a glob pattern to specify which local Prisma Postgres instances should be started, for example:
+
+```terminal
+npx prisma dev start mydb # starts a DB called `mydb` in the background (only if it already exists)
+```
+
+To start all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), you can use a glob:
+
+```terminal
+npx prisma dev start mydb* # starts all existing DBs starting with `mydb`
+```
+
+This enables background instance management outside of the VS Code extension.
+
+### `dev ls`
+
+Lists all available [local Prisma Postgres](/postgres/database/local-development) instances:
+
+```terminal
+npx prisma dev ls
+```
+
+This command shows all instances on your system with their current status and configuration.
+
 ### `dev stop`
 
 Stops one or more [local Prisma Postgres](/postgres/database/local-development) databases:
@@ -899,6 +954,12 @@ To stop all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), 
 npx prisma dev stop mydb* # stops all DBs starting with `mydb`
 ```
 
+:::note
+
+The `stop` command is interactive and includes safety prompts to prevent accidental operations.
+
+:::
+
 ### `dev rm`
 
 Removes the data of one or more [local Prisma Postgres](/postgres/database/local-development) databases from your file system:
@@ -910,14 +971,26 @@ npx prisma dev rm <glob>
 `<glob>` is a placeholder for a glob pattern to specify which local Prisma Postgres instances should be removed, for example:
 
 ```terminal
-npx prisma dev stop mydb # stops a DB called `mydb`
+npx prisma dev rm mydb # removes a DB called `mydb`
 ```
 
-To stop all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), you can use a glob:
+To remove all databases that begin with `mydb` (e.g. `mydb-dev` and `mydb-prod`), you can use a glob:
 
+```terminal
+npx prisma dev rm mydb* # removes all DBs starting with `mydb`
 ```
-npx prisma dev stop mydb* # stops all DBs starting with `mydb`
-```
+
+#### Arguments
+
+| Argument  | Required | Description                                                                                                          | Default |
+| --------- | -------- | -------------------------------------------------------------------------------------------------------------------- | ------- |
+| `--force` | No       | Stops any running servers before removing them. Without this flag, the command will fail if any server is running. | `false` |
+
+:::note
+
+The `rm` command is interactive and includes safety prompts to prevent accidental data loss.
+
+:::
 
 
 ## `db`
@@ -1137,10 +1210,15 @@ export default defineConfig({
 
 | Options              | Required | Description                                                                                                                |
 | :------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------- |
-| `--skip-generate`    | No       | Skip generation of artifacts such as Prisma Client                                                                         |
 | `--force-reset`      | No       | Resets the database and then updates the schema - useful if you need to start from scratch due to unexecutable migrations. |
 | `--accept-data-loss` | No       | Ignore data loss warnings. This option is required if as a result of making the schema changes, data may be lost.          |
 | `--help` / `--h`     | No       | Displays the help message                                                                                                  |
+
+:::warning
+
+The `--skip-generate` flag was removed in Prisma 7. `db push` no longer runs `prisma generate` automatically. Run it explicitly if needed.
+
+:::
 
 #### Arguments
 
@@ -1203,10 +1281,7 @@ This command is currently not supported on [MongoDB](/orm/overview/databases/mon
 
 :::
 
-This command applies a SQL script to the database without interacting with the Prisma migrations table. The script takes two inputs:
-
-- the SQL script, which can be provided either on standard input or in a file
-- the data source, which can either be the URL of the data source or the path to your Prisma schema file
+This command applies a SQL script to the database without interacting with the Prisma migrations table. The datasource URL configuration is read from the Prisma config file (e.g., `prisma.config.ts`).
 
 The output of the command is connector-specific, and is not meant for returning data, but only to report success or failure.
 
@@ -1216,7 +1291,7 @@ See also:
 
 #### Prerequisites
 
-Before using the `db execute` command, if you do not use the `--url` option you must configure your database connection in your `prisma.config.ts` file.
+Before using the `db execute` command, you must configure your database connection in your `prisma.config.ts` file.
 
 For example:
 
@@ -1249,38 +1324,33 @@ export default defineConfig({
 
 #### Options
 
-One of the following data source inputs is required:
+| Options    | Required | Description                                                           |
+| :--------- | :------- | :-------------------------------------------------------------------- |
+| `--file`   | Yes*     | Path to a file. The content will be sent as the script to be executed |
+| `--stdin`  | No       | Use the terminal standard input as the script to be executed          |
+| `--config` | No       | Custom path to your Prisma config file                                |
+| `--help`   | No       | Displays the help message                                             |
 
-| Options    | Description                                                          |
-| :--------- | :------------------------------------------------------------------- |
-| `--url`    | URL of the data source to run the command on                         |
-| `--schema` | Path to a Prisma schema file, uses the URL in the `datasource` block |
+\* Either `--file` or `--stdin` is required to provide the script input.
 
-One of the following script inputs is required:
+:::info
 
-| Options   | Description                                                           |
-| :-------- | :-------------------------------------------------------------------- |
-| `--stdin` | Use the terminal standard input as the script to be executed          |
-| `--file`  | Path to a file. The content will be sent as the script to be executed |
+**Prisma 7 breaking change**: The `--schema` and `--url` options have been removed. Configure your database connection in `prisma.config.ts` instead.
 
-Other options:
-
-| Options  | Required | Description                |
-| :------- | :------- | :------------------------- |
-| `--help` | No       | Displays the help message. |
+:::
 
 #### Examples
 
-- Take the content of a SQL file located at `./script.sql` and execute it on the database specified by the URL in the `datasource` block of your `schema.prisma` file:
+- Execute the content of a SQL script file using the datasource configured in `prisma.config.ts`:
 
   ```terminal
-  prisma db execute --file ./script.sql --schema schema.prisma
+  prisma db execute --file ./script.sql
   ```
 
-- Take the SQL script from standard input and execute it on the database specified by the data source URL given in the `DATABASE_URL` environment variable:
+- Execute the SQL script from stdin using the configured datasource:
 
   ```terminal wrap
-  echo 'TRUNCATE TABLE dev;' | prisma db execute --stdin --url="$DATABASE_URL"
+  echo 'TRUNCATE TABLE dev;' | prisma db execute --stdin
   ```
 
 ## Prisma Migrate
@@ -1304,11 +1374,16 @@ The `migrate dev` command:
 1. Applies pending migrations to the shadow database (for example, new migrations created by colleagues)
 1. Generates a new migration from any changes you made to the Prisma schema before running `migrate dev`
 1. Applies all unapplied migrations to the development database and updates the `_prisma_migrations` table
-1. Triggers the generation of artifacts (for example, Prisma Client)
 
 :::warning
 
 This command is not supported on [MongoDB](/orm/overview/databases/mongodb). Use [`db push`](/orm/prisma-migrate/workflows/prototyping-your-schema) instead.
+
+:::
+
+:::info
+
+**Prisma 7**: `migrate dev` no longer automatically triggers `prisma generate` or seed scripts. Run `prisma generate` explicitly if needed.
 
 :::
 
@@ -1322,10 +1397,14 @@ See also:
 | Option            | Required | Description                                                                                                                                                                                        | Default |
 | :---------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
 | `--create-only`   | No       | Creates a new migration but does not apply it. This also works if you haven't made any changes to your schema (in that case, an empty migration is created). Run `migrate dev` to apply migration. |         |
-| `--skip-seed`     | No       | Skip triggering seed                                                                                                                                                                               |         |
-| `--skip-generate` | No       | Skip triggering generators (for example, Prisma Client)                                                                                                                                            |         |
 | `--name` / `-n`   | No       | Name the migration (e.g. `prisma migrate dev --name added_job_title`)                                                                                                                              |         |
 | `--help` / `-h`   | No       | Displays the help message                                                                                                                                                                          |         |
+
+:::warning
+
+The `--skip-generate` and `--skip-seed` flags were removed in Prisma 7. `migrate dev` no longer runs `prisma generate` or seeds automatically. Run them explicitly if needed.
+
+:::
 
 :::info
 
@@ -1584,7 +1663,7 @@ See also:
 
 #### Prerequisites
 
-Before using the `migrate diff` command, if you are using the `--from-schema-datasource` or `--to-schema-datasource` you must configure your database connection in your `prisma.config.ts` file.
+Before using the `migrate diff` command, if you are using `--from-config-datasource` or `--to-config-datasource`, you must configure your database connection in your `prisma.config.ts` file.
 
 For example:
 
@@ -1615,56 +1694,85 @@ export default defineConfig({
 
 #### Options
 
+:::info
+
+**Prisma 7 breaking change**: The `--from-url`, `--to-url`, `--from-schema-datasource`, `--to-schema-datasource`, and `--shadow-database-url` options have been removed. Use `--from-config-datasource` and `--to-config-datasource` instead, which read the database URL from `prisma.config.ts`.
+
+:::
+
 One of the following `--from-...` options is required:
 
 | Options                    | Description                                                                                              | Notes                                                                          |
 | :------------------------- | :------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| `--from-url`               | A data source URL                                                                                        |                                                                                |
+| `--from-empty`             | Assume that the data model you are migrating from is empty                                               |                                                                                |
+| `--from-schema`            | Path to a Prisma schema file, uses the data model for the diff                                           |                                                                                |
 | `--from-migrations`        | Path to the Prisma Migrate migrations directory                                                          | Not supported in MongoDB                                                       |
-| `--from-schema-datamodel`  | Path to a Prisma schema file, uses the data model for the diff                                           |                                                                                |
-| `--from-schema-datasource` | Path to a Prisma schema file, uses the URL in the `datasource` block for the diff                        |                                                                                |
-| `--from-empty`             | Assume that you the data model you are migrating from is empty                                           |                                                                                |
-| `--from-local-d1`          | Path to a local D1 instance ([learn more](/orm/overview/databases/cloudflare-d1#using-the-wrangler-cli-with-prisma-migrate-diff)) | Available since [5.12.0](https://github.com/prisma/prisma/releases/tag/5.12.0) |
+| `--from-config-datasource` | Use the datasource from the Prisma config file                                                           | Prisma 7+                                                                      |
 
 One of the following `--to-...` options is required:
 
 | Options                  | Description                                                                                              | Notes                                                                          |
 | :----------------------- | :------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| `--to-url`               | A data source URL                                                                                        |                                                                                |
+| `--to-empty`             | Assume that the data model you are migrating to is empty                                                 |                                                                                |
+| `--to-schema`            | Path to a Prisma schema file, uses the data model for the diff                                           |                                                                                |
 | `--to-migrations`        | Path to the Prisma Migrate migrations directory                                                          | Not supported in MongoDB                                                       |
-| `--to-schema-datamodel`  | Path to a Prisma schema file, uses the data model for the diff                                           |                                                                                |
-| `--to-schema-datasource` | Path to a Prisma schema file, uses the URL in the `datasource` block for the diff                        |                                                                                |
-| `--to-empty`             | Assume that you the data model you are migrating to is empty                                             |                                                                                |
-| `--to-local-d1`          | Path to a local D1 instance ([learn more](/orm/overview/databases/cloudflare-d1#using-the-wrangler-cli-with-prisma-migrate-diff)) | Available since [5.12.0](https://github.com/prisma/prisma/releases/tag/5.12.0) |
+| `--to-config-datasource` | Use the datasource from the Prisma config file                                                           | Prisma 7+                                                                      |
 
 Other options:
 
-| Options                 | Required | Description                                                                                                                                       | Notes                                                                          |
-| :---------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------- |
-| `--shadow-database-url` | No       | URL for the shadow database                                                                                                                       | Only required if using `--to-migrations` or `--from-migrations`                |
-| `--script`              | No       | Outputs a SQL script instead of the default human-readable summary                                                                                | Not supported in MongoDB                                                       |
-| `-o`, `--output`        | No       | Writes to a file instead of stdout                                                                                                                | Available since [5.12.1](https://github.com/prisma/prisma/releases/tag/5.12.1) |
-| `--exit-code`           | No       | Change the exit code behavior to signal if the diff is empty or not (Empty: 0, Error: 1, Not empty: 2). Default behavior is Success: 0, Error: 1. |                                                                                |
-| `--help`                | No       | Displays the help message.                                                                                                                        |                                                                                |
+| Options       | Required | Description                                                                                                                                       | Notes                                                                          |
+| :------------ | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------- |
+| `--script`    | No       | Outputs a SQL script instead of the default human-readable summary                                                                                | Not supported in MongoDB                                                       |
+| `-o`, `--output` | No    | Writes to a file instead of stdout                                                                                                                | Available since [5.12.1](https://github.com/prisma/prisma/releases/tag/5.12.1) |
+| `--exit-code` | No       | Change the exit code behavior to signal if the diff is empty or not (Empty: 0, Error: 1, Not empty: 2). Default behavior is Success: 0, Error: 1. |                                                                                |
+| `--config`    | No       | Custom path to your Prisma config file                                                                                                            |                                                                                |
+| `--help`      | No       | Displays the help message                                                                                                                         |                                                                                |
 
 #### Examples
 
-- Compare two databases specified by their data source URL, and output the default human-readable summary:
+- Compare the configured database to a Prisma schema (e.g., to roll forward after a migration failed):
 
   ```terminal
   prisma migrate diff \
-    --from-url "$DATABASE_URL" \
-    --to-url "postgresql://login:password@localhost:5432/db2"
+    --from-config-datasource \
+    --to-schema=next_datamodel.prisma \
+    --script
   ```
 
-- Compare the state of a database with a URL of `$DATABASE_URL` to the schema defined by the migrations in the `./prisma/migrations` directory, and output the differences to a script `script.sql`:
+- Compare a Prisma schema to the configured database:
 
   ```terminal
   prisma migrate diff \
-   --from-url "$DATABASE_URL" \
-   --to-migrations ./prisma/migrations \
-   --shadow-database-url $SHADOW_DATABASE_URL \
-   --script > script.sql
+    --from-schema=schema.prisma \
+    --to-config-datasource \
+    --script
+  ```
+
+- Compare the migrations directory to the configured database (e.g., to generate a migration for a hotfix already applied on production):
+
+  ```terminal
+  prisma migrate diff \
+    --from-migrations ./migrations \
+    --to-config-datasource \
+    --script
+  ```
+
+- Pipe the output to `prisma db execute`:
+
+  ```terminal
+  prisma migrate diff \
+    --from-config-datasource \
+    --to-schema=schema.prisma \
+    --script | prisma db execute --stdin
+  ```
+
+- Detect if both sources are in sync (exits with code 2 if changes are detected):
+
+  ```terminal
+  prisma migrate diff \
+    --exit-code \
+    --from-config-datasource \
+    --to-schema=schema.prisma
   ```
 
 ## Prisma Data Platform
@@ -1803,42 +1911,6 @@ prisma studio --config=./prisma.config.ts
 ```terminal
 prisma studio --url="postgresql://user:password@localhost:5432/dbname"
 ```
-
-## `package.json` entry options
-
-### `schema`
-
-The path to the desired `schema.prisma` file can be specified with the `prisma.schema` entry in the `package.json` file. The path defines the file the Prisma CLI should use when you run any of the CLI commands. Both absolute and relative paths are supported.
-
-```json file="package.json"
-{
-  "name": "my-project",
-  "version": "1.0.0",
-  "prisma": {
-    "schema": "./custom-path-to-schema/schema.prisma"
-  }
-}
-```
-
-This is available from version 2.7.0 and later.
-
-### `seed`
-
-The command used to populate the datasource is specified in the `prisma.seed` entry in the `package.json` file. It is used when `prisma db seed` is invoked or triggered.
-
-See [Seeding your database](/orm/prisma-migrate/workflows/seeding)
-
-```json file="package.json"
-{
-  "name": "my-project",
-  "version": "1.0.0",
-  "prisma": {
-    "seed": "node ./prisma/seed.js"
-  }
-}
-```
-
-This is available from version 3.0.1 and later.
 
 ## Using a HTTP proxy for the CLI
 

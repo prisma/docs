@@ -1,6 +1,6 @@
 ---
 title: 'How to embed Prisma Studio in a Next.js app'
-metaTitle: 'How to embed Prisma Studio in a Next.js app with Prisma Postgres'
+metaTitle: 'How to embed Prisma Studio in a Next.js app'
 description: 'Learn how to embed Prisma Studio directly in your Next.js application for database management'
 sidebar_label: 'Embedded Prisma Studio (with Next.js)'
 image: '/img/guides/prisma-studio-embedded-in-nextjs.png'
@@ -9,6 +9,9 @@ tags:
   - Next.js
   - Prisma Studio
   - Embedding
+  - PostgreSQL
+  - SQLite
+  - MySQL
 community_section: true
 ---
 
@@ -32,15 +35,15 @@ Embedding Prisma Studio can be useful in scenarios such as:
 ⚠️ Prisma branding must remain visible and unchanged
 🔐 To remove branding or learn about upcoming partner-only features, reach out at [partnerships@prisma.io](mailto:partnerships@prisma.io)
 
-Currently, Embedded Prisma Studio supports [**Prisma Postgres**](/postgres), with additional databases coming soon.
+Currently, Embedded Prisma Studio supports **PostgreSQL, SQLite, and MySQL** databases.
 
 :::
 
 ## Prerequisites
 
-- [Node.js 18+](https://nodejs.org)
+- [Node.js 20+](https://nodejs.org)
 - Basic knowledge of React and Next.js
-- A Prisma Postgres database 
+- A database (PostgreSQL, SQLite, or MySQL) 
 
 ## 1. Setting up Next.js
 
@@ -72,42 +75,80 @@ Then, navigate to the project directory:
 cd nextjs-studio-embed
 ```
 
-## 2. Setting up Prisma ORM and Prisma Postgres
+## 2. Setting up Prisma ORM and your database
 
-### 2.1. Install Prisma dependencies
+This guide uses Prisma Postgres as the primary example, but you can adapt it for SQLite or MySQL.
 
-Install the required Prisma packages:
+### 2.1. Install the required packages
 
-```terminal
+<TabbedContent code>
+
+<TabItem value="postgres" label="Prisma Postgres (PostgreSQL)">
+
+```bash
 npm install prisma tsx @types/pg --save-dev
 npm install @prisma/extension-accelerate @prisma/client @prisma/adapter-pg dotenv pg
 ```
 
-:::info
+</TabItem>
 
-If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+<TabItem value="sqlite" label="SQLite">
 
-:::
+```bash
+npm install prisma tsx --save-dev
+npm install @prisma/client @prisma/adapter-sqlite dotenv better-sqlite3
+```
 
-### 2.2. Initialize Prisma with Prisma Postgres
+</TabItem>
 
-Initialize Prisma in your project and create a Prisma Postgres database:
+<TabItem value="mysql" label="MySQL">
 
-```terminal
+```bash
+npm install prisma tsx @types/mysql2 --save-dev
+npm install @prisma/client @prisma/adapter-mysql dotenv mysql2
+```
+
+</TabItem>
+
+</TabbedContent>
+
+### 2.2. Initialize Prisma with the proper datasource
+
+<TabbedContent code>
+
+<TabItem value="postgres" label="Prisma Postgres (PostgreSQL)">
+
+```bash
 npx prisma init --db --output ../app/generated/prisma
 ```
 
-:::info
+</TabItem>
 
-You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My __________ Project"
+<TabItem value="sqlite" label="SQLite">
 
-:::
+```bash
+npx prisma init --datasource-provider sqlite --output ../app/generated/prisma
+```
 
-The `prisma init --db` command creates:
+</TabItem>
+
+<TabItem value="mysql" label="MySQL">
+
+```bash
+npx prisma init --datasource-provider mysql --output ../app/generated/prisma
+```
+
+</TabItem>
+
+</TabbedContent>
+
+### 2.2. What the init command creates
+
+The `prisma init` command creates:
 
 - A `prisma/` directory with your `schema.prisma` file
 - A `prisma.config.ts` file for configuring Prisma 
-- A new Prisma Postgres database
+- A new Prisma Postgres database or local SQLite database file
 - A `.env` file with your `DATABASE_URL`
 - An output directory at `app/generated/prisma` for the Prisma Client
 
@@ -122,7 +163,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // this will change depending on the --datasource-provider flag used in the init command
 }
 
 //add-start
@@ -147,7 +188,7 @@ model Post {
 //add-end
 ```
 
-### 2.4 Add `dotenv` to `prisma.config.ts`
+### 2.4. Add `dotenv` to `prisma.config.ts`
 
 To get access to the variables in the `.env` file, they can either be loaded by your runtime, or by using `dotenv`.
 Include an import for `dotenv` at the top of the `prisma.config.ts`
@@ -173,18 +214,22 @@ export default defineConfig({
 
 Generate the Prisma Client and apply the schema:
 
-```terminal
+```bash
 npx prisma migrate dev --name init
 npx prisma generate
 ```
 
-This creates the tables in your Prisma Postgres database and generates the Prisma Client.
+This creates the tables in your database and generates the Prisma Client.
 
 ### 2.6. Seed your database (optional)
 
 Create a seed file to add some sample data. Create a `seed.ts` file in the `prisma` folder and add the following code:
 
-```typescript file=prisma/seed.ts
+<TabbedContent code>
+
+<TabItem value="postgres" label="Prisma Postgres (PostgreSQL)">
+
+```typescript
 import { PrismaClient } from '../app/generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
@@ -244,9 +289,145 @@ main()
   })
 ```
 
+</TabItem>
+
+<TabItem value="sqlite" label="SQLite">
+
+```typescript
+import { PrismaClient } from '../app/generated/prisma/client'
+import { PrismaSQLite } from '@prisma/adapter-sqlite'
+
+const adapter = new PrismaSQLite({
+  connectionString: process.env.DATABASE_URL!,
+})
+
+const prisma = new PrismaClient({
+  adapter,
+})
+
+async function main() {
+  // Create users
+  const user1 = await prisma.user.create({
+    data: {
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+    },
+  })
+
+  const user2 = await prisma.user.create({
+    data: {
+      name: 'Bob Smith',
+      email: 'bob@example.com',
+    },
+  })
+
+  // Create posts
+  await prisma.post.create({
+    data: {
+      title: 'Getting Started with Next.js',
+      content: 'Next.js is a powerful React framework...',
+      published: true,
+      authorId: user1.id,
+    },
+  })
+
+  await prisma.post.create({
+    data: {
+      title: 'Database Management with Prisma',
+      content: 'Prisma makes database management easy...',
+      published: false,
+      authorId: user2.id,
+    },
+  })
+
+  console.log('Database seeded successfully!')
+}
+
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</TabItem>
+
+<TabItem value="mysql" label="MySQL">
+
+```typescript
+import { PrismaClient } from '../app/generated/prisma/client'
+import { PrismaMySQL } from '@prisma/adapter-mysql'
+
+const adapter = new PrismaMySQL({
+  connectionString: process.env.DATABASE_URL!,
+})
+
+const prisma = new PrismaClient({
+  adapter,
+})
+
+async function main() {
+  // Create users
+  const user1 = await prisma.user.create({
+    data: {
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+    },
+  })
+
+  const user2 = await prisma.user.create({
+    data: {
+      name: 'Bob Smith',
+      email: 'bob@example.com',
+    },
+  })
+
+  // Create posts
+  await prisma.post.create({
+    data: {
+      title: 'Getting Started with Next.js',
+      content: 'Next.js is a powerful React framework...',
+      published: true,
+      authorId: user1.id,
+    },
+  })
+
+  await prisma.post.create({
+    data: {
+      title: 'Database Management with Prisma',
+      content: 'Prisma makes database management easy...',
+      published: false,
+      authorId: user2.id,
+    },
+  })
+
+  console.log('Database seeded successfully!')
+}
+
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+</TabItem>
+
+</TabbedContent>
+
 Add a seed script to your `prisma.config.ts`:
 
-```ts file=prisma.config.ts
+<TabbedContent code>
+
+<TabItem value="postgres" label="Prisma Postgres (PostgreSQL)">
+
+```ts
 import 'dotenv/config';
 import { defineConfig, env } from 'prisma/config';
 export default defineConfig({
@@ -261,21 +442,63 @@ export default defineConfig({
 });
 ```
 
+</TabItem>
+
+<TabItem value="sqlite" label="SQLite">
+
+```ts
+import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: `tsx prisma/seed.ts`,
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+</TabItem>
+
+<TabItem value="mysql" label="MySQL">
+
+```ts
+import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: `tsx prisma/seed.ts`,
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
+```
+
+</TabItem>
+
+</TabbedContent>
+
 Run the seed script:
 
-```terminal
+```bash
 npx prisma db seed
 ```
 
 ## 3. Setting up the embedded Prisma Studio in your app
 
-Now that you have Prisma ORM and Prisma Postgres set up, you can embed Prisma Studio in your Next.js app. 
+Now that you have Prisma ORM and your database set up, you can embed Prisma Studio in your Next.js app. 
 
 ### 3.1. Install the Prisma Studio Core package
 
 Install the [`@prisma/studio-core` package](https://www.npmjs.com/package/@prisma/studio-core) that provides the embeddable components:
 
-```terminal
+```bash
 npm install @prisma/studio-core
 ```
 
@@ -283,14 +506,14 @@ npm install @prisma/studio-core
 
 If you encounter a dependency resolution error while installing `@prisma/studio-core`, you can force the install with:
 
-```terminal
+```bash
 npm install @prisma/studio-core --force
 ```
 
 If you are using yarn, pnpm, or another package manager, use the equivalent flag for your tool.
 :::
 
-The `@prisma/studio-core` provides `Studio`, a React component which renders Prisma Studio for your database. The `Studio` component accepts an _executor_ which accesses a custom endpoint in your backend. The backend uses your API key to identify the correct Prisma Postgres instance and sends the SQL query to it.
+The `@prisma/studio-core` provides `Studio`, a React component which renders Prisma Studio for your database. The `Studio` component accepts an _executor_ which accesses a custom endpoint in your backend. The backend uses your database connection to execute SQL queries and return the results.
 
 ### 3.2. Create a Studio wrapper component
 
@@ -330,11 +553,15 @@ export default function StudioWrapper({ children }: StudioWrapperProps) {
 }
 ```
 
-### 3.3. Create an API endpoint to send the SQL queries to Prisma Studio
+### 3.3. Create an API endpoint to send SQL queries to your database
 
-Next, set up a backend endpoint that Prisma Studio can communicate with. This endpoint receives SQL queries from the embedded Studio UI, forwards them to your Prisma Postgres database, and then returns the results (or errors) back to the frontend.
+Next, set up a backend endpoint that Prisma Studio can communicate with. This endpoint receives SQL queries from the embedded Studio UI, forwards them to your database, and then returns the results (or errors) back to the frontend.
 
 To do this, create a new folder called `api` inside the `app` directory. Inside it, add a `studio` folder with a `route.ts` file. This file will handle all requests sent to `/api/studio` and act as the bridge between the Studio component in your frontend and the database in your backend:
+
+<TabbedContent code>
+
+<TabItem value="postgres" label="route.ts (PostgreSQL)">
 
 ```typescript file=app/api/studio/route.ts
 import "dotenv/config"
@@ -378,6 +605,7 @@ export async function POST(request: Request) {
       });
     }
 
+    // Execute query using PostgreSQL
     const [error, results] = await createPrismaPostgresHttpClient({
       url,
     }).execute(query);
@@ -403,9 +631,162 @@ export async function OPTIONS() {
 }
 ```
 
+</TabItem>
+
+<TabItem value="sqlite" label="route.ts (SQLite)">
+
+```typescript file=app/api/studio/route.ts
+import "dotenv/config"
+import { createNodeSQLiteExecutor } from "@prisma/studio-core/data/node-sqlite";
+import { serializeError } from "@prisma/studio-core/data/bff";
+import DatabaseSync from "better-sqlite3";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*", // Change to your domain in production
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Use dynamic rendering for database operations
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return Response.json(
+    { message: "Studio API endpoint is running" },
+    { headers: CORS_HEADERS }
+  );
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const query = body.query;
+
+    if (!query) {
+      return Response.json([serializeError(new Error("Query is required"))], {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      const message = "❌ Environment variable DATABASE_URL is missing.";
+      return Response.json([serializeError(new Error(message))], {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    // Execute query using SQLite
+    const dbPath = url.replace("file:", "");
+    const database = new DatabaseSync(dbPath);
+    const [error, results] = await createNodeSQLiteExecutor(database).execute(query);
+
+    if (error) {
+      return Response.json([serializeError(error)], {
+        headers: CORS_HEADERS,
+      });
+    }
+
+    return Response.json([null, results], { headers: CORS_HEADERS });
+  } catch (err) {
+    return Response.json([serializeError(err)], {
+      status: 400,
+      headers: CORS_HEADERS,
+    });
+  }
+}
+
+// Handle preflight requests for CORS
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+```
+
+</TabItem>
+
+<TabItem value="mysql" label="route.ts (MySQL)">
+
+```typescript file=app/api/studio/route.ts
+import "dotenv/config"
+import { createMySQL2Executor } from "@prisma/studio-core/data/mysql2";
+import { serializeError } from "@prisma/studio-core/data/bff";
+import mysql from "mysql2/promise";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*", // Change to your domain in production
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Use dynamic rendering for database operations
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return Response.json(
+    { message: "Studio API endpoint is running" },
+    { headers: CORS_HEADERS }
+  );
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const query = body.query;
+
+    if (!query) {
+      return Response.json([serializeError(new Error("Query is required"))], {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      const message = "❌ Environment variable DATABASE_URL is missing.";
+      return Response.json([serializeError(new Error(message))], {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    // Execute query using MySQL
+    const pool = mysql.createPool(url);
+    const [error, results] = await createMySQL2Executor(pool).execute(query);
+
+    if (error) {
+      return Response.json([serializeError(error)], {
+        headers: CORS_HEADERS,
+      });
+    }
+
+    return Response.json([null, results], { headers: CORS_HEADERS });
+  } catch (err) {
+    return Response.json([serializeError(err)], {
+      status: 400,
+      headers: CORS_HEADERS,
+    });
+  }
+}
+
+// Handle preflight requests for CORS
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+```
+
+</TabItem>
+
+</TabbedContent>
+
 ### 3.4. Create the main Studio page
 
-Open the `app/page.tsx` file and replace the existing code to render the embedded Studio with the following:
+Open the `app/page.tsx` file and replace the existing code to render the embedded Studio:
+
+<TabbedContent code>
+
+<TabItem value="postgres" label="Prisma Postgres (PostgreSQL)">
 
 ```tsx file=app/page.tsx
 'use client';
@@ -442,7 +823,7 @@ const ClientOnlyStudio = () => {
       url: "/api/studio",
     });
 
-    // Create the Postgres adapter using the executor
+    // Create the PostgreSQL adapter using the executor
     return createPostgresAdapter({ executor });
   }, []);
 
@@ -460,11 +841,129 @@ export default function App() {
 }
 ```
 
+</TabItem>
+
+<TabItem value="sqlite" label="SQLite">
+
+```tsx file=app/page.tsx
+'use client';
+
+import dynamic from "next/dynamic";
+import { createSQLiteAdapter } from "@prisma/studio-core/data/sqlite-core";
+import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import { useMemo, Suspense } from "react";
+import StudioWrapper from "@/components/StudioWrapper";
+
+// Dynamically import Studio with no SSR to avoid hydration issues
+const Studio = dynamic(
+  () => import("@prisma/studio-core/ui").then(mod => mod.Studio),
+  {
+    ssr: false
+  }
+);
+
+// Loading component
+const StudioLoading = () => (
+  <div className="flex items-center justify-center h-full">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">Loading Studio...</p>
+    </div>
+  </div>
+);
+
+// Client-only Studio component
+const ClientOnlyStudio = () => {
+  const adapter = useMemo(() => {
+    // Create the HTTP client that communicates with our API endpoint
+    const executor = createStudioBFFClient({
+      url: "/api/studio",
+    });
+
+    // Create the SQLite adapter using the executor
+    return createSQLiteAdapter({ executor });
+  }, []);
+
+  return <Studio adapter={adapter} />;
+};
+
+export default function App() {
+  return (
+    <StudioWrapper>
+      <Suspense fallback={<StudioLoading />}>
+        <ClientOnlyStudio />
+      </Suspense>
+    </StudioWrapper>
+  );
+}
+```
+
+</TabItem>
+
+<TabItem value="mysql" label="MySQL">
+
+```tsx file=app/page.tsx
+'use client';
+
+import dynamic from "next/dynamic";
+import { createMySQLAdapter } from "@prisma/studio-core/data/mysql-core";
+import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import { useMemo, Suspense } from "react";
+import StudioWrapper from "@/components/StudioWrapper";
+
+// Dynamically import Studio with no SSR to avoid hydration issues
+const Studio = dynamic(
+  () => import("@prisma/studio-core/ui").then(mod => mod.Studio),
+  {
+    ssr: false
+  }
+);
+
+// Loading component
+const StudioLoading = () => (
+  <div className="flex items-center justify-center h-full">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">Loading Studio...</p>
+    </div>
+  </div>
+);
+
+// Client-only Studio component
+const ClientOnlyStudio = () => {
+  const adapter = useMemo(() => {
+    // Create the HTTP client that communicates with our API endpoint
+    const executor = createStudioBFFClient({
+      url: "/api/studio",
+    });
+
+    // Create the MySQL adapter using the executor
+    return createMySQLAdapter({ executor });
+  }, []);
+
+  return <Studio adapter={adapter} />;
+};
+
+export default function App() {
+  return (
+    <StudioWrapper>
+      <Suspense fallback={<StudioLoading />}>
+        <ClientOnlyStudio />
+      </Suspense>
+    </StudioWrapper>
+  );
+}
+```
+
+</TabItem>
+
+</TabbedContent>
+
 ### 3.5. Start your development server and test the embedded Studio
 
 Start your Next.js development server:
 
-```terminal
+```bash
 npm run dev
 ```
 
@@ -491,11 +990,11 @@ Verify whether everything works by testing the basics:
 - Try filtering data to make sure queries run correctly.
 - Navigate through relationships (for example, view a user's posts) to confirm associations work.
 
-Once these actions work as expected, your embedded Prisma Studio is set up and connected to your Prisma Postgres database.
+Once these actions work as expected, your embedded Prisma Studio is set up and connected to your database.
 
 ## Next steps
 
-At this point you have Prisma Studio running inside your Next.js application and connected to your Prisma Postgres database. You can browse, edit, and manage your data without leaving your app. To make this setup production-ready, consider these improvements:
+At this point you have Prisma Studio running inside your Next.js application and connected to your database. You can browse, edit, and manage your data without leaving your app. To make this setup production-ready, consider these improvements:
 
 1. **Add authentication**: Currently, anyone who can open your app has access to Prisma Studio. [Add user authentication](/postgres/database/prisma-studio/embedding-studio#adding-user-authentication) and only allow specific roles (for example, admins) to use the embedded Studio. You can do this by checking authentication tokens in your `/api/studio` endpoint before running queries.
 

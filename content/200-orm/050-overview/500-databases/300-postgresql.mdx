@@ -81,22 +81,47 @@ Notice that this code requires the `DATABASE_URL` environment variable to be set
 
 ### Notes
 
-#### Specifying a PostgreSQL schema
+#### Configuring the schema for Prisma queries (most common case)
 
-You can specify a [PostgreSQL schema](https://www.postgresql.org/docs/current/ddl-schemas.html) by passing in the `schema` option when instantiating `PrismaPg`:
+In Prisma 7, you configure the schema that Prisma uses when generating queries by passing a `schema` option when creating the `PrismaPg` instance. This is the recommended approach for most users who previously used the `schema` URL parameter in Prisma 6.
 
 ```ts
 const adapter = new PrismaPg(
   { connectionString },
-  { schema: 'myPostgresSchema' }
+  { schema: 'myPostgresSchema' } // Optional: specify the default schema
 )
 ```
+
+:::note
+**For Prisma 6 users**: In Prisma 6, you may have used a `?schema=` parameter in your connection URL. In Prisma 7, you must use the `schema` option shown above instead. This change makes the schema configuration more explicit and consistent across database adapters.
+:::
+
+#### Configuring the search path for raw SQL queries (less common case)
+
+If you need to set the search path for raw SQL queries (where you refer to tables without schema qualification), use PostgreSQL's native `options` parameter in your connection string. This is only necessary if you're using raw queries that reference tables without their schema name.
+
+```
+postgresql://user:pass@host:5432/db?options=-c%20search_path%3Dmyschemaname
+```
+
+or with the alternative syntax:
+
+```
+postgresql://user:pass@host:5432/db?options=--search_path%3Dmyschemaname
+```
+
+Both syntaxes are supported by the underlying `pg` driver. This approach is only needed for raw SQL queries - for Prisma Client queries, use the `schema` option shown above.
 
 ## Connection details
 
 ### Connection URL
 
-Prisma ORM follows the connection URL format specified by [PostgreSQL's official guidelines](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING), but does not support all arguments and includes additional arguments such as `schema`. Here's an overview of the components needed for a PostgreSQL connection URL:
+Prisma ORM follows the connection URL format specified by [PostgreSQL's official guidelines](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING). Note that in Prisma 7, the custom `schema` URL parameter that was available in Prisma 6 is no longer supported. Instead:
+
+1. For configuring the schema used by Prisma's query builder, use the `schema` option when creating the `PrismaPg` instance
+2. For setting the search path for raw SQL queries, use PostgreSQL's native `options` parameter in the connection URL
+
+Here's an overview of the components needed for a PostgreSQL connection URL:
 
 ![Structure of the PostgreSQL connection URL](./postgresql-connection-string.png)
 
@@ -160,8 +185,15 @@ As an example, if you want to connect to a schema called `myschema`, set the con
 postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=myschema&connection_limit=5&socket_timeout=3
 ```
 
-:::tip[Prisma ORM v7 connection pooling]
-In Prisma ORM v7, [driver adapters](/orm/overview/databases/database-drivers) are the default for relational databases. Connection pooling is handled by the Node.js driver you provide (like `pg`), not by Prisma's connection URL parameters. See the [connection pool guide](/orm/prisma-client/setup-and-configuration/databases-connections/connection-pool) for v7 defaults and configuration.
+:::warning[Prisma ORM v7: Connection pool defaults have changed]
+
+In Prisma ORM v7, [driver adapters](/orm/overview/databases/database-drivers) are the default for relational databases. Connection pooling is now handled by the `pg` driver, which has **different defaults** than Prisma ORM v6:
+
+- **Connection timeout**: `0` (no timeout) vs. v6's `5s`
+- **Idle timeout**: `10s` vs. v6's `300s`
+
+If you experience timeout issues after upgrading, you may need to configure your driver adapter to match v6 behavior. See the [connection pool guide](/orm/prisma-client/setup-and-configuration/databases-connections/connection-pool#postgresql-using-the-pg-driver-adapter) for detailed configuration examples.
+
 :::
 
 ### Configuring an SSL connection

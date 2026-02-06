@@ -342,6 +342,12 @@ const config: Config = {
           ],
         },
         {
+          href: "https://pris.ly/discord?utm_source=docs&utm_medium=navbar",
+          position: "right",
+          className: "header-discord-link",
+          "aria-label": "Join the Prisma Discord community",
+        },
+        {
           href: "https://pris.ly/github?utm_source=docs&utm_medium=navbar",
           position: "right",
           className: "header-github-link",

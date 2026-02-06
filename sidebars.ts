@@ -106,7 +106,12 @@ const sidebars: SidebarsConfig = {
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/quickstart/planetscale",
-                  label: "PlanetScale",
+                  label: "PlanetScale MySQL",
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/quickstart/planetscale-postgres",
+                  label: "PlanetScale Postgres",
                 },
                 {
                   type: "doc",
@@ -162,7 +167,12 @@ const sidebars: SidebarsConfig = {
                 {
                   type: "doc",
                   id: "getting-started/prisma-orm/add-to-existing-project/planetscale",
-                  label: "PlanetScale",
+                  label: "PlanetScale MySQL",
+                },
+                {
+                  type: "doc",
+                  id: "getting-started/prisma-orm/add-to-existing-project/planetscale-postgres",
+                  label: "PlanetScale Postgres",
                 },
                 {
                   type: "doc",
@@ -360,10 +370,12 @@ const sidebars: SidebarsConfig = {
           collapsible: false,
           items: [
             "guides/nextjs",
+            "guides/nestjs",
             "guides/nuxt",
             "guides/sveltekit",
             "guides/astro",
             "guides/hono",
+            "guides/elysia",
             "guides/solid-start",
             "guides/react-router-7",
             "guides/tanstack-start",
@@ -376,11 +388,14 @@ const sidebars: SidebarsConfig = {
           collapsed: false,
           collapsible: false,
           items: [
+            "guides/cloudflare-workers",
             "guides/docker",
             "guides/use-prisma-in-pnpm-workspaces",
+            "guides/bun-workspaces",
             "guides/data-dog",
             "guides/github-actions",
             "guides/bun",
+            "guides/management-api-api-clients",
           ].sort(),
         },
         {
@@ -390,6 +405,7 @@ const sidebars: SidebarsConfig = {
           collapsible: false,
           items: [
             "guides/clerk-nextjs",
+            "guides/clerk-astro",
             "guides/shopify",
             "guides/permit-io-access-control",
             "guides/betterauth-astro",
@@ -480,7 +496,19 @@ const sidebars: SidebarsConfig = {
           label: "Prompts",
           collapsed: false,
           collapsible: false,
-          items: ["ai/prompts/astro", "ai/prompts/nextjs", "ai/prompts/prisma-7"],
+          items: [
+            "ai/prompts/astro",
+            "ai/prompts/nextjs",
+            "ai/prompts/prisma-7",
+            "ai/prompts/turborepo",
+          ],
+        },
+        {
+          type: "category",
+          label: "Vibe Coding Tutorials",
+          collapsed: false,
+          collapsible: false,
+          items: ["ai/tutorials/linktree-clone", "ai/tutorials/typefully-clone"],
         },
         {
           type: "category",

@@ -176,7 +176,13 @@ The path to the directory where Prisma should store migration files, and look fo
 
 ### `migrations.seed`
 
-This option allows you to define a script that Prisma runs to seed your database after running migrations or using the npx prisma db seed command. The string should be a command that can be executed in your terminal, such as with `node`, `ts-node`, or `tsx`.
+This option allows you to define a script that Prisma runs when you execute the `npx prisma db seed` command. The string should be a command that can be executed in your terminal, such as with `node`, `ts-node`, or `tsx`.
+
+:::info[Prisma ORM v7 changes]
+
+In Prisma ORM v7, seeding is only triggered explicitly via `npx prisma db seed`. In Prisma ORM v6 and earlier, the seed script also ran automatically after `prisma migrate dev` and `prisma migrate reset`.
+
+:::
 
 | Property          | Type     | Required | Default |
 | ----------------- | -------- | -------- | ------- |
@@ -601,7 +607,13 @@ tsx --env-file=.env ./prisma/seed.ts
 
 #### Using Bun
 
-For Bun, `.env` files are automatically loaded without additional configuration.
+For Bun, `.env` files are automatically loaded without additional configuration. The `import 'dotenv/config'` line that `prisma init` generates is not needed when using Bun and can be safely removed from your `prisma.config.ts` file.
+
+:::note
+
+When running Prisma CLI commands with Bun, use the `--bun` flag (e.g., `bunx --bun prisma init`) to ensure Prisma uses the Bun runtime instead of falling back to Node.js.
+
+:::
 
 #### Type-safe environment variables
 
@@ -625,6 +637,43 @@ export default defineConfig({
   },
 });
 ```
+
+#### Handling optional environment variables
+
+The `env()` helper function from `prisma/config` **throws an error** if the specified environment variable is not defined. This is important to understand because:
+
+- Every Prisma CLI command loads the `prisma.config.ts` file
+- Only **some** commands actually need the `datasource.url` value (e.g., `prisma db *`, `prisma migrate *`, `prisma generate --sql`)
+- Commands like `prisma generate` don't need a database URL, but will still fail if `env()` throws an error when loading the config file
+
+For example, if you run `prisma generate` without `DATABASE_URL` set, and your config uses `env('DATABASE_URL')`, you'll see:
+
+```terminal
+Error: PrismaConfigEnvError: Missing required environment variable: DATABASE_URL
+```
+
+**Solution:** If your environment variable isn't guaranteed to exist (e.g., in CI/CD pipelines where you only run `prisma generate` for type-checking), don't use the `env()` helper. Instead, access the environment variable directly:
+
+```ts
+import 'dotenv/config'
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: process.env.DATABASE_URL!, // Or use: process.env.DATABASE_URL ?? '' to provide a fallback value
+  },
+});
+```
+
+:::note
+
+Use the `env()` helper when you want to **enforce** that an environment variable exists. Use `process.env` directly when the variable may be optional depending on the command being run.
+
+:::
 
 ### Using multi-file schemas
 
@@ -695,14 +744,20 @@ pnpm prisma validate
 # → Still finds prisma.config.ts and resolves schema correctly
 ```
 
-### Behavior with `npm exec prisma` or `bun prisma`
+### Behavior with `npx prisma` or `bunx --bun prisma`
 
-When running via `npm exec prisma` or `bun prisma`, the CLI only detects the config file if the command is run from the **project root** (where `package.json` declares Prisma).
+When running via `npx prisma` or `bunx --bun prisma`, the CLI only detects the config file if the command is run from the **project root** (where `package.json` declares Prisma).
+
+:::note
+
+The `--bun` flag is required when using Bun to ensure Prisma runs with the Bun runtime. Without it, Prisma falls back to Node.js due to the `#!/usr/bin/env node` shebang in the CLI.
+
+:::
 
 Example run from the project root:
 
 ```bash
-npm exec prisma validate
+npx prisma validate
 # → Works as expected
 ```
 
@@ -710,14 +765,14 @@ Run from a subdirectory (fails):
 
 ```bash
 cd src
-npm exec prisma validate
+npx prisma validate
 # → Error: Could not find Prisma Schema...
 ```
 
 To fix this, you can use the `--config` flag:
 
 ```bash
-npm exec prisma -- --config ../prisma.config.ts validate
+npx prisma validate --config ../prisma.config.ts
 ```
 
 ### Global Prisma installations
