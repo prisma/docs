@@ -48,7 +48,7 @@ export default async function Page({
           <LLMCopyButton pageUrl={page.url} />
           <ViewOptions
             pageUrl={page.url}
-            githubUrl={`https://github.com/prisma/temp-docs-rewrite/blob/main/content/docs/${page.path}`}
+            githubUrl={`https://github.com/prisma/docs/blob/main/content/docs.v6/${page.path}`}
           />
         </div>
       </div>
@@ -65,7 +65,7 @@ export default async function Page({
       </DocsBody>
       <div className="flex flex-row flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm">
         <EditOnGitHub
-          href={`https://github.com/prisma/temp-docs-rewrite/edit/main/content/docs/${page.path}`}
+          href={`https://github.com/prisma/docs/edit/main/content/docs.v6/${page.path}`}
         />
         {(page.data as { lastModified?: Date }).lastModified && (
           <PageLastUpdate

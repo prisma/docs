@@ -40,7 +40,7 @@ export default async function Page({
         {/*   <LLMCopyButton markdownUrl={`${page.url}.mdx`} /> */}
         {/*   <ViewOptions */}
         {/*     markdownUrl={`${page.url}.mdx`} */}
-        {/*     githubUrl={`https://github.com/prisma/temp-docs-rewrite/blob/main/apps/docs/content/docs/${page.path}`} */}
+        {/*     githubUrl={`https://github.com/prisma/docs/blob/main/apps/eclipse/content/design-system/${page.path}`} */}
         {/*   /> */}
         {/* </div> */}
       </div>
@@ -54,7 +54,7 @@ export default async function Page({
       </DocsBody>
       <div className="flex flex-row flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm">
         {/* <EditOnGitHub */}
-        {/*   href={`https://github.com/prisma/temp-docs-rewrite/edit/main/apps/docs/content/docs/${page.path}`} */}
+        {/*   href={`https://github.com/prisma/docs/edit/main/apps/eclipse/content/design-system/${page.path}`} */}
         {/* /> */}
         {(page.data as { lastModified?: Date }).lastModified && (
           <PageLastUpdate
