@@ -1,7 +1,7 @@
 ---
 title: 'How to use Prisma ORM and Prisma Postgres with Nuxt'
-metaTitle: 'Build a Nuxt app with Prisma ORM and Prisma Postgres'
-description: 'A step-by-step guide to setting up and using Prisma ORM and Prisma Postgres in a Nuxt app.'
+metaTitle: 'How to use Prisma ORM and Prisma Postgres with Nuxt'
+description: 'Learn how to use Prisma ORM in a Nuxt app'
 sidebar_label: 'Nuxt'
 completion_time: '10 min'
 image: '/img/guides/prisma-postgres-and-prisma-nuxt-guide.png'
@@ -11,44 +11,79 @@ tags:
 community_section: true
 ---
 
-This guide shows you how to set up Prisma ORM in a Nuxt application with [Prisma Postgres](https://prisma.io/postgres).
+## Introduction
+
+This guide shows you how to use Prisma ORM with [Nuxt](https://nuxt.com/), a fullstack Vue framework. You'll learn how to set up Prisma ORM and [Prisma Postgres](/postgres/) with Nuxt and handle migrations.
+
+You can find a [deployment-ready example on GitHub](https://github.com/prisma/prisma-examples/tree/latest/orm/nuxt).
 
 ## Prerequisites
+- [Node.js 20+](https://nodejs.org)
 
-- Node.js 18+
-- A [Prisma Postgres](https://console.prisma.io/) database (or any PostgreSQL database)
+## 1. Set up your project
 
-## 1. Create a Nuxt project
-
-Create a new Nuxt project and install dependencies:
+Create a new Nuxt project:
 
 ```terminal
-npx nuxi@latest init hello-prisma
-cd hello-prisma
-npm install @prisma/client @prisma/adapter-pg pg
-npm install -D prisma @types/pg dotenv tsx
+npx nuxi@latest init nuxt-prisma
 ```
 
-## 2. Initialize Prisma
-
-Initialize Prisma in your project:
+Navigate into the project directory:
 
 ```terminal
-npx prisma init
+cd nuxt-prisma
 ```
 
-Update your `prisma/schema.prisma`:
+## 2. Install and Configure Prisma
+
+### 2.1. Install dependencies
+
+To get started with Prisma, you'll need to install a few dependencies:
+
+```terminal
+npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg
+```
+
+:::info
+
+If you are using a different database provider (MySQL, SQL Server, SQLite), install the corresponding driver adapter package instead of `@prisma/adapter-pg`. For more information, see [Database drivers](/orm/overview/databases/database-drivers).
+
+:::
+
+Once installed, initialize Prisma in your project:
+
+```terminal
+npx prisma init --db --output ../server/generated/prisma
+```
+:::info
+You'll need to answer a few questions while setting up your Prisma Postgres database. Select the region closest to your location and a memorable name for your database like "My Nuxt Project"
+:::
+
+This will create:
+
+- A `prisma` directory with a `schema.prisma` file.
+- A `prisma.config.ts` file for configuring Prisma.
+- A Prisma Postgres database.
+- A `.env` file containing the `DATABASE_URL` at the project root.
+
+The `server/generated/prisma` output directory for the generated Prisma Client will be created when you run `prisma generate` or `prisma migrate dev` in a later step.
+
+### 2.2. Define your Prisma Schema
+
+In the `prisma/schema.prisma` file, add the following models:
 
 ```prisma file=prisma/schema.prisma
 generator client {
   provider = "prisma-client"
-  output   = "./generated"
+  output   = "../server/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+//add-start
 model User {
   id    Int     @id @default(autoincrement())
   email String  @unique
@@ -57,110 +92,203 @@ model User {
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   title     String
   content   String?
-  published Boolean  @default(false)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
+  published Boolean @default(false)
+  authorId  Int
+  author    User    @relation(fields: [authorId], references: [id])
 }
+//add-end
 ```
 
-Create a `prisma.config.ts` file in the root of your project:
+This creates two models: `User` and `Post`, with a one-to-many relationship between them.
 
-```ts file=prisma.config.ts
-import { defineConfig, env } from 'prisma/config'
-import 'dotenv/config'
+### 2.3. Run migrations and generate Prisma Client
 
-export default defineConfig({
-  schema: 'prisma/schema.prisma',
-  migrations: {
-    path: 'prisma/migrations',
-    seed: 'tsx ./prisma/seed.ts',
-  },
-  datasource: {
-    url: env('DATABASE_URL'),
-  },
-})
-```
-
-Update your `.env` file with your database connection string:
-
-```bash file=.env
-DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
-```
-
-Run the migration to create your database tables:
+Now, run the following command to create the database tables:
 
 ```terminal
 npx prisma migrate dev --name init
 ```
 
-## 3. Set up Prisma Client
+Then generate Prisma Client:
 
-Create `server/utils/db.ts`. Nuxt auto-imports exports from `server/utils`, making `prisma` available in all API routes:
-
-```ts file=server/utils/db.ts
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '../../prisma/generated/client'
-
-const prismaClientSingleton = () => {
-  const pool = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
-  return new PrismaClient({ adapter: pool })
-}
-
-type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClientSingleton | undefined
-}
-
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+```terminal
+npx prisma generate
 ```
 
-## 4. Create API routes
+### 2.4. Seed the database
 
-Create an API route to fetch users. The `prisma` instance is auto-imported:
+Add some seed data to populate the database with sample users and posts.
+
+Create a new file called `seed.ts` in the `prisma/` directory:
+
+```typescript file=prisma/seed.ts
+import { PrismaClient, Prisma } from "../server/generated/prisma/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
+
+const userData: Prisma.UserCreateInput[] = [
+  {
+    name: "Alice",
+    email: "alice@prisma.io",
+    posts: {
+      create: [
+        {
+          title: "Join the Prisma Discord",
+          content: "https://pris.ly/discord",
+          published: true,
+        },
+        {
+          title: "Prisma on YouTube",
+          content: "https://pris.ly/youtube",
+        },
+      ],
+    },
+  },
+  {
+    name: "Bob",
+    email: "bob@prisma.io",
+    posts: {
+      create: [
+        {
+          title: "Follow Prisma on Twitter",
+          content: "https://www.twitter.com/prisma",
+          published: true,
+        },
+      ],
+    },
+  },
+];
+
+export async function main() {
+  for (const u of userData) {
+    await prisma.user.create({ data: u });
+  }
+}
+
+main();
+```
+
+Now, tell Prisma how to run this script by updating your `prisma.config.ts`:
+
+```ts file=prisma.config.ts
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+//add-start
+    seed: "tsx prisma/seed.ts",
+//add-end
+  },
+  datasource: {
+    url: process.env["DATABASE_URL"],
+  },
+});
+```
+
+Run the seed script:
+
+```terminal
+npx prisma db seed
+```
+
+And open Prisma Studio to inspect your data:
+
+```terminal
+npx prisma studio
+```
+
+## 3. Integrate Prisma into Nuxt
+
+### 3.1. Create a Prisma Client
+
+Create `server/utils/db.ts`. Nuxt [auto-imports](https://nuxt.com/docs/guide/concepts/auto-imports#auto-imports) exports from `server/utils/`, making `prisma` available in all server routes and utilities:
+
+```typescript file=server/utils/db.ts
+import { PrismaClient } from "../generated/prisma/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+```
+
+:::warning
+We recommend using a connection pooler (like [Prisma Accelerate](https://www.prisma.io/accelerate)) to manage database connections efficiently.
+
+If you choose not to use one, **avoid** instantiating `PrismaClient` globally in long-lived environments. Instead, create and dispose of the client per request to prevent exhausting your database connections.
+:::
+
+### 3.2. Create API routes
+
+Create an API route to fetch users:
 
 ```ts file=server/api/users.get.ts
+import { prisma } from "../utils/db";
+
 export default defineEventHandler(async () => {
   const users = await prisma.user.findMany({
-    include: { posts: true }
-  })
-  return users
-})
+    include: { posts: true },
+  });
+  return users;
+});
 ```
 
 Create an API route to create a user:
 
 ```ts file=server/api/users.post.ts
+import { prisma } from "../utils/db";
+
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ name: string; email: string }>(event)
+  const body = await readBody<{ name: string; email: string }>(event);
 
   const user = await prisma.user.create({
     data: {
       name: body.name,
       email: body.email,
     },
-  })
+  });
 
-  return user
-})
+  return user;
+});
 ```
 
-## 5. Create a page
+### 3.3. Create a page
 
-Update `app.vue` to display users:
+Update `app.vue` to display users and their posts:
 
 ```html file=app.vue
 <template>
   <div>
-    <h1>Users</h1>
+    <h1>Nuxt + Prisma</h1>
     <ul v-if="users?.length">
       <li v-for="user in users" :key="user.id">
-        {{ user.name }} ({{ user.email }})
+        <h2>{{ user.name }} ({{ user.email }})</h2>
+        <ul>
+          <li v-for="post in user.posts" :key="post.id">
+            {{ post.title }}
+          </li>
+        </ul>
       </li>
     </ul>
     <p v-else>No users yet.</p>
@@ -172,7 +300,7 @@ const { data: users } = await useFetch('/api/users')
 </script>
 ```
 
-## 6. Run the app
+### 3.4. Run the app
 
 Start the development server:
 
@@ -180,105 +308,23 @@ Start the development server:
 npm run dev
 ```
 
-Open `http://localhost:3000` to see your app.
+Open `http://localhost:3000` to see your app. You should see a list of users with their posts pulled from the database:
 
-## 7. Seed your database (optional)
-
-Create a seed file to populate your database with sample data:
-
-```ts file=prisma/seed.ts
-import 'dotenv/config'
-import { PrismaClient } from './generated/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
-const prisma = new PrismaClient({ adapter })
-
-async function main() {
-  const alice = await prisma.user.create({
-    data: {
-      name: 'Alice',
-      email: 'alice@prisma.io',
-      posts: {
-        create: { title: 'Hello World', published: true },
-      },
-    },
-  })
-  console.log(`Created user: ${alice.name}`)
-}
-
-main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
-```
-
-Run the seed:
-
-```terminal
-npx prisma db seed
-```
-
-## 8. Deploy to Vercel
-
-You can deploy your Nuxt application to Vercel using one of two methods:
-
-### Option A: Deploy using Vercel CLI
-
-1. Install the Vercel CLI (if not already installed):
-   ```terminal
-   npm install -g vercel
-   ```
-
-2. Deploy your project:
-   ```terminal
-   npx vercel
-   ```
-
-3. Set the `DATABASE_URL` environment variable:
-   - Go to your [Vercel Dashboard](https://vercel.com/dashboard)
-   - Select your project
-   - Navigate to **Settings** → **Environment Variables**
-   - Add `DATABASE_URL` with your database connection string
-
-4. Redeploy your application to apply the environment variable:
-   ```terminal
-   npx vercel --prod
-   ```
-
-### Option B: Deploy using Git integration
-
-1. Push your code to a Git repository (GitHub, GitLab, or Bitbucket).
-
-2. Add `prisma generate` to your `postinstall` script in `package.json` to ensure Prisma Client is generated during deployment:
-   ```json file=package.json
-   {
-     "scripts": {
-       "postinstall": "prisma generate",
-       "build": "nuxt build",
-       "dev": "nuxt dev"
-     }
-   }
-   ```
-
-3. Import your project in Vercel:
-   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
-   - Click **Add New** → **Project**
-   - Import your Git repository
-   - Vercel will automatically detect it as a Nuxt project
-
-4. Configure environment variables:
-   - Before deploying, go to **Environment Variables**
-   - Add `DATABASE_URL` with your database connection string
-   - Click **Deploy**
-
-Vercel will automatically build and deploy your Nuxt application. The deployment process is the same as any other Node.js application, and Prisma Client will be generated during the build process thanks to the `postinstall` script.
+- **Alice** with her posts "Join the Prisma Discord" and "Prisma on YouTube"
+- **Bob** with his post "Follow Prisma on Twitter"
 
 ## Next steps
 
-- Explore the [full Nuxt + Prisma example](https://github.com/prisma/prisma-examples/tree/latest/orm/nuxt) for a complete blog application
-- Learn about [Prisma Client API](/orm/prisma-client)
-- Set up [Prisma Postgres](/postgres) for a managed database
+Now that you have a working Nuxt application with Prisma ORM, here are some ways you can expand and improve your application:
+
+- Add authentication to protect your routes
+- Add the ability to edit and delete posts
+- Add comments to posts
+- Use [Prisma Studio](/orm/tools/prisma-studio) for visual database management
+- Enable query caching with [Prisma Postgres](/postgres/database/caching) for better performance
+
+### More info
+
+- [Prisma ORM documentation](/orm)
+- [Prisma Client API reference](/orm/prisma-client)
+- [Nuxt documentation](https://nuxt.com/docs)
