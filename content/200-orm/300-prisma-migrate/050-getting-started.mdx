@@ -242,13 +242,18 @@ To include [unsupported database features](/orm/prisma-migrate/workflows/unsuppo
 
 1. Open the `migration.sql` file generated in the [Create a baseline migration](#create-a-baseline-migration) section.
 1. Modify the generated SQL. For example:
-  - If the changes are minor, you can append additional custom SQL to the generated migration. The following example creates a partial index:
+  - If the changes are minor, you can append additional custom SQL to the generated migration. The following example creates a trigger function:
     ```sql
     /* Generated migration SQL */
 
     --add-start
-    CREATE UNIQUE INDEX tests_success_constraint ON posts (subject, target)
-      WHERE success;
+    CREATE OR REPLACE FUNCTION notify_on_insert()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      PERFORM pg_notify('new_record', NEW.id::text);
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
     --add-end
     ```
   - If the changes are significant, it can be easier to replace the entire migration file with the result of a database dump ([`mysqldump`](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html), [`pg_dump`](https://www.postgresql.org/docs/12/app-pgdump.html)). When using `pg_dump` for this, you'll need to update the `search_path` as follows with this command: `SELECT pg_catalog.set_config('search_path', '', false);`; otherwise you'll run into the following error: `The underlying table for model '_prisma_migrations' does not exist.`
