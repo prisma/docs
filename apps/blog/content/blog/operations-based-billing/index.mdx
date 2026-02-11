@@ -1,0 +1,130 @@
+---
+title: "Operations-Based Billing: A Simpler Pricing Model for Modern Databases"
+slug: "operations-based-billing"
+date: "2025-05-15"
+authors:
+  - "Petra Donka"
+metaTitle: "Operations-Based Billing: A Simpler Pricing Model for Modern Databases"
+metaDescription: "Serverless pricing for databases is notoriously difficult to grok and predict accurately. When thinking of how to solve this pricing dilemma for Prisma Postgres, we wanted to make things easy. Our operations-based pricing model simplifies pricing and removes the need to think about resource sizes or abstract compute time metrics."
+metaImagePath: "/blog/operations-based-billing/imgs/meta-3354519625f3caa95164b69d5b9418abd3b99059-1266x711.png"
+heroImagePath: "/blog/operations-based-billing/imgs/hero-1d997b49de7986be043f844425adc9214c468725-844x474.svg"
+excerpt: |
+  Serverless pricing for databases is notoriously difficult to grok and predict accurately. When thinking of how to solve this pricing dilemma for [Prisma Postgres](https://prisma.io/postgres), we wanted to make things easy. Our operations-based model simplifies pricing and removes the need to think about resource sizes or abstract compute time metrics.
+---
+
+### A simpler approach to database pricing
+
+As applications moved to the cloud, the first pricing model that gained popularity was termed “**serverful pricing**". When running on these fixed-size server instances, not only were you forced to predict all future traffic so you could choose the right resource size upfront, you were also expected to implement elaborate scaling mechanisms yourself. This gave you full control, but also meant over-provisioning during lulls and scrambling for resources during spikes.
+
+To tackle the gaps with this method of pricing, "**serverless compute-time billing**" emerged. It removed the burden of provisioning in advance and charged only for the time your database was active, largely eliminating idle costs, but still billed you in abstract units like CPU seconds or compute hours, which can be very difficult to accurately predict. You also needed to select a tier with fixed resource limits, trading one type of infrastructure work for another, plus the efficiency of the compute, and as a result, it’s duration, is dependent on the underlying system and out of your control.
+
+[Prisma Postgres](https://prisma.io/postgres) takes a different approach to making the whole pricing brouhaha a bit simpler and fairer with **operations-based pricing**: your usage is billed based on operations (which we explain in detail below), **regardless of the compute or the data bandwidth it uses**. With this model, you don't have to provision resources or consider idle or peak loads, and the system scales automatically. This aligns your costs directly with your application’s behavior, removes mundane infrastructure decisions, and lets you focus on what matters the most, which is building features and winning users.
+
+Let’s dive into how operations-based pricing works and how to calculate your costs in this pricing model.
+
+### What is an operation?
+
+At it’s core, an operation is an action you perform against your Prisma Postgres database, whether that’s a create, a read, an update or a delete, or even a cached read. 
+
+We count these as the [queries](https://www.prisma.io/docs/orm/prisma-client/queries) you issue via the Prisma ORM (a “Prisma Query” for short), as the Prisma ORM is the primary client you use to interact with your database. This is similar to how other database providers provide their own clients, though the Prisma ORM goes a few steps further with a superior, type-safe developer experience and additional features, like migrations, to simplify working with your database. In short, it’s a big part of what gives you a great DX when working with Prisma Postgres, and every query you run through it counts as an operation.
+
+The reason we chose this approach is because it’s so simple. Behind the scenes, a complex Prisma Query may result in multiple SQL statements, but for billing purposes, it remains one operation, so you never have to think about it. A simple create and a complex read with multiple JOINs may also take different durations to complete, but that’s another thing you don’t have to reason about, nor the data transfer bandwidth they use.
+
+Let’s take a look at a single operation through an example. The following Prisma Query is billed as one operation, yet it translates to several (8, in the case of the example below) SQL statements.
+
+
+
+```javascript
+// create a new user, assigning 2 posts to them, or creating them on the fly
+prisma.user.create({
+  data: {
+    name: "Alice",
+    posts: {
+      connectOrCreate: [
+        {
+          where: { title: "Post 1" },
+          create: { title: "Post 1" },
+        },
+        {
+          where: { title: "Post 2" },
+          create: { title: "Post 2" },
+        },
+      ],
+    },
+  },
+});
+```
+```sql
+BEGIN;                                            -- start transaction
+
+INSERT INTO public."User"("name")
+VALUES($1,$2,$3) RETURNING public."User"."id";    -- insert user
+
+SELECT "id" FROM public."Post"
+WHERE "name"=$1 AND 1=1 OFFSET $2;                -- lookup post
+
+INSERT INTO public."Post"("title")
+VALUES($1,$2,$3) RETURNING "id";                  -- insert missing post
+
+INSERT INTO public."_Post"("A","B")
+VALUES($1,$2) ON CONFLICT DO NOTHING;             -- link user to post
+
+SELECT "id" FROM public."Post"
+WHERE "title"=$1 AND 1=1 OFFSET $2;               -- lookup next post
+
+INSERT INTO public."Post"("title")
+VALUES($1,$2,$3) RETURNING "id";                  -- insert next post
+
+INSERT INTO public."_Post"("A","B")
+VALUES($1,$2) ON CONFLICT DO NOTHING;             -- link next post
+
+SELECT t0."id",t0."name"
+FROM public."User" AS t0
+WHERE t0."id"=$1 LIMIT $2;                        -- fetch user
+
+COMMIT;                                           -- commit transaction
+```
+
+
+### Why is an operations-based pricing model better?
+
+In practice, this shifts your mental model, and we think it does so in a good way. Instead of asking *“How much compute time will this endpoint use?”* or *“What if this launch creates traffic that maxes out the CPU or RAM we have?”*, you ask, *“How many operations will this user interaction generate?”* It’s easier to reason about, easier to predict, and keeps your team focused on product behavior, not infra behavior.
+
+Basing pricing on operations means:
+
+- You don't have to spend hours thinking about the compute required for your database operation, whether it’s a simple write to the database, or a complex query involving multiple JOINs, it’s just one operation.
+- You don’t pay more for write-heavy workloads, writes and reads are simply billed equally.
+- Data transfer has no impact on your bill, so queries with small or large egress cost the same.
+- Cached queries simply count as operations and also benefit from much lower latency and predictable pricing.
+- Storage billing is separated from other usage costs making it more transparent and simpler to understand.
+
+### Calculation example
+
+To see how operations-based pricing works in practice, let’s take a look at a billing example for a typical medium-sized application.
+
+Here are the base assumptions and facts our calculation will be based on:
+
+- 4M operations per month (a typical application with 3K monthly active users)
+- 1M operations are free every month for the Starter plan (as per our pricing plan)
+- $8 per million operations (above the 1M *free operations*)
+- 1.2GB storage used (typical for a medium-sized application)
+- 10GB storage is free every month (as per our pricing plan)
+- $10 base plan fee
+
+Based on these assumptions, the billing calculation would be as follows:
+
+> 1 million no-cost operations + (3M operations at $8/M) + (10GB no-cost storage) + $10 base plan fee
+>
+> = (3.0 × $8) + $10
+> 
+> = $34.00 per month
+
+Note: This calculation is based on our Starter plan. Pricing per million operations progressively decreases as you upgrade to higher plans, plus what’s included for free continues to increase as well. This means that you pay less per million operations on Business than on Starter, and you get more storage included for free. More plan differentiating features are on our [pricing page.](https://prisma.io/pricing)
+
+### Final thoughts
+
+Pricing is an essential consideration for product development, and the feedback we have received tells us that our operations based approach is a positive shift.
+
+We hope this explanation is helpful for you in clarifying any questions you may have about the operations-based pricing model of Prisma Postgres.
+
+In the meantime, [give Prisma Postgres a try](http://console.prisma.io), we can’t wait to see what you build with it!

@@ -1,0 +1,205 @@
+---
+title: "ORM v6.11.0, Embedded Prisma Studio, Rust-free ORM for MySQL in Preview & More"
+slug: "orm-v6-11-0-embedded-prisma-studio-rust-free-orm-for-mysql-in-preview-and-more"
+date: "2025-07-02"
+authors:
+  - "Nikolas Burk"
+metaTitle: "ORM v6.11.0, Embedded Prisma Studio, Rust-free ORM for MySQL in Preview & More"
+metaDescription: "What’s new: Prisma ORM without Rust in Preview for MySQL & Neon, embedded Prisma Studio for your React apps, new region for Prisma Postgres & more. "
+metaImagePath: "/blog/orm-v6-11-0-embedded-prisma-studio-rust-free-orm-for-mysql-in-preview-and-more/imgs/meta-f3f4386ecb62981d836ac001e9ad7d7bf3983817-1266x711.png"
+heroImagePath: "/blog/orm-v6-11-0-embedded-prisma-studio-rust-free-orm-for-mysql-in-preview-and-more/imgs/hero-3fe13fbc2fb282c40babce1bbdd9090f848862d9-844x474.svg"
+excerpt: |
+  Check out what’s new: Prisma ORM without Rust in Preview for MySQL, Neon & CockroachDB, embedded Prisma Studio for your React apps, new region for Prisma Postgres & more. 
+---
+
+import { Accordions, Accordion } from "@prisma-docs/eclipse";
+
+## Embed Prisma Studio in your React apps
+
+If you're using Prisma Postgres (yourself or by offering it to your own users), you can now embed Prisma Studio to offer an amazing data editing experience to your users!
+
+Check out the [demo site](https://github.com/prisma/studio-core-demo) to see how Studio can be integrated in a React app with Vite and Hono on the server-side.
+
+![](/blog/orm-v6-11-0-embedded-prisma-studio-rust-free-orm-for-mysql-in-preview-and-more/imgs/d2c35b8243dd6f86ff9a353d5bb64ad79510920f-2836x981.png)
+
+Here's a high-level overview for how you can integrate Prisma Studio in your own app (check the [docs](https://www.prisma.io/docs/postgres/database/prisma-studio/embedding-studio) for details). First, install the [`@prisma/studio-core`](https://www.npmjs.com/package/@prisma/studio-core)  package via npm. Then, in your frontend, you can include the `Studio` component.
+
+<Accordions type="single">
+  <Accordion title="Expand to view the frontend code">
+```tsx
+import { Studio } from "@prisma/studio-core/ui";
+import { createPostgresAdapter } from "@prisma/studio-core/data/postgres-core";
+import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+
+function App() {
+  const adapter = useMemo(() => {
+    // 1. Create a client that points to your backend endpoint
+    const executor = createStudioBFFClient({
+      url: "http://localhost:4242/studio",
+    });
+
+    // 2. Create a Postgres adapter with the executor
+    const adapter = createPostgresAdapter({ executor });
+    return adapter;
+  }, []);
+
+  return (
+    <Layout>
+      <Studio adapter={adapter} />
+    </Layout>
+  );
+}
+```
+  </Accordion>
+</Accordions>
+
+On the server-side, you need to expose a `/studio` endpoint that accepts the requests from the `Studio` component on frontend.
+
+<Accordions type="single">
+  <Accordion title="Expand to view the backend code">
+```ts
+import { Hono } from "hono";
+import { createPrismaPostgresHttpClient } from "@prisma/studio-core/data/ppg";
+import { serializeError } from "@prisma/studio-core/data/bff";
+
+const app = new Hono().use("*", cors());
+
+app.post("/studio", async (c) => {
+  // 1. Extract the query and custom data from the request
+  const { query } = await c.req.json();
+  
+  // 2. Read DB URL from env vars
+  const url = process.env.DATABASE_URL;
+  
+  // 3. Execute the query against Prisma Postgres
+  const [error, results] = await createPrismaPostgresHttpClient({ url }).execute(query);
+  
+  // 4. Return results or errors
+  if (error) {
+    return c.json([serializeError(error)]);
+  }
+  
+  return c.json([null, results]);
+});
+```
+  </Accordion>
+</Accordions>
+
+Note that you can also pass extra headers and a custom payload for each request sent from the frontend, that way you can add an authentication layer or serve multi-tenant use cases where each of your users has access to their own database. 
+
+[Try the demo](https://www.github.com/prisma/studio-core-demo) and let us know what you think!
+
+## Predict your Prisma Postgres bill with our new Pricing Calculator
+
+Prisma Postgres comes with a pricing model that seems too simple to be true: You're charged based on storage and operations—not CPU, compute hours or any other resource-based metrics.
+
+While it's simple, it may feel unfamiliar because it's so different from existing pricing models. To understand how much you'd pay for Prisma Postgres running your app, you can now use our [Pricing Calculator](https://www.prisma.io/pricing?calculator). Put in the predicted storage and number of operations to see how much you're going to be charged on each plan.
+
+![](/blog/orm-v6-11-0-embedded-prisma-studio-rust-free-orm-for-mysql-in-preview-and-more/imgs/9ef5f02aad029c18e343816c7906ac2ce1dab223-1088x1080.gif)
+
+## Prisma Postgres now available for _all_ Postgres templates in Vercel Marketplace
+
+On vercel.com/templates, you can find lots of one-click-deploy application templates! We  worked with the Vercel team to get Prisma Postgres working with _all_ templates requiring a PostgreSQL database, for example:
+
+- [Next.js SaaS Starter with Drizzle ORM](https://vercel.com/templates/authentication/next-js-saas-starter)
+- [Postgres SvelteKit Starter with Postgres.js](https://vercel.com/templates/svelte/postgres-sveltekit)
+- [Next.js + PostgreSQL Auth Starter with Drizzle ORM](https://vercel.com/templates/authentication/drizzle-postgres-auth-starter)
+- … and [a lot more](https://vercel.com/templates?search=postgres)
+
+## New region for Prisma Postgres: Frankfurt (`eu-central-1`)
+
+We keep expanding Prisma Postgres availability across the globe! After having added San Francisco just a few weeks ago, we're now adding Frankfurt based on another [poll we ran on X](https://x.com/prisma/status/1924494260910612841). Here are all the regions where you can spin up Prisma Postgres instances today:
+
+- **`eu-central-1`: Frankfurt (_new!_)**
+- `eu-west-3`: Paris
+- `us-west-1`: San Francisco
+- `us-east-1`: North Virginia
+- `ap-northeast-1`: Tokyo
+- `ap-southeast-1`: Singapore
+
+[Keep an eye on our X account](https://pris.ly/x) to take part in the poll and vote for the next availability zone of Prisma Postgres!
+
+## Prisma ORM v6.11.0 release
+
+We just released [Prisma ORM v6.11.0](https://pris.ly/release/6.11.0), so read on to learn about the newly added features!
+
+### Prisma ORM without Rust engines for MySQL/MariaDB, Neon & CockroachDB in Preview
+
+In this release, we are excited to move the “Rust-free version of Prisma ORM” into Preview for our remaining [first-class SQL databases](https://www.prisma.io/blog/prisma-orm-manifesto#1-defining-first-class-databases): MySQL/MariaDB, Neon and CockroachDB.
+
+If you want to try this, you can configure your generator like this:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js" // or `prisma-client`
+  previewFeatures = ["queryCompiler", "driverAdapters"]
+  output          = "../generated/prisma"
+}
+```
+To use the Rust-free Prisma ORM version, you can use the following driver adapters:
+- MySQL/MariaDB: `@prisma/adapter-mariadb`
+- Neon: `@prisma/adapter-neon` (or `@prisma/adapter-pg`)
+- CockroachDB: `@prisma/adapter-pg`
+
+> **Note:** The [`mariadb`](https://github.com/mariadb-corporation/mariadb-connector-nodejs) driver is compatible with _all_ MySQL databases. It's the recommended option to use MySQL with Prisma ORM when using [driver adapters.](https://www.prisma.io/docs/orm/overview/databases/database-drivers)
+
+Here's how to use it with MySQL. First, make sure to re-generate Prisma Client for the changes on your `generator` to take effect:
+
+```shell
+npx prisma generate
+```
+Then, install the required driver adapter:
+
+```shell
+npm install @prisma/adapter-mariadb
+```
+Once installed, you can instantiate `PrismaClient` as follows:
+
+```ts
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { PrismaClient } from './generated/prisma';
+
+const adapter = new PrismaMariaDb({
+  host: "localhost",
+  port: 3306,
+  connectionLimit: 5
+});
+const prisma = new PrismaClient({ adapter });
+```
+No more hassle with query engines, binary targets and an even smoother experience in serverless and edge environments!
+
+### Ready-to-run examples for new `prisma-client` generator
+
+Our new [`prisma-client`](https://www.prisma.io/docs/orm/prisma-schema/overview/generators#prisma-client-early-access) generator is more flexible, provides more control about the generated code, works with various JS runtimes and comes with ESM support out-of-the-box.
+
+To make it easier for you to try it out, we created a few ready-to-run example projects so you can see the new generator in action:
+
+- [`nextjs-starter-webpack`](https://github.com/prisma/prisma-examples/tree/latest/generator-prisma-client/nextjs-starter-webpack)
+- [`nextjs-starter-turbopack`](https://github.com/prisma/prisma-examples/tree/latest/generator-prisma-client/nextjs-starter-turbopack)
+- [`neextjs-starter-webpack-monorepo`](https://github.com/prisma/prisma-examples/tree/latest/generator-prisma-client/neextjs-starter-webpack-monorepo)
+- [`nextjs-starter-webpack-with-middleware`](https://github.com/prisma/prisma-examples/tree/latest/generator-prisma-client/nextjs-starter-webpack-with-middleware)
+
+
+### Stop and remove local Prisma Postgres instances via CLI
+
+You can start a _local_ Prisma Postgres instance using the `prisma dev --name mydb` command or via the Prisma VS Code extension UI. 
+
+If you start a local instance via the Prisma CLI, you can simply kill the process to stop the instance. However, when you start instances via the VS Code extension UI, you could also only stop them via the UI—not via the CLI.
+
+This changes in this release: You can now also _stop_ local Prisma Postgres instances and _remove_ them from your file system via the Prisma CLI:
+
+- `prisma dev stop <globs>`: Stops one or more local Prisma Postgres instances
+- `prisma dev rm <globs>`: Removes one or more local Prisma Postgres instances from your file system
+
+Learn more about these new commands in the [docs](https://tbd).
+
+## Connecting to Prisma Postgres with any tool is now faster
+
+We recently enabled the option to connect to Prisma Postgres with any tool via [direct connections](https://www.prisma.io/docs/postgres/database/direct-connections). In this release, we have reduced the connection latency so your first request is now even faster.
+
+
+## Try out the new features & let us know what you think
+
+This week released a bunch of new features for Prisma ORM and Prisma Postgres! We're especially excited about letting you integrate Prisma Studio in your own React apps and are excited to see what you're going to build with it. We also released a new navigation UI for the Prisma Console, Rust-free Prisma ORM for MySQL/MariaDB in Preview and the ability to stop and remove local Prisma Postgres instances.
+
+If you're using any of these features, we want to know what you think! Join the discussion on [Discord](https://pris.ly/discord), and ping us on [X](https://pris.ly/x).

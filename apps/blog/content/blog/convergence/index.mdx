@@ -1,0 +1,310 @@
+---
+title: "Plot Twist: We're All Building the Same ORM"
+slug: "convergence"
+date: "2025-10-20"
+authors:
+  - "Nitin Gupta"
+metaTitle: "The ORM Convergence: Convergence through experience"
+metaDescription: "Why Drizzle's relational API v2 mirrors Prisma: production database problems at scale lead to similar patterns. A look at ORM convergence."
+metaImagePath: "/blog/convergence/imgs/meta-3963296cdd515c9ae5cb17379fcff0da144c7b35-1266x711.png"
+heroImagePath: "/blog/convergence/imgs/hero-532d75ec739a13ee528e8b2a085d47fc962a3ca7-840x472.png"
+heroImageAlt: "ORM Convergence"
+excerpt: |
+  Drizzle's relational API v2 adds migrations, object-based queries, and abstractions mirroring Prisma's architecture. Plot twist: this isn't copying, it's convergence. Production database problems at scale demand similar solutions. Seeing another team reach the same conclusions we did in 2020? Pretty validating.
+---
+
+A few years ago, Drizzle ORM burst onto the scene with a compelling pitch: at "~7.4kb minified+gzipped," they positioned themselves as the anti-Prisma. No heavy Rust engine, no migration complexity, no abstractions hiding SQL. Just lightweight, typesafe SQL that stays close to the metal. And honestly they had a point. The "just write SQL" philosophy is genuinely appealing, especially to developers who know databases well. We've been called "bloated," "over-engineered," and "too magical" enough times to appreciate why a fresh, minimal approach resonated with developers.
+
+Fast forward to 2025. Drizzle's "Relational API v2" and their massive "Alternation Engine" [PR #4439](https://github.com/drizzle-team/drizzle-orm/pull/4439) tell a different story. As of this writing, this new branch has 363 commits, [9,000+ tests](https://github.com/drizzle-team/drizzle-orm/issues/2061#issuecomment-3239454117), a systematic implementation of migrations, object-based queries, and abstractions. As someone who's been through that exact journey (we remember when our migration test suite exploded), we can say with authority: this is impressive, necessary engineering work.
+Here's what makes this really cool: two ORMs with opposite starting philosophies, built by different teams, are converging on remarkably similar thinking and arch. This isn't about who copied whom, it's about discovering what production applications actually need, and then doing the necessary to serve your the needs of your users.  It's also about what this convergence reveals: certain patterns aren't arbitrary preferences made by engineering teams or biased framework opinions, they're optimal solutions that emerge when you tackle production-scale problems in complicated domains like databases. 
+
+Whether you start lightweight or comprehensive, you eventually end up in a similar place and we think that's pretty cool. And we'd be lying if we said it doesn't feel validating. 😉
+
+## The Migration Engine: Complexity Demands Specialized Attention
+Let's talk about migrations. Drizzle has always offered schema-first migrations and automated tooling, and their initialk commands for the same have been remarkably similar to Prisma's from day one. But their ongoing Alternation Engine work now reveals something we learned the hard way back in 2021: building reliable migrations across databases isn't a weekend project, rather it's a sustained, core engineering effort.
+
+The test suite expansion alone tells the unavoidble story. You don't go from 600 to over 9,000 tests because you're over-engineering. You do it because migrations are genuinely complex: handling edge cases across database vendors, tricky alterations (column renames, type changes), data preservation during schema evolution, and the intricacies of multi-dialect support safely.
+
+### Migration Commands: Parallel Evolution Validates Design
+```shell
+# Prisma's approach (since 2021)
+npx prisma db push       # Push schema state to database
+npx prisma db pull       # Pull database state to schema (introspection)
+npx prisma migrate dev   # Generate and apply migrations
+npx prisma generate      # Generate client code
+
+# Drizzle's approach (since inception)
+npx drizzle-kit push     # Push schema state to database
+npx drizzle-kit pull     # Pull database state to schema (introspection)
+npx drizzle-kit migrate  # Apply migrations
+npx drizzle-kit generate # Generate migrations
+```
+The reason that these command structures have been remarkably similar from the start is simple: when you're building production-grade migration tooling that needs introspection, code generation, schema diffing, and migration execution across multiple database vendors, you will naturally arrive at similar command structures.
+
+Both teams independently discovered that separating rapid prototyping (push/pull) from stable production workflows (generate/migrate) isn't an arbitrary choice; it's a necessary operational pattern. This parallel evolution proves that these core design patterns were never over-engineering. They are simply what production migration systems mandate. We learned this through years of difficult iteration. Drizzle is learning it now through their comprehensive rewrite. It’s the same lessons, just on a different timeline.
+
+### What The Rewrite Reveals
+```shell
+PR #4439 - "Alternation Engine"
+- 363 commits (to date)
+- ~167k lines added, 67k removed  
+- Test suite: 600 → 9k+ tests
+```
+Here's what we truly respect about the Alternation Engine work: it shows a team that's willing to execute a massive rebuild when users need more. The scope of this endeavor, refining diffing, restructuring folders, adding CockroachDB and SQL Server support, is the exact gritty technical road we traveled with Prisma Migrate. It's not glamorous work, but it's undeniably essential.
+
+The commitment to 9,000 tests isn't just about completeness. They’re irrefutable proof that getting migrations right across different databases is genuinely difficult. You can't hand-wave edge cases. You simply cannot ignore the intricacies of ALTER TABLE across vendors. Production usage exposes every single corner case.
+
+To be clear: Drizzle's SQL-first philosophy has genuine, specific merit. For teams with deep SQL expertise who want maximum control, seeing exactly what SQL runs is valuable. Their lightweight TypeScript schema definitions eliminate the need for a separate schema language. For simpler applications, their approach works great.
+
+But when you scale to production complexity, need to coordinate schema changes across multiple teams, maintaining reliability across environments, and moving fast without breaking things, you inevitably end up building what they're building now: sophisticated diffing, extensive testing, and robust tooling. The [9k tests](https://github.com/drizzle-team/drizzle-orm/issues/2061#issuecomment-3239454117) aren't overkill. They are the mandated cost of doing migrations right at scale.
+
+## Relational Queries: The Complete Convergence
+Okay, this is where it gets technically interesting. Let's talk about relational queries. In their own [Relational API v2 discussion](https://github.com/drizzle-team/drizzle-orm/discussions/2316), Drizzle's team made an interesting admission: they acknowledged that their original approach had "several major flaws" and concluded that object-based filters, the exact pattern their early positioning dismissed as unnecessary abstraction, now "just feels natural."
+
+We don't say this to gloat or score cheap points. We say it because watching another team arrive at the same conclusion through independent experience is genuinely validating. It confirms that this design choice is simply superior for developer experience at scale. 
+
+Let's look at the APIs side by side.
+
+### Fetching Related Data - Spot the Difference
+```tsx
+// Let's look at a real-world query: fetching published
+// posts with author details and recent comments. 
+// The similarity is remarkable:
+
+// Prisma (since 2020)
+const postsWithDetails = await prisma.post.findMany({
+  where: { published: true },
+  include: {
+    author: {
+      select: {
+        name: true,
+        email: true
+      }
+    },
+    comments: {
+      where: { approved: true },
+      include: {
+        user: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    }
+  }
+});
+
+// Drizzle's Relational Queries v2 (2025)
+const postsWithDetails = await db.query.posts.findMany({
+  where: { published: true },
+  with: {
+    author: {
+      columns: {
+        name: true,
+        email: true
+      }
+    },
+    comments: {
+      where: { approved: true },
+      with: {
+        user: true
+      },
+      orderBy: { createdAt: 'desc' },
+      limit: 5
+    }
+  }
+});
+```
+The APIs are nearly identical:
+| Prisma | Drizzle Relational API v2 |
+| --- | --- |
+| `include` | `with` |
+| `select` | `columns` |
+| `take` | `limit` |
+
+The results speak for themselves: nearly identical patterns. The differences are mostly semantic: `include` vs `with`, `select` vs `columns`, `take` vs `limit`.
+
+When we launched this API in 2020, people loudly said we were over-abstracting SQL. The mantra was always "Just write JOINS!" Now here we are, five years later, and the SQL-first ORM has implemented this same abstraction, albeit with slightly different names. 🙂
+
+Here's the undeniable thing folks: we're not claiming they copied us (though we'd be flattered). We're claiming that when you build for production-scale relational queries, you mujst naturally converge on these patterns. They feel natural because they are fundamentally superior for developer experience and correctnes.
+
+
+The unavoidable takeaway comes stratight from Drizzle's [v2 migration documentation](https://rqbv2.drizzle-orm-fe.pages.dev/docs/relations-v1-v2), which lists the features conspicuously "not supported in v1":
+- Filtering by relations
+- Using `offset` on nested relations
+- Predefined filters in relation definitions
+- Direct many-to-many queries (required manual junction table mapping)
+- Object-based `where` and `orderBy` syntax
+
+Every single one of these items has been a core, fundamental Prisma feature since 2020. And every single one is a feature Drizzle users were asking for loud enough that the team was forced to rebuild their entire relational query system.
+
+Another final piece of evidence is structural: Drizzle RQB v2 deprecated their callback-based syntax entirely, moving it to `db._query` and `import from 'drizzle-orm/_relations'` while giving the clean `db.query` namespace to object-based patterns. That underscore prefix is a universally understood signal JavaScript, conventionally marking code as "internal," "deprecated," or "legacy." Their [v2 migration docs](https://rqbv2.drizzle-orm-fe.pages.dev/docs/relations-v1-v2) confirm: "`where` is now object" and "`orderBy` is now object." This isn't incremental improvement. It's a philosophical pivot driven by what users actually need. The new default is object-based queries…the exact pattern Prisma pioneered.
+
+Consider this example:
+```sql
+-- Raw SQL equivalent: published posts with author + latest 5 approved comments
+SELECT 
+  p.id, p.title, p.content,
+  u.name as author_name, u.email as author_email,
+  COALESCE(c.comment_data, '[]'::json) AS comment_data
+  c.comment_data
+FROM posts p
+INNER JOIN users u ON p.author_id = u.id
+LEFT JOIN LATERAL (
+  SELECT json_agg(
+    json_build_object(
+      'id', c.id,
+      'content', c.content,
+      'created_at', c.created_at,
+      'user_name', cu.name,
+      'user_email', cu.email
+    ) ORDER BY c.created_at DESC
+  ) as comment_data
+  FROM (
+    SELECT * FROM comments 
+    WHERE post_id = p.id AND approved = true 
+    ORDER BY created_at DESC 
+    LIMIT 5
+  ) c
+  INNER JOIN users cu ON c.user_id = cu.id
+) c ON true
+WHERE p.published = true;
+```
+```tsx
+// Prisma: Same query, readable and maintainable
+const posts = await prisma.post.findMany({
+  where: { published: true },
+  include: {
+    author: {
+      select: { name: true, email: true }
+    },
+    comments: {
+      where: { approved: true },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    }
+  }
+});
+```
+The readability difference is stark, and it's about maintenance overhead. The SQL demands LATERAL joins, JSON aggregation, deeply nested subqueries, and incredibly careful correlation. One wrong alias or forgotten JOIN condition and you're debugging for hours. The object-based version reads like a description of what you want. For simple queries? Sure, raw SQL is fine. But production applications need code you can reliably reason about at 3am, debug without a PhD in SQL optimization, and onboard junior developers to understand quickly. This operational necessity is precisely why both ORMs converged here. The "close to SQL" approach works great for straightforward queries and individual projects. But production-level complexity with distributed teams mandates higher-level patterns. Drizzle's users have perhaps learned this the hard way and are demanding a change. The Drizzle team listened and made the right call. That's good product development.
+```tsx
+*// Drizzle v1 - Manually navigate junction tables*
+const usersWithGroups = await db.query.users.findMany({
+  with: {
+    usersToGroups: {  *// Explicitly query junction table*
+      columns: {},
+      with: {
+        group: true,  *// Then dig through to actual relation*
+      },
+    },
+  },
+});
+
+*// Then map the results yourself*
+const mapped = usersWithGroups.map(user => ({
+  ...user,
+  groups: user.usersToGroups.map(utg => utg.group)
+}));
+```
+Having to manually navigate junction tables and map results yourself isn't "close to SQL," it's a maintenance nightmare. Drizzle RQB v2 finally added first-class many-to-many support, providing the seamless DX Prisma has always provided. Again, this isn't criticism: it's validation. The "just write SQL" approach always needs abstraction layers when real users build real applications that feature complex relationships and when team members have different skill levels. We learned this essential lesson in 2019. Drizzle learned it through direct user feedback. Same lesson, different cost.
+
+## Performance: Everyone's Getting Better
+Here's where the story gets truly interesting, and honestly, kind of fun.
+
+While Drizzle is forced to add sophisticated features (migrations, relational queries, growing test coverage), Prisma went the opposite direction in terms of architecture: we [removed our entire Rust engine](https://www.prisma.io/blog/rust-free-prisma-orm-is-ready-for-production), becoming 90% smaller and 3-4x faster in many scenarios.
+
+Wait, smaller *and* more features? Yes. Turns out the complexity isn't in the feature set, it's in the underlying architecture. We spent years building sophisticated query engines and migration tooling in Rust, only to discover we could achieve better results by optimizing our TypeScript implementation. TypeScript is making quite the waves when it comes to adoption, so like dutiful devs, we observe and adapt. Sometimes you need to build the complex version first specifically to learn what complexity you actually need to discard. Such is the way of the *Force*. 
+
+### Type-Checking Performance
+There's another crucial dimension worth discussing: DX during actual coding. Our [comprehensive benchmarks](https://www.prisma.io/blog/why-prisma-orm-checks-types-faster-than-drizzle) with TypeScript expert David Blass already revealed something interesting about performance and Type overhead. But even more telling, Drizzle's own community raised concerns in their [v2 discussion](https://github.com/drizzle-team/drizzle-orm/discussions/2316), noting that "Prisma has a codegen step to create the types which would help the approach scale." That single comment cuts to the heart of the matter. While Drizzle relies on complex runtime inference from procedural TypeScript, Prisma uses a dedicated, declared schema ([PSL](https://www.prisma.io/blog/prisma-schema-language-the-best-way-to-define-your-data)) to generate a perfectly type-safe client. This code generation step, which Drizzle's early philosophy dismissed as "heavy," is the mandatory gateway to superior IntelliSense, predictable type safety, and efficient development when your schema reaches any non-trivial size.
+```shell
+// Type instantiations (lower is better)
+Schema Types:
+- Prisma:          427 instantiations
+- Drizzle Beta:   ~5,000 instantiations (11.7x more)
+- Drizzle Stable: ~59,000 instantiations (138x more)
+
+// Actual check times
+Queries: Prisma is ~1.5x faster than Drizzle Beta
+         Prisma is ~2.1x faster than Drizzle Stable
+```
+Why? Prisma generates types at build time while Drizzle infers them on every keystroke:
+```tsx
+// Prisma: Types precomputed during `prisma generate`
+// Result: .d.ts files with optimized types
+type User = {
+  id: number
+  email: string
+  name: string | null
+  posts: Post[]
+}
+
+// Drizzle: Types inferred from schema on every compile
+// Result: TypeScript does heavy lifting repeatedly
+type User = InferSelectModel<typeof users> // Complex inference chain
+```
+The point isn't "we win, they lose." The point is that different architectural choices have real tradeoffs. Code generation adds a build step but delivers [faster type-checking](https://benchmarks.prisma.io/?tab=type). Type inference is more immediate but can get expensive at scale. There's no free lunch, just different costs.
+
+## What We're All Learning
+
+Step back and look at the unfolding pattern: two ORMs with opposite starting philosophies, built by different teams with different priorities, are converging on remarkably similar architectures. This isn't random, it proves fundamental truths about what production applications actually require.
+
+### **What Production Demands: The Mandatory Feature Set**
+
+1. **Migrations need specialized attention**: The 9k test suite isn't overkill, it's the cost of reliability acros databases
+2. **Object-based queries are essential for complex relations**: Eventually everyone needs the intuitive `include`/`with` patterns
+3. **Relations need first-class support**: Manual junction table navigation doesn't scale to real teams
+4. **Type generation beats inference at scale**: It provides better performance, and better DX for large schemas
+5. **Features aren't bloat**: They're necessary answers to problems users actually have
+
+### **What This Teaches About Building Tools:**
+
+1. **Starting philosophy doesn't determine ending architecture**: You can start minimal or comprehensive, but production requirements will ultimately force convergence
+2. **Users reveal what's necessary**: Features you think are optional become absolutely essential when people build real things
+3. **Performance comes from architecture, not slogans**: "Lightweight" and "fast" are outcomes of good engineering, not marketing positions
+4. **Flexibility beats ideology**: Being willing to rebuild when users need more is better than rigidly defending original choices
+
+These patterns aren't "Prisma patterns," they're solutions that emerge when solving production database problems. We got here first. We'd argue our path was more direct. But the observed convergence validates tthe destination.
+
+## Meanwhile, at Prisma
+While the ecosystem converges on similar ORM patterns, we've been pushing in a different direction entirely.
+
+The Rust-to-TypeScript migration shows our commitment to DX over dogma. We built sophisticated Rust engines, learned what complexity we actually needed, then rebuilt in a way that's smaller and faster. That's what [Prisma v7](https://www.prisma.io/blog/announcing-prisma-orm-7-0-0) is all about, and we're proud of it.
+
+But the real innovation? [Prisma Postgres](https://prisma.io/postgres): a database designed from the ground up to work seamlessly with Prisma ORM. We're not just building an ORM anymore, we're creating an integrated data platform where the database and ORM speak the same language.
+
+```tsx
+// Step 1: Update schema
+generator client {
+  provider = "prisma-client"
+  engineType = "client"
+}
+```
+```tsx
+// Step 2: Install adapter
+npm install @prisma/adapter-pg pg
+```
+```tsx
+// Step 3: Use it
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+
+const adapter = new PrismaPg(process.env.DATABASE_URL!)
+const prisma = new PrismaClient({ adapter })
+```
+This is the kind of innovation that happens when you're not busy rebuilding features you once claimed weren't needed (ok, we admit, that was a little spicy). But seriously, we're excited about where this is going.) And here's the thing: we genuinely want other ORMs work great with Prisma Postgres too. A rising tide lifts all boats. More good ORMs means more developers building with databases, which means more potential Prisma Postgres users. Everyone wins.
+
+## Looking Forward: Why Convergence Matters
+The evolution from Drizzle v1 to v2 isn't just feature additions, it's a fundamental philosophical pivot validated through production experience. They deprecated callback-based queries, moved them to underscore-prefixed APIs, and gave the clean namespace to Prisma-like patterns. Their docs repeatedly note features that were "not supported in v1" but are now core to v2.
+
+We're flattered. We're validated. And honestly? We're impressed. Building a comprehensive relational query system and migration engine is genuinely hard work. The Drizzle team is doing it well.
+
+**Here's what this convergence means for developers:**
+When ORMs converge on patterns, onboarding gets easier, switching gets smoother, and the ecosystem gets more coherent. If you know Prisma's query patterns, you'll feel at home with Drizzle's RQB v2. If you know Drizzle's schema definitions, Prisma's won't feel alien anymore. That's good for everyone.
+
+**Not every application needs all of this.** If you're building a simple API with straightforward data models, or if your team has deep database expertise and prefers seeing explicit SQL, lighter-weight tools might work fine. The convergence we're discussing happens primarily at production scale: multiple environments, team coordination, complex data relationships, and varied skill levels across developers.
+
+**For teams evaluating ORMs today**, the question isn't "lightweight vs. heavy" anymore. Both tools are converging on the same features because those features solve real problems. The strategic question is now: do you want battle-tested implementations available today with [Prisma ORM v7](https://www.prisma.io/blog/announcing-prisma-orm-7-0-0), or do you want to adopt tools that are still implementing patterns we've been refining for years? We think we know the answer, but we're biased. 😉
+
+**To the Drizzle team**: Seriously impressive work on RQB v2. The engineering effort is clear, the community response is strong, and the architectural convergence validates what we've both learned about production database tools. We'll be watching with interest (and maybe borrowing good ideas right back). See you at the convergence point.
+
+**To everyone else**: May the best API win. Or you know, may we all just build really good tools that make developers' lives easier. That works too.
