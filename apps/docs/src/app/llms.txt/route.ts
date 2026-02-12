@@ -1,8 +1,10 @@
 import { source, sourceV6 } from "@/lib/source";
+import { getBaseUrl } from "@/lib/urls";
 
 export const revalidate = false;
 
 export async function GET() {
+  const baseUrl = getBaseUrl();
   const allPages = [...source.getPages(), ...sourceV6.getPages()];
 
   const sortedPages = allPages.sort((a, b) =>
@@ -13,7 +15,7 @@ export async function GET() {
     .map((page) => {
       const title = page.data.title;
       const description = page.data.description || "";
-      const path = page.url;
+      const path = `${baseUrl}${page.url}`;
 
       return `- [\`${title}\`](${path}): ${description}`;
     })
@@ -27,7 +29,7 @@ ${docsList}
 
 ## Options
 
-- [Full documentation with content](/llms-full.txt)
+- [Full documentation with content](${baseUrl}/llms-full.txt)
 `;
 
   return new Response(content, {
