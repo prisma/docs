@@ -24,7 +24,9 @@ export function getSource(version: Version) {
 }
 
 
-export function getPageImage(page: InferPageType<typeof source>) {
+export function getPageImage(
+  page: InferPageType<typeof source> | InferPageType<typeof sourceV6>
+) {
   const segments = [...page.slugs, "image.png"];
 
   return {
