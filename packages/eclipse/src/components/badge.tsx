@@ -1,0 +1,73 @@
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "../lib/cn";
+
+/**
+ * Define badge variants using CVA based on Figma design
+ */
+const badgeVariants = cva(
+  "inline-flex flex-row justify-center items-center px-2 py-1 min-w-[24px] rounded-square text-xs font-medium",
+  {
+    variants: {
+      color: {
+        neutral: "bg-background-neutral text-foreground-neutral",
+        ppg: "bg-background-ppg text-foreground-ppg",
+        orm: "bg-background-orm text-foreground-orm",
+        error: "bg-background-error text-foreground-error",
+        success: "bg-background-success text-foreground-success",
+        warning: "bg-background-warning text-foreground-warning",
+      },
+    },
+    defaultVariants: {
+      color: "neutral",
+    },
+  },
+);
+
+/**
+ * Badge props interface
+ */
+export interface BadgeProps
+  extends
+    Omit<React.HTMLAttributes<HTMLSpanElement>, "children">,
+    VariantProps<typeof badgeVariants> {
+  /**
+   * The color variant of the badge
+   */
+  color?: "neutral" | "ppg" | "orm" | "error" | "success" | "warning";
+  /**
+   * The label text to display inside the badge
+   */
+  label: string;
+}
+
+/**
+ * Badge component
+ *
+ * A label component that displays text with a colored background.
+ * Matches Figma design specs with flex layout and proper sizing.
+ *
+ * @example
+ * ```tsx
+ * <Badge color="ppg" label="New Feature" />
+ * <Badge color="error" label="Deprecated" />
+ * <Badge color="success" label="Active" />
+ * ```
+ */
+const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+  ({ className, color, label, ...props }, ref) => {
+    return (
+      <span
+        ref={ref}
+        className={cn(badgeVariants({ color, className }))}
+        {...props}
+      >
+        <span className="flex-grow-1">{label}</span>
+      </span>
+    );
+  },
+);
+
+Badge.displayName = "Badge";
+
+export { Badge, badgeVariants };

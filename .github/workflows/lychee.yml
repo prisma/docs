@@ -7,11 +7,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-links:
-    name: Check links
+  check:
+    name: Check Links
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
+    permissions: write-all
     steps:
       - uses: actions/checkout@v4
 
@@ -19,53 +18,50 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@v2
         with:
-          fail: false
-          output: ../lychee/out.md
-          args: >
+          args: >-
             --cache
             --cache-exclude-status 429,500,502,503,504
             --max-cache-age 5m
+            --verbose
             --no-progress
-            --accept 200,201,204,304,403,429
+            --exclude '.*'
             --timeout 20
             --max-retries 8
             --retry-wait-time 5
-            --exclude 'http://localhost.*'
-            --exclude 'https://localhost.*'
-            --exclude 'https://cockroachlabs.com'
-            --exclude 'https://docs.permit.io'
+            --include '^https://'
             --exclude 'https://www.gnu.org'
-            --exclude '^/.*'
-            './**/*.md' './**/*.mdx'
-          workingDirectory: "content"
+            --exclude 'https://docs.solidjs.com'
+            --accept 200,201,204,304,403,429
+            './apps/docs/content'
+          output: lychee/out.md
+          fail: false
         env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🔄 Retry Lychee Link Checker (Second Run for Timeouts)
         id: lychee-retry
         if: ${{ always() && steps.lychee.outputs.exit_code != 0 }}
         uses: lycheeverse/lychee-action@v2
         with:
-          fail: false
-          output: ../lychee/out-retry.md
-          args: >
+          args: >-
             --cache
-            --max-cache-age 5m
-            --no-progress
-            --accept 200,201,204,304,403,429
             --cache-exclude-status 429,500,502,503,504
+            --max-cache-age 5m
+            --verbose
+            --no-progress
+            --exclude '.*'
             --timeout 30
             --max-retries 10
             --retry-wait-time 10
-            --exclude 'http://localhost.*'
-            --exclude 'https://localhost.*'
-            --exclude 'https://cockroachlabs.com'
+            --include '^https://'
             --exclude 'https://www.gnu.org'
-            --exclude '^/.*'
-            './**/*.md' './**/*.mdx'
-          workingDirectory: "content"
+            --exclude 'https://docs.solidjs.com'
+            --accept 200,201,204,304,403,429
+            './apps/docs/content'
+          output: lychee/out-retry.md
+          fail: false
         env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📝 Clean up Lychee Report
         if: ${{ always() && github.event.pull_request.head.repo.fork == false }}
@@ -73,36 +69,71 @@ jobs:
           # Use retry results if available, otherwise use first run results
           if [ -f "lychee/out-retry.md" ]; then
             REPORT_FILE="lychee/out-retry.md"
-            NOTE="Links are cached for 5 minutes. Failed links (timeouts, rate limits) are retried in a second run with longer timeout."
           elif [ -f "lychee/out.md" ]; then
             REPORT_FILE="lychee/out.md"
-            NOTE="Links are cached for 5 minutes to avoid unnecessary requests, and speed up consecutive runs."
           fi
 
           if [ -n "$REPORT_FILE" ]; then
-            # Read the original output and remove everything after 'Redirects per input'
-            ORIGINAL=$(cat "$REPORT_FILE" | sed '/^##* Redirects per input/,$d')
+            # Parse stats from lychee markdown table
+            TOTAL=$(grep 'Total' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
+            SUCCESS=$(grep 'Successful' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
+            ERRORS=$(grep 'Errors' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
+            REDIRECTS=$(grep 'Redirected' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
+            EXCLUDED=$(grep 'Excluded' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
+            TIMEOUTS=$(grep 'Timeouts' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
+            UNKNOWN=$(grep 'Unknown' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
+            UNSUPPORTED=$(grep 'Unsupported' "$REPORT_FILE" | grep -oE '\| [0-9]+ +\|' | grep -oE '[0-9]+' || echo "0")
 
-            # Create formatted output
-            cat > lychee/formatted.md << EOF
-          ## 🍈 Lychee Link Check Report
+            # Extract errors section
+            ERRORS_SECTION=$(sed -n '/^## Errors/,/^## /p' "$REPORT_FILE" | sed '$d' | tail -n +2)
 
-          > **Note:** $NOTE
+            # Format errors section
+            FORMATTED_ERRORS=""
+            while IFS= read -r line; do
+              if [[ $line =~ ^### ]]; then
+                file=$(echo "$line" | sed 's/### Errors in //')
+                FORMATTED_ERRORS+="\n**\`$file\`**\n"
+              elif [[ $line =~ ^\* ]]; then
+                FORMATTED_ERRORS+="$line\n"
+              fi
+            done <<< "$ERRORS_SECTION"
 
-          ### 📊 Results Overview
+            # Create formatted output using echo statements
+            echo "## 🍈 Lychee Link Check Report" > lychee/formatted.md
+            echo "" >> lychee/formatted.md
+            echo "**$TOTAL links:** \`✅ $SUCCESS OK\` | \`🚫 $ERRORS errors\` | \`🔀 $REDIRECTS redirects\` | \`👻 $EXCLUDED excluded\`" >> lychee/formatted.md
+            echo "" >> lychee/formatted.md
 
-          EOF
-
-            # Append the cleaned content with title replacement
-            echo "$ORIGINAL" | sed 's/^# Summary$//' | sed 's/^## Summary$//' >> lychee/formatted.md
+            if [ "$ERRORS" -eq 0 ]; then
+              echo "### ✅ All links are working!" >> lychee/formatted.md
+            else
+              echo "### ❌ Errors" >> lychee/formatted.md
+              echo -e "$FORMATTED_ERRORS" >> lychee/formatted.md
+            fi
+            echo "---" >> lychee/formatted.md
+            echo "" >> lychee/formatted.md
+            echo "<details>" >> lychee/formatted.md
+            echo "<summary>Full Statistics Table</summary>" >> lychee/formatted.md
+            echo "" >> lychee/formatted.md
+            echo "| Status | Count |" >> lychee/formatted.md
+            echo "|--------|-------|" >> lychee/formatted.md
+            echo "| ✅ Successful | $SUCCESS |" >> lychee/formatted.md
+            echo "| 🔀 Redirected | $REDIRECTS |" >> lychee/formatted.md
+            echo "| 👻 Excluded | $EXCLUDED |" >> lychee/formatted.md
+            echo "| 🚫 Errors | $ERRORS |" >> lychee/formatted.md
+            echo "| ⛔ Unsupported | $UNSUPPORTED |" >> lychee/formatted.md
+            echo "| ⏳ Timeouts | $TIMEOUTS |" >> lychee/formatted.md
+            echo "| ❓ Unknown | $UNKNOWN |" >> lychee/formatted.md
+            echo "" >> lychee/formatted.md
+            echo "</details>" >> lychee/formatted.md
           fi
 
       - name: 📝 Comment Broken Links
-        if: ${{ always() && github.event.pull_request.head.repo.fork == false && (steps.lychee.outputs.exit_code != 0 || (steps.lychee-retry.conclusion != 'skipped' && steps.lychee-retry.outputs.exit_code != 0)) }}
-        uses: peter-evans/create-or-update-comment@v5
+        if: ${{ always() && github.event.pull_request.head.repo.fork == false }}
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body-path: lychee/formatted.md
+          header: lychee
+          path: lychee/formatted.md
 
       - name: 🚫 Fail if broken links found
         if: ${{ steps.lychee-retry.conclusion == 'success' && steps.lychee-retry.outputs.exit_code != 0 || steps.lychee-retry.conclusion == 'failure' }}

@@ -1,0 +1,113 @@
+---
+title: "ORM 6.15.0, AI Safety Guardrails for Destructive Commands & More"
+slug: "orm-6-15-0-ai-safety-guardrails-for-destructive-commands-and-more"
+date: "2025-08-27"
+authors:
+  - "Nikolas Burk"
+metaTitle: "ORM 6.15.0, AI Safety Guardrails for Destructive Commands & More"
+metaDescription: "Protect your DB from AI mishaps with Prisma ORM v6.15.0—new safety guardrails, ESM-first client updates & better Postgres tooling."
+metaImagePath: "/blog/orm-6-15-0-ai-safety-guardrails-for-destructive-commands-and-more/imgs/meta-5f2a233de0328436ce4a9b015a641f91c80610a3-1266x711.png"
+heroImagePath: "/blog/orm-6-15-0-ai-safety-guardrails-for-destructive-commands-and-more/imgs/hero-405ae53feaf2033d74021e5007c20467a7d1069c-844x474.svg"
+excerpt: |
+  AI coding tools are powerful—but sometimes too powerful. With [Prisma ORM v6.15.0](https://pris.ly/release/6.15.0), we’re adding new guardrails to stop AI agents from wiping your database without your explicit confirmation, plus major improvements to Prisma Client, serverless connections, and Prisma Postgres.
+---
+
+## Don’t let AI reset your DB — new safety guardrails for destructive commands
+
+_Ever had your AI coding tool attempt to reset your database? Or maybe it actually did?_
+
+In Prisma ORM v6.15.0, we’ve added extra guardrails that will prevent an AI coding tool from running the `prisma migrate reset` without explicit permission.
+
+The `prisma migrate` CLI now detects the environment from which it has been executed. If it’s being executed by popular AI agents such as Claude Code, Gemini CLI, Qwen Code, Cursor, Aider and Replit, it will request an explicit confirmation before executing the command against the database.
+
+
+![](/blog/orm-6-15-0-ai-safety-guardrails-for-destructive-commands-and-more/imgs/6e96adf6edf9a2019424eba3ab11054927abc353-1668x1080.gif)
+
+
+This feature ensures that irreversible operations which drop and recreate the database are not executed automatically by an AI tool. Prisma ORM is the first ORM to provide this level of protection, making it safer to use AI-assisted development while working with your databases.
+
+## ESM-first `prisma-client` generator is coming close to production-readiness
+
+_Want to use a more flexible Prisma Client library with less magic and more control?_
+
+The new [`prisma-client`](https://www.prisma.io/docs/orm/prisma-schema/overview/generators#prisma-client-preview) generator is ESM-first and more flexible than the current `prisma-client-js` generator. It requires setting a dedicated `output` path in your Prisma schema so the generated code for your Prisma Client library is fully under your control!
+
+In this release, we made the runtime options for the Prisma Client more consistent and easier to understand. Previously there were several overlapping aliases which created confusion. With this release we simplified the inputs while keeping support for all the major environments you might be targeting.
+
+Changes include:
+
+- `node` has been removed, use `runtime = "nodejs"` instead
+- `deno-deploy` has been removed, use `runtime = "deno"` instead
+- `vercel` has been removed, use `runtime = "vercel-edge"` instead
+- `edge-light` is now just an alias for `vercel-edge`
+- `nodejs`, `deno`, and `bun` now share the same internal code path, while still keeping their separate input values for clarity
+- The Prisma VS Code extension has been updated to reflect these changes
+
+Here is the full list of with all updated values for the supported runtimes: `nodejs`, `deno`, `bun`, `workerd` (alias `cloudflare`), `vercel-edge` (alias `edge-light`), and `react-native`.
+
+## Solve the serverless database connection problem with Prisma ORM & Vercel Fluid
+
+_Ever ran into trouble when connecting to your database from a serverless function?_
+
+[Fluid compute](https://vercel.com/fluid) is a new compute model from Vercel that combines the flexibility of serverless with the stability of servers, making it ideal for dynamic workloads such as streaming data and AI APIs. 
+
+A [common challenge in traditional serverless platforms](https://vercel.com/blog/the-real-serverless-compute-to-database-connection-problem-solved) is that when functions are suspended, database connection pools can’t close idle connections. This leads to leaked connections that stay open until the database times them out, which can exhaust the pool.
+
+Vercel provides the [`attachDatabasePool`](https://vercel.com/guides/connection-pooling-with-functions) utility to solve this problem. It ensures idle connections in the pool are properly released before a function is suspended, preventing connection leaks.
+
+You can use this utility together with Prisma’s driver adapters to safely manage database connections in Fluid Compute:
+
+```ts
+import { Pool } from "pg";
+import { attachDatabasePool } from "@vercel/functions";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "./generated/prisma/client";
+
+const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+attachDatabasePool(pool);
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(pool),
+});
+```
+## Prisma Postgres Management API is ready for production
+
+_Do you want to programmatically provisioning and manage Prisma Postgres, e.g. during CI/CD?_ 
+
+The [Prisma Postgres Management API](https://www.prisma.io/docs/postgres/introduction/management-api) for programmatically managing database instances is now Generally Available! 
+
+It’s the perfect fit for CI/CD workflows, or any time you need a database on demand, check out these example GitHub Actions to see how it works:
+
+- [Create Prisma Postgres Database Action](https://github.com/marketplace/actions/create-prisma-postgres-database)
+- [Delete Prisma Postgres Database Action](https://github.com/marketplace/actions/delete-prisma-postgres-database)
+
+You can also use it to provision databases in your own product! Take it for a spin with [`npx create-db`](https://create-db.prisma.io/) , a CLI tool we built with the same API it, you can read about this [here](https://www.prisma.io/docs/guides/management-api).
+
+## Integrate Prisma Postgres with 2800+ apps to automate workflows via Pipedream
+
+_Love automating workflows? You can now integrate Prisma Postgres with all kinds of apps—from ChatGPT, to Telegram, to Zendesk. The options are limitless!_ 
+
+Prisma Postgres can now be used directly in your [Pipedream](https://pipedream.com/) workflows 🎉
+
+With this [integration](https://pipedream.com/apps/prisma-management-api), you can connect Prisma Postgres to over 2,800+ apps supported on Pipedream, enabling powerful automations and data workflows. For example, you can:
+
+- Automatically spin up a new Prisma Postgres database when a customer signs up in Stripe.
+- Connect Prisma Postgres with Slack, Notion, Airtable, or any other app in the Pipedream ecosystem
+
+This makes it easier than ever to use Prisma Postgres in your automation pipelines, without needing to manage custom scripts or infrastructure.
+
+## New `--json` flag for `npx create-db`
+
+_Need a quick database without the hassle of manual setup or authenticating with a 3rd party service?_ 
+
+The [`npx create-db`](https://create-db.prisma.io/) command lets you spin up a temporary, production-ready Prisma Postgres database that you can later claim for continued use. With this release, you can now add the `--json` flag to return the database details in JSON format.
+
+This makes it straightforward to programmatically use the connection details, whether you are building custom APIs or integrating database provisioning into your workflows.
+
+![](/blog/orm-6-15-0-ai-safety-guardrails-for-destructive-commands-and-more/imgs/9a99ba8aa9c6b70479608f1693544eb1159acf22-1404x1080.gif)
+
+## Try it out and share your feedback
+
+In this release, we added guardrails for destructive commands ran by AI tools to ensure the new coding overlords are not accidentally deleting your data! We also made huge progress on moving the new, ESM-first `prisma-client` generator closer to General Availability and made many smaller improvements to Prisma ORM, Prisma Postgres and other tools.
+
+Let us know your thoughts, questions and feedback [on X](https://pris.ly/x) and join the conversation [on Discord](https://pris.ly/discord).

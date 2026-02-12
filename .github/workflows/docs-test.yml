@@ -1,0 +1,47 @@
+name: Docs Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Playwright Tests (Docs)
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright Browsers
+        working-directory: apps/docs
+        run: npx playwright install --with-deps
+
+      - name: Build docs app
+        run: pnpm --filter=docs run build
+
+      - name: Run Playwright tests
+        run: pnpm --filter=docs exec playwright test
+        env:
+          ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-docs
+          path: apps/docs/playwright-report/
+          retention-days: 30

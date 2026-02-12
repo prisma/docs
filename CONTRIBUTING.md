@@ -1,35 +1,134 @@
-# Contributing to Prisma Documentation
+# Contributing
 
-Thank you for wanting to contribute to our docs! If you come across some documentation on [prisma.io/docs](https://www.prisma.io/docs) that you feel is missing or incorrect, please open an issue or submit a pull request.
+## Workflow
 
-## New contributor guide
+1. Create a branch from the default branch.
+2. Make focused changes (prefer smaller PRs).
+3. Ensure lint/build pass for impacted workspaces.
+4. Commit using the required commit format (below).
+5. Open a PR with a clear description and validation notes.
 
-In general, we would recommend you first open an issue before submitting a pull request. In some cases, Prisma contributors may be able to describe the issue or offer a solution. If you would like to try and solve the issue yourself, please feel free to read [our README](./README.md), get set up with the docs repo, and submit a pull request.
+---
 
-### I am not sure my changes are valid
+## Hard Requirements
 
-If you are not sure your changes are valid, then please still open an issue and we will discuss it. Contributions from community members are welcome and will be considered for inclusion.
+### 1) Commit messages MUST include a type
 
-### Creating an issue
+Every commit **must** start with a valid change type:
 
-There are no hard and fast rules for creating an issues to the repository. We only ask that you outline your reasoning for creating the issue and try to provide as much detail as possible. Depending on the issue, this could mean explaining what machine you are working on (Is it a Mac? Are you on a Windows machine?), or including a code snippet that demonstrates the issue.
+- `feat` — new functionality
+- `fix` — bug fix
+- `docs` — documentation only
+- `chore` — maintenance, tooling, housekeeping
+- `refactor` — code change that neither fixes a bug nor adds a feature
+- `perf` — performance improvement
+- `build` — build system / dependencies
+- `ci` — CI configuration/scripts
+- `revert` — revert a prior commit
 
-If you spot a problem with the docs, [search if an issue already exists](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/prisma/docs/issues/new/choose).
+### 2) Commit scope MUST be the app being worked on (or empty if crossing boundaries)
 
-### Solving an issue
+We use Conventional-Commit-inspired scopes to clarify *where* changes land.
 
-Scan through our [existing issues](https://github.com/prisma/docs/issues) to find one that interests you. You can narrow down the search using `labels` as filters. See "[Label reference](https://docs.github.com/en/contributing/collaborating-on-github-docs/label-reference)" for more information. As a general rule, we don’t assign issues to anyone. If you find an issue to work on, you are welcome to open a PR with a fix.
+- If your change is scoped to **one app**, the scope **must** be that app/workspace.
+  - Example: `feat(docs): update page layout`
+- If your change intentionally spans **multiple apps/packages**, you **must** use an **empty scope** (no parentheses).
+  - Example: `chore: align eslint rules across apps`
 
-### Creating a pull request (PR)
 
-Similar to issues, we do not have hard and fast rules for Pull Requests. If you are opening a pull request we do ask that you:
+### 3) Commit body MUST reference an issue
 
-- Describe the reason for the PR. A little context goes a long way in helping to quickly scan the PR
-- Briefly describe what changes were made
-- Link to any relevant issues
+Every commit **must** include a Linear issue reference in the **commit body**.
 
-The Prisma team may ask for changes before a PR can be merged. As these changes are made, please mark the corresponding comments as "resolved". If you need help on a pull request or would like feedback, please feel free to mention the `@Dev-Connections` team.
+Example:
+```
+fix(admin): prevent crash on empty results
 
-As a final note, if you're still working on a PR, please utilize the "Draft Pull Request" feature to let us know that your work is not yet ready.
+Linear: DR-482
+```
 
-Thank you again for contributing to our documentation!
+**Notes**
+- The Linear reference must be in the **body**, not just the title.
+- If a commit truly has no issue, create one first.
+
+---
+
+## Commit Message Format
+
+### Required shape
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+```
+
+- **`type`**: required (see list above)
+- **`scope`**: required for single-app changes; **must be empty** for cross-boundary changes
+- **`subject`**: short, imperative, no trailing period
+- **`body`**: must include Linear reference (required)
+
+### Examples
+
+Single app change (scoped):
+```
+feat(docs): update getting started
+
+Linear: DC-53423
+```
+
+Single app bug fix (scoped):
+```
+fix(docs): ensure UTMs are persisted
+
+Linear: DC-233
+```
+
+Cross-boundary change (empty scope):
+```
+chore: update shared lint rules and apply fixes
+
+Linear: DC-1288
+```
+
+---
+
+## Dependencies
+
+Use the **same version** for a given dependency across all apps and packages (e.g. the same `react`, `typescript`, or `next` range everywhere). When adding or upgrading a dependency used in multiple workspaces, update every `package.json` that lists it so versions stay aligned.
+
+---
+
+## Keep changes workspace-focused
+- Prefer changes that only touch the necessary app/package.
+- If you need shared updates, ensure they’re intentional and explained in the PR.
+
+### Validate before pushing
+Run checks for affected workspaces where possible:
+
+- `pnpm run lint`
+- `pnpm run build`
+
+---
+
+## Pull Requests
+
+### PR title
+PR titles should follow the same convention as commits:
+- `feat(app): …`
+- `fix(app): …`
+- `chore: …` (for cross-boundary)
+
+### PR description should include
+- What changed and why
+- How it was tested (commands + notes)
+- Screenshots for UI changes (when applicable)
+- Follow-ups / known limitations
+
+---
+
+## Code Style & Quality
+- Prefer clarity over cleverness.
+- Avoid drive-by refactors inside feature/bugfix PRs.
+- Follow existing patterns within each app.

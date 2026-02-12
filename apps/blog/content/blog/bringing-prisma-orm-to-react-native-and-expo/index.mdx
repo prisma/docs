@@ -1,0 +1,72 @@
+---
+title: "Bringing Prisma ORM to React Native and Expo"
+slug: "bringing-prisma-orm-to-react-native-and-expo"
+date: "2024-05-23"
+authors:
+  - "Søren Bramer Schmidt"
+metaTitle: "Bringing Prisma ORM to React Native and Expo"
+metaDescription: "Prisma ORM now provides Early Access support for React Native and Expo. The integration introduces reactive queries, using React hooks to auto-update the UI when the underlying data changes."
+metaImagePath: "/blog/bringing-prisma-orm-to-react-native-and-expo/imgs/meta-289f00bdde5d5f308f3faa684d09f647974d77b6-1200x630.png"
+heroImagePath: "/blog/bringing-prisma-orm-to-react-native-and-expo/imgs/hero-bbb1e7f6b0f7bef3d318fac96652548cad0ef0b5-844x474.svg"
+excerpt: |
+  Prisma ORM now provides Early Access support for React Native and Expo, fulfilling a popular community request. The integration introduces *reactive queries*, using React hooks to auto-update the UI when the underlying data changes.
+---
+
+Prisma ORM is the preferred way to work with databases in backend JavaScript applications. This is due to its excellent type-safety, easy migration system and tight integration into your favorite IDE.
+
+<Youtube videoId="km9O6_WTtnA" />
+
+We got the first request to support React Native back in 2019, and since then [the issue has gotten more than 300 upvotes](https://github.com/prisma/prisma/issues/5011). We always wanted Prisma to power the data of local apps - both on mobile, web and desktop, so this community interest made sense to us. But we also knew that porting Prisma ORM to mobile wouldn’t cut it. Apps are different than web servers, and to provide excellent DX, we would need to build additional functionality to offer tight integration with the underlying platform. So that’s what we have been doing, and today, we are excited to announce the [Early Access of Prisma ORM for React Native and Expo](https://github.com/prisma/react-native-prisma) 🎉 
+
+We have worked with [Expo](https://expo.dev/) to make sure it’s easy to use in an app managed by Expo, and the readme contains documentation to set up Prisma ORM in a React Native app not managed by Expo.
+
+## Reactive Queries
+
+In addition to the full Prisma ORM API, we are introducing a new set of query functions that integrate with React’s hook mechanism to automatically update your UI when the underlying data changes. We call these Reactive Queries, and it works like this:
+
+```prisma
+export default function TransactionList() {
+  const transactions = prisma.transactions.useFindMany({ orderBy: { date: "desc" }})
+
+  return (
+    <View style={{ gap: 15 }}>
+      {transactions.map((transaction) => {
+        return (
+          <TouchableOpacity
+            key={transaction.id}
+            activeOpacity={0.7}
+            onLongPress={() => prisma.transactions.delete({ where: { id: transaction.id } })}
+          >
+            <TransactionListItem
+              transaction={transaction}
+            />
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+```
+In this component, we declare the data dependency at the top. Instead of using Prisma ORM’s normal `findMany()` query function, we use the new `useFindMany()` query function which integrates directly with the React `useState()` and `useEffect()` mechanisms to re-render the component when the underlying data changes.
+
+This line initially returns an empty array and then re-renders the component as soon as the list of transactions is fetched from the local database:
+
+```ts
+prisma.transactions.useFindMany({ orderBy: { date: "desc" }})
+```
+> It is customary for hooks in React to be free standing functions - for example `useFindManyTransactions()`. To conform with the regular Prisma ORM API, we have chosen the alternative format `prisma.transactions.useFindMany()`. During this Early Access period, we are soliciting feedback on this decision. Please share your thoughts on [Discord](pris.ly/discord).
+
+In the `LongPress` handler, the database row is deleted, automatically triggering a re-render of the component. It’s important to note that data changes can happen anywhere in your application, and it will trigger a re-render of any active component that relies on that data.
+
+```ts
+() => prisma.transactions.delete({ where: { id: transaction.id } })
+```
+By taking advantage of Reactive Queries, many applications can be refactored to remove brittle and manual state management in favor of a simple automated reactivity model.
+
+## Prisma ORM in your Expo App today
+
+Prisma ORM is ready to be used in your Expo and React Native app today. Keep in mind this is an Early Access release, so please help us test it out and share your experience with us [on Discord](pris.ly/discord). To get started, follow the [instructions in the readme](https://github.com/prisma/react-native-prisma).
+
+### A Local-First experiment
+
+We have designed the reactive query system to work directly with a fully integrated sync service in the future. This will enable you to write applications that work with local data for the best user experience while syncing automatically in the background to enable powerful experiences such as live collaboration, presence indication, and data sharing. We aren’t ready to talk about this just yet, but you can take a look at an experimental implementation of this concept in the [GitHub repo](https://github.com/sorenbs/budget-buddy-experimental-sync).
