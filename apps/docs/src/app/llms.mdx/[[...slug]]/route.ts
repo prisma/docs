@@ -30,7 +30,15 @@ export function generateStaticParams() {
   // A slug is considered non-leaf if it is a prefix of any other slug.
   const v7Params = source.generateParams();
   const v6Params = sourceV6.generateParams();
-  const allParams = [...v7Params, ...v6Params];
+
+  // Deduplicate identical slugs from v7 and v6
+  const seen = new Set<string>();
+  const allParams = [...v7Params, ...v6Params].filter((p) => {
+    const key = JSON.stringify(p.slug ?? []);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   const allSlugs = allParams.map((p) => p.slug ?? []);
   const isPrefix = (a: string[], b: string[]) =>
