@@ -1,15 +1,24 @@
 import { getLLMText } from "@/lib/get-llm-text";
-import { source } from "@/lib/source";
+import { source, sourceV6 } from "@/lib/source";
 import { notFound } from "next/navigation";
 
 export const revalidate = false;
 
 export async function GET(_req: Request, { params }: RouteContext<"/llms.mdx/[[...slug]]">) {
   const { slug } = await params;
-  const page = source.getPage(slug);
+  const page = source.getPage(slug) || sourceV6.getPage(slug);
   if (!page) notFound();
 
-  return new Response(await getLLMText(page), {
+  const content = await getLLMText(page);
+  const frontmatter = `---
+title: ${page.data.title}
+description: ${page.data.description || ''}
+url: ${page.url}
+---
+
+`;
+
+  return new Response(frontmatter + content, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
     },
@@ -19,14 +28,16 @@ export async function GET(_req: Request, { params }: RouteContext<"/llms.mdx/[[.
 export function generateStaticParams() {
   // Only pre-render leaf pages to avoid file/dir conflicts during static export.
   // A slug is considered non-leaf if it is a prefix of any other slug.
-  return Promise.resolve(source.generateParams()).then((params: Array<{ slug?: string[] }>) => {
-    const allSlugs = params.map((p) => p.slug ?? []);
-    const isPrefix = (a: string[], b: string[]) =>
-      a.length < b.length && a.every((seg, i) => seg === b[i]);
+  const v7Params = source.generateParams();
+  const v6Params = sourceV6.generateParams();
+  const allParams = [...v7Params, ...v6Params];
 
-    return params.filter((p) => {
-      const s = p.slug ?? [];
-      return !allSlugs.some((other) => isPrefix(s, other));
-    });
+  const allSlugs = allParams.map((p) => p.slug ?? []);
+  const isPrefix = (a: string[], b: string[]) =>
+    a.length < b.length && a.every((seg, i) => seg === b[i]);
+
+  return allParams.filter((p) => {
+    const s = p.slug ?? [];
+    return !allSlugs.some((other) => isPrefix(s, other));
   });
 }
