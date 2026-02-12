@@ -1,4 +1,4 @@
-import { getPageImage, source } from "@/lib/source";
+import { getPageImage, source, sourceV6 } from "@/lib/source";
 import { notFound } from "next/navigation";
 import { ImageResponse } from "next/og";
 
@@ -196,7 +196,8 @@ async function loadGoogleFont(font: string, weight: number) {
 
 export async function GET(_req: Request, { params }: RouteContext<"/og/docs/[...slug]">) {
   const { slug } = await params;
-  const page = source.getPage(slug.slice(0, -1));
+  // Check v7 first, then v6
+  const page = source.getPage(slug.slice(0, -1)) ?? sourceV6.getPage(slug.slice(0, -1));
   if (!page) notFound();
 
   const method = (page.data as any)?._openapi?.method as "GET" | "POST" | "DELETE" | undefined;
@@ -239,8 +240,16 @@ export async function GET(_req: Request, { params }: RouteContext<"/og/docs/[...
 }
 
 export function generateStaticParams() {
-  return source.getPages().map((page) => ({
+  // Generate OG images for both v7 and v6 pages
+  const v7Pages = source.getPages().map((page) => ({
     lang: page.locale,
     slug: getPageImage(page).segments,
   }));
+
+  const v6Pages = sourceV6.getPages().map((page) => ({
+    lang: page.locale,
+    slug: getPageImage(page).segments,
+  }));
+
+  return [...v7Pages, ...v6Pages];
 }
