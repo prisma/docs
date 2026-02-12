@@ -1,0 +1,157 @@
+---
+title: "Rust to TypeScript Update: Boosting Prisma ORM Performance"
+slug: "rust-to-typescript-update-boosting-prisma-orm-performance"
+date: "2025-03-03"
+authors:
+  - "Jon Harrell"
+  - "Will Madden"
+metaTitle: "Rust to TypeScript Update: Boosting Prisma ORM Performance"
+metaDescription: "A blog post showing how the new Query Compiler project, where the Prisma query engine is being re-written from Rust to TypeScript, is improving performance."
+metaImagePath: "/blog/rust-to-typescript-update-boosting-prisma-orm-performance/imgs/meta-a0def58926eae703ce0eccf28d5df589a2c5bc05-1266x711.png"
+heroImagePath: "/blog/rust-to-typescript-update-boosting-prisma-orm-performance/imgs/hero-508e044038cf37bd9138323288a3d8b5be57ca63-844x474.svg"
+series:
+  title: "Prisma ORM: The Complete Rust-to-TypeScript Migration Journey"
+  slug: "prisma-orm-the-complete-rust-to-typescript-migration-journey"
+seriesIndex: 2
+excerpt: |
+  The Query Compiler project upgrades Prisma ORM by swapping out the traditional Rust engine for a leaner solution built on a WASM module and TypeScript. This change boosts query performance and cuts the bundle size by 85–90%, while also improving compatibility with a variety of web frameworks and bundlers. As Prisma ORM heads toward version 7, developers can expect a smoother, more efficient experience.
+---
+
+### TL;DR: The Rust-Free ORM is ready for production-use
+
+Prisma ORM's core engine has undergone a major shift from the **Rust based query engine** to a leaner **TypeScript/WASM core** (the **Query Compiler**). This [new architecture is now **production-ready** (v6.16+)](https://github.com/prisma/prisma/releases/tag/6.16.0) and fundamentally improves your developer experience (DX) and application performance.
+
+- **No binary overhead:** The dependency on native Rust binaries is eliminated, drastically simplifying deployment and reducing potential complexity issues.
+- **Performance:** Get **up to 3.4x faster queries** (by removing cross-language serialization) and a **90% smaller bundle size** (from ~14MB to 1.6 MB).
+- **Better support for different runtimes:** Enables better support for deployement environments and runtimes like Cloudflare Workers, Deno, Bun, Vercel Edge and more.
+
+To implement these benefits now, see the [official usage guide for the new Rust-Free ORM](https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/no-rust-engine). You can also follow the entire development and release history in our **[Prisma ORM: The Complete Rust-to-TypeScript Migration Journey](https://www.prisma.io/blog/series/prisma-orm-the-complete-rust-to-typescript-migration-journey)** blog series**.**
+
+## Breaking performance barriers
+
+To quickly recap, the Query Compiler project is our push to replace the Prisma query engine, written in Rust, with a lean WASM module and supplemental TypeScript code. With this move we expected faster queries and a smaller footprint and now we’ve run benchmarks to prove it. 
+
+Since [our last update](https://www.prisma.io/blog/from-rust-to-typescript-a-new-chapter-for-prisma-orm), our team has been heads down on this project. With Prisma ORM 6.4 we have reached an important milestone: a working proof-of-concept of the Query Compiler. This alpha version contains the needed APIs to run comprehensive benchmarks against our existing Prisma Client implementations. You can check out the code and full benchmark results in our [ORM benchmarks repo](https://pris.ly/qc-benchmark-repo).
+
+## A new architecture for Prisma Client
+
+The architecture of the Prisma Client with a Query Compiler builds on our current architecture for Driver Adapters. In the current Driver Adapters implementation, Prisma Client queries are sent from TypeScript, through the query engine, driver adapter, and database driver and then finally arrive at your database.
+
+![](/blog/rust-to-typescript-update-boosting-prisma-orm-performance/imgs/c63df7c781f89520601e5a727a48e01b07475569-1280x889.png)
+
+With the Query Compiler, Prisma Client queries are instead first translated to an internal query plan and then passed back to the client to be sent to your database via the same driver adapter and database driver setup. If you’re using the `driverAdapters` preview feature today, the new implementation will work very similarly.
+
+![](/blog/rust-to-typescript-update-boosting-prisma-orm-performance/imgs/727c131f97f5cc9f326082e0f7d55a1ea61f6b80-1480x695.png)
+
+This shift isn’t just about modernization; it’s about making Prisma ORM faster and simpler. We are confident that the new architecture will have significantly less “gotchas”, allowing for developers to integrate Prisma ORM in their stack without worrying about compatibilities.
+
+## Key Benefits of the New Architecture
+
+### Faster performance
+
+The main driver behind this project is that while Rust is very quick, the cost of serializing data between Rust and TypeScript is very high. This cost negates any benefit gained from having our Query Engine in Rust and we have seen significant improvements with the new architecture.
+
+### No more extra binaries
+
+By removing our dependency on a Rust binary, we have eliminated a whole class of issues that resulted from managing an extra file in your development pipeline. From the simple problem of strict networks being unable to install the binary, to complex issues around making sure that your production and development environments have the correct file, none of these issues are present in the Query Compiler project.
+
+On top of that, the removal of the binary means that if your environment can run JavaScript, it can run Prisma ORM. We expect to see the largest pain points of environments like AWS Lambda or Cloudflare Workers to be resolved. Your Prisma Client will now fit naturally into your application stack.
+
+### Significantly reduced bundle size
+
+Our initial testing shows that while the Rust-based Prisma query engine clocks in roughly 14 MB (7 MB gzipped), the new Query Compiler is just about 1.6 MB (600 KB gzipped) representing an 85-90% reduction in size on average. Less disk space means your deployments are quicker and your apps can be deployed to more platforms easily. 
+
+## Benchmark Results
+
+The numbers speak for themselves. When compared to the existing Rust query engine, the new Query Compiler (QC) architecture results in performance gains that get progressively better as the amount of data retrieved increases. It’s faster exactly when it matters most:
+
+| **Benchmark** | **QC** | **Rust** | **Conclusion** |
+| --- | --- | --- | --- |
+| findMany (25,000 records) | 55.0 ms | 185.0 ms | QC 3.4x faster |
+| findMany, take 2000 | 3.1 ms | 6.6 ms | QC 2.1x faster |
+| findMany with where and take 2000 | 10.8 ms | 13.3 ms | QC 1.2x faster |
+| findMany with orderBy and take 50 | 5.8 ms | 7.2 ms | QC 1.2x faster |
+| findMany with where, to-many join, and take 2000 | 72.3 ms | 92.3 ms | QC 1.3x faster |
+| findMany with where, to-many → to-one join, and take 2000 | 130.0 ms | 207.0 ms | QC 1.6x faster |
+| findMany with to-many relational filter, take 100 | 333.0 ms | 330.0 ms | Rust 1.01x faster |
+| findMany with deep relational filter, take 100 | 1.5 ms | 2.4 ms | QC 1.6x faster |
+| findMany with to-one filter, take 100 | 1.3 ms | 1.4 ms | QC 1.1x faster |
+| findMany with to-many → to-many → to-one relational filter, take 100 | 300.0 ms | 323.0 ms | QC 1.1x faster |
+| findUnique with take three of to-many join | 23.2 ms | 23.5 ms | QC 1.01x faster |
+
+From our tests we’ve found that with large sets of data the Query Compiler was consistently faster than the Rust-based engine, up to three to four times faster in some cases. When only small sets of data are returned both implementations perform effectively the same. The Query Compiler gives a large benefit with no downside to existing Prisma ORM users.
+
+These examples are just the first benchmarks, however. We’re planning on expanding these benchmarks and also running them in constrained environments, like AWS Lambda or Cloudflare Workers, so that we can be confident in our numbers. Additionally, we’ll be continuing to improve our implementation for added efficiencies and benefits.
+
+## Embracing the Future: Prisma ORM 7 and Beyond
+
+We’re very excited about what this means for Prisma ORM users. The breakthrough performance and reduced bundle size not only make your apps faster and more efficient, but also us to more rapidly innovate. In the coming months, starting with a Preview release, we will invite you to try out these improvements. Shortly after that, Prisma ORM 7 will fully embrace the Query Compiler, marking the transition to a new era in how Prisma communicates with your databases.
+
+As always, our focus in on our community and we’d love to hear your thoughts!
+
+- Keep up with the latest updates and [join the conversation on GitHub](https://github.com/prisma/prisma/discussions)
+- [Ask us burning questions on Discord](https://pris.ly/discord) in our dev AMAs
+- Even [run the benchmarks](https://pris.ly/qc-benchmark-repo) yourself!
+
+## Frequently Asked Questions (FAQ)
+
+The [Rust binary-free version](https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/no-rust-engine) of Prisma ORM is ready for production use as of [Prisma ORM version 6.16](https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/no-rust-engine?utm_source=chatgpt.com), and here are some common FAQs from our users:
+
+### How much smaller is Prisma’s bundle without the Rust engine, and why does that help with cold starts?
+
+When Prisma removed the Rust binary query engine, the bundle size dropped from about **14 MB (7 MB gzipped)** to around **1.6 MB (600 KB gzipped)**, which is an **85 to 90 percent reduction**.
+
+This smaller bundle loads faster in serverless and edge environments such as [AWS Lambda](https://aws.amazon.com/lambda/), [Cloudflare Workers](https://workers.cloudflare.com/), and [Vercel Edge Functions](https://vercel.com/features/edge-functions).
+
+Because less code needs to load and initialize, cold starts become faster and memory usage decreases.
+
+### How much faster are queries with the Rust binary-free Prisma ORM compared to the old Rust engine?
+
+In internal benchmarks, the Rust binary-free version of Prisma ORM, also called the **Query Compiler**, delivers significant performance improvements:
+
+- `findMany` with 25,000 records improved from **185 ms to 55 ms** (about **3.4 times faster**)
+- `findMany` with take = 2000 improved from **6.6 ms to 3.1 ms** (about **2.1 times faster**)
+- Complex joins improved from **207 ms to 130 ms** (about **1.6 times faster**)
+
+You can read more in the [Rust to TypeScript performance update blog](https://www.prisma.io/blog/rust-to-typescript-update-boosting-prisma-orm-performance?utm_source=chatgpt.com).
+
+These improvements are most noticeable on large or complex queries.
+
+### Will the Rust binary-free Prisma ORM work in runtimes like Cloudflare, Deno, and Bun?
+
+Yes. Because Prisma’s new engine runs entirely in TypeScript and WebAssembly, it no longer depends on a native binary.
+
+You can now use Prisma in environments that support JavaScript or WASM, such as [Cloudflare Workers](https://developers.cloudflare.com/workers/), [Bun](https://bun.sh/), and [Deno](https://deno.com/).
+
+To enable it, use the new `prisma-client` generator and configure the correct driver adapter for your database, for example `@prisma/adapter-pg` for PostgreSQL.
+
+See the [Prisma Client generator documentation](https://www.prisma.io/docs/orm/prisma-schema/overview/generators#prisma-client?utm_source=chatgpt.com) for setup instructions.
+
+### If Rust is already fast, why does switching to TypeScript and WebAssembly make Prisma faster?
+
+Rust is a very fast systems language, but in the old architecture Prisma had to serialize and deserialize data between Rust and JavaScript.
+
+That cross-language communication added overhead, especially for large queries.
+
+The new Query Compiler runs in TypeScript and WebAssembly, which removes the need for this serialization step and results in faster query execution.
+
+You can learn more about the change in [From Rust to TypeScript: A New Chapter for Prisma ORM](https://www.prisma.io/blog/from-rust-to-typescript-a-new-chapter-for-prisma-orm?utm_source=chatgpt.com).
+
+### What changes are needed to use the Rust binary-free Prisma ORM?
+
+To migrate to the new version:
+
+1. Use the new `prisma-client` generator and set `engineType = "client"` in your `schema.prisma` file
+2. Remove the `binaryTargets` configuration (it is no longer required)
+3. Install the appropriate driver adapter for your database, such as `@prisma/adapter-pg` for PostgreSQL or `@prisma/adapter-sqlite` for SQLite
+4. Run `npx prisma generate` to regenerate your Prisma Client
+
+You can follow the full usage guide in the [Prisma documentation for the Rust binary-free ORM](https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/no-rust-engine?utm_source=chatgpt.com).
+
+### Can I switch back to the Rust engine if needed?
+
+Yes. If you encounter compatibility issues, you can temporarily revert to the legacy Rust engine by using an older Prisma ORM version before `6.16.0`.
+
+However, the Rust binary-free engine is now the default moving forward and is recommended for all new projects.
+
+Migration steps and fallback guidance are available in the [Rust-free Prisma ORM production release blog](https://www.prisma.io/blog/rust-free-prisma-orm-is-ready-for-production?utm_source=chatgpt.com)

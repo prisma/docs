@@ -1,0 +1,92 @@
+---
+title: "We Transitioned Prisma Accelerate to IPv6 Without Anyone Noticing"
+slug: "accelerate-ipv6-first"
+date: "2024-01-29"
+authors:
+  - "Tyler Benfield"
+metaTitle: "We Transitioned Prisma Accelerate to IPv6 Without Anyone Noticing"
+metaDescription: "In July 2023, AWS announced the decision to begin charging for IPv4 addresses beginning in February 2024. This move had a major impact on Prisma Accelerate for reasons we’ll get into, prompting us to go all-in on IPv6. Join us for a deep dive into how we approached our IPv6 migration, lessons learned, and the outcome for users of Prisma Accelerate."
+metaImagePath: "/blog/accelerate-ipv6-first/imgs/meta-b5bac6d735ee17d003b0a06190a5fa5c0e3fcc15-1266x713.png"
+heroImagePath: "/blog/accelerate-ipv6-first/imgs/hero-248d5719caeee73ee2c7f94a7d194de949af1524-844x475.svg"
+excerpt: |
+  In July 2023, [AWS announced](https://aws.amazon.com/blogs/aws/new-aws-public-ipv4-address-charge-public-ip-insights/) the decision to begin charging for IPv4 addresses beginning in February 2024. This move had a major impact on [Prisma Accelerate](https://www.prisma.io/data-platform/accelerate) for reasons we’ll get into, prompting us to go all-in on IPv6. Join us for a deep dive into how we approached our IPv6 migration, lessons learned, and the outcome for users of Prisma Accelerate.
+---
+
+## Prelude
+
+We should start with a bit of a primer on how Prisma Accelerate works. We’re overdue on a deep dive into Prisma Accelerate, so we’ll summarize the key architecture points.
+
+Prisma Accelerate is built on a hybrid cloud architecture spanning Cloudflare and AWS infrastructure. The caching, authorization, and request routing aspects of Prisma Accelerate occur at the edge using Cloudflare Workers. This leads to consistently fast cache hits for apps deployed all over the world. The edge is not so good for maintaining a connection pool and optimizing round-trips to a database that resides in a single region, so Prisma Accelerate operates an EC2 instance for each project in the AWS region closest to the database. We chose to completely isolate projects to their own EC2 instance for many reasons including security, performance, and workload isolation.
+
+These EC2 instances previously utilized an IPv4 network and were assigned a public IPv4 address to communicate externally. This setup was simple: a VPC in each of the 16 regions Prisma Accelerate supports and a subnet for each. Things get more interesting in how the EC2 instances are orchestrated, but we’ll save that for another post.
+
+The important takeaway is that Prisma Accelerate operates on thousands of EC2 instances that are provisioned and decommissioned as usage patterns change. An additional $3.60 per-month, per-instance, would have impacted our ability to provide a cost effective solution for our users. We needed to eliminate the public IPv4 addresses.
+
+## IPv6 all the things
+
+Anyone looking at a transition to IPv6-only should know that IPv4 and IPv6 are different, incompatible protocols. A machine with only an IPv4 address cannot talk to an IPv6-only machine and vice-versa. It’s important to assess what external services your workload is communicating with and determine if those services advertise an IPv6 address.
+
+At first thought, it seemed like Prisma Accelerate would be suitable for a quick switch to IPv6. All incoming traffic routes through the Cloudflare Worker based edge network first, which advertises both IPv4 and IPv6 addresses for our users (thanks Cloudflare!). Communication from Cloudflare to AWS occurs within our internal network which supports both IPv4 and IPv6 as well.
+
+The challenge came in connecting to the user’s database. As it turns out, many popular database providers do not advertise IPv6 addresses. Over half of our Prisma Accelerate users relied on IPv4-only databases. This was unfortunate, as it meant that making Prisma Accelerate’s EC2 workload IPv6-only was not an option. Still, we needed to eliminate the new AWS levied cost of those IPv4 addresses.
+
+## Enter DNS64 and NAT64
+
+I’m a 90’s kid. I spent a substantial amount of time sitting in front of a CRT playing N64 🕹️ Unfortunately, that did not prepare me for DNS64/NAT64.
+
+Despite IPv4 and IPv6 being incompatible, it is possible to translate outgoing traffic from IPv6 to IPv4. A special IPv6 range, `64:ff9b::/96`, is designated for a protocol called [DNS64](https://www.rfc-editor.org/rfc/rfc6147.html). DNS64 encodes an IPv4 address into an IPv6 address. When an IPv6-only server executes a DNS query against a DNS64 name server, it will transform IPv4 `A` records into IPv6 `AAAA` records. The IPv6-only server will then send requests to the DNS64 IPv6 address.
+
+DNS64 alone only encodes and decodes the IPv4 address. Another host, usually a gateway, must be listening on the DNS64 IPv6 address to receive the request and proxy it to the destination IPv4. This process is called [NAT64](https://www.rfc-editor.org/rfc/rfc6146.html). The network routing configuration is configured to route the `64:ff9b::/96` range to the NAT64 gateway, so all IPv6-only hosts are unaware of the DNS64/NAT64 process. With NAT64 in place, only the NAT64 gateway needs a public IPv4 address to communicate with external IPv4-only servers.
+
+There was one case here that we did not catch early enough: explicit IPv4 addresses will not be encoded by DNS64 because they don’t go through DNS resolution. We have a small number of users on Prisma Accelerate that utilize direct IPv4 addresses in their connection strings. The initial rollout affected a few of these users. To mitigate this, we added some code to our orchestration workflow in Cloudflare Workers to detect an IPv4 and transform it with DNS64 before passing it to the EC2 instance. The DNS64 transformation is a simple function that is only a few lines of code to implement.
+
+```tsx
+function applyDNS64(ipv4: string): string {
+  // split the IPv4 address into octets
+  // convert the octets in hexadecimal numbers
+  const octets = ipv4
+    .split(".")
+    .map((x) => parseInt(x))
+    .map((x) => x.toString(16).padStart(2, "0"));
+
+  // construct the DNS64 IPv6 address
+  // 64:ff9b::/96 is the well-known DNS64 prefix
+  // your routing will need to send the 64:ff9b::/96 prefix to a NAT64 gateway
+  return `[64:ff9b::${octets[0]}${octets[1]}:${octets[2]}${octets[3]}]`;
+}
+```
+## IPv6-first
+
+Prisma Accelerate takes advantage of NAT64 in an approach we call IPv6-first. Every region Prisma Accelerate supports operates an AWS NAT gateway with NAT64 enabled. EC2 instances are placed into an IPv6-only VPC subnet, which automatically provisions a ***public*** IPv6 address from a specific address range and ***no*** IPv4 address. When the EC2 instance attempts to connect to a user’s database, it will prefer a direct connection over the public IPv6 address if the database also advertises an IPv6 address. Otherwise, a DNS64 address will be resolved instead, routing the request through the attached NAT gateway and to the database over IPv4. All internal traffic, including the request from Cloudflare to AWS, is always IPv6.
+
+Unfortunately, while this removes the IPv4 address cost, it does add additional data transfer costs over the NAT gateway. Prisma has decided to absorb this cost while the ecosystem adjusts to the new IPv6 landscape. We made this decision so that the transition is as seamless for our users as possible (you see now why we picked the title for this post? 😉). This decision is also in alignment with several of the developer experience focused principles that we’ve put across on our [Data DX manifesto](https://www.datadx.io/#manifesto).
+
+Using a NAT gateway in AWS comes with additional costs. For many workloads, it is more cost effective to utilize a dedicated IPv4 address rather than a NAT gateway. For others, like Prisma Accelerate, the NAT gateway is the more cost effective solution. We recommend doing your own analysis to identify the best solution for you.
+
+## Unforeseen circumstances
+
+NAT64 solved our external networking challenges, which only exposed where we had unexpectedly relied on IPv4 internally.
+
+Prisma Accelerate runs processes on the EC2 instances that bind to ports for communication from Cloudflare to AWS. These bindings listened on IPv4 rather than IPv6. Fortunately, this was a simple change in our Cloudflare Workers based orchestration code which dynamically configures the EC2 instance.
+
+Prisma Accelerate orchestrates those processes on the EC2 instance using Docker. We observed container networking issues initially which were quickly resolved by enabling IPv6 on the local Docker network.
+
+Finally, everything was working, yet network calls appeared to be extremely slow. After some digging (yes, with `dig`), we identified that the slowness was caused by DNS resolution attempting to query an IPv4 address first, then using the correct IPv6 address. This was caused by our EC2 base AMI being created on an IPv4 network and restoring with that configuration. A few adjustments to DNS resolution and speeds looked great.
+
+## Rollout
+
+Prisma Accelerate is so highly distributed that this change was deployed in a gradual way with no visible impact to users. We’re quite proud of this. 🏆
+
+We began by deploying the new infrastructure to all regions. We manage infrastructure with [Pulumi](https://www.pulumi.com/) to ensure our configuration is repeatable in deployment and reviewable by our team. We mitigated infrastructure risk by deploying an all new VPC, subnet, NAT gateway,… everything, side-by-side with the existing infrastructure in every region.
+
+The new infrastructure was unused until we modified our orchestration code to deploy EC2 instances that utilized it. We conditionally toggled the new configuration by region, allowing us to gradually enable it and closely monitor the results. Beginning with our internal test region, we enabled the new configuration region-by-region from least utilized to most utilized.
+
+Enabling the new configuration in a region also didn’t have a dramatic impact though. Running EC2 instances are not immediately replaced by Prisma Accelerate. Rather, as instances were naturally recycled by the orchestration workflow, old IPv4-only instances were replaced with shiny, new, IPv6-first ones. This property of Prisma Accelerate was instrumental to our rollout as it minimized the risk and impact on active users.
+
+The initial rollout was very smooth across thousands of users. Yes, there were a few isolated issues (Murphy’s Law!). We built such an eventuality in our planning, enabling us to revert isolated regions with troubled users back to the previous version, deploy the fix and get the region back on IPv6 again. Over time, all user instances were replaced and we were able to decommission the old infrastructure.
+
+## Outro
+
+Prisma Accelerate’s IPv6-first architecture optimizes for the future of the web while continuing to provide excellent support for IPv4-only databases. We’re actively working with our partners to improve the state of IPv6 adoption across the database ecosystem. Our team is excited to be on the forefront of innovation with Prisma Accelerate, and more exciting products to come.
+
+Today’s deep-dive was all about our switch from IPv4 to IPv6 on our internal network. In the next post, I’ll do a deep dive on the Prisma Accelerate architecture. We’ll explore how we saved money and increased uptime by migrating from Kubernetes to Cloudflare + EC2. Stay tuned or [sign up to get alerted](https://www.prisma.io/newsletter).

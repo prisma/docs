@@ -1,0 +1,266 @@
+---
+title: "Working With Data in Large Teams"
+slug: "working-with-data-in-large-teams"
+date: "2025-04-29"
+authors:
+  - "Ankur Datta"
+metaTitle: "Working With Data in Large Teams"
+metaDescription: "Scale your data workflows without slowing down your team. This guide helps engineering leads adopt CI for database changes, define clear ownership, and balance velocity with safety using proven patterns like expand-contract and schema validation."
+metaImagePath: "/blog/working-with-data-in-large-teams/imgs/meta-22576a7f1d6f518c9a4f0c317c5952374add63e6-1266x711.png"
+heroImagePath: "/blog/working-with-data-in-large-teams/imgs/hero-3d53c303fc2f5c1cb3e19f10a0f6522f093d6291-844x474.svg"
+heroImageAlt: "Illustration showing a large team of diverse people collaborating on a shared data dashboard. Individuals are interacting with charts, tables, and code snippets displayed on floating UI panels. The environment suggests an organized, collaborative workspace with digital tools and version control systems. Arrows and icons represent data flows, edits, and teamwork across roles like engineers, analysts, and product managers."
+excerpt: |
+  When multiple teams share a database, things break. Migrations conflict, queries start to bloat, or  ownership gets murky. 
+
+  This post breaks down how large teams can build resilient data workflows—using SQL, ORMs, or both—while maintaining speed and autonomy. We’ll explore real-world patterns like expand-and-contract, schema CI, query conventions, and how to know when to use raw SQL. 
+
+  If you're scaling teams and databases, this one’s for you.
+---
+
+## Why data workflows fall apart at scale
+
+As teams grow, they often collide in shared database environments. The result? Sloppy migrations, unexpected table changes, and nobody quite sure who owns what.
+
+When ownership is vague, even well-meaning changes can cause breakages. This is especially common in fast-moving product teams that don’t have clearly defined database protocols.
+
+Some common breakdowns occur when:
+
+- One team ships a migration that drops a column another still needs
+- Tables become bloated with fields serving conflicting purposes
+- A single schema file has five owners and zero accountability
+
+Sometimes, scaling is less about tech and more about clarity.
+
+## Pick one workflow and make it boring
+
+Giving teams multiple ways to manage the same task might seem flexible—but it often results in inconsistency and confusion. A single, boring workflow reduces mental overhead and promotes smoother collaboration.
+
+There are three common approaches teams use to manage schema changes:
+
+| **Approach** | **Examples** | **Description** |
+| --- | --- | --- |
+| **Migration-first** | Prisma, Rails, Knex | Write schema migrations in code and commit them to version control |
+| **Model-first** | Django, Sequelize | Define schema via application models, and generate database changes automatically |
+| **DDL-first** | Raw SQL, Liquibase, Atlas | Write and review SQL statements directly—offering full control and transparency |
+
+> Tip: DDL stands for Data Definition Language—SQL statements like `CREATE`, `ALTER`, or DROP that define database structure.
+> 
+
+Stick with one approach across teams. Mixing styles without discipline makes your workflow harder to debug and nearly impossible to scale.
+
+## Treat schema like application code
+
+Would you ship app code without a pull request? Probably not. Database schema deserves the same level of scrutiny.
+
+Make sure to adopt the following practices:
+
+- Version every schema change in Git
+- Review schema changes through pull requests
+- Use diff tools like Prisma Migrate, Atlas, or Liquibase to visualize changes before they go live
+
+This creates transparency, catches mistakes early, and builds a historical trail of every evolution.
+
+## Use the expand and contract pattern
+
+Big schema changes don’t need to be risky. The expand-and-contract pattern breaks changes into non-breaking steps that minimize downtimes:
+
+- **Expand**: Add the new field, table, or structure
+- **Migrate**: Backfill and update any references or dependencies
+- **Contract**: Remove or rename the old parts only after everything is safe
+
+This avoids breaking production, supports rolling deployments, and helps teams maintain uptime, even when changes are complex.
+
+![Diagram showing how a database table for a customer evolves using the "expand and contract" pattern. It starts with a single name field, then adds firstname and lastname alongside name in the expand phase, and finally removes name in the contract phase, keeping only firstname and lastname.](/blog/working-with-data-in-large-teams/imgs/692db4b94d2545446995a4138069dcd5c4d664ed-1722x1620.png)
+
+It's a reliable pattern whether you're using raw SQL, Prisma, Rails, or any other system. [Visit our dataguide](https://www.prisma.io/dataguide/types/relational/expand-and-contract-pattern?utm_source=blog&utm_campaign=data_in_large_teams) to learn more about the expand and contract pattern.
+
+## Define when to use SQL and when to use an ORM
+
+SQL and ORMs are complementary—not competing—tools. The key is knowing when each is the better fit based on your goals: speed of development, control over queries, and long-term maintainability.
+
+**Use an ORM when:**
+
+- You want to move quickly on product development
+- You prefer readable, maintainable, and type-safe code
+- Your team benefits from abstracting away boilerplate and repetitive tasks
+- You want to *de-risk development* by not requiring every developer to be a SQL expert
+
+**Use raw SQL when:**
+
+- You’re optimizing complex joins or performance-critical paths
+- You need fine-grained control over queries, indexes, or execution plans
+- You’re building reporting-heavy internal tools that rely on custom logic
+
+You don’t have to choose just one. Most modern applications combine both: use an ORM to move fast and stay type-safe, and drop down to raw SQL when performance or flexibility demands it—ideally wrapping those queries in typed helpers to keep things maintainable.
+
+For example, [TypedSQL in Prisma ORM](https://www.prisma.io/typedsql) lets you use raw SQL with full TypeScript types, right next to your ORM calls. This gives you the flexibility of SQL without giving up type safety or maintainability.
+
+<Youtube videoId="yyOM_fBMehA" />
+
+**Some popular tools include:**
+
+Kysley (TypeScript), Sequelize (Node.js), Django ORM (Python), Knex (SQL builder), raw SQL via SQLX or pgx (Rust), or even SQL scripts with migration tools like Atlas or Liquibase.
+
+## Use CI to enforce database safety
+
+Without safeguards, schema changes can silently break production. **Continuous Integration (CI)** helps prevent that by validating each change before it’s merged.
+
+A robust database CI pipeline should:
+
+- **Preview schema diffs** using tools like Prisma Migrate or Atlas to detect breaking changes
+- **Run integration tests** against a temporary or shadow database to validate behavior end-to-end
+- **Fail the build** if destructive actions are detected (e.g. dropping columns, data loss)
+
+Set this up with **GitHub Actions**, **Docker**, and your migration tool of choice. For example, use a job that:
+
+1. Boots a clean PostgreSQL container
+2. Applies migrations
+3. Runs your test suite
+4. Parses migration plans for potentially unsafe operations
+
+This catches regressions before they hit production, and makes schema evolution a shared, reviewable part of your workflow—not a side effect of deployment.
+
+## Use OpenAPI and Swagger to define boundaries
+
+When teams exchange data over APIs, clear contracts are essential to avoid miscommunication and bugs. [**OpenAPI** is a widely adopted specification](https://www.openapis.org/) for describing RESTful APIs in a structured format that both humans and tools can understand.
+
+[**Swagger** is a popular set of tools](https://swagger.io/) built around the OpenAPI standard. It lets teams document, visualize, and test APIs with minimal friction.
+
+**Using tools like Swagger helps teams:**
+
+- Define API boundaries and expected behavior explicitly
+- Auto-generate types and client code for both frontend and backend
+- Validate changes to catch breaking updates early
+- Browse and test API endpoints through interactive documentation
+- Help frontend teams move faster by mocking responses and integrating typed clients
+- Improve developer onboarding by making APIs self-explanatory and discoverable
+
+This approach works especially well in **microservice architectures** or when multiple teams rely on shared internal APIs.
+
+![Screenshot of Swagger UI displaying a REST API for Prisma examples. It shows endpoints for common actions like getting posts, deleting posts, signing up, publishing posts, and viewing drafts. Each HTTP method is color-coded (e.g., GET in blue, POST in green, DELETE in red, PUT in orange), and the interface is hosted locally at localhost:3000.](/blog/working-with-data-in-large-teams/imgs/f95eeb393e9927416c9bd776ac02895cc5775624-1348x932.png)
+
+
+Instead of relying on tribal knowledge or Slack messages to explain how APIs work, developers can explore, prototype, and integrate confidently—powered by accurate, always-up-to-date documentation.
+
+## Co-locate queries, standardize structure
+
+Scattered logic is hard to scale. A consistent file structure makes your codebase easier to navigate, reason about, and extend—especially as your team grows.
+
+Instead of splitting data access logic across `models/`, `utils/`, and `services/`, group queries by domain. This mirrors patterns from the **CLEAN architecture** and **modular monolith** design, where feature boundaries—not technical layers—drive the structure.
+
+```shell
+db/
+└── queries/
+    ├── user/
+    │   ├── createUser.ts
+    │   ├── getUserById.ts
+    │   └── query.types.ts
+    ├── project/
+    │   ├── createProject.ts
+    │   ├── listProjectsByUser.ts
+    │   └── query.types.ts
+    ├── billing/
+    │   ├── createInvoice.ts
+    │   ├── getInvoiceById.ts
+    │   └── query.types.ts
+    ├── auth/
+    │   ├── getSession.ts
+    │   ├── createSession.ts
+    │   └── query.types.ts
+    ├── analytics/
+    │   ├── trackEvent.ts
+    │   ├── getEventSummary.ts
+    │   └── query.types.ts
+    └── internal/
+        ├── getSystemStatus.ts
+        ├── getAdminUsers.ts
+        └── query.types.ts
+
+```
+**Why this works:**
+
+- Encourages clear ownership and encapsulation per domain
+- Speeds up onboarding by making query location predictable
+- Reduces cross-cutting concerns and inconsistent abstractions
+- Keeps your logic close to where it's used—easier to test, document, and refactor
+
+Design patterns like **CLEAN** or **feature-based architecture** aren’t just academic, they make collaboration smoother and systems more resilient over time. A good structure scales with your team and your product.
+
+## Share types across systems
+
+Type mismatches between frontend and backend are a common source of bugs—like treating a `number` as a `string`, or missing optional fields. These issues often arise when teams define the same types in multiple places, leading to duplication and drift.
+
+**Code generation** solves this by producing types directly from your database schema or query definitions. This gives you a single source of truth that stays in sync across your stack.
+
+![Diagram showing how a shared type system can be generated from a source schema. The flow goes from a "Source Schema" file to a "Types Generator", which produces a "Types" file. These types are then used by both the "Frontend" and "Backend" systems, promoting consistency across the stack.](/blog/working-with-data-in-large-teams/imgs/a4b58bb31aec94338e862c881d97216ae51f7c70-2888x1372.png)
+
+**Why it matters:**
+
+- Avoids manual duplication of types across backend and frontend
+- Prevents bugs caused by type mismatches or out-of-date contracts
+- Enforces correctness at compile time instead of at runtime
+- Makes refactoring safer with better IDE support and autocomplete
+
+Examples of tools that help with this: Prisma ORM (TypeScript), SQLC (Go), SeaORM (Rust), Pydantic (Python)
+
+When your application layers share the same type definitions, you reduce bugs, increase developer confidence, and ship faster with fewer surprises.
+
+## Let AI catch the obvious (and not-so-obvious)
+
+Modern AI tools help teams move faster without sacrificing quality. By integrating large language models (LLMs) into your development workflow, you can automate the tedious, catch the subtle, and focus on solving real problems.
+
+![Two-part diagram comparing software deployment workflows before and after continuous integration (CI) improvements. In the "Before" section, application code follows an automated path to deployment, while database code faces multiple manual steps like sending scripts to DBAs, script reviews, bundling, and manual deployment—each marked with stop signs. In the "After" section, both application and database code are integrated into a unified CI pipeline with shared steps for commit, validation, artifact build, and automatic deployment, eliminating manual bottlenecks.](/blog/working-with-data-in-large-teams/imgs/f84211e7150686712c3c6ac48c443d69c60e73f3-2888x2206.png)
+
+**Use LLM-powered assistants to:**
+
+- Spot potentially unsafe or breaking schema changes
+- Summarize pull request diffs for quicker reviews
+- Generate test data, edge cases, and seed scenarios
+- Recommend improvements or flag risks directly in pull requests
+
+**Examples of tools that help with this:**
+
+Windsurf, CodiumAI, Sweep.dev (schema & PR review), GitHub Copilot, Cursor (inline coding help), OpenDevin (backend automation).
+
+Here’s an example from the Laravel ecosystem, [called Enlightn](https://www.laravel-enlightn.com/), a tool that scans your app and offers actionable recommendations across performance, security, and more:
+
+![Screenshot of a pull request code review by the enlightn-for-laravel bot on GitHub. The bot flags that 2 checks have failed, reporting 2 security vulnerabilities but no performance or reliability issues. It comments on a code snippet in UserProfileController.php, warning that using orderBy with request input could allow users to inject column names dynamically, potentially leading to security risks.](/blog/working-with-data-in-large-teams/imgs/8e1499926a4ed10abfcf7d2c310d81cfaee4de21-1066x1190.png)
+
+AI isn't just for speed—it’s your second pair of eyes. Used wisely, it helps you write safer code, reduce review fatigue, and offload routine tasks so you can stay focused on the bigger picture.
+
+## Optimize for team velocity, not query perfection
+
+Well-tuned queries are valuable, but the ability to ship reliably and consistently matters more. Prioritize workflows that help your entire team move faster without sacrificing stability.
+
+**Focus on processes that:**
+
+- Encourage safe defaults and sensible conventions
+- Make onboarding straightforward for new developers
+- Catch issues early through tooling and CI
+- Balance performance with code clarity and maintainability
+
+**Examples of velocity-focused practices:**
+
+Use ORMs with guardrails, linters and formatters, type-safe APIs, and CI checks for query regressions.
+
+Fast teams ship more value than perfectly tuned queries, optimize for workflows that scale with your team, not just your database.
+
+## TLDR: Build a workflow, not a mess
+
+You’ve made it this far—great! Here’s a quick recap to keep things sticky. Think of this table not as a checklist, but as a lens to diagnose and refine your current setup. Most data challenges at scale are less about technology, more about clarity and alignment.
+
+| Problem | Solution |
+| --- | --- |
+| Conflicting migrations | Use PRs, version control, expand-contract |
+| Schema ownership confusion | Organize queries, share types |
+| Fragile raw SQL | Use typed helpers, CI validation |
+| Teams moving too slow | Choose boring, fast workflows |
+| Surprising API changes | Use OpenAPI and validate in CI |
+
+A good data workflow is one your team understands, trusts, and can improve. That’s what scales. Choose discipline and clarity. When everyone knows how things work, teams move faster—together.
+
+## Join the conversation, shape better workflows
+
+If this helped you, we’d love to hear about it. [Tag us on X](https://pris.ly/x?utm_source=blog&utm_content=conclusion) and share what you're building. Or hop into [our Discord](https://pris.ly/discord?utm_source=blog&utm_content=conclusion) if you want to chat, troubleshoot, or nerd out about databases and performance.
+
+We also post video deep dives [regularly on YouTube](https://pris.ly/youtube?utm_source=blog&utm_content=conclusion). Hit subscribe if you’re into that kind of thing. More examples, more performance tricks, and maybe a few surprise launches. We’ll see you there.
