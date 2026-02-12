@@ -17,6 +17,7 @@ import {
   EditOnGitHub,
   PageLastUpdate,
 } from '@/components/layout/notebook/page';
+import { TechArticleSchema, BreadcrumbSchema } from '@/components/structured-data';
 
 interface PageParams {
   version: string;
@@ -36,13 +37,16 @@ export default async function Page({
   const MDX = page.data.body;
 
   return (
-    <DocsPage
-      tableOfContent={{ style: 'normal' }}
-      toc={page.data.toc}
-      full={page.data.full}
-    >
-      <div className="flex flex-row items-center gap-4 pt-2 pb-6 justify-between">
-        <DocsTitle>{page.data.title}</DocsTitle>
+    <>
+      <TechArticleSchema page={page} />
+      <BreadcrumbSchema page={page} />
+      <DocsPage
+        tableOfContent={{ style: 'normal' }}
+        toc={page.data.toc}
+        full={page.data.full}
+      >
+        <div className="flex flex-row items-center gap-4 pt-2 pb-6 justify-between">
+          <DocsTitle>{page.data.title}</DocsTitle>
         <div className="flex flex-row gap-2 items-center">
           <LLMCopyButton pageUrl={page.url} />
           <ViewOptions
@@ -73,6 +77,7 @@ export default async function Page({
         )}
       </div>
     </DocsPage>
+    </>
   );
 }
 
