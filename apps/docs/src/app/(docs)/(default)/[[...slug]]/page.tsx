@@ -83,22 +83,25 @@ export async function generateMetadata({
   const page = source.getPage(slug);
   if (!page) notFound();
 
+  const title = page.data.metaTitle ?? page.data.title;
+  const description = page.data.metaDescription ?? page.data.description;
+
   return {
-    title: page.data.title,
-    description: page.data.description,
+    title,
+    description,
     alternates: {
       canonical: page.url,
     },
     openGraph: {
-      title: page.data.title,
-      description: page.data.description,
+      title,
+      description,
       url: page.url,
       images: page.data.image || getPageImage(page).url,
     },
     twitter: {
       card: 'summary_large_image',
-      title: page.data.title,
-      description: page.data.description,
+      title,
+      description,
     },
   };
 }

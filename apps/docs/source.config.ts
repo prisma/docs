@@ -22,7 +22,9 @@ export const docs = defineDocs({
     schema: frontmatterSchema.extend({
       image: z.string().optional(),
       badge: z.enum(['early-access', 'deprecated', 'preview']).optional(),
-      url: z.string().optional(),
+      url: z.string(),
+      metaTitle: z.string(),
+      metaDescription: z.string(),
     }),
     postprocess: {
       includeProcessedMarkdown: true,
@@ -40,7 +42,9 @@ export const docsV6 = defineDocs({
     schema: frontmatterSchema.extend({
       image: z.string().optional(),
       badge: z.enum(['early-access', 'deprecated', 'preview']).optional(),
-      url: z.string().optional(),
+      url: z.string(),
+      metaTitle: z.string().optional(),
+      metaDescription: z.string().optional(),
     }),
     postprocess: {
       includeProcessedMarkdown: true,
