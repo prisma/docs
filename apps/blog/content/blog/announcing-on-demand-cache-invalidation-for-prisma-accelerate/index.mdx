@@ -1,0 +1,134 @@
+---
+title: "Announcing On-Demand Cache Invalidation for Prisma Accelerate"
+slug: "announcing-on-demand-cache-invalidation-for-prisma-accelerate"
+date: "2024-09-26"
+authors:
+  - "Ankur Datta"
+metaTitle: "On-Demand Cache Invalidation Now Available in Prisma Accelerate"
+metaDescription: "Boost app performance with precise control using Prisma's on-demand cache invalidation."
+metaImagePath: "/blog/announcing-on-demand-cache-invalidation-for-prisma-accelerate/imgs/meta-40c9facc0c25985278c069ade326008e14baef9a-1266x711.png"
+heroImagePath: "/blog/announcing-on-demand-cache-invalidation-for-prisma-accelerate/imgs/hero-4100fa47bccf0620564331dda7e0c65bcd069ef2-844x474.svg"
+heroImageAlt: "Prisma Accelerate's cache invalidation API in a code block"
+excerpt: |
+  Caching with Prisma Accelerate can significantly boost performance for read-heavy applications while reducing strain on your database. On-demand cache invalidation gives you precise control over refreshes, simplifying management and optimization while ensuring that up-to-date information is always served.
+---
+
+**Quick recap on caching:**
+
+Caching stores frequently accessed data in a temporary layer for quicker access, minimizing the need for repeated fetching from the original source. Prisma Accelerate caches data in the location closest to your server to provide faster data retrieval.
+
+> Explore our [speed test](https://accelerate-speed-test.prisma.io/) to experience firsthand how caching can dramatically improve your application's performance.
+> ![Prisma Accelerate speed test result GIF](/blog/announcing-on-demand-cache-invalidation-for-prisma-accelerate/imgs/46cf59b4dcf666cc403923788d01a5eb0c959970-870x804.gif)
+>
+
+**Benefits of caching:**
+
+- Improves performance by reducing latency
+- Lowers server load and resource usage
+- Enhances user experience with faster response times
+- Reduces network bandwidth consumption
+- Increases scalability by handling more traffic
+
+However, keeping cached data accurate is key. On-demand cache invalidation, which removes outdated data, ensures users receive real-time information. This is a tricky balance—improper invalidation can result in either serving stale data or clearing the cache unnecessarily, impacting both performance and reliability.
+
+## The Importance of cache invalidation
+
+On-demand cache invalidation is crucial for maintaining data integrity while benefiting from the speed of having cached data. With earlier versions of Prisma Accelerate, depending on the cache strategy, you had to wait for TTL or SWR timers to expire, limiting control over data refresh timing. Now, with on-demand cache invalidation, you can refresh your cache exactly when needed, allowing for a more dynamic and responsive experience.
+
+### Use-case: *Hackernews* forum
+
+Imagine a scenario with [*Hackernews*](https://news.ycombinator.com/), where new posts and upvotes are constantly being added. Caching can dramatically speed up fetching popular stories, reducing server load. However, without proper on-demand invalidation, users could be shown outdated rankings, comments, or even entirely removed posts. This delay can mislead users with outdated data, degrading the experience and lowering engagement.
+
+For example, a post gaining significant upvotes won’t reflect in real-time without on-demand invalidation, leaving the top posts list inaccurate. By employing this technique, updates like votes, comments, or edits are consistently reflected, keeping the feed fresh and users engaged.
+
+## How to add Prisma Accelerate on-demand cache invalidation to your project
+
+Continuing from the Hackernews example, you’re retrieving a cached list of the most recent posts. With a query like the one below, which retrieves the latest posts and caches the result with a high Time-to-Live (TTL) value, the load on the database is significantly reduced:
+
+```ts
+const { data, info } = await prisma.post
+  .findMany({
+    take: 20,
+    orderBy: {
+      createdAt: 'desc',
+    },
+    cacheStrategy: {
+      ttl: 120,
+    },
+  })
+  .withAccelerateInfo()
+
+```
+Now, with Prisma Accelerate, you can invalidate the cache by using tags, which group cached query results for easier management. Let’s look at an example:
+
+1. First, add a tag to the `cacheStrategy` of your query:
+    
+    ```ts
+    const { data, info } = await prisma.post
+      .findMany({
+        take: 20,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        cacheStrategy: {
+          ttl: 600,
+          // add the tags option and label the cached query result
+          tags: ['posts'],
+        },
+      })
+      .withAccelerateInfo()
+    
+    ```
+    
+2. Then, when adding a new post, use the `$accelerate.invalidate` to refresh the cache immediately with on-demand invalidation:
+    
+    ```ts
+    const newPost = await prisma.post.create({
+      data: {
+        title: title,
+        content: text,
+        url: url,
+        vote: 0,
+      },
+    })
+    
+    await prisma.$accelerate.invalidate({
+      tags: ['posts'],
+    })
+    
+    ```
+    
+3. Similarly, when you upvote a post, you can invalidate the cache as well:
+    
+    ```ts
+    await prisma.post.update({
+      where: {
+        id: id,
+      },
+      data: {
+        vote: {
+          increment: 1,
+        },
+      },
+    })
+    
+    await prisma.$accelerate.invalidate({
+      tags: ['posts'],
+    })
+    
+    ```
+
+And that’s how simple it is to achieve on-demand cache revalidation. Check out the [example app](https://pris.ly/cache-invalidation-acc-example) to see how it works.
+
+## Start caching your queries
+
+Leverage on-demand cache invalidation to enhance query performance, improve the overall responsiveness of your app, and reduce load on the database.
+
+<br />
+
+[Get started with Accelerate](https://pris.ly/ci-accelerate-website)
+
+[Read the docs on caching with Accelerate](https://pris.ly/ci-accelerate-caching-docs)
+
+Stay tuned for more exciting updates on [X](https://x.com/prisma), and keep an eye on our [changelog](https://pris.ly/changelog-website). If you need any help, feel free to reach out on our [Discord](https://pris.ly/discord).
+
