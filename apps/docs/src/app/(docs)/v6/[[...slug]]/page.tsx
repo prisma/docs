@@ -1,4 +1,5 @@
-import { getPageImage, getSource, sourceV6 } from '@/lib/source';import { notFound, redirect } from 'next/navigation';
+import { getPageImage, sourceV6 } from '@/lib/source';
+import { notFound, redirect } from 'next/navigation';
 
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
@@ -86,9 +87,7 @@ export async function generateMetadata({
   params: Promise<PageParams>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const source = sourceV6;
-
-  let page = source.getPage(slug);
+  const page = sourceV6.getPage(slug);
   if (!page) notFound();
 
   const title = page.data.metaTitle ?? page.data.title;
