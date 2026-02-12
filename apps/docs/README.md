@@ -51,7 +51,7 @@ Turbo runs `dev` for every app in parallel (docs on 3000, blog on 3001, eclipse 
 | Path | Purpose |
 |------|---------|
 | `apps/docs/content/docs/` | Latest version docs (MDX) |
-| `apps/docs/content/docs.v6/` | V6 versioned docs |
+| `apps/docs/content/docs/orm/v6/` | V6 ORM docs (versioned under orm) |
 | `apps/docs/source.config.ts` | Fumadocs config (collections, meta, plugins) |
 | `apps/docs/cli.json` | CLI reference data |
 

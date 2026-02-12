@@ -1,4 +1,4 @@
-import { docs, docsV6 } from "../../.source/server";
+import { docs } from "../../.source/server";
 import { type InferPageType, loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/lucide-icons";
 import { openapiPlugin } from "fumadocs-openapi/server";
@@ -11,22 +11,12 @@ export const source = loader({
   plugins: [lucideIconsPlugin(), openapiPlugin()],
 });
 
-// v6 source - URLs with /v6/ prefix
-export const sourceV6 = loader({
-  baseUrl: "/v6",
-  source: docsV6.toFumadocsSource(),
-  plugins: [lucideIconsPlugin()],
-});
-
-// Get the appropriate source for a version
+// Get the appropriate source for a version (v6 pages are now under /orm/v6)
 export function getSource(version: Version) {
-  return version === "v6" ? sourceV6 : source;
+  return source;
 }
 
-
-export function getPageImage(
-  page: InferPageType<typeof source> | InferPageType<typeof sourceV6>
-) {
+export function getPageImage(page: InferPageType<typeof source>) {
   const segments = [...page.slugs, "image.png"];
 
   return {
@@ -35,7 +25,7 @@ export function getPageImage(
   };
 }
 
-export async function getLLMText(page: InferPageType<typeof source> | InferPageType<typeof sourceV6>) {
+export async function getLLMText(page: InferPageType<typeof source>) {
   const processed = await page.data.getText("processed");
 
   return `# ${page.data.title}

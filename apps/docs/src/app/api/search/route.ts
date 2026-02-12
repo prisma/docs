@@ -7,9 +7,7 @@ function getBreadcrumbsFromUrl(url: string): string[] {
   const path = url.replace(/#.*$/, '').trim().replace(/\/$/, '') || '/';
   const segments = path.split('/').filter(Boolean);
   if (segments.length === 0) return ['Docs'];
-  // Strip version prefix (e.g. v6)
-  const normalized = segments[0] === 'v6' ? segments.slice(1) : segments;
-  if (normalized.length === 0) return ['Docs'];
+  const normalized = segments;
   // Ancestors only (exclude last = current page), or full path for section roots
   const breadcrumbSegments =
     normalized.length > 1 ? normalized.slice(0, -1) : normalized;

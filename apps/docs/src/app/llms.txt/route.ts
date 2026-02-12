@@ -1,11 +1,11 @@
-import { source, sourceV6 } from "@/lib/source";
+import { source } from "@/lib/source";
 import { getBaseUrl } from "@/lib/urls";
 
 export const revalidate = false;
 
 export async function GET() {
   const baseUrl = getBaseUrl();
-  const allPages = [...source.getPages(), ...sourceV6.getPages()];
+  const allPages = source.getPages();
 
   const sortedPages = allPages.sort((a, b) =>
     a.data.title.localeCompare(b.data.title)

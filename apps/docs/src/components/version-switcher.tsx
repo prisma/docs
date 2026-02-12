@@ -22,23 +22,29 @@ export function VersionSwitcher({ currentVersion }: VersionSwitcherProps) {
   const handleVersionChange = (newVersion: string) => {
     if (newVersion === currentVersion) return;
 
-    const VERSION_SECTIONS: Record<string, Set<string>> = {
-      v7: new Set(['accelerate', 'ai', 'cli', 'console', 'guides', 'management-api', 'optimize', 'orm', 'postgres', 'studio']),
-      v6: new Set(['accelerate', 'ai', 'guides', 'optimize', 'orm', 'platform', 'postgres']),
-    };
-
-    const rawPath = pathname.replace(/^\/v\d+(?=\/|$)/, '') || '/';
-    const topSection = rawPath.split('/').filter(Boolean)[0] ?? '';
-    const sectionExists = VERSION_SECTIONS[newVersion]?.has(topSection);
+    const isV6Orm = pathname.startsWith('/orm/v6');
+    const ormSubPath = pathname.startsWith('/orm') ? pathname.slice(4) : ''; // /orm/... -> /... or /orm/v6/... -> /v6/...
 
     let newPath: string;
     if (newVersion === LATEST_VERSION) {
-      newPath = sectionExists ? `/${topSection}` : '/';
+      if (isV6Orm) {
+        const withoutV6 = ormSubPath.replace(/^\/v6/, '') || '';
+        newPath = withoutV6 ? `/orm${withoutV6}` : '/orm';
+      } else {
+        newPath = pathname;
+      }
     } else {
-      newPath = sectionExists ? `/${newVersion}/${topSection}` : `/${newVersion}`;
+      if (pathname.startsWith('/orm') && !isV6Orm) {
+        const subPath = ormSubPath || '';
+        newPath = `/orm/v6${subPath}`;
+      } else if (!pathname.startsWith('/orm')) {
+        newPath = '/orm/v6';
+      } else {
+        newPath = pathname;
+      }
     }
 
-    router.push(newPath);
+    router.push(newPath || '/orm');
   };
 
   return (

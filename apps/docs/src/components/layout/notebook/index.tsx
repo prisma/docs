@@ -20,7 +20,7 @@ import {
   SidebarTrigger,
   SidebarViewport,
 } from "./sidebar";
-import { TreeContextProvider } from "@fumadocs/base-ui/contexts/tree";
+import { OrmTreeProvider } from "@/components/orm-tree-provider";
 import { cn } from "@prisma-docs/ui/lib/cn";
 import { buttonVariants } from "../../ui/button";
 import { Languages, Sidebar as SidebarIcon, X } from "lucide-react";
@@ -241,7 +241,7 @@ export function DocsLayout(props: DocsLayoutProps) {
   }
 
   return (
-    <TreeContextProvider tree={tree}>
+    <OrmTreeProvider tree={tree}>
       <LayoutContextProvider navTransparentMode={nav.transparentMode}>
         <Sidebar defaultOpenLevel={defaultOpenLevel} prefetch={prefetch}>
           <SidebarEnabledFromPageProvider layoutEnabled={sidebarEnabled}>
@@ -255,7 +255,7 @@ export function DocsLayout(props: DocsLayoutProps) {
           </SidebarEnabledFromPageProvider>
         </Sidebar>
       </LayoutContextProvider>
-    </TreeContextProvider>
+    </OrmTreeProvider>
   );
 }
 

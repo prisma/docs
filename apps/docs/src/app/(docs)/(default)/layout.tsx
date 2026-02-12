@@ -1,9 +1,8 @@
 import { source } from '@/lib/source';
 import { baseOptions, links } from '@/lib/layout.shared';
-import { VersionSwitcher } from '@/components/version-switcher';
+import { VersionSwitcherNavItem } from '@/components/version-switcher-nav';
 import type { LinkItemType } from 'fumadocs-ui/layouts/shared';
 import { DocsLayout } from '@/components/layout/notebook';
-import { LATEST_VERSION } from '@/lib/version';
 
 export default async function Layout({
   children,
@@ -16,7 +15,7 @@ export default async function Layout({
     ...links,
     {
       type: 'custom',
-      children: <VersionSwitcher currentVersion={LATEST_VERSION} />,
+      children: <VersionSwitcherNavItem />,
     },
   ];
 

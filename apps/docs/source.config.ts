@@ -35,26 +35,6 @@ export const docs = defineDocs({
   },
 });
 
-// v6 docs collection
-export const docsV6 = defineDocs({
-  dir: 'content/docs.v6',
-  docs: {
-    schema: frontmatterSchema.extend({
-      image: z.string().optional(),
-      badge: z.enum(['early-access', 'deprecated', 'preview']).optional(),
-      url: z.string(),
-      metaTitle: z.string().optional(),
-      metaDescription: z.string().optional(),
-    }),
-    postprocess: {
-      includeProcessedMarkdown: true,
-    },
-  },
-  meta: {
-    schema: metaSchema,
-  },
-});
-
 export default defineConfig({
   plugins: [lastModified()],
   mdxOptions: {

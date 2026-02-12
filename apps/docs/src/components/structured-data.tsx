@@ -1,9 +1,9 @@
 import { getBaseUrl } from '@/lib/urls';
 import type { InferPageType } from 'fumadocs-core/source';
-import type { source, sourceV6 } from '@/lib/source';
+import type { source } from '@/lib/source';
 
 interface StructuredDataProps {
-  page: InferPageType<typeof source> | InferPageType<typeof sourceV6>;
+  page: InferPageType<typeof source>;
 }
 
 export function TechArticleSchema({ page }: StructuredDataProps) {
