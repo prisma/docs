@@ -76,7 +76,7 @@ const client = new Mixedbread({ apiKey: process.env.MIXEDBREAD_API_KEY! });
 export const { GET } = createMixedbreadSearchAPI({
   client,
   storeIdentifier: 'web-search',
-  rewriteQuery: true,
+  topK: 20,
   transform: (results, _query) => {
     return results.flatMap((item) => {
       const { url = '#', title = 'Untitled' } = item.generated_metadata ?? {};
