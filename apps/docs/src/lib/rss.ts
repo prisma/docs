@@ -1,7 +1,13 @@
 import { generateRSS } from '@prisma-docs/ui/lib/rss';
-import { source } from '@/lib/source';
+import { source, sourceV6 } from '@/lib/source';
 
 export function getRSS() {
+  // Combine v7 and v6 pages
+  const allPages = [
+    ...source.getPages(),
+    ...sourceV6.getPages(),
+  ];
+
   return generateRSS(
     {
       title: 'Prisma Documentation',
@@ -12,7 +18,7 @@ export function getRSS() {
         name: 'Prisma Data, Inc.',
       },
     },
-    source.getPages().map((page: any) => ({
+    allPages.map((page: any) => ({
       id: page.url,
       url: page.url,
       title: page.data.title,
