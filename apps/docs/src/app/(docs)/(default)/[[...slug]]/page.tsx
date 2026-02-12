@@ -12,6 +12,7 @@ import {
   EditOnGitHub,
   PageLastUpdate,
 } from '@/components/layout/notebook/page';
+import { TechArticleSchema, BreadcrumbSchema } from '@/components/structured-data';
 
 interface PageParams {
   slug?: string[];
@@ -29,25 +30,28 @@ export default async function Page({
   const MDX = page.data.body;
 
   return (
-    <DocsPage
-      tableOfContent={{
-        style: 'normal',
-      }}
-      toc={page.data.toc}
-      full={page.data.full}
-    >
-      <div className="flex flex-col md:flex-row items-start gap-4 pt-2 pb-1 md:justify-between">
-        <DocsTitle>{page.data.title}</DocsTitle>
-        <div className="flex flex-row gap-2 items-center">
-          {!page.url.startsWith('/management-api/endpoints') && (
-            <LLMCopyButton pageUrl={page.url} />
-          )}
-          <ViewOptions
-            pageUrl={page.url}
-            githubUrl={`https://github.com/prisma/docs/blob/main/apps/docs/content/docs/${page.path}`}
-          />
+    <>
+      <TechArticleSchema page={page} />
+      <BreadcrumbSchema page={page} />
+      <DocsPage
+        tableOfContent={{
+          style: 'normal',
+        }}
+        toc={page.data.toc}
+        full={page.data.full}
+      >
+        <div className="flex flex-col md:flex-row items-start gap-4 pt-2 pb-1 md:justify-between">
+          <DocsTitle>{page.data.title}</DocsTitle>
+          <div className="flex flex-row gap-2 items-center">
+            {!page.url.startsWith('/management-api/endpoints') && (
+              <LLMCopyButton pageUrl={page.url} />
+            )}
+            <ViewOptions
+              pageUrl={page.url}
+              githubUrl={`https://github.com/prisma/docs/blob/main/apps/docs/content/docs/${page.path}`}
+            />
+          </div>
         </div>
-      </div>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
         <MDX
@@ -67,6 +71,7 @@ export default async function Page({
         )}
       </div>
     </DocsPage>
+    </>
   );
 }
 
