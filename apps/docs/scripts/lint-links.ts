@@ -49,7 +49,7 @@ async function checkLinks() {
   );
 }
 
-function getHeadings({ data }: InferPageType<typeof source>): string[] {
+function getHeadings({ data }: InferPageType<typeof source> | InferPageType<typeof sourceV6>): string[] {
   return data.toc.map((item) => item.url.slice(1));
 }
 
