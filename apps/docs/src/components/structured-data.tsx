@@ -1,9 +1,9 @@
 import { getBaseUrl } from '@/lib/urls';
 import type { InferPageType } from 'fumadocs-core/source';
-import type { source } from '@/lib/source';
+import type { source, sourceV6 } from '@/lib/source';
 
 interface StructuredDataProps {
-  page: InferPageType<typeof source>;
+  page: InferPageType<typeof source> | InferPageType<typeof sourceV6>;
 }
 
 export function TechArticleSchema({ page }: StructuredDataProps) {
@@ -13,8 +13,8 @@ export function TechArticleSchema({ page }: StructuredDataProps) {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
-    headline: page.data.metaTitle,
-    description: page.data.metaDescription,
+    headline: (page.data as any).metaTitle ?? page.data.title,
+    description: (page.data as any).metaDescription ?? page.data.description,
     url: `${baseUrl}${page.url}`,
     dateModified: lastModified?.toISOString(),
     author: {
