@@ -1,4 +1,6 @@
-import { getPageImage, getSource, sourceV6 } from '@/lib/source';import { notFound, redirect } from 'next/navigation';
+import { getCanonicalForV6Page } from '@/lib/canonical';
+import { getPageImage, source, sourceV6 } from '@/lib/source';
+import { notFound, redirect } from 'next/navigation';
 
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
@@ -86,19 +88,18 @@ export async function generateMetadata({
   params: Promise<PageParams>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const source = sourceV6;
-
-  let page = source.getPage(slug);
+  const page = sourceV6.getPage(slug);
   if (!page) notFound();
 
   const title = page.data.metaTitle ?? page.data.title;
   const description = page.data.metaDescription ?? page.data.description;
+  const canonical = getCanonicalForV6Page(page, source);
 
   return {
     title,
     description,
     alternates: {
-      canonical: page.url,
+      canonical,
     },
     openGraph: {
       title,

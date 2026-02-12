@@ -45,6 +45,7 @@ export const docsV6 = defineDocs({
       url: z.string(),
       metaTitle: z.string().optional(),
       metaDescription: z.string().optional(),
+      canonical: z.string().optional(),
     }),
     postprocess: {
       includeProcessedMarkdown: true,
