@@ -395,6 +395,7 @@ const sidebars: SidebarsConfig = {
             "guides/data-dog",
             "guides/github-actions",
             "guides/bun",
+            "guides/deno",
             "guides/management-api-api-clients",
           ].sort(),
         },
