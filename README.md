@@ -2,130 +2,75 @@
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/prisma/docs/blob/main/CONTRIBUTING.md) [![Discord](https://img.shields.io/discord/937751382725886062)](https://discord.com/invite/prisma-937751382725886062?utm_source=twitter&utm_medium=bio&dub_id=0HxLEKaaOg6pL0OL)
 
-This repository contains the [source code](./src) and the [content](./content) for the [Prisma documentation](https://www.prisma.io/docs).
+This repository is a **pnpm monorepo** containing the Prisma documentation, blog, design system docs, and shared packages.
 
-## Contributing to the docs
+## Repository structure
 
-New contributors are welcome! Read through the [contributing guide](CONTRIBUTING.md) to learn how you can contribute to the Prisma documentation.
+| Path | Description |
+|------|--------------|
+| `apps/docs` | Prisma documentation site (Next.js + Fumadocs) |
+| `apps/blog` | Prisma blog |
+| `apps/eclipse` | Eclipse design system documentation |
+| `packages/eclipse` | Eclipse design system component library (`@prisma-docs/eclipse`) |
+| `packages/ui` | Shared UI components and utilities (`@prisma-docs/ui`) |
 
-## Run the docs site locally
+See each app’s `README.md` for more detail.
 
-1. Clone this repository.
-2. On your computer, open a terminal window in the repository's directory.
-3. Run the following commands:
+## Contributing
 
-```
-npm install
-npm run start
-```
+New contributors are welcome. Read the [contributing guide](CONTRIBUTING.md) before submitting changes.
 
-Be sure to also test building the static site:
+## Run locally
 
-```
-npm run clean && npm run build
-npm run serve
-```
-
-To prettify or format the code, run:
-
-```
-npm run format
-```
-
-Please note that `.md` and `.mdx` files are not formatted by Prettier because they are written in [MDX 3](https://mdxjs.com/blog/v3/) which Prettier [does not support](https://github.com/prettier/prettier/issues/12209).
-
-Visit `http://localhost:3000` to view the app.
-
-## Configure
-
-Write MDX files in `content` folder.
-
-Most frontmatter for the docs are the same as [Docusaurus Frontmatter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter). There are some differences due to legacy frontmatter which are handled [here](https://github.com/prisma/docs/blob/94b04aa1d8f723802e715b531b9808bab2d7ae15/src/theme/DocItem/Metadata/index.tsx).
-
-When possible, avoid using custom frontmatter fields and use the default ones available via Docusaurus.
-
-## Inserting, moving and deleting files
-
-All files/folders in the context are prefixed with a _position_ which indicates the order in which they appear in the sidenav on the docs website. This makes it cumbersome to insert, move and delete files because the positions of a number of other files (if not all) in the same folder might need to be adjusted. Thanks to [Luca Steeb](https://github.com/steebchen/), you can perform these operations with a dedicated CLI called [`mdtool`](https://gist.githubusercontent.com/steebchen/bd085ebde1fcf4242e3fdd0df4d202a6/raw/c04e3d262eb6a302a9fab98f6428fec9329681e2/mdtool).
-
-### Install
-
-First, install `wget`:
+From the repository root:
 
 ```bash
-brew install wget
+pnpm install
+pnpm dev
 ```
 
-Then use `wget` to install `mdtool`:
+This starts all apps via Turbo:
+
+- **Docs** — http://localhost:3000  
+- **Blog** — http://localhost:3001  
+- **Eclipse** — http://localhost:3002  
+
+To run a single app:
 
 ```bash
-wget https://gist.githubusercontent.com/steebchen/bd085ebde1fcf4242e3fdd0df4d202a6/raw/c04e3d262eb6a302a9fab98f6428fec9329681e2/mdtool -qO /usr/local/bin/mdtool
-chmod +x /usr/local/bin/mdtool
+pnpm --filter docs dev      # docs only
+pnpm --filter blog dev      # blog only
+pnpm --filter eclipse dev   # eclipse design system docs only
 ```
 
-### Usage
+## Build
 
-#### Overview
-
-```
-mdtool insert 3
-mdtool swap A B
-mdtool move A B
-mdtool remove 4
+```bash
+pnpm build
 ```
 
-#### `mdtool insert`
+To build and serve the docs site:
 
-Make place for a new file at given index and increment all numbers by one after that index:
-
-```
-$ mdtool insert INDEX
-
-# e.g.:
-$ mdtool insert 2
-
-# Result: for files 01-a, 02-b, 03-c, and 04-d; 03-c is renamed to 04-c and 04-d is renamed to 05-d so you can create a new file at index 2
+```bash
+pnpm --filter docs build
+pnpm --filter docs start
 ```
 
-#### `mdtool swap`
+## Scripts
 
-Swap two files; specify both filenames (prefix numbers get automatically adjusted):
+| Script | Description |
+|--------|-------------|
+| `pnpm lint:links` | Validate internal and external links (docs) |
+| `pnpm lint:code` | Lint code blocks in MDX (docs) |
+| `pnpm lint:spellcheck` | Spell-check content (docs) |
+| `pnpm format` | Format code (`.md` / `.mdx` excluded — see note below) |
 
-```
-$ mdtool swap FILENAME1 FILENAME2
+## Content
 
-# e.g.:
-$ mdtool swap 03-file1.mdx 07-file2.mdx
+- **Docs** — `apps/docs/content/docs/` (latest), `apps/docs/content/docs.v6/` (versioned). Sidebar structure comes from `meta.json` in each folder. See [Fumadocs collections](https://fumadocs.dev/docs/mdx/collections).
+- **Blog** — `apps/blog/content/blog/` (MDX with authors, dates, hero images).
+- **Eclipse** — `apps/eclipse/content/design-system/` (component docs).
 
-# Result: Files are now named: 03-file2.mdx 07-file1.mdx
-```
+## Note on formatting
 
-#### `mdtool move`
-
-Move a given file to another given index
-
-```
-$ mdtool move FILENAME INDEX
-
-# e.g.:
-$ mdtool move 05-file.mdx 2
-
-# Result: 05-file.mdx is move to 02-file.mdx, plus previous files 02-*, 03-*, 04-* are incremented
-```
-
-#### `mdtool remove`
-
-Shift all other items by -1 at a given index:
-
-```
-$ mdtool remove INDEX
-
-# e.g.:
-$ mdtool remove 2
-
-# Result: 01-a, 02-b, 03-c, 04-d becomes 01-a, 02-b, 02-c, 03-d; 02-b is supposed to be manually deleted
-```
-
-#### Thanks Luca
-
-![](https://res.cloudinary.com/prismaio/image/upload/v1628765536/docs/LJ0FGHk_u2jjxv.png)
+`.md` and `.mdx` files are not formatted by Prettier because they use [MDX 3](https://mdxjs.com/blog/v3/), which Prettier does not support. See [prettier/prettier#12209](https://github.com/prettier/prettier/issues/12209).
