@@ -12,7 +12,8 @@ import {
   type SharedProps,
 } from 'fumadocs-ui/components/dialog/search';
 import { SearchIcon, X } from 'lucide-react';
-import { ComponentProps } from 'react';
+import { ComponentProps, useEffect, useRef } from 'react';
+import posthog from 'posthog-js';
 
 export function CustomSearchDialogIcon(
   props: ComponentProps<'svg'> & { isLoading: boolean },
@@ -34,6 +35,32 @@ export default function CustomSearchDialog(props: SharedProps) {
     api: '/api/search',
     delayMs: 500,
   });
+
+  const lastCapturedQueryRef = useRef<string | null>(null);
+  const stabilityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  useEffect(() => {
+    if (
+      search.length > 0 &&
+      !query.isLoading &&
+      query.data !== undefined &&
+      query.data !== 'empty'
+    ) {
+      if (stabilityTimerRef.current) clearTimeout(stabilityTimerRef.current);
+      stabilityTimerRef.current = setTimeout(() => {
+        stabilityTimerRef.current = null;
+        if (lastCapturedQueryRef.current !== search) {
+          lastCapturedQueryRef.current = search;
+          posthog.capture('docs:search', {
+            query: search,
+          });
+        }
+      }, 1500);
+    }
+    return () => {
+      if (stabilityTimerRef.current) clearTimeout(stabilityTimerRef.current);
+    };
+  }, [query.data, query.isLoading, search]);
 
   return (
     <SearchDialog
