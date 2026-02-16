@@ -1,5 +1,5 @@
-import { withSentryConfig } from "@sentry/nextjs";
-import { createMDX } from "fumadocs-mdx/next";
+import { withSentryConfig } from '@sentry/nextjs';
+import { createMDX } from 'fumadocs-mdx/next';
 
 const withMDX = createMDX();
 
@@ -7,7 +7,7 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   images: { unoptimized: true },
-  transpilePackages: ["@prisma-docs/eclipse"],
+  transpilePackages: ['@prisma-docs/eclipse'],
   experimental: {
     globalNotFound: true,
   },
@@ -15,15 +15,23 @@ const config = {
   // Only enable when this deployment is the subdomain proxy; leave unset when this app is used as DOCS_ORIGIN (e.g. *.vercel.app) to avoid a loop.
   // For local testing: ENABLE_DOCS_SUBDOMAIN_PROXY=1 and DOCS_PROXY_TARGET=http://localhost:<WEBSITE_PORT>/docs (website must be running on that port)
   async rewrites() {
-    if (process.env.ENABLE_DOCS_SUBDOMAIN_PROXY !== "1") {
+    if (process.env.ENABLE_DOCS_SUBDOMAIN_PROXY !== '1') {
       return [];
     }
-    const base =
-      process.env.DOCS_PROXY_TARGET ?? "https://prisma.io/docs";
+    const base = process.env.DOCS_PROXY_TARGET ?? 'https://prisma.io/docs';
     return [
       {
-        source: "/:path*",
-        destination: `${base.replace(/\/$/, "")}/:path*`,
+        source: '/:path*',
+        destination: `${base.replace(/\/$/, '')}/:path*`,
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        destination: 'https://prisma.io/docs/:path*',
+        permanent: true, // 308
       },
     ];
   },
@@ -33,13 +41,13 @@ export default withSentryConfig(withMDX(config), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "prisma-ch",
+  org: 'prisma-ch',
 
-  project: "javascript-nextjs",
+  project: 'javascript-nextjs',
 
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  tunnelRoute: "/monitoring",
-  
+  tunnelRoute: '/monitoring',
+
   // Only print logs for uploading source maps in CI\
   silent: !process.env.CI,
 
