@@ -11,6 +11,22 @@ const config = {
   experimental: {
     globalNotFound: true,
   },
+  // docs.prisma.io: proxy all requests to prisma.io/docs/... (browser stays on docs.prisma.io).
+  // Only enable when this deployment is the subdomain proxy; leave unset when this app is used as DOCS_ORIGIN (e.g. *.vercel.app) to avoid a loop.
+  // For local testing: ENABLE_DOCS_SUBDOMAIN_PROXY=1 and DOCS_PROXY_TARGET=http://localhost:<WEBSITE_PORT>/docs (website must be running on that port)
+  async rewrites() {
+    if (process.env.ENABLE_DOCS_SUBDOMAIN_PROXY !== "1") {
+      return [];
+    }
+    const base =
+      process.env.DOCS_PROXY_TARGET ?? "https://prisma.io/docs";
+    return [
+      {
+        source: "/:path*",
+        destination: `${base.replace(/\/$/, "")}/:path*`,
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(withMDX(config), {
