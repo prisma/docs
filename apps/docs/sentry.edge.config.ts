@@ -1,23 +1,16 @@
-import posthog from "posthog-js";
-import * as Sentry from "@sentry/nextjs";
+// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
+// The config you add here will be used whenever one of the edge features is loaded.
+// Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
-posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-  capture_pageview: "history_change",
-  defaults: "2025-11-30",
-  loaded: (posthog) => {
-    posthog.register({
-      site_name: "mono-docs", // or 'docs-site', 'app-site', etc.
-      environment: "production",
-    });
-  },
-});
+import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: "https://e83ce4699e59051fdeaa330bf4a0dfb9@o4510879743737856.ingest.us.sentry.io/4510879744000000",
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,
+
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
@@ -25,5 +18,3 @@ Sentry.init({
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
 });
-
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
