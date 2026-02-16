@@ -30,6 +30,7 @@ export const links: LinkItemTypeWithActivePaths[] = [
   {
     text: 'Getting Started',
     url: '/docs',
+    active: 'nested-url',
     activePaths: ['/docs', '/docs/prisma-orm', '/docs/prisma-postgres'],
   },
   {
@@ -82,7 +83,7 @@ export function baseOptions(): BaseLayoutProps {
         <>
           <Link href="https://www.prisma.io">{logo} </Link> /
           <Link
-            href="/"
+            href="/docs"
             className="group relative inline-block"
           >
             <span className="font-mono text-lg">docs</span>
