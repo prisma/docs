@@ -5,7 +5,7 @@ const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
-  basePath: '/docs/', // if serving under /docs path
+  basePath: '/docs', // if serving under /docs path
   reactStrictMode: true,
   images: { unoptimized: true },
   transpilePackages: ['@prisma-docs/eclipse'],
