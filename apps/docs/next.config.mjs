@@ -5,7 +5,6 @@ const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
-  assetPrefix: 'https://docs.prisma.io',
   basePath: '/docs', // if serving under /docs path
   reactStrictMode: true,
   images: { unoptimized: true },
