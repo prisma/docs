@@ -1,8 +1,11 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { VERSIONS, LATEST_VERSION, type Version } from '@/lib/version';
 import { ChevronDownIcon } from 'lucide-react';
+
+import { VERSIONS, LATEST_VERSION, type Version } from '@/lib/version';
+
+const DOCS_PREFIX = '/docs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,15 +30,16 @@ export function VersionSwitcher({ currentVersion }: VersionSwitcherProps) {
       v6: new Set(['accelerate', 'ai', 'guides', 'optimize', 'orm', 'platform', 'postgres']),
     };
 
-    const rawPath = pathname.replace(/^\/v\d+(?=\/|$)/, '') || '/';
+    const pathWithoutDocs = pathname.replace(/^\/docs\/?/, '') || '/';
+    const rawPath = pathWithoutDocs.replace(/^\/v\d+(?=\/|$)/, '') || '/';
     const topSection = rawPath.split('/').filter(Boolean)[0] ?? '';
     const sectionExists = VERSION_SECTIONS[newVersion]?.has(topSection);
 
     let newPath: string;
     if (newVersion === LATEST_VERSION) {
-      newPath = sectionExists ? `/${topSection}` : '/';
+      newPath = sectionExists ? `${DOCS_PREFIX}/${topSection}` : DOCS_PREFIX;
     } else {
-      newPath = sectionExists ? `/${newVersion}/${topSection}` : `/${newVersion}`;
+      newPath = sectionExists ? `${DOCS_PREFIX}/${newVersion}/${topSection}` : `${DOCS_PREFIX}/${newVersion}`;
     }
 
     router.push(newPath);
