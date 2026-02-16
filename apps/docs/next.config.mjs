@@ -28,11 +28,14 @@ const config = {
     ];
   },
   async redirects() {
+    if (process.env.ENABLE_DOCS_SUBDOMAIN_PROXY === '1') {
+      return [];
+    }
     return [
       {
         source: '/:path*',
         destination: 'https://prisma.io/docs/:path*',
-        permanent: true, // 308
+        permanent: false, // use 307 until you've verified the behavior
       },
     ];
   },
