@@ -6,6 +6,7 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   basePath: process.env.NODE_ENV === 'production' ? '/docs' : '', // if serving under /docs path
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/docs' : '', // if serving under /docs path
   reactStrictMode: true,
   images: { unoptimized: true },
   transpilePackages: ['@prisma-docs/eclipse'],
@@ -13,18 +14,18 @@ const config = {
     globalNotFound: true,
   },
   // docs.prisma.io: in production, redirect all requests to prisma.io/docs (browser navigates to prisma.io).
-  async redirects() {
-    if (process.env.NODE_ENV !== 'production') {
-      return [];
-    }
-    return [
-      {
-        source: '/:path*',
-        destination: 'https://prisma.io/docs/:path*',
-        permanent: false, // use 307 until you've verified the behavior
-      },
-    ];
-  },
+  // async redirects() {
+  //   if (process.env.NODE_ENV !== 'production') {
+  //     return [];
+  //   }
+  //   return [
+  //     {
+  //       source: '/:path*',
+  //       destination: 'https://prisma.io/docs/:path*',
+  //       permanent: false, // use 307 until you've verified the behavior
+  //     },
+  //   ];
+  // },
 };
 
 export default withSentryConfig(withMDX(config), {
