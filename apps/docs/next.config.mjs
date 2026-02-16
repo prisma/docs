@@ -1,29 +1,27 @@
-import { withSentryConfig } from "@sentry/nextjs";
-import { createMDX } from "fumadocs-mdx/next";
+import { withSentryConfig } from '@sentry/nextjs';
+import { createMDX } from 'fumadocs-mdx/next';
 
 const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
+  basePath: process.env.NODE_ENV === 'production' ? '/docs' : '', // if serving under /docs path
   reactStrictMode: true,
   images: { unoptimized: true },
-  transpilePackages: ["@prisma-docs/eclipse"],
+  transpilePackages: ['@prisma-docs/eclipse'],
   experimental: {
     globalNotFound: true,
   },
-  // docs.prisma.io: proxy all requests to prisma.io/docs/... (browser stays on docs.prisma.io).
-  // Only enable when this deployment is the subdomain proxy; leave unset when this app is used as DOCS_ORIGIN (e.g. *.vercel.app) to avoid a loop.
-  // For local testing: ENABLE_DOCS_SUBDOMAIN_PROXY=1 and DOCS_PROXY_TARGET=http://localhost:<WEBSITE_PORT>/docs (website must be running on that port)
-  async rewrites() {
-    if (process.env.ENABLE_DOCS_SUBDOMAIN_PROXY !== "1") {
+  // docs.prisma.io: in production, redirect all requests to prisma.io/docs (browser navigates to prisma.io).
+  async redirects() {
+    if (process.env.NODE_ENV !== 'production') {
       return [];
     }
-    const base =
-      process.env.DOCS_PROXY_TARGET ?? "https://prisma.io/docs";
     return [
       {
-        source: "/:path*",
-        destination: `${base.replace(/\/$/, "")}/:path*`,
+        source: '/:path*',
+        destination: 'https://prisma.io/docs/:path*',
+        permanent: false, // use 307 until you've verified the behavior
       },
     ];
   },
@@ -33,13 +31,13 @@ export default withSentryConfig(withMDX(config), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "prisma-ch",
+  org: 'prisma-ch',
 
-  project: "javascript-nextjs",
+  project: 'javascript-nextjs',
 
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  tunnelRoute: "/monitoring",
-  
+  tunnelRoute: '/monitoring',
+
   // Only print logs for uploading source maps in CI\
   silent: !process.env.CI,
 
