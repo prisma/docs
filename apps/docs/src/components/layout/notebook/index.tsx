@@ -341,7 +341,9 @@ function DocsNavbar({
                 ))}
             </div>
 
-            <ThemeToggle mode={themeSwitch.mode ?? 'light-dark-system'} />
+            {themeSwitch.enabled !== false && (
+              <ThemeToggle mode={themeSwitch.mode ?? 'light-dark-system'} />
+            )}
             <SidebarEnabledGate>
               {sidebarCollapsible && (
                 <SidebarCollapseTrigger
