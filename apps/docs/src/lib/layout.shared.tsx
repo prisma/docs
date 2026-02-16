@@ -69,7 +69,7 @@ export const links: LinkItemTypeWithActivePaths[] = [
     label: 'Join Discord',
     icon: <DiscordIcon />,
     text: 'Discord',
-    url: 'https://pris.ly/discord?utm_source=docs&utm_medium=header',
+    url: 'https://pris.ly/discord?utm_source=docs&utm_medium=navbar',
   },
 ];
 
@@ -95,6 +95,6 @@ export function baseOptions(): BaseLayoutProps {
       ),
       transparentMode: 'none',
     },
-    githubUrl: 'https://github.com/prisma/docs',
+    githubUrl: 'https://pris.ly/github?utm_source=docs&utm_medium=navbar',
   };
 }
