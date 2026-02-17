@@ -1,5 +1,5 @@
-import { withSentryConfig } from '@sentry/nextjs';
-import { createMDX } from 'fumadocs-mdx/next';
+import { withSentryConfig } from "@sentry/nextjs";
+import { createMDX } from "fumadocs-mdx/next";
 
 const withMDX = createMDX();
 
@@ -172,24 +172,24 @@ const ContentSecurityPolicy = `
 
 const securityHeaders = [
   {
-    key: 'Accept-Encoding',
-    value: 'gzip, compress, br, zstd',
+    key: "Accept-Encoding",
+    value: "gzip, compress, br, zstd",
   },
   {
-    key: 'X-Frame-Options',
-    value: 'SAMEORIGIN',
+    key: "X-Frame-Options",
+    value: "SAMEORIGIN",
   },
   {
-    key: 'X-Content-Type-Options',
-    value: 'nosniff',
+    key: "X-Content-Type-Options",
+    value: "nosniff",
   },
   {
-    key: 'Content-Security-Policy',
-    value: ContentSecurityPolicy.replace(/\s{2,}/g, ' ').trim(),
+    key: "Content-Security-Policy",
+    value: ContentSecurityPolicy.replace(/\s{2,}/g, " ").trim(),
   },
   {
-    key: 'Referrer-Policy',
-    value: 'strict-origin-when-cross-origin',
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
   },
 ];
 
@@ -198,24 +198,36 @@ const config = {
   async rewrites() {
     return [
       {
-        source: '/docs/:path*.mdx',
-        destination: '/llms.mdx/:path*',
+        source: "/docs/:path*.mdx",
+        destination: "/llms.mdx/:path*",
       },
     ];
   },
-  assetPrefix: '/docs',
+  redirects: [
+    {
+      source: "/docs/llms.txt",
+      destination: "https://docs.prisma.io/llms.txt",
+      permanent: false,
+    },
+    {
+      source: "/docs/llms-full.txt",
+      destination: "https://docs.prisma.io/llms-full.txt",
+      permanent: false,
+    },
+  ],
+  assetPrefix: "/docs",
   // Allow website (localhost:3001) to load assets when proxying docs
-  allowedDevOrigins: ['http://prisma.io'],
+  allowedDevOrigins: ["http://prisma.io"],
   reactStrictMode: true,
   images: { unoptimized: true },
-  transpilePackages: ['@prisma-docs/eclipse'],
+  transpilePackages: ["@prisma-docs/eclipse"],
   experimental: {
     globalNotFound: true,
   },
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: "/:path*",
         headers: securityHeaders,
       },
     ];
@@ -226,12 +238,12 @@ export default withSentryConfig(withMDX(config), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: 'prisma-ch',
+  org: "prisma-ch",
 
-  project: 'javascript-nextjs',
+  project: "javascript-nextjs",
 
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  tunnelRoute: '/monitoring',
+  tunnelRoute: "/monitoring",
 
   // Only print logs for uploading source maps in CI\
   silent: !process.env.CI,
