@@ -5,6 +5,14 @@ const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
+  async rewrites() {
+    return [
+      {
+        source: '/docs/:path*.mdx',
+        destination: '/llms.mdx/:path*',
+      },
+    ];
+  },
   assetPrefix: '/docs',
   // Allow website (localhost:3001) to load assets when proxying docs
   allowedDevOrigins: ['http://prisma.io'],
