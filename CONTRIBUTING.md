@@ -36,23 +36,6 @@ We use Conventional-Commit-inspired scopes to clarify *where* changes land.
   - Example: `chore: align eslint rules across apps`
 
 
-### 3) Commit body MUST reference an issue
-
-Every commit **must** include a Linear issue reference in the **commit body**.
-
-Example:
-```
-fix(admin): prevent crash on empty results
-
-Linear: DR-482
-```
-
-**Notes**
-- The Linear reference must be in the **body**, not just the title.
-- If a commit truly has no issue, create one first.
-
----
-
 ## Commit Message Format
 
 ### Required shape
@@ -67,29 +50,23 @@ Linear: DR-482
 - **`type`**: required (see list above)
 - **`scope`**: required for single-app changes; **must be empty** for cross-boundary changes
 - **`subject`**: short, imperative, no trailing period
-- **`body`**: must include Linear reference (required)
+- **`body`**: optional details/context
 
 ### Examples
 
 Single app change (scoped):
 ```
 feat(docs): update getting started
-
-Linear: DC-53423
 ```
 
 Single app bug fix (scoped):
 ```
 fix(docs): ensure UTMs are persisted
-
-Linear: DC-233
 ```
 
 Cross-boundary change (empty scope):
 ```
 chore: update shared lint rules and apply fixes
-
-Linear: DC-1288
 ```
 
 ---
@@ -132,3 +109,20 @@ PR titles should follow the same convention as commits:
 - Prefer clarity over cleverness.
 - Avoid drive-by refactors inside feature/bugfix PRs.
 - Follow existing patterns within each app.
+
+---
+
+## Internal only
+
+If you are opening an **internal PR**, include a Linear issue reference in the commit body.
+
+Example:
+```
+fix(admin): prevent crash on empty results
+
+Linear: DR-482
+```
+
+Notes:
+- Put the Linear reference in the **body**, not only in the title.
+- If internal work does not yet have an issue, create one first.
