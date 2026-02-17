@@ -21,15 +21,13 @@ const cache = new Map<string, string>();
 
 export function LLMCopyButton({
   /**
-   * The page URL path (e.g., /guides/getting-started)
+   * A URL to fetch the raw Markdown/MDX content of page
    */
-  pageUrl,
+  markdownUrl,
 }: {
-  pageUrl: string;
+  markdownUrl: string;
 }) {
   const [isLoading, setLoading] = useState(false);
-  const markdownUrl = `/mdx${pageUrl}`;
-
   const [checked, onClick] = useCopyButton(async () => {
     const cached = cache.get(markdownUrl);
     if (cached) return navigator.clipboard.writeText(cached);

@@ -44,7 +44,7 @@ export default async function Page({
           <DocsTitle>{page.data.title}</DocsTitle>
           <div className="flex flex-row gap-2 items-center">
             {!page.url.startsWith('/management-api/endpoints') && (
-              <LLMCopyButton pageUrl={page.url} />
+              <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
             )}
             <ViewOptions
               pageUrl={page.url}
