@@ -5,8 +5,9 @@ const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
-  basePath: '', 
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/docs' : '', // if serving under /docs path
+  assetPrefix: '/docs',
+  // Allow website (localhost:3001) to load assets when proxying docs
+  allowedDevOrigins: ['http://prisma.io'],
   reactStrictMode: true,
   images: { unoptimized: true },
   transpilePackages: ['@prisma-docs/eclipse'],
