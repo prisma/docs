@@ -203,18 +203,20 @@ const config = {
       },
     ];
   },
-  redirects: [
-    {
-      source: "/docs/llms.txt",
-      destination: "https://docs.prisma.io/llms.txt",
-      permanent: false,
-    },
-    {
-      source: "/docs/llms-full.txt",
-      destination: "https://docs.prisma.io/llms-full.txt",
-      permanent: false,
-    },
-  ],
+  async redirects() {
+    return [
+      {
+        source: "/docs/llms.txt",
+        destination: "https://docs.prisma.io/llms.txt",
+        permanent: false,
+      },
+      {
+        source: "/docs/llms-full.txt",
+        destination: "https://docs.prisma.io/llms-full.txt",
+        permanent: false,
+      },
+    ];
+  },
   assetPrefix: "/docs",
   // Allow website (localhost:3001) to load assets when proxying docs
   allowedDevOrigins: ["http://prisma.io"],
