@@ -37,13 +37,17 @@ const ContentSecurityPolicy = `
     https://googleads.g.doubleclick.net
     https://td.doubleclick.net
     https://kit.fontawesome.com
-    https://raw.githubusercontent.com;
+    https://raw.githubusercontent.com
+    https://hcaptcha.com
+    https://*.hcaptcha.com;
 
   style-src 'self' 'unsafe-inline'
     https://fonts.googleapis.com
     https://cdn.tolt.io
     https://vercel.live
-    https://proxyhog.prisma-data.net;
+    https://proxyhog.prisma-data.net
+    https://hcaptcha.com
+    https://*.hcaptcha.com;
 
   font-src 'self' data:
     https://fonts.gstatic.com
@@ -115,7 +119,10 @@ const ContentSecurityPolicy = `
     https://td.doubleclick.net
     https://raw.githubusercontent.com
     https://www.google-analytics.com
-    https://unpkg.com;
+    https://unpkg.com
+    https://proxy.kapa.ai
+    https://hcaptcha.com
+    https://*.hcaptcha.com;
 
   media-src 'self'
     https://*.prisma.io
@@ -137,7 +144,9 @@ const ContentSecurityPolicy = `
     https://googleads.g.doubleclick.net
     https://td.doubleclick.net
     https://calculator.prisma.io/
-    https://ppg-pricing-calculator.vercel.app;
+    https://ppg-pricing-calculator.vercel.app
+    https://hcaptcha.com
+    https://*.hcaptcha.com;
 
 
   child-src 'self'
