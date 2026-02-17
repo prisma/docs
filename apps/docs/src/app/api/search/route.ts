@@ -77,6 +77,7 @@ export const { GET } = createMixedbreadSearchAPI({
   client,
   storeIdentifier: 'web-search',
   topK: 20,
+  rerank: true,
   transform: (results, _query) => {
     return results.flatMap((item) => {
       const { url = '#', title = 'Untitled' } = item.generated_metadata ?? {};
