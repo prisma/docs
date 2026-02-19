@@ -43,9 +43,7 @@ export default async function Page({
         <div className="flex flex-col md:flex-row items-start gap-4 pt-2 pb-1 md:justify-between">
           <DocsTitle>{page.data.title}</DocsTitle>
           <div className="flex flex-row gap-2 items-center">
-            {/* {!page.url.startsWith('/management-api/endpoints') && ( */}
-            {/*   <LLMCopyButton markdownUrl={`${page.url}.mdx`} /> */}
-            {/* )} */}
+            <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
             <ViewOptions
               markdownUrl={`${page.url}.mdx`}
               githubUrl={`https://github.com/prisma/docs/blob/main/apps/docs/content/docs/${page.path}`}
